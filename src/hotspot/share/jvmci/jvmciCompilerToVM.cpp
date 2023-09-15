@@ -3076,7 +3076,7 @@ C2V_VMENTRY_0(jlong, getThreadLocalLong, (JNIEnv* env, jobject, jint id))
   }
 C2V_END
 
-C2V_VMENTRY(void, getLiveObjectLocalsAt, (JNIEnv* env, jobject, ARGUMENT_PAIR(method),
+C2V_VMENTRY(void, getOopMapAt, (JNIEnv* env, jobject, ARGUMENT_PAIR(method),
                  jint bci, jlongArray oop_map_handle))
   methodHandle method(THREAD, UNPACK_PAIR(Method, method));
   if (bci < 0 || bci >= method->code_size()) {
@@ -3092,8 +3092,8 @@ C2V_VMENTRY(void, getLiveObjectLocalsAt, (JNIEnv* env, jobject, ARGUMENT_PAIR(me
     return;
   }
 
-  int nlocals = method->max_locals();
-  int nwords = ((nlocals - 1) / 64) + 1;
+  int nslots = method->max_locals() + method->max_stack();
+  int nwords = ((nslots - 1) / 64) + 1;
   JVMCIPrimitiveArray oop_map = JVMCIENV->wrap(oop_map_handle);
   int oop_map_len = JVMCIENV->get_length(oop_map);
   if (nwords > oop_map_len) {
@@ -3110,7 +3110,7 @@ C2V_VMENTRY(void, getLiveObjectLocalsAt, (JNIEnv* env, jobject, ARGUMENT_PAIR(me
   }
 
   BitMapView oop_map_view = BitMapView((BitMap::bm_word_t*) oop_map_buf, nwords * BitsPerLong);
-  for (int i = 0; i < nlocals; i++) {
+  for (int i = 0; i < nslots; i++) {
     if (mask.is_oop(i)) {
       oop_map_view.set_bit(i);
     }
@@ -3275,7 +3275,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "registerCompilerPhase",                        CC "(" STRING ")I",                                                                   FN_PTR(registerCompilerPhase)},
   {CC "notifyCompilerPhaseEvent",                     CC "(JIII)V",                                                                         FN_PTR(notifyCompilerPhaseEvent)},
   {CC "notifyCompilerInliningEvent",                  CC "(I" HS_METHOD2 HS_METHOD2 "ZLjava/lang/String;I)V",                               FN_PTR(notifyCompilerInliningEvent)},
-  {CC "getLiveObjectLocalsAt",                        CC "(" HS_METHOD2 "I[J)V",                                                            FN_PTR(getLiveObjectLocalsAt)},
+  {CC "getOopMapAt",                                  CC "(" HS_METHOD2 "I[J)V",                                                            FN_PTR(getOopMapAt)},
 };
 
 int CompilerToVM::methods_count() {

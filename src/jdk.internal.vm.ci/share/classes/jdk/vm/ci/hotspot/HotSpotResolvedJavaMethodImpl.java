@@ -770,13 +770,13 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     @Override
-    public BitSet getLiveObjectLocalsAt(int bci) {
+    public BitSet getOopMapAt(int bci) {
         if (getCodeSize() == 0) {
             throw new IllegalArgumentException("has no bytecode");
         }
-        int nwords = ((getMaxLocals() - 1) / 64) + 1;
+        int nwords = ((getMaxLocals() + getMaxStackSize() - 1) / 64) + 1;
         long[] oopMap = new long[nwords];
-        compilerToVM().getLiveObjectLocalsAt(this, bci, oopMap);
+        compilerToVM().getOopMapAt(this, bci, oopMap);
         return BitSet.valueOf(oopMap);
     }
 }

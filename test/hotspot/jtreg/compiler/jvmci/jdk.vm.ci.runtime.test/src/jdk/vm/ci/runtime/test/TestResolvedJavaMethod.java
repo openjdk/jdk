@@ -662,14 +662,13 @@ public class TestResolvedJavaMethod extends MethodUniverse {
     }
 
     @Test
-    public void getLiveObjectLocalsAtTest() throws Exception {
+    public void getOopMapAtTest() throws Exception {
         Collection<Class<?>> allClasses = new ArrayList<>(classes);
 
         // Add this class so that methodWithManyArgs is processed
         allClasses.add(getClass());
 
         boolean[] processedMethodWithManyArgs = {false};
-        final boolean debug = false;
 
         for (Class<?> c : allClasses) {
             if (c.isArray() || c.isPrimitive() || c.isHidden()) {
@@ -682,37 +681,52 @@ public class TestResolvedJavaMethod extends MethodUniverse {
                 cm.findAttribute(Attributes.CODE).ifPresent(codeAttr -> {
                     String key = cm.methodName().stringValue() + ":" + cm.methodType().stringValue();
                     HotSpotResolvedJavaMethod m = (HotSpotResolvedJavaMethod) Objects.requireNonNull(methodMap.get(key));
-                    int maxLocals = m.getMaxLocals();
+                    boolean isMethodWithManyArgs = c == getClass() && m.getName().equals("methodWithManyArgs");
+                    if (isMethodWithManyArgs) {
+                        processedMethodWithManyArgs[0] = true;
+                    }
+                    int maxSlots = m.getMaxLocals() + m.getMaxStackSize();
 
                     int bci = 0;
+                    Map<String, int[]> expectOopMaps = !isMethodWithManyArgs ? null : Map.of(
+                        "{0, 64, 128}",      new int[] {0},
+                        "{0, 64, 128, 130}", new int[] {0},
+                        "{0, 64, 128, 129}", new int[] {0});
                     for (CodeElement i : codeAttr.elementList()) {
                         if (i instanceof Instruction ins) {
-                            BitSet oopMap = m.getLiveObjectLocalsAt(bci);
-                            if (c == getClass() && m.getName().equals("methodWithManyArgs")) {
-                                if (debug) {
-                                    System.out.printf("%s@%d [%d]: %s%n", m.getName(), bci, maxLocals, oopMap);
-                                    System.out.printf("%s@%d [%d]: %s%n", m.getName(), bci, maxLocals, ins);
-                                }
+                            BitSet oopMap = m.getOopMapAt(bci);
+                            if (isMethodWithManyArgs) {
+                                System.out.printf("methodWithManyArgs@%d [%d]: %s%n", bci, maxSlots, oopMap);
+                                System.out.printf("methodWithManyArgs@%d [%d]: %s%n", bci, maxSlots, ins);
+
                                 // Assumes stability of javac output
                                 String where = "methodWithManyArgs@" + bci;
-                                if (bci >= 21 && bci <= 27) {
-                                    Assert.assertEquals(where, "{0, 64, 128, 129}", oopMap.toString());
-                                } else {
-                                    Assert.assertEquals(where, "{0, 64, 128}", oopMap.toString());
+                                String oopMapString = String.valueOf(oopMap);
+                                int[] count = expectOopMaps.get(oopMapString);
+                                if (count == null) {
+                                    throw new AssertionError(where + ": unexpected oop map: " + oopMapString);
                                 }
-                                processedMethodWithManyArgs[0] = true;
+                                count[0]++;
                             }
 
                             // Requesting an oop map at an invalid BCI must throw an exception
                             if (ins.sizeInBytes() > 1) {
                                 try {
-                                    oopMap = m.getLiveObjectLocalsAt(bci + 1);
+                                    oopMap = m.getOopMapAt(bci + 1);
                                     throw new AssertionError("expected exception for illegal bci %d in %s: %s".formatted(bci + 1, m.format("%H.%n(%p)"), oopMap));
                                 } catch(IllegalArgumentException e) {
                                     // expected
                                 }
                             }
                             bci += ins.sizeInBytes();
+                        }
+                    }
+                    if (isMethodWithManyArgs) {
+                        for (var e : expectOopMaps.entrySet()) {
+                            if (e.getValue()[0] == 0) {
+                                throw new AssertionError(m.format("%H.%n(%p)") + "did not find expected oop map: " + e.getKey());
+                            }
+                            System.out.printf("methodWithManyArgs: %s = %d%n", e.getKey(), e.getValue()[0]);
                         }
                     }
                 });

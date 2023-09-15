@@ -1475,16 +1475,11 @@ final class CompilerToVM {
     }
 
     /**
-     * Computes which local variables in {@code method} contain live object values
-     * at the instruction denoted by {@code bci}. This is the "oop map" used
-     * by the garbage collector.
-     *
-     * @param oopMap array in which the oop map is returned
-     * @see HotSpotResolvedJavaMethodImpl#getLiveObjectLocalsAt
+     * @see HotSpotResolvedJavaMethod#getOopMapAt
      */
-    void getLiveObjectLocalsAt(HotSpotResolvedJavaMethodImpl method, int bci, long[] oopMap) {
-        getLiveObjectLocalsAt(method, method.getMethodPointer(), bci, oopMap);
+    void getOopMapAt(HotSpotResolvedJavaMethodImpl method, int bci, long[] oopMap) {
+        getOopMapAt(method, method.getMethodPointer(), bci, oopMap);
     }
 
-    native void getLiveObjectLocalsAt(HotSpotResolvedJavaMethodImpl method, long methodPointer, int bci, long[] oopMap);
+    native void getOopMapAt(HotSpotResolvedJavaMethodImpl method, long methodPointer, int bci, long[] oopMap);
 }
