@@ -120,7 +120,7 @@ public class bug4711693 {
         if (!passed) {
             throw new RuntimeException("Test failed. Popup disposed on mouse release.");
         } else {
-            System.out.println("test Passed!");
+            System.out.println("Test Passed!");
         }
     }
 }
