@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2022 SAP. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,8 +49,7 @@ public class VeryEarlyAssertTest {
   public static void main(String[] args) throws Exception {
 
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-version");
+    ProcessBuilder pb = ProcessTools.createTestJvm("-version");
     Map<String, String> env = pb.environment();
     env.put("HOTSPOT_FATAL_ERROR_DURING_DYNAMIC_INITIALIZATION", "1");
 
