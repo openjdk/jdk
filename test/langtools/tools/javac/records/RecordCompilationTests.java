@@ -1276,8 +1276,8 @@ public class RecordCompilationTests extends CompilationTestCase {
             for (final File fileEntry : Objects.requireNonNull(dir.listFiles())) {
                 if (fileEntry.getName().endsWith("R.class")) {
                     ClassModel classFile = Classfile.of().parse(fileEntry.toPath());
-                    for (int i = 1; i < classFile.constantPool().entryCount(); ++i) {
-                        if (classFile.constantPool().entryByIndex(i) instanceof FieldRefEntry fieldRefEntry) {
+                    for (PoolEntry pe : classFile.constantPool()) {
+                        if (pe instanceof FieldRefEntry fieldRefEntry) {
                             numberOfFieldRefs++;
                             NameAndTypeEntry nameAndType = (NameAndTypeEntry) classFile.constantPool()
                                             .entryByIndex(fieldRefEntry.nameAndType().index());
