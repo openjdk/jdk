@@ -1300,9 +1300,9 @@ public class ForkJoinPool extends AbstractExecutorService {
          */
         final void push(ForkJoinTask<?> task, ForkJoinPool pool,
                         boolean internal) {
-            int s = top++, cap, m; ForkJoinTask<?>[] a;
+            int s = top++, cap, m, d; ForkJoinTask<?>[] a;
             if ((a = array) != null && (cap = a.length) > 0) {
-                if ((m = cap - 1) == s - base)
+                if ((d = (m = cap - 1) - (s - base)) == 0)
                     growAndPush(task, a, s, internal);
                 else {
                     long pos = slotOffset(m & s);
@@ -1312,9 +1312,9 @@ public class ForkJoinPool extends AbstractExecutorService {
                         U.putReference(a, pos, task);          // inside lock
                         unlockPhase();
                     }
-                    if (a[m & (s - 1)] == null && pool != null)
-                        pool.signalWork();
                 }
+                if ((d == 0 || a[m & (s - 1)] == null) && pool != null)
+                    pool.signalWork();
             }
         }
 
@@ -1991,13 +1991,13 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     private boolean isQuiescent(boolean transition) {
         for (;;) {
-            long phaseSum = -1L;
+            long phaseSum = 0L;
             boolean swept = false;
             for (int e, prevRunState = 0; ; prevRunState = e) {
                 long c = ctl;
                 if (((e = runState) & STOP) != 0)
                     return true;                          // terminating
-                else if ((c & RC_MASK) > 0L)
+                else if ((c & RC_MASK) != 0L)
                     return false;                         // at least one active
                 else if (!swept || e != prevRunState || (e & RS_LOCK) != 0) {
                     long sum = c;
@@ -2005,16 +2005,15 @@ public class ForkJoinPool extends AbstractExecutorService {
                     int n = (qs == null) ? 0 : qs.length;
                     for (int i = 0; i < n; ++i) {         // scan queues
                         WorkQueue q; int p;
-                        if ((q = qs[i]) == null)
-                            sum += (long)(i + 1) << 48;
-                        else if (((p = q.phase) & IDLE) == 0 ||
-                                 q.top - q.base > 0) {
-                            if ((i & 1) == 0)
-                                signalWork();             // ensure live
-                            return false;
+                        if ((q = qs[i]) != null) {
+                            if (((p = q.phase) & IDLE) == 0 ||
+                                q.top - q.base > 0) {
+                                if ((i & 1) == 0)
+                                    signalWork();         // ensure live
+                                return false;
+                            }
+                            sum += p & 0xffffffffL;
                         }
-                        else
-                            sum += p;
                     }
                     swept = (phaseSum == (phaseSum = sum));
                 }
@@ -2132,7 +2131,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     private int awaitWork(WorkQueue w, long queuedCtl, int idlePhase) {
         int p = idlePhase;
-        boolean quiescent = (queuedCtl & RC_MASK) <= 0L && isQuiescent(true);
+        boolean quiescent = (queuedCtl & RC_MASK) == 0L && isQuiescent(true);
         if (w != null && (p = w.phase) == idlePhase && (runState & STOP) == 0) {
             long deadline = (quiescent ?        // timeout for trim
                              keepAlive + System.currentTimeMillis() : 0L);
