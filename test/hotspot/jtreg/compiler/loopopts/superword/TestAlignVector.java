@@ -943,7 +943,7 @@ public class TestAlignVector {
                   IRNode.ADD_VI, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                   IRNode.ADD_VL, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true"})
     // require avx to ensure vectors are larger than what unrolling produces
     static Object[] test13aIL(int[] a, long[] b) {
         for (int i = 0; i < RANGE; i++) {
@@ -1010,7 +1010,7 @@ public class TestAlignVector {
                   IRNode.ADD_VI, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                   IRNode.ADD_VL, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true"})
     // require avx to ensure vectors are larger than what unrolling produces
     static Object[] test13bIL(int[] a, long[] b) {
         for (int i = 1; i < RANGE; i++) {
