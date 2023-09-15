@@ -150,6 +150,9 @@ void* decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
   Options ops = parse_options(options, printf_callback, printf_stream);
   cs_option(cs_handle, CS_OPT_SYNTAX, ops.intel_syntax ? CS_OPT_SYNTAX_INTEL : CS_OPT_SYNTAX_ATT);
 
+  // Turn on SKIPDATA mode
+  cs_option(cs_handle, CS_OPT_SKIPDATA, CS_OPT_ON);
+
   cs_insn *insn;
   size_t count = cs_disasm(cs_handle, buffer, length, (uintptr_t) buffer, 0 , &insn);
   if (count) {
