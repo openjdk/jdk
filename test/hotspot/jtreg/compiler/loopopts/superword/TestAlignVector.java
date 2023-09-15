@@ -34,14 +34,33 @@ import java.util.Random;
 import java.nio.ByteOrder;
 
 /*
- * @test
+ * @test id=NoAlignVector
  * @bug 8310190
- * @summary Test AlignVector with many scenarios
+ * @summary Test AlignVector with various loop init, stride, scale, invar, etc.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.loopopts.superword.TestAlignVector
+ * @requires vm.compiler2.enabled
+ * @run driver compiler.loopopts.superword.TestAlignVector NoAlignVector
+ */
+
+/*
+ * @test id=AlignVector
+ * @bug 8310190
+ * @summary Test AlignVector with various loop init, stride, scale, invar, etc.
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib /
+ * @requires vm.compiler2.enabled
+ * @run driver compiler.loopopts.superword.TestAlignVector AlignVector
+ */
+
+/*
+ * @test id=VerifyAlignVector
+ * @bug 8310190
+ * @summary Test AlignVector with various loop init, stride, scale, invar, etc.
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib /
+ * @requires vm.compiler2.enabled
+ * @run driver compiler.loopopts.superword.TestAlignVector VerifyAlignVector
  */
 
 public class TestAlignVector {
@@ -75,8 +94,17 @@ public class TestAlignVector {
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                                   "-XX:LoopUnrollLimit=250");
+        TestFramework framework = new TestFramework(TestAlignVector.class);
+        framework.addFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                           "-XX:LoopUnrollLimit=250");
+
+        switch (args[0]) {
+            case "NoAlignVector"     -> { framework.addFlags("-XX:-AlignVector"); }
+	    case "AlignVector"       -> { framework.addFlags("-XX:+AlignVector"); }
+            case "VerifyAlignVector" -> { framework.addFlags("-XX:+AlignVector", "-XX:+VerifyAlignVector"); }
+            default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
+        }
+        framework.start();
     }
 
     public TestAlignVector() {
