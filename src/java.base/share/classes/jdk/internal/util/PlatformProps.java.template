@@ -52,16 +52,18 @@ class PlatformProps {
     // Precomputed booleans for each Architecture, shared with jdk.internal.util.Architecture
     // The variables are named to match the Architecture value names, and
     // the values chosen to match the build values.
-    static final boolean TARGET_ARCH_IS_X64     = "@@OPENJDK_TARGET_CPU@@" == "x64";
-    static final boolean TARGET_ARCH_IS_X86     = "@@OPENJDK_TARGET_CPU@@" == "x86";
     static final boolean TARGET_ARCH_IS_AARCH64 = "@@OPENJDK_TARGET_CPU@@" == "aarch64";
     static final boolean TARGET_ARCH_IS_ARM     = "@@OPENJDK_TARGET_CPU@@" == "arm";
-    static final boolean TARGET_ARCH_IS_RISCV64 = "@@OPENJDK_TARGET_CPU@@" == "riscv64";
     static final boolean TARGET_ARCH_IS_LOONGARCH64 = "@@OPENJDK_TARGET_CPU@@" == "loongarch64";
-    static final boolean TARGET_ARCH_IS_S390    = "@@OPENJDK_TARGET_CPU@@" == "s390";
-    static final boolean TARGET_ARCH_IS_PPC64   = "@@OPENJDK_TARGET_CPU@@" == "ppc64";
-    static final boolean TARGET_ARCH_IS_PPC64LE = "@@OPENJDK_TARGET_CPU@@" == "ppc64le";
     static final boolean TARGET_ARCH_IS_MIPSEL  = "@@OPENJDK_TARGET_CPU@@" == "mipsel";
     static final boolean TARGET_ARCH_IS_MIPS64EL= "@@OPENJDK_TARGET_CPU@@" == "mips64el";
+    static final boolean TARGET_ARCH_IS_PPC     = "@@OPENJDK_TARGET_CPU@@" == "ppc";
+    static final boolean TARGET_ARCH_IS_PPC64   = "@@OPENJDK_TARGET_CPU@@" == "ppc64";
+    static final boolean TARGET_ARCH_IS_PPC64LE = "@@OPENJDK_TARGET_CPU@@" == "ppc64le";
+    static final boolean TARGET_ARCH_IS_RISCV64 = "@@OPENJDK_TARGET_CPU@@" == "riscv64";
+    static final boolean TARGET_ARCH_IS_S390    = "@@OPENJDK_TARGET_CPU@@" == "s390";
     static final boolean TARGET_ARCH_IS_SPARCV9 = "@@OPENJDK_TARGET_CPU@@" == "sparcv9";
+    static final boolean TARGET_ARCH_IS_X86     = "@@OPENJDK_TARGET_CPU@@" == "x86";
+    static final boolean TARGET_ARCH_IS_X64     = "@@OPENJDK_TARGET_CPU@@" == "x64";
+
 }

@@ -692,12 +692,8 @@ void ShenandoahConcurrentGC::op_init_mark() {
   // Make above changes visible to worker threads
   OrderAccess::fence();
 
-  // Arm nmethods for concurrent marking. When a nmethod is about to be executed,
-  // we need to make sure that all its metadata are marked. alternative is to remark
-  // thread roots at final mark pause, but it can be potential latency killer.
-  if (heap->unload_classes()) {
-    ShenandoahCodeRoots::arm_nmethods();
-  }
+  // Arm nmethods for concurrent mark
+  ShenandoahCodeRoots::arm_nmethods_for_mark();
 
   ShenandoahStackWatermark::change_epoch_id();
   if (ShenandoahPacing) {
@@ -795,7 +791,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
           // Iff objects will be evaluated, arm the nmethod barriers. These will be disarmed
           // under the same condition (established in prepare_concurrent_roots) after strong
           // root evacuation has completed (see op_strong_roots).
-          ShenandoahCodeRoots::arm_nmethods();
+          ShenandoahCodeRoots::arm_nmethods_for_evac();
           ShenandoahStackWatermark::change_epoch_id();
         }
 
@@ -837,7 +833,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
         heap->set_has_forwarded_objects(true);
 
         // Arm nmethods/stack for concurrent processing
-        ShenandoahCodeRoots::arm_nmethods();
+        ShenandoahCodeRoots::arm_nmethods_for_evac();
         ShenandoahStackWatermark::change_epoch_id();
 
         if (ShenandoahPacing) {

@@ -45,9 +45,10 @@ private:
   size_t _success_old_gcs;
   size_t _interrupted_old_gcs;
   size_t _success_degenerated_gcs;
+  // Written by control thread, read by mutators
   volatile size_t _success_full_gcs;
   size_t _alloc_failure_degenerated;
-  volatile size_t _alloc_failure_degenerated_upgrade_to_full;
+  size_t _alloc_failure_degenerated_upgrade_to_full;
   size_t _alloc_failure_full;
   size_t _explicit_concurrent;
   size_t _explicit_full;
@@ -88,9 +89,11 @@ public:
 
   size_t cycle_counter() const;
 
-  size_t get_fullgc_count();
-
   void print_gc_stats(outputStream* out) const;
+
+  size_t full_gc_count() const {
+    return _success_full_gcs + _alloc_failure_degenerated_upgrade_to_full;
+  }
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTORPOLICY_HPP
