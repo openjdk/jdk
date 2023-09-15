@@ -56,6 +56,7 @@ public class bug4732229 {
 
     public void init() throws Exception {
         robot = new Robot();
+        robot.setAutoDelay(100);
         try {
             SwingUtilities.invokeAndWait(() -> {
                 frame = new JFrame("bug4732229");

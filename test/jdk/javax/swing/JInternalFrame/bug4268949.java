@@ -34,6 +34,10 @@ import javax.swing.SwingUtilities;
 
 public class bug4268949 {
 
+    static Color c1;
+    static Color c2;
+    static Color c3;
+
     public static void main(String[] argv) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             JInternalFrame if1, if2, if3;
@@ -46,12 +50,14 @@ public class bug4268949 {
             if1.setBackground(Color.red);
             if2.setBackground(Color.blue);
             if3.setBackground(Color.green);
-            if (!((if1.getContentPane().getBackground()).equals(Color.red))
-                || !((if2.getContentPane().getBackground()).equals(Color.blue))
-                || !((if3.getContentPane().getBackground()).equals(Color.green))) {
-                throw new RuntimeException("Test failed: JInternalFrame " +
-                        "cannot do setBackground()");
-            }
+            c1 = if1.getContentPane().getBackground();
+            c2 = if2.getContentPane().getBackground();
+            c3 = if3.getContentPane().getBackground();
         });
+        if (!(c1.equals(Color.red)) || !(c2.equals(Color.blue))
+                || !(c3.equals(Color.green))) {
+            throw new RuntimeException("Test failed: JInternalFrame " +
+                    "cannot do setBackground()");
+        }
     }
 }
