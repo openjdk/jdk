@@ -104,7 +104,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         }
     }
 
-    private Set<TypeElement> getTypeElements()  {
+    private Set<TypeElement> getTypeElements() {
         Set<TypeElement> classes = new TreeSet<>(utils.comparators.allClassesComparator());
         boolean noDeprecated = options.noDeprecated();
         Set<TypeElement> includedTypes = configuration.getIncludedTypeElements();
