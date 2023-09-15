@@ -450,7 +450,11 @@ void LoaderConstraintTable::remove_failed_loaded_klass(InstanceKlass* klass,
   Symbol* name = klass->name();
   LoaderConstraint *p = find_loader_constraint(name, loader);
   if (p != nullptr && p->klass() != nullptr && p->klass() == klass) {
-    log_info(class, loader, constraints)("removing klass %s failed to load", name->as_C_string());
+    // If this is the klass in the constraint, the error was OOM from the ClassLoader.addClass() call.
+    // other errors during loading will not have added this klass.
+    log_info(class, loader, constraints)("removing klass %s: failed to load", name->as_C_string());
+    // We only null out the class, since the constraint for the class name for this loader is still valid as
+    // it was added when checking signature loaders for a method or field resolution.
     p->set_klass(nullptr);
   }
 }
