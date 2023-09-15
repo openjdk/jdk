@@ -62,7 +62,7 @@ import java.util.stream.Stream;
  *    args[2]: Full path string to the generated .java file
  *    args[3...]: Names of the property to generate the conditions
  */
-public class  GenerateExtraProperties {
+public class GenerateExtraProperties {
     public static void main(String[] args) {
         var templateFile = Paths.get(args[0]);
         var propertiesFile = Paths.get(args[1]);
