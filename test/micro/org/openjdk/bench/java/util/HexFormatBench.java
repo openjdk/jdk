@@ -95,25 +95,21 @@ public class HexFormatBench {
 
     @Benchmark
     public String formatLower() {
-        builder.setLength(0);
         return HexFormat.of().formatHex(bytes);
     }
 
     @Benchmark
     public String formatUpper() {
-        builder.setLength(0);
         return HexFormat.of().withUpperCase().formatHex(bytes);
     }
 
     @Benchmark
     public String formatLowerCached() {
-        builder.setLength(0);
         return LOWER_FORMATTER.formatHex(bytes);
     }
 
     @Benchmark
     public String formatUpperCached() {
-        builder.setLength(0);
         return UPPER_FORMATTER.formatHex(bytes);
     }
 
