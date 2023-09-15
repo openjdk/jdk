@@ -49,9 +49,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 public class TempDirDoesNotExist {
     final static String WARNING = "WARNING: java.io.tmpdir directory does not exist";
 
-    static String userDir;
-    static String timeStamp;
-    static String tempDir;
+    private static final String USER_DIR = System.getProperty("user.home");
 
     public static void main(String... args) throws IOException {
         for (String arg : args) {
@@ -81,11 +79,9 @@ public class TempDirDoesNotExist {
         }
     }
 
-    @BeforeAll
-    public static void beforeAll() throws IOException {
-        userDir = System.getProperty("user.home");
-        timeStamp = System.currentTimeMillis() + "";
-        tempDir = Path.of(userDir,"non-existing-", timeStamp).toString();
+    private static String tempDir() {
+        String timeStamp = String.valueOf(System.currentTimeMillis());
+        return Path.of(USER_DIR, "non-existing-", timeStamp).toString();
     }
 
     public static Stream<Arguments> existingProvider() {
@@ -95,13 +91,13 @@ public class TempDirDoesNotExist {
         Arguments args = Arguments.of(0, WARNING,
                                       new String[] {
                                           "-Djava.io.tmpdir=" +
-                                          tempDir,
+                                          tempDir(),
                                           "TempDirDoesNotExist", "io"
                                       });
         list.add(args);
         args = Arguments.of(0, WARNING,
                             new String[] {
-                                "-Djava.io.tmpdir=" + tempDir,
+                                "-Djava.io.tmpdir=" + tempDir(),
                                 "TempDirDoesNotExist", "nio"
                             });
         list.add(args);
@@ -109,14 +105,14 @@ public class TempDirDoesNotExist {
         // test with security manager
         args = Arguments.of(0, WARNING,
                             new String[] {
-                                "-Djava.io.tmpdir=" + tempDir
+                                "-Djava.io.tmpdir=" + tempDir()
                                 + " -Djava.security.manager",
                                 "TempDirDoesNotExist", "io"
                             });
         list.add(args);
         args = Arguments.of(0, WARNING,
                             new String[] {
-                                "-Djava.io.tmpdir=" + tempDir
+                                "-Djava.io.tmpdir=" + tempDir()
                                 + " -Djava.security.manager",
                                 "TempDirDoesNotExist", "nio"
                             });
@@ -144,13 +140,13 @@ public class TempDirDoesNotExist {
         // valid custom java.io.tmpdir
         args = Arguments.of(0, WARNING,
                             new String[] {
-                                "-Djava.io.tmpdir=" + userDir,
+                                "-Djava.io.tmpdir=" + USER_DIR,
                                 "TempDirDoesNotExist", "io"
                             });
         list.add(args);
         args = Arguments.of(0, WARNING,
                             new String[] {
-                                "-Djava.io.tmpdir=" + userDir,
+                                "-Djava.io.tmpdir=" + USER_DIR,
                                 "TempDirDoesNotExist", "nio"
                             });
         list.add(args);
@@ -164,7 +160,7 @@ public class TempDirDoesNotExist {
         // standard test with default setting for java.io.tmpdir
         Arguments args = Arguments.of(0,
                                       new String[] {
-                                          "-Djava.io.tmpdir=" + tempDir,
+                                          "-Djava.io.tmpdir=" + tempDir(),
                                           "TempDirDoesNotExist", "io", "nio"
                                       });
         list.add(args);
