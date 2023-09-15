@@ -244,7 +244,7 @@ bool JvmtiAgentList::is_dynamic_lib_loaded(void* os_lib) {
   return false;
 }
 #ifdef AIX
-bool JvmtiAgentList::is_dynamic_lib_loaded(unsigned long device, unsigned long inode) {
+bool JvmtiAgentList::is_dynamic_lib_loaded(dev64_t device, ino64_t inode) {
   JvmtiAgentList::Iterator it = JvmtiAgentList::agents();
   while (it.has_next()) {
     JvmtiAgent* const agent = it.next();

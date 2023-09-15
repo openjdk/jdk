@@ -123,19 +123,19 @@ const char* JvmtiAgent::os_lib_path() const {
 }
 
 #ifdef AIX
-void JvmtiAgent::set_inode(unsigned long inode) {
+void JvmtiAgent::set_inode(ino64_t inode) {
   _inode = inode;
 }
 
-void JvmtiAgent::set_device(unsigned long device) {
+void JvmtiAgent::set_device(dev64_t device) {
   _device = device;
 }
 
-unsigned long JvmtiAgent::inode() const {
+ino64_t JvmtiAgent::inode() const {
   return _inode;
 }
 
-unsigned long JvmtiAgent::device() const {
+dev64_t JvmtiAgent::device() const {
   return _device;
 }
 #endif
