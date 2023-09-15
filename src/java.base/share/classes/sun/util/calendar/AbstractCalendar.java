@@ -173,6 +173,7 @@ public abstract class AbstractCalendar extends CalendarSystem {
             // 3) 1:30am during ending-DST transition is interpreted
             //    as 1:30am DT/0:30am ST (before transition)
             if (zi instanceof ZoneInfo zInfo) {
+                // Offset value adjusts accordingly depending on DST status of date
                 zoneOffset = zInfo.getOffsetsByWall(ms, new int[2]);
             } else {
                 zoneOffset = zi.getOffset(ms - zi.getRawOffset());
