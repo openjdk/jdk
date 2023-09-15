@@ -26,6 +26,7 @@ import javax.swing.JSlider;
 /*
  * @test
  * @bug 4200901
+ * @summary Test to check if JSlider.createStandardLabels() throws Exception
  * @run main bug4200901
  */
 
