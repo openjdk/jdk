@@ -140,7 +140,6 @@ bool frame::safe_for_sender(JavaThread *thread) {
       sender_unextended_sp = (intptr_t*) this->fp()[interpreter_frame_sender_sp_offset];
       saved_fp = (intptr_t*) this->fp()[link_offset];
       sender_pc = pauth_strip_verifiable((address) this->fp()[return_addr_offset]);
-
     } else {
       // must be some sort of compiled/runtime frame
       // fp does not have to be safe (although it could be check for c1?)
@@ -477,7 +476,8 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   }
 #endif // COMPILER2_OR_JVMCI
 
-  // For ROP protection, Interpreter will have signed the sender_pc, but there is no requirement to authenticate it here.
+  // For ROP protection, Interpreter will have signed the sender_pc,
+  // but there is no requirement to authenticate it here.
   address sender_pc = pauth_strip_verifiable(sender_pc_maybe_signed());
 
   if (Continuation::is_return_barrier_entry(sender_pc)) {

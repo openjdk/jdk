@@ -74,7 +74,8 @@ inline address ContinuationHelper::return_address_at(intptr_t* sp) {
   return pauth_strip_verifiable(*(address*)sp);
 }
 
-inline void ContinuationHelper::patch_return_address_at(intptr_t* sp, address pc) {
+inline void ContinuationHelper::patch_return_address_at(intptr_t* sp,
+                                                        address pc) {
   *(address*)sp = pauth_sign_return_address(pc);
 }
 
@@ -90,7 +91,8 @@ inline void ContinuationHelper::set_anchor_pd(JavaFrameAnchor* anchor, intptr_t*
 
 inline bool ContinuationHelper::Frame::assert_frame_laid_out(frame f) {
   intptr_t* sp = f.sp();
-  address pc = ContinuationHelper::return_address_at(sp - frame::sender_sp_ret_address_offset());
+  address pc = ContinuationHelper::return_address_at(
+                 sp - frame::sender_sp_ret_address_offset());
   intptr_t* fp = *(intptr_t**)(sp - frame::sender_sp_offset);
   assert(f.raw_pc() == pc, "f.ra_pc: " INTPTR_FORMAT " actual: " INTPTR_FORMAT, p2i(f.raw_pc()), p2i(pc));
   assert(f.fp() == fp, "f.fp: " INTPTR_FORMAT " actual: " INTPTR_FORMAT, p2i(f.fp()), p2i(fp));

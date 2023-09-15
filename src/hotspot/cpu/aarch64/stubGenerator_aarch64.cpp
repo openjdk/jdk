@@ -7011,7 +7011,8 @@ class StubGenerator: public StubCodeGenerator {
       __ ldr(c_rarg1, Address(rfp, wordSize)); // return address
       __ authenticate_return_address(c_rarg1);
       __ verify_oop(r0);
-      __ mov(r19, r0); // save return value containing the exception oop in callee-saved R19
+      // save return value containing the exception oop in callee-saved R19
+      __ mov(r19, r0);
 
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rthread, c_rarg1);
 
