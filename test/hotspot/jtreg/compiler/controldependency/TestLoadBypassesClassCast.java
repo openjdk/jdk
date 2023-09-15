@@ -66,7 +66,7 @@ public class TestLoadBypassesClassCast {
             testHelper2(42);
             testHelper3(true, 42);
         }
-        for (int j = 0; j <  1000; j++) {
+        for (int j = 0; j < 1000; j++) {
             for (int i = 0; i < 1_000_000; i++) {
                 test(false, d, array, true, true);
             }
