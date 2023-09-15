@@ -49,7 +49,7 @@ public class bug4823809 {
         try {
             robot = new Robot();
             SwingUtilities.invokeAndWait(() -> {
-                frame = new JFrame();
+                frame = new JFrame("RadioButton Test");
                 testUI = new TestRadioButtonUI();
                 JRadioButton radio = new TestRadioButton("<html>This is a radiobutton test!</html>");
 
