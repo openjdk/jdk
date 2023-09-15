@@ -50,10 +50,13 @@ size_t MemReporterBase::committed_total(const MallocMemory* malloc, const Virtua
   return malloc->malloc_size() + malloc->arena_size() + vm->committed();
 }
 
-void MemReporterBase::print_total(size_t reserved, size_t committed) const {
+void MemReporterBase::print_total(size_t reserved, size_t committed, size_t peak) const {
   const char* scale = current_scale();
   output()->print("reserved=" SIZE_FORMAT "%s, committed=" SIZE_FORMAT "%s",
     amount_in_current_scale(reserved), scale, amount_in_current_scale(committed), scale);
+  if (peak != 0) {
+    output()->print(", largest_committed=" SIZE_FORMAT "%s", amount_in_current_scale(peak), scale);
+  }
 }
 
 void MemReporterBase::print_malloc(const MemoryCounter* c, MEMFLAGS flag) const {
@@ -89,10 +92,10 @@ void MemReporterBase::print_malloc(const MemoryCounter* c, MEMFLAGS flag) const 
   }
 }
 
-void MemReporterBase::print_virtual_memory(size_t reserved, size_t committed) const {
+void MemReporterBase::print_virtual_memory(size_t reserved, size_t committed, size_t peak) const {
   const char* scale = current_scale();
-  output()->print("(mmap: reserved=" SIZE_FORMAT "%s, committed=" SIZE_FORMAT "%s)",
-    amount_in_current_scale(reserved), scale, amount_in_current_scale(committed), scale);
+  output()->print("(mmap: reserved=" SIZE_FORMAT "%s, committed=" SIZE_FORMAT "%s, largest_committed=" SIZE_FORMAT "%s)",
+    amount_in_current_scale(reserved), scale, amount_in_current_scale(committed), scale, amount_in_current_scale(peak), scale);
 }
 
 void MemReporterBase::print_malloc_line(const MemoryCounter* c) const {
@@ -101,9 +104,9 @@ void MemReporterBase::print_malloc_line(const MemoryCounter* c) const {
   output()->print_cr(" ");
 }
 
-void MemReporterBase::print_virtual_memory_line(size_t reserved, size_t committed) const {
+void MemReporterBase::print_virtual_memory_line(size_t reserved, size_t committed, size_t peak) const {
   output()->print("%28s", " ");
-  print_virtual_memory(reserved, committed);
+  print_virtual_memory(reserved, committed, peak);
   output()->print_cr(" ");
 }
 
@@ -228,7 +231,7 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
         // report thread count
         out->print_cr("%27s (threads #" SIZE_FORMAT ")", " ", ThreadStackTracker::thread_count());
         out->print("%27s (stack: ", " ");
-        print_total(thread_stack_usage->reserved(), thread_stack_usage->committed());
+        print_total(thread_stack_usage->reserved(), thread_stack_usage->committed(), thread_stack_usage->peak_size());
       } else {
         MallocMemory* thread_stack_memory = _malloc_snapshot->by_type(mtThreadStack);
         const char* scale = current_scale();
@@ -247,8 +250,9 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
       print_malloc_line(malloc_memory->malloc_counter());
     }
 
-    if (amount_in_current_scale(virtual_memory->reserved()) > 0) {
-      print_virtual_memory_line(virtual_memory->reserved(), virtual_memory->committed());
+    if (amount_in_current_scale(virtual_memory->reserved()) > 0
+        DEBUG_ONLY(|| amount_in_current_scale(virtual_memory->peak_size()) > 0)) {
+      print_virtual_memory_line(virtual_memory->reserved(), virtual_memory->committed(), virtual_memory->peak_size());
     }
 
     if (amount_in_current_scale(malloc_memory->arena_size()) > 0
@@ -282,7 +286,7 @@ void MemSummaryReporter::report_metadata(Metaspace::MetadataType type) const {
   const MetaspaceStats stats = MetaspaceUtils::get_statistics(type);
 
   size_t waste = stats.committed() - stats.used();
-  float waste_percentage = stats.committed() > 0 ? (((float)waste * 100)/stats.committed()) : 0.0f;
+  float waste_percentage = stats.committed() > 0 ? (((float)waste * 100)/(float)stats.committed()) : 0.0f;
 
   out->print_cr("%27s (  %s)", " ", name);
   out->print("%27s (    ", " ");
@@ -713,7 +717,7 @@ void MemSummaryDiffReporter::print_metaspace_diff(const char* header,
 
   // Diff waste
   const float waste_percentage = current_stats.committed() == 0 ? 0.0f :
-                                 (current_waste * 100.0f) / current_stats.committed();
+                                 ((float)current_waste * 100.0f) / (float)current_stats.committed();
   out->print("%27s (    waste=" SIZE_FORMAT "%s =%2.2f%%", " ",
     amount_in_current_scale(current_waste), scale, waste_percentage);
   if (diff_waste != 0) {

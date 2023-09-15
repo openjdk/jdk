@@ -34,6 +34,20 @@
 
 size_t VirtualMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(VirtualMemorySnapshot, size_t)];
 
+#ifdef ASSERT
+void VirtualMemory::update_peak(size_t size) {
+  size_t peak_sz = peak_size();
+  while (peak_sz < size) {
+    size_t old_sz = Atomic::cmpxchg(&_peak_size, peak_sz, size, memory_order_relaxed);
+    if (old_sz == peak_sz) {
+      break;
+    } else {
+      peak_sz = old_sz;
+    }
+  }
+}
+#endif // ASSERT
+
 void VirtualMemorySummary::initialize() {
   assert(sizeof(_snapshot) >= sizeof(VirtualMemorySnapshot), "Sanity Check");
   // Use placement operator new to initialize static data area.

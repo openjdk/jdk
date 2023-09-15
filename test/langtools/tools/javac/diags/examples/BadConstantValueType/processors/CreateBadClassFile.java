@@ -22,16 +22,19 @@
  */
 
 import java.io.*;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
 import java.util.*;
 import javax.annotation.processing.*;
 import javax.lang.model.*;
 import javax.lang.model.element.*;
 import javax.tools.*;
+import java.lang.reflect.AccessFlag;
 
-import com.sun.tools.classfile.*;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Class_info;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Utf8_info;
-import com.sun.tools.classfile.ConstantPool.CPInfo;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.attribute.ConstantValueAttribute;
 
 /* Create an invalid classfile with a static final field of type object with
  * ConstantValue of type String.
@@ -40,42 +43,21 @@ import com.sun.tools.classfile.ConstantPool.CPInfo;
 public class CreateBadClassFile extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> elems, RoundEnvironment renv) {
         if (++round == 1) {
-            ConstantPool cp = new ConstantPool(new CPInfo[] {
-                new CONSTANT_Utf8_info(""),                     //0
-                new CONSTANT_Utf8_info("Test"),                 //1
-                new CONSTANT_Class_info(null, 1),               //2
-                new CONSTANT_Utf8_info("java/lang/Object"),     //3
-                new CONSTANT_Class_info(null, 3),               //4
-                new CONSTANT_Utf8_info("test"),                 //5
-                new CONSTANT_Utf8_info("Ljava/lang/Object;"),   //6
-                new CONSTANT_Utf8_info("ConstantValue"),        //7
+            byte[] bytes = Classfile.of().build(ClassDesc.of("Test"), cb -> {
+                cb.withSuperclass(ConstantDescs.CD_Object);
+                cb.withVersion(51, 0);
+                cb.withFlags(AccessFlag.ABSTRACT ,
+                        AccessFlag.INTERFACE ,
+                        AccessFlag.PUBLIC);
+                cb.withField("test", ConstantDescs.CD_Object, fieldBuilder -> {
+                    fieldBuilder.withFlags(AccessFlag.PUBLIC, AccessFlag.STATIC, AccessFlag.FINAL);
+                    fieldBuilder.with(ConstantValueAttribute.of("ConstantValue"));
+                });
             });
-            ClassFile cf = new ClassFile(0xCAFEBABE,
-                          0,
-                          51,
-                          cp,
-                          new AccessFlags(AccessFlags.ACC_ABSTRACT |
-                                          AccessFlags.ACC_INTERFACE |
-                                          AccessFlags.ACC_PUBLIC),
-                          2,
-                          4,
-                          new int[0],
-                          new Field[] {
-                              new Field(new AccessFlags(AccessFlags.ACC_PUBLIC |
-                                                        AccessFlags.ACC_STATIC |
-                                                        AccessFlags.ACC_FINAL),
-                                        5,
-                                      new Descriptor(6),
-                                      new Attributes(cp, new Attribute[] {
-                                          new ConstantValue_attribute(7, 6)
-                                      }))
-                          },
-                          new Method[0],
-                          new Attributes(cp, new Attribute[0]));
             try {
                 JavaFileObject clazz = processingEnv.getFiler().createClassFile("Test");
                 try (OutputStream out = clazz.openOutputStream()) {
-                    new ClassWriter().write(cf, out);
+                    out.write(bytes);
                 }
             } catch (IOException ex) {
                 ex.printStackTrace();

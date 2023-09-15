@@ -113,7 +113,7 @@
           "of the optimal occupancy to start marking.")                     \
           range(1, max_intx)                                                \
                                                                             \
-  product(uintx, G1ConfidencePercent, 50,                                   \
+  product(uint, G1ConfidencePercent, 50,                                   \
           "Confidence level for MMU/pause predictions")                     \
           range(0, 100)                                                     \
                                                                             \
@@ -152,7 +152,7 @@
           "Number of completed buffers that triggers log processing.")      \
           range(0, max_jint)                                                \
                                                                             \
-  product(uintx, G1SATBBufferEnqueueingThresholdPercent, 60,                \
+  product(uint, G1SATBBufferEnqueueingThresholdPercent, 60,                \
           "Before enqueueing them, each mutator thread tries to do some "   \
           "filtering on the SATB buffers it generates. If post-filtering "  \
           "the percentage of retained entries is over this threshold "      \
@@ -160,7 +160,7 @@
           "specifies that mutator threads should not do such filtering.")   \
           range(0, 100)                                                     \
                                                                             \
-  product(intx, G1ExpandByPercentOfAvailable, 20, EXPERIMENTAL,             \
+  product(uint, G1ExpandByPercentOfAvailable, 20, EXPERIMENTAL,             \
           "When expanding, % of uncommitted space to claim.")               \
           range(0, 100)                                                     \
                                                                             \
@@ -168,7 +168,7 @@
           "Size of an update buffer")                                       \
           constraint(G1UpdateBufferSizeConstraintFunc, AtParse)             \
                                                                             \
-  product(intx, G1RSetUpdatingPauseTimePercent, 10,                         \
+  product(uint, G1RSetUpdatingPauseTimePercent, 10,                         \
           "A target percentage of time that is allowed to be spend on "     \
           "processing remembered set update buffers during the collection " \
           "pause.")                                                         \
@@ -218,7 +218,7 @@
           "failures to print per thread.")                                  \
           range(1, SIZE_MAX)                                                \
                                                                             \
-  product(uintx, G1ReservePercent, 10,                                      \
+  product(uint, G1ReservePercent, 10,                                      \
           "It determines the minimum reserve we should have in the heap "   \
           "to minimize the probability of promotion failure.")              \
           range(0, 50)                                                      \
@@ -233,31 +233,31 @@
           "Will be set ergonomically by default.")                          \
           range(0, (max_jint-1)/wordSize)                                   \
                                                                             \
-  product(uintx, G1MaxNewSizePercent, 60, EXPERIMENTAL,                     \
+  product(uint, G1MaxNewSizePercent, 60, EXPERIMENTAL,                     \
           "Percentage (0-100) of the heap size to use as default "          \
           " maximum young gen size.")                                       \
           range(0, 100)                                                     \
           constraint(G1MaxNewSizePercentConstraintFunc,AfterErgo)           \
                                                                             \
-  product(uintx, G1NewSizePercent, 5, EXPERIMENTAL,                         \
+  product(uint, G1NewSizePercent, 5, EXPERIMENTAL,                         \
           "Percentage (0-100) of the heap size to use as default "          \
           "minimum young gen size.")                                        \
           range(0, 100)                                                     \
           constraint(G1NewSizePercentConstraintFunc,AfterErgo)              \
                                                                             \
-  product(uintx, G1MixedGCLiveThresholdPercent, 85, EXPERIMENTAL,           \
+  product(uint, G1MixedGCLiveThresholdPercent, 85, EXPERIMENTAL,           \
           "Threshold for regions to be considered for inclusion in the "    \
           "collection set of mixed GCs. "                                   \
           "Regions with live bytes exceeding this will not be collected.")  \
           range(0, 100)                                                     \
                                                                             \
-  product(uintx, G1RetainRegionLiveThresholdPercent, 85, EXPERIMENTAL,      \
+  product(uint, G1RetainRegionLiveThresholdPercent, 85, EXPERIMENTAL,      \
           "Threshold for evacuation failed regions to be considered for "   \
           "inclusion in the collection set candidates."                     \
           "Regions with live bytes exceeding this will not be retained.")   \
           range(0, 100)                                                     \
                                                                             \
-  product(uintx, G1HeapWastePercent, 5,                                     \
+  product(uint, G1HeapWastePercent, 5,                                     \
           "Amount of space, expressed as a percentage of the heap size, "   \
           "that G1 is willing not to collect to avoid expensive GCs.")      \
           range(0, 100)                                                     \
@@ -275,7 +275,7 @@
           "Chunk size used for rebuilding the remembered set.")             \
           range(4 * K, 32 * M)                                              \
                                                                             \
-  product(uintx, G1OldCSetRegionThresholdPercent, 10, EXPERIMENTAL,         \
+  product(uint, G1OldCSetRegionThresholdPercent, 10, EXPERIMENTAL,         \
           "An upper bound for the number of old CSet regions expressed "    \
           "as a percentage of the heap size.")                              \
           range(0, 100)                                                     \

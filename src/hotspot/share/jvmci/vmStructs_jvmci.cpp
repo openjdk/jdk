@@ -31,6 +31,7 @@
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/vmStructs_jvmci.hpp"
 #include "oops/klassVtable.hpp"
+#include "oops/methodCounters.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/deoptimization.hpp"
@@ -726,7 +727,6 @@
   AARCH64_ONLY(declare_constant(NMethodPatchingType::conc_instruction_and_data_patch)) \
   AARCH64_ONLY(declare_constant(NMethodPatchingType::conc_data_patch))                 \
                                                                           \
-  declare_constant(ReceiverTypeData::nonprofiled_count_off_set)           \
   declare_constant(ReceiverTypeData::receiver_type_row_cell_count)        \
   declare_constant(ReceiverTypeData::receiver0_offset)                    \
   declare_constant(ReceiverTypeData::count0_offset)                       \
@@ -817,7 +817,7 @@
 #if INCLUDE_G1GC
 
 #define VM_STRUCTS_JVMCI_G1GC(nonstatic_field, static_field) \
-  static_field(HeapRegion, LogOfHRGrainBytes, int)
+  static_field(HeapRegion, LogOfHRGrainBytes, uint)
 
 #define VM_INT_CONSTANTS_JVMCI_G1GC(declare_constant, declare_constant_with_value, declare_preprocessor_constant) \
   declare_constant_with_value("G1CardTable::g1_young_gen", G1CardTable::g1_young_card_val()) \

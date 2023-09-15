@@ -27,7 +27,6 @@ package jdk.internal.foreign;
 
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandles;
-import java.nio.file.AccessMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.AccessController;
@@ -91,7 +90,13 @@ public final class SystemLookup implements SymbolLookup {
         Path ucrtbase = system32.resolve("ucrtbase.dll");
         Path msvcrt = system32.resolve("msvcrt.dll");
 
-        boolean useUCRT = Files.exists(ucrtbase);
+        @SuppressWarnings("removal")
+        boolean useUCRT = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+            @Override
+            public Boolean run() {
+                return Files.exists(ucrtbase);
+            }
+        });
         Path stdLib = useUCRT ? ucrtbase : msvcrt;
         SymbolLookup lookup = libLookup(libs -> libs.load(stdLib));
 

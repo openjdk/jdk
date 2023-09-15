@@ -172,19 +172,21 @@ public interface ConstantPool {
 
     /**
      * Gets the details for invoking a bootstrap method associated with the
-     * {@code CONSTANT_Dynamic_info} or {@code CONSTANT_InvokeDynamic_info} pool entry {@code cpi}
+     * {@code CONSTANT_Dynamic_info} or {@code CONSTANT_InvokeDynamic_info} pool entry
      * in the constant pool.
      *
-     * @param cpi a constant pool index
-     * @param opcode the opcode of the instruction that has {@code cpi} as an operand or -1 if
-     *            {@code cpi} was not decoded from an instruction stream
-     * @return the bootstrap method invocation details or {@code null} if the entry at {@code cpi}
+     * @param index if {@code opcode} is -1,  {@code index} is a constant pool index. Otherwise {@code opcode}
+     *              must be {@code Bytecodes.INVOKEDYNAMIC}, and {@code index} must be the operand of that
+     *              opcode in the bytecode stream (i.e., a {@code rawIndex}).
+     * @param opcode must be {@code Bytecodes.INVOKEDYNAMIC}, or -1 if
+     *            {@code index} was not decoded from a bytecode stream
+     * @return the bootstrap method invocation details or {@code null} if the entry specified by {@code index}
      *         is not a {@code CONSTANT_Dynamic_info} or @{code CONSTANT_InvokeDynamic_info}
      * @throws IllegalArgumentException if the bootstrap method invocation makes use of
      *             {@code java.lang.invoke.BootstrapCallInfo}
      * @jvms 4.7.23 The {@code BootstrapMethods} Attribute
      */
-    default BootstrapMethodInvocation lookupBootstrapMethodInvocation(int cpi, int opcode) {
+    default BootstrapMethodInvocation lookupBootstrapMethodInvocation(int index, int opcode) {
         throw new UnsupportedOperationException();
     }
 
@@ -242,10 +244,9 @@ public interface ConstantPool {
     /**
      * Looks up the appendix at the specified index.
      *
-     * @param cpi the constant pool index
-     * @param opcode the opcode of the instruction for which the lookup is being performed or
-     *            {@code -1}
+     * @param rawIndex index in the bytecode stream after the {@code opcode} (could be rewritten for some opcodes)
+     * @param opcode the opcode of the instruction for which the lookup is being performed
      * @return the appendix if it exists and is resolved or {@code null}
      */
-    JavaConstant lookupAppendix(int cpi, int opcode);
+    JavaConstant lookupAppendix(int rawIndex, int opcode);
 }
