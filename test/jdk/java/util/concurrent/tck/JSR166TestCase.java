@@ -35,19 +35,28 @@
  */
 
 /*
- * @test
- * @summary JSR-166 tck tests, in a number of variations.
- *          The first is the conformance testing variant,
- *          while others also test implementation details.
+ * @test id=default
+ * @summary Conformance testing variant of JSR-166 tck tests.
  * @build *
  * @modules java.management
  * @run junit/othervm/timeout=1000 JSR166TestCase
+ */
+
+/*
+ * @test id=security-manager
+ * @summary Conformance testing variant of JSR-166 tck tests
+ *          with java security manager set to allow.
+ * @build *
+ * @modules java.management
  * @run junit/othervm/timeout=1000 -Djava.security.manager=allow JSR166TestCase
- * @run junit/othervm/timeout=1000
- *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
- *      --add-opens java.base/java.lang=ALL-UNNAMED
- *      -Djsr166.testImplementationDetails=true
- *      JSR166TestCase
+ */
+
+/*
+ * @test id=forkjoinpool-common-parallelism
+ * @summary Test implementation details variant of JSR-166
+ *          tck tests with ForkJoinPool common parallelism.
+ * @build *
+ * @modules java.management
  * @run junit/othervm/timeout=1000
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
  *      --add-opens java.base/java.lang=ALL-UNNAMED
@@ -60,6 +69,20 @@
  *      -Djsr166.testImplementationDetails=true
  *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
  *      -Djava.util.secureRandomSeed=true
+ *      JSR166TestCase
+ */
+
+/*
+ * @test id=others
+ * @summary Remaining test implementation details variant of
+ *          JSR-166 tck tests apart from ForkJoinPool common
+ *          parallelism.
+ * @build *
+ * @modules java.management
+ * @run junit/othervm/timeout=1000
+ *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
+ *      --add-opens java.base/java.lang=ALL-UNNAMED
+ *      -Djsr166.testImplementationDetails=true
  *      JSR166TestCase
  * @run junit/othervm/timeout=1000/policy=tck.policy
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED

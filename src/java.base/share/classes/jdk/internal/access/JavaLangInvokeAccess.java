@@ -162,4 +162,12 @@ public interface JavaLangInvokeAccess {
      * @return an array of exceptions, or {@code null}.
      */
     Class<?>[] exceptionTypes(MethodHandle handle);
+
+    /**
+     * Returns a method handle that allocates an instance of the given class
+     * and then invoke the given constructor of one of its superclasses.
+     *
+     * This method should only be used by ReflectionFactory::newConstructorForSerialization.
+     */
+    MethodHandle serializableConstructor(Class<?> decl, Constructor<?> ctorToCall) throws IllegalAccessException;
 }
