@@ -55,8 +55,8 @@ public:
 
   public:
   ConstraintCastNode(Node* n, const Type* t, ConstraintCastNode::DependencyType dependency,
-                     const TypeTuple* types)
-          : TypeNode(t,2), _dependency(dependency), _extra_types(types) {
+                     const TypeTuple* extra_types)
+          : TypeNode(t,2), _dependency(dependency), _extra_types(extra_types) {
     init_class_id(Class_ConstraintCast);
     init_req(1, n);
   }
@@ -104,7 +104,7 @@ public:
 
   bool higher_equal_types(PhaseGVN* phase, const Node* other) const;
 
-  int nb_extra_types() const {
+  int extra_types_count() const {
     return _extra_types == nullptr ? 0 : _extra_types->cnt();
   }
   

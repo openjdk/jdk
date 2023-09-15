@@ -2133,7 +2133,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // Add casts to carry the control dependency of the Phi that is
       // going away
       Node* cast = nullptr;
-      const TypeTuple* extra_types = collect_types(phase, r, phi_type);
+      const TypeTuple* extra_types = collect_types(phase);
       if (phi_type->isa_ptr()) {
         const Type* uin_type = phase->type(uin);
         if (!phi_type->isa_oopptr() && !uin_type->isa_oopptr()) {
@@ -2572,11 +2572,13 @@ static int compare_types(const Type* const& e1, const Type* const& e2) {
 // Collect types at casts that are going to be eliminated at that Phi and store them in a TypeTuple.
 // Sort the types using an arbitrary order so a list of some types always hashes to the same TypeTuple (and TypeTuple
 // pointer comparison is enough to tell if 2 list of types are the same or not)
-const TypeTuple* PhiNode::collect_types(PhaseGVN* phase, const Node* r, const Type* phi_type) const {
+const TypeTuple* PhiNode::collect_types(PhaseGVN* phase) const {
+  const Node* region = in(0);
+  const Type* phi_type = bottom_type();
   ResourceMark rm;
   GrowableArray<const Type*> types;
   for (uint i = 1; i < req(); i++) {
-    if (r->in(i) == nullptr || phase->type(r->in(i)) == Type::TOP) {
+    if (region->in(i) == nullptr || phase->type(region->in(i)) == Type::TOP) {
       continue;
     }
     Node* in = Node::in(i);
@@ -2593,7 +2595,7 @@ const TypeTuple* PhiNode::collect_types(PhaseGVN* phase, const Node* r, const Ty
         break;
       }
       ConstraintCastNode* cast = in->as_ConstraintCast();
-      for (int j = 0; j < cast->nb_extra_types(); ++j) {
+      for (int j = 0; j < cast->extra_types_count(); ++j) {
         const Type* extra_t = cast->extra_type_at(j);
         if (extra_t != phi_type && extra_t->higher_equal_speculative(phi_type)) {
           types.insert_sorted<compare_types>(extra_t);

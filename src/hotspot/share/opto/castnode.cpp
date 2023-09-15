@@ -109,13 +109,14 @@ bool ConstraintCastNode::cmp(const Node &n) const {
   if (!TypeNode::cmp(n)) {
     return false;
   }
-  if (((ConstraintCastNode&) n)._dependency != _dependency) {
+  ConstraintCastNode& cast = (ConstraintCastNode&) n;
+  if (cast._dependency != _dependency) {
     return false;
   }
-  if (_extra_types == nullptr || ((ConstraintCastNode&) n)._extra_types == nullptr) {
-    return _extra_types == ((ConstraintCastNode&) n)._extra_types;
+  if (_extra_types == nullptr || cast._extra_types == nullptr) {
+    return _extra_types == cast._extra_types;
   }
-  return _extra_types->eq(((ConstraintCastNode&)n)._extra_types);
+  return _extra_types->eq(cast._extra_types);
 }
 
 uint ConstraintCastNode::size_of() const {
