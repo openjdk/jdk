@@ -708,8 +708,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 #endif
   if (init_compilation) {
-    CompileBroker::compilation_init_phase1(CHECK_JNI_ERR);
-    CompileBroker::compilation_init_phase2();
+    CompileBroker::compilation_init(CHECK_JNI_ERR);
   }
 #endif
 
