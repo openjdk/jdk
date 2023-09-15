@@ -115,7 +115,7 @@ public class GenerateExtraProperties {
     static String rangeToString(Range r) {
         if (r.start == r.last) {
             return (" ".repeat(12) + "cp == 0x" + toHexString(r.start));
-        } else  if (r.start == r.last - 1) {
+        } else if (r.start == r.last - 1) {
             return " ".repeat(12) + "cp == 0x" + toHexString(r.start) + " ||\n" +
                     " ".repeat(12) + "cp == 0x" + toHexString(r.last);
         } else {
