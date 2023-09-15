@@ -80,10 +80,9 @@ public class T8255757 extends TestRunner {
                 .run();
 
         ClassModel cf = Classfile.of().parse(curPath.resolve("Test.class"));
-        ConstantPool cp = cf.constantPool();
         int num = 0;
-        for (int i = 1; i < cp.entryCount(); i += cp.entryByIndex(i).width()) {
-            if (cp.entryByIndex(i) instanceof MethodRefEntry methodRefEntry) {
+        for (PoolEntry pe : cf.constantPool()) {
+            if (pe instanceof MethodRefEntry methodRefEntry) {
                 String class_name = methodRefEntry.owner().asInternalName();
                 String method_name = methodRefEntry.name().stringValue();
                 String method_type = methodRefEntry.type().stringValue();

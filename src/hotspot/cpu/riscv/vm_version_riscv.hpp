@@ -40,6 +40,12 @@ class RiscvHwprobe;
 class VM_Version : public Abstract_VM_Version {
   friend RiscvHwprobe;
  private:
+
+  // JEDEC encoded as ((bank - 1) << 7) | (0x7f & JEDEC)
+  enum VendorId {
+    RIVOS = 0x6cf, // JEDEC: 0x4f, Bank: 14
+  };
+
   class RVFeatureValue {
     const char* const _pretty;
     const bool        _feature_string;
