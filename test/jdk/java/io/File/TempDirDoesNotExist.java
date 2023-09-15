@@ -25,26 +25,35 @@
  * @bug 8290313
  * @library /test/lib
  * @summary Produce warning when user specified java.io.tmpdir directory doesn't exist
+ * @run junit TempDirDoesNotExist
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class TempDirDoesNotExist {
-    final static String ioWarningMsg = "WARNING: java.io.tmpdir directory does not exist";
+    final static String WARNING = "WARNING: java.io.tmpdir directory does not exist";
 
-    public static void main(String... args) throws Exception {
+    static String userDir;
+    static String timeStamp;
+    static String tempDir;
 
-        String userDir = System.getProperty("user.home");
-        String timeStamp = System.currentTimeMillis() + "";
-        String tempDir = Path.of(userDir,"non-existing-", timeStamp).toString();
-
+    public static void main(String... args) throws IOException {
         for (String arg : args) {
             if (arg.equals("io")) {
                 File file = null;
@@ -67,55 +76,125 @@ public class TempDirDoesNotExist {
                         Files.deleteIfExists(path);
                 }
             } else {
-                throw new Exception("unknown case: " + arg);
+                throw new RuntimeException("unknown case: " + arg);
             }
         }
-
-        if (args.length == 0) {
-            // standard test with default setting for java.io.tmpdir
-            testMessageNotExist(0, ioWarningMsg, "TempDirDoesNotExist", "io");
-            testMessageNotExist(0, ioWarningMsg, "TempDirDoesNotExist", "nio");
-
-            // valid custom java.io.tmpdir
-            testMessageNotExist(0, ioWarningMsg, "-Djava.io.tmpdir=" + userDir,
-                    "TempDirDoesNotExist", "io");
-            testMessageNotExist(0, ioWarningMsg, "-Djava.io.tmpdir=" + userDir,
-                    "TempDirDoesNotExist", "nio");
-
-            // invalid custom java.io.tmpdir
-            testMessageExist(0, ioWarningMsg, "-Djava.io.tmpdir=" + tempDir,
-                    "TempDirDoesNotExist", "io");
-            testMessageExist(0, ioWarningMsg, "-Djava.io.tmpdir=" + tempDir,
-                    "TempDirDoesNotExist", "nio");
-
-            // test with security manager
-            testMessageExist(0, ioWarningMsg, "-Djava.io.tmpdir=" + tempDir
-                            + " -Djava.security.manager",
-                    "TempDirDoesNotExist", "io");
-
-            testMessageExist(0, ioWarningMsg, "-Djava.io.tmpdir=" + tempDir
-                            + " -Djava.security.manager",
-                    "TempDirDoesNotExist", "nio");
-
-            // error message printed only once
-            testMessageCounter(0, "-Djava.io.tmpdir=" + tempDir,
-                    "TempDirDoesNotExist", "io", "nio");
-        }
     }
 
-    private static void testMessageExist(int exitValue, String errorMsg, String... options) throws Exception {
-        ProcessTools.executeTestJvm(options).shouldContain(errorMsg)
-                .shouldHaveExitValue(exitValue);
+    @BeforeAll
+    public static void beforeAll() throws IOException {
+        userDir = System.getProperty("user.home");
+        timeStamp = System.currentTimeMillis() + "";
+        tempDir = Path.of(userDir,"non-existing-", timeStamp).toString();
     }
 
-    private static void testMessageNotExist(int exitValue, String errorMsg,String... options) throws Exception {
-        ProcessTools.executeTestJvm(options).shouldNotContain(errorMsg).shouldHaveExitValue(exitValue);
+    public static Stream<Arguments> existingProvider() {
+        List<Arguments> list = new ArrayList<Arguments>();
+
+        // invalid custom java.io.tmpdir
+        Arguments args = Arguments.of(0, WARNING,
+                                      new String[] {
+                                          "-Djava.io.tmpdir=" +
+                                          tempDir,
+                                          "TempDirDoesNotExist", "io"
+                                      });
+        list.add(args);
+        args = Arguments.of(0, WARNING,
+                            new String[] {
+                                "-Djava.io.tmpdir=" + tempDir,
+                                "TempDirDoesNotExist", "nio"
+                            });
+        list.add(args);
+
+        // test with security manager
+        args = Arguments.of(0, WARNING,
+                            new String[] {
+                                "-Djava.io.tmpdir=" + tempDir
+                                + " -Djava.security.manager",
+                                "TempDirDoesNotExist", "io"
+                            });
+        list.add(args);
+        args = Arguments.of(0, WARNING,
+                            new String[] {
+                                "-Djava.io.tmpdir=" + tempDir
+                                + " -Djava.security.manager",
+                                "TempDirDoesNotExist", "nio"
+                            });
+        list.add(args);
+
+        return list.stream();
     }
 
-    private static void testMessageCounter(int exitValue,String... options) throws Exception {
+    public static Stream<Arguments> nonexistentProvider() {
+        List<Arguments> list = new ArrayList<Arguments>();
+
+        // standard test with default setting for java.io.tmpdir
+        Arguments args = Arguments.of(0, WARNING,
+                                      new String[] {
+                                          "TempDirDoesNotExist",
+                                          "io"
+                                      });
+        list.add(args);
+        args = Arguments.of(0, WARNING,
+                            new String[] {
+                                "TempDirDoesNotExist", "nio"
+                            });
+        list.add(args);
+
+        // valid custom java.io.tmpdir
+        args = Arguments.of(0, WARNING,
+                            new String[] {
+                                "-Djava.io.tmpdir=" + userDir,
+                                "TempDirDoesNotExist", "io"
+                            });
+        list.add(args);
+        args = Arguments.of(0, WARNING,
+                            new String[] {
+                                "-Djava.io.tmpdir=" + userDir,
+                                "TempDirDoesNotExist", "nio"
+                            });
+        list.add(args);
+
+        return list.stream();
+    }
+
+    public static Stream<Arguments> counterProvider() {
+        List<Arguments> list = new ArrayList<Arguments>();
+
+        // standard test with default setting for java.io.tmpdir
+        Arguments args = Arguments.of(0,
+                                      new String[] {
+                                          "-Djava.io.tmpdir=" + tempDir,
+                                          "TempDirDoesNotExist", "io", "nio"
+                                      });
+        list.add(args);
+
+        return list.stream();
+    }
+
+    @ParameterizedTest
+    @MethodSource("existingProvider")
+    public void existingMessage(int exitValue, String errorMsg,
+                                String... options) throws Exception {
+       ProcessTools.executeTestJvm(options).shouldContain(errorMsg)
+           .shouldHaveExitValue(exitValue);
+    }
+
+    @ParameterizedTest
+    @MethodSource("nonexistentProvider")
+    public void nonexistentMessage(int exitValue, String errorMsg,
+                                   String... options) throws Exception {
+        ProcessTools.executeTestJvm(options).shouldNotContain(errorMsg)
+            .shouldHaveExitValue(exitValue);
+    }
+
+    @ParameterizedTest
+    @MethodSource("counterProvider")
+    public  void messageCounter(int exitValue, String... options)
+        throws Exception {
         OutputAnalyzer originalOutput = ProcessTools.executeTestJvm(options);
         List<String> list = originalOutput.asLines().stream().filter(line
-                -> line.equalsIgnoreCase(ioWarningMsg)).collect(Collectors.toList());
+                -> line.equalsIgnoreCase(WARNING)).collect(Collectors.toList());
         if (list.size() != 1 || originalOutput.getExitValue() != exitValue)
             throw new Exception("counter of messages is not one, but " + list.size()
                     + "\n" + originalOutput.asLines().toString() + "\n");
