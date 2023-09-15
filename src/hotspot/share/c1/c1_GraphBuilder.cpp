@@ -2009,9 +2009,10 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
         assert(singleton != declared_interface, "not a unique implementor");
         cha_monomorphic_target = target->find_monomorphic_target(calling_klass, declared_interface, singleton);
         if (cha_monomorphic_target != NULL) {
-          if (cha_monomorphic_target->holder() != compilation()->env()->Object_klass()) {
-            ciInstanceKlass* holder = cha_monomorphic_target->holder();
-            ciInstanceKlass* constraint = (holder->is_subtype_of(singleton) ? holder : singleton); // avoid upcasts
+          ciInstanceKlass* holder = cha_monomorphic_target->holder();
+          ciInstanceKlass* constraint = (holder->is_subtype_of(singleton) ? holder : singleton); // avoid upcasts
+          if (holder != compilation()->env()->Object_klass() &&
+              (!type_is_exact || receiver_klass->is_subtype_of(constraint))) {
             actual_recv = declared_interface;
 
             // insert a check it's really the expected class.
@@ -2024,7 +2025,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
 
             dependency_recorder()->assert_unique_implementor(declared_interface, singleton);
           } else {
-            cha_monomorphic_target = NULL; // subtype check against Object is useless
+            cha_monomorphic_target = nullptr;
           }
         }
       }
