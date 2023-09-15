@@ -1680,7 +1680,10 @@ void InterpreterMacroAssembler::record_klass_in_profile(Register Rreceiver,
 void InterpreterMacroAssembler::record_klass_in_profile_helper(
                                         Register receiver, Register scratch1, Register scratch2,
                                         int start_row, Label& done) {
-  if (TypeProfileWidth == 0) return;
+  if (TypeProfileWidth == 0) {
+    increment_mdp_data_at(in_bytes(CounterData::count_offset()), scratch1, scratch2);
+    return;
+  }
 
   int last_row = VirtualCallData::row_limit() - 1;
   assert(start_row <= last_row, "must be work left to do");
