@@ -1556,7 +1556,6 @@ void ShenandoahFullGC::phase5_epilog() {
 
     // In case this Full GC resulted from degeneration, clear the tally on anticipated promotion.
     heap->clear_promotion_potential();
-    heap->clear_promotion_in_place_potential();
 
     if (heap->mode()->is_generational()) {
       // Invoke this in case we are able to transfer memory from OLD to YOUNG.

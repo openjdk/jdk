@@ -586,7 +586,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _prepare_for_old_mark(false),
   _initial_size(0),
   _promotion_potential(0),
-  _promotion_in_place_potential(0),
   _committed(0),
   _max_workers(MAX3(ConcGCThreads, ParallelGCThreads, 1U)),
   _workers(nullptr),

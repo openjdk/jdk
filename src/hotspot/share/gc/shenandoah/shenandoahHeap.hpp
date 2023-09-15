@@ -226,7 +226,6 @@ private:
            size_t _initial_size;
            size_t _minimum_size;
            size_t _promotion_potential;
-           size_t _promotion_in_place_potential;
            size_t _pad_for_promote_in_place;    // bytes of filler
            size_t _promotable_humongous_regions;
            size_t _promotable_humongous_usage;
@@ -452,10 +451,6 @@ public:
   inline void clear_promotion_potential() { _promotion_potential = 0; };
   inline void set_promotion_potential(size_t val) { _promotion_potential = val; };
   inline size_t get_promotion_potential() { return _promotion_potential; };
-
-  inline void clear_promotion_in_place_potential() { _promotion_in_place_potential = 0; };
-  inline void set_promotion_in_place_potential(size_t val) { _promotion_in_place_potential = val; };
-  inline size_t get_promotion_in_place_potential() { return _promotion_in_place_potential; };
 
   inline void set_pad_for_promote_in_place(size_t pad) { _pad_for_promote_in_place = pad; }
   inline size_t get_pad_for_promote_in_place() { return _pad_for_promote_in_place; }

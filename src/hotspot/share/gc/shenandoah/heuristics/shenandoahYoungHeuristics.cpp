@@ -135,25 +135,16 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
   // be done, we start up the young-gen GC threads so they can do some of this old-gen work.  As implemented, promotion
   // gets priority over old-gen marking.
   ShenandoahHeap* heap = ShenandoahHeap::heap();
+
+  size_t promo_expedite_threshold = (heap->young_generation()->max_capacity() * ShenandoahEvacReserve) / 512;
   size_t promo_potential = heap->get_promotion_potential();
-  if (promo_potential > 0) {
+  if (promo_potential > promo_expedite_threshold) {
     // Detect unsigned arithmetic underflow
     assert(promo_potential < heap->capacity(), "Sanity");
     log_info(gc)("Trigger (%s): expedite promotion of " SIZE_FORMAT "%s",
                  _space_info->name(),
                  byte_size_in_proper_unit(promo_potential),
                  proper_unit_for_byte_size(promo_potential));
-    return true;
-  }
-
-  size_t promo_in_place_potential = heap->get_promotion_in_place_potential();
-  if (promo_in_place_potential > 0) {
-    // Detect unsigned arithmetic underflow
-    assert(promo_in_place_potential < heap->capacity(), "Sanity");
-    log_info(gc)("Trigger (%s): expedite promotion in place of " SIZE_FORMAT "%s",
-                 _space_info->name(),
-                 byte_size_in_proper_unit(promo_in_place_potential),
-                 proper_unit_for_byte_size(promo_in_place_potential));
     return true;
   }
 

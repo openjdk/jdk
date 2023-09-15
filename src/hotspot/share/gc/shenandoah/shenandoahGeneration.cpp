@@ -537,9 +537,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available, size_t nu
 
   size_t old_consumed = 0;
   size_t promo_potential = 0;
-  size_t anticipated_promote_in_place_live = 0;
 
-  heap->clear_promotion_in_place_potential();
   heap->clear_promotion_potential();
   size_t candidates = 0;
   size_t candidates_live = 0;
@@ -626,7 +624,6 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available, size_t nu
         }
         else {
           anticipated_promote_in_place_regions++;
-          anticipated_promote_in_place_live += r->get_live_data_bytes();
         }
       }
     }
@@ -662,7 +659,6 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available, size_t nu
   }
   heap->set_pad_for_promote_in_place(promote_in_place_pad);
   heap->set_promotion_potential(promo_potential);
-  heap->set_promotion_in_place_potential(anticipated_promote_in_place_live);
   return old_consumed;
 }
 
