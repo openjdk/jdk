@@ -2839,6 +2839,26 @@ public final class Formatter implements Closeable, Flushable {
             if (Conversion.isValid(c)) {
                 al.add(new FormatSpecifier(c));
                 i++;
+            } else if (isDigit(c) && i + 1 < max && Conversion.isValid(s.charAt(i + 1))) {
+                int width = c - '0';
+                c = s.charAt(i + 1);
+                al.add(new FormatSpecifier(c, width));
+                i += 2;
+            } else if (isDigit(c)
+                    && i + 2 < max
+                    && isDigit(s.charAt(i + 1))
+                    && Conversion.isValid(s.charAt(i + 2))) {
+                if (c == '0') {
+                    // ZERO_PAD
+                    int width = s.charAt(i + 1) - '0';
+                    char c2 = s.charAt(i + 2);
+                    al.add(new FormatSpecifier(c2, c, width));
+                } else {
+                    int width = (c - '0') * 10 + s.charAt(i + 1) - '0';
+                    char c2 = s.charAt(i + 2);
+                    al.add(new FormatSpecifier(c2, width));
+                }
+                i += 3;
             } else {
                 if (m == null) {
                     m = FORMAT_SPECIFIER_PATTERN.matcher(s);
@@ -2854,6 +2874,10 @@ public final class Formatter implements Closeable, Flushable {
             }
         }
         return al;
+    }
+
+    private static boolean isDigit(char c) {
+        return c >= '0' && c <= '9';
     }
 
     interface FormatString {
@@ -2976,6 +3000,17 @@ public final class Formatter implements Closeable, Flushable {
             if (Conversion.isText(conv)) {
                 index = -2;
             }
+        }
+
+        FormatSpecifier(char conv, int width) {
+            this(conv);
+            this.width = width;
+        }
+
+        FormatSpecifier(char conv, char flag, int width) {
+            this(conv);
+            this.width = width;
+            this.flags |= Flags.parse(flag);
         }
 
         FormatSpecifier(String s, Matcher m) {
