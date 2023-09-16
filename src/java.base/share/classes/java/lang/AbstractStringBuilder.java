@@ -1825,29 +1825,6 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         count += end - off;
     }
 
-    final void appendHex(boolean ucase, byte[] bytes, int fromIndex, int toIndex) {
-        Preconditions.checkFromToIndex(fromIndex, toIndex, bytes.length, Preconditions.IOOBE_FORMATTER);
-
-        ensureCapacityInternal(count + (toIndex - fromIndex) * 2);
-
-        int charPos = count;
-        for (int i = fromIndex; i < toIndex; ++i) {
-            short packed = HexDigits.digitPair(bytes[i], ucase);
-            if (isLatin1()) {
-                ByteArrayLittleEndian.setShort(
-                        value,
-                        charPos,
-                        packed);
-            } else {
-                StringUTF16.putChar(value, charPos, packed & 0xff);
-                StringUTF16.putChar(value, charPos + 1, packed >> 8);
-            }
-            charPos += 2;
-        }
-
-        count = charPos;
-    }
-
     /**
      * Used by StringConcatHelper via JLA. Adds the current builder count to the
      * accumulation of items being concatenated. If the coder for the builder is

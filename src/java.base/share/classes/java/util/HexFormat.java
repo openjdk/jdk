@@ -407,36 +407,18 @@ public final class HexFormat {
         int length = toIndex - fromIndex;
         if (length > 0) {
             try {
-                boolean prefixEmpty = prefix.isEmpty();
-                boolean suffixEmpty = suffix.isEmpty();
-                boolean delimiterEmpty = delimiter.isEmpty();
-                if (!prefixEmpty) {
-                    out.append(prefix);
-                }
-                if (suffixEmpty && delimiterEmpty && prefixEmpty) {
-                    if (out instanceof StringBuilder sb) {
-                        jla.appendHex(sb, digitCase == Case.UPPERCASE, bytes, fromIndex, toIndex);
-                    } else {
-                        for (int i = 0; i < length; i++) {
-                            toHexDigits(out, bytes[fromIndex + i]);
-                        }
-                    }
+                String s = formatOptDelimiter(bytes, fromIndex, toIndex);
+                if (s != null) {
+                    out.append(s);
                 } else {
+                    out.append(prefix);
                     toHexDigits(out, bytes[fromIndex]);
                     for (int i = 1; i < length; i++) {
-                        if (!suffixEmpty) {
-                            out.append(suffix);
-                        }
-                        if (!delimiterEmpty) {
-                            out.append(delimiter);
-                        }
-                        if (!prefixEmpty) {
-                            out.append(prefix);
-                        }
+                        out.append(suffix);
+                        out.append(delimiter);
+                        out.append(prefix);
                         toHexDigits(out, bytes[fromIndex + i]);
                     }
-                }
-                if (!suffixEmpty) {
                     out.append(suffix);
                 }
             } catch (IOException ioe) {

@@ -416,11 +416,6 @@ public interface JavaLangAccess {
      */
     long stringConcatMix(long lengthCoder, String constant);
 
-    /**
-     * Appends formatted hexadecimal strings from a byte array range to the StringBuilder.
-     */
-    void appendHex(StringBuilder sb, boolean ucase, byte[] bytes, int fromIndex, int toIndex);
-
    /**
     * Get the coder for the supplied character.
     */
