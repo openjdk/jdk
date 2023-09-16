@@ -35,8 +35,6 @@ import java.util.Spliterator;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.util.ByteArrayLittleEndian;
-import jdk.internal.util.HexDigits;
 import jdk.internal.util.Preconditions;
 
 import static java.lang.String.COMPACT_STRINGS;
