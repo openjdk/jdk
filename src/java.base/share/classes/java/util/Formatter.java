@@ -2839,27 +2839,13 @@ public final class Formatter implements Closeable, Flushable {
             if (Conversion.isValid(c)) {
                 al.add(new FormatSpecifier(c));
                 i++;
-            } else if (isDigit(c) && i + 1 < max && Conversion.isValid(s.charAt(i + 1))) {
-                int width = c - '0';
-                c = s.charAt(i + 1);
-                al.add(new FormatSpecifier(c, width));
-                i += 2;
-            } else if (isDigit(c)
-                    && i + 2 < max
-                    && isDigit(s.charAt(i + 1))
-                    && Conversion.isValid(s.charAt(i + 2))) {
-                if (c == '0') {
-                    // ZERO_PAD
-                    int width = s.charAt(i + 1) - '0';
-                    char c2 = s.charAt(i + 2);
-                    al.add(new FormatSpecifier(c2, c, width));
-                } else {
-                    int width = (c - '0') * 10 + s.charAt(i + 1) - '0';
-                    char c2 = s.charAt(i + 2);
-                    al.add(new FormatSpecifier(c2, width));
-                }
-                i += 3;
             } else {
+                int off = parse0(al, c, s, i, max);
+                if (off > 0) {
+                    i += off;
+                    continue;
+                }
+
                 if (m == null) {
                     m = FORMAT_SPECIFIER_PATTERN.matcher(s);
                 }
@@ -2874,6 +2860,34 @@ public final class Formatter implements Closeable, Flushable {
             }
         }
         return al;
+    }
+
+    private static int parse0(ArrayList<FormatString> al, char c, String s, int i, int max) {
+        if (isDigit(c) && i + 1 < max && Conversion.isValid(s.charAt(i + 1))) {
+            int width = c - '0';
+            c = s.charAt(i + 1);
+            al.add(new FormatSpecifier(c, width));
+            return 2;
+        }
+
+        if (isDigit(c)
+                && i + 2 < max
+                && isDigit(s.charAt(i + 1))
+                && Conversion.isValid(s.charAt(i + 2))) {
+            if (c == '0') {
+                // ZERO_PAD
+                int width = s.charAt(i + 1) - '0';
+                char c2 = s.charAt(i + 2);
+                al.add(new FormatSpecifier(c2, c, width));
+            } else {
+                int width = (c - '0') * 10 + s.charAt(i + 1) - '0';
+                char c2 = s.charAt(i + 2);
+                al.add(new FormatSpecifier(c2, width));
+            }
+            return  3;
+        }
+
+        return 0;
     }
 
     private static boolean isDigit(char c) {
@@ -3387,6 +3401,18 @@ public final class Formatter implements Closeable, Flushable {
         }
 
         private void print(Formatter fmt, int value, Locale l) throws IOException {
+            if (width == -1
+                    && flags == 0
+                    && index == 0
+                    && precision == -1
+                    && !dt
+                    && c == Conversion.DECIMAL_INTEGER
+                    && fmt.a instanceof StringBuilder sb
+            ) {
+                sb.append(value);
+                return;
+            }
+
             long v = value;
             if (value < 0
                 && (c == Conversion.OCTAL_INTEGER
@@ -3394,10 +3420,26 @@ public final class Formatter implements Closeable, Flushable {
                 v += (1L << 32);
                 assert v >= 0 : v;
             }
-            print(fmt, v, l);
+            printSlow(fmt, v, l);
         }
 
         private void print(Formatter fmt, long value, Locale l) throws IOException {
+            if (width == -1
+                    && flags == 0
+                    && index == 0
+                    && precision == -1
+                    && !dt
+                    && c == Conversion.DECIMAL_INTEGER
+                    && fmt.a instanceof StringBuilder sb
+            ) {
+                sb.append(value);
+                return;
+            }
+
+            printSlow(fmt, value, l);
+        }
+
+        private void printSlow(Formatter fmt, long value, Locale l) throws IOException {
 
             StringBuilder sb = new StringBuilder();
 
