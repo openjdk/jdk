@@ -49,6 +49,11 @@ public class StringFormat {
     public int i = 17;
 
     @Benchmark
+    public String int02Format() {
+        return "%02d".formatted(i);
+    }
+
+    @Benchmark
     public String stringFormat() {
         return "%s".formatted(s);
     }
