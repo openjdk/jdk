@@ -633,8 +633,8 @@ public class GIFImageWriter extends ImageWriter {
                     }
                     /* NB: transparentColorFlag might have not been reset for
                        greyscale images but explicitly resetting it here
-                       is potentially not right thing to do until we have way
-                       to find whether current value was explicitly set by
+                       is potentially not the right thing to do until we have a way
+                       to find whether the current value was explicitly set by
                        the user.
                     */
                 }

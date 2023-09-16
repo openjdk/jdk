@@ -304,7 +304,7 @@ static final class java_sql_Timestamp_PersistenceDelegate extends java_util_Date
     }
 
     /**
-     * Invoke Timestamp getNanos.
+     * Invoke Timestamp.getNanos.
      */
     private static int getNanos(Object obj) {
         if (getNanosMethod == null)

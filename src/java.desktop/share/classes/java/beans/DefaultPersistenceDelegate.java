@@ -297,7 +297,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
 
 
             // The ComponentListener is added automatically, when
-            // Container:add is called on the parent.
+            // Container.add is called on the parent.
             if (listenerType == java.awt.event.ComponentListener.class) {
                 continue;
             }
@@ -400,7 +400,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
                               Object oldInstance, Object newInstance,
                               Encoder out)
     {
-        // System.out.println("DefulatPD:initialize" + type);
+        // System.out.println("DefaultPD:initialize" + type);
         super.initialize(type, oldInstance, newInstance, out);
         if (oldInstance.getClass() == type) { // !type.isInterface()) {
             initBean(type, oldInstance, newInstance, out);

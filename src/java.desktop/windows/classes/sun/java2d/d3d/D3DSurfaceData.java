@@ -958,8 +958,8 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
         @Override
         void disableAccelerationForSurface() {
             // for on-screen surfaces we need to make sure a backup GDI surface is
-            // is used until a new one is set (which may happen during a resize). We
-            // don't want the screen update manager to replace the surface right way
+            // used until a new one is set (which may happen during a resize). We
+            // don't want the screen update manager to replace the surface right away
             // because it causes repainting issues in Swing, so we invalidate it,
             // this will prevent SUM from issuing a replaceSurfaceData call.
             setSurfaceLost(true);

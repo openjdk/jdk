@@ -651,7 +651,7 @@ public class FlowLayout implements LayoutManager, java.io.Serializable {
     //
     private static final int currentSerialVersion = 1;
     /**
-     * This represent the {@code currentSerialVersion}
+     * This represents the {@code currentSerialVersion}
      * which is being used.  It will be one of two values:
      * {@code 0} versions before Java 2 platform v1.2,
      * {@code 1} versions after  Java 2 platform v1.2.
@@ -664,7 +664,7 @@ public class FlowLayout implements LayoutManager, java.io.Serializable {
     /**
      * Reads this object out of a serialization stream, handling
      * objects written by older versions of the class that didn't contain all
-     * of the fields we use now..
+     * of the fields we use now.
      *
      * @param  stream the {@code ObjectInputStream} to read
      * @throws ClassNotFoundException if the class of a serialized object could

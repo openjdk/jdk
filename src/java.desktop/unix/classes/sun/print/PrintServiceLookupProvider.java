@@ -513,7 +513,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         PrinterName name = (PrinterName)serviceSet.get(PrinterName.class);
         PrintService defService;
         if (name != null && (defService = getDefaultPrintService()) != null) {
-            /* To avoid executing a unix command  see if the client is asking
+            /* To avoid executing a unix command, see if the client is asking
              * for the default printer by name, since we already have that
              * initialised.
              */
