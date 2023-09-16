@@ -2426,8 +2426,8 @@ void G1CollectedHeap::update_parallel_gc_threads_cpu_time() {
   if (worker_threads != NULL) {
     ThreadTotalCPUTimeClosure tttc(_perf_parallel_worker_threads_cpu_time, true);
     // Currently parallel worker threads never terminate (JDK-8081682), so it is
-    // safe for VMThread to read their CPU times. If upstream fixes JDK-8087340
-    // so they terminate, we should rethink if it is still safe.
+    // safe for VMThread to read their CPU times. However, if JDK-8087340 is
+    // resolved so they terminate, we should rethink if it is still safe.
     worker_threads->threads_do(&tttc);
   }
 

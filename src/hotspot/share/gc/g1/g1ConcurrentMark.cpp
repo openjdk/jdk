@@ -2086,7 +2086,7 @@ void G1ConcurrentMark::print_on_error(outputStream* st) const {
 }
 
 void G1ConcurrentMark::update_concurrent_mark_threads_cpu_time() {
-  assert(Thread::current() == static_cast<Thread*>(cm_thread()),
+  assert(Thread::current() == cm_thread(),
          "Must be called from _cmThread to avoid races");
   if (!UsePerfData || !os::is_thread_cpu_time_supported()) {
     return;

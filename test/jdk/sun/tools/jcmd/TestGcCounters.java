@@ -6,6 +6,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test
  * @bug 8315149
  * @summary Unit test to ensure CPU GC hsperf counters are published.
+ * @requires vm.gc.G1
  *
  * @library /test/lib
  *
