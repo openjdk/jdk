@@ -354,15 +354,6 @@ public class Check {
         return types.createErrorType(found instanceof Type type ? type : syms.errType);
     }
 
-    /** Report an error that symbol cannot be referenced before super
-     *  has been called.
-     *  @param pos        Position to be used for error reporting.
-     *  @param sym        The referenced symbol.
-     */
-    void earlyRefError(DiagnosticPosition pos, Symbol sym) {
-        log.error(pos, Errors.CantRefBeforeCtorCalled(sym));
-    }
-
     /** Report duplicate declaration error.
      */
     void duplicateError(DiagnosticPosition pos, Symbol sym) {
