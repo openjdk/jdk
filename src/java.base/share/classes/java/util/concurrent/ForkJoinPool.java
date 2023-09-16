@@ -2002,6 +2002,8 @@ public class ForkJoinPool extends AbstractExecutorService {
                         if ((q = qs[i]) != null &&
                             (((p = q.phase) & IDLE) == 0 ||
                              q.top - q.base > 0)) {
+                            if (parallelism == 0)
+                                return false;
                             signalWork();                 // ensure live
                             break recheck;                // restart
                         }
