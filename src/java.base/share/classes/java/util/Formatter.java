@@ -3409,18 +3409,6 @@ public final class Formatter implements Closeable, Flushable {
         }
 
         private void print(Formatter fmt, int value, Locale l) throws IOException {
-            if (width == -1
-                    && flags == 0
-                    && index == 0
-                    && precision == -1
-                    && !dt
-                    && c == Conversion.DECIMAL_INTEGER
-                    && fmt.a instanceof StringBuilder sb
-            ) {
-                sb.append(value);
-                return;
-            }
-
             long v = value;
             if (value < 0
                 && (c == Conversion.OCTAL_INTEGER
@@ -3428,26 +3416,10 @@ public final class Formatter implements Closeable, Flushable {
                 v += (1L << 32);
                 assert v >= 0 : v;
             }
-            printSlow(fmt, v, l);
+            print(fmt, v, l);
         }
 
         private void print(Formatter fmt, long value, Locale l) throws IOException {
-            if (width == -1
-                    && flags == 0
-                    && index == 0
-                    && precision == -1
-                    && !dt
-                    && c == Conversion.DECIMAL_INTEGER
-                    && fmt.a instanceof StringBuilder sb
-            ) {
-                sb.append(value);
-                return;
-            }
-
-            printSlow(fmt, value, l);
-        }
-
-        private void printSlow(Formatter fmt, long value, Locale l) throws IOException {
 
             StringBuilder sb = new StringBuilder();
 
