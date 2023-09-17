@@ -28,12 +28,16 @@ package java.net;
 import java.io.UnsupportedEncodingException;
 import java.io.CharArrayWriter;
 import java.nio.charset.Charset;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException ;
 import java.util.BitSet;
 import java.util.Objects;
 import java.util.function.IntPredicate;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ImmutableBitSetPredicate;
 import jdk.internal.util.StaticProperty;
 
@@ -80,7 +84,11 @@ import jdk.internal.util.StaticProperty;
  * @since   1.0
  */
 public class URLEncoder {
-    private static final IntPredicate DONT_NEED_ENCODING;
+    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
+
+    private static final long DONT_NEED_ENCODING_FLAGS_0;
+    private static final long DONT_NEED_ENCODING_FLAGS_1;
+
     private static final int CASE_DIFF = ('a' - 'A');
     private static final String DEFAULT_ENCODING_NAME;
 
@@ -121,21 +129,39 @@ public class URLEncoder {
          * as is Netscape.
          *
          */
+        long flag0 = 0;
+        flag0 |= 1L << ' '; // 32
+        flag0 |= 1L << '*'; // 42
+        flag0 |= 1L << '-'; // 25
+        flag0 |= 1L << '.'; // 46
+        for (int i = '0'; i <= '9'; ++i) {
+            flag0 |= 1L << i;
+        }
+        DONT_NEED_ENCODING_FLAGS_0 = flag0;
 
-        var bitSet = new BitSet(128);
-        bitSet.set('a', 'z' + 1);
-        bitSet.set('A', 'Z' + 1);
-        bitSet.set('0', '9' + 1);
-        bitSet.set(' '); /* encoding a space to a + is done
-                                    * in the encode() method */
-        bitSet.set('-');
-        bitSet.set('_');
-        bitSet.set('.');
-        bitSet.set('*');
-
-        DONT_NEED_ENCODING = ImmutableBitSetPredicate.of(bitSet);
+        long flags1 = 0;
+        for (int i = 'a'; i <= 'z'; ++i) {
+            flags1 |= 1L << (i - 64);
+        }
+        for (int i = 'A'; i <= 'Z'; ++i) {
+            flags1 |= 1L << (i - 64);
+        }
+        flags1 |= 1L << ('_' - 64);
+        DONT_NEED_ENCODING_FLAGS_1 = flags1;
 
         DEFAULT_ENCODING_NAME = StaticProperty.fileEncoding();
+    }
+
+    /**
+     * dotNeedEncoding
+     */
+    private static boolean dotNeedEncoding(int c) {
+        int prefix = (c >>> 6);
+        if (prefix > 1) {
+            return false;
+        }
+        long flags = prefix == 0 ? DONT_NEED_ENCODING_FLAGS_0 : DONT_NEED_ENCODING_FLAGS_1;
+        return (flags & (1L << (c & 0b11_1111))) != 0;
     }
 
     /**
@@ -222,6 +248,59 @@ public class URLEncoder {
     public static String encode(String s, Charset charset) {
         Objects.requireNonNull(charset, "charset");
 
+        int spaceCount = 0;
+        int needEncodingCount = 0;
+        boolean ascii = true;
+        for (int i = 0; i < s.length(); ++i) {
+            int c = s.charAt(i);
+            if (c == ' ') {
+                spaceCount++;
+            }
+            if (!dotNeedEncoding(c)) {
+                needEncodingCount++;
+                if (ascii & c > 0x7f) {
+                    ascii = false;
+                }
+            }
+        }
+
+        if (needEncodingCount == 0 && spaceCount == 0) {
+            return s;
+        }
+
+        if (!ascii) {
+            return encodeSlow(s, charset);
+        }
+
+        byte[] buf = new byte[s.length() + needEncodingCount * 2];
+
+        int off = 0;
+        for (int i = 0; i < s.length(); ++i) {
+            int c = s.charAt(i);
+            if (dotNeedEncoding(c)) {
+                buf[off++] = (byte) (c == ' ' ? '+' : c);
+            } else {
+                putHex(buf, off, c);
+                off += 3;
+            }
+        }
+
+        try {
+            return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+        } catch (CharacterCodingException cce) {
+            throw new AssertionError(cce);
+        }
+    }
+
+    private static void putHex(byte[] buf, int off, int c) {
+        buf[off] = '%';
+        int n0 = (c >> 4) & 0xf;
+        buf[off + 1] = (byte) (n0 + (n0 < 10 ? '0' : 'A' - 10));
+        int n1 = c & 0xf;
+        buf[off + 2] = (byte) (n1 + (n1 < 10 ? '0' : 'A' - 10));
+    }
+
+    private static String encodeSlow(String s, Charset charset) {
         boolean needToChange = false;
         StringBuilder out = new StringBuilder(s.length());
         CharArrayWriter charArrayWriter = new CharArrayWriter();
@@ -229,7 +308,7 @@ public class URLEncoder {
         for (int i = 0; i < s.length();) {
             int c = s.charAt(i);
             //System.out.println("Examining character: " + c);
-            if (DONT_NEED_ENCODING.test(c)) {
+            if (dotNeedEncoding(c)) {
                 if (c == ' ') {
                     c = '+';
                     needToChange = true;
@@ -272,7 +351,7 @@ public class URLEncoder {
                         }
                     }
                     i++;
-                } while (i < s.length() && !DONT_NEED_ENCODING.test((c = s.charAt(i))));
+                } while (i < s.length() && !dotNeedEncoding((c = s.charAt(i))));
 
                 charArrayWriter.flush();
                 String str = charArrayWriter.toString();
