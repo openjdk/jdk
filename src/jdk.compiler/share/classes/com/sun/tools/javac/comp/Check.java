@@ -4609,6 +4609,19 @@ public class Check {
                 if (!allUnderscore) {
                     log.error(c.labels.tail.head.pos(), Errors.FlowsThroughFromPattern);
                 }
+
+                boolean allPatternCaseLabels = c.labels.stream().allMatch(p -> p instanceof JCPatternCaseLabel);
+
+                if (allPatternCaseLabels) {
+                    preview.checkSourceLevel(c.labels.tail.head.pos(), Feature.UNNAMED_VARIABLES);
+                }
+
+                for (JCCaseLabel label : c.labels.tail) {
+                    if (label instanceof JCConstantCaseLabel) {
+                        log.error(label.pos(), Errors.InvalidCaseLabelCombination);
+                        break;
+                    }
+                }
             }
         }
 
@@ -4699,7 +4712,7 @@ public class Check {
                                          TreeInfo.unguardedCase(testCase);
                         } else if (label instanceof JCPatternCaseLabel patternCL &&
                                    testCaseLabel instanceof JCPatternCaseLabel testPatternCaseLabel &&
-                                   TreeInfo.unguardedCase(testCase)) {
+                                   (testCase.equals(c) || TreeInfo.unguardedCase(testCase))) {
                             dominated = patternDominated(testPatternCaseLabel.pat,
                                                          patternCL.pat);
                         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,9 @@ public class TestGCBasher {
             return;
         }
 
-        long durationMillis = Long.valueOf(args[0]);
-        long start = System.currentTimeMillis();
-        while (System.currentTimeMillis() - start < durationMillis) {
+        long durationNanos = Long.valueOf(args[0]) * 1_000_000L;
+        long startNanos = System.nanoTime();
+        while (System.nanoTime() - startNanos < durationNanos) {
             parseClassFiles();
         }
     }

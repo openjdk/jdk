@@ -37,7 +37,7 @@
  *                   compiler.vectorization.runner.LoopArrayIndexComputeTest
  *
  * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
- * @requires vm.compiler2.enabled & vm.flagless
+ * @requires vm.compiler2.enabled
  */
 
 package compiler.vectorization.runner;
@@ -321,7 +321,7 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
         byte[] res = new byte[SIZE];
         System.arraycopy(bytes, 0, res, 0, SIZE);
         for (int i = 0; i < SIZE / 2; i++) {
-            res[i] *= bytes[i + 3];
+            res[i] += bytes[i + 3];
         }
         return res;
     }

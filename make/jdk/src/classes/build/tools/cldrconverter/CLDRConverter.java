@@ -114,6 +114,7 @@ public class CLDRConverter {
 
     private static Set<String> AVAILABLE_TZIDS;
     static int copyrightYear;
+    static String jdkHeaderTemplate;
     private static String zoneNameTempFile;
     private static String tzDataDir;
     private static final Map<String, String> canonicalTZMap = new HashMap<>();
@@ -229,6 +230,10 @@ public class CLDRConverter {
                         tzDataDir = args[++i];
                         break;
 
+                    case "-jdk-header-template":
+                        jdkHeaderTemplate = Files.readString(Paths.get(args[++i]));
+                        break;
+
                     case "-help":
                         usage();
                         System.exit(0);
@@ -304,7 +309,9 @@ public class CLDRConverter {
                 + "\t-year year     copyright year in output%n"
                 + "\t-zntempfile    template file for java.time.format.ZoneName.java%n"
                 + "\t-tzdatadir     tzdata directory for java.time.format.ZoneName.java%n"
-                + "\t-utf8          use UTF-8 rather than \\uxxxx (for debug)%n");
+                + "\t-utf8          use UTF-8 rather than \\uxxxx (for debug)%n"
+                + "\t-jdk-header-template <file>%n"
+                + "\t\t       override default GPL header with contents of file%n");
     }
 
     static void info(String fmt, Object... args) {
@@ -614,7 +621,14 @@ public class CLDRConverter {
      */
     static void handleAliases(Map<String, Object> bundleMap) {
         for (String key : aliases.keySet()) {
-            var source = bundleMap.get(aliases.get(key));
+            var sourceKey = aliases.get(key);
+            if (key.startsWith("ListPatterns_")) {
+                String k;
+                while ((k = aliases.get(sourceKey)) != null) {
+                    sourceKey = k;
+                }
+            }
+            var source = bundleMap.get(sourceKey);
             if (source != null) {
                 if (bundleMap.get(key) instanceof String[] sa) {
                     // fill missing elements in case of String array
@@ -864,6 +878,7 @@ public class CLDRConverter {
         "DayPeriodRules",
         "DateFormatItemInputRegions.allowed",
         "DateFormatItemInputRegions.preferred",
+        "ListPatterns",
     };
 
     static final Set<String> availableSkeletons = new HashSet<>();
@@ -928,6 +943,14 @@ public class CLDRConverter {
                     formatData.put(k + ".NumberElements", neNew);
                 });
         }
+
+        // ListPatterns
+        for (var lpKey : Bundle.LIST_PATTERN_KEYS) {
+            copyIfPresent(map, lpKey, formatData);
+            copyIfPresent(map, lpKey + "-short", formatData);
+            copyIfPresent(map, lpKey + "-narrow", formatData);
+        }
+
         return formatData;
     }
 

@@ -28,6 +28,7 @@
 #include "oops/method.hpp"
 
 #include "classfile/vmIntrinsics.hpp"
+#include "oops/methodCounters.hpp"
 #include "runtime/atomic.hpp"
 
 inline address Method::from_compiled_entry() const {
@@ -105,6 +106,93 @@ inline bool Method::is_continuation_native_intrinsic() const {
 
 inline bool Method::is_special_native_intrinsic() const {
   return is_method_handle_intrinsic() || is_continuation_native_intrinsic();
+}
+
+#if INCLUDE_JVMTI
+inline u2 Method::number_of_breakpoints() const {
+  MethodCounters* mcs = method_counters();
+  if (mcs == nullptr) {
+    return 0;
+  } else {
+    return mcs->number_of_breakpoints();
+  }
+}
+
+inline void Method::incr_number_of_breakpoints(Thread* current) {
+  MethodCounters* mcs = get_method_counters(current);
+  if (mcs != nullptr) {
+    mcs->incr_number_of_breakpoints();
+  }
+}
+
+inline void Method::decr_number_of_breakpoints(Thread* current) {
+  MethodCounters* mcs = get_method_counters(current);
+  if (mcs != nullptr) {
+    mcs->decr_number_of_breakpoints();
+  }
+}
+
+// Initialization only
+inline void Method::clear_number_of_breakpoints() {
+  MethodCounters* mcs = method_counters();
+  if (mcs != nullptr) {
+    mcs->clear_number_of_breakpoints();
+  }
+}
+#endif // INCLUDE_JVMTI
+
+#if COMPILER2_OR_JVMCI
+inline void Method::interpreter_throwout_increment(Thread* current) {
+  MethodCounters* mcs = get_method_counters(current);
+  if (mcs != nullptr) {
+    mcs->interpreter_throwout_increment();
+  }
+}
+#endif
+
+inline int Method::interpreter_throwout_count() const        {
+  MethodCounters* mcs = method_counters();
+  if (mcs == nullptr) {
+    return 0;
+  } else {
+    return mcs->interpreter_throwout_count();
+  }
+}
+
+inline int Method::prev_event_count() const {
+  MethodCounters* mcs = method_counters();
+  return mcs == nullptr ? 0 : mcs->prev_event_count();
+}
+
+inline void Method::set_prev_event_count(int count) {
+  MethodCounters* mcs = method_counters();
+  if (mcs != nullptr) {
+    mcs->set_prev_event_count(count);
+  }
+}
+
+inline jlong Method::prev_time() const {
+  MethodCounters* mcs = method_counters();
+  return mcs == nullptr ? 0 : mcs->prev_time();
+}
+
+inline void Method::set_prev_time(jlong time) {
+  MethodCounters* mcs = method_counters();
+  if (mcs != nullptr) {
+    mcs->set_prev_time(time);
+  }
+}
+
+inline float Method::rate() const {
+  MethodCounters* mcs = method_counters();
+  return mcs == nullptr ? 0 : mcs->rate();
+}
+
+inline void Method::set_rate(float rate) {
+  MethodCounters* mcs = method_counters();
+  if (mcs != nullptr) {
+    mcs->set_rate(rate);
+  }
 }
 
 #endif // SHARE_OOPS_METHOD_INLINE_HPP
