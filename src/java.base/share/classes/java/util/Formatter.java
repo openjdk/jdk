@@ -2863,28 +2863,52 @@ public final class Formatter implements Closeable, Flushable {
     }
 
     private static int parse0(ArrayList<FormatString> al, char c, String s, int i, int max) {
-        if (isDigit(c) && i + 1 < max && Conversion.isValid(s.charAt(i + 1))) {
-            int width = c - '0';
-            c = s.charAt(i + 1);
-            al.add(new FormatSpecifier(c, width));
-            return 2;
-        }
-
-        if (isDigit(c)
-                && i + 2 < max
-                && isDigit(s.charAt(i + 1))
-                && Conversion.isValid(s.charAt(i + 2))) {
-            if (c == '0') {
-                // ZERO_PAD
-                int width = s.charAt(i + 1) - '0';
-                char c2 = s.charAt(i + 2);
-                al.add(new FormatSpecifier(c2, Flags.ZERO_PAD, width));
-            } else {
-                int width = (c - '0') * 10 + s.charAt(i + 1) - '0';
-                char c2 = s.charAt(i + 2);
-                al.add(new FormatSpecifier(c2, width));
+        boolean digitC = isDigit(c);
+        if (digitC && i + 1 < max) {
+            char c1 = s.charAt(i + 1);
+            if (Conversion.isValid(c1)) {
+                int width = c - '0';
+                c = s.charAt(i + 1);
+                al.add(new FormatSpecifier(c, 0, width, -1));
+                return 2;
             }
-            return  3;
+
+            boolean digitC1 = isDigit(c1);
+            if (digitC1 && i + 2 < max) {
+                char c2 = s.charAt(i + 2);
+                if (Conversion.isValid(c2)) {
+                    int flags = 0;
+                    int width;
+                    if (c == '0') {
+                        // ZERO_PAD
+                        width = s.charAt(i + 1) - '0';
+                        flags = Flags.ZERO_PAD;
+                    } else {
+                        width = (c - '0') * 10 + c1 - '0';
+                    }
+                    al.add(new FormatSpecifier(c2, flags, width, -1));
+                    return 3;
+                }
+
+                if (i + 5 < max && isDigit(c2) && s.charAt(i + 3) == '.') {
+                    char c4 = s.charAt(i + 4);
+                    char c5 = s.charAt(i + 5);
+                    if (isDigit(c4) && Conversion.isValid(c5)) {
+                        int precision = c4 - '0';
+                        int flags = 0;
+                        int width;
+                        if (c == '0') {
+                            // ZERO_PAD
+                            width = s.charAt(i + 1) - '0';
+                        } else {
+                            width = (c - '0') * 10 + c1 - '0';
+                        }
+
+                        al.add(new FormatSpecifier(c5, Flags.ZERO_PAD, width, precision));
+                        return 6;
+                    }
+                }
+            }
         }
 
         return 0;
@@ -3016,19 +3040,16 @@ public final class Formatter implements Closeable, Flushable {
             }
         }
 
-        FormatSpecifier(char conv, int width) {
+        FormatSpecifier(char conv, int flag, int width, int precision) {
             this(conv);
+            this.flags |= flag;
             if (width == 0) {
                 this.flags |= Flags.ZERO_PAD;
             } else {
                 this.width = width;
             }
+            this.precision = precision;
             check();
-        }
-
-        FormatSpecifier(char conv, int flag, int width) {
-            this(conv, width);
-            this.flags |= flag;
         }
 
         FormatSpecifier(String s, Matcher m) {
