@@ -30,6 +30,7 @@ import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Panel;
 import java.awt.Robot;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /*
  * @test
@@ -38,10 +39,6 @@ import java.awt.Robot;
  * @summary Paint pending on heavyweight component move
  */
 
-// Subclass of Frame, creates two buttons: one that moves the Frame by
-// invoking setBounds, and the other that invokes repaint directly on
-// the Frame to repaint a Component. The Component displays an integer
-// that increments everytime paint is invoked on it.
 public class RepaintTest {
     private static Frame frame;
     private static Panel panel;
@@ -59,14 +56,13 @@ public class RepaintTest {
             robot.waitForIdle();
             robot.delay(500);
 
-            int count = counter.getCount();
-            robot.delay(300);
+            int count = counter.getCount().get();
 
-            EventQueue.invokeAndWait(() -> panel.repaint());
+            EventQueue.invokeAndWait(panel::repaint);
             robot.waitForIdle();
             robot.delay(1000);
 
-            if (counter.getCount() == count) {
+            if (counter.getCount().get() == count) {
                 throw new RuntimeException("Failed");
             }
         } finally {
@@ -112,13 +108,13 @@ public class RepaintTest {
     // Subclass of Component, everytime paint is invoked a counter
     // is incremented, this counter is displayed in the component.
     private static class IncrementComponent extends Component {
-        private static int paintCount;
+        private static AtomicInteger paintCount = new AtomicInteger(0);
 
         public Dimension getPreferredSize() {
             return new Dimension(100, 100);
         }
 
-        public int getCount() {
+        public AtomicInteger getCount() {
             return paintCount;
         }
 
@@ -127,7 +123,7 @@ public class RepaintTest {
             g.fillRect(0, 0, getWidth(), getHeight());
             g.setColor(Color.white);
 
-            String string = Integer.toString(paintCount++);
+            String string = Integer.toString(paintCount.getAndIncrement());
             FontMetrics metrics = g.getFontMetrics();
             int x = (getWidth() - metrics.stringWidth(string)) / 2;
             int y = (getHeight() + metrics.getHeight()) / 2;

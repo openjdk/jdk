@@ -32,7 +32,7 @@ import javax.swing.text.html.parser.ParserDelegator;
  * @test
  * @bug 4238223
  * @summary Tests that HTMLEditorKit.ParserCallback methods receive
- *          correct `pos' argument.
+ *          correct 'pos' argument.
  */
 
 public class bug4238223 {
@@ -49,8 +49,8 @@ public class bug4238223 {
         int commentIndex = 65;
 
         public void handleComment(char[] data, int pos) {
-            if (! (new String(data)).equals(commentData) ||
-                    pos != commentIndex) {
+            if (!(new String(data)).equals(commentData)
+                    || pos != commentIndex) {
 
                 throw new RuntimeException("handleComment failed");
             }
@@ -61,8 +61,8 @@ public class bug4238223 {
         int[] endTagPositions = {23, 31, 79, 86};
         int endTagIndex = 0;
         public void handleEndTag(HTML.Tag tag, int pos) {
-            if (! tag.equals(endTags[endTagIndex]) ||
-                    pos != endTagPositions[endTagIndex]) {
+            if (!tag.equals(endTags[endTagIndex])
+                    || pos != endTagPositions[endTagIndex]) {
 
                 throw new RuntimeException("handleEndTag failed");
             } else {
@@ -92,8 +92,8 @@ public class bug4238223 {
         int startTagIndex = 0;
         public void handleStartTag(HTML.Tag tag, MutableAttributeSet attr,
                                    int pos) {
-            if (!tag.equals(startTags[startTagIndex]) ||
-                    pos != startTagPositions[startTagIndex]) {
+            if (!tag.equals(startTags[startTagIndex])
+                    || pos != startTagPositions[startTagIndex]) {
 
                 throw new RuntimeException("handleStartTag failed");
             } else {
@@ -105,8 +105,8 @@ public class bug4238223 {
         int[] textPositions = {19, 54};
         int textIndex = 0;
         public void handleText(char[] data, int pos) {
-            if (!textData[textIndex].equals(new String(data)) ||
-                    pos != textPositions[textIndex]) {
+            if (!textData[textIndex].equals(new String(data))
+                    || pos != textPositions[textIndex]) {
 
                 throw new RuntimeException("handleText failed");
             } else {

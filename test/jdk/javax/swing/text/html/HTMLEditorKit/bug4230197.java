@@ -38,17 +38,19 @@ public class bug4230197 {
         HTMLEditorKit kit = new HTMLEditorKit();
         StringWriter sw = new StringWriter();
         HTMLDocument doc = (HTMLDocument) kit.createDefaultDocument();
-        kit.insertHTML(doc, 0, "<sub>0</sub>", 0, 0, HTML.Tag.SUB);
+        kit.insertHTML(doc, doc.getLength(), "<sub>0</sub>", 0, 0, HTML.Tag.SUB);
         kit.insertHTML(doc, doc.getLength(), "<sup>0</sup>", 0, 0, HTML.Tag.SUP);
         kit.insertHTML(doc, doc.getLength(), "<b>0</b>", 0, 0, HTML.Tag.B);
         kit.insertHTML(doc, doc.getLength(), "<i>0</i>", 0, 0, HTML.Tag.I);
         kit.insertHTML(doc, doc.getLength(), "<code>0</code>", 0, 0, HTML.Tag.CODE);
         kit.write(sw, doc, 0, doc.getLength());
 
-        String au = sw.toString().toLowerCase();
-        if ((!au.contains("<sub>0</sub>")) || (!au.contains("<sup>0</sup>"))
-                || (!au.contains("<code>0</code>")) || (!au.contains("<b>0</b>"))
-                || (!au.contains("<i>0</i>"))) {
+        String out = sw.toString().toLowerCase();
+        if ((!out.contains("<sub>0</sub>"))
+                || (!out.contains("<sup>0</sup>"))
+                || (!out.contains("<code>0</code>"))
+                || (!out.contains("<b>0</b>"))
+                || (!out.contains("<i>0</i>"))) {
             throw new RuntimeException("Test failed: HTMLEditorKit.insertHTML()" +
                     " doesn't work for font/phrase tags");
         }
