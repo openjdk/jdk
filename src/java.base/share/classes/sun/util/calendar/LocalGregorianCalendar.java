@@ -63,6 +63,7 @@ public final class LocalGregorianCalendar extends BaseCalendar {
     private String name;
     private Era[] eras;
 
+    // Used within java.time and java.util
     public static final class Date extends BaseCalendar.Date {
 
         Date() {
