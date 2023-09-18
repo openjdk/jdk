@@ -22,14 +22,16 @@
  */
 
 /* @test
- * @bug 8011536 8151430
+ * @bug 8011536 8151430 8316304
  * @summary Basic test for creationTime attribute on platforms/file systems
  *     that support it.
  * @library  ../.. /test/lib
+ * @modules java.base/sun.nio.fs:open
  * @build jdk.test.lib.Platform
  * @run main CreationTime
  */
 
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.nio.file.attribute.*;
@@ -40,6 +42,8 @@ import jdk.test.lib.Platform;
 
 public class CreationTime {
 
+    private static final String UNIX_DISPATCHER_CLASSNAME = "sun.nio.fs.UnixNativeDispatcher";
+    private static final String SUPPORTS_BIRTH_TIME_METHOD = "birthtimeSupported";
     private static final java.io.PrintStream err = System.err;
 
     /**
@@ -88,6 +92,13 @@ public class CreationTime {
                 supportsCreationTimeRead = true;
                 supportsCreationTimeWrite = true;
             }
+        } else if (Platform.isLinux()) {
+            if (unixDispatcherSupportsBirthTime()) {
+                supportsCreationTimeRead = true;
+            }
+            System.out.println("[Linux] Debug: supportsCreationTimeRead == " + supportsCreationTimeRead);
+            // Creation time updates are not supported on Linux
+            supportsCreationTimeWrite = false;
         }
 
         /**
@@ -115,6 +126,18 @@ public class CreationTime {
             FileTime current = creationTime(file);
             if (Math.abs(creationTime.toMillis()-current.toMillis()) > 1000L)
                 throw new RuntimeException("Creation time not changed");
+        }
+    }
+
+    // Reflective implementation so as to compile on non-Linux platforms
+    private static boolean unixDispatcherSupportsBirthTime() {
+        try {
+            Class<?> unixDispatcher = Class.forName(UNIX_DISPATCHER_CLASSNAME);
+            Method supportsBirthTime = unixDispatcher.getDeclaredMethod(SUPPORTS_BIRTH_TIME_METHOD);
+            supportsBirthTime.setAccessible(true);
+            return (boolean)supportsBirthTime.invoke(null);
+        } catch (Throwable e) {
+            throw new RuntimeException("Illegal state!");
         }
     }
 
