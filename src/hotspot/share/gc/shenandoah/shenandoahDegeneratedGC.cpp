@@ -279,6 +279,13 @@ void ShenandoahDegenGC::op_degenerated() {
       // In above case, update roots should disarm them
       ShenandoahCodeRoots::disarm_nmethods();
 
+      if (heap->mode()->is_generational() && heap->is_concurrent_old_mark_in_progress()) {
+        // This is still necessary for degenerated cycles because the degeneration point may occur
+        // after final mark of the young generation. See ShenandoahConcurrentGC::op_final_updaterefs for
+        // a more detailed explanation.
+        heap->transfer_old_pointers_from_satb();
+      }
+
       op_cleanup_complete();
       // We defer generation resizing actions until after cset regions have been recycled.
       if (heap->mode()->is_generational()) {
