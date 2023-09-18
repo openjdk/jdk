@@ -29,6 +29,7 @@
  * @summary No hs-err file if fatal error is raised during dynamic initialization.
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
+ * @requires vm.flagless
  * @requires (vm.debug == true)
  * @requires os.family == "linux"
  * @run driver VeryEarlyAssertTest
@@ -49,7 +50,7 @@ public class VeryEarlyAssertTest {
   public static void main(String[] args) throws Exception {
 
 
-    ProcessBuilder pb = ProcessTools.createTestJvm("-version");
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-version");
     Map<String, String> env = pb.environment();
     env.put("HOTSPOT_FATAL_ERROR_DURING_DYNAMIC_INITIALIZATION", "1");
 
