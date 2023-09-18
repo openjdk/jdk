@@ -122,7 +122,6 @@ public abstract sealed class MappedByteBuffer
     }
 
     private final class BufferUnmapperProxy implements UnmapperProxy {
-
         // Ensure safe publication as MappedByteBuffer.this.address is not final
         private final long addr;
 
