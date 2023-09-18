@@ -474,10 +474,10 @@ public class GenModuleInfoSource {
                         throw parser.newError("is malformed");
                     }
                 } else if (token.equals("import")) {
-                  nextIdentifier(parser);
-                  skipTokenOrThrow(parser, ";", "missing semicolon");
+                    nextIdentifier(parser);
+                    skipTokenOrThrow(parser, ";", "missing semicolon");
                 } else if (token.startsWith("@")) {
-                  continue;
+                    continue;
                 } else {
                     throw parser.newError("missing keyword");
                 }
