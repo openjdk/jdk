@@ -32,10 +32,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class SpecialTempFile {
-
     private static void test(String name, String[] prefix, String[] suffix,
                              boolean exceptionExpected) throws IOException
     {
@@ -48,7 +46,7 @@ public class SpecialTempFile {
         final String exceptionMsg = "Unable to create temporary file";
         String[] dirs = { null, "." };
 
-        Path testPath = Paths.get(System.getProperty("test.dir", "."));
+        Path testPath = Path.of(System.getProperty("test.dir", "."));
         for (int i = 0; i < prefix.length; i++) {
             boolean exceptionThrown = false;
             File f = null;
@@ -106,8 +104,8 @@ public class SpecialTempFile {
         // Test JDK-8013827
         String[] resvPre = { "LPT1.package.zip", "com7.4.package.zip" };
         String[] resvSuf = { ".temp", ".temp" };
-        // Windows 11 does not reserve the names "COM" and "LPT1"
-        boolean exceptionExpected = !osName.endsWith("11");
+        double osVersion = Double.valueOf(System.getProperty("os.version"));
+        boolean exceptionExpected = !(osName.endsWith("11") || osVersion > 10.0);
         test("ReservedName", resvPre, resvSuf, exceptionExpected);
     }
 }
