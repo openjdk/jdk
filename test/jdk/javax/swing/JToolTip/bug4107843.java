@@ -27,27 +27,24 @@
  * @run main bug4107843
  */
 
-import java.lang.reflect.InvocationTargetException;
-
 import javax.swing.JButton;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 
 public class bug4107843 {
-    public static void main(String[] args) throws InterruptedException,
-            InvocationTargetException {
+    public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             JTabbedPane tp = new JTabbedPane();
             tp.add("First", new JButton("Button1"));
             tp.add("Second", new JButton("Button2"));
             tp.setToolTipTextAt(0, "first button");
             if (!tp.getToolTipTextAt(0).equals("first button")) {
-                throw new RuntimeException("ToolTipText doesn't set " +
+                throw new RuntimeException("ToolTipText isn't set " +
                         "as expected...");
             }
             tp.setToolTipTextAt(1, "second button");
             if (!tp.getToolTipTextAt(1).equals("second button")) {
-                throw new RuntimeException("ToolTipText doesn't set " +
+                throw new RuntimeException("ToolTipText isn't set " +
                         "as expected...");
             }
         });

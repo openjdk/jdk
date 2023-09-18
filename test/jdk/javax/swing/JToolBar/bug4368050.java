@@ -29,26 +29,23 @@
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import javax.swing.JToolBar;
 
 public class bug4368050 {
-    public static void main(String[] args) throws IOException,
-            ClassNotFoundException {
+    public static void main(String[] args) throws Exception {
         JToolBar toolBar = new JToolBar();
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(toolBar);
-        byte[] buf = baos.toByteArray();
-        baos.close();
-
-        ByteArrayInputStream bais = new ByteArrayInputStream(buf);
-        ObjectInputStream ois = new ObjectInputStream(bais);
-        ois.readObject();
-        bais.close();
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+            oos.writeObject(toolBar);
+            byte[] buf = baos.toByteArray();
+            try (ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+                 ObjectInputStream ois = new ObjectInputStream(bais)) {
+                ois.readObject();
+            }
+        }
     }
 }

@@ -28,8 +28,6 @@
  * @run main bug4700351
  */
 
-import java.lang.reflect.InvocationTargetException;
-
 import javax.swing.JFrame;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
@@ -37,25 +35,30 @@ import javax.swing.plaf.basic.BasicToolBarUI;
 
 public class bug4700351 {
     static JFrame fr;
-    static JToolBar tb;
-    static BasicToolBarUI ui;
 
-    public static void main(String[] args) throws InterruptedException,
-            InvocationTargetException {
-        SwingUtilities.invokeAndWait(() -> {
-            fr = new JFrame("bug4700351");
-            tb = new JToolBar();
-            tb.setOrientation(JToolBar.VERTICAL);
-            fr.add(tb);
-            ui = (javax.swing.plaf.basic.BasicToolBarUI) tb.getUI();
-            if (!ui.isFloating()) {
-                ui.setFloatingLocation(100, 100);
-                ui.setFloating(true, tb.getLocation());
-            }
-            if (tb.getOrientation() != JToolBar.VERTICAL) {
-                throw new RuntimeException("Error: toolbar's orientation " +
-                        "has changed");
-            }
-        });
+    public static void main(String[] args) throws Exception {
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                fr = new JFrame("bug4700351");
+                JToolBar tb = new JToolBar();
+                tb.setOrientation(JToolBar.VERTICAL);
+                fr.add(tb);
+                BasicToolBarUI ui = (javax.swing.plaf.basic.BasicToolBarUI) tb.getUI();
+                if (!ui.isFloating()) {
+                    ui.setFloatingLocation(100, 100);
+                    ui.setFloating(true, tb.getLocation());
+                }
+                if (tb.getOrientation() != JToolBar.VERTICAL) {
+                    throw new RuntimeException("Error: toolbar's orientation " +
+                            "has changed");
+                }
+            });
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (fr != null) {
+                    fr.dispose();
+                }
+            });
+        }
     }
 }

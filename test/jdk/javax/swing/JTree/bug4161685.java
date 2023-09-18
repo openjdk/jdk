@@ -28,26 +28,23 @@
  * @run main bug4161685
  */
 
-import java.lang.reflect.InvocationTargetException;
-
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.tree.TreePath;
 
 public class bug4161685 {
-    public static void main(String[] args) throws InterruptedException,
-            InvocationTargetException {
+    public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             JTree tr = new JTree();
             TreePath tp = tr.getPathForRow(2);
             tr.setAnchorSelectionPath(tp);
             if (tr.getAnchorSelectionPath() != tp) {
-                throw new RuntimeException("AnchorSelectionPath doesn't " +
+                throw new RuntimeException("AnchorSelectionPath isn't " +
                         "set correctly...");
             }
             tr.setLeadSelectionPath(tp);
             if (tr.getLeadSelectionPath() != tp) {
-                throw new RuntimeException("LeadSelectionPath doesn't " +
+                throw new RuntimeException("LeadSelectionPath isn't " +
                         "set correctly...");
             }
         });
