@@ -28,8 +28,6 @@
  * @run main bug4224491
  */
 
-import java.lang.reflect.InvocationTargetException;
-
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -39,8 +37,7 @@ public class bug4224491 {
     private static boolean modelChanged = false;
     private static boolean invokesStopCellEditingChanged = false;
 
-    public static void main(String[] args) throws InterruptedException,
-            InvocationTargetException {
+    public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             DefaultMutableTreeNode root = new DefaultMutableTreeNode();
             JTree jt = new JTree(new DefaultTreeModel(root));

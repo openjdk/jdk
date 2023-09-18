@@ -27,8 +27,6 @@
  * @run main bug4210432
  */
 
-import java.lang.reflect.InvocationTargetException;
-
 import javax.swing.JPanel;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
@@ -37,8 +35,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 
 public class bug4210432 {
-    public static void main(String[] args) throws InterruptedException,
-            InvocationTargetException {
+    public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             JPanel p = new JPanel();
             DefaultMutableTreeNode expansible =

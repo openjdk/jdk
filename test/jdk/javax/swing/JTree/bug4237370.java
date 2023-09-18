@@ -53,7 +53,7 @@ public class bug4237370 {
             }
         }
 
-        public void treeExpanded (TreeExpansionEvent e) {
+        public void treeExpanded(TreeExpansionEvent e) {
             testRowCount();
         }
 
