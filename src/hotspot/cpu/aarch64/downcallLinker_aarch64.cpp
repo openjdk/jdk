@@ -91,6 +91,9 @@ public:
   OopMapSet* oop_maps() const {
     return _oop_maps;
   }
+
+  void add_offset_to_oop(VMStorage reg_oop, VMStorage reg_offset, Register tmp1, Register tmp2) const;
+  void add_offsets_to_oops(GrowableArray<VMStorage>& java_regs, Register tmp1, Register tmp2) const;
 };
 
 static const int native_invoker_code_base_size = 256;
@@ -134,6 +137,50 @@ RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
   return stub;
 }
 
+static constexpr int RFP_BIAS = 16; // skip old rbp and return address
+
+void DowncallStubGenerator::add_offset_to_oop(VMStorage reg_oop, VMStorage reg_offset, Register tmp1, Register tmp2) const {
+  if (reg_oop.is_reg()) {
+    assert(reg_oop.type() == StorageType::INTEGER, "expected");
+    Register reg_oop_reg = as_Register(reg_oop);
+    if (reg_offset.is_reg()) {
+      assert(reg_offset.type() == StorageType::INTEGER, "expected");
+      __ add(reg_oop_reg, reg_oop_reg, as_Register(reg_offset));
+    } else {
+      assert(reg_offset.is_stack(), "expected");
+      assert(reg_offset.stack_size() == 8, "expected long");
+      Address offset_addr(rfp, RFP_BIAS + reg_offset.offset());
+      __ ldr (tmp1, offset_addr);
+      __ add(reg_oop_reg, reg_oop_reg, tmp1);
+    }
+  } else {
+    assert(reg_oop.is_stack(), "expected");
+    assert(reg_oop.stack_size() == 8, "expected long");
+    assert(reg_offset.is_stack(), "expected");
+    assert(reg_offset.stack_size() == 8, "expected long");
+    Address offset_addr(rfp, RFP_BIAS + reg_offset.offset());
+    Address oop_addr(rfp, RFP_BIAS + reg_oop.offset());
+    __ ldr(tmp1, offset_addr);
+    __ ldr(tmp2, oop_addr);
+    __ add(tmp1, tmp1, tmp2);
+    __ str(tmp1, oop_addr);
+  }
+}
+
+void DowncallStubGenerator::add_offsets_to_oops(GrowableArray<VMStorage>& java_regs, Register tmp1, Register tmp2) const {
+  int reg_idx = 0;
+  for (int sig_idx = 0; sig_idx < _num_args; sig_idx++) {
+    if (_signature[sig_idx] == T_OBJECT) {
+      VMStorage reg_oop = java_regs.at(reg_idx++);
+      VMStorage reg_offset = java_regs.at(reg_idx++);
+      sig_idx++; // skip offset
+      add_offset_to_oop(reg_oop, reg_offset, tmp1, tmp2);
+    } else if (_signature[sig_idx] != T_VOID) {
+      reg_idx++;
+    }
+  }
+}
+
 void DowncallStubGenerator::generate() {
   enum layout {
     rfp_off,
@@ -149,6 +196,13 @@ void DowncallStubGenerator::generate() {
   // we can't use rscratch1 because it is r8, and used by the ABI
   Register tmp1 = r9;
   Register tmp2 = r10;
+
+  GrowableArray<VMStorage> java_regs;
+  ForeignGlobals::java_calling_convention(_signature, _num_args, java_regs);
+  RegSpiller in_reg_spiller(java_regs); // spill to lock GCLocker
+  bool has_objects = false;
+  GrowableArray<VMStorage> filtered_java_regs = ForeignGlobals::downcall_filter_offset_regs(java_regs, _signature,
+                                                                                             _num_args, has_objects);
 
   int allocated_frame_size = 0;
   assert(_abi._shadow_space_bytes == 0, "not expecting shadow space on AArch64");
@@ -168,6 +222,14 @@ void DowncallStubGenerator::generate() {
       : allocated_frame_size;
   }
 
+  if (has_objects) {
+    spill_offset = 0;
+    // in spill area can also be shared
+    allocated_frame_size = in_reg_spiller.spill_size_bytes() > allocated_frame_size
+      ? in_reg_spiller.spill_size_bytes()
+      : allocated_frame_size;
+  }
+
   StubLocations locs;
   locs.set(StubLocations::TARGET_ADDRESS, _abi._scratch1);
   if (_needs_return_buffer) {
@@ -179,10 +241,22 @@ void DowncallStubGenerator::generate() {
     allocated_frame_size += BytesPerWord;
   }
 
-  GrowableArray<VMStorage> java_regs;
-  ForeignGlobals::java_calling_convention(_signature, _num_args, java_regs);
+  // The space we have allocated will look like:
+  //
+  // FP-> |                     |
+  //      |---------------------| = frame_bottom_offset = frame_size
+  //      | (optional)          |
+  //      | capture state buf   |
+  //      |---------------------| = StubLocations::CAPTURED_STATE_BUFFER
+  //      | (optional)          |
+  //      | return buffer       |
+  //      |---------------------| = StubLocations::RETURN_BUFFER
+  // SP-> | out/stack args      | or | out_reg_spiller area | or | in_reg_spiller area |
+  //
+  // Note how the last chunk can be shared, since the 3 uses occur at different times.
+
   GrowableArray<VMStorage> out_regs = ForeignGlobals::replace_place_holders(_input_registers, locs);
-  ArgumentShuffle arg_shuffle(java_regs, out_regs, as_VMStorage(r19));
+  ArgumentShuffle arg_shuffle(filtered_java_regs, out_regs, as_VMStorage(r19));
 
 #ifndef PRODUCT
   LogTarget(Trace, foreign, downcall) lt;
@@ -218,6 +292,17 @@ void DowncallStubGenerator::generate() {
     __ stlrw(tmp1, tmp2);
   }
 
+  if (has_objects) {
+    in_reg_spiller.generate_spill(_masm, spill_offset);
+
+    __ mov(c_rarg0, rthread);
+    __ rt_call(CAST_FROM_FN_PTR(address, DowncallLinker::lock_gc));
+
+    in_reg_spiller.generate_fill(_masm, spill_offset);
+
+    add_offsets_to_oops(java_regs, tmp1, tmp2);
+  }
+
   __ block_comment("{ argument shuffle");
   arg_shuffle.generate(_masm, 0, _abi._shadow_space_bytes);
   __ block_comment("} argument shuffle");
@@ -239,6 +324,19 @@ void DowncallStubGenerator::generate() {
       } else {
         ShouldNotReachHere();
       }
+    }
+  }
+
+  if (has_objects) {
+    if (should_save_return_value) {
+      out_reg_spiller.generate_spill(_masm, spill_offset);
+    }
+
+    __ mov(c_rarg0, rthread);
+    __ rt_call(CAST_FROM_FN_PTR(address, DowncallLinker::unlock_gc));
+
+    if (should_save_return_value) {
+      out_reg_spiller.generate_fill(_masm, spill_offset);
     }
   }
 
