@@ -214,30 +214,13 @@ getHomeFromShell32()
     static WCHAR *u_path = NULL;
     if (u_path == NULL) {
         HRESULT hr;
-
-        /*
-         * For Windows Vista and later (or patched MS OS) we need to use
-         * [SHGetKnownFolderPath] call to avoid MAX_PATH length limitation.
-         * Shell32.dll (version 6.0.6000 or later)
-         */
-        hr = SHGetKnownFolderPath(&FOLDERID_Profile, KF_FLAG_DONT_VERIFY, NULL, &u_path);
+        WCHAR *tmpPath = NULL;
+        hr = SHGetKnownFolderPath(&FOLDERID_Profile, KF_FLAG_DONT_VERIFY, NULL, &tmpPath);
 
         if (FAILED(hr)) {
-            WCHAR path[MAX_PATH+1];
-            CoTaskMemFree(u_path);
-
-            /* fallback solution for WinXP and Windows 2000 */
-            hr = SHGetFolderPathW(NULL, CSIDL_FLAG_DONT_VERIFY | CSIDL_PROFILE, NULL, SHGFP_TYPE_CURRENT, path);
-            if (FAILED(hr)) {
-                /* we can't find the shell folder. */
-                u_path = NULL;
-            } else {
-                /* Just to be sure about the path length until Windows Vista approach.
-                 * [S_FALSE] could not be returned due to [CSIDL_FLAG_DONT_VERIFY] flag and UNICODE version.
-                 */
-                path[MAX_PATH] = 0;
-                u_path = _wcsdup(path);
-            }
+            CoTaskMemFree(tmpPath);
+        } else {
+            u_path = tmpPath;
         }
     }
     return u_path;
