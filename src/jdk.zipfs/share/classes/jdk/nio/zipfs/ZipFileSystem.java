@@ -1638,7 +1638,7 @@ class ZipFileSystem extends FileSystem {
      * block
      */
     private void checkExtraFields( byte[] cen, int cenPos, long size, long csize,
-                                   long locoff, int diskNo,int startingOffset,
+                                   long locoff, int diskNo, int startingOffset,
                                    int extraFieldLen) throws ZipException {
         // Extra field Length cannot exceed 65,535 bytes per the PKWare
         // APP.note 4.4.11
