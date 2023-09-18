@@ -32,6 +32,7 @@ import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException ;
 import java.util.BitSet;
 import java.util.Objects;
+import java.util.HexFormat;
 import java.util.function.IntPredicate;
 
 import jdk.internal.util.ImmutableBitSetPredicate;
@@ -139,20 +140,7 @@ public class URLEncoder {
 
     private static void encodeByte(StringBuilder out, byte b) {
         out.append('%');
-
-        int n0 = (b >> 4) & 0xF;
-        if (n0 < 10) {
-            out.append((char) ('0' + n0));
-        } else {
-            out.append((char) ('A' - 10 + n0));
-        }
-
-        int n1 = b & 0xF;
-        if (n1 < 10) {
-            out.append((char) ('0' + n1));
-        } else {
-            out.append((char) ('A' - 10 + n1));
-        }
+        HexFormat.of().withUpperCase().toHexDigits(out, b);
     }
 
     /**
