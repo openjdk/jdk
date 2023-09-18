@@ -1597,7 +1597,7 @@ class ZipFileSystem extends FileSystem {
                 throw new ZipException("invalid CEN header (bad header size)");
             }
             if (elen > 0) {
-                checkExtraFields(cen, pos, size, csize, locoff,
+                checkExtraFields(cen, pos, size, csize, locoff, diskNo,
                         pos + CENHDR + nlen, elen);
             } else if (elen == 0 && (size == ZIP64_MINVAL || csize == ZIP64_MINVAL ||
                     locoff == ZIP64_MINVAL || diskNo == ZIP64_MINVAL32)) {
@@ -1631,13 +1631,14 @@ class ZipFileSystem extends FileSystem {
      * @param size CEN size value
      * @param csize CEN csize value
      * @param locoff CEN LOC offset value
+     * @param diskNo CEN Disk number value
      * @param startingOffset Extra Field starting offset within the CEN
      * @param extraFieldLen Length of this Extra field
      * @throws ZipException  If an error occurs validating the Zip64 Extra
      * block
      */
     private void checkExtraFields( byte[] cen, int cenPos, long size, long csize,
-                                   long locoff, int startingOffset,
+                                   long locoff, int diskNo,int startingOffset,
                                    int extraFieldLen) throws ZipException {
         // Extra field Length cannot exceed 65,535 bytes per the PKWare
         // APP.note 4.4.11
@@ -1672,7 +1673,7 @@ class ZipFileSystem extends FileSystem {
 
             if (tag == EXTID_ZIP64) {
                 checkZip64ExtraFieldValues(cen, currentOffset, tagBlockSize,
-                        csize, size, locoff);
+                        csize, size, locoff, diskNo);
             }
             currentOffset += tagBlockSize;
         }
@@ -1691,17 +1692,18 @@ class ZipFileSystem extends FileSystem {
      * @param csize CEN header compressed size value
      * @param size CEN header uncompressed size value
      * @param locoff CEN header LOC offset
+     * @param diskNo CEN header Disk Number
      * @throws ZipException if an error occurs
      */
     private void checkZip64ExtraFieldValues(byte[] cen, int off, int blockSize, long csize,
-                                            long size, long locoff)
+                                            long size, long locoff, int diskNo)
             throws ZipException {
         // if ZIP64_EXTID blocksize == 0, which may occur with some older
         // versions of Apache Ant and Commons Compress, validate csize and size
         // to make sure neither field == ZIP64_MAGICVAL
         if (blockSize == 0) {
             if (csize == ZIP64_MINVAL || size == ZIP64_MINVAL ||
-                    locoff == ZIP64_MINVAL) {
+                    locoff == ZIP64_MINVAL || diskNo == ZIP64_MINVAL32) {
                 zerror("Invalid CEN header (invalid zip64 extra data field size)");
             }
             // Only validate the ZIP64_EXTID data if the block size > 0
@@ -1709,7 +1711,7 @@ class ZipFileSystem extends FileSystem {
         }
         // Validate the Zip64 Extended Information Extra Field (0x0001)
         // length.
-        if (!isZip64ExtBlockSizeValid(blockSize)) {
+        if (!isZip64ExtBlockSizeValid(blockSize, csize, size, locoff, diskNo)) {
             zerror("Invalid CEN header (invalid zip64 extra data field size)");
         }
         // Check the uncompressed size is not negative
@@ -1764,23 +1766,23 @@ class ZipFileSystem extends FileSystem {
      * See PKWare APP.Note Section 4.5.3 for more details
      *
      * @param blockSize the Zip64 Extended Information Extra Field size
+     * @param csize CEN header compressed size value
+     * @param size CEN header uncompressed size value
+     * @param locoff CEN header LOC offset
+     * @param diskNo CEN header Disk Number
      * @return true if the extra block size is valid; false otherwise
      */
-    private static boolean isZip64ExtBlockSizeValid(int blockSize) {
-        /*
-         * As the fields must appear in order, the block size indicates which
-         * fields to expect:
-         *  8 - uncompressed size
-         * 16 - uncompressed size, compressed size
-         * 24 - uncompressed size, compressed sise, LOC Header offset
-         * 28 - uncompressed size, compressed sise, LOC Header offset,
-         * and Disk start number
-         */
-        return switch(blockSize) {
-            case 8, 16, 24, 28 -> true;
-            default -> false;
-        };
+    private static boolean isZip64ExtBlockSizeValid(int blockSize, long csize,
+                                                    long size, long locoff,
+                                                    int diskNo) {
+        int expectedBlockSize =
+                (csize == ZIP64_MINVAL ? Long.BYTES : 0) +
+                        (size == ZIP64_MINVAL ? Long.BYTES : 0) +
+                        (locoff == ZIP64_MINVAL ? Long.BYTES : 0) +
+                        (diskNo == ZIP64_MINVAL32 ? Integer.BYTES : 0);
+        return expectedBlockSize == blockSize;
     }
+
     private  final void checkUTF8(byte[] a) throws ZipException {
         try {
             int end = a.length;

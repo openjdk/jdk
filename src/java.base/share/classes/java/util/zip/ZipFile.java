@@ -1310,9 +1310,11 @@ public class ZipFile implements ZipConstants, Closeable {
                     long size = CENLEN(cen, cenPos);
                     // Get the LOC offset
                     long locoff = CENOFF(cen, cenPos);
+                    // Get the Disk Number
+                    int diskNo = CENDSK(cen, cenPos);
 
                     checkZip64ExtraFieldValues(currentOffset, tagBlockSize,
-                            csize, size, locoff);
+                            csize, size, locoff, diskNo);
                 }
                 currentOffset += tagBlockSize;
             }
@@ -1330,10 +1332,11 @@ public class ZipFile implements ZipConstants, Closeable {
          * @param csize CEN header compressed size value
          * @param size CEN header uncompressed size value
          * @param locoff CEN header LOC offset
+         * @param diskNo CEN header Disk number
          * @throws ZipException if an error occurs
          */
         private void checkZip64ExtraFieldValues(int off, int blockSize, long csize,
-                                                long size, long locoff)
+                                                long size, long locoff, int diskNo)
                 throws ZipException {
             byte[] cen = this.cen;
             // if ZIP64_EXTID blocksize == 0, which may occur with some older
@@ -1341,7 +1344,7 @@ public class ZipFile implements ZipConstants, Closeable {
             // to make sure neither field == ZIP64_MAGICVAL
             if (blockSize == 0) {
                 if (csize == ZIP64_MAGICVAL || size == ZIP64_MAGICVAL ||
-                        locoff == ZIP64_MAGICVAL) {
+                        locoff == ZIP64_MAGICVAL || diskNo == ZIP64_MAGICCOUNT) {
                     zerror("Invalid CEN header (invalid zip64 extra data field size)");
                 }
                 // Only validate the ZIP64_EXTID data if the block size > 0
@@ -1349,7 +1352,7 @@ public class ZipFile implements ZipConstants, Closeable {
             }
             // Validate the Zip64 Extended Information Extra Field (0x0001)
             // length.
-            if (!isZip64ExtBlockSizeValid(blockSize)) {
+            if (!isZip64ExtBlockSizeValid(blockSize, csize, size, locoff, diskNo)) {
                 zerror("Invalid CEN header (invalid zip64 extra data field size)");
             }
             // Check the uncompressed size is not negative
@@ -1404,22 +1407,22 @@ public class ZipFile implements ZipConstants, Closeable {
          * See PKWare APP.Note Section 4.5.3 for more details
          *
          * @param blockSize the Zip64 Extended Information Extra Field size
+         * @param csize CEN header compressed size value
+         * @param size CEN header uncompressed size value
+         * @param locoff CEN header LOC offset
+         * @param diskNo CEN header Disk number
          * @return true if the extra block size is valid; false otherwise
          */
-        private static boolean isZip64ExtBlockSizeValid(int blockSize) {
-            /*
-             * As the fields must appear in order, the block size indicates which
-             * fields to expect:
-             *  8 - uncompressed size
-             * 16 - uncompressed size, compressed size
-             * 24 - uncompressed size, compressed size, LOC Header offset
-             * 28 - uncompressed size, compressed size, LOC Header offset,
-             * and Disk start number
-             */
-            return switch(blockSize) {
-                case 8, 16, 24, 28 -> true;
-                default -> false;
-            };
+        private static boolean isZip64ExtBlockSizeValid(int blockSize, long csize,
+                                                        long size, long locoff,
+                                                        int diskNo) {
+            int expectedBlockSize =
+                    (csize == ZIP64_MAGICVAL ? Long.BYTES : 0) +
+                    (size == ZIP64_MAGICVAL ? Long.BYTES : 0) +
+                    (locoff == ZIP64_MAGICVAL ? Long.BYTES : 0) +
+                    (diskNo == ZIP64_MAGICCOUNT ? Integer.BYTES : 0);
+            return expectedBlockSize == blockSize;
+
         }
         private int getEntryHash(int index) { return entries[index]; }
         private int getEntryNext(int index) { return entries[index + 1]; }

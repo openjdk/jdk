@@ -445,10 +445,6 @@ public class MissingZIP64EntriesTest {
     /**
      * Expected Error messages
      */
-     private static final String MISSING_ZIP64_COMPRESSED_SIZE =
-            "Invalid Zip64 extra block, missing compressed size";
-     private static final String MISSING_ZIP64_LOC_OFFSET =
-             "Invalid Zip64 extra block, missing LOC offset value";
      private static final String INVALID_EXTRA_LENGTH =
      "Invalid CEN header (invalid zip64 extra len size)";
 
@@ -494,13 +490,13 @@ public class MissingZIP64EntriesTest {
                 // Byte array representing the Zip file, compressed size offset,
                 // and expected ZipException Message
                 Arguments.of(ZIP_WITH_ZIP64_EXTRAHDR_SIZE_ONLY_BYTEARRAY,
-                        0x61, MISSING_ZIP64_COMPRESSED_SIZE),
+                        0x61, INVALID_ZIP64_EXTRAHDR_SIZE),
                 // Byte array representing the Zip file, LOC offset and expected ZipException Message
                 Arguments.of(ZIP_WITH_ZIP64_EXTRAHDR_SIZE_ONLY_BYTEARRAY,
-                        0x77, MISSING_ZIP64_LOC_OFFSET),
+                        0x77, INVALID_ZIP64_EXTRAHDR_SIZE),
                 // Byte array representing the Zip file, LOC offset and expected ZipException Message
                 Arguments.of(ZIP_WITH_TWO_ZIP64_HEADER_ENTRIES_BYTEARRAY,
-                        0x77, MISSING_ZIP64_LOC_OFFSET)
+                        0x77, INVALID_ZIP64_EXTRAHDR_SIZE)
         );
     }
 
@@ -605,7 +601,7 @@ public class MissingZIP64EntriesTest {
         ZipException ex = assertThrows(ZipException.class, () -> {
             openWithZipFile(BAD_ZIP_NAME, ZIP_FILE_ENTRY_NAME, null);
         });
-        assertTrue(ex.getMessage().matches(errorMessage),
+        assertTrue(ex.getMessage().equals(errorMessage),
                 "Unexpected ZipException message: " + ex.getMessage());
     }
 
@@ -632,7 +628,7 @@ public class MissingZIP64EntriesTest {
         ZipException ex = assertThrows(ZipException.class, () -> {
             openWithZipFS(BAD_ZIP_NAME, ZIP_FILE_ENTRY_NAME, null);
         });
-        assertTrue(ex.getMessage().matches(errorMessage),
+        assertTrue(ex.getMessage().equals(errorMessage),
                 "Unexpected ZipException message: " + ex.getMessage());
     }
 
