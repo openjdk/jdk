@@ -1238,7 +1238,7 @@ void InterpreterMacroAssembler::call_from_interpreter(Register Rtarget_method, R
   mtctr(Rtarget_addr);
   mtlr(Rret_addr);
 
-  save_interpreter_state(Rscratch2);
+  save_interpreter_state(Rscratch2, Rscratch1);
 #ifdef ASSERT
   ld(Rscratch1, _ijava_state_neg(top_frame_sp), Rscratch2); // Rscratch2 contains fp
   sldi(Rscratch1, Rscratch1, Interpreter::logStackElementSize);
@@ -2188,7 +2188,7 @@ void InterpreterMacroAssembler::check_and_forward_exception(Register Rscratch1, 
     ld(Rtmp, simm16_rest, Rtmp);
   }
   mtctr(Rtmp);
-  save_interpreter_state(Rtmp);
+  save_interpreter_state(Rscratch1, Rscratch2);
   bctr();
 
   align(32, 12);
@@ -2196,7 +2196,7 @@ void InterpreterMacroAssembler::check_and_forward_exception(Register Rscratch1, 
 }
 
 void InterpreterMacroAssembler::call_VM(Register oop_result, address entry_point, bool check_exceptions) {
-  save_interpreter_state(R11_scratch1);
+  save_interpreter_state(R11_scratch1, R12_scratch2);
 
   MacroAssembler::call_VM(oop_result, entry_point, false);
 
@@ -2239,12 +2239,15 @@ void InterpreterMacroAssembler::call_VM(Register oop_result, address entry_point
   call_VM(oop_result, entry_point, check_exceptions);
 }
 
-void InterpreterMacroAssembler::save_interpreter_state(Register scratch) {
-  ld(scratch, 0, R1_SP);
-  std(R15_esp, _ijava_state_neg(esp), scratch);
-  std(R14_bcp, _ijava_state_neg(bcp), scratch);
-  std(R26_monitor, _ijava_state_neg(monitors), scratch);
-  if (ProfileInterpreter) { std(R28_mdx, _ijava_state_neg(mdx), scratch); }
+void InterpreterMacroAssembler::save_interpreter_state(Register scratch1, Register scratch2) {
+  assert_different_registers(scratch1, scratch2);
+  ld(scratch1, 0, R1_SP);
+  std(R15_esp, _ijava_state_neg(esp), scratch1);
+  std(R14_bcp, _ijava_state_neg(bcp), scratch1);
+  subf(scratch2, scratch1, R26_monitor);
+  sradi(scratch2, scratch2, Interpreter::logStackElementSize);
+  std(scratch2, _ijava_state_neg(monitors), scratch1);
+  if (ProfileInterpreter) { std(R28_mdx, _ijava_state_neg(mdx), scratch1); }
   // Other entries should be unchanged.
 }
 
@@ -2274,6 +2277,9 @@ void InterpreterMacroAssembler::restore_interpreter_state(Register scratch, bool
     sldi(R18_locals, R18_locals, Interpreter::logStackElementSize);
     add(R18_locals, R18_locals, scratch);
     ld(R26_monitor, _ijava_state_neg(monitors), scratch);
+    // Derelativize monitors
+    sldi(R26_monitor, R26_monitor, Interpreter::logStackElementSize);
+    add(R26_monitor, R26_monitor, scratch);
   }
 #ifdef ASSERT
   {
