@@ -130,23 +130,27 @@ public class URLEncoder {
          *
          */
         long flag0 = 0;
-        flag0 |= 1L << ' '; // 32
-        flag0 |= 1L << '*'; // 42
-        flag0 |= 1L << '-'; // 25
-        flag0 |= 1L << '.'; // 46
+        flag0 |= 1L << ' '; // ASCII 32
+        flag0 |= 1L << '*'; // ASCII 42
+        flag0 |= 1L << '-'; // ASCII 25
+        flag0 |= 1L << '.'; // ASCII 46
+
+        // ASCII 48 - 57
         for (int i = '0'; i <= '9'; ++i) {
             flag0 |= 1L << i;
         }
         DONT_NEED_ENCODING_FLAGS_0 = flag0;
 
         long flags1 = 0;
-        for (int i = 'a'; i <= 'z'; ++i) {
-            flags1 |= 1L << (i - 64);
-        }
+        // ASCII 65 - 90
         for (int i = 'A'; i <= 'Z'; ++i) {
             flags1 |= 1L << (i - 64);
         }
-        flags1 |= 1L << ('_' - 64);
+        flags1 |= 1L << ('_' - 64); // ASCII 95
+        // ASCII 97 - 122
+        for (int i = 'a'; i <= 'z'; ++i) {
+            flags1 |= 1L << (i - 64);
+        }
         DONT_NEED_ENCODING_FLAGS_1 = flags1;
 
         DEFAULT_ENCODING_NAME = StaticProperty.fileEncoding();
@@ -161,7 +165,7 @@ public class URLEncoder {
             return false;
         }
         long flags = prefix == 0 ? DONT_NEED_ENCODING_FLAGS_0 : DONT_NEED_ENCODING_FLAGS_1;
-        return (flags & (1L << (c & 0b11_1111))) != 0;
+        return (flags & (1L << (c & 0x3f))) != 0;
     }
 
     /**
@@ -341,21 +345,21 @@ public class URLEncoder {
     }
 
     private static void utf8PutSurrogatePair(byte[] buf, int off, int uc) {
-        putEncoded(buf, off, 0xf0 | ((uc >> 18)));
+        putEncoded(buf, off, 0xf0 | (uc >> 18));
         putEncoded(buf, off + 3, 0x80 | ((uc >> 12) & 0x3f));
         putEncoded(buf, off + 6, 0x80 | ((uc >> 6) & 0x3f));
         putEncoded(buf, off + 9, 0x80 | (uc & 0x3f));
     }
 
     private static void utf8Put2(byte[] buf, int off, int c) {
-        putEncoded(buf, off, 0xC0 | ((c >> 6) & 0x1F));
-        putEncoded(buf, off + 3, 0x80 | (c & 0x3F));
+        putEncoded(buf, off, 0xc0 | (c >> 6));
+        putEncoded(buf, off + 3, 0x80 | (c & 0x3f));
     }
 
     private static void utf8Put3(byte[] buf, int off, int c) {
-        putEncoded(buf, off, 0xE0 | ((c >> 12) & 0x0F));
-        putEncoded(buf, off + 3, 0x80 | ((c >> 6) & 0x3F));
-        putEncoded(buf, off + 6, 0x80 | (c & 0x3F));
+        putEncoded(buf, off, 0xe0 | (c >> 12));
+        putEncoded(buf, off + 3, 0x80 | ((c >> 6) & 0x3f));
+        putEncoded(buf, off + 6, 0x80 | (c & 0x3f));
     }
 
     private static void putEncoded(byte[] buf, int off, int c) {
