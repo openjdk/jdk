@@ -601,7 +601,9 @@ final class StringLatin1 {
 
         // Now check if there are any characters that need to be changed, or are surrogate
         for (first = 0 ; first < len; first++ ) {
-            if (!CharacterDataLatin1.instance.hasUpperCaseMapping(value[first] & 0xff)) {
+            int cp = value[first] & 0xff;
+            boolean hasUpperCaseEx = cp >= 'a' && (cp <= 'z' || cp == 181 || (cp >= 223 && cp != 247));
+            if (hasUpperCaseEx) {
                 break;
             }
         }
