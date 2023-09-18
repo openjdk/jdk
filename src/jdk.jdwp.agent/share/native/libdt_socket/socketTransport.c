@@ -1309,7 +1309,7 @@ static int readBooleanSysProp(int *result, int trueValue, int falseValue,
  * Reads java.net.preferIPv6Addresses system value, sets preferredAddressFamily to
  *  - AF_INET6 if the property is "true";
  *  - AF_INET if the property is "false".
- *  - 0 if the property is "false".
+ *  - AF_UNSPEC if the property is "system".
  * Doesn't change preferredAddressFamily if the property is not set or failed to read.
  */
 static int readPreferIPv6Addresses(JNIEnv* jniEnv,
@@ -1335,7 +1335,7 @@ static int readPreferIPv6Addresses(JNIEnv* jniEnv,
         } else if (strcmp(theValue, "false") == 0) {
             preferredAddressFamily = AF_INET;
         } else if (strcmp(theValue, "system") == 0) {
-            preferredAddressFamily = 0;
+            preferredAddressFamily = AF_UNSPEC;
         }
         (*jniEnv)->ReleaseStringUTFChars(jniEnv, value, theValue);
     }
