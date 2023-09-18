@@ -265,7 +265,7 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      *
      * @since 17
      * @jls 8.1.6 Permitted Direct Subclasses
-     * @jls 9.1.4 Permitted Direct Subclasses and Subinterfaces 
+     * @jls 9.1.4 Permitted Direct Subclasses and Subinterfaces
      */
     default List<? extends TypeMirror> getPermittedSubclasses() {
         return List.of();
