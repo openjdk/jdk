@@ -245,6 +245,22 @@ void DowncallStubGenerator::generate() {
     allocated_frame_size += BytesPerWord;
   }
 
+  // The space we have allocated will look like:
+  //
+  // FP-> |                     |
+  //      |---------------------| = frame_bottom_offset = frame_size
+  //      | (optional)          |
+  //      | capture state buf   |
+  //      |---------------------| = StubLocations::CAPTURED_STATE_BUFFER
+  //      | (optional)          |
+  //      | return buffer       |
+  //      |---------------------| = StubLocations::RETURN_BUFFER
+  //      | out/stack args      |    |                      |    |                      |
+  //      |---------------------| or | Java args spill area | or | ret. val. spill area |
+  // SP-> | shadow space        |    |                      |    |                      |
+  //
+  // Note how the last chunk can be shared, since the 3 uses occur at different times.
+
   GrowableArray<VMStorage> out_regs = ForeignGlobals::replace_place_holders(_input_registers, locs);
   VMStorage shuffle_reg = as_VMStorage(rbx);
   ArgumentShuffle arg_shuffle(filtered_java_regs, out_regs, shuffle_reg);
