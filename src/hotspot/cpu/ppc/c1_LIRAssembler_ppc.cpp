@@ -2454,7 +2454,6 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       Register original_klass_RInfo = op->tmp2()->as_register();
       Register original_Rtmp1 = op->tmp3()->as_register();
       bool keep_obj_alive = reg_conflict && (op->code() == lir_checkcast);
-      bool keep_klass_RInfo_alive = (obj == original_klass_RInfo) && should_profile;
       if (keep_obj_alive && (obj != original_Rtmp1)) { __ mr(R0, obj); }
       __ mr_if_needed(original_k_RInfo, k_RInfo);
       __ mr_if_needed(original_klass_RInfo, klass_RInfo);
@@ -2463,11 +2462,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       __ calculate_address_from_global_toc(original_Rtmp1, entry, true, true, false);
       __ mtctr(original_Rtmp1);
       __ bctrl(); // sets CR0
-      if (keep_obj_alive) {
-        if (keep_klass_RInfo_alive) { __ mr(R0, obj); }
-        __ mr(obj, dst);
-      }
-      if (keep_klass_RInfo_alive) { __ mr(klass_RInfo, keep_obj_alive ? R0 : obj); }
+      if (keep_obj_alive) { __ mr(obj, dst); }
       __ beq(CCR0, *success);
       // Fall through to failure case.
     }
