@@ -25,7 +25,7 @@
 
 package sun.util.calendar;
 
-public class CalendarUtils {
+public final class CalendarUtils {
 
     /**
      * Returns whether the specified year is a leap year in the Gregorian
