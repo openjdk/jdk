@@ -602,8 +602,8 @@ final class StringLatin1 {
         // Now check if there are any characters that need to be changed, or are surrogate
         for (first = 0 ; first < len; first++ ) {
             int cp = value[first] & 0xff;
-            boolean upperCaseEx = cp >= 'a' && (cp <= 'z' || cp == 0xb5 || (cp >= 0xdf && cp != 0xf7));
-            if (upperCaseEx) {
+            boolean notUpperCaseEx = cp >= 'a' && (cp <= 'z' || cp == 0xb5 || (cp >= 0xdf && cp != 0xf7));
+            if (notUpperCaseEx) {
                 break;
             }
         }
