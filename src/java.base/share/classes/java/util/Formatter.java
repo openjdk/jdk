@@ -2880,7 +2880,6 @@ public final class Formatter implements Closeable, Flushable {
                     int flags = 0;
                     int width;
                     if (c == '0' || flagC) {
-                        // ZERO_PAD
                         width = c1 - '0';
                         flags = Flags.parse(c);
                     } else {
