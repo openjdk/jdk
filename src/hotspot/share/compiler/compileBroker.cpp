@@ -591,7 +591,7 @@ void register_jfr_phasetype_serializer(CompilerType compiler_type) {
 // CompileBroker::compilation_init
 //
 // Initialize the Compilation object
-void CompileBroker::compilation_init_phase1(JavaThread* THREAD) {
+void CompileBroker::compilation_init(JavaThread* THREAD) {
   // No need to initialize compilation system if we do not use it.
   if (!UseCompiler) {
     return;
@@ -750,11 +750,7 @@ void CompileBroker::compilation_init_phase1(JavaThread* THREAD) {
                                           (jlong)CompileBroker::no_compile,
                                           CHECK);
   }
-}
 
-// Completes compiler initialization. Compilation requests submitted
-// prior to this will be silently ignored.
-void CompileBroker::compilation_init_phase2() {
   _initialized = true;
 }
 

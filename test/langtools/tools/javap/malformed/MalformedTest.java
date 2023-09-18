@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,21 @@
 
 /*
  * @test
- * @bug 8260403
- * @summary javap should be more robust in the face of invalid class files
- * @build InvalidSignature
- * @run main T8260403
+ * @bug 8294969
+ * @summary javap test safeguarding malformed class file
+ * @build Malformed
+ * @run main MalformedTest
  * @modules jdk.jdeps/com.sun.tools.javap
  */
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-public class T8260403 {
+public class MalformedTest {
 
     public static void main(String args[]) throws Exception {
         var sw = new StringWriter();
         int res = com.sun.tools.javap.Main.run(
-                new String[]{"-c", System.getProperty("test.classes") + "/InvalidSignature.class"},
+                new String[]{"-c", "-v", System.getProperty("test.classes") + "/Malformed.class"},
                 new PrintWriter(sw));
         System.out.println(sw);
         if (res == 0)
