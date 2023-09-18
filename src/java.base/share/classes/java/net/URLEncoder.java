@@ -159,7 +159,7 @@ public class URLEncoder {
     /**
      * dotNeedEncoding
      */
-    private static boolean dotNeedEncoding(int c) {
+    private static boolean dontNeedEncoding(int c) {
         int prefix = (c >>> 6);
         if (prefix > 1) {
             return false;
@@ -263,7 +263,7 @@ public class URLEncoder {
                 if (c == ' ') {
                     spaceCount++;
                 }
-                if (!dotNeedEncoding(c)) {
+                if (!dontNeedEncoding(c)) {
                     needEncodingCount++;
                 }
             } else {
@@ -283,7 +283,7 @@ public class URLEncoder {
                             }
                         }
                         surrogateError = true;
-                        ut8Length += 3;
+                        break;
                     } else {
                         // 3 bytes
                         ut8Length += 6;
@@ -292,26 +292,28 @@ public class URLEncoder {
             }
         }
 
-        if (needEncodingCount == 0 && spaceCount == 0) {
-            // not need change
-            return s;
-        }
+        if (!surrogateError) {
+            if (needEncodingCount == 0 && spaceCount == 0) {
+                // not need change
+                return s;
+            }
 
-        if (utf8 & !surrogateError) {
-            return encodeUTF8(s, needEncodingCount, ut8Length);
+            if (utf8) {
+                return encodeUTF8(s, needEncodingCount, ut8Length);
+            }
         }
 
         return encodeSlow(s, charset);
     }
 
     private static String encodeUTF8(String s, int needEncodingCount, int ut8Length) {
-        byte[] buf = new byte[s.length() + needEncodingCount * 2 + ut8Length];
-
+        int length = s.length();
+        byte[] buf = new byte[length + needEncodingCount * 2 + ut8Length];
         int off = 0;
-        for (int i = 0, length = s.length(); i < length; ++i) {
+        for (int i = 0; i < length; ++i) {
             char c = s.charAt(i);
             if (c < 0x80) {
-                if (dotNeedEncoding(c)) {
+                if (dontNeedEncoding(c)) {
                     buf[off++] = (byte) (c == ' ' ? '+' : c);
                 } else {
                     putEncoded(buf, off, c);
@@ -378,7 +380,7 @@ public class URLEncoder {
         for (int i = 0; i < s.length();) {
             int c = s.charAt(i);
             //System.out.println("Examining character: " + c);
-            if (dotNeedEncoding(c)) {
+            if (dontNeedEncoding(c)) {
                 if (c == ' ') {
                     c = '+';
                     needToChange = true;
@@ -421,7 +423,7 @@ public class URLEncoder {
                         }
                     }
                     i++;
-                } while (i < s.length() && !dotNeedEncoding((c = s.charAt(i))));
+                } while (i < s.length() && !dontNeedEncoding((c = s.charAt(i))));
 
                 charArrayWriter.flush();
                 String str = charArrayWriter.toString();
