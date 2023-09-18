@@ -545,10 +545,16 @@ public enum Opcode {
     /** Branch always */
     GOTO(Classfile.GOTO, 3, Kind.BRANCH, TypeKind.VoidType),
 
-    /** Jump subroutine */
+    /**
+     * Jump subroutine is discontinued opcode
+     * @see java.lang.classfile.instruction.DiscontinuedInstruction
+     */
     JSR(Classfile.JSR, 3, Kind.DISCONTINUED_JSR),
 
-    /** Return from subroutine */
+    /**
+     * Return from subroutine is discontinued opcode
+     * @see java.lang.classfile.instruction.DiscontinuedInstruction
+     */
     RET(Classfile.RET, 2, Kind.DISCONTINUED_RET),
 
     /** Access jump table by index and jump */
@@ -644,7 +650,10 @@ public enum Opcode {
     /** Branch always (wide index) */
     GOTO_W(Classfile.GOTO_W, 5, Kind.BRANCH, TypeKind.VoidType),
 
-    /** Jump subroutine (wide index) */
+    /**
+     * Jump subroutine (wide index) is discontinued opcode
+     * @see java.lang.classfile.instruction.DiscontinuedInstruction
+     */
     JSR_W(Classfile.JSR_W, 5, Kind.DISCONTINUED_JSR),
 
     /** Load int from local variable (wide index) */
@@ -677,7 +686,10 @@ public enum Opcode {
     /** Store reference into local variable (wide index) */
     ASTORE_W((Classfile.WIDE << 8) | Classfile.ASTORE, 4, Kind.STORE, TypeKind.ReferenceType, -1),
 
-    /** Return from subroutine (wide index) */
+    /**
+     * Return from subroutine (wide index) is discontinued opcode
+     * @see java.lang.classfile.instruction.DiscontinuedInstruction
+     */
     RET_W((Classfile.WIDE << 8) | Classfile.RET, 4, Kind.DISCONTINUED_RET),
 
     /** Increment local variable by constant (wide index) */
@@ -1049,6 +1061,7 @@ public enum Opcode {
          *
          * @see Opcode#JSR
          * @see Opcode#JSR_W
+         * @see java.lang.classfile.instruction.DiscontinuedInstruction
          */
         DISCONTINUED_JSR,
 
@@ -1057,6 +1070,7 @@ public enum Opcode {
          *
          * @see Opcode#RET
          * @see Opcode#RET_W
+         * @see java.lang.classfile.instruction.DiscontinuedInstruction
          */
         DISCONTINUED_RET;
     }
