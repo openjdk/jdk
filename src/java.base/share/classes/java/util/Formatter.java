@@ -2890,7 +2890,7 @@ public final class Formatter implements Closeable, Flushable {
                     char c3 = s.charAt(i + 3);
                     if (c1 == '.' && isDigit(c2) && Conversion.isValid(c3)) {
                         al.add(new FormatSpecifier(c3, 0, c - '0', c2 - '0'));
-                        return 5;
+                        return 4;
                     }
                 }
             }
