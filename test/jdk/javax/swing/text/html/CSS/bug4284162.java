@@ -52,7 +52,6 @@ public class bug4284162 {
             robot.delay(500);
 
             SwingUtilities.invokeAndWait(bug4284162::testUI);
-            robot.waitForIdle();
 
             if (!passed) {
                 throw new RuntimeException("Test failed!!" +
@@ -79,7 +78,7 @@ public class bug4284162 {
         jep.setText(text);
 
         frame.getContentPane().add(jep);
-        frame.setSize(200,200);
+        frame.setSize(200, 200);
         frame.setVisible(true);
     }
 

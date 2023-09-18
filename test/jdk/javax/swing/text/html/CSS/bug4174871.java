@@ -49,7 +49,6 @@ public class bug4174871 {
             robot.delay(500);
 
             SwingUtilities.invokeAndWait(bug4174871::testUI);
-            robot.waitForIdle();
 
             if (!passed) {
                 throw new RuntimeException("Test failed!!" +

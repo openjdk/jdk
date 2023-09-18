@@ -21,25 +21,18 @@
  * questions.
  */
 
-import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.SwingUtilities;
 
 /*
  * @test
  * @bug 4209280
- * @key headful
  * @summary Tests that no exception is thrown on unknown HTML tag
  */
 
 public class bug4209280 {
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            JFrame frame = new JFrame("Unknown HTML tag Test");
-            String html = "<html><bold>Foo</bold></html>";
-            JLabel label = new JLabel(html);
-            frame.getContentPane().add(label);
-        });
+        String html = "<html><bold>Foo</bold></html>";
+        new JLabel(html);
     }
 }
