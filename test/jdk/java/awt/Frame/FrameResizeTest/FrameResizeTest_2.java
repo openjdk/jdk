@@ -143,3 +143,4 @@ class DumbPanel extends Panel {
         super.paint(g);
     }
 }
+

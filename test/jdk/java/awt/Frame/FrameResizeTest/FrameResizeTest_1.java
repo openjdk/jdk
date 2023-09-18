@@ -91,3 +91,4 @@ class FrameResize_1 extends Frame {
         setSize(200,200);
     }
 }
+
