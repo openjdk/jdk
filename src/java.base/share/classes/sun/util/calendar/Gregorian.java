@@ -34,7 +34,7 @@ import java.util.TimeZone;
  * @since 1.5
  */
 
-public class Gregorian extends BaseCalendar {
+public final class Gregorian extends BaseCalendar {
 
     static final class Date extends BaseCalendar.Date {
         Date() {

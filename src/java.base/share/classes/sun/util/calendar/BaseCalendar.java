@@ -36,7 +36,8 @@ import java.util.TimeZone;
  * @since 1.5
  */
 
-public abstract class BaseCalendar extends AbstractCalendar {
+public sealed abstract class BaseCalendar extends AbstractCalendar
+        permits Gregorian, JulianCalendar, LocalGregorianCalendar {
 
     public static final int JANUARY = 1;
     public static final int FEBRUARY = 2;

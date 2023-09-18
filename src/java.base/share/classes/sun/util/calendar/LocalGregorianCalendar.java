@@ -36,7 +36,7 @@ import sun.security.action.GetPropertyAction;
  * @since 1.6
  */
 
-public class LocalGregorianCalendar extends BaseCalendar {
+public final class LocalGregorianCalendar extends BaseCalendar {
     private static final Era[] JAPANESE_ERAS = {
         new Era("Meiji",  "M", -3218832000000L, true),
         new Era("Taisho", "T", -1812153600000L, true),

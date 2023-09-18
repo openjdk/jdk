@@ -33,7 +33,7 @@ import java.util.TimeZone;
  * @author Masayoshi Okutsu
  * @since 1.5
  */
-public class JulianCalendar extends BaseCalendar {
+public final class JulianCalendar extends BaseCalendar {
 
     private static final int BCE = 0;
     private static final int CE = 1;
