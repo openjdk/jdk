@@ -32,6 +32,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 /**
  * Models a {@code CONSTANT_MethodType_info} constant in the constant pool of a
  * classfile.
+ * @jvms 4.4.9 The CONSTANT_MethodType_info Structure
  */
 public sealed interface MethodTypeEntry
         extends LoadableConstantEntry

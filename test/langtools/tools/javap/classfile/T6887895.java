@@ -49,8 +49,8 @@ public class T6887895 {
 
         ClassModel cm = getClassFile("T6887895$Test.class");
         ConstantPool cp = cm.constantPool();
-        for (int i = 1; i < cp.entryCount(); ++i) {
-            if (cp.entryByIndex(i) instanceof ClassEntry ce) {
+        for (PoolEntry pe : cp) {
+            if (pe instanceof ClassEntry ce) {
                 String name = ce.asInternalName();
                 System.out.println("found: " + name);
                 if (ce.asSymbol().isClassOrInterface())
