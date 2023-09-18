@@ -816,6 +816,13 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         /**
+         * @return the bsmIndex
+         */
+        public int bootstrapMethodIndex() {
+            return bsmIndex;
+        }
+
+        /**
          * @return the nameAndType
          */
         public NameAndTypeEntryImpl nameAndType() {
