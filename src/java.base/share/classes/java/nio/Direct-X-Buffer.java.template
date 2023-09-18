@@ -75,13 +75,14 @@ class Direct$Type$Buffer$RW$$BO$
 
 #if[byte]
 
-    private static class Deallocator
+    private static final class Deallocator
         implements Runnable
     {
 
-        private long address;
-        private long size;
-        private int capacity;
+        private final long address;
+        private final long size;
+        private final int capacity;
+        private volatile boolean completed;
 
         private Deallocator(long address, long size, int capacity) {
             assert (address != 0);
@@ -91,12 +92,12 @@ class Direct$Type$Buffer$RW$$BO$
         }
 
         public void run() {
-            if (address == 0) {
+            if (address == 0 || completed) {
                 // Paranoia
                 return;
             }
+            completed = true;
             UNSAFE.freeMemory(address);
-            address = 0;
             Bits.unreserveMemory(size, capacity);
         }
 

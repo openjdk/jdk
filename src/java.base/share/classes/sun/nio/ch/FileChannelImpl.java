@@ -1154,14 +1154,15 @@ public class FileChannelImpl
 
     // -- Memory-mapped buffers --
 
-    private abstract static class Unmapper
+    private sealed abstract static class Unmapper
         implements Runnable, UnmapperProxy
     {
-        private volatile long address;
+        private final long address;
         protected final long size;
         protected final long cap;
         private final FileDescriptor fd;
         private final int pagePosition;
+        private volatile boolean completed;
 
         private Unmapper(long address, long size, long cap,
                          FileDescriptor fd, int pagePosition)
@@ -1194,10 +1195,10 @@ public class FileChannelImpl
         }
 
         public void unmap() {
-            if (address == 0)
+            if (address == 0 || completed)
                 return;
+            completed = true;
             nd.unmap(address, size);
-            address = 0;
 
             // if this mapping has a valid file descriptor then we close it
             if (fd.valid()) {
@@ -1214,7 +1215,7 @@ public class FileChannelImpl
         protected abstract void decrementStats();
     }
 
-    private static class DefaultUnmapper extends Unmapper {
+    private static final class DefaultUnmapper extends Unmapper {
 
         // keep track of non-sync mapped buffer usage
         static volatile int count;
@@ -1247,7 +1248,7 @@ public class FileChannelImpl
         }
     }
 
-    private static class SyncUnmapper extends Unmapper {
+    private static final class SyncUnmapper extends Unmapper {
 
         // keep track of mapped buffer usage
         static volatile int count;
