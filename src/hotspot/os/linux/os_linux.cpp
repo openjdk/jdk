@@ -2947,10 +2947,10 @@ void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
 }
 
 static void warn_fail_pretouch_memory(void *start, void *end, size_t page_size,
-				      int err) {
+                                      int err) {
   warning("INFO: os::pretouch_memory(" PTR_FORMAT ", " PTR_FORMAT ", "
           SIZE_FORMAT ") failed; error='%s' (errno=%d)",
-	  p2i(start), p2i(end), page_size,
+          p2i(start), p2i(end), page_size,
           os::strerror(err), err);
 }
 
