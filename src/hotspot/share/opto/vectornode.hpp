@@ -876,6 +876,9 @@ class LoadVectorNode : public LoadNode {
                               ControlDependency control_dependency = LoadNode::DependsOnlyOnTest);
   uint element_size(void) { return type2aelembytes(vect_type()->element_basic_type()); }
 
+  // Needed for proper cloning.
+  virtual uint size_of() const { return sizeof(*this); }
+
 #ifdef ASSERT
   bool must_verify_alignment() const { return _must_verify_alignment; }
   void set_must_verify_alignment() { _must_verify_alignment = true; }
