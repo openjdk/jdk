@@ -622,11 +622,6 @@ sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8295343 linux-al
 sun/security/pkcs11/rsa/TestKeyFactory.java                     8295343 linux-all
 sun/security/pkcs11/KeyStore/Basic.java                         8295343 linux-all
 
-# jdk_security_infra
-security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#sslrootrsaca 8316381 generic-all
-security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#sslrootevrsaca 8316381 generic-all
-security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#sslrooteccca 8316381 generic-all
-
 ############################################################################
 
 # jdk_sound
