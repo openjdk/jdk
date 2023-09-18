@@ -438,6 +438,7 @@ private:
   HeapWord* allocate(size_t word_size) override;
   HeapWord* par_allocate(size_t word_size) override;
 
+  // Iteration
   void object_iterate(ObjectClosure* blk) override;
 
   // Compaction support
