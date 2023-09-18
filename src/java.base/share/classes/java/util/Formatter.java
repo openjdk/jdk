@@ -2863,25 +2863,21 @@ public final class Formatter implements Closeable, Flushable {
     }
 
     private static int parse0(ArrayList<FormatString> al, char c, String s, int i, int max) {
-        boolean digitC = isDigit(c);
-        if (digitC && i + 1 < max) {
+        if (isDigit(c) && i + 1 < max) {
             char c1 = s.charAt(i + 1);
             if (Conversion.isValid(c1)) {
-                int width = c - '0';
-                c = s.charAt(i + 1);
-                al.add(new FormatSpecifier(c, 0, width, -1));
+                al.add(new FormatSpecifier(c1, 0, c - '0', -1));
                 return 2;
             }
 
-            boolean digitC1 = isDigit(c1);
-            if (digitC1 && i + 2 < max) {
+            if (i + 2 < max) {
                 char c2 = s.charAt(i + 2);
-                if (Conversion.isValid(c2)) {
+                if (isDigit(c1) && Conversion.isValid(c2)) {
                     int flags = 0;
                     int width;
                     if (c == '0') {
                         // ZERO_PAD
-                        width = s.charAt(i + 1) - '0';
+                        width = c1 - '0';
                         flags = Flags.ZERO_PAD;
                     } else {
                         width = (c - '0') * 10 + c1 - '0';
@@ -2890,22 +2886,11 @@ public final class Formatter implements Closeable, Flushable {
                     return 3;
                 }
 
-                if (i + 5 < max && isDigit(c2) && s.charAt(i + 3) == '.') {
-                    char c4 = s.charAt(i + 4);
-                    char c5 = s.charAt(i + 5);
-                    if (isDigit(c4) && Conversion.isValid(c5)) {
-                        int precision = c4 - '0';
-                        int flags = 0;
-                        int width;
-                        if (c == '0') {
-                            // ZERO_PAD
-                            width = s.charAt(i + 1) - '0';
-                        } else {
-                            width = (c - '0') * 10 + c1 - '0';
-                        }
-
-                        al.add(new FormatSpecifier(c5, Flags.ZERO_PAD, width, precision));
-                        return 6;
+                if (i + 3 < max) {
+                    char c3 = s.charAt(i + 3);
+                    if (c1 == '.' && isDigit(c2) && Conversion.isValid(c3)) {
+                        al.add(new FormatSpecifier(c3, 0, c - '0', c2 - '0'));
+                        return 5;
                     }
                 }
             }
