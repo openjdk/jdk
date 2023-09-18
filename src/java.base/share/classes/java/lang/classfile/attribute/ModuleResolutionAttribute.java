@@ -72,7 +72,7 @@ public sealed interface ModuleResolutionAttribute
     /**
      *  The value of the resolution_flags item is a mask of flags used to denote
      *  properties of module resolution. The flags are as follows:
-     *
+     * <pre> {@code
      *   // Optional
      *   0x0001 (DO_NOT_RESOLVE_BY_DEFAULT)
      *
@@ -80,6 +80,7 @@ public sealed interface ModuleResolutionAttribute
      *   0x0002 (WARN_DEPRECATED)
      *   0x0004 (WARN_DEPRECATED_FOR_REMOVAL)
      *   0x0008 (WARN_INCUBATING)
+     *  } </pre>
      * @return the module resolution flags
      */
     int resolutionFlags();
