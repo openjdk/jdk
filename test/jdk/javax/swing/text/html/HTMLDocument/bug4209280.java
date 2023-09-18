@@ -36,10 +36,10 @@ public class bug4209280 {
 
     public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
-            JFrame jFrame = new JFrame("Unknown HTML tag Test");
+            JFrame frame = new JFrame("Unknown HTML tag Test");
             String html = "<html><bold>Foo</bold></html>";
             JLabel label = new JLabel(html);
-            jFrame.getContentPane().add(label);
+            frame.getContentPane().add(label);
         });
     }
 }

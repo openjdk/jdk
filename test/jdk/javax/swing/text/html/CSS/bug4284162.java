@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.awt.Robot;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
@@ -28,7 +29,7 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.View;
 import javax.swing.text.html.HTMLEditorKit;
-import java.awt.Robot;
+
 
 /*
  * @test
@@ -52,7 +53,6 @@ public class bug4284162 {
 
             SwingUtilities.invokeAndWait(bug4284162::testUI);
             robot.waitForIdle();
-            robot.delay(200);
 
             if (!passed) {
                 throw new RuntimeException("Test failed!!" +
@@ -92,6 +92,6 @@ public class bug4284162 {
 
         AttributeSet attrs = v.getAttributes();
         Object attr = attrs.getAttribute(StyleConstants.FirstLineIndent);
-        passed = (attr.toString().contains("-"));
+        passed = (attr.toString().startsWith("-"));
     }
 }

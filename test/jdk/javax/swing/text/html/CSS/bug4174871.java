@@ -21,12 +21,12 @@
  * questions.
  */
 
+import java.awt.Robot;
+import java.awt.Shape;
 import javax.swing.JFrame;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 import javax.swing.text.View;
-import java.awt.Robot;
-import java.awt.Shape;
 
 /*
  * @test
@@ -50,7 +50,6 @@ public class bug4174871 {
 
             SwingUtilities.invokeAndWait(bug4174871::testUI);
             robot.waitForIdle();
-            robot.delay(200);
 
             if (!passed) {
                 throw new RuntimeException("Test failed!!" +
@@ -75,7 +74,7 @@ public class bug4174871 {
 
         frame = new JFrame("Table CellSpacing Test");
         frame.getContentPane().add(pane);
-        frame.setSize(600,200);
+        frame.setSize(600, 200);
         frame.setVisible(true);
     }
 
@@ -86,7 +85,7 @@ public class bug4174871 {
 
         while (!(v instanceof javax.swing.text.html.ParagraphView)) {
             int n = v.getViewCount();
-            Shape sh = v.getChildAllocation(n - 1,  r);
+            Shape sh = v.getChildAllocation(n - 1, r);
             String viewName = v.getClass().getName();
             if (viewName.endsWith("TableView")) {
                 tableWidth = r.getBounds().width;

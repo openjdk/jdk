@@ -21,13 +21,13 @@
  * questions.
  */
 
+import java.awt.Robot;
+import java.awt.Shape;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 import javax.swing.text.View;
-import java.awt.Robot;
-import java.awt.Shape;
 
 /*
  * @test
@@ -51,11 +51,10 @@ public class bug4764897 {
 
             SwingUtilities.invokeAndWait(bug4764897::testUI);
             robot.waitForIdle();
-            robot.delay(200);
 
             if (!passed) {
                 throw new RuntimeException("Test failed!!" +
-                        " Borders of HTML table not rendered correctly");
+                        " Text and Borders of HTML table run over the right edge");
             }
         } finally {
             SwingUtilities.invokeAndWait(() -> {
@@ -78,7 +77,7 @@ public class bug4764897 {
 
         frame = new JFrame("Table Border Test");
         frame.getContentPane().add(pane);
-        frame.setSize(600,200);
+        frame.setSize(600, 200);
         frame.setVisible(true);
     }
 
@@ -89,7 +88,7 @@ public class bug4764897 {
         int cellsWidth = 0;
         while (!(v instanceof javax.swing.text.html.ParagraphView)) {
             int n = v.getViewCount();
-            Shape sh = v.getChildAllocation(n - 1,  r);
+            Shape sh = v.getChildAllocation(n - 1, r);
             String viewName = v.getClass().getName();
             if (viewName.endsWith("TableView")) {
                 tableWidth = r.getBounds().width;
