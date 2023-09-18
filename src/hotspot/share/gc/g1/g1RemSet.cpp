@@ -829,8 +829,6 @@ public:
     _rem_set_opt_trim_partially_time() { }
 
   bool do_heap_region(HeapRegion* r) {
-    uint const region_idx = r->hrm_index();
-
     // The individual references for the optional remembered set are per-worker, so we
     // always need to scan them.
     if (r->has_index_in_opt_cset()) {
@@ -849,7 +847,7 @@ public:
       // Scan the code root list attached to the current region
       r->code_roots_do(&cl);
 
-      _code_roots_scanned = cl.count();
+      _code_roots_scanned += cl.count();
 
       event.commit(GCId::current(), _worker_id, G1GCPhaseTimes::phase_name(_code_roots_phase));
     }
