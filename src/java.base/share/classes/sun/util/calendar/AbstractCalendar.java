@@ -44,7 +44,8 @@ import java.util.TimeZone;
  * @since 1.5
  */
 
-public abstract class AbstractCalendar extends CalendarSystem {
+public sealed abstract class AbstractCalendar extends CalendarSystem
+        permits BaseCalendar {
 
     // The constants assume no leap seconds support.
     static final int SECOND_IN_MILLIS = 1000;
