@@ -277,8 +277,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
     // 1. range of cards checked for being dirty or clean: [iter_limit_l, iter_limit_r)
     // 2. range of cards can be cleared: [clear_limit_l, clear_limit_r)
     // 3. range of objs (obj-start) can be scanned: [first_obj_addr, cur_stripe_end_addr)
-    // 4. range of large objArray elements to be scanned: [first_obj_addr, cur_stripe_end_addr)
-    //    limited to dirty regions
+    // 4. range of large objArray elements can be scanned: [first_obj_addr, cur_stripe_end_addr)
 
     CardValue* iter_limit_l;
     CardValue* iter_limit_r;
@@ -376,13 +375,16 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
       }
 
       if (large_arr != nullptr && addr_for(dirty_r) >= cast_from_oop<HeapWord*>(large_arr)) {
-        // 3. Scan the large array elements in [dirty_l, dirty_r) subject to [large_arr, cur_stripe_end_addr)
+        // 3. Scan the large array elements in [dirty_l, cur_stripe_end_addr).
+        //    Note: scanning just dirty chunks can be very slow if dirty and
+        //    clean cards are alternating therefore we don't do it.
         HeapWord* arr_l = addr_for(dirty_l);
 
-        HeapWord* arr_r = MIN2(addr_for(dirty_r),
-                               cur_stripe_end_addr);
+        HeapWord* arr_r = cur_stripe_end_addr;
 
         pm->push_array_region(large_arr, arr_l, arr_r);
+        // We're done with this stripe. Continue in the next slice.
+        break;
       }
     }
   }
@@ -412,6 +414,11 @@ void PSCardTable::scavenge_large_array_stripe(ObjectStartArray* start_array,
     return;
   }
 
+  // Constraints:
+  // 1. range of cards checked for being dirty or clean: [iter_limit_l, iter_limit_r)
+  // 2. range of cards can be cleared: [clear_limit_l, clear_limit_r)
+  // 3. range of large objArray elements can be scanned: [stripe_addr, scan_limit_r)
+
   CardValue* iter_limit_l = byte_for(stripe_addr);
   CardValue* iter_limit_r = byte_for(stripe_end_addr - 1) + 1;
   CardValue* clear_limit_l = byte_for(stripe_addr);
@@ -428,37 +435,23 @@ void PSCardTable::scavenge_large_array_stripe(ObjectStartArray* start_array,
     scan_limit_r = arr_end_addr;
   }
 
-  // Process dirty chunks, i.e. consecutive dirty cards [dirty_l, dirty_r),
-  // chunk by chunk inside [iter_limit_l, iter_limit_r).
-  CardValue* dirty_l;
-  CardValue* dirty_r;
+  // Process array elements on the first dirty card to scan_limit_r.
+  // Note: scanning just dirty chunks can be very slow if dirty and
+  // clean cards are alternating therefore we don't do it.
+  CardValue* dirty_l = find_first_dirty_card(iter_limit_l, iter_limit_r);
 
-  for (CardValue* cur_card = iter_limit_l; cur_card < iter_limit_r; cur_card = dirty_r + 1) {
-    dirty_l = find_first_dirty_card(cur_card, iter_limit_r);
-    dirty_r = find_first_clean_card(start_array, dirty_l, iter_limit_r, large_arr);
-    assert(dirty_l <= dirty_r, "inv");
-
-    // empty
-    if (dirty_l == dirty_r) {
-      assert(dirty_r == iter_limit_r, "no more dirty cards in this stripe");
-      break;
-    }
-
-    assert(*dirty_l != clean_card, "inv");
-    assert(*dirty_r == clean_card || dirty_r >= clear_limit_r,
-           "clean card or belonging to next stripe");
-
-    // Process this non-empty dirty chunk in two steps:
+  if (dirty_l < iter_limit_r) {
+    // The processing is done in two steps:
     {
-      // 1. Clear card in [dirty_l, dirty_r) subject to [clear_limit_l, clear_limit_r) constraint
+      // 1. Clear cards in [dirty_l, clear_limit_r) subject to [clear_limit_l, clear_limit_r) constraint.
       clear_cards(MAX2(dirty_l, clear_limit_l),
-                  MIN2(dirty_r, clear_limit_r));
+                  clear_limit_r);
     }
 
     {
-      // 2. Scan elements in [dirty_l, dirty_r)
+      // 2. Scan elements in [dirty_l, scan_limit_r)
       HeapWord* left = addr_for(dirty_l);
-      HeapWord* right = MIN2(addr_for(dirty_r), scan_limit_r);
+      HeapWord* right = scan_limit_r;
       pm->push_array_region(large_arr, left, right);
     }
   }
