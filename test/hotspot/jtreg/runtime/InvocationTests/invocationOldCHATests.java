@@ -69,6 +69,7 @@ public class invocationOldCHATests {
                            ", class file version: " + classFileVersion);
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xmx128M",
             "-Xcomp", "-XX:+UnlockDiagnosticVMOptions", "-XX:-UseVtableBasedCHA",
+            "-XX:MetaspaceSize=128K", "-XX:MaxMetaspaceSize=4M",
             "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
             whichTests, "--classfile_version=" + classFileVersion);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
