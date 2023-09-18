@@ -355,4 +355,19 @@ class Predicates : public StackObj {
     return _entry != _loop_entry;
   }
 };
+
+// This class iterates over the Parse Predicates of a loop.
+class ParsePredicateIterator : public StackObj {
+  GrowableArray<ParsePredicateNode*> _parse_predicates;
+  int _current_index;
+
+ public:
+  ParsePredicateIterator(const Predicates& predicates);
+
+  bool has_next() const {
+    return _current_index < _parse_predicates.length();
+  }
+
+  ParsePredicateNode* next();
+};
 #endif // SHARE_OPTO_PREDICATES_HPP

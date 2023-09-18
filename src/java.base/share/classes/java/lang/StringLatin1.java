@@ -33,7 +33,10 @@ import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.DecimalDigits;
+import jdk.internal.util.ByteArrayLittleEndian;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
@@ -41,7 +44,6 @@ import static java.lang.String.checkIndex;
 import static java.lang.String.checkOffset;
 
 final class StringLatin1 {
-
     public static char charAt(byte[] value, int index) {
         checkIndex(index, value.length);
         return (char)(value[index] & 0xff);
@@ -77,6 +79,115 @@ final class StringLatin1 {
         byte[] ret = StringUTF16.newBytesFor(len);
         inflate(value, off, ret, 0, len);
         return ret;
+    }
+
+    /**
+     * Places characters representing the integer i into the
+     * character array buf. The characters are placed into
+     * the buffer backwards starting with the least significant
+     * digit at the specified index (exclusive), and working
+     * backwards from there.
+     *
+     * @implNote This method converts positive inputs into negative
+     * values, to cover the Integer.MIN_VALUE case. Converting otherwise
+     * (negative to positive) will expose -Integer.MIN_VALUE that overflows
+     * integer.
+     *
+     * @param i     value to convert
+     * @param index next index, after the least significant digit
+     * @param buf   target buffer, Latin1-encoded
+     * @return index of the most significant digit or minus sign, if present
+     */
+    static int getChars(int i, int index, byte[] buf) {
+        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
+        int q, r;
+        int charPos = index;
+
+        boolean negative = i < 0;
+        if (!negative) {
+            i = -i;
+        }
+
+        // Generate two digits per iteration
+        while (i <= -100) {
+            q = i / 100;
+            r = (q * 100) - i;
+            i = q;
+            charPos -= 2;
+            ByteArrayLittleEndian.setShort(buf, charPos, DecimalDigits.digitPair(r));
+        }
+
+        // We know there are at most two digits left at this point.
+        if (i < -9) {
+            charPos -= 2;
+            ByteArrayLittleEndian.setShort(buf, charPos, DecimalDigits.digitPair(-i));
+        } else {
+            buf[--charPos] = (byte)('0' - i);
+        }
+
+        if (negative) {
+            buf[--charPos] = (byte)'-';
+        }
+        return charPos;
+    }
+
+    /**
+     * Places characters representing the long i into the
+     * character array buf. The characters are placed into
+     * the buffer backwards starting with the least significant
+     * digit at the specified index (exclusive), and working
+     * backwards from there.
+     *
+     * @implNote This method converts positive inputs into negative
+     * values, to cover the Long.MIN_VALUE case. Converting otherwise
+     * (negative to positive) will expose -Long.MIN_VALUE that overflows
+     * long.
+     *
+     * @param i     value to convert
+     * @param index next index, after the least significant digit
+     * @param buf   target buffer, Latin1-encoded
+     * @return index of the most significant digit or minus sign, if present
+     */
+    static int getChars(long i, int index, byte[] buf) {
+        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
+        long q;
+        int charPos = index;
+
+        boolean negative = (i < 0);
+        if (!negative) {
+            i = -i;
+        }
+
+        // Get 2 digits/iteration using longs until quotient fits into an int
+        while (i <= Integer.MIN_VALUE) {
+            q = i / 100;
+            charPos -= 2;
+            ByteArrayLittleEndian.setShort(buf, charPos, DecimalDigits.digitPair((int)((q * 100) - i)));
+            i = q;
+        }
+
+        // Get 2 digits/iteration using ints
+        int q2;
+        int i2 = (int)i;
+        while (i2 <= -100) {
+            q2 = i2 / 100;
+            charPos -= 2;
+            ByteArrayLittleEndian.setShort(buf, charPos, DecimalDigits.digitPair((q2 * 100) - i2));
+            i2 = q2;
+        }
+
+        // We know there are at most two digits left at this point.
+        if (i2 < -9) {
+            charPos -= 2;
+            ByteArrayLittleEndian.setShort(buf, charPos, DecimalDigits.digitPair(-i2));
+        } else {
+            buf[--charPos] = (byte)('0' - i2);
+        }
+
+        if (negative) {
+            buf[--charPos] = (byte)'-';
+        }
+        return charPos;
     }
 
     public static void getChars(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {

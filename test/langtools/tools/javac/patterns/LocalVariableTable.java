@@ -25,15 +25,21 @@
  * @test
  * @bug 8231827
  * @summary Ensure the LV table entries are generated for bindings
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @compile -g LocalVariableTable.java
  * @run main LocalVariableTable
  */
 
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 import java.io.*;
 import java.lang.annotation.*;
 import java.util.*;
-import com.sun.tools.classfile.*;
 
 /*
  * The test checks that a LocalVariableTable attribute is generated for the
@@ -77,29 +83,29 @@ public class LocalVariableTable {
             return;
         }
 
-        ClassFile cf = ClassFile.read(getClass().getResource(c.getName() + ".class").openStream());
-        Method m = getMethodByName(cf, c.getSimpleName().contains("Lambda") ? "lambda$" : "test");
+        ClassModel cf = Classfile.of().parse(Objects.requireNonNull(getClass().getResource(c.getName() + ".class"))
+                        .openStream().readAllBytes());
+        MethodModel m = getMethodByName(cf, c.getSimpleName().contains("Lambda") ? "lambda$" : "test");
         if (m == null) {
             error("test method not found");
             return;
         }
 
-        Code_attribute code = (Code_attribute) m.attributes.get(Attribute.Code);
+        CodeAttribute code = m.findAttribute(Attributes.CODE).orElse(null);
         if (code == null) {
             error("Code attribute not found");
             return;
         }
 
-        LocalVariableTable_attribute lvt =
-                (LocalVariableTable_attribute) code.attributes.get(Attribute.LocalVariableTable);
+        LocalVariableTableAttribute lvt = code.findAttribute(Attributes.LOCAL_VARIABLE_TABLE).orElse(null);
         if (lvt == null) {
             error("LocalVariableTable attribute not found");
             return;
         }
 
         Set<String> foundNames = new LinkedHashSet<>();
-        for (LocalVariableTable_attribute.Entry e: lvt.local_variable_table) {
-            foundNames.add(cf.constant_pool.getUTF8Value(e.name_index));
+        for (LocalVariableInfo e: lvt.localVariables()) {
+            foundNames.add(e.name().stringValue());
         }
 
         Set<String> expectNames = new LinkedHashSet<>(Arrays.asList(expect.value()));
@@ -115,9 +121,9 @@ public class LocalVariableTable {
         }
     }
 
-    Method getMethodByName(ClassFile cf, String name) throws ConstantPoolException {
-        for (Method m: cf.methods) {
-            if (m.getName(cf.constant_pool).startsWith(name))
+    MethodModel getMethodByName(ClassModel cf, String name) {
+        for (MethodModel m: cf.methods()) {
+            if (m.methodName().stringValue().startsWith(name))
                 return m;
         }
         return null;
