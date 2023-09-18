@@ -46,6 +46,8 @@ import jdk.internal.util.ArraysSupport;
  * @author Mark Reinhold
  */
 class ChannelInputStream extends InputStream {
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
+
     private final ReadableByteChannel ch;
     private ByteBuffer bb;
     private byte[] bs;       // Invoker's previous array
@@ -58,20 +60,6 @@ class ChannelInputStream extends InputStream {
         this.ch = ch;
     }
 
-    /*
-     * Reads at most Streams.DEFAULT_BUFFER_SIZE bytes into the given buffer.
-     * If the channel is selectable then it must be configured blocking.
-     */
-    private int readBytes(ByteBuffer bb) throws IOException {
-        int pos = bb.position();
-        int rem = bb.limit() - pos;
-        if (rem <= 0)
-            return 0;
-
-        bb.limit(pos + Integer.min(rem, Streams.DEFAULT_BUFFER_SIZE));
-        return ch.read(bb);
-    }
-
     /**
      * Reads a sequence of bytes from the channel into the given buffer.
      */
@@ -80,10 +68,10 @@ class ChannelInputStream extends InputStream {
             synchronized (sc.blockingLock()) {
                 if (!sc.isBlocking())
                     throw new IllegalBlockingModeException();
-                return readBytes(bb);
+                return ch.read(bb);
             }
         } else {
-            return readBytes(bb);
+            return ch.read(bb);
         }
     }
 
@@ -154,7 +142,7 @@ class ChannelInputStream extends InputStream {
             capacity = Math.max(ArraysSupport.newLength(capacity,
                                                         1,         // min growth
                                                         capacity), // pref growth
-                                Streams.DEFAULT_BUFFER_SIZE);
+                                DEFAULT_BUFFER_SIZE);
             buf = Arrays.copyOf(buf, capacity);
             buf[nread++] = (byte)n;
         }

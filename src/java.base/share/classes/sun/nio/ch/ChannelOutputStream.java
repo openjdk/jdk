@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,15 +64,10 @@ class ChannelOutputStream extends OutputStream {
      * If the channel is selectable then it must be configured blocking.
      */
     private void writeFully(ByteBuffer bb) throws IOException {
-        int pos = bb.position();
-        int rem = bb.limit() - pos;
-        while (rem > 0) {
-            bb.limit(pos + Integer.min(rem, Streams.DEFAULT_BUFFER_SIZE));
+        while (bb.remaining() > 0) {
             int n = ch.write(bb);
             if (n <= 0)
-                throw new IOException("no bytes written");
-            pos += n;
-            rem -=n;
+                throw new RuntimeException("no bytes written");
         }
     }
 
