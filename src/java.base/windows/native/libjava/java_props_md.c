@@ -216,23 +216,15 @@ getHomeFromShell32()
         HRESULT hr;
 
         /*
-         * SHELL32 DLL is delay load DLL and we can use the trick with
-         * __try/__except block.
+         * For Windows Vista and later (or patched MS OS) we need to use
+         * [SHGetKnownFolderPath] call to avoid MAX_PATH length limitation.
+         * Shell32.dll (version 6.0.6000 or later)
          */
-        __try {
-            /*
-             * For Windows Vista and later (or patched MS OS) we need to use
-             * [SHGetKnownFolderPath] call to avoid MAX_PATH length limitation.
-             * Shell32.dll (version 6.0.6000 or later)
-             */
-            hr = SHGetKnownFolderPath(&FOLDERID_Profile, KF_FLAG_DONT_VERIFY, NULL, &u_path);
-        } __except(EXCEPTION_EXECUTE_HANDLER) {
-            /* Exception: no [SHGetKnownFolderPath] entry */
-            hr = E_FAIL;
-        }
+        hr = SHGetKnownFolderPath(&FOLDERID_Profile, KF_FLAG_DONT_VERIFY, NULL, &u_path);
 
         if (FAILED(hr)) {
             WCHAR path[MAX_PATH+1];
+            CoTaskMemFree(u_path);
 
             /* fallback solution for WinXP and Windows 2000 */
             hr = SHGetFolderPathW(NULL, CSIDL_FLAG_DONT_VERIFY | CSIDL_PROFILE, NULL, SHGFP_TYPE_CURRENT, path);
