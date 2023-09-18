@@ -2863,22 +2863,26 @@ public final class Formatter implements Closeable, Flushable {
     }
 
     private static int parse0(ArrayList<FormatString> al, char c, String s, int i, int max) {
-        if (isDigit(c) && i + 1 < max) {
+        boolean digitC = isDigit(c);
+        if (i + 1 < max) {
             char c1 = s.charAt(i + 1);
-            if (Conversion.isValid(c1)) {
+            if (digitC && Conversion.isValid(c1)) {
                 al.add(new FormatSpecifier(c1, 0, c - '0', -1));
                 return 2;
             }
 
             if (i + 2 < max) {
                 char c2 = s.charAt(i + 2);
-                if (isDigit(c1) && Conversion.isValid(c2)) {
+                boolean flagC = false;
+                if ((digitC || (flagC = Flags.isFlag(c)))
+                        && isDigit(c1) && Conversion.isValid(c2)
+                ) {
                     int flags = 0;
                     int width;
-                    if (c == '0') {
+                    if (c == '0' || flagC) {
                         // ZERO_PAD
                         width = c1 - '0';
-                        flags = Flags.ZERO_PAD;
+                        flags = Flags.parse(c);
                     } else {
                         width = (c - '0') * 10 + c1 - '0';
                     }
@@ -2886,7 +2890,7 @@ public final class Formatter implements Closeable, Flushable {
                     return 3;
                 }
 
-                if (i + 3 < max) {
+                if (digitC && i + 3 < max) {
                     char c3 = s.charAt(i + 3);
                     if (c1 == '.' && isDigit(c2) && Conversion.isValid(c3)) {
                         al.add(new FormatSpecifier(c3, 0, c - '0', c2 - '0'));
@@ -4746,6 +4750,13 @@ public final class Formatter implements Closeable, Flushable {
                 case '(' -> PARENTHESES;
                 case '<' -> PREVIOUS;
                 default -> throw new UnknownFormatFlagsException(String.valueOf(c));
+            };
+        }
+
+        private static boolean isFlag(char c) {
+            return switch (c) {
+                case '-', '#', '+', ' ', '0', ',', '(', '<' -> true;
+                default -> false;
             };
         }
 

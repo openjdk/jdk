@@ -54,8 +54,18 @@ public class StringFormat {
     }
 
     @Benchmark
+    public String intFormat1() {
+        return "%-6d".formatted(i);
+    }
+
+    @Benchmark
     public String floatFormat() {
         return "%7.3f".formatted((float) i);
+    }
+
+    @Benchmark
+    public String floatFormat2() {
+        return "%17.3f".formatted((float) i);
     }
 
     @Benchmark
