@@ -30,17 +30,17 @@
 
 GENSRC_INDICCONJUNCTBREAK := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/util/regex/IndicConjunctBreak.java
 
-INDICCONJUNCTBREAKTEMP = $(MODULE_SRC)/share/classes/jdk/internal/util/regex/IndicConjunctBreak.java.template
-INDICCONJUNCTBREAKPROPS = $(MODULE_SRC)/share/data/unicodedata/DerivedCoreProperties.txt
-INDICCONJUNCTBREAKPARAMS = InCB\=Linker InCB\=Extend InCB\=Consonant
+INDICCONJUNCTBREAKTEMP := $(MODULE_SRC)/share/classes/jdk/internal/util/regex/IndicConjunctBreak.java.template
+INDICCONJUNCTBREAKPROPS := $(MODULE_SRC)/share/data/unicodedata/DerivedCoreProperties.txt
+INDICCONJUNCTBREAKPARAMS := InCB=Linker InCB=Extend InCB=Consonant
 
 $(GENSRC_INDICCONJUNCTBREAK): $(BUILD_TOOLS_JDK) $(INDICCONJUNCTBREAKTEMP) $(INDICCONJUNCTBREAKPROPS)
 	$(call LogInfo, Generating $@)
 	$(call MakeTargetDir)
 	$(TOOL_GENERATEEXTRAPROPERTIES) \
-		$(INDICCONJUNCTBREAKTEMP) \
-		$(INDICCONJUNCTBREAKPROPS) \
-		$(GENSRC_INDICCONJUNCTBREAK) \
-		$(INDICCONJUNCTBREAKPARAMS)
+	    $(INDICCONJUNCTBREAKTEMP) \
+	    $(INDICCONJUNCTBREAKPROPS) \
+	    $(GENSRC_INDICCONJUNCTBREAK) \
+	    $(INDICCONJUNCTBREAKPARAMS)
 
 TARGETS += $(GENSRC_INDICCONJUNCTBREAK)
