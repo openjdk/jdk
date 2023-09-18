@@ -27,14 +27,11 @@
  * @run main bug4140421
  */
 
-import java.lang.reflect.InvocationTargetException;
-
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 
 public class bug4140421 {
-    public static void main(String[] args) throws InterruptedException,
-            InvocationTargetException {
+    public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             JToolBar tb = new JToolBar("MyToolBar");
             if (!tb.getName().equals("MyToolBar")) {

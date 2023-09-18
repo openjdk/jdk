@@ -27,15 +27,12 @@
  * @run main bug4196662
  */
 
-import java.lang.reflect.InvocationTargetException;
-
 import javax.swing.JButton;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 
 public class bug4196662 {
-    public static void main(String[] args) throws InterruptedException,
-            InvocationTargetException {
+    public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             JToolBar tb = new JToolBar();
             tb.add(new JButton("Button1"));
