@@ -829,6 +829,8 @@ public:
     _rem_set_opt_trim_partially_time() { }
 
   bool do_heap_region(HeapRegion* r) {
+    uint const region_idx = r->hrm_index();
+
     // The individual references for the optional remembered set are per-worker, so we
     // always need to scan them.
     if (r->has_index_in_opt_cset()) {
