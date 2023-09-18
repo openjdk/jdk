@@ -38,8 +38,6 @@ vmTestbase/vm/mlvm/mixed/stress/regression/b6969574/INDIFY_Test.java 8265295 lin
 
 serviceability/AsyncGetCallTrace/MyPackage/ASGCTBaseTest.java 8303168 linux-x64
 
-serviceability/sa/TestJhsdbJstackMixed.java 8248675 linux-aarch64
-
 serviceability/sa/ClhsdbInspect.java 8283578 windows-x64
 
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_a/TestDescription.java 8308367 windows-x64

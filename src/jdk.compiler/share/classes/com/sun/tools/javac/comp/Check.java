@@ -4712,7 +4712,7 @@ public class Check {
                                          TreeInfo.unguardedCase(testCase);
                         } else if (label instanceof JCPatternCaseLabel patternCL &&
                                    testCaseLabel instanceof JCPatternCaseLabel testPatternCaseLabel &&
-                                   TreeInfo.unguardedCase(testCase)) {
+                                   (testCase.equals(c) || TreeInfo.unguardedCase(testCase))) {
                             dominated = patternDominated(testPatternCaseLabel.pat,
                                                          patternCL.pat);
                         }

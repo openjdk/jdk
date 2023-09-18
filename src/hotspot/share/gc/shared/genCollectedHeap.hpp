@@ -197,7 +197,6 @@ public:
   // Iteration functions.
   void oop_iterate(OopIterateClosure* cl);
   void object_iterate(ObjectClosure* cl) override;
-  Space* space_containing(const void* addr) const;
 
   // A CollectedHeap is divided into a dense sequence of "blocks"; that is,
   // each address in the (reserved) heap is a member of exactly
@@ -227,9 +226,6 @@ public:
   HeapWord* allocate_new_tlab(size_t min_size,
                               size_t requested_size,
                               size_t* actual_size) override;
-
-  // Ensure parsability
-  void ensure_parsability(bool retire_tlabs) override;
 
   // Total number of full collections completed.
   unsigned int total_full_collections_completed() {
