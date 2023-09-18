@@ -1880,7 +1880,10 @@ bool Arguments::check_vm_args_consistency() {
   if (status && EnableJVMCI) {
     PropertyList_unique_add(&_system_properties, "jdk.internal.vm.ci.enabled", "true",
         AddProperty, UnwriteableProperty, InternalProperty);
-    if (ClassLoader::is_module_observable("jdk.internal.vm.ci")) {
+    if (UseJVMCINativeLibrary) {
+      // When using libjvmci, do not automatically add jdk.internal.vm.ci to the
+      // root module graph. It must be done explicitly with --add-modules.
+    } else if (ClassLoader::is_module_observable("jdk.internal.vm.ci")) {
       if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", addmods_count++)) {
         return false;
       }
