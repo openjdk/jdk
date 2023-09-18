@@ -2866,35 +2866,45 @@ public final class Formatter implements Closeable, Flushable {
         boolean digitC = isDigit(c);
         if (i + 1 < max) {
             char c1 = s.charAt(i + 1);
-            if (digitC && Conversion.isValid(c1)) {
-                al.add(new FormatSpecifier(c1, 0, c - '0', -1));
+
+            int width = -1;
+            int flags = 0;
+            boolean flagC = Flags.isFlag(c);
+            if ((digitC || flagC) && Conversion.isValid(c1)) {
+                if (flagC) {
+                    flags = Flags.parse(c);
+                } else {
+                    width = c - '0';
+                }
+                al.add(new FormatSpecifier(c1, flags, width, -1));
                 return 2;
             }
 
             if (i + 2 < max) {
                 char c2 = s.charAt(i + 2);
-                boolean flagC = false;
-                if ((digitC || (flagC = Flags.isFlag(c)))
-                        && isDigit(c1) && Conversion.isValid(c2)
-                ) {
-                    int flags = 0;
-                    int width;
-                    if (c == '0' || flagC) {
-                        width = c1 - '0';
+                boolean flagC1 = Flags.isFlag(c1);
+                boolean digitC1 = isDigit(c1);
+                if (Conversion.isValid(c2)) {
+                    if (flagC && (flagC1 || digitC1)) {
                         flags = Flags.parse(c);
-                    } else {
+                        if (flagC1) {
+                            flags |= Flags.parse(c1);
+                        } else {
+                            width = c1 - '0';
+                        }
+                    } else if (digitC && (c != '0') && digitC1){
                         width = (c - '0') * 10 + c1 - '0';
+                    } else {
+                        return 0;
                     }
                     al.add(new FormatSpecifier(c2, flags, width, -1));
                     return 3;
                 }
 
-                if (digitC && i + 3 < max) {
-                    char c3 = s.charAt(i + 3);
-                    if (c1 == '.' && isDigit(c2) && Conversion.isValid(c3)) {
-                        al.add(new FormatSpecifier(c3, 0, c - '0', c2 - '0'));
-                        return 4;
-                    }
+                char c3;
+                if (digitC && c1 == '.' && isDigit(c2) && i + 3 < max && Conversion.isValid(c3 = s.charAt(i + 3))) {
+                    al.add(new FormatSpecifier(c3, 0, c - '0', c2 - '0'));
+                    return 4;
                 }
             }
         }
