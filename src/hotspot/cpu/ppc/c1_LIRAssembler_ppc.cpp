@@ -2467,14 +2467,9 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
         if (keep_klass_RInfo_alive) { __ mr(R0, obj); }
         __ mr(obj, dst);
       }
-      if (should_profile) {
-        __ bne(CCR0, *failure);
-        if (keep_klass_RInfo_alive) { __ mr(klass_RInfo, keep_obj_alive ? R0 : obj); }
-        __ b(*success);
-      } else {
-        __ beq(CCR0, *success);
-        // Fall through to failure case.
-      }
+      if (keep_klass_RInfo_alive) { __ mr(klass_RInfo, keep_obj_alive ? R0 : obj); }
+      __ beq(CCR0, *success);
+      // Fall through to failure case.
     }
   }
 
