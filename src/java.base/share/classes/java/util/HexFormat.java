@@ -178,7 +178,6 @@ public final class HexFormat {
     private final String prefix;
     private final String suffix;
     private final Case digitCase;
-    private final int hexBase;
 
     private enum Case {
         LOWERCASE,
@@ -199,7 +198,6 @@ public final class HexFormat {
         this.prefix = Objects.requireNonNull(prefix, "prefix");
         this.suffix = Objects.requireNonNull(suffix, "suffix");
         this.digitCase = digitCase;
-        this.hexBase = (digitCase == Case.UPPERCASE ? 'A' : 'a') - 10;
     }
 
     /**
@@ -646,7 +644,13 @@ public final class HexFormat {
      */
     public char toLowHexDigit(int value) {
         value = value & 0xf;
-        return (char) ((value < 10 ? '0' : hexBase) + value);
+        if (value < 10) {
+            return (char)('0' + value);
+        }
+        if (digitCase == Case.LOWERCASE) {
+            return (char)('a' - 10 + value);
+        }
+        return (char)('A' - 10 + value);
     }
 
     /**
@@ -661,7 +665,13 @@ public final class HexFormat {
      */
     public char toHighHexDigit(int value) {
         value = (value >> 4) & 0xf;
-        return (char) ((value < 10 ? '0' : hexBase) + value);
+        if (value < 10) {
+            return (char)('0' + value);
+        }
+        if (digitCase == Case.LOWERCASE) {
+            return (char)('a' - 10 + value);
+        }
+        return (char)('A' - 10 + value);
     }
 
     /**
