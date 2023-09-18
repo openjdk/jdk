@@ -32,7 +32,6 @@
  */
 
 import java.awt.BorderLayout;
-import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -43,8 +42,7 @@ import javax.swing.SwingUtilities;
 public class ReplaceCompTab {
     static JFrame f;
 
-    public static void main(String[] args) throws InterruptedException,
-            InvocationTargetException {
+    public static void main(String[] args) throws Exception {
         try {
             SwingUtilities.invokeAndWait(() -> {
                 f = new JFrame("ReplaceCompTab");
@@ -71,8 +69,6 @@ public class ReplaceCompTab {
                 try {
                     tabbedpane.addTab("Second", null);
                 } catch (Exception e) {
-                    System.out.println(e);
-                    e.printStackTrace();
                     throw new RuntimeException("Adding first null " +
                             "component failed:");
                 }

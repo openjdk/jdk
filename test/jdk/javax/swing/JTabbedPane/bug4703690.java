@@ -35,7 +35,8 @@ import java.awt.Robot;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.InputEvent;
-import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -44,105 +45,103 @@ import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 
 public class bug4703690 {
-    static JFrame fr;
+    static JFrame frame;
     static JTabbedPane tabbedPane;
-    static JPanel panel;
     static JButton one, two;
 
-    static volatile boolean focusButtonTwo = false;
-    static volatile boolean switchToTabTwo = false;
-    static volatile boolean focusButtonOne = false;
+    static final CountDownLatch focusButtonTwo = new CountDownLatch(1);
+    static final CountDownLatch switchToTabTwo = new CountDownLatch(1);
+    static final CountDownLatch focusButtonOne = new CountDownLatch(1);
     static Robot robot;
 
     static Point p;
     static Rectangle rect;
 
-    public static void main(String[] args) throws InterruptedException,
-            InvocationTargetException {
+    public static void main(String[] args) throws Exception {
         bug4703690 test = new bug4703690();
         try {
             SwingUtilities.invokeAndWait(() -> {
-                fr = new JFrame("bug4703690");
+                frame = new JFrame("bug4703690");
 
-                panel = new JPanel();
+                JPanel panel = new JPanel();
                 one = new JButton("Button 1");
                 panel.add(one);
                 two = new JButton("Button 2");
                 panel.add(two);
 
                 tabbedPane = new JTabbedPane();
-                fr.getContentPane().add(tabbedPane);
+                frame.getContentPane().add(tabbedPane);
                 tabbedPane.addTab("Tab one", panel);
                 tabbedPane.addTab("Tab two", new JPanel());
 
                 two.addFocusListener(new FocusAdapter() {
                     public void focusGained(FocusEvent e) {
-                        focusButtonTwo = true;
+                        focusButtonTwo.countDown();
                     }
                 });
 
                 tabbedPane.addChangeListener(e -> {
                     if (tabbedPane.getSelectedIndex() == 1) {
-                        switchToTabTwo = true;
+                        switchToTabTwo.countDown();
                     }
                 });
 
-                fr.setBounds(10, 10, 200, 200);
-                fr.setVisible(true);
-                fr.setLocationRelativeTo(null);
+                frame.setSize(200, 200);
+                frame.setLocationRelativeTo(null);
+                frame.setVisible(true);
             });
 
             test.execute();
         } finally {
             SwingUtilities.invokeAndWait(() -> {
-                if (fr != null) {
-                    fr.dispose();
+                if (frame != null) {
+                    frame.dispose();
                 }
             });
         }
     }
 
-    public void execute() {
-        try {
-            robot = new Robot();
-            robot.setAutoDelay(50);
-            robot.delay(1000);
-            two.requestFocus();
+    public void execute() throws Exception {
+        robot = new Robot();
+        robot.setAutoDelay(50);
 
-            one.addFocusListener(new FocusAdapter() {
-                    public void focusGained(FocusEvent e) {
-                        focusButtonOne = true;
-                    }
-                });
+        two.requestFocus();
 
-            SwingUtilities.invokeAndWait(() -> {
-                p = tabbedPane.getLocationOnScreen();
-                rect = tabbedPane.getBoundsAt(1);
-            });
-
-            robot.delay(1000);
-            robot.mouseMove(p.x + rect.x + rect.width / 2,
-                            p.y + rect.y + rect.height / 2);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-
-            robot.delay(1000);
-
-            SwingUtilities.invokeAndWait(() -> {
-                p = tabbedPane.getLocationOnScreen();
-                rect = tabbedPane.getBoundsAt(0);
-            });
-
-            robot.delay(1000);
-            robot.mouseMove(p.x + rect.x + rect.width / 2,
-                            p.y + rect.y + rect.height / 2);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        } catch (Exception t) {
-            throw new RuntimeException("Test failed", t);
+        if (!focusButtonTwo.await(1, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Button two didn't receive focus");
         }
 
-        if (!focusButtonOne) {
+        one.addFocusListener(new FocusAdapter() {
+            public void focusGained(FocusEvent e) {
+                focusButtonOne.countDown();
+            }
+        });
+
+        // Switch to tab two
+        SwingUtilities.invokeAndWait(() -> {
+            p = tabbedPane.getLocationOnScreen();
+            rect = tabbedPane.getBoundsAt(1);
+        });
+        robot.mouseMove(p.x + rect.x + rect.width / 2,
+                p.y + rect.y + rect.height / 2);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+
+        if (!switchToTabTwo.await(1, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Switching to tab two failed");
+        }
+
+        // Switch to tab one
+        SwingUtilities.invokeAndWait(() -> {
+            p = tabbedPane.getLocationOnScreen();
+            rect = tabbedPane.getBoundsAt(0);
+        });
+        robot.mouseMove(p.x + rect.x + rect.width / 2,
+                p.y + rect.y + rect.height / 2);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+
+        if (!focusButtonOne.await(1, TimeUnit.SECONDS)) {
             throw new RuntimeException("The 'Button 1' button doesn't have focus");
         }
     }

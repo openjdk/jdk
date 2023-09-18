@@ -29,23 +29,17 @@
  */
 
 import java.awt.event.ActionEvent;
-import java.beans.PropertyChangeListener;
 
+import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JTextField;
 
 public class bug4244613 {
     /** Auxilliary class implementing Action
     */
-    static class NullAction implements Action {
-        public void addPropertyChangeListener(
-                       PropertyChangeListener listener) {}
-        public void removePropertyChangeListener(
-                       PropertyChangeListener listener) {}
-        public void putValue(String key, Object value) {}
-        public void setEnabled(boolean b) {}
+    static class NullAction extends AbstractAction {
+        @Override
         public void actionPerformed(ActionEvent e) {}
-
         public Object getValue(String key) { return null; }
         public boolean isEnabled() { return false; }
     }

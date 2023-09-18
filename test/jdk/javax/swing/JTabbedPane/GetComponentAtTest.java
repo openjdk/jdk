@@ -30,11 +30,9 @@
  * @run main GetComponentAtTest
  */
 
-import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Robot;
-import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -44,8 +42,7 @@ import javax.swing.SwingUtilities;
 public class GetComponentAtTest {
    static JFrame f;
 
-   public static void main(String[] args) throws InterruptedException,
-           InvocationTargetException, AWTException {
+   public static void main(String[] args) throws Exception {
       try {
          Robot robot = new Robot();
          SwingUtilities.invokeAndWait(() -> {

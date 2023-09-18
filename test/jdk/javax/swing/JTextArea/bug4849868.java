@@ -28,11 +28,9 @@
  * @run main bug4849868
  */
 
-import java.awt.AWTException;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
-import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
@@ -50,8 +48,7 @@ public class bug4849868 {
     private static int end;
     private static int len;
 
-    public static void main(String[] args) throws InterruptedException,
-            InvocationTargetException, AWTException {
+    public static void main(String[] args) throws Exception {
         try {
             Robot robot = new Robot();
             robot.setAutoDelay(100);
@@ -66,14 +63,15 @@ public class bug4849868 {
                         JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
                 f.getContentPane().add(pane);
                 f.setSize(300, 300);
-                f.setVisible(true);
                 f.setLocationRelativeTo(null);
+                f.setVisible(true);
             });
 
+            robot.waitForIdle();
             robot.delay(1000);
 
-            SwingUtilities.invokeAndWait(() -> p =
-                    textArea.getLocationOnScreen());
+            SwingUtilities.invokeAndWait(() ->
+                    p = textArea.getLocationOnScreen());
 
             robot.mouseMove(p.x, p.y);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
