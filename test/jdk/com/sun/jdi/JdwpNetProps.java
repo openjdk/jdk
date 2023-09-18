@@ -39,7 +39,7 @@ import java.util.Map;
 
 /*
  * @test
- * @bug 8184770
+ * @bug 8184770 8313804
  * @summary Tests that JDWP agent honors jdk net properties
  * @library /test/lib
  *
@@ -67,19 +67,26 @@ public class JdwpNetProps {
             new ListenTest("localhost", ipv4Address)
                     .preferIPv4Stack(false)
                     .run(TestResult.Success);
+            new ListenTest("localhost", ipv4Address)
+                    .preferIPv4Stack(true)
+                    .preferIPv6Addresses("system")
+                    .run(TestResult.Success);
             if (ipv6Address != null) {
                 // - only IPv4, so connection prom IPv6 should fail
                 new ListenTest("localhost", ipv6Address)
                         .preferIPv4Stack(true)
-                        .preferIPv6Addresses(true)
+                        .preferIPv6Addresses("true")
                         .run(TestResult.AttachFailed);
                 // - listen on IPv4
                 new ListenTest("localhost", ipv6Address)
-                        .preferIPv6Addresses(false)
+                        .preferIPv6Addresses("false")
                         .run(TestResult.AttachFailed);
                 // - listen on IPv6
                 new ListenTest("localhost", ipv6Address)
-                        .preferIPv6Addresses(true)
+                        .preferIPv6Addresses("true")
+                        .run(TestResult.Success);
+                new ListenTest("localhost", ipv6Address)
+                        .preferIPv6Addresses("system")
                         .run(TestResult.Success);
             }
         } else {
@@ -100,7 +107,7 @@ public class JdwpNetProps {
         private final String listenAddress;
         private final InetAddress connectAddress;
         private Boolean preferIPv4Stack;
-        private Boolean preferIPv6Addresses;
+        private String preferIPv6Addresses;
         public ListenTest(String listenAddress, InetAddress connectAddress) {
             this.listenAddress = listenAddress;
             this.connectAddress = connectAddress;
@@ -109,7 +116,7 @@ public class JdwpNetProps {
             preferIPv4Stack = value;
             return this;
         }
-        public ListenTest preferIPv6Addresses(Boolean value) {
+        public ListenTest preferIPv6Addresses(String value) {
             preferIPv6Addresses = value;
             return this;
         }
@@ -120,7 +127,7 @@ public class JdwpNetProps {
                 options.add("-Djava.net.preferIPv4Stack=" + preferIPv4Stack.toString());
             }
             if (preferIPv6Addresses != null) {
-                options.add("-Djava.net.preferIPv6Addresses=" + preferIPv6Addresses.toString());
+                options.add("-Djava.net.preferIPv6Addresses=" + preferIPv6Addresses);
             }
             log("Starting listening debuggee at " + listenAddress
                     + (expectedResult == TestResult.ListenFailed ? ": expected to fail" : ""));

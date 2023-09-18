@@ -1305,6 +1305,43 @@ static int readBooleanSysProp(int *result, int trueValue, int falseValue,
     return JNI_OK;
 }
 
+/*
+ * Reads java.net.preferIPv6Addresses system value, sets preferredAddressFamily to
+ *  - AF_INET6 if the property is "true";
+ *  - AF_INET if the property is "false".
+ *  - 0 if the property is "false".
+ * Doesn't change preferredAddressFamily if the property is not set or failed to read.
+ */
+static int readPreferIPv6Addresses(JNIEnv* jniEnv,
+    jclass sysClass, jmethodID getPropMethod, const char *propName)
+{
+    jstring value;
+    jstring name = (*jniEnv)->NewStringUTF(jniEnv, propName);
+
+    if (name == NULL) {
+        return JNI_ERR;
+    }
+    value = (jstring)(*jniEnv)->CallStaticObjectMethod(jniEnv, sysClass, getPropMethod, name);
+    if ((*jniEnv)->ExceptionCheck(jniEnv)) {
+        return JNI_ERR;
+    }
+    if (value != NULL) {
+        const char *theValue = (*jniEnv)->GetStringUTFChars(jniEnv, value, NULL);
+        if (theValue == NULL) {
+            return JNI_ERR;
+        }
+        if (strcmp(theValue, "true") == 0) {
+            preferredAddressFamily = AF_INET6;
+        } else if (strcmp(theValue, "false") == 0) {
+            preferredAddressFamily = AF_INET;
+        } else if (strcmp(theValue, "system") == 0) {
+            preferredAddressFamily = 0;
+        }
+        (*jniEnv)->ReleaseStringUTFChars(jniEnv, value, theValue);
+    }
+    return JNI_OK;
+}
+
 JNIEXPORT jint JNICALL
 jdwpTransport_OnLoad(JavaVM *vm, jdwpTransportCallback* cbTablePtr,
                      jint version, jdwpTransportEnv** env)
@@ -1362,7 +1399,7 @@ jdwpTransport_OnLoad(JavaVM *vm, jdwpTransportCallback* cbTablePtr,
         }
         readBooleanSysProp(&allowOnlyIPv4, 1, 0,
             jniEnv, sysClass, getPropMethod, "java.net.preferIPv4Stack");
-        readBooleanSysProp(&preferredAddressFamily, AF_INET6, AF_INET,
+        readPreferIPv6Addresses(
             jniEnv, sysClass, getPropMethod, "java.net.preferIPv6Addresses");
     } while (0);
 
