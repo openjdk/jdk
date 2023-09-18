@@ -57,7 +57,7 @@ public final class NativeConsole {
             return "ms" + cp;
         }
         if (cp == 65001) {
-            return StandardCharsets.UTF_8.name();
+            return sun.nio.cs.UTF_8.INSTANCE.name();
         }
         return "cp" + cp;
     }
