@@ -420,7 +420,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *               <a href="package-summary.html#Statelessness">stateless</a>
      *               function that generates replacement elements
      * @return the new stream
-     * @see #flatMap flatMap
+     * @see #flatMap
      * @since 16
      */
     default <R> Stream<R> mapMulti(BiConsumer<? super T, ? super Consumer<R>> mapper) {
@@ -458,7 +458,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *               <a href="package-summary.html#Statelessness">stateless</a>
      *               function that generates replacement elements
      * @return the new stream
-     * @see #mapMulti mapMulti
+     * @see #mapMulti
      * @since 16
      */
     default IntStream mapMultiToInt(BiConsumer<? super T, ? super IntConsumer> mapper) {
@@ -496,7 +496,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *               <a href="package-summary.html#Statelessness">stateless</a>
      *               function that generates replacement elements
      * @return the new stream
-     * @see #mapMulti mapMulti
+     * @see #mapMulti
      * @since 16
      */
     default LongStream mapMultiToLong(BiConsumer<? super T, ? super LongConsumer> mapper) {
@@ -534,7 +534,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *               <a href="package-summary.html#Statelessness">stateless</a>
      *               function that generates replacement elements
      * @return the new stream
-     * @see #mapMulti mapMulti
+     * @see #mapMulti
      * @since 16
      */
     default DoubleStream mapMultiToDouble(BiConsumer<? super T, ? super DoubleConsumer> mapper) {
