@@ -70,7 +70,7 @@ public class ReplaceCompTab {
                     tabbedpane.addTab("Second", null);
                 } catch (Exception e) {
                     throw new RuntimeException("Adding first null " +
-                            "component failed:");
+                            "component failed:", e);
                 }
                 try {
                     tabbedpane.addTab("Third", null);
