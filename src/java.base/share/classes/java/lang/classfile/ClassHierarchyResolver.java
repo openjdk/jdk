@@ -101,6 +101,9 @@ public interface ClassHierarchyResolver {
      *
      * @param other the other resolver
      * @return the chained resolver
+     *
+     * @implSpec The default implementation returns resolver implemented to ask
+     *           other resolver in cases where this resolver returns {@code null}.
      */
     default ClassHierarchyResolver orElse(ClassHierarchyResolver other) {
         return new ClassHierarchyResolver() {
@@ -122,6 +125,12 @@ public interface ClassHierarchyResolver {
      *
      * @param cacheFactory the factory for the cache
      * @return the ClassHierarchyResolver with caching
+     *
+     * @implSpec The default implementation returns resolver holding an instance
+     *           of the cache map provided by the {@code cacheFactory}. It asks
+     *           the cache map always first and fills the cache map with all
+     *           resolved and also unresolved class info. The cache map may refuse
+     *           {@code null} keys and values.
      */
     default ClassHierarchyResolver cached(Supplier<Map<ClassDesc, ClassHierarchyInfo>> cacheFactory) {
         return new ClassHierarchyImpl.CachedClassHierarchyResolver(this, cacheFactory.get());
@@ -134,6 +143,9 @@ public interface ClassHierarchyResolver {
      * {@snippet file="PackageSnippets.java" region="lookup-class-hierarchy-resolver"}
      *
      * @return the ClassHierarchyResolver
+     *
+     * @implSpec The default implementation calls {@link #cached(Supplier)} with
+     *           {@link HashMap} supplier as {@code cacheFactory}.
      */
     default ClassHierarchyResolver cached() {
         record Factory() implements Supplier<Map<ClassDesc, ClassHierarchyInfo>> {

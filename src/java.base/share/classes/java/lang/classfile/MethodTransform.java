@@ -111,6 +111,10 @@ public non-sealed interface MethodTransform
         return new TransformImpl.MethodCodeTransform(xform);
     }
 
+    /**
+     * @implSpec The default implementation returns a resolved transform with all
+     *           its parts bound to the given method builder.
+     */
     @Override
     default ResolvedTransform<MethodElement> resolve(MethodBuilder builder) {
         return new TransformImpl.ResolvedTransformImpl<>(e -> accept(builder, e),
@@ -118,6 +122,13 @@ public non-sealed interface MethodTransform
                                                          () -> atStart(builder));
     }
 
+    /**
+     * @implSpec
+     * The default implementation returns this method transform chained with another
+     * method transform from the argument. Chaining of two transforms requires to
+     * involve a chained builder serving as a target builder for this transform
+     * and also as a source of elements for the downstream transform.
+     */
     @Override
     default MethodTransform andThen(MethodTransform t) {
         return new TransformImpl.ChainedMethodTransform(this, t);

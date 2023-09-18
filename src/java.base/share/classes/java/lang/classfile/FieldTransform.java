@@ -100,11 +100,22 @@ public non-sealed interface FieldTransform
         };
     }
 
+    /**
+     * @implSpec
+     * The default implementation returns this field transform chained with another
+     * field transform from the argument. Chaining of two transforms requires to
+     * involve a chained builder serving as a target builder for this transform
+     * and also as a source of elements for the downstream transform.
+     */
     @Override
     default FieldTransform andThen(FieldTransform t) {
         return new TransformImpl.ChainedFieldTransform(this, t);
     }
 
+    /**
+     * @implSpec The default implementation returns a resolved transform with all
+     *           its parts bound to the given field builder.
+     */
     @Override
     default ResolvedTransform<FieldElement> resolve(FieldBuilder builder) {
         return new TransformImpl.ResolvedTransformImpl<>(e -> accept(builder, e),

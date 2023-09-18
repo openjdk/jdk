@@ -107,6 +107,8 @@ public interface AttributeMapper<A> {
     /**
      * {@return The earliest classfile version for which this attribute is
      * applicable}
+     *
+     * @implSpec The default implementation returns {@link Classfile#JAVA_1_VERSION}
      */
     default int validSince() {
         return Classfile.JAVA_1_VERSION;
@@ -114,6 +116,8 @@ public interface AttributeMapper<A> {
 
     /**
      * {@return whether this attribute may appear more than once in a given location}
+     *
+     * @implSpec The default implementation returns {@code false}
      */
     default boolean allowMultiple() {
         return false;

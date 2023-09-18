@@ -85,11 +85,22 @@ public non-sealed interface CodeTransform
         };
     }
 
+    /**
+     * @implSpec
+     * The default implementation returns this code transform chained with another
+     * code transform from the argument. Chaining of two transforms requires to
+     * involve a chained builder serving as a target builder for this transform
+     * and also as a source of elements for the downstream transform.
+     */
     @Override
     default CodeTransform andThen(CodeTransform t) {
         return new TransformImpl.ChainedCodeTransform(this, t);
     }
 
+    /**
+     * @implSpec The default implementation returns a resolved transform;
+     *           completely bound to the given code builder.
+     */
     @Override
     default ResolvedTransform<CodeElement> resolve(CodeBuilder builder) {
         return new TransformImpl.ResolvedTransformImpl<>(e -> accept(builder, e),
