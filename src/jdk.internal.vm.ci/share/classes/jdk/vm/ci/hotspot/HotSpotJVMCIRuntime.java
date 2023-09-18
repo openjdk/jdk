@@ -564,7 +564,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
             }
             Option.printProperties(vmLogStream);
             compilerFactory.printProperties(vmLogStream);
-            System.exit(0);
+            exitHotSpot(0);
         }
 
         if (Option.PrintConfig.getBoolean()) {

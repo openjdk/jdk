@@ -842,16 +842,6 @@ void GenCollectedHeap::object_iterate(ObjectClosure* cl) {
   _old_gen->object_iterate(cl);
 }
 
-Space* GenCollectedHeap::space_containing(const void* addr) const {
-  Space* res = _young_gen->space_containing(addr);
-  if (res != nullptr) {
-    return res;
-  }
-  res = _old_gen->space_containing(addr);
-  assert(res != nullptr, "Could not find containing space");
-  return res;
-}
-
 HeapWord* GenCollectedHeap::block_start(const void* addr) const {
   assert(is_in_reserved(addr), "block_start of address outside of heap");
   if (_young_gen->is_in_reserved(addr)) {
@@ -1069,16 +1059,3 @@ void GenCollectedHeap::record_gen_tops_before_GC() {
   }
 }
 #endif  // not PRODUCT
-
-class GenEnsureParsabilityClosure: public GenCollectedHeap::GenClosure {
- public:
-  void do_generation(Generation* gen) {
-    gen->ensure_parsability();
-  }
-};
-
-void GenCollectedHeap::ensure_parsability(bool retire_tlabs) {
-  CollectedHeap::ensure_parsability(retire_tlabs);
-  GenEnsureParsabilityClosure ep_cl;
-  generation_iterate(&ep_cl, false);
-}

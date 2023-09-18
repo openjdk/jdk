@@ -110,7 +110,7 @@ runtime/cds/appcds/customLoader/HelloCustom_JFR.java 8241075 linux-all,windows-x
 applications/jcstress/copy.java 8229852 linux-all
 
 containers/docker/TestJcmd.java 8278102 linux-all
-containers/docker/TestMemoryAwareness.java 8303470 linux-x64
+containers/docker/TestMemoryAwareness.java 8303470 linux-all
 
 #############################################################################
 
@@ -130,6 +130,7 @@ serviceability/sa/ClhsdbPmap.java#core 8267433 macosx-x64
 serviceability/sa/ClhsdbPstack.java#core 8267433 macosx-x64
 serviceability/sa/TestJmapCore.java 8267433 macosx-x64
 serviceability/sa/TestJmapCoreMetaspace.java 8267433 macosx-x64
+serviceability/sa/ClhsdbDumpclass.java 8316342 generic-all
 
 serviceability/attach/ConcAttachTest.java 8290043 linux-all
 
