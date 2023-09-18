@@ -891,17 +891,12 @@ abstract class UnixFileSystem
         // get attributes of source file (don't follow links)
         try {
             sourceAttrs = UnixFileAttributes.get(source, false);
+            if (sourceAttrs.isDirectory()) {
+                // ensure source can be moved
+                access(source, W_OK);
+            }
         } catch (UnixException x) {
             x.rethrowAsIOException(source);
-        }
-
-        if (sourceAttrs.isDirectory()) {
-            // ensure source can be moved
-            try {
-                access(source, W_OK);
-            } catch (UnixException exc) {
-                exc.rethrowAsIOException(source);
-            }
         }
 
         // get attributes of target file (don't follow links)

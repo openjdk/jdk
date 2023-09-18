@@ -29,6 +29,7 @@
  */
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.CopyOption;
 import java.nio.file.FileAlreadyExistsException;
@@ -46,6 +47,7 @@ import static java.nio.file.LinkOption.*;
 import static java.nio.file.StandardCopyOption.*;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -63,6 +65,30 @@ public class CopyMoveVariations {
         FILE,
         DIR,
         LINK
+    }
+
+    private static final boolean SUPPORTS_POSIX_PERMISSIONS;
+
+    static {
+        Path tmp = null;
+        try {
+            tmp = Files.createTempFile("this", "that");
+            SUPPORTS_POSIX_PERMISSIONS =
+                Files.getFileStore(tmp).supportsFileAttributeView("posix");
+        } catch (IOException cause) {
+            throw new UncheckedIOException(cause);
+        } finally {
+            if (tmp != null) {
+                try {
+                    Files.delete(tmp);
+                } catch (IOException ignore)  {
+                }
+            }
+        }
+    }
+
+    private static boolean supportsPosixPermissions() {
+        return SUPPORTS_POSIX_PERMISSIONS;
     }
 
     private static Stream<Arguments> params() {
@@ -87,6 +113,7 @@ public class CopyMoveVariations {
     }
 
     @ParameterizedTest
+    @EnabledIf("supportsPosixPermissions")
     @MethodSource("params")
     void copyFollow(PathType type, String mode, boolean replaceExisting,
                     boolean targetExists) throws IOException {
@@ -94,6 +121,7 @@ public class CopyMoveVariations {
     }
 
     @ParameterizedTest
+    @EnabledIf("supportsPosixPermissions")
     @MethodSource("params")
     void copyNoFollow(PathType type, String mode, boolean replaceExisting,
                     boolean targetExists) throws IOException {
@@ -101,6 +129,7 @@ public class CopyMoveVariations {
     }
 
     @ParameterizedTest
+    @EnabledIf("supportsPosixPermissions")
     @MethodSource("params")
     void move(PathType type, String mode, boolean replaceExisting,
               boolean targetExists) throws IOException {
@@ -126,14 +155,12 @@ public class CopyMoveVariations {
                 }
             }
 
-            if (Files.getFileStore(source).supportsFileAttributeView("posix")) {
-                Set<PosixFilePermission> perms =
-                    PosixFilePermissions.fromString(mode);
-                if (op == OpType.COPY && type == PathType.LINK && followLinks)
-                    Files.setPosixFilePermissions(linkTarget, perms);
-                else
-                    Files.setPosixFilePermissions(source, perms);
-            }
+            Set<PosixFilePermission> perms =
+                PosixFilePermissions.fromString(mode);
+            if (op == OpType.COPY && type == PathType.LINK && followLinks)
+                Files.setPosixFilePermissions(linkTarget, perms);
+            else
+                Files.setPosixFilePermissions(source, perms);
 
             if (targetExists)
                 target = Files.createTempFile("file", "target");
