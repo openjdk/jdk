@@ -531,7 +531,7 @@ final class StringLatin1 {
         }
         int first;
         final int len = value.length;
-        // Now check if there are any characters that need to be changed, or are surrogate
+        // Now check if there are any characters that need to be changed
         for (first = 0 ; first < len; first++) {
             if (CharacterDataLatin1.instance.isUpperCase(value[first] & 0xff)) {
                 break;
