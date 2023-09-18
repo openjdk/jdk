@@ -330,26 +330,17 @@ public class AARCH64Frame extends Frame {
   //------------------------------------------------------------------------------
   // frame::adjust_unextended_sp
   private void adjustUnextendedSP() {
-    // If we are returning to a compiled MethodHandle call site, the
-    // saved_fp will in fact be a saved value of the unextended SP.  The
-    // simplest way to tell whether we are returning to such a call site
-    // is as follows:
+    // Sites calling method handle intrinsics and lambda forms are
+    // treated as any other call site. Therefore, no special action is
+    // needed when we are returning to any of these call sites.
 
     CodeBlob cb = cb();
     NMethod senderNm = (cb == null) ? null : cb.asNMethodOrNull();
     if (senderNm != null) {
-      // If the sender PC is a deoptimization point, get the original
-      // PC.  For MethodHandle call site the unextended_sp is stored in
-      // saved_fp.
-      if (senderNm.isDeoptMhEntry(getPC())) {
-        // DEBUG_ONLY(verifyDeoptMhOriginalPc(senderNm, getFP()));
-        raw_unextendedSP = getFP();
-      }
-      else if (senderNm.isDeoptEntry(getPC())) {
-        // DEBUG_ONLY(verifyDeoptOriginalPc(senderNm, raw_unextendedSp));
-      }
-      else if (senderNm.isMethodHandleReturn(getPC())) {
-        raw_unextendedSP = getFP();
+      // If the sender PC is a deoptimization point, get the original PC.
+      if (senderNm.isDeoptEntry(getPC()) ||
+          senderNm.isDeoptMhEntry(getPC())) {
+        // DEBUG_ONLY(verifyDeoptriginalPc(senderNm, raw_unextendedSp));
       }
     }
   }

@@ -52,8 +52,8 @@ public class ResolvedClassTest {
 
         analyzer.shouldHaveExitValue(0);
 
-        analyzer.shouldNotContain("TestStatic$A::m (1 bytes)   not inlineable");
-        analyzer.shouldNotContain("TestStatic$A::m (1 bytes)   no static binding");
+        analyzer.shouldNotContain("TestStatic$A::m (1 bytes)   failed to inline: not inlineable");
+        analyzer.shouldNotContain("TestStatic$A::m (1 bytes)   failed to inline: no static binding");
 
         analyzer.shouldContain("TestStatic$A::m (1 bytes)   inline");
     }
@@ -88,7 +88,7 @@ public class ResolvedClassTest {
 
         analyzer.shouldHaveExitValue(0);
 
-        analyzer.shouldContain("TestStaticInit$A::m (1 bytes)   no static binding");
+        analyzer.shouldContain("TestStaticInit$A::m (1 bytes)   failed to inline: no static binding");
     }
 
     static class TestStaticInit {
@@ -125,10 +125,10 @@ public class ResolvedClassTest {
 
         analyzer.shouldHaveExitValue(0);
 
-        analyzer.shouldNotMatch("java\\.lang\\.invoke\\..+::linkToTargetMethod \\(9 bytes\\)   not inlineable");
+        analyzer.shouldNotMatch("java\\.lang\\.invoke\\..+::linkToTargetMethod \\(9 bytes\\)   failed to inline: not inlineable");
 
         analyzer.shouldMatch("java\\.lang\\.invoke\\..+::linkToTargetMethod \\(9 bytes\\)   force inline by annotation");
-        analyzer.shouldContain("java/lang/invoke/MethodHandle::invokeBasic (not loaded)   not inlineable");
+        analyzer.shouldContain("java/lang/invoke/MethodHandle::invokeBasic (not loaded)   failed to inline: not inlineable");
     }
 
     static class TestIndy {

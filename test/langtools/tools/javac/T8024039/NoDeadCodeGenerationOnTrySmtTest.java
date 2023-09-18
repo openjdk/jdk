@@ -29,7 +29,12 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main NoDeadCodeGenerationOnTrySmtTest
  */
@@ -37,12 +42,11 @@
 import java.io.File;
 import java.nio.file.Paths;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.Code_attribute.Exception_data;
-import com.sun.tools.classfile.Method;
 import com.sun.tools.javac.util.Assert;
 
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.CodeAttribute;
+import jdk.internal.classfile.instruction.ExceptionCatch;
 import toolbox.JavacTask;
 import toolbox.ToolBox;
 
@@ -100,21 +104,21 @@ public class NoDeadCodeGenerationOnTrySmtTest {
     }
 
     void checkClassFile(final File cfile, String[] methodsToFind) throws Exception {
-        ClassFile classFile = ClassFile.read(cfile);
+        ClassModel classFile = Classfile.of().parse(cfile.toPath());
         int numberOfmethodsFound = 0;
         for (String methodToFind : methodsToFind) {
-            for (Method method : classFile.methods) {
-                if (method.getName(classFile.constant_pool).equals(methodToFind)) {
+            for (MethodModel m : classFile.methods()) {
+                if (m.methodName().equalsString(methodToFind)) {
                     numberOfmethodsFound++;
-                    Code_attribute code = (Code_attribute) method.attributes.get("Code");
-                    Assert.check(code.exception_table_length == expectedExceptionTable.length,
+                    CodeAttribute code = m.findAttribute(Attributes.CODE).orElseThrow();
+                    Assert.check(code.exceptionHandlers().size() == expectedExceptionTable.length,
                             "The ExceptionTable found has a length different to the expected one");
                     int i = 0;
-                    for (Exception_data entry: code.exception_table) {
-                        Assert.check(entry.start_pc == expectedExceptionTable[i][0] &&
-                                entry.end_pc == expectedExceptionTable[i][1] &&
-                                entry.handler_pc == expectedExceptionTable[i][2] &&
-                                entry.catch_type == expectedExceptionTable[i][3],
+                    for (ExceptionCatch entry: code.exceptionHandlers()) {
+                        Assert.check(code.labelToBci(entry.tryStart()) == expectedExceptionTable[i][0] &&
+                                     code.labelToBci(entry.tryEnd()) == expectedExceptionTable[i][1] &&
+                                     code.labelToBci(entry.handler()) == expectedExceptionTable[i][2] &&
+                                     (entry.catchType().isPresent()? entry.catchType().get().index(): 0)== expectedExceptionTable[i][3],
                                 "Exception table entry at pos " + i + " differ from expected.");
                         i++;
                     }

@@ -72,6 +72,7 @@ public class invokevirtualTests {
                            ", class file version: " + classFileVersion);
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xmx128M", option,
             "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
+            "-XX:MetaspaceSize=128K", "-XX:MaxMetaspaceSize=4M",
             "invokevirtual.Generator", "--classfile_version=" + classFileVersion);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         try {

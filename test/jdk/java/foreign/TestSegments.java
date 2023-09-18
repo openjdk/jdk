@@ -225,6 +225,21 @@ public class TestSegments {
         assertTrue(segment.isAccessibleBy(new Thread()) != isConfined);
     }
 
+    @Test(dataProvider = "segmentFactories")
+    public void testToString(Supplier<MemorySegment> segmentSupplier) {
+        var segment = segmentSupplier.get();
+        String s = segment.toString();
+        assertTrue(s.startsWith("MemorySegment{"));
+        assertTrue(s.contains("address: 0x"));
+        assertTrue(s.contains("byteSize: "));
+        if (segment.heapBase().isPresent()) {
+            assertTrue(s.contains("heapBase: ["));
+        } else {
+            assertFalse(s.contains("heapBase: "));
+        }
+        assertFalse(s.contains("Optional"));
+    }
+
     @DataProvider(name = "segmentFactories")
     public Object[][] segmentFactories() {
         List<Supplier<MemorySegment>> l = List.of(
@@ -233,7 +248,7 @@ public class TestSegments {
                 () -> MemorySegment.ofArray(new double[] { 1d, 2d, 3d, 4d} ),
                 () -> MemorySegment.ofArray(new float[] { 1.0f, 2.0f, 3.0f, 4.0f }),
                 () -> MemorySegment.ofArray(new int[] { 1, 2, 3, 4 }),
-                () -> MemorySegment.ofArray(new long[] { 1l, 2l, 3l, 4l } ),
+                () -> MemorySegment.ofArray(new long[] { 1L, 2L, 3L, 4L } ),
                 () -> MemorySegment.ofArray(new short[] { 1, 2, 3, 4 } ),
                 () -> Arena.ofAuto().allocate(4L, 1),
                 () -> Arena.ofAuto().allocate(4L, 8),

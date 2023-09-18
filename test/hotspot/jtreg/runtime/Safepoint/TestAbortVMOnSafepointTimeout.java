@@ -30,7 +30,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test TestAbortVMOnSafepointTimeout
  * @summary Check if VM can kill thread which doesn't reach safepoint,
  *          test grace period before AbortVMOnSafepointTimeout kicks in
- * @bug 8219584 8227528
+ * @bug 8219584 8227528 8315795
  * @requires vm.flagless
  * @library /testlibrary /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -68,7 +68,7 @@ public class TestAbortVMOnSafepointTimeout {
                 "-XX:+SafepointTimeout",
                 "-XX:+SafepointALot",
                 "-XX:+AbortVMOnSafepointTimeout",
-                "-XX:AbortVMOnSafepointTimeoutDelay=2500",
+                "-XX:AbortVMOnSafepointTimeoutDelay=10000", // Using 10 seconds instead of a smaller value for windows-debug
                 "-XX:SafepointTimeoutDelay=50",
                 "-XX:GuaranteedSafepointInterval=1",
                 "-XX:-CreateCoredumpOnCrash",
