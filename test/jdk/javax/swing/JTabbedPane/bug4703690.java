@@ -105,7 +105,7 @@ public class bug4703690 {
         robot = new Robot();
         robot.setAutoDelay(50);
 
-        SwingUtilities.invokeAndWait(() -> two.requestFocus());
+        SwingUtilities.invokeAndWait(two::requestFocus);
 
         if (!focusButtonTwo.await(1, TimeUnit.SECONDS)) {
             throw new RuntimeException("Button two didn't receive focus");
