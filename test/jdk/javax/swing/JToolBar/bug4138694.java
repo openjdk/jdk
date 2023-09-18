@@ -38,7 +38,7 @@ import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 
 public class bug4138694 {
-    public static final String exampleText = "Action";
+    public static final String actionName = "Action";
 
     private static class MyAction extends AbstractAction {
         public void actionPerformed(ActionEvent e) {}
@@ -48,10 +48,10 @@ public class bug4138694 {
         SwingUtilities.invokeAndWait(() -> {
             JToolBar jtb = new JToolBar();
             MyAction aa = new MyAction();
-            aa.putValue(Action.SHORT_DESCRIPTION, exampleText);
+            aa.putValue(Action.SHORT_DESCRIPTION, actionName);
             jtb.add(aa);
             JComponent c = (JComponent)jtb.getComponentAtIndex(0);
-            if (!c.getToolTipText().equals(exampleText)) {
+            if (!c.getToolTipText().equals(actionName)) {
                 throw new RuntimeException("ToolTip not set automatically...");
             }
         });
