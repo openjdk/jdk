@@ -40,10 +40,6 @@
 #include "locale_str.h"
 #include "java_props.h"
 
-#ifndef VER_PLATFORM_WIN32_WINDOWS
-#define VER_PLATFORM_WIN32_WINDOWS 1
-#endif
-
 #ifndef PROCESSOR_ARCHITECTURE_AMD64
 #define PROCESSOR_ARCHITECTURE_AMD64 9
 #endif
