@@ -28,7 +28,7 @@ package sun.util.calendar;
 import java.util.Locale;
 import java.util.TimeZone;
 
-class ImmutableGregorianDate extends BaseCalendar.Date {
+final class ImmutableGregorianDate extends BaseCalendar.Date {
     private final BaseCalendar.Date date;
 
     ImmutableGregorianDate(BaseCalendar.Date date) {

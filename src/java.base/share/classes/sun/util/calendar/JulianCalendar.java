@@ -44,13 +44,13 @@ public class JulianCalendar extends BaseCalendar {
     };
     private static final int JULIAN_EPOCH = -1;
 
-    private static class Date extends BaseCalendar.Date {
-        protected Date() {
+    static final class Date extends BaseCalendar.Date {
+        Date() {
             super();
             setCache(1, -1L, 365); // January 1, 1 CE (Julian)
         }
 
-        protected Date(TimeZone zone) {
+        Date(TimeZone zone) {
             super(zone);
             setCache(1, -1L, 365); // January 1, 1 CE (Julian)
         }
@@ -66,7 +66,7 @@ public class JulianCalendar extends BaseCalendar {
             return this;
         }
 
-        protected void setKnownEra(Era era) {
+        void setKnownEra(Era era) {
             super.setEra(era);
         }
 

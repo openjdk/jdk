@@ -63,13 +63,13 @@ public class LocalGregorianCalendar extends BaseCalendar {
     private String name;
     private Era[] eras;
 
-    public static class Date extends BaseCalendar.Date {
+    public static final class Date extends BaseCalendar.Date {
 
-        protected Date() {
+        Date() {
             super();
         }
 
-        protected Date(TimeZone zone) {
+        Date(TimeZone zone) {
             super(zone);
         }
 

@@ -140,7 +140,8 @@ public abstract class BaseCalendar extends AbstractCalendar {
         744365, // 2039
     };
 
-    public abstract static class Date extends CalendarDate {
+    public sealed abstract static class Date extends CalendarDate
+            permits Gregorian.Date, ImmutableGregorianDate, JulianCalendar.Date, LocalGregorianCalendar.Date {
         protected Date() {
             super();
         }

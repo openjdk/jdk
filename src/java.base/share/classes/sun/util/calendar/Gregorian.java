@@ -36,12 +36,12 @@ import java.util.TimeZone;
 
 public class Gregorian extends BaseCalendar {
 
-    static class Date extends BaseCalendar.Date {
-        protected Date() {
+    static final class Date extends BaseCalendar.Date {
+        Date() {
             super();
         }
 
-        protected Date(TimeZone zone) {
+        Date(TimeZone zone) {
             super(zone);
         }
 
