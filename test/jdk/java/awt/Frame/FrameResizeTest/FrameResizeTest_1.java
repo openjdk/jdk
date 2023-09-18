@@ -35,7 +35,7 @@ import java.lang.String;
  * @bug 4041442
  * @key headful
  * @summary Test resizing a frame containing a canvas
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual FrameResizeTest_1
  */

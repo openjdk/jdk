@@ -38,7 +38,7 @@ import java.awt.event.ActionListener;
  * @test
  * @key headful
  * @summary Test dynamically changing frame component visibility and repacking
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual FrameRepackTest
 */
