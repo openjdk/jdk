@@ -128,13 +128,13 @@ final class DualPivotQuicksort {
     private static final int MAX_RECURSION_DEPTH = 64 * DELTA;
 
     /**
-     * Represents a function that accepts an array and sorts a specified range
-     * of the array into ascending order.
+     * Represents a function that accepts an array and sorts the specified range
+     * of an array into ascending order.
      */
     @FunctionalInterface
     private static interface SortOperation<A> {
         /**
-         * Sorts the specified range of the array.
+         * Sorts the specified range of an array.
          *
          * @param a the array to be sorted
          * @param low the index of the first element, inclusive, to be sorted
@@ -144,9 +144,7 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Sorts the specified array into ascending numerical order using
-     * mixed insertion sort.The intrinsic is free to choose its own
-     * sorting algorithm.
+     * Sorts the specified range of an array into ascending numerical order.
      *
      * @param elemType the class of the elements of the array to be sorted
      * @param array the array to be sorted
@@ -164,13 +162,13 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Represents a function that accepts an array and partitions a specified range
-     * of the array based on the pivots provided.
+     * Represents a function that accepts an array and partitions the specified range
+     * of an array using the pivots provided.
      */
     @FunctionalInterface
     interface PartitionOperation<A> {
         /**
-         * Partitions the specified range of the array.
+         * Partitions the specified range of an array using the given pivots.
          *
          * @param a the array to be sorted
          * @param low the index of the first element, inclusive, to be sorted
@@ -182,7 +180,7 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Partitions the specified array based on the two pivots provided.
+     * Partitions the specified range of an array using the two pivots provided.
      *
      * @param elemType the class of the array to be sorted
      * @param array the array to be sorted
@@ -401,7 +399,7 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Partitions the specified range of the array using the two pivots provided.
+     * Partitions the specified range of an array using the two pivots provided.
      *
      * @param array the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
@@ -490,7 +488,7 @@ final class DualPivotQuicksort {
 
 
     /**
-     * Partitions the specified range of the array using a single pivot provided.
+     * Partitions the specified range of an array using a single pivot provided.
      *
      * @param array the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
@@ -501,7 +499,6 @@ final class DualPivotQuicksort {
      */
     @ForceInline
     private static int[] partitionSinglePivot(int[] a, int low, int high, int indexPivot1, int indexPivot2) {
-        if (indexPivot1 != indexPivot2) throw new IllegalArgumentException("Both the pivot indices must be same");
 
         int end = high - 1;
         int lower = low;
@@ -1206,7 +1203,7 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Partitions the specified range of the array using the two pivots provided.
+     * Partitions the specified range of an array using the two pivots provided.
      *
      * @param array the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
@@ -1294,7 +1291,7 @@ final class DualPivotQuicksort {
 
 
     /**
-     * Partitions the specified range of the array using a single pivot provided.
+     * Partitions the specified range of an array using a single pivot provided.
      *
      * @param array the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
@@ -1305,7 +1302,6 @@ final class DualPivotQuicksort {
      */
     @ForceInline
     private static int[] partitionSinglePivot(long[] a, int low, int high, int indexPivot1, int indexPivot2) {
-        if (indexPivot1 != indexPivot2) throw new IllegalArgumentException("Both the pivot indices must be same");
 
         int end = high - 1;
         int lower = low;
@@ -2798,7 +2794,7 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Partitions the specified range of the array using the two pivots provided.
+     * Partitions the specified range of an array using the two pivots provided.
      *
      * @param array the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
@@ -2886,7 +2882,7 @@ final class DualPivotQuicksort {
 
 
     /**
-     * Partitions the specified range of the array using a single pivot provided.
+     * Partitions the specified range of an array using a single pivot provided.
      *
      * @param array the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
@@ -2897,7 +2893,6 @@ final class DualPivotQuicksort {
      */
     @ForceInline
     private static int[] partitionSinglePivot(float[] a, int low, int high, int indexPivot1, int indexPivot2) {
-        if (indexPivot1 != indexPivot2) throw new IllegalArgumentException("Both the pivot indices must be same");
         int end = high - 1;
         int lower = low;
         int upper = end;
@@ -3654,7 +3649,7 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Partitions the specified range of the array using the two pivots provided.
+     * Partitions the specified range of an array using the two pivots provided.
      *
      * @param array the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
@@ -3743,7 +3738,7 @@ final class DualPivotQuicksort {
 
 
     /**
-     * Partitions the specified range of the array using a single pivot provided.
+     * Partitions the specified range of an array using a single pivot provided.
      *
      * @param array the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
@@ -3753,7 +3748,6 @@ final class DualPivotQuicksort {
      */
     @ForceInline
     private static int[] partitionSinglePivot(double[] a, int low, int high, int indexPivot1, int indexPivot2) {
-        if (indexPivot1 != indexPivot2) throw new IllegalArgumentException("Both the pivot indices must be same");
 
         int end = high - 1;
         int lower = low;

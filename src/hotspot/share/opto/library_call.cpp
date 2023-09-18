@@ -5405,7 +5405,7 @@ bool LibraryCallKit::inline_array_partition() {
   guarantee(alloc != nullptr, "created above");
   Node* pivotIndices_adr = basic_plus_adr(pivotIndices, arrayOopDesc::base_offset_in_bytes(T_INT));
 
-  // pass the bastic type enum to the stub
+  // pass the basic type enum to the stub
   Node* elemType = intcon(bt);
 
   // Call the stub
@@ -5450,7 +5450,7 @@ bool LibraryCallKit::inline_array_sort() {
   }
   Node* obj_adr = make_unsafe_address(obj, offset);
 
-  // pass the bastic type enum to the stub
+  // pass the basic type enum to the stub
   Node* elemType = intcon(bt);
 
   // Call the stub.

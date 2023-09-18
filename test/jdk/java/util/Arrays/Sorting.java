@@ -47,7 +47,7 @@ public class Sorting {
 
     // Array lengths used in a long run (default)
     private static final int[] LONG_RUN_LENGTHS = {
-        1, 3, 8, 21, 55, 100, 1_000, 10_000, 100_000};
+        1, 3, 8, 21, 55, 100, 1_000, 10_000, 100_000 };
 
     // Array lengths used in a short run
     private static final int[] SHORT_RUN_LENGTHS = {
