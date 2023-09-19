@@ -45,7 +45,6 @@ public class ObjectSynchronizer {
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type objectSynchronizerType = db.lookupType("ObjectSynchronizer");
     Type monitorListType = db.lookupType("MonitorList");
-    // Static fields will be left in the default initialized state if the lookup fails
     Address monitorListAddr = objectSynchronizerType.getField("_in_use_list").getStaticFieldAddress();
     inUseListHead = monitorListType.getAddressField("_head").getAddress(monitorListAddr);
   }
