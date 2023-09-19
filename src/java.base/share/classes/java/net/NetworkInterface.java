@@ -93,7 +93,7 @@ public final class NetworkInterface {
      * @return the name of this network interface
      */
     public String getName() {
-        return name;
+            return name;
     }
 
     /**
@@ -354,7 +354,7 @@ public final class NetworkInterface {
      * @see #networkInterfaces()
      */
     public static Enumeration<NetworkInterface> getNetworkInterfaces()
-            throws SocketException {
+        throws SocketException {
         NetworkInterface[] netifs = getAll();
         if (netifs != null && netifs.length > 0) {
             return enumerationFromArray(netifs);
@@ -384,7 +384,7 @@ public final class NetworkInterface {
      * @since 9
      */
     public static Stream<NetworkInterface> networkInterfaces()
-            throws SocketException {
+        throws SocketException {
         NetworkInterface[] netifs = getAll();
         if (netifs != null && netifs.length > 0) {
             return streamFromArray(netifs);
@@ -406,7 +406,7 @@ public final class NetworkInterface {
      *          If an I/O error occurs.
      */
     /* package-private */ static boolean isBoundInetAddress(InetAddress addr)
-            throws SocketException {
+        throws SocketException {
         return boundInetAddress0(addr);
     }
 
@@ -439,19 +439,19 @@ public final class NetworkInterface {
     }
 
     private static native NetworkInterface[] getAll()
-            throws SocketException;
+        throws SocketException;
 
     private static native NetworkInterface getByName0(String name)
-            throws SocketException;
+        throws SocketException;
 
     private static native NetworkInterface getByIndex0(int index)
-            throws SocketException;
+        throws SocketException;
 
     private static native boolean boundInetAddress0(InetAddress addr)
-            throws SocketException;
+        throws SocketException;
 
     private static native NetworkInterface getByInetAddress0(InetAddress addr)
-            throws SocketException;
+        throws SocketException;
 
     /**
      * Returns whether a network interface is up and running.
