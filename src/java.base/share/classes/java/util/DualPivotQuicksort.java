@@ -31,7 +31,6 @@ import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.ForceInline;
 
-
 /**
  * This class implements powerful and fully optimized versions, both
  * sequential and parallel, of the Dual-Pivot Quicksort algorithm by
@@ -52,8 +51,6 @@ import jdk.internal.vm.annotation.ForceInline;
  *
  * @since 1.7 * 14
  */
-
-
 final class DualPivotQuicksort {
 
     /**
