@@ -48,7 +48,6 @@ public class ObjectSynchronizer {
     // Static fields will be left in the default initialized state if the lookup fails
     Address monitorListAddr = objectSynchronizerType.getField("_in_use_list").getStaticFieldAddress();
     inUseListHead = monitorListType.getAddressField("_head").getAddress(monitorListAddr);
-    isSupported = true;
   }
 
   public long identityHashValueFor(Oop obj) {
@@ -74,11 +73,7 @@ public class ObjectSynchronizer {
   }
 
   public static Iterator objectMonitorIterator() {
-    if (isSupported) {
-      return new ObjectMonitorIterator();
-    } else {
-      return null;
-    }
+    return new ObjectMonitorIterator();
   }
 
   private static class ObjectMonitorIterator implements Iterator {
@@ -114,6 +109,5 @@ public class ObjectSynchronizer {
   }
 
   private static Address inUseListHead;
-  private static boolean isSupported;
 
 }
