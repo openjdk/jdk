@@ -230,7 +230,7 @@ public class URLEncoder {
         int i;
         for (i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
-            if (c >= 128 || !DONT_NEED_ENCODING.test(c) || c == ' ') {
+            if (!DONT_NEED_ENCODING.test(c) || c == ' ') {
                 break;
             }
         }
