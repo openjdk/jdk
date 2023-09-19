@@ -400,7 +400,7 @@ public class TestAlignVector {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.AND_VB, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static Object[] test1(byte[] a, byte[] b, byte mask) {
         for (int i = 0; i < RANGE; i+=8) {
             // Safe to vectorize with AlignVector
@@ -552,7 +552,7 @@ public class TestAlignVector {
                   IRNode.AND_VS,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=16"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     @IR(counts = {IRNode.LOAD_VECTOR_S, "= 0",
                   IRNode.AND_VS, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
@@ -687,7 +687,7 @@ public class TestAlignVector {
                   IRNode.AND_VS,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIf = {"MaxVectorSize", ">=16"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static Object[] test10d(short[] a, short[] b, short mask) {
         for (int i = 13; i < RANGE-16; i+=8) {
             // init + offset -> aligned
@@ -987,7 +987,7 @@ public class TestAlignVector {
                   IRNode.ADD_VB, "> 0",
                   IRNode.ADD_VI, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static Object[] test13aIB(int[] a, byte[] b) {
         for (int i = 0; i < RANGE; i++) {
             a[i]++;
@@ -1002,7 +1002,7 @@ public class TestAlignVector {
                   IRNode.ADD_VI, "> 0",
                   IRNode.ADD_VS, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static Object[] test13aIS(int[] a, short[] b) {
         for (int i = 0; i < RANGE; i++) {
             a[i]++;
@@ -1021,7 +1021,7 @@ public class TestAlignVector {
                   IRNode.ADD_VI, "> 0",
                   IRNode.ADD_VL, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static Object[] test13aBSIL(byte[] a, short[] b, int[] c, long[] d) {
         for (int i = 0; i < RANGE; i++) {
             a[i]++;
@@ -1054,7 +1054,7 @@ public class TestAlignVector {
                   IRNode.ADD_VB, "> 0",
                   IRNode.ADD_VI, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static Object[] test13bIB(int[] a, byte[] b) {
         for (int i = 1; i < RANGE; i++) {
             a[i]++;
@@ -1069,7 +1069,7 @@ public class TestAlignVector {
                   IRNode.ADD_VI, "> 0",
                   IRNode.ADD_VS, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static Object[] test13bIS(int[] a, short[] b) {
         for (int i = 1; i < RANGE; i++) {
             a[i]++;
@@ -1088,7 +1088,7 @@ public class TestAlignVector {
                   IRNode.ADD_VI, "> 0",
                   IRNode.ADD_VL, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static Object[] test13bBSIL(byte[] a, short[] b, int[] c, long[] d) {
         for (int i = 1; i < RANGE; i++) {
             a[i]++;
