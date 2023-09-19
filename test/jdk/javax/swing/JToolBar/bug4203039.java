@@ -39,12 +39,14 @@ import javax.swing.SwingUtilities;
  */
 
 public class bug4203039 {
-    private static final String instructionsText = "This test is used to " +
-            "verify that application-installed\ncomponents prevent the " +
-            "toolbar from docking in\nthose locations.\n\nThis test has " +
-            "installed components on the SOUTH\nand EAST, so verify the " +
-            "toolbar cannot dock in those\nlocations but can dock on the " +
-            "NORTH and WEST";
+    private static final String instructionsText = """
+            This test is used to verify that application-installed
+            components prevent the toolbar from docking in
+            those locations.
+
+            This test has installed components on the SOUTH
+            and EAST, so verify the toolbar cannot dock in those
+            locations but can dock on the NORTH and WEST""";
 
     public static void main(String[] args) throws Exception {
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
@@ -52,7 +54,7 @@ public class bug4203039 {
                 .instructions(instructionsText)
                 .testTimeOut(5)
                 .rows(10)
-                .columns(30)
+                .columns(35)
                 .build();
 
         SwingUtilities.invokeAndWait(() -> {
