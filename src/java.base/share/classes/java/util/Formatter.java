@@ -2885,7 +2885,7 @@ public final class Formatter implements Closeable, Flushable {
                 boolean flagC1 = Flags.isFlag(c1);
                 boolean digitC1 = isDigit(c1);
                 if (Conversion.isValid(c2)) {
-                    if (flagC && (flagC1 || digitC1)) {
+                    if (flagC && (flagC1 || digitC1) && c != c1) {
                         flags = Flags.parse(c);
                         if (flagC1) {
                             flags |= Flags.parse(c1);
