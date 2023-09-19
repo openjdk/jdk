@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 import java.awt.BorderLayout;
 
 import javax.swing.JComponent;
