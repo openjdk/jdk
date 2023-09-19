@@ -34,6 +34,7 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.util.Enumeration;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * This class represents an Internet Protocol version 6 (IPv6) address.
@@ -496,8 +497,10 @@ class Inet6Address extends InetAddress {
      * @return an {@link Inet6Address} object with no hostname set constructed from the
      *         IPv6 address literal.
      * @throws IllegalArgumentException if literal cannot be parsed as an IPv6 address literal.
+     * @throws NullPointerException if the {@code addressLiteral} is @{code null}.
      */
     public static Inet6Address ofLiteral(String addressLiteral) {
+        Objects.requireNonNull(addressLiteral);
         try {
             InetAddress inetAddress = parseAddressString(addressLiteral, true);
             // IPv4-mapped IPv6 address literals are rejected

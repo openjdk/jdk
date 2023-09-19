@@ -33,6 +33,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.net.Inet4Address;
@@ -163,13 +164,16 @@ public class OfLiteralTest {
     @MethodSource("invalidLiteralArguments")
     public void invalidLiteral(InetAddressClass inetAddressClass,
                                String addressLiteral) {
-        Executable executable = switch (inetAddressClass) {
-            case INET_ADDRESS -> () -> InetAddress.ofLiteral(addressLiteral);
-            case INET4_ADDRESS -> () -> Inet4Address.ofLiteral(addressLiteral);
-            case INET6_ADDRESS -> () -> Inet6Address.ofLiteral(addressLiteral);
-        };
+        var executable = constructExecutable(inetAddressClass, addressLiteral);
         var exception = assertThrows(IllegalArgumentException.class, executable);
         System.err.println("Expected exception observed: " + exception);
+    }
+
+    @ParameterizedTest
+    @EnumSource(InetAddressClass.class)
+    public void nullLiteral(InetAddressClass inetAddressClass) {
+        var executable = constructExecutable(inetAddressClass, null);
+        assertThrows(NullPointerException.class, executable);
     }
 
     private static Stream<Arguments> invalidLiteralArguments() {
@@ -210,6 +214,14 @@ public class OfLiteralTest {
                 Arguments.of(InetAddressClass.INET_ADDRESS, "0xFFFFFFFF"),
                 Arguments.of(InetAddressClass.INET4_ADDRESS, "0xFFFFFFFF")
         );
+    }
+
+    private static Executable constructExecutable(InetAddressClass inetAddressClass, String input) {
+        return switch (inetAddressClass) {
+            case INET_ADDRESS -> () -> InetAddress.ofLiteral(input);
+            case INET4_ADDRESS -> () -> Inet4Address.ofLiteral(input);
+            case INET6_ADDRESS -> () -> Inet6Address.ofLiteral(input);
+        };
     }
 
     enum InetAddressClass {

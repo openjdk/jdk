@@ -28,6 +28,7 @@ package java.net;
 import sun.net.util.IPAddressUtil;
 
 import java.io.ObjectStreamException;
+import java.util.Objects;
 
 /**
  * This class represents an Internet Protocol version 4 (IPv4) address.
@@ -156,8 +157,10 @@ class Inet4Address extends InetAddress {
      * @return an {@link Inet4Address} object with no hostname set constructed from the
      *         IPv4 address literal.
      * @throws IllegalArgumentException if literal cannot be parsed as an IPv4 address literal.
+     * @throws NullPointerException if the {@code addressLiteral} is @{code null}.
      */
     public static Inet4Address ofLiteral(String addressLiteral) {
+        Objects.requireNonNull(addressLiteral);
         // Try to parse IPv4-compatible IPv6 addresses first
         try {
             InetAddress inetAddress = Inet6Address.parseAddressString(addressLiteral,

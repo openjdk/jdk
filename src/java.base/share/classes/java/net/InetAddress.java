@@ -1715,8 +1715,10 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      *         address literal.
      * @throws IllegalArgumentException if literal cannot be parsed as an IPv4 or IPv6
      *                                  address literal.
+     * @throws NullPointerException if the {@code addressLiteral} is @{code null}.
      */
-    public static InetAddress ofLiteral(String addressLiteral) throws IllegalArgumentException {
+    public static InetAddress ofLiteral(String addressLiteral) {
+        Objects.requireNonNull(addressLiteral);
         InetAddress inetAddress = Inet4Address.parseAddressString(addressLiteral, false);
         if (inetAddress == null) {
             try {
