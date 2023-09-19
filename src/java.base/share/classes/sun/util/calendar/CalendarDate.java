@@ -26,6 +26,7 @@
 package sun.util.calendar;
 
 import java.lang.Cloneable;
+import java.util.Locale;
 import java.util.TimeZone;
 
 /**
