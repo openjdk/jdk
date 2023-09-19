@@ -549,13 +549,6 @@ class ImmutableCollections {
             }
             return array;
         }
-
-        @Override
-        public void forEach(Consumer<? super E> action) {
-            for (int i = 0; i < size; i++) {
-                action.accept(get(i));
-            }
-        }
     }
 
     @jdk.internal.ValueBased
@@ -761,13 +754,6 @@ class ImmutableCollections {
                 }
             }
             return -1;
-        }
-
-        @Override
-        public void forEach(Consumer<? super E> action) {
-            for (var e : elements) {
-                action.accept(e);
-            }
         }
     }
 
@@ -1111,6 +1097,7 @@ class ImmutableCollections {
 
         @Override
         public void forEach(Consumer<? super E> action) {
+            Objects.requireNonNull(action);
             for (int idx = startIndex(), i = 0; i < size; i++) {
                 idx = nextElement(idx);
                 action.accept(elements[idx]);
@@ -1422,6 +1409,7 @@ class ImmutableCollections {
         @Override
         @SuppressWarnings("unchecked")
         public void forEach(BiConsumer<? super K, ? super V> action) {
+            Objects.requireNonNull(action);
             for (int idx = startIndex(), i = 0; i < size; i++) {
                 idx = nextElement(idx);
                 action.accept((K) table[idx], (V) table[idx + 1]);
