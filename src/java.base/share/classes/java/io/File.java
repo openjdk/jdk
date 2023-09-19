@@ -1676,6 +1676,11 @@ public class File
      *     file.setReadable(arg, true)
      * }
      *
+     * @apiNote
+     * On platforms which do not support setting whether a file is readable,
+     * this method does nothing and returns the value of the {@code readable}
+     * parameter.
+     *
      * @param  readable
      *          If {@code true}, sets the access permission to allow read
      *          operations; if {@code false} to disallow read operations
@@ -1762,6 +1767,11 @@ public class File
      * {@snippet lang=java :
      *     file.setExecutable(arg, true)
      * }
+     *
+     * @apiNote
+     * On platforms which do not support setting whether a file is executable,
+     * this method does nothing and returns the value of the {@code executable}
+     * parameter.
      *
      * @param   executable
      *          If {@code true}, sets the access permission to allow execute
