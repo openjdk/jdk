@@ -521,20 +521,21 @@ class java_lang_VirtualThread : AllStatic {
   JFR_ONLY(static int _jfr_epoch_offset;)
  public:
   enum {
-    NEW          = 0,
-    STARTED      = 1,
-    RUNNABLE     = 2,
-    RUNNING      = 3,
-    PARKING      = 4,
-    PARKED       = 5,
-    PINNED       = 6,
-    YIELDING     = 7,
-    TERMINATED   = 99,
+    NEW           = 0,
+    STARTED       = 1,
+    RUNNABLE      = 2,
+    RUNNING       = 3,
+    PARKING       = 4,
+    PARKED        = 5,
+    PINNED        = 6,
+    TIMED_PARKING = 7,
+    TIMED_PARKED  = 8,
+    TIMED_PINNED  = 9,
+    YIELDING      = 10,
+    TERMINATED    = 99,
 
-    // can be suspended from scheduling when unmounted
-    SUSPENDED    = 1 << 8,
-    RUNNABLE_SUSPENDED = (RUNNABLE | SUSPENDED),
-    PARKED_SUSPENDED   = (PARKED | SUSPENDED)
+    // additional state bits
+    SUSPENDED    = 1 << 8,   // suspended when unmounted
   };
 
   static void compute_offsets();

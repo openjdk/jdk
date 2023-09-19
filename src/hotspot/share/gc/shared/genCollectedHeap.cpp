@@ -832,11 +832,6 @@ bool GenCollectedHeap::is_in_partial_collection(const void* p) {
 }
 #endif
 
-void GenCollectedHeap::oop_iterate(OopIterateClosure* cl) {
-  _young_gen->oop_iterate(cl);
-  _old_gen->oop_iterate(cl);
-}
-
 void GenCollectedHeap::object_iterate(ObjectClosure* cl) {
   _young_gen->object_iterate(cl);
   _old_gen->object_iterate(cl);
