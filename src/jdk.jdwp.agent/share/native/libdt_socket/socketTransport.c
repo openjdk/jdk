@@ -727,11 +727,13 @@ socketTransport_startListening(jdwpTransportEnv* env, const char* address,
         return err;
     }
 
-    // Try to find bind address of preferred address family first.
-    for (ai = addrInfo; ai != NULL; ai = ai->ai_next) {
-        if (ai->ai_family == preferredAddressFamily) {
-            listenAddr = ai;
-            break;
+    // Try to find bind address of preferred address family first (if java.net.preferIPv6Addresses != "system").
+    if (preferredAddressFamily != AF_UNSPEC) {
+        for (ai = addrInfo; ai != NULL; ai = ai->ai_next) {
+            if (ai->ai_family == preferredAddressFamily) {
+                listenAddr = ai;
+                break;
+            }
         }
     }
 
@@ -967,8 +969,10 @@ socketTransport_attach(jdwpTransportEnv* env, const char* addressString, jlong a
         return err;
     }
 
-    /* 1st pass - preferredAddressFamily (by default IPv4), 2nd pass - the rest */
-    for (pass = 0; pass < 2 && socketFD < 0; pass++) {
+    // 1st pass - preferredAddressFamily (by default IPv4), 2nd pass - the rest;
+    // if java.net.preferIPv6Addresses == "system", only 2nd pass is needed
+    pass = preferredAddressFamily != AF_UNSPEC ? 0 : 1;
+    for (; pass < 2 && socketFD < 0; pass++) {
         for (ai = addrInfo; ai != NULL; ai = ai->ai_next) {
             if ((pass == 0 && ai->ai_family == preferredAddressFamily) ||
                 (pass == 1 && ai->ai_family != preferredAddressFamily))
