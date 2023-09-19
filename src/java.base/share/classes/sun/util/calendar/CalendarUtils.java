@@ -27,6 +27,7 @@ package sun.util.calendar;
 
 public final class CalendarUtils {
 
+    // Utility class should not be instantiated
     private CalendarUtils() {}
 
     /**
@@ -39,8 +40,8 @@ public final class CalendarUtils {
      * @see CalendarDate#isLeapYear
      */
     public static boolean isGregorianLeapYear(int gregorianYear) {
-        return (((gregorianYear % 4) == 0)
-                && (((gregorianYear % 100) != 0) || ((gregorianYear % 400) == 0)));
+        return (((gregorianYear % 4) == 0) && (((gregorianYear % 100) != 0)
+                || ((gregorianYear % 400) == 0)));
     }
 
     /**
