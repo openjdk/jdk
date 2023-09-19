@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import java.util.TimeZone;
 /*
  * @test
  * @summary Tests that the Properties.store() APIs generate output that is reproducible
- * @bug 8231640 8282023
+ * @bug 8231640 8282023 8316540
  * @library /test/lib
  * @run driver StoreReproducibilityTest
  */
@@ -52,6 +52,7 @@ public class StoreReproducibilityTest {
 
     private static final String DATE_FORMAT_PATTERN = "EEE MMM dd HH:mm:ss zzz uuuu";
     private static final String SYS_PROP_JAVA_PROPERTIES_DATE = "java.properties.date";
+    private static final String SYS_PROP_UTC_TIMEZONE = "-Duser.timezone=UTC";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN, Locale.ROOT)
             .withZone(ZoneOffset.UTC);
 
@@ -94,6 +95,7 @@ public class StoreReproducibilityTest {
             storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
+                    SYS_PROP_UTC_TIMEZONE,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -136,8 +138,9 @@ public class StoreReproducibilityTest {
             storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
+                    SYS_PROP_UTC_TIMEZONE,
                     "-Djava.security.manager",
-                    "-Djava.security.policy=" + policyFile.toString(),
+                    "-Djava.security.policy=" + policyFile,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -180,8 +183,9 @@ public class StoreReproducibilityTest {
             storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
+                    SYS_PROP_UTC_TIMEZONE,
                     "-Djava.security.manager",
-                    "-Djava.security.policy=" + policyFile.toString(),
+                    "-Djava.security.policy=" + policyFile,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -210,6 +214,7 @@ public class StoreReproducibilityTest {
             storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
+                    SYS_PROP_UTC_TIMEZONE,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -241,7 +246,8 @@ public class StoreReproducibilityTest {
         for (int i = 0; i < 2; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
-                    "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + "",
+                    "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=",
+                    SYS_PROP_UTC_TIMEZONE,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -273,6 +279,7 @@ public class StoreReproducibilityTest {
             storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
+                    SYS_PROP_UTC_TIMEZONE,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -302,6 +309,7 @@ public class StoreReproducibilityTest {
                 storedFiles.add(tmpFile);
                 final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
                         "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
+                        SYS_PROP_UTC_TIMEZONE,
                         StoreTest.class.getName(),
                         tmpFile.toString(),
                         i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -344,6 +352,7 @@ public class StoreReproducibilityTest {
                 storedFiles.add(tmpFile);
                 final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
                         "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
+                        SYS_PROP_UTC_TIMEZONE,
                         StoreTest.class.getName(),
                         tmpFile.toString(),
                         i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -440,7 +449,7 @@ public class StoreReproducibilityTest {
     private static String findNthComment(Path file, int commentIndex) throws IOException {
         List<String> comments = new ArrayList<>();
         try (final BufferedReader reader = Files.newBufferedReader(file)) {
-            String line = null;
+            String line;
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("#")) {
                     comments.add(line.substring(1));
