@@ -211,7 +211,6 @@ class HexPrinterTest {
         assertEquals(expected, actual, "Formatters.ASCII mismatch");
     }
 
-    // PrimitiveFormatters
     static Stream<Arguments> formatterParams() {
         return Stream.of(
                 Arguments.of(byte.class, ""),
