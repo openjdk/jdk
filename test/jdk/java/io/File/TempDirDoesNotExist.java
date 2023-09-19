@@ -35,7 +35,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,30 +49,37 @@ public class TempDirDoesNotExist {
 
     private static final String USER_DIR = System.getProperty("user.home");
 
+    //
+    // This class is spawned to test combinations of parameters.
+    //
     public static void main(String... args) throws IOException {
         for (String arg : args) {
-            if (arg.equals("io")) {
-                File file = null;
-                try {
-                    file = File.createTempFile("prefix", ".suffix");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    if (file != null && file.exists())
-                        file.delete();
+            switch (arg) {
+                case "io" -> {
+                    File file = null;
+                    try {
+                        file = File.createTempFile("prefix", ".suffix");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        if (file != null && file.exists())
+                            file.delete();
+                    }
                 }
-            } else if (arg.equals("nio")) {
+                case "nio" -> {
                 Path path = null;
-                try {
-                    path = Files.createTempFile("prefix", ".suffix");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    if (path != null)
-                        Files.deleteIfExists(path);
+                    try {
+                        path = Files.createTempFile("prefix", ".suffix");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        if (path != null)
+                            Files.deleteIfExists(path);
+                    }
                 }
-            } else {
-                throw new RuntimeException("unknown case: " + arg);
+                default -> {
+                    throw new RuntimeException("unknown case: " + arg);
+                }
             }
         }
     }
@@ -84,87 +90,60 @@ public class TempDirDoesNotExist {
     }
 
     public static Stream<Arguments> existingProvider() {
-        List<Arguments> list = new ArrayList<Arguments>();
-
-        // invalid custom java.io.tmpdir
-        Arguments args = Arguments.of(0, WARNING,
+        return Stream.of(Arguments.of(0, WARNING,
                                       new String[] {
                                           "-Djava.io.tmpdir=" +
                                           tempDir(),
                                           "TempDirDoesNotExist", "io"
-                                      });
-        list.add(args);
-        args = Arguments.of(0, WARNING,
+                                      }),
+                         Arguments.of(0, WARNING,
                             new String[] {
                                 "-Djava.io.tmpdir=" + tempDir(),
                                 "TempDirDoesNotExist", "nio"
-                            });
-        list.add(args);
-
-        // test with security manager
-        args = Arguments.of(0, WARNING,
+                            }),
+                         Arguments.of(0, WARNING,
                             new String[] {
                                 "-Djava.io.tmpdir=" + tempDir()
                                 + " -Djava.security.manager",
                                 "TempDirDoesNotExist", "io"
-                            });
-        list.add(args);
-        args = Arguments.of(0, WARNING,
+                            }),
+                         Arguments.of(0, WARNING,
                             new String[] {
                                 "-Djava.io.tmpdir=" + tempDir()
                                 + " -Djava.security.manager",
                                 "TempDirDoesNotExist", "nio"
-                            });
-        list.add(args);
-
-        return list.stream();
+                            }));
     }
 
     public static Stream<Arguments> nonexistentProvider() {
-        List<Arguments> list = new ArrayList<Arguments>();
-
-        // standard test with default setting for java.io.tmpdir
-        Arguments args = Arguments.of(0, WARNING,
+        return Stream.of(Arguments.of(0, WARNING,
                                       new String[] {
                                           "TempDirDoesNotExist",
                                           "io"
-                                      });
-        list.add(args);
-        args = Arguments.of(0, WARNING,
-                            new String[] {
-                                "TempDirDoesNotExist", "nio"
-                            });
-        list.add(args);
-
-        // valid custom java.io.tmpdir
-        args = Arguments.of(0, WARNING,
-                            new String[] {
-                                "-Djava.io.tmpdir=" + USER_DIR,
-                                "TempDirDoesNotExist", "io"
-                            });
-        list.add(args);
-        args = Arguments.of(0, WARNING,
-                            new String[] {
-                                "-Djava.io.tmpdir=" + USER_DIR,
-                                "TempDirDoesNotExist", "nio"
-                            });
-        list.add(args);
-
-        return list.stream();
+                                      }),
+                         Arguments.of(0, WARNING,
+                                      new String[] {
+                                          "TempDirDoesNotExist", "nio"
+                                      }),
+                         Arguments.of(0, WARNING,
+                                      new String[] {
+                                          "-Djava.io.tmpdir=" + USER_DIR,
+                                          "TempDirDoesNotExist", "io"
+                                      }),
+                         Arguments.of(0, WARNING,
+                                      new String[] {
+                                          "-Djava.io.tmpdir=" + USER_DIR,
+                                          "TempDirDoesNotExist", "nio"
+                                      }));
     }
 
     public static Stream<Arguments> counterProvider() {
-        List<Arguments> list = new ArrayList<Arguments>();
-
         // standard test with default setting for java.io.tmpdir
-        Arguments args = Arguments.of(0,
+        return Stream.of(Arguments.of(0,
                                       new String[] {
                                           "-Djava.io.tmpdir=" + tempDir(),
                                           "TempDirDoesNotExist", "io", "nio"
-                                      });
-        list.add(args);
-
-        return list.stream();
+                                      }));
     }
 
     @ParameterizedTest
