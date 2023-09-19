@@ -107,7 +107,7 @@ public final class HexDigits implements Digits {
          *  [a-f] & 0b100_0000 => 32
          *
          *  [0-9] -  0 => [0-9]
-         *  [a-f] + 32 => [A-F]
+         *  [a-f] - 32 => [A-F]
          */
         short v = DIGITS[i & 0xff];
         return ucase
