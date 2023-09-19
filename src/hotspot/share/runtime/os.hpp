@@ -225,8 +225,10 @@ class os: AllStatic {
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
   static void   pd_pretouch_memory(void *first, void *last, size_t page_size);
 
-  // Fallback to this if OS needs no specific treatment
-  static void   pretouch_memory_fallback(void *first, void *last, size_t page_size);
+  // Some platforms may have special treatments for pretouch, while most
+  // platforms do the same. So the common part of the code was extract here to
+  // avoid copying it around.
+  static void   pretouch_memory_common(void *first, void *last, size_t page_size);
 
   static char*  pd_reserve_memory_special(size_t size, size_t alignment, size_t page_size,
 

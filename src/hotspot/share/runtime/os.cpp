@@ -2123,7 +2123,7 @@ void os::pretouch_memory(void* start, void* end, size_t page_size) {
   }
 }
 
-void os::pretouch_memory_fallback(void *first, void *last, size_t page_size) {
+void os::pretouch_memory_common(void *first, void *last, size_t page_size) {
   for (char *cur = static_cast<char *>(first); /* break */; cur += page_size) {
     Atomic::add(reinterpret_cast<int *>(cur), 0, memory_order_relaxed);
     if (cur >= last) break;
