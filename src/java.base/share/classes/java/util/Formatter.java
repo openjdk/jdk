@@ -3041,6 +3041,9 @@ public final class Formatter implements Closeable, Flushable {
         FormatSpecifier(char conv, int flag, int width, int precision) {
             this(conv);
             this.flags |= flag;
+            if (Flags.contains(flags, Flags.PREVIOUS)) {
+                index = -1;
+            }
             if (width == 0) {
                 this.flags |= Flags.ZERO_PAD;
             } else {
