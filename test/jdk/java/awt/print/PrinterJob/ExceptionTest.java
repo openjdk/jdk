@@ -26,11 +26,13 @@
  * @key printer
  * @bug 6467557
  * @summary No exception should be thrown.
+ * @library /test/lib
  * @run main ExceptionTest
  */
 
 import java.awt.*;
 import java.awt.print.*;
+import jtreg.SkippedException;
 
 public class ExceptionTest {
 private TextCanvas c;
@@ -50,7 +52,7 @@ public ExceptionTest() {
            pj.print();
         } catch (PrinterException pe) {
             if (!(pe.getCause() instanceof IndexOutOfBoundsException)) {
-              throw new RuntimeException("initCause of Exception not thrown");
+              throw new SkippedException("initCause of Exception not thrown");
             }
         }
     }

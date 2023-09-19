@@ -26,12 +26,13 @@
  * @key printer
  * @bug 4463280
  * @summary No ClassCastException should occur.
+ * @library /test/lib
  * @run main GetCopiesSupported
  */
 
 import javax.print.*;
-import javax.print.attribute.*;
 import javax.print.attribute.standard.*;
+import jtreg.SkippedException;
 
 public class GetCopiesSupported {
 
@@ -41,7 +42,7 @@ public class GetCopiesSupported {
         if (service == null) {
              pservice = PrintServiceLookup.lookupPrintServices(null, null);
             if (pservice.length == 0) {
-                    throw new RuntimeException("No printer found.  TEST ABORTED");
+                    throw new SkippedException("No printer found.  TEST ABORTED");
             }
             service = pservice[0];
         }

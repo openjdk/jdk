@@ -26,16 +26,13 @@
  * @key printer
  * @bug 4903366
  * @summary No crash should occur.
+ * @library /test/lib
  * @run main SidesPageRangesTest
  */
 
-import java.awt.*;
 import javax.print.*;
 import javax.print.attribute.standard.*;
-import javax.print.attribute.*;
-import java.io.*;
-import java.util.Locale;
-import java.net.URL;
+import jtreg.SkippedException;
 
 public class SidesPageRangesTest {
         /**
@@ -56,7 +53,7 @@ public class SidesPageRangesTest {
                 if (defService == null) {
                     pservice = PrintServiceLookup.lookupPrintServices(null, null);
                     if (pservice.length == 0) {
-                        throw new RuntimeException("Printer is required for this test.  TEST ABORTED");
+                        throw new SkippedException("Printer is required for this test.  TEST ABORTED");
                     }
                     defService = pservice[0];
                 }

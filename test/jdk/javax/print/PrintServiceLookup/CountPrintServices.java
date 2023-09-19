@@ -22,18 +22,18 @@
  */
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
-import javax.print.attribute.AttributeSet;
-import javax.print.attribute.HashAttributeSet;
-import javax.print.attribute.standard.PrinterName;
+import jtreg.SkippedException;
 
 /*
  * @test
  * @bug 8032693
  * @key printer
  * @summary Test that lpstat and JDK agree whether there are printers.
+ * @library /test/lib
  */
 public class CountPrintServices {
 
@@ -51,7 +51,13 @@ public class CountPrintServices {
        return;
     }
     String[] lpcmd = { "lpstat", "-a" };
-    Process proc = Runtime.getRuntime().exec(lpcmd);
+    Process proc;
+    try {
+        proc = Runtime.getRuntime().exec(lpcmd);
+    } catch (IOException e) {
+        e.printStackTrace();
+        throw new SkippedException("lpstat not found but is required for this test.  TEST ABORTED");
+    }
     proc.waitFor();
     InputStreamReader ir = new InputStreamReader(proc.getInputStream());
     BufferedReader br = new BufferedReader(ir);

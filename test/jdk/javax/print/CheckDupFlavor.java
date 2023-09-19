@@ -26,14 +26,13 @@
  * @key printer
  * @bug 4996318 6731937
  * @summary  There should be no duplicates returned by getSupportedDocFlavors.
+ * @library /test/lib
  * @run main CheckDupFlavor
  */
 
 import javax.print.*;
-import javax.print.attribute.*;
-import javax.print.attribute.standard.*;
 import java.util.ArrayList;
-
+import jtreg.SkippedException;
 
 public class CheckDupFlavor {
     public static void main(String[] args){
@@ -42,7 +41,7 @@ public class CheckDupFlavor {
         if (defService == null) {
             pservice = PrintServiceLookup.lookupPrintServices(null, null);
             if (pservice.length == 0) {
-                throw new RuntimeException("No printer found.  TEST ABORTED");
+                throw new SkippedException("No printer found.  TEST ABORTED");
             }
             defService = pservice[0];
         }

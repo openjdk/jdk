@@ -26,12 +26,14 @@
  * @key printer
  * @bug 4429544
  * @summary This test should not throw a printer exception. Test has been modified to correspond with the behavior of 1.5 and above.
+ * @library /test/lib
  * @run main PrtException
  */
 
 import java.awt.*;
 import java.awt.print.*;
 import javax.print.*;
+import jtreg.SkippedException;
 
 public class PrtException implements Printable {
     PrinterJob pj;
@@ -44,7 +46,7 @@ public class PrtException implements Printable {
             if (defService == null) {
                 svc = PrintServiceLookup.lookupPrintServices(DocFlavor.SERVICE_FORMATTED.PRINTABLE, null);
                 if (svc.length == 0) {
-                    throw new RuntimeException("Printer is required for this test.  TEST ABORTED");
+                    throw new SkippedException("Printer is required for this test.  TEST ABORTED");
                 }
                 defService = svc[0];
             }

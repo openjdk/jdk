@@ -26,14 +26,15 @@
  * @key printer
  * @bug 4762773 6289206 6324049 6362765
  * @summary Tests that get non-null return list of printable areas.
+ * @library /test/lib
  * @run main SupportedPrintableAreas
  */
 
 
 import javax.print.*;
-import javax.print.event.*;
 import javax.print.attribute.*;
 import javax.print.attribute.standard.*;
+import jtreg.SkippedException;
 
 public class SupportedPrintableAreas {
 
@@ -43,7 +44,7 @@ public class SupportedPrintableAreas {
      if (printer == null) {
          svc = PrintServiceLookup.lookupPrintServices(DocFlavor.SERVICE_FORMATTED.PRINTABLE, null);
          if (svc.length == 0) {
-             throw new RuntimeException("Printer is required for this test.  TEST ABORTED");
+             throw new SkippedException("Printer is required for this test.  TEST ABORTED");
          }
          printer = svc[0];
      }

@@ -26,11 +26,13 @@
  * @key printer
  * @bug 8061392
  * @summary Test no NPE when printing transparency with null clip.
+ * @library /test/lib
  */
 
 import java.awt.*;
 import java.awt.image.*;
 import java.awt.print.*;
+import jtreg.SkippedException;
 
 public class NullClipARGB implements Printable {
 
@@ -40,8 +42,12 @@ public class NullClipARGB implements Printable {
             PrinterJob pj = PrinterJob.getPrinterJob();
             pj.setPrintable(new NullClipARGB());
             pj.print();
-            } catch (Exception ex) {
-             throw new RuntimeException(ex);
+        } catch (Exception ex) {
+            if (ex instanceof PrinterException) {
+                throw new SkippedException("Printer is required for this test.  TEST ABORTED");
+            } else {
+                throw new RuntimeException(ex);
+            }
         }
     }
 

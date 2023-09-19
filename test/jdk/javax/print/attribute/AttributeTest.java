@@ -26,12 +26,13 @@
  * @key printer
  * @bug 6387255
  * @summary  Tests conflict of Media values returned by isAttrValueSupported and getSupportedAttrValues.  No runtime exception should be thrown.
+ * @library /test/lib
  * @run main AttributeTest
  */
 
 import javax.print.*;
 import javax.print.attribute.standard.*;
-import javax.print.attribute.*;
+import jtreg.SkippedException;
 
 public class AttributeTest {
 
@@ -40,7 +41,7 @@ public class AttributeTest {
                 PrintService service[] = PrintServiceLookup.lookupPrintServices(null, null);
 
                 if (service.length == 0) {
-                        throw new RuntimeException("No printer found.  TEST ABORTED");
+                        throw new SkippedException("No printer found.  TEST ABORTED");
                 }
 
                 for (int x = 0; x < service.length; x ++) {
