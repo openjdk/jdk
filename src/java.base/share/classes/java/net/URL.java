@@ -1471,10 +1471,10 @@ public final class URL implements java.io.Serializable {
     private static Iterator<URLStreamHandlerProvider> providers() {
         return new Iterator<>() {
 
-            ClassLoader cl = ClassLoader.getSystemClassLoader();
-            ServiceLoader<URLStreamHandlerProvider> sl =
+            final ClassLoader cl = ClassLoader.getSystemClassLoader();
+            final ServiceLoader<URLStreamHandlerProvider> sl =
                     ServiceLoader.load(URLStreamHandlerProvider.class, cl);
-            Iterator<URLStreamHandlerProvider> i = sl.iterator();
+            final Iterator<URLStreamHandlerProvider> i = sl.iterator();
 
             URLStreamHandlerProvider next = null;
 
@@ -1589,7 +1589,7 @@ public final class URL implements java.io.Serializable {
     /**
      * A table of protocol handlers.
      */
-    static Hashtable<String,URLStreamHandler> handlers = new Hashtable<>();
+    private static final Hashtable<String, URLStreamHandler> handlers = new Hashtable<>();
     private static final Object streamHandlerLock = new Object();
 
     /**
