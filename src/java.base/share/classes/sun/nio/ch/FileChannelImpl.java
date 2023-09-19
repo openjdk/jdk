@@ -1162,7 +1162,6 @@ public class FileChannelImpl
         protected final long cap;
         private final FileDescriptor fd;
         private final int pagePosition;
-        private volatile boolean unmapped;
 
         private Unmapper(long address, long size, long cap,
                          FileDescriptor fd, int pagePosition)
@@ -1195,9 +1194,6 @@ public class FileChannelImpl
         }
 
         public void unmap() {
-            if (address == 0 || unmapped)
-                return;
-            unmapped = true;
             nd.unmap(address, size);
 
             // if this mapping has a valid file descriptor then we close it

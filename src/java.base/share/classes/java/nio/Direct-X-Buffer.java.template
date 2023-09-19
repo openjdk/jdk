@@ -75,29 +75,15 @@ class Direct$Type$Buffer$RW$$BO$
 
 #if[byte]
 
-    private static final class Deallocator implements Runnable {
-        private final long address;
-        private final long size;
-        private final int capacity;
-        private volatile boolean deallocated;
-
-        private Deallocator(long address, long size, int capacity) {
-            assert (address != 0);
-            this.address = address;
-            this.size = size;
-            this.capacity = capacity;
+    private record Deallocator(long address, long size, int capacity) implements Runnable {
+        private Deallocator {
+            assert address != 0;
         }
 
         public void run() {
-            if (address == 0 || deallocated) {
-                // Paranoia
-                return;
-            }
-            deallocated = true;
             UNSAFE.freeMemory(address);
             Bits.unreserveMemory(size, capacity);
         }
-
     }
 
     private final Cleaner cleaner;
