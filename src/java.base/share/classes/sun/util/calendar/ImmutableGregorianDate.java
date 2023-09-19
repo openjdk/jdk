@@ -47,7 +47,7 @@ final class ImmutableGregorianDate extends BaseCalendar.Date {
 
     @Override
     public CalendarDate setEra(Era era) {
-        unsupported(); return this; // To override method signature
+        unsupported(); return this;
     }
 
     @Override
@@ -57,12 +57,12 @@ final class ImmutableGregorianDate extends BaseCalendar.Date {
 
     @Override
     public CalendarDate setYear(int year) {
-        unsupported(); return this; // To override method signature
+        unsupported(); return this;
     }
 
     @Override
     public CalendarDate addYear(int n) {
-        unsupported(); return this; // To override method signature
+        unsupported(); return this;
     }
 
     @Override
@@ -82,12 +82,12 @@ final class ImmutableGregorianDate extends BaseCalendar.Date {
 
     @Override
     public CalendarDate setMonth(int month) {
-        unsupported(); return this; // To override method signature
+        unsupported(); return this;
     }
 
     @Override
     public CalendarDate addMonth(int n) {
-        unsupported(); return this; // To override method signature
+        unsupported(); return this;
     }
 
     @Override
@@ -97,7 +97,7 @@ final class ImmutableGregorianDate extends BaseCalendar.Date {
 
     @Override
     public CalendarDate setDayOfMonth(int date) {
-        unsupported(); return this; // To override method signature
+        unsupported(); return this;
     }
 
     @Override
