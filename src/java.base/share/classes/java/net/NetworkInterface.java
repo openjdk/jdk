@@ -448,7 +448,7 @@ public final class NetworkInterface {
         throws SocketException;
 
     private static native boolean boundInetAddress0(InetAddress addr)
-        throws SocketException;
+            throws SocketException;
 
     private static native NetworkInterface getByInetAddress0(InetAddress addr)
         throws SocketException;
