@@ -176,10 +176,6 @@ class Generation: public CHeapObj<mtGC> {
     return _reserved.contains(p);
   }
 
-  // If some space in the generation contains the given "addr", return a
-  // pointer to that space, else return "null".
-  virtual Space* space_containing(const void* addr) const;
-
   // Iteration - do not use for time critical operations
   virtual void space_iterate(SpaceClosure* blk, bool usedOnly = false) = 0;
 
@@ -325,10 +321,6 @@ class Generation: public CHeapObj<mtGC> {
   virtual const char* short_name() const = 0;
 
   // Iteration.
-
-  // Iterate over all the ref-containing fields of all objects in the
-  // generation, calling "cl.do_oop" on each.
-  virtual void oop_iterate(OopIterateClosure* cl);
 
   // Iterate over all objects in the generation, calling "cl.do_object" on
   // each.

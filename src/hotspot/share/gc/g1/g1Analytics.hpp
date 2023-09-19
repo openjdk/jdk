@@ -57,11 +57,14 @@ class G1Analytics: public CHeapObj<mtGC> {
   G1PhaseDependentSeq _cost_per_card_scan_ms_seq;
   // The cost to merge a card during young-only and mixed gcs in ms.
   G1PhaseDependentSeq _cost_per_card_merge_ms_seq;
+  // The cost to scan entries in the code root remembered set in ms.
+  G1PhaseDependentSeq _cost_per_code_root_ms_seq;
   // The cost to copy a byte in ms.
   G1PhaseDependentSeq _cost_per_byte_copied_ms_seq;
 
   G1PhaseDependentSeq _pending_cards_seq;
   G1PhaseDependentSeq _rs_length_seq;
+  G1PhaseDependentSeq _code_root_rs_length_seq;
 
   TruncatedSeq _constant_other_time_ms_seq;
   TruncatedSeq _young_other_cost_per_region_ms_seq;
@@ -127,6 +130,7 @@ public:
   void report_dirtied_cards_in_thread_buffers(size_t num_cards);
   void report_cost_per_card_scan_ms(double cost_per_remset_card_ms, bool for_young_only_phase);
   void report_cost_per_card_merge_ms(double cost_per_card_ms, bool for_young_only_phase);
+  void report_cost_per_code_root_scan_ms(double cost_per_code_root_ms, bool for_young_only_phase);
   void report_card_scan_to_merge_ratio(double cards_per_entry_ratio, bool for_young_only_phase);
   void report_rs_length_diff(double rs_length_diff, bool for_young_only_phase);
   void report_cost_per_byte_ms(double cost_per_byte_ms, bool for_young_only_phase);
@@ -135,6 +139,7 @@ public:
   void report_constant_other_time_ms(double constant_other_time_ms);
   void report_pending_cards(double pending_cards, bool for_young_only_phase);
   void report_rs_length(double rs_length, bool for_young_only_phase);
+  void report_code_root_rs_length(double code_root_rs_length, bool for_young_only_phase);
 
   double predict_alloc_rate_ms() const;
   int num_alloc_rate_ms() const;
@@ -150,6 +155,8 @@ public:
   double predict_card_merge_time_ms(size_t card_num, bool for_young_only_phase) const;
   double predict_card_scan_time_ms(size_t card_num, bool for_young_only_phase) const;
 
+  double predict_code_root_scan_time_ms(size_t code_root_num, bool for_young_only_phase) const;
+
   double predict_object_copy_time_ms(size_t bytes_to_copy, bool for_young_only_phase) const;
 
   double predict_constant_other_time_ms() const;
@@ -163,6 +170,7 @@ public:
   double predict_cleanup_time_ms() const;
 
   size_t predict_rs_length(bool for_young_only_phase) const;
+  size_t predict_code_root_rs_length(bool for_young_only_phase) const;
   size_t predict_pending_cards(bool for_young_only_phase) const;
 
   // Add a new GC of the given duration and end time to the record.

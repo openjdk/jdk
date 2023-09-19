@@ -832,24 +832,9 @@ bool GenCollectedHeap::is_in_partial_collection(const void* p) {
 }
 #endif
 
-void GenCollectedHeap::oop_iterate(OopIterateClosure* cl) {
-  _young_gen->oop_iterate(cl);
-  _old_gen->oop_iterate(cl);
-}
-
 void GenCollectedHeap::object_iterate(ObjectClosure* cl) {
   _young_gen->object_iterate(cl);
   _old_gen->object_iterate(cl);
-}
-
-Space* GenCollectedHeap::space_containing(const void* addr) const {
-  Space* res = _young_gen->space_containing(addr);
-  if (res != nullptr) {
-    return res;
-  }
-  res = _old_gen->space_containing(addr);
-  assert(res != nullptr, "Could not find containing space");
-  return res;
 }
 
 HeapWord* GenCollectedHeap::block_start(const void* addr) const {
