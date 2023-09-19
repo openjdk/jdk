@@ -195,7 +195,6 @@ public:
   void prune_scavengable_nmethods();
 
   // Iteration functions.
-  void oop_iterate(OopIterateClosure* cl);
   void object_iterate(ObjectClosure* cl) override;
 
   // A CollectedHeap is divided into a dense sequence of "blocks"; that is,

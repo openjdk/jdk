@@ -233,21 +233,6 @@ bool Generation::block_is_obj(const HeapWord* p) const {
   return blk.is_obj;
 }
 
-class GenerationOopIterateClosure : public SpaceClosure {
- public:
-  OopIterateClosure* _cl;
-  virtual void do_space(Space* s) {
-    s->oop_iterate(_cl);
-  }
-  GenerationOopIterateClosure(OopIterateClosure* cl) :
-    _cl(cl) {}
-};
-
-void Generation::oop_iterate(OopIterateClosure* cl) {
-  GenerationOopIterateClosure blk(cl);
-  space_iterate(&blk);
-}
-
 class GenerationObjIterateClosure : public SpaceClosure {
  private:
   ObjectClosure* _cl;
