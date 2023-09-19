@@ -36,7 +36,6 @@ public final class Grapheme {
      * See Unicode Standard Annex #29 Unicode Text Segmentation for the specification
      * for the extended grapheme cluster boundary rules. The following implementation
      * is based on the annex for Unicode version 15.1.
-     * (http://www.unicode.org/reports/tr29/tr29-43.html)
      *
      * @spec http://www.unicode.org/reports/tr29/tr29-43.html
      * @param src the {@code CharSequence} to be scanned

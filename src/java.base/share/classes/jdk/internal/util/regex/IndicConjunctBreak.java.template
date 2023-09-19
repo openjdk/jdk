@@ -33,6 +33,9 @@ package jdk.internal.util.regex;
  *
  * \p{InCB=Consonant} [ \p{InCB=Extend} \p{InCB=Linker} ]* \p{InCB=Linker} [ \p{InCB=Extend} \p{InCB=Linker} ]* x \p{InCB=Consonant}*
  * </blockquote>
+ *
+ * Code point conditions included in this class are derived from the "Derived Property: Indic_Conjunct_Break"
+ * section in DerivedCoreProperties.txt of the Unicode Character Database.
  */
 final class IndicConjunctBreak {
     static boolean isLinker(int cp) {

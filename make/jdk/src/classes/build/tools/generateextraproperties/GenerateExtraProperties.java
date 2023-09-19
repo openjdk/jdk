@@ -55,6 +55,8 @@ import java.util.stream.Stream;
  *      cp == 0x0020 ||
  *     (cp >= 0x2000 && cp <= 0x200A);
  * </blockquote>
+ * Note that those in parentheses in the properties file and the
+ * template file are optional.
  *
  * Arguments to this utility:
  *    args[0]: Full path string to the template file
