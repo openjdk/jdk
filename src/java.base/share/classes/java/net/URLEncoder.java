@@ -32,6 +32,9 @@ import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.BitSet;
 import java.util.Objects;
+import java.util.function.IntPredicate;
+
+import jdk.internal.util.ImmutableBitSetPredicate;
 
 /**
  * Utility class for HTML form encoding. This class contains static methods
@@ -76,7 +79,7 @@ import java.util.Objects;
  * @since   1.0
  */
 public class URLEncoder {
-    private static final BitSet DONT_NEED_ENCODING;
+    private static final IntPredicate DONT_NEED_ENCODING;
     private static final int CASE_DIFF = ('a' - 'A');
 
     static {
@@ -117,17 +120,18 @@ public class URLEncoder {
          *
          */
 
-        DONT_NEED_ENCODING = new BitSet(128);
-
-        DONT_NEED_ENCODING.set('a', 'z' + 1);
-        DONT_NEED_ENCODING.set('A', 'Z' + 1);
-        DONT_NEED_ENCODING.set('0', '9' + 1);
-        DONT_NEED_ENCODING.set(' '); /* encoding a space to a + is done
+        var bitSet = new BitSet(128);
+        bitSet.set('a', 'z' + 1);
+        bitSet.set('A', 'Z' + 1);
+        bitSet.set('0', '9' + 1);
+        bitSet.set(' '); /* encoding a space to a + is done
                                     * in the encode() method */
-        DONT_NEED_ENCODING.set('-');
-        DONT_NEED_ENCODING.set('_');
-        DONT_NEED_ENCODING.set('.');
-        DONT_NEED_ENCODING.set('*');
+        bitSet.set('-');
+        bitSet.set('_');
+        bitSet.set('.');
+        bitSet.set('*');
+
+        DONT_NEED_ENCODING = ImmutableBitSetPredicate.of(bitSet);
     }
 
     /**
@@ -212,7 +216,7 @@ public class URLEncoder {
         for (int i = 0; i < s.length();) {
             int c = s.charAt(i);
             //System.out.println("Examining character: " + c);
-            if (DONT_NEED_ENCODING.get(c)) {
+            if (DONT_NEED_ENCODING.test(c)) {
                 if (c == ' ') {
                     c = '+';
                     needToChange = true;
@@ -255,7 +259,7 @@ public class URLEncoder {
                         }
                     }
                     i++;
-                } while (i < s.length() && !DONT_NEED_ENCODING.get((c = s.charAt(i))));
+                } while (i < s.length() && !DONT_NEED_ENCODING.test((c = s.charAt(i))));
 
                 charArrayWriter.flush();
                 String str = charArrayWriter.toString();

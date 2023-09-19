@@ -846,8 +846,6 @@ void DefNewGeneration::collect(bool   full,
     from()->set_next_compaction_space(to());
     heap->set_incremental_collection_failed();
 
-    // Inform the next generation that a promotion failure occurred.
-    _old_gen->promotion_failure_occurred();
     _gc_tracer->report_promotion_failed(_promotion_failed_info);
 
     // Reset the PromotionFailureALot counters.

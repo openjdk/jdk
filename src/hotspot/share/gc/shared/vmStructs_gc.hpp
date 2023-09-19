@@ -54,6 +54,7 @@
 #endif
 
 #define VM_STRUCTS_GC(nonstatic_field,                                                                                               \
+                      volatile_static_field,                                                                                         \
                       volatile_nonstatic_field,                                                                                      \
                       static_field,                                                                                                  \
                       unchecked_nonstatic_field)                                                                                     \

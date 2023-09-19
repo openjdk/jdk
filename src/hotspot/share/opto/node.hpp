@@ -1219,6 +1219,9 @@ public:
   // Whether this is a memory-writing machine node.
   bool is_memory_writer() const { return is_Mach() && bottom_type()->has_memory(); }
 
+  // Whether this is a memory phi node
+  bool is_memory_phi() const { return is_Phi() && bottom_type() == Type::MEMORY; }
+
 //----------------- Printing, etc
 #ifndef PRODUCT
  public:

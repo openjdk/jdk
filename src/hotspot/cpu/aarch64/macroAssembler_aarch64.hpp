@@ -943,6 +943,15 @@ public:
                                Label& no_such_interface,
                    bool return_method = true);
 
+  void lookup_interface_method_stub(Register recv_klass,
+                                    Register holder_klass,
+                                    Register resolved_klass,
+                                    Register method_result,
+                                    Register temp_reg,
+                                    Register temp_reg2,
+                                    int itable_index,
+                                    Label& L_no_such_interface);
+
   // virtual method calling
   // n.b. x86 allows RegisterOrConstant for vtable_index
   void lookup_virtual_method(Register recv_klass,
@@ -1583,8 +1592,8 @@ public:
   // Code for java.lang.Thread::onSpinWait() intrinsic.
   void spin_wait();
 
-  void fast_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
-  void fast_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
+  void lightweight_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
+  void lightweight_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
 
 private:
   // Check the current thread doesn't need a cross modify fence.
