@@ -46,8 +46,7 @@ public class bug4321273 {
     public static Robot robot;
 
     public static void main(String[] args) throws Exception {
-        try
-        {
+        try {
             robot = new Robot();
             SwingUtilities.invokeAndWait(() -> {
                 menuBar = new JMenuBar();

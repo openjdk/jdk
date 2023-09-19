@@ -37,7 +37,7 @@ import java.awt.event.MouseEvent;
 /*
  * @test
  * @bug 5091257
- * @summary APPLICATION KEY DOES NOT DISPLAY A POP-UP MENU IN USERS VIEW
+ * @summary Application key does not display a pop-up menu in users view.
  * @key headful
  * @run main bug5091257
  */
@@ -54,6 +54,7 @@ public class bug5091257 {
     public static void main(String[] args) throws Exception {
         try {
             robot = new Robot();
+            robot.setAutoDelay(50);
             SwingUtilities.invokeAndWait(() -> {
                 button = new JButton("Popup button");
                 button.addKeyListener(new KeyListener() {
@@ -99,7 +100,6 @@ public class bug5091257 {
 
             try {
                 robot.keyPress(KeyEvent.VK_CONTEXT_MENU);
-                robot.setAutoDelay(10);
                 robot.keyRelease(KeyEvent.VK_CONTEXT_MENU);
             } catch (IllegalArgumentException ex) {
                 isKeyOk = false;
@@ -129,7 +129,6 @@ public class bug5091257 {
                     button.setComponentPopupMenu(popup);
                 });
                 robot.keyPress(KeyEvent.VK_CONTEXT_MENU);
-                robot.setAutoDelay(10);
                 robot.keyRelease(KeyEvent.VK_CONTEXT_MENU);
 
                 robot.waitForIdle();
