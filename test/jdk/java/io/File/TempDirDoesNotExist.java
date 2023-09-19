@@ -63,7 +63,8 @@ public class TempDirDoesNotExist {
                         e.printStackTrace();
                     } finally {
                         if (file != null && file.exists())
-                            file.delete();
+                            if (!file.delete())
+                                throw new RuntimeException(file + " not deleted");
                     }
                 }
                 case "nio" -> {
@@ -74,7 +75,8 @@ public class TempDirDoesNotExist {
                         e.printStackTrace();
                     } finally {
                         if (path != null)
-                            Files.deleteIfExists(path);
+                            if (!Files.deleteIfExists(path))
+                                throw new RuntimeException(path + " not deleted");
                     }
                 }
                 default -> {
@@ -89,7 +91,7 @@ public class TempDirDoesNotExist {
         return Path.of(USER_DIR, "non-existing-", timeStamp).toString();
     }
 
-    public static Stream<Arguments> existingProvider() {
+    public static Stream<Arguments> tempDirSource() {
         return Stream.of(Arguments.of(0, WARNING,
                                       new String[] {
                                           "-Djava.io.tmpdir=" +
@@ -115,7 +117,7 @@ public class TempDirDoesNotExist {
                             }));
     }
 
-    public static Stream<Arguments> nonexistentProvider() {
+    public static Stream<Arguments> noTempDirSource() {
         return Stream.of(Arguments.of(0, WARNING,
                                       new String[] {
                                           "TempDirDoesNotExist",
@@ -137,7 +139,7 @@ public class TempDirDoesNotExist {
                                       }));
     }
 
-    public static Stream<Arguments> counterProvider() {
+    public static Stream<Arguments> counterSource() {
         // standard test with default setting for java.io.tmpdir
         return Stream.of(Arguments.of(0,
                                       new String[] {
@@ -147,7 +149,7 @@ public class TempDirDoesNotExist {
     }
 
     @ParameterizedTest
-    @MethodSource("existingProvider")
+    @MethodSource("tempDirSource")
     public void existingMessage(int exitValue, String errorMsg,
                                 String... options) throws Exception {
        ProcessTools.executeTestJvm(options).shouldContain(errorMsg)
@@ -155,7 +157,7 @@ public class TempDirDoesNotExist {
     }
 
     @ParameterizedTest
-    @MethodSource("nonexistentProvider")
+    @MethodSource("noTempDirSource")
     public void nonexistentMessage(int exitValue, String errorMsg,
                                    String... options) throws Exception {
         ProcessTools.executeTestJvm(options).shouldNotContain(errorMsg)
@@ -163,12 +165,12 @@ public class TempDirDoesNotExist {
     }
 
     @ParameterizedTest
-    @MethodSource("counterProvider")
+    @MethodSource("counterSource")
     public  void messageCounter(int exitValue, String... options)
         throws Exception {
         OutputAnalyzer originalOutput = ProcessTools.executeTestJvm(options);
         List<String> list = originalOutput.asLines().stream().filter(line
-                -> line.equalsIgnoreCase(WARNING)).collect(Collectors.toList());
+                -> line.equalsIgnoreCase(WARNING)).toList();
         if (list.size() != 1 || originalOutput.getExitValue() != exitValue)
             throw new Exception("counter of messages is not one, but " + list.size()
                     + "\n" + originalOutput.asLines().toString() + "\n");
