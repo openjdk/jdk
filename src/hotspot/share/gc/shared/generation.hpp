@@ -326,10 +326,6 @@ class Generation: public CHeapObj<mtGC> {
   // each.
   virtual void object_iterate(ObjectClosure* cl);
 
-  // Inform a generation that some of its objects have moved.  [e.g. The
-  // generation's spaces were compacted, invalidating the card table.]
-  virtual void invalidate_remembered_set() { }
-
   // Block abstraction.
 
   // Returns the address of the start of the "block" that contains the
