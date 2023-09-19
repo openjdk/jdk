@@ -199,10 +199,11 @@ final class ImmutableGregorianDate extends BaseCalendar.Date {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof ImmutableGregorianDate)) {
+        if (obj instanceof ImmutableGregorianDate igd) {
+            return date.equals(igd.date);
+        } else {
             return false;
         }
-        return date.equals(((ImmutableGregorianDate) obj).date);
     }
 
     @Override
