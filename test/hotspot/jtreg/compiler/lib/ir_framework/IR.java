@@ -109,6 +109,27 @@ public @interface IR {
     String[] applyIf() default {};
 
     /**
+     * Accepts a single feature pair which is composed of platform feature string followed by a true/false
+     * value where a true value necessities existence of platform feature and vice-versa.
+     * IR verifications checks are enforced only if the specified feature constraint is met.
+     */
+    String[] applyIfPlatformFeature() default {};
+
+    /**
+     * Accepts a list of feature pairs where each pair is composed of target feature string followed by a true/false
+     * value where a true value necessities existence of target feature and vice-versa.
+     * IR verifications checks are enforced only if all the specified feature constraints are met.
+     */
+    String[] applyIfPlatformFeatureAnd() default {};
+
+     /**
+     * Accepts a list of feature pairs where each pair is composed of target feature string followed by a true/false
+     * value where a true value necessities existence of target feature and vice-versa.
+     * IR verifications checks are enforced if any of the specified feature constraint is met.
+     */
+    String[] applyIfPlatformFeatureOr() default {};
+
+    /**
      * Accepts a single feature pair which is composed of CPU feature string followed by a true/false
      * value where a true value necessities existence of CPU feature and vice-versa.
      * IR verifications checks are enforced only if the specified feature constraint is met.
