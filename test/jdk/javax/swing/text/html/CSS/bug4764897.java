@@ -74,7 +74,7 @@ public class bug4764897 {
                 + "This is text that won't get displayed correctly.</td></tr>"
                 + "</table></body></html>");
 
-        frame = new JFrame("Table Border Test");
+        frame = new JFrame("Table Border & Text Test");
         frame.getContentPane().add(pane);
         frame.setSize(600, 200);
         frame.setVisible(true);

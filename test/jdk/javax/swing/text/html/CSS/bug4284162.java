@@ -55,7 +55,7 @@ public class bug4284162 {
 
             if (!passed) {
                 throw new RuntimeException("Test failed!!" +
-                        " Borders of HTML table not rendered correctly");
+                        " CSS Text-indent attribute doesn't support negative values");
             }
         } finally {
             SwingUtilities.invokeAndWait(() -> {

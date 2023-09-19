@@ -32,7 +32,7 @@ import javax.swing.text.View;
  * @test
  * @bug 4174871
  * @key headful
- * @summary  Tests if CELLSPACING attribute in HTML table is rendered
+ * @summary Tests if CELLSPACING attribute in HTML table is rendered.
  */
 
 public class bug4174871 {

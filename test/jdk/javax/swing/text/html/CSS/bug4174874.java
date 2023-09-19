@@ -49,8 +49,6 @@ public class bug4174874 {
             robot.delay(500);
 
             SwingUtilities.invokeAndWait(bug4174874::testUI);
-            robot.waitForIdle();
-            robot.delay(200);
 
             if (!passed) {
                 throw new RuntimeException("Test failed!!" +
@@ -75,7 +73,7 @@ public class bug4174874 {
 
         frame = new JFrame("Table Border Test");
         frame.getContentPane().add(pane);
-        frame.setSize(600,200);
+        frame.setSize(600, 200);
         frame.setVisible(true);
     }
 
