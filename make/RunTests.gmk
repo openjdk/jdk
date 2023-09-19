@@ -864,6 +864,7 @@ define SetupRunJtregTestBody
 
   clean-workdir-$1:
 	$$(RM) -r $$($1_TEST_SUPPORT_DIR)
+	$$(RM) -r $$($1_TEST_RESULTS_DIR)
 
   $1_COMMAND_LINE := \
       $$(JAVA) $$($1_JTREG_LAUNCHER_OPTIONS) \
