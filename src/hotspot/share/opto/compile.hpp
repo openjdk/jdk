@@ -69,6 +69,7 @@ class Node_Notes;
 class NodeHash;
 class NodeCloneInfo;
 class OptoReg;
+class ParsePredicateNode;
 class PhaseCFG;
 class PhaseGVN;
 class PhaseIterGVN;
@@ -357,7 +358,7 @@ class Compile : public Phase {
   const char*           _failure_reason;        // for record_failure/failing pattern
   GrowableArray<CallGenerator*> _intrinsics;    // List of intrinsics.
   GrowableArray<Node*>  _macro_nodes;           // List of nodes which need to be expanded before matching.
-  GrowableArray<Node*>  _parse_predicate_opaqs; // List of Opaque1 nodes for the Parse Predicates.
+  GrowableArray<ParsePredicateNode*> _parse_predicates; // List of Parse Predicates.
   GrowableArray<Node*>  _template_assertion_predicate_opaqs; // List of Opaque4 nodes for Template Assertion Predicates.
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
@@ -511,9 +512,9 @@ private:
   void print_inlining_assert_ready();
   void print_inlining_reset();
 
-  void print_inlining(ciMethod* method, int inline_level, int bci, const char* msg = nullptr) {
+  void print_inlining(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr) {
     stringStream ss;
-    CompileTask::print_inlining_inner(&ss, method, inline_level, bci, msg);
+    CompileTask::print_inlining_inner(&ss, method, inline_level, bci, result, msg);
     print_inlining_stream()->print("%s", ss.freeze());
   }
 
@@ -703,13 +704,13 @@ private:
 #endif
 
   int           macro_count()             const { return _macro_nodes.length(); }
-  int           parse_predicate_count()   const { return _parse_predicate_opaqs.length(); }
+  int           parse_predicate_count()   const { return _parse_predicates.length(); }
   int           template_assertion_predicate_count() const { return _template_assertion_predicate_opaqs.length(); }
   int           expensive_count()         const { return _expensive_nodes.length(); }
   int           coarsened_count()         const { return _coarsened_locks.length(); }
 
   Node*         macro_node(int idx)       const { return _macro_nodes.at(idx); }
-  Node*         parse_predicate_opaque1_node(int idx) const { return _parse_predicate_opaqs.at(idx); }
+  ParsePredicateNode* parse_predicate(int idx) const { return _parse_predicates.at(idx); }
 
   Node* template_assertion_predicate_opaq_node(int idx) const {
     return _template_assertion_predicate_opaqs.at(idx);
@@ -728,10 +729,6 @@ private:
     // this function may be called twice for a node so we can only remove it
     // if it's still existing.
     _macro_nodes.remove_if_existing(n);
-    // remove from _parse_predicate_opaqs list also if it is there
-    if (parse_predicate_count() > 0) {
-      _parse_predicate_opaqs.remove_if_existing(n);
-    }
     // Remove from coarsened locks list if present
     if (coarsened_count() > 0) {
       remove_coarsened_lock(n);
@@ -741,16 +738,24 @@ private:
   void remove_expensive_node(Node* n) {
     _expensive_nodes.remove_if_existing(n);
   }
-  void add_parse_predicate_opaq(Node* n) {
-    assert(!_parse_predicate_opaqs.contains(n), "duplicate entry in Parse Predicate opaque1 list");
-    assert(_macro_nodes.contains(n), "should have already been in macro list");
-    _parse_predicate_opaqs.append(n);
+
+  void add_parse_predicate(ParsePredicateNode* n) {
+    assert(!_parse_predicates.contains(n), "duplicate entry in Parse Predicate list");
+    _parse_predicates.append(n);
   }
+
+  void remove_parse_predicate(ParsePredicateNode* n) {
+    if (parse_predicate_count() > 0) {
+      _parse_predicates.remove_if_existing(n);
+    }
+  }
+
   void add_template_assertion_predicate_opaq(Node* n) {
     assert(!_template_assertion_predicate_opaqs.contains(n),
            "duplicate entry in template assertion predicate opaque4 list");
     _template_assertion_predicate_opaqs.append(n);
   }
+
   void remove_template_assertion_predicate_opaq(Node* n) {
     if (template_assertion_predicate_count() > 0) {
       _template_assertion_predicate_opaqs.remove_if_existing(n);
@@ -775,12 +780,7 @@ private:
 
   void sort_macro_nodes();
 
-  // Remove the opaque nodes that protect the Parse Predicates so that the unused checks and
-  // uncommon traps will be eliminated from the graph.
-  void cleanup_parse_predicates(PhaseIterGVN &igvn) const;
-  bool is_predicate_opaq(Node* n) const {
-    return _parse_predicate_opaqs.contains(n);
-  }
+  void mark_parse_predicate_nodes_useless(PhaseIterGVN& igvn);
 
   // Are there candidate expensive nodes for optimization?
   bool should_optimize_expensive_nodes(PhaseIterGVN &igvn);
@@ -1021,7 +1021,8 @@ private:
     _vector_reboxing_late_inlines.push(cg);
   }
 
-  void remove_useless_nodes       (GrowableArray<Node*>&        node_list, Unique_Node_List &useful);
+  template<typename N, ENABLE_IF(std::is_base_of<Node, N>::value)>
+  void remove_useless_nodes(GrowableArray<N*>& node_list, Unique_Node_List& useful);
 
   void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful);
   void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Node* dead);

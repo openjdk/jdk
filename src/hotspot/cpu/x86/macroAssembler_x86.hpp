@@ -32,6 +32,7 @@
 #include "utilities/macros.hpp"
 #include "runtime/rtmLocking.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/checkedCast.hpp"
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -2022,8 +2023,8 @@ public:
 
   void check_stack_alignment(Register sp, const char* msg, unsigned bias = 0, Register tmp = noreg);
 
-  void fast_lock_impl(Register obj, Register hdr, Register thread, Register tmp, Label& slow);
-  void fast_unlock_impl(Register obj, Register hdr, Register tmp, Label& slow);
+  void lightweight_lock(Register obj, Register hdr, Register thread, Register tmp, Label& slow);
+  void lightweight_unlock(Register obj, Register hdr, Register tmp, Label& slow);
 };
 
 /**

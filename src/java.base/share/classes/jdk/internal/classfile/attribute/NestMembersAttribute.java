@@ -40,6 +40,10 @@ import jdk.internal.classfile.impl.Util;
  * appear on classes to indicate that this class is the host of a nest.
  * Delivered as a {@link jdk.internal.classfile.ClassElement} when
  * traversing the elements of a {@link jdk.internal.classfile.ClassModel}.
+ * <p>
+ * The attribute does not permit multiple instances in a given location.
+ * Subsequent occurrence of the attribute takes precedence during the attributed
+ * element build or transformation.
  */
 public sealed interface NestMembersAttribute extends Attribute<NestMembersAttribute>, ClassElement
         permits BoundAttribute.BoundNestMembersAttribute, UnboundAttribute.UnboundNestMembersAttribute {

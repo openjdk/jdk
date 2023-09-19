@@ -339,7 +339,7 @@ G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
   if (ResizePLAB) {
     // See G1EvacStats::compute_desired_plab_sz for the reasoning why this is the
     // expected number of refills.
-    double const ExpectedNumberOfRefills = G1LastPLABAverageOccupancy / TargetPLABWastePct;
+    double const ExpectedNumberOfRefills = (100 - G1LastPLABAverageOccupancy) / TargetPLABWastePct;
     // Add some padding to the threshold to not boost exactly when the targeted refills
     // were reached.
     // E.g. due to limitation of PLAB size to non-humongous objects and region boundaries
@@ -358,14 +358,18 @@ G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
   }
 }
 
-bool G1PLABAllocator::may_throw_away_buffer(size_t const allocation_word_sz, size_t const buffer_size) const {
-  return (allocation_word_sz * 100 < buffer_size * ParallelGCBufferWastePct);
+bool G1PLABAllocator::may_throw_away_buffer(size_t const words_remaining, size_t const buffer_size) const {
+  return (words_remaining * 100 < buffer_size * ParallelGCBufferWastePct);
 }
 
 HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
                                                        size_t word_sz,
                                                        bool* plab_refill_failed,
                                                        uint node_index) {
+  PLAB* alloc_buf = alloc_buffer(dest, node_index);
+  size_t words_remaining = alloc_buf->words_remaining();
+  assert(words_remaining < word_sz, "precondition");
+
   size_t plab_word_size = plab_size(dest.type());
   size_t next_plab_word_size = plab_word_size;
 
@@ -378,13 +382,10 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
   size_t required_in_plab = PLAB::size_required_for_allocation(word_sz);
 
   // Only get a new PLAB if the allocation fits into the to-be-allocated PLAB and
-  // it would not waste more than ParallelGCBufferWastePct in the current PLAB.
-  // Boosting the PLAB also increasingly allows more waste to occur.
+  // retiring the current PLAB would not waste more than ParallelGCBufferWastePct
+  // in the current PLAB. Boosting the PLAB also increasingly allows more waste to occur.
   if ((required_in_plab <= next_plab_word_size) &&
-    may_throw_away_buffer(required_in_plab, plab_word_size)) {
-
-    PLAB* alloc_buf = alloc_buffer(dest, node_index);
-    guarantee(alloc_buf->words_remaining() <= required_in_plab, "must be");
+    may_throw_away_buffer(words_remaining, plab_word_size)) {
 
     alloc_buf->retire();
 

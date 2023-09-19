@@ -71,6 +71,26 @@ public void test() {
 }
 ```
 
+#### Vector IR Nodes
+For vector nodes, we not only check for the presence of the node, but also its type and size (number of elements in the vector). Every node has an associated type, for example `IRNode.LOAD_VECTOR_I` has type `int` and `IRNode.LOAD_VECTOR_F` has type `float`. The size can be explicitly specified as an additional argument. For example:
+
+```
+@IR(counts = {IRNode.LOAD_VECTOR_F, IRNode.VECTOR_SIZE_16, "> 0"},
+    applyIf = {"MaxVectorSize", "=64"},
+    applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+static float[] test() {
+    float[] a = new float[1024*8];
+    for (int i = 0; i < a.length; i++) {
+        a[i]++;
+    }
+    return a;
+}
+```
+
+However, the size does not have to be specified. In most cases, one either wants to have vectorization at the maximal possible vector width, or no vectorization at all. Hence, for lower bound counts ('>' or '>=') and equal count comparisons with strictly positive count (e.g. "=2") the default size is `IRNode.VECTOR_SIZE_MAX`, and for upper bound counts ('<' or '<=' or '=0' or failOn) the default is `IRNode.VECTOR_SIZE_ANY`. On machines with 'canTrustVectorSize == false' (default Cascade Lake) the maximal vector width is not predictable currently (32 byte for SuperWord and 64 byte for VectorAPI). Hence, on such a machine we have to automatically weaken the IR rules. All lower bound counts are performed checking with `IRNode.VECTOR_SIZE_ANY`. Upper bound counts with no user specified size are performed with `IRNode.VECTOR_SIZE_ANY` but upper bound counts with a user specified size are not checked at all. Equal count comparisons with strictly positive count are also not checked at all. Details and reasoning can be found in [RawIRNode](./driver/irmatching/irrule/checkattribute/parsing/RawIRNode.java).
+
+More examples can be found in [IRExample](../../../testlibrary_tests/ir_framework/examples/IRExample.java). You can also find many examples in the Vector API and SuperWord tests, when searching for `IRNode.VECTOR_SIZE` or `IRNode.LOAD_VECTOR`.
+
 #### User-defined Regexes
 
 The user can also directly specify user-defined regexes in combination with a required compile phase (there is no default compile phase known by the framework for custom regexes). If such a user-defined regex represents a not yet supported C2 IR node, it is highly encouraged to directly add a new IR node placeholder string definition to [IRNode](./IRNode.java) for it instead together with a static regex mapping block.
