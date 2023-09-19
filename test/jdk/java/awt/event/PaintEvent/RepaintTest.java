@@ -108,7 +108,7 @@ public class RepaintTest {
     // Subclass of Component, everytime paint is invoked a counter
     // is incremented, this counter is displayed in the component.
     private static class IncrementComponent extends Component {
-        private static AtomicInteger paintCount = new AtomicInteger(0);
+        private static final AtomicInteger paintCount = new AtomicInteger(0);
 
         public Dimension getPreferredSize() {
             return new Dimension(100, 100);
