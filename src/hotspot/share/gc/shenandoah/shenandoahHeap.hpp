@@ -374,9 +374,9 @@ private:
   void rendezvous_threads();
   void recycle_trash();
 public:
-  void notify_gc_progress()    { Atomic::store(&_no_gc_progress_count, 0UL); }
-  void notify_gc_no_progress() { Atomic::inc(&_no_gc_progress_count); }
-  size_t get_gc_no_progress_count() { return Atomic::load(&_no_gc_progress_count); }
+  void notify_gc_progress();
+  void notify_gc_no_progress();
+  size_t get_gc_no_progress_count() const;
 
 //
 // Mark support
