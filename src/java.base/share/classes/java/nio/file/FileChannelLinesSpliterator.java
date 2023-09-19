@@ -193,7 +193,7 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
         }
     }
 
-    private MemorySegment getMappedSegment() {
+    private MemorySegment mappedSegment() {
         try {
             return fc.map(FileChannel.MapMode.READ_ONLY, 0, fence, arena);
         } catch (IOException e) {
@@ -209,7 +209,7 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
 
         MemorySegment b;
         if ((b = buffer) == null) {
-            b = buffer = getMappedSegment();
+            b = buffer = mappedSegment();
             bufRefCount.set(1);
         }
 
