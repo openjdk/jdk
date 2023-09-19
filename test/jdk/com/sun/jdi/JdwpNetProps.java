@@ -72,7 +72,7 @@ public class JdwpNetProps {
                     .preferIPv6Addresses("system")
                     .run(TestResult.Success);
             if (ipv6Address != null) {
-                // - only IPv4, so connection prom IPv6 should fail
+                // - only IPv4, so connection from IPv6 should fail
                 new ListenTest("localhost", ipv6Address)
                         .preferIPv4Stack(true)
                         .preferIPv6Addresses("true")
