@@ -31,6 +31,9 @@ import sun.nio.cs.US_ASCII;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -77,11 +80,12 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
 
     private final FileChannel fc;
     private final Charset cs;
+    private final Arena arena;
     private int index;
     private final int fence;
 
     // Null before first split, non-null when splitting, null when traversing
-    private ByteBuffer buffer;
+    private MemorySegment buffer;
     // Non-null when traversing
     private BufferedReader reader;
 
@@ -99,10 +103,11 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
         this.index = index;
         this.fence = fence;
         this.bufRefCount = new AtomicInteger();
+        this.arena = Arena.ofShared();
     }
 
     private FileChannelLinesSpliterator(FileChannel fc, Charset cs, int index,
-        int fence, ByteBuffer buffer, AtomicInteger bufRefCount) {
+        int fence, MemorySegment buffer, AtomicInteger bufRefCount, Arena arena) {
         this.fc = fc;
         this.cs = cs;
         this.index = index;
@@ -110,6 +115,7 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
         this.buffer = buffer;
         this.bufRefCount = bufRefCount;
         this.bufRefCount.incrementAndGet();
+        this.arena = arena;
     }
 
     @Override
@@ -190,9 +196,9 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
         }
     }
 
-    private ByteBuffer getMappedByteBuffer() {
+    private MemorySegment getMappedByteBuffer() {
         try {
-            return fc.map(FileChannel.MapMode.READ_ONLY, 0, fence);
+            return fc.map(FileChannel.MapMode.READ_ONLY, 0, fence, arena);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -204,7 +210,7 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
         if (reader != null)
             return null;
 
-        ByteBuffer b;
+        MemorySegment b;
         if ((b = buffer) == null) {
             b = buffer = getMappedByteBuffer();
             bufRefCount.set(1);
@@ -214,12 +220,12 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
 
         // Check if line separator hits the mid point
         int mid = (lo + hi) >>> 1;
-        int c =  b.get(mid);
+        int c =  b.get(ValueLayout.JAVA_BYTE, mid);
         if (c == '\n') {
             mid++;
         } else if (c == '\r') {
             // Check if a line separator of "\r\n"
-            if (++mid < hi && b.get(mid) == '\n') {
+            if (++mid < hi && b.get(ValueLayout.JAVA_BYTE, mid) == '\n') {
                 mid++;
             }
         } else {
@@ -230,7 +236,7 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
             mid = 0;
             while (midL > lo && midR < hi) {
                 // Sample to the left
-                c = b.get(midL--);
+                c = b.get(ValueLayout.JAVA_BYTE, midL--);
                 if (c == '\n' || c == '\r') {
                     // If c is "\r" then no need to check for "\r\n"
                     // since the subsequent value was previously checked
@@ -239,11 +245,11 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
                 }
 
                 // Sample to the right
-                c = b.get(midR++);
+                c = b.get(ValueLayout.JAVA_BYTE, midR++);
                 if (c == '\n' || c == '\r') {
                     mid = midR;
                     // Check if line-separator is "\r\n"
-                    if (c == '\r' && mid < hi && b.get(mid) == '\n') {
+                    if (c == '\r' && mid < hi && b.get(ValueLayout.JAVA_BYTE, mid) == '\n') {
                         mid++;
                     }
                     break;
@@ -254,7 +260,7 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
         // The left spliterator will have the line-separator at the end
         return (mid > lo && mid < hi)
                ? new FileChannelLinesSpliterator(fc, cs, lo, index = mid,
-                                                 b, bufRefCount)
+                                                 b, bufRefCount, arena)
                : null;
     }
 
@@ -278,14 +284,9 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
 
     private void unmap() {
         if (buffer != null) {
-            ByteBuffer b = buffer;
             buffer = null;
             if (bufRefCount.decrementAndGet() == 0) {
-                JavaNioAccess nioAccess = SharedSecrets.getJavaNioAccess();
-                try {
-                    nioAccess.unmapper(b).unmap();
-                } catch (UnsupportedOperationException ignored) {
-                }
+                arena.close();
             }
         }
     }

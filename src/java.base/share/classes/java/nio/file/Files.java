@@ -4138,7 +4138,7 @@ public final class Files {
                     new FileChannelLinesSpliterator(fc, cs, 0, (int) length);
                 return StreamSupport.stream(fcls, false)
                         .onClose(Files.asUncheckedRunnable(fc))
-                        .onClose(() -> fcls.close());
+                        .onClose(fcls::close);
             }
         } catch (Error|RuntimeException|IOException e) {
             try {
