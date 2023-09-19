@@ -726,7 +726,10 @@ void ArchiveBuilder::make_klasses_shareable() {
     k->remove_java_mirror();
 #ifdef _LP64
     if (UseCompactObjectHeaders) {
-      narrowKlass nk = get_requested_narrow_klass(k);
+      Klass* requested_k = to_requested(k);
+      address narrow_klass_base = _requested_static_archive_bottom; // runtime encoding base == runtime mapping start
+      const int narrow_klass_shift = ArchiveHeapWriter::precomputed_narrow_klass_shift;
+      narrowKlass nk = CompressedKlassPointers::encode_not_null(requested_k, narrow_klass_base, narrow_klass_shift);
       k->set_prototype_header(markWord::prototype().set_narrow_klass(nk));
     }
 #endif //_LP64
