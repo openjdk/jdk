@@ -26,17 +26,19 @@
  * @bug 8315923
  * @requires vm.gc.Parallel & os.family == "linux" & os.maxMemory > 30G
  * @summary Check if parallel pretouch performs normally with and without THP.
+ * @comment The test is not ParallelGC-specific, but a multi-threaded GC is    \
+ *          required. So ParallelGC is used here.
  *
- * @run main/othervm -XX:+UseParallelGC -XX:ParallelGCThreads=${os.processors}
+ * @run main/othervm -XX:-UseTransparentHugePages
+ *                   -XX:+UseParallelGC -XX:ParallelGCThreads=${os.processors}
  *                   -Xlog:startuptime,pagesize,gc+heap=debug
  *                   -Xms24G -Xmx24G -XX:+AlwaysPreTouch
- *                   -XX:-UseTransparentHugePages
  *                   gc.parallel.TestParallelAlwaysPreTouch
  *
- * @run main/othervm -XX:+UseParallelGC -XX:ParallelGCThreads=${os.processors}
+ * @run main/othervm -XX:+UseTransparentHugePages
+ *                   -XX:+UseParallelGC -XX:ParallelGCThreads=${os.processors}
  *                   -Xlog:startuptime,pagesize,gc+heap=debug
  *                   -Xms24G -Xmx24G -XX:+AlwaysPreTouch
- *                   -XX:+UseTransparentHugePages
  *                   gc.parallel.TestParallelAlwaysPreTouch
  */
 
