@@ -46,12 +46,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-/*
- * @test
- * @modules jdk.jpackage
- * @compile --patch-module jdk.jpackage=${test.src} --add-reads jdk.jpackage=ALL-UNNAMED --add-exports jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED OverridableResourceTest.java
- * @run junit/othervm --patch-module jdk.jpackage=${test.classes} --add-reads jdk.jpackage=ALL-UNNAMED --add-exports jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED jdk.jpackage.internal.OverridableResourceTest
- */
 public class OverridableResourceTest {
 
     @Rule
