@@ -970,6 +970,8 @@ class ImmutableCollections {
 
         // iteration support
         private int startIndex() {
+            // pick a starting index in the [0 .. element.length-1] range
+            // randomly based on SALT32L
             return (int) ((SALT32L * elements.length) >>> 32);
         }
 
@@ -998,8 +1000,6 @@ class ImmutableCollections {
 
             SetNIterator() {
                 remaining = size;
-                // pick a starting index in the [0 .. element.length-1] range
-                // randomly based on SALT32L
                 idx = startIndex();
             }
 
@@ -1302,6 +1302,8 @@ class ImmutableCollections {
 
         // iteration support
         private int startIndex() {
+            // pick an even starting index in the [0 .. table.length-1]
+            // range randomly based on SALT32L
             return (int) ((SALT32L * (table.length >> 1)) >>> 32) << 1;
         }
 
@@ -1328,8 +1330,6 @@ class ImmutableCollections {
 
             MapNIterator() {
                 remaining = size;
-                // pick an even starting index in the [0 .. table.length-1]
-                // range randomly based on SALT32L
                 idx = startIndex();
             }
 
