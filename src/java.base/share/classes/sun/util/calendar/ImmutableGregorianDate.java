@@ -26,16 +26,18 @@
 package sun.util.calendar;
 
 import java.util.Locale;
+import java.util.Objects;
 import java.util.TimeZone;
 
+/*
+ * This class is immutable, and thus any methods from the base classes
+ * that can modify the state are overridden to throw an exception.
+ */
 final class ImmutableGregorianDate extends BaseCalendar.Date {
     private final BaseCalendar.Date date;
 
     ImmutableGregorianDate(BaseCalendar.Date date) {
-        if (date == null) {
-            throw new NullPointerException();
-        }
-        this.date = date;
+        this.date = Objects.requireNonNull(date);
     }
 
     @Override
@@ -45,7 +47,7 @@ final class ImmutableGregorianDate extends BaseCalendar.Date {
 
     @Override
     public CalendarDate setEra(Era era) {
-        unsupported(); return this;
+        unsupported(); return this; // To override method signature
     }
 
     @Override
@@ -55,12 +57,12 @@ final class ImmutableGregorianDate extends BaseCalendar.Date {
 
     @Override
     public CalendarDate setYear(int year) {
-        unsupported(); return this;
+        unsupported(); return this; // To override method signature
     }
 
     @Override
     public CalendarDate addYear(int n) {
-        unsupported(); return this;
+        unsupported(); return this; // To override method signature
     }
 
     @Override
@@ -80,12 +82,12 @@ final class ImmutableGregorianDate extends BaseCalendar.Date {
 
     @Override
     public CalendarDate setMonth(int month) {
-        unsupported(); return this;
+        unsupported(); return this; // To override method signature
     }
 
     @Override
     public CalendarDate addMonth(int n) {
-        unsupported(); return this;
+        unsupported(); return this; // To override method signature
     }
 
     @Override
@@ -95,7 +97,7 @@ final class ImmutableGregorianDate extends BaseCalendar.Date {
 
     @Override
     public CalendarDate setDayOfMonth(int date) {
-        unsupported(); return this;
+        unsupported(); return this; // To override method signature
     }
 
     @Override
@@ -266,6 +268,11 @@ final class ImmutableGregorianDate extends BaseCalendar.Date {
 
     @Override
     public void setNormalizedYear(int normalizedYear) {
+        unsupported();
+    }
+
+    @Override
+    public void setCache(int year, long jan1, int len) {
         unsupported();
     }
 
