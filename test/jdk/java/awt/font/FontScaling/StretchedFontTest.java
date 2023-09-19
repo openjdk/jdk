@@ -158,27 +158,58 @@ public final class StretchedFontTest {
      * If the right half of the image contains only pixels of the background
      * color, the hieroglyph isn't stretched correctly
      * &mdash; it's a failure.
+     * <p>
+     * If the left half of the image contains only pixels of the background
+     * color, the glyph isn't rendered at all, such a font is ignored as if
+     * it were a success.
      *
      * @param image the image to verify
-     * @return {@code true} if the hieroglyph is stretched correctly; or
-     *         {@code false} if right half of the image contains only
+     * @return {@code true} if the hieroglyph is stretched correctly, or
+     *                      if there's no glyph in the image; or<br>
+     *         {@code false} if the right half of the image contains only
      *         background-colored pixels, which means the hieroglyph isn't
      *         stretched.
      */
     private static boolean verifyImage(final BufferedImage image) {
         final int width = image.getWidth();
+
+        // Some fonts map the character to zero-width glyph.
+        // Verify the glyph is rendered on the left side of the image.
+        if (!verifyImage(image, 0, width / 2)) {
+            // Ignore the broken font
+            return true;
+        }
+
+        // There's a glyph on the left side of the image,
+        // Verify it is stretched, i.e. it is present on the right side
+        return verifyImage(image, width / 2, width);
+    }
+
+    /**
+     * Verifies a portion of the rendered image of the hieroglyph.
+     * It returns {@code true} if it finds pixels of a different color
+     * from the background.
+     *
+     * @param image the image to verify
+     * @param startX the starting <i>x</i> coordinate
+     * @param endX the limit for the <i>x</i> coordinate
+     * @return {@code true} if there are non-background color pixels, and
+     *         {@code false} otherwise
+     */
+    private static boolean verifyImage(final BufferedImage image,
+                                       final int startX,
+                                       final int endX) {
         final int height = image.getHeight();
-        for (int x = width / 2; x < width; x++) {
+        for (int x = startX; x < endX; x++) {
             for (int y = 0; y < height; y++) {
                 if (image.getRGB(x, y) != BACKGROUND.getRGB()) {
-                    // Any other color but background means the glyph is stretched
+                    // Any other color but background means there's a glyph
                     return true;
                 }
             }
         }
 
-        // The right side of the image is filled with the background color only,
-        // the glyph isn't stretched.
+        // There's no glyph in the tested part of the image
         return false;
     }
 
