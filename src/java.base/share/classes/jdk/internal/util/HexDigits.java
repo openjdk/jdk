@@ -100,7 +100,7 @@ public final class HexDigits implements Digits {
     public static short digitPair(int i, boolean ucase) {
         short v = DIGITS[i & 0xff];
         return ucase
-                ? (short) (v & ~((v & 0b0100_0000_0100_0000) >> 1)) // really: v - ((v >= 'a' && v <= 'z') ? 32 : 0)
+                ? (short) (v & ~((v & 0b0100_0000_0100_0000) >> 1)) // really: v - ((v >= 'a' && v <= 'f') ? 32 : 0)
                 : v;
     }
 
