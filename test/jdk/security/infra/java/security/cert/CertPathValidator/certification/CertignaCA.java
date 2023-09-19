@@ -23,70 +23,13 @@
 
 /*
  * @test
- * @bug 8245654 8314960
+ * @bug 8245654 8256895
  * @summary Interoperability tests with Certigna Root CAs from Dhimyotis
  * @build ValidatePathWithParams
- * @run main/othervm -Djava.security.debug=certpath CertignaRoots OCSP
- * @run main/othervm -Djava.security.debug=certpath CertignaRoots CRL
+ * @run main/othervm -Djava.security.debug=certpath CertignaCA OCSP
+ * @run main/othervm -Djava.security.debug=certpath CertignaCA CRL
  */
-
-/*
- * Obtain TLS test artifacts for Certigna Root CAs from:
- *
- * Valid TLS Certificates:
- * https://valid.servicesca.dhimyotis.com/
- *
- * Revoked TLS Certificates:
- * https://revoked.servicesca.dhimyotis.com/
- */
-public class CertignaRoots {
-
-    // Owner: CN=Certigna Services CA, OID.2.5.4.97=NTRFR-48146308100036,
-    // OU=0002 48146308100036, O=DHIMYOTIS, C=FR
-    // Issuer: CN=Certigna Root CA, OU=0002 48146308100036, O=Dhimyotis, C=FR
-    // Serial number: fd30cf04344fc38dd90c4e70753d0623
-    // Valid from: Wed Nov 25 03:37:21 PST 2015 until: Fri Jun 03 04:37:21 PDT 2033
-    private static final String INT_CERTIGNA_ROOT_CA = "-----BEGIN CERTIFICATE-----\n" +
-            "MIIHETCCBPmgAwIBAgIRAP0wzwQ0T8ON2QxOcHU9BiMwDQYJKoZIhvcNAQELBQAw\n" +
-            "WjELMAkGA1UEBhMCRlIxEjAQBgNVBAoMCURoaW15b3RpczEcMBoGA1UECwwTMDAw\n" +
-            "MiA0ODE0NjMwODEwMDAzNjEZMBcGA1UEAwwQQ2VydGlnbmEgUm9vdCBDQTAeFw0x\n" +
-            "NTExMjUxMTM3MjFaFw0zMzA2MDMxMTM3MjFaMH0xCzAJBgNVBAYTAkZSMRIwEAYD\n" +
-            "VQQKDAlESElNWU9USVMxHDAaBgNVBAsMEzAwMDIgNDgxNDYzMDgxMDAwMzYxHTAb\n" +
-            "BgNVBGEMFE5UUkZSLTQ4MTQ2MzA4MTAwMDM2MR0wGwYDVQQDDBRDZXJ0aWduYSBT\n" +
-            "ZXJ2aWNlcyBDQTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBALPM+7Lp\n" +
-            "WBz9wFcPaTc3xnB+5g0XrnptB0EPPfrR04vO52Ykm4ky1d4ZLd10tbM1fa1RqNSO\n" +
-            "VWWg93O4pL7zCFKlz6JV74ZZVhHpEAwzBwv2oPnxvVbxtSN67xsSY66ahUYxjzs8\n" +
-            "+3FhmsiRxqwnTYvK2u70uglUvRisOKyTL/M6JnrC4y8tlmoz7OSa5BmBMVplJFQt\n" +
-            "vmON6N9aHLvYMz+EyJPCbXL6pELxeHjFT5QmIaRamsr2DOTaCjtBZKI1Wnh3X7ln\n" +
-            "bjM8MESJiV2t7E9tIQNG0Z/HI3tO4aaUMum3KysY5sC8v3vi7rryGidgzHQhrtP0\n" +
-            "ZXWW5UH/k7umLS/P/XXWnCFpc2Lxa1uDGfc2im7xibRoPP+JNZszN76euFlls6jy\n" +
-            "EXAiwnVr14tVVTewLK0OWs5SJHpEKp8PGMZRDj59EmMvokWwzL6QzNZ6vVAp00oO\n" +
-            "m05sbspNY9+MFqGKKUsKvhFGEa4XmRNxDe6KswLcjPZB+NKHZ0QWFd4ip5C5XmEK\n" +
-            "/8qIPjwVr9dah9+oiHGGO8Wx7gJAMF5DTmkvW7GhqCKj1LmHnabjzc8av6kxWVQZ\n" +
-            "i/C7HCm9i/W4wio+JA2EAFLqNL3GPNbK9kau4yPhQt/c7zxzo0OHnlsV4THCG7oO\n" +
-            "Cd3cfCiyfQcb3FBt6OSpaKRZxjCLBwP00r0fAgMBAAGjggGtMIIBqTASBgNVHRMB\n" +
-            "Af8ECDAGAQH/AgEAMA4GA1UdDwEB/wQEAwIBBjAdBgNVHQ4EFgQUrOyGj0s3HLh/\n" +
-            "FxsZ0K7oTuM0XBIwHwYDVR0jBBgwFoAUGIdW4G537iQ1PE5zmh/W4eJ5fiswSQYD\n" +
-            "VR0gBEIwQDA+BgoqgXoBgTECAAEBMDAwLgYIKwYBBQUHAgEWImh0dHBzOi8vd3d3\n" +
-            "LmNlcnRpZ25hLmZyL2F1dG9yaXRlcy8wgYgGCCsGAQUFBwEBBHwwejA6BggrBgEF\n" +
-            "BQcwAoYuaHR0cDovL2F1dG9yaXRlLmNlcnRpZ25hLmZyL2NlcnRpZ25hcm9vdGNh\n" +
-            "LmRlcjA8BggrBgEFBQcwAoYwaHR0cDovL2F1dG9yaXRlLmRoaW15b3Rpcy5jb20v\n" +
-            "Y2VydGlnbmFyb290Y2EuZGVyMG0GA1UdHwRmMGQwL6AtoCuGKWh0dHA6Ly9jcmwu\n" +
-            "Y2VydGlnbmEuZnIvY2VydGlnbmFyb290Y2EuY3JsMDGgL6AthitodHRwOi8vY3Js\n" +
-            "LmRoaW15b3Rpcy5jb20vY2VydGlnbmFyb290Y2EuY3JsMA0GCSqGSIb3DQEBCwUA\n" +
-            "A4ICAQCI5QbprXJ93L+JWHYpUTinXAMSvXMx2dmNm4mIiJRAbGnBOoEYx7M61fbL\n" +
-            "L5EJIYZhw8jLmeYVFuMao5OJLwda+RMmVzE7lyTGsY64IDKdwogByNCqbKzrlhnU\n" +
-            "8myyMNB0BDs2jgwQe2Dj9v+MddeHr7sDqvs7R1tSS5hoASLtdQhO7oxUzr3m7M8q\n" +
-            "+lh4jszli+cjfiPUVS2ADFu4ccQIh4OsIX6SWdU+8R+c/fn0FV6ip4SAVbNyCToz\n" +
-            "0ZbZKO8YTJgORxRmvrop9dPyuLWjaRrZ0LMx4a3EM3sQDPDqmsG0lHtfFj2PiJvq\n" +
-            "4lEYA+gDiLKODI+3DJMqo559m3QSS52DsShomHX/Txd0lJoZwepCE6X4KkG9FHjV\n" +
-            "WXyLgYFwCOcn+hkLhdpblms0wtjeSPITGOioSkefzhleJnDgJ9X4M3svd0HLTpJi\n" +
-            "lC1DmDZgdrXWITVdOoCogr2LFKNiGd0tbpKG533eKpfBALlm+afc6j73p1KhJEAn\n" +
-            "AfydDZqBRqv6+HHYplNDn/K2I1CZdkwaGrx3HOR/voGUi1sUI+hYbsPAFu8ZxrhD\n" +
-            "9UiysmLCfEUhqkbojony+L2mKsoLqyd24emQzn7GgMa7emlWX2jQUTwrD4SliZ2u\n" +
-            "OetVaZX5RLyqJWs4Igo/xye0xtMQN8INJ4hSZvnMQ1qFtuSRcQ==\n" +
-            "-----END CERTIFICATE-----";
-
+public class CertignaCA {
     // Owner: CN=Certigna Services CA, OID.2.5.4.97=NTRFR-48146308100036,
     // OU=0002 48146308100036, O=DHIMYOTIS, C=FR
     // Issuer: CN=Certigna, O=Dhimyotis, C=FR
@@ -239,28 +182,12 @@ public class CertignaRoots {
             "-----END CERTIFICATE-----";
 
     public static void main(String[] args) throws Exception {
+
+        // Added to test for JDK-8256895
+        System.setProperty("jdk.security.certpath.ocspNonce", "true");
+
         // OCSP check by default
         boolean ocspEnabled = args.length < 1 || !"CRL".equalsIgnoreCase(args[0]);
-
-        // CN=Certigna
-        new CertignaCAs().runTest(ocspEnabled,
-                VALID,
-                REVOKED,
-                INT_CERTIGNA);
-
-        // CN=Certigna Root CA
-        new CertignaCAs().runTest(ocspEnabled,
-                VALID,
-                REVOKED,
-                INT_CERTIGNA_ROOT_CA);
-    }
-}
-
-class CertignaCAs {
-    public void runTest(boolean ocspEnabled,
-                        final String VALID,
-                        final String REVOKED,
-                        final String INT_CERT) throws Exception {
 
         ValidatePathWithParams pathValidator;
         String[] validChainToValidate;
@@ -270,11 +197,11 @@ class CertignaCAs {
             pathValidator = new ValidatePathWithParams(null);
             pathValidator.enableCRLCheck();
 
-            validChainToValidate = new String[]{VALID, INT_CERT};
-            revChainToValidate = new String[]{REVOKED, INT_CERT};
+            validChainToValidate = new String[]{VALID, INT_CERTIGNA};
+            revChainToValidate = new String[]{REVOKED, INT_CERTIGNA};
         } else {
             // int certificate doesn't specify OCSP responder
-            pathValidator = new ValidatePathWithParams(new String[]{INT_CERT});
+            pathValidator = new ValidatePathWithParams(new String[]{INT_CERTIGNA});
             pathValidator.enableOCSPCheck();
 
             validChainToValidate = new String[]{VALID};
