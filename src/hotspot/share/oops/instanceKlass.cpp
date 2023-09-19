@@ -770,9 +770,11 @@ void InstanceKlass::link_class(TRAPS) {
 void InstanceKlass::check_link_state_and_wait(JavaThread* current) {
   MonitorLocker ml(current, _init_monitor);
 
+  bool debug_logging_enabled = log_is_enabled(Debug, class, init);
+
   // Another thread is linking this class, wait.
   while (is_being_linked() && !is_init_thread(current)) {
-    if (log_is_enabled(Debug, class, init)) {
+    if (debug_logging_enabled) {
       ResourceMark rm(current);
       log_debug(class, init)("Thread %s waiting for linking of %s by thread %s",
                              current->name(), external_name(), init_thread_name());
@@ -782,7 +784,7 @@ void InstanceKlass::check_link_state_and_wait(JavaThread* current) {
 
   // This thread is recursively linking this class, continue
   if (is_being_linked() && is_init_thread(current)) {
-    if (log_is_enabled(Debug, class, init)) {
+    if (debug_logging_enabled) {
       ResourceMark rm(current);
       log_debug(class, init)("Thread %s recursively linking %s",
                              current->name(), external_name());
@@ -792,7 +794,7 @@ void InstanceKlass::check_link_state_and_wait(JavaThread* current) {
 
   // If this class wasn't linked already, set state to being_linked
   if (!is_linked()) {
-    if (log_is_enabled(Debug, class, init)) {
+    if (debug_logging_enabled) {
       ResourceMark rm(current);
       log_debug(class, init)("Thread %s linking %s",
                              current->name(), external_name());
@@ -800,7 +802,7 @@ void InstanceKlass::check_link_state_and_wait(JavaThread* current) {
     set_init_state(being_linked);
     set_init_thread(current);
   } else {
-    if (log_is_enabled(Debug, class, init)) {
+    if (debug_logging_enabled) {
       ResourceMark rm(current);
       log_debug(class, init)("Thread %s found %s already linked",
                              current->name(), external_name());
@@ -1079,6 +1081,8 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
   JavaThread* jt = THREAD;
 
+  bool debug_logging_enabled = log_is_enabled(Debug, class, init);
+
   // refer to the JVM book page 47 for description of steps
   // Step 1
   {
@@ -1086,7 +1090,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
     // Step 2
     while (is_being_initialized() && !is_init_thread(jt)) {
-      if (log_is_enabled(Debug, class, init)) {
+      if (debug_logging_enabled) {
         ResourceMark rm(jt);
         log_debug(class, init)("Thread %s waiting for initialization of %s by thread %s",
                                jt->name(), external_name(), init_thread_name());
@@ -1100,7 +1104,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
     // Step 3
     if (is_being_initialized() && is_init_thread(jt)) {
-      if (log_is_enabled(Debug, class, init)) {
+      if (debug_logging_enabled) {
         ResourceMark rm(jt);
         log_debug(class, init)("Thread %s recursively initializing %s",
                                jt->name(), external_name());
@@ -1111,7 +1115,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
     // Step 4
     if (is_initialized()) {
-      if (log_is_enabled(Debug, class, init)) {
+      if (debug_logging_enabled) {
         ResourceMark rm(jt);
         log_debug(class, init)("Thread %s found %s already initialized",
                                jt->name(), external_name());
@@ -1122,7 +1126,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
     // Step 5
     if (is_in_error_state()) {
-      if (log_is_enabled(Debug, class, init)) {
+      if (debug_logging_enabled) {
         ResourceMark rm(jt);
         log_debug(class, init)("Thread %s found %s is in error state",
                                jt->name(), external_name());
@@ -1133,7 +1137,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
       // Step 6
       set_init_state(being_initialized);
       set_init_thread(jt);
-      if (log_is_enabled(Debug, class, init)) {
+      if (debug_logging_enabled) {
         ResourceMark rm(jt);
         log_debug(class, init)("Thread %s is initializing %s",
                                jt->name(), external_name());
