@@ -56,7 +56,6 @@ import jdk.internal.util.ArraysSupport;
 public class BufferedInputStream extends FilterInputStream {
 
     private static final int DEFAULT_BUFFER_SIZE = 8192;
-    private static final int MAX_TRANSFER_SIZE = 128*1024;
 
     private static final byte[] EMPTY = new byte[0];
 
@@ -646,14 +645,8 @@ public class BufferedInputStream extends FilterInputStream {
             if (avail > 0) {
                 // Prevent poisoning and leaking of buf
                 byte[] buffer = Arrays.copyOfRange(getBufIfOpen(), pos, count);
-                int nwritten = 0;
-                while (nwritten < avail) {
-                    int nbyte = Integer.min(avail - nwritten, MAX_TRANSFER_SIZE);
-                    out.write(buffer, pos, nbyte);
-                    pos += nbyte;
-                    nwritten += nbyte;
-                }
-                assert pos == count;
+                out.write(buffer);
+                pos = count;
             }
             try {
                 return Math.addExact(avail, getInIfOpen().transferTo(out));
