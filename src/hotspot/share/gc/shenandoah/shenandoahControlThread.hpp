@@ -122,11 +122,10 @@ public:
   ~ShenandoahControlThread();
 
   // Handle allocation failure from normal allocation.
-  // Blocks until memory is available.
-  void handle_alloc_failure(ShenandoahAllocRequest& req);
+  // Optionally blocks while collector is handling the failure.
+  void handle_alloc_failure(ShenandoahAllocRequest& req, bool block = true);
 
   // Handle allocation failure from evacuation path.
-  // Optionally blocks while collector is handling the failure.
   void handle_alloc_failure_evac(size_t words);
 
   void request_gc(GCCause::Cause cause);

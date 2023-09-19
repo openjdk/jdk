@@ -503,6 +503,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _num_regions(0),
   _regions(nullptr),
   _update_refs_iterator(this),
+  _no_gc_progress_count(0),
   _control_thread(nullptr),
   _shenandoah_policy(policy),
   _gc_mode(nullptr),
@@ -880,11 +881,16 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     // other threads have already depleted the free storage. In this case, a better
     // strategy is to try again, as long as GC makes progress (or until at least
     // one full GC has completed).
-    size_t original_count = shenandoah_policy()->full_gc_count();
-    while (result == nullptr
-        && (_progress_last_gc.is_set() || original_count == shenandoah_policy()->full_gc_count())) {
+    size_t original_count = get_gc_no_progress_count() + 1;
+    while (result == nullptr && original_count > get_gc_no_progress_count()) {
       control_thread()->handle_alloc_failure(req);
       result = allocate_memory_under_lock(req, in_new_region);
+    }
+
+    if (log_is_enabled(Debug, gc, alloc)) {
+      ResourceMark rm;
+      log_debug(gc, alloc)("Thread: %s, Result: " PTR_FORMAT ", Shared: %s, Size: " SIZE_FORMAT ", Original: " SIZE_FORMAT ", Latest: " SIZE_FORMAT,
+                           Thread::current()->name(), p2i(result), BOOL_TO_STR(!req.is_lab_alloc()), req.size(), original_count, get_gc_no_progress_count());
     }
   } else {
     assert(req.is_gc_alloc(), "Can only accept GC allocs here");
@@ -929,7 +935,19 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
 
 HeapWord* ShenandoahHeap::mem_allocate(size_t size,
                                         bool*  gc_overhead_limit_was_exceeded) {
+  *gc_overhead_limit_was_exceeded = false;
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared(size);
+  if (get_gc_no_progress_count() > ShenandoahNoProgressThreshold) {
+    // Shenandoah will grind along for quite a while allocating one
+    // object at a time using non-tlab allocations. This will notify
+    // the collector to start a cycle, but will raise an OOME to the
+    // mutator if the last Full GCs have not made progress.
+    control_thread()->handle_alloc_failure(req, false);
+    notify_gc_progress();
+    *gc_overhead_limit_was_exceeded = true;
+    return nullptr;
+  }
+
   return allocate_memory(req);
 }
 
