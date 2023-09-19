@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6912868 8170868 8316433
+ * @bug 6912868 8170868
  * @summary Basic test to provide some coverage of system proxy code. Will
  * always pass. Should be run manually for specific systems to inspect output.
  * @run main/othervm -Djava.net.useSystemProxies=true SystemProxies
