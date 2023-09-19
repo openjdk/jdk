@@ -98,9 +98,20 @@ public final class HexDigits implements Digits {
      * @return a short encoding a pair of hex ASCII-encoded digit characters
      */
     public static short digitPair(int i, boolean ucase) {
+        /*
+         * 0b0100_0000_0100_0000 is a selector that selects letters (1 << 6),
+         * uppercase or not, and shifting it right by 1 bit incidentally
+         * becomes a bit offset between cases (1 << 5).
+         *
+         *  [0-9] & 0b100_0000 => 0
+         *  [a-f] & 0b100_0000 => 32
+         *
+         *  [0-9] -  0 => [0-9]
+         *  [a-f] + 32 => [A-F]
+         */
         short v = DIGITS[i & 0xff];
         return ucase
-                ? (short) (v - ((v & 0b0100_0000_0100_0000) >> 1)) // really: v - ((v >= 'a' && v <= 'f') ? 32 : 0)
+                ? (short) (v - ((v & 0b0100_0000_0100_0000) >> 1))
                 : v;
     }
 
