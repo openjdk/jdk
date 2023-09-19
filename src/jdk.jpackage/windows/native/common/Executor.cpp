@@ -60,7 +60,15 @@ std::wstring Executor::args() const {
 
 
 int Executor::execAndWaitForExit() const {
-    UniqueHandle h = startProcess();
+    UniqueHandle threadHandle;
+    UniqueHandle h = startProcess(&threadHandle);
+
+    if (theSuspended) {
+        LOG_TRACE(tstrings::any() << "ResumeThread()");
+        if (((DWORD)-1) == ResumeThread(threadHandle.get())) {
+            JP_THROW(SysError("ResumeThread() failed", ResumeThread));
+        }
+    }
 
     const DWORD res = ::WaitForSingleObject(h.get(), INFINITE);
     if (WAIT_FAILED ==  res) {
@@ -85,7 +93,7 @@ int Executor::execAndWaitForExit() const {
 }
 
 
-UniqueHandle Executor::startProcess() const {
+UniqueHandle Executor::startProcess(UniqueHandle* threadHandle) const {
     const std::wstring argsStr = args();
 
     std::vector<TCHAR> argsBuffer(argsStr.begin(), argsStr.end());
@@ -100,6 +108,10 @@ UniqueHandle Executor::startProcess() const {
 
     DWORD creationFlags = 0;
 
+    if (theSuspended) {
+        creationFlags |= CREATE_SUSPENDED;
+    }
+
     if (!theVisible) {
         // For GUI applications.
         startupInfo.dwFlags |= STARTF_USESHOWWINDOW;
@@ -110,10 +122,21 @@ UniqueHandle Executor::startProcess() const {
     }
 
     tstrings::any msg;
-    msg << "CreateProcess(" << appPath << ", " << argsStr << ")";
+    msg << "CreateProcess";
+    if (theSuspended) {
+        msg << "[suspended]";
+    }
+    if (theVisible) {
+        msg << "[visible]";
+    }
+    if (theInherit) {
+        msg << "[inherit]";
+    }
+    msg << "(" << appPath << ", " << argsStr << ")";
 
-    if (!CreateProcess(appPath.c_str(), argsBuffer.data(), NULL, NULL, FALSE,
-                    creationFlags, NULL, NULL, &startupInfo, &processInfo)) {
+    if (!CreateProcess(appPath.c_str(), argsBuffer.data(), NULL, NULL,
+                      theInherit ? TRUE : FALSE, creationFlags, NULL, NULL,
+                      &startupInfo, &processInfo)) {
         msg << " failed";
         JP_THROW(SysError(msg, CreateProcess));
     }
@@ -121,8 +144,22 @@ UniqueHandle Executor::startProcess() const {
     msg << " succeeded; PID=" << processInfo.dwProcessId;
     LOG_TRACE(msg);
 
-    // Close unneeded handles immediately.
-    UniqueHandle(processInfo.hThread);
+    if (threadHandle) {
+        *threadHandle = UniqueHandle(processInfo.hThread);
+    } else {
+        // Close unneeded handle immediately.
+        UniqueHandle(processInfo.hThread);
+    }
+
+    if (jobHandle != NULL) {
+        LOG_TRACE(tstrings::any() << "AssignProcessToJobObject(PID="
+                << processInfo.dwProcessId << ")");
+        if (!AssignProcessToJobObject(jobHandle, processInfo.hProcess)) {
+            JP_THROW(SysError(tstrings::any() <<
+                    "AssignProcessToJobObject() failed",
+                    AssignProcessToJobObject));
+        }
+    }
 
     // Return process handle.
     return UniqueHandle(processInfo.hProcess);
