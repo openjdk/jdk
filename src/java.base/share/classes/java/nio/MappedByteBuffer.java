@@ -118,36 +118,31 @@ public abstract sealed class MappedByteBuffer
     UnmapperProxy unmapper() {
         return fd == null
                 ? null
-                : new BufferUnmapperProxy();
-    }
+                : new UnmapperProxy() {
 
-    private final class BufferUnmapperProxy implements UnmapperProxy {
-        // Ensure safe publication as MappedByteBuffer.this.address is not final
-        private final long addr;
+            // Ensure safe publication as MappedByteBuffer.this.address is not final
+            private final long addr = address;
 
-        BufferUnmapperProxy() {
-            this.addr = address;
-        }
+            @Override
+            public long address() {
+                return addr;
+            }
 
-        @Override
-        public long address() {
-            return addr;
-        }
+            @Override
+            public FileDescriptor fileDescriptor() {
+                return fd;
+            }
 
-        @Override
-        public FileDescriptor fileDescriptor() {
-            return fd;
-        }
+            @Override
+            public boolean isSync() {
+                return isSync;
+            }
 
-        @Override
-        public boolean isSync() {
-            return isSync;
-        }
-
-        @Override
-        public void unmap() {
-            Unsafe.getUnsafe().invokeCleaner(MappedByteBuffer.this);
-        }
+            @Override
+            public void unmap() {
+                Unsafe.getUnsafe().invokeCleaner(MappedByteBuffer.this);
+            }
+        };
     }
 
     /**
