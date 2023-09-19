@@ -94,22 +94,13 @@ public final class HexDigits implements Digits {
     /**
      * For values from 0 to 256 return a short encoding a pair of hex ASCII-encoded digit characters in little-endian
      * @param i value to convert
-     * @return a short encoding a pair of hex ASCII-encoded digit characters
-     */
-    public static short digitPair(int i) {
-        return DIGITS[i & 0xff];
-    }
-
-    /**
-     * For values from 0 to 256 return a short encoding a pair of hex ASCII-encoded digit characters in little-endian
-     * @param i value to convert
      * @param ucase ture uppper case, false lower case
      * @return a short encoding a pair of hex ASCII-encoded digit characters
      */
     public static short digitPair(int i, boolean ucase) {
         short v = DIGITS[i & 0xff];
         return ucase
-                ? (short) (v & ~((v & 0b0100_0000_0100_0000) >> 1)) // really: to uppper
+                ? (short) (v & ~((v & 0b0100_0000_0100_0000) >> 1)) // really: to uppper, 'a' -> 'A'
                 : v;
     }
 
