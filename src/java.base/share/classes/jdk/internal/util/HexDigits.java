@@ -92,9 +92,9 @@ public final class HexDigits implements Digits {
     }
 
     /**
-     * For values from 0 to 256 return a short encoding a pair of hex ASCII-encoded digit characters in little-endian
+     * For values from 0 to 255 return a short encoding a pair of hex ASCII-encoded digit characters in little-endian
      * @param i value to convert
-     * @param ucase ture uppper case, false lower case
+     * @param ucase true uppper case, false lower case
      * @return a short encoding a pair of hex ASCII-encoded digit characters
      */
     public static short digitPair(int i, boolean ucase) {
