@@ -42,14 +42,13 @@ import java.io.ObjectOutputStream;
 public class bug4321273 {
     public static JFrame frame;
     public static JMenu menu;
-    public static JMenuBar menuBar;
     public static Robot robot;
 
     public static void main(String[] args) throws Exception {
         try {
             robot = new Robot();
             SwingUtilities.invokeAndWait(() -> {
-                menuBar = new JMenuBar();
+                JMenuBar menuBar = new JMenuBar();
                 frame = new JFrame();
                 frame.setJMenuBar(menuBar);
                 menu = new JMenu("Menu");
