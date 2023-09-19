@@ -28,7 +28,6 @@
  */
 
 import java.awt.event.ActionEvent;
-import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
@@ -37,14 +36,11 @@ import javax.swing.SwingUtilities;
 
 public class bug4243930 {
 
-/** Auxilliary class implementing Action
- */
     private static class NullAction extends AbstractAction {
         public void actionPerformed(ActionEvent e){}
     }
 
-    public static void main(String[] argv) throws InterruptedException,
-            InvocationTargetException {
+    public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             JToolBar tb = new JToolBar();
             JButton test = tb.add(new NullAction());
