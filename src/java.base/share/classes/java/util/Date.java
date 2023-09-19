@@ -1035,11 +1035,10 @@ public class Date
         }
         convertToAbbr(sb, wtb[index]).append(' ');                        // EEE
         convertToAbbr(sb, wtb[date.getMonth() - 1 + 2 + 7]).append(' ');  // MMM
-        CalendarUtils.sprintf0d(sb, date.getDayOfMonth(), 2).append(' '); // dd
-
-        CalendarUtils.sprintf0d(sb, date.getHours(), 2).append(':');   // HH
-        CalendarUtils.sprintf0d(sb, date.getMinutes(), 2).append(':'); // mm
-        CalendarUtils.sprintf0d(sb, date.getSeconds(), 2).append(' '); // ss
+        sb.append(String.format(Locale.ROOT, "%0"+2+"d", date.getDayOfMonth())).append(' '); // dd
+        sb.append(String.format(Locale.ROOT, "%0"+2+"d", date.getHours())).append(':'); // HH
+        sb.append(String.format(Locale.ROOT, "%0"+2+"d", date.getMinutes())).append(':'); // mm
+        sb.append(String.format(Locale.ROOT, "%0"+2+"d", date.getSeconds())).append(' '); // ss
         TimeZone zi = date.getZone();
         if (zi != null) {
             sb.append(zi.getDisplayName(date.isDaylightTime(), TimeZone.SHORT, Locale.US)); // zzz
@@ -1055,7 +1054,7 @@ public class Date
      * "monday" -> "Mon") and stored the abbreviation in the given
      * {@code StringBuilder}.
      */
-    private static final StringBuilder convertToAbbr(StringBuilder sb, String name) {
+    private static StringBuilder convertToAbbr(StringBuilder sb, String name) {
         sb.append(Character.toUpperCase(name.charAt(0)));
         sb.append(name.charAt(1)).append(name.charAt(2));
         return sb;
@@ -1122,12 +1121,13 @@ public class Date
         BaseCalendar.Date date =
             (BaseCalendar.Date) cal.getCalendarDate(getTime(), (TimeZone)null);
         StringBuilder sb = new StringBuilder(32);
-        CalendarUtils.sprintf0d(sb, date.getDayOfMonth(), 1).append(' '); // d
+        sb.append(String.format(Locale.ROOT, "%0"+1+"d", date.getDayOfMonth())).append(' '); // d
         convertToAbbr(sb, wtb[date.getMonth() - 1 + 2 + 7]).append(' ');  // MMM
         sb.append(date.getYear()).append(' ');                            // yyyy
-        CalendarUtils.sprintf0d(sb, date.getHours(), 2).append(':');      // HH
-        CalendarUtils.sprintf0d(sb, date.getMinutes(), 2).append(':');    // mm
-        CalendarUtils.sprintf0d(sb, date.getSeconds(), 2);                // ss
+
+        sb.append(String.format(Locale.ROOT, "%0"+2+"d", date.getHours())).append(':'); // HH
+        sb.append(String.format(Locale.ROOT, "%0"+2+"d", date.getMinutes())).append(':'); // mm
+        sb.append(String.format(Locale.ROOT, "%0"+2+"d", date.getSeconds())); // ss
         sb.append(" GMT");                                                // ' GMT'
         return sb.toString();
     }

@@ -399,13 +399,13 @@ public sealed abstract class CalendarDate implements Cloneable
      */
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        CalendarUtils.sprintf0d(sb, year, 4).append('-');
-        CalendarUtils.sprintf0d(sb, month, 2).append('-');
-        CalendarUtils.sprintf0d(sb, dayOfMonth, 2).append('T');
-        CalendarUtils.sprintf0d(sb, hours, 2).append(':');
-        CalendarUtils.sprintf0d(sb, minutes, 2).append(':');
-        CalendarUtils.sprintf0d(sb, seconds, 2).append('.');
-        CalendarUtils.sprintf0d(sb, millis, 3);
+        sb.append(String.format(Locale.ROOT, "%0"+4+"d", year)).append('-');
+        sb.append(String.format(Locale.ROOT, "%0"+2+"d", month)).append('-');
+        sb.append(String.format(Locale.ROOT, "%0"+2+"d", dayOfMonth)).append('T');
+        sb.append(String.format(Locale.ROOT, "%0"+2+"d", hours)).append(':');
+        sb.append(String.format(Locale.ROOT, "%0"+2+"d", minutes)).append(':');
+        sb.append(String.format(Locale.ROOT, "%0"+2+"d", seconds)).append('.');
+        sb.append(String.format(Locale.ROOT, "%0"+3+"d", millis));
         if (zoneOffset == 0) {
             sb.append('Z');
         } else if (zoneOffset != FIELD_UNDEFINED) {
@@ -420,8 +420,8 @@ public sealed abstract class CalendarDate implements Cloneable
             }
             offset /= 60000;
             sb.append(sign);
-            CalendarUtils.sprintf0d(sb, offset / 60, 2);
-            CalendarUtils.sprintf0d(sb, offset % 60, 2);
+            sb.append(String.format(Locale.ROOT, "%0"+2+"d", offset / 60));
+            sb.append(String.format(Locale.ROOT, "%0"+2+"d", offset % 60));
         } else {
             sb.append(" local time");
         }

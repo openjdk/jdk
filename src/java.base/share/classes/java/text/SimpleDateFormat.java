@@ -1320,7 +1320,7 @@ public class SimpleDateFormat extends DateFormat {
             }
 
             int num = (value / 60) * 100 + (value % 60);
-            CalendarUtils.sprintf0d(buffer, num, width);
+            buffer.append(String.format(Locale.ROOT, "%0"+ width +"d", num));
             break;
 
         case PATTERN_ISO_ZONE:   // 'X'
@@ -1340,7 +1340,7 @@ public class SimpleDateFormat extends DateFormat {
                 value = -value;
             }
 
-            CalendarUtils.sprintf0d(buffer, value / 60, 2);
+            buffer.append(String.format(Locale.ROOT, "%0"+ 2 +"d", value / 60));
             if (count == 1) {
                 break;
             }
@@ -1348,7 +1348,7 @@ public class SimpleDateFormat extends DateFormat {
             if (count == 3) {
                 buffer.append(':');
             }
-            CalendarUtils.sprintf0d(buffer, value % 60, 2);
+            buffer.append(String.format(Locale.ROOT, "%0"+ 2 +"d", value % 60));
             break;
 
         default:
