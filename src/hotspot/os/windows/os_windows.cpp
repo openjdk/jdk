@@ -425,40 +425,31 @@ int os::get_native_stack(address* stack, int frames, int toSkip) {
   return captured;
 }
 
-// os::current_stack_base()
-//
 //   Returns the base of the stack, which is the stack's
 //   starting address.  This function must be called
 //   while running on the stack of the thread being queried.
 
-address os::current_stack_base() {
+void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
   MEMORY_BASIC_INFORMATION minfo;
   address stack_bottom;
-  size_t stack_size;
+  size_t size;
 
   VirtualQuery(&minfo, &minfo, sizeof(minfo));
-  stack_bottom =  (address)minfo.AllocationBase;
-  stack_size = minfo.RegionSize;
+  stack_bottom = (address)minfo.AllocationBase;
+  size = minfo.RegionSize;
 
   // Add up the sizes of all the regions with the same
   // AllocationBase.
   while (1) {
-    VirtualQuery(stack_bottom+stack_size, &minfo, sizeof(minfo));
+    VirtualQuery(stack_bottom + size, &minfo, sizeof(minfo));
     if (stack_bottom == (address)minfo.AllocationBase) {
-      stack_size += minfo.RegionSize;
+      size += minfo.RegionSize;
     } else {
       break;
     }
   }
-  return stack_bottom + stack_size;
-}
-
-size_t os::current_stack_size() {
-  size_t sz;
-  MEMORY_BASIC_INFORMATION minfo;
-  VirtualQuery(&minfo, &minfo, sizeof(minfo));
-  sz = (size_t)os::current_stack_base() - (size_t)minfo.AllocationBase;
-  return sz;
+  *stack_base = stack_bottom + size;
+  *stack_size = size;
 }
 
 bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
@@ -718,6 +709,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     case os::gc_thread:
     case os::asynclog_thread:
     case os::watcher_thread:
+    default:  // presume the unknown thread type is an internal VM one
       if (VMThreadStackSize > 0) stack_size = (size_t)(VMThreadStackSize * K);
       break;
     }
@@ -1253,13 +1245,34 @@ void  os::dll_unload(void *lib) {
   if (::GetModuleFileName((HMODULE)lib, name, sizeof(name)) == 0) {
     snprintf(name, MAX_PATH, "<not available>");
   }
+
+#if INCLUDE_JFR
+  EventNativeLibraryUnload event;
+  event.set_name(name);
+#endif
+
   if (::FreeLibrary((HMODULE)lib)) {
     Events::log_dll_message(nullptr, "Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
     log_info(os)("Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
+#if INCLUDE_JFR
+    event.set_success(true);
+    event.set_errorMessage(nullptr);
+    event.commit();
+#endif
   } else {
     const DWORD errcode = ::GetLastError();
+    char buf[500];
+    size_t tl = os::lasterror(buf, sizeof(buf));
     Events::log_dll_message(nullptr, "Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
     log_info(os)("Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
+#if INCLUDE_JFR
+    event.set_success(false);
+    if (tl == 0) {
+      os::snprintf(buf, sizeof(buf), "Attempt to unload dll failed (error code %d)", (int) errcode);
+    }
+    event.set_errorMessage(buf);
+    event.commit();
+#endif
   }
 }
 
@@ -1528,13 +1541,21 @@ static int _print_module(const char* fname, address base_address,
 // same architecture as Hotspot is running on
 void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", name);
-
+#if INCLUDE_JFR
+  EventNativeLibraryLoad event;
+  event.set_name(name);
+#endif
   void * result = LoadLibrary(name);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", name);
     // Recalculate pdb search path if a DLL was loaded successfully.
     SymbolEngine::recalc_search_path();
     log_info(os)("shared library load of %s was successful", name);
+#if INCLUDE_JFR
+    event.set_success(true);
+    event.set_errorMessage(nullptr);
+    event.commit();
+#endif
     return result;
   }
   DWORD errcode = GetLastError();
@@ -1548,6 +1569,11 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   if (errcode == ERROR_MOD_NOT_FOUND) {
     strncpy(ebuf, "Can't find dependent libraries", ebuflen - 1);
     ebuf[ebuflen - 1] = '\0';
+#if INCLUDE_JFR
+    event.set_success(false);
+    event.set_errorMessage(ebuf);
+    event.commit();
+#endif
     return nullptr;
   }
 
@@ -1558,6 +1584,11 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // else call os::lasterror to obtain system error message
   int fd = ::open(name, O_RDONLY | O_BINARY, 0);
   if (fd < 0) {
+#if INCLUDE_JFR
+    event.set_success(false);
+    event.set_errorMessage("open on dll file did not work");
+    event.commit();
+#endif
     return nullptr;
   }
 
@@ -1584,6 +1615,11 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   ::close(fd);
   if (failed_to_get_lib_arch) {
     // file i/o error - report os::lasterror(...) msg
+#if INCLUDE_JFR
+    event.set_success(false);
+    event.set_errorMessage("failed to get lib architecture");
+    event.commit();
+#endif
     return nullptr;
   }
 
@@ -1628,6 +1664,11 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // If the architecture is right
   // but some other error took place - report os::lasterror(...) msg
   if (lib_arch == running_arch) {
+#if INCLUDE_JFR
+    event.set_success(false);
+    event.set_errorMessage("lib architecture matches, but other error occured");
+    event.commit();
+#endif
     return nullptr;
   }
 
@@ -1641,6 +1682,11 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
                 "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
                 lib_arch, running_arch_str);
   }
+#if INCLUDE_JFR
+  event.set_success(false);
+  event.set_errorMessage(ebuf);
+  event.commit();
+#endif
 
   return nullptr;
 }
@@ -1728,7 +1774,7 @@ static inline time_t get_mtime(const char* filename) {
 int os::compare_file_modified_times(const char* file1, const char* file2) {
   time_t t1 = get_mtime(file1);
   time_t t2 = get_mtime(file2);
-  return t1 - t2;
+  return primitive_compare(t1, t2);
 }
 
 void os::print_os_info_brief(outputStream* st) {
@@ -3387,6 +3433,11 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
          "Unexpected address from reserve.");
 
   return res;
+}
+
+size_t os::vm_min_address() {
+  assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
+  return _vm_min_address_default;
 }
 
 char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
@@ -5451,6 +5502,10 @@ void Parker::unpark() {
   SetEvent(_ParkHandle);
 }
 
+PlatformMutex::~PlatformMutex() {
+  DeleteCriticalSection(&_mutex);
+}
+
 // Platform Monitor implementation
 
 // Must already be locked
@@ -5570,19 +5625,19 @@ int os::socket_close(int fd) {
   return ::closesocket(fd);
 }
 
-int os::connect(int fd, struct sockaddr* him, socklen_t len) {
+ssize_t os::connect(int fd, struct sockaddr* him, socklen_t len) {
   return ::connect(fd, him, len);
 }
 
-int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
+ssize_t os::recv(int fd, char* buf, size_t nBytes, uint flags) {
   return ::recv(fd, buf, (int)nBytes, flags);
 }
 
-int os::send(int fd, char* buf, size_t nBytes, uint flags) {
+ssize_t os::send(int fd, char* buf, size_t nBytes, uint flags) {
   return ::send(fd, buf, (int)nBytes, flags);
 }
 
-int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
+ssize_t os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
   return ::send(fd, buf, (int)nBytes, flags);
 }
 

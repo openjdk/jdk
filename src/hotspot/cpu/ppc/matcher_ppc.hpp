@@ -39,7 +39,7 @@
 
   // PPC implementation uses VSX load/store instructions (if
   // SuperwordUseVSX) which support 4 byte but not arbitrary alignment
-  static const bool misaligned_vectors_ok() {
+  static constexpr bool misaligned_vectors_ok() {
     return false;
   }
 
@@ -155,7 +155,7 @@
 
   // true means we have fast l2f conversion
   // false means that conversion is done by runtime call
-  static const bool convL2FSupported(void) {
+  static bool convL2FSupported(void) {
     // fcfids can do the conversion (>= Power7).
     // fcfid + frsp showed rounding problem when result should be 0x3f800001.
     return VM_Version::has_fcfids();

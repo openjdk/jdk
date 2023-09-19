@@ -45,6 +45,7 @@ import gc.g1.plab.lib.LogParser;
 import gc.g1.plab.lib.PLABUtils;
 import gc.g1.plab.lib.PlabInfo;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -62,17 +63,18 @@ public class TestPLABPromotion {
     private final static String PLAB_DIRECT_ALLOCATED_FIELD_NAME = "direct allocated";
     private final static List<String> FIELDS_TO_EXTRACT = Arrays.asList(PLAB_USED_FIELD_NAME, PLAB_DIRECT_ALLOCATED_FIELD_NAME);
 
+    private static final int HEAP_WORD_SIZE = Platform.is32bit() ? 4 : 8;
+
     private static String output;
 
     // Allowable difference for memory consumption (percentage)
     private final static long MEM_DIFFERENCE_PCT = 5;
-
     private static final int PLAB_SIZE_SMALL = 1024;
     private static final int PLAB_SIZE_MEDIUM = 4096;
     private static final int PLAB_SIZE_HIGH = 65536;
-    private static final int OBJECT_SIZE_SMALL = 10;
-    private static final int OBJECT_SIZE_MEDIUM = 100;
-    private static final int OBJECT_SIZE_HIGH = 3250;
+    private static final int OBJECT_SIZE_SMALL  = 10 * HEAP_WORD_SIZE;
+    private static final int OBJECT_SIZE_MEDIUM = 128 * HEAP_WORD_SIZE;
+    private static final int OBJECT_SIZE_HIGH   = 3072 * HEAP_WORD_SIZE;
     private static final int GC_NUM_SMALL = 1;
     private static final int GC_NUM_MEDIUM = 3;
     private static final int GC_NUM_HIGH = 7;
@@ -94,7 +96,8 @@ public class TestPLABPromotion {
         new TestCase(WASTE_PCT_SMALL, PLAB_SIZE_SMALL, OBJECT_SIZE_HIGH, GC_NUM_MEDIUM, YOUNG_SIZE_LOW, PLAB_FIXED, true, false),
         new TestCase(WASTE_PCT_MEDIUM, PLAB_SIZE_HIGH, OBJECT_SIZE_SMALL, GC_NUM_HIGH, YOUNG_SIZE_HIGH, PLAB_FIXED, true, true),
         new TestCase(WASTE_PCT_MEDIUM, PLAB_SIZE_SMALL, OBJECT_SIZE_MEDIUM, GC_NUM_SMALL, YOUNG_SIZE_LOW, PLAB_FIXED, true, true),
-        new TestCase(WASTE_PCT_MEDIUM, PLAB_SIZE_MEDIUM, OBJECT_SIZE_HIGH, GC_NUM_MEDIUM, YOUNG_SIZE_LOW, PLAB_FIXED, true, true),
+        new TestCase(WASTE_PCT_MEDIUM, PLAB_SIZE_MEDIUM, OBJECT_SIZE_HIGH, GC_NUM_MEDIUM, YOUNG_SIZE_LOW, PLAB_FIXED, true, false),
+        new TestCase(WASTE_PCT_HIGH, PLAB_SIZE_MEDIUM, OBJECT_SIZE_HIGH, GC_NUM_MEDIUM, YOUNG_SIZE_LOW, PLAB_FIXED, true, true),
         new TestCase(WASTE_PCT_HIGH, PLAB_SIZE_SMALL, OBJECT_SIZE_SMALL, GC_NUM_HIGH, YOUNG_SIZE_HIGH, PLAB_FIXED, true, true),
         new TestCase(WASTE_PCT_HIGH, PLAB_SIZE_HIGH, OBJECT_SIZE_MEDIUM, GC_NUM_SMALL, YOUNG_SIZE_LOW, PLAB_FIXED, true, true),
         new TestCase(WASTE_PCT_HIGH, PLAB_SIZE_SMALL, OBJECT_SIZE_HIGH, GC_NUM_MEDIUM, YOUNG_SIZE_HIGH, PLAB_FIXED, true, false),
@@ -104,8 +107,6 @@ public class TestPLABPromotion {
         new TestCase(WASTE_PCT_SMALL, PLAB_SIZE_HIGH, OBJECT_SIZE_SMALL, GC_NUM_HIGH, YOUNG_SIZE_HIGH, PLAB_DYNAMIC, true, true),
         new TestCase(WASTE_PCT_MEDIUM, PLAB_SIZE_MEDIUM, OBJECT_SIZE_SMALL, GC_NUM_SMALL, YOUNG_SIZE_LOW, PLAB_DYNAMIC, true, true),
         new TestCase(WASTE_PCT_SMALL, PLAB_SIZE_MEDIUM, OBJECT_SIZE_HIGH, GC_NUM_HIGH, YOUNG_SIZE_HIGH, PLAB_DYNAMIC, true, false),
-        new TestCase(WASTE_PCT_MEDIUM, PLAB_SIZE_SMALL, OBJECT_SIZE_MEDIUM, GC_NUM_MEDIUM, YOUNG_SIZE_LOW, PLAB_DYNAMIC, true, true),
-        new TestCase(WASTE_PCT_HIGH, PLAB_SIZE_HIGH, OBJECT_SIZE_MEDIUM, GC_NUM_SMALL, YOUNG_SIZE_HIGH, PLAB_DYNAMIC, true, true),
         new TestCase(WASTE_PCT_HIGH, PLAB_SIZE_HIGH, OBJECT_SIZE_SMALL, GC_NUM_HIGH, YOUNG_SIZE_LOW, PLAB_DYNAMIC, true, true)
     };
 

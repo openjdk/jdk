@@ -349,7 +349,7 @@ class AddressLiteral {
 
   intptr_t value() const { return (intptr_t) _address; }
 
-  const relocInfo::relocType rtype() const { return _rspec.type(); }
+  relocInfo::relocType rtype()       const { return _rspec.type(); }
   const RelocationHolder&    rspec() const { return _rspec; }
 
   RelocationHolder rspec(int offset) const {

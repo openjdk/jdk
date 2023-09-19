@@ -432,11 +432,11 @@ class VM_RedefineClasses: public VM_Operation {
   void append_operand(const constantPoolHandle& scratch_cp, int scratch_bootstrap_spec_index,
     constantPoolHandle *merge_cp_p, int *merge_cp_length_p);
   void finalize_operands_merge(const constantPoolHandle& merge_cp, TRAPS);
-  int find_or_append_indirect_entry(const constantPoolHandle& scratch_cp, int scratch_i,
+  u2 find_or_append_indirect_entry(const constantPoolHandle& scratch_cp, int scratch_i,
     constantPoolHandle *merge_cp_p, int *merge_cp_length_p);
   int find_or_append_operand(const constantPoolHandle& scratch_cp, int scratch_bootstrap_spec_index,
     constantPoolHandle *merge_cp_p, int *merge_cp_length_p);
-  int find_new_index(int old_index);
+  u2 find_new_index(int old_index);
   int find_new_operand_index(int old_bootstrap_spec_index);
   bool is_unresolved_class_mismatch(const constantPoolHandle& cp1, int index1,
     const constantPoolHandle& cp2, int index2);

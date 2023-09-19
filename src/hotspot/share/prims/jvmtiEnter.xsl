@@ -174,7 +174,7 @@ jint </xsl:text>
   <xsl:text>
 
 // Check Event Capabilities
-const bool JvmtiUtil::has_event_capability(jvmtiEvent event_type, const jvmtiCapabilities* capabilities_ptr) {
+bool JvmtiUtil::has_event_capability(jvmtiEvent event_type, const jvmtiCapabilities* capabilities_ptr) {
   switch (event_type) {
 </xsl:text>
   <xsl:for-each select="//eventsection/event">

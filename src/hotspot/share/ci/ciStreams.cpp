@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,9 +267,9 @@ ciConstant ciBytecodeStream::get_constant() {
 //
 // If this bytecode is one of the ldc variants, get the referenced
 // constant.
-constantTag ciBytecodeStream::get_constant_pool_tag(int index) const {
+constantTag ciBytecodeStream::get_constant_pool_tag(int cp_index) const {
   VM_ENTRY_MARK;
-  return _method->get_Method()->constants()->constant_tag_at(index);
+  return _method->get_Method()->constants()->constant_tag_at(cp_index);
 }
 
 // ------------------------------------------------------------------
@@ -283,9 +283,9 @@ constantTag ciBytecodeStream::get_raw_pool_tag_at(int index) const {
 // ------------------------------------------------------------------
 // ciBytecodeStream::get_basic_type_for_constant_at
 //
-BasicType ciBytecodeStream::get_basic_type_for_constant_at(int index) const {
+BasicType ciBytecodeStream::get_basic_type_for_constant_at(int cp_index) const {
   VM_ENTRY_MARK;
-  return _method->get_Method()->constants()->basic_type_for_constant_at(index);
+  return _method->get_Method()->constants()->basic_type_for_constant_at(cp_index);
 }
 
 // ------------------------------------------------------------------
@@ -298,7 +298,7 @@ int ciBytecodeStream::get_field_index() {
          cur_bc() == Bytecodes::_putfield ||
          cur_bc() == Bytecodes::_getstatic ||
          cur_bc() == Bytecodes::_putstatic, "wrong bc");
-  return get_index_u2_cpcache();
+  return get_index_u2();
 }
 
 

@@ -90,7 +90,7 @@ class StubCodeDesc: public CHeapObj<mtCode> {
   address     begin() const                      { return _begin; }
   address     end() const                        { return _end; }
   uint        disp() const                       { return _disp; }
-  int         size_in_bytes() const              { return _end - _begin; }
+  int         size_in_bytes() const              { return pointer_delta_as_int(_end, _begin); }
   bool        contains(address pc) const         { return _begin <= pc && pc < _end; }
   void        print_on(outputStream* st) const;
   void        print() const;

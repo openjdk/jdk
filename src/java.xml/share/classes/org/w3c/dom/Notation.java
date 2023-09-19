@@ -51,6 +51,8 @@ package org.w3c.dom;
  * are therefore readonly.
  * <p>A <code>Notation</code> node does not have any parent.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ *
+ * @since 1.4, DOM Level 2
  */
 public interface Notation extends Node {
     /**

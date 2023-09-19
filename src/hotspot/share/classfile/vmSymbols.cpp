@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/serializeClosure.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDirectives.hpp"
@@ -33,7 +34,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
-#include "utilities/tribool.hpp"
 #include "utilities/xmlstream.hpp"
 
 
@@ -211,7 +211,7 @@ void vmSymbols::serialize(SerializeClosure* soc) {
 }
 
 #ifndef PRODUCT
-static int find_sid_calls, find_sid_probes;
+static uint find_sid_calls, find_sid_probes;
 // (Typical counts are calls=7000 and probes=17000.)
 #endif
 

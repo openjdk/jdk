@@ -178,7 +178,6 @@ public class Socket implements java.io.Closeable {
      * socket implementation is created.
      *
      * @since   1.1
-     * @revised 1.4
      */
     public Socket() {
         this.impl = createImpl();
@@ -1053,8 +1052,6 @@ public class Socket implements java.io.Closeable {
      *             input stream, the socket is closed, the socket is
      *             not connected, or the socket input has been shutdown
      *             using {@link #shutdownInput()}
-     *
-     * @revised 1.4
      */
     public InputStream getInputStream() throws IOException {
         int s = state;
@@ -1168,7 +1165,6 @@ public class Socket implements java.io.Closeable {
      * @return     an output stream for writing bytes to this socket.
      * @throws     IOException  if an I/O error occurs when creating the
      *               output stream or if the socket is not connected.
-     * @revised 1.4
      */
     public OutputStream getOutputStream() throws IOException {
         int s = state;
@@ -1743,7 +1739,6 @@ public class Socket implements java.io.Closeable {
      * as well.
      *
      * @throws     IOException  if an I/O error occurs when closing this socket.
-     * @revised 1.4
      * @see #isClosed
      */
     public void close() throws IOException {

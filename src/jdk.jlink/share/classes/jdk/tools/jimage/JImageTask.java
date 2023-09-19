@@ -180,7 +180,7 @@ class JImageTask {
             String[] remaining = args;
             try {
                 command = args[0];
-                options.task = Enum.valueOf(Task.class, args[0].toUpperCase(Locale.ENGLISH));
+                options.task = Enum.valueOf(Task.class, args[0].toUpperCase(Locale.ROOT));
                 remaining = args.length > 1 ? Arrays.copyOfRange(args, 1, args.length)
                                             : new String[0];
             } catch (IllegalArgumentException ex) {
@@ -212,7 +212,7 @@ class JImageTask {
                 } else {
                     try {
                         log.println(TASK_HELPER.getMessage("main.usage." +
-                                options.task.toString().toLowerCase()));
+                                options.task.toString().toLowerCase(Locale.ROOT)));
                     } catch (MissingResourceException ex) {
                         throw TASK_HELPER.newBadArgs("err.not.a.task", command);
                     }

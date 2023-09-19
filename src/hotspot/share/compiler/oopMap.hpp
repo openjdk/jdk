@@ -30,6 +30,7 @@
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/growableArray.hpp"
 
 // Interface for generating the frame map for compiled code.  A frame map

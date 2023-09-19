@@ -289,12 +289,11 @@ final class DCmdStart extends AbstractDCmd {
         if (!hasJDKEvents(settings)) {
             return;
         }
-        JVM jvm = JVM.getJVM();
         try {
-            jvm.setForceInstrumentation(true);
+            JVM.setForceInstrumentation(true);
             FlightRecorder.getFlightRecorder();
         } finally {
-            jvm.setForceInstrumentation(false);
+            JVM.setForceInstrumentation(false);
         }
     }
 

@@ -43,7 +43,7 @@ private:
   static void merge_loader_constraints(Symbol* class_name, LoaderConstraint* pp1,
                                        LoaderConstraint* pp2, InstanceKlass* klass);
 public:
-
+  static void initialize();
   // Check class loader constraints
   static bool add_entry(Symbol* name, InstanceKlass* klass1, ClassLoaderData* loader1,
                         InstanceKlass* klass2, ClassLoaderData* loader2);

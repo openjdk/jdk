@@ -50,6 +50,7 @@ public:
   static const char* retry_no_subsuming_loads();
   static const char* retry_no_escape_analysis();
   static const char* retry_no_iterative_escape_analysis();
+  static const char* retry_no_reduce_allocation_merges();
   static const char* retry_no_locks_coarsening();
 
   // Print compilation timers and statistics
@@ -62,6 +63,8 @@ public:
   // Return false otherwise.
   virtual bool is_intrinsic_supported(const methodHandle& method);
 
+  // Return true if the intrinsic `id` is supported by C2
+  static bool is_intrinsic_supported(vmIntrinsics::ID id);
   // Initial size of the code buffer (may be increased at runtime)
   static int initial_code_buffer_size(int const_size = initial_const_capacity);
 };

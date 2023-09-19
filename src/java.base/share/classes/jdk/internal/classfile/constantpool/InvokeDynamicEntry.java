@@ -32,6 +32,7 @@ import jdk.internal.classfile.impl.Util;
 
 /**
  * Models a constant pool entry for a dynamic call site.
+ * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
  */
 public sealed interface InvokeDynamicEntry
         extends DynamicConstantPoolEntry

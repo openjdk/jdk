@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "compiler/disassembler.hpp"
+#include "oops/compressedKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
