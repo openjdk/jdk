@@ -38,7 +38,7 @@ import jtreg.SkippedException;
  * @build JCmdTestLingeredApp Hello jdk.test.lib.apps.LingeredApp
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar loadclass.jar JCmdTestLingeredApp
- *             jdk.test.lib.apps.LingeredApp jdk.test.lib.apps.LingeredApp$1
+ *             jdk.test.lib.apps.LingeredApp jdk.test.lib.apps.LingeredApp$1 jdk.test.lib.apps.LingeredApp$SteadyStateLock
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=500 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar DynamicSharedSymbols
  */
