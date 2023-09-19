@@ -103,8 +103,8 @@ public final class HexDigits implements Digits {
          * uppercase or not, and shifting it right by 1 bit incidentally
          * becomes a bit offset between cases (1 << 5).
          *
-         *  [0-9] & 0b100_0000 => 0
-         *  [a-f] & 0b100_0000 => 32
+         *  ([0-9] & 0b100_0000) >> 1 => 0
+         *  ([a-f] & 0b100_0000) >> 1 => 32
          *
          *  [0-9] -  0 => [0-9]
          *  [a-f] - 32 => [A-F]
