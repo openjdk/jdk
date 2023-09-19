@@ -37,6 +37,23 @@
  */
 
 /*
+ * @test id=VerifyAlignVector-Align16
+ * @bug 8253191
+ * @summary Fuzzing loops with different (random) init, limit, stride, scale etc. Verify AlignVector.
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @requires vm.compiler2.enabled
+ * @requires vm.bits == 64
+ * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                                 -XX:+AlignVector -XX:+VerifyAlignVector
+ *                                 -XX:LoopUnrollLimit=250
+ *                                 -XX:CompileCommand=VectorizeDebug,compiler.loopopts.superword.TestAlignVectorFuzzer::test*,128
+ *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
+ *                                 -XX:ObjectAlignmentInBytes=16
+ *                                 compiler.loopopts.superword.TestAlignVectorFuzzer
+ */
+
+/*
  * @test id=Vanilla
  * @bug 8253191
  * @summary Fuzzing loops with different (random) init, limit, stride, scale etc. Do not force alignment.

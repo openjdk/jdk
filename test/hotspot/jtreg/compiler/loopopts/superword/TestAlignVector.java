@@ -100,7 +100,7 @@ public class TestAlignVector {
 
         switch (args[0]) {
             case "NoAlignVector"     -> { framework.addFlags("-XX:-AlignVector"); }
-	    case "AlignVector"       -> { framework.addFlags("-XX:+AlignVector"); }
+            case "AlignVector"       -> { framework.addFlags("-XX:+AlignVector"); }
             case "VerifyAlignVector" -> { framework.addFlags("-XX:+AlignVector", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+VerifyAlignVector"); }
             default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
         }
