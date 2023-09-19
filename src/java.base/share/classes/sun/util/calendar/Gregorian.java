@@ -45,10 +45,12 @@ public final class Gregorian extends BaseCalendar {
             super(zone);
         }
 
+        @Override
         public int getNormalizedYear() {
             return getYear();
         }
 
+        @Override
         public void setNormalizedYear(int normalizedYear) {
             setYear(normalizedYear);
         }
@@ -57,30 +59,37 @@ public final class Gregorian extends BaseCalendar {
     Gregorian() {
     }
 
+    @Override
     public String getName() {
         return "gregorian";
     }
 
+    @Override
     public Date getCalendarDate() {
         return getCalendarDate(System.currentTimeMillis(), newCalendarDate());
     }
 
+    @Override
     public Date getCalendarDate(long millis) {
         return getCalendarDate(millis, newCalendarDate());
     }
 
+    @Override
     public Date getCalendarDate(long millis, CalendarDate date) {
         return (Date) super.getCalendarDate(millis, date);
     }
 
+    @Override
     public Date getCalendarDate(long millis, TimeZone zone) {
         return getCalendarDate(millis, newCalendarDate(zone));
     }
 
+    @Override
     public Date newCalendarDate() {
         return new Date();
     }
 
+    @Override
     public Date newCalendarDate(TimeZone zone) {
         return new Date(zone);
     }
