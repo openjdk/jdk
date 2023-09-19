@@ -271,11 +271,6 @@ final class ImmutableGregorianDate extends BaseCalendar.Date {
         unsupported();
     }
 
-    @Override
-    public void setCache(int year, long jan1, int len) {
-        unsupported();
-    }
-
     private void unsupported() {
         throw new UnsupportedOperationException();
     }
