@@ -39,7 +39,7 @@
 
 ContinuationWrapper::ContinuationWrapper(const RegisterMap* map)
   : ContinuationWrapper(map->thread(),
-                        Continuation::get_continuation_entry_for_continuation(_thread, map->stack_chunk()->cont()),
+                        Continuation::get_continuation_entry_for_continuation(map->thread(), map->stack_chunk()->cont()),
                         map->stack_chunk()->cont()) {
   assert(_entry == nullptr || _continuation == _entry->cont_oop(map->thread()),
     "cont: " INTPTR_FORMAT " entry: " INTPTR_FORMAT " entry_sp: " INTPTR_FORMAT,
@@ -92,4 +92,3 @@ bool ContinuationWrapper::chunk_invariant() const {
   return true;
 }
 #endif // ASSERT
-
