@@ -82,7 +82,7 @@ public class TestObjectMonitorIterate {
              Long.toString(lingeredAppPid));
         SATestUtils.addPrivilegesIfNeeded(processBuilder);
         OutputAnalyzer SAOutput = ProcessTools.executeProcess(processBuilder);
-        SAOutput.shouldContain("java/lang/Object");
+        SAOutput.shouldContain("SteadyStateLock");
         SAOutput.shouldHaveExitValue(0);
         System.out.println(SAOutput.getOutput());
     }

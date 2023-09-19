@@ -587,6 +587,8 @@ public class LingeredApp {
         }
     }
 
+    static class SteadyStateLock {};
+
     /**
      * This part is the application itself. First arg is optional "forceCrash".
      * Following arg is the lock file name.
@@ -615,7 +617,7 @@ public class LingeredApp {
         Path path = Paths.get(theLockFileName);
 
         try {
-            Object steadyStateObj = new Object();
+            Object steadyStateObj = new SteadyStateLock();
             synchronized(steadyStateObj) {
                 startSteadyStateThread(steadyStateObj);
                 if (forceCrash) {
