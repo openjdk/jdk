@@ -81,4 +81,26 @@ public class TestPreconditions {
         applyIfAnd = {"UseAVX", "= 2", "LoopMaxUnroll", "= 0"},
         counts = {IRNode.LOOP, ">= 1000"})
     public static void testApplyBoth3() {}
+
+    // The IR check should not be applied, since arch can not be linux and mac.
+    @Test
+    @IR(applyIfPlatformFeatureAnd = {"linux", "true", "mac", "true"},
+        applyIf = {"LoopMaxUnroll", "= 8"},
+        counts = {IRNode.LOOP, ">= 1000"})
+    public static void testApplyBothOs() {}
+
+    // The IR check should not be applied, since we can't have both 32-bit and 64-bit data model.
+    @Test
+    @IR(applyIfPlatformFeatureAnd = {"32-bit", "true", "64-bit", "true"},
+        applyIf = {"LoopMaxUnroll", "= 8"},
+        counts = {IRNode.LOOP, ">= 1000"})
+    public static void testApplyBothDataModel() {}
+
+    // The IR check should not be applied, since we arch can't be both amd64 and aarch64.
+    @Test
+    @IR(applyIfPlatformFeatureAnd = {"amd64", "true", "aarch64", "true"},
+        applyIf = {"LoopMaxUnroll", "= 8"},
+        counts = {IRNode.LOOP, ">= 1000"})
+    public static void testApplyBothArch() {}
+
 }
