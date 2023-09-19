@@ -87,7 +87,6 @@ class ObjectStreamPrinterTest {
         );
     }
 
-    // SingleObjects
     static Stream<Arguments> sources(){
         return Stream.of(
                 Arguments.of("A Simple", new A(), 1, 1, 0),
