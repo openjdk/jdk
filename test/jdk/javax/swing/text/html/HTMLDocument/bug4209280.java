@@ -33,7 +33,7 @@ public class bug4209280 {
 
     public static void main(String[] args) throws Exception {
         String html = "<html><bold>Foo</bold></html>";
-        // The following line should throw no exceptions.
+        // The following line should throw no exceptions
         new JLabel(html);
     }
 }
