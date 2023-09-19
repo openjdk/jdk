@@ -569,9 +569,9 @@ public class TestCharsetMapping {
 
     public static void main(String args[]) throws Exception {
         Path dir = Paths.get(System.getProperty("test.src", ".") +
-            "/../../../../../make/data/charsetmapping");
+            "/../../../../../make/data/charsetmapping").normalize();
         if (!Files.exists(dir)) {
-            throw new Exception("charsetmapping directory cannot be located.");
+            throw new Exception("charsetmapping files cannot be located in " + dir);
         }
         if (args.length > 0 && "-v".equals(args[0])) {
             // For debugging: java CoderTest [-v]
