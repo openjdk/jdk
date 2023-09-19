@@ -44,9 +44,6 @@ import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.access.JavaNioAccess;
-
 /**
  * A file-based lines spliterator, leveraging a shared mapped byte buffer and
  * associated file channel, covering lines of a file for character encodings
@@ -196,7 +193,7 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
         }
     }
 
-    private MemorySegment getMappedByteBuffer() {
+    private MemorySegment getMappedSegment() {
         try {
             return fc.map(FileChannel.MapMode.READ_ONLY, 0, fence, arena);
         } catch (IOException e) {
@@ -212,7 +209,7 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
 
         MemorySegment b;
         if ((b = buffer) == null) {
-            b = buffer = getMappedByteBuffer();
+            b = buffer = getMappedSegment();
             bufRefCount.set(1);
         }
 
