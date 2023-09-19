@@ -38,8 +38,8 @@ import java.util.stream.Stream;
 
 /**
  * Parses extra properties files of UCD, and replaces the placeholders in
- * the given template source file with the generated conditions, then emit
- * the produced .java files. For example, if the properties file has:
+ * the given template source file with the generated conditions, then emits
+ * .java files. For example, if the properties file has:
  * <blockquote>
  *     0009..000D   ; Type (; Value)
  *     0020         ; Type (; Value)
