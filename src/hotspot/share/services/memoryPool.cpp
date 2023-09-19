@@ -178,13 +178,9 @@ CodeHeapPool::CodeHeapPool(CodeHeap* codeHeap, const char* name, bool support_us
 }
 
 MemoryUsage CodeHeapPool::get_memory_usage() {
-  size_t used;
-  size_t committed;
-  {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    used = used_in_bytes();
-    committed = _codeHeap->capacity();
-  }
+  OrderAccess::loadload();
+  size_t used = used_in_bytes();
+  size_t committed = _codeHeap->capacity();
   size_t maxSize   = (available_for_allocation() ? max_size() : 0);
 
   return MemoryUsage(initial_size(), used, committed, maxSize);
