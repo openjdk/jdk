@@ -785,8 +785,11 @@ size_t XPageAllocator::uncommit(uint64_t* timeout) {
       return 0;
     }
 
+    RISCV_ONLY(PRAGMA_DIAG_PUSH)
+    RISCV_ONLY(PRAGMA_STRINGOP_OVERFLOW_IGNORED)
     // Record flushed pages as claimed
     Atomic::add(&_claimed, flushed);
+    RISCV_ONLY(PRAGMA_DIAG_POP)
   }
 
   // Unmap, uncommit, and destroy flushed pages
