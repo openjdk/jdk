@@ -32,21 +32,18 @@ import java.awt.Color;
 
 import javax.swing.JScrollPane;
 import javax.swing.JViewport;
-import javax.swing.SwingUtilities;
 
 public class bug4677611 {
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            JScrollPane sp = new JScrollPane();
-            JViewport vp = new MyViewport();
-            vp.setBackground(Color.blue);
-            sp.setViewport(vp);
+        JScrollPane sp = new JScrollPane();
+        JViewport vp = new MyViewport();
+        vp.setBackground(Color.blue);
+        sp.setViewport(vp);
 
-            if (vp.isOpaque()) {
-                throw new RuntimeException("JViewport shouldn't set Opaque " +
-                        "after update the UI");
-            }
-        });
+        if (vp.isOpaque()) {
+            throw new RuntimeException("JViewport shouldn't set Opaque " +
+                    "after update the UI");
+        }
     }
 
     static class MyViewport extends JViewport {

@@ -25,63 +25,49 @@
  * @bug 4546474
  * @summary JScrollPane's always-visible scrollbars not updated when
  * viewport is replaced
- * @key headful
  * @run main bug4546474
  */
 
 import java.awt.Dimension;
 import java.awt.Robot;
 
-import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
 public class bug4546474 {
-    static JFrame fr;
     static JScrollPane scrollpane;
     static JScrollBar sbar;
     static volatile boolean viewChanged;
 
     public static void main(String[] args) throws Exception {
-        try {
-            SwingUtilities.invokeAndWait(() -> {
-                fr = new JFrame("bug4546474");
+        SwingUtilities.invokeAndWait(() -> {
+            JPanel panel = new JPanel();
+            panel.setPreferredSize(new Dimension(500, 500));
+            scrollpane = new JScrollPane(panel,
+                    JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+                    JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+            sbar = scrollpane.getVerticalScrollBar();
+        });
 
-                JPanel panel = new JPanel();
-                panel.setPreferredSize(new Dimension(500, 500));
-                scrollpane = new JScrollPane(panel,
-                        JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-                        JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-                sbar = scrollpane.getVerticalScrollBar();
-                fr.getContentPane().add(scrollpane);
-            });
-
-            Robot robot = new Robot();
-            robot.delay(500);
-            SwingUtilities.invokeAndWait(() -> {
-                sbar.addAdjustmentListener(e -> viewChanged = true);
-                scrollpane.setViewportView(null);
-            });
-            robot.delay(500);
-            if (!viewChanged) {
-                viewChanged = true;
-            }
-            robot.delay(500);
-
-            SwingUtilities.invokeAndWait(() -> {
-                if (sbar.getVisibleAmount() > 0) {
-                    throw new RuntimeException("Vertical scrollbar is not " +
-                            "updated when viewport is replaced");
-                }
-            });
-        } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (fr != null) {
-                    fr.dispose();
-                }
-            });
+        Robot robot = new Robot();
+        robot.delay(500);
+        SwingUtilities.invokeAndWait(() -> {
+            sbar.addAdjustmentListener(e -> viewChanged = true);
+            scrollpane.setViewportView(null);
+        });
+        robot.delay(500);
+        if (!viewChanged) {
+            viewChanged = true;
         }
+        robot.delay(500);
+
+        SwingUtilities.invokeAndWait(() -> {
+            if (sbar.getVisibleAmount() > 0) {
+                throw new RuntimeException("Vertical scrollbar is not " +
+                        "updated when viewport is replaced");
+            }
+        });
     }
 }

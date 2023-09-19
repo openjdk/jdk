@@ -78,8 +78,8 @@ public class bug4345798 {
 
             Robot robot = new Robot();
             robot.setAutoDelay(100);
-            robot.delay(1000);
             robot.waitForIdle();
+            robot.delay(1000);
 
             SwingUtilities.invokeAndWait(() -> p = menu.getLocationOnScreen());
             robot.mouseMove(p.x, p.y);

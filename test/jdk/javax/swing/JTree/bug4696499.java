@@ -24,16 +24,12 @@
 /* @test
  * @bug 4696499
  * @summary new tree model asked about nodes of previous tree model
- * @key headful
  * @run main bug4696499
  */
 
 import java.util.ArrayList;
 
-import javax.swing.JFrame;
-import javax.swing.JScrollPane;
 import javax.swing.JTree;
-import javax.swing.SwingUtilities;
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeModel;
@@ -41,30 +37,14 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
 public class bug4696499 {
-    static JFrame fr;
-
     public static void main(String[] args) throws Exception {
-        try {
-            SwingUtilities.invokeAndWait(() -> {
-                fr = new JFrame("bug4696499");
+        JTree tree = new JTree();
+        TreeModel model = new MyModel();
+        tree.setModel(model);
 
-                JTree tree = new JTree();
-                JScrollPane scrollPane = new JScrollPane(tree);
-                fr.getContentPane().add(scrollPane);
-                TreeModel model = new MyModel();
-                tree.setModel(model);
-
-                tree.setSelectionRow(1);
-                model = new MyModel();
-                tree.setModel(model);
-            });
-        } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (fr != null) {
-                    fr.dispose();
-                }
-            });
-        }
+        tree.setSelectionRow(1);
+        model = new MyModel();
+        tree.setModel(model);
     }
 }
 

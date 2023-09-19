@@ -28,19 +28,16 @@
  */
 
 import javax.swing.JTree;
-import javax.swing.SwingUtilities;
 
 public class bug5039542 {
     public static final String exampleStr = "TEST";
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            JTree tree = new JTree();
-            tree.setToolTipText(exampleStr);
-            if (tree.getToolTipText(null) != exampleStr) {
-                throw new RuntimeException("The default JTree tooltip text " +
-                        "have to be used if renderer doesn't provide it.");
-            }
-        });
+        JTree tree = new JTree();
+        tree.setToolTipText(exampleStr);
+        if (tree.getToolTipText(null) != exampleStr) {
+            throw new RuntimeException("The default JTree tooltip text " +
+                    "have to be used if renderer doesn't provide it.");
+        }
     }
 }
