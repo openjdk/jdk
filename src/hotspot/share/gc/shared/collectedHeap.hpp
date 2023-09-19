@@ -145,10 +145,11 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // order to be reused for all collectors.
   PerfCounter* _total_cpu_time;
 
-  // A jlong to atomically track how much CPU time has been spent doing GC.
+  // A long which atomically tracks how much CPU time has been spent doing GC
+  // since the last time we called `publish_total_cpu_time()`.
   // It is incremented using Atomic::add() to prevent race conditions, and
   // is added to `_total_cpu_time` at the end of GC.
-  volatile jlong _total_cpu_time_diff;
+  volatile long _total_cpu_time_diff;
 
   // Perf counter for CPU time of parallel GC threads. Defined here in order to
   // be reused for all collectors.
@@ -487,7 +488,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   virtual void gc_threads_do(ThreadClosure* tc) const = 0;
 
   // Methods to modify and update counter for total CPU time spent doing GC.
-  void inc_total_cpu_time(jlong diff);
+  void inc_total_cpu_time(long diff);
   void publish_total_cpu_time();
 
   // Print any relevant tracing info that flags imply.

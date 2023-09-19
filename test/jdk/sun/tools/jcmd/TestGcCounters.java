@@ -10,7 +10,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  *
  * @library /test/lib
  *
- * @run main/othervm -XX:+UsePerfData TestGcCounters
+ * @run main/othervm TestGcCounters
  */
 public class TestGcCounters {
 
