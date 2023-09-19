@@ -40,6 +40,7 @@ import java.nio.ByteOrder;
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @requires vm.compiler2.enabled
+ * @requires vm.bits == 64
  * @run driver compiler.loopopts.superword.TestAlignVector NoAlignVector
  */
 
@@ -50,6 +51,7 @@ import java.nio.ByteOrder;
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @requires vm.compiler2.enabled
+ * @requires vm.bits == 64
  * @run driver compiler.loopopts.superword.TestAlignVector AlignVector
  */
 
@@ -60,6 +62,7 @@ import java.nio.ByteOrder;
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @requires vm.compiler2.enabled
+ * @requires vm.bits == 64
  * @run driver compiler.loopopts.superword.TestAlignVector VerifyAlignVector
  */
 

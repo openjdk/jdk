@@ -22,6 +22,19 @@
  */
 
 /*
+ * @test id=Vanilla
+ * @bug 8253191
+ * @summary Fuzzing loops with different (random) init, limit, stride, scale etc. Do not force alignment.
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @requires vm.compiler2.enabled
+ * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                                 -XX:LoopUnrollLimit=250
+ *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
+ *                                 compiler.loopopts.superword.TestAlignVectorFuzzer
+ */
+
+/*
  * @test id=VerifyAlignVector
  * @bug 8253191
  * @summary Fuzzing loops with different (random) init, limit, stride, scale etc. Verify AlignVector.
@@ -54,19 +67,6 @@
  */
 
 /*
- * @test id=Vanilla
- * @bug 8253191
- * @summary Fuzzing loops with different (random) init, limit, stride, scale etc. Do not force alignment.
- * @modules java.base/jdk.internal.misc
- * @library /test/lib
- * @requires vm.compiler2.enabled
- * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
- *                                 -XX:LoopUnrollLimit=250
- *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
- *                                 compiler.loopopts.superword.TestAlignVectorFuzzer
- */
-
-/*
  * @test id=VerifyAlignVector-NoTieredCompilation-Xbatch
  * @bug 8253191
  * @summary Fuzzing loops with different (random) init, limit, stride, scale etc. Verify AlignVector.
@@ -84,6 +84,9 @@
 
 package compiler.loopopts.superword;
 
+import java.lang.reflect.Array;
+import java.util.Map;
+import java.util.HashMap;
 import java.lang.invoke.*;
 import java.util.Random;
 import jdk.test.lib.Utils;
@@ -93,9 +96,14 @@ public class TestAlignVectorFuzzer {
 
     static final int RANGE_CON = 1024 * 8;
     static final int ITERATIONS = 5;
+    static int ZERO = 0;
 
     private static final Random random = Utils.getRandomInstance();
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
+    interface TestFunction {
+        Object[] run();
+    }
 
     // Setup for variable compile-time constants:
     private static final CallSite INIT_CS    = new MutableCallSite(MethodType.methodType(int.class));
@@ -162,7 +170,7 @@ public class TestAlignVectorFuzzer {
     static int init_con_or_var() {
         int init = init_con();
         if (!init_is_con()) { // branch constant folds to true or false
-            init += random.nextInt(64);
+            init += ZERO; // LoadI
         }
         return init;
     }
@@ -186,7 +194,7 @@ public class TestAlignVectorFuzzer {
     static int limit_con_or_var() {
         int limit = limit_con();
         if (!limit_is_con()) { // branch constant folds to true or false
-            limit -= random.nextInt(64);
+            limit -= ZERO; // LoadI
         }
         return limit;
     }
@@ -258,7 +266,7 @@ public class TestAlignVectorFuzzer {
     static int offset1_con_or_var() {
         int offset = offset1_con();
         if (!offset1_is_con()) { // branch constant folds to true or false
-            offset += random.nextInt(64);
+            offset += ZERO; // LoadI
         }
         return offset;
     }
@@ -266,7 +274,7 @@ public class TestAlignVectorFuzzer {
     static int offset2_con_or_var() {
         int offset = offset2_con();
         if (!offset2_is_con()) { // branch constant folds to true or false
-            offset += random.nextInt(64);
+            offset += ZERO; // LoadI
         }
         return offset;
     }
@@ -274,7 +282,7 @@ public class TestAlignVectorFuzzer {
     static int offset3_con_or_var() {
         int offset = offset3_con();
         if (!offset3_is_con()) { // branch constant folds to true or false
-            offset += random.nextInt(64);
+            offset += ZERO; // LoadI
         }
         return offset;
     }
@@ -501,54 +509,67 @@ public class TestAlignVectorFuzzer {
     }
 
     public static void main(String[] args) {
-        byte[] aB = new byte[RANGE_CON];
-        byte[] bB = new byte[RANGE_CON];
-        byte[] cB = new byte[RANGE_CON];
-        short[] aS = new short[RANGE_CON];
-        short[] bS = new short[RANGE_CON];
-        short[] cS = new short[RANGE_CON];
-        char[] aC = new char[RANGE_CON];
-        char[] bC = new char[RANGE_CON];
-        char[] cC = new char[RANGE_CON];
-        int[] aI = new int[RANGE_CON];
-        int[] bI = new int[RANGE_CON];
-        int[] cI = new int[RANGE_CON];
-        long[] aL = new long[RANGE_CON];
-        long[] bL = new long[RANGE_CON];
-        long[] cL = new long[RANGE_CON];
-        float[] aF = new float[RANGE_CON];
-        float[] bF = new float[RANGE_CON];
-        float[] cF = new float[RANGE_CON];
-        double[] aD = new double[RANGE_CON];
-        double[] bD = new double[RANGE_CON];
-        double[] cD = new double[RANGE_CON];
+        byte[] aB = generateB();
+        byte[] bB = generateB();
+        byte[] cB = generateB();
+        short[] aS = generateS();
+        short[] bS = generateS();
+        short[] cS = generateS();
+        char[] aC = generateC();
+        char[] bC = generateC();
+        char[] cC = generateC();
+        int[] aI = generateI();
+        int[] bI = generateI();
+        int[] cI = generateI();
+        long[] aL = generateL();
+        long[] bL = generateL();
+        long[] cL = generateL();
+        float[] aF = generateF();
+        float[] bF = generateF();
+        float[] cF = generateF();
+        double[] aD = generateD();
+        double[] bD = generateD();
+        double[] cD = generateD();
+
+        // Add all tests to list
+        Map<String,TestFunction> tests = new HashMap<String,TestFunction>();
+        tests.put("testUUB", () -> { return testUUB(aB.clone()); });
+        tests.put("testDDB", () -> { return testDDB(aB.clone()); });
+        tests.put("testUDB", () -> { return testUDB(aB.clone()); });
+        tests.put("testDUB", () -> { return testDUB(aB.clone()); });
+
+        tests.put("testUUBH", () -> { return testUUBH(aB.clone()); });
+
+        tests.put("testUUBBB", () -> { return testUUBBB(aB.clone(), bB.clone(), cB.clone()); });
+        tests.put("testUUBSI", () -> { return testUUBSI(aB.clone(), bS.clone(), cI.clone()); });
+
+        tests.put("testUUBBBH", () -> { return testUUBBBH(aB.clone(), bB.clone(), cB.clone()); });
+
+        tests.put("testUUBCFH", () -> { return testUUBCFH(aB.clone(), bC.clone(), cF.clone()); });
+        tests.put("testDDBCFH", () -> { return testDDBCFH(aB.clone(), bC.clone(), cF.clone()); });
+        tests.put("testUDBCFH", () -> { return testUDBCFH(aB.clone(), bC.clone(), cF.clone()); });
+        tests.put("testDUBCFH", () -> { return testDUBCFH(aB.clone(), bC.clone(), cF.clone()); });
+
+        tests.put("testMMSFD", () -> { return testMMSFD(aS.clone(), bF.clone(), cD.clone()); });
+
+        tests.put("testUU_unsafe_BasI", () -> { return testUU_unsafe_BasI(aB.clone()); });
+        tests.put("testUU_unsafe_BasIH", () -> { return testUU_unsafe_BasIH(aB.clone(), bB.clone(), cB.clone()); });
 
         for (int i = 1; i <= ITERATIONS; i++) {
-            System.out.println("ITERATION " + i + " of " + ITERATIONS);
             setRandomConstants();
-            // Have enough iterations to deoptimize and re-compile
-            for (int j = 0; j < 20_000; j++) {
-                testUUB(aB);
-                testDDB(aB);
-                testUDB(aB);
-                testDUB(aB);
+            for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
+                String name = entry.getKey();
+                TestFunction test = entry.getValue();
+                System.out.println("ITERATION " + i + " of " + ITERATIONS + ". Test " + name);
 
-                testUUBH(aB);
+                // Compute gold value, probably deopt first if constants have changed.
+                Object[] gold = test.run();
 
-                testUUBBB(aB, bB, cB);
-                testUUBSI(aB, bS, cI);
-
-                testUUBBBH(aB, bB, cB);
-
-                testUUBCFH(aB, bC, cF);
-                testDDBCFH(aB, bC, cF);
-                testUDBCFH(aB, bC, cF);
-                testDUBCFH(aB, bC, cF);
-
-                testMMSFD(aS, bF, cD);
-
-                testUU_unsafe_BasI(aB);
-                testUU_unsafe_BasIH(aB, bB, cB);
+                // Have enough iterations to (re)compile
+                for (int j = 0; j < 10_000; j++) {
+                    Object[] result = test.run();
+                    verify(name, gold, result);
+                }
             }
         }
         System.out.println("TEST PASSED");
@@ -562,7 +583,7 @@ public class TestAlignVectorFuzzer {
 
     // -------------------- BASIC SINGLE --------------------
 
-    static void testUUB(byte[] a) {
+    static Object[] testUUB(byte[] a) {
         int init   = init_con_or_var();
         int limit  = limit_con_or_var();
         int stride = stride_con();
@@ -572,9 +593,10 @@ public class TestAlignVectorFuzzer {
         for (int i = init; i < limit; i += stride) {
             a[offset + i * scale]++;
         }
+        return new Object[]{ a };
     }
 
-    static void testDDB(byte[] a) {
+    static Object[] testDDB(byte[] a) {
         int init   = init_con_or_var();
         int limit  = limit_con_or_var();
         int stride = stride_con();
@@ -584,9 +606,10 @@ public class TestAlignVectorFuzzer {
         for (int i = limit; i > init; i -= stride) {
             a[offset + i * scale]++;
         }
+        return new Object[]{ a };
     }
 
-    static void testUDB(byte[] a) {
+    static Object[] testUDB(byte[] a) {
         int init   = init_con_or_var();
         int limit  = limit_con_or_var();
         int stride = stride_con();
@@ -596,9 +619,10 @@ public class TestAlignVectorFuzzer {
         for (int i = init; i < limit; i += stride) {
            a[x - i * scale]++;
         }
+        return new Object[]{ a };
     }
 
-    static void testDUB(byte[] a) {
+    static Object[] testDUB(byte[] a) {
         int init   = init_con_or_var();
         int limit  = limit_con_or_var();
         int stride = stride_con();
@@ -608,11 +632,12 @@ public class TestAlignVectorFuzzer {
         for (int i = limit; i > init; i -= stride) {
            a[x - i * scale]++;
         }
+        return new Object[]{ a };
     }
 
     // -------------------- BASIC HAND UNROLL --------------------
 
-    static void testUUBH(byte[] a) {
+    static Object[] testUUBH(byte[] a) {
         int init   = init_con_or_var();
         int limit  = limit_con_or_var();
         int stride = stride_con();
@@ -640,11 +665,12 @@ public class TestAlignVectorFuzzer {
             if (h >= 15) { a[offset + i * scale + 14]++; }
             if (h >= 16) { a[offset + i * scale + 15]++; }
         }
+        return new Object[]{ a };
     }
 
     // -------------------- BASIC TRIPPLE --------------------
 
-    static void testUUBBB(byte[] a, byte[] b, byte[] c) {
+    static Object[] testUUBBB(byte[] a, byte[] b, byte[] c) {
         int init    = init_con_or_var();
         int limit   = limit_con_or_var();
         int stride  = stride_con();
@@ -658,9 +684,10 @@ public class TestAlignVectorFuzzer {
             b[offset2 + i * scale]++;
             c[offset3 + i * scale]++;
         }
+        return new Object[]{ a, b, c };
     }
 
-    static void testUUBSI(byte[] a, short[] b, int[] c) {
+    static Object[] testUUBSI(byte[] a, short[] b, int[] c) {
         int init    = init_con_or_var();
         int limit   = limit_con_or_var();
         int stride  = stride_con();
@@ -674,11 +701,12 @@ public class TestAlignVectorFuzzer {
             b[offset2 + i * scale]++;
             c[offset3 + i * scale]++;
         }
+        return new Object[]{ a, b, c };
     }
 
     // -------------------- HAND UNROLL TRIPPLE --------------------
 
-    static void testUUBBBH(byte[] a, byte[] b, byte[] c) {
+    static Object[] testUUBBBH(byte[] a, byte[] b, byte[] c) {
         int init   = init_con_or_var();
         int limit  = limit_con_or_var();
         int stride = stride_con();
@@ -743,9 +771,10 @@ public class TestAlignVectorFuzzer {
             if (h3 >= 15) { c[offset3 + i * scale + 14]++; }
             if (h3 >= 16) { c[offset3 + i * scale + 15]++; }
         }
+        return new Object[]{ a, b, c };
     }
 
-    static void testUUBCFH(byte[] a, char[] b, float[] c) {
+    static Object[] testUUBCFH(byte[] a, char[] b, float[] c) {
         int init   = init_con_or_var();
         int limit  = limit_con_or_var();
         int stride = stride_con();
@@ -810,9 +839,10 @@ public class TestAlignVectorFuzzer {
             if (h3 >= 15) { c[offset3 + i * scale + 14]++; }
             if (h3 >= 16) { c[offset3 + i * scale + 15]++; }
         }
+        return new Object[]{ a, b, c };
     }
 
-    static void testDDBCFH(byte[] a, char[] b, float[] c) {
+    static Object[] testDDBCFH(byte[] a, char[] b, float[] c) {
         int init   = init_con_or_var();
         int limit  = limit_con_or_var();
         int stride = stride_con();
@@ -877,9 +907,10 @@ public class TestAlignVectorFuzzer {
             if (h3 >= 15) { c[offset3 + i * scale + 14]++; }
             if (h3 >= 16) { c[offset3 + i * scale + 15]++; }
         }
+        return new Object[]{ a, b, c };
     }
 
-    static void testUDBCFH(byte[] a, char[] b, float[] c) {
+    static Object[] testUDBCFH(byte[] a, char[] b, float[] c) {
         int init   = init_con_or_var();
         int limit  = limit_con_or_var();
         int stride = stride_con();
@@ -944,9 +975,10 @@ public class TestAlignVectorFuzzer {
             if (h3 >= 15) { c[x3 - i * scale + 14]++; }
             if (h3 >= 16) { c[x3 - i * scale + 15]++; }
         }
+        return new Object[]{ a, b, c };
     }
 
-    static void testDUBCFH(byte[] a, char[] b, float[] c) {
+    static Object[] testDUBCFH(byte[] a, char[] b, float[] c) {
         int init   = init_con_or_var();
         int limit  = limit_con_or_var();
         int stride = stride_con();
@@ -1011,11 +1043,12 @@ public class TestAlignVectorFuzzer {
             if (h3 >= 15) { c[x3 - i * scale + 14]++; }
             if (h3 >= 16) { c[x3 - i * scale + 15]++; }
         }
+        return new Object[]{ a, b, c };
     }
 
     // -------------------- MIXED DIRECTION TRIPPLE --------------------
 
-    static void testMMSFD(short[] a, float[] b, double[] c) {
+    static Object[] testMMSFD(short[] a, float[] b, double[] c) {
         int init    = init_con_or_var();
         int limit   = limit_con_or_var();
         int stride  = stride_con();
@@ -1029,11 +1062,12 @@ public class TestAlignVectorFuzzer {
             b[offset2 - i * scale]++;
             c[offset3 + i * scale]++;
         }
+        return new Object[]{ a, b, c };
     }
 
     // -------------------- UNSAFE --------------------
 
-    static void testUU_unsafe_BasI(byte[] a) {
+    static Object[] testUU_unsafe_BasI(byte[] a) {
         int init   = init_con_or_var();
         int limit  = limit_con_or_var();
         int stride = stride_con();
@@ -1045,9 +1079,10 @@ public class TestAlignVectorFuzzer {
             int v = UNSAFE.getIntUnaligned(a, adr);
             UNSAFE.putIntUnaligned(a, adr, v + 1);
         }
+        return new Object[]{ a };
     }
 
-    static void testUU_unsafe_BasIH(byte[] a, byte[] b, byte[] c) {
+    static Object[] testUU_unsafe_BasIH(byte[] a, byte[] b, byte[] c) {
         int init   = init_con_or_var();
         int limit  = limit_con_or_var();
         int stride = stride_con();
@@ -1115,6 +1150,182 @@ public class TestAlignVectorFuzzer {
             if (h3 >= 14) { UNSAFE.putIntUnaligned(c, adr3 + 13*4, UNSAFE.getIntUnaligned(c, adr3 + 13*4) + 1); }
             if (h3 >= 15) { UNSAFE.putIntUnaligned(c, adr3 + 14*4, UNSAFE.getIntUnaligned(c, adr3 + 14*4) + 1); }
             if (h3 >= 16) { UNSAFE.putIntUnaligned(c, adr3 + 15*4, UNSAFE.getIntUnaligned(c, adr3 + 15*4) + 1); }
+        }
+        return new Object[]{ a, b, c };
+    }
+
+    static byte[] generateB() {
+        byte[] a = new byte[RANGE_CON];
+        for (int i = 0; i < a.length; i++) {
+            a[i] = (byte)random.nextInt();
+        }
+        return a;
+    }
+
+    static char[] generateC() {
+        char[] a = new char[RANGE_CON];
+        for (int i = 0; i < a.length; i++) {
+            a[i] = (char)random.nextInt();
+        }
+        return a;
+    }
+
+    static short[] generateS() {
+        short[] a = new short[RANGE_CON];
+        for (int i = 0; i < a.length; i++) {
+            a[i] = (short)random.nextInt();
+        }
+        return a;
+    }
+
+    static int[] generateI() {
+        int[] a = new int[RANGE_CON];
+        for (int i = 0; i < a.length; i++) {
+            a[i] = random.nextInt();
+        }
+        return a;
+    }
+
+    static long[] generateL() {
+        long[] a = new long[RANGE_CON];
+        for (int i = 0; i < a.length; i++) {
+            a[i] = random.nextLong();
+        }
+        return a;
+    }
+
+    static float[] generateF() {
+        float[] a = new float[RANGE_CON];
+        for (int i = 0; i < a.length; i++) {
+            a[i] = Float.intBitsToFloat(random.nextInt());
+        }
+        return a;
+    }
+
+    static double[] generateD() {
+        double[] a = new double[RANGE_CON];
+        for (int i = 0; i < a.length; i++) {
+            a[i] = Double.longBitsToDouble(random.nextLong());
+        }
+        return a;
+    }
+
+    static void verify(String name, Object[] gold, Object[] result) {
+        if (gold.length != result.length) {
+            throw new RuntimeException("verify " + name + ": not the same number of outputs: gold.length = " +
+                                       gold.length + ", result.length = " + result.length);
+        }
+        for (int i = 0; i < gold.length; i++) {
+            Object g = gold[i];
+            Object r = result[i];
+            if (g.getClass() != r.getClass() || !g.getClass().isArray() || !r.getClass().isArray()) {
+                throw new RuntimeException("verify " + name + ": must both be array of same type:" +
+                                           " gold[" + i + "].getClass() = " + g.getClass().getSimpleName() +
+                                           " result[" + i + "].getClass() = " + r.getClass().getSimpleName());
+            }
+            if (g == r) {
+                throw new RuntimeException("verify " + name + ": should be two separate arrays (with identical content):" +
+                                           " gold[" + i + "] == result[" + i + "]");
+            }
+            if (Array.getLength(g) != Array.getLength(r)) {
+                    throw new RuntimeException("verify " + name + ": arrays must have same length:" +
+                                           " gold[" + i + "].length = " + Array.getLength(g) +
+                                           " result[" + i + "].length = " + Array.getLength(r));
+            }
+            Class c = g.getClass().getComponentType();
+            if (c == byte.class) {
+                verifyB(name, i, (byte[])g, (byte[])r);
+            } else if (c == char.class) {
+                verifyC(name, i, (char[])g, (char[])r);
+            } else if (c == short.class) {
+                verifyS(name, i, (short[])g, (short[])r);
+            } else if (c == int.class) {
+                verifyI(name, i, (int[])g, (int[])r);
+            } else if (c == long.class) {
+                verifyL(name, i, (long[])g, (long[])r);
+            } else if (c == float.class) {
+                verifyF(name, i, (float[])g, (float[])r);
+            } else if (c == double.class) {
+                verifyD(name, i, (double[])g, (double[])r);
+            } else {
+                throw new RuntimeException("verify " + name + ": array type not supported for verify:" +
+                                       " gold[" + i + "].getClass() = " + g.getClass().getSimpleName() +
+                                       " result[" + i + "].getClass() = " + r.getClass().getSimpleName());
+            }
+        }
+    }
+
+    static void verifyB(String name, int i, byte[] g, byte[] r) {
+        for (int j = 0; j < g.length; j++) {
+            if (g[j] != r[j]) {
+                throw new RuntimeException("verifyB " + name + ": arrays must have same content:" +
+                                           " gold[" + i + "][" + j + "] = " + g[j] +
+                                           " result[" + i + "][" + j + "] = " + r[j]);
+            }
+        }
+    }
+
+    static void verifyC(String name, int i, char[] g, char[] r) {
+        for (int j = 0; j < g.length; j++) {
+            if (g[j] != r[j]) {
+                throw new RuntimeException("verifyC " + name + ": arrays must have same content:" +
+                                           " gold[" + i + "][" + j + "] = " + g[j] +
+                                           " result[" + i + "][" + j + "] = " + r[j]);
+            }
+        }
+    }
+
+    static void verifyS(String name, int i, short[] g, short[] r) {
+        for (int j = 0; j < g.length; j++) {
+            if (g[j] != r[j]) {
+                throw new RuntimeException("verifyS " + name + ": arrays must have same content:" +
+                                           " gold[" + i + "][" + j + "] = " + g[j] +
+                                           " result[" + i + "][" + j + "] = " + r[j]);
+            }
+        }
+    }
+
+    static void verifyI(String name, int i, int[] g, int[] r) {
+        for (int j = 0; j < g.length; j++) {
+            if (g[j] != r[j]) {
+                throw new RuntimeException("verifyI " + name + ": arrays must have same content:" +
+                                           " gold[" + i + "][" + j + "] = " + g[j] +
+                                           " result[" + i + "][" + j + "] = " + r[j]);
+            }
+        }
+    }
+
+    static void verifyL(String name, int i, long[] g, long[] r) {
+        for (int j = 0; j < g.length; j++) {
+            if (g[j] != r[j]) {
+                throw new RuntimeException("verifyL " + name + ": arrays must have same content:" +
+                                           " gold[" + i + "][" + j + "] = " + g[j] +
+                                           " result[" + i + "][" + j + "] = " + r[j]);
+            }
+        }
+    }
+
+    static void verifyF(String name, int i, float[] g, float[] r) {
+        for (int j = 0; j < g.length; j++) {
+            int gv = UNSAFE.getInt(g, UNSAFE.ARRAY_FLOAT_BASE_OFFSET + 4 * j);
+            int rv = UNSAFE.getInt(r, UNSAFE.ARRAY_FLOAT_BASE_OFFSET + 4 * j);
+            if (gv != rv) {
+                throw new RuntimeException("verifyF " + name + ": arrays must have same content:" +
+                                           " gold[" + i + "][" + j + "] = " + gv +
+                                           " result[" + i + "][" + j + "] = " + rv);
+            }
+        }
+    }
+
+    static void verifyD(String name, int i, double[] g, double[] r) {
+        for (int j = 0; j < g.length; j++) {
+            long gv = UNSAFE.getLong(g, UNSAFE.ARRAY_DOUBLE_BASE_OFFSET + 8 * j);
+            long rv = UNSAFE.getLong(r, UNSAFE.ARRAY_DOUBLE_BASE_OFFSET + 8 * j);
+            if (gv != rv) {
+                throw new RuntimeException("verifyF " + name + ": arrays must have same content:" +
+                                           " gold[" + i + "][" + j + "] = " + gv +
+                                           " result[" + i + "][" + j + "] = " + rv);
+            }
         }
     }
 }
