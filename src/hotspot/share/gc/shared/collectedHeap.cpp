@@ -167,9 +167,10 @@ void CollectedHeap::publish_total_cpu_time() {
   // to set the value to zero after we obtain the new CPU time difference.
   long old_value;
   long fetched_value = Atomic::load(&_total_cpu_time_diff);
+  long new_value = 0;
   do {
     old_value = fetched_value;
-    fetched_value = Atomic::cmpxchg(&_total_cpu_time_diff, old_value, 0)
+    fetched_value = Atomic::cmpxchg(&_total_cpu_time_diff, old_value, new_value);
   } while (old_value != fetched_value);
   _total_cpu_time->inc(fetched_value);
 }
