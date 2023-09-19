@@ -34,7 +34,7 @@ import javax.swing.SwingUtilities;
  * @test
  * @bug 4203039
  * @summary JToolBar needs a way to limit docking to a particular orientation
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4203039
  */
