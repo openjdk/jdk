@@ -1,0 +1,2 @@
+# override keystore.type property and make it not exist
+#keystore.type=
