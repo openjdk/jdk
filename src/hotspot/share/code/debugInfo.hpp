@@ -133,28 +133,23 @@ class ObjectValue: public ScopeValue {
   GrowableArray<ScopeValue*> _field_values;
   Handle                     _value;
   bool                       _visited;
+  bool                       _was_scalar_replaced;     // Whether this ObjectValue describes an object scalar replaced or just
+                                                       // an object (possibly null) participating in an allocation merge.
   bool                       _is_root;   // Will be true if this object is referred to
                                          // as a local/expression/monitor in the JVMs.
                                          // Otherwise false, meaning it's just a candidate
                                          // in an object allocation merge.
  public:
-  ObjectValue(int id, ScopeValue* klass)
+  ObjectValue(int id, ScopeValue* klass = nullptr, bool was_scalar_replaced = true)
      : _id(id)
      , _klass(klass)
      , _field_values()
      , _value()
      , _visited(false)
+     , _was_scalar_replaced(was_scalar_replaced)
      , _is_root(true) {
-    assert(klass->is_constant_oop(), "should be constant java mirror oop");
+    assert(klass == nullptr || klass->is_constant_oop(), "should be constant java mirror oop");
   }
-
-  ObjectValue(int id)
-     : _id(id)
-     , _klass(nullptr)
-     , _field_values()
-     , _value()
-     , _visited(false)
-     , _is_root(true) {}
 
   // Accessors
   bool                        is_object() const           { return true; }
@@ -165,11 +160,13 @@ class ObjectValue: public ScopeValue {
   virtual int                 field_size()                { return _field_values.length(); }
   virtual Handle              value() const               { return _value; }
   bool                        is_visited() const          { return _visited; }
+  bool was_scalar_replaced() const { return _was_scalar_replaced; }
   bool                        is_root() const             { return _is_root; }
 
   void                        set_id(int id)              { _id = id; }
   virtual void                set_value(oop value);
   void                        set_visited(bool visited)   { _visited = visited; }
+  void                        set_was_scalar_replaced(bool scd) { _was_scalar_replaced = scd; }
   void                        set_root(bool root)         { _is_root = root; }
 
   // Serialization of debugging information
@@ -208,14 +205,14 @@ protected:
   ObjectValue*               _selected;
 public:
   ObjectMergeValue(int id, ScopeValue* merge_pointer, ScopeValue* selector)
-     : ObjectValue(id)
+     : ObjectValue(id, nullptr, false)
      , _selector(selector)
      , _merge_pointer(merge_pointer)
      , _possible_objects()
      , _selected(nullptr) {}
 
   ObjectMergeValue(int id)
-     : ObjectValue(id)
+     : ObjectValue(id, nullptr, false)
      , _selector(nullptr)
      , _merge_pointer(nullptr)
      , _possible_objects()
