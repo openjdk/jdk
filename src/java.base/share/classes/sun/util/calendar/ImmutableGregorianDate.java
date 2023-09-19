@@ -25,7 +25,6 @@
 
 package sun.util.calendar;
 
-import java.util.Locale;
 import java.util.Objects;
 import java.util.TimeZone;
 
@@ -176,18 +175,8 @@ final class ImmutableGregorianDate extends BaseCalendar.Date {
     }
 
     @Override
-    public boolean isStandardTime() {
-        return date.isStandardTime();
-    }
-
-    @Override
     public boolean isDaylightTime() {
         return date.isDaylightTime();
-    }
-
-    @Override
-    protected void setLocale(Locale loc) {
-        unsupported();
     }
 
     @Override

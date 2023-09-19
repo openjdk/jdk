@@ -483,7 +483,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
         @Override
         public ConstantValueEntry constant() {
-            return (ConstantValueEntry) classReader.readEntry(payloadStart);
+            return classReader.readEntry(payloadStart, ConstantValueEntry.class);
         }
 
     }

@@ -26,7 +26,6 @@
 package sun.util.calendar;
 
 import java.lang.Cloneable;
-import java.util.Locale;
 import java.util.TimeZone;
 
 /**
@@ -83,9 +82,6 @@ public sealed abstract class CalendarDate implements Cloneable
     private TimeZone zoneinfo;
     private int zoneOffset;
     private int daylightSaving;
-    private boolean forceStandardTime;
-
-    private Locale locale;
 
     protected CalendarDate() {
         this(TimeZone.getDefault());
@@ -294,20 +290,8 @@ public sealed abstract class CalendarDate implements Cloneable
         return normalized;
     }
 
-
-    public boolean isStandardTime() {
-        return forceStandardTime;
-    }
-
     public boolean isDaylightTime() {
-        if (isStandardTime()) {
-            return false;
-        }
         return daylightSaving != 0;
-    }
-
-    protected void setLocale(Locale loc) {
-        locale = loc;
     }
 
     public TimeZone getZone() {

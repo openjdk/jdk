@@ -197,7 +197,6 @@ public:
   // Iteration functions.
   void oop_iterate(OopIterateClosure* cl);
   void object_iterate(ObjectClosure* cl) override;
-  Space* space_containing(const void* addr) const;
 
   // A CollectedHeap is divided into a dense sequence of "blocks"; that is,
   // each address in the (reserved) heap is a member of exactly

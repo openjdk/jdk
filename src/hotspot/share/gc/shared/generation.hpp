@@ -142,12 +142,6 @@ class Generation: public CHeapObj<mtGC> {
   // might be attempted in the worst case.
   virtual bool promotion_attempt_is_safe(size_t max_promotion_in_bytes) const;
 
-  // For a non-young generation, this interface can be used to inform a
-  // generation that a promotion attempt into that generation failed.
-  // Typically used to enable diagnostic output for post-mortem analysis,
-  // but other uses of the interface are not ruled out.
-  virtual void promotion_failure_occurred() { /* does nothing */ }
-
   // Return an estimate of the maximum allocation that could be performed
   // in the generation without triggering any collection or expansion
   // activity.  It is "unsafe" because no locks are taken; the result
@@ -181,10 +175,6 @@ class Generation: public CHeapObj<mtGC> {
   bool is_in_reserved(const void* p) const {
     return _reserved.contains(p);
   }
-
-  // If some space in the generation contains the given "addr", return a
-  // pointer to that space, else return "null".
-  virtual Space* space_containing(const void* addr) const;
 
   // Iteration - do not use for time critical operations
   virtual void space_iterate(SpaceClosure* blk, bool usedOnly = false) = 0;
