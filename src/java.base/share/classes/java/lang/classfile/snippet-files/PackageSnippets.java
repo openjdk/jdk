@@ -51,15 +51,12 @@ import java.lang.classfile.MethodElement;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
-import java.lang.classfile.instruction.FieldInstruction;
-import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.instruction.*;
 
 import static java.util.stream.Collectors.toSet;
 import java.lang.classfile.components.ClassRemapper;
 import java.lang.classfile.components.CodeLocalsShifter;
 import java.lang.classfile.components.CodeRelabeler;
-import java.lang.classfile.instruction.ReturnInstruction;
-import java.lang.classfile.instruction.StoreInstruction;
 
 class PackageSnippets {
     void enumerateFieldsMethods1(byte[] bytes) {
@@ -217,6 +214,53 @@ class PackageSnippets {
         };
         // @end
     }
+
+    void strictTransform() {
+        // @start region="strictTransform"
+        CodeTransform fooToBar = (b, e) -> switch (e) {
+            case ArrayLoadInstruction i -> doSomething(b, i);
+            case ArrayStoreInstruction i -> doSomething(b, i);
+            case BranchInstruction i -> doSomething(b, i);
+            case ConstantInstruction i -> doSomething(b, i);
+            case ConvertInstruction i -> doSomething(b, i);
+            case DiscontinuedInstruction i -> doSomething(b, i);
+            case FieldInstruction i -> doSomething(b, i);
+            case InvokeDynamicInstruction i -> doSomething(b, i);
+            case InvokeInstruction i -> doSomething(b, i);
+            case LoadInstruction i -> doSomething(b, i);
+            case StoreInstruction i -> doSomething(b, i);
+            case IncrementInstruction i -> doSomething(b, i);
+            case LookupSwitchInstruction i -> doSomething(b, i);
+            case MonitorInstruction i -> doSomething(b, i);
+            case NewMultiArrayInstruction i -> doSomething(b, i);
+            case NewObjectInstruction i -> doSomething(b, i);
+            case NewPrimitiveArrayInstruction i -> doSomething(b, i);
+            case NewReferenceArrayInstruction i -> doSomething(b, i);
+            case NopInstruction i -> doSomething(b, i);
+            case OperatorInstruction i -> doSomething(b, i);
+            case ReturnInstruction i -> doSomething(b, i);
+            case StackInstruction i -> doSomething(b, i);
+            case TableSwitchInstruction i -> doSomething(b, i);
+            case ThrowInstruction i -> doSomething(b, i);
+            case TypeCheckInstruction i -> doSomething(b, i);
+            case PseudoInstruction i ->  doSomething(b, i);
+            default ->
+                throw new IllegalArgumentException("An unknown instruction could not be handled by this transfomration");
+        };
+        // @end
+    }
+
+    void benevolentTransform() {
+        // @start region="benevolentTransform"
+        CodeTransform fooToBar = (b, e) -> switch (e) {
+            case ArrayLoadInstruction i -> doSomething(b, i);
+            case ArrayStoreInstruction i -> doSomething(b, i);
+            default ->  b.with(i);
+        };
+        // @end
+    }
+
+    void doSomething(CodeBuilder b, CodeElement e) {}
 
     void instrumentCallsTransform() {
         // @start region="instrumentCallsTransform"

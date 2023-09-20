@@ -26,9 +26,8 @@
 /**
  * <h2>Provides classfile parsing, generation, and transformation library.</h2>
  * The {@code java.lang.classfile} package contains classes for reading, writing, and
- * modifying Java class files, as specified in Chapter 4 of the <a
- * href="https://docs.oracle.com/javase/specs/jvms/se17/html/index.html">Java
- * Java Virtual Machine Specification</a>.
+ * modifying Java class files, as specified in Chapter {@jvms 4} of the <cite>Java
+ * Java Virtual Machine Specification</cite>.
  *
  * <h2>Reading classfiles</h2>
  * The main class for reading classfiles is {@link java.lang.classfile.ClassModel}; we
@@ -359,6 +358,19 @@
  * with the {@link java.lang.classfile.Classfile.ConstantPoolSharingOption} option.
  * Such suppression may be beneficial when transformation removes many elements,
  * resulting in many unreferenced constant pool entries.
+ *
+ * <h3>Transformation handling of unknown classfile elements from a future</h3>
+ * To achieve stability of transformations in future JDK releases it is desired
+ * to set appropriate response to potential new classfile elements appearing.
+ * Transformation designed to handle all situation should be implemented strict way,
+ * so it fails when a new classfile element appears. As for example in the following
+ * strict compatibility-checking code transformation snippet:
+ * {@snippet lang="java" class="PackageSnippets" region="strictTransform"}
+ * <p>
+ * However transformation selectively interested in just some of the classfile
+ * elements can pass all other elements by (including new unknown elements from
+ * future JDK releases). Following example shows such future-proof code transformation:
+ * {@snippet lang="java" class="PackageSnippets" region="benevolentTransform"}
  *
  * <h2>API conventions</h2>
  * <p>
