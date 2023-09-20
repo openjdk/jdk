@@ -178,7 +178,7 @@ CodeHeapPool::CodeHeapPool(CodeHeap* codeHeap, const char* name, bool support_us
 }
 
 MemoryUsage CodeHeapPool::get_memory_usage() {
-  size_t used = used_in_bytes();
+  size_t used      = used_in_bytes();
   OrderAccess::loadload();
   size_t committed = _codeHeap->capacity();
   size_t maxSize   = (available_for_allocation() ? max_size() : 0);
