@@ -25,11 +25,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.CharBuffer;
 import java.util.Arrays;
-import java.util.Scanner;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolLauncher;
@@ -82,15 +82,22 @@ public class JMapHProfLargeHeapTest {
         procBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
         Process largeHeapProc = procBuilder.start();
 
-        try (Scanner largeHeapScanner = new Scanner(
-                largeHeapProc.getInputStream());) {
+        try (BufferedReader r = new BufferedReader(
+                new InputStreamReader(largeHeapProc.getInputStream()))) {
             String pidstring = null;
-            if (!largeHeapScanner.hasNext()) {
-                throw new RuntimeException ("Test failed: could not open largeHeapScanner.");
+            while ((pidstring = r.readLine()) != null) {
+                // The output might contain different VM output, skip it while searching PID line.
+                if (pidstring.matches("PID\\[[0-9].*\\]")) {
+                    System.out.println("Found: " + pidstring);
+                    break;
+                } else {
+                    System.out.println("Ignoring: " + pidstring);
+                }
             }
-            while ((pidstring = largeHeapScanner.findInLine("PID\\[[0-9].*\\]")) == null) {
-                Thread.sleep(500);
+            if (pidstring == null) {
+                throw new RuntimeException("Not able to find string matching PID.");
             }
+
             int pid = Integer.parseInt(pidstring.substring(4,
                     pidstring.length() - 1));
             System.out.println("Extracted pid: " + pid);
