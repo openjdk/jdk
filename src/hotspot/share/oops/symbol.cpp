@@ -389,10 +389,10 @@ void Symbol::print() const { print_on(tty); }
 // The print_value functions are present in all builds, to support the
 // disassembler and error reporting.
 void Symbol::print_value_on(outputStream* st) const {
-  st->write("'", 1);
+  st->print_raw("'", 1);
   static_assert(sizeof(u1) == sizeof(char), "must be");
-  st->write((const char*)base(), utf8_length());
-  st->write("'", 1);
+  st->print_raw((const char*)base(), utf8_length());
+  st->print_raw("'", 1);
 }
 
 void Symbol::print_value() const { print_value_on(tty); }
