@@ -4373,7 +4373,11 @@ jlong os::Linux::fast_thread_cpu_time(clockid_t clockid) {
 // the number of bytes written to out_fd is returned if transfer was successful
 // otherwise, returns -1 that implies an error
 jlong os::Linux::sendfile(int out_fd, int in_fd, jlong* offset, jlong count) {
+#ifdef MUSL_LIBC
+  return ::sendfile(out_fd, in_fd, (off64_t*)offset, (size_t)count);
+#else
   return sendfile64(out_fd, in_fd, (off64_t*)offset, (size_t)count);
+#endif
 }
 
 // Determine if the vmid is the parent pid for a child in a PID namespace.
