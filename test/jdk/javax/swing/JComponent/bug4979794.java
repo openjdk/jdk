@@ -21,7 +21,8 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
  * @bug 4979794
  * @summary A component is sometimes the next component for itself in focus policy.
  * @key headful
@@ -67,8 +68,8 @@ public class bug4979794 {
             });
 
             Robot r = new Robot();
-            r.delay(1000);
             r.waitForIdle();
+            r.delay(1000);
 
             SwingUtilities.invokeAndWait(() -> {
                 Container root = btn1.getFocusCycleRootAncestor();
@@ -76,7 +77,7 @@ public class bug4979794 {
                 Component next1 = policy.getComponentAfter(fr, btn1);
                 Component next2 = policy.getComponentAfter(fr, btn2);
                 if (next1 == next2) {
-                    throw new Error("btn1 and btn2 have the same next Component.");
+                    throw new RuntimeException("btn1 and btn2 have the same next Component.");
                 }
             });
         } finally {

@@ -21,7 +21,8 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
  * @bug 4907772
  * @summary 1.4 REGRESSION: JPanel responds to mouse clicks on overlapping JPanel
  * @key headful
@@ -66,8 +67,8 @@ public class bug4907772 {
             });
 
             Robot r = new Robot();
-            r.delay(1000);
             r.waitForIdle();
+            r.delay(1000);
 
             SwingUtilities.invokeAndWait(() -> {
                 Container root = btn1.getFocusCycleRootAncestor();

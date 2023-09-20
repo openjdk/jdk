@@ -21,7 +21,8 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
  * @bug 4765272
  * @summary REGRESSION: IAE: focusCycleRoot not focus cyle root of a Component
  * @key headful
@@ -105,8 +106,8 @@ public class bug4765272 {
             });
 
             Robot r = new Robot();
-            r.delay(1000);
             r.waitForIdle();
+            r.delay(1000);
 
             SwingUtilities.invokeAndWait(() -> {
                 bt1.requestFocus();

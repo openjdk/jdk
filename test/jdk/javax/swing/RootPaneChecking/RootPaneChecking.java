@@ -43,6 +43,7 @@ public class RootPaneChecking {
     public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
                 MyJFrame frame = new MyJFrame();
+                frame.setTitle("RootPaneChecking");
                 checkRootPaneCheckingEnabled(frame);
                 frame.setRootPaneCheckingEnabled(false);
                 checkRootPaneCheckingDisabled(frame);
