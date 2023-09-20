@@ -34,6 +34,7 @@ import java.io.UncheckedIOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.lang.ref.Cleaner;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -86,21 +87,18 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
     // Non-null when traversing
     private BufferedReader reader;
 
-    // Number of references to the shared mapped buffer.  Initialized to unity
-    // when the buffer is created by the root spliterator.  Incremented in the
-    // sub-spliterator constructor.  Decremented when 'buffer' transitions from
-    // non-null to null, either when traversing begins or if the spliterator is
-    // closed before traversal.  If the count is zero after decrementing, then
-    // the buffer is unmapped.
+    // Number of original + split Spliterators
     private final AtomicInteger bufRefCount;
+    private final Cleaner.Cleanable cleanupAction;
 
     FileChannelLinesSpliterator(FileChannel fc, Charset cs, int index, int fence) {
         this.fc = fc;
         this.cs = cs;
         this.index = index;
         this.fence = fence;
-        this.bufRefCount = new AtomicInteger();
+        this.bufRefCount = new AtomicInteger(1);
         this.arena = Arena.ofShared();
+        this.cleanupAction = cleanupAction(this);
     }
 
     private FileChannelLinesSpliterator(FileChannel fc, Charset cs, int index,
@@ -113,6 +111,7 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
         this.bufRefCount = bufRefCount;
         this.bufRefCount.incrementAndGet();
         this.arena = arena;
+        this.cleanupAction = cleanupAction(this);
     }
 
     @Override
@@ -210,7 +209,6 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
         MemorySegment b;
         if ((b = buffer) == null) {
             b = buffer = mappedSegment();
-            bufRefCount.set(1);
         }
 
         final int hi = fence, lo = index;
@@ -280,12 +278,19 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
     }
 
     private void unmap() {
-        if (buffer != null) {
-            buffer = null;
-            if (bufRefCount.decrementAndGet() == 0) {
-                arena.close();
+        cleanupAction.clean();
+    }
+
+    static Cleaner.Cleanable cleanupAction(FileChannelLinesSpliterator s) {
+        record Cleanup(AtomicInteger bufRefCount, Arena arena) implements Runnable {
+            @Override
+            public void run() {
+                if (bufRefCount.decrementAndGet() == 0) {
+                    arena.close();
+                }
             }
         }
+        return Cleaner.create().register(s, new Cleanup(s.bufRefCount, s.arena));
     }
 
     void close() {
