@@ -27,6 +27,7 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
+#include "oops/compressedKlass.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/globals.hpp"
 
