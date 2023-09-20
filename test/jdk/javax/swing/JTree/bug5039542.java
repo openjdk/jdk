@@ -30,9 +30,8 @@
 import javax.swing.JTree;
 
 public class bug5039542 {
-    public static final String exampleStr = "TEST";
-
     public static void main(String[] args) throws Exception {
+        final String exampleStr = "TEST";
         JTree tree = new JTree();
         tree.setToolTipText(exampleStr);
         if (tree.getToolTipText(null) != exampleStr) {
