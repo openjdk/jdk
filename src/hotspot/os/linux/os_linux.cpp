@@ -82,7 +82,6 @@
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
-#include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
 #endif
 
 // put OS-includes here
@@ -90,6 +89,7 @@
 # include <sys/mman.h>
 # include <sys/stat.h>
 # include <sys/select.h>
+# include <sys/sendfile.h>
 # include <pthread.h>
 # include <signal.h>
 # include <endian.h>
@@ -1795,10 +1795,15 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   return nullptr;
 }
 
-void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
-  void* result;
-  JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
-  result = ::dlopen(filename, RTLD_LAZY);
+void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
+                                int ebuflen) {
+  void * result = ::dlopen(filename, RTLD_LAZY);
+
+#if INCLUDE_JFR
+  EventNativeLibraryLoad event;
+  event.set_name(filename);
+#endif
+
   if (result == nullptr) {
     const char* error_report = ::dlerror();
     if (error_report == nullptr) {
@@ -1810,10 +1815,19 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
     }
     Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
-    JFR_ONLY(load_event.set_error_msg(error_report);)
+#if INCLUDE_JFR
+    event.set_success(false);
+    event.set_errorMessage(error_report);
+    event.commit();
+#endif
   } else {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     log_info(os)("shared library load of %s was successful", filename);
+#if INCLUDE_JFR
+    event.set_success(true);
+    event.set_errorMessage(nullptr);
+    event.commit();
+#endif
   }
   return result;
 }
@@ -4353,6 +4367,13 @@ jlong os::Linux::fast_thread_cpu_time(clockid_t clockid) {
   int status = clock_gettime(clockid, &tp);
   assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
   return (tp.tv_sec * NANOSECS_PER_SEC) + tp.tv_nsec;
+}
+
+// copy data between two file descriptor within the kernel
+// the number of bytes written to out_fd is returned if transfer was successful
+// otherwise, returns -1 that implies an error
+jlong os::Linux::sendfile(int out_fd, int in_fd, jlong* offset, jlong count) {
+  return sendfile64(out_fd, in_fd, (off64_t*)offset, (size_t)count);
 }
 
 // Determine if the vmid is the parent pid for a child in a PID namespace.

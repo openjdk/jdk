@@ -2216,10 +2216,10 @@ void G1CollectedHeap::print_on(outputStream* st) const {
   if (_numa->is_enabled()) {
     uint num_nodes = _numa->num_active_nodes();
     st->print("  remaining free region(s) on each NUMA node: ");
-    const int* node_ids = _numa->node_ids();
+    const uint* node_ids = _numa->node_ids();
     for (uint node_index = 0; node_index < num_nodes; node_index++) {
       uint num_free_regions = _hrm.num_free_regions(node_index);
-      st->print("%d=%u ", node_ids[node_index], num_free_regions);
+      st->print("%u=%u ", node_ids[node_index], num_free_regions);
     }
     st->cr();
   }

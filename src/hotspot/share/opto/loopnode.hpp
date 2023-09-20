@@ -232,14 +232,14 @@ class CountedLoopNode : public BaseCountedLoopNode {
   // vector mapped unroll factor here
   int _slp_maximum_unroll_factor;
 
-  // The eventual count of vectorizable packs in slp
-  int _slp_vector_pack_count;
+  // Cached CountedLoopEndNode of pre loop for main loops
+  CountedLoopEndNode* _pre_loop_end;
 
 public:
   CountedLoopNode(Node *entry, Node *backedge)
     : BaseCountedLoopNode(entry, backedge), _main_idx(0), _trip_count(max_juint),
       _unrolled_count_log2(0), _node_count_before_unroll(0),
-      _slp_maximum_unroll_factor(0), _slp_vector_pack_count(0) {
+      _slp_maximum_unroll_factor(0), _pre_loop_end(nullptr) {
     init_class_id(Class_CountedLoop);
     // Initialize _trip_count to the largest possible value.
     // Will be reset (lower) if the loop's trip count is known.
@@ -330,6 +330,10 @@ public:
   }
 
   Node* is_canonical_loop_entry();
+  CountedLoopEndNode* find_pre_loop_end();
+  CountedLoopNode* pre_loop_head() const;
+  CountedLoopEndNode* pre_loop_end();
+  void set_pre_loop_end(CountedLoopEndNode* pre_loop_end);
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
@@ -1738,6 +1742,9 @@ public:
   bool clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2);
 
   bool at_relevant_ctrl(Node* n, const Node* blk1, const Node* blk2);
+
+
+  Node* similar_subtype_check(const Node* x, Node* r_in);
 
   void update_addp_chain_base(Node* x, Node* old_base, Node* new_base);
 };
