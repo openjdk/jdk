@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @library /test/lib
  * @summary Sanity check that NTLM will not be selected by the http protocol
  *    handler when running on a profile that does not support NTLM
- * @modules java.base/sun.net.www
- *          java.base/sun.net.www.protocol.http:open
+ * @modules java.base/sun.net.www.protocol.http:open
  * @run main/othervm NoNTLM
  * @run main/othervm -Djava.net.preferIPv6Addresses=true NoNTLM
  */
@@ -42,8 +41,9 @@ import java.net.Proxy;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
+
+import jdk.test.lib.net.HttpHeaderParser;
 import jdk.test.lib.net.URIBuilder;
-import sun.net.www.MessageHeader;
 
 public class NoNTLM {
 
@@ -163,7 +163,7 @@ public class NoNTLM {
             // client ---- GET ---> server
             // client <--- 401 ---- server
             try (Socket s = ss.accept()) {
-                new MessageHeader().parseHeader(s.getInputStream());
+                new HttpHeaderParser().parse(s.getInputStream());
                 s.getOutputStream().write(reply.getBytes("US-ASCII"));
             }
 
@@ -171,10 +171,10 @@ public class NoNTLM {
             // client <--- 200 ---- server
             String auth;
             try (Socket s = ss.accept()) {
-                MessageHeader mh = new MessageHeader();
-                mh.parseHeader(s.getInputStream());
+                HttpHeaderParser mh = new HttpHeaderParser();
+                mh.parse(s.getInputStream());
                 s.getOutputStream().write(OKAY.getBytes("US-ASCII"));
-                auth = mh.findValue("Authorization");
+                auth = mh.getHeaderValue("Authorization").get(0);
             }
 
             // check Authorization header
@@ -208,7 +208,7 @@ public class NoNTLM {
             // client ---- GET ---> server
             // client <--- 401 ---- client
             try (Socket s = ss.accept()) {
-                new MessageHeader().parseHeader(s.getInputStream());
+                new HttpHeaderParser().parse(s.getInputStream());
                 s.getOutputStream().write(reply.getBytes("US-ASCII"));
             }
 
