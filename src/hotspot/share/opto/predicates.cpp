@@ -110,7 +110,7 @@ ParsePredicateNode* ParsePredicateIterator::next() {
 
 #ifdef ASSERT
 // Check that the block has at most one Parse Predicate and that we only find Regular Predicate nodes (i.e. IfProj,
-// If, or RangeCheck nodes.
+// If, or RangeCheck nodes).
 void PredicateBlock::verify_block() {
   Node* next = _parse_predicate.entry(); // Skip unique Parse Predicate of this block if present
   while (next != _entry) {
