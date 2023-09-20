@@ -74,7 +74,7 @@ inline WorkerThreads* ShenandoahHeap::safepoint_workers() {
 }
 
 inline void ShenandoahHeap::notify_gc_progress() {
-  Atomic::store(&_no_gc_progress_count, 0UL);
+  Atomic::store(&_no_gc_progress_count, (size_t) 0);
 
 }
 inline void ShenandoahHeap::notify_gc_no_progress() {
