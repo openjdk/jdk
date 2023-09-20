@@ -318,8 +318,36 @@ final class WinNTFileSystem extends FileSystem {
 
     /* -- Path operations -- */
 
+    // Strip a long path or UNC prefix and return the result.
+    // If there is no such prefix, return the parameter passed in.
+    private static String stripLongOrUNCPrefix(String path) {
+        // if a prefix is present, remove it
+        if (path.startsWith("\\\\?\\")) {
+            if (path.startsWith("UNC\\", 4)) {
+                path = "\\\\" + path.substring(8);
+            } else {
+                path = path.substring(4);
+                // if only "UNC" remains, a trailing "\\" was likely removed
+                if (path.equals("UNC")) {
+                    path = "\\\\";
+                }
+            }
+        }
+
+        return path;
+    }
+
     @Override
     public boolean isAbsolute(File f) {
+        String path = f.getPath();
+
+        // if a prefix is present, remove it
+        String stripped = stripLongOrUNCPrefix(path);
+        if (stripped != path) {
+            path = stripped;
+            f = new File(stripped);
+        }
+
         int pl = f.getPrefixLength();
         return (((pl == 2) && (f.getPath().charAt(0) == slash))
                 || (pl == 3));
@@ -360,17 +388,10 @@ final class WinNTFileSystem extends FileSystem {
         String path = f.getPath();
 
         // if a prefix is present, remove it
-        if (path.startsWith("\\\\?\\")) {
-            if (path.startsWith("UNC\\", 4)) {
-                path = "\\\\" + path.substring(8);
-            } else {
-                path = path.substring(4);
-                // if only "UNC" remains, a trailing "\\" was likely removed
-                if (path.equals("UNC")) {
-                    path = "\\\\";
-                }
-            }
-            f = new File(path);
+        String stripped = stripLongOrUNCPrefix(path);
+        if (stripped != path) {
+            path = stripped;
+            f = new File(stripped);
         }
 
         int pl = f.getPrefixLength();
@@ -455,6 +476,9 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public String canonicalize(String path) throws IOException {
+        // if a prefix is present, remove it
+        path = stripLongOrUNCPrefix(path);
+
         // If path is a drive letter only then skip canonicalization
         int len = path.length();
         if ((len == 2) &&
