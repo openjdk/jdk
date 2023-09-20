@@ -362,7 +362,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
                     MIN2(dirty_r, clear_limit_r));
       }
 
-      {
+      if (large_arr == nullptr || addr_for(dirty_l) < cast_from_oop<HeapWord*>(large_arr)) {
         // 2. Scan objs in [dirty_l, dirty_r) subject to [first_obj_addr, cur_stripe_end_addr) constraint
         //    Exclude the large array if one begins in the stripe
         HeapWord* obj_l = MAX2(start_array->object_start(addr_for(dirty_l)),
