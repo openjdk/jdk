@@ -2536,7 +2536,7 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 
 #if defined(_M_AMD64) || defined(_M_IX86)
 //-----------------------------------------------------------------------------
-bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
+static bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   // handle exception caused by native method modifying control word
   DWORD exception_code = exceptionInfo->ExceptionRecord->ExceptionCode;
 
@@ -2578,7 +2578,7 @@ bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #endif
 
 #ifndef _WIN64
-LONG WINAPI Uncaught_Exception_Handler(struct _EXCEPTION_POINTERS* exceptionInfo) {
+static LONG WINAPI Uncaught_Exception_Handler(struct _EXCEPTION_POINTERS* exceptionInfo) {
   if (handle_FLT_exception(exceptionInfo)) {
     return EXCEPTION_CONTINUE_EXECUTION;
   }
