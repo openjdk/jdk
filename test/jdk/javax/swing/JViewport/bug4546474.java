@@ -35,7 +35,6 @@ import javax.swing.JScrollPane;
 public class bug4546474 {
     static JScrollPane scrollpane;
     static JScrollBar sbar;
-    static volatile boolean viewChanged;
 
     public static void main(String[] args) {
         JPanel panel = new JPanel();
@@ -44,11 +43,7 @@ public class bug4546474 {
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         sbar = scrollpane.getVerticalScrollBar();
 
-        sbar.addAdjustmentListener(e -> viewChanged = true);
         scrollpane.setViewportView(null);
-        if (!viewChanged) {
-            viewChanged = true;
-        }
 
         if (sbar.getVisibleAmount() > 0) {
             throw new RuntimeException("Vertical scrollbar is not " +
