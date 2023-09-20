@@ -26,7 +26,6 @@
 package sun.util.calendar;
 
 import java.lang.Cloneable;
-import java.util.Locale;
 import java.util.TimeZone;
 
 /**
@@ -342,6 +341,7 @@ public sealed abstract class CalendarDate implements Cloneable
                 && zoneOffset == that.zoneOffset);
     }
 
+    @Override
     public int hashCode() {
         // a pseudo (local standard) time stamp value in milliseconds
         // from the Epoch, assuming Gregorian calendar fields.
@@ -364,6 +364,7 @@ public sealed abstract class CalendarDate implements Cloneable
      *
      * @return a copy of this <code>CalendarDate</code>
      */
+    @Override
     public Object clone() {
         try {
             return super.clone();
@@ -382,6 +383,7 @@ public sealed abstract class CalendarDate implements Cloneable
      *
      * @see java.text.SimpleDateFormat
      */
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         CalendarUtils.sprintf0d(sb, year, 4).append('-');
