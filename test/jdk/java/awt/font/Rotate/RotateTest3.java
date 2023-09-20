@@ -90,7 +90,7 @@ public class RotateTest3 extends Panel {
             Graphics2D g2d = (Graphics2D) g;
             Dimension d = this.getSize();
             g.setColor(this.getBackground());
-            g.fillRect(0,0,d.width,d.height);
+            g.fillRect(0, 0, d.width, d.height);
             g2d.setPaint(Color.black);
 
             g2d.translate(150,150);
