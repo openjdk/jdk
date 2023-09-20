@@ -52,7 +52,6 @@ public class StoreReproducibilityTest {
 
     private static final String DATE_FORMAT_PATTERN = "EEE MMM dd HH:mm:ss zzz uuuu";
     private static final String SYS_PROP_JAVA_PROPERTIES_DATE = "java.properties.date";
-    private static final String SYS_PROP_UTC_TIMEZONE = "-Duser.timezone=UTC";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN, Locale.ROOT)
             .withZone(ZoneOffset.UTC);
 
@@ -95,7 +94,6 @@ public class StoreReproducibilityTest {
             storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
-                    SYS_PROP_UTC_TIMEZONE,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -138,7 +136,6 @@ public class StoreReproducibilityTest {
             storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
-                    SYS_PROP_UTC_TIMEZONE,
                     "-Djava.security.manager",
                     "-Djava.security.policy=" + policyFile,
                     StoreTest.class.getName(),
@@ -183,7 +180,6 @@ public class StoreReproducibilityTest {
             storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
-                    SYS_PROP_UTC_TIMEZONE,
                     "-Djava.security.manager",
                     "-Djava.security.policy=" + policyFile,
                     StoreTest.class.getName(),
@@ -214,7 +210,6 @@ public class StoreReproducibilityTest {
             storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
-                    SYS_PROP_UTC_TIMEZONE,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -247,7 +242,7 @@ public class StoreReproducibilityTest {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=",
-                    SYS_PROP_UTC_TIMEZONE,
+                    "-Duser.timezone=UTC",
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -279,7 +274,6 @@ public class StoreReproducibilityTest {
             storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
-                    SYS_PROP_UTC_TIMEZONE,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -309,7 +303,6 @@ public class StoreReproducibilityTest {
                 storedFiles.add(tmpFile);
                 final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
                         "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
-                        SYS_PROP_UTC_TIMEZONE,
                         StoreTest.class.getName(),
                         tmpFile.toString(),
                         i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -352,7 +345,6 @@ public class StoreReproducibilityTest {
                 storedFiles.add(tmpFile);
                 final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
                         "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
-                        SYS_PROP_UTC_TIMEZONE,
                         StoreTest.class.getName(),
                         tmpFile.toString(),
                         i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -425,6 +417,9 @@ public class StoreReproducibilityTest {
      * Verifies that the date comment in the {@code destFile} can be parsed using the
      * "EEE MMM dd HH:mm:ss zzz uuuu" format and the time represented by it is {@link Date#after(Date) after}
      * the passed {@code date}
+     * The JVM runtime to invoke this method should set the time zone to UTC, i.e, specify
+     * "-Duser.timezone=UTC" at the command line. Otherwise, it will fail with some time
+     * zones that have ambiguous short names, such as "IST"
      */
     private static void assertCurrentDate(final Path destFile, final Date date) throws Exception {
         final String dateComment = findNthComment(destFile, 2);
