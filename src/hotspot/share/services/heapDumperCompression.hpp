@@ -78,6 +78,8 @@ public:
   const char* get_file_path() { return _path; }
 
   bool is_overwrite() const { return _overwrite; }
+
+  int get_fd() const {return _fd; }
 };
 
 

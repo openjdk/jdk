@@ -59,6 +59,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "virtualspace.hpp"
 
 using metaspace::ChunkManager;
 using metaspace::CommitLimiter;
@@ -581,86 +582,71 @@ bool Metaspace::class_space_is_initialized() {
   return MetaspaceContext::context_class() != nullptr;
 }
 
-// Reserve a range of memory at an address suitable for en/decoding narrow
-// Klass pointers (see: CompressedClassPointers::is_valid_base()).
-// The returned address shall both be suitable as a compressed class pointers
-//  base, and aligned to Metaspace::reserve_alignment (which is equal to or a
-//  multiple of allocation granularity).
-// On error, returns an unreserved space.
-ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t size) {
+// Reserve a range of memory that is to contain narrow Klass IDs. If "try_in_low_address_ranges"
+// is true, we will attempt to reserve memory suitable for zero-based encoding.
+ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t size, bool try_in_low_address_ranges) {
 
-#if defined(AARCH64) || defined(PPC64)
-  const size_t alignment = Metaspace::reserve_alignment();
+  char* result = nullptr;
+  const bool randomize = RandomizeClassSpaceLocation;
 
-  // AArch64: Try to align metaspace class space so that we can decode a
-  // compressed klass with a single MOVK instruction. We can do this iff the
-  // compressed class base is a multiple of 4G.
-  // Additionally, above 32G, ensure the lower LogKlassAlignmentInBytes bits
-  // of the upper 32-bits of the address are zero so we can handle a shift
-  // when decoding.
-
-  // PPC64: smaller heaps up to 2g will be mapped just below 4g. Then the
-  // attempt to place the compressed class space just after the heap fails on
-  // Linux 4.1.42 and higher because the launcher is loaded at 4g
-  // (ELF_ET_DYN_BASE). In that case we reach here and search the address space
-  // below 32g to get a zerobased CCS. For simplicity we reuse the search
-  // strategy for AARCH64.
-
-  static const struct {
-    address from;
-    address to;
-    size_t increment;
-  } search_ranges[] = {
-    {  (address)(4*G),   (address)(32*G),   4*G, },
-    {  (address)(32*G),  (address)(1024*G), (4 << LogKlassAlignmentInBytes) * G },
-    {  nullptr, nullptr, 0 }
-  };
-
-  // Calculate a list of all possible values for the starting address for the
-  // compressed class space.
-  ResourceMark rm;
-  GrowableArray<address> list(36);
-  for (int i = 0; search_ranges[i].from != nullptr; i ++) {
-    address a = search_ranges[i].from;
-    assert(CompressedKlassPointers::is_valid_base(a), "Sanity");
-    while (a < search_ranges[i].to) {
-      list.append(a);
-      a +=  search_ranges[i].increment;
+  // First try to reserve in low address ranges.
+  if (try_in_low_address_ranges) {
+    constexpr uintptr_t unscaled_max = ((uintptr_t)UINT_MAX + 1);
+    log_debug(metaspace, map)("Trying below " SIZE_FORMAT_X " for unscaled narrow Klass encoding", unscaled_max);
+    result = os::attempt_reserve_memory_between(nullptr, (char*)unscaled_max,
+                                                size, Metaspace::reserve_alignment(), randomize);
+    if (result == nullptr) {
+      constexpr uintptr_t zerobased_max = unscaled_max << LogKlassAlignmentInBytes;
+      log_debug(metaspace, map)("Trying below " SIZE_FORMAT_X " for zero-based narrow Klass encoding", zerobased_max);
+      result = os::attempt_reserve_memory_between((char*)unscaled_max, (char*)zerobased_max,
+                                                  size, Metaspace::reserve_alignment(), randomize);
     }
+  } // end: low-address reservation
+
+#if defined(AARCH64) || defined(PPC64) || defined(S390)
+  if (result == nullptr) {
+    // Failing zero-based allocation, or in strict_base mode, try to come up with
+    // an optimized start address that is amenable to JITs that use 16-bit moves to
+    // load the encoding base as a short immediate.
+    // Therefore we try here for an address that when right-shifted by
+    // LogKlassAlignmentInBytes has only 1s in the third 16-bit quadrant.
+    //
+    // Example: for shift=3, the address space searched would be
+    // [0x0080_0000_0000 - 0xFFF8_0000_0000].
+
+    // Number of least significant bits that should be zero
+    constexpr int lo_zero_bits = 32 + LogKlassAlignmentInBytes;
+    // Number of most significant bits that should be zero
+    constexpr int hi_zero_bits = 16;
+
+    constexpr size_t alignment = nth_bit(lo_zero_bits);
+    assert(alignment >= Metaspace::reserve_alignment(), "Sanity");
+    constexpr uint64_t min = alignment;
+    constexpr uint64_t max = nth_bit(64 - hi_zero_bits);
+
+    log_debug(metaspace, map)("Trying between " UINT64_FORMAT_X " and " UINT64_FORMAT_X
+                              " with " SIZE_FORMAT_X " alignment", min, max, alignment);
+    result = os::attempt_reserve_memory_between((char*)min, (char*)max, size, alignment, randomize);
+  }
+#endif // defined(AARCH64) || defined(PPC64) || defined(S390)
+
+  if (result == nullptr) {
+    // Fallback: reserve anywhere and hope the resulting block is usable.
+    log_debug(metaspace, map)("Trying anywhere...");
+    result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), false);
   }
 
-  int len = list.length();
-  int r = 0;
-  if (!DumpSharedSpaces) {
-    // Starting from a random position in the list. If the address cannot be reserved
-    // (the OS already assigned it for something else), go to the next position, wrapping
-    // around if necessary, until we exhaust all the items.
-    os::init_random((int)os::javaTimeNanos());
-    r = os::random();
-    log_info(metaspace)("Randomizing compressed class space: start from %d out of %d locations",
-                        r % len, len);
+  // Wrap resulting range in ReservedSpace
+  ReservedSpace rs;
+  if (result != nullptr) {
+    assert(is_aligned(result, Metaspace::reserve_alignment()), "Alignment too small for metaspace");
+    rs = ReservedSpace::space_for_range(result, size, Metaspace::reserve_alignment(),
+                                                      os::vm_page_size(), false, false);
+  } else {
+    rs = ReservedSpace();
   }
-  for (int i = 0; i < len; i++) {
-    address a = list.at((i + r) % len);
-    ReservedSpace rs(size, Metaspace::reserve_alignment(),
-                     os::vm_page_size(), (char*)a);
-    if (rs.is_reserved()) {
-      assert(a == (address)rs.base(), "Sanity");
-      return rs;
-    }
-  }
-#endif // defined(AARCH64) || defined(PPC64)
-
-#ifdef AARCH64
-  // Note: on AARCH64, if the code above does not find any good placement, we
-  // have no recourse. We return an empty space and the VM will exit.
-  return ReservedSpace();
-#else
-  // Default implementation: Just reserve anywhere.
-  return ReservedSpace(size, Metaspace::reserve_alignment(), os::vm_page_size(), (char*)nullptr);
-#endif // AARCH64
+  return rs;
 }
-
 #endif // _LP64
 
 size_t Metaspace::reserve_alignment_words() {
@@ -781,14 +767,13 @@ void Metaspace::global_initialize() {
     // case (b) (No CDS)
     ReservedSpace rs;
     const size_t size = align_up(CompressedClassSpaceSize, Metaspace::reserve_alignment());
-    address base = nullptr;
 
     // If CompressedClassSpaceBaseAddress is set, we attempt to force-map class space to
     // the given address. This is a debug-only feature aiding tests. Due to the ASLR lottery
     // this may fail, in which case the VM will exit after printing an appropriate message.
     // Tests using this switch should cope with that.
     if (CompressedClassSpaceBaseAddress != 0) {
-      base = (address)CompressedClassSpaceBaseAddress;
+      const address base = (address)CompressedClassSpaceBaseAddress;
       if (!is_aligned(base, Metaspace::reserve_alignment())) {
         vm_exit_during_initialization(
             err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " invalid "
@@ -806,27 +791,9 @@ void Metaspace::global_initialize() {
       }
     }
 
-    if (!rs.is_reserved()) {
-      // If UseCompressedOops=1 and the java heap has been placed in coops-friendly
-      //  territory, i.e. its base is under 32G, then we attempt to place ccs
-      //  right above the java heap.
-      // Otherwise the lower 32G are still free. We try to place ccs at the lowest
-      // allowed mapping address.
-      base = (UseCompressedOops && (uint64_t)CompressedOops::base() < OopEncodingHeapMax) ?
-              CompressedOops::end() : (address)HeapBaseMinAddress;
-      base = align_up(base, Metaspace::reserve_alignment());
-
-      if (base != nullptr) {
-        if (CompressedKlassPointers::is_valid_base(base)) {
-          rs = ReservedSpace(size, Metaspace::reserve_alignment(),
-                             os::vm_page_size(), (char*)base);
-        }
-      }
-    }
-
     // ...failing that, reserve anywhere, but let platform do optimized placement:
     if (!rs.is_reserved()) {
-      rs = Metaspace::reserve_address_space_for_compressed_classes(size);
+      rs = Metaspace::reserve_address_space_for_compressed_classes(size, true);
     }
 
     // ...failing that, give up.

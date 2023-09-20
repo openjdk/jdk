@@ -41,7 +41,15 @@ import jdk.internal.classfile.impl.Util;
  */
 public sealed interface StoreInstruction extends Instruction
         permits AbstractInstruction.BoundStoreInstruction, AbstractInstruction.UnboundStoreInstruction {
+
+    /**
+     * {@return the local variable slot to store to}
+     */
     int slot();
+
+    /**
+     * {@return the type of the value to be stored}
+     */
     TypeKind typeKind();
 
     /**

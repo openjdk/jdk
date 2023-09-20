@@ -70,6 +70,7 @@
 #include "services/runtimeService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
@@ -88,6 +89,7 @@
 # include <sys/mman.h>
 # include <sys/stat.h>
 # include <sys/select.h>
+# include <sys/sendfile.h>
 # include <pthread.h>
 # include <signal.h>
 # include <endian.h>
@@ -4244,6 +4246,23 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   return nullptr;
 }
 
+size_t os::vm_min_address() {
+  // Determined by sysctl vm.mmap_min_addr. It exists as a safety zone to prevent
+  // NULL pointer dereferences.
+  // Most distros set this value to 64 KB. It *can* be zero, but rarely is. Here,
+  // we impose a minimum value if vm.mmap_min_addr is too low, for increased protection.
+  static size_t value = 0;
+  if (value == 0) {
+    assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
+    FILE* f = fopen("/proc/sys/vm/mmap_min_addr", "r");
+    if (fscanf(f, "%zu", &value) != 1) {
+      value = _vm_min_address_default;
+    }
+    value = MAX2(_vm_min_address_default, value);
+  }
+  return value;
+}
+
 // Used to convert frequent JVM_Yield() to nops
 bool os::dont_yield() {
   return DontYieldALot;
@@ -4348,6 +4367,13 @@ jlong os::Linux::fast_thread_cpu_time(clockid_t clockid) {
   int status = clock_gettime(clockid, &tp);
   assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
   return (tp.tv_sec * NANOSECS_PER_SEC) + tp.tv_nsec;
+}
+
+// copy data between two file descriptor within the kernel
+// the number of bytes written to out_fd is returned if transfer was successful
+// otherwise, returns -1 that implies an error
+jlong os::Linux::sendfile(int out_fd, int in_fd, jlong* offset, jlong count) {
+  return sendfile64(out_fd, in_fd, (off64_t*)offset, (size_t)count);
 }
 
 // Determine if the vmid is the parent pid for a child in a PID namespace.

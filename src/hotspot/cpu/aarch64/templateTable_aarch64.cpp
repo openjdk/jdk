@@ -35,7 +35,7 @@
 #include "interpreter/templateTable.hpp"
 #include "memory/universe.hpp"
 #include "oops/methodData.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedFieldEntry.hpp"
@@ -3910,7 +3910,8 @@ void TemplateTable::monitorenter()
 
     __ check_extended_sp();
     __ sub(sp, sp, entry_size);           // make room for the monitor
-    __ mov(rscratch1, sp);
+    __ sub(rscratch1, sp, rfp);
+    __ asr(rscratch1, rscratch1, Interpreter::logStackElementSize);
     __ str(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
 
     __ ldr(c_rarg1, monitor_block_bot);   // c_rarg1: old expression stack bottom
