@@ -28,10 +28,6 @@ import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.lang.Exception;
-import java.lang.RuntimeException;
-import java.lang.String;
-import java.lang.System;
 import java.util.concurrent.CountDownLatch;
 
 /*

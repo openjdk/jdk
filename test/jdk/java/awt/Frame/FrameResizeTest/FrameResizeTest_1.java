@@ -21,14 +21,11 @@
  * questions.
  */
 
-import javax.swing.SwingUtilities;
 import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Frame;
-import java.lang.Exception;
-import java.lang.String;
-
+import javax.swing.SwingUtilities;
 
 /*
  * @test
@@ -91,4 +88,3 @@ class FrameResize_1 extends Frame {
         setSize(200,200);
     }
 }
-

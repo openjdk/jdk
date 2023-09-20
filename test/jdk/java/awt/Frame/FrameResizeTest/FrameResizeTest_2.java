@@ -21,7 +21,6 @@
  * questions.
  */
 
-import javax.swing.SwingUtilities;
 import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Color;
@@ -32,8 +31,7 @@ import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Panel;
-import java.lang.Exception;
-import java.lang.String;
+import javax.swing.SwingUtilities;
 
 /*
  * @test
@@ -44,6 +42,7 @@ import java.lang.String;
  * @build PassFailJFrame
  * @run main/manual FrameResizeTest_2
  */
+
 public class FrameResizeTest_2 {
     private static final String INSTRUCTIONS = """
         There is a frame (size 300x300).
@@ -143,4 +142,3 @@ class DumbPanel extends Panel {
         super.paint(g);
     }
 }
-
