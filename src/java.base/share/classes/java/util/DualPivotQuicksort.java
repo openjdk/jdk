@@ -169,10 +169,10 @@ final class DualPivotQuicksort {
          * @param a the array to be sorted
          * @param low the index of the first element, inclusive, to be sorted
          * @param high the index of the last element, exclusive, to be sorted
-         * @param indexPivot1 the index of pivot1, the first pivot
-         * @param indexPivot2 the index of pivot2, the second pivot
+         * @param pivotIndex1 the index of pivot1, the first pivot
+         * @param pivotIndex2 the index of pivot2, the second pivot
          */
-        int[] partition(A a, int low, int high, int indexPivot1, int indexPivot2);
+        int[] partition(A a, int low, int high, int pivotIndex1, int pivotIndex2);
     }
 
     /**
@@ -185,14 +185,14 @@ final class DualPivotQuicksort {
      * address pointing to the first element to partition from.
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
-     * @param indexPivot1 the index of pivot1, the first pivot
-     * @param indexPivot2 the index of pivot2, the second pivot
+     * @param pivotIndex1 the index of pivot1, the first pivot
+     * @param pivotIndex2 the index of pivot2, the second pivot
      * @param po the method reference for the fallback implementation
      */
     @IntrinsicCandidate
     @ForceInline
-    private static <A> int[] partition(Class<?> elemType, A array, long offset, int low, int high, int indexPivot1, int indexPivot2, PartitionOperation<A> po) {
-        return po.partition(array, low, high, indexPivot1, indexPivot2);
+    private static <A> int[] partition(Class<?> elemType, A array, long offset, int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<A> po) {
+        return po.partition(array, low, high, pivotIndex1, pivotIndex2);
     }
 
     /**
@@ -399,18 +399,18 @@ final class DualPivotQuicksort {
      * @param array the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
-     * @param indexPivot1 the index of pivot1, the first pivot
-     * @param indexPivot2 the index of pivot2, the second pivot
+     * @param pivotIndex1 the index of pivot1, the first pivot
+     * @param pivotIndex2 the index of pivot2, the second pivot
      *
      */
     @ForceInline
-    private static int[] partitionDualPivot(int[] a, int low, int high, int indexPivot1, int indexPivot2) {
+    private static int[] partitionDualPivot(int[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
         int end = high - 1;
         int lower = low;
         int upper = end;
 
-        int e1 = indexPivot1;
-        int e5 = indexPivot2;
+        int e1 = pivotIndex1;
+        int e5 = pivotIndex2;
         int pivot1 = a[e1];
         int pivot2 = a[e5];
 
@@ -480,25 +480,23 @@ final class DualPivotQuicksort {
         return new int[] {lower, upper};
     }
 
-
-
     /**
      * Partitions the specified range of the array using a single pivot provided.
      *
      * @param array the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
-     * @param indexPivot1 the index of pivot1, the first pivot
-     * @param indexPivot2 the index of pivot2, the second pivot
+     * @param pivotIndex1 the index of pivot1, the first pivot
+     * @param pivotIndex2 the index of pivot2, the second pivot
      *
      */
     @ForceInline
-    private static int[] partitionSinglePivot(int[] a, int low, int high, int indexPivot1, int indexPivot2) {
+    private static int[] partitionSinglePivot(int[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
 
         int end = high - 1;
         int lower = low;
         int upper = end;
-        int e3 = indexPivot1;
+        int e3 = pivotIndex1;
         int pivot = a[e3];
 
         /*
@@ -1202,18 +1200,18 @@ final class DualPivotQuicksort {
      * @param array the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
-     * @param indexPivot1 the index of pivot1, the first pivot
-     * @param indexPivot2 the index of pivot2, the second pivot
+     * @param pivotIndex1 the index of pivot1, the first pivot
+     * @param pivotIndex2 the index of pivot2, the second pivot
      *
      */
     @ForceInline
-    private static int[] partitionDualPivot(long[] a, int low, int high, int indexPivot1, int indexPivot2) {
+    private static int[] partitionDualPivot(long[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
         int end = high - 1;
         int lower = low;
         int upper = end;
 
-        int e1 = indexPivot1;
-        int e5 = indexPivot2;
+        int e1 = pivotIndex1;
+        int e5 = pivotIndex2;
         long pivot1 = a[e1];
         long pivot2 = a[e5];
 
@@ -1283,25 +1281,24 @@ final class DualPivotQuicksort {
         return new int[] {lower, upper};
     }
 
-
     /**
      * Partitions the specified range of the array using a single pivot provided.
      *
      * @param array the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
-     * @param indexPivot1 the index of pivot1, the first pivot
-     * @param indexPivot2 the index of pivot2, the second pivot
+     * @param pivotIndex1 the index of pivot1, the first pivot
+     * @param pivotIndex2 the index of pivot2, the second pivot
      *
      */
     @ForceInline
-    private static int[] partitionSinglePivot(long[] a, int low, int high, int indexPivot1, int indexPivot2) {
+    private static int[] partitionSinglePivot(long[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
 
         int end = high - 1;
         int lower = low;
         int upper = end;
 
-        int e3 = indexPivot1;
+        int e3 = pivotIndex1;
         long pivot = a[e3];
 
         /*
@@ -2792,18 +2789,18 @@ final class DualPivotQuicksort {
      * @param array the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
-     * @param indexPivot1 the index of pivot1, the first pivot
-     * @param indexPivot2 the index of pivot2, the second pivot
+     * @param pivotIndex1 the index of pivot1, the first pivot
+     * @param pivotIndex2 the index of pivot2, the second pivot
      *
      */
     @ForceInline
-    private static int[] partitionDualPivot(float[] a, int low, int high, int indexPivot1, int indexPivot2) {
+    private static int[] partitionDualPivot(float[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
         int end = high - 1;
         int lower = low;
         int upper = end;
 
-        int e1 = indexPivot1;
-        int e5 = indexPivot2;
+        int e1 = pivotIndex1;
+        int e5 = pivotIndex2;
         float pivot1 = a[e1];
         float pivot2 = a[e5];
 
@@ -2873,24 +2870,23 @@ final class DualPivotQuicksort {
         return new int[] {lower, upper};
     }
 
-
     /**
      * Partitions the specified range of the array using a single pivot provided.
      *
      * @param array the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
-     * @param indexPivot1 the index of pivot1, the first pivot
-     * @param indexPivot2 the index of pivot2, the second pivot
+     * @param pivotIndex1 the index of pivot1, the first pivot
+     * @param pivotIndex2 the index of pivot2, the second pivot
      *
      */
     @ForceInline
-    private static int[] partitionSinglePivot(float[] a, int low, int high, int indexPivot1, int indexPivot2) {
+    private static int[] partitionSinglePivot(float[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
         int end = high - 1;
         int lower = low;
         int upper = end;
 
-        int e3 = indexPivot1;
+        int e3 = pivotIndex1;
         float pivot = a[e3];
 
         /*
@@ -3646,18 +3642,18 @@ final class DualPivotQuicksort {
      * @param array the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
-     * @param indexPivot1 the index of pivot1, the first pivot
-     * @param indexPivot2 the index of pivot2, the second pivot
+     * @param pivotIndex1 the index of pivot1, the first pivot
+     * @param pivotIndex2 the index of pivot2, the second pivot
      *
      */
     @ForceInline
-    private static int[] partitionDualPivot(double[] a, int low, int high, int indexPivot1, int indexPivot2) {
+    private static int[] partitionDualPivot(double[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
         int end = high - 1;
         int lower = low;
         int upper = end;
 
-        int e1 = indexPivot1;
-        int e5 = indexPivot2;
+        int e1 = pivotIndex1;
+        int e5 = pivotIndex2;
         double pivot1 = a[e1];
         double pivot2 = a[e5];
 
@@ -3727,25 +3723,23 @@ final class DualPivotQuicksort {
         return new int[] {lower, upper};
     }
 
-
-
     /**
      * Partitions the specified range of the array using a single pivot provided.
      *
      * @param array the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
-     * @param indexPivot1 the index of pivot1, the first pivot
-     * @param indexPivot2 the index of pivot2, the second pivot
+     * @param pivotIndex1 the index of pivot1, the first pivot
+     * @param pivotIndex2 the index of pivot2, the second pivot
      */
     @ForceInline
-    private static int[] partitionSinglePivot(double[] a, int low, int high, int indexPivot1, int indexPivot2) {
+    private static int[] partitionSinglePivot(double[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
 
         int end = high - 1;
         int lower = low;
         int upper = end;
 
-        int e3 = indexPivot1;
+        int e3 = pivotIndex1;
         double pivot = a[e3];
 
         /*
