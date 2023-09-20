@@ -2806,6 +2806,7 @@ public final class Formatter implements Closeable, Flushable {
      * Finds format specifiers in the format string.
      */
     static List<FormatString> parse(String s) {
+        FormatSpecifierParser parser = null;
         ArrayList<FormatString> al = new ArrayList<>();
         int i = 0;
         int max = s.length();
@@ -2833,7 +2834,12 @@ public final class Formatter implements Closeable, Flushable {
             } else {
                 // We have already parsed a '%' at n, so we either have a
                 // match or the specifier at n is invalid
-                int off = parse0(al, c, s, i, max);
+                if (parser == null) {
+                    parser = new FormatSpecifierParser(al, c, i, s, max);
+                } else {
+                    parser.reset(c, i);
+                }
+                int off = parser.parse();
                 if (off > 0) {
                     i += off;
                 } else {
@@ -2844,56 +2850,135 @@ public final class Formatter implements Closeable, Flushable {
         return al;
     }
 
-    private static int parse0(ArrayList<FormatString> al, char c, String s, int i, int max) {
-        // %[argument_index$][flags][width][.precision][t]conversion
-        // %(\d+\$)?([-#+ 0,(\<]*)?(\d+)?(\.\d+)?([tT])?([a-zA-Z%])
-        int argSize = 0, flagSize = 0, widthSize = 0, precisionSize = 0;
-        final char first = c;
-        int start = i;
+    static final class FormatSpecifierParser {
+        final ArrayList<FormatString> al;
+        final String s;
+        final int max;
+        char first;
+        int start;
+        int i;
+        char c;
+        int argSize;
+        int flagSize;
+        int widthSize;
 
-        // (\d+\$)?
-        int size = 0;
-        for (; i < max; ++i, c = s.charAt(i), size++) {
-            if (!isDigit(c)) {
-                if (size > 0) {
-                    if (c == '$') {
-                        ++i;
-                        argSize = size + 1;
-                        size = 0;
-                        if (i < max) {
-                            c = s.charAt(i);
-                        }
-                    } else {
-                        if (first == '0') {
-                            flagSize = 1;
-                            i = start + 1;
+        FormatSpecifierParser(ArrayList<FormatString> al, char first, int start, String s, int max) {
+            this.al = al;
+
+            this.first = first;
+            this.c = first;
+            this.start = start;
+            this.i = start;
+
+            this.s = s;
+            this.max = max;
+        }
+
+        void reset(char first, int start) {
+            this.first = first;
+            this.c = first;
+            this.start = start;
+            this.i = start;
+
+            argSize = 0;
+            flagSize = 0;
+            widthSize = 0;
+        }
+
+        int parse() {
+            // %[argument_index$][flags][width][.precision][t]conversion
+            // %(\d+\$)?([-#+ 0,(\<]*)?(\d+)?(\.\d+)?([tT])?([a-zA-Z%])
+            int precisionSize = 0;
+
+           parseArgument();
+
+            if (widthSize == 0) {
+                if (flagSize == 0) {
+                    parseFlag();
+                }
+                parseWidth();
+            }
+
+            if (c == '.' && i + 1 < max) {
+                // (\.\d+)?
+                precisionSize = parsePrecision();
+                if (precisionSize == 0) {
+                    return 0;
+                }
+            }
+
+            // ([tT])?([a-zA-Z%])
+            char t = '\0', conversion = '\0';
+            if ((c == 't' || c == 'T') && i + 1 < max) {
+                char c1 = s.charAt(i + 1);
+                if (isConversion(c1)) {
+                    t = c;
+                    conversion = c1;
+                    i+= 2;
+                }
+            }
+            if (conversion == '\0' && isConversion(c)) {
+                conversion = c;
+                ++i;
+            }
+
+            if (argSize + flagSize + widthSize + precisionSize + t + conversion != 0) {
+                al.add(new FormatSpecifier(s, start, argSize, flagSize, widthSize, precisionSize, t, conversion));
+                return i - start;
+            }
+            return 0;
+        }
+
+        private void parseArgument() {
+            // (\d+\$)?
+            for (int size = 0; i < max; ++i, c = s.charAt(i), size++) {
+                if (!isDigit(c)) {
+                    if (size > 0) {
+                        if (c == '$') {
+                            ++i;
+                            argSize = size + 1;
+                            size = 0;
                             if (i < max) {
                                 c = s.charAt(i);
                             }
                         } else {
-                            widthSize = size;
+                            if (first == '0') {
+                                boolean nextFlag = i < max && Flags.isFlag(s.charAt(i));
+                                if (!nextFlag) {
+                                    flagSize = 1;
+                                    i = start + 1;
+                                    if (i < max) {
+                                        c = s.charAt(i);
+                                    }
+                                } else {
+                                    i = start;
+                                    c = first;
+                                }
+                            } else {
+                                widthSize = size;
+                            }
+                            size = 0;
                         }
-                        size = 0;
                     }
+                    break;
                 }
-                break;
             }
         }
 
-        if (widthSize == 0) {
+        private void parseFlag() {
             // ([-#+ 0,(\<]*)?
-            if (flagSize == 0) {
-                for (; i < max; ++i, c = s.charAt(i), size++) {
-                    if (!Flags.isFlag(c)) {
-                        flagSize = size;
-                        size = 0;
-                        break;
-                    }
+            for (int size = 0; i < max; ++i, c = s.charAt(i), size++) {
+                if (!Flags.isFlag(c)) {
+                    flagSize = size;
+                    size = 0;
+                    break;
                 }
             }
+        }
 
+        private void parseWidth() {
             // (\d+)?
-            for (; i < max; ++i, c = s.charAt(i), size++) {
+            for (int size = 0; i < max; ++i, c = s.charAt(i), size++) {
                 if (!isDigit(c)) {
                     widthSize = size;
                     break;
@@ -2901,42 +2986,21 @@ public final class Formatter implements Closeable, Flushable {
             }
         }
 
-        // (\.\d+)?
-        if (c == '.' && ++i < max) {
-            size = 0;
-            c = s.charAt(i);
-            for (; i < max; ++i, c = s.charAt(i), size++) {
+        private int parsePrecision() {
+            // (\.\d+)?
+            c = s.charAt(++i);
+            for (int size = 0; i < max; ++i, c = s.charAt(i), size++) {
                 if (!isDigit(c)) {
                     if (size > 0) {
-                        precisionSize = size + 1;
-                        break;
+                        return size + 1;
                     } else {
-                        return 0;
+                        break;
                     }
                 }
             }
-        }
 
-        // ([tT])?([a-zA-Z%])
-        char t = '\0', conversion = '\0';
-        if ((c == 't' || c == 'T') && i + 1 < max) {
-            char c1 = s.charAt(i + 1);
-            if (isConversion(c1)) {
-                t = c;
-                conversion = c1;
-                i+= 2;
-            }
+            return 0;
         }
-        if (conversion == '\0' && isConversion(c)) {
-            conversion = c;
-            ++i;
-        }
-
-        if (argSize + flagSize + widthSize + precisionSize + t + conversion != 0) {
-            al.add(new FormatSpecifier(s, start, argSize, flagSize, widthSize, precisionSize, t, conversion));
-            return i - start;
-        }
-        return 0;
     }
 
     private static boolean isConversion(char c) {
