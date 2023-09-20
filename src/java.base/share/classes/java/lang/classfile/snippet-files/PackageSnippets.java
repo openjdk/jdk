@@ -245,7 +245,7 @@ class PackageSnippets {
             case TypeCheckInstruction i -> doSomething(b, i);
             case PseudoInstruction i ->  doSomething(b, i);
             default ->
-                throw new IllegalArgumentException("An unknown instruction could not be handled by this transfomration");
+                throw new IllegalArgumentException("An unknown instruction could not be handled by this transformation");
         };
         // @end
     }
