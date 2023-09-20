@@ -844,7 +844,7 @@ void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
 #ifdef LINUX
 PerfMapDCmd::PerfMapDCmd(outputStream* output, bool heap) :
              DCmdWithParser(output, heap),
-  _filename("-f", "Name of the file", "STRING", false)
+  _filename("filename", "Name of the map file", "STRING", false)
 {
   _dcmdparser.add_dcmd_option(&_filename);
 }
