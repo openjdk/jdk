@@ -156,13 +156,14 @@ CardTable::CardValue* PSCardTable::find_first_clean_card(ObjectStartArray* const
     }
     assert(i_card - 1 >= start_card, "inv");
     assert(*(i_card - 1) != PSCardTable::clean_card_val(), "prev card must be dirty");
-    // Find the final obj on the prev dirty card.
-    HeapWord* obj_addr = start_array->object_start(addr_for(i_card)-1);
-    if (large_obj_array == cast_to_oop(obj_addr)) {
+    HeapWord* i_card_addr = addr_for(i_card);
+    if (large_obj_array != nullptr && i_card_addr >= cast_from_oop<HeapWord*>(large_obj_array)) {
       // We scan dirty parts of large objArrays precisely, so return immediately.
       assert(i_card <= end_card, "inv");
       return i_card;
     }
+    // Find the final obj on the prev dirty card.
+    HeapWord* obj_addr = start_array->object_start(i_card_addr-1);
     HeapWord* obj_end_addr = obj_addr + cast_to_oop(obj_addr)->size();
     CardValue* final_card_by_obj = byte_for(obj_end_addr - 1);
     assert(final_card_by_obj < end_card, "inv");
