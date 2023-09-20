@@ -2021,7 +2021,28 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   b(fallthru);
 
   bind(hit);
-  std(super_klass, target_offset, sub_klass); // save result to cache
+  // Success. Try to cache the super we found and proceed in triumph.
+  uint32_t super_cache_backoff = checked_cast<uint32_t>(SecondarySuperMissBackoff);
+  if (super_cache_backoff > 0) {
+    Label L_skip;
+
+    lwz(temp, in_bytes(JavaThread::backoff_secondary_super_miss_offset()), R16_thread);
+    addic_(temp, temp, -1);
+    stw(temp, in_bytes(JavaThread::backoff_secondary_super_miss_offset()), R16_thread);
+    bgt(CCR0, L_skip);
+
+    load_const_optimized(temp, super_cache_backoff);
+    stw(temp, in_bytes(JavaThread::backoff_secondary_super_miss_offset()), R16_thread);
+
+    std(super_klass, target_offset, sub_klass); // save result to cache
+
+    bind(L_skip);
+    if (L_success == nullptr && result_reg == noreg) {
+      crorc(CCR0, Assembler::equal, CCR0, Assembler::equal); // Restore CCR0 EQ
+    }
+  } else {
+    std(super_klass, target_offset, sub_klass); // save result to cache
+  }
   if (result_reg != noreg) { li(result_reg, 0); } // load zero result (indicates a hit)
   if (L_success != nullptr) { b(*L_success); }
   else if (result_reg == noreg) { blr(); } // return with CR0.eq if neither label nor result reg provided
