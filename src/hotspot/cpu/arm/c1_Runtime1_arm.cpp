@@ -350,6 +350,13 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler* sasm) {
 
 
 void Runtime1::generate_unwind_exception(StubAssembler* sasm) {
+
+  if (AbortVMOnException) {
+    save_live_registers(sasm);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, check_abort_on_vm_exception), Rexception_obj);
+    restore_live_registers(sasm);
+  }
+
   // FP no longer used to find the frame start
   // on entry, remove_frame() has already been called (restoring FP and LR)
 

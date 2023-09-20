@@ -227,7 +227,7 @@ public final class EventInstrumentation {
                         for (AnnotationNode nameCandidate : m.visibleAnnotations) {
                             if (ANNOTATION_NAME_DESCRIPTOR.equals(nameCandidate.desc)) {
                                 List<Object> values = nameCandidate.values;
-                                if (values.size() == 1 && values.get(0)instanceof String s) {
+                                if (values.size() == 1 && values.getFirst() instanceof String s) {
                                     name = Utils.validJavaIdentifier(s, name);
                                 }
                             }

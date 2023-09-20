@@ -1,0 +1,13 @@
+<?xml version="1.1"?>
+<!DOCTYPE top SYSTEM 'test.dtd'
+[
+    <!ENTITY % pe "x">
+    <!ENTITY   x "AAAAA">
+    <!ENTITY   x1 "BBB">
+        ]>
+<test:root xmlns:test="test"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="test val_test.xsd"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+   <child xsi:type="xsd:string">&x1;</child>
+</test:root>

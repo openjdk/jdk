@@ -23,11 +23,21 @@
 
 /*
  * @test id=default
- * @summary StressStackOverflow the recovery path for ScopedValue
+ * @summary Stress ScopedValue stack overflow recovery path
+ * @enablePreview
+ * @run main/othervm/timeout=300 StressStackOverflow
+ */
+
+/*
+ * @test id=no-TieredCompilation
  * @enablePreview
  * @run main/othervm/timeout=300 -XX:-TieredCompilation StressStackOverflow
+ */
+
+/*
+ * @test id=TieredStopAtLevel1
+ * @enablePreview
  * @run main/othervm/timeout=300 -XX:TieredStopAtLevel=1 StressStackOverflow
- * @run main/othervm/timeout=300 StressStackOverflow
  */
 
 /*
@@ -37,6 +47,7 @@
  * @run main/othervm/timeout=300 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations StressStackOverflow
  */
 
+import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.StructureViolationException;
@@ -55,7 +66,7 @@ public class StressStackOverflow {
         TestFailureException(String s) { super(s); }
     }
 
-    static final long MINUTES = 60 * 1_000_000_000L; // 60 * 10**9 ns
+    static final long DURATION_IN_NANOS = Duration.ofMinutes(2).toNanos();
 
     // Test the ScopedValue recovery mechanism for stack overflows. We implement both Callable
     // and Runnable interfaces. Which one gets tested depends on the constructor argument.
@@ -78,7 +89,7 @@ public class StressStackOverflow {
         public void run() {
             final var last = el.get();
             while (ITERS-- > 0) {
-                if (System.nanoTime() - startTime > 3 * MINUTES) { // 3 minutes is long enough
+                if (System.nanoTime() - startTime > DURATION_IN_NANOS) {
                     return;
                 }
 
@@ -232,7 +243,7 @@ public class StressStackOverflow {
     public static void main(String[] args) {
         var torture = new StressStackOverflow();
         while (torture.ITERS > 0
-                && System.nanoTime() - startTime <= 3 * MINUTES) { // 3 minutes is long enough
+                && System.nanoTime() - startTime <= DURATION_IN_NANOS) {
             try {
                 torture.run();
                 if (inheritedValue.isBound()) {

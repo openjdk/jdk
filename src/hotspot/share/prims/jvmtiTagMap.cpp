@@ -1405,16 +1405,16 @@ class AdvancedHeapWalkContext: public HeapWalkContext {
   jint heap_filter() const         { return _heap_filter; }
   Klass* klass_filter() const      { return _klass_filter; }
 
-  const jvmtiHeapReferenceCallback heap_reference_callback() const {
+  jvmtiHeapReferenceCallback heap_reference_callback() const {
     return _heap_callbacks->heap_reference_callback;
   };
-  const jvmtiPrimitiveFieldCallback primitive_field_callback() const {
+  jvmtiPrimitiveFieldCallback primitive_field_callback() const {
     return _heap_callbacks->primitive_field_callback;
   }
-  const jvmtiArrayPrimitiveValueCallback array_primitive_value_callback() const {
+  jvmtiArrayPrimitiveValueCallback array_primitive_value_callback() const {
     return _heap_callbacks->array_primitive_value_callback;
   }
-  const jvmtiStringPrimitiveValueCallback string_primitive_value_callback() const {
+  jvmtiStringPrimitiveValueCallback string_primitive_value_callback() const {
     return _heap_callbacks->string_primitive_value_callback;
   }
 };
@@ -2320,7 +2320,10 @@ bool StackRefCollector::do_frame(vframe* vf) {
       // Follow oops from compiled nmethod.
       if (jvf->cb() != nullptr && jvf->cb()->is_nmethod()) {
         _blk->set_context(_thread_tag, _tid, _depth, method);
-        jvf->cb()->as_nmethod()->oops_do(_blk);
+        // Need to apply load barriers for unmounted vthreads.
+        nmethod* nm = jvf->cb()->as_nmethod();
+        nm->run_nmethod_entry_barrier();
+        nm->oops_do(_blk);
         if (_blk->stopped()) {
           return false;
         }
