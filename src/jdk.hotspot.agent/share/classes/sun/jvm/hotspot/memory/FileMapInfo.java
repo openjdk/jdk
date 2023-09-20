@@ -83,6 +83,8 @@ public class FileMapInfo {
   }
 
   private static void initialize(TypeDataBase db) {
+    vTableTypeMap = null; // force vTableTypeMap to get re-initialized later
+
     Type FileMapInfo_type = db.lookupType("FileMapInfo");
     Type FileMapHeader_type = db.lookupType("FileMapHeader");
     Type CDSFileMapRegion_type = db.lookupType("CDSFileMapRegion");
