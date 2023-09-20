@@ -499,7 +499,7 @@ public:
   JavaThread* init_thread()  { return Atomic::load(&_init_thread); }
   // We can safely access the name as long as we hold the _init_monitor.
   const char* init_thread_name() {
-    assert(_init_monitor->owned_by_self(), " Must hold _init_monitor here");
+    assert(_init_monitor->owned_by_self(), "Must hold _init_monitor here");
     return init_thread()->name_raw();
   }
 
