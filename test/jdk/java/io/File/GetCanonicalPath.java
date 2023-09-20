@@ -44,30 +44,38 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class GetCanonicalPath {
     private static Stream<Arguments> pathProvider() {
-        File dir = new File(System.getProperty("user.dir", "."));
         List<Arguments> list = new ArrayList<Arguments>();
 
-        String pathname = "C:\\";
+        File dir = new File(System.getProperty("user.dir", "."));
+        char drive = dir.getPath().charAt(0);
+
+        String pathname = drive + ":\\";
         list.add(Arguments.of(pathname, pathname));
-        pathname = "C:";
-        list.add(Arguments.of(pathname, dir.toString()));
+
+        list.add(Arguments.of(drive + ":", dir.toString()));
+
+        String name = "foo";
+        pathname = "\\\\?\\" + name;
+        list.add(Arguments.of(pathname, new File(dir, name).toString()));
+        pathname = "\\\\?\\" + drive + ":" + name;
+        list.add(Arguments.of(pathname, new File(dir, name).toString()));
 
         pathname = "foo\\bar\\gus";
         list.add(Arguments.of(pathname, new File(dir, pathname).toString()));
 
-        pathname = "C:\\foo\\bar\\gus";
+        pathname = drive + ":\\foo\\bar\\gus";
         list.add(Arguments.of(pathname, pathname));
 
         pathname = "\\\\server\\share\\foo\\bar\\gus";
         list.add(Arguments.of(pathname, pathname));
 
-        pathname = "\\\\localhost\\C$\\Users\\file.dat";
+        pathname = "\\\\localhost\\" + drive + "$\\Users\\file.dat";
         list.add(Arguments.of(pathname, pathname));
 
-        list.add(Arguments.of("\\\\?\\C:\\Users\\file.dat",
-                              "C:\\Users\\file.dat"));
-        list.add(Arguments.of("\\\\?\\UNC\\localhost\\C$\\Users\\file.dat",
-                              "\\\\localhost\\C$\\Users\\file.dat"));
+        list.add(Arguments.of("\\\\?\\" + drive + ":\\Users\\file.dat",
+                              drive + ":\\Users\\file.dat"));
+        list.add(Arguments.of("\\\\?\\UNC\\localhost\\" + drive + "$\\Users\\file.dat",
+                              "\\\\localhost\\" + drive + "$\\Users\\file.dat"));
 
         return list.stream();
     }

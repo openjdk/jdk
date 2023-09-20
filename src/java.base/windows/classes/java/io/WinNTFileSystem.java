@@ -358,6 +358,21 @@ final class WinNTFileSystem extends FileSystem {
     @Override
     public String resolve(File f) {
         String path = f.getPath();
+
+        // if a prefix is present, remove it
+        if (path.startsWith("\\\\?\\")) {
+            if (path.startsWith("UNC\\", 4)) {
+                path = "\\\\" + path.substring(8);
+            } else {
+                path = path.substring(4);
+                // if only "UNC" remains, a trailing "\\" was likely removed
+                if (path.equals("UNC")) {
+                    path = "\\\\";
+                }
+            }
+            f = new File(path);
+        }
+
         int pl = f.getPrefixLength();
         if ((pl == 2) && (path.charAt(0) == slash))
             return path;                        /* UNC */
@@ -440,19 +455,6 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public String canonicalize(String path) throws IOException {
-        // if a prefix is present, remove it
-        if (path.startsWith("\\\\?\\")) {
-            if (path.startsWith("UNC\\", 4)) {
-                path = "\\\\" + path.substring(8);
-            } else {
-                path = path.substring(4);
-                // if only "UNC" remains, a trailing "\\" was likely removed
-                if (path.equals("UNC")) {
-                    path = "\\\\";
-                }
-            }
-        }
-
         // If path is a drive letter only then skip canonicalization
         int len = path.length();
         if ((len == 2) &&
