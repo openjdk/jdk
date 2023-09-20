@@ -745,9 +745,9 @@ socketTransport_startListening(jdwpTransportEnv* env, const char* address,
     // Binding to IN6ADDR_ANY allows to serve both IPv4 and IPv6 connections,
     // but binding to mapped INADDR_ANY (::ffff:0.0.0.0) allows to serve IPv4
     // connections only. Make sure that IN6ADDR_ANY is preferred over
-    // mapped INADDR_ANY if preferredAddressFamily is AF_INET6 or not set.
+    // mapped INADDR_ANY if preferIPv4Stack is false.
 
-    if (preferredAddressFamily != AF_INET) {
+    if (!allowOnlyIPv4) {
         inet_pton(AF_INET6, "::ffff:0.0.0.0", &mappedAny);
 
         if (isEqualIPv6Addr(listenAddr, mappedAny)) {
