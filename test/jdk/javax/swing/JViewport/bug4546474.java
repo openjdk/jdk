@@ -28,8 +28,6 @@
  * @run main bug4546474
  */
 
-import java.awt.Dimension;
-
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
@@ -41,7 +39,6 @@ public class bug4546474 {
 
     public static void main(String[] args) {
         JPanel panel = new JPanel();
-        panel.setPreferredSize(new Dimension(500, 500));
         scrollpane = new JScrollPane(panel,
                 JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
