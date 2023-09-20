@@ -50,12 +50,12 @@ public class NullClipARGB implements Printable {
             pj.setPrintable(new NullClipARGB());
             pj.print();
             } catch (Exception ex) {
-            throw new RuntimeException(ex);
+             throw new RuntimeException(ex);
         }
     }
 
     public int print(Graphics g, PageFormat pf, int pageIndex)
-                throws PrinterException{
+               throws PrinterException{
 
         if (pageIndex != 0) {
             return NO_SUCH_PAGE;
