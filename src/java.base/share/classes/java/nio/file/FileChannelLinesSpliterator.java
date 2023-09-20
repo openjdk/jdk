@@ -46,17 +46,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /**
- * A file-based lines spliterator, leveraging a shared mapped byte buffer and
+ * A file-based lines spliterator, leveraging a shared mapped memory segment and
  * associated file channel, covering lines of a file for character encodings
  * where line feed characters can be easily identified from character encoded
  * bytes.
  *
  * <p>
- * When the root spliterator is first split a mapped byte buffer will be created
+ * When the root spliterator is first split a mapped memory segment will be created
  * over the file for its size that was observed when the stream was created.
- * Thus a mapped byte buffer is only required for parallel stream execution.
- * Sub-spliterators will share that mapped byte buffer.  Splitting will use the
- * mapped byte buffer to find the closest line feed characters(s) to the left or
+ * Thus a mapped memory segment is only required for parallel stream execution.
+ * Sub-spliterators will share that mapped memory segment.  Splitting will use the
+ * mapped memory segment to find the closest line feed characters(s) to the left or
  * right of the mid-point of covered range of bytes of the file.  If a line feed
  * is found then the spliterator is split with returned spliterator containing
  * the identified line feed characters(s) at the end of its covered range of
