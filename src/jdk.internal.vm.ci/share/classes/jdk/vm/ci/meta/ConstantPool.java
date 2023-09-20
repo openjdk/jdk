@@ -165,18 +165,22 @@ public interface ConstantPool {
         /**
          * Gets the static arguments with which the bootstrap method will be invoked.
          *
-         * An argument of type {@link PrimitiveConstant} represents a {@code CONSTANT_Dynamic_info}
-         * entry. To resolve this entry, the corresponding bootstrap method has to be called first:
+         * The {@linkplain JavaConstant#getJavaKind kind} of each argument will be
+         * {@link JavaKind#Object} or {@link JavaKind#Int}. The latter represents an
+         * unresolved {@code CONSTANT_Dynamic_info} entry. To resolve this entry, the
+         * corresponding bootstrap method has to be called first:
          *
          * <pre>
          * List<JavaConstant> args = bmi.getStaticArguments();
          * List<JavaConstant> resolvedArgs = new ArrayList<>(args.size());
          * for (JavaConstant c : args) {
          *     JavaConstant r = c;
-         *     if (c instanceof PrimitiveConstant pc) {
+         *     if (c.getJavaKind() == JavaKind.Int) {
          *         // If needed, access corresponding BootstrapMethodInvocation using
          *         // cp.lookupBootstrapMethodInvocation(pc.asInt(), -1)
-         *         r = cp.lookupConstant(pc.asInt(), true);
+         *         r = cp.lookupConstant(c.asInt(), true);
+         *     } else {
+         *         assert c.getJavaKind() == JavaKind.Object;
          *     }
          *     resolvedArgs.append(r);
          * }
