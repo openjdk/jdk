@@ -55,7 +55,7 @@ public abstract class SelectorProviderImpl
     }
 
     public DatagramChannel openUninterruptibleDatagramChannel(ProtocolFamily family) throws IOException {
-    if(family == null)
+    if (family == null)
        return openUninterruptibleDatagramChannel();
        return new DatagramChannelImpl(this, family, /*interruptible*/false);
     }
