@@ -69,6 +69,7 @@ class Node_Notes;
 class NodeHash;
 class NodeCloneInfo;
 class OptoReg;
+class ParsePredicateNode;
 class PhaseCFG;
 class PhaseGVN;
 class PhaseIterGVN;
@@ -135,7 +136,7 @@ class NodeCloneInfo {
   NodeCloneInfo(uint64_t idx_clone_orig) : _idx_clone_orig(idx_clone_orig) {}
   NodeCloneInfo(node_idx_t x, int g) : _idx_clone_orig(0) { set(x, g); }
 
-  void dump() const;
+  void dump_on(outputStream* st) const;
 };
 
 class CloneMap {
@@ -158,7 +159,7 @@ class CloneMap {
   int max_gen()                   const;
   void clone(Node* old, Node* nnn, int gen);
   void verify_insert_and_clone(Node* old, Node* nnn, int gen);
-  void dump(node_idx_t key)       const;
+  void dump(node_idx_t key, outputStream* st) const;
 
   int  clone_idx() const                         { return _clone_idx; }
   void set_clone_idx(int x)                      { _clone_idx = x; }
@@ -176,17 +177,20 @@ class Options {
   const bool _subsume_loads;         // Load can be matched as part of a larger op.
   const bool _do_escape_analysis;    // Do escape analysis.
   const bool _do_iterative_escape_analysis;  // Do iterative escape analysis.
+  const bool _do_reduce_allocation_merges;  // Do try to reduce allocation merges.
   const bool _eliminate_boxing;      // Do boxing elimination.
   const bool _do_locks_coarsening;   // Do locks coarsening
   const bool _install_code;          // Install the code that was compiled
  public:
   Options(bool subsume_loads, bool do_escape_analysis,
           bool do_iterative_escape_analysis,
+          bool do_reduce_allocation_merges,
           bool eliminate_boxing, bool do_locks_coarsening,
           bool install_code) :
           _subsume_loads(subsume_loads),
           _do_escape_analysis(do_escape_analysis),
           _do_iterative_escape_analysis(do_iterative_escape_analysis),
+          _do_reduce_allocation_merges(do_reduce_allocation_merges),
           _eliminate_boxing(eliminate_boxing),
           _do_locks_coarsening(do_locks_coarsening),
           _install_code(install_code) {
@@ -197,6 +201,7 @@ class Options {
        /* subsume_loads = */ true,
        /* do_escape_analysis = */ false,
        /* do_iterative_escape_analysis = */ false,
+       /* do_reduce_allocation_merges = */ false,
        /* eliminate_boxing = */ false,
        /* do_lock_coarsening = */ false,
        /* install_code = */ true
@@ -224,7 +229,7 @@ class Compile : public Phase {
   // (The time collection itself is always conditionalized on CITime.)
   class TracePhase : public TraceTime {
    private:
-    Compile*    C;
+    Compile*    _compile;
     CompileLog* _log;
     const char* _phase_name;
     bool _dolog;
@@ -339,9 +344,9 @@ class Compile : public Phase {
   // JSR 292
   bool                  _has_method_handle_invokes; // True if this method has MethodHandle invokes.
   bool                  _has_monitors;          // Metadata transfered to nmethod to enable Continuations lock-detection fastpath
+  bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
   RTMState              _rtm_state;             // State of Restricted Transactional Memory usage
   int                   _loop_opts_cnt;         // loop opts round
-  bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
   uint                  _stress_seed;           // Seed for stress testing
 
   // Compilation environment.
@@ -353,7 +358,7 @@ class Compile : public Phase {
   const char*           _failure_reason;        // for record_failure/failing pattern
   GrowableArray<CallGenerator*> _intrinsics;    // List of intrinsics.
   GrowableArray<Node*>  _macro_nodes;           // List of nodes which need to be expanded before matching.
-  GrowableArray<Node*>  _parse_predicate_opaqs; // List of Opaque1 nodes for the Parse Predicates.
+  GrowableArray<ParsePredicateNode*> _parse_predicates; // List of Parse Predicates.
   GrowableArray<Node*>  _template_assertion_predicate_opaqs; // List of Opaque4 nodes for Template Assertion Predicates.
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
@@ -369,14 +374,27 @@ class Compile : public Phase {
 
   // Node management
   uint                  _unique;                // Counter for unique Node indices
-  VectorSet             _dead_node_list;        // Set of dead nodes
   uint                  _dead_node_count;       // Number of dead nodes; VectorSet::Size() is O(N).
                                                 // So use this to keep count and make the call O(1).
+  VectorSet             _dead_node_list;        // Set of dead nodes
   DEBUG_ONLY(Unique_Node_List* _modified_nodes;)   // List of nodes which inputs were modified
   DEBUG_ONLY(bool       _phase_optimize_finished;) // Used for live node verification while creating new nodes
 
-  Arena                 _node_arena;            // Arena for new-space Nodes
-  Arena                 _old_arena;             // Arena for old-space Nodes, lifetime during xform
+  // Arenas for new-space and old-space nodes.
+  // Swapped between using _node_arena.
+  // The lifetime of the old-space nodes is during xform.
+  Arena                 _node_arena_one;
+  Arena                 _node_arena_two;
+  Arena*                _node_arena;
+public:
+  Arena* swap_old_and_new() {
+    Arena* filled_arena_ptr = _node_arena;
+    Arena* old_arena_ptr = old_arena();
+    old_arena_ptr->destruct_contents();
+    _node_arena = old_arena_ptr;
+    return filled_arena_ptr;
+  }
+private:
   RootNode*             _root;                  // Unique root of compilation, or null after bail-out.
   Node*                 _top;                   // Unique top node.  (Reset by various phases.)
 
@@ -494,9 +512,9 @@ class Compile : public Phase {
   void print_inlining_assert_ready();
   void print_inlining_reset();
 
-  void print_inlining(ciMethod* method, int inline_level, int bci, const char* msg = nullptr) {
+  void print_inlining(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr) {
     stringStream ss;
-    CompileTask::print_inlining_inner(&ss, method, inline_level, bci, msg);
+    CompileTask::print_inlining_inner(&ss, method, inline_level, bci, result, msg);
     print_inlining_stream()->print("%s", ss.freeze());
   }
 
@@ -552,6 +570,7 @@ class Compile : public Phase {
   /** Do escape analysis. */
   bool              do_escape_analysis() const  { return _options._do_escape_analysis; }
   bool              do_iterative_escape_analysis() const  { return _options._do_iterative_escape_analysis; }
+  bool              do_reduce_allocation_merges() const  { return _options._do_reduce_allocation_merges; }
   /** Do boxing elimination. */
   bool              eliminate_boxing() const    { return _options._eliminate_boxing; }
   /** Do aggressive boxing elimination. */
@@ -685,13 +704,13 @@ class Compile : public Phase {
 #endif
 
   int           macro_count()             const { return _macro_nodes.length(); }
-  int           parse_predicate_count()   const { return _parse_predicate_opaqs.length(); }
+  int           parse_predicate_count()   const { return _parse_predicates.length(); }
   int           template_assertion_predicate_count() const { return _template_assertion_predicate_opaqs.length(); }
   int           expensive_count()         const { return _expensive_nodes.length(); }
   int           coarsened_count()         const { return _coarsened_locks.length(); }
 
   Node*         macro_node(int idx)       const { return _macro_nodes.at(idx); }
-  Node*         parse_predicate_opaque1_node(int idx) const { return _parse_predicate_opaqs.at(idx); }
+  ParsePredicateNode* parse_predicate(int idx) const { return _parse_predicates.at(idx); }
 
   Node* template_assertion_predicate_opaq_node(int idx) const {
     return _template_assertion_predicate_opaqs.at(idx);
@@ -710,10 +729,6 @@ class Compile : public Phase {
     // this function may be called twice for a node so we can only remove it
     // if it's still existing.
     _macro_nodes.remove_if_existing(n);
-    // remove from _parse_predicate_opaqs list also if it is there
-    if (parse_predicate_count() > 0) {
-      _parse_predicate_opaqs.remove_if_existing(n);
-    }
     // Remove from coarsened locks list if present
     if (coarsened_count() > 0) {
       remove_coarsened_lock(n);
@@ -723,16 +738,24 @@ class Compile : public Phase {
   void remove_expensive_node(Node* n) {
     _expensive_nodes.remove_if_existing(n);
   }
-  void add_parse_predicate_opaq(Node* n) {
-    assert(!_parse_predicate_opaqs.contains(n), "duplicate entry in Parse Predicate opaque1 list");
-    assert(_macro_nodes.contains(n), "should have already been in macro list");
-    _parse_predicate_opaqs.append(n);
+
+  void add_parse_predicate(ParsePredicateNode* n) {
+    assert(!_parse_predicates.contains(n), "duplicate entry in Parse Predicate list");
+    _parse_predicates.append(n);
   }
+
+  void remove_parse_predicate(ParsePredicateNode* n) {
+    if (parse_predicate_count() > 0) {
+      _parse_predicates.remove_if_existing(n);
+    }
+  }
+
   void add_template_assertion_predicate_opaq(Node* n) {
     assert(!_template_assertion_predicate_opaqs.contains(n),
            "duplicate entry in template assertion predicate opaque4 list");
     _template_assertion_predicate_opaqs.append(n);
   }
+
   void remove_template_assertion_predicate_opaq(Node* n) {
     if (template_assertion_predicate_count() > 0) {
       _template_assertion_predicate_opaqs.remove_if_existing(n);
@@ -757,12 +780,7 @@ class Compile : public Phase {
 
   void sort_macro_nodes();
 
-  // Remove the opaque nodes that protect the Parse Predicates so that the unused checks and
-  // uncommon traps will be eliminated from the graph.
-  void cleanup_parse_predicates(PhaseIterGVN &igvn) const;
-  bool is_predicate_opaq(Node* n) const {
-    return _parse_predicate_opaqs.contains(n);
-  }
+  void mark_parse_predicate_nodes_useless(PhaseIterGVN& igvn);
 
   // Are there candidate expensive nodes for optimization?
   bool should_optimize_expensive_nodes(PhaseIterGVN &igvn);
@@ -801,8 +819,8 @@ class Compile : public Phase {
   uint         unique() const              { return _unique; }
   uint         next_unique()               { return _unique++; }
   void         set_unique(uint i)          { _unique = i; }
-  Arena*       node_arena()                { return &_node_arena; }
-  Arena*       old_arena()                 { return &_old_arena; }
+  Arena*       node_arena()                { return _node_arena; }
+  Arena*       old_arena()                 { return (&_node_arena_one == _node_arena) ? &_node_arena_two : &_node_arena_one; }
   RootNode*    root() const                { return _root; }
   void         set_root(RootNode* r)       { _root = r; }
   StartNode*   start() const;              // (Derived from root.)
@@ -1003,7 +1021,8 @@ class Compile : public Phase {
     _vector_reboxing_late_inlines.push(cg);
   }
 
-  void remove_useless_nodes       (GrowableArray<Node*>&        node_list, Unique_Node_List &useful);
+  template<typename N, ENABLE_IF(std::is_base_of<Node, N>::value)>
+  void remove_useless_nodes(GrowableArray<N*>& node_list, Unique_Node_List& useful);
 
   void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful);
   void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Node* dead);

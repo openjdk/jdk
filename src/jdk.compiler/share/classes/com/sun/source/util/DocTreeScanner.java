@@ -340,7 +340,7 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
     /**
      * {@inheritDoc}
      *
-     * @implSpec This implementation returns {@code null}.
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -348,7 +348,7 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
      */
     @Override
     public R visitInheritDoc(InheritDocTree node, P p) {
-        return null;
+        return scan(node.getSupertype(), p);
     }
 
     /**

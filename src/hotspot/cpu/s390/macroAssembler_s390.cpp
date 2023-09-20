@@ -35,6 +35,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/accessDecorators.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
@@ -2231,8 +2232,8 @@ void MacroAssembler::call_VM(Register oop_result, address entry_point, Register 
 
 void MacroAssembler::call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2, bool check_exceptions) {
   // Z_ARG1 is reserved for the thread.
+  assert_different_registers(arg_2, Z_ARG2);
   lgr_if_needed(Z_ARG2, arg_1);
-  assert(arg_2 != Z_ARG2, "smashed argument");
   lgr_if_needed(Z_ARG3, arg_2);
   call_VM(oop_result, entry_point, check_exceptions);
 }
@@ -2240,10 +2241,10 @@ void MacroAssembler::call_VM(Register oop_result, address entry_point, Register 
 void MacroAssembler::call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2,
                              Register arg_3, bool check_exceptions) {
   // Z_ARG1 is reserved for the thread.
+  assert_different_registers(arg_3, Z_ARG2, Z_ARG3);
+  assert_different_registers(arg_2, Z_ARG2);
   lgr_if_needed(Z_ARG2, arg_1);
-  assert(arg_2 != Z_ARG2, "smashed argument");
   lgr_if_needed(Z_ARG3, arg_2);
-  assert(arg_3 != Z_ARG2 && arg_3 != Z_ARG3, "smashed argument");
   lgr_if_needed(Z_ARG4, arg_3);
   call_VM(oop_result, entry_point, check_exceptions);
 }
@@ -2258,10 +2259,10 @@ void MacroAssembler::call_VM_static(Register oop_result, address entry_point, bo
 void MacroAssembler::call_VM_static(Register oop_result, address entry_point, Register arg_1, Register arg_2,
                                     Register arg_3, bool check_exceptions) {
   // Z_ARG1 is reserved for the thread.
+  assert_different_registers(arg_3, Z_ARG2, Z_ARG3);
+  assert_different_registers(arg_2, Z_ARG2);
   lgr_if_needed(Z_ARG2, arg_1);
-  assert(arg_2 != Z_ARG2, "smashed argument");
   lgr_if_needed(Z_ARG3, arg_2);
-  assert(arg_3 != Z_ARG2 && arg_3 != Z_ARG3, "smashed argument");
   lgr_if_needed(Z_ARG4, arg_3);
   call_VM_static(oop_result, entry_point, check_exceptions);
 }
@@ -2282,8 +2283,8 @@ void MacroAssembler::call_VM(Register oop_result, Register last_java_sp, address
 void MacroAssembler::call_VM(Register oop_result, Register last_java_sp, address entry_point, Register arg_1,
                              Register arg_2, bool check_exceptions) {
    // Z_ARG1 is reserved for the thread.
+   assert_different_registers(arg_2, Z_ARG2);
    lgr_if_needed(Z_ARG2, arg_1);
-   assert(arg_2 != Z_ARG2, "smashed argument");
    lgr_if_needed(Z_ARG3, arg_2);
    call_VM(oop_result, last_java_sp, entry_point, check_exceptions);
 }
@@ -2291,10 +2292,10 @@ void MacroAssembler::call_VM(Register oop_result, Register last_java_sp, address
 void MacroAssembler::call_VM(Register oop_result, Register last_java_sp, address entry_point, Register arg_1,
                              Register arg_2, Register arg_3, bool check_exceptions) {
   // Z_ARG1 is reserved for the thread.
+  assert_different_registers(arg_3, Z_ARG2, Z_ARG3);
+  assert_different_registers(arg_2, Z_ARG2);
   lgr_if_needed(Z_ARG2, arg_1);
-  assert(arg_2 != Z_ARG2, "smashed argument");
   lgr_if_needed(Z_ARG3, arg_2);
-  assert(arg_3 != Z_ARG2 && arg_3 != Z_ARG3, "smashed argument");
   lgr_if_needed(Z_ARG4, arg_3);
   call_VM(oop_result, last_java_sp, entry_point, check_exceptions);
 }
@@ -2312,17 +2313,17 @@ void MacroAssembler::call_VM_leaf(address entry_point, Register arg_1) {
 }
 
 void MacroAssembler::call_VM_leaf(address entry_point, Register arg_1, Register arg_2) {
+  assert_different_registers(arg_2, Z_ARG1);
   if (arg_1 != noreg) lgr_if_needed(Z_ARG1, arg_1);
-  assert(arg_2 != Z_ARG1, "smashed argument");
   if (arg_2 != noreg) lgr_if_needed(Z_ARG2, arg_2);
   call_VM_leaf(entry_point);
 }
 
 void MacroAssembler::call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3) {
+  assert_different_registers(arg_3, Z_ARG1, Z_ARG2);
+  assert_different_registers(arg_2, Z_ARG1);
   if (arg_1 != noreg) lgr_if_needed(Z_ARG1, arg_1);
-  assert(arg_2 != Z_ARG1, "smashed argument");
   if (arg_2 != noreg) lgr_if_needed(Z_ARG2, arg_2);
-  assert(arg_3 != Z_ARG1 && arg_3 != Z_ARG2, "smashed argument");
   if (arg_3 != noreg) lgr_if_needed(Z_ARG3, arg_3);
   call_VM_leaf(entry_point);
 }
@@ -2341,17 +2342,17 @@ void MacroAssembler::call_VM_leaf_static(address entry_point, Register arg_1) {
 }
 
 void MacroAssembler::call_VM_leaf_static(address entry_point, Register arg_1, Register arg_2) {
+  assert_different_registers(arg_2, Z_ARG1);
   if (arg_1 != noreg) lgr_if_needed(Z_ARG1, arg_1);
-  assert(arg_2 != Z_ARG1, "smashed argument");
   if (arg_2 != noreg) lgr_if_needed(Z_ARG2, arg_2);
   call_VM_leaf_static(entry_point);
 }
 
 void MacroAssembler::call_VM_leaf_static(address entry_point, Register arg_1, Register arg_2, Register arg_3) {
+  assert_different_registers(arg_3, Z_ARG1, Z_ARG2);
+  assert_different_registers(arg_2, Z_ARG1);
   if (arg_1 != noreg) lgr_if_needed(Z_ARG1, arg_1);
-  assert(arg_2 != Z_ARG1, "smashed argument");
   if (arg_2 != noreg) lgr_if_needed(Z_ARG2, arg_2);
-  assert(arg_3 != Z_ARG1 && arg_3 != Z_ARG2, "smashed argument");
   if (arg_3 != noreg) lgr_if_needed(Z_ARG3, arg_3);
   call_VM_leaf_static(entry_point);
 }

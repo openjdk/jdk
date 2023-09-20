@@ -28,20 +28,23 @@
 #include "memory/referenceType.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constMethod.hpp"
-#include "oops/constantPool.hpp"
 #include "oops/fieldInfo.hpp"
 #include "oops/instanceKlassFlags.hpp"
 #include "oops/instanceOop.hpp"
 #include "runtime/handles.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/align.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrKlassExtension.hpp"
 #endif
 
+class ConstantPool;
 class DeoptimizationScope;
 class klassItable;
+class Monitor;
 class RecordComponent;
 
 // An InstanceKlass is the VM level representation of a Java class.
@@ -113,7 +116,7 @@ class OopMapBlock {
   }
 
   // sizeof(OopMapBlock) in words.
-  static const int size_in_words() {
+  static int size_in_words() {
     return align_up((int)sizeof(OopMapBlock), wordSize) >>
       LogBytesPerWord;
   }
@@ -344,6 +347,7 @@ class InstanceKlass: public Klass {
   ObjArrayKlass* array_klasses() const     { return _array_klasses; }
   inline ObjArrayKlass* array_klasses_acquire() const; // load with acquire semantics
   inline void release_set_array_klasses(ObjArrayKlass* k); // store with release semantics
+  void set_array_klasses(ObjArrayKlass* k) { _array_klasses = k; }
 
   // methods
   Array<Method*>* methods() const          { return _methods; }
@@ -645,15 +649,15 @@ public:
   void set_is_contended(bool value)        { _misc_flags.set_is_contended(value); }
 
   // source file name
-  Symbol* source_file_name() const               { return _constants->source_file_name(); }
-  u2 source_file_name_index() const              { return _constants->source_file_name_index(); }
-  void set_source_file_name_index(u2 sourcefile_index) { _constants->set_source_file_name_index(sourcefile_index); }
+  Symbol* source_file_name() const;
+  u2 source_file_name_index() const;
+  void set_source_file_name_index(u2 sourcefile_index);
 
   // minor and major version numbers of class file
-  u2 minor_version() const                 { return _constants->minor_version(); }
-  void set_minor_version(u2 minor_version) { _constants->set_minor_version(minor_version); }
-  u2 major_version() const                 { return _constants->major_version(); }
-  void set_major_version(u2 major_version) { _constants->set_major_version(major_version); }
+  u2 minor_version() const;
+  void set_minor_version(u2 minor_version);
+  u2 major_version() const;
+  void set_major_version(u2 major_version);
 
   // source debug extension
   const char* source_debug_extension() const { return _source_debug_extension; }
@@ -690,14 +694,7 @@ public:
   InstanceKlass* previous_versions() const { return nullptr; }
 #endif
 
-  InstanceKlass* get_klass_version(int version) {
-    for (InstanceKlass* ik = this; ik != nullptr; ik = ik->previous_versions()) {
-      if (ik->constants()->version() == version) {
-        return ik;
-      }
-    }
-    return nullptr;
-  }
+  InstanceKlass* get_klass_version(int version);
 
   bool has_been_redefined() const { return _misc_flags.has_been_redefined(); }
   void set_has_been_redefined() { _misc_flags.set_has_been_redefined(true); }
@@ -773,9 +770,9 @@ public:
   void set_initial_method_idnum(u2 value)             { _idnum_allocated_count = value; }
 
   // generics support
-  Symbol* generic_signature() const                   { return _constants->generic_signature(); }
-  u2 generic_signature_index() const                  { return _constants->generic_signature_index(); }
-  void set_generic_signature_index(u2 sig_index)      { _constants->set_generic_signature_index(sig_index); }
+  Symbol* generic_signature() const;
+  u2 generic_signature_index() const;
+  void set_generic_signature_index(u2 sig_index);
 
   u2 enclosing_method_data(int offset) const;
   u2 enclosing_method_class_index() const {
@@ -995,9 +992,7 @@ public:
   void static deallocate_record_components(ClassLoaderData* loader_data,
                                            Array<RecordComponent*>* record_component);
 
-  // The constant pool is on stack if any of the methods are executing or
-  // referenced by handles.
-  bool on_stack() const { return _constants->on_stack(); }
+  virtual bool on_stack() const;
 
   // callbacks for actions during class unloading
   static void unload_class(InstanceKlass* ik);
@@ -1081,12 +1076,12 @@ public:
   // Lock during initialization
 public:
   // Returns the array class for the n'th dimension
-  virtual Klass* array_klass(int n, TRAPS);
-  virtual Klass* array_klass_or_null(int n);
+  virtual ArrayKlass* array_klass(int n, TRAPS);
+  virtual ArrayKlass* array_klass_or_null(int n);
 
   // Returns the array class with this class as element type
-  virtual Klass* array_klass(TRAPS);
-  virtual Klass* array_klass_or_null();
+  virtual ArrayKlass* array_klass(TRAPS);
+  virtual ArrayKlass* array_klass_or_null();
 
   static void clean_initialization_error_table();
 
@@ -1170,6 +1165,11 @@ public:
   void print_class_load_logging(ClassLoaderData* loader_data,
                                 const ModuleEntry* module_entry,
                                 const ClassFileStream* cfs) const;
+ private:
+  void print_class_load_cause_logging() const;
+  void print_class_load_helper(ClassLoaderData* loader_data,
+                               const ModuleEntry* module_entry,
+                               const ClassFileStream* cfs) const;
 };
 
 // for adding methods

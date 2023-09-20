@@ -157,6 +157,7 @@ public class Threads {
         virtualConstructor.addMapping("MonitorDeflationThread", MonitorDeflationThread.class);
         virtualConstructor.addMapping("NotificationThread", NotificationThread.class);
         virtualConstructor.addMapping("StringDedupThread", StringDedupThread.class);
+        virtualConstructor.addMapping("AttachListenerThread", AttachListenerThread.class);
     }
 
     public Threads() {
@@ -164,14 +165,15 @@ public class Threads {
     }
 
     /** NOTE: this returns objects of type JavaThread, CompilerThread,
-      JvmtiAgentThread, NotificationThread, MonitorDeflationThread and ServiceThread.
-      The latter four are subclasses of the former. Most operations
+      JvmtiAgentThread, NotificationThread, MonitorDeflationThread,
+      StringDedupThread, AttachListenerThread and ServiceThread.
+      The latter seven subclasses of the former. Most operations
       (fetching the top frame, etc.) are only allowed to be performed on
       a "pure" JavaThread. For this reason, {@link
       sun.jvm.hotspot.runtime.JavaThread#isJavaThread} has been
       changed from the definition in the VM (which returns true for
       all of these thread types) to return true for JavaThreads and
-      false for the four subclasses. FIXME: should reconsider the
+      false for the seven subclasses. FIXME: should reconsider the
       inheritance hierarchy; see {@link
       sun.jvm.hotspot.runtime.JavaThread#isJavaThread}. */
     public JavaThread getJavaThreadAt(int i) {
@@ -195,7 +197,8 @@ public class Threads {
             return thread;
         } catch (Exception e) {
             throw new RuntimeException("Unable to deduce type of thread from address " + threadAddr +
-            " (expected type JavaThread, CompilerThread, MonitorDeflationThread, ServiceThread or JvmtiAgentThread)", e);
+            " (expected type JavaThread, CompilerThread, MonitorDeflationThread, AttachListenerThread," +
+            " StringDedupThread, NotificationThread, ServiceThread or JvmtiAgentThread)", e);
         }
     }
 

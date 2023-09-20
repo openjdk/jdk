@@ -28,6 +28,7 @@
 #include <ffi.h>
 
 #include <errno.h>
+#include <stdint.h>
 #ifdef _WIN64
 #include <Windows.h>
 #include <Winsock2.h>

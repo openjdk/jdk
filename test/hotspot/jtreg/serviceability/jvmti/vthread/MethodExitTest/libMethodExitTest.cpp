@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,9 @@ clear_breakpoint(JNIEnv *jni, const char *methodName,
   set_or_clear_breakpoint(jni, JNI_FALSE, methodName, klass, methods, method_count);
 }
 
-static long tls_data = 0;
+static void* tls_data = 0;
+static const void* const tls_data1 = (const void*)0x111;
+static const void* const tls_data2 = (const void*)0x222;
 
 static void
 breakpoint_hit1(jvmtiEnv *jvmti, JNIEnv* jni,
@@ -149,14 +151,14 @@ breakpoint_hit1(jvmtiEnv *jvmti, JNIEnv* jni,
   // Test GetThreadLocalStorage for carrier thread.
   LOG("Hit #1: Breakpoint: %s: checking GetThreadLocalStorage on carrier thread: %p\n",
          mname, (void*)cthread);
-  err = jvmti->GetThreadLocalStorage(cthread, (void**)&tls_data);
+  err = jvmti->GetThreadLocalStorage(cthread, &tls_data);
   check_jvmti_status(jni, err, "Breakpoint: error in JVMTI GetThreadLocalStorage");
 
-  if (tls_data != 111) {
+  if (tls_data != tls_data1) {
     passed = JNI_FALSE;
-    LOG("FAILED: GetThreadLocalStorage for carrier thread returned value: %d, expected 111\n\n", (int)tls_data);
+    LOG("FAILED: GetThreadLocalStorage for carrier thread returned value: %p, expected %p\n\n", tls_data, tls_data1);
   } else {
-    LOG("GetThreadLocalStorage for carrier thread returned value %d as expected\n\n", (int)tls_data);
+    LOG("GetThreadLocalStorage for carrier thread returned value %p as expected\n\n", tls_data);
   }
   {
     jmethodID method = NULL;
@@ -225,14 +227,14 @@ breakpoint_hit2(jvmtiEnv *jvmti, JNIEnv* jni,
   // Test GetThreadLocalStorage for virtual thread.
   LOG("Hit #2: Breakpoint: %s: checking GetThreadLocalStorage on virtual thread: %p\n",
          mname, (void*)thread);
-  err = jvmti->GetThreadLocalStorage(thread, (void**)&tls_data);
+  err = jvmti->GetThreadLocalStorage(thread, &tls_data);
   check_jvmti_status(jni, err, "Breakpoint: error in JVMTI GetThreadLocalStorage");
 
-  if (tls_data != 222) {
+  if (tls_data != tls_data2) {
     passed = JNI_FALSE;
-    LOG("FAILED: GetThreadLocalStorage for virtual thread returned value: %d, expected 222\n\n", (int)tls_data);
+    LOG("FAILED: GetThreadLocalStorage for virtual thread returned value: %p, expected %p\n\n", tls_data, tls_data2);
   } else {
-    LOG("GetThreadLocalStorage for virtual thread returned value %d as expected\n\n", (int)tls_data);
+    LOG("GetThreadLocalStorage for virtual thread returned value %p as expected\n\n", tls_data);
   }
 }
 
@@ -380,7 +382,7 @@ ThreadStart(jvmtiEnv *jvmti, JNIEnv* jni, jthread cthread) {
     return; // avoid failures with JVMTI_ERROR_WRONG_PHASE
   }
   char* tname = get_thread_name(jvmti, jni, cthread);
-  long loc_tls_data = 0;
+  void* loc_tls_data = 0;
   jvmtiError err;
 
   RawMonitorLocker rml(jvmti, jni, event_mon);
@@ -388,18 +390,18 @@ ThreadStart(jvmtiEnv *jvmti, JNIEnv* jni, jthread cthread) {
   LOG("\nThreadStart: cthread: %p, name: %s\n", (void*)cthread, tname);
 
   // Test SetThreadLocalStorage for carrier thread.
-  err = jvmti->SetThreadLocalStorage(cthread, (void*)111);
+  err = jvmti->SetThreadLocalStorage(cthread, tls_data1);
   check_jvmti_status(jni, err, "ThreadStart: error in JVMTI SetThreadLocalStorage");
 
   // Test GetThreadLocalStorage for carrier thread.
-  err = jvmti->GetThreadLocalStorage(cthread, (void**)&loc_tls_data);
+  err = jvmti->GetThreadLocalStorage(cthread, &loc_tls_data);
   check_jvmti_status(jni, err, "ThreadStart: error in JVMTI GetThreadLocalStorage");
 
-  if (loc_tls_data != 111) {
+  if (loc_tls_data != tls_data1) {
     passed = JNI_FALSE;
-    LOG("ThreadStart: FAILED: GetThreadLocalStorage for carrier thread returned value: %d, expected 111\n\n", (int)loc_tls_data);
+    LOG("ThreadStart: FAILED: GetThreadLocalStorage for carrier thread returned value: %p, expected %p\n\n", loc_tls_data, tls_data1);
   } else {
-    LOG("ThreadStart: GetThreadLocalStorage for carrier thread returned value %d as expected\n\n", (int)loc_tls_data);
+    LOG("ThreadStart: GetThreadLocalStorage for carrier thread returned value %p as expected\n\n", loc_tls_data);
   }
   deallocate(jvmti, jni, (void*)tname);
 }
@@ -419,7 +421,7 @@ VirtualThreadStart(jvmtiEnv *jvmti, JNIEnv* jni, jthread vthread) {
   LOG("\nVirtualThreadStart: %s thread: %p, name: %s\n", virt, (void*)vthread, tname);
 
   // Test SetThreadLocalStorage for virtual thread.
-  err = jvmti->SetThreadLocalStorage(vthread, (void*)222);
+  err = jvmti->SetThreadLocalStorage(vthread, tls_data2);
   check_jvmti_status(jni, err, "VirtualThreadMount: error in JVMTI SetThreadLocalStorage");
 
   deallocate(jvmti, jni, (void*)tname);
@@ -463,7 +465,7 @@ VirtualThreadMount(jvmtiEnv *jvmti, ...) {
   print_frame_event_info(jvmti, jni, thread, method, "VirtualThreadMount", vthread_mounted_count);
 
   // Test SetThreadLocalStorage for virtual thread.
-  err = jvmti->SetThreadLocalStorage(thread, (void*)222);
+  err = jvmti->SetThreadLocalStorage(thread, tls_data2);
   check_jvmti_status(jni, err, "VirtualThreadMount: error in JVMTI SetThreadLocalStorage");
 
   deallocate(jvmti, jni, (void*)mname);

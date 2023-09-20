@@ -114,6 +114,8 @@ public abstract sealed class AbstractMemorySegmentImpl
     @Override
     public MemorySegment asSlice(long offset, long newSize, long byteAlignment) {
         checkBounds(offset, newSize);
+        Utils.checkAlign(byteAlignment);
+
         if (!isAlignedForElement(offset, byteAlignment)) {
             throw new IllegalArgumentException("Target offset incompatible with alignment constraints");
         }
@@ -503,7 +505,11 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public String toString() {
-        return "MemorySegment{ heapBase: " + heapBase() + " address:" + address() + " limit: " + length + " }";
+        return "MemorySegment{ " +
+                heapBase().map(hb -> "heapBase: " + hb + ", ").orElse("") +
+                "address: " + Utils.toHexString(address()) +
+                ", byteSize: " + length +
+                " }";
     }
 
     @Override

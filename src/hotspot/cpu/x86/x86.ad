@@ -1254,8 +1254,18 @@ static inline bool is_clz_non_subword_predicate_evex(BasicType bt, int vlen_byte
 class Node::PD {
 public:
   enum NodeFlags {
-    Flag_intel_jcc_erratum = Node::_last_flag << 1,
-    _last_flag             = Flag_intel_jcc_erratum
+    Flag_intel_jcc_erratum    = Node::_last_flag << 1,
+    Flag_sets_carry_flag      = Node::_last_flag << 2,
+    Flag_sets_parity_flag     = Node::_last_flag << 3,
+    Flag_sets_zero_flag       = Node::_last_flag << 4,
+    Flag_sets_overflow_flag   = Node::_last_flag << 5,
+    Flag_sets_sign_flag       = Node::_last_flag << 6,
+    Flag_clears_carry_flag    = Node::_last_flag << 7,
+    Flag_clears_parity_flag   = Node::_last_flag << 8,
+    Flag_clears_zero_flag     = Node::_last_flag << 9,
+    Flag_clears_overflow_flag = Node::_last_flag << 10,
+    Flag_clears_sign_flag     = Node::_last_flag << 11,
+    _last_flag                = Flag_clears_sign_flag
   };
 };
 
@@ -1392,7 +1402,7 @@ Assembler::Width widthForType(BasicType bt) {
   static address vector_double_signflip() { return StubRoutines::x86::vector_double_sign_flip();}
 
 //=============================================================================
-const bool Matcher::match_rule_supported(int opcode) {
+bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode)) {
     return false; // no match rule present
   }
@@ -1566,6 +1576,8 @@ const bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
+    case Op_FmaF:
+    case Op_FmaD:
     case Op_FmaVD:
     case Op_FmaVF:
       if (!UseFMA) {
@@ -1694,13 +1706,13 @@ static inline bool is_pop_count_instr_target(BasicType bt) {
          (is_non_subword_integral_type(bt) && VM_Version::supports_avx512_vpopcntdq());
 }
 
-const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
   return match_rule_supported_vector(opcode, vlen, bt);
 }
 
 // Identify extra cases that we might want to provide match rules for vector nodes and
 // other intrinsics guarded with vector length (vlen) and element type (bt).
-const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
   const bool is_LP64 = LP64_ONLY(true) NOT_LP64(false);
   if (!match_rule_supported(opcode)) {
     return false;
@@ -1988,7 +2000,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
   return true;  // Per default match rules are supported.
 }
 
-const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
   // ADLC based match_rule_supported routine checks for the existence of pattern based
   // on IR opcode. Most of the unary/binary/ternary masked operation share the IR nodes
   // of their non-masked counterpart with mask edge being the differentiator.
@@ -2147,21 +2159,8 @@ const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, Bas
   }
 }
 
-const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
+bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
   return false;
-}
-
-// Return true if Vector::rearrange needs preparation of the shuffle argument
-const bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
-  switch (elem_bt) {
-    case T_BYTE:  return false;
-    case T_SHORT: return !VM_Version::supports_avx512bw();
-    case T_INT:   return !VM_Version::supports_avx();
-    case T_LONG:  return vlen < 8 && !VM_Version::supports_avx512vl();
-    default:
-      ShouldNotReachHere();
-      return false;
-  }
 }
 
 MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* generic_opnd, uint ideal_reg, bool is_temp) {
@@ -2232,7 +2231,7 @@ const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) 
 }
 
 // Max vector size in bytes. 0 if not supported.
-const int Matcher::vector_width_in_bytes(BasicType bt) {
+int Matcher::vector_width_in_bytes(BasicType bt) {
   assert(is_java_primitive(bt), "only primitive type vectors");
   if (UseSSE < 2) return 0;
   // SSE2 supports 128bit vectors for all types.
@@ -2275,10 +2274,10 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
 }
 
 // Limits on vector size (number of elements) loaded into vector.
-const int Matcher::max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size(const BasicType bt) {
   return vector_width_in_bytes(bt)/type2aelembytes(bt);
 }
-const int Matcher::min_vector_size(const BasicType bt) {
+int Matcher::min_vector_size(const BasicType bt) {
   int max_size = max_vector_size(bt);
   // Min size which can be loaded into vector is 4 bytes.
   int size = (type2aelembytes(bt) == 1) ? 4 : 2;
@@ -2289,7 +2288,7 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return MIN2(size,max_size);
 }
 
-const int Matcher::superword_max_vector_size(const BasicType bt) {
+int Matcher::superword_max_vector_size(const BasicType bt) {
   // Limit the max vector size for auto vectorization to 256 bits (32 bytes)
   // by default on Cascade Lake
   if (VM_Version::is_default_intel_cascade_lake()) {
@@ -2298,12 +2297,12 @@ const int Matcher::superword_max_vector_size(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
-const int Matcher::scalable_vector_reg_size(const BasicType bt) {
+int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return -1;
 }
 
 // Vector ideal reg corresponding to specified size in bytes
-const uint Matcher::vector_ideal_reg(int size) {
+uint Matcher::vector_ideal_reg(int size) {
   assert(MaxVectorSize >= size, "");
   switch(size) {
     case  4: return Op_VecS;
@@ -3638,7 +3637,7 @@ instruct sqrtD_reg(regD dst) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct convF2HF_reg_reg(rRegI dst, regF src, regF tmp) %{
+instruct convF2HF_reg_reg(rRegI dst, vlRegF src, vlRegF tmp) %{
   effect(TEMP tmp);
   match(Set dst (ConvF2HF src));
   ins_cost(125);
@@ -3682,7 +3681,7 @@ instruct vconvF2HF_mem_reg(memory mem, vec src) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct convHF2F_reg_reg(regF dst, rRegI src) %{
+instruct convHF2F_reg_reg(vlRegF dst, rRegI src) %{
   match(Set dst (ConvHF2F src));
   format %{ "vcvtph2ps $dst,$src" %}
   ins_encode %{
@@ -3973,11 +3972,11 @@ instruct onspinwait() %{
 
 // a * b + c
 instruct fmaD_reg(regD a, regD b, regD c) %{
-  predicate(UseFMA);
   match(Set c (FmaD  c (Binary a b)));
   format %{ "fmasd $a,$b,$c\t# $c = $a * $b + $c" %}
   ins_cost(150);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmad($c$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $c$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
@@ -3985,11 +3984,11 @@ instruct fmaD_reg(regD a, regD b, regD c) %{
 
 // a * b + c
 instruct fmaF_reg(regF a, regF b, regF c) %{
-  predicate(UseFMA);
   match(Set c (FmaF  c (Binary a b)));
   format %{ "fmass $a,$b,$c\t# $c = $a * $b + $c" %}
   ins_cost(150);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmaf($c$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $c$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
@@ -8340,6 +8339,17 @@ instruct VectorPopulateLIndex(vec dst, rRegL src1, immI_1 src2, vec vtmp) %{
 //-------------------------------- Rearrange ----------------------------------
 
 // LoadShuffle/Rearrange for Byte
+
+instruct loadShuffleB(vec dst) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_BYTE);
+  match(Set dst (VectorLoadShuffle dst));
+  format %{ "vector_load_shuffle $dst, $dst" %}
+  ins_encode %{
+    // empty
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct rearrangeB(vec dst, vec shuffle) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE &&
             Matcher::vector_length(n) < 32);
@@ -8406,7 +8416,7 @@ instruct rearrangeB_evex_vbmi(vec dst, vec src, vec shuffle) %{
 
 instruct loadShuffleS(vec dst, vec src, vec vtmp) %{
   predicate(Matcher::vector_element_basic_type(n) == T_SHORT &&
-            !VM_Version::supports_avx512bw());
+            Matcher::vector_length(n) <= 16 && !VM_Version::supports_avx512bw()); // NB! aligned with rearrangeS
   match(Set dst (VectorLoadShuffle src));
   effect(TEMP dst, TEMP vtmp);
   format %{ "vector_load_shuffle $dst, $src\t! using $vtmp as TEMP" %}
@@ -8417,7 +8427,7 @@ instruct loadShuffleS(vec dst, vec src, vec vtmp) %{
     if (UseAVX == 0) {
       assert(vlen_in_bytes <= 16, "required");
       // Multiply each shuffle by two to get byte index
-      __ movdqu($vtmp$$XMMRegister, $src$$XMMRegister);
+      __ pmovzxbw($vtmp$$XMMRegister, $src$$XMMRegister);
       __ psllw($vtmp$$XMMRegister, 1);
 
       // Duplicate to create 2 copies of byte index
@@ -8432,7 +8442,8 @@ instruct loadShuffleS(vec dst, vec src, vec vtmp) %{
       assert(UseAVX > 1 || vlen_in_bytes <= 16, "required");
       int vlen_enc = vector_length_encoding(this);
       // Multiply each shuffle by two to get byte index
-      __ vpsllw($vtmp$$XMMRegister, $src$$XMMRegister, 1, vlen_enc);
+      __ vpmovzxbw($vtmp$$XMMRegister, $src$$XMMRegister, vlen_enc);
+      __ vpsllw($vtmp$$XMMRegister, $vtmp$$XMMRegister, 1, vlen_enc);
 
       // Duplicate to create 2 copies of byte index
       __ vpsllw($dst$$XMMRegister, $vtmp$$XMMRegister,  8, vlen_enc);
@@ -8479,6 +8490,21 @@ instruct rearrangeS_avx(legVec dst, legVec src, vec shuffle, legVec vtmp1, legVe
   ins_pipe( pipe_slow );
 %}
 
+instruct loadShuffleS_evex(vec dst, vec src) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_SHORT &&
+            VM_Version::supports_avx512bw());
+  match(Set dst (VectorLoadShuffle src));
+  format %{ "vector_load_shuffle $dst, $src" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    if (!VM_Version::supports_avx512vl()) {
+      vlen_enc = Assembler::AVX_512bit;
+    }
+    __ vpmovzxbw($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct rearrangeS_evex(vec dst, vec src, vec shuffle) %{
   predicate(Matcher::vector_element_basic_type(n) == T_SHORT &&
             VM_Version::supports_avx512bw());
@@ -8509,7 +8535,7 @@ instruct loadShuffleI(vec dst, vec src, vec vtmp) %{
     // only byte shuffle instruction available on these platforms
 
     // Duplicate and multiply each shuffle by 4
-    __ movdqu($vtmp$$XMMRegister, $src$$XMMRegister);
+    __ pmovzxbd($vtmp$$XMMRegister, $src$$XMMRegister);
     __ pshuflw($vtmp$$XMMRegister, $vtmp$$XMMRegister, 0xA0);
     __ pshufhw($vtmp$$XMMRegister, $vtmp$$XMMRegister, 0xA0);
     __ psllw($vtmp$$XMMRegister, 2);
@@ -8534,6 +8560,18 @@ instruct rearrangeI(vec dst, vec shuffle) %{
   ins_encode %{
     assert(UseSSE >= 4, "required");
     __ pshufb($dst$$XMMRegister, $shuffle$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct loadShuffleI_avx(vec dst, vec src) %{
+  predicate((Matcher::vector_element_basic_type(n) == T_INT || Matcher::vector_element_basic_type(n) == T_FLOAT) &&
+            UseAVX > 0);
+  match(Set dst (VectorLoadShuffle src));
+  format %{ "vector_load_shuffle $dst, $src" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ vpmovzxbd($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8567,7 +8605,8 @@ instruct loadShuffleL(vec dst, vec src, vec vtmp) %{
     // only double word shuffle instruction available on these platforms
 
     // Multiply each shuffle by two to get double word index
-    __ vpsllq($vtmp$$XMMRegister, $src$$XMMRegister, 1, vlen_enc);
+    __ vpmovzxbq($vtmp$$XMMRegister, $src$$XMMRegister, vlen_enc);
+    __ vpsllq($vtmp$$XMMRegister, $vtmp$$XMMRegister, 1, vlen_enc);
 
     // Duplicate each double word shuffle
     __ vpsllq($dst$$XMMRegister, $vtmp$$XMMRegister, 32, vlen_enc);
@@ -8589,6 +8628,20 @@ instruct rearrangeL(vec dst, vec src, vec shuffle) %{
 
     int vlen_enc = vector_length_encoding(this);
     __ vpermd($dst$$XMMRegister, $shuffle$$XMMRegister, $src$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct loadShuffleL_evex(vec dst, vec src) %{
+  predicate(is_double_word_type(Matcher::vector_element_basic_type(n)) && // T_LONG, T_DOUBLE
+            (Matcher::vector_length(n) == 8 || VM_Version::supports_avx512vl()));
+  match(Set dst (VectorLoadShuffle src));
+  format %{ "vector_load_shuffle $dst, $src" %}
+  ins_encode %{
+    assert(UseAVX > 2, "required");
+
+    int vlen_enc = vector_length_encoding(this);
+    __ vpmovzxbq($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -9823,6 +9876,7 @@ instruct vfma_reg_masked(vec dst, vec src2, vec src3, kReg mask) %{
   match(Set dst (FmaVD (Binary dst src2) (Binary src3 mask)));
   format %{ "vfma_masked $dst, $src2, $src3, $mask \t! vfma masked operation" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     int vlen_enc = vector_length_encoding(this);
     BasicType bt = Matcher::vector_element_basic_type(this);
     int opc = this->ideal_Opcode();
@@ -9837,6 +9891,7 @@ instruct vfma_mem_masked(vec dst, vec src2, memory src3, kReg mask) %{
   match(Set dst (FmaVD (Binary dst src2) (Binary (LoadVector src3) mask)));
   format %{ "vfma_masked $dst, $src2, $src3, $mask \t! vfma masked operation" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     int vlen_enc = vector_length_encoding(this);
     BasicType bt = Matcher::vector_element_basic_type(this);
     int opc = this->ideal_Opcode();

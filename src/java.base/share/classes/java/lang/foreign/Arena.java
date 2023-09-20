@@ -56,7 +56,7 @@ import java.lang.foreign.MemorySegment.Scope;
  * Alternatively, clients can obtain an {@linkplain Arena#ofAuto() automatic arena}, that is an arena
  * which features a <em>bounded lifetime</em> that is managed, automatically, by the garbage collector. As such, the regions
  * of memory backing memory segments allocated with the automatic arena are deallocated at some unspecified time
- * <em>after</em> the automatic arena (and all the segments allocated by it) become
+ * <em>after</em> the automatic arena (and all the segments allocated by it) becomes
  * <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>, as shown below:
  * {@snippet lang = java:
  * MemorySegment segment = Arena.ofAuto().allocate(100, 1); // @highlight regex='ofAuto()'
@@ -202,7 +202,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
 
     /**
      * Creates a new arena that is managed, automatically, by the garbage collector.
-     * Segments obtained with the returned arena can be
+     * Segments allocated with the returned arena can be
      * {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by any thread.
      * Calling {@link #close()} on the returned arena will result in an {@link UnsupportedOperationException}.
      *
@@ -213,7 +213,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
     }
 
     /**
-     * Obtains the global arena. Segments obtained with the global arena can be
+     * Obtains the global arena. Segments allocated with the global arena can be
      * {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by any thread.
      * Calling {@link #close()} on the returned arena will result in an {@link UnsupportedOperationException}.
      *
@@ -227,14 +227,17 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
     }
 
     /**
-     * {@return a new confined arena, owned by the current thread}
+     * {@return a new confined arena} Segments allocated with the confined arena can be
+     * {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by the thread that created the arena,
+     * the arena's <em>owner thread</em>.
      */
     static Arena ofConfined() {
         return MemorySessionImpl.createConfined(Thread.currentThread()).asArena();
     }
 
     /**
-     * {@return a new shared arena}
+     * {@return a new shared arena} Segments allocated with the global arena can be
+     * {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by any thread.
      */
     static Arena ofShared() {
         return MemorySessionImpl.createShared().asArena();
@@ -244,7 +247,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * Returns a native memory segment with the given size (in bytes) and alignment constraint (in bytes).
      * The returned segment is associated with this {@linkplain #scope() arena scope}.
      * The segment's {@link MemorySegment#address() address} is the starting address of the
-     * allocated off-heap memory region backing the segment, and the address is
+     * allocated off-heap region of memory backing the segment, and the address is
      * aligned according the provided alignment constraint.
      *
      * @implSpec
@@ -256,14 +259,14 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      *     S1.asOverlappingSlice(S2).isEmpty() == true
      * }
      *
-     * @param byteSize the size (in bytes) of the off-heap memory block backing the native memory segment.
+     * @param byteSize the size (in bytes) of the off-heap region of memory backing the native memory segment.
      * @param byteAlignment the alignment constraint (in bytes) of the off-heap region of memory backing the native memory segment.
      * @return a new native memory segment.
-     * @throws IllegalArgumentException if {@code bytesSize < 0}, {@code alignmentBytes <= 0}, or if {@code alignmentBytes}
+     * @throws IllegalArgumentException if {@code bytesSize < 0}, {@code byteAlignment <= 0}, or if {@code byteAlignment}
      * is not a power of 2.
      * @throws IllegalStateException if this arena has already been {@linkplain #close() closed}.
-     * @throws WrongThreadException if this arena is confined, and this method is called from a thread {@code T}
-     * other than the arena owner thread.
+     * @throws WrongThreadException if this arena is confined, and this method is called from a thread
+     * other than the arena's owner thread.
      */
     @Override
     default MemorySegment allocate(long byteSize, long byteAlignment) {
@@ -293,9 +296,9 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * @throws IllegalStateException if the arena has already been closed.
      * @throws IllegalStateException if a segment associated with this arena is being accessed concurrently, e.g.
      * by a {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...) downcall method handle}.
-     * @throws WrongThreadException if this arena is confined, and this method is called from a thread {@code T}
-     * other than the arena owner thread.
-     * @throws UnsupportedOperationException if this arena does not support explicit closure.
+     * @throws WrongThreadException if this arena is confined, and this method is called from a thread
+     * other than the arena's owner thread.
+     * @throws UnsupportedOperationException if this arena cannot be closed explicitly.
      */
     @Override
     void close();

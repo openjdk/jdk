@@ -75,17 +75,17 @@ class MethodCounters : public Metadata {
       _interpreter_throwout_count++;
     }
   }
-  int  interpreter_throwout_count() const {
+  u2  interpreter_throwout_count() const {
     return _interpreter_throwout_count;
   }
-  void set_interpreter_throwout_count(int count) {
+  void set_interpreter_throwout_count(u2 count) {
     _interpreter_throwout_count = count;
   }
 #else // COMPILER2_OR_JVMCI
-  int  interpreter_throwout_count() const {
+  u2  interpreter_throwout_count() const {
     return 0;
   }
-  void set_interpreter_throwout_count(int count) {
+  void set_interpreter_throwout_count(u2 count) {
     assert(count == 0, "count must be 0");
   }
 #endif // COMPILER2_OR_JVMCI

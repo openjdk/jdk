@@ -28,6 +28,7 @@
 
 #include "asm/register.hpp"
 #include "metaprogramming/enableIf.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -221,7 +222,7 @@ public:
     mask <<= lsb;
     unsigned target = *(unsigned *)a;
     target &= ~mask;
-    target |= val;
+    target |= (unsigned)val;
     *(unsigned *)a = target;
   }
 
@@ -229,14 +230,14 @@ public:
     int nbits = msb - lsb + 1;
     int64_t chk = val >> (nbits - 1);
     guarantee (chk == -1 || chk == 0, "Field too big for insn at " INTPTR_FORMAT, p2i(a));
-    unsigned uval = val;
+    uint64_t uval = val;
     unsigned mask = checked_cast<unsigned>(right_n_bits(nbits));
     uval &= mask;
     uval <<= lsb;
     mask <<= lsb;
     unsigned target = *(unsigned *)a;
     target &= ~mask;
-    target |= uval;
+    target |= (unsigned)uval;
     *(unsigned *)a = target;
   }
 
@@ -262,10 +263,10 @@ public:
     int nbits = msb - lsb + 1;
     int64_t chk = val >> (nbits - 1);
     guarantee (chk == -1 || chk == 0, "Field too big for insn");
-    unsigned uval = val;
+    uint64_t uval = val;
     unsigned mask = checked_cast<unsigned>(right_n_bits(nbits));
     uval &= mask;
-    f(uval, lsb + nbits - 1, lsb);
+    f((unsigned)uval, lsb + nbits - 1, lsb);
   }
 
   void rf(Register r, int lsb) {
@@ -553,7 +554,7 @@ class Address {
           i->sf(offset(), 20, 12);
         } else {
           i->f(0b01, 25, 24);
-          i->f(offset() >> size, 21, 10);
+          i->f(checked_cast<unsigned>(offset() >> size), 21, 10);
         }
       }
       break;
@@ -573,7 +574,7 @@ class Address {
         if (size == 0) // It's a byte
           i->f(ext().shift() >= 0, 12);
         else {
-          assert(ext().shift() <= 0 || ext().shift() == (int)size, "bad shift");
+          guarantee(ext().shift() <= 0 || ext().shift() == (int)size, "bad shift");
           i->f(ext().shift() > 0, 12);
         }
         i->f(0b10, 11, 10);
@@ -653,8 +654,9 @@ class Address {
   static bool offset_ok_for_sve_immed(int64_t offset, int shift, int vl /* sve vector length */) {
     if (offset % vl == 0) {
       // Convert address offset into sve imm offset (MUL VL).
-      int sve_offset = offset / vl;
-      if (((-(1 << (shift - 1))) <= sve_offset) && (sve_offset < (1 << (shift - 1)))) {
+      int64_t sve_offset = offset / vl;
+      int32_t range = 1 << (shift - 1);
+      if ((-range <= sve_offset) && (sve_offset < range)) {
         // sve_offset can be encoded
         return true;
       }
@@ -2412,7 +2414,7 @@ public:
       ld_st(Vt, T, a.base(), op1, op2);
       break;
     case Address::post:
-      ld_st(Vt, T, a.base(), a.offset(), op1, op2, regs);
+      ld_st(Vt, T, a.base(), checked_cast<int>(a.offset()), op1, op2, regs);
       break;
     case Address::post_reg:
       ld_st(Vt, T, a.base(), a.index(), op1, op2);
@@ -3522,7 +3524,7 @@ private:
               int op1, int type, int imm_op2, int scalar_op2) {
     switch (a.getMode()) {
     case Address::base_plus_offset:
-      sve_ld_st1(Zt, a.base(), a.offset(), Pg, T, op1, type, imm_op2);
+      sve_ld_st1(Zt, a.base(), checked_cast<int>(a.offset()), Pg, T, op1, type, imm_op2);
       break;
     case Address::base_plus_offset_reg:
       sve_ld_st1(Zt, a.base(), a.index(), Pg, T, op1, type, scalar_op2);
@@ -4211,7 +4213,7 @@ Instruction_aarch64::~Instruction_aarch64() {
 #undef starti
 
 // Invert a condition
-inline const Assembler::Condition operator~(const Assembler::Condition cond) {
+inline Assembler::Condition operator~(const Assembler::Condition cond) {
   return Assembler::Condition(int(cond) ^ 1);
 }
 

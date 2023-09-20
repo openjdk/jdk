@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,7 @@ class LambdaFormInvokers : public AllStatic {
   static GrowableArrayCHeap<char*, mtClassShared>* _lambdaform_lines;
   // For storing LF form lines (LF_RESOLVE only) in read only table.
   static Array<Array<char>*>* _static_archive_invokers;
-  static GrowableArrayCHeap<OopHandle, mtClassShared>* _regenerated_mirrors;
   static void regenerate_class(char* name, ClassFileStream& st, TRAPS);
-  static void add_regenerated_class(oop regenerated_class);
  public:
   static void append(char* line);
   static void dump_static_archive_invokers();

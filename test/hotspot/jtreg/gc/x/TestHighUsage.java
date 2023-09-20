@@ -25,7 +25,7 @@ package gc.x;
 
 /*
  * @test TestHighUsage
- * @requires vm.gc.Z & !vm.opt.final.ZGenerational
+ * @requires vm.gc.ZSinglegen
  * @summary Test ZGC "High Usage" rule
  * @library /test/lib
  * @run main/othervm gc.x.TestHighUsage

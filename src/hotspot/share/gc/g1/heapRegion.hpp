@@ -182,10 +182,6 @@ public:
   // All allocated blocks are occupied by objects in a HeapRegion.
   bool block_is_obj(const HeapWord* p, HeapWord* pb) const;
 
-  // Returns whether the given object is dead based on the given parsable_bottom (pb).
-  // For an object to be considered dead it must be below pb and scrubbed.
-  bool is_obj_dead(oop obj, HeapWord* pb) const;
-
   // Returns the object size for all valid block starts. If parsable_bottom (pb)
   // is given, calculates the block size based on that parsable_bottom, not the
   // current value of this HeapRegion.
@@ -293,16 +289,15 @@ public:
   // there's clearing to be done ourselves. We also always mangle the space.
   void initialize(bool clear_space = false, bool mangle_space = SpaceDecorator::Mangle);
 
-  static int    LogOfHRGrainBytes;
-  static int    LogCardsPerRegion;
+  static uint   LogOfHRGrainBytes;
+  static uint   LogCardsPerRegion;
 
   static size_t GrainBytes;
   static size_t GrainWords;
   static size_t CardsPerRegion;
 
   static size_t align_up_to_region_byte_size(size_t sz) {
-    return (sz + (size_t) GrainBytes - 1) &
-                                      ~((1 << (size_t) LogOfHRGrainBytes) - 1);
+    return align_up(sz, GrainBytes);
   }
 
   // Returns whether a field is in the same region as the obj it points to.
@@ -487,7 +482,7 @@ public:
 
   // Notify the region that an evacuation failure occurred for an object within this
   // region.
-  void note_evacuation_failure(bool during_concurrent_start);
+  void note_evacuation_failure();
 
   // Notify the region that we have partially finished processing self-forwarded
   // objects during evacuation failure handling.
@@ -524,16 +519,16 @@ public:
 
   void record_surv_words_in_group(size_t words_survived);
 
-  // Determine if an object is in the parsable or the to-be-scrubbed area.
-  inline static bool obj_in_parsable_area(const HeapWord* addr, HeapWord* pb);
-  inline static bool obj_in_unparsable_area(oop obj, HeapWord* pb);
+  // Determine if an address is in the parsable or the to-be-scrubbed area.
+  inline        bool is_in_parsable_area(const void* const addr) const;
+  inline static bool is_in_parsable_area(const void* const addr, const void* const pb);
 
   bool obj_allocated_since_marking_start(oop obj) const {
     return cast_from_oop<HeapWord*>(obj) >= top_at_mark_start();
   }
 
   // Update the region state after a failed evacuation.
-  void handle_evacuation_failure();
+  void handle_evacuation_failure(bool retain);
 
   // Iterate over the objects overlapping the given memory region, applying cl
   // to all references in the region.  This is a helper for

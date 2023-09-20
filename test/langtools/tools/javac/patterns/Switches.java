@@ -105,6 +105,18 @@ public class Switches {
         emptyFallThrough(1.0);
         testSimpleSwitch();
         testSimpleSwitchExpression();
+        assertEquals(0, constantAndPatternGuardInteger(0, true));
+        assertEquals(0, constantAndPatternGuardInteger(1, true));
+        assertEquals(1, constantAndPatternGuardInteger(1, false));
+        assertEquals(2, constantAndPatternGuardInteger(0, false));
+        assertEquals(0, constantAndPatternGuardString("", true));
+        assertEquals(0, constantAndPatternGuardString("a", true));
+        assertEquals(1, constantAndPatternGuardString("a", false));
+        assertEquals(2, constantAndPatternGuardString("", false));
+        assertEquals(0, constantAndPatternGuardEnum(E.A, true));
+        assertEquals(0, constantAndPatternGuardEnum(E.B, true));
+        assertEquals(1, constantAndPatternGuardEnum(E.B, false));
+        assertEquals(2, constantAndPatternGuardEnum(E.A, false));
     }
 
     void run(Function<Object, Integer> mapper) {
@@ -711,6 +723,30 @@ public class Switches {
             default -> 1;
         };
         assertEquals(1, res);
+    }
+
+    int constantAndPatternGuardInteger(Integer i, boolean g) {
+        return switch (i) {
+            case Integer j when g -> 0;
+            case 1 -> 1;
+            case Integer j -> 2;
+        };
+    }
+
+    int constantAndPatternGuardString(String s, boolean g) {
+        return switch (s) {
+            case String t when g -> 0;
+            case "a" -> 1;
+            case String t -> 2;
+        };
+    }
+
+    int constantAndPatternGuardEnum(E e, boolean g) {
+        return switch (e) {
+            case E f when g -> 0;
+            case E.B -> 1;
+            case E f -> 2;
+        };
     }
 
     //verify that for cases like:

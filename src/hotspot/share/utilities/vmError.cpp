@@ -54,6 +54,7 @@
 #include "runtime/stackOverflow.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
@@ -99,12 +100,15 @@ const char*       VMError::_filename;
 int               VMError::_lineno;
 size_t            VMError::_size;
 const size_t      VMError::_reattempt_required_stack_headroom = 64 * K;
+const intptr_t    VMError::segfault_address = pd_segfault_address;
 
 // List of environment variables that should be reported in error log file.
 static const char* env_list[] = {
   // All platforms
   "JAVA_HOME", "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "CLASSPATH",
   "PATH", "USERNAME",
+
+  "XDG_CACHE_HOME", "XDG_CONFIG_HOME", "FC_LANG", "FONTCONFIG_USE_MMAP",
 
   // Env variables that are defined on Linux/BSD
   "LD_LIBRARY_PATH", "LD_PRELOAD", "SHELL", "DISPLAY",
@@ -174,7 +178,10 @@ static void print_bug_submit_message(outputStream *out, Thread *thread) {
 }
 
 static bool stack_has_headroom(size_t headroom) {
-  const size_t stack_size = os::current_stack_size();
+  size_t stack_size = 0;
+  address stack_base = nullptr;
+  os::current_stack_base_and_size(&stack_base, &stack_size);
+
   const size_t guard_size = StackOverflow::stack_guard_zone_size();
   const size_t unguarded_stack_size = stack_size - guard_size;
 
@@ -182,7 +189,6 @@ static bool stack_has_headroom(size_t headroom) {
     return false;
   }
 
-  const address stack_base          = os::current_stack_base();
   const address unguarded_stack_end = stack_base - unguarded_stack_size;
   const address stack_pointer       = os::current_stack_pointer();
 
@@ -195,9 +201,11 @@ PRAGMA_INFINITE_RECURSION_IGNORED
 void VMError::reattempt_test_hit_stack_limit(outputStream* st) {
   if (stack_has_headroom(_reattempt_required_stack_headroom)) {
     // Use all but (_reattempt_required_stack_headroom - K) unguarded stack space.
-    const size_t stack_size     = os::current_stack_size();
+    size_t stack_size = 0;
+    address stack_base = nullptr;
+    os::current_stack_base_and_size(&stack_base, &stack_size);
+
     const size_t guard_size     = StackOverflow::stack_guard_zone_size();
-    const address stack_base    = os::current_stack_base();
     const address stack_pointer = os::current_stack_pointer();
 
     const size_t unguarded_stack_size = stack_size - guard_size;
@@ -387,6 +395,27 @@ static bool print_code(outputStream* st, Thread* thread, address pc, bool is_cra
   return false;
 }
 
+// Like above, but only try to figure out a short name. Return nullptr if not found.
+static const char* find_code_name(address pc) {
+  if (Interpreter::contains(pc)) {
+    InterpreterCodelet* codelet = Interpreter::codelet_containing(pc);
+    if (codelet != nullptr) {
+      return codelet->description();
+    }
+  } else {
+    StubCodeDesc* desc = StubCodeDesc::desc_for(pc);
+    if (desc != nullptr) {
+      return desc->name();
+    } else {
+      CodeBlob* cb = CodeCache::find_blob(pc);
+      if (cb != nullptr) {
+        return cb->name();
+      }
+    }
+  }
+  return nullptr;
+}
+
 /**
  * Gets the caller frame of `fr`.
  *
@@ -425,7 +454,7 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, bool pri
   // see if it's a valid frame
   if (fr.pc()) {
     st->print_cr("Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)");
-    const int limit = max_frames == -1 ? StackPrintLimit : MIN2(max_frames, (int)StackPrintLimit);
+    const int limit = max_frames == -1 ? StackPrintLimit : MIN2(max_frames, StackPrintLimit);
     int count = 0;
     while (count++ < limit) {
       fr.print_on_error(st, buf, buf_size);
@@ -451,6 +480,8 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, bool pri
       st->print_cr("...<more frames>...");
     }
 
+  } else {
+    st->print_cr("Native frames: <unavailable>");
   }
 }
 
@@ -674,6 +705,10 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   // don't allocate large buffer on stack
   static char buf[O_BUFLEN];
+
+  // Native stack trace may get stuck. We try to handle the last pc if it
+  // belongs to VM generated code.
+  address lastpc = nullptr;
 
   BEGIN
 
@@ -944,8 +979,7 @@ void VMError::report(outputStream* st, bool _verbose) {
       stack_top = _thread->stack_base();
       stack_size = _thread->stack_size();
     } else {
-      stack_top = os::current_stack_base();
-      stack_size = os::current_stack_size();
+      os::current_stack_base_and_size(&stack_top, &stack_size);
     }
 
     address stack_bottom = stack_top - stack_size;
@@ -963,9 +997,16 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->cr();
 
   STEP_IF("printing native stack (with source info)", _verbose)
-    if (os::platform_print_native_stack(st, _context, buf, sizeof(buf))) {
+    if (os::platform_print_native_stack(st, _context, buf, sizeof(buf), lastpc)) {
       // We have printed the native stack in platform-specific code
       // Windows/x64 needs special handling.
+      // Stack walking may get stuck. Try to find the calling code.
+      if (lastpc != nullptr) {
+        const char* name = find_code_name(lastpc);
+        if (name != nullptr) {
+          st->print_cr("The last pc belongs to %s (printed below).", name);
+        }
+      }
     } else {
       frame fr = _context ? os::fetch_frame_from_context(_context)
                           : os::current_frame();
@@ -1070,6 +1111,13 @@ void VMError::report(outputStream* st, bool _verbose) {
     // value outside the range.
     int limit = MIN2(ErrorLogPrintCodeLimit, printed_capacity);
     if (limit > 0) {
+      // Check if a pc was found by native stack trace above.
+      if (lastpc != nullptr) {
+        if (print_code(st, _thread, lastpc, true, printed, printed_capacity)) {
+          printed_len++;
+        }
+      }
+
       // Scan the native stack
       if (!_print_native_stack_used) {
         // Only try to print code of the crashing frame since
@@ -1245,9 +1293,13 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   STEP_IF("Native Memory Tracking", _verbose)
     MemTracker::error_report(st);
+    st->cr();
+
+  STEP_IF("printing periodic trim state", _verbose)
+    NativeHeapTrimmer::print_state(st);
+    st->cr();
 
   STEP_IF("printing system", _verbose)
-    st->cr();
     st->print_cr("---------------  S Y S T E M  ---------------");
     st->cr();
 
@@ -1414,10 +1466,14 @@ void VMError::print_vm_info(outputStream* st) {
   // STEP("Native Memory Tracking")
 
   MemTracker::error_report(st);
+  st->cr();
+
+  // STEP("printing periodic trim state")
+  NativeHeapTrimmer::print_state(st);
+  st->cr();
+
 
   // STEP("printing system")
-
-  st->cr();
   st->print_cr("---------------  S Y S T E M  ---------------");
   st->cr();
 
@@ -1788,6 +1844,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
           int e = errno;
           out.print_raw("#\n# Can't open file to dump replay data. Error: ");
           out.print_raw_cr(os::strerror(e));
+          close(fd);
         }
       }
     }

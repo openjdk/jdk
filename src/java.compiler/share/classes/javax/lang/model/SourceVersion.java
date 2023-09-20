@@ -74,6 +74,7 @@ public enum SourceVersion {
      *  21: pattern matching for switch and record patterns (string
      *      templates in preview, unnamed patterns and variables in
      *      preview, unnamed classes and instance main methods in preview)
+     *  22: tbd
      */
 
     /**
@@ -395,7 +396,20 @@ public enum SourceVersion {
      * @see <a href="https://openjdk.org/jeps/441">
      * Pattern Matching for switch</a>
      */
-    RELEASE_21;
+    RELEASE_21,
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 22.
+     *
+     * @since 22
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se22/html/index.html">
+     * <cite>The Java Language Specification, Java SE 22 Edition</cite></a>
+     */
+    RELEASE_22,
+    ; // Reduce code churn when appending new constants
 
     // Note that when adding constants for newer releases, the
     // behavior of latest() and latestSupported() must be updated too.
@@ -404,7 +418,7 @@ public enum SourceVersion {
      * {@return the latest source version that can be modeled}
      */
     public static SourceVersion latest() {
-        return RELEASE_21;
+        return RELEASE_22;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -419,7 +433,7 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         int intVersion = Runtime.version().feature();
         return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(21, intVersion)):
+            valueOf("RELEASE_" + Math.min(22, intVersion)):
             RELEASE_10;
     }
 

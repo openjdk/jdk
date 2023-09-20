@@ -55,6 +55,7 @@ class TestStringDeduplicationTools {
     private static byte[] dummy;
 
     private static String selectedGC = null;
+    private static String selectedGCMode = null;
 
     static {
         try {
@@ -71,6 +72,9 @@ class TestStringDeduplicationTools {
 
     public static void selectGC(String[] args) {
         selectedGC = args[0];
+        if (args.length > 1) {
+            selectedGCMode = args[1];
+        }
     }
 
     private static Object getValue(String string) {
@@ -289,6 +293,9 @@ class TestStringDeduplicationTools {
 
         ArrayList<String> args = new ArrayList<String>();
         args.add("-XX:+Use" + selectedGC + "GC");
+        if (selectedGCMode != null) {
+            args.add(selectedGCMode);
+        }
         args.addAll(Arrays.asList(defaultArgs));
         args.addAll(Arrays.asList(extraArgs));
 
@@ -392,10 +399,8 @@ class TestStringDeduplicationTools {
 
             forceDeduplication(ageThreshold, FullGC);
 
-            if (!waitForDeduplication(dupString3, baseString)) {
-                if (getValue(dupString3) != getValue(internedString)) {
-                    throw new RuntimeException("String 3 doesn't match either");
-                }
+            if (!waitForDeduplication(dupString3, internedString)) {
+                throw new RuntimeException("Deduplication has not occurred for string 3");
             }
 
             if (afterInternedValue != getValue(dupString2)) {

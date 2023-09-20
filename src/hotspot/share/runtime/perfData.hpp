@@ -396,7 +396,6 @@ class PerfLongConstant : public PerfLong {
 class PerfLongVariant : public PerfLong {
 
   protected:
-    jlong* _sampled;
     PerfLongSampleHelper* _sample_helper;
 
     PerfLongVariant(CounterNS ns, const char* namep, Units u, Variability v,

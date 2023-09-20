@@ -31,7 +31,9 @@
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/vmStructs_jvmci.hpp"
 #include "oops/klassVtable.hpp"
+#include "oops/methodCounters.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "prims/jvmtiThreadState.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/osThread.hpp"
@@ -214,7 +216,11 @@
   nonstatic_field(JavaThread,                  _jni_environment,                              JNIEnv)                                \
   nonstatic_field(JavaThread,                  _poll_data,                                    SafepointMechanism::ThreadData)        \
   nonstatic_field(JavaThread,                  _stack_overflow_state._reserved_stack_activation, address)                            \
-  nonstatic_field(JavaThread,                  _held_monitor_count,                           int64_t)                               \
+  nonstatic_field(JavaThread,                  _held_monitor_count,                           intx)                                  \
+  JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_VTMS_transition,                        bool))                                 \
+  JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_tmp_VTMS_transition,                    bool))                                 \
+                                                                                                                                     \
+  JVMTI_ONLY(static_field(JvmtiVTMSTransitionDisabler, _VTMS_notify_jvmti_events,             bool))                                 \
                                                                                                                                      \
   static_field(java_lang_Class,                _klass_offset,                                 int)                                   \
   static_field(java_lang_Class,                _array_klass_offset,                           int)                                   \
@@ -366,6 +372,7 @@
   JFR_ONLY(nonstatic_field(Thread,          _jfr_thread_local,                                JfrThreadLocal))                       \
                                                                                                                                      \
   static_field(java_lang_Thread,            _tid_offset,                                      int)                                   \
+  static_field(java_lang_Thread,            _jvmti_is_in_VTMS_transition_offset,              int)                                   \
   JFR_ONLY(static_field(java_lang_Thread,   _jfr_epoch_offset,                                int))                                  \
                                                                                                                                      \
   JFR_ONLY(nonstatic_field(JfrThreadLocal,  _vthread_id,                                      traceid))                              \
@@ -524,9 +531,11 @@
   declare_constant(CodeInstaller::REGISTER_PRIMITIVE)                     \
   declare_constant(CodeInstaller::REGISTER_OOP)                           \
   declare_constant(CodeInstaller::REGISTER_NARROW_OOP)                    \
+  declare_constant(CodeInstaller::REGISTER_VECTOR)                        \
   declare_constant(CodeInstaller::STACK_SLOT_PRIMITIVE)                   \
   declare_constant(CodeInstaller::STACK_SLOT_OOP)                         \
   declare_constant(CodeInstaller::STACK_SLOT_NARROW_OOP)                  \
+  declare_constant(CodeInstaller::STACK_SLOT_VECTOR)                      \
   declare_constant(CodeInstaller::VIRTUAL_OBJECT_ID)                      \
   declare_constant(CodeInstaller::VIRTUAL_OBJECT_ID2)                     \
   declare_constant(CodeInstaller::NULL_CONSTANT)                          \
@@ -718,7 +727,6 @@
   AARCH64_ONLY(declare_constant(NMethodPatchingType::conc_instruction_and_data_patch)) \
   AARCH64_ONLY(declare_constant(NMethodPatchingType::conc_data_patch))                 \
                                                                           \
-  declare_constant(ReceiverTypeData::nonprofiled_count_off_set)           \
   declare_constant(ReceiverTypeData::receiver_type_row_cell_count)        \
   declare_constant(ReceiverTypeData::receiver0_offset)                    \
   declare_constant(ReceiverTypeData::count0_offset)                       \
@@ -756,6 +764,10 @@
   declare_function(SharedRuntime::enable_stack_reserved_zone)             \
   declare_function(SharedRuntime::frem)                                   \
   declare_function(SharedRuntime::drem)                                   \
+  JVMTI_ONLY(declare_function(SharedRuntime::notify_jvmti_vthread_start)) \
+  JVMTI_ONLY(declare_function(SharedRuntime::notify_jvmti_vthread_end))   \
+  JVMTI_ONLY(declare_function(SharedRuntime::notify_jvmti_vthread_mount)) \
+  JVMTI_ONLY(declare_function(SharedRuntime::notify_jvmti_vthread_unmount)) \
                                                                           \
   declare_function(os::dll_load)                                          \
   declare_function(os::dll_lookup)                                        \
@@ -805,7 +817,7 @@
 #if INCLUDE_G1GC
 
 #define VM_STRUCTS_JVMCI_G1GC(nonstatic_field, static_field) \
-  static_field(HeapRegion, LogOfHRGrainBytes, int)
+  static_field(HeapRegion, LogOfHRGrainBytes, uint)
 
 #define VM_INT_CONSTANTS_JVMCI_G1GC(declare_constant, declare_constant_with_value, declare_preprocessor_constant) \
   declare_constant_with_value("G1CardTable::g1_young_gen", G1CardTable::g1_young_card_val()) \

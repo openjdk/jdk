@@ -145,7 +145,7 @@ JvmtiEnvBase::phase() {
 
 bool
 JvmtiEnvBase::is_valid() {
-  jint value = 0;
+  jlong value = 0;
 
   // This object might not be a JvmtiEnvBase so we can't assume
   // the _magic field is properly aligned. Get the value in a safe
@@ -730,7 +730,7 @@ JvmtiEnvBase::get_cthread_last_java_vframe(JavaThread* jt, RegisterMap* reg_map_
 }
 
 jint
-JvmtiEnvBase::get_thread_state(oop thread_oop, JavaThread* jt) {
+JvmtiEnvBase::get_thread_state_base(oop thread_oop, JavaThread* jt) {
   jint state = 0;
 
   if (thread_oop != nullptr) {
@@ -757,6 +757,30 @@ JvmtiEnvBase::get_thread_state(oop thread_oop, JavaThread* jt) {
 }
 
 jint
+JvmtiEnvBase::get_thread_state(oop thread_oop, JavaThread* jt) {
+  jint state = 0;
+
+  if (is_thread_carrying_vthread(jt, thread_oop)) {
+    state = (jint)java_lang_Thread::get_thread_status(thread_oop);
+
+    // This is for extra safety. Other bits are not expected nor needed.
+    state &= (JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_INTERRUPTED);
+
+    if (jt->is_carrier_thread_suspended()) {
+      state |= JVMTI_THREAD_STATE_SUSPENDED;
+    }
+    // It's okay for the JVMTI state to be reported as WAITING when waiting
+    // for something other than an Object.wait. So, we treat a thread carrying
+    // a virtual thread as waiting indefinitely which is not runnable.
+    // It is why the RUNNABLE bit is not needed and the WAITING bits are added.
+    state |= JVMTI_THREAD_STATE_WAITING | JVMTI_THREAD_STATE_WAITING_INDEFINITELY;
+  } else {
+    state = get_thread_state_base(thread_oop, jt);
+  }
+  return state;
+}
+
+jint
 JvmtiEnvBase::get_vthread_state(oop thread_oop, JavaThread* java_thread) {
   jint state = 0;
   bool ext_suspended = JvmtiVTSuspender::is_vthread_suspended(thread_oop);
@@ -770,17 +794,19 @@ JvmtiEnvBase::get_vthread_state(oop thread_oop, JavaThread* java_thread) {
     jint filtered_bits = JVMTI_THREAD_STATE_SUSPENDED | JVMTI_THREAD_STATE_INTERRUPTED;
 
     // This call can trigger a safepoint, so thread_oop must not be used after it.
-    state = get_thread_state(ct_oop, java_thread) & ~filtered_bits;
+    state = get_thread_state_base(ct_oop, java_thread) & ~filtered_bits;
   } else {
-    jshort vt_state = java_lang_VirtualThread::state(thread_oop);
+    int vt_state = java_lang_VirtualThread::state(thread_oop);
     state = (jint)java_lang_VirtualThread::map_state_to_thread_status(vt_state);
   }
-  if (ext_suspended && ((state & JVMTI_THREAD_STATE_ALIVE) != 0)) {
-    state &= ~java_lang_VirtualThread::RUNNING;
-    state |= JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_RUNNABLE | JVMTI_THREAD_STATE_SUSPENDED;
-  }
-  if (interrupted) {
-    state |= JVMTI_THREAD_STATE_INTERRUPTED;
+  // Ensure the thread has not exited after retrieving suspended/interrupted values.
+  if ((state & JVMTI_THREAD_STATE_ALIVE) != 0) {
+    if (ext_suspended) {
+      state |= JVMTI_THREAD_STATE_SUSPENDED;
+    }
+    if (interrupted) {
+      state |= JVMTI_THREAD_STATE_INTERRUPTED;
+    }
   }
   return state;
 }
@@ -1578,13 +1604,8 @@ JvmtiEnvBase::is_in_thread_list(jint count, const jthread* list, oop jt_oop) {
 
 class VM_SetNotifyJvmtiEventsMode : public VM_Operation {
 private:
-  static bool _whitebox_used;
   bool _enable;
 
-  // This function is needed only for testing purposes to support multiple
-  // enable&disable notifyJvmti events. Otherwise, there can be only one call
-  // to enable_virtual_threads_notify_jvmti() for late binding agents. There
-  // have to be no JvmtiThreadState's and need to correct them in such a case.
   static void correct_jvmti_thread_state(JavaThread* jt) {
     oop  ct_oop = jt->threadObj();
     oop  vt_oop = jt->vthread();
@@ -1594,8 +1615,7 @@ private:
     bool virt = vt_oop != nullptr && java_lang_VirtualThread::is_instance(vt_oop);
 
     // Correct jt->jvmti_thread_state() and jt->jvmti_vthread().
-    // It was not maintained while notifyJvmti was disabled but there can be
-    // a leftover from previous cycle when notification were enabled.
+    // It was not maintained while notifyJvmti was disabled.
     if (virt) {
       jt->set_jvmti_thread_state(nullptr);  // reset jt->jvmti_thread_state()
       jt->set_jvmti_vthread(vt_oop);        // restore jt->jvmti_vthread()
@@ -1616,9 +1636,7 @@ private:
         count++;
         continue; // no need in JvmtiThreadState correction below if in transition
       }
-      if (_whitebox_used) {
-        correct_jvmti_thread_state(jt); // needed in testing environment only
-      }
+      correct_jvmti_thread_state(jt);
     }
     return count;
   }
@@ -1627,9 +1645,6 @@ public:
   VMOp_Type type() const { return VMOp_SetNotifyJvmtiEventsMode; }
   bool allow_nested_vm_operations() const { return false; }
   VM_SetNotifyJvmtiEventsMode(bool enable) : _enable(enable) {
-    if (!enable) {
-      _whitebox_used = true; // disabling is available via WhiteBox only
-    }
   }
 
   void doit() {
@@ -1639,8 +1654,6 @@ public:
     JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(_enable);
   }
 };
-
-bool VM_SetNotifyJvmtiEventsMode::_whitebox_used = false;
 
 // This function is to support agents loaded into running VM.
 // Must be called in thread-in-native mode.
@@ -1708,13 +1721,13 @@ JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool singl
   if (java_thread->is_hidden_from_external_view()) {
     return JVMTI_ERROR_NONE;
   }
-  bool is_passive_cthread = is_passive_carrier_thread(java_thread, thread_h());
+  bool is_thread_carrying = is_thread_carrying_vthread(java_thread, thread_h());
 
   // A case of non-virtual thread.
   if (!is_virtual) {
     // Thread.suspend() is used in some tests. It sets jt->is_suspended() only.
     if (java_thread->is_carrier_thread_suspended() ||
-        (!is_passive_cthread && java_thread->is_suspended())) {
+        (!is_thread_carrying && java_thread->is_suspended())) {
       return JVMTI_ERROR_THREAD_SUSPENDED;
     }
     java_thread->set_carrier_thread_suspended();
@@ -1725,10 +1738,10 @@ JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool singl
           (is_virtual && JvmtiVTSuspender::is_vthread_suspended(thread_h())),
          "sanity check");
 
-  // An attempt to handshake-suspend a passive carrier thread will result in
+  // An attempt to handshake-suspend a thread carrying a virtual thread will result in
   // suspension of mounted virtual thread. So, we just mark it as suspended
   // and it will be actually suspended at virtual thread unmount transition.
-  if (!is_passive_cthread) {
+  if (!is_thread_carrying) {
     assert(thread_h() != nullptr, "sanity check");
     assert(single_suspend || thread_h()->is_a(vmClasses::BaseVirtualThread_klass()),
            "SuspendAllVirtualThreads should never suspend non-virtual threads");
@@ -1778,19 +1791,19 @@ JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single
   if (java_thread->is_hidden_from_external_view()) {
     return JVMTI_ERROR_NONE;
   }
-  bool is_passive_cthread = is_passive_carrier_thread(java_thread, thread_h());
+  bool is_thread_carrying = is_thread_carrying_vthread(java_thread, thread_h());
 
   // A case of a non-virtual thread.
   if (!is_virtual) {
     if (!java_thread->is_carrier_thread_suspended() &&
-        (is_passive_cthread || !java_thread->is_suspended())) {
+        (is_thread_carrying || !java_thread->is_suspended())) {
       return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
     }
     java_thread->clear_carrier_thread_suspended();
   }
   assert(!java_thread->is_in_VTMS_transition(), "sanity check");
 
-  if (!is_passive_cthread) {
+  if (!is_thread_carrying) {
     assert(thread_h() != nullptr, "sanity check");
     assert(single_resume || thread_h()->is_a(vmClasses::BaseVirtualThread_klass()),
            "ResumeAllVirtualThreads should never resume non-virtual threads");
@@ -2525,7 +2538,7 @@ VirtualThreadGetFrameLocationClosure::do_thread(Thread *target) {
 void
 VirtualThreadGetThreadStateClosure::do_thread(Thread *target) {
   assert(target->is_Java_thread(), "just checking");
-  jshort vthread_state = java_lang_VirtualThread::state(_vthread_h());
+  int vthread_state = java_lang_VirtualThread::state(_vthread_h());
   oop carrier_thread_oop = java_lang_VirtualThread::carrier_thread(_vthread_h());
   jint state;
 

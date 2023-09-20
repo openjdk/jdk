@@ -61,3 +61,8 @@ void CompilerThread::thread_entry(JavaThread* thread, TRAPS) {
 bool CompilerThread::can_call_java() const {
   return _compiler != nullptr && _compiler->is_jvmci();
 }
+
+// Hide native compiler threads from external view.
+bool CompilerThread::is_hidden_from_external_view() const {
+  return _compiler == nullptr || _compiler->is_hidden_from_external_view();
+}
