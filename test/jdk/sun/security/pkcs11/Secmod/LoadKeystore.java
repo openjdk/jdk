@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,10 +48,6 @@ public class LoadKeystore extends SecmodTest {
                     BASE + File.separator + args[1]);
         }
 
-        double version = getNSSVersion();
-        if (version == 0.0 || version >= 3.55) {
-            useSqlite(true);
-        }
         if (!initSecmod()) {
             return;
         }
