@@ -2755,7 +2755,6 @@ void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Reg
     casal(Assembler::xword, oldv, newv, addr);
     cmp(tmp, oldv);
     br(Assembler::EQ, succeed);
-    membar(AnyAny);
   } else {
     Label retry_load, nope;
     prfm(Address(addr), PSTL1STRM);
@@ -2797,7 +2796,6 @@ void MacroAssembler::cmpxchgw(Register oldv, Register newv, Register addr, Regis
     casal(Assembler::word, oldv, newv, addr);
     cmp(tmp, oldv);
     br(Assembler::EQ, succeed);
-    membar(AnyAny);
   } else {
     Label retry_load, nope;
     prfm(Address(addr), PSTL1STRM);
