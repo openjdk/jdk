@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,88 @@
  * @bug 4372743
  * @summary test that checks transitions of ERA and YEAR which are caused by add(MONTH).
  * @library /java/text/testlib
+ * @run junit bug4372743
  */
 
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
+import java.util.stream.Stream;
 
-import static java.util.GregorianCalendar.*;
+import static java.util.GregorianCalendar.AD;
+import static java.util.GregorianCalendar.APRIL;
+import static java.util.GregorianCalendar.AUGUST;
+import static java.util.GregorianCalendar.BC;
+import static java.util.GregorianCalendar.DECEMBER;
+import static java.util.GregorianCalendar.ERA;
+import static java.util.GregorianCalendar.FEBRUARY;
+import static java.util.GregorianCalendar.JANUARY;
+import static java.util.GregorianCalendar.JULY;
+import static java.util.GregorianCalendar.JUNE;
+import static java.util.GregorianCalendar.MARCH;
+import static java.util.GregorianCalendar.MAY;
+import static java.util.GregorianCalendar.MONTH;
+import static java.util.GregorianCalendar.NOVEMBER;
+import static java.util.GregorianCalendar.OCTOBER;
+import static java.util.GregorianCalendar.SEPTEMBER;
+import static java.util.GregorianCalendar.YEAR;
 
-public class bug4372743 extends IntlTest {
+import org.junit.jupiter.api.BeforeEach;
 
-    public static void main(String[] args) throws Exception {
-        new bug4372743().run(args);
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class bug4372743 {
+
+    @BeforeEach
+    void setTimeZone() {
+        TimeZone.setDefault(TimeZone.getTimeZone("PST"));
     }
 
-    private int[][] data = {
+    // Set March 3, A.D. 2 and test add
+    @ParameterizedTest
+    @MethodSource("A_D_Values")
+    public void A_D_Test(GregorianCalendar gc, int monthValue) {
+        for (int i = 0; i < tableSize; i+=(-monthValue)) {
+            check(gc, i);
+            gc.add(MONTH, monthValue);
+        }
+    }
+
+    private static Stream<Arguments> A_D_Values() {
+        return Stream.of(
+                Arguments.of(new GregorianCalendar(2, MARCH, 3), -1),
+                Arguments.of(new GregorianCalendar(2, MARCH, 3), -7));
+    }
+
+
+    // Set March 10, 2 B.C. and test add
+    @ParameterizedTest
+    @MethodSource("B_C_Values")
+    public void B_C_Test(GregorianCalendar gc, int monthValue) {
+            gc.add(YEAR, -3);
+            for (int i = tableSize - 1; i >= 0; i-=monthValue) {
+                check(gc, i);
+                gc.add(MONTH, monthValue);
+            }
+    }
+
+    private static Stream<Arguments> B_C_Values() {
+        return Stream.of(
+                Arguments.of(new GregorianCalendar(2, OCTOBER, 10), 1),
+                Arguments.of(new GregorianCalendar(2, OCTOBER, 10), 8));
+    }
+
+    // Check golden data array with actual value
+    private void check(GregorianCalendar gc, int index) {
+        assertEquals(data[index][ERA], gc.get(ERA), "Invalid era");
+        assertEquals(data[index][YEAR], gc.get(YEAR), "Invalid year");
+        assertEquals(data[index][MONTH], gc.get(MONTH), "Invalid month");
+    }
+
+    private final int[][] data = {
         {AD, 2, MARCH},
         {AD, 2, FEBRUARY},
         {AD, 2, JANUARY},
@@ -70,61 +138,5 @@ public class bug4372743 extends IntlTest {
         {BC, 2, DECEMBER},
         {BC, 2, NOVEMBER},
         {BC, 2, OCTOBER}};
-    private int tablesize = data.length;
-
-    private void check(GregorianCalendar gc, int index) {
-        if (gc.get(ERA) != data[index][ERA]) {
-            errln("Invalid era :" + gc.get(ERA)
-                    + ", expected :" + data[index][ERA]);
-        }
-        if (gc.get(YEAR) != data[index][YEAR]) {
-            errln("Invalid year :" + gc.get(YEAR)
-                    + ", expected :" + data[index][YEAR]);
-        }
-        if (gc.get(MONTH) != data[index][MONTH]) {
-            errln("Invalid month :" + gc.get(MONTH)
-                    + ", expected :" + data[index][MONTH]);
-        }
-    }
-
-    public void Test4372743() {
-        GregorianCalendar gc;
-        TimeZone saveZone = TimeZone.getDefault();
-
-        try {
-            TimeZone.setDefault(TimeZone.getTimeZone("PST"));
-
-            /* Set March 3, A.D. 2 */
-            gc = new GregorianCalendar(2, MARCH, 3);
-            for (int i = 0; i < tablesize; i++) {
-                check(gc, i);
-                gc.add(MONTH, -1);
-            }
-
-            /* Again, Set March 3, A.D. 2 */
-            gc = new GregorianCalendar(2, MARCH, 3);
-            for (int i = 0; i < tablesize; i += 7) {
-                check(gc, i);
-                gc.add(MONTH, -7);
-            }
-
-            /* Set March 10, 2 B.C. */
-            gc = new GregorianCalendar(2, OCTOBER, 10);
-            gc.add(YEAR, -3);
-            for (int i = tablesize - 1; i >= 0; i--) {
-                check(gc, i);
-                gc.add(MONTH, 1);
-            }
-
-            /* Again, Set March 10, 2 B.C. */
-            gc = new GregorianCalendar(2, OCTOBER, 10);
-            gc.add(YEAR, -3);
-            for (int i = tablesize - 1; i >= 0; i -= 8) {
-                check(gc, i);
-                gc.add(MONTH, 8);
-            }
-        } finally {
-            TimeZone.setDefault(saveZone);
-        }
-    }
+    private final int tableSize = data.length;
 }
