@@ -665,6 +665,14 @@ class ImmutableCollections {
                 action.accept((E) e1);
             }
         }
+
+        @Override
+        public Spliterator<E> spliterator() {
+            if (e1 == EMPTY) {
+                return Collections.singletonSpliterator(e0);
+            }
+            return super.spliterator();
+        }
     }
 
     @jdk.internal.ValueBased
@@ -915,6 +923,14 @@ class ImmutableCollections {
             if (!REVERSE && e1 != EMPTY) {
                 action.accept((E) e1);
             }
+        }
+
+        @Override
+        public Spliterator<E> spliterator() {
+            if (e1 == EMPTY) {
+                return Collections.singletonSpliterator(e0);
+            }
+            return super.spliterator();
         }
     }
 
