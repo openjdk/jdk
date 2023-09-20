@@ -25,17 +25,14 @@
 
 package com.sun.tools.javap;
 
-import com.sun.tools.classfile.Annotation;
-import com.sun.tools.classfile.TypeAnnotation;
-import com.sun.tools.classfile.Annotation.Annotation_element_value;
-import com.sun.tools.classfile.Annotation.Array_element_value;
-import com.sun.tools.classfile.Annotation.Class_element_value;
-import com.sun.tools.classfile.Annotation.Enum_element_value;
-import com.sun.tools.classfile.Annotation.Primitive_element_value;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Descriptor;
-import com.sun.tools.classfile.Descriptor.InvalidDescriptor;
+import java.util.List;
+import jdk.internal.classfile.Annotation;
+import jdk.internal.classfile.AnnotationElement;
+import jdk.internal.classfile.AnnotationValue;
+import jdk.internal.classfile.constantpool.*;
+import jdk.internal.classfile.Signature;
+import jdk.internal.classfile.TypeAnnotation;
+import jdk.internal.classfile.attribute.CodeAttribute;
 
 /**
  *  A writer for writing annotations as text.
@@ -68,15 +65,15 @@ public class AnnotationWriter extends BasicWriter {
     }
 
     public void write(Annotation annot, boolean resolveIndices) {
-        writeDescriptor(annot.type_index, resolveIndices);
+        writeDescriptor(annot.className(), resolveIndices);
         if (resolveIndices) {
-            boolean showParens = annot.num_element_value_pairs > 0;
+            boolean showParens = annot.elements().size() > 0;
             if (showParens) {
                 println("(");
                 indent(+1);
             }
-            for (int i = 0; i < annot.num_element_value_pairs; i++) {
-                write(annot.element_value_pairs[i], true);
+            for (var element : annot.elements()) {
+                write(element, true);
                 println();
             }
             if (showParens) {
@@ -85,143 +82,126 @@ public class AnnotationWriter extends BasicWriter {
             }
         } else {
             print("(");
-            for (int i = 0; i < annot.num_element_value_pairs; i++) {
+            for (int i = 0; i < annot.elements().size(); i++) {
                 if (i > 0)
                     print(",");
-                write(annot.element_value_pairs[i], false);
+                write(annot.elements().get(i), false);
             }
             print(")");
         }
     }
 
-    public void write(TypeAnnotation annot) {
-        write(annot, true, false);
+    public void write(TypeAnnotation annot, CodeAttribute lr) {
+        write(annot, true, false, lr);
         println();
         indent(+1);
-        write(annot.annotation, true);
+        write(annot, true);
         indent(-1);
     }
 
-    public void write(TypeAnnotation annot, boolean showOffsets, boolean resolveIndices) {
-        write(annot.annotation, resolveIndices);
+    public void write(TypeAnnotation annot, boolean showOffsets,
+            boolean resolveIndices, CodeAttribute lr) {
+        write(annot, resolveIndices);
         print(": ");
-        write(annot.position, showOffsets);
+        write(annot.targetInfo(), annot.targetPath(), showOffsets, lr);
     }
 
-    public void write(TypeAnnotation.Position pos, boolean showOffsets) {
-        print(pos.type);
+    public void write(TypeAnnotation.TargetInfo targetInfo,
+            List<TypeAnnotation.TypePathComponent> targetPath,
+            boolean showOffsets, CodeAttribute lr) {
+        print(targetInfo.targetType());
 
-        switch (pos.type) {
-        // instanceof
-        case INSTANCEOF:
-        // new expression
-        case NEW:
-        // constructor/method reference receiver
-        case CONSTRUCTOR_REFERENCE:
-        case METHOD_REFERENCE:
-            if (showOffsets) {
-                print(", offset=");
-                print(pos.offset);
-            }
-            break;
-        // local variable
-        case LOCAL_VARIABLE:
-        // resource variable
-        case RESOURCE_VARIABLE:
-            if (pos.lvarOffset == null) {
-                print(", lvarOffset is Null!");
-                break;
-            }
-            print(", {");
-            for (int i = 0; i < pos.lvarOffset.length; ++i) {
-                if (i != 0) print("; ");
+        switch (targetInfo) {
+            // instanceof
+            // new expression
+            // constructor/method reference receiver
+            case TypeAnnotation.OffsetTarget pos -> {
                 if (showOffsets) {
-                    print("start_pc=");
-                    print(pos.lvarOffset[i]);
+                    print(", offset=");
+                    print(lr.labelToBci(pos.target()));
                 }
-                print(", length=");
-                print(pos.lvarLength[i]);
-                print(", index=");
-                print(pos.lvarIndex[i]);
             }
-            print("}");
-            break;
-        // exception parameter
-        case EXCEPTION_PARAMETER:
-            print(", exception_index=");
-            print(pos.exception_index);
-            break;
-        // method receiver
-        case METHOD_RECEIVER:
-            // Do nothing
-            break;
-        // type parameter
-        case CLASS_TYPE_PARAMETER:
-        case METHOD_TYPE_PARAMETER:
-            print(", param_index=");
-            print(pos.parameter_index);
-            break;
-        // type parameter bound
-        case CLASS_TYPE_PARAMETER_BOUND:
-        case METHOD_TYPE_PARAMETER_BOUND:
-            print(", param_index=");
-            print(pos.parameter_index);
-            print(", bound_index=");
-            print(pos.bound_index);
-            break;
-        // class extends or implements clause
-        case CLASS_EXTENDS:
-            print(", type_index=");
-            print(pos.type_index);
-            break;
-        // throws
-        case THROWS:
-            print(", type_index=");
-            print(pos.type_index);
-            break;
-        // method parameter
-        case METHOD_FORMAL_PARAMETER:
-            print(", param_index=");
-            print(pos.parameter_index);
-            break;
-        // type cast
-        case CAST:
-        // method/constructor/reference type argument
-        case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT:
-        case METHOD_INVOCATION_TYPE_ARGUMENT:
-        case CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT:
-        case METHOD_REFERENCE_TYPE_ARGUMENT:
-            if (showOffsets) {
-                print(", offset=");
-                print(pos.offset);
+            case TypeAnnotation.LocalVarTarget pos -> {
+                if (pos.table().isEmpty()) {
+                    print(", lvarOffset is Null!");
+                    break;
+                }
+                print(", {");
+                var table = pos.table();
+                for (int i = 0; i < table.size(); ++i) {
+                    var e = table.get(i);
+                    if (i != 0) print("; ");
+                    int startPc = lr.labelToBci(e.startLabel());
+                    if (showOffsets) {
+                        print("start_pc=");
+                        print(startPc);
+                    }
+                    print(", length=");
+                    print(lr.labelToBci(e.endLabel()) - startPc);
+                    print(", index=");
+                    print(e.index());
+                }
+                print("}");
             }
-            print(", type_index=");
-            print(pos.type_index);
-            break;
-        // We don't need to worry about these
-        case METHOD_RETURN:
-        case FIELD:
-            break;
-        case UNKNOWN:
-            throw new AssertionError("AnnotationWriter: UNKNOWN target type should never occur!");
-        default:
-            throw new AssertionError("AnnotationWriter: Unknown target type for position: " + pos);
+            case TypeAnnotation.CatchTarget pos -> {
+                print(", exception_index=");
+                print(pos.exceptionTableIndex());
+            }
+            case TypeAnnotation.TypeParameterTarget pos -> {
+                print(", param_index=");
+                print(pos.typeParameterIndex());
+            }
+            case TypeAnnotation.TypeParameterBoundTarget pos -> {
+                print(", param_index=");
+                print(pos.typeParameterIndex());
+                print(", bound_index=");
+                print(pos.boundIndex());
+            }
+            case TypeAnnotation.SupertypeTarget pos -> {
+                print(", type_index=");
+                print(pos.supertypeIndex());
+            }
+            case TypeAnnotation.ThrowsTarget pos -> {
+                print(", type_index=");
+                print(pos.throwsTargetIndex());
+            }
+            case TypeAnnotation.FormalParameterTarget pos -> {
+                print(", param_index=");
+                print(pos.formalParameterIndex());
+            }
+            case TypeAnnotation.TypeArgumentTarget pos -> {
+                if (showOffsets) {
+                    print(", offset=");
+                    print(lr.labelToBci(pos.target()));
+                }
+                print(", type_index=");
+                print(pos.typeArgumentIndex());
+            }
+            case TypeAnnotation.EmptyTarget pos -> {
+                // Do nothing
+            }
+            default ->
+                throw new AssertionError("AnnotationWriter: Unhandled target type: "
+                        + targetInfo.getClass());
         }
 
         // Append location data for generics/arrays.
-        if (!pos.location.isEmpty()) {
+        if (!targetPath.isEmpty()) {
             print(", location=");
-            print(pos.location);
+            print(targetPath.stream().map(tp -> tp.typePathKind().toString() +
+                    (tp.typePathKind() == TypeAnnotation.TypePathComponent.Kind.TYPE_ARGUMENT
+                            ? ("(" + tp.typeArgumentIndex() + ")")
+                            : "")).toList());
         }
     }
 
-    public void write(Annotation.element_value_pair pair, boolean resolveIndices) {
-        writeIndex(pair.element_name_index, resolveIndices);
+    public void write(AnnotationElement pair, boolean resolveIndices) {
+        writeIndex(pair.name(), resolveIndices);
         print("=");
-        write(pair.value, resolveIndices);
+        write(pair.value(), resolveIndices);
     }
 
-    public void write(Annotation.element_value value) {
+    public void write(AnnotationValue value) {
         write(value, false);
         println();
         indent(+1);
@@ -229,122 +209,94 @@ public class AnnotationWriter extends BasicWriter {
         indent(-1);
     }
 
-    public void write(Annotation.element_value value, boolean resolveIndices) {
-        ev_writer.write(value, resolveIndices);
-    }
-
-    private void writeDescriptor(int index, boolean resolveIndices) {
+    private void writeDescriptor(Utf8Entry entry, boolean resolveIndices) {
         if (resolveIndices) {
-            try {
-                ConstantPool constant_pool = classWriter.getClassFile().constant_pool;
-                Descriptor d = new Descriptor(index);
-                print(d.getFieldType(constant_pool));
-                return;
-            } catch (ConstantPoolException | InvalidDescriptor ignore) {
-            }
+            print(classWriter.sigPrinter.print(Signature.parseFrom(entry.stringValue())));
+            return;
         }
-
-        print("#" + index);
+        print("#" + entry.index());
     }
 
-    private void writeIndex(int index, boolean resolveIndices) {
+    private void writeIndex(PoolEntry entry, boolean resolveIndices) {
         if (resolveIndices) {
-            print(constantWriter.stringValue(index));
+            print(constantWriter.stringValue(entry));
         } else
-            print("#" + index);
+            print("#" + entry.index());
     }
 
-    element_value_Writer ev_writer = new element_value_Writer();
-
-    class element_value_Writer implements Annotation.element_value.Visitor<Void,Boolean> {
-        public void write(Annotation.element_value value, boolean resolveIndices) {
-            value.accept(this, resolveIndices);
-        }
-
-        @Override
-        public Void visitPrimitive(Primitive_element_value ev, Boolean resolveIndices) {
-            if (resolveIndices) {
-                int index = ev.const_value_index;
-                switch (ev.tag) {
-                    case 'B':
-                        print("(byte) ");
-                        print(constantWriter.stringValue(index));
-                        break;
-                    case 'C':
-                        print("'");
-                        print(constantWriter.charValue(index));
-                        print("'");
-                        break;
-                    case 'D':
-                    case 'F':
-                    case 'I':
-                    case 'J':
-                        print(constantWriter.stringValue(index));
-                        break;
-                    case 'S':
-                        print("(short) ");
-                        print(constantWriter.stringValue(index));
-                        break;
-                    case 'Z':
-                        print(constantWriter.booleanValue(index));
-                        break;
-                    case 's':
-                        print("\"");
-                        print(constantWriter.stringValue(index));
-                        print("\"");
-                        break;
-                    default:
-                        print(((char) ev.tag) + "#" + ev.const_value_index);
-                        break;
+    public void write(AnnotationValue value, boolean resolveIndices) {
+        switch (value) {
+            case AnnotationValue.OfConstant ev -> {
+                if (resolveIndices) {
+                    var entry = ev.constant();
+                    switch (ev.tag()) {
+                        case 'B':
+                            print("(byte) ");
+                            print(constantWriter.stringValue(entry));
+                            break;
+                        case 'C':
+                            print("'");
+                            print(constantWriter.charValue(entry));
+                            print("'");
+                            break;
+                        case 'D':
+                        case 'F':
+                        case 'I':
+                        case 'J':
+                            print(constantWriter.stringValue(entry));
+                            break;
+                        case 'S':
+                            print("(short) ");
+                            print(constantWriter.stringValue(entry));
+                            break;
+                        case 'Z':
+                            print(constantWriter.booleanValue(entry));
+                            break;
+                        case 's':
+                            print("\"");
+                            print(constantWriter.stringValue(entry));
+                            print("\"");
+                            break;
+                        default:
+                            print(ev.tag() + "#" + entry.index());
+                            break;
+                    }
+                } else {
+                    print(ev.tag() + "#" + ev.constant().index());
                 }
-            } else {
-                print(((char) ev.tag) + "#" + ev.const_value_index);
             }
-            return null;
-        }
-
-        @Override
-        public Void visitEnum(Enum_element_value ev, Boolean resolveIndices) {
-            if (resolveIndices) {
-                writeIndex(ev.type_name_index, resolveIndices);
-                print(".");
-                writeIndex(ev.const_name_index, resolveIndices);
-            } else {
-                print(((char) ev.tag) + "#" + ev.type_name_index + ".#" + ev.const_name_index);
+            case AnnotationValue.OfEnum ev -> {
+                if (resolveIndices) {
+                    writeIndex(ev.className(), resolveIndices);
+                    print(".");
+                    writeIndex(ev.constantName(), resolveIndices);
+                } else {
+                    print(ev.tag() + "#" + ev.className().index() + ".#"
+                            + ev.constantName().index());
+                }
             }
-            return null;
-        }
-
-        @Override
-        public Void visitClass(Class_element_value ev, Boolean resolveIndices) {
-            if (resolveIndices) {
-                print("class ");
-                writeIndex(ev.class_info_index, resolveIndices);
-            } else {
-                print(((char) ev.tag) + "#" + ev.class_info_index);
+            case AnnotationValue.OfClass ev -> {
+                if (resolveIndices) {
+                    print("class ");
+                    writeIndex(ev.className(), resolveIndices);
+                } else {
+                    print(ev.tag() + "#" + ev.className().index());
+                }
             }
-            return null;
-        }
-
-        @Override
-        public Void visitAnnotation(Annotation_element_value ev, Boolean resolveIndices) {
-            print((char) ev.tag);
-            AnnotationWriter.this.write(ev.annotation_value, resolveIndices);
-            return null;
-        }
-
-        @Override
-        public Void visitArray(Array_element_value ev, Boolean resolveIndices) {
-            print("[");
-            for (int i = 0; i < ev.num_values; i++) {
-                if (i > 0)
-                    print(",");
-                write(ev.values[i], resolveIndices);
+            case AnnotationValue.OfAnnotation ev -> {
+                print(ev.tag());
+                AnnotationWriter.this.write(ev.annotation(), resolveIndices);
             }
-            print("]");
-            return null;
+            case AnnotationValue.OfArray ev -> {
+                print("[");
+                for (int i = 0; i < ev.values().size(); i++) {
+                    if (i > 0)
+                        print(",");
+                    write(ev.values().get(i), resolveIndices);
+                }
+                print("]");
+            }
         }
-
     }
 
     private final ClassWriter classWriter;

@@ -89,6 +89,7 @@
 # include <sys/mman.h>
 # include <sys/stat.h>
 # include <sys/select.h>
+# include <sys/sendfile.h>
 # include <pthread.h>
 # include <signal.h>
 # include <endian.h>
@@ -4366,6 +4367,13 @@ jlong os::Linux::fast_thread_cpu_time(clockid_t clockid) {
   int status = clock_gettime(clockid, &tp);
   assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
   return (tp.tv_sec * NANOSECS_PER_SEC) + tp.tv_nsec;
+}
+
+// copy data between two file descriptor within the kernel
+// the number of bytes written to out_fd is returned if transfer was successful
+// otherwise, returns -1 that implies an error
+jlong os::Linux::sendfile(int out_fd, int in_fd, jlong* offset, jlong count) {
+  return sendfile64(out_fd, in_fd, (off64_t*)offset, (size_t)count);
 }
 
 // Determine if the vmid is the parent pid for a child in a PID namespace.
