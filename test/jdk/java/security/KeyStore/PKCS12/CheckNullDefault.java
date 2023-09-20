@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,8 @@ import static java.lang.System.out;
 /**
  * @test
  * @bug 8304956
- * @summary Set up keystore.type as null and check that
- * KeyStore.getDefaultType() value is related to property value. Expect a full
- * match the value 'keystore.type' and the value of the
- * KeyStore.getDefaultType()
+ * @summary Set keystore.type as null and check that
+ * KeyStore.getDefaultType() returns pkcs12
  * @run main/othervm CheckDefaults
  *  -Djava.security.properties=./java.security
  */
@@ -39,10 +37,10 @@ public class CheckNullDefault {
     private static final String DEFAULT_KEY_STORE_TYPE = "pkcs12";
     private void runTest(String[] args) {
         if (!KeyStore.getDefaultType().
-            equalsIgnoreCase(DEFAULT_KEY_STORE_TYPE)) {
+                equalsIgnoreCase(DEFAULT_KEY_STORE_TYPE)) {
             throw new RuntimeException(String.format("Default keystore type "
                     + "Expected '%s' . Actual: '%s' ", DEFAULT_KEY_STORE_TYPE,
-                KeyStore.getDefaultType()));
+                    KeyStore.getDefaultType()));
         }
         out.println("Test Passed");
     }

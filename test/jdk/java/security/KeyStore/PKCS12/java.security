@@ -1,2 +1,2 @@
-# override keystore.type property and make it not exist
+# do not set keystore.type property, so default value will be used
 #keystore.type=
