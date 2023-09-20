@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,10 @@ package javax.crypto;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.io.*;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.nio.file.*;
 import java.security.*;
@@ -86,12 +89,15 @@ final class JceSecurity {
     // Map of the providers we already have verified.
     // If verified ok, value == PROVIDER_VERIFIED, otherwise
     // the cause of verification failure is stored as value.
-    private static final Map<IdentityWrapper, Object>
+    private static final Map<WeakIdentityWrapper, Object>
         verificationResults = new ConcurrentHashMap<>();
 
     // Map<Provider,?> of the providers currently being verified
     private static final Map<Provider, Object> verifyingProviders =
             new IdentityHashMap<>();
+
+    // weak references queued by GC
+    private static final ReferenceQueue<Object> queue = new ReferenceQueue<>();
 
     private static final boolean isRestricted;
 
@@ -199,38 +205,51 @@ final class JceSecurity {
      * Return null if ok, failure Exception if verification failed.
      */
     static Exception getVerificationResult(Provider p) {
-        IdentityWrapper pKey = new IdentityWrapper(p);
-        Object o = verificationResults.get(pKey);
-        // no mapping found
-        if (o == null) {
-            synchronized (JceSecurity.class) {
-                // check cache again in case the result is now available
-                o = verificationResults.get(pKey);
-                if (o == null) {
+        expungeStaleWrappers();
+        WeakIdentityWrapper pKey = new WeakIdentityWrapper(p, queue);
+        try {
+            Object o = verificationResults.computeIfAbsent(pKey, new Function<>() {
+                public Object apply(WeakIdentityWrapper key) {
+                    // no mapping found
                     if (verifyingProviders.get(p) != null) {
                         // recursion; return failure now
-                        return new NoSuchProviderException
-                                ("Recursion during verification");
+                        throw new IllegalStateException();
                     }
+                    Object result;
                     try {
                         verifyingProviders.put(p, Boolean.FALSE);
                         URL providerURL = getCodeBase(p.getClass());
                         verifyProvider(providerURL, p);
-                        o = PROVIDER_VERIFIED;
+                        result = PROVIDER_VERIFIED;
                     } catch (Exception e) {
-                        o = e;
+                        result = e;
                     } finally {
                         verifyingProviders.remove(p);
                     }
-                    verificationResults.put(pKey, o);
                     if (debug != null) {
                         debug.println("Provider " + p.getName() +
-                                " verification result: " + o);
+                                " verification result: " + result);
                     }
+                    return result;
                 }
-            }
+            });
+            return (o == PROVIDER_VERIFIED? null : (Exception) o);
+
+        } catch (IllegalStateException ise) {
+            // recursive update detected
+            return new NoSuchProviderException
+                    ("Recursion during verification");
         }
-        return (o == PROVIDER_VERIFIED? null : (Exception) o);
+    }
+
+    /**
+     * Removes weakly reachable keys from history.
+     */
+    static void expungeStaleWrappers() {
+        WeakIdentityWrapper key;
+        while ((key = (WeakIdentityWrapper) queue.poll()) != null) {
+            verificationResults.remove(key);
+        }
     }
 
     // return whether this provider is properly signed and can be used by JCE
@@ -403,12 +422,13 @@ final class JceSecurity {
         return isRestricted;
     }
 
-    private static final class IdentityWrapper {
+    private static final class WeakIdentityWrapper extends WeakReference<Object> {
 
-        final Provider obj;
+        final int hash;
 
-        IdentityWrapper(Provider obj) {
-            this.obj = obj;
+        WeakIdentityWrapper(Provider obj, ReferenceQueue<Object> queue) {
+            super(obj, queue);
+            hash = System.identityHashCode(obj);
         }
 
         @Override
@@ -416,15 +436,12 @@ final class JceSecurity {
             if (this == o) {
                 return true;
             }
-            if (!(o instanceof IdentityWrapper)) {
-                return false;
-            }
-            return this.obj == ((IdentityWrapper)o).obj;
+            return o instanceof WeakIdentityWrapper w && get() == w.get();
         }
 
         @Override
         public int hashCode() {
-            return System.identityHashCode(obj);
+            return hash;
         }
     }
 }
