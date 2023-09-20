@@ -26,12 +26,11 @@
  * @bug 8314263
  * @summary Creating a logger while loading the Logger finder
  *          triggers recursion and StackOverflowError
- * @modules java.base/sun.util.logging
- * @library /test/lib
+ * @modules java.base/sun.util.logging java.base/jdk.internal.logger:+open
+ * @library ../lib
  * @compile RecursiveLoadingTest.java SimpleLoggerFinder.java
  * @run main/othervm PlatformRecursiveLoadingTest
  */
-
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -50,6 +49,8 @@ public class PlatformRecursiveLoadingTest {
      */
     public static void main(String[] args) throws Throwable {
         PlatformLogger.getLogger("main").info("in main");
+        // allow time to let bootstrap logger flush data
+        BootstrapLoggerUtils.awaitPending();
         List<Object> logs = loggerfinder.SimpleLoggerFinder.LOGS;
         logs.stream().map(SimpleLogRecord::of).forEach(System.out::println);
         logs.stream().map(SimpleLogRecord::of).forEach(SimpleLogRecord::check);

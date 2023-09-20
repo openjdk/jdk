@@ -32,6 +32,7 @@ import java.lang.constant.MethodTypeDesc;
 /**
  * Models a {@code CONSTANT_InterfaceMethodRef_info} constant in the constant pool of a
  * classfile.
+ * @jvms 4.4.2 The CONSTANT_Fieldref_info, CONSTANT_Methodref_info, and CONSTANT_InterfaceMethodref_info Structures
  */
 public sealed interface InterfaceMethodRefEntry
         extends MemberRefEntry

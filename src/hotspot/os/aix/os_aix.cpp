@@ -1590,10 +1590,13 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   }
 
   // Now attach the shared segment.
-  // Note that I attach with SHM_RND - which means that the requested address is rounded down, if
-  // needed, to the next lowest segment boundary. Otherwise the attach would fail if the address
-  // were not a segment boundary.
-  char* const addr = (char*) shmat(shmid, requested_addr, SHM_RND);
+  // Note that we deliberately *don't* pass SHM_RND. The contract of os::attempt_reserve_memory_at() -
+  // which invokes this function with a request address != NULL - is to map at the specified address
+  // excactly, or to fail. If the caller passed us an address that is not usable (aka not a valid segment
+  // boundary), shmat should not round down the address, or think up a completely new one.
+  // (In places where this matters, e.g. when reserving the heap, we take care of passing segment-aligned
+  // addresses on Aix. See, e.g., ReservedHeapSpace.
+  char* const addr = (char*) shmat(shmid, requested_addr, 0);
   const int errno_shmat = errno;
 
   // (A) Right after shmat and before handing shmat errors delete the shm segment.
@@ -3040,3 +3043,32 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
 void os::jfr_report_memory_info() {}
 
 #endif // INCLUDE_JFR
+
+// Simulate the library search algorithm of dlopen() (in os::dll_load)
+int os::Aix::stat64x_via_LIBPATH(const char* path, struct stat64x* stat) {
+  if (path[0] == '/' ||
+      (path[0] == '.' && (path[1] == '/' ||
+                          (path[1] == '.' && path[2] == '/')))) {
+    return stat64x(path, stat);
+  }
+
+  const char* env = getenv("LIBPATH");
+  if (env == nullptr || *env == 0)
+    return -1;
+
+  int ret = -1;
+  size_t libpathlen = strlen(env);
+  char* libpath = NEW_C_HEAP_ARRAY(char, libpathlen + 1, mtServiceability);
+  char* combined = NEW_C_HEAP_ARRAY(char, libpathlen + strlen(path) + 1, mtServiceability);
+  char *saveptr, *token;
+  strcpy(libpath, env);
+  for (token = strtok_r(libpath, ":", &saveptr); token != nullptr; token = strtok_r(nullptr, ":", &saveptr)) {
+    sprintf(combined, "%s/%s", token, path);
+    if (0 == (ret = stat64x(combined, stat)))
+      break;
+  }
+
+  FREE_C_HEAP_ARRAY(char*, combined);
+  FREE_C_HEAP_ARRAY(char*, libpath);
+  return ret;
+}
