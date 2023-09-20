@@ -280,8 +280,21 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
       assert( in1->in(2) != this && in2->in(2) != this,
               "dead loop in AddINode::Ideal" );
       Node* sub = SubNode::make(nullptr, nullptr, bt);
-      sub->init_req(1, phase->transform(AddNode::make(in1->in(1), in2->in(1), bt)));
-      sub->init_req(2, phase->transform(AddNode::make(in1->in(2), in2->in(2), bt)));
+      Node* sub_in1;
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      if (igvn != nullptr) {
+        sub_in1 = igvn->register_new_node_with_optimizer(AddNode::make(in1->in(1), in2->in(1), bt));
+      } else {
+        sub_in1 = phase->transform(AddNode::make(in1->in(1), in2->in(1), bt));
+      }
+      Node* sub_in2;
+      if (igvn != nullptr) {
+        sub_in2 = igvn->register_new_node_with_optimizer(AddNode::make(in1->in(2), in2->in(2), bt));
+      } else {
+        sub_in2 = phase->transform(AddNode::make(in1->in(2), in2->in(2), bt));
+      }
+      sub->init_req(1, sub_in1);
+      sub->init_req(2, sub_in2);
       return sub;
     }
     // Convert "(a-b)+(b+c)" into "(a+c)"
