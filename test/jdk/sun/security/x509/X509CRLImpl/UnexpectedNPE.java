@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,17 @@
 
 /*
  * @test
- * @bug 5052433
+ * @bug 5052433 8315042
  * @summary NullPointerException for generateCRL and generateCRLs methods.
  */
 import java.security.NoSuchProviderException;
 import java.security.cert.*;
 import java.io.ByteArrayInputStream;
+import java.util.Base64;
 
 public class UnexpectedNPE {
     CertificateFactory cf = null ;
+    private static final String INPUT = "MAsGCSqGSMP7TQEHAjI1Bgn///////8wCwUyAQ==";
 
     public UnexpectedNPE() {}
 
@@ -39,23 +41,29 @@ public class UnexpectedNPE {
         byte[] encoded_1 = { 0x00, 0x00, 0x00, 0x00 };
         byte[] encoded_2 = { 0x30, 0x01, 0x00, 0x00 };
         byte[] encoded_3 = { 0x30, 0x01, 0x00 };
+        byte[] decodedBytes = Base64.getDecoder().decode(INPUT);
+        boolean generateCRL = true;
 
         UnexpectedNPE unpe = new UnexpectedNPE() ;
 
-        if(!unpe.run(encoded_1)) {
+        if (!unpe.run(encoded_1, generateCRL)) {
             throw new SecurityException("CRLException has not been thrown");
         }
 
-        if(!unpe.run(encoded_2)) {
+        if (!unpe.run(encoded_2, generateCRL)) {
             throw new SecurityException("CRLException has not been thrown");
         }
 
-        if(!unpe.run(encoded_2)) {
+        if (!unpe.run(encoded_3, generateCRL)) {
+            throw new SecurityException("CRLException has not been thrown");
+        }
+
+        if (!unpe.run(decodedBytes, generateCRL = false)) {
             throw new SecurityException("CRLException has not been thrown");
         }
     }
 
-    private boolean run(byte[] buf) {
+    private boolean run(byte[] buf, boolean generateCRL) {
         if (cf == null) {
             try {
                 cf = CertificateFactory.getInstance("X.509", "SUN");
@@ -66,7 +74,11 @@ public class UnexpectedNPE {
             }
         }
         try {
-            cf.generateCRL(new ByteArrayInputStream(buf));
+            if (generateCRL) {
+                cf.generateCRL(new ByteArrayInputStream(buf));
+            } else {
+                cf.generateCRLs(new ByteArrayInputStream(buf));
+            }
         } catch (CRLException ce) {
             System.out.println("NPE checking passed");
             return true;
