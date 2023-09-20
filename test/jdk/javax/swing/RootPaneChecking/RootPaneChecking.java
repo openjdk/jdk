@@ -28,72 +28,58 @@
  * @summary Makes sure add/remove/setLayout redirect to the contentpane
  */
 
+import java.awt.Container;
+import java.awt.GridLayout;
+import java.awt.LayoutManager;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 import javax.swing.JWindow;
 import javax.swing.RootPaneContainer;
-import java.awt.Container;
-import java.awt.GridLayout;
-import java.awt.LayoutManager;
-import java.lang.reflect.Method;
+import javax.swing.SwingUtilities;
 
 public class RootPaneChecking {
-    public static void main(String[] args) throws Throwable {
-        MyJFrame frame = new MyJFrame();
-        checkRootPaneCheckingEnabled(frame);
-        frame.setRootPaneCheckingEnabled(false);
-        checkRootPaneCheckingDisabled(frame);
+    public static void main(String[] args) throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+                MyJFrame frame = new MyJFrame();
+                checkRootPaneCheckingEnabled(frame);
+                frame.setRootPaneCheckingEnabled(false);
+                checkRootPaneCheckingDisabled(frame);
 
-        MyJWindow window = new MyJWindow();
-        checkRootPaneCheckingEnabled(window);
-        window.setRootPaneCheckingEnabled(false);
-        checkRootPaneCheckingDisabled(window);
+                MyJWindow window = new MyJWindow();
+                checkRootPaneCheckingEnabled(window);
+                window.setRootPaneCheckingEnabled(false);
+                checkRootPaneCheckingDisabled(window);
 
-        MyJDialog dialog = new MyJDialog();
-        checkRootPaneCheckingEnabled(dialog);
-        dialog.setRootPaneCheckingEnabled(false);
-        checkRootPaneCheckingDisabled(dialog);
+                MyJDialog dialog = new MyJDialog();
+                checkRootPaneCheckingEnabled(dialog);
+                dialog.setRootPaneCheckingEnabled(false);
+                checkRootPaneCheckingDisabled(dialog);
 
-        MyJInternalFrame iframe = new MyJInternalFrame();
-        checkRootPaneCheckingEnabled(iframe);
-        iframe.setRootPaneCheckingEnabled(false);
-        checkRootPaneCheckingDisabled(iframe);
-    }
-
-    private static void test(RootPaneContainer rpc) throws Throwable {
-        checkRootPaneCheckingEnabled(rpc);
-
-        // Use reflection to turn off RPC
-        Method[] methods = rpc.getClass().getDeclaredMethods();
-        for (int counter = methods.length - 1; counter >= 0; counter--) {
-            if (methods[counter].getName().equals(
-                                 "setRootPaneCheckingEnabled")) {
-                methods[counter].setAccessible(true);
-                methods[counter].invoke(rpc, new Object[] { Boolean.FALSE });
-            }
-        }
-
-        checkRootPaneCheckingDisabled(rpc);
+                MyJInternalFrame iframe = new MyJInternalFrame();
+                checkRootPaneCheckingEnabled(iframe);
+                iframe.setRootPaneCheckingEnabled(false);
+                checkRootPaneCheckingDisabled(iframe);
+        });
     }
 
     private static void checkRootPaneCheckingEnabled(RootPaneContainer rpc) {
-        Container parent = (Container)rpc;
+        Container parent = (Container) rpc;
         Container cp = rpc.getContentPane();
         // Test add
-        JButton button = new JButton("Button");
+        JButton button = new JButton("RootPaneChecking");
         parent.add(button);
         if (button.getParent() != cp) {
             throw new RuntimeException("Add parent mismatch, want: " +
-                                       cp + " got " + button.getParent());
+                    cp + " got " + button.getParent());
         }
 
         // Test remove
         parent.remove(button);
         if (button.getParent() != null) {
             throw new RuntimeException("Remove mismatch, want null got " +
-                                       button.getParent());
+                    button.getParent());
         }
 
         // Test setLayout
@@ -101,21 +87,20 @@ public class RootPaneChecking {
         parent.setLayout(manager);
         if (manager != cp.getLayout()) {
             throw new RuntimeException("LayoutManager mismatch, want: " +
-                                       manager + " got " + cp.getLayout());
+                    manager + " got " + cp.getLayout());
         }
     }
 
-    private static void checkRootPaneCheckingDisabled(RootPaneContainer rpc)
-                             throws Throwable {
-        Container parent = (Container)rpc;
+    private static void checkRootPaneCheckingDisabled(RootPaneContainer rpc) {
+        Container parent = (Container) rpc;
         Container cp = rpc.getContentPane();
 
         // Test add
-        JButton button = new JButton("Button");
+        JButton button = new JButton("RootPaneChecking");
         parent.add(button);
         if (button.getParent() != parent) {
             throw new RuntimeException("Add parent mismatch, want: " +
-                                       parent + " got " + button.getParent());
+                    parent + " got " + button.getParent());
         }
 
         // Test setLayout
@@ -123,7 +108,7 @@ public class RootPaneChecking {
         parent.setLayout(manager);
         if (manager != parent.getLayout()) {
             throw new RuntimeException("LayoutManager mismatch, want: " +
-                                       manager + " got " + cp.getLayout());
+                    manager + " got " + cp.getLayout());
         }
     }
 
