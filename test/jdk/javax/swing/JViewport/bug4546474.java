@@ -25,6 +25,7 @@
  * @bug 4546474
  * @summary JScrollPane's always-visible scrollbars not updated when
  * viewport is replaced
+ * @key headful
  * @run main bug4546474
  */
 
