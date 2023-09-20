@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ public class bug4490179 {
     static volatile int buttonW;
     static volatile int buttonH;
     static volatile boolean passed = true;
+
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
         robot.setAutoDelay(100);
@@ -59,7 +60,6 @@ public class bug4490179 {
                     }
                 });
                 frame.pack();
-                frame.setSize(250, 200);
                 frame.setLocationRelativeTo(null);
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 frame.setVisible(true);
@@ -73,7 +73,7 @@ public class bug4490179 {
             });
 
             robot.mouseMove(pt.x + buttonW / 2, pt.y + buttonH / 2);
-            robot.delay(100);
+            robot.waitForIdle();
             robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
 

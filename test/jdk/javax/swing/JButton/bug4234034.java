@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4234034
- * @summary Tests
+ * @summary Tests NullPointerException when ToolTip invoked via keyboard
  * @key headful
  * @run main bug4234034
  */
@@ -44,15 +44,14 @@ public class bug4234034 {
         robot.setAutoDelay(100);
         try {
             SwingUtilities.invokeAndWait(() -> {
-                    frame = new JFrame("bug4323121");
-                    button = new JButton("Press tab, then Ctrl+F1");
-                    button.setToolTipText("Tooltip for button");
-                    frame.getContentPane().add(button);
-                    frame.pack();
-                    frame.setSize(250, 200);
-                    frame.setLocationRelativeTo(null);
-                    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                    frame.setVisible(true);
+                frame = new JFrame("bug4323121");
+                button = new JButton("Press tab, then Ctrl+F1");
+                button.setToolTipText("Tooltip for button");
+                frame.getContentPane().add(button);
+                frame.pack();
+                frame.setLocationRelativeTo(null);
+                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                frame.setVisible(true);
             });
             robot.waitForIdle();
             robot.delay(1000);
