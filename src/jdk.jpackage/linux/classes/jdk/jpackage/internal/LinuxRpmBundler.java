@@ -310,7 +310,8 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
                 // do not use other system directories to build as current user
                 "--define", String.format("%%_topdir %s",
                         TEMP_ROOT.fetchFrom(params).toAbsolutePath()),
-                "--define", String.format("%%_rpmfilename %s", rpmFile.getFileName())
+                "--define", String.format("%%_rpmfilename %s", rpmFile.getFileName()),
+		"--define", "_build_id_links none"
         ).executeExpectSuccess();
 
         Log.verbose(MessageFormat.format(
