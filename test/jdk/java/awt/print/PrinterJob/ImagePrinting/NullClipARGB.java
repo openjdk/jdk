@@ -32,27 +32,30 @@
 import java.awt.*;
 import java.awt.image.*;
 import java.awt.print.*;
+import javax.print.DocFlavor;
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
 import jtreg.SkippedException;
 
 public class NullClipARGB implements Printable {
 
     public static void main( String[] args ) {
+        PrintService[] svc = PrintServiceLookup.lookupPrintServices(DocFlavor.SERVICE_FORMATTED.PRINTABLE, null);
+        if (svc.length == 0) {
+            throw new SkippedException("Printer is required for this test.  TEST ABORTED");
+        }
 
         try {
             PrinterJob pj = PrinterJob.getPrinterJob();
             pj.setPrintable(new NullClipARGB());
             pj.print();
         } catch (Exception ex) {
-            if (ex instanceof PrinterException) {
-                throw new SkippedException("Printer is required for this test.  TEST ABORTED");
-            } else {
-                throw new RuntimeException(ex);
-            }
+            throw new RuntimeException(ex);
         }
     }
 
     public int print(Graphics g, PageFormat pf, int pageIndex)
-               throws PrinterException{
+            throws PrinterException{
 
         if (pageIndex != 0) {
             return NO_SUCH_PAGE;
@@ -65,7 +68,7 @@ public class NullClipARGB implements Printable {
         g2.setColor( Color.BLACK );
         g2.drawString("This text should be visible through the image", 0, 20);
         BufferedImage bi = new BufferedImage(100, 100,
-                                              BufferedImage.TYPE_INT_ARGB );
+                BufferedImage.TYPE_INT_ARGB );
         Graphics ig = bi.createGraphics();
         ig.setColor( new Color( 192, 192, 192, 80 ) );
         ig.fillRect( 0, 0, 100, 100 );
