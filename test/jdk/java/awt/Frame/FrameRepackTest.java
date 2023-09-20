@@ -41,7 +41,7 @@ import javax.swing.SwingUtilities;
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual FrameRepackTest
-*/
+ */
 
 public class FrameRepackTest  {
 
