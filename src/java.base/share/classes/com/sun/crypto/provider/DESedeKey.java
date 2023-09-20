@@ -152,11 +152,9 @@ final class DESedeKey implements SecretKey {
          throws java.io.IOException, ClassNotFoundException
     {
         s.defaultReadObject();
-        byte[] temp = key;
-        this.key = temp.clone();
-        java.util.Arrays.fill(temp, (byte)0x00);
+        key = key.clone();
         // Use the cleaner to zero the key when no longer referenced
-        final byte[] k = this.key;
+        final byte[] k = key;
         CleanerFactory.cleaner().register(this,
                 () -> java.util.Arrays.fill(k, (byte)0x00));
     }
