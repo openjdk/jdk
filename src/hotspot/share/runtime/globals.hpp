@@ -1061,7 +1061,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, VerifyHeavyMonitors, false,                                 \
           "Checks that no stack locking happens when using "                \
-          "-XX:LockingMode=LM_MONITOR")                                     \
+          "-XX:LockingMode=0 (LM_MONITOR)")                                 \
                                                                             \
   product(bool, PrintStringTableStatistics, false,                          \
           "print statistics about the StringTable and SymbolTable")         \
