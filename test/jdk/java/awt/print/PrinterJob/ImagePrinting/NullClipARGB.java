@@ -49,13 +49,13 @@ public class NullClipARGB implements Printable {
             PrinterJob pj = PrinterJob.getPrinterJob();
             pj.setPrintable(new NullClipARGB());
             pj.print();
-        } catch (Exception ex) {
+            } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
     }
 
     public int print(Graphics g, PageFormat pf, int pageIndex)
-            throws PrinterException{
+                throws PrinterException{
 
         if (pageIndex != 0) {
             return NO_SUCH_PAGE;
@@ -68,7 +68,7 @@ public class NullClipARGB implements Printable {
         g2.setColor( Color.BLACK );
         g2.drawString("This text should be visible through the image", 0, 20);
         BufferedImage bi = new BufferedImage(100, 100,
-                BufferedImage.TYPE_INT_ARGB );
+                                              BufferedImage.TYPE_INT_ARGB );
         Graphics ig = bi.createGraphics();
         ig.setColor( new Color( 192, 192, 192, 80 ) );
         ig.fillRect( 0, 0, 100, 100 );

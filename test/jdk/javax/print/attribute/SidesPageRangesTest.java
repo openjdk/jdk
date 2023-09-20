@@ -30,8 +30,13 @@
  * @run main SidesPageRangesTest
  */
 
+import java.awt.*;
 import javax.print.*;
 import javax.print.attribute.standard.*;
+import javax.print.attribute.*;
+import java.io.*;
+import java.util.Locale;
+import java.net.URL;
 import jtreg.SkippedException;
 
 public class SidesPageRangesTest {

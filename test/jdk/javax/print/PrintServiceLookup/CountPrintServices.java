@@ -26,6 +26,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
+import javax.print.attribute.AttributeSet;
+import javax.print.attribute.HashAttributeSet;
+import javax.print.attribute.standard.PrinterName;
 import jtreg.SkippedException;
 
 /*

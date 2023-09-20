@@ -32,6 +32,7 @@
 
 import javax.print.*;
 import javax.print.attribute.standard.*;
+import javax.print.attribute.*;
 import jtreg.SkippedException;
 
 public class AttributeTest {

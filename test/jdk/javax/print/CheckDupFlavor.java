@@ -31,6 +31,8 @@
  */
 
 import javax.print.*;
+import javax.print.attribute.*;
+import javax.print.attribute.standard.*;
 import java.util.ArrayList;
 import jtreg.SkippedException;
 
