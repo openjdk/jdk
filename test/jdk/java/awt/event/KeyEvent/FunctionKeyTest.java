@@ -25,61 +25,81 @@ import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Color;
 import java.awt.Event;
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Label;
+import java.awt.Robot;
 import java.awt.TextArea;
-import javax.swing.SwingUtilities;
+import java.awt.event.KeyEvent;
 
 /*
  * @test
  * @bug 4011219
  * @summary Test for function key press/release received by Java client.
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @run main/manual FunctionKeyTest
+ * @key headful
  */
 
 public class FunctionKeyTest {
-    private static final String INSTRUCTIONS = """
-            Press and release function keys F11 and F12.
-            Look at the test window:
-               On KeyPress:   'e.id=403' is printed
-               On KeyRelease: 'e.id=404' is printed
-            If the above is true, then click Pass, else click Fail.
-            """;
-
     private static FunctionKeyTester frame;
+    private static Robot robot;
+
+    static volatile boolean keyPressReceived;
+    static volatile boolean keyReleaseReceived;
+
+    static final StringBuilder failures = new StringBuilder();
+
+    private static void testKey(int keyCode, String keyText) {
+        keyPressReceived = false;
+        keyReleaseReceived = false;
+
+        robot.keyPress(keyCode);
+
+        if (!keyPressReceived) {
+            failures.append(keyText).append(" key press is not received\n");
+        }
+
+        robot.keyRelease(keyCode);
+
+        if (!keyReleaseReceived) {
+            failures.append(keyText).append(" key release is not received\n");
+        }
+    }
 
     public static void main(String[] args) throws Exception {
+        robot = new Robot();
+        robot.setAutoWaitForIdle(true);
+        robot.setAutoDelay(150);
 
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
-                .title("FunctionKeyTest Instructions Frame")
-                .instructions(INSTRUCTIONS)
-                .testTimeOut(5)
-                .rows(10)
-                .columns(45)
-                .build();
+        try {
+            EventQueue.invokeAndWait(() -> {
+                frame = new FunctionKeyTester();
+                frame.setSize(200, 200);
+                frame.setLocationRelativeTo(null);
+                frame.setVisible(true);
+            });
 
-        SwingUtilities.invokeAndWait(() -> {
-            frame = new FunctionKeyTester();
+            robot.waitForIdle();
+            robot.delay(1000);
 
-            PassFailJFrame.addTestWindow(frame);
-            PassFailJFrame
-                    .positionTestWindow(frame, PassFailJFrame.Position.HORIZONTAL);
+            testKey(KeyEvent.VK_F11, "F11");
+            testKey(KeyEvent.VK_F12, "F12");
+        } finally {
+            EventQueue.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
 
-            frame.setVisible(true);
-        });
-
-        Thread.sleep(500);
-
-        SwingUtilities.invokeAndWait(() -> frame.requestFocus());
-
-        passFailJFrame.awaitAndCheck();
+        if (failures.isEmpty()) {
+            System.out.println("Passed");
+        } else {
+            throw new RuntimeException(failures.toString());
+        }
     }
 }
 
 class FunctionKeyTester extends Frame {
-
     Label l = new Label ("NULL");
     Button b =  new Button ();
     TextArea log = new TextArea();
@@ -100,6 +120,11 @@ class FunctionKeyTester extends Frame {
         String message = "e.id=" + e.id + "\n";
         System.out.print(message);
         log.append(message);
+
+        switch (e.id) {
+            case 403 -> FunctionKeyTest.keyPressReceived = true;
+            case 404 -> FunctionKeyTest.keyReleaseReceived = true;
+        }
 
         return super.handleEvent(e);
     }
