@@ -1537,15 +1537,15 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   if (super_cache_backoff > 0) {
     Label L_skip;
 
-    ldr(rscratch1, Address(rthread, JavaThread::backoff_secondary_super_miss_offset()));
+    ldrw(rscratch1, Address(rthread, JavaThread::backoff_secondary_super_miss_offset()));
     sub(rscratch1, rscratch1, 1);
-    str(rscratch1, Address(rthread, JavaThread::backoff_secondary_super_miss_offset()));
+    strw(rscratch1, Address(rthread, JavaThread::backoff_secondary_super_miss_offset()));
 
     cmp(rscratch1, (u1) 0);
     br(Assembler::GT, L_skip);
 
     mov_immediate32(rscratch1, super_cache_backoff);
-    str(rscratch1, Address(rthread, JavaThread::backoff_secondary_super_miss_offset()));
+    strw(rscratch1, Address(rthread, JavaThread::backoff_secondary_super_miss_offset()));
 
     str(super_klass, super_cache_addr);
 
