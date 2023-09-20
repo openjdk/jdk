@@ -33,15 +33,12 @@ import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 
 public class bug4546474 {
-    static JScrollPane scrollpane;
-    static JScrollBar sbar;
-
     public static void main(String[] args) {
         JPanel panel = new JPanel();
-        scrollpane = new JScrollPane(panel,
+        JScrollPane scrollpane = new JScrollPane(panel,
                 JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        sbar = scrollpane.getVerticalScrollBar();
+        JScrollBar sbar = scrollpane.getVerticalScrollBar();
 
         scrollpane.setViewportView(null);
 
