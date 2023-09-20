@@ -195,7 +195,9 @@ public class NativeTestHelper {
         return result;
     }
 
-    public record TestValue (Object value, Consumer<Object> check) {}
+    public record TestValue (Object value, Consumer<Object> check) {
+        public void check(Object actual) { check.accept(actual); }
+    }
 
     public static TestValue genTestValue(MemoryLayout layout, SegmentAllocator allocator) {
         return genTestValue(DEFAULT_RANDOM, layout, allocator);

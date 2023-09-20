@@ -41,7 +41,10 @@ import java.lang.foreign.StructLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.IntFunction;
+import java.util.stream.Stream;
 
 import static org.testng.Assert.assertEquals;
 
@@ -82,35 +85,92 @@ public class TestCritical extends NativeTestHelper {
         }
     }
 
-    record AllowHeapCase(IntFunction<MemorySegment> newArray, ValueLayout elementLayout) {}
+    public record AllowHeapCase(IntFunction<MemorySegment> newArraySegment, ValueLayout elementLayout,
+                                String fName, FunctionDescriptor fDesc) {}
 
     @Test(dataProvider = "allowHeapCases")
     public void testAllowHeap(AllowHeapCase testCase) throws Throwable {
-        MethodHandle handle = downcallHandle("test_allow_heap", FunctionDescriptor.ofVoid(C_POINTER, C_POINTER, C_LONG_LONG), Linker.Option.critical(true));
+        MethodHandle handle = downcallHandle(testCase.fName(), testCase.fDesc(), Linker.Option.critical(true));
         int elementCount = 10;
-        MemorySegment heapSegment = testCase.newArray().apply(elementCount);
+        MemorySegment heapSegment = testCase.newArraySegment().apply(elementCount);
         SequenceLayout sequence = MemoryLayout.sequenceLayout(elementCount, testCase.elementLayout());
 
         try (Arena arena = Arena.ofConfined()) {
-            TestValue tv = genTestValue(sequence, arena);
+            TestValue[] tvs = genTestArgs(testCase.fDesc(), arena);
+            Object[] args = Stream.of(tvs).map(TestValue::value).toArray();
 
-            handle.invoke(heapSegment, tv.value(), sequence.byteSize());
+            // inject our custom last three arguments
+            args[args.length - 1] = (int) sequence.byteSize();
+            TestValue sourceSegment = genTestValue(sequence, arena);
+            args[args.length - 2] = sourceSegment.value();
+            args[args.length - 3] = heapSegment;
+
+            if (handle.type().parameterType(0) == SegmentAllocator.class) {
+                Object[] newArgs = new Object[args.length + 1];
+                newArgs[0] = arena;
+                System.arraycopy(args, 0, newArgs, 1, args.length);
+                args = newArgs;
+            }
+
+            Object o = handle.invokeWithArguments(args);
+
+            if (o != null) {
+                tvs[0].check(o);
+            }
 
             // check that writes went through to array
-            tv.check().accept(heapSegment);
+            sourceSegment.check(heapSegment);
         }
     }
 
     @DataProvider
     public Object[][] allowHeapCases() {
-        return new Object[][] {
-            { new AllowHeapCase(i -> MemorySegment.ofArray(new byte[i]), ValueLayout.JAVA_BYTE) },
-            { new AllowHeapCase(i -> MemorySegment.ofArray(new short[i]), ValueLayout.JAVA_SHORT) },
-            { new AllowHeapCase(i -> MemorySegment.ofArray(new char[i]), ValueLayout.JAVA_CHAR) },
-            { new AllowHeapCase(i -> MemorySegment.ofArray(new int[i]), ValueLayout.JAVA_INT) },
-            { new AllowHeapCase(i -> MemorySegment.ofArray(new long[i]), ValueLayout.JAVA_LONG) },
-            { new AllowHeapCase(i -> MemorySegment.ofArray(new float[i]), ValueLayout.JAVA_FLOAT) },
-            { new AllowHeapCase(i -> MemorySegment.ofArray(new double[i]), ValueLayout.JAVA_DOUBLE) },
-        };
+        FunctionDescriptor voidDesc = FunctionDescriptor.ofVoid(C_POINTER, C_POINTER, C_INT);
+        FunctionDescriptor intDesc = voidDesc.changeReturnLayout(C_INT).insertArgumentLayouts(0, C_INT);
+        StructLayout L2 = MemoryLayout.structLayout(
+            C_LONG_LONG.withName("x"),
+            C_LONG_LONG.withName("y")
+        );
+        FunctionDescriptor L2Desc = voidDesc.changeReturnLayout(L2).insertArgumentLayouts(0, L2);
+        StructLayout L3 = MemoryLayout.structLayout(
+            C_LONG_LONG.withName("x"),
+            C_LONG_LONG.withName("y"),
+            C_LONG_LONG.withName("z")
+        );
+        FunctionDescriptor L3Desc = voidDesc.changeReturnLayout(L3).insertArgumentLayouts(0, L3);
+        FunctionDescriptor stackDesc = voidDesc.insertArgumentLayouts(0,
+                C_LONG_LONG, C_LONG_LONG, C_LONG_LONG, C_LONG_LONG,
+                C_LONG_LONG, C_LONG_LONG, C_LONG_LONG, C_LONG_LONG,
+                C_CHAR, C_SHORT, C_INT);
+
+        List<AllowHeapCase> cases = new ArrayList<>();
+
+        for (HeapSegmentFactory hsf : HeapSegmentFactory.values()) {
+            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_void", voidDesc));
+            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_int", intDesc));
+            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_return_buffer", L2Desc));
+            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_imr", L3Desc));
+            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_void_stack", stackDesc));
+        }
+
+        return cases.stream().map(e -> new Object[]{ e }).toArray(Object[][]::new);
+    }
+
+    private enum HeapSegmentFactory {
+        BYTE(i -> MemorySegment.ofArray(new byte[i]), ValueLayout.JAVA_BYTE),
+        SHORT(i -> MemorySegment.ofArray(new short[i]), ValueLayout.JAVA_SHORT),
+        CHAR(i -> MemorySegment.ofArray(new char[i]), ValueLayout.JAVA_CHAR),
+        INT(i -> MemorySegment.ofArray(new int[i]), ValueLayout.JAVA_INT),
+        LONG(i -> MemorySegment.ofArray(new long[i]), ValueLayout.JAVA_LONG),
+        FLOAT(i -> MemorySegment.ofArray(new float[i]), ValueLayout.JAVA_FLOAT),
+        DOUBLE(i -> MemorySegment.ofArray(new double[i]), ValueLayout.JAVA_DOUBLE);
+
+        IntFunction<MemorySegment> newArray;
+        ValueLayout elementLayout;
+
+        private HeapSegmentFactory(IntFunction<MemorySegment> newArray, ValueLayout elementLayout) {
+            this.newArray = newArray;
+            this.elementLayout = elementLayout;
+        }
     }
 }
