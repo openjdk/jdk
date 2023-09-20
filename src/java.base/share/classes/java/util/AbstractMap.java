@@ -312,10 +312,6 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * {@code contains} method delegates to this map's
      * {@code containsKey} method.
      *
-     * <p>The set is created the first time this method is called,
-     * and returned in response to all subsequent calls.  No synchronization
-     * is performed, so there is a slight chance that multiple calls to this
-     * method will not all return the same set.
      */
     public Set<K> keySet() {
         return new AbstractSet<>() {
@@ -366,10 +362,6 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * method and the {@code contains} method delegates to this map's
      * {@code containsValue} method.
      *
-     * <p>The collection is created the first time this method is called, and
-     * returned in response to all subsequent calls.  No synchronization is
-     * performed, so there is a slight chance that multiple calls to this
-     * method will not all return the same collection.
      */
     public Collection<V> values() {
         return new AbstractCollection<>() {
