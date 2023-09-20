@@ -179,14 +179,6 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 
   if (len->is_valid()) {
     movl(Address(obj, arrayOopDesc::length_offset_in_bytes()), len);
-#ifdef _LP64
-    if (!is_aligned(arrayOopDesc::header_size_in_bytes(), BytesPerWord)) {
-      assert(is_aligned(arrayOopDesc::header_size_in_bytes(), BytesPerInt), "must be 4-byte aligned");
-      movl(Address(obj, arrayOopDesc::header_size_in_bytes()), 0);
-    }
-#else
-    assert(is_aligned(arrayOopDesc::header_size_in_bytes(), BytesPerInt), "must be 4-byte aligned");
-#endif
   }
 #ifdef _LP64
   else if (UseCompressedClassPointers) {
@@ -291,12 +283,22 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
 
   initialize_header(obj, klass, len, t1, t2);
 
+  // Clear leading 4 bytes, if necessary.
+  // TODO: This could perhaps go into initialize_body() and also clear the leading 4 bytes
+  // for non-array objects, thereby replacing the klass-gap clearing code in initialize_header().
+  int base_offset = base_offset_in_bytes;
+#ifdef _LP64
+  if (!is_aligned(base_offset, BytesPerWord)) {
+    assert(is_aligned(base_offset, BytesPerInt), "must be 4-byte aligned");
+    movl(Address(obj, base_offset), 0);
+    base_offset += BytesPerInt;
+  }
+#endif
+  assert(is_aligned(base_offset, BytesPerWord), "must be word aligned");
+
   // clear rest of allocated space
   const Register len_zero = len;
-  // We align-up the header size to word-size, because we clear the
-  // possible alignment gap in initialize_header().
-  int hdr_size = align_up(base_offset_in_bytes, BytesPerWord);
-  initialize_body(obj, arr_size, hdr_size, len_zero);
+  initialize_body(obj, arr_size, base_offset, len_zero);
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     assert(obj == rax, "must be");
