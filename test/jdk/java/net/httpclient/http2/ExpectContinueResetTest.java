@@ -69,11 +69,10 @@ import static org.testng.Assert.*;
 public class ExpectContinueResetTest {
 
     Http2TestServer http2TestServer;
-    final byte[] data = new byte[65535];
     final String samplePost = "Sample Post";
 
-    URI http2WarmupURI, http2PostSuccessfullyUri, http2PostExceptionallyUri;
-    URI h2resetStreamAfter100NoErrorUri, h2resetStreamAfter100ErrorUri , h2ResetStreamAfter200UriNoError, h2ResetStreamAfter200UriError;
+    URI warmup, postSuccessfully, postExceptionally;
+    URI resetStreamAfter100NoError, resetStreamAfter100Error, resetStreamAfter200NoError, resetStreamAfter200Error;
 
     static PrintStream err = new PrintStream(System.err);
 
@@ -81,8 +80,8 @@ public class ExpectContinueResetTest {
     public Object[][] testDataUnconsumedBody() {
         // Not consuming the InputStream in the server's handler results in different handling of RST_STREAM client-side
         return new Object[][] {
-                { http2PostSuccessfullyUri, false }, // Checks RST_STREAM is ignored after client sees an END_STREAM
-                { http2PostExceptionallyUri, true }  // Checks RST_STREAM is processed if client sees no END_STREAM
+                { postSuccessfully, false }, // Checks RST_STREAM is ignored after client sees an END_STREAM
+                { postExceptionally, true }  // Checks RST_STREAM is processed if client sees no END_STREAM
         };
     }
 
@@ -90,10 +89,10 @@ public class ExpectContinueResetTest {
     public Object[][] testDataConsumedBody() {
         return new Object[][] {
                 // All client requests to these URIs should complete exceptionally
-                { h2resetStreamAfter100NoErrorUri }, // Client receives RST_STREAM before END_STREAM and 200
-                { h2resetStreamAfter100ErrorUri },  // Client receives RST_STREAM before END_STREAM and 200
-                { h2ResetStreamAfter200UriNoError }, // Client receives RST_STREAM after 200 but before server sends END_STREAM
-                { h2ResetStreamAfter200UriError } // Client receives RST_STREAM after 200 but before server sends END_STREAM
+                { resetStreamAfter100NoError }, // Client receives RST_STREAM before END_STREAM and 200
+                { resetStreamAfter100Error },  // Client receives RST_STREAM before END_STREAM and 200
+                { resetStreamAfter200NoError }, // Client receives RST_STREAM after 200 but before server sends END_STREAM
+                { resetStreamAfter200Error } // Client receives RST_STREAM after 200 but before server sends END_STREAM
         };
     }
 
@@ -145,17 +144,15 @@ public class ExpectContinueResetTest {
 
         http2TestServer.addHandler(new TestHandlerEndStreamOn200(), "/testHandlerSuccessfully");
         http2TestServer.addHandler(new TestHandlerNoEndStreamOn200(), "/testHandlerExceptionally");
-        http2WarmupURI = URI.create("http://" + http2TestServer.serverAuthority() + "/warmup");
+        warmup = URI.create("http://" + http2TestServer.serverAuthority() + "/warmup");
 
+        resetStreamAfter100NoError = URI.create("http://" + http2TestServer.serverAuthority() + "/http2/resetStreamAfter100NoError");
+        resetStreamAfter100Error = URI.create("http://" + http2TestServer.serverAuthority() + "/http2/resetStreamAfter100Error");
+        resetStreamAfter200NoError = URI.create("http://" + http2TestServer.serverAuthority() + "/http2/resetStreamAfter200NoError");
+        resetStreamAfter200Error = URI.create("http://" + http2TestServer.serverAuthority() + "/http2/resetStreamAfter200Error");
 
-        h2resetStreamAfter100NoErrorUri =  URI.create("http://" + http2TestServer.serverAuthority() + "/http2/resetStreamAfter100NoError");
-        h2resetStreamAfter100ErrorUri =  URI.create("http://" + http2TestServer.serverAuthority() + "/http2/resetStreamAfter100Error");
-        h2ResetStreamAfter200UriNoError = URI.create("http://" + http2TestServer.serverAuthority() + "/http2/resetStreamAfter200NoError");
-        h2ResetStreamAfter200UriError = URI.create("http://" + http2TestServer.serverAuthority() + "/http2/resetStreamAfter200Error");
-
-
-        http2PostSuccessfullyUri = URI.create("http://" + http2TestServer.serverAuthority() + "/testHandlerSuccessfully");
-        http2PostExceptionallyUri = URI.create("http://" + http2TestServer.serverAuthority() + "/testHandlerExceptionally");
+        postSuccessfully = URI.create("http://" + http2TestServer.serverAuthority() + "/testHandlerSuccessfully");
+        postExceptionally = URI.create("http://" + http2TestServer.serverAuthority() + "/testHandlerExceptionally");
         http2TestServer.start();
     }
 
@@ -167,9 +164,8 @@ public class ExpectContinueResetTest {
     private HttpResponse<String> performRequest(HttpRequest.BodyPublisher bodyPublisher, URI uri)
             throws IOException, InterruptedException, ExecutionException {
         try (HttpClient client = HttpClient.newBuilder().proxy(HttpClient.Builder.NO_PROXY).version(HTTP_2).build()) {
-            err.printf("Performing warmup request to %s", http2WarmupURI);
-            client.send(HttpRequest.newBuilder(http2WarmupURI).GET().version(HTTP_2).build(), HttpResponse.BodyHandlers.discarding());
-
+            err.printf("Performing warmup request to %s", warmup);
+            client.send(HttpRequest.newBuilder(warmup).GET().version(HTTP_2).build(), HttpResponse.BodyHandlers.discarding());
             HttpRequest postRequest = HttpRequest.newBuilder(uri)
                     .version(HTTP_2)
                     .POST(bodyPublisher)
@@ -225,7 +221,7 @@ public class ExpectContinueResetTest {
         @Override
         public void handle(Http2TestExchange exchange) throws IOException {
             err.println("Sending 100");
-            exchange.sendResponseHeaders(100,   0);
+            exchange.sendResponseHeaders(100, 0);
             err.println("Sending 200");
             exchange.sendResponseHeaders(200, 0);
             if (exchange instanceof ExpectContinueResetTestExchangeImpl testExchange) {

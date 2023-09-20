@@ -94,14 +94,13 @@ public class ExpectContinueTest implements HttpServerAdapters {
     static PrintStream out = new PrintStream(System.out);
     static final String EXPECTATION_FAILED_417 = "417 Expectation Failed";
 
-
     @DataProvider(name = "uris")
     public Object[][] urisData() {
         return new Object[][]{
                 // URI, Expected Status Code, Will finish with Exception, Protocol Version
                 { postUri, 200, false, HTTP_1_1 },
-                { hangUri,  417, false, HTTP_1_1},
-                { h2postUri, 200, false,  HTTP_2 },
+                { hangUri, 417, false, HTTP_1_1},
+                { h2postUri, 200, false, HTTP_2 },
                 { h2hangUri, 417, false, HTTP_2 },
                 { h2endStreamUri, 200, true, HTTP_2 }, // Error
         };
