@@ -54,10 +54,10 @@ public class UncaughtNativeExceptionTest {
     // and don't terminate abruptly due to stack overflow error
     @Test
     public void testNativeExceptionReporting() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        OutputAnalyzer output = ProcessTools.executeTestJvm(
+                // executeTestJvm doesn't seem to forward 'java.library.path'
                 "-Djava.library.path=" + System.getProperty("java.library.path"),
                 Crasher.class.getName());
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         File hsErrFile = HsErrFileUtils.openHsErrFileFromOutput(output);
         Path hsErrPath = hsErrFile.toPath();
