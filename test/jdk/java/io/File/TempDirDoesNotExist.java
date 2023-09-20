@@ -92,87 +92,60 @@ public class TempDirDoesNotExist {
     }
 
     public static Stream<Arguments> tempDirSource() {
-        return Stream.of(Arguments.of(0, WARNING,
-                                      new String[] {
-                                          "-Djava.io.tmpdir=" +
-                                          tempDir(),
-                                          "TempDirDoesNotExist", "io"
-                                      }),
-                         Arguments.of(0, WARNING,
-                                      new String[] {
-                                          "-Djava.io.tmpdir=" + tempDir(),
-                                          "TempDirDoesNotExist", "nio"
-                                      }),
-                         Arguments.of(0, WARNING,
-                                      new String[] {
-                                          "-Djava.io.tmpdir=" + tempDir()
-                                          + " -Djava.security.manager",
-                                          "TempDirDoesNotExist", "io"
-                                      }),
-                         Arguments.of(0, WARNING,
-                                      new String[] {
-                                          "-Djava.io.tmpdir=" + tempDir()
-                                          + " -Djava.security.manager",
-                                          "TempDirDoesNotExist", "nio"
-                                      }));
+        return Stream.of(Arguments.of(List.of("-Djava.io.tmpdir=" + tempDir(),
+                                              "TempDirDoesNotExist", "io")),
+                         Arguments.of(List.of("-Djava.io.tmpdir=" + tempDir(),
+                                              "TempDirDoesNotExist", "nio")),
+                         Arguments.of(List.of("-Djava.io.tmpdir=" + tempDir() +
+                                              " -Djava.security.manager",
+                                              "TempDirDoesNotExist", "io")),
+                         Arguments.of(List.of("-Djava.io.tmpdir=" + tempDir() +
+                                              " -Djava.security.manager",
+                                              "TempDirDoesNotExist", "nio")));
     }
 
     public static Stream<Arguments> noTempDirSource() {
-        return Stream.of(Arguments.of(0, WARNING,
-                                      new String[] {
-                                          "TempDirDoesNotExist",
-                                          "io"
-                                      }),
-                         Arguments.of(0, WARNING,
-                                      new String[] {
-                                          "TempDirDoesNotExist", "nio"
-                                      }),
-                         Arguments.of(0, WARNING,
-                                      new String[] {
-                                          "-Djava.io.tmpdir=" + USER_DIR,
-                                          "TempDirDoesNotExist", "io"
-                                      }),
-                         Arguments.of(0, WARNING,
-                                      new String[] {
-                                          "-Djava.io.tmpdir=" + USER_DIR,
-                                          "TempDirDoesNotExist", "nio"
-                                      }));
+        return Stream.of(Arguments.of(List.of("TempDirDoesNotExist", "io")),
+                         Arguments.of(List.of("TempDirDoesNotExist", "nio")),
+                         Arguments.of(List.of("-Djava.io.tmpdir=" + USER_DIR,
+                                              "TempDirDoesNotExist", "io")),
+                         Arguments.of(List.of("-Djava.io.tmpdir=" + USER_DIR,
+                                              "TempDirDoesNotExist", "nio")));
     }
 
     public static Stream<Arguments> counterSource() {
         // standard test with default setting for java.io.tmpdir
-        return Stream.of(Arguments.of(0,
-                                      new String[] {
-                                          "-Djava.io.tmpdir=" + tempDir(),
-                                          "TempDirDoesNotExist", "io", "nio"
-                                      }));
+        return Stream.of(Arguments.of(List.of("-Djava.io.tmpdir=" + tempDir(),
+                                             "TempDirDoesNotExist",
+                                             "io", "nio")));
     }
 
     @ParameterizedTest
     @MethodSource("tempDirSource")
-    public void existingMessage(int exitValue, String errorMsg,
-                                String... options) throws Exception {
-       ProcessTools.executeTestJvm(options).shouldContain(errorMsg)
-           .shouldHaveExitValue(exitValue);
+    public void existingMessage(List<String> options) throws Exception {
+       ProcessTools.executeTestJvm(options).shouldContain(WARNING)
+           .shouldHaveExitValue(0);
     }
 
     @ParameterizedTest
     @MethodSource("noTempDirSource")
-    public void nonexistentMessage(int exitValue, String errorMsg,
-                                   String... options) throws Exception {
-        ProcessTools.executeTestJvm(options).shouldNotContain(errorMsg)
-            .shouldHaveExitValue(exitValue);
+    public void nonexistentMessage(List<String> options) throws Exception {
+        ProcessTools.executeTestJvm(options).shouldNotContain(WARNING)
+            .shouldHaveExitValue(0);
     }
 
     @ParameterizedTest
     @MethodSource("counterSource")
-    public  void messageCounter(int exitValue, String... options)
-        throws Exception {
+    public void messageCounter(List<String> options) throws Exception {
         OutputAnalyzer originalOutput = ProcessTools.executeTestJvm(options);
         List<String> list = originalOutput.asLines().stream().filter(line
                 -> line.equalsIgnoreCase(WARNING)).toList();
-        if (list.size() != 1 || originalOutput.getExitValue() != exitValue)
-            throw new Exception("counter of messages is not one, but " + list.size()
-                    + "\n" + originalOutput.asLines().toString() + "\n");
+        if (list.size() != 1)
+            throw new RuntimeException("counter of messages is not one, but " +
+                                       list.size() + "\n" +
+                                       originalOutput.asLines().toString());
+        int exitValue = originalOutput.getExitValue();
+        if (exitValue != 0)
+            throw new RuntimeException("non-zero exit value " + exitValue);
     }
 }
