@@ -2847,54 +2847,55 @@ public final class Formatter implements Closeable, Flushable {
     private static int parse0(ArrayList<FormatString> al, char c, String s, int i, int max) {
         // %[argument_index$][flags][width][.precision][t]conversion
         // %(\d+\$)?([-#+ 0,(\<]*)?(\d+)?(\.\d+)?([tT])?([a-zA-Z%])
-        int arg = 0, flag = 0, width = 0, precision = 0;
+        int argSize = 0, flagSize = 0, widthSize = 0, precisionSize = 0;
         final char first = c;
         int start = i;
+
         // (\d+\$)?
-        int count = 0;
-        for (; i < max; ++i, c = s.charAt(i), count++) {
+        int size = 0;
+        for (; i < max; ++i, c = s.charAt(i), size++) {
             if (!isDigit(c)) {
-                if (count > 0) {
+                if (size > 0) {
                     if (c == '$') {
                         ++i;
-                        arg = count + 1;
-                        count = 0;
+                        argSize = size + 1;
+                        size = 0;
                         if (i < max) {
                             c = s.charAt(i);
                         }
                     } else {
                         if (first == '0') {
-                            flag = 1;
+                            flagSize = 1;
                             i = start + 1;
                             if (i < max) {
                                 c = s.charAt(i);
                             }
                         } else {
-                            width = count;
+                            widthSize = size;
                         }
-                        count = 0;
+                        size = 0;
                     }
                 }
                 break;
             }
         }
 
-        if (width == 0) {
+        if (widthSize == 0) {
             // ([-#+ 0,(\<]*)?
-            if (flag == 0) {
-                for (; i < max; ++i, c = s.charAt(i), count++) {
+            if (flagSize == 0) {
+                for (; i < max; ++i, c = s.charAt(i), size++) {
                     if (!Flags.isFlag(c)) {
-                        flag = count;
-                        count = 0;
+                        flagSize = size;
+                        size = 0;
                         break;
                     }
                 }
             }
 
             // (\d+)?
-            for (; i < max; ++i, c = s.charAt(i), count++) {
+            for (; i < max; ++i, c = s.charAt(i), size++) {
                 if (!isDigit(c)) {
-                    width = count;
+                    widthSize = size;
                     break;
                 }
             }
@@ -2902,12 +2903,12 @@ public final class Formatter implements Closeable, Flushable {
 
         // (\.\d+)?
         if (c == '.' && ++i < max) {
-            count = 0;
+            size = 0;
             c = s.charAt(i);
-            for (; i < max; ++i, c = s.charAt(i), count++) {
+            for (; i < max; ++i, c = s.charAt(i), size++) {
                 if (!isDigit(c)) {
-                    if (count > 0) {
-                        precision = count + 1;
+                    if (size > 0) {
+                        precisionSize = size + 1;
                         break;
                     } else {
                         return 0;
@@ -2918,14 +2919,12 @@ public final class Formatter implements Closeable, Flushable {
 
         // ([tT])?([a-zA-Z%])
         char t = '\0', conversion = '\0';
-        if (c == 't' || c == 'T') {
-            if (i < max) {
-                char c1 = s.charAt(i);
-                if (isConversion(c1)) {
-                    t = c;
-                    conversion = c1;
-                    i+= 2;
-                }
+        if ((c == 't' || c == 'T') && i + 1 < max) {
+            char c1 = s.charAt(i + 1);
+            if (isConversion(c1)) {
+                t = c;
+                conversion = c1;
+                i+= 2;
             }
         }
         if (conversion == '\0' && isConversion(c)) {
@@ -2933,11 +2932,10 @@ public final class Formatter implements Closeable, Flushable {
             ++i;
         }
 
-        if (arg + flag + width + precision + t + conversion != 0) {
-            al.add(new FormatSpecifier(s, start, arg, flag, width, precision, t, c));
+        if (argSize + flagSize + widthSize + precisionSize + t + conversion != 0) {
+            al.add(new FormatSpecifier(s, start, argSize, flagSize, widthSize, precisionSize, t, conversion));
             return i - start;
         }
-
         return 0;
     }
 
@@ -3086,22 +3084,31 @@ public final class Formatter implements Closeable, Flushable {
             check();
         }
 
-        FormatSpecifier(String s, int i, int arg, int flag, int width, int precesion, char t, char conversion) {
-            int argEnd = i + arg;
-            int flagEnd = argEnd + flag;
-            int widthEnd = flagEnd + width;
-            int precesionEnd = widthEnd + precesion;
+        FormatSpecifier(
+                String s,
+                int i,
+                int argSize,
+                int flagSize,
+                int widthSize,
+                int precisionSize,
+                char t,
+                char conversion
+        ) {
+            int argEnd = i + argSize;
+            int flagEnd = argEnd + flagSize;
+            int widthEnd = flagEnd + widthSize;
+            int precesionEnd = widthEnd + precisionSize;
 
-            if (arg > 0) {
+            if (argSize > 0) {
                 index(s, i, argEnd);
             }
-            if (flag > 0) {
+            if (flagSize > 0) {
                 flags(s, argEnd, flagEnd);
             }
-            if (width > 0) {
+            if (widthSize > 0) {
                 width(s, flagEnd, widthEnd);
             }
-            if (precesion > 0) {
+            if (precisionSize > 0) {
                 precision(s, widthEnd, precesionEnd);
             }
             if (t != '\0') {
