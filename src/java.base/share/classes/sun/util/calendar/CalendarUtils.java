@@ -126,4 +126,45 @@ public final class CalendarUtils {
         long z = mod(x, y);
         return (z == 0) ? y : z;
     }
+
+    /**
+     * Mimics sprintf(buf, "%0*d", decaimal, width).
+     */
+    public static StringBuilder sprintf0d(StringBuilder sb, int value, int width) {
+        long d = value;
+        if (d < 0) {
+            sb.append('-');
+            d = -d;
+            --width;
+        }
+        int n = 10;
+        for (int i = 2; i < width; i++) {
+            n *= 10;
+        }
+        for (int i = 1; i < width && d < n; i++) {
+            sb.append('0');
+            n /= 10;
+        }
+        sb.append(d);
+        return sb;
+    }
+
+    public static StringBuffer sprintf0d(StringBuffer sb, int value, int width) {
+        long d = value;
+        if (d < 0) {
+            sb.append('-');
+            d = -d;
+            --width;
+        }
+        int n = 10;
+        for (int i = 2; i < width; i++) {
+            n *= 10;
+        }
+        for (int i = 1; i < width && d < n; i++) {
+            sb.append('0');
+            n /= 10;
+        }
+        sb.append(d);
+        return sb;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 
 import java.util.Calendar;
-import java.util.Locale;
 import sun.util.calendar.CalendarUtils;
 
 public class CalendarAdapter extends Calendar {
@@ -373,18 +372,18 @@ public class CalendarAdapter extends Calendar {
         sb.append(eraNames[cal.get(ERA)]);
         if (sb.length() > 0)
             sb.append(' ');
-        sb.append(String.format(Locale.ROOT, "%0"+4+"d", cal.get(YEAR))).append('-');
-        sb.append(String.format(Locale.ROOT, "%0"+2+"d", cal.get(MONTH)+1)).append('-');
-        sb.append(String.format(Locale.ROOT, "%0"+2+"d", cal.get(DAY_OF_MONTH)));
+        CalendarUtils.sprintf0d(sb, cal.get(YEAR), 4).append('-');
+        CalendarUtils.sprintf0d(sb, cal.get(MONTH)+1, 2).append('-');
+        CalendarUtils.sprintf0d(sb, cal.get(DAY_OF_MONTH), 2);
         return sb.toString();
     }
 
     String toTimeString() {
         StringBuffer sb = new StringBuffer();
-        sb.append(String.format(Locale.ROOT, "%0"+2+"d", cal.get(HOUR_OF_DAY))).append(':');
-        sb.append(String.format(Locale.ROOT, "%0"+2+"d", cal.get(MINUTE))).append(':');
-        sb.append(String.format(Locale.ROOT, "%0"+2+"d", cal.get(SECOND))).append('.');
-        sb.append(String.format(Locale.ROOT, "%0"+3+"d", cal.get(MILLISECOND)));
+        CalendarUtils.sprintf0d(sb, cal.get(HOUR_OF_DAY), 2).append(':');
+        CalendarUtils.sprintf0d(sb, cal.get(MINUTE), 2).append(':');
+        CalendarUtils.sprintf0d(sb, cal.get(SECOND),2 ).append('.');
+        CalendarUtils.sprintf0d(sb, cal.get(MILLISECOND), 3);
         int zoneOffset = cal.get(ZONE_OFFSET) + cal.get(DST_OFFSET);
         if (zoneOffset == 0) {
             sb.append('Z');
@@ -400,8 +399,8 @@ public class CalendarAdapter extends Calendar {
             }
             offset /= 60000;
             sb.append(sign);
-            sb.append(String.format(Locale.ROOT, "%0"+2+"d", offset / 60));
-            sb.append(String.format(Locale.ROOT, "%0"+2+"d", offset % 60));
+            CalendarUtils.sprintf0d(sb, offset / 60, 2);
+            CalendarUtils.sprintf0d(sb, offset % 60, 2);
         }
         return sb.toString();
     }

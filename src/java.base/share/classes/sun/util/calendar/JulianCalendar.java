@@ -25,7 +25,6 @@
 
 package sun.util.calendar;
 
-import java.util.Locale;
 import java.util.TimeZone;
 
 /**
@@ -108,8 +107,8 @@ public final class JulianCalendar extends BaseCalendar {
                 }
             }
             sb.append(getYear()).append('-');
-            sb.append(String.format(Locale.ROOT, "%0"+2+"d", getMonth())).append('-');
-            sb.append(String.format(Locale.ROOT, "%0"+2+"d", getDayOfMonth()));
+            CalendarUtils.sprintf0d(sb, getMonth(), 2).append('-');
+            CalendarUtils.sprintf0d(sb, getDayOfMonth(), 2);
             sb.append(time);
             return sb.toString();
         }
