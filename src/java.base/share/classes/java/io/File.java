@@ -1621,8 +1621,7 @@ public class File
      * file attributes including file permissions. This may be used when finer
      * manipulation of file permissions is required.
      *
-     * @apiNote
-     * On platforms which do not support setting whether a file is readable,
+     * <p> On platforms which do not support setting a file's read permission,
      * this method does nothing and returns the value of the {@code readable}
      * parameter.
      *
@@ -1640,9 +1639,9 @@ public class File
      * @return  {@code true} if and only if the operation succeeded.  The
      *          operation will fail if the user does not have permission to
      *          change the access permissions of this abstract pathname.  If
-     *          {@code readable} is {@code false} and the underlying
-     *          file system does not implement a read permission, then the
-     *          operation will fail.
+     *          the underlying file system does not implement a read permission,
+     *          then the operation will return the value of the {@code readable}
+     *          parameter.
      *
      * @throws  SecurityException
      *          If a security manager exists and its {@link
@@ -1676,8 +1675,7 @@ public class File
      *     file.setReadable(arg, true)
      * }
      *
-     * @apiNote
-     * On platforms which do not support setting whether a file is readable,
+     * <p> On platforms which do not support setting a file's read permission,
      * this method does nothing and returns the value of the {@code readable}
      * parameter.
      *
@@ -1688,9 +1686,9 @@ public class File
      * @return  {@code true} if and only if the operation succeeded.  The
      *          operation will fail if the user does not have permission to
      *          change the access permissions of this abstract pathname.  If
-     *          {@code readable} is {@code false} and the underlying
-     *          file system does not implement a read permission, then the
-     *          operation will fail.
+     *          the underlying file system does not implement a read permission,
+     *          then the operation will return the value of the {@code readable}
+     *          parameter.
      *
      * @throws  SecurityException
      *          If a security manager exists and its {@link
@@ -1713,8 +1711,7 @@ public class File
      * file attributes including file permissions. This may be used when finer
      * manipulation of file permissions is required.
      *
-     * @apiNote
-     * On platforms which do not support setting whether a file is executable,
+     * <p> On platforms which do not support setting a file's execute permission,
      * this method does nothing and returns the value of the {@code executable}
      * parameter.
      *
@@ -1732,9 +1729,9 @@ public class File
      * @return  {@code true} if and only if the operation succeeded.  The
      *          operation will fail if the user does not have permission to
      *          change the access permissions of this abstract pathname.  If
-     *          {@code executable} is {@code false} and the underlying
-     *          file system does not implement an execute permission, then the
-     *          operation will fail.
+     *          the underlying file system does not implement an execute
+     *          permission, then the operation will return the value of
+     *          the {@code executable} parameter.
      *
      * @throws  SecurityException
      *          If a security manager exists and its {@link
@@ -1768,8 +1765,7 @@ public class File
      *     file.setExecutable(arg, true)
      * }
      *
-     * @apiNote
-     * On platforms which do not support setting whether a file is executable,
+     * <p> On platforms which do not support setting a file's execute permission,
      * this method does nothing and returns the value of the {@code executable}
      * parameter.
      *
@@ -1777,12 +1773,12 @@ public class File
      *          If {@code true}, sets the access permission to allow execute
      *          operations; if {@code false} to disallow execute operations
      *
-     * @return   {@code true} if and only if the operation succeeded.  The
-     *           operation will fail if the user does not have permission to
-     *           change the access permissions of this abstract pathname.  If
-     *           {@code executable} is {@code false} and the underlying
-     *           file system does not implement an execute permission, then the
-     *           operation will fail.
+     * @return  {@code true} if and only if the operation succeeded.  The
+     *          operation will fail if the user does not have permission to
+     *          change the access permissions of this abstract pathname.  If
+     *          the underlying file system does not implement an execute
+     *          permission, then the operation will return the value of the
+     *          {@code executable} parameter.
      *
      * @throws  SecurityException
      *          If a security manager exists and its {@link
