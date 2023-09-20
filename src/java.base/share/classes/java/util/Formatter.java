@@ -2857,12 +2857,10 @@ public final class Formatter implements Closeable, Flushable {
                 if (count > 0) {
                     if (c == '$') {
                         ++i;
-                        arg = count;
+                        arg = count + 1;
                         count = 0;
                         if (i < max) {
-                            ++i;
-                        } else {
-                            break;
+                            c = s.charAt(i);
                         }
                     } else {
                         if (first == '0') {
@@ -2928,7 +2926,8 @@ public final class Formatter implements Closeable, Flushable {
             }
         }
 
-        if (Conversion.isValid(c)) {
+        // ([a-zA-Z%])
+        if ((c >= 'a' && c <= 'z') || (c >= 'A' || c <= 'Z') || c == '%') {
             ++i;
             if (arg + flag + width + precision + t != 0) {
                 al.add(new FormatSpecifier(s, start, arg, flag, width, precision, t, c));
