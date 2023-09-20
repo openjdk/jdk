@@ -2916,26 +2916,33 @@ public final class Formatter implements Closeable, Flushable {
             }
         }
 
-        // ([tT])?
-        char t = '\0';
+        // ([tT])?([a-zA-Z%])
+        char t = '\0', conversion = '\0';
         if (c == 't' || c == 'T') {
-            t = c;
-            i++;
             if (i < max) {
-                c = s.charAt(i);
+                char c1 = s.charAt(i);
+                if (isConversion(c1)) {
+                    t = c;
+                    conversion = c1;
+                    i+= 2;
+                }
             }
         }
-
-        // ([a-zA-Z%])
-        if ((c >= 'a' && c <= 'z') || (c >= 'A' || c <= 'Z') || c == '%') {
+        if (conversion == '\0' && isConversion(c)) {
+            conversion = c;
             ++i;
-            if (arg + flag + width + precision + t != 0) {
-                al.add(new FormatSpecifier(s, start, arg, flag, width, precision, t, c));
-                return i - start;
-            }
+        }
+
+        if (arg + flag + width + precision + t + conversion != 0) {
+            al.add(new FormatSpecifier(s, start, arg, flag, width, precision, t, c));
+            return i - start;
         }
 
         return 0;
+    }
+
+    private static boolean isConversion(char c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' || c <= 'Z') || c == '%';
     }
 
     private static boolean isDigit(char c) {
