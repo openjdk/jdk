@@ -49,8 +49,6 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.spi.NumberFormatProvider;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -2804,12 +2802,6 @@ public final class Formatter implements Closeable, Flushable {
         return this;
     }
 
-    // %[argument_index$][flags][width][.precision][t]conversion
-    static final String FORMAT_SPECIFIER
-        = "%(\\d+\\$)?([-#+ 0,(\\<]*)?(\\d+)?(\\.\\d+)?([tT])?([a-zA-Z%])";
-
-    static final Pattern FORMAT_SPECIFIER_PATTERN = Pattern.compile(FORMAT_SPECIFIER);
-
     /**
      * Finds format specifiers in the format string.
      */
@@ -2817,7 +2809,6 @@ public final class Formatter implements Closeable, Flushable {
         ArrayList<FormatString> al = new ArrayList<>();
         int i = 0;
         int max = s.length();
-        Matcher m = null; // create if needed
         while (i < max) {
             int n = s.indexOf('%', i);
             if (n < 0) {
@@ -2840,20 +2831,11 @@ public final class Formatter implements Closeable, Flushable {
                 al.add(new FormatSpecifier(c));
                 i++;
             } else {
+                // We have already parsed a '%' at n, so we either have a
+                // match or the specifier at n is invalid
                 int off = parse0(al, c, s, i, max);
                 if (off > 0) {
                     i += off;
-                    continue;
-                }
-
-                if (m == null) {
-                    m = FORMAT_SPECIFIER_PATTERN.matcher(s);
-                }
-                // We have already parsed a '%' at n, so we either have a
-                // match or the specifier at n is invalid
-                if (m.find(n) && m.start() == n) {
-                    al.add(new FormatSpecifier(s, m));
-                    i = m.end();
                 } else {
                     throw new UnknownFormatConversionException(String.valueOf(c));
                 }
@@ -2863,49 +2845,94 @@ public final class Formatter implements Closeable, Flushable {
     }
 
     private static int parse0(ArrayList<FormatString> al, char c, String s, int i, int max) {
-        boolean digitC = isDigit(c);
-        if (i + 1 < max) {
-            char c1 = s.charAt(i + 1);
-
-            int width = -1;
-            int flags = 0;
-            boolean flagC = Flags.isFlag(c);
-            if ((digitC || flagC) && Conversion.isValid(c1)) {
-                if (flagC) {
-                    flags = Flags.parse(c);
-                } else {
-                    width = c - '0';
+        // %[argument_index$][flags][width][.precision][t]conversion
+        // %(\d+\$)?([-#+ 0,(\<]*)?(\d+)?(\.\d+)?([tT])?([a-zA-Z%])
+        int arg = 0, flag = 0, width = 0, precision = 0;
+        final char first = c;
+        int start = i;
+        // (\d+\$)?
+        int count = 0;
+        for (; i < max; ++i, c = s.charAt(i), count++) {
+            if (!isDigit(c)) {
+                if (count > 0) {
+                    if (c == '$') {
+                        ++i;
+                        arg = count;
+                        count = 0;
+                        if (i < max) {
+                            ++i;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        if (first == '0') {
+                            flag = 1;
+                            i = start + 1;
+                            if (i < max) {
+                                c = s.charAt(i);
+                            }
+                        } else {
+                            width = count;
+                        }
+                        count = 0;
+                    }
                 }
-                al.add(new FormatSpecifier(c1, flags, width, -1));
-                return 2;
+                break;
+            }
+        }
+
+        if (width == 0) {
+            // ([-#+ 0,(\<]*)?
+            if (flag == 0) {
+                for (; i < max; ++i, c = s.charAt(i), count++) {
+                    if (!Flags.isFlag(c)) {
+                        flag = count;
+                        count = 0;
+                        break;
+                    }
+                }
             }
 
-            if (i + 2 < max) {
-                char c2 = s.charAt(i + 2);
-                boolean flagC1 = Flags.isFlag(c1);
-                boolean digitC1 = isDigit(c1);
-                if (Conversion.isValid(c2)) {
-                    if (flagC && (flagC1 || digitC1) && c != c1) {
-                        flags = Flags.parse(c);
-                        if (flagC1) {
-                            flags |= Flags.parse(c1);
-                        } else {
-                            width = c1 - '0';
-                        }
-                    } else if (digitC && (c != '0') && digitC1){
-                        width = (c - '0') * 10 + c1 - '0';
+            // (\d+)?
+            for (; i < max; ++i, c = s.charAt(i), count++) {
+                if (!isDigit(c)) {
+                    width = count;
+                    break;
+                }
+            }
+        }
+
+        // (\.\d+)?
+        if (c == '.' && ++i < max) {
+            count = 0;
+            c = s.charAt(i);
+            for (; i < max; ++i, c = s.charAt(i), count++) {
+                if (!isDigit(c)) {
+                    if (count > 0) {
+                        precision = count + 1;
+                        break;
                     } else {
                         return 0;
                     }
-                    al.add(new FormatSpecifier(c2, flags, width, -1));
-                    return 3;
                 }
+            }
+        }
 
-                char c3;
-                if (digitC && c1 == '.' && isDigit(c2) && i + 3 < max && Conversion.isValid(c3 = s.charAt(i + 3))) {
-                    al.add(new FormatSpecifier(c3, 0, c - '0', c2 - '0'));
-                    return 4;
-                }
+        // ([tT])?
+        char t = '\0';
+        if (c == 't' || c == 'T') {
+            t = c;
+            i++;
+            if (i < max) {
+                c = s.charAt(i);
+            }
+        }
+
+        if (Conversion.isValid(c)) {
+            ++i;
+            if (arg + flag + width + precision + t != 0) {
+                al.add(new FormatSpecifier(s, start, arg, flag, width, precision, t, c));
+                return i - start;
             }
         }
 
@@ -3053,21 +3080,31 @@ public final class Formatter implements Closeable, Flushable {
             check();
         }
 
-        FormatSpecifier(String s, Matcher m) {
-            index(s, m.start(1), m.end(1));
-            flags(s, m.start(2), m.end(2));
-            width(s, m.start(3), m.end(3));
-            precision(s, m.start(4), m.end(4));
+        FormatSpecifier(String s, int i, int arg, int flag, int width, int precesion, char t, char conversion) {
+            int argEnd = i + arg;
+            int flagEnd = argEnd + flag;
+            int widthEnd = flagEnd + width;
+            int precesionEnd = widthEnd + precesion;
 
-            int tTStart = m.start(5);
-            if (tTStart >= 0) {
+            if (arg > 0) {
+                index(s, i, argEnd);
+            }
+            if (flag > 0) {
+                flags(s, argEnd, flagEnd);
+            }
+            if (width > 0) {
+                width(s, flagEnd, widthEnd);
+            }
+            if (precesion > 0) {
+                precision(s, widthEnd, precesionEnd);
+            }
+            if (t != '\0') {
                 dt = true;
-                if (s.charAt(tTStart) == 'T') {
+                if (t == 'T') {
                     flags = Flags.add(flags, Flags.UPPERCASE);
                 }
             }
-            conversion(s.charAt(m.start(6)));
-
+            conversion(conversion);
             check();
         }
 

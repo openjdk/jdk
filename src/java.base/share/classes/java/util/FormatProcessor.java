@@ -31,6 +31,7 @@ import java.lang.invoke.MethodType;
 import java.lang.StringTemplate.Processor;
 import java.lang.StringTemplate.Processor.Linkage;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jdk.internal.javac.PreviewFeature;
 
@@ -96,6 +97,12 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 public final class FormatProcessor implements Processor<String, RuntimeException>, Linkage {
+    // %[argument_index$][flags][width][.precision][t]conversion
+    static final String FORMAT_SPECIFIER
+            = "%(\\d+\\$)?([-#+ 0,(\\<]*)?(\\d+)?(\\.\\d+)?([tT])?([a-zA-Z%])";
+
+    static final Pattern FORMAT_SPECIFIER_PATTERN = Pattern.compile(FORMAT_SPECIFIER);
+
     /**
      * {@link Locale} used to format
      */
@@ -218,7 +225,7 @@ public final class FormatProcessor implements Processor<String, RuntimeException
      * @throws MissingFormatArgumentException if not at end or found and not needed
      */
     private static boolean findFormat(String fragment, boolean needed) {
-        Matcher matcher = Formatter.FORMAT_SPECIFIER_PATTERN.matcher(fragment);
+        Matcher matcher = FORMAT_SPECIFIER_PATTERN.matcher(fragment);
         String group;
 
         while (matcher.find()) {
