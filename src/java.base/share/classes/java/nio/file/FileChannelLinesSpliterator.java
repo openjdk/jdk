@@ -79,39 +79,41 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
     private final FileChannel fc;
     private final Charset cs;
     private final Arena arena;
-    private int index;
+    private final Cleaner.Cleanable cleanupAction;
+
+    // Holds a reference to the parent spliterator to ensure the root's Cleaner
+    // is invoked once itself and all spits are no longer phantom reachable.
+    private final FileChannelLinesSpliterator parent;
+
     private final int fence;
+    private int index;
 
     // Null before first split, non-null when splitting, null when traversing
     private MemorySegment buffer;
     // Non-null when traversing
     private BufferedReader reader;
 
-    // Number of original + split Spliterators
-    private final AtomicInteger bufRefCount;
-    private final Cleaner.Cleanable cleanupAction;
-
     FileChannelLinesSpliterator(FileChannel fc, Charset cs, int index, int fence) {
         this.fc = fc;
         this.cs = cs;
         this.index = index;
         this.fence = fence;
-        this.bufRefCount = new AtomicInteger(1);
         this.arena = Arena.ofShared();
         this.cleanupAction = cleanupAction(this);
+        this.parent = null; // No parent for the original Spliterator (root)
     }
 
-    private FileChannelLinesSpliterator(FileChannel fc, Charset cs, int index,
-        int fence, MemorySegment buffer, AtomicInteger bufRefCount, Arena arena) {
-        this.fc = fc;
-        this.cs = cs;
+    private FileChannelLinesSpliterator(FileChannelLinesSpliterator parent,
+                                        int index,
+                                        int fence) {
+        this.fc = parent.fc;
+        this.cs = parent.cs;
         this.index = index;
         this.fence = fence;
-        this.buffer = buffer;
-        this.bufRefCount = bufRefCount;
-        this.bufRefCount.incrementAndGet();
-        this.arena = arena;
-        this.cleanupAction = cleanupAction(this);
+        this.buffer = parent.buffer;
+        this.arena = parent.arena;
+        this.cleanupAction = null;
+        this.parent = parent;
     }
 
     @Override
@@ -134,7 +136,7 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
     }
 
     private BufferedReader getBufferedReader() {
-        /**
+        /*
          * A readable byte channel that reads bytes from an underlying
          * file channel over a specified range.
          */
@@ -182,7 +184,6 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
     private String readLine() {
         if (reader == null) {
             reader = getBufferedReader();
-            unmap();
         }
 
         try {
@@ -215,7 +216,7 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
 
         // Check if line separator hits the mid point
         int mid = (lo + hi) >>> 1;
-        int c =  b.get(ValueLayout.JAVA_BYTE, mid);
+        int c = b.get(ValueLayout.JAVA_BYTE, mid);
         if (c == '\n') {
             mid++;
         } else if (c == '\r') {
@@ -254,9 +255,8 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
 
         // The left spliterator will have the line-separator at the end
         return (mid > lo && mid < hi)
-               ? new FileChannelLinesSpliterator(fc, cs, lo, index = mid,
-                                                 b, bufRefCount, arena)
-               : null;
+                ? new FileChannelLinesSpliterator(this, lo, index = mid)
+                : null;
     }
 
     @Override
@@ -277,23 +277,18 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
         return Spliterator.ORDERED | Spliterator.NONNULL;
     }
 
-    private void unmap() {
-        cleanupAction.clean();
-    }
-
     static Cleaner.Cleanable cleanupAction(FileChannelLinesSpliterator s) {
-        record Cleanup(AtomicInteger bufRefCount, Arena arena) implements Runnable {
+        record Cleanup(Arena arena) implements Runnable {
             @Override
             public void run() {
-                if (bufRefCount.decrementAndGet() == 0) {
-                    arena.close();
-                }
+                arena.close();
             }
         }
-        return Cleaner.create().register(s, new Cleanup(s.bufRefCount, s.arena));
+        return Cleaner.create().register(s, new Cleanup(s.arena));
     }
 
+    // Only called on the original root spliterator and not on splits
     void close() {
-        unmap();
+        cleanupAction.clean();
     }
 }
