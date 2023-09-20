@@ -44,7 +44,6 @@ public class bug4323121 {
 
     static JFrame frame;
     static testButton button;
-    static Robot robot;
     static volatile Point pt;
     static volatile int buttonW;
     static volatile int buttonH;

@@ -38,7 +38,6 @@ import javax.swing.SwingUtilities;
 public class bug4234034 {
     static JFrame frame;
     static JButton button;
-    static Robot robot;
 
     public static void main(String args[]) throws Exception {
         Robot robot = new Robot();

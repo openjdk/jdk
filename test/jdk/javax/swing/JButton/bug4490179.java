@@ -41,7 +41,6 @@ import javax.swing.SwingUtilities;
 public class bug4490179 {
     static JFrame frame;
     static JButton button;
-    static Robot robot;
     static volatile Point pt;
     static volatile int buttonW;
     static volatile int buttonH;
