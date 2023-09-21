@@ -522,7 +522,7 @@ jint StackWalk::fetchNextBatch(Handle stackStream, jint mode, jlong magic,
 
   log_debug(stackwalk)("StackWalk::fetchNextBatch last_batch_count %d buffer_size %d existing_stream "
                        PTR_FORMAT " start %d", last_batch_count,
-                       buffer_size, p2i(existing_stream), start_index);
+                       buffer_size, p2i(existing_stream), start_index, frames_array->length());
   int end_index = start_index;
   if (buffer_size <= start_index) {
     return 0;        // No operation.
