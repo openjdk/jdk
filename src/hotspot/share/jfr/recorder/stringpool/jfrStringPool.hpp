@@ -69,10 +69,12 @@ class JfrStringPool : public JfrCHeapObj {
   bool initialize();
   static void destroy();
   static bool is_modified();
+  static void on_epoch_shift();
 
   // mspace callback
   void register_full(BufferPtr buffer, Thread* thread);
 
+  friend class JfrCheckpointManager;
   friend class JfrRecorder;
   friend class JfrRecorderService;
   friend class JfrStringPoolFlush;

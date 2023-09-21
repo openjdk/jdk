@@ -376,7 +376,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int methodDataCountOffset = getConstant("CounterData::count_off", Integer.class);
     final int jumpDataTakenOffset = getConstant("JumpData::taken_off_set", Integer.class);
     final int jumpDataDisplacementOffset = getConstant("JumpData::displacement_off_set", Integer.class);
-    final int receiverTypeDataNonprofiledCountOffset = getConstant("ReceiverTypeData::nonprofiled_count_off_set", Integer.class);
     final int receiverTypeDataReceiverTypeRowCellCount = getConstant("ReceiverTypeData::receiver_type_row_cell_count", Integer.class);
     final int receiverTypeDataReceiver0Offset = getConstant("ReceiverTypeData::receiver0_offset", Integer.class);
     final int receiverTypeDataCount0Offset = getConstant("ReceiverTypeData::count0_offset", Integer.class);

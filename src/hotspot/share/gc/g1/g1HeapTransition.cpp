@@ -115,10 +115,10 @@ static void log_regions(const char* msg, size_t before_length, size_t after_leng
     if (before_per_node_length != nullptr && after_per_node_length != nullptr) {
       G1NUMA* numa = G1NUMA::numa();
       uint num_nodes = numa->num_active_nodes();
-      const int* node_ids = numa->node_ids();
+      const uint* node_ids = numa->node_ids();
       ls.print(" (");
       for (uint i = 0; i < num_nodes; i++) {
-        ls.print("%d: %u->%u", node_ids[i], before_per_node_length[i], after_per_node_length[i]);
+        ls.print("%u: %u->%u", node_ids[i], before_per_node_length[i], after_per_node_length[i]);
         // Skip adding below if it is the last one.
         if (i != num_nodes - 1) {
           ls.print(", ");

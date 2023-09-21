@@ -28,18 +28,23 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main MatchExceptionTest
  */
 
 import java.nio.file.Path;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Class_info;
-import com.sun.tools.classfile.ConstantPool.CPInfo;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.constantpool.ClassEntry;
+import jdk.internal.classfile.constantpool.ConstantPool;
 import java.util.Arrays;
+import jdk.internal.classfile.constantpool.PoolEntry;
 
 import toolbox.JavacTask;
 import toolbox.TestRunner;
@@ -50,7 +55,7 @@ public class MatchExceptionTest extends TestRunner {
     private static final String TEST_METHOD = "test";
 
     ToolBox tb;
-    ClassFile cf;
+    ClassModel cf;
 
     public MatchExceptionTest() {
         super(System.err);
@@ -111,15 +116,14 @@ public class MatchExceptionTest extends TestRunner {
                         .outdir(curPath)
                         .run();
 
-                cf = ClassFile.read(curPath.resolve("Test.class"));
+                cf = Classfile.of().parse(curPath.resolve("Test.class"));
                 boolean incompatibleClassChangeErrror = false;
                 boolean matchException = false;
-                for (CPInfo entry : cf.constant_pool.entries()) {
-                    if (entry.getTag() == ConstantPool.CONSTANT_Class) {
-                        CONSTANT_Class_info clazz = (CONSTANT_Class_info) entry;
-                        incompatibleClassChangeErrror |=
-                                "java/lang/IncompatibleClassChangeError".equals(clazz.getName());
-                        matchException |= "java/lang/MatchException".equals(clazz.getName());
+                for (PoolEntry pe : cf.constantPool()) {
+                    if (pe instanceof ClassEntry clazz) {
+                        incompatibleClassChangeErrror |= clazz.name().equalsString(
+                                "java/lang/IncompatibleClassChangeError");
+                        matchException |= clazz.name().equalsString("java/lang/MatchException");
                     }
                 }
                 if (variant.hasMatchException) {

@@ -40,12 +40,6 @@ namespace std {
 
 class awt_toolkit_shutdown {};
 
-// Disable "C++ Exception Specification ignored" warnings.
-// These warnings are generated because VC++ 5.0 allows, but does not enforce,
-// exception specifications. This #pragma can be safely removed when VC++
-// is updated to enforce exception specifications.
-#pragma warning(disable : 4290)
-
 #ifdef TRY
 #error Multiple definitions of TRY
 #endif

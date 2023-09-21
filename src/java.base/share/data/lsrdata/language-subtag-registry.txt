@@ -1,4 +1,4 @@
-File-Date: 2023-05-11
+File-Date: 2023-08-02
 %%
 Type: language
 Subtag: aa
@@ -47642,6 +47642,15 @@ Added: 2007-07-05
 Prefix: sl-rozaj
 Comments: The dialect of San Giorgio/Bila is one of the four major local
   dialects of Resian
+%%
+Type: variant
+Subtag: blasl
+Description: Black American Sign Language dialect
+Added: 2023-07-31
+Prefix: ase
+Prefix: sgn-ase
+Comments: Black American Sign Language (BASL) or Black Sign Variation
+  (BSV) is a dialect of American Sign Language (ASL)
 %%
 Type: variant
 Subtag: bohoric

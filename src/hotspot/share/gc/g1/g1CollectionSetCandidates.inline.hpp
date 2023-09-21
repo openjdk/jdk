@@ -51,25 +51,28 @@ inline bool G1CollectionCandidateListIterator::operator!=(const G1CollectionCand
   return !(*this == rhs);
 }
 
-inline G1CollectionSetCandidatesIterator::G1CollectionSetCandidatesIterator(G1CollectionSetCandidates* which, uint marking_position) :
-  _which(which), _marking_position(marking_position) {
+inline G1CollectionSetCandidatesIterator::G1CollectionSetCandidatesIterator(G1CollectionSetCandidates* which, uint position) :
+  _which(which), _position(position) {
 }
 
 inline G1CollectionSetCandidatesIterator& G1CollectionSetCandidatesIterator::operator++() {
-  assert(_marking_position < _which->_marking_regions.length(),
-         "must not be at end already");
-
-  _marking_position++;
+  assert(_position < _which->length(), "must not be at end already");
+  _position++;
   return *this;
 }
 
 inline HeapRegion* G1CollectionSetCandidatesIterator::operator*() {
-  return _which->_marking_regions.at(_marking_position)._r;
+  uint length = _which->marking_regions_length();
+  if (_position < length) {
+    return _which->_marking_regions.at(_position)._r;
+  } else {
+    return _which->_retained_regions.at(_position - length)._r;
+  }
 }
 
 inline bool G1CollectionSetCandidatesIterator::operator==(const G1CollectionSetCandidatesIterator& rhs)  {
   assert(_which == rhs._which, "iterator belongs to different array");
-  return _marking_position == rhs._marking_position;
+  return _position == rhs._position;
 }
 
 inline bool G1CollectionSetCandidatesIterator::operator!=(const G1CollectionSetCandidatesIterator& rhs)  {

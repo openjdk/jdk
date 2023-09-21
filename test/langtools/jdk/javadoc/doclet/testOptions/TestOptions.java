@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,9 +116,9 @@ public class TestOptions extends JavadocTester {
                 "pkg");
         checkExit(Exit.OK);
 
-        checkOutput("custom-stylesheet.css", true, "Custom javadoc style sheet");
+        checkOutput("resource-files/custom-stylesheet.css", true, "Custom javadoc style sheet");
         checkOutput("pkg/Foo.html", true, """
-            <link rel="stylesheet" type="text/css" href="../custom-stylesheet.css" title="Style">""");
+            <link rel="stylesheet" type="text/css" href="../resource-files/custom-stylesheet.css" title="Style">""");
     }
 
     @Test
@@ -129,9 +129,9 @@ public class TestOptions extends JavadocTester {
                 "pkg");
         checkExit(Exit.OK);
 
-        checkOutput("custom-stylesheet.css", true, "Custom javadoc style sheet");
+        checkOutput("resource-files/custom-stylesheet.css", true, "Custom javadoc style sheet");
         checkOutput("pkg/Foo.html", true, """
-            <link rel="stylesheet" type="text/css" href="../custom-stylesheet.css" title="Style">""");
+            <link rel="stylesheet" type="text/css" href="../resource-files/custom-stylesheet.css" title="Style">""");
     }
 
     @Test
@@ -144,14 +144,14 @@ public class TestOptions extends JavadocTester {
                 "pkg");
         checkExit(Exit.OK);
 
-        checkOutput("additional-stylesheet-1.css", true, "Additional javadoc style sheet 1");
-        checkOutput("additional-stylesheet-2.css", true, "Additional javadoc style sheet 2");
-        checkOutput("additional-stylesheet-3.css", true, "Additional javadoc style sheet 3");
+        checkOutput("resource-files/additional-stylesheet-1.css", true, "Additional javadoc style sheet 1");
+        checkOutput("resource-files/additional-stylesheet-2.css", true, "Additional javadoc style sheet 2");
+        checkOutput("resource-files/additional-stylesheet-3.css", true, "Additional javadoc style sheet 3");
         checkOutput("pkg/Foo.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="../additional-stylesheet-1.css" title="Style">
-                    <link rel="stylesheet" type="text/css" href="../additional-stylesheet-2.css" title="Style">
-                    <link rel="stylesheet" type="text/css" href="../additional-stylesheet-3.css" title="Style">""");
+                    <link rel="stylesheet" type="text/css" href="../resource-files/additional-stylesheet-1.css" title="Style">
+                    <link rel="stylesheet" type="text/css" href="../resource-files/additional-stylesheet-2.css" title="Style">
+                    <link rel="stylesheet" type="text/css" href="../resource-files/additional-stylesheet-3.css" title="Style">""");
     }
 
     @Test
@@ -189,12 +189,12 @@ public class TestOptions extends JavadocTester {
                 "pkg");
         checkExit(Exit.OK);
 
-        checkOutput("script-dir/additional-script-1.js", true, "Additional script file 1");
-        checkOutput("script-dir/additional-script-2.js", true, "Additional script file 2");
+        checkOutput("script-files/additional-script-1.js", true, "Additional script file 1");
+        checkOutput("script-files/additional-script-2.js", true, "Additional script file 2");
         checkOutput("pkg/Foo.html", true,
                 """
-                    <script type="text/javascript" src="../script-dir/additional-script-1.js"></script>
-                    <script type="text/javascript" src="../script-dir/additional-script-2.js"></script>
+                    <script type="text/javascript" src="../script-files/additional-script-1.js"></script>
+                    <script type="text/javascript" src="../script-files/additional-script-2.js"></script>
                     """);
     }
 

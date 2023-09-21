@@ -26,6 +26,7 @@
 #define SHARE_OOPS_METHODDATA_HPP
 
 #include "interpreter/bytecodes.hpp"
+#include "interpreter/invocationCounter.hpp"
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.hpp"
@@ -1080,29 +1081,18 @@ public:
 // ReceiverTypeData
 //
 // A ReceiverTypeData is used to access profiling information about a
-// dynamic type check.  It consists of a counter which counts the total times
-// that the check is reached, and a series of (Klass*, count) pairs
-// which are used to store a type profile for the receiver of the check.
+// dynamic type check.  It consists of a series of (Klass*, count)
+// pairs which are used to store a type profile for the receiver of
+// the check, the associated count is incremented every time the type
+// is seen. A per ReceiverTypeData counter is incremented on type
+// overflow (when there's no more room for a not yet profiled Klass*).
+//
 class ReceiverTypeData : public CounterData {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 protected:
   enum {
-#if INCLUDE_JVMCI
-    // Description of the different counters
-    // ReceiverTypeData for instanceof/checkcast/aastore:
-    //   count is decremented for failed type checks
-    //   JVMCI only: nonprofiled_count is incremented on type overflow
-    // VirtualCallData for invokevirtual/invokeinterface:
-    //   count is incremented on type overflow
-    //   JVMCI only: nonprofiled_count is incremented on method overflow
-
-    // JVMCI is interested in knowing the percentage of type checks involving a type not explicitly in the profile
-    nonprofiled_count_off_set = counter_cell_count,
-    receiver0_offset,
-#else
     receiver0_offset = counter_cell_count,
-#endif
     count0_offset,
     receiver_type_row_cell_count = (count0_offset + 1) - receiver0_offset
   };
@@ -1117,7 +1107,7 @@ public:
   virtual bool is_ReceiverTypeData() const { return true; }
 
   static int static_cell_count() {
-    return counter_cell_count + (uint) TypeProfileWidth * receiver_type_row_cell_count JVMCI_ONLY(+ 1);
+    return counter_cell_count + (uint) TypeProfileWidth * receiver_type_row_cell_count;
   }
 
   virtual int cell_count() const {
@@ -1179,13 +1169,6 @@ public:
     set_count(0);
     set_receiver(row, nullptr);
     set_receiver_count(row, 0);
-#if INCLUDE_JVMCI
-    if (!this->is_VirtualCallData()) {
-      // if this is a ReceiverTypeData for JVMCI, the nonprofiled_count
-      // must also be reset (see "Description of the different counters" above)
-      set_nonprofiled_count(0);
-    }
-#endif
   }
 
   // Code generation support
@@ -1195,17 +1178,6 @@ public:
   static ByteSize receiver_count_offset(uint row) {
     return cell_offset(receiver_count_cell_index(row));
   }
-#if INCLUDE_JVMCI
-  static ByteSize nonprofiled_receiver_count_offset() {
-    return cell_offset(nonprofiled_count_off_set);
-  }
-  uint nonprofiled_count() const {
-    return uint_at(nonprofiled_count_off_set);
-  }
-  void set_nonprofiled_count(uint count) {
-    set_uint_at(nonprofiled_count_off_set, count);
-  }
-#endif // INCLUDE_JVMCI
   static ByteSize receiver_type_data_size() {
     return cell_offset(static_cell_count());
   }

@@ -238,13 +238,11 @@ public class GetThreadStateMountedTest {
 
     public static void main(String[] args) throws Exception {
         runnable();
-        /* "waiting" test cases fail due JDK-8310584
         blockedOnMonitorEnter();
         waiting(false);
         waiting(true);
         sleeping();
         parked();
-        */
         inNative();
 
         int errCount = getErrorCount();

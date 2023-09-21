@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,18 @@
  * @bug 4396708
  * @summary Test URL encoder and decoder on a string that contains
  * surrogate pairs.
- *
+ * @run junit SurrogatePairs
  */
 
-import java.io.*;
-import java.net.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.stream.Collectors;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * Surrogate pairs are two character Unicode sequences where the first
@@ -40,86 +47,42 @@ import java.net.*;
  */
 public class SurrogatePairs {
 
-    static String[] testStrings = {"\uD800\uDC00",
-                                   "\uD800\uDFFF",
-                                   "\uDBFF\uDC00",
-                                   "\uDBFF\uDFFF",
-                                   "1\uDBFF\uDC00",
-                                   "@\uDBFF\uDC00",
-                                   "\uDBFF\uDC001",
-                                   "\uDBFF\uDC00@",
-                                   "\u0101\uDBFF\uDC00",
-                                   "\uDBFF\uDC00\u0101"
-    };
-
-    static String[] correctEncodings = {"%F0%90%80%80",
-                                        "%F0%90%8F%BF",
-                                        "%F4%8F%B0%80",
-                                        "%F4%8F%BF%BF",
-                                        "1%F4%8F%B0%80",
-                                        "%40%F4%8F%B0%80",
-                                        "%F4%8F%B0%801",
-                                        "%F4%8F%B0%80%40",
-                                        "%C4%81%F4%8F%B0%80",
-                                        "%F4%8F%B0%80%C4%81"
-    };
-
-    public static void main(String[] args) throws Exception {
-
-        for (int i=0; i < testStrings.length; i++) {
-            test(testStrings[i], correctEncodings[i]);
-        }
+    public static String[][] arguments() {
+        return new String[][] {
+                {"\uD800\uDC00", "%F0%90%80%80"},
+                {"\uD800\uDFFF", "%F0%90%8F%BF"},
+                {"\uDBFF\uDC00", "%F4%8F%B0%80"},
+                {"\uDBFF\uDFFF", "%F4%8F%BF%BF"},
+                {"1\uDBFF\uDC00", "1%F4%8F%B0%80"},
+                {"@\uDBFF\uDC00", "%40%F4%8F%B0%80"},
+                {"\uDBFF\uDC001", "%F4%8F%B0%801"},
+                {"\uDBFF\uDC00@", "%F4%8F%B0%80%40"},
+                {"\u0101\uDBFF\uDC00", "%C4%81%F4%8F%B0%80"},
+                {"\uDBFF\uDC00\u0101", "%F4%8F%B0%80%C4%81"},
+                {"\uDE0A\uD83D", "%3F%3F"},
+                {"1\uDE0A\uD83D", "1%3F%3F"},
+                {"@\uDE0A\uD83D", "%40%3F%3F"},
+                {"1@1\uDE0A\uD800\uDC00 \uD83D", "1%401%3F%F0%90%80%80+%3F"}
+        };
     }
 
-    private static void test(String str, String correctEncoding)
-        throws Exception {
+    @ParameterizedTest
+    @MethodSource("arguments")
+    public void test(String str, String correctEncoding) {
+        String encoded = URLEncoder.encode(str, UTF_8);
+        assertEquals(correctEncoding, encoded, () ->
+                "str=%s, expected=%s, actual=%s"
+                        .formatted(escape(str), escape(correctEncoding), escape(encoded)));
 
-        System.out.println("Unicode bytes of test string are: "
-                           + getHexBytes(str));
-
-        String encoded = URLEncoder.encode(str, "UTF-8");
-
-        System.out.println("URLEncoding is: " + encoded);
-
-        if (encoded.equals(correctEncoding))
-            System.out.println("The encoding is correct!");
-        else {
-            throw new Exception("The encoding is incorrect!" +
-                                " It should be " + correctEncoding);
-        }
-
-        String decoded = URLDecoder.decode(encoded, "UTF-8");
-
-        System.out.println("Unicode bytes for URLDecoding are: "
-                           + getHexBytes(decoded));
-
-        if (str.equals(decoded))
-            System.out.println("The decoding is correct");
-        else {
-            throw new Exception("The decoded is not equal to the original");
-        }
-        System.out.println("---");
+        // Map unmappable characters to '?'
+        String cleanStr = new String(str.getBytes(UTF_8), UTF_8);
+        String decoded = URLDecoder.decode(encoded, UTF_8);
+        assertEquals(cleanStr, decoded, () ->
+                "expected=%s, actual=%s".formatted(escape(str), escape(decoded)));
     }
 
-    private static String getHexBytes(String s) throws Exception {
-        StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < s.length(); i++) {
-
-            int a = s.charAt(i);
-            int b1 = (a >>8) & 0xff;
-            int b2 = (byte)a;
-            int b11 = (b1>>4) & 0x0f;
-            int b12 = b1 & 0x0f;
-            int b21 = (b2 >>4) & 0x0f;
-            int b22 = b2 & 0x0f;
-
-            sb.append(Integer.toHexString(b11));
-            sb.append(Integer.toHexString(b12));
-            sb.append(Integer.toHexString(b21));
-            sb.append(Integer.toHexString(b22));
-            sb.append(' ');
-        }
-        return sb.toString();
+    private static String escape(String s) {
+        return s.chars().mapToObj(c -> String.format("\\u%04x", c))
+                .collect(Collectors.joining());
     }
-
 }

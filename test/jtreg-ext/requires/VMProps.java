@@ -123,6 +123,10 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.continuations", this::vmContinuations);
         // vm.graal.enabled is true if Graal is used as JIT
         map.put("vm.graal.enabled", this::isGraalEnabled);
+        // jdk.hasLibgraal is true if the libgraal shared library file is present
+        map.put("jdk.hasLibgraal", this::hasLibgraal);
+        // vm.libgraal.enabled is true if libgraal is used as JIT
+        map.put("vm.libgraal.enabled", this::isLibgraalEnabled);
         map.put("vm.compiler1.enabled", this::isCompiler1Enabled);
         map.put("vm.compiler2.enabled", this::isCompiler2Enabled);
         map.put("docker.support", this::dockerSupport);
@@ -487,6 +491,24 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
+     * Check if the libgraal shared library file is present.
+     *
+     * @return true if the libgraal shared library file is present.
+     */
+    protected String hasLibgraal() {
+        return "" + WB.hasLibgraal();
+    }
+
+    /**
+     * Check if libgraal is used as JIT compiler.
+     *
+     * @return true if libgraal is used as JIT compiler.
+     */
+    protected String isLibgraalEnabled() {
+        return "" + Compiler.isLibgraalEnabled();
+    }
+
+    /**
      * Check if Compiler1 is present.
      *
      * @return true if Compiler1 is used as JIT compiler, either alone or as part of the tiered system.
@@ -709,6 +731,7 @@ public class VMProps implements Callable<Map<String, String>> {
         }
         List<String> lines = new ArrayList<>();
         map.forEach((k, v) -> lines.add(k + ":" + v));
+        Collections.sort(lines);
         try {
             Files.write(Paths.get(dumpFileName), lines,
                     StandardOpenOption.APPEND, StandardOpenOption.CREATE);
