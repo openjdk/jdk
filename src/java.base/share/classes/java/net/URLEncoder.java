@@ -142,11 +142,6 @@ public class URLEncoder {
         DEFAULT_ENCODING_NAME = StaticProperty.fileEncoding();
     }
 
-    private static void encodeByte(StringBuilder out, byte b) {
-        out.append('%');
-        HexFormat.of().withUpperCase().toHexDigits(out, b);
-    }
-
     /**
      * You can't call the constructor.
      */
@@ -209,7 +204,7 @@ public class URLEncoder {
         }
     }
 
-    private static final int ENCODING_CHUNK_SIZE = 4;
+    private static final int ENCODING_CHUNK_SIZE = 8;
 
     /**
      * Translates a string into {@code application/x-www-form-urlencoded}
@@ -307,8 +302,12 @@ public class URLEncoder {
         } catch (CharacterCodingException x) {
             throw new Error(x); // Can't happen
         }
-        for (int j = 0; j < bb.position(); j++) {
-            encodeByte(out, bb.get(j));
+        HexFormat hex = HexFormat.of().withUpperCase();
+        byte[] bytes = bb.array();
+        int len = bb.position();
+        for (int i = 0; i < len; i++) {
+            out.append('%');
+            hex.toHexDigits(out, bytes[i]);
         }
         cb.clear();
         bb.clear();
