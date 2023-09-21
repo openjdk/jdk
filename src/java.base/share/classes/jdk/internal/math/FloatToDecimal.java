@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,17 @@
 
 package jdk.internal.math;
 
-import java.io.IOException;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 
-import static java.lang.Float.*;
-import static java.lang.Integer.*;
-import static java.lang.Math.multiplyHigh;
+import java.io.IOException;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
+
+import static java.lang.Float.PRECISION;
+import static java.lang.Float.floatToRawIntBits;
+import static java.lang.Integer.numberOfLeadingZeros;
+import static java.lang.Math.*;
 import static jdk.internal.math.MathUtils.*;
 
 /**
@@ -101,18 +107,11 @@ final public class FloatToDecimal {
     private static final int MINUS_INF      = 4;
     private static final int NAN            = 5;
 
-    /*
-     * Room for the longer of the forms
-     *     -ddddd.dddd         H + 2 characters
-     *     -0.00ddddddddd      H + 5 characters
-     *     -d.ddddddddE-ee     H + 6 characters
-     * where there are H digits d
-     */
-    public static final int MAX_CHARS = H + 6;
+    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
-    private final byte[] bytes = new byte[MAX_CHARS];
+    private byte[] bytes;
 
-    /* Index into bytes of rightmost valid character */
+    /* Index into bytes */
     private int index;
 
     private FloatToDecimal() {
@@ -159,28 +158,14 @@ final public class FloatToDecimal {
 
     private Appendable appendDecimalTo(float v, Appendable app)
             throws IOException {
-        switch (toDecimal(v)) {
-            case NON_SPECIAL:
-                char[] chars = new char[index + 1];
-                for (int i = 0; i < chars.length; ++i) {
-                    chars[i] = (char) bytes[i];
-                }
-                if (app instanceof StringBuilder builder) {
-                    return builder.append(chars);
-                }
-                if (app instanceof StringBuffer buffer) {
-                    return buffer.append(chars);
-                }
-                for (char c : chars) {
-                    app.append(c);
-                }
-                return app;
-            case PLUS_ZERO: return app.append("0.0");
-            case MINUS_ZERO: return app.append("-0.0");
-            case PLUS_INF: return app.append("Infinity");
-            case MINUS_INF: return app.append("-Infinity");
-            default: return app.append("NaN");
-        }
+        return switch (toDecimal(v)) {
+            case NON_SPECIAL -> app.append(charsToString());
+            case PLUS_ZERO -> app.append("0.0");
+            case MINUS_ZERO -> app.append("-0.0");
+            case PLUS_INF -> app.append("Infinity");
+            case MINUS_INF -> app.append("-Infinity");
+            default -> app.append("NaN");
+        };
     }
 
     /*
@@ -205,10 +190,7 @@ final public class FloatToDecimal {
         int t = bits & T_MASK;
         int bq = (bits >>> P - 1) & BQ_MASK;
         if (bq < BQ_MASK) {
-            index = -1;
-            if (bits < 0) {
-                append('-');
-            }
+            index = bits < 0 ? 1 : 0;
             if (bq != 0) {
                 /* normal value. Here mq = -q */
                 int mq = -Q_MIN + 1 - bq;
@@ -354,10 +336,10 @@ final public class FloatToDecimal {
          * Let fp and ep be the original f and e, respectively.
          * Transform f and e to ensure
          *     10^(H-1) <= f < 10^H
-         *     fp 10^ep = f 10^(e-H) = 0.f 10^e
+         *     fp 10^ep = f 10^(e-H) = f_0.f_1...f_{H-1} 10^e
          */
         f *= (int)pow10(H - len);
-        e += len;
+        e += len - 1;
 
         /*
          * The toChars?() methods perform left-to-right digits extraction
@@ -368,91 +350,117 @@ final public class FloatToDecimal {
          *
          * For n = 9, m = 8 the table in section 10 of [1] shows
          *     floor(f / 10^8) = floor(1_441_151_881 f / 2^57)
+         *
+         * dlen is the index of the least significant non-zero decimal in
+         *     f_0f_1...f_{H-1}
+         * which is the expansion of f.
+         * For example, when f = 123_456_700 then dlen = 6.
          */
         int h = (int) (f * 1_441_151_881L >>> 57);
         int l = f - 100_000_000 * h;
+        int dlen = l != 0
+            ? 8 - decNumberOfTrailingZeros(l)
+            : 0;
 
-        if (0 < e && e <= 7) {
-            return toChars1(h, l, e);
+        if (0 <= e && e < 7) {
+            if (dlen <= e) {
+                return toChars0(h, l, e);
+            }
+            return toChars1(h, l, e, dlen);
         }
-        if (-3 < e && e <= 0) {
-            return toChars2(h, l, e);
+        if (-3 <= e && e < 0) {
+            return toChars2(h, l, e, dlen);
         }
-        return toChars3(h, l, e);
+        return toChars3(h, l, e, dlen);
     }
 
-    private int toChars1(int h, int l, int e) {
+    private int toChars0(int h, int m, int e) {
         /*
-         * 0 < e <= 7: plain format without leading zeroes.
+         * 0 <= e < 7: plain format without leading zeroes, integer values.
          * Left-to-right digits extraction:
          * algorithm 1 in [3], with b = 10, k = 8, n = 28.
          */
+        bytes = new byte[index + e + 3];
+        appendSign();
         appendDigit(h);
-        int y = y(l);
-        int t;
-        int i = 1;
-        for (; i < e; ++i) {
-            t = 10 * y;
-            appendDigit(t >>> 28);
-            y = t & MASK_28;
-        }
-        append('.');
-        for (; i <= 8; ++i) {
-            t = 10 * y;
-            appendDigit(t >>> 28);
-            y = t & MASK_28;
-        }
-        removeTrailingZeroes();
-        return NON_SPECIAL;
-    }
-
-    private int toChars2(int h, int l, int e) {
-        /* -3 < e <= 0: plain format with leading zeroes */
-        appendDigit(0);
-        append('.');
-        for (; e < 0; ++e) {
-          appendDigit(0);
-        }
-        appendDigit(h);
-        append8Digits(l);
-        removeTrailingZeroes();
-        return NON_SPECIAL;
-    }
-
-    private int toChars3(int h, int l, int e) {
-        /* -3 >= e | e > 7: computerized scientific notation */
-        appendDigit(h);
-        append('.');
-        append8Digits(l);
-        removeTrailingZeroes();
-        exponent(e - 1);
-        return NON_SPECIAL;
-    }
-
-    private void append8Digits(int m) {
-        /*
-         * Left-to-right digits extraction:
-         * algorithm 1 in [3], with b = 10, k = 8, n = 28.
-         */
         int y = y(m);
-        for (int i = 0; i < 8; ++i) {
+        for (; e > 0; --e) {
             int t = 10 * y;
             appendDigit(t >>> 28);
             y = t & MASK_28;
         }
+        append('.');
+        append('0');
+        return NON_SPECIAL;
     }
 
-    private void removeTrailingZeroes() {
-        while (bytes[index] == '0') {
-            --index;
+    private int toChars1(int h, int l, int e, int dlen) {
+        /*
+         * 0 <= e < 7: plain format without leading zeroes.
+         * Left-to-right digits extraction:
+         * algorithm 1 in [3], with b = 10, k = 8, n = 28.
+         */
+        bytes = new byte[index + dlen + 2];
+        appendSign();
+        appendDigit(h);
+        int y = y(l);
+        int min = min(dlen, 8);
+        for (int i = 0; i < min; ++i) {
+            if (i == e) {
+                append('.');
+            }
+            int t = 10 * y;
+            appendDigit(t >>> 28);
+            y = t & MASK_28;
         }
-        /* ... but do not remove the one directly to the right of '.' */
-        if (bytes[index] == '.') {
-            ++index;
-        }
+        return NON_SPECIAL;
     }
 
-    private int y(int a) {
+    private int toChars2(int h, int l, int e, int dlen) {
+        /* -3 <= e < 0: plain format with leading zeroes */
+        bytes = new byte[index + 2 - e + dlen];
+        appendSign();
+        append('0');
+        append('.');
+        for (; e < -1; ++e) {
+            append('0');
+        }
+        appendDigit(h);
+        int y = y(l);
+        for (int min = min(dlen, 8); min > 0; --min) {
+            int t = 10 * y;
+            appendDigit(t >>> 28);
+            y = t & MASK_28;
+        }
+        return NON_SPECIAL;
+    }
+
+    private int toChars3(int h, int l, int e, int dlen) {
+        /* -3 > e | e >= 7: computerized scientific notation */
+        if (dlen == 0) {
+            dlen = 1;
+        }
+        int ea = abs(e);
+        int elen = ea < 10 ? 1 : 2;
+        bytes = new byte[index + dlen + elen + (e < 0 ? 4 : 3)];
+        appendSign();
+        appendDigit(h);
+        append('.');
+        int y = y(l);
+        for (int min = min(dlen, 8); min > 0; --min) {
+            int t = 10 * y;
+            appendDigit(t >>> 28);
+            y = t & MASK_28;
+        }
+        append('E');
+        if (e < 0) {
+            append('-');
+        }
+        exponent(ea);
+        return NON_SPECIAL;
+    }
+
+    private static int y(int a) {
         /*
          * Algorithm 1 in [3] needs computation of
          *     floor((a + 1) 2^n / b^k) - 1
@@ -466,37 +474,40 @@ final public class FloatToDecimal {
                 193_428_131_138_340_668L) >>> 20) - 1;
     }
 
-    private void exponent(int e) {
-        append('E');
-        if (e < 0) {
-            append('-');
-            e = -e;
-        }
-        if (e < 10) {
-            appendDigit(e);
+    private void exponent(int ea) {
+        if (ea < 10) {
+            appendDigit(ea);
             return;
         }
         /*
          * For n = 2, m = 1 the table in section 10 of [1] shows
-         *     floor(e / 10) = floor(103 e / 2^10)
+         *     floor(ea / 10) = floor(103 ea / 2^10)
          */
-        int d = e * 103 >>> 10;
+        int d = ea * 103 >>> 10;
         appendDigit(d);
-        appendDigit(e - 10 * d);
+        appendDigit(ea - 10 * d);
+    }
+
+    private void appendSign() {
+        if (index != 0) {
+            bytes[0] = '-';
+        }
     }
 
     private void append(int c) {
-        bytes[++index] = (byte) c;
+        bytes[index++] = (byte) c;
     }
 
     private void appendDigit(int d) {
-        bytes[++index] = (byte) ('0' + d);
+        bytes[index++] = (byte) ('0' + d);
     }
 
-    /* Using the deprecated constructor enhances performance */
-    @SuppressWarnings("deprecation")
     private String charsToString() {
-        return new String(bytes, 0, 0, index + 1);
+        try {
+            return jla.newStringNoRepl(bytes, StandardCharsets.ISO_8859_1);
+        } catch (CharacterCodingException e) {
+            throw new AssertionError(e);
+        }
     }
 
 }
