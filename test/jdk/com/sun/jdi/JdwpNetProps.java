@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /*
  * @test
@@ -44,7 +45,7 @@ import java.util.Map;
  * @library /test/lib
  *
  * @build HelloWorld JdwpNetProps
- * @run main/othervm JdwpNetProps
+ * @run main/othervm -Djava.net.preferIPv6Addresses=system JdwpNetProps
  */
 public class JdwpNetProps {
 
@@ -60,26 +61,52 @@ public class JdwpNetProps {
             }
         }
 
+        String preferIPv6Address = System.getProperty("java.net.preferIPv6Addresses");
+        if (!Objects.equals(preferIPv6Address, "system")) {
+          throw new AssertionError(
+              "Expected -Djava.net.preferIPv6Address=system, was " + preferIPv6Address);
+        }
+        boolean systemPrefersIPv6 = addrs[0] instanceof Inet6Address;
+
         if (ipv4Address != null) {
             new ListenTest("localhost", ipv4Address)
                     .preferIPv4Stack(true)
                     .run(TestResult.Success);
             new ListenTest("localhost", ipv4Address)
-                    .preferIPv4Stack(false)
+                    .preferIPv4Stack(true)
+                    .preferIPv6Addresses("true")
                     .run(TestResult.Success);
             new ListenTest("localhost", ipv4Address)
                     .preferIPv4Stack(true)
                     .preferIPv6Addresses("system")
                     .run(TestResult.Success);
+            new ListenTest("localhost", ipv4Address)
+                    .preferIPv4Stack(false)
+                    .run(TestResult.Success);
+            new ListenTest("localhost", ipv4Address)
+                    .preferIPv4Stack(false)
+                    .preferIPv6Addresses("true")
+                    .run(TestResult.AttachFailed);
+            new ListenTest("localhost", ipv4Address)
+                    .preferIPv4Stack(false)
+                    .preferIPv6Addresses("system")
+                    .run(systemPrefersIPv6 ? TestResult.AttachFailed : TestResult.Success);
             if (ipv6Address != null) {
                 // - only IPv4, so connection from IPv6 should fail
                 new ListenTest("localhost", ipv6Address)
                         .preferIPv4Stack(true)
                         .preferIPv6Addresses("true")
                         .run(TestResult.AttachFailed);
+                new ListenTest("localhost", ipv6Address)
+                        .preferIPv4Stack(true)
+                        .preferIPv6Addresses("system")
+                        .run(TestResult.AttachFailed);
                 // - listen on IPv4
                 new ListenTest("localhost", ipv6Address)
                         .preferIPv6Addresses("false")
+                        .run(TestResult.AttachFailed);
+                // - listen on IPv4 (preferIPv6Addresses defaults to false)
+                new ListenTest("localhost", ipv6Address)
                         .run(TestResult.AttachFailed);
                 // - listen on IPv6
                 new ListenTest("localhost", ipv6Address)
@@ -87,13 +114,29 @@ public class JdwpNetProps {
                         .run(TestResult.Success);
                 new ListenTest("localhost", ipv6Address)
                         .preferIPv6Addresses("system")
-                        .run(TestResult.Success);
+                        .run(systemPrefersIPv6 ? TestResult.Success : TestResult.AttachFailed);
             }
         } else {
             // IPv6-only system - expected to fail on IPv4 address
             new ListenTest("localhost", ipv6Address)
                     .preferIPv4Stack(true)
                     .run(TestResult.ListenFailed);
+            new ListenTest("localhost", ipv6Address)
+                    .preferIPv4Stack(true)
+                    .preferIPv6Addresses("system")
+                    .run(TestResult.ListenFailed);
+            new ListenTest("localhost", ipv6Address)
+                    .preferIPv4Stack(true)
+                    .preferIPv6Addresses("true")
+                    .run(TestResult.ListenFailed);
+            new ListenTest("localhost", ipv6Address)
+                    .run(TestResult.ListenFailed);
+            new ListenTest("localhost", ipv6Address)
+                    .preferIPv6Addresses("system")
+                    .run(systemPrefersIPv6 ? TestResult.Success : TestResult.AttachFailed);
+            new ListenTest("localhost", ipv6Address)
+                    .preferIPv6Addresses("true")
+                    .run(TestResult.Success);
         }
     }
 
@@ -207,5 +250,6 @@ public class JdwpNetProps {
     private static void log(Object o) {
         System.out.println(String.valueOf(o));
     }
+
 
 }
