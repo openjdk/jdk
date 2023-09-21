@@ -209,9 +209,8 @@ getHomeFromShell32()
      */
     static WCHAR *u_path = NULL;
     if (u_path == NULL) {
-        HRESULT hr;
         WCHAR *tmpPath = NULL;
-        hr = SHGetKnownFolderPath(&FOLDERID_Profile, KF_FLAG_DONT_VERIFY, NULL, &tmpPath);
+        HRESULT hr = SHGetKnownFolderPath(&FOLDERID_Profile, KF_FLAG_DONT_VERIFY, NULL, &tmpPath);
 
         if (FAILED(hr)) {
             CoTaskMemFree(tmpPath);
