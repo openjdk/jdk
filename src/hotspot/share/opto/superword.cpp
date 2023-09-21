@@ -2565,18 +2565,15 @@ bool SuperWord::output() {
       if (n->is_Load()) {
         Node* ctl = n->in(MemNode::Control);
         Node* mem = first->in(MemNode::Memory);
-        VPointer p1(n->as_Mem(), phase(), lpt(), nullptr, false);
-        // Identify the memory dependency for the new loadVector node by
-        // walking up through memory chain.
-        // This is done to give flexibility to the new loadVector node so that
-        // it can move above independent storeVector nodes.
+        // Set the memory dependency of the LoadVector as early as possible.
+        // Walk up the memory chain, and ignore any StoreVector that provably
+        // does not have any memory dependency.
         while (mem->is_StoreVector()) {
-          VPointer p2(mem->as_Mem(), phase(), lpt(), nullptr, false);
-          int cmp = p1.cmp(p2);
-          if (VPointer::not_equal(cmp) || !VPointer::comparable(cmp)) {
-            mem = mem->in(MemNode::Memory);
+          VPointer p_store(mem->as_Mem(), phase(), lpt(), nullptr, false);
+          if (p_store.overlap_possible_with_any_in(p)) {
+            break; // memory dependency
           } else {
-            break; // dependent memory
+            mem = mem->in(MemNode::Memory);
           }
         }
         Node* adr = first->in(MemNode::Address);
