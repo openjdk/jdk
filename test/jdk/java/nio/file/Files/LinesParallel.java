@@ -54,8 +54,14 @@ public class LinesParallel {
     }
 
     @AfterEach
-    void cleanup() throws IOException {
-        Files.deleteIfExists(tmpFile);
+    void cleanup() {
+        try {
+            Files.deleteIfExists(tmpFile);
+        } catch (IOException ioe) {
+            // This might happen on Windows.
+            System.err.println("Unable to delete file. Will let it remain: " + tmpFile);
+            ioe.printStackTrace();
+        }
     }
 
     @Test
@@ -89,7 +95,7 @@ public class LinesParallel {
             while (!ready.get()) {
                 System.gc();
                 // Hammer GC
-                LockSupport.parkNanos(1_000);
+                LockSupport.parkNanos(10_000); // 10 us
             }
         });
 
@@ -117,8 +123,15 @@ public class LinesParallel {
             cnt += list.size();
         }
 
+        // On Windows, there might be a problem with deleting
+        // a file that is mapped. So, wait here for a while
+        // so that all files are more likely to be unmapped via GC.
+        LockSupport.parkNanos(10_000_000); // 10 ms
+
         // Make the background thread exit
         ready.set(true);
+
+        // Consume the counter
         System.out.println(cnt);
     }
 
