@@ -285,7 +285,7 @@ void os::run_periodic_checks(outputStream* st) {
 static LPTOP_LEVEL_EXCEPTION_FILTER prev_uef_handler = nullptr;
 #endif
 
-LONG WINAPI Uncaught_Exception_Handler(struct _EXCEPTION_POINTERS* exceptionInfo);
+static LONG WINAPI Uncaught_Exception_Handler(struct _EXCEPTION_POINTERS* exceptionInfo);
 
 void os::init_system_properties_values() {
   // sysclasspath, java_home, dll_dir
