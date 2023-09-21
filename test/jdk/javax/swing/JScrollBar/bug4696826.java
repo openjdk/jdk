@@ -37,7 +37,7 @@ import java.awt.image.BufferedImage;
  */
 
 public class bug4696826 {
-    public static void main(String[] argv) throws Exception {
+    public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             JScrollBar sb = new JScrollBar();
             sb.setBounds(new Rectangle(0, 0, 20, 20));
@@ -52,7 +52,7 @@ public class bug4696826 {
             g.setClip(200, 200, 100, 100);
             sb.paint(g);
         });
-        System.out.println("test Passed!");
+        System.out.println("Test Passed!");
     }
 
     static class TestScrollBarUI extends BasicScrollBarUI {

@@ -76,6 +76,6 @@ public class bug4264640 {
                 }
             });
         }
-        System.out.println("test Passed!");
+        System.out.println("Test Passed!");
     }
 }

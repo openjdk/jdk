@@ -37,7 +37,7 @@ import java.util.Date;
 public class bug4842792 {
     public static TestScrollBar scrollBar;
 
-    public static void main(String[] argv) throws Exception {
+    public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             scrollBar = new TestScrollBar(JScrollBar.HORIZONTAL, 10, 10, 0, 100);
             scrollBar.setPreferredSize(new Dimension(200, 20));
@@ -47,7 +47,7 @@ public class bug4842792 {
                 throw new RuntimeException("The scrollbar new value should not be 0");
             }
         });
-        System.out.println("test Passed!");
+        System.out.println("Test Passed!");
     }
 
     static class TestScrollBar extends JScrollBar {
@@ -61,8 +61,7 @@ public class bug4842792 {
                                            MouseEvent.MOUSE_PRESSED,
                                            (new Date()).getTime(),
                                            MouseEvent.BUTTON1_DOWN_MASK,
-                                           150, 10,
-                                           1, true);
+                                           150, 10, 1, true);
             processMouseEvent(mouseEvent);
             return scrollBar.getValue();
         }

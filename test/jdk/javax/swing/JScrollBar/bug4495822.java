@@ -57,6 +57,6 @@ public class bug4495822 {
         if (!isAdjusted) {
             throw new RuntimeException("adjustmentValueChanged() not invoked!");
         }
-        System.out.println("test Passed!");
+        System.out.println("Test Passed!");
     }
 }

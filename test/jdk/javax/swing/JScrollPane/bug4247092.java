@@ -37,6 +37,6 @@ public class bug4247092 {
         if (sp.getCorner(JScrollPane.LOWER_RIGHT_CORNER) != null) {
             throw new RuntimeException("The corner component should be null");
         }
-        System.out.println("test Passed!");
+        System.out.println("Test Passed!");
     }
 }

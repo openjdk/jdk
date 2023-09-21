@@ -93,6 +93,6 @@ public class bug4467063 {
                 throw new RuntimeException("Incorrect UPPER_TRAILING_CORNER value");
             }
         });
-        System.out.println("test Passed!");
+        System.out.println("Test Passed!");
     }
 }
