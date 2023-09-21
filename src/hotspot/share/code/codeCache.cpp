@@ -1800,17 +1800,13 @@ void CodeCache::log_state(outputStream* st) {
 }
 
 #ifdef LINUX
-void CodeCache::write_perf_map(const char* filename) {
-  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-
+CodeCache::DefaultPerfMapFile::DefaultPerfMapFile() {
   // Perf expects to find the map file at /tmp/perf-<pid>.map.
-  // Write to filename if specified.
-  char fname[MAXPATHLEN];
-  if (filename == nullptr) {
-    jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
-  } else {
-    jio_snprintf(fname, sizeof(fname), "%s", filename);
-  }
+  jio_snprintf(_name, sizeof(_name), "/tmp/perf-%d.map", os::current_process_id());
+}
+
+void CodeCache::write_perf_map(const char* fname) {
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   fileStream fs(fname, "w");
   if (!fs.is_open()) {

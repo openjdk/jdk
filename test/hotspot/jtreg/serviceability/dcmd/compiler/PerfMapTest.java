@@ -79,12 +79,16 @@ public class PerfMapTest {
     }
 
     @Test
-    public void jmx() {
+    public void defaultMapFile() {
         final long pid = ProcessHandle.current().pid();
-        Path path = Paths.get(String.format("/tmp/perf-%d.map", pid));
+        final Path path = Paths.get(String.format("/tmp/perf-%d.map", pid));
         run(new JMXExecutor(), "Compiler.perfmap", path);
+    }
 
+    @Test
+    public void specifiedMapFile() {
         String test_dir = System.getProperty("test.dir", ".");
+        Path path = null;
         do {
             path = Paths.get(String.format("%s/%s.map", test_dir, UUID.randomUUID().toString()));
         } while(Files.exists(path));

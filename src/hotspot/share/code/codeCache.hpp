@@ -223,6 +223,13 @@ class CodeCache : AllStatic {
   static void release_exception_cache(ExceptionCache* entry);
   static void purge_exception_caches();
 
+  LINUX_ONLY(class DefaultPerfMapFile {
+    char _name[32];
+  public:
+    DefaultPerfMapFile();
+    const char* name() const  { return _name; }
+  };)
+
   // Printing/debugging
   static void print();                           // prints summary
   static void print_internals();
@@ -231,7 +238,7 @@ class CodeCache : AllStatic {
   static void print_trace(const char* event, CodeBlob* cb, int size = 0) PRODUCT_RETURN;
   static void print_summary(outputStream* st, bool detailed = true); // Prints a summary of the code cache usage
   static void log_state(outputStream* st);
-  LINUX_ONLY(static void write_perf_map(const char* filename = nullptr);)
+  LINUX_ONLY(static void write_perf_map(const char* filename);)
   static const char* get_code_heap_name(CodeBlobType code_blob_type)  { return (heap_available(code_blob_type) ? get_code_heap(code_blob_type)->name() : "Unused"); }
   static void report_codemem_full(CodeBlobType code_blob_type, bool print);
 
