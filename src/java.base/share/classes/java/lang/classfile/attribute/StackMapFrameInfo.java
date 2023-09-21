@@ -153,6 +153,7 @@ public sealed interface StackMapFrameInfo
         /**
          * {@return a new object verification type info}
          * @param classDesc the class of the object
+         * @throws IllegalArgumentException if {@code classDesc} represents a primitive type
          */
         public static ObjectVerificationTypeInfo of(ClassDesc classDesc) {
             return of(TemporaryConstantPool.INSTANCE.classEntry(classDesc));

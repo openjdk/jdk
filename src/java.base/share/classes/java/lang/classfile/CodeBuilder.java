@@ -338,7 +338,8 @@ public sealed interface CodeBuilder
          * @param catchHandler handler that receives a {@linkplain CodeBuilder} to
          *                     generate the body of the catch block.
          * @return this builder
-         * @throws IllegalArgumentException if an existing catch block catches an exception of the given type.
+         * @throws IllegalArgumentException if an existing catch block catches an exception of the given type
+         *                                  or {@code exceptionType} represents a primitive type
          * @see #catchingMulti
          * @see #catchingAll
          */
@@ -592,6 +593,7 @@ public sealed interface CodeBuilder
      * Generate an instruction to create a new object
      * @param type the object type
      * @return this builder
+     * @throws IllegalArgumentException if {@code type} represents a primitive type
      */
     default CodeBuilder newObjectInstruction(ClassDesc type) {
         return newObjectInstruction(constantPool().classEntry(type));
@@ -621,6 +623,7 @@ public sealed interface CodeBuilder
      * Generate an instruction to create a new array of reference
      * @param type the component type
      * @return this builder
+     * @throws IllegalArgumentException if {@code type} represents a primitive type
      */
     default CodeBuilder newReferenceArrayInstruction(ClassDesc type) {
         return newReferenceArrayInstruction(constantPool().classEntry(type));
@@ -1015,6 +1018,7 @@ public sealed interface CodeBuilder
      * Generate an instruction to create a new array of reference
      * @param className the component type
      * @return this builder
+     * @throws IllegalArgumentException if {@code className} represents a primitive type
      */
     default CodeBuilder anewarray(ClassDesc className) {
         return newReferenceArrayInstruction(constantPool().classEntry(className));
@@ -1107,6 +1111,7 @@ public sealed interface CodeBuilder
      * Generate an instruction to check whether an object is of the given type
      * @param type the object type
      * @return this builder
+     * @throws IllegalArgumentException if {@code type} represents a primitive type
      */
     default CodeBuilder checkcast(ClassDesc type) {
         return typeCheckInstruction(Opcode.CHECKCAST, type);
@@ -1477,6 +1482,7 @@ public sealed interface CodeBuilder
      * @param name the field name
      * @param type the field type
      * @return this builder
+     * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default CodeBuilder getfield(ClassDesc owner, String name, ClassDesc type) {
         return fieldInstruction(Opcode.GETFIELD, owner, name, type);
@@ -1497,6 +1503,7 @@ public sealed interface CodeBuilder
      * @param name the field name
      * @param type the field type
      * @return this builder
+     * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default CodeBuilder getstatic(ClassDesc owner, String name, ClassDesc type) {
         return fieldInstruction(Opcode.GETSTATIC, owner, name, type);
@@ -1856,6 +1863,7 @@ public sealed interface CodeBuilder
      * Generate an instruction to determine if an object is of the given type
      * @param target the target type
      * @return this builder
+     * @throws IllegalArgumentException if {@code target} represents a primitive type
      */
     default CodeBuilder instanceof_(ClassDesc target) {
         return typeCheckInstruction(Opcode.INSTANCEOF, constantPool().classEntry(target));
@@ -1894,6 +1902,7 @@ public sealed interface CodeBuilder
      * @param name the method name
      * @param type the method type
      * @return this builder
+     * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default CodeBuilder invokeinterface(ClassDesc owner, String name, MethodTypeDesc type) {
         return invokeInstruction(Opcode.INVOKEINTERFACE, constantPool().interfaceMethodRefEntry(owner, name, type));
@@ -1926,6 +1935,7 @@ public sealed interface CodeBuilder
      * @param name the method name
      * @param type the method type
      * @return this builder
+     * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default CodeBuilder invokespecial(ClassDesc owner, String name, MethodTypeDesc type) {
         return invokeInstruction(Opcode.INVOKESPECIAL, owner, name, type, false);
@@ -1939,6 +1949,7 @@ public sealed interface CodeBuilder
      * @param type the method type
      * @param isInterface the interface method invocation indication
      * @return this builder
+     * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default CodeBuilder invokespecial(ClassDesc owner, String name, MethodTypeDesc type, boolean isInterface) {
         return invokeInstruction(Opcode.INVOKESPECIAL, owner, name, type, isInterface);
@@ -1968,6 +1979,7 @@ public sealed interface CodeBuilder
      * @param name the method name
      * @param type the method type
      * @return this builder
+     * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default CodeBuilder invokestatic(ClassDesc owner, String name, MethodTypeDesc type) {
         return invokeInstruction(Opcode.INVOKESTATIC, owner, name, type, false);
@@ -1980,6 +1992,7 @@ public sealed interface CodeBuilder
      * @param type the method type
      * @param isInterface the interface method invocation indication
      * @return this builder
+     * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default CodeBuilder invokestatic(ClassDesc owner, String name, MethodTypeDesc type, boolean isInterface) {
         return invokeInstruction(Opcode.INVOKESTATIC, owner, name, type, isInterface);
@@ -2000,6 +2013,7 @@ public sealed interface CodeBuilder
      * @param name the method name
      * @param type the method type
      * @return this builder
+     * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default CodeBuilder invokevirtual(ClassDesc owner, String name, MethodTypeDesc type) {
         return invokeInstruction(Opcode.INVOKEVIRTUAL, owner, name, type, false);
@@ -2326,6 +2340,7 @@ public sealed interface CodeBuilder
      * @param array the array type
      * @param dims the number of dimensions
      * @return this builder
+     * @throws IllegalArgumentException if {@code array} represents a primitive type
      */
     default CodeBuilder multianewarray(ClassDesc array, int dims) {
         return newMultidimensionalArrayInstruction(dims, constantPool().classEntry(array));
@@ -2344,6 +2359,7 @@ public sealed interface CodeBuilder
      * Generate an instruction to create a new object
      * @param clazz the new class type
      * @return this builder
+     * @throws IllegalArgumentException if {@code clazz} represents a primitive type
      */
     default CodeBuilder new_(ClassDesc clazz) {
         return newObjectInstruction(constantPool().classEntry(clazz));
@@ -2389,6 +2405,7 @@ public sealed interface CodeBuilder
      * @param name the field name
      * @param type the field type
      * @return this builder
+     * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default CodeBuilder putfield(ClassDesc owner, String name, ClassDesc type) {
         return fieldInstruction(Opcode.PUTFIELD, owner, name, type);
@@ -2409,6 +2426,7 @@ public sealed interface CodeBuilder
      * @param name the field name
      * @param type the field type
      * @return this builder
+     * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default CodeBuilder putstatic(ClassDesc owner, String name, ClassDesc type) {
         return fieldInstruction(Opcode.PUTSTATIC, owner, name, type);

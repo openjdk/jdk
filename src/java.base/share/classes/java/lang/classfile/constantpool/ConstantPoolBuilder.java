@@ -151,9 +151,10 @@ public sealed interface ConstantPoolBuilder
      * returned.
      *
      * @param classDesc the symbolic descriptor for the class
+     * @throws IllegalArgumentException if {@code classDesc} represents a primitive type
      */
     default ClassEntry classEntry(ClassDesc classDesc) {
-        if (classDesc.isPrimitive()) {
+        if (Objects.requireNonNull(classDesc).isPrimitive()) {
             throw new IllegalArgumentException("Cannot be encoded as ClassEntry: " + classDesc.displayName());
         }
         ClassEntryImpl ret = (ClassEntryImpl)classEntry(utf8Entry(classDesc.isArray() ? classDesc.descriptorString() : Util.toInternalName(classDesc)));
@@ -271,6 +272,7 @@ public sealed interface ConstantPoolBuilder
      * @param owner the class the field is a member of
      * @param name the name of the field
      * @param type the type of the field
+     * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default FieldRefEntry fieldRefEntry(ClassDesc owner, String name, ClassDesc type) {
         return fieldRefEntry(classEntry(owner), nameAndTypeEntry(name, type));
@@ -296,6 +298,7 @@ public sealed interface ConstantPoolBuilder
      * @param owner the class the method is a member of
      * @param name the name of the method
      * @param type the type of the method
+     * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default MethodRefEntry methodRefEntry(ClassDesc owner, String name, MethodTypeDesc type) {
         return methodRefEntry(classEntry(owner), nameAndTypeEntry(name, type));
@@ -321,6 +324,7 @@ public sealed interface ConstantPoolBuilder
      * @param owner the class the method is a member of
      * @param name the name of the method
      * @param type the type of the method
+     * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default InterfaceMethodRefEntry interfaceMethodRefEntry(ClassDesc owner, String name, MethodTypeDesc type) {
         return interfaceMethodRefEntry(classEntry(owner), nameAndTypeEntry(name, type));

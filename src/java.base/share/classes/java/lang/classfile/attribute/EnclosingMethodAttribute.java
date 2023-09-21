@@ -108,6 +108,7 @@ public sealed interface EnclosingMethodAttribute
      * @param className the class name
      * @param methodName the name of the enclosing method
      * @param methodType the type of the enclosing method
+     * @throws IllegalArgumentException if {@code className} represents a primitive type
      */
     static EnclosingMethodAttribute of(ClassDesc className,
                                        Optional<String> methodName,

@@ -67,6 +67,7 @@ public sealed interface NestHostAttribute extends Attribute<NestHostAttribute>, 
     /**
      * {@return a {@code NestHost} attribute}
      * @param nestHost the host class of the nest
+     * @throws IllegalArgumentException if {@code nestHost} represents a primitive type
      */
     static NestHostAttribute of(ClassDesc nestHost) {
         return of(TemporaryConstantPool.INSTANCE.classEntry(nestHost));

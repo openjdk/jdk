@@ -291,6 +291,7 @@ public sealed interface ModuleAttribute
          * Declares use of a service
          * @param service the service class used
          * @return this builder
+         * @throws IllegalArgumentException if {@code service} represents a primitive type
          */
         ModuleAttributeBuilder uses(ClassDesc service);
 
@@ -306,6 +307,7 @@ public sealed interface ModuleAttribute
          * @param service the service class provided
          * @param implClasses the implementation classes
          * @return this builder
+         * @throws IllegalArgumentException if {@code service} or any of the {@code implClasses} represents a primitive type
          */
         ModuleAttributeBuilder provides(ClassDesc service, ClassDesc... implClasses);
 

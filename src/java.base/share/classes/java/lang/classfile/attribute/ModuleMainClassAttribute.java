@@ -67,6 +67,7 @@ public sealed interface ModuleMainClassAttribute
     /**
      * {@return a {@code ModuleMainClass} attribute}
      * @param mainClass the main class
+     * @throws IllegalArgumentException if {@code mainClass} represents a primitive type
      */
     static ModuleMainClassAttribute of(ClassDesc mainClass) {
         return new UnboundAttribute.UnboundModuleMainClassAttribute(TemporaryConstantPool.INSTANCE.classEntry(mainClass));

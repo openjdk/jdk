@@ -318,6 +318,7 @@ public sealed interface Classfile
      * @param thisClass the name of the class to build
      * @param handler a handler that receives a {@link ClassBuilder}
      * @return the classfile bytes
+     * @throws IllegalArgumentException if {@code thisClass} represents a primitive type
      */
     default byte[] build(ClassDesc thisClass,
                          Consumer<? super ClassBuilder> handler) {

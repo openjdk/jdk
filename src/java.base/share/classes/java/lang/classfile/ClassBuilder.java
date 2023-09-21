@@ -105,6 +105,7 @@ public sealed interface ClassBuilder
      * Sets the superclass of this class.
      * @param desc the superclass
      * @return this builder
+     * @throws IllegalArgumentException if {@code desc} represents a primitive type
      */
     default ClassBuilder withSuperclass(ClassDesc desc) {
         return withSuperclass(constantPool().classEntry(desc));
