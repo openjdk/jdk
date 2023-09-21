@@ -282,36 +282,28 @@ public class URLEncoder {
                         }
                     }
                     if (cb.position() >= ENCODING_CHUNK_SIZE - 1) {
-                        flushToStringBuilder(out, ce, cb, bb);
+                        flushToStringBuilder(out, ce, cb, bb, false);
                     }
                     i++;
                 } while (i < s.length() && !DONT_NEED_ENCODING.test((c = s.charAt(i))));
-                flushToStringBuilder(out, ce, cb, bb);
+                flushToStringBuilder(out, ce, cb, bb, true);
             }
         }
-
-        // Handle trailing, possibly malformed, input
-        try {
-            cb.flip();
-            CoderResult cr = ce.encode(cb, bb, true);
-            if (!cr.isUnderflow())
-                cr.throwException();
-            cr = ce.flush(bb);
-            if (!cr.isUnderflow())
-                cr.throwException();
-        } catch (CharacterCodingException x) {
-            throw new Error(x); // Can't happen
-        }
-
         return out.toString();
     }
 
-    private static void flushToStringBuilder(StringBuilder out, CharsetEncoder ce, CharBuffer cb, ByteBuffer bb) {
+    private static void flushToStringBuilder(StringBuilder out, CharsetEncoder ce, CharBuffer cb, ByteBuffer bb, boolean endOfInput) {
         cb.flip();
         try {
-            CoderResult cr = ce.encode(cb, bb, false);
+            CoderResult cr = ce.encode(cb, bb, endOfInput);
             if (!cr.isUnderflow())
                 cr.throwException();
+            if (endOfInput) {
+                cr = ce.flush(bb);
+                if (!cr.isUnderflow())
+                    cr.throwException();
+                ce.reset();
+            }
         } catch (CharacterCodingException x) {
             throw new Error(x); // Can't happen
         }
