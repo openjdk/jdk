@@ -4254,9 +4254,12 @@ size_t os::vm_min_address() {
   static size_t value = 0;
   if (value == 0) {
     assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
-    FILE* f = fopen("/proc/sys/vm/mmap_min_addr", "r");
-    if (fscanf(f, "%zu", &value) != 1) {
-      value = _vm_min_address_default;
+    FILE* f = os::fopen("/proc/sys/vm/mmap_min_addr", "r");
+    if (f != nullptr) {
+      if (fscanf(f, "%zu", &value) != 1) {
+        value = _vm_min_address_default;
+      }
+      fclose(f);
     }
     value = MAX2(_vm_min_address_default, value);
   }
