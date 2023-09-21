@@ -24,6 +24,7 @@
  */
 package java.nio.file;
 
+import jdk.internal.ref.CleanerFactory;
 import sun.nio.cs.ISO_8859_1;
 import sun.nio.cs.UTF_8;
 import sun.nio.cs.US_ASCII;
@@ -42,7 +43,6 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.Set;
 import java.util.Spliterator;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /**
@@ -82,7 +82,7 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
     private final Cleaner.Cleanable cleanupAction;
 
     // Holds a reference to the parent spliterator to ensure the root's Cleaner
-    // is invoked once itself and all spits are no longer phantom reachable.
+    // is invoked only once itself and all spits are no longer phantom reachable.
     private final FileChannelLinesSpliterator parent;
 
     private final int fence;
@@ -279,15 +279,12 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
 
     static Cleaner.Cleanable cleanupAction(FileChannelLinesSpliterator s) {
         record Cleanup(Arena arena) implements Runnable {
-            @Override
-            public void run() {
-                arena.close();
-            }
+            @Override public void run() { arena.close(); }
         }
-        return Cleaner.create().register(s, new Cleanup(s.arena));
+        return CleanerFactory.cleaner().register(s, new Cleanup(s.arena));
     }
 
-    // Only called on the original root spliterator and not on splits
+    // Only called on the original root Spliterator and not on splits
     void close() {
         cleanupAction.clean();
     }
