@@ -21,93 +21,15 @@
  * questions.
  */
 
-/*
- * @test id=MD2withRSA
- * @bug 8050374 8146293
- * @library /test/lib
- * @build jdk.test.lib.SigTestUtil
- * @compile ../../../java/security/SignedObject/Chain.java
- * @run main/othervm -DSigAlg=MD2withRSA SignedObjectChain
- * @summary Verify a chain of signed objects
- */
+import java.util.Arrays;
 
 /*
- * @test id=MD5withRSA
+ * @test
  * @bug 8050374 8146293
  * @library /test/lib
  * @build jdk.test.lib.SigTestUtil
  * @compile ../../../java/security/SignedObject/Chain.java
- * @run main/othervm -DSigAlg=MD5withRSA SignedObjectChain
- * @summary Verify a chain of signed objects
- */
-
-/*
- * @test id=SHA1withRSA
- * @bug 8050374 8146293
- * @library /test/lib
- * @build jdk.test.lib.SigTestUtil
- * @compile ../../../java/security/SignedObject/Chain.java
- * @run main/othervm -DSigAlg=SHA1withRSA SignedObjectChain
- * @summary Verify a chain of signed objects
- */
-
-/*
- * @test id=SHA224withRSA
- * @bug 8050374 8146293
- * @library /test/lib
- * @build jdk.test.lib.SigTestUtil
- * @compile ../../../java/security/SignedObject/Chain.java
- * @run main/othervm -DSigAlg=SHA224withRSA SignedObjectChain
- * @summary Verify a chain of signed objects
- */
-
-/*
- * @test id=SHA256withRSA
- * @bug 8050374 8146293
- * @library /test/lib
- * @build jdk.test.lib.SigTestUtil
- * @compile ../../../java/security/SignedObject/Chain.java
- * @run main/othervm -DSigAlg=SHA256withRSA SignedObjectChain
- * @summary Verify a chain of signed objects
- */
-
-/*
- * @test id=SHA384withRSA
- * @bug 8050374 8146293
- * @library /test/lib
- * @build jdk.test.lib.SigTestUtil
- * @compile ../../../java/security/SignedObject/Chain.java
- * @run main/othervm -DSigAlg=SHA384withRSA SignedObjectChain
- * @summary Verify a chain of signed objects
- */
-
-/*
- * @test id=SHA512withRSA
- * @bug 8050374 8146293
- * @library /test/lib
- * @build jdk.test.lib.SigTestUtil
- * @compile ../../../java/security/SignedObject/Chain.java
- * @run main/othervm -DSigAlg=SHA512withRSA SignedObjectChain
- * @summary Verify a chain of signed objects
- */
-
-/*
- * @test id=SHA512_224withRSA
- * @bug 8050374 8146293
- * @library /test/lib
- * @build jdk.test.lib.SigTestUtil
- * @compile ../../../java/security/SignedObject/Chain.java
- * @run main/othervm -DSigAlg=SHA512_224withRSA SignedObjectChain
- * @summary Verify a chain of signed objects
- */
-
-/*
- * @test id=SHA512_256withRSA
- * @bug 8050374 8146293
- * @library /test/lib
- * @build jdk.test.lib.SigTestUtil
- * @compile ../../../java/security/SignedObject/Chain.java
- * @run main/othervm -DSigAlg=SHA512_256withRSA SignedObjectChain
+ * @run main SignedObjectChain
  * @summary Verify a chain of signed objects
  */
 public class SignedObjectChain {
@@ -118,14 +40,26 @@ public class SignedObjectChain {
         }
     }
 
+    private static final Test[] tests = {
+        new Test(Chain.SigAlg.MD2withRSA),
+        new Test(Chain.SigAlg.MD5withRSA),
+        new Test(Chain.SigAlg.SHA1withRSA),
+        new Test(Chain.SigAlg.SHA224withRSA),
+        new Test(Chain.SigAlg.SHA256withRSA),
+        new Test(Chain.SigAlg.SHA384withRSA),
+        new Test(Chain.SigAlg.SHA512withRSA),
+        new Test(Chain.SigAlg.SHA512_224withRSA),
+        new Test(Chain.SigAlg.SHA512_256withRSA),
+    };
 
     public static void main(String argv[]) {
-        boolean resutl = Chain.runTest(new Test(Chain.SigAlg.valueOf(System.getProperty("SigAlg"))));
+        boolean result = Arrays.stream(tests).parallel().allMatch(Chain::runTest);
 
-        if(resutl) {
+        if(result) {
             System.out.println("All tests passed");
         } else {
             throw new RuntimeException("Some tests failed");
         }
     }
 }
+
