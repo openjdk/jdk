@@ -96,7 +96,8 @@ public sealed interface EnclosingMethodAttribute
     /**
      * {@return an {@code EnclosingMethod} attribute}
      * @param className the class name
-     * @param method the name and type of the enclosing method
+     * @param method the name and type of the enclosing method or {@code empty} if
+     *               the class is not immediately enclosed by a method or constructor
      */
     static EnclosingMethodAttribute of(ClassEntry className,
                                        Optional<NameAndTypeEntry> method) {
@@ -106,8 +107,10 @@ public sealed interface EnclosingMethodAttribute
     /**
      * {@return an {@code EnclosingMethod} attribute}
      * @param className the class name
-     * @param methodName the name of the enclosing method
-     * @param methodType the type of the enclosing method
+     * @param methodName the name of the enclosing method or {@code empty} if
+     *                   the class is not immediately enclosed by a method or constructor
+     * @param methodType the type of the enclosing method or {@code empty} if
+     *                   the class is not immediately enclosed by a method or constructor
      * @throws IllegalArgumentException if {@code className} represents a primitive type
      */
     static EnclosingMethodAttribute of(ClassDesc className,
