@@ -30,6 +30,7 @@ import jdk.internal.javac.PreviewFeature;
 /**
  * Models a dynamic constant pool entry, which is either {@link ConstantDynamicEntry}
  * or {@link InvokeDynamicEntry}.
+ * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
  *
  * @since 22
  */
