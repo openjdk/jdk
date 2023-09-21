@@ -323,7 +323,7 @@ void G1FullCollector::phase1_mark_live_objects() {
     // Unload classes and purge the SystemDictionary.
     bool purged_class = SystemDictionary::do_unloading(scope()->timer());
     _heap->complete_cleaning(purged_class);
-    _heap->clean_code_root_sets();
+    _heap->remove_dead_entries_from_code_root_sets();
   }
 
   {

@@ -207,7 +207,7 @@ public:
   };
 
   // Removes unlinked entries, multi-threaded.
-  void remove_unlinked_entries() {
+  void remove_dead_entries() {
     assert_at_safepoint();
 
     // A lot of code root sets are typically empty.
@@ -233,10 +233,10 @@ public:
 
   // Calculate the log2 of the table size we want to shrink to.
   size_t log2_target_shrink_size(size_t current_size) const {
-    // A table with the new size should be at most filled by this percentage. Otherwise
+    // A table with the new size should be at most filled by this factor. Otherwise
     // we would grow again quickly.
-    const float WantedFillFactor = 0.5;
-    size_t min_expected_size = checked_cast<size_t>(ceil(current_size / WantedFillFactor));
+    const float WantedLoadFactor = 0.5;
+    size_t min_expected_size = checked_cast<size_t>(ceil(current_size / WantedLoadFactor));
 
     size_t result = Log2DefaultNumBuckets;
     if (min_expected_size != 0) {
@@ -301,7 +301,7 @@ bool G1CodeRootSet::remove(nmethod* method) {
 
 void G1CodeRootSet::remove_dead_entries() {
   assert(!_is_iterating, "should not mutate while iterating the table");
-  _table->remove_unlinked_entries();
+  _table->remove_dead_entries();
 }
 
 bool G1CodeRootSet::contains(nmethod* method) {

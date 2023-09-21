@@ -2595,23 +2595,22 @@ void G1CollectedHeap::complete_cleaning(bool class_unloading_occurred) {
   workers()->run_task(&unlink_task);
 }
 
-class G1CleanCodeCache : public HeapRegionClosure {
-public:
-  G1CleanCodeCache() { }
-
-  bool do_heap_region(HeapRegion* hr) {
-    hr->rem_set()->remove_dead_entries();
-    return false;
-  }
-};
-
-class G1CleanCodeCacheTask : public WorkerTask {
+class G1RemoveDeadFromCodeRootSetsTask : public WorkerTask {
   HeapRegionClaimer _hrclaimer;
-  G1CleanCodeCache _cl;
+
+  class RemoveDeadHeapRegionClosure : public HeapRegionClosure {
+  public:
+    RemoveDeadHeapRegionClosure() { }
+
+    bool do_heap_region(HeapRegion* hr) {
+      hr->rem_set()->remove_dead_entries();
+      return false;
+    }
+  } _cl;
 
 public:
-  G1CleanCodeCacheTask(uint num_workers)
-  : WorkerTask("G1 Clean Code Cache Task"),
+  G1RemoveDeadFromCodeRootSetsTask(uint num_workers)
+  : WorkerTask("G1 Remove Dead From Code Root Set Task"),
     _hrclaimer(num_workers) { }
 
   void work(uint worker_id) {
@@ -2619,10 +2618,10 @@ public:
   }
 };
 
-void G1CollectedHeap::clean_code_root_sets() {
+void G1CollectedHeap::remove_dead_entries_from_code_root_sets() {
   uint num_workers = workers()->active_workers();
-  G1CleanCodeCacheTask clean_task(num_workers);
-  workers()->run_task(&clean_task);
+  G1RemoveDeadFromCodeRootSetsTask remove_dead_task(num_workers);
+  workers()->run_task(&remove_dead_task);
 }
 
 bool G1STWSubjectToDiscoveryClosure::do_object_b(oop obj) {

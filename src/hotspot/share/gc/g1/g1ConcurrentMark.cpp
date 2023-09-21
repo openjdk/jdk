@@ -1697,7 +1697,7 @@ void G1ConcurrentMark::weak_refs_work() {
     CodeCache::UnloadingScope scope(&g1_is_alive);
     bool purged_classes = SystemDictionary::do_unloading(_gc_timer_cm);
     _g1h->complete_cleaning(purged_classes);
-    _g1h->clean_code_root_sets();
+    _g1h->remove_dead_entries_from_code_root_sets();
   }
 }
 

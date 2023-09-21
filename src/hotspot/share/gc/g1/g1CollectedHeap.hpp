@@ -1265,7 +1265,7 @@ public:
   void complete_cleaning(bool class_unloading_occurred);
 
   // Removes unlinked nmethods from all code root sets after class unloading.
-  void clean_code_root_sets();
+  void remove_dead_entries_from_code_root_sets();
 
   // Verification
 
