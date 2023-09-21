@@ -154,13 +154,13 @@ public class URLEncoder {
     /**
      * dotNeedEncoding
      */
-    private static boolean dontNeedEncoding(int c) {
-        int prefix = (c >>> 6);
+    private static boolean dontNeedEncoding(char c) {
+        int prefix = c >> 6;
         if (prefix > 1) {
             return false;
         }
         long flags = prefix == 0 ? DONT_NEED_ENCODING_FLAGS_0 : DONT_NEED_ENCODING_FLAGS_1;
-        return (flags & (1L << (c & 0x3f))) != 0;
+        return (flags & (1L << c)) != 0;
     }
 
     private static void encodeByte(StringBuilder out, byte b) {
