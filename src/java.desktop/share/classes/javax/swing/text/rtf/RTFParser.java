@@ -398,7 +398,7 @@ abstract class RTFParser extends AbstractFilter
                 decoderBB.limit(1);
                 return ca[0];
             } else {
-                // Detectied lead byte
+                // Detected lead byte
                 decoder.reset();
                 decoderBB.limit(2);
                 decoderBB.position(1);
