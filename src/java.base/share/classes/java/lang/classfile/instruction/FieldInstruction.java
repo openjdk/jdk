@@ -80,7 +80,7 @@ public sealed interface FieldInstruction extends Instruction
      * {@return a symbolic descriptor for the type of the field}
      */
     default ClassDesc typeSymbol() {
-        return Util.fieldTypeSymbol(field().nameAndType());
+        return field().typeSymbol();
     }
 
     /**
