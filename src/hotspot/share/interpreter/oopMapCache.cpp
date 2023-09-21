@@ -407,6 +407,8 @@ void OopMapCacheEntry::flush() {
 void InterpreterOopMap::resource_copy(OopMapCacheEntry* from) {
   assert(_resource_allocate_bit_mask,
     "Should not resource allocate the _bit_mask");
+  assert(from->has_valid_mask(),
+    "Cannot copy entry with an invalid mask");
 
   set_method(from->method());
   set_bci(from->bci());
