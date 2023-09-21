@@ -392,21 +392,29 @@ public class TestDynamicConstant implements Opcodes {
                     Assert.assertTrue(expectedBSMs.contains(bsm), expectedBSMs.toString());
                 } else {
                     Assert.assertFalse(bsmi.isInvokeDynamic());
-                    if (condyType == CondyType.CALL_DIRECT_BSM || condyType == CondyType.CALL_DIRECT_WITH_ARGS_BSM) {
-                        Assert.assertTrue(bsm.startsWith("jdk.vm.ci.hotspot.test.TestDynamicConstant.get") && bsm.endsWith("BSM"), bsm);
-                        if (condyType == CondyType.CALL_DIRECT_WITH_ARGS_BSM) {
-                            List<JavaConstant> staticArguments = bsmi.getStaticArguments();
-                            if (staticArguments.size() > 0) {
-                                JavaConstant primitiveConstant = staticArguments.get(0);
-                                Assert.assertTrue(primitiveConstant instanceof PrimitiveConstant);
-                                BootstrapMethodInvocation innerBsmi = cp.lookupBootstrapMethodInvocation(primitiveConstant.asInt(), -1);
-                                String innerBsm = innerBsmi.getMethod().format("%H.%n");
-                                Assert.assertTrue(innerBsm.startsWith("jdk.vm.ci.hotspot.test.TestDynamicConstant.get") && bsm.endsWith("BSM"), bsm);
-                                Assert.assertTrue(staticArguments.get(1) instanceof HotSpotObjectConstant);
+                    checkBsmName(condyType, bsm);
+                    List<JavaConstant> staticArguments = bsmi.getStaticArguments();
+                    for (int i = 0; i < staticArguments.size(); ++i) {
+                        JavaConstant constant = staticArguments.get(i);
+                        if (constant instanceof PrimitiveConstant) {
+                            String innerTag = String.valueOf(getTagAt.invoke(cp, constant.asInt()));
+                            if (condyType == CondyType.CALL_DIRECT_WITH_ARGS_BSM) {
+                                Assert.assertEquals(i, 0);
+                                Assert.assertEquals(innerTag, "Dynamic");
                             }
+                            if (innerTag.equals("Dynamic")) {
+                                BootstrapMethodInvocation innerBsmi = cp.lookupBootstrapMethodInvocation(constant.asInt(), -1);
+                                String innerBsm = innerBsmi.getMethod().format("%H.%n");
+                                checkBsmName(condyType, innerBsm);
+                            } else {
+                                Assert.assertEquals(innerTag, "MethodHandle");
+                            }
+                        } else {
+                            if (condyType == CondyType.CALL_DIRECT_WITH_ARGS_BSM) {
+                                Assert.assertEquals(i, 1);
+                            }
+                            Assert.assertTrue(staticArguments.get(i) instanceof HotSpotObjectConstant);
                         }
-                    } else {
-                        Assert.assertEquals(bsm, "java.lang.invoke.ConstantBootstraps.invoke");
                     }
                 }
             } else {
@@ -415,6 +423,14 @@ public class TestDynamicConstant implements Opcodes {
         }
 
         testLoadReferencedType(concat, cp);
+    }
+
+    private static void checkBsmName(CondyType condyType, String bsm) {
+        if (condyType == CondyType.CALL_DIRECT_BSM || condyType == CondyType.CALL_DIRECT_WITH_ARGS_BSM) {
+            Assert.assertTrue(bsm.startsWith("jdk.vm.ci.hotspot.test.TestDynamicConstant.get") && bsm.endsWith("BSM"), bsm);
+        } else {
+            Assert.assertEquals(bsm, "java.lang.invoke.ConstantBootstraps.invoke");
+        }
     }
 
     private static int beS4(byte[] data, int bci) {
