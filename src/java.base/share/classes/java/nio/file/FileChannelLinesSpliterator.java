@@ -36,6 +36,7 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.ref.Cleaner;
+import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -184,53 +185,58 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
         if (reader != null)
             return null;
 
-        // Only unmapped for the original Spliterator
-        MemorySegment s = ss.mapIfUnmapped(fence);
-        final int hi = fence, lo = index;
+        try {
+            // Only unmapped for the original Spliterator
+            MemorySegment s = ss.mapIfUnmapped(fence);
+            final int hi = fence, lo = index;
 
-        // Check if line separator hits the mid point
-        int mid = (lo + hi) >>> 1;
-        int c = s.get(ValueLayout.JAVA_BYTE, mid);
-        if (c == '\n') {
-            mid++;
-        } else if (c == '\r') {
-            // Check if a line separator of "\r\n"
-            if (++mid < hi && s.get(ValueLayout.JAVA_BYTE, mid) == '\n') {
+            // Check if line separator hits the mid point
+            int mid = (lo + hi) >>> 1;
+            int c = s.get(ValueLayout.JAVA_BYTE, mid);
+            if (c == '\n') {
                 mid++;
-            }
-        } else {
-            // TODO give up after a certain distance from the mid point?
-            // Scan to the left and right of the mid point
-            int midL = mid - 1;
-            int midR = mid + 1;
-            mid = 0;
-            while (midL > lo && midR < hi) {
-                // Sample to the left
-                c = s.get(ValueLayout.JAVA_BYTE, midL--);
-                if (c == '\n' || c == '\r') {
-                    // If c is "\r" then no need to check for "\r\n"
-                    // since the subsequent value was previously checked
-                    mid = midL + 2;
-                    break;
+            } else if (c == '\r') {
+                // Check if a line separator of "\r\n"
+                if (++mid < hi && s.get(ValueLayout.JAVA_BYTE, mid) == '\n') {
+                    mid++;
                 }
-
-                // Sample to the right
-                c = s.get(ValueLayout.JAVA_BYTE, midR++);
-                if (c == '\n' || c == '\r') {
-                    mid = midR;
-                    // Check if line-separator is "\r\n"
-                    if (c == '\r' && mid < hi && s.get(ValueLayout.JAVA_BYTE, mid) == '\n') {
-                        mid++;
+            } else {
+                // TODO give up after a certain distance from the mid point?
+                // Scan to the left and right of the mid point
+                int midL = mid - 1;
+                int midR = mid + 1;
+                mid = 0;
+                while (midL > lo && midR < hi) {
+                    // Sample to the left
+                    c = s.get(ValueLayout.JAVA_BYTE, midL--);
+                    if (c == '\n' || c == '\r') {
+                        // If c is "\r" then no need to check for "\r\n"
+                        // since the subsequent value was previously checked
+                        mid = midL + 2;
+                        break;
                     }
-                    break;
+
+                    // Sample to the right
+                    c = s.get(ValueLayout.JAVA_BYTE, midR++);
+                    if (c == '\n' || c == '\r') {
+                        mid = midR;
+                        // Check if line-separator is "\r\n"
+                        if (c == '\r' && mid < hi && s.get(ValueLayout.JAVA_BYTE, mid) == '\n') {
+                            mid++;
+                        }
+                        break;
+                    }
                 }
             }
-        }
 
-        // The left spliterator will have the line-separator at the end
-        return (mid > lo && mid < hi)
-                ? new FileChannelLinesSpliterator(this, lo, index = mid)
-                : null;
+            // The left spliterator will have the line-separator at the end
+            return (mid > lo && mid < hi)
+                    ? new FileChannelLinesSpliterator(this, lo, index = mid)
+                    : null;
+        } finally {
+            // Make sure the underlying `original` remains strongly referenced until the segment is fully used
+            Reference.reachabilityFence(ss.original);
+        }
     }
 
     @Override
