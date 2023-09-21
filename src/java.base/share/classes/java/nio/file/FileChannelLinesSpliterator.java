@@ -72,9 +72,9 @@ import java.util.function.Consumer;
 final class FileChannelLinesSpliterator implements Spliterator<String> {
 
     static final Set<Charset> SUPPORTED_CHARSETS = Set.of(
-            UTF_8.INSTANCE,
-            ISO_8859_1.INSTANCE,
-            US_ASCII.INSTANCE
+        UTF_8.INSTANCE,
+        ISO_8859_1.INSTANCE,
+        US_ASCII.INSTANCE
     );
 
     // This state is shared across all splits
