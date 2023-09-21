@@ -22,8 +22,8 @@
  */
 
 /* @test
- * @summary Unit test for checking parallel use of FileChannelLinesSpliterator
- * @run junit Parallel
+ * @summary Unit test for checking parallel use of Files::lines
+ * @run junit LinesParallel
  */
 
 import java.io.IOException;
@@ -42,7 +42,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class Parallel {
+public class LinesParallel {
 
     // file used by the tests
     private Path tmpFile;
@@ -74,14 +74,14 @@ public class Parallel {
     }
 
     @Test
-    /*
-     * The objective of this test is to ensure it is very likely the mapped
-     * memory region in the underlying Spliterator is released in a proper way.
-     *
-     * This works by creating parallel streams of various lengths and then
-     * , at the same time, invoking GC frequently (the mapped memory region can
-     * be freed both explicitly via the `Stream::close` method and via the GC).
-     */
+        /*
+         * The objective of this test is to ensure it is very likely the mapped
+         * memory region in the underlying Spliterator is released in a proper way.
+         *
+         * This works by creating parallel streams of various lengths and then
+         * , at the same time, invoking GC frequently (the mapped memory region can
+         * be freed both explicitly via the `Stream::close` method and via the GC).
+         */
     void fuzzer() throws IOException {
 
         AtomicBoolean ready = new AtomicBoolean();
