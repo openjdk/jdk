@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import jdk.jfr.Category;
 import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
+import jdk.jfr.StackFilter;
 import jdk.jfr.internal.MirrorEvent;
 
 @Category({"Operating System"})
@@ -36,6 +37,7 @@ import jdk.jfr.internal.MirrorEvent;
 @Name("jdk.ProcessStart")
 @Description("Operating system process started")
 @MirrorEvent(className = "jdk.internal.event.ProcessStartEvent")
+@StackFilter({"java.lang.ProcessBuilder", "java.lang.Runtime::exec"})
 public final class ProcessStartEvent extends AbstractJDKEvent {
     @Label("Process Id")
     public long pid;

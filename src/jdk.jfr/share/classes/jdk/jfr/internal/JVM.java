@@ -34,7 +34,7 @@ import jdk.jfr.internal.event.EventWriter;
 
 /**
  * Interface against the JVM.
- *
+ *fet
  */
 public final class JVM {
     private static final JVM jvm = new JVM();
@@ -152,7 +152,7 @@ public final class JVM {
      * @param skipCount number of frames to skip
      * @return a unique stack trace identifier
      */
-    public static native long getStackTraceId(int skipCount);
+    public static native long getStackTraceId(int skipCount, long startFrameId);
 
     /**
      * Return identifier for thread
@@ -628,4 +628,28 @@ public final class JVM {
      * @param bytes number of bytes that were lost
      */
     public static native void emitDataLoss(long bytes);
+
+    /**
+     * Registers stack filters that should be used with getStackTrace(int, long)
+     * <p>
+     * Method name at an array index is for class at the same array index.
+     * <p>
+     * This method should be called holding the MetadataRepository lock and before
+     * bytecode for the associated event class has been added.
+     *
+     * @param classes, name of classes, for example {"java/lang/String"}, not
+     *                 {@code null}
+     * @param methods, name of method, for example {"toString"}, not {@code null}
+     *
+     * @return an ID that can be used to unregister the start frames.
+     */
+    public static native long registerStackFilter(String[] classes, String[] methods);
+
+    /**
+     * Unregisters a set of stack filters.
+     * <p>
+     * This method should be called holding the MetadataRepository lock and after
+     * the associated event class has been unloaded.
+     */
+    public static native void unregisterStackFilter(long startFrameid);
 }

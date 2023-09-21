@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.Unsigned;
+import jdk.jfr.StackFilter;
 import jdk.jfr.internal.MirrorEvent;
 
 @Category({"Java Development Kit", "Security"})
@@ -37,6 +38,7 @@ import jdk.jfr.internal.MirrorEvent;
 @Name("jdk.TLSHandshake")
 @Description("Parameters used in TLS Handshake")
 @MirrorEvent(className = "jdk.internal.event.TLSHandshakeEvent")
+@StackFilter("sun.security.ssl.Finished::recordEvent")
 public final class TLSHandshakeEvent extends AbstractJDKEvent {
     @Label("Peer Host")
     public String peerHost;

@@ -325,6 +325,9 @@ public final class MetadataRepository {
                     if (!knownIds.contains(pe.getId())) {
                         if (!pe.isJVM()) {
                             pe.setRegistered(false);
+                            if (pe.hasStackFilters()) {
+                                JVM.unregisterStackFilter(pe.getStackFilterId());
+                            }
                         }
                     }
                 }
@@ -368,5 +371,9 @@ public final class MetadataRepository {
 
     public synchronized List<Type> getVisibleTypes() {
         return TypeLibrary.getVisibleTypes();
+    }
+    
+    public synchronized long registerStackFilter(String[] typeArray, String[] methodArray) {
+        return JVM.registerStackFilter(typeArray, methodArray);
     }
 }

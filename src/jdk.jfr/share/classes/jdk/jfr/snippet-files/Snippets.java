@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import jdk.jfr.consumer.RecordingStream;
 import jdk.jfr.Configuration;
 import jdk.jfr.SettingDefinition;
 import jdk.jfr.SettingControl;
+import jdk.jfr.StackFilter;
 import jdk.jfr.Timestamp;
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.consumer.RecordedEvent;
@@ -56,6 +57,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -590,7 +592,7 @@ public class Snippets {
      // @end
  }
 
- // @start region="SettingDefinitionOverview"
+//@start region="SettingDefinitionOverview"
  class HelloWorld extends Event {
 
      @Label("Message")
@@ -600,6 +602,26 @@ public class Snippets {
      @Label("Message Filter")
      public boolean filter(RegExpControl regExp) {
          return regExp.matches(message);
+     }
+ }
+ // @end
+ 
+ //@start region="StackFilterOverview"
+ @Name("logger.log")
+ @Label("Log Message")
+ @StackFilter("com.example.Logger::log")
+ static class LogMessage extends Event {
+     @Label("Message")
+     String message;
+ }
+
+ class Logger {
+
+     public static void log(String message) {
+         System.out.print(Instant.now() + " : " + message);
+         LogMessage event = new LogMessage();
+         event.message = message;
+         event.commit();
      }
  }
  // @end

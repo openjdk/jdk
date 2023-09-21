@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,26 +19,36 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package jdk.jfr.events;
+#ifndef SHARE_JFR_RECORDER_STACKTRACE_JFRSTCKFILTERREGISTRY_HPP
+#define SHARE_JFR_RECORDER_STACKTRACE_JFRSTCKFILTERREGISTRY_HPP
 
-import jdk.jfr.Category;
-import jdk.jfr.Label;
-import jdk.jfr.Name;
-import jdk.jfr.StackFilter;
-import jdk.jfr.Timespan;
-import jdk.jfr.internal.MirrorEvent;
+#include "jfr/utilities/jfrAllocation.hpp"
 
-@Category("Java Application")
-@Label("Java Thread Sleep")
-@Name("jdk.ThreadSleep")
-@MirrorEvent(className = "jdk.internal.event.ThreadSleepEvent")
-@StackFilter({"java.lang.Thread::afterSleep",
-              "java.lang.Thread::sleepNanos",
-              "java.lang.Thread::sleep"})
-public final class ThreadSleepEvent extends AbstractJDKEvent {
-    @Label("Sleep Time")
-    @Timespan(Timespan.NANOSECONDS)
-    public long time;
-}
+class JfrStackFilter;
+
+class JfrStackFilterRegistry : public JfrCHeapObj {
+
+ private:
+  static const size_t SIZE = 1024;
+  JfrStackFilter* _elements[SIZE];
+  size_t _index;
+  size_t _free_list[SIZE];
+  size_t _free_list_index;
+
+ public:
+  static JfrStackFilterRegistry* create();
+  static JfrStackFilterRegistry* instance();
+  static void destroy();
+
+  JfrStackFilterRegistry();
+  size_t add(JfrStackFilter* frame);
+  JfrStackFilter* lookup(size_t id);
+  void remove(size_t id);
+  ~JfrStackFilterRegistry();
+
+};
+
+#endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTCKFILTERREGISTRY_HPP

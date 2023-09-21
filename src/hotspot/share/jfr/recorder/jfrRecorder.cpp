@@ -49,6 +49,7 @@
 #include "memory/resourceArea.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/globals_extension.hpp"
+#include "stacktrace/jfrStackFilterRegistry.hpp"
 #include "utilities/growableArray.hpp"
 #ifdef ASSERT
 #include "prims/jvmtiEnvBase.hpp"
@@ -284,6 +285,9 @@ bool JfrRecorder::create_components() {
   if (!create_stacktrace_repository()) {
     return false;
   }
+  if (!create_start_frame_registry()) {
+    return false;
+  }
   if (!create_os_interface()) {
     return false;
   }
@@ -305,6 +309,7 @@ static JfrStorage* _storage = nullptr;
 static JfrCheckpointManager* _checkpoint_manager = nullptr;
 static JfrRepository* _repository = nullptr;
 static JfrStackTraceRepository* _stack_trace_repository;
+static JfrStackFilterRegistry* _start_frame_registry;
 static JfrStringPool* _stringpool = nullptr;
 static JfrOSInterface* _os_interface = nullptr;
 static JfrThreadSampling* _thread_sampling = nullptr;
@@ -356,6 +361,12 @@ bool JfrRecorder::create_stacktrace_repository() {
   return _stack_trace_repository != nullptr && _stack_trace_repository->initialize();
 }
 
+bool JfrRecorder::create_start_frame_registry() {
+  assert(_start_frame_registry == nullptr, "invariant");
+  _start_frame_registry = JfrStackFilterRegistry::create();
+  return _start_frame_registry;
+}
+
 bool JfrRecorder::create_stringpool() {
   assert(_stringpool == nullptr, "invariant");
   assert(_repository != nullptr, "invariant");
@@ -394,6 +405,10 @@ void JfrRecorder::destroy_components() {
   if (_stack_trace_repository != nullptr) {
     JfrStackTraceRepository::destroy();
     _stack_trace_repository = nullptr;
+  }
+  if (_start_frame_registry != nullptr) {
+    JfrStackFilterRegistry::destroy();
+    _start_frame_registry = nullptr;
   }
   if (_stringpool != nullptr) {
     JfrStringPool::destroy();

@@ -525,6 +525,36 @@ const char* JfrJavaSupport::c_str(jstring string, Thread* thread, bool c_heap /*
   return string != nullptr ? c_str(resolve_non_null(string), thread, c_heap) : nullptr;
 }
 
+static Symbol** allocate_c_str_array(bool c_heap, int length, Thread* thread) {
+  return c_heap ?
+           NEW_C_HEAP_ARRAY(Symbol*, length, mtTracing) :
+           NEW_RESOURCE_ARRAY_IN_THREAD(thread, Symbol*, length);
+}
+
+Symbol** JfrJavaSupport::symbol_array(jobjectArray string_array, JavaThread* thread, jint* result_array_size, bool c_heap /* false */) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
+  if (string_array == nullptr) {
+    *result_array_size = -1;
+    return nullptr;
+  }
+  objArrayOop arrayOop = objArrayOop(JfrJavaSupport::resolve_non_null(string_array));
+  const int length = arrayOop->length();
+  Symbol** result_array = allocate_c_str_array(c_heap, length, thread);
+  if (result_array != nullptr) {
+    for (int i = 0; i < length; i++) {
+      oop object = arrayOop->obj_at(i);
+      Symbol* symbol = nullptr;
+      if (object != nullptr) {
+        const char* text = JfrJavaSupport::c_str(arrayOop->obj_at(i), thread, c_heap);
+        symbol = SymbolTable::new_symbol(text);
+      }
+      result_array[i] = symbol;
+    }
+  }
+  *result_array_size = length;
+  return result_array;
+}
+
 /*
  *  Exceptions and errors
  */

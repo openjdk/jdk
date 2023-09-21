@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import jdk.internal.module.Checks;
 import jdk.internal.module.Modules;
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.Enabled;
@@ -42,8 +43,10 @@ import jdk.jfr.Period;
 import jdk.jfr.SettingControl;
 import jdk.jfr.SettingDefinition;
 import jdk.jfr.StackTrace;
+import jdk.jfr.StackFilter;
 import jdk.jfr.Threshold;
 import jdk.jfr.events.ActiveSettingEvent;
+import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.settings.CutoffSetting;
 import jdk.jfr.internal.settings.EnabledSetting;
 import jdk.jfr.internal.settings.PeriodSetting;
@@ -89,6 +92,7 @@ public final class EventControl {
         }
         addControl(Enabled.NAME, defineEnabled(eventType));
 
+        addStackFilters(eventType);
         List<AnnotationElement> aes = new ArrayList<>(eventType.getAnnotationElements());
         remove(eventType, aes, Threshold.class);
         remove(eventType, aes, Period.class);
@@ -96,9 +100,63 @@ public final class EventControl {
         remove(eventType, aes, StackTrace.class);
         remove(eventType, aes, Cutoff.class);
         remove(eventType, aes, Throttle.class);
+        remove(eventType, aes, StackFilter.class);
         eventType.setAnnotations(aes);
         this.type = eventType;
         this.idName = String.valueOf(eventType.getId());
+    }
+
+    private void addStackFilters(PlatformEventType eventType) {
+        StackFilter filter = eventType.getAnnotation(StackFilter.class);
+        if (filter != null) {
+            int size = filter.value().length;
+            List<String> types = new ArrayList<>(size);
+            List<String> methods = new ArrayList<>(size);
+            for (String frame : filter.value()) {
+                int index = frame.indexOf("::");
+                String clazz = null;
+                String method  = null;
+                boolean valid = false;
+                if (index != -1) {
+                    clazz = frame.substring(0, index);
+                    method = frame.substring(index + 2);
+                    if (eventType.isJDK() && clazz.isEmpty()) {
+                        clazz = null; // To allow ::<init> for exception events
+                    } else {
+                        valid = isValidType(clazz) && isValidMethod(method);
+                    }
+                } else {
+                    clazz = frame;
+                    valid = isValidType(frame);
+                }
+                if (valid) {
+                    types.add(clazz.replace(".", "/"));
+                    methods.add(method);
+                } else {
+                    Logger.log(LogTag.JFR, LogLevel.WARN, "@StackFrameFilter element ignored, not a valid Java identifier.");
+                }
+            }
+            if (!types.isEmpty()) {
+                String[] typeArray = types.toArray(new String[0]);
+                String[] methodArray = methods.toArray(new String[0]);
+                long id = MetadataRepository.getInstance().registerStackFilter(typeArray, methodArray);
+                eventType.setStackFilterId(id);
+            }
+        }
+    }
+
+    private boolean isValidType(String className) {
+        if (className.length() < 1 || className.length() > 65535) {
+            return false;
+        }
+        return Checks.isClassName(className);
+    }
+    
+    private boolean isValidMethod(String method) {
+        if (method.length() < 1 || method.length() > 65535) {
+            return false;
+        }
+        return Checks.isJavaIdentifier(method);
     }
 
     private boolean hasControl(String name) {

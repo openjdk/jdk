@@ -36,7 +36,8 @@
 #include "jfr/recorder/repository/jfrEmergencyDump.hpp"
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
-#include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
+#include "jfr/recorder/stacktrace/jfrStackFilter.hpp"
+#include "jfr/recorder/stacktrace/jfrStackFilterRegistry.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/jni/jfrJniMethodRegistration.hpp"
@@ -239,8 +240,8 @@ JVM_ENTRY_NO_ENV(jlong, jfr_class_id(JNIEnv* env, jclass jvm, jclass jc))
   return JfrTraceId::load(jc);
 JVM_END
 
-JVM_ENTRY_NO_ENV(jlong, jfr_stacktrace_id(JNIEnv* env, jclass jvm, jint skip))
-  return JfrStackTraceRepository::record(thread, skip);
+JVM_ENTRY_NO_ENV(jlong, jfr_stacktrace_id(JNIEnv* env, jclass jvm, jint skip, jlong start_frame_id))
+  return JfrStackTraceRepository::record(thread, skip, start_frame_id);
 JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_log(JNIEnv* env, jclass jvm, jint tag_set, jint level, jstring message))
@@ -396,4 +397,34 @@ JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_emit_data_loss(JNIEnv* env, jclass jvm, jlong bytes))
   EventDataLoss::commit(bytes, min_jlong);
+JVM_END
+
+JVM_ENTRY_NO_ENV(jlong, jfr_register_stack_filter(JNIEnv* env,  jclass jvm, jobjectArray classes, jobjectArray methods))
+  JfrStackFilterRegistry* registry = JfrStackFilterRegistry::instance();
+  if (registry != nullptr) {
+    ResourceMark rm(thread);
+    jint c_size = 0;
+    Symbol** class_array = JfrJavaSupport::symbol_array(classes, thread, &c_size, true);
+    jint m_size = 0;
+    Symbol** method_array = JfrJavaSupport::symbol_array(methods, thread, &m_size, true);
+    if (method_array == nullptr || class_array == nullptr) {
+      JfrJavaSupport::throw_out_of_memory_error("Could not allocate memory for @StackFilter", thread);
+      return -1;
+    }
+    if (c_size != m_size) {
+      JfrJavaSupport::throw_internal_error("Method array size doesn't match class array size", thread);
+      return -1;
+    }
+    JfrStackFilter* filter = new JfrStackFilter(class_array, method_array, c_size);
+    size_t id = registry->add(filter);
+    return (id == SIZE_MAX) ? -1 : id;
+  }
+  return -1;
+JVM_END
+
+JVM_ENTRY_NO_ENV(void, jfr_un_register_stack_filter(JNIEnv* env,  jclass jvm, jlong id))
+  JfrStackFilterRegistry* registry = JfrStackFilterRegistry::instance();
+  if (registry != nullptr) {
+    registry->remove(id);
+  }
 JVM_END
