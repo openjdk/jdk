@@ -32,6 +32,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException ;
 import java.util.BitSet;
@@ -244,7 +245,9 @@ public class URLEncoder {
             out.append(s, 0, i);
         }
 
-        CharsetEncoder ce = charset.newEncoder();
+        CharsetEncoder ce = charset.newEncoder()
+                .onMalformedInput(CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(CodingErrorAction.REPLACE);
         CharBuffer cb = CharBuffer.allocate(ENCODING_CHUNK_SIZE);
         ByteBuffer bb = ByteBuffer.allocate((int)(ENCODING_CHUNK_SIZE * ce.maxBytesPerChar()));
 
@@ -277,6 +280,8 @@ public class URLEncoder {
                             }
                         }
                     }
+                    // Limit to ENCODING_CHUNK_SIZE - 1 so that we can always fit in
+                    // a surrogate pair on the next iteration
                     if (cb.position() >= ENCODING_CHUNK_SIZE - 1) {
                         flushToStringBuilder(out, ce, cb, bb, false);
                     }
