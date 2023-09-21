@@ -28,13 +28,17 @@ package java.net;
 import java.io.UnsupportedEncodingException;
 import java.io.CharArrayWriter;
 import java.nio.charset.Charset;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException ;
 import java.util.BitSet;
 import java.util.Objects;
 import java.util.HexFormat;
 import java.util.function.IntPredicate;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ImmutableBitSetPredicate;
 import jdk.internal.util.StaticProperty;
 
@@ -81,6 +85,8 @@ import jdk.internal.util.StaticProperty;
  * @since   1.0
  */
 public class URLEncoder {
+    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
+
     private static final long DONT_NEED_ENCODING_FLAGS_0;
     private static final long DONT_NEED_ENCODING_FLAGS_1;
 
@@ -250,6 +256,129 @@ public class URLEncoder {
      * @since 10
      */
     public static String encode(String s, Charset charset) {
+        Objects.requireNonNull(charset, "charset");
+
+        int spaceCount = 0;
+        int needEncodingCount = 0;
+        boolean utf8 = charset == StandardCharsets.UTF_8;
+        int ut8Length = 0;
+        boolean surrogateError = false;
+        for (int i = 0, length = s.length(); i < length; ++i) {
+            char c = s.charAt(i);
+            if (c < 0x80) {
+                if (c == ' ') {
+                    spaceCount++;
+                }
+                if (!dontNeedEncoding(c)) {
+                    needEncodingCount++;
+                }
+            } else {
+                needEncodingCount++;
+                if (utf8) {
+                    if (c < 0x800) {
+                        // 2 bytes
+                        ut8Length += 3;
+                    } else if (Character.isSurrogate(c)) {
+                        // Have a surrogate pair
+                        if (Character.isHighSurrogate(c) && i + 1 < length) {
+                            char d = s.charAt(i + 1);
+                            if (Character.isLowSurrogate(d)) {
+                                ut8Length += 8;
+                                i++;
+                                continue;
+                            }
+                        }
+                        surrogateError = true;
+                        break;
+                    } else {
+                        // 3 bytes
+                        ut8Length += 6;
+                    }
+                }
+            }
+        }
+
+        if (!surrogateError) {
+            if (needEncodingCount == 0 && spaceCount == 0) {
+                // not need change
+                return s;
+            }
+
+            if (utf8) {
+                return encodeUTF8(s, needEncodingCount, ut8Length);
+            }
+        }
+
+        return encodeSlow(s, charset);
+    }
+
+    private static String encodeUTF8(String s, int needEncodingCount, int ut8Length) {
+        int length = s.length();
+        byte[] buf = new byte[length + needEncodingCount * 2 + ut8Length];
+        int off = 0;
+        for (int i = 0; i < length; ++i) {
+            char c = s.charAt(i);
+            if (c < 0x80) {
+                if (dontNeedEncoding(c)) {
+                    buf[off++] = (byte) (c == ' ' ? '+' : c);
+                } else {
+                    putEncoded(buf, off, c);
+                    off += 3;
+                }
+            } else if (c < 0x800) {
+                // 2 bytes, 11 bits
+                utf8Put2(buf, off, c);
+                off += 6;
+            } else if (Character.isSurrogate(c)) {
+                // Have a surrogate pair and not handle surrogate error
+                char d = s.charAt(i + 1);
+                utf8PutSurrogatePair(
+                        buf,
+                        off,
+                        Character.toCodePoint(c, d));
+                off += 12;
+                i++;
+            } else {
+                // 3 bytes
+                utf8Put3(buf, off, c);
+                off += 9;
+            }
+        }
+
+        try {
+            return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+        } catch (CharacterCodingException cce) {
+            throw new AssertionError(cce);
+        }
+    }
+
+    private static void utf8PutSurrogatePair(byte[] buf, int off, int uc) {
+        putEncoded(buf, off, 0xf0 | (uc >> 18));
+        putEncoded(buf, off + 3, 0x80 | ((uc >> 12) & 0x3f));
+        putEncoded(buf, off + 6, 0x80 | ((uc >> 6) & 0x3f));
+        putEncoded(buf, off + 9, 0x80 | (uc & 0x3f));
+    }
+
+    private static void utf8Put2(byte[] buf, int off, int c) {
+        putEncoded(buf, off, 0xc0 | (c >> 6));
+        putEncoded(buf, off + 3, 0x80 | (c & 0x3f));
+    }
+
+    private static void utf8Put3(byte[] buf, int off, int c) {
+        putEncoded(buf, off, 0xe0 | (c >> 12));
+        putEncoded(buf, off + 3, 0x80 | ((c >> 6) & 0x3f));
+        putEncoded(buf, off + 6, 0x80 | (c & 0x3f));
+    }
+
+    private static void putEncoded(byte[] buf, int off, int c) {
+        buf[off] = '%';
+        int n0 = (c >> 4) & 0xf;
+        buf[off + 1] = (byte) (n0 + (n0 < 10 ? '0' : 'A' - 10));
+        int n1 = c & 0xf;
+        buf[off + 2] = (byte) (n1 + (n1 < 10 ? '0' : 'A' - 10));
+    }
+
+    private static String encodeSlow(String s, Charset charset) {
         Objects.requireNonNull(charset, "charset");
 
         int i;
