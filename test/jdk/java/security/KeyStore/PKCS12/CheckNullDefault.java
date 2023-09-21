@@ -29,7 +29,7 @@ import static java.lang.System.out;
  * @summary Set keystore.type as null and check that
  * KeyStore.getDefaultType() returns pkcs12
  * @run main/othervm
- *  -Djava.security.properties=${test.src}/java.security CheckDefaults
+ *  -Djava.security.properties==${test.src}/java.security CheckDefaults
  */
 public class CheckNullDefault {
     public static void main(String[] args) {
