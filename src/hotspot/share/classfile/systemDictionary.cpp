@@ -1526,6 +1526,10 @@ InstanceKlass* SystemDictionary::find_or_define_instance_class(Symbol* class_nam
   } else if (HAS_PENDING_EXCEPTION) {
     assert(defined_k == nullptr, "Should not have a klass if there's an exception");
     k->class_loader_data()->add_to_deallocate_list(k);
+
+    // Also remove this InstanceKlass from the LoaderConstraintTable if added.
+    MutexLocker ml(SystemDictionary_lock);
+    LoaderConstraintTable::remove_failed_loaded_klass(k, class_loader_data(class_loader));
   }
   return defined_k;
 }
