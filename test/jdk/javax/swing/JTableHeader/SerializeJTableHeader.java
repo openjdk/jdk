@@ -36,23 +36,7 @@ import javax.swing.SwingUtilities;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
 
-public class SerializeJTableHeader implements Runnable{
-
-    public void run() {
-        JTableHeader jth = new JTableHeader();
-        try {
-            for(int i = 0; i < 10; i ++){
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                ObjectOutputStream oos = new ObjectOutputStream(baos);
-                //System.out.println(jth.getUI());
-                oos.writeObject(jth);
-                oos.writeObject(jth.getAccessibleContext());
-            }
-        }
-        catch (Exception x) {
-            x.printStackTrace();
-        }
-    }
+public class SerializeJTableHeader {
 
     private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
         try {
@@ -65,12 +49,18 @@ public class SerializeJTableHeader implements Runnable{
         }
     }
 
-    public static void main(String ... args) throws Exception{
+    public static void main(String[] args) throws Exception {
         for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
             System.out.println("Testing L&F: " + laf);
             SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
-            SwingUtilities.invokeAndWait(new SerializeJTableHeader());
+            JTableHeader jth = new JTableHeader();
+            for (int i = 0; i < 10; i++) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ObjectOutputStream oos = new ObjectOutputStream(baos);
+                //System.out.println(jth.getUI());
+                oos.writeObject(jth);
+                oos.writeObject(jth.getAccessibleContext());
+            }
         }
     }
-
 }
