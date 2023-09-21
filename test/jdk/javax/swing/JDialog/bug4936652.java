@@ -32,7 +32,7 @@ import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
 
 public class bug4936652 {
-    public static void main(String[] argv) throws Exception {
+    public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             for (int i = 0 ; i < 100; i++) {
                 System.out.println("i: " + i);
