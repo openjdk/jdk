@@ -41,36 +41,36 @@ public class TestMovingLoadBeforeStore {
     static int RANGE = 1024*64;
 
     private static final Random random = Utils.getRandomInstance();
-                                   
+
     public static void main(String[] strArr) {
         byte a[] = new byte[RANGE];
         for (int i = 0; i < 100; i++) {
             for (int j = 0; j < a.length; j++) {
                 a[j] = (byte)random.nextInt();
-            }                 
+            }
             System.out.println("i: " + i);
             byte[] a_ref = a.clone();
-            byte[] a_res = a.clone();      
+            byte[] a_res = a.clone();
             test_ref(a_ref, a_ref, i % 2);
             test(a_res, a_res, i % 2);
             verify(a_ref, a_res, a);
-        }                                              
-    }        
+        }
+    }
 
     static void verify(byte[] ref, byte[] res, byte[] orig) {
         boolean fail = false;
         for (int j = 0; j < ref.length; j++) {
-            if (ref[j] != res[j]) {      
+            if (ref[j] != res[j]) {
                 System.out.println("Wrong: " + j + ":" + ref[j] + " vs " + res[j] + " from " + orig[j]);
-                fail = true;                                                                 
-            }                                                                                
-        }                                                                                    
-        if (fail) {                                                                          
-            throw new RuntimeException("wrong result");                                       
-        }                                                                                    
-    }                                                                                        
+                fail = true;
+            }
+        }
+        if (fail) {
+            throw new RuntimeException("wrong result");
+        }
+    }
 
-    static void test(byte[] a, byte[] b, int inv) {                                        
+    static void test(byte[] a, byte[] b, int inv) {
         for (int i = 0; i < RANGE-4; i+=4) {
             a[i +  0]++;
             a[i +  1]++;
@@ -80,11 +80,11 @@ public class TestMovingLoadBeforeStore {
             b[inv + i +  1]++;
             b[inv + i +  2]++;
             b[inv + i +  3]++;
-        }                                                                                    
-    }                                                                                        
-                                                                                             
-    static void test_ref(byte[] a, byte[] b, int inv) {                                    
-        for (int i = 0; i < RANGE-4; i+=4) {                                                 
+        }
+    }
+
+    static void test_ref(byte[] a, byte[] b, int inv) {
+        for (int i = 0; i < RANGE-4; i+=4) {
             a[i +  0]++;
             a[i +  1]++;
             a[i +  2]++;
@@ -93,6 +93,6 @@ public class TestMovingLoadBeforeStore {
             b[inv + i +  1]++;
             b[inv + i +  2]++;
             b[inv + i +  3]++;
-        }                                                                                                                                         
-    }                                                                                                                                             
+        }
+    }
 }
