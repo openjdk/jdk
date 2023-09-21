@@ -1473,4 +1473,13 @@ final class CompilerToVM {
             }
         }
     }
+
+    /**
+     * @see HotSpotResolvedJavaMethod#getOopMapAt
+     */
+    void getOopMapAt(HotSpotResolvedJavaMethodImpl method, int bci, long[] oopMap) {
+        getOopMapAt(method, method.getMethodPointer(), bci, oopMap);
+    }
+
+    native void getOopMapAt(HotSpotResolvedJavaMethodImpl method, long methodPointer, int bci, long[] oopMap);
 }
