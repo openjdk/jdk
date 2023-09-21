@@ -604,6 +604,7 @@ void CodeCache::free(CodeBlob* cb) {
     heap->set_adapter_count(heap->adapter_count() - 1);
   }
 
+  cb->~CodeBlob();
   // Get heap for given CodeBlob and deallocate
   get_code_heap(cb)->deallocate(cb);
 

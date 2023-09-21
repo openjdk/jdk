@@ -119,11 +119,6 @@ protected:
 #ifndef PRODUCT
   AsmRemarks _asm_remarks;
   DbgStrings _dbg_strings;
-
- ~CodeBlob() {
-    _asm_remarks.clear();
-    _dbg_strings.clear();
-  }
 #endif // not PRODUCT
 
   CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset,
@@ -132,9 +127,14 @@ protected:
   CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb, int frame_complete_offset,
            int frame_size, OopMapSet* oop_maps,
            bool caller_must_gc_arguments, bool compiled = false);
+
 public:
   // Only used by unit test.
   CodeBlob() : _type(compiler_none) {}
+
+  ~CodeBlob() {
+    assert(_oop_maps == nullptr, "Not flushed");
+  }
 
   // Returns the space needed for CodeBlob
   static unsigned int allocation_size(CodeBuffer* cb, int header_size);
