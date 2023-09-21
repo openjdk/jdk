@@ -229,18 +229,17 @@ public class URLEncoder {
         Objects.requireNonNull(charset, "charset");
 
         int i;
-        int len = s.length();
-        for (i = 0; i < len; i++) {
+        for (i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
             if (!DONT_NEED_ENCODING.test(c) || c == ' ') {
                 break;
             }
         }
-        if (i == len) {
+        if (i == s.length()) {
             return s;
         }
 
-        StringBuilder out = new StringBuilder(len << 1);
+        StringBuilder out = new StringBuilder(s.length() << 1);
         if (i > 0) {
             out.append(s, 0, i);
         }
@@ -249,7 +248,7 @@ public class URLEncoder {
         CharBuffer cb = CharBuffer.allocate(ENCODING_CHUNK_SIZE);
         ByteBuffer bb = ByteBuffer.allocate((int)(ENCODING_CHUNK_SIZE * ce.maxBytesPerChar()));
 
-        while (i < len) {
+        while (i < s.length()) {
             char c = s.charAt(i);
             if (DONT_NEED_ENCODING.test(c)) {
                 if (c == ' ') {
@@ -270,7 +269,7 @@ public class URLEncoder {
                      * any other character.
                      */
                     if (Character.isHighSurrogate(c)) {
-                        if ((i + 1) < len) {
+                        if ((i + 1) < s.length()) {
                             char d = s.charAt(i + 1);
                             if (Character.isLowSurrogate(d)) {
                                 cb.put(d);
@@ -282,7 +281,7 @@ public class URLEncoder {
                         flushToStringBuilder(out, ce, cb, bb, false);
                     }
                     i++;
-                } while (i < len && !DONT_NEED_ENCODING.test((c = s.charAt(i))));
+                } while (i < s.length() && !DONT_NEED_ENCODING.test((c = s.charAt(i))));
                 flushToStringBuilder(out, ce, cb, bb, true);
             }
         }
