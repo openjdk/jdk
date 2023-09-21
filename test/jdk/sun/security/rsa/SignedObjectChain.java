@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,95 @@
  */
 
 /*
- * @test
+ * @test id=MD2withRSA
  * @bug 8050374 8146293
  * @library /test/lib
  * @build jdk.test.lib.SigTestUtil
  * @compile ../../../java/security/SignedObject/Chain.java
- * @run main SignedObjectChain
+ * @run main/othervm -DSigAlg=MD2withRSA SignedObjectChain
+ * @summary Verify a chain of signed objects
+ */
+
+/*
+ * @test id=MD5withRSA
+ * @bug 8050374 8146293
+ * @library /test/lib
+ * @build jdk.test.lib.SigTestUtil
+ * @compile ../../../java/security/SignedObject/Chain.java
+ * @run main/othervm -DSigAlg=MD5withRSA SignedObjectChain
+ * @summary Verify a chain of signed objects
+ */
+
+/*
+ * @test id=SHA1withRSA
+ * @bug 8050374 8146293
+ * @library /test/lib
+ * @build jdk.test.lib.SigTestUtil
+ * @compile ../../../java/security/SignedObject/Chain.java
+ * @run main/othervm -DSigAlg=SHA1withRSA SignedObjectChain
+ * @summary Verify a chain of signed objects
+ */
+
+/*
+ * @test id=SHA224withRSA
+ * @bug 8050374 8146293
+ * @library /test/lib
+ * @build jdk.test.lib.SigTestUtil
+ * @compile ../../../java/security/SignedObject/Chain.java
+ * @run main/othervm -DSigAlg=SHA224withRSA SignedObjectChain
+ * @summary Verify a chain of signed objects
+ */
+
+/*
+ * @test id=SHA256withRSA
+ * @bug 8050374 8146293
+ * @library /test/lib
+ * @build jdk.test.lib.SigTestUtil
+ * @compile ../../../java/security/SignedObject/Chain.java
+ * @run main/othervm -DSigAlg=SHA256withRSA SignedObjectChain
+ * @summary Verify a chain of signed objects
+ */
+
+/*
+ * @test id=SHA384withRSA
+ * @bug 8050374 8146293
+ * @library /test/lib
+ * @build jdk.test.lib.SigTestUtil
+ * @compile ../../../java/security/SignedObject/Chain.java
+ * @run main/othervm -DSigAlg=SHA384withRSA SignedObjectChain
+ * @summary Verify a chain of signed objects
+ */
+
+/*
+ * @test id=SHA512withRSA
+ * @bug 8050374 8146293
+ * @library /test/lib
+ * @build jdk.test.lib.SigTestUtil
+ * @compile ../../../java/security/SignedObject/Chain.java
+ * @run main/othervm -DSigAlg=SHA512withRSA SignedObjectChain
+ * @summary Verify a chain of signed objects
+ */
+
+/*
+ * @test id=SHA512_224withRSA
+ * @bug 8050374 8146293
+ * @library /test/lib
+ * @build jdk.test.lib.SigTestUtil
+ * @compile ../../../java/security/SignedObject/Chain.java
+ * @run main/othervm -DSigAlg=SHA512_224withRSA SignedObjectChain
+ * @summary Verify a chain of signed objects
+ */
+
+/*
+ * @test id=SHA512_256withRSA
+ * @bug 8050374 8146293
+ * @library /test/lib
+ * @build jdk.test.lib.SigTestUtil
+ * @compile ../../../java/security/SignedObject/Chain.java
+ * @run main/othervm -DSigAlg=SHA512_256withRSA SignedObjectChain
  * @summary Verify a chain of signed objects
  */
 public class SignedObjectChain {
-
     private static class Test extends Chain.Test {
 
         public Test(Chain.SigAlg sigAlg) {
@@ -39,21 +118,9 @@ public class SignedObjectChain {
         }
     }
 
-    private static final Test[] tests = {
-        new Test(Chain.SigAlg.MD2withRSA),
-        new Test(Chain.SigAlg.MD5withRSA),
-        new Test(Chain.SigAlg.SHA1withRSA),
-        new Test(Chain.SigAlg.SHA224withRSA),
-        new Test(Chain.SigAlg.SHA256withRSA),
-        new Test(Chain.SigAlg.SHA384withRSA),
-        new Test(Chain.SigAlg.SHA512withRSA),
-        new Test(Chain.SigAlg.SHA512_224withRSA),
-        new Test(Chain.SigAlg.SHA512_256withRSA),
-    };
 
     public static void main(String argv[]) {
-        boolean resutl = java.util.Arrays.stream(tests).allMatch(
-                (test) -> Chain.runTest(test));
+        boolean resutl = Chain.runTest(new Test(Chain.SigAlg.valueOf(System.getProperty("SigAlg"))));
 
         if(resutl) {
             System.out.println("All tests passed");
