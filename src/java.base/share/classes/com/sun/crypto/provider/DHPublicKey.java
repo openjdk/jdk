@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,19 +279,19 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
      * Calculates a hash code value for the object.
      * Objects that are equal will also have the same hashcode.
      */
+    @Override
     public int hashCode() {
         return Objects.hash(y, p, g);
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
 
-        if (!(obj instanceof javax.crypto.interfaces.DHPublicKey)) {
+        if (!(obj instanceof javax.crypto.interfaces.DHPublicKey other)) {
             return false;
         }
 
-        javax.crypto.interfaces.DHPublicKey other =
-            (javax.crypto.interfaces.DHPublicKey) obj;
         DHParameterSpec otherParams = other.getParams();
         return ((this.y.compareTo(other.getY()) == 0) &&
                 (this.p.compareTo(otherParams.getP()) == 0) &&

@@ -736,13 +736,8 @@ socketTransport_startListening(jdwpTransportEnv* env, const char* address,
     }
 
     if (listenAddr == NULL) {
-        // No address of preferred address family found, grab the fist one.
+        // No address of preferred address family found, grab the first one.
         listenAddr = &(addrInfo[0]);
-    }
-
-    if (listenAddr == NULL) {
-        dbgsysFreeAddrInfo(addrInfo);
-        RETURN_ERROR(JDWPTRANSPORT_ERROR_INTERNAL, "listen failed: wrong address");
     }
 
     // Binding to IN6ADDR_ANY allows to serve both IPv4 and IPv6 connections,

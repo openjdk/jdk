@@ -26,12 +26,11 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles;
+import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Set;
 
 import java.lang.reflect.AccessFlag;
-import java.util.ArrayDeque;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -125,29 +124,49 @@ class PackageSnippets {
         // @end
     }
 
-    void writeHelloWorld() {
-        // @start region="helloWorld"
-        byte[] bytes = Classfile.of().build(ClassDesc.of("Hello"), cb -> {
-            cb.withFlags(AccessFlag.PUBLIC);
-            cb.withMethod("<init>", MethodTypeDesc.of(ConstantDescs.CD_void), Classfile.ACC_PUBLIC,
-                          mb -> mb.withCode(
-                                  b -> b.aload(0)
-                                        .invokespecial(ConstantDescs.CD_Object, "<init>",
-                                                       MethodTypeDesc.of(ConstantDescs.CD_void))
-                                        .returnInstruction(TypeKind.VoidType)
-                          )
-              )
-              .withMethod("main", MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String.arrayType()),
-                          Classfile.ACC_PUBLIC,
-                          mb -> mb.withFlags(AccessFlag.STATIC, AccessFlag.PUBLIC)
-                                  .withCode(
-                                  b -> b.getstatic(ClassDesc.of("java.lang.System"), "out", ClassDesc.of("java.io.PrintStream"))
-                                        .constantInstruction(Opcode.LDC, "Hello World")
-                                        .invokevirtual(ClassDesc.of("java.io.PrintStream"), "println",
-                                                       MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String))
-                                        .returnInstruction(TypeKind.VoidType)
-            ));
-        });
+    private static final ClassDesc CD_Hello = ClassDesc.of("Hello");
+    private static final ClassDesc CD_Foo = ClassDesc.of("Foo");
+    private static final ClassDesc CD_Bar = ClassDesc.of("Bar");
+    private static final ClassDesc CD_System = ClassDesc.of("java.lang.System");
+    private static final ClassDesc CD_PrintStream = ClassDesc.of("java.io.PrintStream");
+    private static final MethodTypeDesc MTD_void_StringArray = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String.arrayType());
+    private static final MethodTypeDesc MTD_void_String = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String);
+
+    void writeHelloWorld1() {
+        // @start region="helloWorld1"
+        byte[] bytes = Classfile.of().build(CD_Hello,
+                clb -> clb.withFlags(Classfile.ACC_PUBLIC)
+                          .withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void,
+                                      Classfile.ACC_PUBLIC,
+                                      mb -> mb.withCode(
+                                              cob -> cob.aload(0)
+                                                        .invokespecial(ConstantDescs.CD_Object,
+                                                                       ConstantDescs.INIT_NAME, ConstantDescs.MTD_void)
+                                                        .return_()))
+                          .withMethod("main", MTD_void_StringArray, Classfile.ACC_PUBLIC + Classfile.ACC_STATIC,
+                                      mb -> mb.withCode(
+                                              cob -> cob.getstatic(CD_System, "out", CD_PrintStream)
+                                                        .ldc("Hello World")
+                                                        .invokevirtual(CD_PrintStream, "println", MTD_void_String)
+                                                        .return_())));
+        // @end
+    }
+
+    void writeHelloWorld2() {
+        // @start region="helloWorld2"
+        byte[] bytes = Classfile.of().build(CD_Hello,
+                clb -> clb.withFlags(Classfile.ACC_PUBLIC)
+                          .withMethodBody(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void,
+                                          Classfile.ACC_PUBLIC,
+                                          cob -> cob.aload(0)
+                                                    .invokespecial(ConstantDescs.CD_Object,
+                                                                   ConstantDescs.INIT_NAME, ConstantDescs.MTD_void)
+                                                    .return_())
+                          .withMethodBody("main", MTD_void_StringArray, Classfile.ACC_PUBLIC + Classfile.ACC_STATIC,
+                                          cob -> cob.getstatic(CD_System, "out", CD_PrintStream)
+                                                    .ldc("Hello World")
+                                                    .invokevirtual(CD_PrintStream, "println", MTD_void_String)
+                                                    .return_()));
         // @end
     }
 
@@ -155,13 +174,14 @@ class PackageSnippets {
         // @start region="stripDebugMethods1"
         ClassModel classModel = Classfile.of().parse(bytes);
         byte[] newBytes = Classfile.of().build(classModel.thisClass().asSymbol(),
-                                          classBuilder -> {
-                                              for (ClassElement ce : classModel) {
-                                                  if (!(ce instanceof MethodModel mm
-                                                        && mm.methodName().stringValue().startsWith("debug")))
-                                                      classBuilder.with(ce);
-                                              }
-                                          });
+                classBuilder -> {
+                    for (ClassElement ce : classModel) {
+                        if (!(ce instanceof MethodModel mm
+                                && mm.methodName().stringValue().startsWith("debug"))) {
+                            classBuilder.with(ce);
+                        }
+                    }
+                });
         // @end
     }
 
@@ -176,13 +196,21 @@ class PackageSnippets {
         // @end
     }
 
+    void stripDebugMethods3(byte[] bytes) {
+        // @start region="stripDebugMethods3"
+        ClassTransform ct = ClassTransform.dropping(
+                                    element -> element instanceof MethodModel mm
+                                            && mm.methodName().stringValue().startsWith("debug"));
+        // @end
+    }
+
     void fooToBarTransform() {
         // @start region="fooToBarTransform"
         CodeTransform fooToBar = (b, e) -> {
             if (e instanceof InvokeInstruction i
                     && i.owner().asInternalName().equals("Foo")
                     && i.opcode() == Opcode.INVOKESTATIC)
-                        b.invokeInstruction(i.opcode(), ClassDesc.of("Bar"), i.name().stringValue(), i.typeSymbol(), i.isInterface());
+                        b.invokeInstruction(i.opcode(), CD_Bar, i.name().stringValue(), i.typeSymbol(), i.isInterface());
             else b.with(e);
         };
         // @end
@@ -192,10 +220,9 @@ class PackageSnippets {
         // @start region="instrumentCallsTransform"
         CodeTransform instrumentCalls = (b, e) -> {
             if (e instanceof InvokeInstruction i) {
-                b.getstatic(ClassDesc.of("java.lang.System"), "out", ClassDesc.of("java.io.PrintStream"))
-                 .constantInstruction(Opcode.LDC, i.name().stringValue())
-                 .invokevirtual(ClassDesc.of("java.io.PrintStream"), "println",
-                                MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String));
+                b.getstatic(CD_System, "out", CD_PrintStream)
+                 .ldc(i.name().stringValue())
+                 .invokevirtual(CD_PrintStream, "println", MTD_void_String);
             }
             b.with(e);
         };
@@ -217,7 +244,7 @@ class PackageSnippets {
                                               for (CodeElement e : xm) {
                                                   if (e instanceof InvokeInstruction i && i.owner().asInternalName().equals("Foo")
                                                                                && i.opcode() == Opcode.INVOKESTATIC)
-                                                              codeBuilder.invokeInstruction(i.opcode(), ClassDesc.of("Bar"),
+                                                              codeBuilder.invokeInstruction(i.opcode(), CD_Bar,
                                                                                             i.name().stringValue(), i.typeSymbol(), i.isInterface());
                                                   else codeBuilder.with(e);
                                               }});
@@ -303,7 +330,7 @@ class PackageSnippets {
                                     !(cle instanceof FieldModel fm
                                             && !targetFieldNames.contains(fm.fieldName().stringValue()))
                                     && !(cle instanceof MethodModel mm
-                                            && !"<init>".equals(mm.methodName().stringValue())
+                                            && !ConstantDescs.INIT_NAME.equals(mm.methodName().stringValue())
                                             && !targetMethods.contains(mm.methodName().stringValue() + mm.methodType().stringValue())))
                             //and instrumentor class references remapped to target class
                             .andThen(instrumentorClassRemapper)))));

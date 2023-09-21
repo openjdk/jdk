@@ -190,6 +190,11 @@ class os: AllStatic {
   static OSThread*          _starting_thread;
   static PageSizes          _page_sizes;
 
+  // The default value for os::vm_min_address() unless the platform knows better. This value
+  // is chosen to give us reasonable protection against NULL pointer dereferences while being
+  // low enough to leave most of the valuable low-4gb address space open.
+  static constexpr size_t _vm_min_address_default = 16 * M;
+
   static char*  pd_reserve_memory(size_t bytes, bool executable);
 
   static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable);
@@ -420,6 +425,9 @@ class os: AllStatic {
 
   static size_t vm_allocation_granularity() { return OSInfo::vm_allocation_granularity(); }
 
+  // Returns the lowest address the process is allowed to map against.
+  static size_t vm_min_address();
+
   inline static size_t cds_core_region_alignment();
 
   // Reserves virtual memory.
@@ -431,6 +439,10 @@ class os: AllStatic {
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
   static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false);
+
+  // Given an address range [min, max), attempts to reserve memory within this area, with the given alignment.
+  // If randomize is true, the location will be randomized.
+  static char* attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize);
 
   static bool   commit_memory(char* addr, size_t bytes, bool executable);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,
@@ -596,8 +608,7 @@ class os: AllStatic {
   static bool start_debugging(char *buf, int buflen);
 
   static address current_stack_pointer();
-  static address current_stack_base();
-  static size_t current_stack_size();
+  static void current_stack_base_and_size(address* base, size_t* size);
 
   static void verify_stack_alignment() PRODUCT_RETURN;
 
@@ -772,7 +783,7 @@ class os: AllStatic {
   static void print_context(outputStream* st, const void* context);
   static void print_tos_pc(outputStream* st, const void* context);
   static void print_tos(outputStream* st, address sp);
-  static void print_instructions(outputStream* st, address pc, int unitsize);
+  static void print_instructions(outputStream* st, address pc, int unitsize = 1);
   static void print_register_info(outputStream* st, const void* context, int& continuation);
   static void print_register_info(outputStream* st, const void* context);
   static bool signal_sent_by_kill(const void* siginfo);
@@ -886,10 +897,10 @@ class os: AllStatic {
 
   // SocketInterface (ex HPI SocketInterface )
   static int socket_close(int fd);
-  static int recv(int fd, char* buf, size_t nBytes, uint flags);
-  static int send(int fd, char* buf, size_t nBytes, uint flags);
-  static int raw_send(int fd, char* buf, size_t nBytes, uint flags);
-  static int connect(int fd, struct sockaddr* him, socklen_t len);
+  static ssize_t recv(int fd, char* buf, size_t nBytes, uint flags);
+  static ssize_t send(int fd, char* buf, size_t nBytes, uint flags);
+  static ssize_t raw_send(int fd, char* buf, size_t nBytes, uint flags);
+  static ssize_t connect(int fd, struct sockaddr* him, socklen_t len);
 
   // Support for signals
   static void  initialize_jdk_signal_support(TRAPS);

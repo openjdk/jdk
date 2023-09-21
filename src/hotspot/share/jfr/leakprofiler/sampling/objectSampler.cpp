@@ -249,7 +249,7 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, bool
   sample->set_thread(bh);
 
   const JfrThreadLocal* const tl = thread->jfr_thread_local();
-  const unsigned int stacktrace_hash = tl->cached_stack_trace_hash();
+  const traceid stacktrace_hash = tl->cached_stack_trace_hash();
   if (stacktrace_hash != 0) {
     sample->set_stack_trace_id(tl->cached_stack_trace_id());
     sample->set_stack_trace_hash(stacktrace_hash);

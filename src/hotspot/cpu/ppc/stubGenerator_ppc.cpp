@@ -4680,6 +4680,41 @@ class StubGenerator: public StubCodeGenerator {
     return stub;
   }
 
+  // For c2: call to return a leased buffer.
+  RuntimeStub* generate_jfr_return_lease() {
+    CodeBuffer code("jfr_return_lease", 512, 64);
+    MacroAssembler* _masm = new MacroAssembler(&code);
+
+    Register tmp1 = R10_ARG8;
+    Register tmp2 = R9_ARG7;
+
+    int framesize = frame::native_abi_reg_args_size / VMRegImpl::stack_slot_size;
+    address start = __ pc();
+    __ mflr(tmp1);
+    __ std(tmp1, _abi0(lr), R1_SP);  // save return pc
+    __ push_frame_reg_args(0, tmp1);
+    int frame_complete = __ pc() - start;
+    __ set_last_Java_frame(R1_SP, noreg);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), R16_thread);
+    address calls_return_pc = __ last_calls_return_pc();
+    __ reset_last_Java_frame();
+    __ pop_frame();
+    __ ld(tmp1, _abi0(lr), R1_SP);
+    __ mtlr(tmp1);
+    __ blr();
+
+    OopMapSet* oop_maps = new OopMapSet();
+    OopMap* map = new OopMap(framesize, 0);
+    oop_maps->add_gc_map(calls_return_pc - start, map);
+
+    RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
+      RuntimeStub::new_runtime_stub(code.name(),
+                                    &code, frame_complete,
+                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                    oop_maps, false);
+    return stub;
+  }
+
 #endif // INCLUDE_JFR
 
 
@@ -4728,9 +4763,17 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
 
-    JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
-    JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
+    JFR_ONLY(generate_jfr_stubs();)
   }
+
+#if INCLUDE_JFR
+  void generate_jfr_stubs() {
+    StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
+    StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
+    StubRoutines::_jfr_return_lease_stub = generate_jfr_return_lease();
+    StubRoutines::_jfr_return_lease = StubRoutines::_jfr_return_lease_stub->entry_point();
+  }
+#endif // INCLUDE_JFR
 
   void generate_final_stubs() {
     // Generates all stubs and initializes the entry points

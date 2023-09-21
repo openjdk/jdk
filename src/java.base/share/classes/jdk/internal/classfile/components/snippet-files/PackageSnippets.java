@@ -25,6 +25,7 @@
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 
+import java.lang.constant.ConstantDescs;
 import java.lang.reflect.AccessFlag;
 import java.util.ArrayDeque;
 import java.util.Map;
@@ -98,10 +99,13 @@ class PackageSnippets {
     // @end
     @interface Test{}
 
+    private static final ClassDesc CD_Foo = ClassDesc.of("Foo");
+    private static final ClassDesc CD_Bar = ClassDesc.of("Bar");
+
     void singleClassRemap(ClassModel... allMyClasses) {
         // @start region="singleClassRemap"
         var classRemapper = ClassRemapper.of(
-                Map.of(ClassDesc.of("Foo"), ClassDesc.of("Bar")));
+                Map.of(CD_Foo, CD_Bar));
         var cc = Classfile.of();
         for (var classModel : allMyClasses) {
             byte[] newBytes = classRemapper.remapClass(cc, classModel);
@@ -207,7 +211,7 @@ class PackageSnippets {
                                     !(cle instanceof FieldModel fm
                                             && !targetFieldNames.contains(fm.fieldName().stringValue()))
                                     && !(cle instanceof MethodModel mm
-                                            && !"<init>".equals(mm.methodName().stringValue())
+                                            && !ConstantDescs.INIT_NAME.equals(mm.methodName().stringValue())
                                             && !targetMethods.contains(mm.methodName().stringValue() + mm.methodType().stringValue())))
                             //and instrumentor class references remapped to target class
                             .andThen(instrumentorClassRemapper)))));

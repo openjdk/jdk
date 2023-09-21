@@ -113,4 +113,3 @@ void EpsilonMonitoringSupport::update_counters() {
     MetaspaceCounters::update_performance_counters();
   }
 }
-

@@ -330,9 +330,7 @@ gss_release_name(OM_uint32 *minor_status,
 {
     PP(">>>> Calling gss_release_name %p...", *name);
     if (name != NULL && *name != GSS_C_NO_NAME) {
-        if ((*name)->name != NULL) {
-            delete[] (*name)->name;
-        }
+        delete[] (*name)->name;
         delete *name;
         *name = GSS_C_NO_NAME;
     }
@@ -419,9 +417,7 @@ gss_import_name(OM_uint32 *minor_status,
     *output_name = (gss_name_t) name;
     return GSS_S_COMPLETE;
 err:
-    if (value != NULL) {
-        delete[] value;
-    }
+    delete[] value;
     return GSS_S_FAILURE;
 }
 
@@ -1023,9 +1019,7 @@ err:
         OM_uint32 dummy;
         gss_delete_sec_context(&dummy, context_handle, GSS_C_NO_BUFFER);
     }
-    if (newCred) {
-        delete newCred;
-    }
+    delete newCred;
     if (output_token->value) {
         gss_release_buffer(NULL, output_token);
     }
@@ -1266,9 +1260,7 @@ gss_get_mic(OM_uint32 *minor_status,
 err:
     msg_token->length = 0;
     msg_token->value = NULL;
-    if (secBuff[1].pvBuffer) {
-        free(secBuff[1].pvBuffer);
-    }
+    free(secBuff[1].pvBuffer);
     return GSS_S_FAILURE;
 }
 
@@ -1342,7 +1334,7 @@ gss_wrap(OM_uint32 *minor_status,
     secBuff[0].pvBuffer = malloc(
             context_handle->SecPkgContextSizes.cbSecurityTrailer
                     + input_message_buffer->length
-                    + context_handle->SecPkgContextSizes.cbBlockSize);;
+                    + context_handle->SecPkgContextSizes.cbBlockSize);
     if (!secBuff[0].pvBuffer) {
         goto err;
     }
@@ -1393,15 +1385,10 @@ gss_wrap(OM_uint32 *minor_status,
     return GSS_S_COMPLETE;
 
 err:
-    if (secBuff[0].pvBuffer) {
-        free(secBuff[0].pvBuffer);
-    }
-    if (secBuff[1].pvBuffer) {
-        free(secBuff[1].pvBuffer);
-    }
-    if (secBuff[2].pvBuffer) {
-        free(secBuff[2].pvBuffer);
-    }
+    free(secBuff[0].pvBuffer);
+    free(secBuff[1].pvBuffer);
+    free(secBuff[2].pvBuffer);
+
     output_message_buffer->length = 0;
     output_message_buffer->value = NULL;
     return GSS_S_FAILURE;
@@ -1468,9 +1455,7 @@ gss_unwrap(OM_uint32 *minor_status,
     return GSS_S_COMPLETE;
 
 err:
-    if (secBuff[0].pvBuffer) {
-        free(secBuff[0].pvBuffer);
-    }
+    free(secBuff[0].pvBuffer);
     output_message_buffer->length = 0;
     output_message_buffer->value = NULL;
     return GSS_S_FAILURE;
@@ -1581,9 +1566,7 @@ gss_add_oid_set_member(OM_uint32 *minor_status,
             member_oid->elements, member_oid->length);
     (*oid_set)->elements = newcopy;
     (*oid_set)->count++;
-    if (existing) {
-        delete[] existing;
-    }
+    delete[] existing;
 
     return GSS_S_COMPLETE;
 }
@@ -1670,10 +1653,8 @@ gss_release_buffer(OM_uint32 *minor_status,
     if (buffer == NULL || buffer == GSS_C_NO_BUFFER) {
         return GSS_S_COMPLETE;
     }
-    if (buffer->value) {
-        free(buffer->value);
-        buffer->value = NULL;
-    }
+    free(buffer->value);
+    buffer->value = NULL;
     buffer->length = 0;
     return GSS_S_COMPLETE;
 }

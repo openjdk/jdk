@@ -32,6 +32,8 @@
 #include "utilities/macros.hpp"
 #include "utilities/enumIterator.hpp"
 
+class SerializeClosure;
+
 // The class vmSymbols is a name space for fast lookup of
 // symbols commonly used in the VM.
 //
@@ -376,6 +378,7 @@
   /* Support for JVMCI */                                                                         \
   JVMCI_VM_SYMBOLS_DO(template, do_alias)                                                         \
                                                                                                   \
+  template(java_lang_ClassFrameInfo,                  "java/lang/ClassFrameInfo")                 \
   template(java_lang_StackWalker,                     "java/lang/StackWalker")                    \
   template(java_lang_StackFrameInfo,                  "java/lang/StackFrameInfo")                 \
   template(java_lang_LiveStackFrameInfo,              "java/lang/LiveStackFrameInfo")             \
@@ -757,7 +760,7 @@
   template(decodeAndThrowThrowable_name,               "decodeAndThrowThrowable")                                 \
   template(encodeAnnotations_name,                     "encodeAnnotations")                                       \
   template(encodeAnnotations_signature,                "([BLjava/lang/Class;Ljdk/internal/reflect/ConstantPool;Z[Ljava/lang/Class;)[B")\
-  template(decodeAndThrowThrowable_signature,          "(JZ)V")                                                   \
+  template(decodeAndThrowThrowable_signature,          "(IJZ)V")                                                  \
   template(classRedefinedCount_name,                   "classRedefinedCount")                                     \
   template(classLoader_name,                           "classLoader")                                             \
   template(componentType_name,                         "componentType")                                           \

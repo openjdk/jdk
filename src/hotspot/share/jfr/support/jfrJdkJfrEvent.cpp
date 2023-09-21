@@ -150,7 +150,7 @@ jobject JdkJfrEvent::get_all_klasses(TRAPS) {
 
   JavaValue result(T_BOOLEAN);
   for (int i = 0; i < event_subklasses.length(); ++i) {
-    const jclass clazz = (const jclass)event_subklasses.at(i);
+    const jclass clazz = (jclass)event_subklasses.at(i);
     assert(JdkJfrEvent::is_subklass(clazz), "invariant");
     JfrJavaArguments args(&result, array_list_klass, add_method_sym, add_method_sig_sym);
     args.set_receiver(h_array_list());

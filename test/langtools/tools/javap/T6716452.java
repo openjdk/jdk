@@ -24,11 +24,18 @@
 /*
  * @test 6716452
  * @summary need a method to get an index of an attribute
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  */
 
 import java.io.*;
-import com.sun.tools.classfile.*;
+import java.nio.file.Files;
+
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 
 public class T6716452 {
     public static void main(String[] args) throws Exception {
@@ -38,49 +45,44 @@ public class T6716452 {
     public void run() throws Exception {
         File javaFile = writeTestFile();
         File classFile = compileTestFile(javaFile);
-
-        ClassFile cf = ClassFile.read(classFile);
-        for (Method m: cf.methods) {
-            test(cf, m);
+        ClassModel cm = Classfile.of().parse(classFile.toPath());
+        for (MethodModel mm: cm.methods()) {
+            test(mm);
         }
 
         if (errors > 0)
             throw new Exception(errors + " errors found");
     }
 
-    void test(ClassFile cf, Method m) {
-        test(cf, m, Attribute.Code, Code_attribute.class);
-        test(cf, m, Attribute.Exceptions, Exceptions_attribute.class);
+    void test(MethodModel mm) {
+        test(mm, Attributes.CODE, CodeAttribute.class);
+        test(mm, Attributes.EXCEPTIONS, ExceptionsAttribute.class);
     }
 
-    // test the result of Attributes.getIndex according to expectations
+    // test the result of MethodModel.findAttribute, MethodModel.attributes().indexOf() according to expectations
     // encoded in the method's name
-    void test(ClassFile cf, Method m, String name, Class<?> c) {
-        int index = m.attributes.getIndex(cf.constant_pool, name);
-        try {
-            String m_name = m.getName(cf.constant_pool);
-            System.err.println("Method " + m_name + " name:" + name + " index:" + index + " class: " + c);
-            boolean expect = (m_name.equals("<init>") && name.equals("Code"))
-                || (m_name.indexOf(name) != -1);
-            boolean found = (index != -1);
-            if (expect) {
-                if (found) {
-                    Attribute attr = m.attributes.get(index);
-                    if (!c.isAssignableFrom(attr.getClass())) {
-                        error(m + ": unexpected attribute found,"
-                              + " expected " + c.getName()
-                              + " found " + attr.getClass().getName());
-                    }
-                } else {
-                    error(m + ": expected attribute " + name + " not found");
+    <T extends Attribute<T>> void test(MethodModel mm, AttributeMapper<T> attr, Class<?> c) {
+        Attribute<T> attr_instance = mm.findAttribute(attr).orElse(null);
+        int index = mm.attributes().indexOf(attr_instance);
+        String mm_name = mm.methodName().stringValue();
+        System.err.println("Method " + mm_name + " name:" + attr.name() + " index:" + index + " class: " + c);
+        boolean expect = (mm_name.equals("<init>") && attr.name().equals("Code"))
+                || (mm_name.contains(attr.name()));
+        boolean found = (index != -1);
+        if (expect) {
+            if (found) {
+                if (!c.isAssignableFrom(mm.attributes().get(index).getClass())) {
+                    error(mm + ": unexpected attribute found,"
+                            + " expected " + c.getName()
+                            + " found " + mm.attributes().get(index).attributeName());
                 }
             } else {
-                if (found) {
-                    error(m + ": unexpected attribute " + name);
-                }
+                error(mm + ": expected attribute " + attr.name() + " not found");
             }
-        } catch (ConstantPoolException e) {
-            error(m + ": " + e);
+        } else {
+            if (found) {
+                error(mm + ": unexpected attribute " + attr.name());
+            }
         }
     }
 
