@@ -248,6 +248,30 @@
  * symbolic information, one accepting nominal descriptors, and the other
  * accepting constant pool entries.
  *
+ * <h3>Consistency checks, syntax checks and verification</h3>
+ * No consistency checks are performed while building or transforming classfiles
+ * (except for null arguments checks). All builders and classfile elements factory
+ * methods accepts provided information without implicit validation.
+ * However fatal inconsistencies (like for example invalid code sequence or
+ * unresolved labels) affects internal tools and may cause exceptions later in
+ * the classfile building process.
+ * <p>
+ * Basic syntax control can be achieved using symbolic descriptors. For example
+ * using {@link java.lang.constant.ClassDesc} assures the right serial form is
+ * used in the particular place inside classfile and also assures the class name
+ * has been already syntactically validated.
+ * <p>
+ * On the other hand it is possible to use builders methods and factories accepting
+ * constant pool entries to avoid any form of syntax control. Constant pool entries
+ * can be constructed from raw values, where no syntax control is in charge.
+ * {@snippet lang=java :
+ * var invalidInternalClassName = constantPoolBuilder.classEntry(
+ *                                    constantPoolBuilder.utf8Entry("mypackage.MyClass"));
+ * }
+ * <p>
+ * More complex verification of a classfile can be achieved by explicit invocation
+ * of {@link java.lang.classfile.ClassModel#verify}.
+ *
  * <h2>Transforming classfiles</h2>
  * Classfile Processing APIs are most frequently used to combine reading and
  * writing into transformation, where a classfile is read, localized changes are
