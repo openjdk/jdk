@@ -21,7 +21,8 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
  * @bug 4859570
  * @summary SwingUtilities.sharedOwnerFrame is never disposed
  * @key headful
@@ -35,10 +36,11 @@ import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
 
 public class bug4859570 {
-    static boolean dialogIsClosed = false;
+    static volatile boolean dialogIsClosed = false;
+    static Robot r;
     static Window owner;
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             JDialog dialog = new JDialog();
             dialog.setTitle("bug4859570");
@@ -47,10 +49,7 @@ public class bug4859570 {
 
             dialog.addWindowListener(new WindowAdapter() {
                 public void windowClosed(WindowEvent e) {
-                    synchronized (this) {
-                        dialogIsClosed = true;
-                        this.notifyAll();
-                    }
+                    dialogIsClosed = true;
                 }
             });
 
@@ -58,19 +57,15 @@ public class bug4859570 {
             dialog.dispose();
         });
 
-        Robot r = new Robot();
+        r = new Robot();
         r.delay(1000);
         r.waitForIdle();
 
-        SwingUtilities.invokeAndWait(() -> {
-            try {
-                if (!dialogIsClosed) {
-                    Thread.sleep(1000);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        if (!dialogIsClosed) {
+            r.delay(1000);
+        }
 
+        SwingUtilities.invokeAndWait(() -> {
             if (owner.isDisplayable()) {
                 throw new RuntimeException("The shared owner frame should be disposed.");
             }

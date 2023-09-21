@@ -21,7 +21,8 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
  * @bug 4768127
  * @summary ToolTipManager not removed from components
  * @key headful
@@ -41,10 +42,10 @@ import javax.swing.ToolTipManager;
 
 public class bug4768127 {
     static JFrame fr;
+    static volatile Point p;
     static volatile JLabel[] label = new JLabel[2];
-    static volatile Robot robot;
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         try {
             SwingUtilities.invokeAndWait(() -> {
                 fr = new JFrame("bug4768127");
@@ -74,26 +75,26 @@ public class bug4768127 {
                 fr.setVisible(true);
             });
 
-            robot = new Robot();
+            Robot robot = new Robot();
             robot.setAutoDelay(10);
-            robot.delay(3000);
             robot.waitForIdle();
+            robot.delay(3000);
 
-            clickLabel(0);
-            robot.delay(3000);
+            clickLabel(0, robot);
             robot.waitForIdle();
+            robot.delay(3000);
 
-            clickLabel(1);
-            robot.delay(3000);
+            clickLabel(1, robot);
             robot.waitForIdle();
+            robot.delay(3000);
 
-            clickLabel(0);
-            robot.delay(3000);
+            clickLabel(0, robot);
             robot.waitForIdle();
+            robot.delay(3000);
 
-            clickLabel(1);
-            robot.delay(3000);
+            clickLabel(1, robot);
             robot.waitForIdle();
+            robot.delay(3000);
 
             MouseMotionListener[] mml = label[0].getMouseMotionListeners();
             if (mml.length > 0 && mml[0] instanceof ToolTipManager) {
@@ -108,12 +109,15 @@ public class bug4768127 {
         }
     }
 
-    static void clickLabel(int i) {
-        final Point p = label[i].getLocationOnScreen();
+    static void clickLabel(int i, Robot robot) throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            p = label[i].getLocationOnScreen();
+        });
         final Rectangle rect = label[i].getBounds();
         robot.mouseMove(p.x + rect.width / 2, p.y + rect.height / 2);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+
         //Generate mouseMotionEvent
         robot.mouseMove(p.x + rect.width / 2 + 3, p.y + rect.height / 2 + 3);
         robot.mouseMove(p.x + rect.width / 2, p.y + rect.height / 2);

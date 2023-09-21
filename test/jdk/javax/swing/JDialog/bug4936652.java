@@ -21,7 +21,8 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
  * @bug 4936652
  * @key headful
  * @summary JDialog.setVisible, JDialog.dispose works incorrectly
