@@ -30,8 +30,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.StringTemplate.Processor;
 import java.lang.StringTemplate.Processor.Linkage;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jdk.internal.javac.PreviewFeature;
 
@@ -97,12 +95,6 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 public final class FormatProcessor implements Processor<String, RuntimeException>, Linkage {
-    // %[argument_index$][flags][width][.precision][t]conversion
-    static final String FORMAT_SPECIFIER
-            = "%(\\d+\\$)?([-#+ 0,(\\<]*)?(\\d+)?(\\.\\d+)?([tT])?([a-zA-Z%])";
-
-    static final Pattern FORMAT_SPECIFIER_PATTERN = Pattern.compile(FORMAT_SPECIFIER);
-
     /**
      * {@link Locale} used to format
      */
@@ -225,22 +217,47 @@ public final class FormatProcessor implements Processor<String, RuntimeException
      * @throws MissingFormatArgumentException if not at end or found and not needed
      */
     private static boolean findFormat(String fragment, boolean needed) {
-        Matcher matcher = FORMAT_SPECIFIER_PATTERN.matcher(fragment);
-        String group;
+        Formatter.FormatSpecifierParser parser = null;
+        int max = fragment.length();
+        for (int i = 0; i < max;) {
+            int n = fragment.indexOf('%', i);
+            if (n < 0) {
+                return false;
+            }
 
-        while (matcher.find()) {
-            group = matcher.group();
+            i = n + 1;
+            if (i >= max) {
+                return false;
+            }
 
-            if (!group.equals("%%") && !group.equals("%n")) {
-                if (matcher.end() == fragment.length() && needed) {
+            char c = fragment.charAt(i);
+            if (parser == null) {
+                parser = new Formatter.FormatSpecifierParser(null, c, i, fragment, max);
+            } else {
+                parser.reset(c, i);
+            }
+
+            String group;
+            int off = parser.parse();
+
+            if (off == 1) {
+                char c1 = fragment.charAt(off);
+                if (c1 == '%' || c1 == 'n') {
+                    continue;
+                }
+            }
+
+            if (off > 0) {
+                // if (!group.equals("%%") && !group.equals("%n")) {
+                if (i + off == max && needed) {
                     return true;
                 }
-
-                throw new MissingFormatArgumentException(group +
-                        " is not immediately followed by an embedded expression");
+                group = fragment.substring(i - 1, i + off + 1);
+            } else {
+                group = String.valueOf(c);
             }
+            throw new MissingFormatArgumentException(group + " is not immediately followed by an embedded expression");
         }
-
         return false;
     }
 
