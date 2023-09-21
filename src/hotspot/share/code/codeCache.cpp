@@ -472,10 +472,10 @@ CodeHeap* CodeCache::get_code_heap_containing(void* start) {
   return nullptr;
 }
 
-CodeHeap* CodeCache::get_code_heap(const CodeBlob* cb) {
+CodeHeap* CodeCache::get_code_heap(const void* cb) {
   assert(cb != nullptr, "CodeBlob is null");
   FOR_ALL_HEAPS(heap) {
-    if ((*heap)->contains_blob(cb)) {
+    if ((*heap)->contains(cb)) {
       return *heap;
     }
   }
