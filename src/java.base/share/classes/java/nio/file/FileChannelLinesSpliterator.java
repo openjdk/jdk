@@ -54,7 +54,7 @@ import java.util.function.Consumer;
  * <p>
  * When the root spliterator is first split a mapped memory segment will be created
  * over the file for its size that was observed when the stream was created.
- * Thus a mapped memory segment is only required for parallel stream execution.
+ * Thus, a mapped memory segment is only required for parallel stream execution.
  * Sub-spliterators will share that mapped memory segment.  Splitting will use the
  * mapped memory segment to find the closest line feed characters(s) to the left or
  * right of the mid-point of covered range of bytes of the file.  If a line feed
@@ -82,14 +82,14 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
     private final Cleaner.Cleanable cleanupAction;
 
     // Holds a reference to the parent spliterator to ensure the root's Cleaner
-    // is invoked only once itself and all spits are no longer phantom reachable.
+    // is invoked only once itself _and all its splits_ are no longer phantom reachable.
     private final FileChannelLinesSpliterator parent;
 
     private final int fence;
     private int index;
 
-    // Null before first split, non-null when splitting, null when traversing
-    private MemorySegment buffer;
+    // Null before first split, non-null otherwise
+    private MemorySegment segment;
     // Non-null when traversing
     private BufferedReader reader;
 
@@ -110,9 +110,9 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
         this.cs = parent.cs;
         this.index = index;
         this.fence = fence;
-        this.buffer = parent.buffer;
+        this.segment = parent.segment;
         this.arena = parent.arena;
-        this.cleanupAction = null;
+        this.cleanupAction = null; // No cleanupAction for splits
         this.parent = parent;
     }
 
@@ -207,21 +207,21 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
         if (reader != null)
             return null;
 
-        MemorySegment b;
-        if ((b = buffer) == null) {
-            b = buffer = mappedSegment();
+        MemorySegment s;
+        if ((s = segment) == null) {
+            s = segment = mappedSegment();
         }
 
         final int hi = fence, lo = index;
 
         // Check if line separator hits the mid point
         int mid = (lo + hi) >>> 1;
-        int c = b.get(ValueLayout.JAVA_BYTE, mid);
+        int c = s.get(ValueLayout.JAVA_BYTE, mid);
         if (c == '\n') {
             mid++;
         } else if (c == '\r') {
             // Check if a line separator of "\r\n"
-            if (++mid < hi && b.get(ValueLayout.JAVA_BYTE, mid) == '\n') {
+            if (++mid < hi && s.get(ValueLayout.JAVA_BYTE, mid) == '\n') {
                 mid++;
             }
         } else {
@@ -232,7 +232,7 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
             mid = 0;
             while (midL > lo && midR < hi) {
                 // Sample to the left
-                c = b.get(ValueLayout.JAVA_BYTE, midL--);
+                c = s.get(ValueLayout.JAVA_BYTE, midL--);
                 if (c == '\n' || c == '\r') {
                     // If c is "\r" then no need to check for "\r\n"
                     // since the subsequent value was previously checked
@@ -241,11 +241,11 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
                 }
 
                 // Sample to the right
-                c = b.get(ValueLayout.JAVA_BYTE, midR++);
+                c = s.get(ValueLayout.JAVA_BYTE, midR++);
                 if (c == '\n' || c == '\r') {
                     mid = midR;
                     // Check if line-separator is "\r\n"
-                    if (c == '\r' && mid < hi && b.get(ValueLayout.JAVA_BYTE, mid) == '\n') {
+                    if (c == '\r' && mid < hi && s.get(ValueLayout.JAVA_BYTE, mid) == '\n') {
                         mid++;
                     }
                     break;
