@@ -32,6 +32,7 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Array;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -1069,8 +1070,8 @@ class ImmutableCollections {
 
     // ---------- Map Implementations ----------
 
-    // Not a jdk.internal.ValueBased class; disqualified by fields in superclass AbstractMap
-    abstract static class AbstractImmutableMap<K,V> extends AbstractMap<K,V> implements Serializable {
+    @jdk.internal.ValueBased
+    abstract static class AbstractImmutableMap<K,V> implements Map<K, V>, Serializable {
         @Override public void clear() { throw uoe(); }
         @Override public V compute(K key, BiFunction<? super K,? super V,? extends V> rf) { throw uoe(); }
         @Override public V computeIfAbsent(K key, Function<? super K,? extends V> mf) { throw uoe(); }
@@ -1100,7 +1101,7 @@ class ImmutableCollections {
         }
     }
 
-    // Not a jdk.internal.ValueBased class; disqualified by fields in superclass AbstractMap
+    @jdk.internal.ValueBased
     static final class Map1<K,V> extends AbstractImmutableMap<K,V> {
         @Stable
         private final K k0;
@@ -1156,6 +1157,21 @@ class ImmutableCollections {
         public int hashCode() {
             return k0.hashCode() ^ v0.hashCode();
         }
+
+        @Override
+        public Set<K> keySet() {
+            return Collections.singleton(k0);
+        }
+
+        @Override
+        public Collection<V> values() {
+            return Collections.singletonList(v0);
+        }
+
+        @Override
+        public void forEach(BiConsumer<? super K, ? super V> action) {
+            action.accept(k0, v0);
+        }
     }
 
     /**
@@ -1167,7 +1183,7 @@ class ImmutableCollections {
      * @param <K> the key type
      * @param <V> the value type
      */
-    // Not a jdk.internal.ValueBased class; disqualified by fields in superclass AbstractMap
+    @jdk.internal.ValueBased
     static final class MapN<K,V> extends AbstractImmutableMap<K,V> {
 
         @Stable
@@ -1356,6 +1372,52 @@ class ImmutableCollections {
                 }
             }
             return new CollSer(CollSer.IMM_MAP, array);
+        }
+
+        @Override
+        public Set<K> keySet() {
+            return new AbstractSet<>() {
+                public Iterator<K> iterator() {
+                    return new Iterator<>() {
+                        private final Iterator<Entry<K, V>> i = entrySet().iterator();
+                        public boolean hasNext() { return i.hasNext(); }
+                        public K next() { return i.next().getKey(); }
+                        public void remove() { i.remove(); }
+                    };
+                }
+                public int size() { return MapN.this.size; }
+                public boolean isEmpty() { return false; }
+                public void clear() { throw uoe(); }
+                public boolean contains(Object k) { return MapN.this.containsKey(k); }
+            };
+        }
+
+        @Override
+        public Collection<V> values() {
+            return new AbstractCollection<>() {
+                public Iterator<V> iterator() {
+                    return new Iterator<>() {
+                        private final Iterator<Entry<K,V>> i = entrySet().iterator();
+                        public boolean hasNext() { return i.hasNext(); }
+                        public V next() { return i.next().getValue(); }
+                        public void remove() { i.remove(); }
+                    };
+                }
+                public int size() { return MapN.this.size;}
+            };
+        }
+
+        @Override
+        public void forEach(BiConsumer<? super K, ? super V> action) {
+            for (int i = 0; i < table.length; i += 2) {
+                @SuppressWarnings("unchecked")
+                K key = (K)table[i];
+                if (key != null) {
+                    @SuppressWarnings("unchecked")
+                    V value = (V)table[i + 1];
+                    action.accept(key, value);
+                }
+            }
         }
     }
 }
