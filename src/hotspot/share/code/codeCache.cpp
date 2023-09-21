@@ -1805,12 +1805,12 @@ CodeCache::DefaultPerfMapFile::DefaultPerfMapFile() {
   jio_snprintf(_name, sizeof(_name), "/tmp/perf-%d.map", os::current_process_id());
 }
 
-void CodeCache::write_perf_map(const char* fname) {
+void CodeCache::write_perf_map(const char* filename) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-  fileStream fs(fname, "w");
+  fileStream fs(filename, "w");
   if (!fs.is_open()) {
-    log_warning(codecache)("Failed to create %s for perf map", fname);
+    log_warning(codecache)("Failed to create %s for perf map", filename);
     return;
   }
 
