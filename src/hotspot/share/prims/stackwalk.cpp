@@ -186,7 +186,6 @@ int StackWalk::fill_in_frames(jint mode, BaseFrameStream& stream,
 
     // skip hidden frames for default StackWalker option (i.e. SHOW_HIDDEN_FRAMES
     // not set) and when StackWalker::getCallerClass is called
-    LogTarget(Debug, stackwalk) lt;
     if (!ShowHiddenFrames && skip_hidden_frames(mode)) {
       if (method->is_hidden()) {
         log_debug(stackwalk)("  skip hidden method: %s", stream.method()->external_name());
@@ -198,7 +197,7 @@ int StackWalk::fill_in_frames(jint mode, BaseFrameStream& stream,
     }
 
     int index = end_index++;
-    log_debug(stackwalk)("  %d: frame method: %s bci %d", index, stream.method()->external_name(), stream.bci());
+    log_debug(stackwalk)("  frame %d: %s bci %d", index, stream.method()->external_name(), stream.bci());
     stream.fill_frame(index, frames_array, methodHandle(THREAD, method), CHECK_0);
     frames_decoded++;
 
@@ -522,14 +521,14 @@ jint StackWalk::fetchNextBatch(Handle stackStream, jint mode, jlong magic,
   }
 
   log_debug(stackwalk)("StackWalk::fetchNextBatch last_batch_count %d buffer_size %d existing_stream "
-                       PTR_FORMAT " start %d frames %d", last_batch_count,
+                       PTR_FORMAT " start %d", last_batch_count,
                        buffer_size, p2i(existing_stream), start_index, frames_array->length());
   int end_index = start_index;
   if (buffer_size <= start_index) {
     return 0;        // No operation.
   }
 
-  assert (frames_array->length() >= buffer_size, "not enough space in buffers");
+  assert (frames_array->length() >= buffer_size, "frames_array length < buffer_size");
 
   BaseFrameStream& stream = (*existing_stream);
   if (!stream.at_end()) {
