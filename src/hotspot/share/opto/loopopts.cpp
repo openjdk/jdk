@@ -1165,20 +1165,13 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   Node *phi = split_thru_phi( n, n_blk, policy );
   if (!phi) return n;
 
-  uint hash = n->hash();
   // Found a Phi to split thru!
   // Replace 'n' with the new phi
   _igvn.replace_node( n, phi );
-
-  //bool seen_before = saved_hashes.test_set(hash);
-  //bool seen_before = saved_hashes.test(hash);
-  //saved_hashes.set(hash);
-
   // Moved a load around the loop, 'en-registering' something.
   if (n_blk->is_Loop() && n->is_Load() &&
-      !phi->in(LoopNode::LoopBackControl)->is_Load() && !C->saved_hashes()->test_set(hash)) {
+      !phi->in(LoopNode::LoopBackControl)->is_Load())
     C->set_major_progress();
-  }
 
   return phi;
 }

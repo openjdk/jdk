@@ -451,9 +451,6 @@ private:
   // Shared node hash table for GVN, IGVN and CCP.
   NodeHash*             _node_hash;
 
-  //
-  VectorSet*             _saved_hashes;
-
   GrowableArray<CallGenerator*> _late_inlines;        // List of CallGenerators to be revisited after main parsing has finished.
   GrowableArray<CallGenerator*> _string_late_inlines; // same but for string operations
   GrowableArray<CallGenerator*> _boxing_late_inlines; // same but for boxing operations
@@ -994,11 +991,6 @@ private:
     assert(_node_hash != nullptr, "must be created in Compile::Compile");
     return _node_hash;
   }
-
-  VectorSet* saved_hashes() {
-    assert(_saved_hashes != nullptr, "must be created in Compile::Compile");
-    return _saved_hashes;
-  }
   inline void       record_for_igvn(Node* n);   // Body is after class Unique_Node_List in node.hpp.
   inline void       remove_for_igvn(Node* n);   // Body is after class Unique_Node_List in node.hpp.
   void          set_initial_gvn(PhaseGVN *gvn)           { _initial_gvn = gvn; }
@@ -1068,7 +1060,7 @@ private:
   void inline_incrementally(PhaseIterGVN& igvn);
   void inline_string_calls(bool parse_time);
   void inline_boxing_calls(PhaseIterGVN& igvn);
-  bool optimize_loops(PhaseIterGVN& igvn);
+  bool optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode);
   void remove_root_to_sfpts_edges(PhaseIterGVN& igvn);
 
   void inline_vector_reboxing_calls();

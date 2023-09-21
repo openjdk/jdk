@@ -30,7 +30,6 @@
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
-#include "opto/compile.hpp"
 #include "utilities/checkedCast.hpp"
 
 
@@ -1199,29 +1198,6 @@ public:
 
       v.log_loop_tree();
     }
-  }
-
-  static bool optimize_default(PhaseIterGVN& igvn, int loop_opts_cnt) {
-    Compile* C = Compile::current();
-    loop_opts_cnt = 200;
-
-    while (C->major_progress() && (loop_opts_cnt > 0)) {
-      ResourceMark rm;
-      loop_opts_cnt--;
-      assert(loop_opts_cnt > 0, "infinite loop in optimize_loops very likely");
-
-      Compile::TracePhase tp("idealLoop", &timers[_t_idealLoop]);
-
-      PhaseIdealLoop ideal_loop(igvn, LoopOptsDefault);
-      if (C->failing()) return false;
-
-      // Cleanup any modified bits
-      igvn.optimize();
-      ideal_loop.log_loop_tree();
-
-      if (C->major_progress()) C->print_method(PHASE_PHASEIDEALLOOP_ITERATIONS, 2);
-    }
-    return true;
   }
 
   // True if the method has at least 1 irreducible loop
