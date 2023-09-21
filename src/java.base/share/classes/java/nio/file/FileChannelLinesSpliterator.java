@@ -93,10 +93,10 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
         this.fence = fence;
     }
 
-    private FileChannelLinesSpliterator(FileChannelLinesSpliterator parent,
+    private FileChannelLinesSpliterator(SharedState ss,
                                         int index,
                                         int fence) {
-        this.ss = parent.ss;
+        this.ss = ss;
         this.index = index;
         this.fence = fence;
     }
@@ -231,7 +231,7 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
 
             // The left spliterator will have the line-separator at the end
             return (mid > lo && mid < hi)
-                    ? new FileChannelLinesSpliterator(this, lo, index = mid)
+                    ? new FileChannelLinesSpliterator(ss, lo, index = mid)
                     : null;
         } finally {
             // Make sure the underlying `original` remains strongly referenced until the segment is fully used
