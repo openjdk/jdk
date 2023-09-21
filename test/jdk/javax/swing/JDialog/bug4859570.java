@@ -58,8 +58,8 @@ public class bug4859570 {
         });
 
         r = new Robot();
-        r.delay(1000);
         r.waitForIdle();
+        r.delay(1000);
 
         if (!dialogIsClosed) {
             r.delay(1000);
