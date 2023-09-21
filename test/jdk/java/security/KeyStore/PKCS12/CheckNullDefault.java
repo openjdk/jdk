@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -30,23 +28,17 @@ import static java.lang.System.out;
  * @bug 8304956
  * @summary Set keystore.type as null and check that
  * KeyStore.getDefaultType() returns pkcs12
- * @run main/othervm CheckDefaults
- *  -Djava.security.properties=./java.security
+ * @run main/othervm
+ *  -Djava.security.properties=${test.src}/java.security CheckDefaults
  */
 public class CheckNullDefault {
-    private static final String DEFAULT_KEY_STORE_TYPE = "pkcs12";
-    private void runTest(String[] args) {
+    public static void main(String[] args) {
         if (!KeyStore.getDefaultType().
-                equalsIgnoreCase(DEFAULT_KEY_STORE_TYPE)) {
+            equalsIgnoreCase("pkcs12")) {
             throw new RuntimeException(String.format("Default keystore type "
-                    + "Expected '%s' . Actual: '%s' ", DEFAULT_KEY_STORE_TYPE,
-                    KeyStore.getDefaultType()));
+                    + "Expected '%s' . Actual: '%s' ", "pkcs12",
+                KeyStore.getDefaultType()));
         }
         out.println("Test Passed");
-    }
-
-    public static void main(String[] args) {
-        CheckNullDefault checkDefaultsTest = new CheckNullDefault();
-        checkDefaultsTest.runTest(args);
     }
 }
