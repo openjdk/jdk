@@ -34,7 +34,6 @@ import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
 
 public class bug4859570 {
-    static Robot r;
     static Window owner;
 
     public static void main(String[] args) throws Exception {
@@ -48,7 +47,7 @@ public class bug4859570 {
             dialog.dispose();
         });
 
-        r = new Robot();
+        Robot r = new Robot();
         r.waitForIdle();
         r.delay(1000);
 
