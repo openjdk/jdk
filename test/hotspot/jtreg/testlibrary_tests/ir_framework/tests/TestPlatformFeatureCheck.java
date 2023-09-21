@@ -28,16 +28,16 @@ import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
 
 /*
  * @test 8280120
- * @summary Add attribute to IR to enable/disable IR matching based on the architecture 
+ * @summary Add attribute to IR to enable/disable IR matching based on the architecture
  * @library /test/lib /
  * @run driver ir_framework.tests.TestPlatformFeatureCheck
  */
 
 public class TestPlatformFeatureCheck {
     private static final int SIZE = 1000;
-    private static int a[] = new int[SIZE];
-    private static int b[] = new int[SIZE];
-    private static int res[] = new int[SIZE];
+    private static int[] a = new int[SIZE];
+    private static int[] b = new int[SIZE];
+    private static int[] res = new int[SIZE];
 
     public static void setup() {
         for (int i = 0; i < SIZE; i++) {
@@ -46,13 +46,13 @@ public class TestPlatformFeatureCheck {
         }
     }
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         setup();
-        TestFramework.runWithFlags("-XX:+UseKNLSetting");
+        TestFramework.run();
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, "> 0"}, applyIfPlatformFeature = {"amd64", "true"})
+    @IR(counts = {IRNode.ADD_VI, "> 0"}, applyIfPlatformFeature = {"x64", "true"})
     public static void test1() {
         for (int i = 0; i < SIZE; i++) {
             res[i] = a[i] + b[i];
@@ -61,7 +61,7 @@ public class TestPlatformFeatureCheck {
 
     // IR rule is enforced if all the feature conditions holds good
     @Test
-    @IR(counts = {IRNode.ADD_VI, "> 0"}, applyIfPlatformFeatureAnd={"amd64", "true", "64-bit", "true"})
+    @IR(counts = {IRNode.ADD_VI, "> 0"}, applyIfPlatformFeatureAnd = {"x64", "true", "linux", "true"})
     public static void test2() {
         for (int i = 0; i < SIZE; i++) {
             res[i] = a[i] + b[i];
@@ -70,7 +70,7 @@ public class TestPlatformFeatureCheck {
 
     // IR rule is enforced if any of the feature condition holds good
     @Test
-    @IR(counts = {IRNode.ADD_VI, "> 0"}, applyIfPlatformFeatureOr={"amd64", "true", "x86_64", "true"})
+    @IR(counts = {IRNode.ADD_VI, "> 0"}, applyIfPlatformFeatureOr = {"x64", "true", "x86", "true"})
     public static void test3() {
         for (int i = 0; i < SIZE; i++) {
             res[i] = a[i] + b[i];

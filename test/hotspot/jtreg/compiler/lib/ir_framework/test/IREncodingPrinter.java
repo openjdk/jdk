@@ -56,26 +56,22 @@ public class IREncodingPrinter {
     private Method method;
     private int ruleIndex;
 
+    // Platform specific features for use in IR preconditions. Please verify that there is
+    // a corresponding value e.g. in a jtreg @requires annotation before adding new features,
+    // as adding non-existent features can lead to skipped tests.
     private static final List<String> verifiedPlatformFeatures = new ArrayList<String>( Arrays.asList(
-        // datamodel
-        "32-bit",
-        "64-bit",
-        // name
+        // os.name prefixes
         "linux",
         "mac",
         "windows",
-        // arch
+        // vm.simpleArch values
         "aarch64",
-        "amd64",
-        "arm",
-        "i386",
-        "ppc64",
-        "ppc64le",
         "riscv64",
-        "s390",
-        "windows-i586",
+        "x64",
         "x86",
-        "x86_64"
+        // corresponds to vm.bits
+        "32-bit",
+        "64-bit"
     ));
 
     // Please verify new CPU features before adding them. If we allow non-existent features
@@ -155,6 +151,15 @@ public class IREncodingPrinter {
         checkIRAnnotations(irAnno);
         if (isIRNodeUnsupported(irAnno)) {
             return false;
+        } else if (irAnno.applyIfPlatformFeature().length != 0 && !hasAllRequiredPlatformFeature(irAnno.applyIfPlatformFeature())) {
+            printDisableReason(m, "Feature constraint not met (applyIfPlatformFeature)", irAnno.applyIfPlatformFeature(), ruleIndex, ruleMax);
+            return false;
+        } else if (irAnno.applyIfPlatformFeatureAnd().length != 0 && !hasAllRequiredPlatformFeature(irAnno.applyIfPlatformFeatureAnd())) {
+            printDisableReason(m, "Not all feature constraints are met (applyIfPlatformFeatureAnd)", irAnno.applyIfPlatformFeatureAnd(), ruleIndex, ruleMax);
+            return false;
+        } else if (irAnno.applyIfPlatformFeatureOr().length != 0 && !hasAnyRequiredPlatformFeature(irAnno.applyIfPlatformFeatureOr())) {
+            printDisableReason(m, "None of the feature constraints met (applyIfPlatformFeatureOr)", irAnno.applyIfPlatformFeatureOr(), ruleIndex, ruleMax);
+            return false;
         } else if (irAnno.applyIfCPUFeature().length != 0 && !hasAllRequiredCPUFeature(irAnno.applyIfCPUFeature())) {
             printDisableReason(m, "Feature constraint not met (applyIfCPUFeature)", irAnno.applyIfCPUFeature(), ruleIndex, ruleMax);
             return false;
@@ -175,15 +180,6 @@ public class IREncodingPrinter {
             return false;
         } else if (irAnno.applyIfOr().length != 0 && hasNoRequiredFlags(irAnno.applyIfOr(), "applyIfOr")) {
             printDisableReason(m, "None of the flag constraints met (applyIfOr)", irAnno.applyIfOr(), ruleIndex, ruleMax);
-            return false;
-        } else if (irAnno.applyIfPlatformFeature().length != 0 && !hasAllRequiredPlatformFeature(irAnno.applyIfPlatformFeature())) {
-            printDisableReason(m, "Feature constraint not met (applyIfPlatformFeature)", irAnno.applyIfPlatformFeature(), ruleIndex, ruleMax);
-            return false;
-        } else if (irAnno.applyIfPlatformFeatureAnd().length != 0 && !hasAllRequiredPlatformFeature(irAnno.applyIfPlatformFeatureAnd())) {
-            printDisableReason(m, "Not all feature constraints are met (applyIfPlatformFeatureAnd)", irAnno.applyIfPlatformFeatureAnd(), ruleIndex, ruleMax);
-            return false;
-        } else if (irAnno.applyIfPlatformFeatureOr().length != 0 && !hasAnyRequiredPlatformFeature(irAnno.applyIfPlatformFeatureOr())) {
-            printDisableReason(m, "None of the feature constraints met (applyIfPlatformFeatureOr)", irAnno.applyIfPlatformFeatureOr(), ruleIndex, ruleMax);
             return false;
         } else {
             // All preconditions satisfied: apply rule.
@@ -326,18 +322,20 @@ public class IREncodingPrinter {
             TestFormat.failNoThrow("Provided incorrect value for feature " + feature + failAt());
             return false;
         }
-        String platformFeatures = System.getProperty("os.arch") + " ";
+
+        String platformFeatures = "";
 
         String osName = System.getProperty("os.name").toLowerCase();
         if (osName.startsWith("win")) {
-          platformFeatures += "windows ";
+            platformFeatures += "windows";
         } else if (osName.startsWith("linux")) {
-            platformFeatures += "linux ";
+            platformFeatures += "linux";
         } else if (osName.startsWith("mac")) {
-            platformFeatures += "mac ";
+            platformFeatures += "mac";
         }
 
-        platformFeatures += Platform.is32bit()? "32-bit" : "64-bit";
+        platformFeatures += " " + System.getProperty("vm.simpleArch") + " ";
+        platformFeatures += Platform.is32bit() ? "32-bit" : "64-bit";
 
         return (trueValue && platformFeatures.contains(feature)) || (falseValue && !platformFeatures.contains(feature));
     }

@@ -122,7 +122,7 @@ public @interface IR {
      */
     String[] applyIfPlatformFeatureAnd() default {};
 
-     /**
+    /**
      * Accepts a list of feature pairs where each pair is composed of target feature string followed by a true/false
      * value where a true value necessities existence of target feature and vice-versa.
      * IR verifications checks are enforced if any of the specified feature constraint is met.
