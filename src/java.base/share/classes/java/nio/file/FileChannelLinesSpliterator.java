@@ -71,49 +71,33 @@ import java.util.function.Consumer;
 final class FileChannelLinesSpliterator implements Spliterator<String> {
 
     static final Set<Charset> SUPPORTED_CHARSETS = Set.of(
-        UTF_8.INSTANCE,
-        ISO_8859_1.INSTANCE,
-        US_ASCII.INSTANCE
+            UTF_8.INSTANCE,
+            ISO_8859_1.INSTANCE,
+            US_ASCII.INSTANCE
     );
 
-    private final FileChannel fc;
-    private final Charset cs;
-    private final Arena arena;
-    private final Cleaner.Cleanable cleanupAction;
-
-    // Holds a reference to the parent spliterator to ensure the root's Cleaner
-    // is invoked only once itself _and all its splits_ are no longer phantom reachable.
-    private final FileChannelLinesSpliterator parent;
-
+    // This state is shared across all splits
+    private final SharedState ss;
     private final int fence;
     private int index;
 
-    // Null before first split, non-null otherwise
-    private MemorySegment segment;
     // Non-null when traversing
     private BufferedReader reader;
 
-    FileChannelLinesSpliterator(FileChannel fc, Charset cs, int index, int fence) {
-        this.fc = fc;
-        this.cs = cs;
-        this.index = index;
+    FileChannelLinesSpliterator(FileChannel fc,
+                                Charset cs,
+                                int fence) {
+        this.ss = new SharedState(this, fc, cs);
+        this.index = 0;
         this.fence = fence;
-        this.arena = Arena.ofShared();
-        this.cleanupAction = cleanupAction(this);
-        this.parent = null; // No parent for the original Spliterator (root)
     }
 
     private FileChannelLinesSpliterator(FileChannelLinesSpliterator parent,
                                         int index,
                                         int fence) {
-        this.fc = parent.fc;
-        this.cs = parent.cs;
+        this.ss = parent.ss;
         this.index = index;
         this.fence = fence;
-        this.segment = parent.segment;
-        this.arena = parent.arena;
-        this.cleanupAction = null; // No cleanupAction for splits
-        this.parent = parent;
     }
 
     @Override
@@ -154,10 +138,10 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
                     // Snapshot the limit, reduce it, read, then restore
                     int oldLimit = dst.limit();
                     dst.limit(dst.position() + bytesToRead);
-                    bytesRead = fc.read(dst, index);
+                    bytesRead = ss.fc.read(dst, index);
                     dst.limit(oldLimit);
                 } else {
-                    bytesRead = fc.read(dst, index);
+                    bytesRead = ss.fc.read(dst, index);
                 }
                 if (bytesRead == -1) {
                     index = fence;
@@ -170,15 +154,15 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
 
             @Override
             public boolean isOpen() {
-                return fc.isOpen();
+                return ss.fc.isOpen();
             }
 
             @Override
             public void close() throws IOException {
-                fc.close();
+                ss.fc.close();
             }
         };
-        return new BufferedReader(Channels.newReader(rrbc, cs.newDecoder(), -1));
+        return new BufferedReader(Channels.newReader(rrbc, ss.cs.newDecoder(), -1));
     }
 
     private String readLine() {
@@ -193,13 +177,6 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
         }
     }
 
-    private MemorySegment mappedSegment() {
-        try {
-            return fc.map(FileChannel.MapMode.READ_ONLY, 0, fence, arena);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
 
     @Override
     public Spliterator<String> trySplit() {
@@ -207,11 +184,8 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
         if (reader != null)
             return null;
 
-        MemorySegment s;
-        if ((s = segment) == null) {
-            s = segment = mappedSegment();
-        }
-
+        // Only unmapped for the original Spliterator
+        MemorySegment s = ss.mapIfUnmapped(fence);
         final int hi = fence, lo = index;
 
         // Check if line separator hits the mid point
@@ -277,15 +251,51 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
         return Spliterator.ORDERED | Spliterator.NONNULL;
     }
 
-    static Cleaner.Cleanable cleanupAction(FileChannelLinesSpliterator s) {
-        record Cleanup(Arena arena) implements Runnable {
-            @Override public void run() { arena.close(); }
-        }
-        return CleanerFactory.cleaner().register(s, new Cleanup(s.arena));
-    }
-
     // Only called on the original root Spliterator and not on splits
     void close() {
-        cleanupAction.clean();
+        ss.cleanupAction.clean();
     }
+
+    private static final class SharedState {
+        // Holds a reference to the original (top-most) spliterator to ensure the original's Cleaner
+        // is invoked only once itself _and all its splits_ are no longer phantom reachable.
+        final FileChannelLinesSpliterator original;
+        final Cleaner.Cleanable cleanupAction;
+        final FileChannel fc;
+        final Charset cs;
+        final Arena arena;
+
+        // Null before first split, non-null otherwise
+        MemorySegment segment;
+
+        SharedState(FileChannelLinesSpliterator original,
+                    FileChannel fc,
+                    Charset cs) {
+            this.original = original;
+            this.fc = fc;
+            this.cs = cs;
+            this.arena = Arena.ofShared();
+            this.cleanupAction = cleanupAction();
+        }
+
+        MemorySegment mapIfUnmapped(int fence) {
+            if (segment != null) {
+                return segment;
+            }
+            try {
+                return segment = fc.map(FileChannel.MapMode.READ_ONLY, 0, fence, arena);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        Cleaner.Cleanable cleanupAction() {
+            record Cleanup(Arena arena) implements Runnable {
+                @Override public void run() { arena.close(); }
+            }
+            return CleanerFactory.cleaner().register(original, new Cleanup(arena));
+        }
+
+    }
+
 }

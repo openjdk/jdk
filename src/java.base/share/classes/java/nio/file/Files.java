@@ -4135,7 +4135,7 @@ public final class Files {
             // for a non-zero length file so disallow this case.
             if (length > 0 && length <= Integer.MAX_VALUE) {
                 FileChannelLinesSpliterator fcls =
-                    new FileChannelLinesSpliterator(fc, cs, 0, (int) length);
+                    new FileChannelLinesSpliterator(fc, cs,(int) length);
                 return StreamSupport.stream(fcls, false)
                         .onClose(Files.asUncheckedRunnable(fc))
                         .onClose(fcls::close);
