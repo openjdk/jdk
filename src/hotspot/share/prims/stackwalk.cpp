@@ -189,13 +189,7 @@ int StackWalk::fill_in_frames(jint mode, BaseFrameStream& stream,
     LogTarget(Debug, stackwalk) lt;
     if (!ShowHiddenFrames && skip_hidden_frames(mode)) {
       if (method->is_hidden()) {
-        if (lt.is_enabled()) {
-          ResourceMark rm(THREAD);
-          LogStream ls(lt);
-          ls.print("  skip hidden method: ");
-          method->print_short_name(&ls);
-          ls.cr();
-        }
+        log_debug(stackwalk)("  skip hidden method: %s", stream.method()->external_name());
 
         // End a batch on continuation bottom to let the Java side to set the continuation to its parent and continue
         if (stream.continuation() != nullptr && method->intrinsic_id() == vmIntrinsics::_Continuation_enter) break;
@@ -204,23 +198,8 @@ int StackWalk::fill_in_frames(jint mode, BaseFrameStream& stream,
     }
 
     int index = end_index++;
-    if (lt.is_enabled()) {
-      ResourceMark rm(THREAD);
-      LogStream ls(lt);
-      ls.print("  %d: frame method: ", index);
-      method->print_short_name(&ls);
-      ls.print_cr(" bci=%d", stream.bci());
-    }
-
-    // fill in StackFrameInfo and initialize MemberName
+    log_debug(stackwalk)("  %d: frame method: %s bci %d", index, stream.method()->external_name(), stream.bci());
     stream.fill_frame(index, frames_array, methodHandle(THREAD, method), CHECK_0);
-
-    if (lt.is_enabled()) {
-      ResourceMark rm(THREAD);
-      LogStream ls(lt);
-      ls.print("  %d: done frame method: ", index);
-      method->print_short_name(&ls);
-    }
     frames_decoded++;
 
     // End a batch on continuation bottom to let the Java side to set the continuation to its parent and continue
@@ -228,7 +207,7 @@ int StackWalk::fill_in_frames(jint mode, BaseFrameStream& stream,
 
     if (end_index >= buffer_size)  break;
   }
-  log_debug(stackwalk)("fill_in_frames done frames_decoded=%d at_end=%d", frames_decoded, stream.at_end());
+  log_debug(stackwalk)("fill_in_frames returns %d at_end=%d", frames_decoded, stream.at_end());
 
   return frames_decoded;
 }
@@ -461,29 +440,14 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
             ik != abstractStackWalker_klass && ik->super() != abstractStackWalker_klass)  {
         break;
       }
-
-      LogTarget(Debug, stackwalk) lt;
-      if (lt.is_enabled()) {
-        ResourceMark rm(THREAD);
-        LogStream ls(lt);
-        ls.print("  skip ");
-        stream.method()->print_short_name(&ls);
-        ls.cr();
-      }
+      log_debug(stackwalk)("  skip %s", stream.method()->external_name());
       stream.next();
     }
 
     // stack frame has been traversed individually and resume stack walk
     // from the stack frame at depth == skip_frames.
     for (int n=0; n < skip_frames && !stream.at_end(); stream.next(), n++) {
-      LogTarget(Debug, stackwalk) lt;
-      if (lt.is_enabled()) {
-        ResourceMark rm(THREAD);
-        LogStream ls(lt);
-        ls.print("  skip ");
-        stream.method()->print_short_name(&ls);
-        ls.cr();
-      }
+      log_debug(stackwalk)("  skip %s", stream.method()->external_name());
     }
   }
 
@@ -506,7 +470,7 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
   JavaCallArguments args(stackStream);
   args.push_long(stream.address_value());
   args.push_int(skip_frames);
-  args.push_int(buffer_size);
+  args.push_int(numFrames);
   args.push_int(start_index);
   args.push_int(end_index);
 
@@ -540,7 +504,7 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
 //   start_index    Start index to the user-supplied buffers.
 //   frames_array   Buffer to store StackFrame in, starting at start_index.
 //
-// Returns the end index of frame filled in the buffer.
+// Returns the number of frames filled in the buffer.
 //
 jint StackWalk::fetchNextBatch(Handle stackStream, jint mode, jlong magic,
                                int last_batch_count, int buffer_size, int start_index,
@@ -562,7 +526,7 @@ jint StackWalk::fetchNextBatch(Handle stackStream, jint mode, jlong magic,
                        buffer_size, p2i(existing_stream), start_index, frames_array->length());
   int end_index = start_index;
   if (buffer_size <= start_index) {
-    return end_index;        // No operation.
+    return 0;        // No operation.
   }
 
   assert (frames_array->length() >= buffer_size, "not enough space in buffers");
@@ -580,19 +544,21 @@ jint StackWalk::fetchNextBatch(Handle stackStream, jint mode, jlong magic,
     // it advanced the frame it previously decoded as it reaches the bottom of
     // the continuation and it returns to let Java side set the continuation.
     // Now this batch starts right at the first frame of another continuation.
-    if (last_batch_count > 0)
+    if (last_batch_count > 0) {
+      log_debug(stackwalk)("advanced past %s", stream.method()->external_name());
       stream.next();
+    }
 
     if (!stream.at_end()) {
-      int n = fill_in_frames(mode, stream, buffer_size, start_index,
+      int numFrames = fill_in_frames(mode, stream, buffer_size, start_index,
                              frames_array, end_index, CHECK_0);
-      if (n < 1 && !skip_hidden_frames(mode)) {
+      if (numFrames < 1 && !skip_hidden_frames(mode)) {
         THROW_MSG_(vmSymbols::java_lang_InternalError(), "doStackWalk: later decode failed", 0L);
       }
-      return end_index;
+      return numFrames;
     }
   }
-  return end_index;
+  return 0;
 }
 
 void StackWalk::setContinuation(Handle stackStream, jlong magic, objArrayHandle frames_array, Handle cont, TRAPS) {
