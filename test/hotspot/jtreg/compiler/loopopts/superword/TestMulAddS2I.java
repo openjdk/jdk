@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8310886
+ * @requires vm.bits == "64"
  * @summary Test MulAddS2I vectorization.
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMulAddS2I
