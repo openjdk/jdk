@@ -97,6 +97,9 @@ public final class CodeImpl
 
     @Override
     public Label getLabel(int bci) {
+        if (bci < 0 || bci > codeLength)
+            throw new IllegalArgumentException(String.format("Bytecode offset out of range; bci=%d, codeLength=%d",
+                                                             bci, codeLength));
         if (labels == null)
             labels = new LabelImpl[codeLength + 1];
         LabelImpl l = labels[bci];

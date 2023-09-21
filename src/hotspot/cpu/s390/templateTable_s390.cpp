@@ -34,6 +34,7 @@
 #include "interpreter/templateTable.hpp"
 #include "memory/universe.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -4144,7 +4145,7 @@ void TemplateTable::monitorenter() {
 
   // Check for null object.
   __ null_check(Z_tos);
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
   NearLabel allocated;
   // Initialize entry pointer.
   const Register Rfree_slot = Z_tmp_1;
@@ -4239,7 +4240,7 @@ void TemplateTable::monitorexit() {
 
   // Find matching slot.
   {
-    const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+    const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
     NearLabel entry, loop;
 
     const Register Rbot = Z_ARG3; // Points to word under bottom of monitor block.

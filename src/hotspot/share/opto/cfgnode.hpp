@@ -132,7 +132,8 @@ public:
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   void remove_unreachable_subgraph(PhaseIterGVN* igvn);
   virtual const RegMask &out_RegMask() const;
-  bool try_clean_mem_phi(PhaseGVN* phase);
+  bool is_diamond() const;
+  void try_clean_mem_phis(PhaseIterGVN* phase);
   bool optimize_trichotomy(PhaseIterGVN* igvn);
   NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
 };
@@ -233,7 +234,8 @@ public:
   LoopSafety simple_data_loop_check(Node *in) const;
   // Is it unsafe data loop? It becomes a dead loop if this phi node removed.
   bool is_unsafe_data_reference(Node *in) const;
-  int  is_diamond_phi(bool check_control_only = false) const;
+  int is_diamond_phi() const;
+  bool try_clean_memory_phi(PhaseIterGVN* igvn);
   virtual int Opcode() const;
   virtual bool pinned() const { return in(0) != 0; }
   virtual const TypePtr *adr_type() const { verify_adr_type(true); return _adr_type; }
@@ -337,7 +339,7 @@ private:
 protected:
   ProjNode* range_check_trap_proj(int& flip, Node*& l, Node*& r);
   Node* Ideal_common(PhaseGVN *phase, bool can_reshape);
-  Node* search_identical(int dist);
+  Node* search_identical(int dist, PhaseIterGVN* igvn);
 
   Node* simple_subsuming(PhaseIterGVN* igvn);
 
@@ -436,6 +438,8 @@ public:
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
+
+  bool same_condition(const Node* dom, PhaseIterGVN* igvn) const;
 };
 
 class RangeCheckNode : public IfNode {
@@ -461,8 +465,9 @@ public:
 // More information about predicates can be found in loopPredicate.cpp.
 class ParsePredicateNode : public IfNode {
   Deoptimization::DeoptReason _deopt_reason;
+  bool _useless; // If the associated loop dies, this parse predicate becomes useless and can be cleaned up by Value().
  public:
-  ParsePredicateNode(Node* control, Node* bol, Deoptimization::DeoptReason deopt_reason);
+  ParsePredicateNode(Node* control, Deoptimization::DeoptReason deopt_reason, PhaseGVN* gvn);
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
 
@@ -470,8 +475,25 @@ class ParsePredicateNode : public IfNode {
     return _deopt_reason;
   }
 
+  bool is_useless() const {
+    return _useless;
+  }
+
+  void mark_useless() {
+    _useless = true;
+  }
+
+  void mark_useful() {
+    _useless = false;
+  }
+
   Node* uncommon_trap() const;
 
+  Node* Ideal(PhaseGVN* phase, bool can_reshape) {
+    return nullptr; // Don't optimize
+  }
+
+  const Type* Value(PhaseGVN* phase) const;
   NOT_PRODUCT(void dump_spec(outputStream* st) const;)
 };
 
