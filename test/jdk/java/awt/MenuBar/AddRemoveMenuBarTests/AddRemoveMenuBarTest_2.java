@@ -21,13 +21,12 @@
  * questions.
  */
 
-import javax.swing.SwingUtilities;
 import java.awt.Frame;
 import java.awt.Menu;
 import java.awt.MenuBar;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.lang.String;
+import javax.swing.SwingUtilities;
 
 /*
  * @test

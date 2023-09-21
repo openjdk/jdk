@@ -21,7 +21,6 @@
  * questions.
  */
 
-import javax.swing.SwingUtilities;
 import java.awt.BorderLayout;
 import java.awt.Checkbox;
 import java.awt.Frame;
@@ -35,8 +34,7 @@ import java.awt.TextField;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.lang.Integer;
-import java.lang.String;
+import javax.swing.SwingUtilities;
 
 /*
  * @test

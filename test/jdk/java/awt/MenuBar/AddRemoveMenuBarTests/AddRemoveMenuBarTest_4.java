@@ -21,14 +21,13 @@
  * questions.
  */
 
-import javax.swing.SwingUtilities;
 import java.awt.Button;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.Menu;
 import java.awt.MenuBar;
 import java.awt.MenuItem;
-import java.lang.String;
+import javax.swing.SwingUtilities;
 
 /*
  * @test
