@@ -32,7 +32,7 @@
  * @summary make ephemeral DH key match the length of the certificate key
  * @library /javax/net/ssl/templates
  * @run main/othervm -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA 1645 267 TLSv1
+ *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA 1643 267 TLSv1
  * @run main/othervm -Djsse.enableFFDHE=false
  *      -Djdk.tls.client.enableSessionTicketExtension=false
  *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA 1259 75 TLSv1.1
@@ -53,7 +53,7 @@
  *      DHEKeySizing SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA 233 75 TLSv1.2
  * @run main/othervm -Djsse.enableFFDHE=false
  *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA 1645 267 TLSv1
+ *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA 1643 267 TLSv1
  * @run main/othervm -Djsse.enableFFDHE=false
  *      -Djdk.tls.ephemeralDHKeySize=legacy
  *      -Djdk.tls.client.enableSessionTicketExtension=false
@@ -130,7 +130,7 @@ public class DHEKeySizing extends SSLEngineTemplate {
     // key length bias because of the stripping of leading zero bytes of
     // negotiated DH keys.
     //
-    // This is an effort to mimum intermittent failure when we cannot
+    // This is an effort to minimize intermittent failures when we cannot
     // estimate what's the exact number of leading zero bytes of
     // negotiated DH keys.
     private final static int KEY_LEN_BIAS = 6;
