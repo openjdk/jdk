@@ -141,6 +141,10 @@ public class Root {
         return referer;
     }
 
+    public long getReferrerId() {
+        return refererId;
+    }
+
     /**
      * @return the stack trace responsible for this root, or null if there
      * is none.

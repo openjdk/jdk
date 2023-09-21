@@ -436,8 +436,10 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
                     int threadSeq = in.readInt();
                     int stackSeq = in.readInt();
                     bytesLeft -= identifierSize + 8;
-                    threadObjects.put(threadSeq,
-                                      new ThreadObject(id, stackSeq));
+                    StackTrace st = getStackTraceFromSerial(stackSeq);
+                    ThreadObject threadObj = new ThreadObject(id, st);
+                    threadObjects.put(threadSeq, threadObj);
+                    snapshot.addThreadObject(threadObj);
                     break;
                 }
                 case HPROF_GC_ROOT_JNI_GLOBAL: {
@@ -453,11 +455,11 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
                     int depth = in.readInt();
                     bytesLeft -= identifierSize + 8;
                     ThreadObject to = getThreadObjectFromSequence(threadSeq);
-                    StackTrace st = getStackTraceFromSerial(to.stackSeq);
+                    StackTrace st = to.getStackTrace();
                     if (st != null) {
                         st = st.traceForDepth(depth+1);
                     }
-                    snapshot.addRoot(new Root(id, to.threadId,
+                    snapshot.addRoot(new Root(id, to.getId(),
                                               Root.NATIVE_LOCAL, "", st));
                     break;
                 }
@@ -467,11 +469,11 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
                     int depth = in.readInt();
                     bytesLeft -= identifierSize + 8;
                     ThreadObject to = getThreadObjectFromSequence(threadSeq);
-                    StackTrace st = getStackTraceFromSerial(to.stackSeq);
+                    StackTrace st = to.getStackTrace();;
                     if (st != null) {
                         st = st.traceForDepth(depth+1);
                     }
-                    snapshot.addRoot(new Root(id, to.threadId,
+                    snapshot.addRoot(new Root(id, to.getId(),
                                               Root.JAVA_LOCAL, "", st));
                     break;
                 }
@@ -480,8 +482,8 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
                     int threadSeq = in.readInt();
                     bytesLeft -= identifierSize + 4;
                     ThreadObject to = getThreadObjectFromSequence(threadSeq);
-                    StackTrace st = getStackTraceFromSerial(to.stackSeq);
-                    snapshot.addRoot(new Root(id, to.threadId,
+                    StackTrace st = to.getStackTrace();;
+                    snapshot.addRoot(new Root(id, to.getId(),
                                               Root.NATIVE_STACK, "", st));
                     break;
                 }
@@ -496,8 +498,8 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
                     int threadSeq = in.readInt();
                     bytesLeft -= identifierSize + 4;
                     ThreadObject to = getThreadObjectFromSequence(threadSeq);
-                    StackTrace st = getStackTraceFromSerial(to.stackSeq);
-                    snapshot.addRoot(new Root(id, to.threadId,
+                    StackTrace st = to.getStackTrace();
+                    snapshot.addRoot(new Root(id, to.getId(),
                                      Root.THREAD_BLOCK, "", st));
                     break;
                 }
@@ -912,7 +914,7 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
     private void warn(String msg) {
         System.out.println("WARNING: " + msg);
     }
-
+/*
     //
     // A trivial data-holder class for HPROF_GC_ROOT_THREAD_OBJ.
     //
@@ -926,5 +928,5 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
             this.stackSeq = stackSeq;
         }
     }
-
+*/
 }
