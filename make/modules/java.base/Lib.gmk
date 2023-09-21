@@ -52,7 +52,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
     DISABLED_WARNINGS_microsoft_ResolverConfigurationImpl.c := 4996, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_windows := -delayload:secur32.dll -delayload:iphlpapi.dll, \
+    LDFLAGS_windows := -delayload:secur32.dll -delayload:iphlpapi.dll \
+        -delayload:winhttp.dll, \
     LIBS_unix := -ljvm -ljava, \
     LIBS_linux := $(LIBDL), \
     LIBS_aix := $(LIBDL),\

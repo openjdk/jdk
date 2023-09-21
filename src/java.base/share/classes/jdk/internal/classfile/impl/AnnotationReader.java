@@ -58,14 +58,14 @@ class AnnotationReader {
         char tag = (char) classReader.readU1(p);
         ++p;
         return switch (tag) {
-            case AEV_BYTE -> new AnnotationImpl.OfByteImpl((IntegerEntry)classReader.readEntry(p));
-            case AEV_CHAR -> new AnnotationImpl.OfCharacterImpl((IntegerEntry)classReader.readEntry(p));
-            case AEV_DOUBLE -> new AnnotationImpl.OfDoubleImpl((DoubleEntry)classReader.readEntry(p));
-            case AEV_FLOAT -> new AnnotationImpl.OfFloatImpl((FloatEntry)classReader.readEntry(p));
-            case AEV_INT -> new AnnotationImpl.OfIntegerImpl((IntegerEntry)classReader.readEntry(p));
-            case AEV_LONG -> new AnnotationImpl.OfLongImpl((LongEntry)classReader.readEntry(p));
-            case AEV_SHORT -> new AnnotationImpl.OfShortImpl((IntegerEntry)classReader.readEntry(p));
-            case AEV_BOOLEAN -> new AnnotationImpl.OfBooleanImpl((IntegerEntry)classReader.readEntry(p));
+            case AEV_BYTE -> new AnnotationImpl.OfByteImpl(classReader.readEntry(p, IntegerEntry.class));
+            case AEV_CHAR -> new AnnotationImpl.OfCharacterImpl(classReader.readEntry(p, IntegerEntry.class));
+            case AEV_DOUBLE -> new AnnotationImpl.OfDoubleImpl(classReader.readEntry(p, DoubleEntry.class));
+            case AEV_FLOAT -> new AnnotationImpl.OfFloatImpl(classReader.readEntry(p, FloatEntry.class));
+            case AEV_INT -> new AnnotationImpl.OfIntegerImpl(classReader.readEntry(p, IntegerEntry.class));
+            case AEV_LONG -> new AnnotationImpl.OfLongImpl(classReader.readEntry(p, LongEntry.class));
+            case AEV_SHORT -> new AnnotationImpl.OfShortImpl(classReader.readEntry(p, IntegerEntry.class));
+            case AEV_BOOLEAN -> new AnnotationImpl.OfBooleanImpl(classReader.readEntry(p, IntegerEntry.class));
             case AEV_STRING -> new AnnotationImpl.OfStringImpl(classReader.readUtf8Entry(p));
             case AEV_ENUM -> new AnnotationImpl.OfEnumImpl(classReader.readUtf8Entry(p), classReader.readUtf8Entry(p + 2));
             case AEV_CLASS -> new AnnotationImpl.OfClassImpl(classReader.readUtf8Entry(p));

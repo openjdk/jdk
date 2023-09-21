@@ -816,15 +816,16 @@ public class Collections {
         if (distance == 0)
             return;
 
-        for (int cycleStart = 0, nMoved = 0; nMoved != size; cycleStart++) {
+        int bound = size - distance;
+        for (int cycleStart = 0, nMoved = 0; nMoved < size; cycleStart++) {
             T displaced = list.get(cycleStart);
             int i = cycleStart;
             do {
-                i += distance;
-                if (i >= size)
+                if (i >= bound)
                     i -= size;
+                i += distance;
                 displaced = list.set(i, displaced);
-                nMoved ++;
+                nMoved++;
             } while (i != cycleStart);
         }
     }
