@@ -81,7 +81,9 @@ import jdk.internal.util.StaticProperty;
  * @since   1.0
  */
 public class URLEncoder {
-    private static final IntPredicate DONT_NEED_ENCODING;
+    private static final long DONT_NEED_ENCODING_FLAGS_0;
+    private static final long DONT_NEED_ENCODING_FLAGS_1;
+
     private static final String DEFAULT_ENCODING_NAME;
 
     static {
@@ -122,20 +124,43 @@ public class URLEncoder {
          *
          */
 
-        var bitSet = new BitSet(128);
-        bitSet.set('a', 'z' + 1);
-        bitSet.set('A', 'Z' + 1);
-        bitSet.set('0', '9' + 1);
-        bitSet.set(' '); /* encoding a space to a + is done
-                                    * in the encode() method */
-        bitSet.set('-');
-        bitSet.set('_');
-        bitSet.set('.');
-        bitSet.set('*');
+        long flag0 = 0;
+        flag0 |= 1L << ' '; // ASCII 32
+        flag0 |= 1L << '*'; // ASCII 42
+        flag0 |= 1L << '-'; // ASCII 25
+        flag0 |= 1L << '.'; // ASCII 46
 
-        DONT_NEED_ENCODING = ImmutableBitSetPredicate.of(bitSet);
+        // ASCII 48 - 57
+        for (int i = '0'; i <= '9'; ++i) {
+            flag0 |= 1L << i;
+        }
+        DONT_NEED_ENCODING_FLAGS_0 = flag0;
+
+        long flags1 = 0;
+        // ASCII 65 - 90
+        for (int i = 'A'; i <= 'Z'; ++i) {
+            flags1 |= 1L << (i - 64);
+        }
+        flags1 |= 1L << ('_' - 64); // ASCII 95
+        // ASCII 97 - 122
+        for (int i = 'a'; i <= 'z'; ++i) {
+            flags1 |= 1L << (i - 64);
+        }
+        DONT_NEED_ENCODING_FLAGS_1 = flags1;
 
         DEFAULT_ENCODING_NAME = StaticProperty.fileEncoding();
+    }
+
+    /**
+     * dotNeedEncoding
+     */
+    private static boolean dontNeedEncoding(int c) {
+        int prefix = (c >>> 6);
+        if (prefix > 1) {
+            return false;
+        }
+        long flags = prefix == 0 ? DONT_NEED_ENCODING_FLAGS_0 : DONT_NEED_ENCODING_FLAGS_1;
+        return (flags & (1L << (c & 0x3f))) != 0;
     }
 
     private static void encodeByte(StringBuilder out, byte b) {
@@ -230,7 +255,7 @@ public class URLEncoder {
         int i;
         for (i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
-            if (!DONT_NEED_ENCODING.test(c) || c == ' ') {
+            if (!dontNeedEncoding(c) || c == ' ') {
                 break;
             }
         }
@@ -246,7 +271,7 @@ public class URLEncoder {
 
         while (i < s.length()) {
             char c = s.charAt(i);
-            if (DONT_NEED_ENCODING.test(c)) {
+            if (dontNeedEncoding(c)) {
                 if (c == ' ') {
                     c = '+';
                 }
@@ -274,7 +299,7 @@ public class URLEncoder {
                         }
                     }
                     i++;
-                } while (i < s.length() && !DONT_NEED_ENCODING.test((c = s.charAt(i))));
+                } while (i < s.length() && !dontNeedEncoding((c = s.charAt(i))));
 
                 String str = charArrayWriter.toString();
                 byte[] ba = str.getBytes(charset);
