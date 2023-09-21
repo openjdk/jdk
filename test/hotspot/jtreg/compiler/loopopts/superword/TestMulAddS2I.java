@@ -81,6 +81,8 @@ public class TestMulAddS2I {
         counts = {IRNode.MUL_ADD_S2I, "> 0"})
     @IR(applyIfCPUFeature = {"asimd", "true"}, applyIf = {"MaxVectorSize", "16"},
             counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
+    @IR(applyIfCPUFeature = {"avx512_vnni", "true"}, applyIf = {"UseUnalignedLoadStores", "true"},
+            counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
     public static int[] test() {
         int[] out = new int[ITER];
         int[] out2 = new int[ITER];

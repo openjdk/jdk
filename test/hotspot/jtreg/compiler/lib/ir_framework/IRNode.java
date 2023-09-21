@@ -917,6 +917,12 @@ public class IRNode {
         superWordNodes(MUL_ADD_VS2VI, "MulAddVS2VI");
     }
 
+    // Can only be used if avx512_vnni is available.
+    public static final String MUL_ADD_VS2VI_VNNI = PREFIX + "MUL_ADD_VS2VI_VNNI" + POSTFIX;
+    static {
+        machOnly(MUL_ADD_VS2VI_VNNI, "vmuladdaddS2I_reg");
+    }
+
     public static final String MUL_D = PREFIX + "MUL_D" + POSTFIX;
     static {
         beforeMatchingNameRegex(MUL_D, "MulD");

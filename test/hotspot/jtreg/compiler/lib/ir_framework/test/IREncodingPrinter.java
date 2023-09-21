@@ -75,6 +75,7 @@ public class IREncodingPrinter {
         "avx512dq",
         "avx512vl",
         "avx512f",
+        "avx512_vnni",
         // AArch64
         "sha3",
         "asimd",
