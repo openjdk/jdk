@@ -21,7 +21,8 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
  * @bug 4803649
  * @summary setWidth() doesn't work on the container in a SpringLayout
  * @key headful

@@ -21,13 +21,15 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
  * @bug 4756178
  * @summary SpringLayout:applyDefaults() discards size information when right-aligning.
  * @key headful
  */
 
 import java.awt.Dimension;
+import java.awt.Robot;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -37,8 +39,9 @@ import javax.swing.SwingUtilities;
 
 public class bug4756178 {
     static JFrame fr;
-    static volatile JButton bt;
+    static JButton bt;
     static volatile Dimension buttonPreferredSize;
+    static volatile Dimension actualSize;
 
     public static void main(String[] args) throws Exception {
         try {
@@ -65,13 +68,20 @@ public class bug4756178 {
                 fr.setSize(200, 200);
                 fr.setLocationRelativeTo(null);
                 fr.setVisible(true);
-
             });
 
-            if (!buttonPreferredSize.equals(bt.getSize())) {
-                throw new RuntimeException("Button size is " + bt.getSize() +
-                        ", should be " + buttonPreferredSize);
-            }
+            Robot robot = new Robot();
+            robot.waitForIdle();
+            robot.delay(1000);
+
+            SwingUtilities.invokeAndWait(() -> {
+                actualSize = bt.getSize();
+            });
+
+            if (!buttonPreferredSize.equals(actualSize)) {
+                    throw new RuntimeException("Button size is " + actualSize +
+                            ", should be " + buttonPreferredSize);
+                }
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (fr != null) {

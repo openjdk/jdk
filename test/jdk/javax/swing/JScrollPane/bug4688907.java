@@ -21,14 +21,14 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
  * @bug 4688907
  * @summary ScrollPaneLayout.minimumLayoutSize incorrectly compares hsbPolicy
  */
 
 import java.awt.Dimension;
 import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
 
 public class bug4688907 {
     public static void main(String[] argv) throws Exception {
