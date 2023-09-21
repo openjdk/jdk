@@ -25,6 +25,7 @@
 
 package jdk.jfr.internal;
 
+import static jdk.jfr.internal.LogLevel.ERROR;
 import static jdk.jfr.internal.LogLevel.INFO;
 import static jdk.jfr.internal.LogLevel.TRACE;
 import static jdk.jfr.internal.LogLevel.WARN;
@@ -66,7 +67,6 @@ public final class PlatformRecorder {
     private final ArrayList<PlatformRecording> recordings = new ArrayList<>();
     private static final List<SecureRecorderListener> changeListeners = new ArrayList<>();
     private final Repository repository;
-    private static final JVM jvm = JVM.getJVM();
     private final Thread shutdownHook;
 
     private Timer timer;
@@ -79,7 +79,7 @@ public final class PlatformRecorder {
         repository = Repository.getRepository();
         Logger.log(JFR_SYSTEM, INFO, "Initialized disk repository");
         repository.ensureRepository();
-        jvm.createNativeJFR();
+        JVMSupport.createJFR();
         Logger.log(JFR_SYSTEM, INFO, "Created native");
         JDKEvents.initialize();
         Logger.log(JFR_SYSTEM, INFO, "Registered JDK events");
@@ -97,7 +97,7 @@ public final class PlatformRecorder {
             Thread t = SecuritySupport.createThreadWitNoPermissions("Permissionless thread", ()-> {
                 result.add(new Timer("JFR Recording Scheduler", true));
             });
-            jvm.exclude(t);
+            JVM.exclude(t);
             t.start();
             t.join();
             return result.getFirst();
@@ -207,11 +207,11 @@ public final class PlatformRecorder {
 
         JDKEvents.remove();
 
-        if (jvm.hasNativeJFR()) {
-            if (jvm.isRecording()) {
-                jvm.endRecording();
+        if (JVMSupport.hasJFR()) {
+            if (JVM.isRecording()) {
+                JVM.endRecording();
             }
-            jvm.destroyNativeJFR();
+            JVMSupport.destroyJFR();
         }
         repository.clear();
     }
@@ -244,7 +244,7 @@ public final class PlatformRecorder {
                 MetadataRepository.getInstance().setOutput(null);
             }
             currentChunk = newChunk;
-            jvm.beginRecording();
+            JVM.beginRecording();
             startNanos = JVMSupport.getChunkStartNanos();
             startTime = Utils.epochNanosToInstant(startNanos);
             if (currentChunk != null) {
@@ -320,7 +320,7 @@ public final class PlatformRecorder {
             PeriodicEvents.doChunkEnd();
             if (recording.isToDisk()) {
                 if (inShutdown) {
-                    jvm.markChunkFinal();
+                    JVM.markChunkFinal();
                 }
                 stopTime = MetadataRepository.getInstance().setOutput(null);
                 finishChunk(currentChunk, stopTime, null);
@@ -329,7 +329,7 @@ public final class PlatformRecorder {
                 // last memory
                 stopTime = dumpMemoryToDestination(recording);
             }
-            jvm.endRecording();
+            JVM.endRecording();
             recording.setStopTime(stopTime);
             disableEvents();
             setRunPeriodicTask(false);
@@ -449,10 +449,19 @@ public final class PlatformRecorder {
     }
 
     private void finishChunk(RepositoryChunk chunk, Instant time, PlatformRecording ignoreMe) {
-        chunk.finish(time);
-        for (PlatformRecording r : getRecordings()) {
-            if (r != ignoreMe && r.getState() == RecordingState.RUNNING) {
-                r.appendChunk(chunk);
+        if (chunk.finish(time)) {
+            for (PlatformRecording r : getRecordings()) {
+                if (r != ignoreMe && r.getState() == RecordingState.RUNNING) {
+                    r.appendChunk(chunk);
+                }
+            }
+        } else {
+            if (chunk.isMissingFile()) {
+                // With one chunkfile found missing, its likely more could've been removed too. Iterate through all recordings,
+                // and check for missing files. This will emit more error logs that can be seen in subsequent recordings.
+                for (PlatformRecording r : getRecordings()) {
+                    r.removeNonExistantPaths();
+                }
             }
         }
         // Decrease initial reference count
@@ -495,21 +504,28 @@ public final class PlatformRecorder {
     }
 
     private void periodicTask() {
-        if (!jvm.hasNativeJFR()) {
+        if (!JVMSupport.hasJFR()) {
             return;
         }
         while (true) {
-            synchronized (this) {
-                if (jvm.shouldRotateDisk()) {
-                    rotateDisk();
+            long wait = Options.getWaitInterval();
+            try {
+                synchronized (this) {
+                    if (JVM.shouldRotateDisk()) {
+                        rotateDisk();
+                    }
+                    if (isToDisk()) {
+                        EventLog.update();
+                    }
                 }
-                if (isToDisk()) {
-                    EventLog.update();
-                }
+                long minDelta = PeriodicEvents.doPeriodic();
+                wait = Math.min(minDelta, Options.getWaitInterval());
+            } catch (Throwable t) {
+                // Catch everything and log, but don't allow it to end the periodic task
+                Logger.log(JFR_SYSTEM, ERROR, "Error in Periodic task: " + t.getClass().getName());
+            } finally {
+                takeNap(wait);
             }
-            long minDelta = PeriodicEvents.doPeriodic();
-            long wait = Math.min(minDelta, Options.getWaitInterval());
-            takeNap(wait);
         }
     }
 
@@ -658,7 +674,7 @@ public final class PlatformRecorder {
             }
         }
         if (disk) {
-            jvm.markChunkFinal();
+            JVM.markChunkFinal();
             rotateDisk();
         }
     }

@@ -497,7 +497,7 @@ void VM_Version::print_features() {
   if (Verbose) {
     if (ContendedPaddingWidth > 0) {
       tty->cr();
-      tty->print_cr("ContendedPaddingWidth " INTX_FORMAT, ContendedPaddingWidth);
+      tty->print_cr("ContendedPaddingWidth %d", ContendedPaddingWidth);
     }
   }
 }

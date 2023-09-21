@@ -48,6 +48,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/stringUtils.hpp"
 
 jshort ClassLoaderExt::_app_class_paths_start_index = ClassLoaderExt::max_classpath_index;
@@ -215,7 +216,7 @@ void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* e
     if (dir_tail == nullptr) {
       dir_len = 0;
     } else {
-      dir_len = dir_tail - dir_name + 1;
+      dir_len = pointer_delta_as_int(dir_tail, dir_name) + 1;
     }
 
     // Split the cp_attr by spaces, and add each file

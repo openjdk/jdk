@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -61,7 +59,7 @@ public class ModuleExamples {
         System.out.println("Exports: " + ma.exports());
 
         ModuleMainClassAttribute mmca = cm.findAttribute(Attributes.MODULE_MAIN_CLASS).orElse(null);
-        System.out.println("Does the module have a MainClassAttribte?: " + (mmca != null));
+        System.out.println("Does the module have a MainClassAttribute?: " + (mmca != null));
 
         ModulePackagesAttribute mmp = cm.findAttribute(Attributes.MODULE_PACKAGES).orElseThrow();
         System.out.println("Packages?: " + mmp.packages());

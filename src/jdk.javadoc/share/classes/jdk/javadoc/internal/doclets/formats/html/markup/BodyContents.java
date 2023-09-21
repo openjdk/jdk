@@ -25,7 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html.markup;
 
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 
 import java.io.IOException;
 import java.io.Writer;

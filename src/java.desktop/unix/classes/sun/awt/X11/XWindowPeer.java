@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -804,10 +804,10 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         if (insLog.isLoggable(PlatformLogger.Level.FINE)) {
             insLog.fine(xe.toString());
         }
-        checkIfOnNewScreen(toGlobal(new Rectangle(scaleDown(xe.get_x()),
+        checkIfOnNewScreen(new Rectangle(scaleDown(xe.get_x()),
                 scaleDown(xe.get_y()),
                 scaleDown(xe.get_width()),
-                scaleDown(xe.get_height()))));
+                scaleDown(xe.get_height())));
 
         Rectangle oldBounds = getBounds();
 

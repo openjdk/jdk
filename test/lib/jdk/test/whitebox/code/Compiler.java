@@ -89,6 +89,25 @@ public class Compiler {
     }
 
     /**
+     * Check if libgraal is used as JIT compiler.
+     *
+     * libraal is enabled if isGraalEnabled is true and:
+     * - UseJVMCINativeLibrary flag is true
+     *
+     * @return true if libgraal is used as JIT compiler.
+     */
+    public static boolean isLibgraalEnabled() {
+        if (!isGraalEnabled()) {
+            return false;
+        }
+        Boolean useJvmciNativeLibrary = WB.getBooleanVMFlag("UseJVMCINativeLibrary");
+        if (useJvmciNativeLibrary == null || !useJvmciNativeLibrary) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Check if C2 is used as JIT compiler.
      *
      * C2 is enabled if following conditions are true:

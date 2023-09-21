@@ -39,7 +39,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr.Role;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * A tree node representing an HTML element, containing the name of the element,

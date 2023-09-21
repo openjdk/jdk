@@ -321,7 +321,7 @@ class networkStream : public bufferedStream {
 
     bool connect(const char *host, short port);
     bool is_open() const { return _socket != -1; }
-    int read(char *buf, size_t len);
+    ssize_t read(char *buf, size_t len);
     void close();
     virtual void flush();
 };

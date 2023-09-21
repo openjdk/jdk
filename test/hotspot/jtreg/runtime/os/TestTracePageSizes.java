@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@
  * @library /test/lib
  * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
- * @requires vm.gc != "Z"
+ * @requires vm.gc != "Z" & vm.gc != "Shenandoah"
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:-SegmentedCodeCache TestTracePageSizes
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:-SegmentedCodeCache -XX:+UseLargePages TestTracePageSizes
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:-SegmentedCodeCache -XX:+UseTransparentHugePages TestTracePageSizes
