@@ -2566,17 +2566,18 @@ bool SuperWord::output() {
         Node* ctl = n->in(MemNode::Control);
         Node* mem = first->in(MemNode::Memory);
         VPointer p1(n->as_Mem(), phase(), lpt(), nullptr, false);
-        // Identify the memory dependency for the new loadVector node by
-        // walking up through memory chain.
-        // This is done to give flexibility to the new loadVector node so that
-        // it can move above independent storeVector nodes.
+        // Move LoadVector as much up as possible, to give its placement more flexibility.
+        // Walk up the memory chain, and ignore any StoreVector that provably does not
+        // overlap the same memory region.
         while (mem->is_StoreVector()) {
           VPointer p2(mem->as_Mem(), phase(), lpt(), nullptr, false);
           int cmp = p1.cmp(p2);
-          if (VPointer::not_equal(cmp) || !VPointer::comparable(cmp)) {
+          if (VPointer::not_equal(cmp)) {
+            // Proof that there is no overlap. Skip it.
             mem = mem->in(MemNode::Memory);
           } else {
-            break; // dependent memory
+            // No proof that there is no overlap. Stop here.
+            break;
           }
         }
         Node* adr = first->in(MemNode::Address);
