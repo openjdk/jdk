@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class Parallel {
 
-    // file used by most tests
+    // file used by the tests
     private Path tmpFile;
 
     @BeforeEach
