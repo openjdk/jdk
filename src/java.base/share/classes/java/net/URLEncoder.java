@@ -26,8 +26,12 @@
 package java.net;
 
 import java.io.UnsupportedEncodingException;
-import java.io.CharArrayWriter;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CoderResult;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException ;
 import java.util.BitSet;
@@ -205,6 +209,8 @@ public class URLEncoder {
         }
     }
 
+    private static final int ENCODING_CHUNK_SIZE = 4;
+
     /**
      * Translates a string into {@code application/x-www-form-urlencoded}
      * format using a specific {@linkplain Charset Charset}.
@@ -239,7 +245,9 @@ public class URLEncoder {
         }
 
         StringBuilder out = new StringBuilder(s.length() << 1);
-        CharArrayWriter charArrayWriter = new CharArrayWriter();
+        CharsetEncoder ce = charset.newEncoder();
+        CharBuffer cb = CharBuffer.allocate(ENCODING_CHUNK_SIZE);
+        ByteBuffer bb = ByteBuffer.allocate((int)(ENCODING_CHUNK_SIZE * (double)ce.maxBytesPerChar()));
         if (i > 0) {
             out.append(s, 0, i);
         }
@@ -255,7 +263,7 @@ public class URLEncoder {
             } else {
                 // convert to external encoding before hex conversion
                 do {
-                    charArrayWriter.write(c);
+                    cb.put(c);
                     /*
                      * If this character represents the start of a Unicode
                      * surrogate pair, then pass in two characters. It's not
@@ -268,23 +276,49 @@ public class URLEncoder {
                         if ((i + 1) < s.length()) {
                             char d = s.charAt(i + 1);
                             if (Character.isLowSurrogate(d)) {
-                                charArrayWriter.write(d);
+                                cb.put(d);
                                 i++;
                             }
                         }
                     }
+                    if (cb.position() >= ENCODING_CHUNK_SIZE - 1) {
+                        flushToStringBuilder(out, ce, cb, bb);
+                    }
                     i++;
                 } while (i < s.length() && !DONT_NEED_ENCODING.test((c = s.charAt(i))));
-
-                String str = charArrayWriter.toString();
-                byte[] ba = str.getBytes(charset);
-                for (byte b : ba) {
-                    encodeByte(out, b);
-                }
-                charArrayWriter.reset();
+                flushToStringBuilder(out, ce, cb, bb);
             }
         }
 
+        // Handle trailing, possibly malformed, input
+        try {
+            cb.flip();
+            CoderResult cr = ce.encode(cb, bb, true);
+            if (!cr.isUnderflow())
+                cr.throwException();
+            cr = ce.flush(bb);
+            if (!cr.isUnderflow())
+                cr.throwException();
+        } catch (CharacterCodingException x) {
+            throw new Error(x); // Can't happen
+        }
+
         return out.toString();
+    }
+
+    private static void flushToStringBuilder(StringBuilder out, CharsetEncoder ce, CharBuffer cb, ByteBuffer bb) {
+        cb.flip();
+        try {
+            CoderResult cr = ce.encode(cb, bb, false);
+            if (!cr.isUnderflow())
+                cr.throwException();
+        } catch (CharacterCodingException x) {
+            throw new Error(x); // Can't happen
+        }
+        for (int j = 0; j < bb.position(); j++) {
+            encodeByte(out, bb.get(j));
+        }
+        cb.clear();
+        bb.clear();
     }
 }
