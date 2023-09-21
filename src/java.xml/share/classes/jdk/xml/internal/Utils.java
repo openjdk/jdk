@@ -39,7 +39,7 @@ public class Utils {
      * The {@systemProperty jaxp.debug} property is supported by JAXP factories
      * and used to print out information related to the configuration of factories
      * and processors
-    */
+     */
     static {
         try {
             String val = SecuritySupport.getSystemProperty("jaxp.debug");
