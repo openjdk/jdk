@@ -74,8 +74,10 @@ public class RotateTest3 extends Panel {
         RotateTest3 panel = new RotateTest3();
 
         frame = new JFrame("RotateTest3");
-        frame.addWindowListener(new WindowAdapter(){
-            public void windowClosing(WindowEvent e) {System.exit(0);}
+        frame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                frame.dispose();
+            }
         });
         frame.getContentPane().setLayout(new GridLayout(1, 1));
         frame.getContentPane().add("Center", panel);
