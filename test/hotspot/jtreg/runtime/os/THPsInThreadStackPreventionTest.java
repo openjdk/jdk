@@ -27,6 +27,7 @@
  * @bug 8303215 8312182
  * @summary On THP=always systems, we prevent THPs from forming within thread stacks
  * @library /test/lib
+ * @requires vm.flagless
  * @requires os.family == "linux"
  * @requires vm.debug
  * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
@@ -40,6 +41,7 @@
  * @bug 8303215 8312182
  * @summary On THP=always systems, we prevent THPs from forming within thread stacks (negative test)
  * @library /test/lib
+ * @requires vm.flagless
  * @requires os.family == "linux"
  * @requires vm.debug
  * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"

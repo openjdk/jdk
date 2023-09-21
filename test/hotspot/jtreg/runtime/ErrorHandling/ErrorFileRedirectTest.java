@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, SAP. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,6 +29,7 @@
  * @summary Test ErrorFileToStderr and ErrorFileToStdout
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
+ * @requires vm.flagless
  * @requires (vm.debug == true)
  * @run driver ErrorFileRedirectTest
  */

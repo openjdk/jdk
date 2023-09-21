@@ -48,8 +48,8 @@
 #include "runtime/globals_extension.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-int    HeapRegion::LogOfHRGrainBytes = 0;
-int    HeapRegion::LogCardsPerRegion = 0;
+uint   HeapRegion::LogOfHRGrainBytes = 0;
+uint   HeapRegion::LogCardsPerRegion = 0;
 size_t HeapRegion::GrainBytes        = 0;
 size_t HeapRegion::GrainWords        = 0;
 size_t HeapRegion::CardsPerRegion    = 0;
@@ -78,12 +78,9 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   // Now make sure that we don't go over or under our limits.
   region_size = clamp(region_size, HeapRegionBounds::min_size(), HeapRegionBounds::max_size());
 
-  // Calculate the log for the region size.
-  int region_size_log = log2i_exact(region_size);
-
   // Now, set up the globals.
   guarantee(LogOfHRGrainBytes == 0, "we should only set it once");
-  LogOfHRGrainBytes = region_size_log;
+  LogOfHRGrainBytes = log2i_exact(region_size);
 
   guarantee(GrainBytes == 0, "we should only set it once");
   GrainBytes = region_size;
@@ -94,7 +91,7 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   guarantee(CardsPerRegion == 0, "we should only set it once");
   CardsPerRegion = GrainBytes >> G1CardTable::card_shift();
 
-  LogCardsPerRegion = log2i(CardsPerRegion);
+  LogCardsPerRegion = log2i_exact(CardsPerRegion);
 
   if (G1HeapRegionSize != GrainBytes) {
     FLAG_SET_ERGO(G1HeapRegionSize, GrainBytes);
@@ -430,7 +427,7 @@ void HeapRegion::print_on(outputStream* st) const {
   if (UseNUMA) {
     G1NUMA* numa = G1NUMA::numa();
     if (node_index() < numa->num_active_nodes()) {
-      st->print("|%d", numa->numa_id(node_index()));
+      st->print("|%u", numa->numa_id(node_index()));
     } else {
       st->print("|-");
     }

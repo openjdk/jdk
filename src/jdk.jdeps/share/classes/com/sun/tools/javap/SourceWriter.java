@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
@@ -40,13 +39,10 @@ import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Instruction;
-import com.sun.tools.classfile.LineNumberTable_attribute;
-import com.sun.tools.classfile.SourceFile_attribute;
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.CodeModel;
+import jdk.internal.classfile.Instruction;
 
 
 /**
@@ -74,14 +70,15 @@ public class SourceWriter extends InstructionDetailWriter {
         this.fileManager = fileManager;
     }
 
-    public void reset(ClassFile cf, Code_attribute attr) {
-        setSource(cf);
+    public void reset(CodeModel attr) {
+        setSource(attr.parent().get().parent().get());
         setLineMap(attr);
     }
 
-    public void writeDetails(Instruction instr) {
+    @Override
+    public void writeDetails(int pc, Instruction instr) {
         String indent = space(40); // could get from Options?
-        Set<Integer> lines = lineMap.get(instr.getPC());
+        var lines = lineMap.get(pc);
         if (lines != null) {
             for (int line: lines) {
                 print(indent);
@@ -105,37 +102,34 @@ public class SourceWriter extends InstructionDetailWriter {
         return (sourceLines.length > 0);
     }
 
-    private void setLineMap(Code_attribute attr) {
+    private void setLineMap(CodeModel attr) {
         SortedMap<Integer, SortedSet<Integer>> map = new TreeMap<>();
         SortedSet<Integer> allLines = new TreeSet<>();
-        for (Attribute a: attr.attributes) {
-            if (a instanceof LineNumberTable_attribute) {
-                LineNumberTable_attribute t = (LineNumberTable_attribute) a;
-                for (LineNumberTable_attribute.Entry e: t.line_number_table) {
-                    int start_pc = e.start_pc;
-                    int line = e.line_number;
-                    SortedSet<Integer> pcLines = map.get(start_pc);
-                    if (pcLines == null) {
-                        pcLines = new TreeSet<>();
-                        map.put(start_pc, pcLines);
-                    }
-                    pcLines.add(line);
-                    allLines.add(line);
+        for (var t : attr.findAttributes(Attributes.LINE_NUMBER_TABLE)) {
+            for (var e: t.lineNumbers()) {
+                int start_pc = e.startPc();
+                int line = e.lineNumber();
+                SortedSet<Integer> pcLines = map.get(start_pc);
+                if (pcLines == null) {
+                    pcLines = new TreeSet<>();
+                    map.put(start_pc, pcLines);
                 }
+                pcLines.add(line);
+                allLines.add(line);
             }
         }
         lineMap = map;
         lineList = new ArrayList<>(allLines);
     }
 
-    private void setSource(ClassFile cf) {
+    private void setSource(ClassModel cf) {
         if (cf != classFile) {
             classFile = cf;
             sourceLines = splitLines(readSource(cf));
         }
     }
 
-    private String readSource(ClassFile cf) {
+    private String readSource(ClassModel cf) {
         if (fileManager == null)
             return null;
 
@@ -150,14 +144,13 @@ public class SourceWriter extends InstructionDetailWriter {
         // additional classes to determine the outmost class from any
         // InnerClasses and EnclosingMethod attributes.
         try {
-            String className = cf.getName();
-            SourceFile_attribute sf =
-                    (SourceFile_attribute) cf.attributes.get(Attribute.SourceFile);
-            if (sf == null) {
+            String className = cf.thisClass().asInternalName();
+            var sf = cf.findAttribute(Attributes.SOURCE_FILE);
+            if (sf.isEmpty()) {
                 report(messages.getMessage("err.no.SourceFile.attribute"));
                 return null;
             }
-            String sourceFile = sf.getSourceFile(cf.constant_pool);
+            String sourceFile = sf.get().sourceFile().stringValue();
             String fileBase = sourceFile.endsWith(".java")
                 ? sourceFile.substring(0, sourceFile.length() - 5) : sourceFile;
             int sep = className.lastIndexOf("/");
@@ -172,9 +165,6 @@ public class SourceWriter extends InstructionDetailWriter {
                 return null;
             }
             return fo.getCharContent(true).toString();
-        } catch (ConstantPoolException e) {
-            report(e);
-            return null;
         } catch (IOException e) {
             report(e.getLocalizedMessage());
             return null;
@@ -205,7 +195,7 @@ public class SourceWriter extends InstructionDetailWriter {
     }
 
     private JavaFileManager fileManager;
-    private ClassFile classFile;
+    private ClassModel classFile;
     private SortedMap<Integer, SortedSet<Integer>> lineMap;
     private List<Integer> lineList;
     private String[] sourceLines;

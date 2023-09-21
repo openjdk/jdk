@@ -96,14 +96,6 @@ class ObjArrayKlass : public ArrayKlass {
                arrayOop d, size_t dst_offset,
                int length, TRAPS);
  public:
-  // Returns the ObjArrayKlass for n'th dimension.
-  virtual ArrayKlass* array_klass(int n, TRAPS);
-  virtual ArrayKlass* array_klass_or_null(int n);
-
-  // Returns the array class with this class as element type.
-  virtual ArrayKlass* array_klass(TRAPS);
-  virtual ArrayKlass* array_klass_or_null();
-
   static ObjArrayKlass* cast(Klass* k) {
     return const_cast<ObjArrayKlass*>(cast(const_cast<const Klass*>(k)));
   }

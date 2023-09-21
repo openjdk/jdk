@@ -169,8 +169,11 @@ void Thread::record_stack_base_and_size() {
   // any members being initialized. Do not rely on Thread::current() being set.
   // If possible, refrain from doing anything which may crash or assert since
   // quite probably those crash dumps will be useless.
-  set_stack_base(os::current_stack_base());
-  set_stack_size(os::current_stack_size());
+  address base;
+  size_t size;
+  os::current_stack_base_and_size(&base, &size);
+  set_stack_base(base);
+  set_stack_size(size);
 
   // Set stack limits after thread is initialized.
   if (is_Java_thread()) {
