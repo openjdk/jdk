@@ -43,6 +43,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TempDirDoesNotExist {
     final static String WARNING = "WARNING: java.io.tmpdir directory does not exist";
@@ -138,14 +139,12 @@ public class TempDirDoesNotExist {
     @MethodSource("counterSource")
     public void messageCounter(List<String> options) throws Exception {
         OutputAnalyzer originalOutput = ProcessTools.executeTestJvm(options);
-        List<String> list = originalOutput.asLines().stream().filter(line
-                -> line.equalsIgnoreCase(WARNING)).toList();
-        if (list.size() != 1)
-            throw new RuntimeException("counter of messages is not one, but " +
-                                       list.size() + "\n" +
-                                       originalOutput.asLines().toString());
+        long count = originalOutput.asLines().stream().filter(
+                line -> line.equalsIgnoreCase(WARNING)).count();
+        assertEquals(1, count,
+                     "counter of messages is not one, but " + count +
+                     "\n" + originalOutput.asLines().toString());
         int exitValue = originalOutput.getExitValue();
-        if (exitValue != 0)
-            throw new RuntimeException("non-zero exit value " + exitValue);
+        assertEquals(0, exitValue);
     }
 }
