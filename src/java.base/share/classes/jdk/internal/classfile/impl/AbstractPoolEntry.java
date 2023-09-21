@@ -241,7 +241,7 @@ public abstract sealed class AbstractPoolEntry {
             }
             else {
                 char[] chararr = new char[rawLen];
-                int chararr_count = 0;
+                int chararr_count = singleBytes;
                 // Inflate prefix of bytes to characters
                 JLA.inflateBytesToChars(rawBytes, offset, chararr, 0, singleBytes);
 
