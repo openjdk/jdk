@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,11 +56,6 @@ public class AttachSetGetFlag {
     // Test a manageable uintx flag.
     testGetFlag("MaxHeapFreeRatio", "60");
     testSetFlag("MaxHeapFreeRatio", "50", "60");
-
-    // Test a non-manageable size_t flag.
-    // Since it is not manageable, we can't test the setFlag functionality.
-    testGetFlag("ArrayAllocatorMallocLimit", "128");
-    // testSetFlag("ArrayAllocatorMallocLimit", "64", "128");
 
     // Test a uint flag.
     testGetFlag("ParallelGCThreads", "10");
