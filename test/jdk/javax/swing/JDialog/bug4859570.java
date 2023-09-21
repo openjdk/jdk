@@ -30,13 +30,10 @@
 
 import java.awt.Robot;
 import java.awt.Window;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
 
 public class bug4859570 {
-    static volatile boolean dialogIsClosed = false;
     static Robot r;
     static Window owner;
 
@@ -47,12 +44,6 @@ public class bug4859570 {
             dialog.setBounds(100, 100, 100, 100);
             dialog.setVisible(true);
 
-            dialog.addWindowListener(new WindowAdapter() {
-                public void windowClosed(WindowEvent e) {
-                    dialogIsClosed = true;
-                }
-            });
-
             owner = dialog.getOwner();
             dialog.dispose();
         });
@@ -60,10 +51,6 @@ public class bug4859570 {
         r = new Robot();
         r.waitForIdle();
         r.delay(1000);
-
-        if (!dialogIsClosed) {
-            r.delay(1000);
-        }
 
         SwingUtilities.invokeAndWait(() -> {
             if (owner.isDisplayable()) {
