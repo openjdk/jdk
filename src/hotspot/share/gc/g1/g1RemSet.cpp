@@ -849,7 +849,7 @@ public:
       // Scan the code root list attached to the current region
       r->code_roots_do(&cl);
 
-      _code_roots_scanned = cl.count();
+      _code_roots_scanned += cl.count();
 
       event.commit(GCId::current(), _worker_id, G1GCPhaseTimes::phase_name(_code_roots_phase));
     }

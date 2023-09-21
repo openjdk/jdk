@@ -175,6 +175,7 @@ java/awt/Mixing/AWT_Mixing/JTextFieldOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JToggleButtonInGlassPaneOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JToggleButtonOverlapping.java 8158801 windows-all
 java/awt/Mixing/NonOpaqueInternalFrame.java 7124549 macosx-all
+java/awt/Mouse/EnterExitEvents/DragWindowTest.java 8298823 macosx-all
 java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowRetaining.java 6829264 generic-all
 java/awt/datatransfer/DragImage/MultiResolutionDragImageTest.java 8080982 generic-all
 java/awt/datatransfer/SystemFlavorMap/AddFlavorTest.java 8079268 linux-all
@@ -534,15 +535,22 @@ javax/management/remote/mandatory/subjectDelegation/SubjectDelegation1Test.java 
 
 # jdk_net
 
-java/net/MulticastSocket/NoLoopbackPackets.java                 7122846,8308807 macosx-all,aix-ppc64
-java/net/MulticastSocket/SetLoopbackMode.java                   7122846,8308807 macosx-all,aix-ppc64
+java/net/DatagramSocket/DatagramSocketExample.java              8308807 aix-ppc64
+java/net/DatagramSocket/DatagramSocketMulticasting.java         8308807 aix-ppc64
 
+java/net/MulticastSocket/B6427403.java                          8308807 aix-ppc64
+java/net/MulticastSocket/IPMulticastIF.java                     8308807 aix-ppc64
+java/net/MulticastSocket/JoinLeave.java                         8308807 aix-ppc64
+java/net/MulticastSocket/MulticastAddresses.java                8308807 aix-ppc64
+java/net/MulticastSocket/NoLoopbackPackets.java                 7122846,8308807 macosx-all,aix-ppc64
+java/net/MulticastSocket/NoSetNetworkInterface.java             8308807 aix-ppc64
+java/net/MulticastSocket/Promiscuous.java                       8308807 aix-ppc64
+java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8308807 aix-ppc64
+java/net/MulticastSocket/SetLoopbackMode.java                   7122846,8308807 macosx-all,aix-ppc64
+java/net/MulticastSocket/SetOutgoingIf.java                     8308807 aix-ppc64
 java/net/MulticastSocket/Test.java                              7145658,8308807 macosx-all,aix-ppc64
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
-
-java/net/MulticastSocket/B6427403.java                          8308807 aix-ppc64
-java/net/MulticastSocket/SetOutgoingIf.java                     8308807 aix-ppc64
 
 ############################################################################
 
@@ -550,10 +558,9 @@ java/net/MulticastSocket/SetOutgoingIf.java                     8308807 aix-ppc6
 
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
+java/nio/channels/DatagramChannel/AdaptorMulticasting.java      8308807 aix-ppc64
 java/nio/channels/DatagramChannel/AfterDisconnect.java          8308807 aix-ppc64
-
 java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-aarch64
-
 java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-all
 
 java/nio/file/Path/ToRealPath.java                              8315273 windows-all
@@ -722,16 +729,12 @@ java/util/concurrent/ExecutorService/CloseTest.java             8288899 macosx-a
 
 # svc_tools
 
-sun/tools/jstatd/TestJstatdDefaults.java                        8081569 windows-all
 sun/tools/jstatd/TestJstatdRmiPort.java                         8251259,8293577 generic-all
-sun/tools/jstatd/TestJstatdServer.java                          8081569 windows-all
 
 sun/tools/jstat/jstatLineCounts1.sh                             8268211 linux-aarch64
 sun/tools/jstat/jstatLineCounts2.sh                             8268211 linux-aarch64
 sun/tools/jstat/jstatLineCounts3.sh                             8268211 linux-aarch64
 sun/tools/jstat/jstatLineCounts4.sh                             8268211 linux-aarch64
-
-sun/tools/jhsdb/JStackStressTest.java                           8276210 linux-aarch64
 
 ############################################################################
 
@@ -745,6 +748,7 @@ jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-
 # jdk_jfr
 
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209 generic-all
+jdk/jfr/event/runtime/TestResidentSetSizeEvent.java             8309846 aix-ppc64
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
 jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
