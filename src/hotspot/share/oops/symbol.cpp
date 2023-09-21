@@ -390,7 +390,6 @@ void Symbol::print() const { print_on(tty); }
 // disassembler and error reporting.
 void Symbol::print_value_on(outputStream* st) const {
   st->print_raw("'", 1);
-  static_assert(sizeof(u1) == sizeof(char), "must be");
   st->print_raw((const char*)base(), utf8_length());
   st->print_raw("'", 1);
 }
