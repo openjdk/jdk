@@ -29,7 +29,8 @@
  * @summary In SuperWord::output, LoadVector can be moved before StoreVector, but only if it is proven to be safe.
  * @library /test/lib
  * @run main/othervm -XX:CompileCommand=compileonly,compiler.loopopts.superword.TestMovingLoadBeforeStore::test
- *                   -Xbatch -XX:LoopUnrollLimit=100 -Xbatch -XX:-StressLCM
+ *                   -Xbatch -XX:LoopUnrollLimit=100
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressLCM
  *                   compiler.loopopts.superword.TestMovingLoadBeforeStore
  */
 
