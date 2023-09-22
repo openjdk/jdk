@@ -83,7 +83,7 @@ public abstract sealed class MemorySessionImpl
     }
 
     @ForceInline
-    public static final MemorySessionImpl toMemorySession(Arena arena) {
+    public static MemorySessionImpl toMemorySession(Arena arena) {
         return (MemorySessionImpl) arena.scope();
     }
 
@@ -211,7 +211,7 @@ public abstract sealed class MemorySessionImpl
         }
     }
 
-    public static final void checkValidState(MemorySegment segment) {
+    public static void checkValidState(MemorySegment segment) {
         ((AbstractMemorySegmentImpl)segment).sessionImpl().checkValidState();
     }
 

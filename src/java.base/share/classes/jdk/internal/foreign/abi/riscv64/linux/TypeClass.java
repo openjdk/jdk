@@ -78,7 +78,7 @@ public enum TypeClass {
      * Struct will be flattened while classifying. That is, struct{struct{int, double}} will be treated
      * same as struct{int, double} and struct{int[2]} will be treated same as struct{int, int}.
      * */
-    private static record FieldCounter(long integerCnt, long floatCnt, long pointerCnt) {
+    private record FieldCounter(long integerCnt, long floatCnt, long pointerCnt) {
         static final FieldCounter EMPTY = new FieldCounter(0, 0, 0);
         static final FieldCounter SINGLE_INTEGER = new FieldCounter(1, 0, 0);
         static final FieldCounter SINGLE_FLOAT = new FieldCounter(0, 1, 0);
@@ -128,9 +128,7 @@ public enum TypeClass {
         }
     }
 
-    public static record FlattenedFieldDesc(TypeClass typeClass, long offset, ValueLayout layout) {
-
-    }
+    public record FlattenedFieldDesc(TypeClass typeClass, long offset, ValueLayout layout) { }
 
     private static List<FlattenedFieldDesc> getFlattenedFieldsInner(long offset, MemoryLayout layout) {
         if (layout instanceof ValueLayout valueLayout) {

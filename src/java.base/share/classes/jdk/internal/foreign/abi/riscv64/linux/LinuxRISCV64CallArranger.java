@@ -251,8 +251,8 @@ public class LinuxRISCV64CallArranger {
                               Map.entry(STRUCT_REGISTER_XF, STRUCT_REGISTER_X));
     }
 
-    static class UnboxBindingCalculator extends BindingCalculator {
-        boolean forArguments;
+    static final class UnboxBindingCalculator extends BindingCalculator {
+        final boolean forArguments;
 
         UnboxBindingCalculator(boolean forArguments) {
             super(forArguments);
