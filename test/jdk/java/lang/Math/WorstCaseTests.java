@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,12 @@
  * JDK implementation complies with a 1 ulp bound on the worst-case
  * values.  Therefore, no addition leeway is afforded when testing
  * sinh and cosh.
+ *
+ * Additional worst-case observed error inputs for the FDLIBM-dervied
+ * OpenLibm 0.8.1 added from
+ * "Accuracy of Mathematical Functions in Single, Double, Double
+ * Extended, and Quadruple Precision"
+ * by Brian Gladman, Vincenzo Innocente and Paul Zimmermann
  */
 public class WorstCaseTests {
     private WorstCaseTests() {throw new AssertionError("No instances for you.");}
@@ -113,6 +119,9 @@ public class WorstCaseTests {
             {+0x1.A8EAD058BC6B8p3,      0x1.1D71965F516ADp19},
             {+0x1.1D5C2DAEBE367p4,      0x1.A8C02E974C314p25},
             {+0x1.C44CE0D716A1Ap4,      0x1.B890CA8637AE1p40},
+
+            // Worst-case observed error
+            {+0x1.2e8f20cf3cbe7p+8,     0x1.6a2a59cc78bf7p436},
         };
 
         for(double[] testCase: testCases) {
@@ -145,6 +154,9 @@ public class WorstCaseTests {
             {+0x17.F3825778AAAFp0,      +0x3.2D0F907F5E00Cp+0},
             {+0x1AC.50B409C8AEEp0,      +0x6.0F52F37AECFCCp+0},
             {+0x1.DE7CD6751029Ap16,     +0x1.76E7E5D7B6EABp+3},
+
+            // Worst-case observed error
+            {+0x1.48ae5a67204f5p+0,     0x1.ffd10abffc3fep-3},
         };
 
         for(double[] testCase: testCases) {
@@ -178,6 +190,9 @@ public class WorstCaseTests {
             {+0x1.921FB54442D18p-0,     +0x1.FFFFFFFFFFFFFp-1},
 
             {+0x1.6756745770A51p+1,     +0x1.4FF350E412821p-2},
+
+            // Worst-case observed error
+            {+0x1.4d84db080b9fdp+21,    +0x1.6e21c4ff6aec3p-1},
         };
 
         for(double[] testCase: testCases) {
@@ -210,6 +225,9 @@ public class WorstCaseTests {
             {+0x1.1ED06D50F7E88p-1,     +0x1.30706F699466Dp-1},
             {+0x1.D5B05A89D3E77p-1,     +0x1.29517AB4C132Ap+0},
             {+0x1.E264357EA0E29p-1,     +0x1.3AA301F6EBB1Dp+0},
+
+            // Worst-case observed error
+            {-0x1.004d1c5a9400bp-1,    -0x1.0c6e322e8a28cp-1},
         };
 
         for(double[] testCase: testCases) {
@@ -243,6 +261,9 @@ public class WorstCaseTests {
             {+0x1.7CB7648526F99p-1,     +0x1.78DAF01036D0Cp-1},
             {+0x1.C65A170474549p-1,     +0x1.434A3645BE208p-1},
             {+0x1.6B8A6273D7C21p+0,     +0x1.337FC5B072C52p-3},
+
+            // Worst-case observed error
+            {-0x1.34e729fd08086p+21,    +0x1.6a6a0d6a17f0fp-1},
         };
 
         for(double[] testCase: testCases) {
@@ -267,6 +288,9 @@ public class WorstCaseTests {
             {+0x1.4182199998587p-1,     +0x1.C8A538AE83D1Fp-1},
             {+0x1.E45A1C93651ECp-1,     +0x1.520DC553F6B23p-2},
             {+0x1.F10FC61E2C78Fp-1,     +0x1.EFEEF61D39AC1p-3},
+
+            // Worst-case observed error
+            {-0x1.0068b067c6feep-1,     +0x1.0c335e2f0727p1},
         };
 
         for(double[] testCase: testCases) {
@@ -296,6 +320,9 @@ public class WorstCaseTests {
             {+0x1.D696BFA988DB9p-2,     +0x1.FAC71CD34EEA6p-2},
             {+0x1.46AC372243536p-1,     +0x1.7BA49F739829Ep-1},
             {+0x0.A3561B9121A9Bp+0,     +0x0.BDD24FB9CC14Fp+0},
+
+            // Worst-case observed error
+            {0x1.3f9605aaeb51bp+21,     -0x1.9678ee5d64935p-1},
         };
 
         for(double[] testCase: testCases) {
@@ -328,6 +355,9 @@ public class WorstCaseTests {
             {+0x1.7BA49F739829Fp-1,     +0x1.46AC372243536p-1},
 
             {+0x0.BDD24FB9CC14F8p+0,    +0x0.A3561B9121A9Bp+0},
+
+            // Worst-case observed error
+            {0x1.62ff6a1682c25p-1,      +0x1.3666b15c8756ap-1},
         };
 
         for(double[] testCase: testCases) {
