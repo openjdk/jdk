@@ -107,7 +107,7 @@ public final class DoubleToDecimal {
     private static final int MINUS_INF      = 4;
     private static final int NAN            = 5;
 
-    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     private byte[] bytes;
 
@@ -569,7 +569,7 @@ public final class DoubleToDecimal {
 
     private String charsToString() {
         try {
-            return jla.newStringNoRepl(bytes, StandardCharsets.ISO_8859_1);
+            return JLA.newStringNoRepl(bytes, StandardCharsets.ISO_8859_1);
         } catch (CharacterCodingException e) {
             throw new AssertionError(e);
         }
