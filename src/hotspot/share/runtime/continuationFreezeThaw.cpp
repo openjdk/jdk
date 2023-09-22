@@ -706,20 +706,21 @@ void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp CONT_J
   copy_to_chunk(from, to, cont_size() + frame::metadata_words_at_bottom);
   // Because we're not patched yet, the chunk is now in a bad state
 
-  // patch return pc of the bottom-most frozen frame (now in the chunk) with the actual caller's return address
-  intptr_t* chunk_bottom_sp = chunk_top + cont_size() - _cont.argsize() - frame::metadata_words_at_top;
+  // patch return pc of the bottom-most frozen frame (now in the chunk)
+  // with the actual caller's return address
+  intptr_t* chunk_bottom_retaddr_slot = (chunk_top + cont_size()
+                                         - _cont.argsize()
+                                         - frame::metadata_words_at_top
+                                         - frame::sender_sp_ret_address_offset());
 #ifdef ASSERT
   if (!_empty) {
-    intptr_t* retaddr_slot = (chunk_bottom_sp
-                              - frame::sender_sp_ret_address_offset());
-    assert(ContinuationHelper::return_address_at(retaddr_slot)
+    assert(ContinuationHelper::return_address_at(chunk_bottom_retaddr_slot)
            == StubRoutines::cont_returnBarrier(),
            "should be the continuation return barrier");
   }
 #endif
-  ContinuationHelper::patch_return_address_at(
-    chunk_bottom_sp - frame::sender_sp_ret_address_offset(),
-    chunk->pc());
+  ContinuationHelper::patch_return_address_at(chunk_bottom_retaddr_slot,
+                                              chunk->pc());
 
   // We're always writing to a young chunk, so the GC can't see it until the next safepoint.
   chunk->set_sp(chunk_new_sp);
