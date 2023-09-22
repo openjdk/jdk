@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 package jdk.internal.logger;
 
 import java.io.FilePermission;
+import java.lang.System.Logger;
+import java.lang.System.LoggerFinder;
 import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
@@ -32,6 +34,9 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
+import java.util.function.BooleanSupplier;
+
+import jdk.internal.vm.annotation.Stable;
 import sun.security.util.SecurityConstants;
 import sun.security.action.GetPropertyAction;
 
@@ -64,18 +69,39 @@ public final class LoggerFinderLoader {
         throw new InternalError("LoggerFinderLoader cannot be instantiated");
     }
 
-
+    // record the loadingThread while loading the backend
+    static volatile Thread loadingThread;
     // Return the loaded LoggerFinder, or load it if not already loaded.
     private static System.LoggerFinder service() {
         if (service != null) return service;
+        // ensure backend is detected before attempting to load the finder
+        BootstrapLogger.ensureBackendDetected();
         synchronized(lock) {
             if (service != null) return service;
-            service = loadLoggerFinder();
+            Thread currentThread = Thread.currentThread();
+            if (loadingThread == currentThread) {
+                // recursive attempt to load the backend while loading the backend
+                // use a temporary logger finder that returns special BootstrapLogger
+                // which will wait until loading is finished
+                return TemporaryLoggerFinder.INSTANCE;
+            }
+            loadingThread = currentThread;
+            try {
+                service = loadLoggerFinder();
+            } finally {
+                loadingThread = null;
+            }
         }
         // Since the LoggerFinder is already loaded - we can stop using
         // temporary loggers.
         BootstrapLogger.redirectTemporaryLoggers();
         return service;
+    }
+
+    // returns true if called by the thread that loads the LoggerFinder, while
+    // loading the LoggerFinder.
+    static boolean isLoadingThread() {
+        return loadingThread != null && loadingThread == Thread.currentThread();
     }
 
     // Get configuration error policy
@@ -114,6 +140,34 @@ public final class LoggerFinderLoader {
                         READ_PERMISSION);
         }
         return iterator;
+    }
+
+    public static final class TemporaryLoggerFinder extends LoggerFinder {
+        private TemporaryLoggerFinder() {}
+        @Stable
+        private LoggerFinder loadedService;
+
+        private static final BooleanSupplier isLoadingThread = new BooleanSupplier() {
+            @Override
+            public boolean getAsBoolean() {
+                return LoggerFinderLoader.isLoadingThread();
+            }
+        };
+        private static final TemporaryLoggerFinder INSTANCE = new TemporaryLoggerFinder();
+
+        @Override
+        public Logger getLogger(String name, Module module) {
+            if (loadedService == null) {
+                loadedService = service;
+                if (loadedService == null) {
+                    return LazyLoggers.makeLazyLogger(name, module, isLoadingThread);
+                }
+            }
+            assert loadedService != null;
+            assert !LoggerFinderLoader.isLoadingThread();
+            assert loadedService != this;
+            return LazyLoggers.getLogger(name, module);
+        }
     }
 
     // Loads the LoggerFinder using ServiceLoader. If no LoggerFinder

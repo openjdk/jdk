@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import java.util.function.BooleanSupplier;
 
 import jdk.internal.logger.BootstrapLogger;
 
-class BootstrapLoggerUtils {
+public final class BootstrapLoggerUtils {
 
     private static final Field IS_BOOTED;
     private static final Method AWAIT_PENDING;
@@ -46,11 +46,11 @@ class BootstrapLoggerUtils {
         }
     }
 
-    static void setBootedHook(BooleanSupplier supplier) throws IllegalAccessException {
+    public static void setBootedHook(BooleanSupplier supplier) throws IllegalAccessException {
         IS_BOOTED.set(null, supplier);
     }
 
-    static void awaitPending() {
+    public static void awaitPending() {
         try {
             AWAIT_PENDING.invoke(null);
         } catch (IllegalAccessException | IllegalArgumentException
