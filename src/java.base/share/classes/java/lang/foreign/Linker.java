@@ -149,8 +149,7 @@ import java.util.stream.Stream;
  * the layout constant {@link ValueLayout#JAVA_INT} on Windows/x64.
  * <p>
  * The following table shows some examples of how C types are modelled in Linux/x64 according to the
- * "System V Application Binary Interface - AMD64 Architecture Processor Supplement" (all the examples provided
- * here will assume these platform-dependent mappings):
+ * "System V Application Binary Interface" (all the examples provided here will assume these platform-dependent mappings):
  *
  * <blockquote><table class="plain">
  * <caption style="display:none">Mapping C types</caption>
@@ -406,7 +405,7 @@ import java.util.stream.Stream;
  * <h3 id="variadic-funcs">Variadic functions</h3>
  *
  * Variadic functions are C functions which can accept a variable number and type of arguments. They are declared with a
- * trailing ellipsis ({@code ...}) at the end of the formal parameter list, such as: {@code void foo(int x, ...);}.
+ * trailing ellipsis ({@code ...}) at the end of the formal parameter list, such as: {@code void foo(int x, ...);}
  * The arguments passed in place of the ellipsis are called <em>variadic arguments</em>. Variadic functions are,
  * essentially, templates that can be <em>specialized</em> into multiple non-variadic functions by replacing the
  * {@code ...} with a list of <em>variadic parameters</em> of a fixed number and type.
