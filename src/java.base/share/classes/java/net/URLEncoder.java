@@ -294,9 +294,9 @@ public class URLEncoder {
     }
 
     /**
-     * Encodes input chars in cb and appends the byte values in an escaped format
-     * ("%FF") to out. The temporary byte buffer, bb, must be able to accept
-     * cb.position() * ce.maxBytesPerChar() bytes.
+     * Encodes input chars in {@code cb} and appends the byte values in an escaped
+     * format ({@code "%XX"}) to {@code out}. The temporary byte buffer, {@code bb},
+     * must be able to accept {@code cb.position() * ce.maxBytesPerChar()} bytes.
      *
      * @param out the StringBuilder to output encoded and escaped bytes to
      * @param ce charset encoder. Will be reset if endOfInput is true
