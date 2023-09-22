@@ -26,7 +26,7 @@
 #define SHARE_GC_PARALLEL_PSCARDTABLE_HPP
 
 #include "gc/shared/cardTable.hpp"
-#include "oops/oop.hpp"
+#include "oops/oop.inline.hpp"
 
 class MutableSpace;
 class ObjectStartArray;
@@ -44,6 +44,10 @@ class PSCardTable: public CardTable {
 
   static size_t stripe_size_in_words;
   static size_t large_obj_arr_min_words;
+
+  static bool is_large_obj_array(oop obj) {
+    return obj->is_objArray() && obj->size() >= large_obj_arr_min_words;
+  }
 
   CardValue* find_first_dirty_card(CardValue* const start_card,
                                    CardValue* const end_card);
@@ -73,7 +77,10 @@ class PSCardTable: public CardTable {
                                   PSPromotionManager* pm,
                                   uint stripe_index,
                                   uint n_stripes);
-  void scavenge_large_array_stripe(ObjectStartArray* start_array,
+  // Scavenge the elements of a large object array on dirty cards of the stripe.
+  // Scan to end if it is in the next stripe.
+  void scavenge_large_array_stripe(objArrayOop large_arr,
+                                   ObjectStartArray* start_array,
                                    PSPromotionManager* pm,
                                    HeapWord* stripe_addr,
                                    HeapWord* stripe_end_addr,
