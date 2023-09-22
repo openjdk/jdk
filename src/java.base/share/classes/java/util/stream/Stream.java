@@ -276,7 +276,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *               function to apply to each element which produces a stream
      *               of new values
      * @return the new stream
-     * @see #mapMulti
+     * @see #mapMulti mapMulti
      */
     <R> Stream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper);
 
@@ -296,7 +296,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *               function to apply to each element which produces a stream
      *               of new values
      * @return the new stream
-     * @see #flatMap(Function)
+     * @see #flatMap flatMap
      */
     IntStream flatMapToInt(Function<? super T, ? extends IntStream> mapper);
 
@@ -316,7 +316,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *               function to apply to each element which produces a stream
      *               of new values
      * @return the new stream
-     * @see #flatMap(Function)
+     * @see #flatMap flatMap
      */
     LongStream flatMapToLong(Function<? super T, ? extends LongStream> mapper);
 
@@ -336,7 +336,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *               function to apply to each element which produces a stream
      *               of new values
      * @return the new stream
-     * @see #flatMap(Function)
+     * @see #flatMap flatMap
      */
     DoubleStream flatMapToDouble(Function<? super T, ? extends DoubleStream> mapper);
 
