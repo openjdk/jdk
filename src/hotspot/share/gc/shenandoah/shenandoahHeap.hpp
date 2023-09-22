@@ -289,7 +289,7 @@ private:
   ShenandoahSharedFlag   _full_gc_move_in_progress;
   ShenandoahSharedFlag   _concurrent_strong_root_in_progress;
 
-  size_t _no_gc_progress_count;
+  size_t _gc_no_progress_count;
 
   void set_gc_state_all_threads(char state);
   void set_gc_state_mask(uint mask, bool value);
