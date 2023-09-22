@@ -36,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Bug4766302 {
 
+    @SuppressWarnings("serial")
     static class MyCalendar extends GregorianCalendar {
         boolean isTimeStillSet() {
             return isTimeSet;
