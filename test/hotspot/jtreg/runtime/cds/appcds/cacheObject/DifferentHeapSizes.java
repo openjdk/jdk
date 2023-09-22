@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Test automatic relocation of archive heap regions dur to heap size changes.
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile ../test-classes/Hello.java
  * @build jdk.test.whitebox.WhiteBox

@@ -26,7 +26,7 @@
  * @test
  * @key randomness
  * @summary
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build jdk.test.whitebox.WhiteBox jdk.test.lib.Utils
  * @compile GCStressApp.java

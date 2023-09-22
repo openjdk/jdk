@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Test archived module graph with custom runtime image
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build jdk.test.whitebox.WhiteBox
  * @compile CheckArchivedModuleApp.java

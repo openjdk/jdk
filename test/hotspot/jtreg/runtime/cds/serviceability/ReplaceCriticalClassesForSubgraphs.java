@@ -26,7 +26,7 @@
  * @test
  * @summary Tests how CDS works when critical library classes are replaced with JVMTI ClassFileLoadHook
  * @library /test/lib
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
  * @run main/othervm/native ReplaceCriticalClassesForSubgraphs

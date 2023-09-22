@@ -111,7 +111,7 @@ public class VMProps implements Callable<Map<String, String>> {
         // vm.cds is true if the VM is compiled with cds support.
         map.put("vm.cds", this::vmCDS);
         map.put("vm.cds.custom.loaders", this::vmCDSForCustomLoaders);
-        map.put("vm.cds.archived.java.heap", this::vmCDSForArchivedJavaHeap);
+        map.put("vm.cds.write.archived.java.heap", this::vmCDSCanWriteArchivedJavaHeap);
         // vm.graal.enabled is true if Graal is used as JIT
         map.put("vm.graal.enabled", this::isGraalEnabled);
         map.put("vm.compiler1.enabled", this::isCompiler1Enabled);
@@ -386,12 +386,10 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
-     * Check for CDS support for archived Java heap regions.
-     *
-     * @return true if CDS provides support for archive Java heap regions in the VM to be tested.
+     * @return true if this VM can write Java heap objects into the CDS archive
      */
-    protected String vmCDSForArchivedJavaHeap() {
-        return "" + ("true".equals(vmCDS()) && WB.isJavaHeapArchiveSupported());
+    protected String vmCDSCanWriteArchivedJavaHeap() {
+        return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive());
     }
 
     /**
