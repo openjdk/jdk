@@ -30,6 +30,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test TestAbortVMOnSafepointTimeout
  * @summary Check if VM can kill thread which doesn't reach safepoint.
  * @bug 8219584 8227528
+ * @requires vm.flagless
  * @library /testlibrary /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
