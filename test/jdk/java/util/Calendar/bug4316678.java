@@ -25,7 +25,6 @@
  * @test
  * @bug 4316678
  * @summary test that Calendar's Serialization works correctly.
- * @library /java/text/testlib
  * @run junit bug4316678
  */
 
@@ -49,16 +48,19 @@ public class bug4316678 {
     private static final String serializedData = "bug4316678.ser";
     private static final TimeZone savedTz = TimeZone.getDefault();
 
+    // Save JVM default Locale and TimeZone
     @BeforeAll
     static void initAll() {
         TimeZone.setDefault(TimeZone.getTimeZone("PST"));
     }
 
+    // Restore JVM default Locale and TimeZone
     @AfterAll
     static void tearDownAll() {
         TimeZone.setDefault(savedTz);
     }
 
+    // Test that a serialized GregorianCalendar has the expected values
     @Test
     public void serializationTest() throws IOException, ClassNotFoundException {
         GregorianCalendar gc1 = new GregorianCalendar(2000, Calendar.OCTOBER, 10);

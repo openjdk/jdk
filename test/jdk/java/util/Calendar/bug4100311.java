@@ -38,10 +38,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class bug4100311 {
 
-    // Should set to january 1st properly
+    // GregorianCalendar should be able to date to january 1st properly
     @SuppressWarnings("deprecation")
     @Test
-    public void DayOfYearIsOneTest() {
+    public void dayOfYearIsOneTest() {
         GregorianCalendar cal = new GregorianCalendar();
         cal.set(Calendar.YEAR, 1997);
         cal.set(Calendar.DAY_OF_YEAR, 1);

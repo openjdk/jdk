@@ -25,7 +25,6 @@
  * @test
  * @bug 4372743
  * @summary test that checks transitions of ERA and YEAR which are caused by add(MONTH).
- * @library /java/text/testlib
  * @run junit bug4372743
  */
 
@@ -64,17 +63,22 @@ public class bug4372743 {
 
     private static final TimeZone savedTz = TimeZone.getDefault();
 
+    // Save JVM default Locale and TimeZone
     @BeforeAll
     static void initAll() {
         TimeZone.setDefault(TimeZone.getTimeZone("PST"));
     }
 
+    // Restore JVM default Locale and TimeZone
     @AfterAll
     static void tearDownAll() {
         TimeZone.setDefault(savedTz);
     }
 
-    // Set March 3, A.D. 2 and test add
+    /*
+     * Set GregorianCalendar to (March 3, A.D. 2) and test adding
+     * to the month field. Ensure that the added field is as expected.
+     */
     @ParameterizedTest
     @MethodSource("A_D_Values")
     public void A_D_Test(GregorianCalendar gc, int monthValue) {
@@ -84,14 +88,17 @@ public class bug4372743 {
         }
     }
 
+    // Given in format: (A.D.) GregorianCalendar, amount to add
     private static Stream<Arguments> A_D_Values() {
         return Stream.of(
                 Arguments.of(new GregorianCalendar(2, MARCH, 3), -1),
                 Arguments.of(new GregorianCalendar(2, MARCH, 3), -7));
     }
 
-
-    // Set March 10, 2 B.C. and test add
+    /*
+     * Set GregorianCalendar to (March 10, 2 B.C.) and test adding
+     * to the month field. Ensure that the added field is as expected.
+     */
     @ParameterizedTest
     @MethodSource("B_C_Values")
     public void B_C_Test(GregorianCalendar gc, int monthValue) {
@@ -102,6 +109,7 @@ public class bug4372743 {
             }
     }
 
+    // Given in format: (B.C.) GregorianCalendar, amount to add
     private static Stream<Arguments> B_C_Values() {
         return Stream.of(
                 Arguments.of(new GregorianCalendar(2, OCTOBER, 10), 1),
@@ -115,6 +123,7 @@ public class bug4372743 {
         assertEquals(data[index][MONTH], gc.get(MONTH), "Invalid month");
     }
 
+    // Expected ERA, YEAR, and MONTH combinations
     private final int[][] data = {
         {AD, 2, MARCH},
         {AD, 2, FEBRUARY},

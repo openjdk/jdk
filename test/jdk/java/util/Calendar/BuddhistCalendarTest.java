@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4817812 4847186 4956227 4956479
- * @summary Confirm that BuddhistCalendar's add(), roll() and toString()
+ * @summary Confirm that BuddhistCalendar's add(), roll(), set(), and toString()
  *          work correctly with Buddhist Era years.
  * @run junit BuddhistCalendarTest
  */
@@ -58,8 +58,10 @@ public class BuddhistCalendarTest {
 
     private static final Locale THAI_LOCALE = Locale.of("th", "TH");
 
-    // Test some add values for the BuddhistCalendar. Compare the same field
-    // as the one added.
+    /*
+     * Test some add values for the BuddhistCalendar. This test compares the same field
+     * as the one added.
+     */
     @ParameterizedTest
     @MethodSource("addDataProvider")
     public void buddhistAddTest(Calendar cal, int amount, int fieldToAdd) {
@@ -70,6 +72,10 @@ public class BuddhistCalendarTest {
                 "Added: %s to field: %s", amount, fieldToAdd));
     }
 
+    /*
+     * Given in the format: Calendar, amount to add, and field to add.
+     * Test adding of positive and negative year values.
+     */
     private static Stream<Arguments> addDataProvider() {
         return Stream.of(
                 Arguments.of(getBuddhistCalendar(), 1, YEAR),
@@ -77,8 +83,10 @@ public class BuddhistCalendarTest {
         );
     }
 
-    // Test some add values for the BuddhistCalendar. Compare a bigger field
-    // (year) than the one added (month). Larger field should roll over.
+    /*
+     * Test some add values for the BuddhistCalendar. Compare a bigger field
+     * (year) than the one added (month). Larger field should roll over.
+     */
     @ParameterizedTest
     @MethodSource("alternateAddDataProvider")
     public void buddhistAlternateAddTest(Calendar cal, int amount, int fieldToAdd) {
@@ -89,6 +97,10 @@ public class BuddhistCalendarTest {
                 "Added: %s to field: %s", amount, fieldToAdd));
     }
 
+    /*
+     * Given in the format: Calendar, amount to add, and field to add.
+     * Test adding of positive and negative month values.
+     */
     private static Stream<Arguments> alternateAddDataProvider() {
         return Stream.of(
                 Arguments.of(getBuddhistCalendarBuilder().set(MONTH, DECEMBER).build(), 2, MONTH),
@@ -96,8 +108,10 @@ public class BuddhistCalendarTest {
                 );
     }
 
-    // Test some roll values for the BuddhistCalendar. Compare same field
-    // that was rolled, value should change.
+    /*
+     * Test some roll values for the BuddhistCalendar. Compare same field
+     * that was rolled, value should change.
+     */
     @ParameterizedTest
     @MethodSource("rollProvider")
     public void buddhistRollTest(Calendar cal, int amount, int fieldToRoll) {
@@ -107,6 +121,10 @@ public class BuddhistCalendarTest {
         assertEquals(year, base+amount, "Rolling field should change value");
     }
 
+    /*
+     * Given in the format: Calendar, amount to roll, and field to roll.
+     * Test rolling of positive and negative year values.
+     */
     private static Stream<Arguments> rollProvider() {
         return Stream.of(
                 Arguments.of(getBuddhistCalendar(), 2, YEAR),
@@ -114,9 +132,11 @@ public class BuddhistCalendarTest {
         );
     }
 
-    // Set some calendar values and roll, however, measure a different
-    // Field than the field that was rolled. Rolling should not change the
-    // larger field.
+    /*
+     * Set some calendar values and roll, however, measure a different
+     * field than the field that was rolled. Rolling should not change the
+     * larger field.
+     */
     @ParameterizedTest
     @MethodSource("alternateRollProvider")
     public void buddhistAlternateRollTest(Calendar cal, int amount, int fieldToRoll) {
@@ -126,6 +146,10 @@ public class BuddhistCalendarTest {
         assertEquals(year, base, "Rolling smaller field should not change bigger field");
     }
 
+    /*
+     * Given in the format: Calendar, amount to roll, and field to roll.
+     * Test rolling of positive and negative week_of_year values.
+     */
     private static Stream<Arguments> alternateRollProvider() {
         return Stream.of(
                 Arguments.of(getBuddhistCalendarBuilder().set(YEAR, 2543)
@@ -208,11 +232,12 @@ public class BuddhistCalendarTest {
         }
     }
 
-    // Utility methods to get Buddhist calendars ----
+    // Utility to get a new Buddhist Calendar Builder (to allow setting of other values)
     private static Calendar.Builder getBuddhistCalendarBuilder() {
         return new Calendar.Builder().setLocale(THAI_LOCALE);
     }
 
+    // Utility to get a new Buddhist calendar
     private static Calendar getBuddhistCalendar() {
         return Calendar.getInstance(THAI_LOCALE);
     }

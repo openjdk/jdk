@@ -36,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Bug4766302 {
 
+    // Extend GregorianCalendar to check the protected value of isTimeSet
     @SuppressWarnings("serial")
     static class MyCalendar extends GregorianCalendar {
         boolean isTimeStillSet() {
@@ -47,8 +48,9 @@ public class Bug4766302 {
         }
     }
 
+    // Check the value of isTimeStillSet() after calling computeTime()
     @Test
-    public void test() {
+    public void validateIsTimeSetTest() {
         MyCalendar cal = new MyCalendar();
         cal.computeTime();
         assertTrue(cal.isTimeStillSet(), "computeTime() call reset isTimeSet.");

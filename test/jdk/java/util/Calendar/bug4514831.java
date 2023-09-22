@@ -47,24 +47,33 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class bug4514831 {
-    private static final String goldenData1 = "27-28 28-29 29-30 30-31 31-1 1-2 2-3 ";
-    private static final String goldenData2 = "27-28 28-29 29-30 30-31 31-25 25-26 26-27 ";
-    private static final String goldenData3 = "1-8 8-15 15-22 22-29 29-1 1-8 8-15 ";
+    
+    // goldenData are used to generate the expected values
+    private static final String expectedDayOfYearData = "27-28 28-29 29-30 30-31 31-1 1-2 2-3 ";
+    private static final String expectedDayOfWeekData = "27-28 28-29 29-30 30-31 31-25 25-26 26-27 ";
+    private static final String expectedDayOfWeekInMonthData = "1-8 8-15 15-22 22-29 29-1 1-8 8-15 ";
     private static final TimeZone savedTz = TimeZone.getDefault();
     private static final Locale savedLocale = Locale.getDefault();
 
+    // Save JVM default Locale and TimeZone
     @BeforeAll
     void initAll() {
         Locale.setDefault(Locale.US);
         TimeZone.setDefault(TimeZone.getTimeZone("US/Pacific"));
     }
 
+    // Restore JVM default Locale and TimeZone
     @AfterAll
     void tearDownAll() {
         Locale.setDefault(savedLocale);
         TimeZone.setDefault(savedTz);
     }
 
+    /*
+     * Test some roll values during transition (DAY_OF_YEAR field). Uses
+     * the boolean roll method. Roll multiple times and attach the returned
+     * values to a long string which is then compared to the expected data.
+     */
     public void rollDayOfYearTest() {
         StringBuilder actualRollData = new StringBuilder();
         GregorianCalendar cal = new GregorianCalendar(2001, OCTOBER, 27);
@@ -73,10 +82,15 @@ public class bug4514831 {
             cal.roll(DAY_OF_YEAR, true);
             actualRollData.append(cal.get(DAY_OF_MONTH)).append(" ");
         }
-        assertEquals(goldenData1, actualRollData.toString(),
+        assertEquals(expectedDayOfYearData, actualRollData.toString(),
                 "Wrong roll(DAY_OF_YEAR) transition");
     }
 
+    /*
+     * Test some roll values during transition (DAY_OF_WEEK field). Uses
+     * the boolean roll method. Roll multiple times and attach the returned
+     * values to a long string which is then compared to the expected data.
+     */
     public void rollDayOfWeekTest() {
         StringBuilder actualRollData = new StringBuilder();
         GregorianCalendar cal = new GregorianCalendar(2001, OCTOBER, 27);
@@ -86,10 +100,15 @@ public class bug4514831 {
             cal.roll(DAY_OF_WEEK, true);
             actualRollData.append(cal.get(DAY_OF_MONTH)).append(" ");
         }
-        assertEquals(goldenData2, actualRollData.toString(),
+        assertEquals(expectedDayOfWeekData, actualRollData.toString(),
                 "Wrong roll(DAY_OF_WEEK) transition");
     }
 
+    /*
+     * Test some roll values during transition (DAY_OF_WEEK_IN_MONTH field). Uses
+     * the boolean roll method. Roll multiple times and attach the returned
+     * values to a long string which is then compared to the expected data.
+     */
     public void rollDayOfWeekInMonthTest() {
         StringBuilder actualRollData = new StringBuilder();
         GregorianCalendar cal = new GregorianCalendar(2001, OCTOBER, 1);
@@ -98,7 +117,7 @@ public class bug4514831 {
             cal.roll(DAY_OF_WEEK_IN_MONTH, true);
             actualRollData.append(cal.get(DAY_OF_MONTH)).append(" ");
         }
-        assertEquals(goldenData3, actualRollData.toString(),
+        assertEquals(expectedDayOfWeekInMonthData, actualRollData.toString(),
                 "Wrong roll(DAY_OF_WEEK_IN_MONTH) transition");
     }
 }
