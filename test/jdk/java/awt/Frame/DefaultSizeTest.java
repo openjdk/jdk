@@ -32,7 +32,7 @@ import javax.swing.SwingUtilities;
  * @run main/manual DefaultSizeTest
  */
 
-public class DefaultSizeTest  {
+public class DefaultSizeTest {
 
     private static final String INSTRUCTIONS = """
             An empty frame is created.

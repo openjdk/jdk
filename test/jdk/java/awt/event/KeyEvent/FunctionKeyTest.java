@@ -101,7 +101,7 @@ public class FunctionKeyTest {
 
 class FunctionKeyTester extends Frame {
     Label l = new Label ("NULL");
-    Button b =  new Button ();
+    Button b = new Button();
     TextArea log = new TextArea();
 
     FunctionKeyTester() {

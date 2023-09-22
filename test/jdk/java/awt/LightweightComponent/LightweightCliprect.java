@@ -93,7 +93,7 @@ class MyComponent extends Component {
         int y = 10;
         for(int i = 0; i < 30; i++) {
             g.drawString("Lightweight: Java version: " + version +
-                         ", Vendor: " + vendor,  10, y += 20);
+                         ", Vendor: " + vendor, 10, y += 20);
         }
         g.setColor(c);
         g.setClip(clip);
