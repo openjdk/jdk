@@ -31,7 +31,7 @@ import java.awt.Dimension;
 import javax.swing.JScrollPane;
 
 public class bug4688907 {
-    public static void main(String[] argv) throws Exception {
+    public static void main(String[] args) throws Exception {
         JScrollPane sp = new JScrollPane();
         Dimension d1 = sp.getMinimumSize();
         sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
