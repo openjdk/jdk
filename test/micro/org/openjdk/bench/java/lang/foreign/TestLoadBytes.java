@@ -48,9 +48,7 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 1, jvmArgsAppend = {
-        "-Dforeign.restricted=permit",
-        "--enable-native-access", "ALL-UNNAMED"})
+@Fork(1)
 public class TestLoadBytes {
     @Param("1024")
     private int size;
