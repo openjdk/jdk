@@ -60,7 +60,7 @@ public class IREncodingPrinter {
     // a corresponding value e.g. in a jtreg @requires annotation before adding new features,
     // as adding non-existent features can lead to skipped tests.
     private static final List<String> verifiedPlatformFeatures = new ArrayList<String>( Arrays.asList(
-        // os.name prefixes
+        // os.family
         "linux",
         "mac",
         "windows",
