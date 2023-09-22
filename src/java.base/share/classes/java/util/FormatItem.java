@@ -226,7 +226,7 @@ class FormatItem {
             this.width = width;
             this.hasPrefix = hasPrefix;
             this.value = value;
-            this.length = HexDigits.stringSize(value);
+            this.length = HexDigits.INSTANCE.size(value);
         }
 
         private int prefixLength() {
@@ -245,7 +245,7 @@ class FormatItem {
         @Override
         public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
             MethodHandle putCharMH = selectPutChar(lengthCoder);
-            HexDigits.getCharsLatin1(value, (int)lengthCoder, buffer);
+            HexDigits.INSTANCE.digits(value, buffer, (int)lengthCoder, putCharMH);
             lengthCoder -= length;
 
             for (int i = 0; i < zeroesLength(); i++) {
@@ -274,7 +274,7 @@ class FormatItem {
             this.width = width;
             this.hasPrefix = hasPrefix;
             this.value = value;
-            this.length = OctalDigits.stringSize(value);
+            this.length = HexDigits.INSTANCE.size(value);
         }
 
         private int prefixLength() {
@@ -293,7 +293,7 @@ class FormatItem {
         @Override
         public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
             MethodHandle putCharMH = selectPutChar(lengthCoder);
-            OctalDigits.getCharsLatin1(value, (int)lengthCoder, buffer);
+            OctalDigits.INSTANCE.digits(value, buffer, (int)lengthCoder, putCharMH);
             lengthCoder -= length;
 
             for (int i = 0; i < zeroesLength(); i++) {
