@@ -293,7 +293,23 @@ public class URLEncoder {
         return out.toString();
     }
 
-    private static void flushToStringBuilder(StringBuilder out, CharsetEncoder ce, CharBuffer cb, ByteBuffer bb, boolean endOfInput) {
+    /**
+     * Encodes input chars in cb and appends the byte values in an escaped format
+     * ("%FF") to out. The temporary byte buffer, bb, must be able to accept
+     * cb.position() * ce.maxBytesPerChar() bytes.
+     *
+     * @param out the StringBuilder to output encoded and escaped bytes to
+     * @param ce charset encoder. Will be reset if endOfInput is true
+     * @param cb input buffer, will be cleared
+     * @param bb output buffer, will be cleared
+     * @param endOfInput true if this is the last flush for an encoding chunk,
+     *                  to all bytes in ce is flushed to out and reset
+     */
+    private static void flushToStringBuilder(StringBuilder out,
+                                             CharsetEncoder ce,
+                                             CharBuffer cb,
+                                             ByteBuffer bb,
+                                             boolean endOfInput) {
         cb.flip();
         try {
             CoderResult cr = ce.encode(cb, bb, endOfInput);
