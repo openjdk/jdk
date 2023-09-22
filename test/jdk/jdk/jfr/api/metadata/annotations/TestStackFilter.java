@@ -60,7 +60,7 @@ public class TestStackFilter {
         private static void two() throws Exception {
             three();
         }
-        
+
         private static void three() throws Exception {
             TestStackFilter.qux();
         }
@@ -247,7 +247,7 @@ public class TestStackFilter {
             if (events.isEmpty()) {
                 throw new Exception("Excected events");
             }
-            
+
             RecordedEvent e = events.get(0);
             assertTopFrame(e, "qux");
             for (RecordedFrame f : e.getStackTrace().getFrames()) {
