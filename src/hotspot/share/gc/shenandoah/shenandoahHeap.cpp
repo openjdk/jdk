@@ -874,6 +874,15 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       result = allocate_memory_under_lock(req, in_new_region);
     }
 
+    if (result == nullptr && !req.is_lab_alloc() && get_gc_no_progress_count() > ShenandoahNoProgressThreshold) {
+      // Shenandoah will grind along for quite a while allocating one
+      // object at a time using non-tlab allocations. This will notify
+      // the collector to start a cycle, but will raise an OOME to the
+      // mutator if the last Full GCs have not made progress.
+      control_thread()->handle_alloc_failure(req, false);
+      return nullptr;
+    }
+
     // Allocation failed, block until control thread reacted, then retry allocation.
     //
     // It might happen that one of the threads requesting allocation would unblock
@@ -935,19 +944,7 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
 
 HeapWord* ShenandoahHeap::mem_allocate(size_t size,
                                         bool*  gc_overhead_limit_was_exceeded) {
-  *gc_overhead_limit_was_exceeded = false;
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared(size);
-  if (get_gc_no_progress_count() > ShenandoahNoProgressThreshold) {
-    // Shenandoah will grind along for quite a while allocating one
-    // object at a time using non-tlab allocations. This will notify
-    // the collector to start a cycle, but will raise an OOME to the
-    // mutator if the last Full GCs have not made progress.
-    control_thread()->handle_alloc_failure(req, false);
-    notify_gc_progress();
-    *gc_overhead_limit_was_exceeded = true;
-    return nullptr;
-  }
-
   return allocate_memory(req);
 }
 
