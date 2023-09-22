@@ -2571,7 +2571,7 @@ bool SuperWord::output() {
         while (mem->is_StoreVector()) {
           VPointer p_store(mem->as_Mem(), phase(), lpt(), nullptr, false);
           if (p_store.overlap_possible_with_any_in(p)) {
-            break; // memory dependency
+            break;
           } else {
             mem = mem->in(MemNode::Memory);
           }
