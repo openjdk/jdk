@@ -244,8 +244,8 @@ public class IREncodingPrinter {
                                     "Use applyIfAnd or applyIfOr or only 1 condition for applyIfNot" + failAt());
         }
         TestFormat.checkNoThrow(flagConstraints <= 1, "Can only specify one flag constraint" + failAt());
-        TestFormat.checkNoThrow(cpuFeatureConstraints <= 1, "Can only specify one CPU feature constraint" + failAt());
         TestFormat.checkNoThrow(platformFeatureConstraints <= 1, "Can only specify one platform feature constraint" + failAt());
+        TestFormat.checkNoThrow(cpuFeatureConstraints <= 1, "Can only specify one CPU feature constraint" + failAt());
     }
 
     private boolean isIRNodeUnsupported(IR irAnno) {
@@ -323,19 +323,27 @@ public class IREncodingPrinter {
             return false;
         }
 
-        String platformFeatures = "";
-
-        String osName = System.getProperty("os.name").toLowerCase();
-        if (osName.startsWith("win")) {
-            platformFeatures += "windows";
-        } else if (osName.startsWith("linux")) {
-            platformFeatures += "linux";
-        } else if (osName.startsWith("mac")) {
-            platformFeatures += "mac";
+        String os = "";
+        if (Platform.isLinux()) {
+            os = "linux";
+        } else if (Platform.isOSX()) {
+            os = "mac";
+        } else if (Platform.isWindows()) {
+            os = "windows";
         }
 
-        platformFeatures += " " + System.getProperty("vm.simpleArch") + " ";
-        platformFeatures += Platform.is32bit() ? "32-bit" : "64-bit";
+        String arch = "";
+        if (Platform.isAArch64()) {
+            arch = "aarch64";
+        } else if (Platform.isRISCV64()) {
+            arch = "riscv64";
+        } else if (Platform.isX64()) {
+            arch = "x64";
+        } else if (Platform.isX86()) {
+            arch = "x86";
+        }
+
+        String platformFeatures = os + " " + arch + " " + (Platform.is32bit() ? "32-bit" : "64-bit");
 
         return (trueValue && platformFeatures.contains(feature)) || (falseValue && !platformFeatures.contains(feature));
     }
