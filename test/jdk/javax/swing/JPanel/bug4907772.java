@@ -52,7 +52,7 @@ public class bug4907772 {
                 p.setLayout(null);
                 fr.getContentPane().add(p);
 
-                JButton btn1 = new JButton("Button 1");
+                btn1 = new JButton("Button 1");
                 btn1.setBounds(0, 0, 200, 200);
 
                 btn2 = new JButton("Button 2");
