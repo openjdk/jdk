@@ -26,8 +26,8 @@
  * @compile/module=java.base java/util/SortingHelper.java
  * @bug 6880672 6896573 6899694 6976036 7013585 7018258 8003981 8226297
  * @build Sorting
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_arraySort,_arrayPartition, Sorting -shortrun
- * @run main/othervm -XX:CompileThreshold=1 -XX:-TieredCompilation Sorting -shortrun
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_arraySort,_arrayPartition Sorting -shortrun
+ * @run main/othervm -XX:-TieredCompilation -XX:CompileCommand=CompileThresholdScaling,java.util.DualPivotQuicksort::sort,0.0001 Sorting -shortrun
  * @summary Exercise Arrays.sort, Arrays.parallelSort
  *
  * @author Vladimir Yaroslavskiy
