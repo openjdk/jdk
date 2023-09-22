@@ -1621,9 +1621,9 @@ public class File
      * file attributes including file permissions. This may be used when finer
      * manipulation of file permissions is required.
      *
-     * <p> On platforms which do not support setting a file's read permission,
-     * this method does nothing and returns the value of the {@code readable}
-     * parameter.
+     * <p> If the underlying file system does not implement a read permission,
+     * then this method does nothing and returns the value of the
+     * {@code readable} parameter.
      *
      * @param   readable
      *          If {@code true}, sets the access permission to allow read
@@ -1675,9 +1675,9 @@ public class File
      *     file.setReadable(arg, true)
      * }
      *
-     * <p> On platforms which do not support setting a file's read permission,
-     * this method does nothing and returns the value of the {@code readable}
-     * parameter.
+     * <p> If the underlying file system does not implement a read permission,
+     * then this method does nothing and returns the value of the
+     * {@code readable} parameter.
      *
      * @param  readable
      *          If {@code true}, sets the access permission to allow read
@@ -1711,9 +1711,9 @@ public class File
      * file attributes including file permissions. This may be used when finer
      * manipulation of file permissions is required.
      *
-     * <p> On platforms which do not support setting a file's execute permission,
-     * this method does nothing and returns the value of the {@code executable}
-     * parameter.
+     * <p> If the underlying file system does not implement an execute
+     * permission, then this method does nothing and returns the value of the
+     * {@code executable} parameter.
      *
      * @param   executable
      *          If {@code true}, sets the access permission to allow execute
@@ -1765,9 +1765,9 @@ public class File
      *     file.setExecutable(arg, true)
      * }
      *
-     * <p> On platforms which do not support setting a file's execute permission,
-     * this method does nothing and returns the value of the {@code executable}
-     * parameter.
+     * <p> If the underlying file system does not implement an execute
+     * permission, then this method does nothing and returns the value of the
+     * {@code executable} parameter.
      *
      * @param   executable
      *          If {@code true}, sets the access permission to allow execute
