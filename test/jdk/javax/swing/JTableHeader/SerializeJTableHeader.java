@@ -55,11 +55,11 @@ public class SerializeJTableHeader {
             SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
             JTableHeader jth = new JTableHeader();
             for (int i = 0; i < 10; i++) {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                ObjectOutputStream oos = new ObjectOutputStream(baos);
-                //System.out.println(jth.getUI());
-                oos.writeObject(jth);
-                oos.writeObject(jth.getAccessibleContext());
+                try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                     ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+                    oos.writeObject(jth);
+                    oos.writeObject(jth.getAccessibleContext());
+                }
             }
         }
     }
