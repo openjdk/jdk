@@ -349,7 +349,7 @@ public final class PlatformEventType extends Type {
     public void setStackFilterId(long id) {
         startFilterId = id;
     }
-    
+
     public boolean hasStackFilters() {
         return startFilterId >= 0;
     }

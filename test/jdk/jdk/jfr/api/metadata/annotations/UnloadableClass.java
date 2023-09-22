@@ -39,7 +39,7 @@ public final class UnloadableClass<T> extends ClassLoader {
         UnloadableClass cl = new UnloadableClass(clazz.getName());
         return cl.loadClass(cl.className);
     }
-    
+
     private UnloadableClass(String className) {
         super("Class loader for class " + className, ClassLoader.getSystemClassLoader());
         this.className = className;

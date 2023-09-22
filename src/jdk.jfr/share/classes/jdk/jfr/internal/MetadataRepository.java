@@ -372,7 +372,7 @@ public final class MetadataRepository {
     public synchronized List<Type> getVisibleTypes() {
         return TypeLibrary.getVisibleTypes();
     }
-    
+
     public synchronized long registerStackFilter(String[] typeArray, String[] methodArray) {
         return JVM.registerStackFilter(typeArray, methodArray);
     }

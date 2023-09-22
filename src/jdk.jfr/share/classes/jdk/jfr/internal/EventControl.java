@@ -151,7 +151,7 @@ public final class EventControl {
         }
         return Checks.isClassName(className);
     }
-    
+
     private boolean isValidMethod(String method) {
         if (method.length() < 1 || method.length() > 65535) {
             return false;

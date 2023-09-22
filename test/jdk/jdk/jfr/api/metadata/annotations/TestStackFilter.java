@@ -74,7 +74,7 @@ public class TestStackFilter {
     @Name("MethodFilter")
     public static class MethodFilterEvent extends Event {
     }
-    
+
     @StackFilter(C1)
     @Name("ClassFilter")
     public static class ClassFilterEvent extends Event {
@@ -94,7 +94,7 @@ public class TestStackFilter {
     @Name("Reuse")
     public static class ReuseEvent extends Event {
     }
-    
+
     @StackFilter(PACKAGE + "::emitCommitter")
     @Name("Max")
     public static class ExceedMaxEvent extends Event {
@@ -133,7 +133,7 @@ public class TestStackFilter {
                     System.out.println(event);
                     throw new Exception("Expected stack trace for 'Max' event");
                 }
-                
+
                 RecordedFrame f = s.getFrames().get(0);
                 if (!f.isJavaFrame()) {
                     throw new Exception("Expected Java frame for 'Max' event");
@@ -161,7 +161,6 @@ public class TestStackFilter {
             }
         }
     }
-
 
     // Tests that event classes with @StartFrame that are unloaded
     // reuses the memory slot used to bookkeep things in native
@@ -226,7 +225,7 @@ public class TestStackFilter {
             if (events.isEmpty()) {
                 throw new Exception("Excected events");
             }
-            
+
             RecordedEvent e1 = events.get(0);
             assertTopFrame(e1, "testMethodFilter");
 
@@ -237,7 +236,7 @@ public class TestStackFilter {
             assertTopFrame(e3, "empty");
         }
     }
-    
+
     private static void testClassFilter() throws Exception {
         try (Recording r = new Recording()) {
             r.enable(MethodFilterEvent.class);
@@ -272,7 +271,7 @@ public class TestStackFilter {
     static void bar() {
         baz();
     }
-    
+
     static void baz() {
         MethodFilterEvent event = new MethodFilterEvent();
         event.commit();
@@ -282,7 +281,7 @@ public class TestStackFilter {
         ClassFilterEvent event = new ClassFilterEvent();
         event.commit();
     }
-    
+
     private static void rotate() {
         try (Recording r = new Recording()) {
             r.start();
@@ -303,7 +302,7 @@ public class TestStackFilter {
         Event event = eventClass.getConstructor().newInstance();
         event.commit();
     }
-    
+
     private static void assertTopFrame(RecordedEvent event, String methodName) throws Exception {
         RecordedStackTrace stackTrace = event.getStackTrace();
         if (stackTrace == null) {

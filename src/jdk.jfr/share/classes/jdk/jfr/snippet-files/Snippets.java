@@ -605,7 +605,7 @@ public class Snippets {
      }
  }
  // @end
- 
+
  //@start region="StackFilterOverview"
  @Name("logger.log")
  @Label("Log Message")

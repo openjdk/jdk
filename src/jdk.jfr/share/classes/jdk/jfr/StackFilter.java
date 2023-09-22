@@ -36,9 +36,9 @@ import java.lang.annotation.Target;
  * <p>
  * The following example illustrates how the {@code StackFilter} annotation can
  * be used to remove the {@code Logger::log} method in a stack trace:
- * 
+ *
  * {@snippet class="Snippets" region="StackFilterOverview"}
- * 
+ *
  * @since 22
  */
 @MetadataDefinition
