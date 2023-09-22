@@ -33,7 +33,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/arrayKlass.hpp"
+#include "oops/arrayKlass.inline.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
@@ -115,6 +115,63 @@ void ArrayKlass::complete_create_array_klass(ArrayKlass* k, Klass* super_klass, 
   oop module = (module_entry != nullptr) ? module_entry->module() : (oop)nullptr;
   java_lang_Class::create_mirror(k, Handle(THREAD, k->class_loader()), Handle(THREAD, module), Handle(), Handle(), CHECK);
 }
+
+ArrayKlass* ArrayKlass::array_klass(int n, TRAPS) {
+
+  assert(dimension() <= n, "check order of chain");
+  int dim = dimension();
+  if (dim == n) return this;
+
+  // lock-free read needs acquire semantics
+  if (higher_dimension_acquire() == nullptr) {
+
+    ResourceMark rm(THREAD);
+    {
+      // Ensure atomic creation of higher dimensions
+      MutexLocker mu(THREAD, MultiArray_lock);
+
+      // Check if another thread beat us
+      if (higher_dimension() == nullptr) {
+
+        // Create multi-dim klass object and link them together
+        ObjArrayKlass* ak =
+          ObjArrayKlass::allocate_objArray_klass(class_loader_data(), dim + 1, this, CHECK_NULL);
+        ak->set_lower_dimension(this);
+        // use 'release' to pair with lock-free load
+        release_set_higher_dimension(ak);
+        assert(ak->is_objArray_klass(), "incorrect initialization of ObjArrayKlass");
+      }
+    }
+  }
+
+  ObjArrayKlass *ak = higher_dimension();
+  THREAD->check_possible_safepoint();
+  return ak->array_klass(n, THREAD);
+}
+
+ArrayKlass* ArrayKlass::array_klass_or_null(int n) {
+
+  assert(dimension() <= n, "check order of chain");
+  int dim = dimension();
+  if (dim == n) return this;
+
+  // lock-free read needs acquire semantics
+  if (higher_dimension_acquire() == nullptr) {
+    return nullptr;
+  }
+
+  ObjArrayKlass *ak = higher_dimension();
+  return ak->array_klass_or_null(n);
+}
+
+ArrayKlass* ArrayKlass::array_klass(TRAPS) {
+  return array_klass(dimension() +  1, THREAD);
+}
+
+ArrayKlass* ArrayKlass::array_klass_or_null() {
+  return array_klass_or_null(dimension() +  1);
+}
+
 
 GrowableArray<Klass*>* ArrayKlass::compute_secondary_supers(int num_extra_slots,
                                                             Array<InstanceKlass*>* transitive_interfaces) {

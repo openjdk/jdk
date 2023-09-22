@@ -30,17 +30,17 @@ import jdk.internal.misc.Unsafe;
 
 import static jdk.internal.util.Architecture.AARCH64;
 import static jdk.internal.util.Architecture.ARM;
+import static jdk.internal.util.Architecture.LOONGARCH64;
+import static jdk.internal.util.Architecture.MIPSEL;
+import static jdk.internal.util.Architecture.MIPS64EL;
 import static jdk.internal.util.Architecture.PPC;
 import static jdk.internal.util.Architecture.PPC64;
 import static jdk.internal.util.Architecture.PPC64LE;
 import static jdk.internal.util.Architecture.RISCV64;
-import static jdk.internal.util.Architecture.LOONGARCH64;
 import static jdk.internal.util.Architecture.S390;
+import static jdk.internal.util.Architecture.SPARCV9;
 import static jdk.internal.util.Architecture.X64;
 import static jdk.internal.util.Architecture.X86;
-import static jdk.internal.util.Architecture.MIPSEL;
-import static jdk.internal.util.Architecture.MIPS64EL;
-import static jdk.internal.util.Architecture.SPARCV9;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

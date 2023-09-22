@@ -1165,9 +1165,9 @@ define SetupNativeCompilationBody
       $1_LD_OBJ_ARG := `cat $$($1_OBJ_FILE_LIST)`
     endif
 
-    # If we are building static library, 'AR' on macosx may not support @-file.
+    # If we are building static library, 'AR' on macosx/aix may not support @-file.
     ifeq ($$($1_TYPE), STATIC_LIBRARY)
-      ifeq ($(call isTargetOs, macosx), true)
+      ifeq ($(call isTargetOs, macosx aix), true)
         $1_LD_OBJ_ARG := `cat $$($1_OBJ_FILE_LIST)`
       endif
     endif

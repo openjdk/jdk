@@ -497,8 +497,8 @@ public class CheckResourceKeys {
     void scan(JavaFileObject fo, Set<String> results) throws IOException {
         try (InputStream in = fo.openInputStream()) {
             ClassModel cm = Classfile.of().parse(in.readAllBytes());
-            for (int i = 1; i < cm.constantPool().entryCount(); ++i) {
-                if (cm.constantPool().entryByIndex(i) instanceof Utf8Entry entry) {
+            for (PoolEntry pe : cm.constantPool()) {
+                if (pe instanceof Utf8Entry entry) {
                     String v = entry.stringValue();
                     if (v.matches("[A-Za-z0-9-_.]+"))
                         results.add(v);

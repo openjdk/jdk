@@ -25,6 +25,8 @@
 
 package java.net;
 
+import jdk.internal.event.SocketReadEvent;
+import jdk.internal.event.SocketWriteEvent;
 import sun.security.util.SecurityConstants;
 
 import java.io.InputStream;
@@ -1073,9 +1075,6 @@ public class Socket implements java.io.Closeable {
     /**
      * An InputStream that delegates read/available operations to an underlying
      * input stream. The close method is overridden to close the Socket.
-     *
-     * This class is instrumented by Java Flight Recorder (JFR) to get socket
-     * I/O events.
      */
     private static class SocketInputStream extends InputStream {
         private final Socket parent;
@@ -1092,6 +1091,16 @@ public class Socket implements java.io.Closeable {
         }
         @Override
         public int read(byte[] b, int off, int len) throws IOException {
+            if (!SocketReadEvent.enabled()) {
+                return implRead(b, off, len);
+            }
+            long start = SocketReadEvent.timestamp();
+            int nbytes = implRead(b, off, len);
+            SocketReadEvent.offer(start, nbytes, parent.getRemoteSocketAddress(), getSoTimeout());
+            return nbytes;
+        }
+
+        private int implRead(byte[] b, int off, int len) throws IOException {
             try {
                 return in.read(b, off, len);
             } catch (SocketTimeoutException e) {
@@ -1105,6 +1114,16 @@ public class Socket implements java.io.Closeable {
                 throw e;
             }
         }
+
+        private int getSoTimeout() {
+            try {
+                return parent.getSoTimeout();
+            } catch (SocketException e) {
+                // ignored - avoiding exceptions in jfr event data gathering
+            }
+            return 0;
+        }
+
         @Override
         public int available() throws IOException {
             return in.available();
@@ -1169,9 +1188,6 @@ public class Socket implements java.io.Closeable {
     /**
      * An OutputStream that delegates write operations to an underlying output
      * stream. The close method is overridden to close the Socket.
-     *
-     * This class is instrumented by Java Flight Recorder (JFR) to get socket
-     * I/O events.
      */
     private static class SocketOutputStream extends OutputStream {
         private final Socket parent;
@@ -1187,6 +1203,16 @@ public class Socket implements java.io.Closeable {
         }
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
+            if (!SocketWriteEvent.enabled()) {
+                implWrite(b, off, len);
+                return;
+            }
+            long start = SocketWriteEvent.timestamp();
+            implWrite(b, off, len);
+            SocketWriteEvent.offer(start, len, parent.getRemoteSocketAddress());
+        }
+
+        private void implWrite(byte[] b, int off, int len) throws IOException {
             try {
                 out.write(b, off, len);
             } catch (InterruptedIOException e) {
