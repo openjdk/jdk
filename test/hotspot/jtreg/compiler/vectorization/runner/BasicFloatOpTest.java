@@ -36,7 +36,7 @@
  *                   compiler.vectorization.runner.BasicFloatOpTest
  *
  * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
- * @requires vm.compiler2.enabled & vm.flagless
+ * @requires vm.compiler2.enabled
  */
 
 package compiler.vectorization.runner;
@@ -65,7 +65,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     // ---------------- Arithmetic ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse", "true"},
-        counts = {IRNode.NEG_V, ">0"})
+        counts = {IRNode.NEG_VF, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -79,7 +79,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse", "true"},
-        counts = {IRNode.ABS_V, ">0"})
+        counts = {IRNode.ABS_VF, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -93,7 +93,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
-        counts = {IRNode.SQRT_V, ">0"})
+        counts = {IRNode.SQRT_VF, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -107,7 +107,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.ADD_V, ">0"})
+        counts = {IRNode.ADD_VF, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -121,7 +121,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.SUB_V, ">0"})
+        counts = {IRNode.SUB_VF, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -135,7 +135,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.MUL_V, ">0"})
+        counts = {IRNode.MUL_VF, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -149,7 +149,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.DIV_V, ">0"})
+        counts = {IRNode.DIV_VF, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -163,7 +163,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
-        counts = {IRNode.MAX_V, ">0"})
+        counts = {IRNode.MAX_VF, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -177,7 +177,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
-        counts = {IRNode.MIN_V, ">0"})
+        counts = {IRNode.MIN_VF, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -191,9 +191,9 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VF, ">0", IRNode.VFMLA, ">0"})
     @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VF, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -207,9 +207,9 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VF, ">0", IRNode.VFMLS, ">0"})
     @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VF, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -223,9 +223,9 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VF, ">0", IRNode.VFMLS, ">0"})
     @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VF, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -239,9 +239,11 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VF, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        counts = {IRNode.VFNMLA, ">0"})
     @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VF, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -255,9 +257,11 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VF, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        counts = {IRNode.VFNMLA, ">0"})
     @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VF, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -271,9 +275,9 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VF, ">0"})
     @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VF, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})

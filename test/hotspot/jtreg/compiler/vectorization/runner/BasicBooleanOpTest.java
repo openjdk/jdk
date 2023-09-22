@@ -35,7 +35,7 @@
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.BasicBooleanOpTest
  *
- * @requires vm.compiler2.enabled & vm.flagless
+ * @requires vm.compiler2.enabled
  */
 
 package compiler.vectorization.runner;
@@ -44,7 +44,7 @@ import compiler.lib.ir_framework.*;
 
 public class BasicBooleanOpTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 543;
+    private static final int SIZE = 6543;
 
     private boolean[] a;
     private boolean[] b;
@@ -72,9 +72,9 @@ public class BasicBooleanOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        counts = {IRNode.AND_V, ">0"})
+        counts = {IRNode.AND_VB, ">0"})
     @IR(applyIfCPUFeatureAnd = {"avx512f", "false", "sse2", "true"},
-        counts = {IRNode.AND_V, ">0"})
+        counts = {IRNode.AND_VB, ">0"})
     @IR(applyIfCPUFeature = {"avx512f", "true"},
         counts = {IRNode.MACRO_LOGIC_V, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
@@ -90,7 +90,7 @@ public class BasicBooleanOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.OR_V, ">0"})
+        counts = {IRNode.OR_VB, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -104,7 +104,7 @@ public class BasicBooleanOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.XOR_V, ">0"})
+        counts = {IRNode.XOR_VB, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})

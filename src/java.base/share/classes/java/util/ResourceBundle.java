@@ -373,7 +373,6 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * @see MissingResourceException
  * @see ResourceBundleProvider
  * @since 1.1
- * @revised 9
  */
 public abstract class ResourceBundle {
 
@@ -719,8 +718,7 @@ public abstract class ResourceBundle {
             if (this == other) {
                 return true;
             }
-            try {
-                final CacheKey otherEntry = (CacheKey)other;
+            if (other instanceof CacheKey otherEntry) {
                 //quick check to see if they are not equal
                 if (modulesHash != otherEntry.modulesHash) {
                     return false;
@@ -738,7 +736,6 @@ public abstract class ResourceBundle {
                 Module caller = getCallerModule();
                 return ((module != null) && (module.equals(otherEntry.getModule())) &&
                         (caller != null) && (caller.equals(otherEntry.getCallerModule())));
-            } catch (NullPointerException | ClassCastException e) {
             }
             return false;
         }
@@ -896,7 +893,6 @@ public abstract class ResourceBundle {
      * @throws UnsupportedOperationException
      *         if this method is called in a named module
      * @since 1.6
-     * @revised 9
      */
     @CallerSensitive
     public static final ResourceBundle getBundle(String baseName,
@@ -1056,7 +1052,6 @@ public abstract class ResourceBundle {
      * @throws UnsupportedOperationException
      *         if this method is called in a named module
      * @since 1.6
-     * @revised 9
      */
     @CallerSensitive
     public static final ResourceBundle getBundle(String baseName, Locale targetLocale,
@@ -1269,7 +1264,6 @@ public abstract class ResourceBundle {
      * @throws    MissingResourceException
      *        if no resource bundle for the specified base name can be found
      * @since 1.2
-     * @revised 9
      * @see <a href="#resource-bundle-modules">Resource Bundles and Named Modules</a>
      */
     @CallerSensitive
@@ -1494,7 +1488,6 @@ public abstract class ResourceBundle {
      * @throws UnsupportedOperationException
      *         if this method is called in a named module
      * @since 1.6
-     * @revised 9
      */
     @CallerSensitive
     public static ResourceBundle getBundle(String baseName, Locale targetLocale,
@@ -2237,7 +2230,6 @@ public abstract class ResourceBundle {
      * by the caller's module.
      *
      * @since 1.6
-     * @revised 9
      * @see ResourceBundle.Control#getTimeToLive(String,Locale)
      */
     @CallerSensitive
@@ -2526,7 +2518,6 @@ public abstract class ResourceBundle {
      * of {@link ResourceBundleControlProvider} are ignored in named modules.
      *
      * @since 1.6
-     * @revised 9
      * @see java.util.spi.ResourceBundleProvider
      */
     public static class Control {
@@ -3152,7 +3143,6 @@ public abstract class ResourceBundle {
          *        if an error occurred when reading resources using
          *        any I/O operations
          * @see java.util.spi.ResourceBundleProvider#getBundle(String, Locale)
-         * @revised 9
          */
         public ResourceBundle newBundle(String baseName, Locale locale, String format,
                                         ClassLoader loader, boolean reload)

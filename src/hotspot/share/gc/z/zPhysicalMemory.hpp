@@ -84,9 +84,6 @@ private:
   ZPhysicalMemoryBacking _backing;
   ZMemoryManager         _manager;
 
-  void nmt_commit(zoffset offset, size_t size) const;
-  void nmt_uncommit(zoffset offset, size_t size) const;
-
   void pretouch_view(zaddress addr, size_t size) const;
   void map_view(zaddress_unsafe addr, const ZPhysicalMemory& pmem) const;
   void unmap_view(zaddress_unsafe addr, size_t size) const;

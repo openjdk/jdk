@@ -65,10 +65,6 @@ inline PlatformMutex::PlatformMutex() {
   InitializeCriticalSection(&_mutex);
 }
 
-inline PlatformMutex::~PlatformMutex() {
-  DeleteCriticalSection(&_mutex);
-}
-
 inline PlatformMonitor::PlatformMonitor() {
   InitializeConditionVariable(&_cond);
 }
@@ -97,7 +93,7 @@ inline void PlatformMonitor::notify_all() {
   WakeAllConditionVariable(&_cond);
 }
 
-// stubbed-out trim-native support
+// Trim-native support, stubbed out for now, may be enabled later
 inline bool os::can_trim_native_heap() { return false; }
 inline bool os::trim_native_heap(os::size_change_t* rss_change) { return false; }
 

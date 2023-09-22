@@ -25,7 +25,7 @@
 #define SHARE_OPTO_VMASKLOOP_HPP
 
 #include "opto/loopnode.hpp"
-#include "opto/superword.hpp"
+#include "opto/vectorization.hpp"
 #include "opto/vectornode.hpp"
 
 // ----------------------------- VectorMaskedLoop -----------------------------
@@ -49,7 +49,7 @@ class VectorMaskedLoop : public ResourceObj {
   GrowableArray<int>         _rpo_idx;      // Map from node index to RPO traversal index
   GrowableArray<BasicType>   _elem_bt;      // Per node vector element basic type
   GrowableArray<Node_List*>  _stmts;        // Lists of nodes that make up loop statements
-  GrowableArray<SWPointer*>  _swptrs;       // SWPointer array for memory access nodes
+  GrowableArray<VPointer*>   _vptrs;        // VPointer array for memory access nodes
   VectorElementSizeStats     _size_stats;   // Statistics of data sizes in vectors
 
   // Basic utilities
@@ -113,7 +113,7 @@ class VectorMaskedLoop : public ResourceObj {
   const TypeVectMask* create_vector_mask_type();
 
   bool supported_mem_access(MemNode* mem);
-  SWPointer* mem_access_to_swpointer(MemNode* mem);
+  VPointer* mem_access_to_VPointer(MemNode* mem);
   bool operates_on_array_of_type(Node* node, BasicType bt);
 
   // Methods for vector masked loop transformation

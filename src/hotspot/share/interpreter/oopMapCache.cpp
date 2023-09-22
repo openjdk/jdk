@@ -334,7 +334,7 @@ void OopMapCacheEntry::fill(const methodHandle& method, int bci) {
   // Flush entry to deallocate an existing entry
   flush();
   set_method(method());
-  set_bci(bci);
+  set_bci(checked_cast<unsigned short>(bci));  // bci is always u2
   if (method->is_native()) {
     // Native method activations have oops only among the parameters and one
     // extra oop following the parameters (the mirror for static native methods).

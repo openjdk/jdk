@@ -122,7 +122,7 @@ abstract class Command {
         StringBuilder sb = new StringBuilder();
         if (aliases.size() == 1) {
             sb.append(" (alias ");
-            sb.append(aliases.get(0));
+            sb.append(aliases.getFirst());
             sb.append(")");
             return sb.toString();
          }

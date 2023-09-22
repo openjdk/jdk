@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,64 +67,49 @@ public class DotFileTest {
         File testDir = dir.toFile();
         // test a .class file
         test(new File(testDir, "Test.class"),
-             new String[] {"java.lang", "p"},
-             new String[] {"compact1", "not found"});
+             new String[] {"java.lang", "p"});
         // test a directory
         test(new File(testDir, "p"),
              new String[] {"java.lang", "java.util", "java.lang.management", "javax.crypto"},
-             new String[] {"compact1", "compact1", "compact3", "compact1"},
              new String[] {"-classpath", testDir.getPath()});
         // test class-level dependency output
         test(new File(testDir, "Test.class"),
              new String[] {"java.lang.Object", "java.lang.String", "p.Foo", "p.Bar"},
-             new String[] {"compact1", "compact1", "not found", "not found"},
              new String[] {"-verbose:class"});
         // test -filter:none option
         test(new File(testDir, "p"),
              new String[] {"java.lang", "java.util", "java.lang.management", "javax.crypto", "p"},
-             new String[] {"compact1", "compact1", "compact3", "compact1", "p"},
              new String[] {"-classpath", testDir.getPath(), "-verbose:package", "-filter:none"});
         // test -filter:archive option
         test(new File(testDir, "p"),
              new String[] {"java.lang", "java.util", "java.lang.management", "javax.crypto"},
-             new String[] {"compact1", "compact1", "compact3", "compact1"},
              new String[] {"-classpath", testDir.getPath(), "-verbose:package", "-filter:archive"});
-        // test -p option
-        test(new File(testDir, "Test.class"),
-             new String[] {"p.Foo", "p.Bar"},
-             new String[] {"not found", "not found"},
-             new String[] {"-verbose:class", "-p", "p"});
         // test -e option
         test(new File(testDir, "Test.class"),
              new String[] {"p.Foo", "p.Bar"},
-             new String[] {"not found", "not found"},
              new String[] {"-verbose:class", "-e", "p\\..*"});
         test(new File(testDir, "Test.class"),
              new String[] {"java.lang"},
-             new String[] {"compact1"},
              new String[] {"-verbose:package", "-e", "java\\.lang\\..*"});
         // test -classpath options
         test(new File(testDir, "Test.class"),
              new String[] {"java.lang.Object", "java.lang.String", "p.Foo", "p.Bar"},
-             new String[] {"compact1", "compact1", testDir.getName(), testDir.getName()},
              new String[] {"-v", "-classpath", testDir.getPath()});
 
         testSummary(new File(testDir, "Test.class"),
              new String[] {"java.base", testDir.getName()},
-             new String[] {"compact1", ""},
              new String[] {"-classpath", testDir.getPath()});
         testSummary(new File(testDir, "Test.class"),
              new String[] {"java.lang", "p"},
-             new String[] {"compact1", testDir.getName()},
              new String[] {"-v", "-classpath", testDir.getPath()});
         return errors;
     }
 
-    void test(File file, String[] expect, String[] profiles) throws IOException {
-        test(file, expect, profiles, new String[0]);
+    void test(File file, String[] expect) throws IOException {
+        test(file, expect, new String[0]);
     }
 
-    void test(File file, String[] expect, String[] profiles, String[] options)
+    void test(File file, String[] expect, String[] options)
         throws IOException
     {
         Path dotfile = dotoutput.resolve(file.toPath().getFileName().toString() + ".dot");
@@ -138,17 +123,9 @@ public class DotFileTest {
 
         Map<String,String> result = jdeps(args, dotfile);
         checkResult("dependencies", expect, result.keySet());
-
-        // with -P option
-        List<String> argsWithDashP = new ArrayList<>();
-        argsWithDashP.add("-P");
-        argsWithDashP.addAll(args);
-
-        result = jdeps(argsWithDashP, dotfile);
-        checkResult("profiles", expect, profiles, result);
     }
 
-    void testSummary(File file, String[] expect, String[] profiles, String[] options)
+    void testSummary(File file, String[] expect, String[] options)
         throws IOException
     {
         Path dotfile = dotoutput.resolve("summary.dot");
@@ -162,14 +139,6 @@ public class DotFileTest {
 
         Map<String,String> result = jdeps(args, dotfile);
         checkResult("dependencies", expect, result.keySet());
-
-        // with -P option
-        List<String> argsWithDashP = new ArrayList<>();
-        argsWithDashP.add("-P");
-        argsWithDashP.addAll(args);
-
-        result = jdeps(argsWithDashP, dotfile);
-        checkResult("profiles", expect, profiles, result);
     }
 
     Map<String,String> jdeps(List<String> args, Path dotfile) throws IOException {
@@ -213,33 +182,19 @@ public class DotFileTest {
         return result;
     }
 
-    void checkResult(String label, String[] expect, Collection<String> found) {
-        List<String> list = Arrays.asList(expect);
-        if (!isEqual(list, found))
-            error("Unexpected " + label + " found: '" + found + "', expected: '" + list + "'");
-    }
-
-    void checkResult(String label, String[] expect, String[] profiles, Map<String,String> result) {
-        if (expect.length != profiles.length)
-            error("Invalid expected names and profiles");
-
+    void checkResult(String label, String[] expect, Collection<String> result) {
         // check the dependencies
-        checkResult(label, expect, result.keySet());
-        // check profile information
-        checkResult(label, profiles, result.values());
-        for (int i=0; i < expect.length; i++) {
-            String profile = result.get(expect[i]);
-            if (!profile.equals(profiles[i]))
-                error("Unexpected profile: '" + profile + "', expected: '" + profiles[i] + "'");
-        }
+        if (!isEqual(expect, result))
+            error("Unexpected " + label + " found: '" + result +
+                    "', expected: '" + Arrays.toString(expect) + "'");
     }
 
-    boolean isEqual(List<String> expected, Collection<String> found) {
-        if (expected.size() != found.size())
+    boolean isEqual(String[] expected, Collection<String> found) {
+        if (expected.length != found.size())
             return false;
 
         List<String> list = new ArrayList<>(found);
-        list.removeAll(expected);
+        list.removeAll(Arrays.asList(expected));
         return list.isEmpty();
     }
 

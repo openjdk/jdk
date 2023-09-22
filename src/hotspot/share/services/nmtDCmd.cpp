@@ -77,7 +77,7 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
     return;
   }
 
-  const char* scale_value = _scale.value();
+  const char* scale_value = _scale.value() != nullptr ? _scale.value() : "(null)";
   size_t scale_unit = get_scale(scale_value);
   if (scale_unit == 0) {
     output()->print_cr("Incorrect scale value: %s", scale_value);

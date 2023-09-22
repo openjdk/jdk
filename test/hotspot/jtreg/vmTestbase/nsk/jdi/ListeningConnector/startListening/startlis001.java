@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ public class startlis001 {
                           + " " + argHandler.getLaunchOptions();
 
         String cmd = java +
-            " -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,server=n,address=" +
+            " -Xrunjdwp:transport=dt_socket,server=n,address=" +
             addr + " " + DEBUGEE_CLASS;
 
         Binder binder = new Binder(argHandler, log);

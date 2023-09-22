@@ -35,6 +35,7 @@ typedef BOOL  (WINAPI *pfn_SymGetSymFromAddr64)(HANDLE, DWORD64, PDWORD64, PIMAG
 typedef DWORD (WINAPI *pfn_UnDecorateSymbolName)(const char*, char*, DWORD, DWORD);
 typedef BOOL  (WINAPI *pfn_SymSetSearchPath)(HANDLE, PCTSTR);
 typedef BOOL  (WINAPI *pfn_SymGetSearchPath)(HANDLE, PTSTR, int);
+typedef BOOL  (WINAPI *pfn_SymRefreshModuleList)(HANDLE);
 typedef BOOL  (WINAPI *pfn_StackWalk64)(DWORD MachineType,
                                         HANDLE hProcess,
                                         HANDLE hThread,
@@ -68,7 +69,8 @@ typedef LPAPI_VERSION (WINAPI *pfn_ImagehlpApiVersion)(void);
  DO(SymFunctionTableAccess64) \
  DO(SymGetModuleBase64) \
  DO(MiniDumpWriteDump) \
- DO(SymGetLineFromAddr64)
+ DO(SymGetLineFromAddr64) \
+ DO(SymRefreshModuleList)
 
 
 #define DECLARE_FUNCTION_POINTER(functionname) \
@@ -205,6 +207,14 @@ BOOL WindowsDbgHelp::symGetSearchPath(HANDLE hProcess, PTSTR SearchPath, int Sea
   return FALSE;
 }
 
+BOOL WindowsDbgHelp::symRefreshModuleList(HANDLE hProcess) {
+  WindowsDbgHelpEntry entry_guard;
+  if (g_pfn_SymRefreshModuleList != nullptr) {
+    return g_pfn_SymRefreshModuleList(hProcess);
+  }
+  return FALSE;
+}
+
 BOOL WindowsDbgHelp::stackWalk64(DWORD MachineType,
                                  HANDLE hProcess,
                                  HANDLE hThread,
@@ -301,4 +311,3 @@ void WindowsDbgHelp::print_state_on(outputStream* st) {
   }
   st->cr();
 }
-

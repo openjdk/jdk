@@ -34,9 +34,11 @@
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
+ *                   -XX:CompileCommand=CompileOnly,compiler.vectorization.runner.BasicByteOpTest::*
+ *                   -XX:LoopUnrollLimit=1000
  *                   compiler.vectorization.runner.BasicByteOpTest
  *
- * @requires vm.compiler2.enabled & vm.flagless
+ * @requires vm.compiler2.enabled
  */
 
 package compiler.vectorization.runner;
@@ -45,7 +47,7 @@ import compiler.lib.ir_framework.*;
 
 public class BasicByteOpTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 543;
+    private static int SIZE = 6543;
 
     private byte[] a;
     private byte[] b;
@@ -65,7 +67,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     // ---------------- Arithmetic ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.SUB_V, ">0"})
+        counts = {IRNode.SUB_VB, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -79,7 +81,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "ssse3", "true"},
-        counts = {IRNode.ABS_V, ">0"})
+        counts = {IRNode.ABS_VB, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -93,7 +95,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.ADD_V, ">0"})
+        counts = {IRNode.ADD_VB, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -107,7 +109,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.SUB_V, ">0"})
+        counts = {IRNode.SUB_VB, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -121,7 +123,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.MUL_V, ">0"})
+        counts = {IRNode.MUL_VB, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -135,7 +137,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.MUL_V, ">0", IRNode.ADD_V, ">0"})
+        counts = {IRNode.MUL_VB, ">0", IRNode.ADD_VB, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -149,7 +151,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.MUL_V, ">0", IRNode.SUB_V, ">0"})
+        counts = {IRNode.MUL_VB, ">0", IRNode.SUB_VB, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -164,7 +166,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     // ---------------- Logic ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.XOR_V, ">0"})
+        counts = {IRNode.XOR_VB, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -178,7 +180,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.AND_V, ">0"})
+        counts = {IRNode.AND_VB, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -192,7 +194,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.OR_V, ">0"})
+        counts = {IRNode.OR_VB, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -206,7 +208,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.XOR_V, ">0"})
+        counts = {IRNode.XOR_VB, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -221,7 +223,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     // ---------------- Shift ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.LSHIFT_V, ">0"})
+        counts = {IRNode.LSHIFT_VB, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -235,7 +237,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.RSHIFT_V, ">0"})
+        counts = {IRNode.RSHIFT_VB, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -249,7 +251,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.RSHIFT_V, ">0"})
+        counts = {IRNode.RSHIFT_VB, ">0"})
     public byte[] vectorUnsignedShiftRight() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {

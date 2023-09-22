@@ -261,21 +261,6 @@ public class ObjectInputStream
     /** marker for unshared objects in internal handle table */
     private static final Object unsharedMarker = new Object();
 
-    /**
-     * immutable table mapping primitive type names to corresponding
-     * class objects
-     */
-    private static final Map<String, Class<?>> primClasses =
-        Map.of("boolean", boolean.class,
-               "byte", byte.class,
-               "char", char.class,
-               "short", short.class,
-               "int", int.class,
-               "long", long.class,
-               "float", float.class,
-               "double", double.class,
-               "void", void.class);
-
     private static class Caches {
         /** cache of subclass security audit results */
         static final ClassValue<Boolean> subclassAudits =
@@ -803,7 +788,7 @@ public class ObjectInputStream
         try {
             return Class.forName(name, false, latestUserDefinedLoader());
         } catch (ClassNotFoundException ex) {
-            Class<?> cl = primClasses.get(name);
+            Class<?> cl = Class.forPrimitiveName(name);
             if (cl != null) {
                 return cl;
             } else {

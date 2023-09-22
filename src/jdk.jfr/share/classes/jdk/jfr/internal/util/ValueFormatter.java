@@ -281,7 +281,7 @@ public final class ValueFormatter {
         return sb.toString();
     }
 
-    private static List<String> decodeDescriptors(String descriptor, String arraySize) {
+    public static List<String> decodeDescriptors(String descriptor, String arraySize) {
         List<String> descriptors = new ArrayList<>();
         for (int index = 0; index < descriptor.length(); index++) {
             String arrayBrackets = "";

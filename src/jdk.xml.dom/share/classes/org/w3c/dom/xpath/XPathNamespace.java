@@ -75,6 +75,8 @@ import org.w3c.dom.Node;
  * node may be changed incomatibly, in which case incompatible changes to
  * field values may be required to implement versions beyond XPath 1.0.
  * <p>See also the <a href='https://www.w3.org/TR/DOM-Level-3-XPath/'>Document Object Model (DOM) Level 3 XPath Specification</a>.
+ *
+ * @since 1.4, DOM Level 3
  */
 public interface XPathNamespace extends Node {
     // XPathNodeType

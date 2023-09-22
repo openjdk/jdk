@@ -35,9 +35,14 @@
  *                   -XX:+WhiteBoxAPI
  *                   -XX:-OptimizeFill
  *                   compiler.vectorization.runner.ArrayInvariantFillTest
+ * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:+OptimizeFill
+ *                   compiler.vectorization.runner.ArrayInvariantFillTest
  *
  * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
- * @requires vm.compiler2.enabled & vm.flagless
+ * @requires vm.compiler2.enabled
  */
 
 package compiler.vectorization.runner;
@@ -68,6 +73,9 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         applyIf = {"OptimizeFill", "false"},
         counts = {IRNode.REPLICATE_B, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"OptimizeFill", "true"},
+        counts = {IRNode.REPLICATE_B, "0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIfAnd = {"UseMaskedLoop", "true", "OptimizeFill", "false"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -83,6 +91,9 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         applyIf = {"OptimizeFill", "false"},
         counts = {IRNode.REPLICATE_S, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"OptimizeFill", "true"},
+        counts = {IRNode.REPLICATE_S, "0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIfAnd = {"UseMaskedLoop", "true", "OptimizeFill", "false"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -98,6 +109,9 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         applyIf = {"OptimizeFill", "false"},
         counts = {IRNode.REPLICATE_S, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"OptimizeFill", "true"},
+        counts = {IRNode.REPLICATE_S, "0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIfAnd = {"UseMaskedLoop", "true", "OptimizeFill", "false"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -113,6 +127,9 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         applyIf = {"OptimizeFill", "false"},
         counts = {IRNode.REPLICATE_I, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"OptimizeFill", "true"},
+        counts = {IRNode.REPLICATE_I, "0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIfAnd = {"UseMaskedLoop", "true", "OptimizeFill", "false"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -128,7 +145,7 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.REPLICATE_L, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
-        applyIf = {"UseMaskedLoop", "true"},
+        applyIfAnd = {"UseMaskedLoop", "true", "OptimizeFill", "false"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public long[] fillLongArray() {
         long[] res = new long[SIZE];
@@ -142,6 +159,9 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         applyIf = {"OptimizeFill", "false"},
         counts = {IRNode.REPLICATE_F, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"OptimizeFill", "true"},
+        counts = {IRNode.REPLICATE_F, "0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIfAnd = {"UseMaskedLoop", "true", "OptimizeFill", "false"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -157,7 +177,7 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.REPLICATE_D, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
-        applyIf = {"UseMaskedLoop", "true"},
+        applyIfAnd = {"UseMaskedLoop", "true", "OptimizeFill", "false"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public double[] fillDoubleArray() {
         double[] res = new double[SIZE];
@@ -172,7 +192,7 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.REPLICATE_L, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
-        applyIf = {"UseMaskedLoop", "true"},
+        applyIfAnd = {"UseMaskedLoop", "true", "OptimizeFill", "false"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public long[] fillLongArrayWithInt() {
         long[] res = new long[SIZE];
@@ -186,7 +206,7 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.REPLICATE_L, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
-        applyIf = {"UseMaskedLoop", "true"},
+        applyIfAnd = {"UseMaskedLoop", "true", "OptimizeFill", "false"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public long[] fillLongArrayWithUnsigned() {
         long[] res = new long[SIZE];
@@ -200,7 +220,7 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.REPLICATE_L, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
-        applyIf = {"UseMaskedLoop", "true"},
+        applyIfAnd = {"UseMaskedLoop", "true", "OptimizeFill", "false"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public long[] fillLongArrayWithFloat() {
         long[] res = new long[SIZE];
@@ -214,6 +234,9 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         applyIf = {"OptimizeFill", "false"},
         counts = {IRNode.REPLICATE_I, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"OptimizeFill", "true"},
+        counts = {IRNode.REPLICATE_I, "0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIfAnd = {"UseMaskedLoop", "true", "OptimizeFill", "false"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})

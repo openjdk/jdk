@@ -35,7 +35,7 @@
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.BasicShortOpTest
  *
- * @requires vm.compiler2.enabled & vm.flagless
+ * @requires vm.compiler2.enabled
  */
 
 package compiler.vectorization.runner;
@@ -67,7 +67,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     // ---------------- Arithmetic ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.SUB_V, ">0"})
+        counts = {IRNode.SUB_VS, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -81,7 +81,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "ssse3", "true"},
-        counts = {IRNode.ABS_V, ">0"})
+        counts = {IRNode.ABS_VS, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -95,7 +95,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.ADD_V, ">0"})
+        counts = {IRNode.ADD_VS, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -109,7 +109,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.SUB_V, ">0"})
+        counts = {IRNode.SUB_VS, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -123,7 +123,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.MUL_V, ">0"})
+        counts = {IRNode.MUL_VS, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -137,7 +137,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.MUL_V, ">0", IRNode.ADD_V, ">0"})
+        counts = {IRNode.MUL_VS, ">0", IRNode.ADD_VS, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -151,7 +151,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.MUL_V, ">0", IRNode.SUB_V, ">0"})
+        counts = {IRNode.MUL_VS, ">0", IRNode.SUB_VS, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -166,7 +166,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     // ---------------- Logic ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.XOR_V, ">0"})
+        counts = {IRNode.XOR_VS, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -180,7 +180,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.AND_V, ">0"})
+        counts = {IRNode.AND_VS, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -194,7 +194,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.OR_V, ">0"})
+        counts = {IRNode.OR_VS, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -208,7 +208,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.XOR_V, ">0"})
+        counts = {IRNode.XOR_VS, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -223,7 +223,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     // ---------------- Shift ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.LSHIFT_V, ">0"})
+        counts = {IRNode.LSHIFT_VS, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -237,7 +237,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.RSHIFT_V, ">0"})
+        counts = {IRNode.RSHIFT_VS, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -276,7 +276,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.RSHIFT_V, ">0"})
+        counts = {IRNode.RSHIFT_VS, ">0"})
     public short[] vectorUnsignedShiftRight() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -288,7 +288,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     // ------------- ReverseBytes -------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
-        counts = {IRNode.REVERSE_BYTES_V, ">0"})
+        counts = {IRNode.REVERSE_BYTES_VS, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})

@@ -254,7 +254,7 @@ public:
     INLINE void SetModuleHandle(HMODULE h) { m_dllHandle = h; }
 
     INLINE static DWORD MainThread() { return GetInstance().m_mainThreadId; }
-    INLINE void VerifyActive() throw (awt_toolkit_shutdown) {
+    INLINE void VerifyActive() {
         if (!m_isActive && m_mainThreadId != ::GetCurrentThreadId()) {
             throw awt_toolkit_shutdown();
         }

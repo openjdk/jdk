@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class TestStylesheet extends JavadocTester {
 
         // TODO: most of this test seems a bit silly, since javadoc is simply
         // copying in the stylesheet from the source directory
-        checkOutput("stylesheet.css", true,
+        checkOutput("resource-files/stylesheet.css", true,
                 """
                     body {
                         background-color:var(--body-background-color);
@@ -141,7 +141,7 @@ public class TestStylesheet extends JavadocTester {
                         overflow-x: auto;
                         scrollbar-width: thin;
                     }""",
-                "@import url('resources/fonts/dejavu.css');",
+                "@import url('fonts/dejavu.css');",
                 """
                     .search-tag-result:target {
                         background-color:var(--search-tag-highlight-color);
@@ -175,7 +175,7 @@ public class TestStylesheet extends JavadocTester {
                 """
                     #reset-button {
                         background-color: transparent;
-                        background-image:url('resources/x.png');
+                        background-image:url('x.png');
                         background-repeat:no-repeat;
                         background-size:contain;
                         border:0;
@@ -197,7 +197,7 @@ public class TestStylesheet extends JavadocTester {
                 // Test whether a link to the stylesheet file is inserted properly
                 // in the class documentation.
                 """
-                    <link rel="stylesheet" type="text/css" href="../stylesheet.css" title="Style">""",
+                    <link rel="stylesheet" type="text/css" href="../resource-files/stylesheet.css" title="Style">""",
                 """
                     <div class="block">Test comment for a class which has an <a name="named_anchor">anchor_with_name</a> and
                      an <a id="named_anchor1">anchor_with_id</a>.</div>""");
@@ -211,9 +211,9 @@ public class TestStylesheet extends JavadocTester {
 
         checkOutput("index.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="stylesheet.css" title="Style">""");
+                    <link rel="stylesheet" type="text/css" href="resource-files/stylesheet.css" title="Style">""");
 
-        checkOutput("stylesheet.css", false,
+        checkOutput("resource-files/stylesheet.css", false,
                 """
                     * {
                         margin:0;
@@ -275,7 +275,7 @@ public class TestStylesheet extends JavadocTester {
     Set<String> readStylesheet() {
         // scan for class selectors, skipping '{' ... '}'
         Set<String> styles = new TreeSet<>();
-        String stylesheet = readFile("stylesheet.css");
+        String stylesheet = readFile("resource-files/stylesheet.css");
         for (int i = 0; i < stylesheet.length(); i++) {
             char ch = stylesheet.charAt(i);
             switch (ch) {

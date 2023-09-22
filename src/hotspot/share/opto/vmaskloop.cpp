@@ -46,7 +46,7 @@ VectorMaskedLoop::VectorMaskedLoop(PhaseIdealLoop* phase) :
   _rpo_idx(_arena, 32, 0, 0),
   _elem_bt(_arena, 32, 0, T_ILLEGAL),
   _stmts(_arena, 2, 0, nullptr),
-  _swptrs(_arena, 8, 0, nullptr),
+  _vptrs(_arena, 8, 0, nullptr),
   _size_stats(_arena)
 {}
 
@@ -112,7 +112,7 @@ void VectorMaskedLoop::init(IdealLoopTree* lpt) {
   _rpo_idx.clear();
   _elem_bt.clear();
   _stmts.clear();
-  _swptrs.clear();
+  _vptrs.clear();
   _size_stats.clear();
 }
 
@@ -308,8 +308,8 @@ bool VectorMaskedLoop::analyze_vectorizability() {
   if (!vector_nodes_implemented()) {
     return false;
   }
-  // Delegate data dependence check to SWPointer utility
-  if (SWPointer::has_potential_dependence(_swptrs)) {
+  // Delegate data dependence check to VPointer utility
+  if (VPointer::has_potential_dependence(_vptrs)) {
     trace_msg(nullptr, "Potential data dependence is found in the loop");
     return false;
   }
@@ -460,9 +460,9 @@ bool VectorMaskedLoop::analyze_loop_body_nodes() {
       tracked.set(idx);
     }
   }
-  // 2) Track memory address computing nodes in SWPointer node stacks
-  for (int ptridx = 0; ptridx < _swptrs.length(); ptridx++) {
-    Node_Stack* nstack = _swptrs.at(ptridx)->node_stack();
+  // 2) Track memory address computing nodes in VPointer node stacks
+  for (int ptridx = 0; ptridx < _vptrs.length(); ptridx++) {
+    Node_Stack* nstack = _vptrs.at(ptridx)->node_stack();
     while (nstack->is_nonempty()) {
       Node* node = nstack->node();
       if (in_body(node)) {
@@ -512,24 +512,24 @@ const TypeVectMask* VectorMaskedLoop::create_vector_mask_type() {
 
 // This checks if memory access node is our supported pattern
 bool VectorMaskedLoop::supported_mem_access(MemNode* mem) {
-  // First do a quick check by searching existing SWPointer(s)
-  for (int idx = 0; idx < _swptrs.length(); idx++) {
-    if (_swptrs.at(idx)->mem() == mem) {
+  // First do a quick check by searching existing VPointer(s)
+  for (int idx = 0; idx < _vptrs.length(); idx++) {
+    if (_vptrs.at(idx)->mem() == mem) {
       return true;
     }
   }
-  // If not found, try creating a new SWPointer and insert it
-  SWPointer* ptr = mem_access_to_swpointer(mem);
+  // If not found, try creating a new VPointer and insert it
+  VPointer* ptr = mem_access_to_VPointer(mem);
   if (ptr != nullptr) {
-    _swptrs.push(ptr);
+    _vptrs.push(ptr);
     return true;
   }
   return false;
 }
 
-// This tries creating an SWPointer object associated to the memory access.
-// Return nullptr if it fails or the SWPointer is not valid.
-SWPointer* VectorMaskedLoop::mem_access_to_swpointer(MemNode* mem) {
+// This tries creating an VPointer object associated to the memory access.
+// Return nullptr if it fails or the VPointer is not valid.
+VPointer* VectorMaskedLoop::mem_access_to_VPointer(MemNode* mem) {
   // Should access memory of a Java primitive value
   BasicType mem_type = mem->memory_type();
   if (!is_java_primitive(mem_type)) {
@@ -543,7 +543,7 @@ SWPointer* VectorMaskedLoop::mem_access_to_swpointer(MemNode* mem) {
     trace_msg(mem, "Memory access has inconsistent type");
     return nullptr;
   }
-  // Create a Node_Stack for SWPointer's initial stack
+  // Create a Node_Stack for VPointer's initial stack
   Node_Stack* nstack = new Node_Stack(_arena, 5);
   nstack->push(addp, 0);
   // addp2: another possible AddP node for array element addressing. It should
@@ -558,12 +558,12 @@ SWPointer* VectorMaskedLoop::mem_access_to_swpointer(MemNode* mem) {
     nstack->push(addp2, 1);
   }
 
-  // Check supported memory access via SWPointer. It's not supported if
-  //  1) The constructed SWPointer is invalid
+  // Check supported memory access via VPointer. It's not supported if
+  //  1) The constructed VPointer is invalid
   //  2) Address is growing down (index scale * loop stride < 0)
   //  3) Memory access scale is different from data size
-  //  4) The loop increment node is on the SWPointer's node stack
-  SWPointer* ptr = new (_arena) SWPointer(mem, _phase, _lpt, nstack, true);
+  //  4) The loop increment node is on the VPointer's node stack
+  VPointer* ptr = new (_arena) VPointer(mem, _phase, _lpt, nstack, true);
   if (!ptr->valid()) {
     trace_msg(mem, "Memory access has unsupported address pattern");
     return nullptr;

@@ -83,6 +83,7 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/threads.hpp"
 #include "services/classLoadingService.hpp"
@@ -769,20 +770,43 @@ void InstanceKlass::link_class(TRAPS) {
 void InstanceKlass::check_link_state_and_wait(JavaThread* current) {
   MonitorLocker ml(current, _init_monitor);
 
+  bool debug_logging_enabled = log_is_enabled(Debug, class, init);
+
   // Another thread is linking this class, wait.
   while (is_being_linked() && !is_init_thread(current)) {
+    if (debug_logging_enabled) {
+      ResourceMark rm(current);
+      log_debug(class, init)("Thread \"%s\" waiting for linking of %s by thread \"%s\"",
+                             current->name(), external_name(), init_thread_name());
+    }
     ml.wait();
   }
 
   // This thread is recursively linking this class, continue
   if (is_being_linked() && is_init_thread(current)) {
+    if (debug_logging_enabled) {
+      ResourceMark rm(current);
+      log_debug(class, init)("Thread \"%s\" recursively linking %s",
+                             current->name(), external_name());
+    }
     return;
   }
 
   // If this class wasn't linked already, set state to being_linked
   if (!is_linked()) {
+    if (debug_logging_enabled) {
+      ResourceMark rm(current);
+      log_debug(class, init)("Thread \"%s\" linking %s",
+                             current->name(), external_name());
+    }
     set_init_state(being_linked);
     set_init_thread(current);
+  } else {
+    if (debug_logging_enabled) {
+      ResourceMark rm(current);
+      log_debug(class, init)("Thread \"%s\" found %s already linked",
+                             current->name(), external_name());
+      }
   }
 }
 
@@ -978,8 +1002,8 @@ void InstanceKlass::initialize_super_interfaces(TRAPS) {
   }
 }
 
-ResourceHashtable<const InstanceKlass*, OopHandle, 107, AnyObj::C_HEAP, mtClass>
-      _initialization_error_table;
+using InitializationErrorTable = ResourceHashtable<const InstanceKlass*, OopHandle, 107, AnyObj::C_HEAP, mtClass>;
+static InitializationErrorTable* _initialization_error_table;
 
 void InstanceKlass::add_initialization_error(JavaThread* current, Handle exception) {
   // Create the same exception with a message indicating the thread name,
@@ -1006,14 +1030,20 @@ void InstanceKlass::add_initialization_error(JavaThread* current, Handle excepti
   MutexLocker ml(current, ClassInitError_lock);
   OopHandle elem = OopHandle(Universe::vm_global(), init_error());
   bool created;
-  _initialization_error_table.put_if_absent(this, elem, &created);
+  if (_initialization_error_table == nullptr) {
+    _initialization_error_table = new (mtClass) InitializationErrorTable();
+  }
+  _initialization_error_table->put_if_absent(this, elem, &created);
   assert(created, "Initialization is single threaded");
   log_trace(class, init)("Initialization error added for class %s", external_name());
 }
 
 oop InstanceKlass::get_initialization_error(JavaThread* current) {
   MutexLocker ml(current, ClassInitError_lock);
-  OopHandle* h = _initialization_error_table.get(this);
+  if (_initialization_error_table == nullptr) {
+    return nullptr;
+  }
+  OopHandle* h = _initialization_error_table->get(this);
   return (h != nullptr) ? h->resolve() : nullptr;
 }
 
@@ -1032,7 +1062,9 @@ void InstanceKlass::clean_initialization_error_table() {
 
   assert_locked_or_safepoint(ClassInitError_lock);
   InitErrorTableCleaner cleaner;
-  _initialization_error_table.unlink(&cleaner);
+  if (_initialization_error_table != nullptr) {
+    _initialization_error_table->unlink(&cleaner);
+  }
 }
 
 void InstanceKlass::initialize_impl(TRAPS) {
@@ -1049,13 +1081,21 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
   JavaThread* jt = THREAD;
 
+  bool debug_logging_enabled = log_is_enabled(Debug, class, init);
+
   // refer to the JVM book page 47 for description of steps
   // Step 1
   {
-    MonitorLocker ml(THREAD, _init_monitor);
+    MonitorLocker ml(jt, _init_monitor);
 
     // Step 2
     while (is_being_initialized() && !is_init_thread(jt)) {
+      if (debug_logging_enabled) {
+        ResourceMark rm(jt);
+        log_debug(class, init)("Thread \"%s\" waiting for initialization of %s by thread \"%s\"",
+                               jt->name(), external_name(), init_thread_name());
+      }
+
       wait = true;
       jt->set_class_to_be_initialized(this);
       ml.wait();
@@ -1064,24 +1104,44 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
     // Step 3
     if (is_being_initialized() && is_init_thread(jt)) {
+      if (debug_logging_enabled) {
+        ResourceMark rm(jt);
+        log_debug(class, init)("Thread \"%s\" recursively initializing %s",
+                               jt->name(), external_name());
+      }
       DTRACE_CLASSINIT_PROBE_WAIT(recursive, -1, wait);
       return;
     }
 
     // Step 4
     if (is_initialized()) {
+      if (debug_logging_enabled) {
+        ResourceMark rm(jt);
+        log_debug(class, init)("Thread \"%s\" found %s already initialized",
+                               jt->name(), external_name());
+      }
       DTRACE_CLASSINIT_PROBE_WAIT(concurrent, -1, wait);
       return;
     }
 
     // Step 5
     if (is_in_error_state()) {
+      if (debug_logging_enabled) {
+        ResourceMark rm(jt);
+        log_debug(class, init)("Thread \"%s\" found %s is in error state",
+                               jt->name(), external_name());
+      }
       throw_error = true;
     } else {
 
       // Step 6
       set_init_state(being_initialized);
       set_init_thread(jt);
+      if (debug_logging_enabled) {
+        ResourceMark rm(jt);
+        log_debug(class, init)("Thread \"%s\" is initializing %s",
+                               jt->name(), external_name());
+      }
     }
   }
 
@@ -1413,7 +1473,7 @@ bool InstanceKlass::is_same_or_direct_interface(Klass *k) const {
 objArrayOop InstanceKlass::allocate_objArray(int n, int length, TRAPS) {
   check_array_allocation_length(length, arrayOopDesc::max_array_length(T_OBJECT), CHECK_NULL);
   size_t size = objArrayOopDesc::object_size(length);
-  Klass* ak = array_klass(n, CHECK_NULL);
+  ArrayKlass* ak = array_klass(n, CHECK_NULL);
   objArrayOop o = (objArrayOop)Universe::heap()->array_allocate(ak, size, length,
                                                                 /* do_zero */ true, CHECK_NULL);
   return o;
@@ -1477,7 +1537,7 @@ void InstanceKlass::check_valid_for_instantiation(bool throwError, TRAPS) {
   }
 }
 
-Klass* InstanceKlass::array_klass(int n, TRAPS) {
+ArrayKlass* InstanceKlass::array_klass(int n, TRAPS) {
   // Need load-acquire for lock-free read
   if (array_klasses_acquire() == nullptr) {
     ResourceMark rm(THREAD);
@@ -1499,7 +1559,7 @@ Klass* InstanceKlass::array_klass(int n, TRAPS) {
   return oak->array_klass(n, THREAD);
 }
 
-Klass* InstanceKlass::array_klass_or_null(int n) {
+ArrayKlass* InstanceKlass::array_klass_or_null(int n) {
   // Need load-acquire for lock-free read
   ObjArrayKlass* oak = array_klasses_acquire();
   if (oak == nullptr) {
@@ -1509,11 +1569,11 @@ Klass* InstanceKlass::array_klass_or_null(int n) {
   }
 }
 
-Klass* InstanceKlass::array_klass(TRAPS) {
+ArrayKlass* InstanceKlass::array_klass(TRAPS) {
   return array_klass(1, THREAD);
 }
 
-Klass* InstanceKlass::array_klass_or_null() {
+ArrayKlass* InstanceKlass::array_klass_or_null() {
   return array_klass_or_null(1);
 }
 
@@ -1555,7 +1615,9 @@ void InstanceKlass::call_class_initializer(TRAPS) {
     LogStream ls(lt);
     ls.print("%d Initializing ", call_class_initializer_counter++);
     name()->print_value_on(&ls);
-    ls.print_cr("%s (" PTR_FORMAT ")", h_method() == nullptr ? "(no method)" : "", p2i(this));
+    ls.print_cr("%s (" PTR_FORMAT ") by thread \"%s\"",
+                h_method() == nullptr ? "(no method)" : "", p2i(this),
+                THREAD->name());
   }
   if (h_method() != nullptr) {
     JavaCallArguments args; // No arguments
@@ -1769,7 +1831,6 @@ void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
   if (i > 0) {
     int length = i;
     assert(length == fields_sorted.length(), "duh");
-    // _sort_Fn is defined in growableArray.hpp.
     fields_sorted.sort(compare_fields_by_offset);
     for (int i = 0; i < length; i++) {
       fd.reinitialize(this, fields_sorted.at(i).second);
@@ -2464,7 +2525,7 @@ void InstanceKlass::clean_method_data() {
   for (int m = 0; m < methods()->length(); m++) {
     MethodData* mdo = methods()->at(m)->method_data();
     if (mdo != nullptr) {
-      MutexLocker ml(SafepointSynchronize::is_at_safepoint() ? nullptr : mdo->extra_data_lock());
+      ConditionalMutexLocker ml(mdo->extra_data_lock(), !SafepointSynchronize::is_at_safepoint());
       mdo->clean_method_data(/*always_clean*/false);
     }
   }
@@ -2695,10 +2756,11 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   if (array_klasses() != nullptr) {
     // To get a consistent list of classes we need MultiArray_lock to ensure
     // array classes aren't observed while they are being restored.
-     MutexLocker ml(MultiArray_lock);
+    MutexLocker ml(MultiArray_lock);
+    assert(this == array_klasses()->bottom_klass(), "sanity");
     // Array classes have null protection domain.
     // --> see ArrayKlass::complete_create_array_klass()
-    array_klasses()->restore_unshareable_info(ClassLoaderData::the_null_class_loader_data(), Handle(), CHECK);
+    array_klasses()->restore_unshareable_info(class_loader_data(), Handle(), CHECK);
   }
 
   // Initialize @ValueBased class annotation
@@ -2846,6 +2908,31 @@ void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
   }
 }
 
+// The constant pool is on stack if any of the methods are executing or
+// referenced by handles.
+bool InstanceKlass::on_stack() const {
+  return _constants->on_stack();
+}
+
+Symbol* InstanceKlass::source_file_name() const               { return _constants->source_file_name(); }
+u2 InstanceKlass::source_file_name_index() const              { return _constants->source_file_name_index(); }
+void InstanceKlass::set_source_file_name_index(u2 sourcefile_index) { _constants->set_source_file_name_index(sourcefile_index); }
+
+// minor and major version numbers of class file
+u2 InstanceKlass::minor_version() const                 { return _constants->minor_version(); }
+void InstanceKlass::set_minor_version(u2 minor_version) { _constants->set_minor_version(minor_version); }
+u2 InstanceKlass::major_version() const                 { return _constants->major_version(); }
+void InstanceKlass::set_major_version(u2 major_version) { _constants->set_major_version(major_version); }
+
+InstanceKlass* InstanceKlass::get_klass_version(int version) {
+  for (InstanceKlass* ik = this; ik != nullptr; ik = ik->previous_versions()) {
+    if (ik->constants()->version() == version) {
+      return ik;
+    }
+  }
+  return nullptr;
+}
+
 void InstanceKlass::set_source_debug_extension(const char* array, int length) {
   if (array == nullptr) {
     _source_debug_extension = nullptr;
@@ -2863,6 +2950,10 @@ void InstanceKlass::set_source_debug_extension(const char* array, int length) {
     _source_debug_extension = sde;
   }
 }
+
+Symbol* InstanceKlass::generic_signature() const                   { return _constants->generic_signature(); }
+u2 InstanceKlass::generic_signature_index() const                  { return _constants->generic_signature_index(); }
+void InstanceKlass::set_generic_signature_index(u2 sig_index)      { _constants->set_generic_signature_index(sig_index); }
 
 const char* InstanceKlass::signature_name() const {
 
@@ -3368,8 +3459,7 @@ void InstanceKlass::add_osr_nmethod(nmethod* n) {
 // Remove osr nmethod from the list. Return true if found and removed.
 bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
   // This is a short non-blocking critical region, so the no safepoint check is ok.
-  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock
-                 , Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   assert(n->is_osr_method(), "wrong kind of nmethod");
   nmethod* last = nullptr;
   nmethod* cur  = osr_nmethods_head();
@@ -3410,8 +3500,7 @@ bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
 }
 
 int InstanceKlass::mark_osr_nmethods(DeoptimizationScope* deopt_scope, const Method* m) {
-  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
-                 Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
   int found = 0;
   while (osr != nullptr) {
@@ -3426,8 +3515,7 @@ int InstanceKlass::mark_osr_nmethods(DeoptimizationScope* deopt_scope, const Met
 }
 
 nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_level, bool match_level) const {
-  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
-                 Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
   nmethod* best = nullptr;
   while (osr != nullptr) {
@@ -3749,9 +3837,18 @@ const char* InstanceKlass::internal_name() const {
 void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
                                              const ModuleEntry* module_entry,
                                              const ClassFileStream* cfs) const {
+
   if (ClassListWriter::is_enabled()) {
     ClassListWriter::write(this, cfs);
   }
+
+  print_class_load_helper(loader_data, module_entry, cfs);
+  print_class_load_cause_logging();
+}
+
+void InstanceKlass::print_class_load_helper(ClassLoaderData* loader_data,
+                                             const ModuleEntry* module_entry,
+                                             const ClassFileStream* cfs) const {
 
   if (!log_is_enabled(Info, class, load)) {
     return;
@@ -3836,6 +3933,66 @@ void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
     }
 
     msg.debug("%s", debug_stream.as_string());
+  }
+}
+
+void InstanceKlass::print_class_load_cause_logging() const {
+  bool log_cause_native = log_is_enabled(Info, class, load, cause, native);
+  if (log_cause_native || log_is_enabled(Info, class, load, cause)) {
+    JavaThread* current = JavaThread::current();
+    ResourceMark rm(current);
+    const char* name = external_name();
+
+    if (LogClassLoadingCauseFor == nullptr ||
+        (strcmp("*", LogClassLoadingCauseFor) != 0 &&
+         strstr(name, LogClassLoadingCauseFor) == nullptr)) {
+        return;
+    }
+
+    // Log Java stack first
+    {
+      LogMessage(class, load, cause) msg;
+      NonInterleavingLogStream info_stream{LogLevelType::Info, msg};
+
+      info_stream.print_cr("Java stack when loading %s:", name);
+      current->print_stack_on(&info_stream);
+    }
+
+    // Log native stack second
+    if (log_cause_native) {
+      // Log to string first so that lines can be indented
+      stringStream stack_stream;
+      char buf[O_BUFLEN];
+      address lastpc = nullptr;
+      if (os::platform_print_native_stack(&stack_stream, nullptr, buf, O_BUFLEN, lastpc)) {
+        // We have printed the native stack in platform-specific code,
+        // so nothing else to do in this case.
+      } else {
+        frame f = os::current_frame();
+        VMError::print_native_stack(&stack_stream, f, current, true /*print_source_info */,
+                                    -1 /* max stack_stream */, buf, O_BUFLEN);
+      }
+
+      LogMessage(class, load, cause, native) msg;
+      NonInterleavingLogStream info_stream{LogLevelType::Info, msg};
+      info_stream.print_cr("Native stack when loading %s:", name);
+
+      // Print each native stack line to the log
+      int size = (int) stack_stream.size();
+      char* stack = stack_stream.as_string();
+      char* stack_end = stack + size;
+      char* line_start = stack;
+      for (char* p = stack; p < stack_end; p++) {
+        if (*p == '\n') {
+          *p = '\0';
+          info_stream.print_cr("\t%s", line_start);
+          line_start = p + 1;
+        }
+      }
+      if (line_start < stack_end) {
+        info_stream.print_cr("\t%s", line_start);
+      }
+    }
   }
 }
 

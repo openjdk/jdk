@@ -37,7 +37,7 @@
  *                   compiler.vectorization.runner.LoopArrayIndexComputeTest
  *
  * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
- * @requires vm.compiler2.enabled & vm.flagless
+ * @requires vm.compiler2.enabled
  */
 
 package compiler.vectorization.runner;
@@ -48,7 +48,7 @@ import java.util.Random;
 
 public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 543;
+    private static final int SIZE = 6543;
 
     private int[] ints;
     private short[] shorts;
@@ -98,7 +98,7 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
-        counts = {IRNode.MUL_V, ">0"})
+        counts = {IRNode.MUL_VI, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -114,7 +114,7 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.MUL_V, ">0"})
+        counts = {IRNode.MUL_VI, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -131,7 +131,7 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
-        counts = {IRNode.MUL_V, ">0"})
+        counts = {IRNode.MUL_VI, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -148,7 +148,7 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.MUL_V, ">0"})
+        counts = {IRNode.MUL_VI, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -165,7 +165,7 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.SUB_V, ">0"})
+        counts = {IRNode.SUB_VI, ">0"})
     @IR(applyIfCPUFeature = {"sve", "true"},
         applyIf = {"UseMaskedLoop", "true"},
         counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
@@ -339,7 +339,7 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
         byte[] res = new byte[SIZE];
         System.arraycopy(bytes, 0, res, 0, SIZE);
         for (int i = 0; i < SIZE / 2; i++) {
-            res[i] *= bytes[i + 3];
+            res[i] += bytes[i + 3];
         }
         return res;
     }
