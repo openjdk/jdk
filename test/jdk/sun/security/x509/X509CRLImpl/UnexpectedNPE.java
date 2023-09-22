@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @library /test/lib
  * @bug 5052433 8315042
  * @summary NullPointerException for generateCRL and generateCRLs methods.
  */
@@ -31,9 +32,11 @@ import java.security.cert.*;
 import java.io.ByteArrayInputStream;
 import java.util.Base64;
 
+import jdk.test.lib.Utils;
+
 public class UnexpectedNPE {
     CertificateFactory cf = null ;
-    private static final String INPUT = "MAsGCSqGSMP7TQEHAjI1Bgn///////8wCwUyAQ==";
+    private static final String in = "MAsGCSqGSMP7TQEHAjI1Bgn///////8wCwUyAQ==";
 
     public UnexpectedNPE() {}
 
@@ -41,29 +44,17 @@ public class UnexpectedNPE {
         byte[] encoded_1 = { 0x00, 0x00, 0x00, 0x00 };
         byte[] encoded_2 = { 0x30, 0x01, 0x00, 0x00 };
         byte[] encoded_3 = { 0x30, 0x01, 0x00 };
-        byte[] decodedBytes = Base64.getDecoder().decode(INPUT);
-        boolean generateCRL = true;
+        byte[] decodedBytes = Base64.getDecoder().decode(in);
 
         UnexpectedNPE unpe = new UnexpectedNPE() ;
 
-        if (!unpe.run(encoded_1, generateCRL)) {
-            throw new SecurityException("CRLException has not been thrown");
-        }
-
-        if (!unpe.run(encoded_2, generateCRL)) {
-            throw new SecurityException("CRLException has not been thrown");
-        }
-
-        if (!unpe.run(encoded_3, generateCRL)) {
-            throw new SecurityException("CRLException has not been thrown");
-        }
-
-        if (!unpe.run(decodedBytes, generateCRL = false)) {
-            throw new SecurityException("CRLException has not been thrown");
-        }
+        unpe.run(encoded_1);
+        unpe.run(encoded_2);
+        unpe.run(encoded_3);
+        unpe.run(decodedBytes);
     }
 
-    private boolean run(byte[] buf, boolean generateCRL) {
+    private void run(byte[] buf) {
         if (cf == null) {
             try {
                 cf = CertificateFactory.getInstance("X.509", "SUN");
@@ -73,18 +64,13 @@ public class UnexpectedNPE {
                 throw new SecurityException("Cannot get CertificateFactory");
             }
         }
-        try {
-            if (generateCRL) {
-                cf.generateCRL(new ByteArrayInputStream(buf));
-            } else {
-                cf.generateCRLs(new ByteArrayInputStream(buf));
-            }
-        } catch (CRLException ce) {
-            System.out.println("NPE checking passed");
-            return true;
-        }
 
-        System.out.println("CRLException has not been thrown");
-        return false;
+        Utils.runAndCheckException(
+                () -> cf.generateCRL(new ByteArrayInputStream(buf)),
+                CRLException.class);
+        Utils.runAndCheckException(
+                () -> cf.generateCRLs(new ByteArrayInputStream(buf)),
+                CRLException.class);
+        System.out.println("NPE checking passed");
     }
 }
