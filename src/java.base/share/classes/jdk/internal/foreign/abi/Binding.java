@@ -32,7 +32,6 @@ import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
