@@ -83,6 +83,9 @@ public class WorstCaseTests {
         }
     }
 
+    /*
+     * 1 ulp stated error bound
+     */
     private static int testWorstExp() {
         int failures = 0;
         double [][] testCases = {
@@ -139,6 +142,9 @@ public class WorstCaseTests {
         return failures;
     }
 
+    /*
+     * 1 ulp stated error bound
+     */
     private static int testWorstLog() {
         int failures = 0;
         double [][] testCases = {
@@ -174,6 +180,9 @@ public class WorstCaseTests {
         return failures;
     }
 
+    /*
+     * 1 ulp stated error bound
+     */
     private static int testWorstSin() {
         int failures = 0;
         double [][] testCases = {
@@ -210,6 +219,9 @@ public class WorstCaseTests {
         return failures;
     }
 
+    /*
+     * 1 ulp stated error bound
+     */
     private static int testWorstAsin() {
         int failures = 0;
         double [][] testCases = {
@@ -245,6 +257,9 @@ public class WorstCaseTests {
         return failures;
     }
 
+    /*
+     * 1 ulp stated error bound
+     */
     private static int testWorstCos() {
         int failures = 0;
         double [][] testCases = {
@@ -281,6 +296,9 @@ public class WorstCaseTests {
         return failures;
     }
 
+    /*
+     * 1 ulp stated error bound
+     */
     private static int testWorstAcos() {
         int failures = 0;
         double [][] testCases = {
@@ -308,6 +326,9 @@ public class WorstCaseTests {
         return failures;
     }
 
+    /*
+     * 1 ulp stated error bound
+     */
     private static int testWorstTan() {
         int failures = 0;
         double [][] testCases = {
@@ -340,6 +361,9 @@ public class WorstCaseTests {
         return failures;
     }
 
+    /*
+     * 1 ulp stated error bound
+     */
     private static int testWorstAtan() {
         int failures = 0;
         double [][] testCases = {
@@ -375,6 +399,9 @@ public class WorstCaseTests {
         return failures;
     }
 
+    /*
+     * 1 ulp stated error bound
+     */
     private static int testWorstPow2() {
         int failures = 0;
         double [][] testCases = {
