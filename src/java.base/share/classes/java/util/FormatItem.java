@@ -274,7 +274,7 @@ class FormatItem {
             this.width = width;
             this.hasPrefix = hasPrefix;
             this.value = value;
-            this.length = HexDigits.INSTANCE.size(value);
+            this.length = OctalDigits.INSTANCE.size(value);
         }
 
         private int prefixLength() {
