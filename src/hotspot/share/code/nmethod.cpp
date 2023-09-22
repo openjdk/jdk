@@ -1339,7 +1339,7 @@ bool nmethod::make_not_entrant() {
 
   {
     // Enter critical section.  Does not block for safepoint.
-    MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+    ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
 
     if (Atomic::load(&_state) == not_entrant) {
       // another thread already performed this transition so nothing

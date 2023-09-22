@@ -4275,6 +4275,12 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
         break; // Chain traversal fails.
       }
 
+      assert(current->vect_type() != nullptr, "must have vector type");
+      if (current->vect_type() != last_ur->vect_type()) {
+        // Reductions do not have the same vector type (length and element type).
+        break; // Chain traversal fails.
+      }
+
       // Expect single use of UnorderedReduction, except for last_ur.
       if (current == last_ur) {
         // Expect all uses to be outside the loop, except phi.
