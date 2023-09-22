@@ -49,10 +49,6 @@ public class AttrContext {
      */
     int staticLevel = 0;
 
-    /** are we analyzing the arguments for a constructor invocation?
-     */
-    boolean constructorArgs = false;
-
     /** Are we in the 'prologue' part of a constructor, prior to an explicit this()/super()?
      */
     boolean ctorPrologue = false;
@@ -136,7 +132,6 @@ public class AttrContext {
         AttrContext info = new AttrContext();
         info.scope = scope;
         info.staticLevel = staticLevel;
-        info.constructorArgs = constructorArgs;
         info.ctorPrologue = ctorPrologue;
         info.selectSuper = selectSuper;
         info.pendingResolutionPhase = pendingResolutionPhase;

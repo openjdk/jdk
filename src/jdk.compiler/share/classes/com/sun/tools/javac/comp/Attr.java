@@ -2521,9 +2521,7 @@ public class Attr extends JCTree.Visitor {
         if (isConstructorCall) {
 
             // Attribute arguments, yielding list of argument types.
-            localEnv.info.constructorArgs = true;
             KindSelector kind = attribArgs(KindSelector.MTH, tree.args, localEnv, argtypesBuf);
-            localEnv.info.constructorArgs = false;
             argtypes = argtypesBuf.toList();
             typeargtypes = attribTypes(tree.typeargs, localEnv);
 
