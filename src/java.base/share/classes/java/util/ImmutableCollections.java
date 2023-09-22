@@ -1106,7 +1106,7 @@ class ImmutableCollections {
 
         @Override
         public boolean equals(Object o) {
-            return AbstractMap.equals(this, 0);
+            return AbstractMap.equals(this, o);
         }
 
         @Override
