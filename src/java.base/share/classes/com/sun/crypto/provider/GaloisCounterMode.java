@@ -1430,6 +1430,13 @@ abstract class GaloisCounterMode extends CipherSpi {
                 len += buffer.remaining();
             }
 
+            // Check that input data is long enough to fit the expected tag.
+            if (len < 0) {
+                throw new AEADBadTagException("Input data too short to " +
+                    "contain an expected tag length of " + tagLenBytes +
+                    "bytes");
+            }
+
             checkDataLength(len);
 
             // Save GHASH context to allow the tag to be checked even though
