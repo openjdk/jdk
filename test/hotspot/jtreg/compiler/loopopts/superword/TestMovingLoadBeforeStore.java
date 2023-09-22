@@ -30,7 +30,7 @@
  * @library /test/lib
  * @run main/othervm -XX:CompileCommand=compileonly,compiler.loopopts.superword.TestMovingLoadBeforeStore::test
  *                   -Xbatch -XX:LoopUnrollLimit=100
- *                   -XX:+UnlockDiagnosticVMOptions -XX:-StressLCM
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressLCM
  *                   compiler.loopopts.superword.TestMovingLoadBeforeStore
  */
 
