@@ -477,16 +477,20 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * @return {@code true} if the specified object is equal to this map
      */
     public boolean equals(Object o) {
-        if (o == this)
+        return equals(this, o);
+    }
+
+    static <K, V> boolean equals(Map<K, V> original, Object o) {
+        if (o == original)
             return true;
 
         if (!(o instanceof Map<?, ?> m))
             return false;
-        if (m.size() != size())
+        if (m.size() != original.size())
             return false;
 
         try {
-            for (Entry<K, V> e : entrySet()) {
+            for (Entry<K, V> e : original.entrySet()) {
                 K key = e.getKey();
                 V value = e.getValue();
                 if (value == null) {
@@ -542,7 +546,11 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * @return a string representation of this map
      */
     public String toString() {
-        Iterator<Entry<K,V>> i = entrySet().iterator();
+        return toString(this);
+    }
+
+    static <K, V> String toString(Map<K, V> map) {
+        Iterator<Entry<K,V>> i = map.entrySet().iterator();
         if (! i.hasNext())
             return "{}";
 
@@ -552,9 +560,9 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
             Entry<K,V> e = i.next();
             K key = e.getKey();
             V value = e.getValue();
-            sb.append(key   == this ? "(this Map)" : key);
+            sb.append(key   == map ? "(this Map)" : key);
             sb.append('=');
-            sb.append(value == this ? "(this Map)" : value);
+            sb.append(value == map ? "(this Map)" : value);
             if (! i.hasNext())
                 return sb.append('}').toString();
             sb.append(',').append(' ');

@@ -1099,6 +1099,20 @@ class ImmutableCollections {
                     ? v
                     : defaultValue;
         }
+
+        protected Object clone() throws CloneNotSupportedException {
+            return super.clone();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return AbstractMap.equals(this, 0);
+        }
+
+        @Override
+        public String toString() {
+            return AbstractMap.toString(this);
+        }
     }
 
     @jdk.internal.ValueBased
@@ -1386,7 +1400,7 @@ class ImmutableCollections {
                     };
                 }
                 public int size() { return MapN.this.size; }
-                public boolean isEmpty() { return false; }
+                public boolean isEmpty() { return size() == 0; }
                 public void clear() { throw uoe(); }
                 public boolean contains(Object k) { return MapN.this.containsKey(k); }
             };
