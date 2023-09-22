@@ -679,9 +679,8 @@ public final class HexFormat {
      * @throws UncheckedIOException if an I/O exception occurs appending to the output
      */
     public <A extends Appendable> A toHexDigits(A out, byte value) {
-        Objects.requireNonNull(out, "out");
         try {
-            out.append(toHighHexDigit(value));
+            out.append(toHighHexDigit(value)); // implicit null-check
             out.append(toLowHexDigit(value));
             return out;
         } catch (IOException ioe) {
