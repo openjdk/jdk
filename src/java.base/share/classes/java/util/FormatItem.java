@@ -143,9 +143,9 @@ class FormatItem {
             this.zeroDigit = dfs.getZeroDigit();
             this.minusSign = dfs.getMinusSign();
             this.digitOffset = this.zeroDigit - '0';
-            int length = DecimalDigits.INSTANCE.size(value);
+            int length = DecimalDigits.stringSize(value);
             this.digits = new byte[length];
-            DecimalDigits.INSTANCE.digits(value, this.digits, length, PUT_CHAR_DIGIT);
+            DecimalDigits.getCharsLatin1(value, length, this.digits);
             this.isNegative = value < 0L;
             this.length = this.isNegative ? length - 1 : length;
             this.width = width;
@@ -226,7 +226,7 @@ class FormatItem {
             this.width = width;
             this.hasPrefix = hasPrefix;
             this.value = value;
-            this.length = HexDigits.INSTANCE.size(value);
+            this.length = HexDigits.stringSize(value);
         }
 
         private int prefixLength() {
@@ -245,7 +245,7 @@ class FormatItem {
         @Override
         public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
             MethodHandle putCharMH = selectPutChar(lengthCoder);
-            HexDigits.INSTANCE.digits(value, buffer, (int)lengthCoder, putCharMH);
+            HexDigits.getCharsLatin1(value, (int)lengthCoder, buffer);
             lengthCoder -= length;
 
             for (int i = 0; i < zeroesLength(); i++) {
@@ -274,7 +274,7 @@ class FormatItem {
             this.width = width;
             this.hasPrefix = hasPrefix;
             this.value = value;
-            this.length = OctalDigits.INSTANCE.size(value);
+            this.length = OctalDigits.stringSize(value);
         }
 
         private int prefixLength() {
@@ -293,7 +293,7 @@ class FormatItem {
         @Override
         public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
             MethodHandle putCharMH = selectPutChar(lengthCoder);
-            OctalDigits.INSTANCE.digits(value, buffer, (int)lengthCoder, putCharMH);
+            OctalDigits.getCharsLatin1(value, (int)lengthCoder, buffer);
             lengthCoder -= length;
 
             for (int i = 0; i < zeroesLength(); i++) {
