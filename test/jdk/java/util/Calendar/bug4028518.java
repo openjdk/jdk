@@ -38,7 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class bug4028518 {
 
-    // Ensure modifying cloned gregCalendar does not modify the original
+    // Ensure modifying the original GregorianCalendar does not
+    // modify the cloned one as well
     @Test
     public void clonedShouldNotChangeOriginalTest() {
         GregorianCalendar cal1 = new GregorianCalendar() ;

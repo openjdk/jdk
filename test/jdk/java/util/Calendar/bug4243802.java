@@ -34,7 +34,8 @@ import java.util.Calendar;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 
 import org.junit.jupiter.api.Test;
 
@@ -42,10 +43,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class bug4243802 {
 
-    @BeforeEach
-    void setUp() {
+    private static final TimeZone savedTz = TimeZone.getDefault();
+    private static final Locale savedLocale = Locale.getDefault();
+
+    @BeforeAll
+    static void initAll() {
         Locale.setDefault(Locale.US);
         TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
+    }
+
+    @AfterAll
+    static void tearDownAll() {
+        Locale.setDefault(savedLocale);
+        TimeZone.setDefault(savedTz);
     }
 
     // Call getTimeInMillis() and setTimeInMillis()

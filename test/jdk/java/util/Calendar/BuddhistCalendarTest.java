@@ -138,7 +138,7 @@ public class BuddhistCalendarTest {
     // Test the overloaded set() methods. Check year value.
     @Test
     public void buddhistSetTest() {
-        Calendar cal  = getBuddhistCalendar();
+        Calendar cal = getBuddhistCalendar();
         cal.set(3001, APRIL, 10);
         assertEquals(cal.get(YEAR), 3001);
         cal.set(3020, MAY, 20, 9, 10);

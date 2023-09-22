@@ -40,7 +40,8 @@ import static java.util.GregorianCalendar.DAY_OF_YEAR;
 import static java.util.GregorianCalendar.OCTOBER;
 import static java.util.GregorianCalendar.THURSDAY;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -49,11 +50,19 @@ public class bug4514831 {
     private static final String goldenData1 = "27-28 28-29 29-30 30-31 31-1 1-2 2-3 ";
     private static final String goldenData2 = "27-28 28-29 29-30 30-31 31-25 25-26 26-27 ";
     private static final String goldenData3 = "1-8 8-15 15-22 22-29 29-1 1-8 8-15 ";
+    private static final TimeZone savedTz = TimeZone.getDefault();
+    private static final Locale savedLocale = Locale.getDefault();
 
-    @BeforeEach
-    void setLocale() {
+    @BeforeAll
+    void initAll() {
         Locale.setDefault(Locale.US);
         TimeZone.setDefault(TimeZone.getTimeZone("US/Pacific"));
+    }
+
+    @AfterAll
+    void tearDownAll() {
+        Locale.setDefault(savedLocale);
+        TimeZone.setDefault(savedTz);
     }
 
     public void rollDayOfYearTest() {

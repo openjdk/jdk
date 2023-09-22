@@ -51,7 +51,8 @@ import static java.util.GregorianCalendar.OCTOBER;
 import static java.util.GregorianCalendar.SEPTEMBER;
 import static java.util.GregorianCalendar.YEAR;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -61,9 +62,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class bug4372743 {
 
-    @BeforeEach
-    void setTimeZone() {
+    private static final TimeZone savedTz = TimeZone.getDefault();
+
+    @BeforeAll
+    static void initAll() {
         TimeZone.setDefault(TimeZone.getTimeZone("PST"));
+    }
+
+    @AfterAll
+    static void tearDownAll() {
+        TimeZone.setDefault(savedTz);
     }
 
     // Set March 3, A.D. 2 and test add

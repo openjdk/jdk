@@ -38,8 +38,8 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
-import org.junit.jupiter.api.BeforeEach;
-
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,15 +47,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class bug4316678 {
 
     private static final String serializedData = "bug4316678.ser";
+    private static final TimeZone savedTz = TimeZone.getDefault();
 
-    @BeforeEach
-    void setTimeZone() {
+    @BeforeAll
+    static void initAll() {
         TimeZone.setDefault(TimeZone.getTimeZone("PST"));
+    }
+
+    @AfterAll
+    static void tearDownAll() {
+        TimeZone.setDefault(savedTz);
     }
 
     @Test
     public void serializationTest() throws IOException, ClassNotFoundException {
-        TimeZone.setDefault(TimeZone.getTimeZone("PST"));
         GregorianCalendar gc1 = new GregorianCalendar(2000, Calendar.OCTOBER, 10);
         GregorianCalendar gc2;
         try (ObjectOutputStream out
