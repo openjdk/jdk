@@ -574,7 +574,6 @@ CodeBlob* CodeCache::allocate(int size, CodeBlobType code_blob_type, bool handle
       }
       return nullptr;
     }
-    OrderAccess::storestore();
     if (PrintCodeCacheExtension) {
       ResourceMark rm;
       if (_nmethod_heaps->length() >= 1) {
