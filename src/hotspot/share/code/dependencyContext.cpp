@@ -89,9 +89,6 @@ void DependencyContext::mark_dependent_nmethods(DeoptimizationScope* deopt_scope
 
 //
 // Add an nmethod to the dependency context.
-// It's possible that an nmethod has multiple dependencies on a klass
-// so a count is kept for each bucket to guarantee that creation and
-// deletion of dependencies is consistent.
 //
 void DependencyContext::add_dependent_nmethod(nmethod* nm) {
   assert_lock_strong(CodeCache_lock);
