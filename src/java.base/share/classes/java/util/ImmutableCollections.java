@@ -1287,7 +1287,7 @@ class ImmutableCollections {
             return size == 0;
         }
 
-        class MapNIterator implements Iterator<Map.Entry<K,V>> {
+        final class MapNIterator implements Iterator<Map.Entry<K,V>> {
 
             private int remaining;
 
@@ -1393,10 +1393,10 @@ class ImmutableCollections {
             return new AbstractSet<>() {
                 public Iterator<K> iterator() {
                     return new Iterator<>() {
-                        private final Iterator<Entry<K, V>> i = entrySet().iterator();
+                        private final Iterator<Entry<K, V>> i = new MapNIterator();
                         public boolean hasNext() { return i.hasNext(); }
                         public K next() { return i.next().getKey(); }
-                        public void remove() { i.remove(); }
+                        public void remove() { throw uoe(); }
                     };
                 }
                 public int size() { return MapN.this.size; }
@@ -1411,10 +1411,10 @@ class ImmutableCollections {
             return new AbstractCollection<>() {
                 public Iterator<V> iterator() {
                     return new Iterator<>() {
-                        private final Iterator<Entry<K,V>> i = entrySet().iterator();
+                        private final Iterator<Entry<K,V>> i = new MapNIterator();
                         public boolean hasNext() { return i.hasNext(); }
                         public V next() { return i.next().getValue(); }
-                        public void remove() { i.remove(); }
+                        public void remove() { throw uoe(); }
                     };
                 }
                 public int size() { return MapN.this.size;}
