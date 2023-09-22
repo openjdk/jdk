@@ -53,7 +53,7 @@
  * values.  Therefore, no addition leeway is afforded when testing
  * sinh and cosh.
  *
- * Additional worst-case observed error inputs for the FDLIBM-dervied
+ * Additional worst-case observed error inputs for the FDLIBM-derived
  * OpenLibm 0.8.1 added from
  * "Accuracy of Mathematical Functions in Single, Double, Double
  * Extended, and Quadruple Precision"
