@@ -52,10 +52,12 @@ class PSCardTable: public CardTable {
   CardValue* find_first_dirty_card(CardValue* const start_card,
                                    CardValue* const end_card);
 
+  CardValue* find_first_clean_card(CardValue* const start_card,
+                                   CardValue* const end_card);
+  // All cards of an object following a dirty card are considered dirty too.
   CardValue* find_first_clean_card(ObjectStartArray* start_array,
                                    CardValue* const start_card,
-                                   CardValue* const end_card,
-                                   objArrayOop const large_obj_array);
+                                   CardValue* const end_card);
 
   void clear_cards(CardValue* const start, CardValue* const end);
 
@@ -80,7 +82,6 @@ class PSCardTable: public CardTable {
   // Scavenge the elements of a large object array on dirty cards of the stripe.
   // Scan to end if it is in the next stripe.
   void scavenge_large_array_stripe(objArrayOop large_arr,
-                                   ObjectStartArray* start_array,
                                    PSPromotionManager* pm,
                                    HeapWord* stripe_addr,
                                    HeapWord* stripe_end_addr,
