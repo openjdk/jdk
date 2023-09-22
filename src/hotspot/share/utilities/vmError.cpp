@@ -1167,6 +1167,10 @@ void VMError::report(outputStream* st, bool _verbose) {
       st->cr();
     }
 
+  STEP_IF("printing fast locked objects", _verbose && _thread != nullptr && _thread->is_Java_thread() && LockingMode == LM_LIGHTWEIGHT);
+    st->print_cr("Objects fast locked by this thread (top to bottom):");
+    JavaThread::cast(_thread)->lock_stack().print_on(st);
+
   STEP_IF("printing process", _verbose)
     st->cr();
     st->print_cr("---------------  P R O C E S S  ---------------");
