@@ -511,7 +511,7 @@ abstract public class TestScaffold extends TargetAdapter {
         //     argInfo.targetAppCommandLine : Frames2Targ
         //     argInfo.targetVMArgs : -Xss4M
         // The result with wrapper enabled:
-        //     argInfo.targetAppCommandLine : TestScaffold Virtual Frames2Targ
+        //     argInfo.targetAppCommandLine : DebuggeeWrapper Virtual Frames2Targ
         //     argInfo.targetVMArgs : -Xss4M
         boolean classNameParsed = false;
         for (int i = 0; i < args.length; i++) {
