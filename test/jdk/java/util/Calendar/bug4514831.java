@@ -47,8 +47,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class bug4514831 {
-    
-    // goldenData are used to generate the expected values
+    // Data of 7 rolls in the form of a string for the respective field
     private static final String expectedDayOfYearData = "27-28 28-29 29-30 30-31 31-1 1-2 2-3 ";
     private static final String expectedDayOfWeekData = "27-28 28-29 29-30 30-31 31-25 25-26 26-27 ";
     private static final String expectedDayOfWeekInMonthData = "1-8 8-15 15-22 22-29 29-1 1-8 8-15 ";
