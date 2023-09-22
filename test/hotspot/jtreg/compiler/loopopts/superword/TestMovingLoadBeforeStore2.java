@@ -48,7 +48,7 @@ public class TestMovingLoadBeforeStore2 {
     public static void main(String[] strArr) {
         byte a[] = new byte[RANGE];
         byte b[] = new byte[RANGE];
-	for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 100; i++) {
             for (int j = 0; j < a.length; j++) {
                 a[j] = (byte)random.nextInt();
                 b[j] = (byte)random.nextInt();
