@@ -126,10 +126,8 @@ public final class HexDigits {
      */
     public static int getCharsLatin1(long value, int index, byte[] buffer) {
         while ((value & ~0xFF) != 0) {
-            int digits = DIGITS[(int) (value & 0xFF)];
+            putPair(buffer, index, (int) (value & 0xFF));
             value >>>= 8;
-            buffer[--index] = (byte) (digits >> 8);
-            buffer[--index] = (byte) (digits & 0xFF);
         }
 
         int digits = DIGITS[(int) (value & 0xFF)];
@@ -156,10 +154,9 @@ public final class HexDigits {
      */
     public static int getCharsUTF16(long value, int index, byte[] buffer) {
         while ((value & ~0xFF) != 0) {
-            int digits = DIGITS[(int) (value & 0xFF)];
+            index -= 2;
+            putPair(buffer, index, (int) (value & 0xFF));
             value >>>= 8;
-            JLA.putCharUTF16(buffer, --index, (byte) (digits >> 8));
-            JLA.putCharUTF16(buffer, --index, (byte) (digits & 0xFF));
         }
 
         int digits = DIGITS[(int) (value & 0xFF)];
@@ -182,5 +179,11 @@ public final class HexDigits {
     public static int stringSize(long value) {
         return value == 0 ? 1 :
                 67 - Long.numberOfLeadingZeros(value) >> 2;
+    }
+
+    private static void putPair(byte[] buf, int charPos, int v) {
+        int packed = (int) DIGITS[v];
+        JLA.putCharUTF16(buf, charPos, packed & 0xFF);
+        JLA.putCharUTF16(buf, charPos + 1, packed >> 8);
     }
 }

@@ -83,15 +83,6 @@ public final class DecimalDigits {
     }
 
     /**
-     * For values from 0 to 99 return a short encoding a pair of ASCII-encoded digit characters in little-endian
-     * @param i value to convert
-     * @return a short encoding a pair of ASCII-encoded digit characters
-     */
-    public static short digitPair(int i) {
-        return DIGITS[i];
-    }
-
-    /**
      * Returns the string representation size for a given int value.
      *
      * @param x int value
@@ -179,13 +170,13 @@ public final class DecimalDigits {
             r = (q * 100) - i;
             i = q;
             charPos -= 2;
-            ByteArrayLittleEndian.setShort(buf, charPos, DIGITS[r]);
+            writeDigitPairLatin1(buf, charPos, r);
         }
 
         // We know there are at most two digits left at this point.
         if (i < -9) {
             charPos -= 2;
-            ByteArrayLittleEndian.setShort(buf, charPos, DIGITS[-i]);
+            writeDigitPairLatin1(buf, charPos, -i);
         } else {
             buf[--charPos] = (byte)('0' - i);
         }
@@ -228,7 +219,7 @@ public final class DecimalDigits {
         while (i <= Integer.MIN_VALUE) {
             q = i / 100;
             charPos -= 2;
-            ByteArrayLittleEndian.setShort(buf, charPos, DIGITS[(int)((q * 100) - i)]);
+            writeDigitPairLatin1(buf, charPos, (int)((q * 100) - i));
             i = q;
         }
 
@@ -238,14 +229,14 @@ public final class DecimalDigits {
         while (i2 <= -100) {
             q2 = i2 / 100;
             charPos -= 2;
-            ByteArrayLittleEndian.setShort(buf, charPos, DIGITS[(q2 * 100) - i2]);
+            writeDigitPairLatin1(buf, charPos, (q2 * 100) - i2);
             i2 = q2;
         }
 
         // We know there are at most two digits left at this point.
         if (i2 < -9) {
             charPos -= 2;
-            ByteArrayLittleEndian.setShort(buf, charPos, DIGITS[-i2]);
+            writeDigitPairLatin1(buf, charPos, -i2);
         } else {
             buf[--charPos] = (byte)('0' - i2);
         }
@@ -281,13 +272,13 @@ public final class DecimalDigits {
             r = (q * 100) - i;
             i = q;
             charPos -= 2;
-            putPair(buf, charPos, r);
+            writeDigitPairUTF16(buf, charPos, r);
         }
 
         // We know there are at most two digits left at this point.
         if (i < -9) {
             charPos -= 2;
-            putPair(buf, charPos, -i);
+            writeDigitPairUTF16(buf, charPos, -i);
         } else {
             JLA.putCharUTF16(buf, --charPos, '0' - i);
         }
@@ -321,7 +312,7 @@ public final class DecimalDigits {
         while (i <= Integer.MIN_VALUE) {
             q = i / 100;
             charPos -= 2;
-            putPair(buf, charPos, (int)((q * 100) - i));
+            writeDigitPairUTF16(buf, charPos, (int)((q * 100) - i));
             i = q;
         }
 
@@ -331,14 +322,14 @@ public final class DecimalDigits {
         while (i2 <= -100) {
             q2 = i2 / 100;
             charPos -= 2;
-            putPair(buf, charPos, (q2 * 100) - i2);
+            writeDigitPairUTF16(buf, charPos, (q2 * 100) - i2);
             i2 = q2;
         }
 
         // We know there are at most two digits left at this point.
         if (i2 < -9) {
             charPos -= 2;
-            putPair(buf, charPos, -i2);
+            writeDigitPairUTF16(buf, charPos, -i2);
         } else {
             JLA.putCharUTF16(buf, --charPos, '0' - i2);
         }
@@ -349,8 +340,14 @@ public final class DecimalDigits {
         return charPos;
     }
 
-    private static void putPair(byte[] buf, int charPos, int v) {
-        int packed = (int) DecimalDigits.digitPair(v);
+    private static void writeDigitPairLatin1(byte[] buf, int charPos, int value) {
+        short pair = DIGITS[value];
+        buf[charPos] = (byte)(pair);
+        buf[charPos + 1] = (byte)(pair >> 8);
+    }
+
+    private static void writeDigitPairUTF16(byte[] buf, int charPos, int value) {
+        int packed = (int) DIGITS[value];
         JLA.putCharUTF16(buf, charPos, packed & 0xFF);
         JLA.putCharUTF16(buf, charPos + 1, packed >> 8);
     }
