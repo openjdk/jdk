@@ -253,7 +253,7 @@ final class StringConcatHelper {
         if (indexCoder < UTF16) {
             return DecimalDigits.getCharsLatin1(value, (int)indexCoder, buf);
         } else {
-            return StringUTF16.getChars(value, (int)indexCoder, buf) | UTF16;
+            return DecimalDigits.getCharsUTF16(value, (int)indexCoder, buf) | UTF16;
         }
     }
 
@@ -288,7 +288,7 @@ final class StringConcatHelper {
         if (indexCoder < UTF16) {
             return DecimalDigits.getCharsLatin1(value, (int)indexCoder, buf);
         } else {
-            return StringUTF16.getChars(value, (int)indexCoder, buf) | UTF16;
+            return DecimalDigits.getCharsUTF16(value, (int)indexCoder, buf) | UTF16;
         }
     }
 
