@@ -27,6 +27,8 @@ package jdk.internal.util;
 
 import java.lang.invoke.MethodHandle;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -36,6 +38,7 @@ import jdk.internal.vm.annotation.Stable;
  * @since 21
  */
 public final class DecimalDigits {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     /**
      * Each element of the array represents the packaging of two ascii characters based on little endian:<p>
@@ -139,6 +142,9 @@ public final class DecimalDigits {
         }
         return 19 + d;
     }
+
+    // Used by trusted callers.  Assumes all necessary bounds checks have
+    // been done by the caller.
 
     /**
      * Places characters representing the integer i into the
@@ -249,4 +255,104 @@ public final class DecimalDigits {
         }
         return charPos;
     }
+
+    /**
+     * This is a variant of {@link StringLatin1#getChars(int, int, byte[])}, but for
+     * UTF-16 coder.
+     *
+     * @param i     value to convert
+     * @param index next index, after the least significant digit
+     * @param buf   target buffer, UTF16-coded.
+     * @return index of the most significant digit or minus sign, if present
+     */
+    public static int getCharsUTF16(int i, int index, byte[] buf) {
+        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
+        int q, r;
+        int charPos = index;
+
+        boolean negative = (i < 0);
+        if (!negative) {
+            i = -i;
+        }
+
+        // Get 2 digits/iteration using ints
+        while (i <= -100) {
+            q = i / 100;
+            r = (q * 100) - i;
+            i = q;
+            charPos -= 2;
+            JLA.putCharUTF16(buf, charPos, r);
+        }
+
+        // We know there are at most two digits left at this point.
+        if (i < -9) {
+            charPos -= 2;
+            putPair(buf, charPos, -i);
+        } else {
+            JLA.putCharUTF16(buf, --charPos, '0' - i);
+        }
+
+        if (negative) {
+            JLA.putCharUTF16(buf, --charPos, '-');
+        }
+        return charPos;
+    }
+
+    /**
+     * This is a variant of {@link StringLatin1#getChars(long, int, byte[])}, but for
+     * UTF-16 coder.
+     *
+     * @param i     value to convert
+     * @param index next index, after the least significant digit
+     * @param buf   target buffer, UTF16-coded.
+     * @return index of the most significant digit or minus sign, if present
+     */
+    public static int getCharsUTF16(long i, int index, byte[] buf) {
+        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
+        long q;
+        int charPos = index;
+
+        boolean negative = (i < 0);
+        if (!negative) {
+            i = -i;
+        }
+
+        // Get 2 digits/iteration using longs until quotient fits into an int
+        while (i <= Integer.MIN_VALUE) {
+            q = i / 100;
+            charPos -= 2;
+            putPair(buf, charPos, (int)((q * 100) - i));
+            i = q;
+        }
+
+        // Get 2 digits/iteration using ints
+        int q2;
+        int i2 = (int)i;
+        while (i2 <= -100) {
+            q2 = i2 / 100;
+            charPos -= 2;
+            putPair(buf, charPos, (q2 * 100) - i2);
+            i2 = q2;
+        }
+
+        // We know there are at most two digits left at this point.
+        if (i2 < -9) {
+            charPos -= 2;
+            putPair(buf, charPos, -i2);
+        } else {
+            JLA.putCharUTF16(buf, --charPos, '0' - i2);
+        }
+
+        if (negative) {
+            JLA.putCharUTF16(buf, --charPos, '-');
+        }
+        return charPos;
+    }
+
+    private static void putPair(byte[] buf, int charPos, int v) {
+        int packed = (int) DecimalDigits.digitPair(v);
+        JLA.putCharUTF16(buf, charPos, packed & 0xFF);
+        JLA.putCharUTF16(buf, charPos + 1, packed >> 8);
+    }
+    // End of trusted methods.
 }

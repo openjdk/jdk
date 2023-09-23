@@ -87,7 +87,6 @@ class FormatItem {
         private final char zeroDigit;
         private final char minusSign;
         private final int digitOffset;
-        private final byte[] digits;
         private final int length;
         private final boolean isNegative;
         private final int width;
@@ -103,8 +102,6 @@ class FormatItem {
             this.minusSign = dfs.getMinusSign();
             this.digitOffset = this.zeroDigit - '0';
             int length = DecimalDigits.stringSize(value);
-            this.digits = new byte[length];
-            DecimalDigits.getCharsLatin1(value, length, this.digits);
             this.isNegative = value < 0L;
             this.length = this.isNegative ? length - 1 : length;
             this.width = width;
@@ -138,43 +135,6 @@ class FormatItem {
             }
         }
 
-        private long prependUTF16(long lengthCoder, byte[] buffer) throws Throwable {
-            if (parentheses) {
-                putCharUTF16(buffer, (int)--lengthCoder, (int)')');
-            }
-
-            if (0 < groupSize) {
-                int groupIndex = groupSize;
-
-                for (int i = 1; i <= length; i++) {
-                    if (groupIndex-- == 0) {
-                        putCharUTF16(buffer, (int) --lengthCoder, (int) groupingSeparator);
-                        groupIndex = groupSize - 1;
-                    }
-
-                    putCharUTF16(buffer, (int) --lengthCoder, digits[digits.length - i] + digitOffset);
-                }
-            } else {
-                for (int i = 1; i <= length; i++) {
-                    putCharUTF16(buffer, (int) --lengthCoder, digits[digits.length - i] + digitOffset);
-                }
-            }
-
-            for (int i = length + signLength() + groupLength(); i < width; i++) {
-                putCharUTF16(buffer, (int) --lengthCoder, (int) '0');
-            }
-
-            if (parentheses) {
-                putCharUTF16(buffer, (int) --lengthCoder, (int) '(');
-            }
-
-            if (prefixSign != '\0') {
-                putCharUTF16(buffer, (int) --lengthCoder, (int) prefixSign);
-            }
-
-            return lengthCoder;
-        }
-
         private long prependLatin1(long lengthCoder, byte[] buffer) throws Throwable {
             int lengthCoderLatin1 = (int) lengthCoder;
 
@@ -185,6 +145,9 @@ class FormatItem {
             if (0 < groupSize) {
                 int groupIndex = groupSize;
 
+                byte[] digits = new byte[length];
+                DecimalDigits.getCharsLatin1(value, length, digits);
+
                 for (int i = 1; i <= length; i++) {
                     if (groupIndex-- == 0) {
                         buffer[--lengthCoderLatin1] = (byte) groupingSeparator;
@@ -194,9 +157,8 @@ class FormatItem {
                     buffer[--lengthCoderLatin1] = (byte) (digits[digits.length - i] + digitOffset);
                 }
             } else {
-                for (int i = 1; i <= length; i++) {
-                    buffer[--lengthCoderLatin1] = (byte) (digits[digits.length - i] + digitOffset);
-                }
+                DecimalDigits.getCharsLatin1(value, (int)lengthCoder, buffer);
+                lengthCoderLatin1 -= length;
             }
 
             for (int i = length + signLength() + groupLength(); i < width; i++) {
@@ -212,6 +174,45 @@ class FormatItem {
             }
 
             return lengthCoderLatin1;
+        }
+
+        private long prependUTF16(long lengthCoder, byte[] buffer) throws Throwable {
+            if (parentheses) {
+                putCharUTF16(buffer, (int)--lengthCoder, (int)')');
+            }
+
+            if (0 < groupSize) {
+                int groupIndex = groupSize;
+
+                byte[] digits = new byte[length];
+                DecimalDigits.getCharsLatin1(value, length, digits);
+
+                for (int i = 1; i <= length; i++) {
+                    if (groupIndex-- == 0) {
+                        putCharUTF16(buffer, (int) --lengthCoder, (int) groupingSeparator);
+                        groupIndex = groupSize - 1;
+                    }
+
+                    putCharUTF16(buffer, (int) --lengthCoder, digits[digits.length - i] + digitOffset);
+                }
+            } else {
+                DecimalDigits.getCharsUTF16(value, (int)lengthCoder, buffer);
+                lengthCoder -= length;
+            }
+
+            for (int i = length + signLength() + groupLength(); i < width; i++) {
+                putCharUTF16(buffer, (int) --lengthCoder, (int) '0');
+            }
+
+            if (parentheses) {
+                putCharUTF16(buffer, (int) --lengthCoder, (int) '(');
+            }
+
+            if (prefixSign != '\0') {
+                putCharUTF16(buffer, (int) --lengthCoder, (int) prefixSign);
+            }
+
+            return lengthCoder;
         }
     }
 
