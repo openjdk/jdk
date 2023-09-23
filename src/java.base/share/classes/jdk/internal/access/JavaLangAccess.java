@@ -414,7 +414,7 @@ public interface JavaLangAccess {
     /**
      * putChar of to buffer as UTF16
      */
-    void stringConcatHelperPutCharUTF16(byte[] buffer, int index, int ch);
+    void putCharUTF16(byte[] buffer, int index, int ch);
 
     /**
      * Get the string concat initial coder

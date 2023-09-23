@@ -100,7 +100,7 @@ class FormatItem {
     }
 
     private static void putCharUTF16(byte[] buffer, int index, int ch) {
-        JLA.stringConcatHelperPutCharUTF16(buffer, index, ch);
+        JLA.putCharUTF16(buffer, index, ch);
     }
 
     private static boolean isLatin1(long lengthCoder) {
@@ -255,15 +255,12 @@ class FormatItem {
         private final boolean hasPrefix;
         private final long value;
         private final int length;
-        private final byte[] digits;
 
         FormatItemHexadecimal(int width, boolean hasPrefix, long value) {
             this.width = width;
             this.hasPrefix = hasPrefix;
             this.value = value;
             this.length = HexDigits.stringSize(value);
-            this.digits = new byte[length];
-            HexDigits.getCharsLatin1(value, length, this.digits);
         }
 
         private int prefixLength() {
@@ -290,9 +287,8 @@ class FormatItem {
 
         protected long prependLatin1(long lengthCoder, byte[] buffer) throws Throwable {
             int lengthCoderLatin1 = (int) lengthCoder;
-            for (int i = 1; i <= length; i++) {
-                buffer[--lengthCoderLatin1] = digits[digits.length - i];
-            }
+            HexDigits.getCharsLatin1(value, lengthCoderLatin1, buffer);
+            lengthCoderLatin1 -= length;
 
             if (hasPrefix && value != 0) {
                 buffer[--lengthCoderLatin1] = 'x';
@@ -303,9 +299,8 @@ class FormatItem {
         }
 
         protected long prependUTF16(long lengthCoder, byte[] buffer) throws Throwable {
-            for (int i = 1; i <= length; i++) {
-                putCharUTF16(buffer, (int)--lengthCoder, digits[digits.length - i]);
-            }
+            HexDigits.getCharsUTF16(value, (int)lengthCoder, buffer);
+            lengthCoder -= length;
 
             for (int i = 0; i < zeroesLength(); i++) {
                 putCharUTF16(buffer, (int)--lengthCoder, '0');
@@ -328,15 +323,12 @@ class FormatItem {
         private final boolean hasPrefix;
         private final long value;
         private final int length;
-        private final byte[] digits;
 
         FormatItemOctal(int width, boolean hasPrefix, long value) {
             this.width = width;
             this.hasPrefix = hasPrefix;
             this.value = value;
             this.length = OctalDigits.stringSize(value);
-            this.digits = new byte[length];
-            OctalDigits.getCharsLatin1(value, length, this.digits);
         }
 
         private int prefixLength() {
@@ -363,9 +355,8 @@ class FormatItem {
 
         protected long prependLatin1(long lengthCoder, byte[] buffer) throws Throwable {
             int lengthCoderLatin1 = (int) lengthCoder;
-            for (int i = 1; i <= length; i++) {
-                buffer[--lengthCoderLatin1] = digits[digits.length - i];
-            }
+            OctalDigits.getCharsLatin1(value, lengthCoderLatin1, buffer);
+            lengthCoderLatin1 -= length;
 
             int zeroesLength = zeroesLength();
             if (hasPrefix && value != 0) {
@@ -380,9 +371,8 @@ class FormatItem {
         }
 
         protected long prependUTF16(long lengthCoder, byte[] buffer) throws Throwable {
-            for (int i = 1; i <= length; i++) {
-                putCharUTF16(buffer, (int)--lengthCoder, digits[digits.length - i]);
-            }
+            OctalDigits.getCharsUTF16(value, (int) lengthCoder, buffer);
+            lengthCoder -= length;
 
             int zeroesLength = zeroesLength();
             if (hasPrefix && value != 0) {

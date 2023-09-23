@@ -27,6 +27,8 @@ package jdk.internal.util;
 
 import java.lang.invoke.MethodHandle;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -41,6 +43,8 @@ import jdk.internal.vm.annotation.Stable;
  * @since 21
  */
 public final class OctalDigits {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
     @Stable
     private static final short[] DIGITS;
 
@@ -90,6 +94,38 @@ public final class OctalDigits {
 
         if (7 < value) {
             buffer[--index] = (byte) (digits & 0xFF);
+        }
+
+        return index;
+    }
+
+
+    /**
+     * This is a variant of {@link OctalDigits#getCharsLatin1(int, int, byte[])}, but for
+     * UTF-16 coder.
+     *
+     * @param value      value to convert
+     * @param index      insert point + 1
+     * @param buffer     byte buffer to copy into
+     * @param putCharMH  method to put character
+     *
+     * @return the last index used
+     *
+     * @throws Throwable if putCharMH fails (unusual).
+     */
+    public static int getCharsUTF16(long value, int index, byte[] buffer){
+        while ((value & ~0x3F) != 0) {
+            int digits = DIGITS[(int) (value & 0x3F)];
+            value >>>= 6;
+            JLA.putCharUTF16(buffer, --index, digits >> 8);
+            JLA.putCharUTF16(buffer, --index, digits & 0xFF);
+        }
+
+        int digits = DIGITS[(int) (value & 0x3F)];
+        JLA.putCharUTF16(buffer, --index, digits >> 8);
+
+        if (7 < value) {
+            JLA.putCharUTF16(buffer, --index, digits & 0xFF);
         }
 
         return index;

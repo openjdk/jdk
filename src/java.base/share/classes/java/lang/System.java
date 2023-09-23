@@ -2479,6 +2479,9 @@ public final class System {
             public char getUTF16Char(byte[] bytes, int index) {
                 return StringUTF16.getChar(bytes, index);
             }
+            public void putCharUTF16(byte[] buffer, int index, int ch) {
+                StringUTF16.putChar(buffer, index, ch);
+            }
             public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
                 return String.getBytesNoRepl(s, cs);
             }
@@ -2521,10 +2524,6 @@ public final class System {
 
             public boolean stringConcatHelpeIsLatin1(long lengthCoder) {
                 return StringConcatHelper.isLatin1(lengthCoder);
-            }
-
-            public void stringConcatHelperPutCharUTF16(byte[] buffer, int index, int ch) {
-                StringConcatHelper.putCharUTF16(buffer, index, ch);
             }
 
             public long stringConcatInitialCoder() {
