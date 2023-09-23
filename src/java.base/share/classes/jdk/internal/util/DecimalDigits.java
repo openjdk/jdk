@@ -347,9 +347,9 @@ public final class DecimalDigits {
     }
 
     private static void writeDigitPairUTF16(byte[] buf, int charPos, int value) {
-        int packed = (int) DIGITS[value];
-        JLA.putCharUTF16(buf, charPos, packed & 0xFF);
-        JLA.putCharUTF16(buf, charPos + 1, packed >> 8);
+        int pair = (int) DIGITS[value];
+        JLA.putCharUTF16(buf, charPos, pair & 0xFF);
+        JLA.putCharUTF16(buf, charPos + 1, pair >> 8);
     }
     // End of trusted methods.
 }

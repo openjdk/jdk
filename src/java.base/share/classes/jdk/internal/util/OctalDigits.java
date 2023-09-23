@@ -83,7 +83,7 @@ public final class OctalDigits {
      */
     public static int getCharsLatin1(long value, int index, byte[] buffer){
         while ((value & ~0x3F) != 0) {
-            int digits = DIGITS[(int) (value & 0x3F)];
+            int digits = DIGITS[((int) value) & 0x3F];
             value >>>= 6;
             buffer[--index] = (byte) (digits >> 8);
             buffer[--index] = (byte) (digits & 0xFF);
@@ -115,8 +115,9 @@ public final class OctalDigits {
      */
     public static int getCharsUTF16(long value, int index, byte[] buffer){
         while ((value & ~0x3F) != 0) {
-            index -= 2;
-            putPair(buffer, index, (int) (value & 0x3F));
+            int pair = (int) DIGITS[((int) value) & 0x3F];
+            JLA.putCharUTF16(buf, --index, pair >> 8);
+            JLA.putCharUTF16(buf, --index, pair & 0xFF);
             value >>>= 6;
         }
 
@@ -139,11 +140,5 @@ public final class OctalDigits {
      */
     public static int stringSize(long value) {
         return (66 - Long.numberOfLeadingZeros(value)) / 3;
-    }
-
-    private static void putPair(byte[] buf, int charPos, int v) {
-        int packed = (int) DIGITS[v];
-        JLA.putCharUTF16(buf, charPos, packed & 0xFF);
-        JLA.putCharUTF16(buf, charPos + 1, packed >> 8);
     }
 }
