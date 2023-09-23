@@ -99,21 +99,12 @@ class FormatItem {
         return (MethodHandle)SELECT_PUTCHAR_MH.invokeExact(indexCoder);
     }
 
-    private static final MethodHandle PUT_CHAR_DIGIT;
-
-    static {
-        try {
-            Lookup lookup = MethodHandles.lookup();
-            PUT_CHAR_DIGIT = lookup.findStatic(FormatItem.class, "putByte",
-                    MethodType.methodType(void.class,
-                            byte[].class, int.class, int.class));
-        } catch (ReflectiveOperationException ex) {
-            throw new AssertionError("putByte lookup failed", ex);
-        }
+    private static void putCharUTF16(byte[] buffer, int index, int ch) {
+        JLA.stringConcatHelperPutCharUTF16(buffer, index, ch);
     }
 
-    private static void putByte(byte[] buffer, int index, int ch) {
-        buffer[index] = (byte)ch;
+    private static boolean isLatin1(long lengthCoder) {
+        return JLA.stringConcatHelpeIsLatin1(lengthCoder);
     }
 
     private FormatItem() {
@@ -172,10 +163,16 @@ class FormatItem {
 
         @Override
         public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
-            MethodHandle putCharMH = selectPutChar(lengthCoder);
+            if (isLatin1(lengthCoder)) {
+                return prependLatin1(lengthCoder, buffer);
+            } else {
+                return prependUTF16(lengthCoder, buffer);
+            }
+        }
 
+        private long prependUTF16(long lengthCoder, byte[] buffer) throws Throwable {
             if (parentheses) {
-                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)')');
+                putCharUTF16(buffer, (int)--lengthCoder, (int)')');
             }
 
             if (0 < groupSize) {
@@ -183,33 +180,70 @@ class FormatItem {
 
                 for (int i = 1; i <= length; i++) {
                     if (groupIndex-- == 0) {
-                        putCharMH.invokeExact(buffer, (int)--lengthCoder,
-                                (int)groupingSeparator);
+                        putCharUTF16(buffer, (int) --lengthCoder, (int) groupingSeparator);
                         groupIndex = groupSize - 1;
                     }
 
-                    putCharMH.invokeExact(buffer, (int)--lengthCoder,
-                            digits[digits.length - i] + digitOffset);
+                    putCharUTF16(buffer, (int) --lengthCoder, digits[digits.length - i] + digitOffset);
                 }
             } else {
                 for (int i = 1; i <= length; i++) {
-                    putCharMH.invokeExact(buffer, (int)--lengthCoder,
-                            digits[digits.length - i] + digitOffset);
+                    putCharUTF16(buffer, (int) --lengthCoder, digits[digits.length - i] + digitOffset);
                 }
             }
 
             for (int i = length + signLength() + groupLength(); i < width; i++) {
-                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'0');
+                putCharUTF16(buffer, (int) --lengthCoder, (int) '0');
             }
 
             if (parentheses) {
-                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'(');
+                putCharUTF16(buffer, (int) --lengthCoder, (int) '(');
             }
+
             if (prefixSign != '\0') {
-                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)prefixSign);
+                putCharUTF16(buffer, (int) --lengthCoder, (int) prefixSign);
             }
 
             return lengthCoder;
+        }
+
+        private long prependLatin1(long lengthCoder, byte[] buffer) throws Throwable {
+            int lengthCoderLatin1 = (int) lengthCoder;
+
+            if (parentheses) {
+                buffer[--lengthCoderLatin1] = ')';
+            }
+
+            if (0 < groupSize) {
+                int groupIndex = groupSize;
+
+                for (int i = 1; i <= length; i++) {
+                    if (groupIndex-- == 0) {
+                        buffer[--lengthCoderLatin1] = (byte) groupingSeparator;
+                        groupIndex = groupSize - 1;
+                    }
+
+                    buffer[--lengthCoderLatin1] = (byte) (digits[digits.length - i] + digitOffset);
+                }
+            } else {
+                for (int i = 1; i <= length; i++) {
+                    buffer[--lengthCoderLatin1] = (byte) (digits[digits.length - i] + digitOffset);
+                }
+            }
+
+            for (int i = length + signLength() + groupLength(); i < width; i++) {
+                buffer[--lengthCoderLatin1] = '0';
+            }
+
+            if (parentheses) {
+                buffer[--lengthCoderLatin1] = '(';
+            }
+
+            if (prefixSign != '\0') {
+                buffer[--lengthCoderLatin1] = prefixSign;
+            }
+
+            return lengthCoderLatin1;
         }
     }
 
@@ -221,12 +255,15 @@ class FormatItem {
         private final boolean hasPrefix;
         private final long value;
         private final int length;
+        private final byte[] digits;
 
         FormatItemHexadecimal(int width, boolean hasPrefix, long value) {
             this.width = width;
             this.hasPrefix = hasPrefix;
             this.value = value;
-            this.length = HexDigits.INSTANCE.size(value);
+            this.length = HexDigits.stringSize(value);
+            this.digits = new byte[length];
+            HexDigits.getCharsLatin1(value, length, this.digits);
         }
 
         private int prefixLength() {
@@ -244,17 +281,39 @@ class FormatItem {
 
         @Override
         public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
-            MethodHandle putCharMH = selectPutChar(lengthCoder);
-            HexDigits.INSTANCE.digits(value, buffer, (int)lengthCoder, putCharMH);
-            lengthCoder -= length;
+            if (isLatin1(lengthCoder)) {
+                return prependLatin1(lengthCoder, buffer);
+            } else {
+                return prependUTF16(lengthCoder, buffer);
+            }
+        }
 
-            for (int i = 0; i < zeroesLength(); i++) {
-                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'0');
+        protected long prependLatin1(long lengthCoder, byte[] buffer) throws Throwable {
+            int lengthCoderLatin1 = (int) lengthCoder;
+            for (int i = 1; i <= length; i++) {
+                buffer[--lengthCoderLatin1] = digits[digits.length - i];
             }
 
-            if (hasPrefix) {
-                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'x');
-                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'0');
+            if (hasPrefix && value != 0) {
+                buffer[--lengthCoderLatin1] = 'x';
+                buffer[--lengthCoderLatin1] = '0';
+            }
+
+            return lengthCoderLatin1;
+        }
+
+        protected long prependUTF16(long lengthCoder, byte[] buffer) throws Throwable {
+            for (int i = 1; i <= length; i++) {
+                putCharUTF16(buffer, (int)--lengthCoder, digits[digits.length - i]);
+            }
+
+            for (int i = 0; i < zeroesLength(); i++) {
+                putCharUTF16(buffer, (int)--lengthCoder, '0');
+            }
+
+            if (hasPrefix && value != 0) {
+                putCharUTF16(buffer, (int)--lengthCoder, 'x');
+                putCharUTF16(buffer, (int)--lengthCoder, '0');
             }
 
             return lengthCoder;
@@ -269,12 +328,15 @@ class FormatItem {
         private final boolean hasPrefix;
         private final long value;
         private final int length;
+        private final byte[] digits;
 
         FormatItemOctal(int width, boolean hasPrefix, long value) {
             this.width = width;
             this.hasPrefix = hasPrefix;
             this.value = value;
-            this.length = OctalDigits.INSTANCE.size(value);
+            this.length = OctalDigits.stringSize(value);
+            this.digits = new byte[length];
+            OctalDigits.getCharsLatin1(value, length, this.digits);
         }
 
         private int prefixLength() {
@@ -292,16 +354,42 @@ class FormatItem {
 
         @Override
         public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
-            MethodHandle putCharMH = selectPutChar(lengthCoder);
-            OctalDigits.INSTANCE.digits(value, buffer, (int)lengthCoder, putCharMH);
-            lengthCoder -= length;
+            if (isLatin1(lengthCoder)) {
+                return prependLatin1(lengthCoder, buffer);
+            } else {
+                return prependUTF16(lengthCoder, buffer);
+            }
+        }
 
-            for (int i = 0; i < zeroesLength(); i++) {
-                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'0');
+        protected long prependLatin1(long lengthCoder, byte[] buffer) throws Throwable {
+            int lengthCoderLatin1 = (int) lengthCoder;
+            for (int i = 1; i <= length; i++) {
+                buffer[--lengthCoderLatin1] = digits[digits.length - i];
             }
 
+            int zeroesLength = zeroesLength();
             if (hasPrefix && value != 0) {
-                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'0');
+                zeroesLength++;
+            }
+
+            for (int i = 0; i < zeroesLength; i++) {
+                buffer[--lengthCoderLatin1] = '0';
+            }
+
+            return lengthCoderLatin1;
+        }
+
+        protected long prependUTF16(long lengthCoder, byte[] buffer) throws Throwable {
+            for (int i = 1; i <= length; i++) {
+                putCharUTF16(buffer, (int)--lengthCoder, digits[digits.length - i]);
+            }
+
+            int zeroesLength = zeroesLength();
+            if (hasPrefix && value != 0) {
+                zeroesLength++;
+            }
+            for (int i = 0; i < zeroesLength; i++) {
+                putCharUTF16(buffer, (int)--lengthCoder, '0');
             }
 
             return lengthCoder;

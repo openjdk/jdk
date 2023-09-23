@@ -549,6 +549,12 @@ final class StringConcatHelper {
 
     @ForceInline
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+    static boolean isLatin1(long indexCoder) {
+        return indexCoder < UTF16;
+    }
+
+    @ForceInline
+    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     static char getCharLatin1(byte[] buffer, int index) {
         return (char)buffer[index];
     }

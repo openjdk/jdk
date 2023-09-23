@@ -2519,6 +2519,14 @@ public final class System {
                 return StringConcatHelper.lookupStatic(name, methodType);
             }
 
+            public boolean stringConcatHelpeIsLatin1(long lengthCoder) {
+                return StringConcatHelper.isLatin1(lengthCoder);
+            }
+
+            public void stringConcatHelperPutCharUTF16(byte[] buffer, int index, int ch) {
+                StringConcatHelper.putCharUTF16(buffer, index, ch);
+            }
+
             public long stringConcatInitialCoder() {
                 return StringConcatHelper.initialCoder();
             }

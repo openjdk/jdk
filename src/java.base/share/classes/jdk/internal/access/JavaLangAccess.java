@@ -407,6 +407,16 @@ public interface JavaLangAccess {
     MethodHandle stringConcatHelper(String name, MethodType methodType);
 
     /**
+     * Returns {@code true} if lengthCoder is Latin1
+     */
+    boolean stringConcatHelpeIsLatin1(long lengthCoder);
+
+    /**
+     * putChar of to buffer as UTF16
+     */
+    void stringConcatHelperPutCharUTF16(byte[] buffer, int index, int ch);
+
+    /**
      * Get the string concat initial coder
      */
     long stringConcatInitialCoder();
