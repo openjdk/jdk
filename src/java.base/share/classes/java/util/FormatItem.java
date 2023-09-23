@@ -145,8 +145,9 @@ class FormatItem {
             if (0 < groupSize) {
                 int groupIndex = groupSize;
 
-                byte[] digits = new byte[length];
-                DecimalDigits.getCharsLatin1(value, length, digits);
+                int digitLength = this.length + (isNegative ? 1 : 0);
+                byte[] digits = new byte[digitLength];
+                DecimalDigits.getCharsLatin1(value, digitLength, digits);
 
                 for (int i = 1; i <= length; i++) {
                     if (groupIndex-- == 0) {
@@ -157,7 +158,7 @@ class FormatItem {
                     buffer[--lengthCoderLatin1] = (byte) (digits[digits.length - i] + digitOffset);
                 }
             } else {
-                DecimalDigits.getCharsLatin1(value, (int)lengthCoder, buffer);
+                DecimalDigits.getCharsLatin1(value, lengthCoderLatin1, buffer);
                 lengthCoderLatin1 -= length;
             }
 
@@ -184,8 +185,9 @@ class FormatItem {
             if (0 < groupSize) {
                 int groupIndex = groupSize;
 
-                byte[] digits = new byte[length];
-                DecimalDigits.getCharsLatin1(value, length, digits);
+                int digitLength = this.length + (isNegative ? 1 : 0);
+                byte[] digits = new byte[digitLength];
+                DecimalDigits.getCharsLatin1(value, digitLength, digits);
 
                 for (int i = 1; i <= length; i++) {
                     if (groupIndex-- == 0) {
