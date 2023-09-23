@@ -499,7 +499,7 @@ class FormatItem {
         public abstract long mix(long lengthCoder);
 
         @Override
-        public abstract long prepend(long lengthCoder, byte[] buffer) throws Throwable;
+        public abstract long prepend(long lengthCoder, byte[] buffer);
     }
 
     /**
@@ -520,7 +520,7 @@ class FormatItem {
         }
 
         @Override
-        public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
+        public long prepend(long lengthCoder, byte[] buffer) {
             lengthCoder = item.prepend(lengthCoder, buffer);
 
             if (isLatin1(lengthCoder)) {
@@ -555,7 +555,7 @@ class FormatItem {
         }
 
         @Override
-        public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
+        public long prepend(long lengthCoder, byte[] buffer) {
             int length = length();
             if (isLatin1(lengthCoder)) {
                 for (int i = length; i < width; i++) {
