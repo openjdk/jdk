@@ -62,8 +62,7 @@ class FormatItem {
         return JLA.stringConcatMix(lengthCoder, value);
     }
 
-    private static long stringPrepend(long lengthCoder, byte[] buffer,
-                                            String value) throws Throwable {
+    private static long stringPrepend(long lengthCoder, byte[] buffer, String value) {
         return JLA.stringConcatHelperPrepend(lengthCoder, buffer, value,
                 (String)null);
     }
@@ -97,7 +96,7 @@ class FormatItem {
         private final boolean parentheses;
 
         FormatItemDecimal(DecimalFormatSymbols dfs, int width, char sign,
-                          boolean parentheses, int groupSize, long value) throws Throwable {
+                          boolean parentheses, int groupSize, long value) {
             this.groupingSeparator = dfs.getGroupingSeparator();
             this.zeroDigit = dfs.getZeroDigit();
             this.minusSign = dfs.getMinusSign();
@@ -128,7 +127,7 @@ class FormatItem {
         }
 
         @Override
-        public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
+        public long prepend(long lengthCoder, byte[] buffer) {
             if (isLatin1(lengthCoder)) {
                 return prependLatin1(lengthCoder, buffer);
             } else {
@@ -136,7 +135,7 @@ class FormatItem {
             }
         }
 
-        private long prependLatin1(long lengthCoder, byte[] buffer) throws Throwable {
+        private long prependLatin1(long lengthCoder, byte[] buffer) {
             int lengthCoderLatin1 = (int) lengthCoder;
 
             if (parentheses) {
@@ -177,7 +176,7 @@ class FormatItem {
             return lengthCoderLatin1;
         }
 
-        private long prependUTF16(long lengthCoder, byte[] buffer) throws Throwable {
+        private long prependUTF16(long lengthCoder, byte[] buffer) {
             if (parentheses) {
                 putCharUTF16(buffer, (int)--lengthCoder, (int)')');
             }
@@ -247,7 +246,7 @@ class FormatItem {
         }
 
         @Override
-        public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
+        public long prepend(long lengthCoder, byte[] buffer) {
             if (isLatin1(lengthCoder)) {
                 return prependLatin1(lengthCoder, buffer);
             } else {
@@ -255,7 +254,7 @@ class FormatItem {
             }
         }
 
-        protected long prependLatin1(long lengthCoder, byte[] buffer) throws Throwable {
+        protected long prependLatin1(long lengthCoder, byte[] buffer) {
             int lengthCoderLatin1 = (int) lengthCoder;
             HexDigits.getCharsLatin1(value, lengthCoderLatin1, buffer);
             lengthCoderLatin1 -= length;
@@ -268,7 +267,7 @@ class FormatItem {
             return lengthCoderLatin1;
         }
 
-        protected long prependUTF16(long lengthCoder, byte[] buffer) throws Throwable {
+        protected long prependUTF16(long lengthCoder, byte[] buffer) {
             HexDigits.getCharsUTF16(value, (int)lengthCoder, buffer);
             lengthCoder -= length;
 
@@ -315,7 +314,7 @@ class FormatItem {
         }
 
         @Override
-        public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
+        public long prepend(long lengthCoder, byte[] buffer) {
             if (isLatin1(lengthCoder)) {
                 return prependLatin1(lengthCoder, buffer);
             } else {
@@ -323,7 +322,7 @@ class FormatItem {
             }
         }
 
-        protected long prependLatin1(long lengthCoder, byte[] buffer) throws Throwable {
+        protected long prependLatin1(long lengthCoder, byte[] buffer) {
             int lengthCoderLatin1 = (int) lengthCoder;
             OctalDigits.getCharsLatin1(value, lengthCoderLatin1, buffer);
             lengthCoderLatin1 -= length;
@@ -340,7 +339,7 @@ class FormatItem {
             return lengthCoderLatin1;
         }
 
-        protected long prependUTF16(long lengthCoder, byte[] buffer) throws Throwable {
+        protected long prependUTF16(long lengthCoder, byte[] buffer) {
             OctalDigits.getCharsUTF16(value, (int) lengthCoder, buffer);
             lengthCoder -= length;
 
@@ -380,7 +379,7 @@ class FormatItem {
         }
 
         @Override
-        public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
+        public long prepend(long lengthCoder, byte[] buffer) {
             boolean latin1 = isLatin1(lengthCoder);
             byte[] bytes;
             if (latin1) {
@@ -409,7 +408,7 @@ class FormatItem {
         }
 
         @Override
-        public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
+        public long prepend(long lengthCoder, byte[] buffer) {
             if (isLatin1(lengthCoder)) {
                 buffer[(int) --lengthCoder] = (byte) value;
             } else {
@@ -435,7 +434,7 @@ class FormatItem {
         }
 
         @Override
-        public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
+        public long prepend(long lengthCoder, byte[] buffer) {
             return stringPrepend(lengthCoder, buffer, value);
         }
     }
@@ -471,7 +470,7 @@ class FormatItem {
         }
 
         @Override
-        public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
+        public long prepend(long lengthCoder, byte[] buffer) {
             return JLA.stringBuilderConcatPrepend(lengthCoder, buffer, sb);
         }
     }
@@ -594,7 +593,7 @@ class FormatItem {
         }
 
         @Override
-        public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
+        public long prepend(long lengthCoder, byte[] buffer) {
             byte[] bytes = isLatin1(lengthCoder) ? BYTES_LATIN1 : BYTES_UTF16;
             System.arraycopy(bytes, 0, buffer, (int) (lengthCoder) - bytes.length, bytes.length);
             return lengthCoder - 4;
