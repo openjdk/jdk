@@ -426,6 +426,17 @@ public interface JavaLangAccess {
      */
     long stringConcatMix(long lengthCoder, String constant);
 
+    /**
+     * Mix value length and coder into current length and coder.
+     */
+    long stringConcatMix(long lengthCoder, char value);
+
+    /**
+     * Prepends constant and the stringly representation of value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     */
+    long stringConcatHelperPrepend(long indexCoder, byte[] buf, String value, String prefix);
+
    /**
     * Get the coder for the supplied character.
     */

@@ -2522,6 +2522,10 @@ public final class System {
                 return StringConcatHelper.lookupStatic(name, methodType);
             }
 
+            public long stringConcatHelperPrepend(long indexCoder, byte[] buf, String value, String prefix) {
+                return StringConcatHelper.prepend(indexCoder, buf, value, prefix);
+            }
+
             public boolean stringConcatHelpeIsLatin1(long lengthCoder) {
                 return StringConcatHelper.isLatin1(lengthCoder);
             }
@@ -2532,6 +2536,10 @@ public final class System {
 
             public long stringConcatMix(long lengthCoder, String constant) {
                 return StringConcatHelper.mix(lengthCoder, constant);
+            }
+
+            public long stringConcatMix(long lengthCoder, char value) {
+                return StringConcatHelper.mix(lengthCoder, value);
             }
 
             @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
