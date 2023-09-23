@@ -1705,29 +1705,33 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     }
 
     /**
-     * Creates an {@code InetAddress} based on the provided IP address literal.
-     * <p> This method doesn't block, i.e. the system-wide {@linkplain
-     * java.net.spi.InetAddressResolver resolver} is not queried to resolve
-     * the provided literal, and no reverse lookup is performed.
+     * Creates an {@code InetAddress} based on the provided textual representation of
+     * an IP address.
+     * <p> The provided IP address literal is parsed as an IPv4 address literal first.
+     * If it cannot be parsed as {@linkplain Inet4Address#ofLiteral(String) IPv4 address
+     * literal}, then the method attempts to parse it as
+     * {@linkplain Inet6Address#ofLiteral(String) an IPv6 address literal}.
+     * If neither attempts succeed an {@code IllegalArgumentException} is thrown.
+     * <p> This method doesn't block, i.e. no reverse lookup is performed.
      *
-     * @param addressLiteral the IP address literal.
-     * @return an {@link InetAddress} object with no hostname set constructed from the IP
-     *         address literal.
-     * @throws IllegalArgumentException if literal cannot be parsed as an IPv4 or IPv6
-     *                                  address literal.
-     * @throws NullPointerException if the {@code addressLiteral} is @{code null}.
+     * @param ipAddressLiteral the textual representation of an IP address.
+     * @return an {@link InetAddress} object with no hostname set, and constructed
+     *         from the IP address literal.
+     * @throws IllegalArgumentException if the {@code ipAddressLiteral} cannot be parsed
+     *         as an IPv4 or IPv6 address literal.
+     * @throws NullPointerException if the {@code ipAddressLiteral} is {@code null}.
+     * @see Inet4Address#ofLiteral(String)
+     * @see Inet6Address#ofLiteral(String)
      */
-    public static InetAddress ofLiteral(String addressLiteral) {
-        Objects.requireNonNull(addressLiteral);
-        InetAddress inetAddress = Inet4Address.parseAddressString(addressLiteral, false);
-        if (inetAddress == null) {
-            try {
-                inetAddress = Inet6Address.parseAddressString(addressLiteral, true);
-            } catch(UnknownHostException uhe) {
-            }
-        }
-        if (inetAddress == null) {
-            throw IPAddressUtil.invalidIpAddressLiteral(addressLiteral);
+    public static InetAddress ofLiteral(String ipAddressLiteral) {
+        Objects.requireNonNull(ipAddressLiteral);
+        InetAddress inetAddress;
+        try {
+            // First try to parse the input as an IPv4 address literal
+            inetAddress = Inet4Address.ofLiteral(ipAddressLiteral);
+        } catch (IllegalArgumentException iae) {
+            // If it fails try to parse the input as an IPv6 address literal
+            inetAddress = Inet6Address.ofLiteral(ipAddressLiteral);
         }
         return inetAddress;
     }

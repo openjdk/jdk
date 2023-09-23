@@ -484,48 +484,76 @@ class Inet6Address extends InetAddress {
     }
 
     /**
-     * Creates an {@code Inet6Address} based on the provided IPv6 address literal.
-     * <p> This method doesn't block, i.e. the system-wide {@linkplain
-     * java.net.spi.InetAddressResolver resolver} is not queried to resolve
-     * the provided literal, and no reverse lookup is performed.
-     * @implNote <a href="Inet6Address.html#special-ipv6-address-heading">
-     * IPv4-mapped IPv6 address literals</a> are treated as invalid by this method.
-     * <p>{@link InetAddress#ofLiteral(String)} can be used to parse IPv4-mapped IPv6
-     * address literals.
+     * Creates an {@code InetAddress} based on the provided textual representation of
+     * an IPv6 address.
+     * <p>The following IPv6 address {@linkplain Inet6Address##format
+     * textual representations} are supported by this method:
+     * {@snippet :
+     *  // The full IPv6 form
+     *  Inet6Address.ofLiteral("1080:0:0:0:8:800:200C:417A") ==> /1080:0:0:0:8:800:200c:417a
      *
-     * @param addressLiteral the IPv6 address literal.
-     * @return an {@link Inet6Address} object with no hostname set constructed from the
-     *         IPv6 address literal.
-     * @throws IllegalArgumentException if literal cannot be parsed as an IPv6 address literal.
-     * @throws NullPointerException if the {@code addressLiteral} is @{code null}.
+     *  // The compressed IPv6 form with multiple groups of 16-bits of
+     *  // zero replaced with "::"
+     *  Inet6Address.ofLiteral("1080::8:800:200C:417A") ==> /1080:0:0:0:8:800:200c:417a
+     *
+     *  // IPv4-mapped IPv6 form
+     *  Inet6Address.ofLiteral("::FFFF:129.144.52.38") ==> /129.144.52.38
+     *
+     *  // IPv4-compatible IPv6 form
+     *  Inet6Address.ofLiteral("::129.144.52.38") ==> /0:0:0:0:0:0:8190:3426
+     *
+     *  // IPv6 scoped address form with scope-id as numeric identifier
+     *  Inet6Address.ofLiteral("fe80::1%1") ==> /fe80:0:0:0:0:0:0:1%1
+     *
+     *  // IPv6 scoped address with scope-id as string
+     *  Inet6Address.ofLiteral("fe80::1%en0") ==> /fe80:0:0:0:0:0:0:1%en0
+     * }
+     * All IPv6 address literal forms listed above are also supported when enclosed in
+     * square brackets.
+     * <p>If the provided address literal cannot represent a valid IP address an
+     * {@code IllegalArgumentException} is thrown. For instance, if an IPv6 scoped
+     *  address literal contains a scope-id that doesn't map to any network interface
+     *  on the system, or if a scope-id is present in an IPv4-mapped IPv6 address literal.
+     * <p>This method doesn't block, i.e. no reverse lookup is performed.
+     *
+     * @param ipv6AddressLiteral the textual representation of an IPv6 address.
+     * @return an {@link Inet6Address} object with no hostname set, and constructed
+     *         from the IPv6 address literal.
+     * @throws IllegalArgumentException if the {@code ipv6AddressLiteral} cannot be
+     *         parsed as an IPv6 address literal.
+     * @throws NullPointerException if the {@code ipv6AddressLiteral} is {@code null}.
      */
-    public static Inet6Address ofLiteral(String addressLiteral) {
-        Objects.requireNonNull(addressLiteral);
+    public static InetAddress ofLiteral(String ipv6AddressLiteral) {
+        Objects.requireNonNull(ipv6AddressLiteral);
         try {
-            InetAddress inetAddress = parseAddressString(addressLiteral, true);
-            // IPv4-mapped IPv6 address literals are rejected
-            if (inetAddress instanceof Inet6Address inet6Address) {
-                return inet6Address;
+            InetAddress parsedAddress = parseAddressString(ipv6AddressLiteral, true);
+            if (parsedAddress != null) {
+                return parsedAddress;
             }
         } catch (UnknownHostException uhe) {
             // Error constructing Inet6Address from address literal containing
             // a network interface name
         }
-        throw IPAddressUtil.invalidIpAddressLiteral(addressLiteral);
+        throw IPAddressUtil.invalidIpAddressLiteral(ipv6AddressLiteral);
     }
 
     /**
-     * Method tries to parse IPv6 or IPv4-mapped IPv6 address string as a literal IP address.
-     * If string doesn't contain valid literal - null is returned.
-     * If there is an issue with constructing {@link InetAddress} from parsed bytes -
-     * UnknownHostException is thrown.
+     * Method tries to parse supplied IP address literal as IPv6, IPv4-compatible IPv6 or
+     * IPv4-mapped IPv6 address.
+     * If address part of the literal string doesn't contain address in valid IPv6 form
+     * - {@code null} is returned.
+     * {@code UnknownHostException} is thrown if {@link InetAddress} cannot be constructed
+     * from parsed string due to:
+     * - incorrect zone-id specified in IPv6-scoped address literal that references
+     * non-existing interface name.
+     * - unexpected zone-id in IPv4-mapped address literal.
      *
      * @param addressLiteral literal IP address
      * @param removeSqBrackets if {@code "true"} remove outer square brackets
      * @return {@link Inet6Address} or {@link Inet4Address} object constructed from
-     * literal IP address string
+     * literal IP address string.
      * @throws UnknownHostException if literal IP address string cannot be parsed
-     * as IPv6 or IPv4-mapped IPv6 address literals.
+     * as IPv6, IPv4-mapped IPv6 or IPv4-compatible IPv6 address literals.
      */
     static InetAddress parseAddressString(String addressLiteral, boolean removeSqBrackets)
             throws UnknownHostException {

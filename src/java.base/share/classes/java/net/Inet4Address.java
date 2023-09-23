@@ -138,41 +138,42 @@ class Inet4Address extends InetAddress {
     }
 
     /**
-     * Creates an {@code Inet4Address} based on the provided IPv4 address literal.
-     * <p> IPv4 address literals in dotted-decimal form and
-     * <a href="Inet6Address.html#format">IPv4-compatible IPv6 address</a> literals
-     * are supported. For example, the following literals are valid literals in
-     * dotted-decimal form:
+     * Creates an {@code Inet4Address} based on the provided textual representation of
+     * an IPv4 address.
+     * <p>The following IPv4 address {@linkplain Inet4Address##format
+     * textual representations} are supported by this method:
+     * {@snippet :
+     *  // Dotted-decimal 'd.d.d.d' form with four part address literal
+     *  Inet4Address.ofLiteral("7.08.9.010") ==> /7.8.9.10
      *
-     *   <blockquote><ul style="list-style-type:none">
-     *   <li>{@code 1.2.3.4}</li>
-     *   <li>{@code 06.07.08.09}</li>
-     *   </ul></blockquote>
+     *  // Dotted-decimal 'd.d.d' form with three part address literal,
+     *  // the last part is placed in the right most two bytes
+     *  // of the constructed address
+     *  Inet4Address.ofLiteral("127.0.257") ==> /127.0.1.1
      *
-     * <p> This method doesn't block, i.e. the system-wide {@linkplain
-     * java.net.spi.InetAddressResolver resolver} is not queried to resolve
-     * the provided literal, and no reverse lookup is performed.
+     *  // Dotted-decimal 'd.d' form with two part address literal,
+     *  // the last part is placed in the right most three bytes
+     *  // of the constructed address
+     *  Inet4Address.ofLiteral("127.257") ==> /127.0.1.1
      *
-     * @param addressLiteral the IPv4 address literal.
-     * @return an {@link Inet4Address} object with no hostname set constructed from the
-     *         IPv4 address literal.
-     * @throws IllegalArgumentException if literal cannot be parsed as an IPv4 address literal.
-     * @throws NullPointerException if the {@code addressLiteral} is @{code null}.
+     *  // 'd' form with one decimal value that is stored directly in
+     *  // the constructed address bytes without any rearrangement
+     *  Inet4Address.ofLiteral("02130706689") ==> /127.0.1.1
+     * }
+     * <p>If the provided address literal cannot represent a valid IPv4 address an
+     * {@code IllegalArgumentException} is thrown.
+     * <p>This method doesn't block, i.e. no reverse lookup is performed.
+     *
+     * @param ipv4AddressLiteral the textual representation of an IPv4 address.
+     * @return an {@link Inet4Address} object with no hostname set, and constructed
+     *         from the IPv4 address literal.
+     * @throws IllegalArgumentException if the {@code ipv4AddressLiteral} cannot be
+     *         parsed as an IPv4 address literal.
+     * @throws NullPointerException if the {@code ipv4AddressLiteral} is {@code null}.
      */
-    public static Inet4Address ofLiteral(String addressLiteral) {
-        Objects.requireNonNull(addressLiteral);
-        // Try to parse IPv4-compatible IPv6 addresses first
-        try {
-            InetAddress inetAddress = Inet6Address.parseAddressString(addressLiteral,
-                                                       true);
-            if (inetAddress instanceof Inet4Address ipv4compAddress) {
-                return ipv4compAddress;
-            }
-        } catch (UnknownHostException uhe) {
-            // If address literal is not an IPv4-compatible IPv6 address - continue parsing
-            // it as an IPv4 address literal
-        }
-        return parseAddressString(addressLiteral, true);
+    public static Inet4Address ofLiteral(String ipv4AddressLiteral) {
+        Objects.requireNonNull(ipv4AddressLiteral);
+        return parseAddressString(ipv4AddressLiteral, true);
     }
 
     /**

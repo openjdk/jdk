@@ -26,6 +26,15 @@
  * @summary Test for ofLiteral API in InetAddress classes
  * @run junit/othervm -Djdk.net.hosts.file=nonExistingHostsFile.txt
  *                     OfLiteralTest
+ * @run junit/othervm -Djdk.net.hosts.file=nonExistingHostsFile.txt
+ *                    -Djava.net.preferIPv4Stack=true
+ *                     OfLiteralTest
+ * @run junit/othervm -Djdk.net.hosts.file=nonExistingHostsFile.txt
+ *                    -Djava.net.preferIPv6Addresses=true
+ *                     OfLiteralTest
+ * @run junit/othervm -Djdk.net.hosts.file=nonExistingHostsFile.txt
+ *                    -Djava.net.preferIPv6Addresses=false
+ *                     OfLiteralTest
  */
 
 import org.junit.Assert;
@@ -39,6 +48,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -61,7 +74,7 @@ public class OfLiteralTest {
         Assert.assertEquals(getByNameResult, ofLiteralResult);
     }
 
-    private static Stream<Arguments> validLiteralArguments() {
+    private static Stream<Arguments> validLiteralArguments() throws Exception {
         // 1080:0:0:0:8:800:200C:417A address bytes
         byte[] ipv6AddressExpBytes = new byte[]{16, -128, 0, 0, 0, 0, 0, 0, 0,
                 8, 8, 0, 32, 12, 65, 122};
@@ -88,27 +101,28 @@ public class OfLiteralTest {
         byte[] ipv6Ipv4MappedAddressExpBytes = new byte[]{
                 (byte) 129, (byte) 144, 52, 38};
 
-        return Stream.of(
+        Stream<Arguments> validLiterals = Stream.of(
                 // IPv6 address literals are parsable by Inet6Address.ofLiteral
                 // and InetAddress.ofLiteral methods
                 Arguments.of(InetAddressClass.INET6_ADDRESS,
                         "1080:0:0:0:8:800:200C:417A", ipv6AddressExpBytes),
-                Arguments.of(InetAddressClass.INET6_ADDRESS,
-                        "[1080:0::8:800:200C:417A]", ipv6AddressExpBytes),
-                Arguments.of(InetAddressClass.INET_ADDRESS,
-                        "1080:0::8:800:200C:417A", ipv6AddressExpBytes),
                 Arguments.of(InetAddressClass.INET_ADDRESS,
                         "[1080:0:0:0:8:800:200C:417A]", ipv6AddressExpBytes),
-
+                // Compressed series of zeros with square brackets
+                Arguments.of(InetAddressClass.INET6_ADDRESS,
+                        "[1080::8:800:200C:417A]", ipv6AddressExpBytes),
+                // Compressed series of zeros without square brackets
+                Arguments.of(InetAddressClass.INET_ADDRESS,
+                        "1080::8:800:200C:417A", ipv6AddressExpBytes),
                 // IPv4-mapped IPv6 address literals are parsable by
-                // InetAddress.ofLiteral and Inet4Address.ofLiteral methods
+                // InetAddress.ofLiteral and Inet6Address.ofLiteral methods
                 Arguments.of(InetAddressClass.INET_ADDRESS,
                         "::FFFF:129.144.52.38", ipv6Ipv4MappedAddressExpBytes),
                 Arguments.of(InetAddressClass.INET_ADDRESS,
                         "[::ffff:1.2.3.4]", oneToFourAddressExpBytes),
-                Arguments.of(InetAddressClass.INET4_ADDRESS,
+                Arguments.of(InetAddressClass.INET6_ADDRESS,
                         "::FFFF:129.144.52.38", ipv6Ipv4MappedAddressExpBytes),
-                Arguments.of(InetAddressClass.INET4_ADDRESS,
+                Arguments.of(InetAddressClass.INET6_ADDRESS,
                         "[::ffff:1.2.3.4]", oneToFourAddressExpBytes),
 
                 // IPv4-compatible IPv6 address literals are parsable by
@@ -158,6 +172,25 @@ public class OfLiteralTest {
                 Arguments.of(InetAddressClass.INET_ADDRESS,
                         "03735928559", ipv4ExpBytes)
         );
+
+        // Generate addresses for loopback and wildcard address test cases
+        var loopbackAndWildcardAddresses = List.of(
+                // Loopback address
+                InetAddress.getLoopbackAddress(),
+                // IPv6 wildcard address
+                InetAddress.getByName("::"),
+                // IPv4 wildcard address
+                InetAddress.getByName("0.0.0.0"));
+
+        // Get addresses for all network interfaces available,
+        // and construct a test case for each. And then combine
+        // them with loopback/wildcard test cases.
+        Stream<Arguments> hostAddressArguments = Stream.concat(
+                        NetworkInterface.networkInterfaces()
+                                .flatMap(NetworkInterface::inetAddresses),
+                        loopbackAndWildcardAddresses.stream())
+                .flatMap(OfLiteralTest::addressToValidTestCases);
+        return Stream.concat(validLiterals, hostAddressArguments);
     }
 
     @ParameterizedTest
@@ -177,7 +210,7 @@ public class OfLiteralTest {
     }
 
     private static Stream<Arguments> invalidLiteralArguments() {
-        return Stream.of(
+        Stream<Arguments> argumentsStream = Stream.of(
                 // IPv4 address wrapped in square brackets
                 Arguments.of(InetAddressClass.INET_ADDRESS, "[1.2.3.4]"),
                 Arguments.of(InetAddressClass.INET4_ADDRESS, "[1.2.3.4]"),
@@ -186,10 +219,6 @@ public class OfLiteralTest {
                 // IPv4 address literal with BSD-formatting
                 Arguments.of(InetAddressClass.INET_ADDRESS, "1.2.3.0256"),
                 Arguments.of(InetAddressClass.INET4_ADDRESS, "1.2.3.0256"),
-
-                // IPv4-mapped IPv6 addresses not parsable by Inet6Address.ofLiteral
-                Arguments.of(InetAddressClass.INET6_ADDRESS, "::FFFF:129.144.52.38"),
-                Arguments.of(InetAddressClass.INET6_ADDRESS, "[::ffff:1.2.3.4]"),
 
                 // Invalid IPv4-mapped IPv6 address forms
                 //      ::FFFF:d.d.d
@@ -206,6 +235,16 @@ public class OfLiteralTest {
                 Arguments.of(InetAddressClass.INET_ADDRESS, "::1.2"),
                 Arguments.of(InetAddressClass.INET6_ADDRESS, "::1.2"),
 
+                // IPv4-mapped IPv6 address with scope-id
+                Arguments.of(InetAddressClass.INET6_ADDRESS,
+                        "::FFFF:129.144.52.38%1"),
+
+                // IPv4-mapped IPv6 addresses cannot be parsed by Inet4Address.ofLiteral
+                Arguments.of(InetAddressClass.INET4_ADDRESS,
+                        "::FFFF:129.144.52.38"),
+                Arguments.of(InetAddressClass.INET4_ADDRESS,
+                        "[::ffff:1.2.3.4]"),
+
                 // IPv4 literals in BSD form
                 Arguments.of(InetAddressClass.INET_ADDRESS, "0256.1.2.3"),
                 Arguments.of(InetAddressClass.INET4_ADDRESS, "1.2.0256.3"),
@@ -214,6 +253,39 @@ public class OfLiteralTest {
                 Arguments.of(InetAddressClass.INET_ADDRESS, "0xFFFFFFFF"),
                 Arguments.of(InetAddressClass.INET4_ADDRESS, "0xFFFFFFFF")
         );
+        // Construct arguments for a test case with IPv6-scoped address with scope-id
+        // specified as a string with non-existing network interface name
+        String ifName = generateNonExistingIfName();
+        Stream<Arguments> nonExistingIFinScope = ifName.isBlank() ? Stream.empty() :
+                Stream.of(Arguments.of(InetAddressClass.INET6_ADDRESS,
+                        "2001:db8:a0b:12f0::1%" + ifName));
+        return Stream.concat(argumentsStream, nonExistingIFinScope);
+    }
+
+    private static Stream<Arguments> addressToValidTestCases(InetAddress inetAddress) {
+        String addressLiteral = inetAddress.getHostAddress();
+        byte[] expectedAddressBytes = inetAddress.getAddress();
+
+        InetAddressClass addressClass = switch (inetAddress) {
+            case Inet4Address i4 -> InetAddressClass.INET4_ADDRESS;
+            case Inet6Address i6 -> InetAddressClass.INET6_ADDRESS;
+            case InetAddress ia -> InetAddressClass.INET_ADDRESS;
+        };
+        return Stream.of(
+                Arguments.of(InetAddressClass.INET_ADDRESS, addressLiteral, expectedAddressBytes),
+                Arguments.of(addressClass, addressLiteral, expectedAddressBytes));
+    }
+
+    private static String generateNonExistingIfName() {
+        try {
+            return NetworkInterface
+                    .networkInterfaces()
+                    .map(NetworkInterface::getName)
+                    .collect(Collectors.joining())
+                    .strip();
+        } catch (SocketException e) {
+            return "";
+        }
     }
 
     private static Executable constructExecutable(InetAddressClass inetAddressClass, String input) {
