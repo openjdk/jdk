@@ -835,7 +835,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         if (isLatin1()) {
             DecimalDigits.getCharsLatin1(i, spaceNeeded, value);
         } else {
-            StringUTF16.getChars(i, count, spaceNeeded, value);
+            StringUTF16.checkBoundsBeginEnd(count, spaceNeeded, value);
+            int pos = DecimalDigits.getCharsUTF16(i, spaceNeeded, value);
+            assert count == pos;
         }
         this.count = spaceNeeded;
         return this;
@@ -860,7 +862,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         if (isLatin1()) {
             DecimalDigits.getCharsLatin1(l, spaceNeeded, value);
         } else {
-            StringUTF16.getChars(l, count, spaceNeeded, value);
+            StringUTF16.checkBoundsBeginEnd(count, spaceNeeded, value);
+            int pos = DecimalDigits.getCharsUTF16(l, spaceNeeded, value);
+            assert count == pos;
         }
         this.count = spaceNeeded;
         return this;

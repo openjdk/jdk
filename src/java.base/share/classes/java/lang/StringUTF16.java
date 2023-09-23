@@ -1365,13 +1365,6 @@ final class StringUTF16 {
         return pos;
     }
 
-    public static int getChars(long l, int begin, int end, byte[] value) {
-        checkBoundsBeginEnd(begin, end, value);
-        int pos = getChars(l, end, value);
-        assert begin == pos;
-        return pos;
-    }
-
     public static boolean contentEquals(byte[] v1, byte[] v2, int len) {
         checkBoundsOffCount(0, len, v2);
         for (int i = 0; i < len; i++) {
