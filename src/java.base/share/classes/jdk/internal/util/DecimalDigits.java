@@ -281,7 +281,7 @@ public final class DecimalDigits {
             r = (q * 100) - i;
             i = q;
             charPos -= 2;
-            JLA.putCharUTF16(buf, charPos, r);
+            putPair(buf, charPos, r);
         }
 
         // We know there are at most two digits left at this point.
