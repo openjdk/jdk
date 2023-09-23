@@ -78,8 +78,6 @@ public final class OctalDigits {
      * @param putCharMH  method to put character
      *
      * @return the last index used
-     *
-     * @throws Throwable if putCharMH fails (unusual).
      */
     public static int getCharsLatin1(long value, int index, byte[] buffer){
         while ((value & ~0x3F) != 0) {
@@ -110,14 +108,12 @@ public final class OctalDigits {
      * @param putCharMH  method to put character
      *
      * @return the last index used
-     *
-     * @throws Throwable if putCharMH fails (unusual).
      */
     public static int getCharsUTF16(long value, int index, byte[] buffer){
         while ((value & ~0x3F) != 0) {
             int pair = (int) DIGITS[((int) value) & 0x3F];
-            JLA.putCharUTF16(buf, --index, pair >> 8);
-            JLA.putCharUTF16(buf, --index, pair & 0xFF);
+            JLA.putCharUTF16(buffer, --index, pair >> 8);
+            JLA.putCharUTF16(buffer, --index, pair & 0xFF);
             value >>>= 6;
         }
 

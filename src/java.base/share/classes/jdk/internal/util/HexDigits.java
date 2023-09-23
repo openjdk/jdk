@@ -121,8 +121,6 @@ public final class HexDigits {
      * @param putCharMH  method to put character
      *
      * @return the last index used
-     *
-     * @throws Throwable if putCharMH fails (unusual).
      */
     public static int getCharsLatin1(long value, int index, byte[] buffer) {
         while ((value & ~0xFF) != 0) {
@@ -151,8 +149,6 @@ public final class HexDigits {
      * @param putCharMH  method to put character
      *
      * @return the last index used
-     *
-     * @throws Throwable if putCharMH fails (unusual).
      */
     public static int getCharsUTF16(long value, int index, byte[] buffer) {
         while ((value & ~0xFF) != 0) {
