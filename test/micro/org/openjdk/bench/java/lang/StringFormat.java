@@ -47,6 +47,12 @@ public class StringFormat {
 
     public String s = "str";
     public int i = 17;
+    public static final BigDecimal pi  = new BigDecimal(Math.PI);
+
+    @Benchmark
+    public String decimalFormat() {
+        return "%010.3f".formatted(pi);
+    }
 
     @Benchmark
     public String stringFormat() {
