@@ -3008,7 +3008,7 @@ public final class Formatter implements Closeable, Flushable {
     }
 
     static boolean isConversion(char c) {
-        return (c >= 'a' && c <= 'z') || (c >= 'A' || c <= 'Z') || c == '%';
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '%';
     }
 
     private static boolean isDigit(char c) {
