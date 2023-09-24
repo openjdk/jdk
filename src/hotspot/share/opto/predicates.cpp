@@ -77,7 +77,7 @@ Deoptimization::DeoptReason RuntimePredicate::uncommon_trap_reason(IfProjNode* i
 }
 
 bool RuntimePredicate::is_success_proj(Node* node, Deoptimization::DeoptReason deopt_reason) {
-  if (node->is_IfProj()) {
+  if (node->is_IfProj() && !node->in(0)->is_ParsePredicate()) {
     return deopt_reason == uncommon_trap_reason(node->as_IfProj());
   } else {
     return false;
@@ -107,6 +107,21 @@ ParsePredicateNode* ParsePredicateIterator::next() {
   assert(has_next(), "always check has_next() first");
   return _parse_predicates.at(_current_index++);
 }
+
+#ifdef ASSERT
+// Check that the block has at most one Parse Predicate and that we only find Regular Predicate nodes (i.e. IfProj,
+// If, or RangeCheck nodes).
+void PredicateBlock::verify_block() {
+  Node* next = _parse_predicate.entry(); // Skip unique Parse Predicate of this block if present
+  while (next != _entry) {
+    assert(!next->is_ParsePredicate(), "can only have one Parse Predicate in a block");
+    const int opcode = next->Opcode();
+    assert(next->is_IfProj() || opcode == Op_If || opcode == Op_RangeCheck,
+           "Regular Predicates consist of an IfProj and an If or RangeCheck node");
+    next = next->in(0);
+  }
+}
+#endif // ASSERT
 
 // Walk over all Regular Predicates of this block (if any) and return the first node not belonging to the block
 // anymore (i.e. entry to the first Regular Predicate in this block if any or `regular_predicate_proj` otherwise).
