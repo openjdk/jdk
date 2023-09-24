@@ -25,7 +25,7 @@
  * @test
  * @bug 5078214
  * @summary ToolTip is shown partially when the application is near the bottom of screen.
- * @library ../../regtesthelpers
+ * @library ../regtesthelpers
  * @build Util JRobot
  * @key headful
  * @run main bug5078214
@@ -89,8 +89,6 @@ public class bug5078214 {
                     // Position frame
                     mainFrame.setSize(200, 200);
                     bounds = testGraphics.getBounds();
-                    Insets insets = Toolkit.getDefaultToolkit()
-                            .getScreenInsets(testGraphics);
                     int x = bounds.x + 200;
                     int y = bounds.y + bounds.height - insets.bottom - 100;
                     mainFrame.setLocation(x, y);
@@ -100,6 +98,7 @@ public class bug5078214 {
                     System.out.print("We need at least one screen with ");
                     System.out.println("the taskbar at the bottom position.");
                     System.out.println("Testing skipped.");
+                    return;
                 }
             });
 
@@ -130,7 +129,7 @@ public class bug5078214 {
         ToolTipManager.sharedInstance().setInitialDelay(100);
         r.mouseMove(b.x + 300, b.y + b.height - i.bottom - 10);
         r.delay(2000);
-        Window ow[] = mainFrame.getOwnedWindows();
+        Window[] ow = mainFrame.getOwnedWindows();
         if (ow == null || ow.length < 1) {
             System.out.println("No owned windows for JFrame - no tooltip shown?");
             passed = true;
