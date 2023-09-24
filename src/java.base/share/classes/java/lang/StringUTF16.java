@@ -1358,6 +1358,20 @@ final class StringUTF16 {
         return codePointCount(val, beginIndex, endIndex, true /* checked */);
     }
 
+    public static int getChars(int i, int begin, int end, byte[] value) {
+        checkBoundsBeginEnd(begin, end, value);
+        int pos = DecimalDigits.getCharsUTF16(i, end, value);
+        assert begin == pos;
+        return pos;
+    }
+
+    public static int getChars(long l, int begin, int end, byte[] value) {
+        checkBoundsBeginEnd(begin, end, value);
+        int pos = DecimalDigits.getCharsUTF16(l, end, value);
+        assert begin == pos;
+        return pos;
+    }
+
     public static boolean contentEquals(byte[] v1, byte[] v2, int len) {
         checkBoundsOffCount(0, len, v2);
         for (int i = 0; i < len; i++) {
