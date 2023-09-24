@@ -49,36 +49,6 @@ public class StringFormat {
     public int i = 17;
 
     @Benchmark
-    public String flagsFormat() {
-        return "%(d".formatted(i);
-    }
-
-    @Benchmark
-    public String flags2Format() {
-        return "%, d".formatted(i);
-    }
-
-    @Benchmark
-    public String widthFormat() {
-        return "%2d".formatted(i);
-    }
-
-    @Benchmark
-    public String width2Format() {
-        return "%20d".formatted(i);
-    }
-
-    @Benchmark
-    public String widthPrecisionFormat() {
-        return "%7.3f".formatted((float) i);
-    }
-
-    @Benchmark
-    public String width2PrecisionFormat() {
-        return "%17.3f".formatted((float) i);
-    }
-
-    @Benchmark
     public String stringFormat() {
         return "%s".formatted(s);
     }
