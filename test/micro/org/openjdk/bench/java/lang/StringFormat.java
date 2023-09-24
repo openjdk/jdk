@@ -32,6 +32,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.math.BigDecimal;
 import java.util.concurrent.TimeUnit;
 
 /*
