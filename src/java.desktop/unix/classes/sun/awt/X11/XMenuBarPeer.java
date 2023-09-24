@@ -129,7 +129,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      * Functions addMenu, delMenu, addHelpMenu
      * need to have somewhat strange behaviour
      * deduced from java.awt.MenuBar.
-     * We can not get index of particular item in
+     * We cannot get index of particular item in
      * MenuBar.menus array, because MenuBar firstly
      * performs array operations and then calls peer.
      * So we need to synchronize indices in 'items'
