@@ -55,13 +55,15 @@ define GenerateVarHandle
   $$($1_FILENAME): $(VARHANDLES_SRC_DIR)/X-VarHandle.java.template $(BUILD_TOOLS_JDK)
         ifeq ($$($1_Type), Reference)
 	  $$(eval $1_type := Object)
+	  $$(eval $1_TYPE := OBJECT)
         else
 	  $$(eval $1_type := $$$$(shell $(TR) '[:upper:]' '[:lower:]' <<< $$$$($1_Type)))
+	  $$(eval $1_TYPE := $$$$(shell $(TR) '[:lower:]' '[:upper:]' <<< $$$$($1_Type)))
         endif
 	$$(call MakeDir, $$(@D))
 	$(RM) $$@
 	$(TOOL_SPP) -nel -K$$($1_type) -Dtype=$$($1_type) -DType=$$($1_Type) \
-	    $$($1_ARGS) -i$$< -o$$@
+	    -DTYPE=$$($1_TYPE) $$($1_ARGS) -i$$< -o$$@
 
   GENSRC_VARHANDLES += $$($1_FILENAME)
 endef

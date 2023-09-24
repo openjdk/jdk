@@ -24,6 +24,7 @@
  */
 package java.lang.invoke;
 
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -736,8 +737,8 @@ final class VarHandle$Type$s {
         final Class<? extends Object[]> arrayType;
         final Class<?> componentType;
 #else[Object]
-        private static final int BASE = UNSAFE.arrayBaseOffset($type$[].class);
-        private static final int SHIFT = 31 - Integer.numberOfLeadingZeros(UNSAFE.arrayIndexScale($type$[].class));
+        private static final int BASE = Unsafe.ARRAY_$TYPE$_BASE_OFFSET;
+        private static final int SHIFT = 31 - Integer.numberOfLeadingZeros(Unsafe.ARRAY_$TYPE$_INDEX_SCALE);
 #end[Object]
 
 #if[Object]
