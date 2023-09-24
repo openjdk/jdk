@@ -2828,9 +2828,8 @@ public final class Formatter implements Closeable, Flushable {
                 throw new UnknownFormatConversionException("%");
             }
             char c = s.charAt(i);
-            FormatSpecifier formatSpecifier = Conversion.of(c);
-            if (formatSpecifier != null) {
-                al.add(formatSpecifier);
+            if (Conversion.isValid(c)) {
+                al.add(new FormatSpecifier(c));
                 i++;
             } else {
                 // We have already parsed a '%' at n, so we either have a
@@ -2923,59 +2922,56 @@ public final class Formatter implements Closeable, Flushable {
                 ++off;
             }
 
-            if (argSize + flagSize + widthSize + precisionSize + t + conversion == 0) {
-                return 0;
+            if (argSize + flagSize + widthSize + precisionSize + t + conversion != 0) {
+                if (al != null) {
+                    FormatSpecifier formatSpecifier
+                            = new FormatSpecifier(s, start, argSize, flagSize, widthSize, precisionSize, t, conversion);
+                    al.add(formatSpecifier);
+                }
+                return off - start;
             }
-
-            if (al != null) {
-                FormatSpecifier formatSpecifier
-                        = new FormatSpecifier(s, start, argSize, flagSize, widthSize, precisionSize, t, conversion);
-                al.add(formatSpecifier);
-            }
-            return off - start;
+            return 0;
         }
 
         private void parseArgument() {
             // (\d+\$)?
-            for (int size = 0; off < max; c = s.charAt(++off), size++) {
-                if (isDigit(c)) {
-                    continue;
-                }
-
-                if (size != 0) {
-                    if (c == '$') {
-                        ++off;
-                        argSize = size + 1;
-                        size = 0;
-                        if (off < max) {
-                            c = s.charAt(off);
-                        }
-                    } else {
-                        if (first == '0') {
-                            boolean nextFlag = off < max && Flags.isFlag(s.charAt(off));
-                            if (nextFlag) {
-                                off = start;
-                                c = first;
-                            } else {
-                                flagSize = 1;
-                                off = start + 1;
-                                if (off < max) {
-                                    c = s.charAt(off);
-                                }
+            for (int size = 0; off < max; ++off, c = s.charAt(off), size++) {
+                if (!isDigit(c)) {
+                    if (size > 0) {
+                        if (c == '$') {
+                            ++off;
+                            argSize = size + 1;
+                            size = 0;
+                            if (off < max) {
+                                c = s.charAt(off);
                             }
                         } else {
-                            widthSize = size;
+                            if (first == '0') {
+                                boolean nextFlag = off < max && Flags.isFlag(s.charAt(off));
+                                if (!nextFlag) {
+                                    flagSize = 1;
+                                    off = start + 1;
+                                    if (off < max) {
+                                        c = s.charAt(off);
+                                    }
+                                } else {
+                                    off = start;
+                                    c = first;
+                                }
+                            } else {
+                                widthSize = size;
+                            }
+                            size = 0;
                         }
-                        size = 0;
                     }
+                    break;
                 }
-                break;
             }
         }
 
         private void parseFlag() {
             // ([-#+ 0,(\<]*)?
-            for (int size = 0; off < max; c = s.charAt(++off), size++) {
+            for (int size = 0; off < max; ++off, c = s.charAt(off), size++) {
                 if (!Flags.isFlag(c)) {
                     flagSize = size;
                     size = 0;
@@ -2986,7 +2982,7 @@ public final class Formatter implements Closeable, Flushable {
 
         private void parseWidth() {
             // (\d+)?
-            for (int size = 0; off < max; c = s.charAt(++off), size++) {
+            for (int size = 0; off < max; ++off, c = s.charAt(off), size++) {
                 if (!isDigit(c)) {
                     widthSize = size;
                     break;
@@ -2997,14 +2993,13 @@ public final class Formatter implements Closeable, Flushable {
         private int parsePrecision() {
             // (\.\d+)?
             c = s.charAt(++off);
-            for (int size = 0; off < max; c = s.charAt(++off), size++) {
-                if (isDigit(c)) {
-                    continue;
-                }
-                if (size != 0) {
-                    return size + 1;
-                } else {
-                    break;
+            for (int size = 0; off < max; ++off, c = s.charAt(off), size++) {
+                if (!isDigit(c)) {
+                    if (size > 0) {
+                        return size + 1;
+                    } else {
+                        break;
+                    }
                 }
             }
 
@@ -4980,33 +4975,6 @@ public final class Formatter implements Closeable, Flushable {
             };
         }
 
-        static FormatSpecifier of(char c) {
-            return switch (c) {
-                case BOOLEAN -> SPEC_BOOLEAN;
-                case BOOLEAN_UPPER -> SPEC_BOOLEAN_UPPER;
-                case STRING -> SPEC_STRING;
-                case STRING_UPPER -> SPEC_STRING_UPPER;
-                case HASHCODE -> SPEC_HASHCODE;
-                case HASHCODE_UPPER -> SPEC_HASHCODE_UPPER;
-                case CHARACTER -> SPEC_CHARACTER;
-                case CHARACTER_UPPER -> SPEC_CHARACTER_UPPER;
-                case DECIMAL_INTEGER -> SPEC_DECIMAL_INTEGER;
-                case OCTAL_INTEGER -> SPEC_OCTAL_INTEGER;
-                case HEXADECIMAL_INTEGER -> SPEC_HEXADECIMAL_INTEGER;
-                case HEXADECIMAL_INTEGER_UPPER -> SPEC_HEXADECIMAL_INTEGER_UPPER;
-                case SCIENTIFIC -> SPEC_SCIENTIFIC;
-                case SCIENTIFIC_UPPER -> SPEC_SCIENTIFIC_UPPER;
-                case GENERAL -> SPEC_GENERAL;
-                case GENERAL_UPPER -> SPEC_GENERAL_UPPER;
-                case DECIMAL_FLOAT -> SPEC_DECIMAL_FLOAT;
-                case HEXADECIMAL_FLOAT -> SPEC_HEXADECIMAL_FLOAT;
-                case HEXADECIMAL_FLOAT_UPPER -> SPEC_HEXADECIMAL_FLOAT_UPPER;
-                case LINE_SEPARATOR -> SPEC_LINE_SEPARATOR;
-                case PERCENT_SIGN -> SPEC_PERCENT_SIGN;
-                default -> null;
-            };
-        }
-
         // Returns true iff the Conversion is applicable to all objects.
         static boolean isGeneral(char c) {
             return switch (c) {
@@ -5061,28 +5029,6 @@ public final class Formatter implements Closeable, Flushable {
                 default -> false;
             };
         }
-
-        static final FormatSpecifier SPEC_BOOLEAN = new FormatSpecifier(Conversion.BOOLEAN);
-        static final FormatSpecifier SPEC_BOOLEAN_UPPER = new FormatSpecifier(Conversion.BOOLEAN_UPPER);
-        static final FormatSpecifier SPEC_STRING = new FormatSpecifier(Conversion.STRING);
-        static final FormatSpecifier SPEC_STRING_UPPER = new FormatSpecifier(Conversion.STRING_UPPER);
-        static final FormatSpecifier SPEC_HASHCODE = new FormatSpecifier(Conversion.HASHCODE);
-        static final FormatSpecifier SPEC_HASHCODE_UPPER = new FormatSpecifier(Conversion.HASHCODE_UPPER);
-        static final FormatSpecifier SPEC_CHARACTER = new FormatSpecifier(Conversion.CHARACTER);
-        static final FormatSpecifier SPEC_CHARACTER_UPPER = new FormatSpecifier(Conversion.CHARACTER_UPPER);
-        static final FormatSpecifier SPEC_DECIMAL_INTEGER = new FormatSpecifier(Conversion.DECIMAL_INTEGER);
-        static final FormatSpecifier SPEC_OCTAL_INTEGER = new FormatSpecifier(Conversion.OCTAL_INTEGER);
-        static final FormatSpecifier SPEC_HEXADECIMAL_INTEGER = new FormatSpecifier(Conversion.HEXADECIMAL_INTEGER);
-        static final FormatSpecifier SPEC_HEXADECIMAL_INTEGER_UPPER = new FormatSpecifier(Conversion.HEXADECIMAL_INTEGER_UPPER);
-        static final FormatSpecifier SPEC_SCIENTIFIC = new FormatSpecifier(Conversion.SCIENTIFIC);
-        static final FormatSpecifier SPEC_SCIENTIFIC_UPPER = new FormatSpecifier(Conversion.SCIENTIFIC_UPPER);
-        static final FormatSpecifier SPEC_GENERAL = new FormatSpecifier(Conversion.GENERAL);
-        static final FormatSpecifier SPEC_GENERAL_UPPER = new FormatSpecifier(Conversion.GENERAL_UPPER);
-        static final FormatSpecifier SPEC_DECIMAL_FLOAT = new FormatSpecifier(Conversion.DECIMAL_FLOAT);
-        static final FormatSpecifier SPEC_HEXADECIMAL_FLOAT = new FormatSpecifier(Conversion.HEXADECIMAL_FLOAT);
-        static final FormatSpecifier SPEC_HEXADECIMAL_FLOAT_UPPER = new FormatSpecifier(Conversion.HEXADECIMAL_FLOAT_UPPER);
-        static final FormatSpecifier SPEC_LINE_SEPARATOR = new FormatSpecifier(Conversion.LINE_SEPARATOR);
-        static final FormatSpecifier SPEC_PERCENT_SIGN = new FormatSpecifier(Conversion.PERCENT_SIGN);
     }
 
     static class DateTime {
