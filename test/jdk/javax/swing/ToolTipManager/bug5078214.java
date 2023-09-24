@@ -74,42 +74,41 @@ public class bug5078214 {
                     }
                 }
 
-                if (testGraphics != null) {
-                    mainFrame = new JFrame("bug5078214");
-                    mainFrame.setLayout(new BorderLayout());
-                    mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                    JButton button = new JButton("Button with tooltip") {
-                        public Point getToolTipLocation(MouseEvent ev) {
-                            return new Point(100, 100);
-                        }
-                    };
-                    mainFrame.add(button, BorderLayout.CENTER);
-                    button.setToolTipText("ToolTip for this button");
-
-                    // Position frame
-                    mainFrame.setSize(200, 200);
-                    bounds = testGraphics.getBounds();
-                    int x = bounds.x + 200;
-                    int y = bounds.y + bounds.height - insets.bottom - 100;
-                    mainFrame.setLocation(x, y);
-                    mainFrame.setVisible(true);
-
-                } else {
+                if (testGraphics == null) {
                     System.out.print("We need at least one screen with ");
                     System.out.println("the taskbar at the bottom position.");
                     System.out.println("Testing skipped.");
                     return;
                 }
+
+                mainFrame = new JFrame("bug5078214");
+                mainFrame.setLayout(new BorderLayout());
+                mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                JButton button = new JButton("Button with tooltip") {
+                    public Point getToolTipLocation(MouseEvent ev) {
+                        return new Point(100, 100);
+                    }
+                };
+                mainFrame.add(button, BorderLayout.CENTER);
+                button.setToolTipText("ToolTip for this button");
+
+                // Position frame
+                mainFrame.setSize(200, 200);
+                bounds = testGraphics.getBounds();
+                int x = bounds.x + 200;
+                int y = bounds.y + bounds.height - insets.bottom - 100;
+                mainFrame.setLocation(x, y);
+                mainFrame.setVisible(true);
             });
 
             r = new JRobot(true);
             Util.blockTillDisplayed(mainFrame);
-            r.delay(1000);
             r.waitForIdle();
+            r.delay(1000);
 
             test(bounds, insets);
-            r.delay(1000);
             r.waitForIdle();
+            r.delay(1000);
 
             if (!passed) {
                 throw new RuntimeException("ToolTip shown outside of the visible area. Test failed.");

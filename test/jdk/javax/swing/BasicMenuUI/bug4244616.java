@@ -49,10 +49,10 @@ public class bug4244616 {
                 ActionEvent.ACTION_PERFORMED, "test event");
 
         // Stream redirection
-        try(ByteArrayOutputStream bout = new ByteArrayOutputStream();
-            ByteArrayOutputStream berr = new ByteArrayOutputStream();
-            PrintStream out = new PrintStream(bout);
-            PrintStream err = new PrintStream(berr)) {
+        try (ByteArrayOutputStream bout = new ByteArrayOutputStream();
+             ByteArrayOutputStream berr = new ByteArrayOutputStream();
+             PrintStream out = new PrintStream(bout);
+             PrintStream err = new PrintStream(berr)) {
 
             PrintStream oldOut = System.out;
             PrintStream oldErr = System.err;
