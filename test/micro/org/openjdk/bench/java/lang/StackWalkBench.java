@@ -311,16 +311,6 @@ public class StackWalkBench {
     }
 
     /**
-     * StackWalker.getCallerClass()
-     */
-    @Benchmark
-    public void getCallerClass(Blackhole bh) {
-        final StackWalker sw = walker(walker);
-        Class<?> c = sw.getCallerClass();
-        bh.consume(c);
-    }
-
-    /**
      * StackWalker.getCallerClass() with generated call stack of
      * the given depth.
      */

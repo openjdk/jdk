@@ -505,7 +505,11 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public String toString() {
-        return "MemorySegment{ heapBase: " + heapBase() + " address:" + address() + " limit: " + length + " }";
+        return "MemorySegment{ " +
+                heapBase().map(hb -> "heapBase: " + hb + ", ").orElse("") +
+                "address: " + Utils.toHexString(address()) +
+                ", byteSize: " + length +
+                " }";
     }
 
     @Override
