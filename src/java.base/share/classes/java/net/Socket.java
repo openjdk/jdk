@@ -1096,7 +1096,10 @@ public class Socket implements java.io.Closeable {
             }
             long start = SocketReadEvent.timestamp();
             int nbytes = implRead(b, off, len);
-            SocketReadEvent.offer(start, nbytes, parent.getRemoteSocketAddress(), getSoTimeout());
+            long duration = SocketReadEvent.timestamp() - start;
+            if (SocketReadEvent.shouldCommit(duration)) {
+                SocketReadEvent.emit(start, duration, nbytes, parent.getRemoteSocketAddress(), getSoTimeout());
+            }
             return nbytes;
         }
 

@@ -494,7 +494,10 @@ class SocketChannelImpl
         }
         long start = SocketReadEvent.timestamp();
         int nbytes = implRead(buf);
-        SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
+        long duration = SocketReadEvent.timestamp() - start;
+        if (SocketReadEvent.shouldCommit(duration)) {
+            SocketReadEvent.emit(start, duration, nbytes, remoteAddress(), 0);
+        }
         return nbytes;
     }
 
@@ -508,7 +511,10 @@ class SocketChannelImpl
         }
         long start = SocketReadEvent.timestamp();
         long nbytes = implRead(dsts, offset, length);
-        SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
+        long duration = SocketReadEvent.timestamp() - start;
+        if (SocketReadEvent.shouldCommit(duration)) {
+            SocketReadEvent.emit(start, duration, nbytes, remoteAddress(), 0);
+        }
         return nbytes;
     }
 
