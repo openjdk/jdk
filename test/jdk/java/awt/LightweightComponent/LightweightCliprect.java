@@ -25,11 +25,12 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Rectangle;
-import javax.swing.SwingUtilities;
+import java.awt.Shape;
 
 /*
  * @test
@@ -43,8 +44,8 @@ import javax.swing.SwingUtilities;
 public class LightweightCliprect {
 
     private static final String INSTRUCTIONS = """
-            If some text is drawn outside the red rectangle press "Fail" button.
-            Otherwise press "Pass" button.
+            If some text is drawn outside the red rectangle, press "Fail" button.
+            Otherwise, press "Pass" button.
             """;
 
     public static void main(String[] args) throws Exception {
@@ -56,7 +57,7 @@ public class LightweightCliprect {
                 .columns(45)
                 .build();
 
-        SwingUtilities.invokeAndWait(() -> {
+        EventQueue.invokeAndWait(() -> {
             Frame frame = new Frame("DefaultSize");
 
             Container panel = new MyContainer();
@@ -83,8 +84,7 @@ class MyComponent extends Component {
         Color c = g.getColor();
         g.setColor(Color.red);
         g.fillRect(20, 20, 400, 200);
-        Rectangle clip;
-        clip = g.getClipBounds();
+        Shape clip = g.getClip();
         g.setClip(20, 20, 400, 200);
         //draw the current java version in the component
         g.setColor(Color.black);

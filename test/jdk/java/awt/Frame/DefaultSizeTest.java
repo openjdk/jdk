@@ -21,8 +21,8 @@
  * questions.
  */
 
+import java.awt.EventQueue;
 import java.awt.Frame;
-import javax.swing.SwingUtilities;
 
 /*
  * @test 4033151
@@ -39,7 +39,7 @@ public class DefaultSizeTest {
             It should be located to the right of this window
             and should be the minimum size allowed by the window manager.
             For any WM, the frame should be very small.
-            When the test is complete, click Pass or Fail as appropriate.
+            If the frame is not large, click Pass or Fail otherwise.
             """;
 
 
@@ -52,7 +52,7 @@ public class DefaultSizeTest {
                 .columns(45)
                 .build();
 
-        SwingUtilities.invokeAndWait(() -> {
+        EventQueue.invokeAndWait(() -> {
             Frame frame = new Frame("DefaultSize");
 
             PassFailJFrame.addTestWindow(frame);

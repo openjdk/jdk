@@ -44,19 +44,9 @@ import javax.swing.WindowConstants;
  */
 
 public class DefaultCloseOperation extends JPanel {
+
     private static final String INSTRUCTIONS = """
-        This is a manual test (requires user interaction) which tests the
-        "defaultCloseOperation" property for swing's JFrame and JDialog.
-        This property enables a program to tell swing to automatically
-        handle a user's "Close" operation on a JFrame or JDialog in one of
-        the following ways:
-
-         - Do nothing - do not do anything when the user closes the window
-         - Hide - automatically hide the window when the user closes it
-         - Dispose - automatically dispose the window when the user closes it
-
-        To run this test, do the following steps (if an exception is thrown
-        at anytime during the test, the test has failed, else it passed):
+        Do the following steps:
 
          -  Click the "Open Frame" button (a TestFrame will appear)
          -  On the TestFrame, select "Close" from the system menu (the window should go away)
@@ -88,7 +78,7 @@ public class DefaultCloseOperation extends JPanel {
                 .title("DefaultCloseOperation Manual Test")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(5)
-                .rows(33)
+                .rows(20)
                 .columns(70)
                 .build();
 
