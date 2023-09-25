@@ -44,7 +44,6 @@ import javax.swing.text.DefaultStyledDocument;
 import javax.swing.undo.UndoManager;
 
 public class bug4549069 {
-    static boolean passed = true;
     static Timer timer;
     static volatile Point p;
 
@@ -80,10 +79,6 @@ public class bug4549069 {
                 f.getContentPane().add(jta);
                 f.pack();
                 f.setVisible(true);
-
-                if (!passed) {
-                    throw new RuntimeException("Test failed.");
-                }
             });
 
             robot.waitForIdle();
