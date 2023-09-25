@@ -25,7 +25,6 @@
 
 package java.lang.foreign;
 
-import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -135,8 +134,11 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a new memory segment initialized with the provided {@code byte} {@code value} as
-     * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
+     * {@return a new memory segment initialized with the provided byte value.}
+     * <p>
+     * The size of the allocated memory segment is the {@linkplain MemoryLayout#byteSize() size} of the given layout.
+     * The given value is written into the segment according to the byte order and alignment constraint of the
+     * given layout.
      *
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
@@ -156,8 +158,11 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a new memory segment initialized with the provided {@code char} {@code value} as
-     * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
+     * {@return a new memory segment initialized with the provided char value.}
+     * <p>
+     * The size of the allocated memory segment is the {@linkplain MemoryLayout#byteSize() size} of the given layout.
+     * The given value is written into the segment according to the byte order and alignment constraint of the
+     * given layout.
      *
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
@@ -177,8 +182,11 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a new memory segment initialized with the provided {@code short} {@code value} as
-     * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
+     * {@return a new memory segment initialized with the provided short value.}
+     * <p>
+     * The size of the allocated memory segment is the {@linkplain MemoryLayout#byteSize() size} of the given layout.
+     * The given value is written into the segment according to the byte order and alignment constraint of the
+     * given layout.
      *
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
@@ -198,8 +206,11 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a new memory segment initialized with the provided {@code int} {@code value} as
-     * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
+     * {@return a new memory segment initialized with the provided int value.}
+     * <p>
+     * The size of the allocated memory segment is the {@linkplain MemoryLayout#byteSize() size} of the given layout.
+     * The given value is written into the segment according to the byte order and alignment constraint of the
+     * given layout.
      *
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
@@ -219,8 +230,11 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a new memory segment initialized with the provided {@code float} {@code value} as
-     * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
+     * {@return a new memory segment initialized with the provided float value.}
+     * <p>
+     * The size of the allocated memory segment is the {@linkplain MemoryLayout#byteSize() size} of the given layout.
+     * The given value is written into the segment according to the byte order and alignment constraint of the
+     * given layout.
      *
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
@@ -240,8 +254,11 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a new memory segment initialized with the provided {@code long} {@code value} as
-     * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
+     * {@return a new memory segment initialized with the provided long value.}
+     * <p>
+     * The size of the allocated memory segment is the {@linkplain MemoryLayout#byteSize() size} of the given layout.
+     * The given value is written into the segment according to the byte order and alignment constraint of the
+     * given layout.
      *
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
@@ -261,8 +278,11 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a new memory segment initialized with the provided {@code double} {@code value} as
-     * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
+     * {@return a new memory segment initialized with the provided double value.}
+     * <p>
+     * The size of the allocated memory segment is the {@linkplain MemoryLayout#byteSize() size} of the given layout.
+     * The given value is written into the segment according to the byte order and alignment constraint of the
+     * given layout.
      *
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
@@ -282,10 +302,13 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a new memory segment initialized with the address of the provided {@code value} as
-     * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
+     * {@return a new memory segment initialized with the {@linkplain MemorySegment#address() address} of the provided memory segment.}
      * <p>
      * The address value might be narrowed according to the platform address size (see {@link ValueLayout#ADDRESS}).
+     * <p>
+     * The size of the allocated memory segment is the {@linkplain MemoryLayout#byteSize() size} of the given layout.
+     * The given value is written into the segment according to the byte order and alignment constraint of the
+     * given layout.
      *
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
@@ -297,6 +320,7 @@ public interface SegmentAllocator {
      *
      * @param layout the layout of the block of memory to be allocated.
      * @param value  the value to be set in the newly allocated memory segment.
+     * @throws UnsupportedOperationException if {@code value} is not a {@linkplain MemorySegment#isNative() native} segment.
      */
     default MemorySegment allocateFrom(AddressLayout layout, MemorySegment value) {
         Objects.requireNonNull(value);
@@ -307,9 +331,11 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a new memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of
-     * {@code elementCount*elementLayout.byteSize()} initialized with the contents of the provided {@code source} segment
-     * as specified by the provided {@code elementLayout} (i.e. byte ordering, alignment and size)}
+     * {@return a new memory segment initialized with the contents of the provided segment.}
+     * <p>
+     * The size of the allocated memory segment is the {@code elementLayout.byteSize() * elementCount}.
+     * The contents of the source segment is copied into the result segment element by element, according to the byte
+     * order and alignment constraint of the given element layout.
      *
      * @implSpec the default implementation for this method is equivalent to the following code:
      * {@snippet lang = java:
@@ -347,9 +373,11 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a new memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of
-     * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code byte} {@code elements} as
-     * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
+     * {@return a new memory segment initialized with the elements in the provided byte array.}
+     * <p>
+     * The size of the allocated memory segment is the {@code elementLayout.byteSize() * elements.length}.
+     * The contents of the source array is copied into the result segment element by element, according to the byte
+     * order and alignment constraint of the given element layout.
      *
      * @implSpec the default implementation for this method is equivalent to the following code:
      * {@snippet lang = java:
@@ -367,9 +395,11 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a new memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of
-     * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code short} {@code elements} as
-     * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
+     * {@return a new memory segment initialized with the elements in the provided short array.}
+     * <p>
+     * The size of the allocated memory segment is the {@code elementLayout.byteSize() * elements.length}.
+     * The contents of the source array is copied into the result segment element by element, according to the byte
+     * order and alignment constraint of the given element layout.
      *
      * @implSpec the default implementation for this method is equivalent to the following code:
      * {@snippet lang = java:
@@ -387,9 +417,11 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a new memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of
-     * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code char} {@code elements} as
-     * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
+     * {@return a new memory segment initialized with the elements in the provided char array.}
+     * <p>
+     * The size of the allocated memory segment is the {@code elementLayout.byteSize() * elements.length}.
+     * The contents of the source array is copied into the result segment element by element, according to the byte
+     * order and alignment constraint of the given element layout.
      *
      * @implSpec the default implementation for this method is equivalent to the following code:
      * {@snippet lang = java:
@@ -407,9 +439,11 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a new memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of
-     * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code int} {@code elements} as
-     * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
+     * {@return a new memory segment initialized with the elements in the provided int array.}
+     * <p>
+     * The size of the allocated memory segment is the {@code elementLayout.byteSize() * elements.length}.
+     * The contents of the source array is copied into the result segment element by element, according to the byte
+     * order and alignment constraint of the given element layout.
      *
      * @implSpec the default implementation for this method is equivalent to the following code:
      * {@snippet lang = java:
@@ -427,9 +461,11 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a new memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of
-     * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code float} {@code elements} as
-     * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
+     * {@return a new memory segment initialized with the elements in the provided float array.}
+     * <p>
+     * The size of the allocated memory segment is the {@code elementLayout.byteSize() * elements.length}.
+     * The contents of the source array is copied into the result segment element by element, according to the byte
+     * order and alignment constraint of the given element layout.
      *
      * @implSpec the default implementation for this method is equivalent to the following code:
      * {@snippet lang = java:
@@ -447,9 +483,11 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a new memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of
-     * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code long} {@code elements} as
-     * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
+     * {@return a new memory segment initialized with the elements in the provided long array.}
+     * <p>
+     * The size of the allocated memory segment is the {@code elementLayout.byteSize() * elements.length}.
+     * The contents of the source array is copied into the result segment element by element, according to the byte
+     * order and alignment constraint of the given element layout.
      *
      * @implSpec the default implementation for this method is equivalent to the following code:
      * {@snippet lang = java:
@@ -467,9 +505,11 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a new memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of
-     * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code double} {@code elements} as
-     * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
+     * {@return a new memory segment initialized with the elements in the provided double array.}
+     * <p>
+     * The size of the allocated memory segment is the {@code elementLayout.byteSize() * elements.length}.
+     * The contents of the source array is copied into the result segment element by element, according to the byte
+     * order and alignment constraint of the given element layout.
      *
      * @implSpec the default implementation for this method is equivalent to the following code:
      * {@snippet lang = java:
