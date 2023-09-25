@@ -224,6 +224,18 @@ public class SecurityTools {
     }
 
     /**
+     * Runs kinit.
+     *
+     * @param args arguments to kinit in a single string. The string is
+     *             converted to be List with makeList.
+     * @return an {@link OutputAnalyzer} object
+     * @throws Exception if there is an error
+     */
+    public static OutputAnalyzer kinit(String args) throws Exception {
+        return execute(getProcessBuilder("kinit", makeList(args)));
+    }
+
+    /**
      * Runs jar.
      *
      * @param args arguments to jar in a single string. The string is
