@@ -119,7 +119,7 @@ public class Reflection {
         class Holder {
             static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
         }
-        Holder.JLA.ensureNativeAccess(module, owner, methodName);
+        Holder.JLA.ensureNativeAccess(module, owner, methodName, currentClass);
     }
 
     /**

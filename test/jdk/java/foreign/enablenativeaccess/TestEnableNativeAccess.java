@@ -113,7 +113,7 @@ public class TestEnableNativeAccess extends TestEnableNativeAccessBase {
     public void testWarnFirstAccess() throws Exception {
         List<String> output1 = run("panama_enable_native_access_first", PANAMA_MAIN,
                 successWithWarning("panama")).asLines();
-        assertTrue(count(output1, "WARNING") == 3);  // 3 on first access, none on subsequent access
+        assertTrue(count(output1, "WARNING") == 4);  // 4 on first access, none on subsequent access
     }
 
     /**

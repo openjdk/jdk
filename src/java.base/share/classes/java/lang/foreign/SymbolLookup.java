@@ -213,8 +213,7 @@ public interface SymbolLookup {
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
+     * the JVM or, worse, silently result in memory corruption.
      *
      * @implNote The process of resolving a library name is OS-specific. For instance, in a POSIX-compliant OS,
      * the library name is resolved according to the specification of the {@code dlopen} function for that OS.
@@ -247,8 +246,7 @@ public interface SymbolLookup {
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
+     * the JVM or, worse, silently result in memory corruption.
      *
      * @implNote On Linux, the functionalities provided by this factory method and the returned symbol lookup are
      * implemented using the {@code dlopen}, {@code dlsym} and {@code dlclose} functions.

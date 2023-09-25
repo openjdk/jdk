@@ -606,8 +606,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
+     * the JVM or, worse, silently result in memory corruption.
      *
      * @param newSize the size of the returned segment.
      * @return a new memory segment that has the same address and scope as this segment, but the new
@@ -639,8 +638,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
+     * the JVM or, worse, silently result in memory corruption.
      *
      * @apiNote The cleanup action (if present) should take care not to leak the received segment to external
      * clients which might access the segment after its backing region of memory is no longer available. Furthermore,
@@ -678,8 +676,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
+     * the JVM or, worse, silently result in memory corruption.
      *
      * @apiNote The cleanup action (if present) should take care not to leak the received segment to external
      * clients which might access the segment after its backing region of memory is no longer available. Furthermore,

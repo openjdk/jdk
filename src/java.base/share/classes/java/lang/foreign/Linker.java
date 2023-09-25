@@ -522,8 +522,7 @@ public sealed interface Linker permits AbstractLinker {
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
+     * the JVM or, worse, silently result in memory corruption.
      *
      * @param address  the native memory segment whose {@linkplain MemorySegment#address() base address} is the
      *                 address of the target foreign function.
@@ -578,8 +577,7 @@ public sealed interface Linker permits AbstractLinker {
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
+     * the JVM or, worse, silently result in memory corruption.
      *
      * @param function the function descriptor of the target foreign function.
      * @param options  the linker options associated with this linkage request.
@@ -615,8 +613,7 @@ public sealed interface Linker permits AbstractLinker {
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
+     * the JVM or, worse, silently result in memory corruption.
      *
      * @param target the target method handle.
      * @param function the upcall stub function descriptor.
