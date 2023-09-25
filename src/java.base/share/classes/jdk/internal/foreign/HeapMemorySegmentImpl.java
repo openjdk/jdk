@@ -33,7 +33,6 @@ import java.util.Optional;
 
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
@@ -48,9 +47,6 @@ import jdk.internal.vm.annotation.ForceInline;
  * such as the elimination of store barriers in methods like {@link HeapMemorySegmentImpl#dup(long, long, boolean, MemorySessionImpl)}.
  */
 abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
-
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-    private static final int BYTE_ARR_BASE = UNSAFE.arrayBaseOffset(byte[].class);
 
     private static final long MAX_ALIGN_1 = ValueLayout.JAVA_BYTE.byteAlignment();
     private static final long MAX_ALIGN_2 = ValueLayout.JAVA_SHORT.byteAlignment();
@@ -88,7 +84,7 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
             throw new UnsupportedOperationException("Not an address to an heap-allocated byte array");
         }
         JavaNioAccess nioAccess = SharedSecrets.getJavaNioAccess();
-        return nioAccess.newHeapByteBuffer(baseByte, (int)offset - BYTE_ARR_BASE, (int) byteSize(), null);
+        return nioAccess.newHeapByteBuffer(baseByte, (int)offset - Utils.BaseAndScale.BYTE.base(), (int) byteSize(), null);
     }
 
     // factories
@@ -116,7 +112,7 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_BYTE_BASE_OFFSET;
+            return offset - Utils.BaseAndScale.BYTE.base();
         }
     }
 
@@ -143,7 +139,7 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_CHAR_BASE_OFFSET;
+            return offset - Utils.BaseAndScale.CHAR.base();
         }
     }
 
@@ -170,7 +166,7 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_SHORT_BASE_OFFSET;
+            return offset - Utils.BaseAndScale.SHORT.base();
         }
     }
 
@@ -197,7 +193,7 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_INT_BASE_OFFSET;
+            return offset - Utils.BaseAndScale.INT.base();
         }
     }
 
@@ -224,7 +220,7 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_LONG_BASE_OFFSET;
+            return offset - Utils.BaseAndScale.LONG.base();
         }
     }
 
@@ -251,7 +247,7 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_FLOAT_BASE_OFFSET;
+            return offset - Utils.BaseAndScale.FLOAT.base();
         }
     }
 
@@ -278,7 +274,7 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_DOUBLE_BASE_OFFSET;
+            return offset - Utils.BaseAndScale.DOUBLE.base();
         }
     }
 

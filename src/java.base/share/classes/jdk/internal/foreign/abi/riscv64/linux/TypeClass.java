@@ -131,34 +131,37 @@ public enum TypeClass {
     public record FlattenedFieldDesc(TypeClass typeClass, long offset, ValueLayout layout) { }
 
     private static List<FlattenedFieldDesc> getFlattenedFieldsInner(long offset, MemoryLayout layout) {
-        if (layout instanceof ValueLayout valueLayout) {
-            TypeClass typeClass = classifyValueType(valueLayout);
-            return List.of(switch (typeClass) {
-                case INTEGER, FLOAT -> new FlattenedFieldDesc(typeClass, offset, valueLayout);
-                default -> throw new IllegalStateException("Should not reach here.");
-            });
-        } else if (layout instanceof GroupLayout groupLayout) {
-            List<FlattenedFieldDesc> fields = new ArrayList<>();
-            for (MemoryLayout memberLayout : groupLayout.memberLayouts()) {
-                if (memberLayout instanceof PaddingLayout) {
+        return switch (layout) {
+            case ValueLayout valueLayout -> {
+                TypeClass typeClass = classifyValueType(valueLayout);
+                yield List.of(switch (typeClass) {
+                    case INTEGER, FLOAT -> new FlattenedFieldDesc(typeClass, offset, valueLayout);
+                    default -> throw new IllegalStateException("Should not reach here.");
+                });
+            }
+            case GroupLayout groupLayout -> {
+                List<FlattenedFieldDesc> fields = new ArrayList<>();
+                for (MemoryLayout memberLayout : groupLayout.memberLayouts()) {
+                    if (memberLayout instanceof PaddingLayout) {
+                        offset += memberLayout.byteSize();
+                        continue;
+                    }
+                    fields.addAll(getFlattenedFieldsInner(offset, memberLayout));
                     offset += memberLayout.byteSize();
-                    continue;
                 }
-                fields.addAll(getFlattenedFieldsInner(offset, memberLayout));
-                offset += memberLayout.byteSize();
+                yield fields;
             }
-            return fields;
-        } else if (layout instanceof SequenceLayout sequenceLayout) {
-            List<FlattenedFieldDesc> fields = new ArrayList<>();
-            MemoryLayout elementLayout = sequenceLayout.elementLayout();
-            for (long i = 0; i < sequenceLayout.elementCount(); i++) {
-                fields.addAll(getFlattenedFieldsInner(offset, elementLayout));
-                offset += elementLayout.byteSize();
+            case SequenceLayout sequenceLayout -> {
+                List<FlattenedFieldDesc> fields = new ArrayList<>();
+                MemoryLayout elementLayout = sequenceLayout.elementLayout();
+                for (long i = 0; i < sequenceLayout.elementCount(); i++) {
+                    fields.addAll(getFlattenedFieldsInner(offset, elementLayout));
+                    offset += elementLayout.byteSize();
+                }
+                yield fields;
             }
-            return fields;
-        } else {
-            throw new IllegalStateException("Cannot get here: " + layout);
-        }
+            case null, default -> throw new IllegalStateException("Cannot get here: " + layout);
+        };
     }
 
     public static List<FlattenedFieldDesc> getFlattenedFields(GroupLayout layout) {
