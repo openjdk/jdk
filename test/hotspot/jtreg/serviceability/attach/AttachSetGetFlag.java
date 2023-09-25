@@ -57,6 +57,10 @@ public class AttachSetGetFlag {
     testGetFlag("MaxHeapFreeRatio", "60");
     testSetFlag("MaxHeapFreeRatio", "50", "60");
 
+    // Test a non-manageable size_t flag.
+    // Since it is not manageable, we can't test the setFlag functionality.
+    testGetFlag("StringDeduplicationCleanupDeadMinimum", "128");
+
     // Test a uint flag.
     testGetFlag("ParallelGCThreads", "10");
   }
