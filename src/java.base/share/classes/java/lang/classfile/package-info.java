@@ -32,10 +32,10 @@
  * <h2>Reading classfiles</h2>
  * The main class for reading classfiles is {@link java.lang.classfile.ClassModel}; we
  * convert bytes into a {@link java.lang.classfile.ClassModel} with {@link
- * java.lang.classfile.Classfile#parse(byte[])}:
+ * java.lang.classfile.ClassFile#parse(byte[])}:
  * <p>
  * {@snippet lang=java :
- * ClassModel cm = Classfile.of().parse(bytes);
+ * ClassModel cm = ClassFile.of().parse(bytes);
  * }
  * <p>
  * There are several additional overloads of {@code parse} that let you specify
@@ -163,30 +163,30 @@
  * <p>
  * For nonstandard attributes, user-provided attribute mappers can be specified
  * through the use of the {@link
- * java.lang.classfile.Classfile.AttributeMapperOption#of(java.util.function.Function)}}
+ * java.lang.classfile.ClassFile.AttributeMapperOption#of(java.util.function.Function)}}
  * classfile option.  Implementations of custom attributes should extend {@link
  * java.lang.classfile.CustomAttribute}.
  *
  * <h3>Options</h3>
  * <p>
- * {@link java.lang.classfile.Classfile#of(java.lang.classfile.Classfile.Option[])}
- * accepts a list of options.  {@link java.lang.classfile.Classfile.Option} is a base interface
+ * {@link java.lang.classfile.ClassFile#of(java.lang.classfile.ClassFile.Option[])}
+ * accepts a list of options.  {@link java.lang.classfile.ClassFile.Option} is a base interface
  * for some statically enumerated options, as well as factories for more complex options,
  * including:
  * <ul>
- *   <li>{@link java.lang.classfile.Classfile.StackMapsOption}
+ *   <li>{@link java.lang.classfile.ClassFile.StackMapsOption}
  * -- generate stackmaps (default is {@code STACK_MAPS_WHEN_REQUIRED})</li>
- *   <li>{@link java.lang.classfile.Classfile.DebugElementsOption}
+ *   <li>{@link java.lang.classfile.ClassFile.DebugElementsOption}
  * -- processing of debug information, such as local variable metadata (default is {@code PASS_DEBUG}) </li>
- *   <li>{@link java.lang.classfile.Classfile.LineNumbersOption}
+ *   <li>{@link java.lang.classfile.ClassFile.LineNumbersOption}
  * -- processing of line numbers (default is {@code PASS_LINE_NUMBERS}) </li>
- *   <li>{@link java.lang.classfile.Classfile.AttributesProcessingOption}
+ *   <li>{@link java.lang.classfile.ClassFile.AttributesProcessingOption}
  * -- unrecognized or problematic original attributes (default is {@code PASS_ALL_ATTRIBUTES})</li>
- *   <li>{@link java.lang.classfile.Classfile.ConstantPoolSharingOption}}
+ *   <li>{@link java.lang.classfile.ClassFile.ConstantPoolSharingOption}}
  * -- share constant pool when transforming (default is {@code SHARED_POOL})</li>
- *   <li>{@link java.lang.classfile.Classfile.ClassHierarchyResolverOption#of(java.lang.classfile.ClassHierarchyResolver)}
+ *   <li>{@link java.lang.classfile.ClassFile.ClassHierarchyResolverOption#of(java.lang.classfile.ClassHierarchyResolver)}
  * -- specify a custom class hierarchy resolver used by stack map generation</li>
- *   <li>{@link java.lang.classfile.Classfile.AttributeMapperOption#of(java.util.function.Function)}
+ *   <li>{@link java.lang.classfile.ClassFile.AttributeMapperOption#of(java.util.function.Function)}
  * -- specify format of custom attributes</li>
  * </ul>
  * <p>
@@ -199,7 +199,7 @@
  * can suppress it with options to gain some performance.
  *
  * <h2>Writing classfiles</h2>
- * Classfile generation is accomplished through <em>builders</em>.  For each
+ * ClassFile generation is accomplished through <em>builders</em>.  For each
  * entity type that has a model, there is also a corresponding builder type;
  * classes are built through {@link java.lang.classfile.ClassBuilder}, methods through
  * {@link java.lang.classfile.MethodBuilder}, etc.
@@ -225,7 +225,7 @@
  * java.lang.classfile.CodeBuilder#invokeInstruction(java.lang.classfile.Opcode,
  * java.lang.constant.ClassDesc, java.lang.String, java.lang.constant.MethodTypeDesc,
  * boolean) CodeBuilder.invokeInstruction}, or {@link
- * java.lang.classfile.CodeBuilder#with(java.lang.classfile.ClassfileElement)
+ * java.lang.classfile.CodeBuilder#with(java.lang.classfile.ClassFileElement)
  * CodeBuilder.with}.
  * <p>
  * The convenience method {@code CodeBuilder.invokevirtual} behaves as if it calls
@@ -273,7 +273,7 @@
  * of {@link java.lang.classfile.ClassModel#verify}.
  *
  * <h2>Transforming classfiles</h2>
- * Classfile Processing APIs are most frequently used to combine reading and
+ * ClassFile Processing APIs are most frequently used to combine reading and
  * writing into transformation, where a classfile is read, localized changes are
  * made, but much of the classfile is passed through unchanged.  For each kind
  * of builder, {@code XxxBuilder} has a method {@code with(XxxElement)} so that
@@ -340,7 +340,7 @@
  * <p>
  * and then transform the classfile:
  * {@snippet lang=java :
- * var cc = Classfile.of();
+ * var cc = ClassFile.of();
  * byte[] newBytes = cc.transform(cc.parse(bytes), ct);
  * }
  * <p>
@@ -359,7 +359,7 @@
  * java.lang.classfile.CodeTransform#andThen(java.lang.classfile.CodeTransform)}:
  * <p>
  * {@snippet lang=java :
- * var cc = Classfile.of();
+ * var cc = ClassFile.of();
  * byte[] newBytes = cc.transform(cc.parse(bytes),
  *                                ClassTransform.transformingMethods(
  *                                    MethodTransform.transformingCode(
@@ -379,7 +379,7 @@
  * attributes that are not transformed can be processed by bulk-copying their
  * bytes, rather than parsing them and regenerating their contents.)  If
  * constant pool sharing is not desired it can be suppressed
- * with the {@link java.lang.classfile.Classfile.ConstantPoolSharingOption} option.
+ * with the {@link java.lang.classfile.ClassFile.ConstantPoolSharingOption} option.
  * Such suppression may be beneficial when transformation removes many elements,
  * resulting in many unreferenced constant pool entries.
  *

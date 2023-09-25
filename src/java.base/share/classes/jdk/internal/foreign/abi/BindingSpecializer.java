@@ -24,7 +24,7 @@
  */
 package jdk.internal.foreign.abi;
 
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.Label;
 import java.lang.classfile.Opcode;
@@ -67,7 +67,7 @@ import java.util.Deque;
 import java.util.List;
 
 import static java.lang.constant.ConstantDescs.*;
-import static java.lang.classfile.Classfile.*;
+import static java.lang.classfile.ClassFile.*;
 import static java.lang.classfile.TypeKind.*;
 
 public class BindingSpecializer {
@@ -188,7 +188,7 @@ public class BindingSpecializer {
     private static byte[] specializeHelper(MethodType leafType, MethodType callerMethodType,
                                            CallingSequence callingSequence, ABIDescriptor abi) {
         String className = callingSequence.forDowncall() ? CLASS_NAME_DOWNCALL : CLASS_NAME_UPCALL;
-        byte[] bytes = Classfile.of().build(ClassDesc.ofInternalName(className), clb -> {
+        byte[] bytes = ClassFile.of().build(ClassDesc.ofInternalName(className), clb -> {
             clb.withFlags(ACC_PUBLIC + ACC_FINAL + ACC_SUPER);
             clb.withSuperclass(CD_Object);
             clb.withVersion(CLASSFILE_VERSION, 0);
@@ -209,7 +209,7 @@ public class BindingSpecializer {
         }
 
         if (PERFORM_VERIFICATION) {
-            List<VerifyError> errors = Classfile.of().parse(bytes).verify(null);
+            List<VerifyError> errors = ClassFile.of().parse(bytes).verify(null);
             if (!errors.isEmpty()) {
                 errors.forEach(System.err::println);
                 throw new IllegalStateException("Verification error(s)");

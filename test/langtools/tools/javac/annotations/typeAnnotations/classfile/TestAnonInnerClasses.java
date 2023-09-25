@@ -317,7 +317,7 @@ public class TestAnonInnerClasses extends ClassfileTestHelper {
                    0,classFile.getAbsolutePath().indexOf(classFile.getPath()));
             for (String clazz : classes) {
                 try {
-                    cm = Classfile.of().parse(new File(testloc+clazz).toPath());
+                    cm = ClassFile.of().parse(new File(testloc+clazz).toPath());
                 }
                 catch (Exception e) { e.printStackTrace();  }
                 // Test for all methods and fields

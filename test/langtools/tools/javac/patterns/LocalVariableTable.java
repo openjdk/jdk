@@ -79,7 +79,7 @@ public class LocalVariableTable {
             return;
         }
 
-        ClassModel cf = Classfile.of().parse(Objects.requireNonNull(getClass().getResource(c.getName() + ".class"))
+        ClassModel cf = ClassFile.of().parse(Objects.requireNonNull(getClass().getResource(c.getName() + ".class"))
                         .openStream().readAllBytes());
         MethodModel m = getMethodByName(cf, c.getSimpleName().contains("Lambda") ? "lambda$" : "test");
         if (m == null) {

@@ -34,24 +34,24 @@ import jdk.internal.javac.PreviewFeature;
 /**
  * A builder for a classfile or portion of a classfile.  Builders are rarely
  * created directly; they are passed to handlers by methods such as
- * {@link Classfile#build(ClassDesc, Consumer)} or to transforms.
+ * {@link ClassFile#build(ClassDesc, Consumer)} or to transforms.
  * Elements of the newly built entity can be specified
- * abstractly (by passing a {@link ClassfileElement} to {@link #with(ClassfileElement)}
+ * abstractly (by passing a {@link ClassFileElement} to {@link #with(ClassFileElement)}
  * or concretely by calling the various {@code withXxx} methods.
  *
  * @param <E> the element type
  * @param <B> the builder type
- * @see ClassfileTransform
+ * @see ClassFileTransform
  *
  * @sealedGraph
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-public sealed interface ClassfileBuilder<E extends ClassfileElement, B extends ClassfileBuilder<E, B>>
+public sealed interface ClassFileBuilder<E extends ClassFileElement, B extends ClassFileBuilder<E, B>>
         extends Consumer<E> permits ClassBuilder, FieldBuilder, MethodBuilder, CodeBuilder {
 
     /**
-     * Integrate the {@link ClassfileElement} into the entity being built.
+     * Integrate the {@link ClassFileElement} into the entity being built.
      * @param e the element
      */
     @Override
@@ -60,7 +60,7 @@ public sealed interface ClassfileBuilder<E extends ClassfileElement, B extends C
     }
 
     /**
-     * Integrate the {@link ClassfileElement} into the entity being built.
+     * Integrate the {@link ClassFileElement} into the entity being built.
      * @param e the element
      * @return this builder
      */
@@ -84,7 +84,7 @@ public sealed interface ClassfileBuilder<E extends ClassfileElement, B extends C
      * @param model the model to transform
      * @param transform the transform to apply
      */
-    default void transform(CompoundElement<E> model, ClassfileTransform<?, E, B> transform) {
+    default void transform(CompoundElement<E> model, ClassFileTransform<?, E, B> transform) {
         @SuppressWarnings("unchecked")
         B builder = (B) this;
         var resolved = transform.resolve(builder);

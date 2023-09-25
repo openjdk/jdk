@@ -36,7 +36,7 @@
  */
 
 import java.lang.classfile.AccessFlags;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.reflect.AccessFlag;
 
 import java.io.IOException;
@@ -57,10 +57,10 @@ public class ModuleFlagTest {
                 .files(moduleInfo)
                 .run();
 
-        AccessFlags accessFlags = Classfile.of().parse(outdir.resolve("module-info.class"))
+        AccessFlags accessFlags = ClassFile.of().parse(outdir.resolve("module-info.class"))
                 .flags();
         if (!accessFlags.has(AccessFlag.MODULE)) {
-            throw new RuntimeException("Classfile doesn't have module access flag");
+            throw new RuntimeException("ClassFile doesn't have module access flag");
         }
     }
 }

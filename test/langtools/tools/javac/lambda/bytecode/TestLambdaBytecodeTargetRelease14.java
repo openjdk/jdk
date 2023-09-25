@@ -208,7 +208,7 @@ public class TestLambdaBytecodeTargetRelease14 extends ComboInstance<TestLambdaB
             return;
         }
         try (InputStream is = res.get().iterator().next().openInputStream()) {
-            ClassModel cm = Classfile.of().parse(is.readAllBytes());
+            ClassModel cm = ClassFile.of().parse(is.readAllBytes());
             MethodModel testMethod = null;
             for (MethodModel m : cm.methods()) {
                 if (m.methodName().equalsString("test")) {

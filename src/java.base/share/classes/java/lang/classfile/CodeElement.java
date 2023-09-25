@@ -30,7 +30,7 @@ import java.lang.classfile.attribute.StackMapTableAttribute;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * A {@link ClassfileElement} that can appear when traversing the elements
+ * A {@link ClassFileElement} that can appear when traversing the elements
  * of a {@link CodeModel} or be presented to a {@link CodeBuilder}.  Code elements
  * are either an {@link Instruction}, which models an instruction in the body
  * of a method, or a {@link PseudoInstruction}, which models metadata from
@@ -40,7 +40,7 @@ import jdk.internal.javac.PreviewFeature;
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-public sealed interface CodeElement extends ClassfileElement
+public sealed interface CodeElement extends ClassFileElement
         permits Instruction, PseudoInstruction,
                 CustomAttribute, RuntimeVisibleTypeAnnotationsAttribute, RuntimeInvisibleTypeAnnotationsAttribute,
                 StackMapTableAttribute {

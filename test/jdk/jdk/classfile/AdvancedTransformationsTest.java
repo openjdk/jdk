@@ -23,14 +23,14 @@
 
 /*
  * @test
- * @summary Testing Classfile advanced transformations.
+ * @summary Testing ClassFile advanced transformations.
  * @run junit AdvancedTransformationsTest
  */
 import helpers.ByteArrayClassLoader;
 import java.util.Map;
 import java.util.Set;
 import java.lang.classfile.ClassHierarchyResolver;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.MethodModel;
@@ -73,7 +73,7 @@ class AdvancedTransformationsTest {
     @Test
     void testShiftLocals() throws Exception {
         try (var in = StackMapGenerator.class.getResourceAsStream("StackMapGenerator.class")) {
-            var cc = Classfile.of();
+            var cc = ClassFile.of();
             var clm = cc.parse(in.readAllBytes());
             var remapped = cc.parse(cc.transform(clm, (clb, cle) -> {
                 if (cle instanceof MethodModel mm) {
@@ -112,7 +112,7 @@ class AdvancedTransformationsTest {
                 ClassDesc.ofDescriptor(StackMapGenerator.class.descriptorString()), ClassDesc.of("remapped.StackMapGenerator")
         );
         try (var in = StackMapGenerator.class.getResourceAsStream("StackMapGenerator.class")) {
-            var cc = Classfile.of();
+            var cc = ClassFile.of();
             var clm = cc.parse(in.readAllBytes());
             var remapped = cc.parse(ClassRemapper.of(map).remapClass(cc, clm));
             assertEmpty(remapped.verify(
@@ -167,7 +167,7 @@ class AdvancedTransformationsTest {
     void testRemapModule() throws Exception {
         var foo = ClassDesc.ofDescriptor(Foo.class.descriptorString());
         var bar = ClassDesc.ofDescriptor(Bar.class.descriptorString());
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         var ma = cc.parse(
                 ClassRemapper.of(Map.of(foo, bar)).remapClass(
                         cc,
@@ -188,7 +188,7 @@ class AdvancedTransformationsTest {
         var fooAnno = ClassDesc.ofDescriptor(FooAnno.class.descriptorString());
         var barAnno = ClassDesc.ofDescriptor(BarAnno.class.descriptorString());
         var rec = ClassDesc.ofDescriptor(Rec.class.descriptorString());
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         var remapped = cc.parse(
                 ClassRemapper.of(Map.of(foo, bar, fooAnno, barAnno)).remapClass(
                         cc,
@@ -235,7 +235,7 @@ class AdvancedTransformationsTest {
 
     @Test
     void testInstrumentClass() throws Exception {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         var instrumentor = cc.parse(AdvancedTransformationsTest.class.getResourceAsStream("AdvancedTransformationsTest$InstrumentorClass.class").readAllBytes());
         var target = cc.parse(AdvancedTransformationsTest.class.getResourceAsStream("AdvancedTransformationsTest$TargetClass.class").readAllBytes());
         var instrumentedBytes = instrument(target, instrumentor, mm -> mm.methodName().stringValue().equals("instrumentedMethod"));
@@ -300,7 +300,7 @@ class AdvancedTransformationsTest {
         var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
         var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
         var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
-        return Classfile.of().transform(target,
+        return ClassFile.of().transform(target,
                 ClassTransform.transformingMethods(
                         instrumentedMethodsFilter,
                         (mb, me) -> {

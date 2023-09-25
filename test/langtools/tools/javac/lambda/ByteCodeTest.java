@@ -74,7 +74,7 @@ public class ByteCodeTest {
     private static boolean verifyClassFileAttributes(File classFile, TestCases tc) {
         ClassModel c = null;
         try {
-            c = Classfile.of().parse(classFile.toPath());
+            c = ClassFile.of().parse(classFile.toPath());
         } catch (IOException e) {
             e.printStackTrace();
         }

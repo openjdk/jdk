@@ -134,7 +134,7 @@ public class StripJavaDebugAttributesPluginTest {
     }
 
     private <T extends Attribute<T>> void checkDebugAttributes(byte[] strippedClassFile) {
-        ClassModel classFile = Classfile.of().parse(strippedClassFile);
+        ClassModel classFile = ClassFile.of().parse(strippedClassFile);
         for (MethodModel method : classFile.methods()) {
             String methodName = method.methodName().stringValue();
             CodeAttribute code = method.findAttribute(Attributes.CODE).orElseThrow();

@@ -42,7 +42,7 @@ public class JSR175Annotations {
         File javaFile = writeTestFile();
         File classFile = compileTestFile(javaFile);
 
-        ClassModel cm = Classfile.of().parse(classFile.toPath());
+        ClassModel cm = ClassFile.of().parse(classFile.toPath());
         for (MethodModel mm: cm.methods()) {
             test(mm);
         }

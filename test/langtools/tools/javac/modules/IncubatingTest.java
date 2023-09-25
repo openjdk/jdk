@@ -254,9 +254,9 @@ public class IncubatingTest extends ModuleTestBase {
     }
 
     private void addModuleResolutionAttribute(Path classfile, int resolution_flags) throws Exception {
-        ClassModel cm = Classfile.of().parse(classfile);
+        ClassModel cm = ClassFile.of().parse(classfile);
         ModuleResolutionAttribute modRAttr = ModuleResolutionAttribute.of(resolution_flags);
-        byte[] newBytes = Classfile.of().transform(cm, ClassTransform.dropping(ce -> ce instanceof ModuleResolutionAttribute).
+        byte[] newBytes = ClassFile.of().transform(cm, ClassTransform.dropping(ce -> ce instanceof ModuleResolutionAttribute).
                 andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(modRAttr))));
         try (OutputStream out = Files.newOutputStream(classfile)) {
             out.write(newBytes);

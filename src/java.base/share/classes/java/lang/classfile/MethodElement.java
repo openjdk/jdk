@@ -40,14 +40,14 @@ import java.lang.classfile.attribute.UnknownAttribute;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * A {@link ClassfileElement} that can appear when traversing the elements
+ * A {@link ClassFileElement} that can appear when traversing the elements
  * of a {@link MethodModel} or be presented to a {@link MethodBuilder}.
  *
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface MethodElement
-        extends ClassfileElement
+        extends ClassFileElement
         permits AccessFlags, CodeModel, CustomAttribute,
                 AnnotationDefaultAttribute, DeprecatedAttribute,
                 ExceptionsAttribute, MethodParametersAttribute,

@@ -70,7 +70,7 @@ public class CPoolRefClassContainingInlinedCts {
         File testClasses = new File(System.getProperty("test.classes"));
         File file = new File(testClasses,
                 CPoolRefClassContainingInlinedCts.class.getName() + ".class");
-        ClassModel classFile = Classfile.of().parse(file.toPath());
+        ClassModel classFile = ClassFile.of().parse(file.toPath());
         for (PoolEntry cpInfo : classFile.constantPool()) {
             if (cpInfo instanceof ClassEntry classEntry) {
                 checkClassName(classEntry.asInternalName());

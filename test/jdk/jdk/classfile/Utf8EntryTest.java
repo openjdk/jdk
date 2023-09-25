@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @summary Testing Classfile CP Utf8Entry.
+ * @summary Testing ClassFile CP Utf8Entry.
  * @run junit Utf8EntryTest
  */
 import java.lang.classfile.ClassModel;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.classfile.constantpool.StringEntry;
@@ -79,9 +79,9 @@ class Utf8EntryTest {
         }
     )
     void testParse(String s) {
-        byte[] classfile = createClassfile(s);
+        byte[] classfile = createClassFile(s);
 
-        ClassModel cm = Classfile.of().parse(classfile);
+        ClassModel cm = ClassFile.of().parse(classfile);
         StringEntry se = obtainStringEntry(cm.constantPool());
 
         Utf8Entry utf8Entry = se.utf8();
@@ -158,10 +158,10 @@ class Utf8EntryTest {
     @MethodSource("malformedStringsProvider")
     void testMalformedInput(UnaryOperator<byte[]> f) {
         String marker = "XXXXXXXX";
-        byte[] classfile = createClassfile(marker);
+        byte[] classfile = createClassFile(marker);
         replace(classfile, marker, f);
 
-        ClassModel cm = Classfile.of().parse(classfile);
+        ClassModel cm = ClassFile.of().parse(classfile);
         StringEntry se = obtainStringEntry(cm.constantPool());
 
         assertThrows(RuntimeException.class, () -> {
@@ -193,8 +193,8 @@ class Utf8EntryTest {
         throw new AssertionError();
     }
 
-    static byte[] createClassfile(String s) {
-        return Classfile.of().build(ClassDesc.of("C"),
+    static byte[] createClassFile(String s) {
+        return ClassFile.of().build(ClassDesc.of("C"),
                                clb -> clb.withMethod("m", MethodTypeDesc.of(CD_void), 0,
                                                      mb -> mb.withCode(cb -> cb.constantInstruction(s)
                                                                                .returnInstruction(VoidType))));

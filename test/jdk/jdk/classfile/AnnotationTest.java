@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile annotations.
+ * @summary Testing ClassFile annotations.
  * @run junit AnnotationTest
  */
 import java.lang.constant.ClassDesc;
@@ -125,7 +125,7 @@ class AnnotationTest {
 
     @Test
     void testAnnos() {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         byte[] bytes = cc.build(ClassDesc.of("Foo"), cb -> {
             ((DirectClassBuilder) cb).writeAttribute(buildAnnotationsWithCPB(cb.constantPool()));
             cb.withMethod("foo", MethodTypeDesc.of(CD_void), 0, mb -> mb.with(buildAnnotationsWithCPB(mb.constantPool())));
@@ -171,7 +171,7 @@ class AnnotationTest {
 
     @Test
     void testAnnosNoCPB() {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         byte[] bytes = cc.build(ClassDesc.of("Foo"), cb -> {
             ((DirectClassBuilder) cb).writeAttribute(buildAnnotations());
             cb.withMethod("foo", MethodTypeDesc.of(CD_void), 0, mb -> mb.with(buildAnnotations()));

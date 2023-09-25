@@ -60,7 +60,7 @@ import static java.lang.module.ModuleDescriptor.Requires.Modifier.*;
 
 import jdk.internal.access.JavaLangModuleAccess;
 import jdk.internal.access.SharedSecrets;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.attribute.ModuleAttribute;
 import java.lang.constant.PackageDesc;
 import java.lang.constant.ModuleDesc;
@@ -1369,7 +1369,7 @@ public class ModuleDescriptorTest {
      * complete set of packages.
      */
     public void testReadsWithBadPackageFinder() throws Exception {
-        ByteBuffer bb = ByteBuffer.wrap(Classfile.of().buildModule(
+        ByteBuffer bb = ByteBuffer.wrap(ClassFile.of().buildModule(
                 ModuleAttribute.of(
                         ModuleDesc.of("foo"),
                         mb -> mb.requires(ModuleDesc.of("java.base"), 0, null)

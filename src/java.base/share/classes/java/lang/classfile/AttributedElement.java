@@ -33,13 +33,13 @@ import jdk.internal.classfile.impl.AbstractUnboundModel;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * A {@link ClassfileElement} describing an entity that has attributes, such
+ * A {@link ClassFileElement} describing an entity that has attributes, such
  * as a class, field, method, code attribute, or record component.
  *
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-public sealed interface AttributedElement extends ClassfileElement
+public sealed interface AttributedElement extends ClassFileElement
         permits ClassModel, CodeModel, FieldModel, MethodModel,
                 RecordComponentInfo, AbstractUnboundModel {
 

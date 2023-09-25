@@ -64,7 +64,7 @@ public class Annotations extends JavacTestingAbstractProcessor {
         InputStream annotationsClass =
                 Annotations.class.getResourceAsStream("Annotations.class");
         assert annotationsClass != null;
-        ClassModel cf = Classfile.of().parse(annotationsClass.readAllBytes());
+        ClassModel cf = ClassFile.of().parse(annotationsClass.readAllBytes());
         for (MethodModel m : cf.methods()) {
             if (m.methodName().equalsString("test")) {
                 CodeAttribute codeAttr = m.findAttribute(Attributes.CODE).orElseThrow();

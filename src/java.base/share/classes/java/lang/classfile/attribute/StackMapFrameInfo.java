@@ -32,7 +32,7 @@ import java.lang.classfile.Label;
 import java.lang.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.impl.StackMapDecoder;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
-import static java.lang.classfile.Classfile.*;
+import static java.lang.classfile.ClassFile.*;
 import jdk.internal.javac.PreviewFeature;
 
 /**

@@ -148,9 +148,9 @@ public class T7093325 extends ComboInstance<T7093325> {
         }
 
         try (InputStream is = result.get().iterator().next().openInputStream()) {
-            ClassModel cf = Classfile.of().parse(is.readAllBytes());
+            ClassModel cf = ClassFile.of().parse(is.readAllBytes());
             if (cf == null) {
-                fail("Classfile not found: " + result.compilationInfo());
+                fail("ClassFile not found: " + result.compilationInfo());
                 return;
             }
 

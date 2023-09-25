@@ -108,7 +108,7 @@ public class T4241573 {
     void verifySourceFileAttribute(File f) {
         System.err.println("verify: " + f);
         try {
-            ClassModel cf = Classfile.of().parse(f.toPath());
+            ClassModel cf = ClassFile.of().parse(f.toPath());
             SourceFileAttribute sfa = cf.findAttribute(Attributes.SOURCE_FILE).orElseThrow();
             String found = sfa.sourceFile().stringValue();
             String expect = f.getName().replaceAll("([$.].*)?\\.class", ".java");

@@ -31,8 +31,8 @@ import java.util.function.Supplier;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.ClassTransform;
-import java.lang.classfile.ClassfileElement;
-import java.lang.classfile.ClassfileTransform;
+import java.lang.classfile.ClassFileElement;
+import java.lang.classfile.ClassFileTransform;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
@@ -75,10 +75,10 @@ public class TransformImpl {
         }
     }
 
-    public record ResolvedTransformImpl<E extends ClassfileElement>(Consumer<E> consumer,
+    public record ResolvedTransformImpl<E extends ClassFileElement>(Consumer<E> consumer,
                                      Runnable endHandler,
                                      Runnable startHandler)
-            implements ClassfileTransform.ResolvedTransform<E> {
+            implements ClassFileTransform.ResolvedTransform<E> {
 
         public ResolvedTransformImpl(Consumer<E> consumer) {
             this(consumer, NOTHING, NOTHING);

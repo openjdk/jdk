@@ -60,7 +60,7 @@ public class DoubleCastTest {
 
     public static void main(String... cmdline) throws Exception {
 
-        ClassModel cls = Classfile.of().parse(Objects.requireNonNull(DoubleCastTest.class.getResourceAsStream("DoubleCastTest$C.class")).readAllBytes());
+        ClassModel cls = ClassFile.of().parse(Objects.requireNonNull(DoubleCastTest.class.getResourceAsStream("DoubleCastTest$C.class")).readAllBytes());
         for (MethodModel m: cls.methods())
             check(m);
     }

@@ -200,7 +200,7 @@ public class TestNewCastArray {
             System.out.println("Testing " + testclazz);
             try {
                 in = Objects.requireNonNull(getClass().getResource(testclazz)).openStream();
-                cm = Classfile.of().parse(in.readAllBytes());
+                cm = ClassFile.of().parse(in.readAllBytes());
                 in.close();
             } catch(Exception e) { e.printStackTrace();  }
 

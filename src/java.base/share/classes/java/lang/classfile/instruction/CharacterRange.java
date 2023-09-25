@@ -24,7 +24,7 @@
  */
 package java.lang.classfile.instruction;
 
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Label;
@@ -38,7 +38,7 @@ import jdk.internal.javac.PreviewFeature;
  * A pseudo-instruction which models a single entry in the
  * {@link CharacterRangeTableAttribute}.  Delivered as a {@link CodeElement}
  * during traversal of the elements of a {@link CodeModel}, according to
- * the setting of the {@link Classfile.DebugElementsOption} option.
+ * the setting of the {@link ClassFile.DebugElementsOption} option.
  *
  * @since 22
  */
@@ -74,15 +74,15 @@ public sealed interface CharacterRange extends PseudoInstruction
     /**
      * A flags word, indicating the kind of range.  Multiple flag bits
      * may be set.  Valid flags include
-     * {@link java.lang.classfile.Classfile#CRT_STATEMENT},
-     * {@link java.lang.classfile.Classfile#CRT_BLOCK},
-     * {@link java.lang.classfile.Classfile#CRT_ASSIGNMENT},
-     * {@link java.lang.classfile.Classfile#CRT_FLOW_CONTROLLER},
-     * {@link java.lang.classfile.Classfile#CRT_FLOW_TARGET},
-     * {@link java.lang.classfile.Classfile#CRT_INVOKE},
-     * {@link java.lang.classfile.Classfile#CRT_CREATE},
-     * {@link java.lang.classfile.Classfile#CRT_BRANCH_TRUE},
-     * {@link java.lang.classfile.Classfile#CRT_BRANCH_FALSE}.
+     * {@link java.lang.classfile.ClassFile#CRT_STATEMENT},
+     * {@link java.lang.classfile.ClassFile#CRT_BLOCK},
+     * {@link java.lang.classfile.ClassFile#CRT_ASSIGNMENT},
+     * {@link java.lang.classfile.ClassFile#CRT_FLOW_CONTROLLER},
+     * {@link java.lang.classfile.ClassFile#CRT_FLOW_TARGET},
+     * {@link java.lang.classfile.ClassFile#CRT_INVOKE},
+     * {@link java.lang.classfile.ClassFile#CRT_CREATE},
+     * {@link java.lang.classfile.ClassFile#CRT_BRANCH_TRUE},
+     * {@link java.lang.classfile.ClassFile#CRT_BRANCH_FALSE}.
      *
      * @see java.lang.classfile.attribute.CharacterRangeInfo#flags()
      *

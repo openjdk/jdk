@@ -68,9 +68,9 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
 import java.lang.classfile.ClassModel;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.constantpool.*;
-import static java.lang.classfile.Classfile.*;
+import static java.lang.classfile.ClassFile.*;
 
 /**
  *  "Main" class for javap, normally accessed from the command line
@@ -827,7 +827,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                 in = new DigestInputStream(in, md);
                 in = sizeIn = new SizeInputStream(in);
             }
-            ClassModel cm = Classfile.of().parse(in.readAllBytes());
+            ClassModel cm = ClassFile.of().parse(in.readAllBytes());
             byte[] digest = (md == null) ? null : md.digest();
             int size = (sizeIn == null) ? -1 : sizeIn.size();
             return new ClassFileInfo(fo, cm, digest, size);

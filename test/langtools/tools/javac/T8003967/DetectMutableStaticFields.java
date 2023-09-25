@@ -170,7 +170,7 @@ public class DetectMutableStaticFields {
             if (shouldAnalyzePackage(pckName)) {
                 ClassModel classFile;
                 try (InputStream input = file.openInputStream()) {
-                    classFile = Classfile.of().parse(input.readAllBytes());
+                    classFile = ClassFile.of().parse(input.readAllBytes());
                 }
                 analyzeClassFile(classFile);
             }
@@ -192,7 +192,7 @@ public class DetectMutableStaticFields {
 
     void analyzeClassFile(ClassModel classFileToCheck) {
         boolean enumClass =
-                (classFileToCheck.flags().flagsMask() & Classfile.ACC_ENUM) != 0;
+                (classFileToCheck.flags().flagsMask() & ClassFile.ACC_ENUM) != 0;
         boolean nonFinalStaticEnumField;
         boolean nonFinalStaticField;
 
@@ -204,10 +204,10 @@ public class DetectMutableStaticFields {
                 continue;
             }
             nonFinalStaticEnumField =
-                    (field.flags().flagsMask() & (Classfile.ACC_ENUM | Classfile.ACC_FINAL)) == 0;
+                    (field.flags().flagsMask() & (ClassFile.ACC_ENUM | ClassFile.ACC_FINAL)) == 0;
             nonFinalStaticField =
-                    (field.flags().flagsMask() & Classfile.ACC_STATIC) != 0 &&
-                    (field.flags().flagsMask() & Classfile.ACC_FINAL) == 0;
+                    (field.flags().flagsMask() & ClassFile.ACC_STATIC) != 0 &&
+                    (field.flags().flagsMask() & ClassFile.ACC_FINAL) == 0;
             if (enumClass ? nonFinalStaticEnumField : nonFinalStaticField) {
                 errors.add("There is a mutable field named " +
                         field.fieldName().stringValue() +

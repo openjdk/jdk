@@ -40,7 +40,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.lang.classfile.ClassModel;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 
 public class CLTest {
     public static void main(String... args) throws Exception {
@@ -152,7 +152,7 @@ public class CLTest {
     }
 
     void checkClass(String name, InputStream in) throws Exception {
-        ClassModel cf = Classfile.of().parse(in.readAllBytes());
+        ClassModel cf = ClassFile.of().parse(in.readAllBytes());
         System.err.println("    class " + cf.thisClass().asInternalName());
         if (!name.equals(cf.thisClass().asInternalName() + ".class")) {
             error("unexpected class found: " + cf.thisClass().asInternalName());

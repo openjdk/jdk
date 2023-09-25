@@ -112,7 +112,7 @@ public class ParameterNamesAreNotCopiedToAnonymousInitTest {
     }
 
     void checkClassFile(final File cfile, int numberOfParams) throws Exception {
-        ClassModel classFile = Classfile.of().parse(cfile.toPath());
+        ClassModel classFile = ClassFile.of().parse(cfile.toPath());
         boolean methodFound = false;
         for (MethodModel method : classFile.methods()) {
             if (method.methodName().equalsString("<init>")) {

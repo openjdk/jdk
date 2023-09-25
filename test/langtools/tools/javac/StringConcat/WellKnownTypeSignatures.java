@@ -97,7 +97,7 @@ public class WellKnownTypeSignatures {
     public static void readIndyTypes() throws Exception {
         actualTypes = new ArrayList<String>();
 
-        ClassModel classFile = Classfile.of().parse(
+        ClassModel classFile = ClassFile.of().parse(
                         new File(
                                 System.getProperty("test.classes", "."),
                                 WellKnownTypeSignatures.class.getName() + ".class").toPath());

@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import jdk.internal.jimage.BasicImageReader;
 import jdk.internal.jimage.ImageLocation;
 
@@ -222,7 +222,7 @@ public class JImageValidator {
     }
 
     public static void readClass(byte[] clazz) throws IOException{
-        var errors = Classfile.of().parse(clazz).verify(null);
+        var errors = ClassFile.of().parse(clazz).verify(null);
         if (!errors.isEmpty()) {
             var itr = errors.iterator();
             var thrown = itr.next();

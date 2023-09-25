@@ -91,7 +91,7 @@ public class DuplicateConstantPoolEntry {
 
     void checkReference() throws IOException {
         File file = new File("A.class");
-        ClassModel classFile = Classfile.of().parse(file.toPath());
+        ClassModel classFile = ClassFile.of().parse(file.toPath());
         ConstantPool constantPool = classFile.constantPool();
         for (PoolEntry pe1 : constantPool) {
             for (PoolEntry pe2 : constantPool) {

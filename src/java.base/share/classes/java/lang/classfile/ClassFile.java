@@ -36,7 +36,7 @@ import java.lang.classfile.attribute.UnknownAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.impl.ClassfileImpl;
+import jdk.internal.classfile.impl.ClassFileImpl;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import java.lang.reflect.AccessFlag;
 import java.lang.classfile.attribute.CharacterRangeInfo;
@@ -48,27 +48,27 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * Represents a context for parsing, transforming, and generating classfiles.
- * A {@code Classfile} has a set of options that condition how parsing and
+ * A {@code ClassFile} has a set of options that condition how parsing and
  * generation is done.
  *
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-public sealed interface Classfile
-        permits ClassfileImpl {
+public sealed interface ClassFile
+        permits ClassFileImpl {
 
     /**
      * {@return a context with default options}
      */
-    static Classfile of() {
-        return ClassfileImpl.DEFAULT_CONTEXT;
+    static ClassFile of() {
+        return ClassFileImpl.DEFAULT_CONTEXT;
     }
 
     /**
      * {@return a new context with options altered from the default}
      * @param options the desired processing options
      */
-    static Classfile of(Option... options) {
+    static ClassFile of(Option... options) {
         return of().withOptions(options);
     }
 
@@ -76,7 +76,7 @@ public sealed interface Classfile
      * {@return a copy of the context with altered options}
      * @param options the desired processing options
      */
-    Classfile withOptions(Option... options);
+    ClassFile withOptions(Option... options);
 
     /**
      * An option that affects the parsing and writing of classfiles.
@@ -95,7 +95,7 @@ public sealed interface Classfile
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface AttributeMapperOption extends Option
-            permits ClassfileImpl.AttributeMapperOptionImpl {
+            permits ClassFileImpl.AttributeMapperOptionImpl {
 
         /**
          * {@return an option describing attribute mappers for custom attributes}
@@ -103,7 +103,7 @@ public sealed interface Classfile
          */
         static AttributeMapperOption of(Function<Utf8Entry, AttributeMapper<?>> attributeMapper) {
             requireNonNull(attributeMapper);
-            return new ClassfileImpl.AttributeMapperOptionImpl(attributeMapper);
+            return new ClassFileImpl.AttributeMapperOptionImpl(attributeMapper);
         }
 
         /**
@@ -120,7 +120,7 @@ public sealed interface Classfile
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface ClassHierarchyResolverOption extends Option
-            permits ClassfileImpl.ClassHierarchyResolverOptionImpl {
+            permits ClassFileImpl.ClassHierarchyResolverOptionImpl {
 
         /**
          * {@return an option describing the class hierarchy resolver to use when
@@ -129,7 +129,7 @@ public sealed interface Classfile
          */
         static ClassHierarchyResolverOption of(ClassHierarchyResolver classHierarchyResolver) {
             requireNonNull(classHierarchyResolver);
-            return new ClassfileImpl.ClassHierarchyResolverOptionImpl(classHierarchyResolver);
+            return new ClassFileImpl.ClassHierarchyResolverOptionImpl(classHierarchyResolver);
         }
 
         /**

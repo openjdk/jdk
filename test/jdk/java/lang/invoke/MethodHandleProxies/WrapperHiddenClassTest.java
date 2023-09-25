@@ -21,7 +21,7 @@
  * questions.
  */
 
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import jdk.test.lib.util.ForceGC;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -39,7 +39,7 @@ import java.util.Comparator;
 import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandleProxies.*;
 import static java.lang.invoke.MethodType.methodType;
-import static java.lang.classfile.Classfile.*;
+import static java.lang.classfile.ClassFile.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /*
@@ -83,7 +83,7 @@ public class WrapperHiddenClassTest {
     // Update this template when the MHP template is updated
     @SuppressWarnings("unchecked")
     private Comparator<Integer> createHostileInstance() throws Throwable {
-        var cf = Classfile.of();
+        var cf = ClassFile.of();
         var bytes = cf.build(CD_HostileWrapper, clb -> {
             clb.withSuperclass(CD_Object);
             clb.withFlags(ACC_FINAL | ACC_SYNTHETIC);

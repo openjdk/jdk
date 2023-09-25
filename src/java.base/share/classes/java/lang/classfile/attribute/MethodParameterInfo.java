@@ -29,7 +29,7 @@ import java.util.Set;
 
 import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.reflect.AccessFlag;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
@@ -52,8 +52,8 @@ public sealed interface MethodParameterInfo
 
     /**
      * Parameter access flags for this parameter, as a bit mask.  Valid
-     * parameter flags include {@link Classfile#ACC_FINAL},
-     * {@link Classfile#ACC_SYNTHETIC}, and {@link Classfile#ACC_MANDATED}.
+     * parameter flags include {@link ClassFile#ACC_FINAL},
+     * {@link ClassFile#ACC_SYNTHETIC}, and {@link ClassFile#ACC_MANDATED}.
      *
      * @return the access flags, as a bit mask
      */

@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @summary Testing Classfile arrays.
+ * @summary Testing ClassFile arrays.
  * @run junit ArrayTest
  */
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.MethodModel;
@@ -51,7 +51,7 @@ class ArrayTest {
 
     @Test
     void testArrayNew() throws Exception {
-        ClassModel cm = Classfile.of().parse(testClassPath);
+        ClassModel cm = ClassFile.of().parse(testClassPath);
 
         for (MethodModel mm : cm.methods()) {
             mm.code().ifPresent(code -> {

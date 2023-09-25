@@ -45,7 +45,7 @@ import java.util.function.Consumer;
 public final class BufferedCodeBuilder
         implements TerminalCodeBuilder, LabelContext {
     private final SplitConstantPool constantPool;
-    private final ClassfileImpl context;
+    private final ClassFileImpl context;
     private final List<CodeElement> elements = new ArrayList<>();
     private final LabelImpl startLabel, endLabel;
     private final CodeModel original;
@@ -55,7 +55,7 @@ public final class BufferedCodeBuilder
 
     public BufferedCodeBuilder(MethodInfo methodInfo,
                                SplitConstantPool constantPool,
-                               ClassfileImpl context,
+                               ClassFileImpl context,
                                CodeModel original) {
         this.constantPool = constantPool;
         this.context = context;

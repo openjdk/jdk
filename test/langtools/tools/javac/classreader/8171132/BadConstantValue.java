@@ -181,11 +181,11 @@ public class BadConstantValue {
      * B's type and A's ConstantValue attribute.
      */
     private static void swapConstantValues(File file) throws Exception {
-        ClassModel cf = Classfile.of().parse(file.toPath());
+        ClassModel cf = ClassFile.of().parse(file.toPath());
         FieldModel a = cf.fields().getFirst();
         FieldModel b = cf.fields().get(1);
-        byte[] Bytes = Classfile.of().transform(cf, ClassTransform
-                .dropping(ce -> ce instanceof ClassfileVersion || ce instanceof FieldModel)
+        byte[] Bytes = ClassFile.of().transform(cf, ClassTransform
+                .dropping(ce -> ce instanceof ClassFileVersion || ce instanceof FieldModel)
                 .andThen(ClassTransform.endHandler(classBuilder -> classBuilder
                         .withField(b.fieldName(), b.fieldType(), fieldBuilder -> {
                             fieldBuilder.withFlags(b.flags().flagsMask());

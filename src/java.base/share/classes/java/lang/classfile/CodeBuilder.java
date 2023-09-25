@@ -94,7 +94,7 @@ import jdk.internal.javac.PreviewFeature;
  * directly; they are passed to handlers by methods such as {@link
  * MethodBuilder#withCode(Consumer)} or to code transforms.  The elements of a
  * code can be specified abstractly, by passing a {@link CodeElement} to {@link
- * #with(ClassfileElement)} or concretely by calling the various {@code withXxx}
+ * #with(ClassFileElement)} or concretely by calling the various {@code withXxx}
  * methods.
  *
  * @see CodeTransform
@@ -103,7 +103,7 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CodeBuilder
-        extends ClassfileBuilder<CodeElement, CodeBuilder>
+        extends ClassFileBuilder<CodeElement, CodeBuilder>
         permits CodeBuilder.BlockCodeBuilder, ChainedCodeBuilder, TerminalCodeBuilder, NonterminalCodeBuilder {
 
     /**

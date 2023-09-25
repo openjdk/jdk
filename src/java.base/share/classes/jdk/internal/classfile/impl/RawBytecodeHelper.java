@@ -25,11 +25,11 @@
 package jdk.internal.classfile.impl;
 
 import java.nio.ByteBuffer;
-import static java.lang.classfile.Classfile.ASTORE_3;
-import static java.lang.classfile.Classfile.ISTORE;
-import static java.lang.classfile.Classfile.LOOKUPSWITCH;
-import static java.lang.classfile.Classfile.TABLESWITCH;
-import static java.lang.classfile.Classfile.WIDE;
+import static java.lang.classfile.ClassFile.ASTORE_3;
+import static java.lang.classfile.ClassFile.ISTORE;
+import static java.lang.classfile.ClassFile.LOOKUPSWITCH;
+import static java.lang.classfile.ClassFile.TABLESWITCH;
+import static java.lang.classfile.ClassFile.WIDE;
 
 public final class RawBytecodeHelper {
 

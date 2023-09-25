@@ -59,7 +59,7 @@ public class NonDirectSuper {
 
     void verifyInvokeSpecialRefToObject(File clazz) {
         try {
-            final ClassModel cf = Classfile.of().parse(clazz.toPath());
+            final ClassModel cf = ClassFile.of().parse(clazz.toPath());
             for (MethodModel m : cf.methods()) {
                 CodeAttribute codeAttr = m.findAttribute(Attributes.CODE).orElseThrow();
                 for (CodeElement ce : codeAttr.elementList()) {

@@ -94,7 +94,7 @@ import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
 import com.sun.source.util.JavacTask;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.platform.PlatformProvider;
@@ -285,7 +285,7 @@ public class ElementStructureTest {
                 }
                 JavaFileObject file = new ByteArrayJavaFileObject(data.toByteArray());
                 try (InputStream in = new ByteArrayInputStream(data.toByteArray())) {
-                    String name = Classfile.of().parse(in.readAllBytes()).thisClass().name().stringValue();
+                    String name = ClassFile.of().parse(in.readAllBytes()).thisClass().name().stringValue();
                     className2File.put(name, file);
                     file2ClassName.put(file, name);
                 } catch (IOException ex) {

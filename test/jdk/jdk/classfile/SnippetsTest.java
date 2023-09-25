@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Compile Classfile API snippets
+ * @summary Compile ClassFile API snippets
  * @run junit SnippetsTest
  */
 

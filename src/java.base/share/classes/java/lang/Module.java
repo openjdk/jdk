@@ -56,7 +56,7 @@ import java.lang.classfile.AccessFlags;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassTransform;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.attribute.ModuleAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 
@@ -1590,7 +1590,7 @@ public final class Module implements AnnotatedElement {
      */
     private Class<?> loadModuleInfoClass(InputStream in) throws IOException {
         final String MODULE_INFO = "module-info";
-        var cc = Classfile.of(Classfile.ConstantPoolSharingOption.NEW_POOL);
+        var cc = ClassFile.of(ClassFile.ConstantPoolSharingOption.NEW_POOL);
         byte[] bytes = cc.transform(cc.parse(in.readAllBytes()), (clb, cle) -> {
             switch (cle) {
                 case AccessFlags af -> clb.withFlags(AccessFlag.INTERFACE,

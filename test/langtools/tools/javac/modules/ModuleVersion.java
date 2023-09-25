@@ -112,7 +112,7 @@ public class ModuleVersion extends ModuleTestBase {
     }
 
     private void checkModuleVersion(Path classfile, String version) throws IOException {
-        ClassModel cm = Classfile.of().parse(classfile);
+        ClassModel cm = ClassFile.of().parse(classfile);
 
         ModuleAttribute moduleAttribute = cm.findAttribute(Attributes.MODULE).orElse(null);
 

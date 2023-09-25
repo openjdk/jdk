@@ -75,7 +75,7 @@ public class T8255757 extends TestRunner {
                 .outdir(curPath)
                 .run();
 
-        ClassModel cf = Classfile.of().parse(curPath.resolve("Test.class"));
+        ClassModel cf = ClassFile.of().parse(curPath.resolve("Test.class"));
         int num = 0;
         for (PoolEntry pe : cf.constantPool()) {
             if (pe instanceof MethodRefEntry methodRefEntry) {

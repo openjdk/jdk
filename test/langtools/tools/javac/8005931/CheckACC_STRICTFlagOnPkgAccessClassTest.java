@@ -89,10 +89,10 @@ public class CheckACC_STRICTFlagOnPkgAccessClassTest {
     }
 
     void check() throws IOException {
-        ClassModel classFileToCheck = Classfile.of().parse(new File("Test.class").toPath());
+        ClassModel classFileToCheck = ClassFile.of().parse(new File("Test.class").toPath());
 
         for (MethodModel method : classFileToCheck.methods()) {
-            if ((method.flags().flagsMask() & Classfile.ACC_STRICT) == 0) {
+            if ((method.flags().flagsMask() & ClassFile.ACC_STRICT) == 0) {
                 errors.add(String.format(offendingMethodErrorMessage,
                         method.methodName().stringValue(),
                         classFileToCheck.thisClass().asInternalName()));

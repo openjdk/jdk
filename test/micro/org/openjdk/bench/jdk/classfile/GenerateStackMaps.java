@@ -32,13 +32,13 @@ import java.nio.file.Files;
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.List;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassReader;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import jdk.internal.classfile.impl.CodeImpl;
 import jdk.internal.classfile.impl.LabelContext;
-import jdk.internal.classfile.impl.ClassfileImpl;
+import jdk.internal.classfile.impl.ClassFileImpl;
 import jdk.internal.classfile.impl.SplitConstantPool;
 import jdk.internal.classfile.impl.StackMapGenerator;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -73,11 +73,11 @@ public class GenerateStackMaps {
     List<GenData> data;
     Iterator<GenData> it;
     GenData d;
-    Classfile cc;
+    ClassFile cc;
 
     @Setup(Level.Trial)
     public void setup() throws IOException {
-        cc = Classfile.of();
+        cc = ClassFile.of();
         data = new ArrayList<>();
         Files.walk(FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java")).forEach(p ->  {
             if (Files.isRegularFile(p) && p.toString().endsWith(".class")) try {
@@ -92,7 +92,7 @@ public class GenerateStackMaps {
                                 thisCls,
                                 m.methodName().stringValue(),
                                 m.methodTypeSymbol(),
-                                (m.flags().flagsMask() & Classfile.ACC_STATIC) != 0,
+                                (m.flags().flagsMask() & ClassFile.ACC_STATIC) != 0,
                                 bb.slice(8, bb.getInt(4)),
                                 cp,
                                 com.exceptionHandlers().stream().map(eh -> (AbstractPseudoInstruction.ExceptionCatchImpl)eh).toList()));
@@ -117,7 +117,7 @@ public class GenerateStackMaps {
                 d.isStatic(),
                 d.bytecode().rewind(),
                 (SplitConstantPool)d.constantPool(),
-                (ClassfileImpl)cc,
+                (ClassFileImpl)cc,
                 d.handlers());
     }
 }

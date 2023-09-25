@@ -111,7 +111,7 @@ public class TypeAnnotationsPositionsOnRecords {
     }
 
     void checkClassFile(final File cfile, int... taPositions) throws Exception {
-        ClassModel classFile = Classfile.of().parse(cfile.toPath());
+        ClassModel classFile = ClassFile.of().parse(cfile.toPath());
         int accessorPos = 0;
         int checkedAccessors = 0;
         for (MethodModel method : classFile.methods()) {

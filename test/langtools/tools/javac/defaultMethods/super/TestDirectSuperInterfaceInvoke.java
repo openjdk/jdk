@@ -84,7 +84,7 @@ public class TestDirectSuperInterfaceInvoke {
         String workDir = System.getProperty("test.classes");
         File file = new File(workDir, classFile);
         try {
-            final ClassModel cf = Classfile.of().parse(file.toPath());
+            final ClassModel cf = ClassFile.of().parse(file.toPath());
             for (MethodModel m : cf.methods()) {
                 CodeAttribute codeAttr = m.findAttribute(Attributes.CODE).orElseThrow();
                 for (CodeElement ce : codeAttr.elementList()) {

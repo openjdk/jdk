@@ -80,7 +80,7 @@ public class FinallyLineNumberTest {
     }
 
     static List<LineNumberInfo> findEntries() throws IOException {
-        ClassModel self = Classfile.of().parse(FinallyLineNumberTest.class.getResourceAsStream("FinallyLineNumberTest.class").readAllBytes());
+        ClassModel self = ClassFile.of().parse(FinallyLineNumberTest.class.getResourceAsStream("FinallyLineNumberTest.class").readAllBytes());
         for (MethodModel m : self.methods()) {
             if (m.methodName().equalsString("method")) {
                 CodeAttribute code_attribute = m.findAttribute(Attributes.CODE).orElseThrow();

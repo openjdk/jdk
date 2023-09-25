@@ -96,7 +96,7 @@ public class DuplicatedCheckcastTest extends TestRunner {
                 .sources(source)
                 .outdir(curPath)
                 .run();
-        cf = Classfile.of().parse(curPath.resolve("IntersectionTypeTest.class"));
+        cf = ClassFile.of().parse(curPath.resolve("IntersectionTypeTest.class"));
         ArrayList<Instruction> checkCastList = new ArrayList<>();
         for (MethodModel method : cf.methods()) {
             if (method.methodName().equalsString("test")) {

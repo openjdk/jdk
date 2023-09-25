@@ -47,7 +47,7 @@ public final class BufferedMethodBuilder
         implements TerminalMethodBuilder, MethodInfo {
     private final List<MethodElement> elements;
     private final SplitConstantPool constantPool;
-    private final ClassfileImpl context;
+    private final ClassFileImpl context;
     private final Utf8Entry name;
     private final Utf8Entry desc;
     private AccessFlags flags;
@@ -56,7 +56,7 @@ public final class BufferedMethodBuilder
     MethodTypeDesc mDesc;
 
     public BufferedMethodBuilder(SplitConstantPool constantPool,
-                                 ClassfileImpl context,
+                                 ClassFileImpl context,
                                  Utf8Entry nameInfo,
                                  Utf8Entry typeInfo,
                                  MethodModel original) {

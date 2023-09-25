@@ -98,7 +98,7 @@ public class TwrSimpleClose {
             }
 
             byte[] data = fm.classBytes.values().iterator().next();
-            ClassModel cf = Classfile.of().parse(new ByteArrayInputStream(data).readAllBytes());
+            ClassModel cf = ClassFile.of().parse(new ByteArrayInputStream(data).readAllBytes());
 
             for (MethodModel m : cf.methods()) {
                 CodeAttribute codeAttr = m.findAttribute(Attributes.CODE).orElseThrow();

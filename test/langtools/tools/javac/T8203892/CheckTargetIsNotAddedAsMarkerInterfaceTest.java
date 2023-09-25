@@ -79,7 +79,7 @@ public class CheckTargetIsNotAddedAsMarkerInterfaceTest {
     }
 
     void checkClassFile(final File cfile) throws Exception {
-        ClassModel classFile = Classfile.of().parse(cfile.toPath());
+        ClassModel classFile = ClassFile.of().parse(cfile.toPath());
         for (Attribute<?> attr : classFile.attributes()) {
             if (attr instanceof BootstrapMethodsAttribute bsmAttr) {
                 BootstrapMethodEntry bsmSpecifier = bsmAttr.bootstrapMethods().getFirst();

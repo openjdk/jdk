@@ -39,22 +39,22 @@ import java.lang.classfile.constantpool.PoolEntry;
 public final class BufWriterImpl implements BufWriter {
 
     private final ConstantPoolBuilder constantPool;
-    private final ClassfileImpl context;
+    private final ClassFileImpl context;
     private LabelContext labelContext;
     private final ClassEntry thisClass;
     private final int majorVersion;
     byte[] elems;
     int offset = 0;
 
-    public BufWriterImpl(ConstantPoolBuilder constantPool, ClassfileImpl context) {
+    public BufWriterImpl(ConstantPoolBuilder constantPool, ClassFileImpl context) {
         this(constantPool, context, 64, null, 0);
     }
 
-    public BufWriterImpl(ConstantPoolBuilder constantPool, ClassfileImpl context, int initialSize) {
+    public BufWriterImpl(ConstantPoolBuilder constantPool, ClassFileImpl context, int initialSize) {
         this(constantPool, context, initialSize, null, 0);
     }
 
-    public BufWriterImpl(ConstantPoolBuilder constantPool, ClassfileImpl context, int initialSize, ClassEntry thisClass, int majorVersion) {
+    public BufWriterImpl(ConstantPoolBuilder constantPool, ClassFileImpl context, int initialSize, ClassEntry thisClass, int majorVersion) {
         this.constantPool = constantPool;
         this.context = context;
         elems = new byte[initialSize];
@@ -87,7 +87,7 @@ public final class BufWriterImpl implements BufWriter {
         return majorVersion;
     }
 
-    public ClassfileImpl context() {
+    public ClassFileImpl context() {
         return context;
     }
 

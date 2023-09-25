@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @summary Testing Classfile TransformExamples compilation.
+ * @summary Testing ClassFile TransformExamples compilation.
  * @compile TransformExamples.java
  */
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassTransform;
 import java.lang.classfile.FieldModel;
@@ -38,18 +38,18 @@ import java.lang.classfile.Attribute;
  */
 public class TransformExamples {
     public byte[] noop(ClassModel cm) {
-        return Classfile.of().transform(cm, ClassTransform.ACCEPT_ALL);
+        return ClassFile.of().transform(cm, ClassTransform.ACCEPT_ALL);
     }
 
     public byte[] deleteAllMethods(ClassModel cm) {
-        return Classfile.of().transform(cm, (b, e) -> {
+        return ClassFile.of().transform(cm, (b, e) -> {
             if (!(e instanceof MethodModel))
                 b.with(e);
         });
     }
 
     public byte[] deleteFieldsWithDollarInName(ClassModel cm) {
-        return Classfile.of().transform(cm, (b, e) ->
+        return ClassFile.of().transform(cm, (b, e) ->
                         {
                             if (!(e instanceof FieldModel fm && fm.fieldName().stringValue().contains("$")))
                                 b.with(e);
@@ -57,14 +57,14 @@ public class TransformExamples {
     }
 
     public byte[] deleteAttributes(ClassModel cm) {
-        return Classfile.of().transform(cm, (b, e) -> {
+        return ClassFile.of().transform(cm, (b, e) -> {
             if (!(e instanceof Attribute))
                 b.with(e);
         });
     }
 
     public byte[] keepMethodsAndFields(ClassModel cm) {
-        return Classfile.of().transform(cm, (b, e) -> {
+        return ClassFile.of().transform(cm, (b, e) -> {
             if (e instanceof MethodModel || e instanceof FieldModel)
                 b.with(e);
         });

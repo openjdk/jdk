@@ -111,7 +111,7 @@ public class TestBootstrapMethodsCount {
     void verifyBytecode() {
         File compiledTest = new File("Test.class");
         try {
-            ClassModel cf = Classfile.of().parse(compiledTest.toPath());
+            ClassModel cf = ClassFile.of().parse(compiledTest.toPath());
             BootstrapMethodsAttribute bsm_attr = cf.findAttribute(Attributes.BOOTSTRAP_METHODS).orElseThrow();
             int length = bsm_attr.bootstrapMethodsSize();
             if (length != 1) {

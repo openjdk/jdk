@@ -42,8 +42,8 @@ import java.lang.classfile.ClassElement;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassReader;
 import java.lang.classfile.ClassTransform;
-import java.lang.classfile.Classfile;
-import java.lang.classfile.ClassfileVersion;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassFileVersion;
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.FieldModel;
@@ -63,7 +63,7 @@ public final class ClassImpl
     private List<Attribute<?>> attributes;
     private List<ClassEntry> interfaces;
 
-    public ClassImpl(byte[] cfbytes, ClassfileImpl context) {
+    public ClassImpl(byte[] cfbytes, ClassFileImpl context) {
         this.reader = new ClassReaderImpl(cfbytes, context);
         ClassReaderImpl reader = (ClassReaderImpl) this.reader;
         int p = reader.interfacesPos;
@@ -156,7 +156,7 @@ public final class ClassImpl
     @Override
     public void forEachElement(Consumer<ClassElement> consumer) {
         consumer.accept(flags());
-        consumer.accept(ClassfileVersion.of(majorVersion(), minorVersion()));
+        consumer.accept(ClassFileVersion.of(majorVersion(), minorVersion()));
         superclass().ifPresent(new Consumer<ClassEntry>() {
             @Override
             public void accept(ClassEntry entry) {
@@ -187,7 +187,7 @@ public final class ClassImpl
         AccessFlags flags = flags();
         // move to where?
         return flags.has(AccessFlag.MODULE)
-               && majorVersion() >= Classfile.JAVA_9_VERSION
+               && majorVersion() >= ClassFile.JAVA_9_VERSION
                && thisClass().asInternalName().equals("module-info")
                && (superclass().isEmpty())
                && interfaces().isEmpty()

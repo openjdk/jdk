@@ -34,14 +34,14 @@ import jdk.internal.javac.PreviewFeature;
 /**
  * A transformation on streams of {@link MethodElement}.
  *
- * @see ClassfileTransform
+ * @see ClassFileTransform
  *
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 @FunctionalInterface
 public non-sealed interface MethodTransform
-        extends ClassfileTransform<MethodTransform, MethodElement, MethodBuilder> {
+        extends ClassFileTransform<MethodTransform, MethodElement, MethodBuilder> {
 
     /**
      * A method transform that sends all elements to the builder.

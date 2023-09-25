@@ -65,7 +65,7 @@ public class NoLocalsMustBeReservedForDCEedVarsTest {
                 .run();
 
         File cfile = new File(Paths.get(System.getProperty("user.dir"), "Test.class").toUri());
-        ClassModel classFile = Classfile.of().parse(cfile.toPath());
+        ClassModel classFile = ClassFile.of().parse(cfile.toPath());
         for (MethodModel method: classFile.methods()) {
             if (method.methodName().stringValue().equals("foo")) {
                 CodeAttribute codeAttr = method.findAttribute(Attributes.CODE).orElse(null);

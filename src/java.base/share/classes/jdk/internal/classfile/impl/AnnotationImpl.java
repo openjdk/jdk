@@ -30,7 +30,7 @@ import java.lang.classfile.constantpool.*;
 import java.lang.constant.ConstantDesc;
 import java.util.List;
 
-import static java.lang.classfile.Classfile.*;
+import static java.lang.classfile.ClassFile.*;
 
 public final class AnnotationImpl implements Annotation {
     private final Utf8Entry className;

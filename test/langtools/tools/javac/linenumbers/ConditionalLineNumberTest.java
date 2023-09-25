@@ -51,7 +51,7 @@ public class ConditionalLineNumberTest {
     }
 
     static List<LineNumberInfo> findEntries() throws IOException {
-        ClassModel self = Classfile.of().parse(ConditionalLineNumberTest.class.getResourceAsStream("ConditionalLineNumberTest.class").readAllBytes());
+        ClassModel self = ClassFile.of().parse(ConditionalLineNumberTest.class.getResourceAsStream("ConditionalLineNumberTest.class").readAllBytes());
         for (MethodModel m : self.methods()) {
             if (m.methodName().equalsString("method")) {
                 CodeAttribute code_attribute = m.findAttribute(Attributes.CODE).orElse(null);

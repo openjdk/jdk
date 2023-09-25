@@ -59,7 +59,7 @@ public class T7005371 {
     void verifyLocalVariableTypeTableAttr(File f) {
         System.err.println("verify: " + f);
         try {
-            ClassModel cf = Classfile.of().parse(f.toPath());
+            ClassModel cf = ClassFile.of().parse(f.toPath());
             MethodModel testMethod = null;
             for (MethodModel m : cf.methods()) {
                 if (m.methodName().equalsString(TEST_METHOD_NAME)) {

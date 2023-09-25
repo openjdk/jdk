@@ -42,7 +42,7 @@ import java.lang.classfile.ClassElement;
 import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassTransform;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
@@ -63,7 +63,7 @@ import java.lang.classfile.components.CodeRelabeler;
 class PackageSnippets {
     void enumerateFieldsMethods1(byte[] bytes) {
         // @start region="enumerateFieldsMethods1"
-        ClassModel cm = Classfile.of().parse(bytes);
+        ClassModel cm = ClassFile.of().parse(bytes);
         for (FieldModel fm : cm.fields())
             System.out.printf("Field %s%n", fm.fieldName().stringValue());
         for (MethodModel mm : cm.methods())
@@ -73,7 +73,7 @@ class PackageSnippets {
 
     void enumerateFieldsMethods2(byte[] bytes) {
         // @start region="enumerateFieldsMethods2"
-        ClassModel cm = Classfile.of().parse(bytes);
+        ClassModel cm = ClassFile.of().parse(bytes);
         for (ClassElement ce : cm) {
             switch (ce) {
                 case MethodModel mm -> System.out.printf("Method %s%n", mm.methodName().stringValue());
@@ -86,7 +86,7 @@ class PackageSnippets {
 
     void gatherDependencies1(byte[] bytes) {
         // @start region="gatherDependencies1"
-        ClassModel cm = Classfile.of().parse(bytes);
+        ClassModel cm = ClassFile.of().parse(bytes);
         Set<ClassDesc> dependencies = new HashSet<>();
 
         for (ClassElement ce : cm) {
@@ -109,7 +109,7 @@ class PackageSnippets {
 
     void gatherDependencies2(byte[] bytes) {
         // @start region="gatherDependencies2"
-        ClassModel cm = Classfile.of().parse(bytes);
+        ClassModel cm = ClassFile.of().parse(bytes);
         Set<ClassDesc> dependencies =
               cm.elementStream()
                 .flatMap(ce -> ce instanceof MethodModel mm ? mm.elementStream() : Stream.empty())
@@ -135,16 +135,16 @@ class PackageSnippets {
 
     void writeHelloWorld1() {
         // @start region="helloWorld1"
-        byte[] bytes = Classfile.of().build(CD_Hello,
-                clb -> clb.withFlags(Classfile.ACC_PUBLIC)
+        byte[] bytes = ClassFile.of().build(CD_Hello,
+                clb -> clb.withFlags(ClassFile.ACC_PUBLIC)
                           .withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void,
-                                      Classfile.ACC_PUBLIC,
+                                      ClassFile.ACC_PUBLIC,
                                       mb -> mb.withCode(
                                               cob -> cob.aload(0)
                                                         .invokespecial(ConstantDescs.CD_Object,
                                                                        ConstantDescs.INIT_NAME, ConstantDescs.MTD_void)
                                                         .return_()))
-                          .withMethod("main", MTD_void_StringArray, Classfile.ACC_PUBLIC + Classfile.ACC_STATIC,
+                          .withMethod("main", MTD_void_StringArray, ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC,
                                       mb -> mb.withCode(
                                               cob -> cob.getstatic(CD_System, "out", CD_PrintStream)
                                                         .ldc("Hello World")
@@ -155,15 +155,15 @@ class PackageSnippets {
 
     void writeHelloWorld2() {
         // @start region="helloWorld2"
-        byte[] bytes = Classfile.of().build(CD_Hello,
-                clb -> clb.withFlags(Classfile.ACC_PUBLIC)
+        byte[] bytes = ClassFile.of().build(CD_Hello,
+                clb -> clb.withFlags(ClassFile.ACC_PUBLIC)
                           .withMethodBody(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void,
-                                          Classfile.ACC_PUBLIC,
+                                          ClassFile.ACC_PUBLIC,
                                           cob -> cob.aload(0)
                                                     .invokespecial(ConstantDescs.CD_Object,
                                                                    ConstantDescs.INIT_NAME, ConstantDescs.MTD_void)
                                                     .return_())
-                          .withMethodBody("main", MTD_void_StringArray, Classfile.ACC_PUBLIC + Classfile.ACC_STATIC,
+                          .withMethodBody("main", MTD_void_StringArray, ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC,
                                           cob -> cob.getstatic(CD_System, "out", CD_PrintStream)
                                                     .ldc("Hello World")
                                                     .invokevirtual(CD_PrintStream, "println", MTD_void_String)
@@ -173,8 +173,8 @@ class PackageSnippets {
 
     void stripDebugMethods1(byte[] bytes) {
         // @start region="stripDebugMethods1"
-        ClassModel classModel = Classfile.of().parse(bytes);
-        byte[] newBytes = Classfile.of().build(classModel.thisClass().asSymbol(),
+        ClassModel classModel = ClassFile.of().parse(bytes);
+        byte[] newBytes = ClassFile.of().build(classModel.thisClass().asSymbol(),
                 classBuilder -> {
                     for (ClassElement ce : classModel) {
                         if (!(ce instanceof MethodModel mm
@@ -192,7 +192,7 @@ class PackageSnippets {
             if (!(element instanceof MethodModel mm && mm.methodName().stringValue().startsWith("debug")))
                 builder.with(element);
         };
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         byte[] newBytes = cc.transform(cc.parse(bytes), ct);
         // @end
     }
@@ -283,7 +283,7 @@ class PackageSnippets {
 
     void fooToBarUnrolled(ClassModel classModel) {
         // @start region="fooToBarUnrolled"
-        byte[] newBytes = Classfile.of().build(classModel.thisClass().asSymbol(),
+        byte[] newBytes = ClassFile.of().build(classModel.thisClass().asSymbol(),
             classBuilder -> {
               for (ClassElement ce : classModel) {
                   if (ce instanceof MethodModel mm) {
@@ -315,7 +315,7 @@ class PackageSnippets {
 
     void codeRelabeling(ClassModel classModel) {
         // @start region="codeRelabeling"
-        byte[] newBytes = Classfile.of().transform(classModel,
+        byte[] newBytes = ClassFile.of().transform(classModel,
                 ClassTransform.transformingMethodBodies(
                         CodeTransform.ofStateful(CodeRelabeler::of)));
         // @end
@@ -329,7 +329,7 @@ class PackageSnippets {
         var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
         var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
         var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
-        return Classfile.of().transform(target,
+        return ClassFile.of().transform(target,
                 ClassTransform.transformingMethods(
                         instrumentedMethodsFilter,
                         (mb, me) -> {

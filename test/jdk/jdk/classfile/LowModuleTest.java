@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile low module attribute.
+ * @summary Testing ClassFile low module attribute.
  * @run junit LowModuleTest
  */
 import java.io.IOException;
@@ -34,7 +34,7 @@ import java.nio.file.Path;
 
 import java.lang.classfile.Attribute;
 import java.lang.classfile.ClassModel;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.attribute.*;
 import java.lang.classfile.constantpool.ClassEntry;
@@ -66,7 +66,7 @@ class LowModuleTest {
     void testRead(Path path, TestInfo test) throws Exception {
         try {
             printf("%nCHECK %s%n", test.getDisplayName());
-            ClassModel classLow = Classfile.of().parse(path);
+            ClassModel classLow = ClassFile.of().parse(path);
             testRead0(classLow);
         } catch(Exception ex) {
             System.err.printf("%nFAIL %s - %s%n", path, ex);

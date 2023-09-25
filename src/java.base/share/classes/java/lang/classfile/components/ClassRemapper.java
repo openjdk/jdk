@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassTransform;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeTransform;
 import java.lang.classfile.FieldTransform;
 import java.lang.classfile.MethodTransform;
@@ -102,11 +102,11 @@ public sealed interface ClassRemapper extends ClassTransform permits ClassRemapp
 
     /**
      * Remaps the whole ClassModel into a new class file, including the class name.
-     * @param context Classfile context
+     * @param context ClassFile context
      * @param clm class model to re-map
      * @return re-mapped class file bytes
      */
-    default byte[] remapClass(Classfile context, ClassModel clm) {
+    default byte[] remapClass(ClassFile context, ClassModel clm) {
         return context.transform(clm, map(clm.thisClass().asSymbol()), this);
     }
 }

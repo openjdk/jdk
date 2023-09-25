@@ -33,14 +33,14 @@ import jdk.internal.javac.PreviewFeature;
 /**
  * A transformation on streams of {@link CodeElement}.
  *
- * @see ClassfileTransform
+ * @see ClassFileTransform
  *
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 @FunctionalInterface
 public non-sealed interface CodeTransform
-        extends ClassfileTransform<CodeTransform, CodeElement, CodeBuilder> {
+        extends ClassFileTransform<CodeTransform, CodeElement, CodeBuilder> {
 
     /**
      * A code transform that sends all elements to the builder.

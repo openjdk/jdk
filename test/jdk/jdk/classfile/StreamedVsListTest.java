@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @summary Testing Classfile streaming versus model.
+ * @summary Testing ClassFile streaming versus model.
  * @run junit StreamedVsListTest
  */
 import java.lang.classfile.ClassModel;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.MethodModel;
@@ -76,7 +76,7 @@ class StreamedVsListTest {
 
     private class Vs {
         boolean failed;
-        ClassModel cm = Classfile.of().parse(fileBytes);
+        ClassModel cm = ClassFile.of().parse(fileBytes);
         String meth;
         CodeElement iim;
         CodeElement mim;

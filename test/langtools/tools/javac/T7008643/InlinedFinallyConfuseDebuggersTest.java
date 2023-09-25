@@ -96,7 +96,7 @@ public class InlinedFinallyConfuseDebuggersTest {
     }
 
     void checkClassFile(final File cfile, String methodToFind) throws Exception {
-        ClassModel classFile = Classfile.of().parse(cfile.toPath());
+        ClassModel classFile = ClassFile.of().parse(cfile.toPath());
         boolean methodFound = false;
         for (MethodModel m : classFile.methods()) {
             if (m.methodName().equalsString(methodToFind)) {

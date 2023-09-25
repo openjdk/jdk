@@ -34,7 +34,7 @@
  * @run main PreviewTest
  */
 import java.lang.classfile.ClassModel;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.io.InputStream;
 import java.nio.file.Files;
 import toolbox.JavacTask;
@@ -477,7 +477,7 @@ public class PreviewTest extends TestRunner {
 
     private void checkPreviewClassfile(Path p, boolean preview) throws Exception {
         try (InputStream in = Files.newInputStream(p)) {
-            ClassModel cf = Classfile.of().parse(in.readAllBytes());
+            ClassModel cf = ClassFile.of().parse(in.readAllBytes());
             if (preview && cf.minorVersion() != 65535) {
                 throw new IllegalStateException("Expected preview class, but got: " + cf.minorVersion() + " for: " + p.toString());
             } else if (!preview && cf.minorVersion() != 0) {

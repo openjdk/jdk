@@ -88,7 +88,7 @@ public class InnerClassCannotBeVerified {
     private void check(CompilationKind ck) throws IOException {
         try {
             File file = new File("Test$1.class");
-            ClassModel classFile = Classfile.of().parse(file.toPath());
+            ClassModel classFile = ClassFile.of().parse(file.toPath());
             if (ck == CompilationKind.POST_NESTMATES) {
                 throw new AssertionError("Unexpected constructor tag class!");
             }

@@ -24,7 +24,7 @@
  */
 package java.lang.classfile.instruction;
 
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.PseudoInstruction;
@@ -36,7 +36,7 @@ import jdk.internal.javac.PreviewFeature;
  * A pseudo-instruction which models a single entry in the
  * {@link LineNumberTableAttribute}.  Delivered as a {@link CodeElement}
  * during traversal of the elements of a {@link CodeModel}, according to
- * the setting of the {@link Classfile.LineNumbersOption} option.
+ * the setting of the {@link ClassFile.LineNumbersOption} option.
  *
  * @see PseudoInstruction
  *

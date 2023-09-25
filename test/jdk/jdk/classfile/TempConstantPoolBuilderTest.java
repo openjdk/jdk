@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile TempConstantPoolBuilder.
+ * @summary Testing ClassFile TempConstantPoolBuilder.
  * @run junit TempConstantPoolBuilderTest
  */
 import java.lang.classfile.*;
@@ -53,7 +53,7 @@ class TempConstantPoolBuilderTest {
 
     @Test
     void addAnno() {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         byte[] bytes = cc.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC)
               .with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))

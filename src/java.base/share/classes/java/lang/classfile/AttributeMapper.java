@@ -68,13 +68,13 @@ public interface AttributeMapper<A> {
 
         /**
          * The attribute may contain indexes into structured not managed by the library (type variable lists, etc)
-         * and so we consult the {@link Classfile.AttributesProcessingOption} option to determine whether to preserve
+         * and so we consult the {@link ClassFile.AttributesProcessingOption} option to determine whether to preserve
          * or drop it during transformation.
          */
         UNSTABLE,
 
         /**
-         * The attribute is completely unknown and so we consult the {@link Classfile.AttributesProcessingOption} option
+         * The attribute is completely unknown and so we consult the {@link ClassFile.AttributesProcessingOption} option
          * to determine whether to preserve or drop it during transformation.
          */
         UNKNOWN
@@ -108,10 +108,10 @@ public interface AttributeMapper<A> {
      * {@return The earliest classfile version for which this attribute is
      * applicable}
      *
-     * @implSpec The default implementation returns {@link Classfile#JAVA_1_VERSION}
+     * @implSpec The default implementation returns {@link ClassFile#JAVA_1_VERSION}
      */
     default int validSince() {
-        return Classfile.JAVA_1_VERSION;
+        return ClassFile.JAVA_1_VERSION;
     }
 
     /**

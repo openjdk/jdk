@@ -80,7 +80,7 @@ public class NestedPatternVariablesBytecode extends TestRunner {
                 .outdir(curPath)
                 .run();
 
-        cf = Classfile.of().parse(curPath.resolve("NestedPatterVariablesTest.class"));
+        cf = ClassFile.of().parse(curPath.resolve("NestedPatterVariablesTest.class"));
         MethodModel testMethod = cf.methods().stream()
                                   .filter(this::isTestMethod)
                                   .findAny()

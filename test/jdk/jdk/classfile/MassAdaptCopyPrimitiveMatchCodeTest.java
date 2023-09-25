@@ -23,12 +23,12 @@
 
 /*
  * @test
- * @summary Testing Classfile massive class adaptation.
+ * @summary Testing ClassFile massive class adaptation.
  * @run junit MassAdaptCopyPrimitiveMatchCodeTest
  */
 import helpers.InstructionModelToCodeBuilder;
 import java.lang.reflect.AccessFlag;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassModel;
@@ -94,7 +94,7 @@ class MassAdaptCopyPrimitiveMatchCodeTest {
 
     void copy(String name, byte[] bytes) throws Exception {
         //System.err.printf("MassAdaptCopyPrimitiveMatchCodeTest - %s%n", name);
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         ClassModel cm =cc.parse(bytes);
         Map<String, byte[]> m2b = new HashMap<>();
         Map<String, CodeAttribute> m2c = new HashMap<>();

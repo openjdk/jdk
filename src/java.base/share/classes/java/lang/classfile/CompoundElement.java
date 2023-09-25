@@ -35,7 +35,7 @@ import java.util.stream.StreamSupport;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * A {@link ClassfileElement} that has complex structure defined in terms of
+ * A {@link ClassFileElement} that has complex structure defined in terms of
  * other classfile elements, such as a method, field, method body, or entire
  * class.  When encountering a {@linkplain CompoundElement}, clients have the
  * option to treat the element as a single entity (e.g., an entire method)
@@ -46,8 +46,8 @@ import jdk.internal.javac.PreviewFeature;
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-public sealed interface CompoundElement<E extends ClassfileElement>
-        extends ClassfileElement, Iterable<E>
+public sealed interface CompoundElement<E extends ClassFileElement>
+        extends ClassFileElement, Iterable<E>
         permits ClassModel, CodeModel, FieldModel, MethodModel, jdk.internal.classfile.impl.AbstractUnboundModel {
     /**
      * Invoke the provided handler with each element contained in this

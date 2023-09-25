@@ -172,8 +172,8 @@ public class TestClassNameWarning extends TestRunner {
                 .files(tb.findJavaFiles(src))
                 .run()
                 .writeAll();
-        ClassModel cm = Classfile.of().parse(classes.resolve("A.class"));
-        Classfile.of().buildTo(
+        ClassModel cm = ClassFile.of().parse(classes.resolve("A.class"));
+        ClassFile.of().buildTo(
                 classes.resolve("Z.class"),
                 ClassDesc.of("0"), cb -> {
                     for (ClassElement ce : cm) {

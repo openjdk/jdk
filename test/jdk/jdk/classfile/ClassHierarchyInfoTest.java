@@ -28,7 +28,7 @@
  *          java.base/java.util:open
  * @comment Opens java.util so HashMap bytecode generation can access its nested
  *          classes with a proper Lookup object
- * @summary Testing Classfile class hierarchy resolution SPI.
+ * @summary Testing ClassFile class hierarchy resolution SPI.
  * @run junit ClassHierarchyInfoTest
  */
 import java.io.IOException;
@@ -44,7 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.lang.classfile.ClassHierarchyResolver;
 
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.MethodModel;
 import jdk.internal.classfile.impl.Util;
@@ -121,8 +121,8 @@ class ClassHierarchyInfoTest {
 
     void transformAndVerifySingle(ClassHierarchyResolver res) throws Exception {
         Path path = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util/HashMap.class");
-        var classModel = Classfile.of().parse(path);
-        byte[] newBytes = Classfile.of(Classfile.ClassHierarchyResolverOption.of(res)).transform(classModel,
+        var classModel = ClassFile.of().parse(path);
+        byte[] newBytes = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(res)).transform(classModel,
                 (clb, cle) -> {
                     if (cle instanceof MethodModel mm) {
                         clb.transformMethod(mm, (mb, me) -> {
@@ -136,7 +136,7 @@ class ClassHierarchyInfoTest {
                     else
                         clb.with(cle);
                 });
-        var errors = Classfile.of().parse(newBytes).verify(null);
+        var errors = ClassFile.of().parse(newBytes).verify(null);
         if (!errors.isEmpty()) {
             var itr = errors.iterator();
             var thrown = itr.next();

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile bootstrap methods.
+ * @summary Testing ClassFile bootstrap methods.
  * @run junit BSMTest
  */
 import java.lang.constant.ClassDesc;
@@ -58,7 +58,7 @@ public class BSMTest {
 
     @Test
     void testSevenOfThirteenIterator() throws Exception {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         ClassModel cm = cc.parse(testClassPath);
         byte[] newBytes = cc.transform(cm, (cb, ce) -> {
             if (ce instanceof MethodModel mm) {

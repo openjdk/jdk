@@ -37,7 +37,7 @@ import jdk.internal.javac.PreviewFeature;
  * the code table and line numbers in the source file.
  * Delivered as a {@link java.lang.classfile.instruction.LineNumber} when traversing the
  * elements of a {@link java.lang.classfile.CodeModel}, according to the setting of the
- * {@link java.lang.classfile.Classfile.LineNumbersOption} option.
+ * {@link java.lang.classfile.ClassFile.LineNumbersOption} option.
  * <p>
  * The attribute permits multiple instances in a given location.
  *

@@ -63,13 +63,13 @@ public class ClassfileTestHelper {
         URL url = getClass().getResource(name);
         assert url != null;
         try (InputStream in = url.openStream()) {
-            return Classfile.of().parse(in.readAllBytes());
+            return ClassFile.of().parse(in.readAllBytes());
         }
     }
 
     ClassModel getClassFile(URL url) throws IOException {
         try (InputStream in = url.openStream()) {
-            return Classfile.of().parse(in.readAllBytes());
+            return ClassFile.of().parse(in.readAllBytes());
         }
     }
 

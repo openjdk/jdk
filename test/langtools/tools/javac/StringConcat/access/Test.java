@@ -177,7 +177,7 @@ public class Test {
     public static void readIndyTypes() throws Exception {
         actualTypes = new ArrayList<String>();
 
-        ClassModel classFile = Classfile.of().parse(new File(System.getProperty("test.classes", "."),
+        ClassModel classFile = ClassFile.of().parse(new File(System.getProperty("test.classes", "."),
                     Test.class.getName() + ".class").toPath());
 
         for (MethodModel method : classFile.methods()) {

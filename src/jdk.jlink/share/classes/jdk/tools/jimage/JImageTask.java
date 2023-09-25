@@ -40,7 +40,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.lang.classfile.ClassModel;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.MethodModel;
 
@@ -368,7 +368,7 @@ class JImageTask {
         if (name.endsWith(".class") && !name.endsWith("module-info.class")) {
             try {
                 byte[] bytes = reader.getResource(location);
-                Classfile.of().parse(bytes).forEachElement(cle -> {
+                ClassFile.of().parse(bytes).forEachElement(cle -> {
                     if (cle instanceof MethodModel mm) mm.forEachElement(me -> {
                         if (me instanceof CodeModel com) com.forEachElement(coe -> {
                             //do nothing here, just visit each model element

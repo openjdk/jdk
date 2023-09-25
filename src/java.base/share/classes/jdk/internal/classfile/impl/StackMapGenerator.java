@@ -28,7 +28,7 @@ package jdk.internal.classfile.impl;
 import java.lang.constant.ClassDesc;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantDynamicEntry;
 import java.lang.classfile.constantpool.DynamicConstantPoolEntry;
@@ -43,7 +43,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.lang.classfile.Attribute;
 
-import static java.lang.classfile.Classfile.*;
+import static java.lang.classfile.ClassFile.*;
 import java.lang.classfile.BufWriter;
 import java.lang.classfile.Label;
 import java.lang.classfile.attribute.StackMapTableAttribute;
@@ -225,7 +225,7 @@ public final class StackMapGenerator {
                      boolean isStatic,
                      ByteBuffer bytecode,
                      SplitConstantPool cp,
-                     ClassfileImpl context,
+                     ClassFileImpl context,
                      List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers) {
         this.thisType = Type.referenceType(thisClass);
         this.methodName = methodName;
@@ -237,8 +237,8 @@ public final class StackMapGenerator {
         this.handlers = handlers;
         this.rawHandlers = new ArrayList<>(handlers.size());
         this.classHierarchy = new ClassHierarchyImpl(context.classHierarchyResolverOption().classHierarchyResolver());
-        this.patchDeadCode = context.deadCodeOption() == Classfile.DeadCodeOption.PATCH_DEAD_CODE;
-        this.filterDeadLabels = context.deadLabelsOption() == Classfile.DeadLabelsOption.DROP_DEAD_LABELS;
+        this.patchDeadCode = context.deadCodeOption() == ClassFile.DeadCodeOption.PATCH_DEAD_CODE;
+        this.filterDeadLabels = context.deadLabelsOption() == ClassFile.DeadLabelsOption.DROP_DEAD_LABELS;
         this.currentFrame = new Frame(classHierarchy);
         generate();
     }
@@ -838,7 +838,7 @@ public final class StackMapGenerator {
                 methodDesc.parameterList().stream().map(ClassDesc::displayName).collect(Collectors.joining(","))));
         //try to attach debug info about corrupted bytecode to the message
         try {
-            var cc = Classfile.of();
+            var cc = ClassFile.of();
             var clm = cc.parse(cc.build(cp.classEntry(thisType.sym()), cp, clb ->
                     clb.withMethod(methodName, methodDesc, isStatic ? ACC_STATIC : 0, mb ->
                             ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.CODE) {

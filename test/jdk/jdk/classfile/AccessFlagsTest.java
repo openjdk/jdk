@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile AccessFlags.
+ * @summary Testing ClassFile AccessFlags.
  * @run junit AccessFlagsTest
  */
 import java.util.EnumSet;

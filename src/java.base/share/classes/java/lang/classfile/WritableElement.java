@@ -39,7 +39,7 @@ import jdk.internal.javac.PreviewFeature;
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-public sealed interface WritableElement<T> extends ClassfileElement
+public sealed interface WritableElement<T> extends ClassFileElement
         permits Annotation, AnnotationElement, AnnotationValue, Attribute,
                 PoolEntry, BootstrapMethodEntry, FieldModel, MethodModel,
                 ConstantPoolBuilder, DirectFieldBuilder, DirectMethodBuilder {

@@ -51,14 +51,14 @@ import java.lang.classfile.attribute.UnknownAttribute;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * A {@link ClassfileElement} that can appear when traversing the elements
+ * A {@link ClassFileElement} that can appear when traversing the elements
  * of a {@link ClassModel} or be presented to a {@link ClassBuilder}.
  *
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-public sealed interface ClassElement extends ClassfileElement
-        permits AccessFlags, Superclass, Interfaces, ClassfileVersion,
+public sealed interface ClassElement extends ClassFileElement
+        permits AccessFlags, Superclass, Interfaces, ClassFileVersion,
                 FieldModel, MethodModel,
                 CustomAttribute, CompilationIDAttribute, DeprecatedAttribute,
                 EnclosingMethodAttribute, InnerClassesAttribute,

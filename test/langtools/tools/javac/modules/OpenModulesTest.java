@@ -232,10 +232,10 @@ public class OpenModulesTest extends ModuleTestBase {
             .writeAll();
 
         Path miClass = m1Classes.resolve("module-info.class");
-        ClassModel cm = Classfile.of().parse(miClass);
+        ClassModel cm = ClassFile.of().parse(miClass);
         ModuleAttribute module = cm.findAttribute(Attributes.MODULE).orElseThrow();
         ModuleAttribute newModule = ModuleAttribute.of(module.moduleName(),
-                                                          module.moduleFlagsMask() | Classfile.ACC_OPEN,
+                                                          module.moduleFlagsMask() | ClassFile.ACC_OPEN,
                                                           module.moduleVersion().orElse(null),
                                                           module.requires(),
                                                           module.exports(),
@@ -243,7 +243,7 @@ public class OpenModulesTest extends ModuleTestBase {
                                                           module.uses(),
                                                           module.provides());
 
-        byte[] newBytes = Classfile.of().transform(cm, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
+        byte[] newBytes = ClassFile.of().transform(cm, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
                 andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(newModule))));
         try (OutputStream out = Files.newOutputStream(miClass)) {
             out.write(newBytes);

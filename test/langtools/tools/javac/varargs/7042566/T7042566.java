@@ -270,7 +270,7 @@ public class T7042566 extends ComboInstance<T7042566> {
 
     void verifyBytecode(Result<Iterable<? extends JavaFileObject>> res, VarargsMethod selected) {
         try (InputStream is = res.get().iterator().next().openInputStream()) {
-            ClassModel cf = Classfile.of().parse(is.readAllBytes());
+            ClassModel cf = ClassFile.of().parse(is.readAllBytes());
             MethodModel testMethod = null;
             for (MethodModel m : cf.methods()) {
                 if (m.methodName().equalsString("test")) {

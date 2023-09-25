@@ -98,10 +98,10 @@ public class T8193717 {
     }
 
     private byte[] generateClassFile(String name) throws IOException {
-        byte[] bytes = Classfile.of().build(ClassDesc.of(name), classBuilder -> {
+        byte[] bytes = ClassFile.of().build(ClassDesc.of(name), classBuilder -> {
             classBuilder.withSuperclass(ClassDesc.ofInternalName("java/lang/Object"))
                     .withVersion(51, 0)
-                    .withFlags(Classfile.ACC_ABSTRACT | Classfile.ACC_INTERFACE | Classfile.ACC_PUBLIC);
+                    .withFlags(ClassFile.ACC_ABSTRACT | ClassFile.ACC_INTERFACE | ClassFile.ACC_PUBLIC);
         });
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         baos.write(bytes);

@@ -296,7 +296,7 @@ public class ClassReader {
             currentCpInfoOffset += cpInfoSize;
         }
         maxStringLength = currentMaxStringLength;
-        // The Classfile's access_flags field is just after the last constant pool entry.
+        // The ClassFile's access_flags field is just after the last constant pool entry.
         header = currentCpInfoOffset;
 
         // Allocate the cache of ConstantDynamic values, if there is at least one.

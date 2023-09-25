@@ -83,7 +83,7 @@ public class LocalVariableTable {
             return;
         }
 
-        ClassModel cm = Classfile.of().parse(Objects.requireNonNull(getClass().getResource(c.getName() + ".class")).openStream().readAllBytes());
+        ClassModel cm = ClassFile.of().parse(Objects.requireNonNull(getClass().getResource(c.getName() + ".class")).openStream().readAllBytes());
         MethodModel m = getLambdaMethod(cm);
         if (m == null) {
             error("lambda method not found");

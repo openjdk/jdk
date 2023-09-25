@@ -33,7 +33,7 @@ import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassTransform;
 import java.lang.classfile.CodeModel;
@@ -108,7 +108,7 @@ class PackageSnippets {
         // @start region="singleClassRemap"
         var classRemapper = ClassRemapper.of(
                 Map.of(CD_Foo, CD_Bar));
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         for (var classModel : allMyClasses) {
             byte[] newBytes = classRemapper.remapClass(cc, classModel);
 
@@ -120,7 +120,7 @@ class PackageSnippets {
         // @start region="allPackageRemap"
         var classRemapper = ClassRemapper.of(cd ->
                 ClassDesc.ofDescriptor(cd.descriptorString().replace("Lcom/oldpackage/", "Lcom/newpackage/")));
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         for (var classModel : allMyClasses) {
             byte[] newBytes = classRemapper.remapClass(cc, classModel);
 
@@ -130,7 +130,7 @@ class PackageSnippets {
 
     void codeLocalsShifting(ClassModel classModel) {
         // @start region="codeLocalsShifting"
-        byte[] newBytes = Classfile.of().transform(
+        byte[] newBytes = ClassFile.of().transform(
                 classModel,
                 (classBuilder, classElement) -> {
                     if (classElement instanceof MethodModel method)
@@ -145,7 +145,7 @@ class PackageSnippets {
 
     void codeRelabeling(ClassModel classModel) {
         // @start region="codeRelabeling"
-        byte[] newBytes = Classfile.of().transform(
+        byte[] newBytes = ClassFile.of().transform(
                 classModel,
                 ClassTransform.transformingMethodBodies(
                         CodeTransform.ofStateful(CodeRelabeler::of)));
@@ -160,7 +160,7 @@ class PackageSnippets {
         var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
         var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
         var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
-        return Classfile.of().transform(target,
+        return ClassFile.of().transform(target,
                 ClassTransform.transformingMethods(
                         instrumentedMethodsFilter,
                         (mb, me) -> {

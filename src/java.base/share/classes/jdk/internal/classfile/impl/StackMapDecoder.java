@@ -37,7 +37,7 @@ import java.lang.classfile.attribute.StackMapFrameInfo;
 import java.lang.classfile.attribute.StackMapFrameInfo.*;
 import java.lang.classfile.ClassReader;
 
-import static java.lang.classfile.Classfile.*;
+import static java.lang.classfile.ClassFile.*;
 import java.lang.classfile.Label;
 import java.lang.classfile.MethodModel;
 

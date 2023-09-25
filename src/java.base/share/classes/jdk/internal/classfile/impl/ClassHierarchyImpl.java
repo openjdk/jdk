@@ -39,7 +39,7 @@ import java.util.function.Function;
 import java.lang.classfile.ClassHierarchyResolver;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
-import static java.lang.classfile.Classfile.*;
+import static java.lang.classfile.ClassFile.*;
 import static java.util.Objects.requireNonNull;
 
 /**

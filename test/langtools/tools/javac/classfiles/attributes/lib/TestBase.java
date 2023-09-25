@@ -128,7 +128,7 @@ public class TestBase {
      * @throws IOException if I/O error occurs
      */
     public ClassModel readClassFile(InputStream is) throws IOException {
-        return Classfile.of().parse(is.readAllBytes());
+        return ClassFile.of().parse(is.readAllBytes());
     }
 
     /**

@@ -35,7 +35,7 @@ import java.lang.classfile.BufWriter;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.ClassModel;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.FieldBuilder;
 import java.lang.classfile.FieldModel;
@@ -61,15 +61,15 @@ public final class DirectClassBuilder
     private int sizeHint;
 
     public DirectClassBuilder(SplitConstantPool constantPool,
-                              ClassfileImpl context,
+                              ClassFileImpl context,
                               ClassEntry thisClass) {
         super(constantPool, context);
         this.thisClassEntry = AbstractPoolEntry.maybeClone(constantPool, thisClass);
-        this.flags = Classfile.DEFAULT_CLASS_FLAGS;
+        this.flags = ClassFile.DEFAULT_CLASS_FLAGS;
         this.superclassEntry = null;
         this.interfaceEntries = Collections.emptyList();
-        this.majorVersion = Classfile.latestMajorVersion();
-        this.minorVersion = Classfile.latestMinorVersion();
+        this.majorVersion = ClassFile.latestMajorVersion();
+        this.minorVersion = ClassFile.latestMinorVersion();
     }
 
     @Override
@@ -159,7 +159,7 @@ public final class DirectClassBuilder
         ClassEntry superclass = superclassEntry;
         if (superclass != null)
             superclass = AbstractPoolEntry.maybeClone(constantPool, superclass);
-        else if ((flags & Classfile.ACC_MODULE) == 0 && !"java/lang/Object".equals(thisClassEntry.asInternalName()))
+        else if ((flags & ClassFile.ACC_MODULE) == 0 && !"java/lang/Object".equals(thisClassEntry.asInternalName()))
             superclass = constantPool.classEntry(ConstantDescs.CD_Object);
         List<ClassEntry> ies = new ArrayList<>(interfaceEntries.size());
         for (ClassEntry ce : interfaceEntries)
@@ -185,7 +185,7 @@ public final class DirectClassBuilder
         }
 
         // Now we can make the head
-        head.writeInt(Classfile.MAGIC_NUMBER);
+        head.writeInt(ClassFile.MAGIC_NUMBER);
         head.writeU2(minorVersion);
         head.writeU2(majorVersion);
         constantPool.writeTo(head);

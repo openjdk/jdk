@@ -38,7 +38,7 @@ import jdk.internal.javac.PreviewFeature;
  * traversing the elements of a {@linkplain CodeModel}, {@linkplain Label}
  * markers will be delivered at the position to which they correspond.  A label
  * can be bound to the current position within a {@linkplain CodeBuilder} via
- * {@link CodeBuilder#labelBinding(Label)} or {@link CodeBuilder#with(ClassfileElement)}.
+ * {@link CodeBuilder#labelBinding(Label)} or {@link CodeBuilder#with(ClassFileElement)}.
  *
  * @since 22
  */

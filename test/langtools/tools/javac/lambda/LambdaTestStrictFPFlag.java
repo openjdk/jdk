@@ -56,13 +56,13 @@ public class LambdaTestStrictFPFlag {
         }
     }
 
-// this version of the code can be used when Classfile API in not in a preview
+// this version of the code can be used when ClassFile API in not in a preview
 //    void run() throws Exception {
 //        ClassModel cm = getClassFile("LambdaTestStrictFPFlag$Test.class");
 //        boolean found = false;
 //        for (MethodModel meth: cm.methods()) {
 //            if (meth.methodName().stringValue().startsWith("lambda$")) {
-//                if ((meth.flags().flagsMask() & Classfile.ACC_STRICT) == 0){
+//                if ((meth.flags().flagsMask() & ClassFile.ACC_STRICT) == 0){
 //                    throw new Exception("strict flag missing from lambda");
 //                }
 //                found = true;

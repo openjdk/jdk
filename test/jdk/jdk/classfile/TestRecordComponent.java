@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile RecordComponent.
+ * @summary Testing ClassFile RecordComponent.
  * @run junit TestRecordComponent
  */
 import java.lang.annotation.ElementType;
@@ -39,7 +39,7 @@ import helpers.ClassRecord;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassTransform;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.attribute.RecordAttribute;
 import java.lang.classfile.attribute.RecordComponentInfo;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
@@ -53,7 +53,7 @@ class TestRecordComponent {
 
     @Test
     void testAdapt() throws Exception {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         ClassModel cm = cc.parse(Files.readAllBytes(testClassPath));
         ClassTransform xform = (cb, ce) -> {
             if (ce instanceof RecordAttribute rm) {
@@ -71,7 +71,7 @@ class TestRecordComponent {
 
     @Test
     void testPassThrough() throws Exception {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         ClassModel cm = cc.parse(Files.readAllBytes(testClassPath));
         ClassTransform xform = (cb, ce) -> cb.with(ce);
         ClassModel newModel = cc.parse(cc.transform(cm, xform));
@@ -80,7 +80,7 @@ class TestRecordComponent {
 
     @Test
     void testChagne() throws Exception {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         ClassModel cm = cc.parse(Files.readAllBytes(testClassPath));
         ClassTransform xform = (cb, ce) -> {
             if (ce instanceof RecordAttribute ra) {
@@ -104,7 +104,7 @@ class TestRecordComponent {
     @Test
     void testOptions() throws Exception {
         AtomicInteger count = new AtomicInteger(0);
-        ClassModel cm = Classfile.of().parse(Files.readAllBytes(testClassPath));
+        ClassModel cm = ClassFile.of().parse(Files.readAllBytes(testClassPath));
         cm.forEachElement((ce) -> {
             if (ce instanceof RecordAttribute rm) {
                 count.addAndGet(rm.components().size());

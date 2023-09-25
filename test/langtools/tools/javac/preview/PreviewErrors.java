@@ -57,7 +57,7 @@ import java.util.stream.Collectors;
 import javax.tools.Diagnostic;
 
 import java.lang.classfile.ClassModel;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.io.FileWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
@@ -407,7 +407,7 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                             throw new IllegalStateException("Cannot find Test.class");
                         }
                         try (InputStream input = testClass.openInputStream()) {
-                            cf = Classfile.of().parse(input.readAllBytes());
+                            cf = ClassFile.of().parse(input.readAllBytes());
                         }
                     } catch (IOException ex) {
                         throw new IllegalStateException(ex);

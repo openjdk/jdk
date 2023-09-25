@@ -33,7 +33,7 @@ import java.lang.module.ModuleDescriptor.Version;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassTransform;
 import java.lang.classfile.attribute.ModuleAttribute;
 import java.lang.classfile.attribute.ModuleHashInfo;
@@ -150,7 +150,7 @@ public final class ModuleInfoExtender {
      * be discarded.
      */
     public byte[] toByteArray() throws IOException {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         var cm = cc.parse(in.readAllBytes());
         Version v = ModuleInfoExtender.this.version;
         return cc.transform(cm, ClassTransform.endHandler(clb -> {

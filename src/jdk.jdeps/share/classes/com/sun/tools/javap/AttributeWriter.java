@@ -33,7 +33,7 @@ import java.lang.classfile.*;
 import java.lang.reflect.AccessFlag;
 import java.lang.classfile.constantpool.*;
 import java.lang.classfile.attribute.*;
-import static java.lang.classfile.Classfile.*;
+import static java.lang.classfile.ClassFile.*;
 import static java.lang.classfile.attribute.StackMapFrameInfo.*;
 
 /*

@@ -112,7 +112,7 @@ public class MatchExceptionTest extends TestRunner {
                         .outdir(curPath)
                         .run();
 
-                cf = Classfile.of().parse(curPath.resolve("Test.class"));
+                cf = ClassFile.of().parse(curPath.resolve("Test.class"));
                 boolean incompatibleClassChangeErrror = false;
                 boolean matchException = false;
                 for (PoolEntry pe : cf.constantPool()) {

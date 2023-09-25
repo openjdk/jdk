@@ -122,7 +122,7 @@ public class LVTHarness {
     }
 
     void checkClassFile(File file) throws IOException {
-        ClassModel classFile = Classfile.of().parse(file.toPath());
+        ClassModel classFile = ClassFile.of().parse(file.toPath());
 
         //lets get all the methods in the class file.
         for (MethodModel method : classFile.methods()) {

@@ -100,7 +100,7 @@ public class NoDeadCodeGenerationOnTrySmtTest {
     }
 
     void checkClassFile(final File cfile, String[] methodsToFind) throws Exception {
-        ClassModel classFile = Classfile.of().parse(cfile.toPath());
+        ClassModel classFile = ClassFile.of().parse(cfile.toPath());
         int numberOfmethodsFound = 0;
         for (String methodToFind : methodsToFind) {
             for (MethodModel m : classFile.methods()) {

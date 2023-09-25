@@ -31,7 +31,7 @@
 
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassTransform;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.MethodTransform;
 import java.lang.classfile.attribute.MethodParametersAttribute;
 import java.lang.classfile.attribute.SignatureAttribute;
@@ -47,7 +47,7 @@ import java.util.Objects;
 public class ClassBuildingTest {
     @Test
     public void test() throws Throwable {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         ClassModel cm;
         try (var in = ClassBuildingTest.class.getResourceAsStream("/Outer$1Local.class")) {
             cm = cc.parse(Objects.requireNonNull(in).readAllBytes());

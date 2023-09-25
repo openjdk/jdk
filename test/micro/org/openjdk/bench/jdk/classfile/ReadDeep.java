@@ -23,8 +23,8 @@
 package org.openjdk.bench.jdk.classfile;
 
 import java.lang.classfile.ClassModel;
-import java.lang.classfile.Classfile;
-import java.lang.classfile.ClassfileElement;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassFileElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.CompoundElement;
 import java.lang.classfile.MethodModel;
@@ -97,7 +97,7 @@ public class ReadDeep extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkElementsCountLoads(Blackhole bh) {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         for (byte[] bytes : classes) {
             int[] count = new int[1];
             ClassModel cm = cc.parse(bytes);
@@ -121,15 +121,15 @@ public class ReadDeep extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkElementsDeepIterate(Blackhole bh) {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         for (byte[] bytes : classes) {
             ClassModel cm = cc.parse(bytes);
             bh.consume(iterateAll(cm));
         }
     }
 
-    private static ClassfileElement iterateAll(CompoundElement<?> model) {
-        ClassfileElement last = null;
+    private static ClassFileElement iterateAll(CompoundElement<?> model) {
+        ClassFileElement last = null;
         for (var e : model) {
             if (e instanceof CompoundElement<?> cm) {
                 last = iterateAll(cm);

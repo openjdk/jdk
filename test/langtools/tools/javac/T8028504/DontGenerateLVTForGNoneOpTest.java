@@ -50,7 +50,7 @@ public class DontGenerateLVTForGNoneOpTest {
     }
 
     void checkClassFile(final File cfile) throws Exception {
-        ClassModel classFile = Classfile.of().parse(cfile.toPath());
+        ClassModel classFile = ClassFile.of().parse(cfile.toPath());
         for (MethodModel method : classFile.methods()) {
             CodeAttribute code = method.findAttribute(Attributes.CODE).orElse(null);
             if (code != null) {

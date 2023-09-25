@@ -24,7 +24,7 @@
  */
 package java.lang.classfile;
 
-import jdk.internal.classfile.impl.ClassfileVersionImpl;
+import jdk.internal.classfile.impl.ClassFileVersionImpl;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -35,9 +35,9 @@ import jdk.internal.javac.PreviewFeature;
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-public sealed interface ClassfileVersion
+public sealed interface ClassFileVersion
         extends ClassElement
-        permits ClassfileVersionImpl {
+        permits ClassFileVersionImpl {
     /**
      * {@return the major classfile version}
      */
@@ -49,11 +49,11 @@ public sealed interface ClassfileVersion
     int minorVersion();
 
     /**
-     * {@return a {@link ClassfileVersion} element}
+     * {@return a {@link ClassFileVersion} element}
      * @param majorVersion the major classfile version
      * @param minorVersion the minor classfile version
      */
-    static ClassfileVersion of(int majorVersion, int minorVersion) {
-        return new ClassfileVersionImpl(majorVersion, minorVersion);
+    static ClassFileVersion of(int majorVersion, int minorVersion) {
+        return new ClassFileVersionImpl(majorVersion, minorVersion);
     }
 }

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile transformations.
+ * @summary Testing ClassFile transformations.
  * @run junit TransformTests
  */
 import java.net.URI;
@@ -34,7 +34,7 @@ import java.nio.file.Paths;
 import helpers.ByteArrayClassLoader;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassTransform;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.CodeTransform;
 import java.lang.classfile.MethodModel;
@@ -93,7 +93,7 @@ class TransformTests {
     void testSingleTransform() throws Exception {
 
         byte[] bytes = Files.readAllBytes(testClassPath);
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         ClassModel cm = cc.parse(bytes);
 
         assertEquals(invoke(bytes), "foo");
@@ -105,7 +105,7 @@ class TransformTests {
     void testSeq2() throws Exception {
 
         byte[] bytes = Files.readAllBytes(testClassPath);
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         ClassModel cm = cc.parse(bytes);
 
         assertEquals(invoke(bytes), "foo");
@@ -117,7 +117,7 @@ class TransformTests {
     void testSeqN() throws Exception {
 
         byte[] bytes = Files.readAllBytes(testClassPath);
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         ClassModel cm = cc.parse(bytes);
 
         assertEquals(invoke(bytes), "foo");

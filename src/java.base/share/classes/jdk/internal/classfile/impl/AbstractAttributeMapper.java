@@ -28,7 +28,7 @@ import java.lang.classfile.Attribute;
 import java.lang.classfile.AttributeMapper;
 import java.lang.classfile.BufWriter;
 
-import static java.lang.classfile.Classfile.JAVA_1_VERSION;
+import static java.lang.classfile.ClassFile.JAVA_1_VERSION;
 
 public abstract class AbstractAttributeMapper<T extends Attribute<T>>
         implements AttributeMapper<T> {

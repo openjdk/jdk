@@ -56,7 +56,7 @@ public record ApplicableAnnotationsOnRecords(@FieldAnnotation @MethodAnnotation 
 
     public static void main(String... args) throws Exception {
         try ( InputStream in = ApplicableAnnotationsOnRecords.class.getResourceAsStream("ApplicableAnnotationsOnRecords.class")) {
-            ClassModel cm = Classfile.of().parse(Objects.requireNonNull(in).readAllBytes());
+            ClassModel cm = ClassFile.of().parse(Objects.requireNonNull(in).readAllBytes());
             Assert.check(cm.methods().size() > 5);
             for (MethodModel mm : cm.methods()) {
                 String methodName = mm.methodName().stringValue();

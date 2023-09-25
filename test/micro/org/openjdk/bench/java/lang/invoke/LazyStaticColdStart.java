@@ -22,7 +22,7 @@
  */
 package org.openjdk.bench.java.lang.invoke;
 
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -43,7 +43,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.constant.ConstantDescs.*;
-import static java.lang.classfile.Classfile.ACC_STATIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 
 /**
  * A benchmark ensuring that var and method handle lazy initialization are not
@@ -73,7 +73,7 @@ public class LazyStaticColdStart {
             static final MethodTypeDesc MTD_void_long = MethodTypeDesc.of(CD_void, CD_long);
             static final MethodTypeDesc MTD_ThreadLocalRandom = MethodTypeDesc.of(CD_ThreadLocalRandom);
             static final MethodTypeDesc MTD_long = MethodTypeDesc.of(CD_long);
-            static final byte[] classBytes = Classfile.of().build(describedClass, clb -> {
+            static final byte[] classBytes = ClassFile.of().build(describedClass, clb -> {
                 clb.withField("v", CD_long, ACC_STATIC);
                 clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
                     cob.constantInstruction(100L);

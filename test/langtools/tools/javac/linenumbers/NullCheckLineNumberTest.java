@@ -60,7 +60,7 @@ public class NullCheckLineNumberTest {
     }
 
     static List<Entry> findEntries() throws IOException {
-        ClassModel self = Classfile.of().parse(Objects.requireNonNull(Test.class.getResourceAsStream("NullCheckLineNumberTest$Test.class")).readAllBytes());
+        ClassModel self = ClassFile.of().parse(Objects.requireNonNull(Test.class.getResourceAsStream("NullCheckLineNumberTest$Test.class")).readAllBytes());
         for (MethodModel m : self.methods()) {
             if ("<init>".equals(m.methodName().stringValue())) {
                 CodeAttribute code_attribute = m.findAttribute(Attributes.CODE).orElseThrow();

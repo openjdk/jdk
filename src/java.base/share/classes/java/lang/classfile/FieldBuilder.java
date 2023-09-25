@@ -38,7 +38,7 @@ import jdk.internal.javac.PreviewFeature;
  * A builder for fields.  Builders are not created directly; they are passed
  * to handlers by methods such as {@link ClassBuilder#withField(Utf8Entry, Utf8Entry, Consumer)}
  * or to field transforms.  The elements of a field can be specified
- * abstractly (by passing a {@link FieldElement} to {@link #with(ClassfileElement)}
+ * abstractly (by passing a {@link FieldElement} to {@link #with(ClassFileElement)}
  * or concretely by calling the various {@code withXxx} methods.
  *
  * @see FieldTransform
@@ -47,7 +47,7 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface FieldBuilder
-        extends ClassfileBuilder<FieldElement, FieldBuilder>
+        extends ClassFileBuilder<FieldElement, FieldBuilder>
         permits TerminalFieldBuilder, ChainedFieldBuilder {
 
     /**

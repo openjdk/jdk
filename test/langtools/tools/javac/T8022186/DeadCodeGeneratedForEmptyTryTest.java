@@ -59,7 +59,7 @@ public class DeadCodeGeneratedForEmptyTryTest {
 
     void checkClassFile(final Path path) throws Exception {
         numberOfRefToStr = 0;
-        ClassModel classFile = Classfile.of().parse(
+        ClassModel classFile = ClassFile.of().parse(
                 new BufferedInputStream(Files.newInputStream(path)).readAllBytes());
         constantPool = classFile.constantPool();
         for (MethodModel method: classFile.methods()) {

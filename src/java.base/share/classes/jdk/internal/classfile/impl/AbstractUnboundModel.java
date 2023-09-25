@@ -30,10 +30,10 @@ import java.util.stream.Stream;
 
 import java.lang.classfile.Attribute;
 import java.lang.classfile.AttributedElement;
-import java.lang.classfile.ClassfileElement;
+import java.lang.classfile.ClassFileElement;
 import java.lang.classfile.CompoundElement;
 
-public abstract sealed class AbstractUnboundModel<E extends ClassfileElement>
+public abstract sealed class AbstractUnboundModel<E extends ClassFileElement>
         extends AbstractElement
         implements CompoundElement<E>, AttributedElement
         permits BufferedCodeBuilder.Model, BufferedFieldBuilder.Model, BufferedMethodBuilder.Model {

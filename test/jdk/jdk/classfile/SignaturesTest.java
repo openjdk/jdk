@@ -37,7 +37,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import java.lang.classfile.ClassSignature;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.MethodSignature;
 import java.lang.classfile.Signature;
 import java.lang.classfile.Signature.*;
@@ -126,7 +126,7 @@ class SignaturesTest {
                 .flatMap(p -> p)
                 .filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".class")).forEach(path -> {
             try {
-                var cm = Classfile.of().parse(path);
+                var cm = ClassFile.of().parse(path);
                 cm.findAttribute(Attributes.SIGNATURE).ifPresent(csig -> {
                     assertEquals(
                             ClassSignature.parseFrom(csig.signature().stringValue()).signatureString(),

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile class building.
+ * @summary Testing ClassFile class building.
  * @run junit WriteTest
  */
 import java.lang.constant.ClassDesc;
@@ -32,7 +32,7 @@ import java.lang.constant.MethodTypeDesc;
 import helpers.TestConstants;
 import java.lang.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.Label;
 import java.lang.classfile.attribute.SourceFileAttribute;
@@ -50,7 +50,7 @@ class WriteTest {
     @Test
     void testJavapWrite() {
 
-        byte[] bytes = Classfile.of().build(ClassDesc.of("MyClass"), cb -> {
+        byte[] bytes = ClassFile.of().build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
@@ -92,7 +92,7 @@ class WriteTest {
     @Test
     void testPrimitiveWrite() {
 
-        byte[] bytes = Classfile.of().build(ClassDesc.of("MyClass"), cb -> {
+        byte[] bytes = ClassFile.of().build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC)
               .with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb

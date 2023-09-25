@@ -99,7 +99,7 @@ public class VariablesDeclaredWithVarTest {
     }
 
     void checkClassFile(final File cfile, int... taPositions) throws Exception {
-        ClassModel classFile = Classfile.of().parse(cfile.toPath());
+        ClassModel classFile = ClassFile.of().parse(cfile.toPath());
         List<TypeAnnotation> annos = new ArrayList<>();
         for (MethodModel method : classFile.methods()) {
             findAnnotations(classFile, method, annos);

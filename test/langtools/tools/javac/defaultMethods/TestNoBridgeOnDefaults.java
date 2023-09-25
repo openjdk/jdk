@@ -70,7 +70,7 @@ public class TestNoBridgeOnDefaults {
     void checkNoBridgeOnDefaults(File f) {
         System.err.println("check: " + f);
         try {
-            ClassModel cf = Classfile.of().parse(f.toPath());
+            ClassModel cf = ClassFile.of().parse(f.toPath());
             for (MethodModel m : cf.methods()) {
                 String mname = m.methodName().stringValue();
                 if (mname.equals(TEST_METHOD_NAME)) {

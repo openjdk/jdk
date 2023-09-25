@@ -20,7 +20,7 @@ import java.lang.classfile.attribute.*;
 
 public class T8050993 {
     public static void main(String[] args) throws IOException {
-        ClassModel someTestIn = Classfile.of().parse(T8050993.class.getResourceAsStream("T8050993.class").readAllBytes());
+        ClassModel someTestIn = ClassFile.of().parse(T8050993.class.getResourceAsStream("T8050993.class").readAllBytes());
         Set<Integer> expectedLineNumbers = new HashSet<>(Arrays.asList(49, 50, 47, 48));
         for (MethodModel m : someTestIn.methods()) {
             if (m.methodName().equalsString("method")) {

@@ -492,7 +492,7 @@ public class CheckResourceKeys {
      */
     void scan(JavaFileObject fo, Set<String> results) throws IOException {
         try (InputStream in = fo.openInputStream()) {
-            ClassModel cm = Classfile.of().parse(in.readAllBytes());
+            ClassModel cm = ClassFile.of().parse(in.readAllBytes());
             for (PoolEntry pe : cm.constantPool()) {
                 if (pe instanceof Utf8Entry entry) {
                     String v = entry.stringValue();

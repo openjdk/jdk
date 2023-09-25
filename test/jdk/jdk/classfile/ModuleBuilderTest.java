@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile building module.
+ * @summary Testing ClassFile building module.
  * @run junit ModuleBuilderTest
  */
 import java.lang.classfile.*;
@@ -62,7 +62,7 @@ class ModuleBuilderTest {
     private final ModuleAttribute attr;
 
     public ModuleBuilderTest() {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         byte[] modInfo = cc.buildModule(
                 ModuleAttribute.of(modName, mb -> mb
                         .moduleVersion(modVsn)
@@ -97,7 +97,7 @@ class ModuleBuilderTest {
     @Test
     void testCreateModuleInfo() {
         // Build the module-info.class bytes
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         byte[] modBytes = cc.buildModule(ModuleAttribute.of(modName, mb -> mb.moduleVersion(modVsn)));
 
         // Verify
@@ -195,7 +195,7 @@ class ModuleBuilderTest {
     void verifyIsModuleInfo() throws Exception {
         assertTrue(moduleModel.isModuleInfo());
 
-        ClassModel m = Classfile.of().parse(Paths.get(URI.create(ModuleBuilderTest.class.getResource("ModuleBuilderTest.class").toString())));
+        ClassModel m = ClassFile.of().parse(Paths.get(URI.create(ModuleBuilderTest.class.getResource("ModuleBuilderTest.class").toString())));
         assertFalse(m.isModuleInfo());
     }
 }

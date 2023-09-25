@@ -1271,7 +1271,7 @@ public class RecordCompilationTests extends CompilationTestCase {
             int numberOfFieldRefs = 0;
             for (final File fileEntry : Objects.requireNonNull(dir.listFiles())) {
                 if (fileEntry.getName().endsWith("R.class")) {
-                    ClassModel classFile = Classfile.of().parse(fileEntry.toPath());
+                    ClassModel classFile = ClassFile.of().parse(fileEntry.toPath());
                     for (PoolEntry pe : classFile.constantPool()) {
                         if (pe instanceof FieldRefEntry fieldRefEntry) {
                             numberOfFieldRefs++;
@@ -1294,7 +1294,7 @@ public class RecordCompilationTests extends CompilationTestCase {
         File dir = assertOK(true, "record R(int i, String s) { R {} }");
         for (final File fileEntry : Objects.requireNonNull(dir.listFiles())) {
             if (fileEntry.getName().equals("R.class")) {
-                ClassModel classFile = Classfile.of().parse(fileEntry.toPath());
+                ClassModel classFile = ClassFile.of().parse(fileEntry.toPath());
                 for (MethodModel method : classFile.methods()) {
                     if (method.methodName().equalsString("<init>")) {
                         CodeAttribute code_attribute = method.findAttribute(Attributes.CODE).orElseThrow();
@@ -1439,7 +1439,7 @@ public class RecordCompilationTests extends CompilationTestCase {
 
                 File dir = assertOK(true, code);
 
-                ClassModel classFile = Classfile.of().parse(findClassFileOrFail(dir, "R.class").toPath());
+                ClassModel classFile = ClassFile.of().parse(findClassFileOrFail(dir, "R.class").toPath());
 
                 // field first
                 Assert.check(classFile.fields().size() == 1);
@@ -1541,7 +1541,7 @@ public class RecordCompilationTests extends CompilationTestCase {
 
         File dir = assertOK(true, code);
 
-        ClassModel classFile = Classfile.of().parse(findClassFileOrFail(dir, "R.class").toPath());
+        ClassModel classFile = ClassFile.of().parse(findClassFileOrFail(dir, "R.class").toPath());
 
         // field first
         Assert.check(classFile.fields().size() == 1);
@@ -1756,11 +1756,11 @@ public class RecordCompilationTests extends CompilationTestCase {
         File dir = assertOK(true, "record R() {}");
         for (final File fileEntry : Objects.requireNonNull(dir.listFiles())) {
             if (fileEntry.getName().equals("R.class")) {
-                ClassModel classFile = Classfile.of().parse(fileEntry.toPath());
+                ClassModel classFile = ClassFile.of().parse(fileEntry.toPath());
                 for (MethodModel method : classFile.methods())
                     switch (method.methodName().stringValue()) {
                         case "toString", "equals", "hashCode" ->
-                            Assert.check(((method.flags().flagsMask() & Classfile.ACC_PUBLIC) != 0) && ((method.flags().flagsMask() & Classfile.ACC_FINAL) != 0));
+                            Assert.check(((method.flags().flagsMask() & ClassFile.ACC_PUBLIC) != 0) && ((method.flags().flagsMask() & ClassFile.ACC_FINAL) != 0));
                         default -> {}
                     }
             }
@@ -1788,7 +1788,7 @@ public class RecordCompilationTests extends CompilationTestCase {
             File dir = assertOK(true, "class R {# record RR() {} }", a);
             for (final File fileEntry : Objects.requireNonNull(dir.listFiles())) {
                 if (fileEntry.getName().equals("R$RR.class")) {
-                    ClassModel classFile = Classfile.of().parse(fileEntry.toPath());
+                    ClassModel classFile = ClassFile.of().parse(fileEntry.toPath());
                     for (MethodModel method : classFile.methods())
                         if (method.methodName().equalsString("<init>")) {
                             Assert.check(method.flags().flagsMask() == accessFlag(a),
@@ -1811,9 +1811,9 @@ public class RecordCompilationTests extends CompilationTestCase {
 
     private int accessFlag(String access) {
         return switch (access) {
-            case "private" -> Classfile.ACC_PRIVATE;
-            case "protected" -> Classfile.ACC_PROTECTED;
-            case "public" -> Classfile.ACC_PUBLIC;
+            case "private" -> ClassFile.ACC_PRIVATE;
+            case "protected" -> ClassFile.ACC_PROTECTED;
+            case "public" -> ClassFile.ACC_PUBLIC;
             case "" -> 0;
             default -> throw new AssertionError();
         };

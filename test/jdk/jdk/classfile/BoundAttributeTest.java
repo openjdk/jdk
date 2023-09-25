@@ -29,7 +29,7 @@
  */
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassModel;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.attribute.MethodParameterInfo;
 import java.lang.classfile.attribute.MethodParametersAttribute;
@@ -49,7 +49,7 @@ class BoundAttributeTest {
 
     @Test
     void testReadMethodParametersAttributeWithoutParameterName() {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         // build a simple method: void method(int)
         MethodTypeDesc methodTypeDesc = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_int);
         byte[] raw = cc.build(ClassDesc.of("TestClass"), builder -> {

@@ -63,7 +63,7 @@ public class TestDefaultBody {
     void verifyDefaultBody(File f) {
         System.err.println("verify: " + f);
         try {
-            ClassModel cf = Classfile.of().parse(f.toPath());
+            ClassModel cf = ClassFile.of().parse(f.toPath());
             MethodModel testMethod = null;
             CodeAttribute codeAttr = null;
             for (MethodModel m : cf.methods()) {
@@ -79,7 +79,7 @@ public class TestDefaultBody {
             if (testMethod == null) {
                 throw new Error("Test method not found");
             }
-            if ((testMethod.flags().flagsMask() & Classfile.ACC_ABSTRACT) != 0) {
+            if ((testMethod.flags().flagsMask() & ClassFile.ACC_ABSTRACT) != 0) {
                 throw new Error("Test method is abstract");
             }
             if (codeAttr == null) {

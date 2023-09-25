@@ -60,9 +60,9 @@ public class AnnotationsAreNotCopiedToBridgeMethodsTest {
     }
 
     <A extends Attribute<A>> void checkClassFile(final Path cfilePath) throws Exception {
-        ClassModel classFile = Classfile.of().parse(cfilePath);
+        ClassModel classFile = ClassFile.of().parse(cfilePath);
         for (MethodModel method : classFile.methods()) {
-            if ((method.flags().flagsMask() & Classfile.ACC_BRIDGE) != 0) {
+            if ((method.flags().flagsMask() & ClassFile.ACC_BRIDGE) != 0) {
                 Assert.checkNonNull(method.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS),
                         "Annotations hasn't been copied to bridge method");
                 Assert.checkNonNull(method.findAttribute(Attributes.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS),

@@ -45,7 +45,7 @@ public class SyntheticClasses {
     private void run() throws IOException {
         File testClasses = new File(System.getProperty("test.classes"));
         for (File classFile : Objects.requireNonNull(testClasses.listFiles(f -> f.getName().endsWith(".class")))) {
-            ClassModel cf = Classfile.of().parse(classFile.toPath());
+            ClassModel cf = ClassFile.of().parse(classFile.toPath());
             if (cf.thisClass().asInternalName().matches(".*\\$[0-9]+")) {
                 EnclosingMethodAttribute encl = cf.findAttribute(Attributes.ENCLOSING_METHOD).orElse(null);
                 if (encl != null) {

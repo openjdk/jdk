@@ -42,7 +42,7 @@ public class Presence {
         File javaFile = writeTestFile();
         File classFile = compileTestFile(javaFile);
 
-        ClassModel cm = Classfile.of().parse(classFile.toPath());
+        ClassModel cm = ClassFile.of().parse(classFile.toPath());
         test(cm);
         for (FieldModel fm : cm.fields()) {
             test(fm);

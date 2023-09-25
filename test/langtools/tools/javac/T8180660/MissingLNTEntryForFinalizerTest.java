@@ -85,7 +85,7 @@ public class MissingLNTEntryForFinalizerTest {
         }
         File testClasses = new File(".");
         File file = new File(testClasses, "Test1.class");
-        ClassModel classFile = Classfile.of().parse(file.toPath());
+        ClassModel classFile = ClassFile.of().parse(file.toPath());
         for (MethodModel m : classFile.methods()) {
             if (m.methodName().equalsString("foo")) {
                 CodeAttribute code = m.findAttribute(Attributes.CODE).orElseThrow();

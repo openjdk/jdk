@@ -70,17 +70,17 @@ public sealed interface CharacterRangeInfo
      * The value of the flags item describes the kind of range. Multiple flags
      * may be set within flags.
      * <ul>
-     * <li>{@link java.lang.classfile.Classfile#CRT_STATEMENT} Range is a Statement
+     * <li>{@link java.lang.classfile.ClassFile#CRT_STATEMENT} Range is a Statement
      * (except ExpressionStatement), StatementExpression {@jls 14.8}, as well as each
      * VariableDeclaratorId = VariableInitializer of
      * LocalVariableDeclarationStatement {@jls 14.4} or FieldDeclaration {@jls 8.3} in the
      * grammar.
-     * <li>{@link java.lang.classfile.Classfile#CRT_BLOCK} Range is a Block in the
+     * <li>{@link java.lang.classfile.ClassFile#CRT_BLOCK} Range is a Block in the
      * grammar.
-     * <li>{@link java.lang.classfile.Classfile#CRT_ASSIGNMENT} Range is an assignment
+     * <li>{@link java.lang.classfile.ClassFile#CRT_ASSIGNMENT} Range is an assignment
      * expression - Expression1 AssignmentOperator Expression1 in the grammar as
      * well as increment and decrement expressions (both prefix and postfix).
-     * <li>{@link java.lang.classfile.Classfile#CRT_FLOW_CONTROLLER} An expression
+     * <li>{@link java.lang.classfile.ClassFile#CRT_FLOW_CONTROLLER} An expression
      * whose value will effect control flow. {@code Flowcon} in the following:
      * <pre>
      * if ( Flowcon ) Statement [else Statement]
@@ -92,7 +92,7 @@ public sealed interface CharacterRangeInfo
      * Flowcon &amp;&amp; Expression3
      * Flowcon ? Expression : Expression1
      * </pre>
-     * <li>{@link java.lang.classfile.Classfile#CRT_FLOW_TARGET} Statement or
+     * <li>{@link java.lang.classfile.ClassFile#CRT_FLOW_TARGET} Statement or
      * expression effected by a CRT_FLOW_CONTROLLER. {@code Flowtarg} in the following:
      * <pre>
      * if ( Flowcon ) Flowtarg [else Flowtarg]
@@ -103,11 +103,11 @@ public sealed interface CharacterRangeInfo
      * Flowcon &amp;&amp; Flowtarg
      * Flowcon ? Flowtarg : Flowtarg
      * </pre>
-     * <li>{@link java.lang.classfile.Classfile#CRT_INVOKE} Method invocation. For
+     * <li>{@link java.lang.classfile.ClassFile#CRT_INVOKE} Method invocation. For
      * example: Identifier Arguments.
-     * <li>{@link java.lang.classfile.Classfile#CRT_CREATE} New object creation. For
+     * <li>{@link java.lang.classfile.ClassFile#CRT_CREATE} New object creation. For
      * example: new Creator.
-     * <li>{@link java.lang.classfile.Classfile#CRT_BRANCH_TRUE} A condition encoded
+     * <li>{@link java.lang.classfile.ClassFile#CRT_BRANCH_TRUE} A condition encoded
      * in the branch instruction immediately contained in the code range for
      * this item is not inverted towards the corresponding branch condition in
      * the source code. I.e. actual jump occurs if and only if the the source
@@ -119,7 +119,7 @@ public sealed interface CharacterRangeInfo
      * if&lt;cond&gt;, ifnonull, ifnull or goto. CRT_BRANCH_TRUE and
      * CRT_BRANCH_FALSE are special kinds of entries that can be used to
      * determine what branch of a condition was chosen during the runtime.
-     * <li>{@link java.lang.classfile.Classfile#CRT_BRANCH_FALSE} A condition encoded
+     * <li>{@link java.lang.classfile.ClassFile#CRT_BRANCH_FALSE} A condition encoded
      * in the branch instruction immediately contained in the code range for
      * this item is inverted towards the corresponding branch condition in the
      * source code. I.e. actual jump occurs if and only if the the source code

@@ -35,7 +35,7 @@ import java.util.function.Consumer;
 import java.lang.classfile.AccessFlags;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassElement;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.constantpool.*;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.MethodModel;
@@ -166,7 +166,7 @@ final class FingerPrint {
     }
 
     private static ClassAttributes getClassAttributes(byte[] bytes) {
-        var cm = Classfile.of().parse(bytes);
+        var cm = ClassFile.of().parse(bytes);
         ClassAttributes attrs = new ClassAttributes(
                 cm.flags(),
                 cm.thisClass().asInternalName(),

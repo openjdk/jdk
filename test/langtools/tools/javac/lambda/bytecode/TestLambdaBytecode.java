@@ -206,7 +206,7 @@ public class TestLambdaBytecode extends ComboInstance<TestLambdaBytecode> {
             return;
         }
         try (InputStream is = res.get().iterator().next().openInputStream()) {
-            ClassModel cf = Classfile.of().parse(is.readAllBytes());
+            ClassModel cf = ClassFile.of().parse(is.readAllBytes());
             MethodModel testMethod = null;
             for (MethodModel m : cf.methods()) {
                 if (m.methodName().equalsString("test")) {

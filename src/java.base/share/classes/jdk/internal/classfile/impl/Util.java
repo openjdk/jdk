@@ -33,7 +33,7 @@ import java.util.function.Function;
 
 import java.lang.classfile.Attribute;
 import java.lang.classfile.AttributeMapper;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ModuleEntry;
@@ -42,7 +42,7 @@ import java.lang.constant.ModuleDesc;
 import java.lang.reflect.AccessFlag;
 import jdk.internal.access.SharedSecrets;
 
-import static java.lang.classfile.Classfile.ACC_STATIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 
 /**
  * Helper to create and manipulate type descriptors, where type descriptors are
@@ -57,7 +57,7 @@ public class Util {
     private static final int ATTRIBUTE_STABILITY_COUNT = AttributeMapper.AttributeStability.values().length;
 
     public static boolean isAttributeAllowed(final Attribute<?> attr,
-                                             final Classfile.AttributesProcessingOption processingOption) {
+                                             final ClassFile.AttributesProcessingOption processingOption) {
         return attr instanceof BoundAttribute
                 ? ATTRIBUTE_STABILITY_COUNT - attr.attributeMapper().stability().ordinal() > processingOption.ordinal()
                 : true;

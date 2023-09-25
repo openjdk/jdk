@@ -44,9 +44,9 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * A builder for classfiles.  Builders are not created directly; they are passed
- * to handlers by methods such as {@link Classfile#build(ClassDesc, Consumer)}
+ * to handlers by methods such as {@link ClassFile#build(ClassDesc, Consumer)}
  * or to class transforms.  The elements of a classfile can be specified
- * abstractly (by passing a {@link ClassElement} to {@link #with(ClassfileElement)})
+ * abstractly (by passing a {@link ClassElement} to {@link #with(ClassFileElement)})
  * or concretely by calling the various {@code withXxx} methods.
  *
  * @see ClassTransform
@@ -55,7 +55,7 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassBuilder
-        extends ClassfileBuilder<ClassElement, ClassBuilder>
+        extends ClassFileBuilder<ClassElement, ClassBuilder>
         permits ChainedClassBuilder, DirectClassBuilder {
 
     /**
@@ -71,7 +71,7 @@ public sealed interface ClassBuilder
      * @return this builder
      */
     default ClassBuilder withVersion(int major, int minor) {
-        return with(ClassfileVersion.of(major, minor));
+        return with(ClassFileVersion.of(major, minor));
     }
 
     /**

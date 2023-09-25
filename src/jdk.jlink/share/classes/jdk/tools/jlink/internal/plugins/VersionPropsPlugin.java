@@ -27,7 +27,7 @@ package jdk.tools.jlink.internal.plugins;
 
 import java.util.Locale;
 import java.util.Map;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassTransform;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
@@ -101,7 +101,7 @@ abstract class VersionPropsPlugin extends AbstractPlugin {
 
     @SuppressWarnings("deprecation")
     private byte[] redefine(String path, byte[] classFile) {
-        return Classfile.of().transform(newClassReader(path, classFile),
+        return ClassFile.of().transform(newClassReader(path, classFile),
             ClassTransform.transformingMethodBodies(
                 mm -> mm.methodName().equalsString("<clinit>"),
                 new CodeTransform() {

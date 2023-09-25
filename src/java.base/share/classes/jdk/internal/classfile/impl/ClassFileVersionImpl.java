@@ -22,23 +22,37 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.lang.classfile;
+package jdk.internal.classfile.impl;
 
-import jdk.internal.javac.PreviewFeature;
+import java.lang.classfile.ClassFileVersion;
 
-/**
- * Immutable model for a portion of (or the entirety of) a classfile.  Elements
- * that model parts of the classfile that have attributes will implement {@link
- * AttributedElement}; elements that model complex parts of the classfile that
- * themselves contain their own child elements will implement {@link
- * CompoundElement}.  Elements specific to various locations in the classfile
- * will implement {@link ClassElement}, {@link MethodElement}, etc.
- *
- * @sealedGraph
- * @since 22
- */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-public sealed interface ClassfileElement
-        permits AttributedElement, CompoundElement, WritableElement,
-                ClassElement, CodeElement, FieldElement, MethodElement {
+public final class ClassFileVersionImpl
+        extends AbstractElement
+        implements ClassFileVersion {
+    private final int majorVersion, minorVersion;
+
+    public ClassFileVersionImpl(int majorVersion, int minorVersion) {
+        this.majorVersion = majorVersion;
+        this.minorVersion = minorVersion;
+    }
+
+    @Override
+    public int majorVersion() {
+        return majorVersion;
+    }
+
+    @Override
+    public int minorVersion() {
+        return minorVersion;
+    }
+
+    @Override
+    public void writeTo(DirectClassBuilder builder) {
+        builder.setVersion(majorVersion, minorVersion);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("ClassFileVersion[majorVersion=%d, minorVersion=%d]", majorVersion, minorVersion);
+    }
 }

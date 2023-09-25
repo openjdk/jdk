@@ -33,28 +33,28 @@ import java.util.Objects;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassReader;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.BootstrapMethodEntry;
 import java.lang.classfile.BufWriter;
 import java.lang.classfile.attribute.BootstrapMethodsAttribute;
 import java.lang.classfile.constantpool.*;
 
-import static java.lang.classfile.Classfile.TAG_CLASS;
-import static java.lang.classfile.Classfile.TAG_CONSTANTDYNAMIC;
-import static java.lang.classfile.Classfile.TAG_DOUBLE;
-import static java.lang.classfile.Classfile.TAG_FIELDREF;
-import static java.lang.classfile.Classfile.TAG_FLOAT;
-import static java.lang.classfile.Classfile.TAG_INTEGER;
-import static java.lang.classfile.Classfile.TAG_INTERFACEMETHODREF;
-import static java.lang.classfile.Classfile.TAG_INVOKEDYNAMIC;
-import static java.lang.classfile.Classfile.TAG_LONG;
-import static java.lang.classfile.Classfile.TAG_METHODHANDLE;
-import static java.lang.classfile.Classfile.TAG_METHODREF;
-import static java.lang.classfile.Classfile.TAG_METHODTYPE;
-import static java.lang.classfile.Classfile.TAG_MODULE;
-import static java.lang.classfile.Classfile.TAG_NAMEANDTYPE;
-import static java.lang.classfile.Classfile.TAG_PACKAGE;
-import static java.lang.classfile.Classfile.TAG_STRING;
+import static java.lang.classfile.ClassFile.TAG_CLASS;
+import static java.lang.classfile.ClassFile.TAG_CONSTANTDYNAMIC;
+import static java.lang.classfile.ClassFile.TAG_DOUBLE;
+import static java.lang.classfile.ClassFile.TAG_FIELDREF;
+import static java.lang.classfile.ClassFile.TAG_FLOAT;
+import static java.lang.classfile.ClassFile.TAG_INTEGER;
+import static java.lang.classfile.ClassFile.TAG_INTERFACEMETHODREF;
+import static java.lang.classfile.ClassFile.TAG_INVOKEDYNAMIC;
+import static java.lang.classfile.ClassFile.TAG_LONG;
+import static java.lang.classfile.ClassFile.TAG_METHODHANDLE;
+import static java.lang.classfile.ClassFile.TAG_METHODREF;
+import static java.lang.classfile.ClassFile.TAG_METHODTYPE;
+import static java.lang.classfile.ClassFile.TAG_MODULE;
+import static java.lang.classfile.ClassFile.TAG_NAMEANDTYPE;
+import static java.lang.classfile.ClassFile.TAG_PACKAGE;
+import static java.lang.classfile.ClassFile.TAG_STRING;
 
 public final class SplitConstantPool implements ConstantPoolBuilder {
 
@@ -319,7 +319,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         for (int token = map.firstToken(hash); token != -1;
              token = map.nextToken(hash, token)) {
             PoolEntry e = map.getElementByToken(token);
-            if (e.tag() == Classfile.TAG_UTF8
+            if (e.tag() == ClassFile.TAG_UTF8
                 && e instanceof AbstractPoolEntry.Utf8EntryImpl ce
                 && ce.hashCode() == hash
                 && target.equals(ce.stringValue()))
@@ -336,7 +336,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         EntryMap<PoolEntry> map = map();
         for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
             PoolEntry e = map.getElementByToken(token);
-            if (e.tag() == Classfile.TAG_UTF8
+            if (e.tag() == ClassFile.TAG_UTF8
                 && e instanceof AbstractPoolEntry.Utf8EntryImpl ce
                 && target.equalsUtf8(ce))
                 return ce;

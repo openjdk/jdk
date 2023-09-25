@@ -132,7 +132,7 @@ public class CharImmediateValue implements Plugin {
         }
 
         Path testClass = classes.resolve("Test.class");
-        ClassModel cf = Classfile.of().parse(testClass);
+        ClassModel cf = ClassFile.of().parse(testClass);
         CodeAttribute codeAttr = cf.methods().get(1).findAttribute(Attributes.CODE).orElseThrow();
         boolean seenCast = false;
         for (CodeElement i : codeAttr.elementList()) {

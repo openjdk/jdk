@@ -44,7 +44,7 @@ public class NoObjectToString {
          //Verify there are no references to Object.toString() in a Test:
         try (InputStream in = NoObjectToString.class.getResourceAsStream("NoObjectToString$Test.class")) {
             assert in != null;
-            ClassModel cm = Classfile.of().parse(in.readAllBytes());
+            ClassModel cm = ClassFile.of().parse(in.readAllBytes());
             for (PoolEntry pe : cm.constantPool()) {
                 if (pe instanceof MethodRefEntry ref) {
                     String methodDesc = ref.owner().name() + "." + ref.nameAndType().name() + ":" + ref.nameAndType().type();

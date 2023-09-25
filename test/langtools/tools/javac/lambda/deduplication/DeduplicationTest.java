@@ -140,7 +140,7 @@ public class DeduplicationTest {
         for (JavaFileObject output : generated) {
             ClassModel cm;
             try (InputStream input = output.openInputStream()) {
-                cm = Classfile.of().parse(input.readAllBytes());
+                cm = ClassFile.of().parse(input.readAllBytes());
             }
             if (cm.thisClass().asInternalName().equals("com/sun/tools/javac/comp/Deduplication$R")) {
                 continue;

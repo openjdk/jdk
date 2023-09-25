@@ -50,7 +50,7 @@ public class RedundantByteCodeInArrayTest {
 
     void checkClassFile(File file)
             throws IOException {
-        ClassModel classFile = Classfile.of().parse(file.toPath());
+        ClassModel classFile = ClassFile.of().parse(file.toPath());
         ConstantPool constantPool = classFile.constantPool();
 
         //lets get all the methods in the class file.

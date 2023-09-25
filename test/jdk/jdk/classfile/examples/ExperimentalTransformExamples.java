@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile ExperimentalTransformExamples compilation.
+ * @summary Testing ClassFile ExperimentalTransformExamples compilation.
  * @compile ExperimentalTransformExamples.java
  */
 import java.net.URI;
@@ -52,7 +52,7 @@ public class ExperimentalTransformExamples {
     };
 
     public byte[] deleteAnnotations(ClassModel cm) {
-        return Classfile.of().transform(cm, (cb, ce) -> {
+        return ClassFile.of().transform(cm, (cb, ce) -> {
             switch (ce) {
                 case MethodModel m -> cb.transformMethod(m, dropMethodAnnos);
                 case FieldModel f -> cb.transformField(f, dropFieldAnnos);

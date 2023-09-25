@@ -29,7 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.lang.classfile.Attributes;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 
 import java.lang.classfile.Instruction;
 import java.lang.classfile.attribute.CodeAttribute;
@@ -69,7 +69,7 @@ public class StackMapWriter extends InstructionDetailWriter {
             return;
         }
         var m = code.parent().get();
-        if ((m.flags().flagsMask() & Classfile.ACC_STATIC) == 0) {
+        if ((m.flags().flagsMask() & ClassFile.ACC_STATIC) == 0) {
             thisClassName =  m.parent().get().thisClass().asInternalName();
         } else {
             thisClassName = null;

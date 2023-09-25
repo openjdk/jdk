@@ -94,7 +94,7 @@ public class SymLinkTest extends TestRunner {
             .run()
             .writeAll();
 
-        ClassModel cf = Classfile.of().parse(classes.resolve("HelloWorld.class"));
+        ClassModel cf = ClassFile.of().parse(classes.resolve("HelloWorld.class"));
         SourceFileAttribute sf = cf.findAttribute(Attributes.SOURCE_FILE).orElseThrow();
         String sourceFile = sf.sourceFile().stringValue();
 

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile ModuleExamples compilation.
+ * @summary Testing ClassFile ModuleExamples compilation.
  * @compile ModuleExamples.java
  */
 import java.io.IOException;
@@ -37,7 +37,7 @@ import java.util.function.Consumer;
 import java.lang.classfile.Annotation;
 import java.lang.classfile.AnnotationElement;
 import java.lang.classfile.ClassModel;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.attribute.ModuleAttribute;
 import java.lang.classfile.attribute.ModuleAttribute.ModuleAttributeBuilder;
 import java.lang.classfile.attribute.ModuleMainClassAttribute;
@@ -51,7 +51,7 @@ public class ModuleExamples {
     private static final FileSystem JRT = FileSystems.getFileSystem(URI.create("jrt:/"));
 
     public void examineModule() throws IOException {
-        ClassModel cm = Classfile.of().parse(JRT.getPath("modules/java.base/module-info.class"));
+        ClassModel cm = ClassFile.of().parse(JRT.getPath("modules/java.base/module-info.class"));
         System.out.println("Is JVMS $4.7 compatible module-info: " + cm.isModuleInfo());
 
         ModuleAttribute ma = cm.findAttribute(Attributes.MODULE).orElseThrow();
@@ -76,7 +76,7 @@ public class ModuleExamples {
         });
 
         // Build it
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         byte[] moduleInfo = cc.buildModule(ModuleAttribute.of(moduleName, handler), clb -> {
 
                 // Add an annotation to the module

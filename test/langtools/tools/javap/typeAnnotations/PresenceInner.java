@@ -41,7 +41,7 @@ public class PresenceInner {
         File javaFile = writeTestFile();
         File classFile = compileTestFile(javaFile);
 
-        ClassModel cm = Classfile.of().parse(classFile.toPath());
+        ClassModel cm = ClassFile.of().parse(classFile.toPath());
         test(cm);
         for (FieldModel fm : cm.fields()) {
             test(fm);
@@ -55,7 +55,7 @@ public class PresenceInner {
 
         // visit inner class
         File innerFile = new File("Test$1Inner.class");
-        ClassModel icm = Classfile.of().parse(innerFile.toPath());
+        ClassModel icm = ClassFile.of().parse(innerFile.toPath());
         test(icm);
         for (FieldModel fm : icm.fields()) {
             test(fm);

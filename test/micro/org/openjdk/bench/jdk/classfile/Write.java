@@ -24,7 +24,7 @@ package org.openjdk.bench.jdk.classfile;
 
 import java.lang.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.attribute.SourceFileAttribute;
 import jdk.internal.org.objectweb.asm.*;
@@ -136,7 +136,7 @@ public class Write {
     @BenchmarkMode(Mode.Throughput)
     public byte[] jdkTree() {
 
-        byte[] bytes = Classfile.of().build(CD_MyClass, cb -> {
+        byte[] bytes = ClassFile.of().build(CD_MyClass, cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
@@ -184,7 +184,7 @@ public class Write {
     @BenchmarkMode(Mode.Throughput)
     public byte[] jdkTreePrimitive() {
 
-        byte[] bytes = Classfile.of().build(CD_MyClass, cb -> {
+        byte[] bytes = ClassFile.of().build(CD_MyClass, cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))

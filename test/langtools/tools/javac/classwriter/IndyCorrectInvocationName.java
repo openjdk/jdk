@@ -164,7 +164,7 @@ public class IndyCorrectInvocationName implements Plugin {
         }
 
         Path testClass = classes.resolve("Test.class");
-        ClassModel cf = Classfile.of().parse(testClass);
+        ClassModel cf = ClassFile.of().parse(testClass);
         BootstrapMethodsAttribute bootAttr = cf.findAttribute(Attributes.BOOTSTRAP_METHODS).orElseThrow();
         if (bootAttr.bootstrapMethodsSize() != 1) {
             throw new AssertionError("Incorrect number of bootstrap methods: " +

@@ -55,8 +55,8 @@ public sealed interface ModuleOpenInfo
 
     /**
      * {@return the flags associated with this open declaration, as a bit mask}
-     * Valid flags include {@link java.lang.classfile.Classfile#ACC_SYNTHETIC} and
-     * {@link java.lang.classfile.Classfile#ACC_MANDATED}
+     * Valid flags include {@link java.lang.classfile.ClassFile#ACC_SYNTHETIC} and
+     * {@link java.lang.classfile.ClassFile#ACC_MANDATED}
      */
     int opensFlagsMask();
 

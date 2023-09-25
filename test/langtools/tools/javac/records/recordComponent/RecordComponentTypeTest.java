@@ -139,7 +139,7 @@ public class RecordComponentTypeTest extends TestRunner {
                 .options("-processor", "GenerateTypeProcessor")
                 .outdir(curPath)
                 .run();
-        cf = Classfile.of().parse(curPath.resolve("RecordComponentUsingGeneratedTypeWithAnnotation.class"));
+        cf = ClassFile.of().parse(curPath.resolve("RecordComponentUsingGeneratedTypeWithAnnotation.class"));
 
         for (FieldModel field : cf.fields()) {
             if (field.fieldName().equalsString("generatedType")){

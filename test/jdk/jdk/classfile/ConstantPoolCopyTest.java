@@ -23,12 +23,12 @@
 
 /*
  * @test
- * @summary Testing Classfile constant pool cloning.
+ * @summary Testing ClassFile constant pool cloning.
  * @run junit ConstantPoolCopyTest
  */
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassReader;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantDynamicEntry;
 import java.lang.classfile.constantpool.DoubleEntry;
@@ -69,7 +69,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ConstantPoolCopyTest {
     private static ClassModel[] rtJarToClassLow(FileSystem fs) {
         try {
-            var cc = Classfile.of();
+            var cc = ClassFile.of();
             var modules = Stream.of(
                     Files.walk(fs.getPath("modules/java.base/java")),
                     Files.walk(fs.getPath("modules"), 2).filter(p -> p.endsWith("module-info.class")))

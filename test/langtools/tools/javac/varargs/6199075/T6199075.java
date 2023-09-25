@@ -215,7 +215,7 @@ public class T6199075 {
         bytecodeCheckCount++;
         File compiledTest = new File("Test.class");
         try {
-            ClassModel cf = Classfile.of().parse(compiledTest.toPath());
+            ClassModel cf = ClassFile.of().parse(compiledTest.toPath());
             MethodModel testMethod = null;
             for (MethodModel m : cf.methods()) {
                 if (m.methodName().equalsString("test")) {

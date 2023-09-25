@@ -25,7 +25,7 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.util.function.Predicate;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassTransform;
 import java.lang.classfile.CodeTransform;
 import java.lang.classfile.MethodTransform;
@@ -65,9 +65,9 @@ public final class StripJavaDebugAttributesPlugin extends AbstractPlugin {
                         // XXX. Do we have debug info?
                     } else {
                         var clm = newClassReader(path, resource,
-                                Classfile.DebugElementsOption.DROP_DEBUG,
-                                Classfile.LineNumbersOption.DROP_LINE_NUMBERS);
-                        byte[] content = Classfile.of().transform(clm, ClassTransform
+                                ClassFile.DebugElementsOption.DROP_DEBUG,
+                                ClassFile.LineNumbersOption.DROP_LINE_NUMBERS);
+                        byte[] content = ClassFile.of().transform(clm, ClassTransform
                                         .dropping(cle -> cle instanceof SourceFileAttribute
                                                             || cle instanceof SourceDebugExtensionAttribute)
                                               .andThen(ClassTransform.transformingMethods(MethodTransform

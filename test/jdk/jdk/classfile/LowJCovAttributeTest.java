@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile low JCov attributes.
+ * @summary Testing ClassFile low JCov attributes.
  * @compile -Xjcov LowJCovAttributeTest.java
  * @run junit LowJCovAttributeTest
  */
@@ -34,7 +34,7 @@ import java.nio.file.Paths;
 
 import java.lang.classfile.Attribute;
 import java.lang.classfile.ClassModel;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.Attributes;
@@ -59,7 +59,7 @@ class LowJCovAttributeTest {
 
     LowJCovAttributeTest() throws IOException {
         this.path = Paths.get(URI.create(LowJCovAttributeTest.class.getResource(TEST_FILE).toString()));
-        this.classLow = Classfile.of().parse(path);
+        this.classLow = ClassFile.of().parse(path);
     }
 
     @Test

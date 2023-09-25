@@ -52,7 +52,7 @@ public class EmptyUTF8ForInnerClassNameTest {
     }
 
     void checkClassFile(final Path path) throws Exception {
-        ClassModel classFile = Classfile.of().parse(
+        ClassModel classFile = ClassFile.of().parse(
                 new BufferedInputStream(Files.newInputStream(path)).readAllBytes());
         for (PoolEntry pe : classFile.constantPool()) {
             if (pe instanceof Utf8Entry utf8Info) {

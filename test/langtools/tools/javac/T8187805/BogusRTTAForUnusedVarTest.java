@@ -67,7 +67,7 @@ public class BogusRTTAForUnusedVarTest {
         File testClasses = new File(System.getProperty("test.classes"));
         File file = new File(testClasses,
                 BogusRTTAForUnusedVarTest.class.getName() + "$Foo.class");
-        ClassModel classFile = Classfile.of().parse(file.toPath());
+        ClassModel classFile = ClassFile.of().parse(file.toPath());
         for (MethodModel m : classFile.methods()) {
             if (m.methodName().equalsString("something")) {
                 for (Attribute<?> a : m.attributes()) {

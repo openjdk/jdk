@@ -50,7 +50,7 @@ public class NoUnnecessaryCast {
     }
 
     void checkClassFile(File file) throws IOException {
-        ClassModel classFile = Classfile.of().parse(file.toPath());
+        ClassModel classFile = ClassFile.of().parse(file.toPath());
 
         MethodModel method = classFile.methods().stream()
                               .filter(m -> getName(m).equals("test"))

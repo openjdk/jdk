@@ -23,12 +23,12 @@
 
 /*
  * @test
- * @summary Testing Classfile massive class adaptation.
+ * @summary Testing ClassFile massive class adaptation.
  * @run junit MassAdaptCopyCodeTest
  */
 import helpers.ByteArrayClassLoader;
 import java.lang.classfile.ClassModel;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.CodeTransform;
 import java.lang.classfile.MethodModel;
@@ -74,13 +74,13 @@ class MassAdaptCopyCodeTest {
     }
 
     void copy(String name, byte[] bytes) throws Exception {
-        byte[] newBytes = adaptCopy(Classfile.of().parse(bytes));
+        byte[] newBytes = adaptCopy(ClassFile.of().parse(bytes));
         classNameToClass.put(name, new ByteArrayClassLoader.ClassData(name, newBytes));
         if (name.contains("/")) throw new RuntimeException(name);
     }
 
     public byte[] adaptCopy(ClassModel cm) {
-        return Classfile.of().transform(cm, (cb, ce) -> {
+        return ClassFile.of().transform(cm, (cb, ce) -> {
             if (ce instanceof MethodModel mm) {
                 cb.transformMethod(mm, (mb, me) -> {
                     if (me instanceof CodeModel xm) {

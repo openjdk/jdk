@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile local variable table.
+ * @summary Testing ClassFile local variable table.
  * @compile -g testdata/Lvt.java
  * @run junit LvtTest
  */
@@ -79,7 +79,7 @@ class LvtTest {
 
     @Test
     void getLVTEntries() {
-        ClassModel c = Classfile.of().parse(fileBytes);
+        ClassModel c = ClassFile.of().parse(fileBytes);
         CodeModel co = c.methods().stream()
                         .filter(mm -> mm.methodName().stringValue().equals("m"))
                         .map(MethodModel::code)
@@ -104,7 +104,7 @@ class LvtTest {
 
     @Test
     void buildLVTEntries() throws Exception {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         ClassModel c = cc.parse(fileBytes);
 
         // Compare transformed model and original with CodeBuilder filter
@@ -116,7 +116,7 @@ class LvtTest {
 
     @Test
     void testCreateLoadLVT() throws Exception {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         byte[] bytes = cc.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
@@ -189,7 +189,7 @@ class LvtTest {
 
     @Test
     void getLVTTEntries() {
-        ClassModel c = Classfile.of().parse(fileBytes);
+        ClassModel c = ClassFile.of().parse(fileBytes);
         CodeModel co = c.methods().stream()
                         .filter(mm -> mm.methodName().stringValue().equals("n"))
                         .map(MethodModel::code)
@@ -229,7 +229,7 @@ class LvtTest {
 
     @Test
     void testCreateLoadLVTT() throws Exception {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         byte[] bytes = cc.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
@@ -243,7 +243,7 @@ class LvtTest {
               )
 
               .withMethod("m", MethodTypeDesc.of(CD_Object, CD_Object.arrayType()),
-                          Classfile.ACC_PUBLIC,
+                          ClassFile.ACC_PUBLIC,
                           mb -> mb.withFlags(AccessFlag.PUBLIC)
                                   .withCode(c0 -> {
                                       ConstantPoolBuilder cpb = cb.constantPool();
@@ -302,7 +302,7 @@ class LvtTest {
 
     @Test
     void skipDebugSkipsLVT() {
-        ClassModel c = Classfile.of(Classfile.DebugElementsOption.DROP_DEBUG).parse(fileBytes);
+        ClassModel c = ClassFile.of(ClassFile.DebugElementsOption.DROP_DEBUG).parse(fileBytes);
 
         c.forEachElement(e -> {
             if (e instanceof MethodModel m) {

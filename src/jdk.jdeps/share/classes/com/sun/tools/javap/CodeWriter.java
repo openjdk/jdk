@@ -30,7 +30,7 @@ import java.util.List;
 
 import java.util.Locale;
 import java.util.stream.Collectors;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.constantpool.*;
 import java.lang.classfile.Instruction;
@@ -82,7 +82,7 @@ public class CodeWriter extends BasicWriter {
     public void writeVerboseHeader(CodeAttribute attr) {
         MethodModel method = attr.parent().get();
         int n = method.methodTypeSymbol().parameterCount();
-        if ((method.flags().flagsMask() & Classfile.ACC_STATIC) == 0)
+        if ((method.flags().flagsMask() & ClassFile.ACC_STATIC) == 0)
             ++n;  // for 'this'
         println("stack=" + attr.maxStack() +
                 ", locals=" + attr.maxLocals() +

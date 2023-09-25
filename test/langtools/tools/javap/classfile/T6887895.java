@@ -71,7 +71,7 @@ public class T6887895 {
 
     ClassModel getClassFile(String name) throws IOException, URISyntaxException {
         URL rsc = getClass().getResource(name);
-        return Classfile.of().parse(Paths.get(rsc.toURI()));
+        return ClassFile.of().parse(Paths.get(rsc.toURI()));
     }
 
     class Test {

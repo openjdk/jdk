@@ -143,7 +143,7 @@ public class BridgeHarness {
      */
     protected void checkBridges(JavaFileObject jfo) {
         try (InputStream is = jfo.openInputStream()) {
-            ClassModel cf = Classfile.of().parse(is.readAllBytes());
+            ClassModel cf = ClassFile.of().parse(is.readAllBytes());
             System.err.println("checking: " + cf.thisClass().asInternalName());
 
             List<Bridge> bridgeList = bridgesMap.get(cf.thisClass().asInternalName());
@@ -153,7 +153,7 @@ public class BridgeHarness {
             }
 
             for (MethodModel m : cf.methods()) {
-                if ((m.flags().flagsMask() & (Classfile.ACC_SYNTHETIC | Classfile.ACC_BRIDGE)) != 0) {
+                if ((m.flags().flagsMask() & (ClassFile.ACC_SYNTHETIC | ClassFile.ACC_BRIDGE)) != 0) {
                     //this is a bridge - see if there's a match in the bridge list
                     Bridge match = null;
                     for (Bridge b : bridgeList) {

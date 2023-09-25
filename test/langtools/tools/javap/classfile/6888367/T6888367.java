@@ -152,7 +152,7 @@ public class T6888367 {
     ClassModel getClassFile(String name) throws IOException, URISyntaxException {
         URL rsc = getClass().getResource(name + ".class");
         assert rsc != null;
-        return Classfile.of().parse(Paths.get(rsc.toURI()));
+        return ClassFile.of().parse(Paths.get(rsc.toURI()));
     }
 
     AnnotValues getDescValue(AttributedElement m) {

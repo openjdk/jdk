@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile stack maps generator.
+ * @summary Testing ClassFile stack maps generator.
  * @bug 8305990
  * @build testdata.*
  * @run junit StackMapsTest
@@ -38,7 +38,7 @@ import java.nio.file.Files;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static helpers.TestUtil.assertEmpty;
-import static java.lang.classfile.Classfile.ACC_STATIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
@@ -52,8 +52,8 @@ import java.lang.reflect.AccessFlag;
 class StackMapsTest {
 
     private byte[] buildDeadCode() {
-        return Classfile.of(Classfile.StackMapsOption.DROP_STACK_MAPS,
-                                    Classfile.DeadCodeOption.KEEP_DEAD_CODE).build(
+        return ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS,
+                                    ClassFile.DeadCodeOption.KEEP_DEAD_CODE).build(
                 ClassDesc.of("DeadCodePattern"),
                 clb -> clb.withMethodBody(
                                 "twoReturns",
@@ -95,7 +95,7 @@ class StackMapsTest {
 
     @Test
     void testDeadCodePatternFail() throws Exception {
-        var error = assertThrows(IllegalArgumentException.class, () -> testTransformedStackMaps(buildDeadCode(), Classfile.DeadCodeOption.KEEP_DEAD_CODE));
+        var error = assertThrows(IllegalArgumentException.class, () -> testTransformedStackMaps(buildDeadCode(), ClassFile.DeadCodeOption.KEEP_DEAD_CODE));
         assertLinesMatch(
             """
             Unable to generate stack map frame for dead code at bytecode offset 1 of method twoReturns()
@@ -170,7 +170,7 @@ class StackMapsTest {
 
     @Test
     void testFrameOutOfBytecodeRange() {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         var error = assertThrows(IllegalArgumentException.class, () ->
         cc.parse(
                 cc.build(ClassDesc.of("TestClass"), clb ->
@@ -193,7 +193,7 @@ class StackMapsTest {
     @Test
     void testMethodSwitchFromStatic() {
         assertThrows(IllegalArgumentException.class, () ->
-        Classfile.of().build(ClassDesc.of("TestClass"), clb ->
+        ClassFile.of().build(ClassDesc.of("TestClass"), clb ->
                 clb.withMethod("testMethod", MethodTypeDesc.of(ConstantDescs.CD_Object, ConstantDescs.CD_int),
                                ACC_STATIC,
                                mb -> mb.withCode(cob -> {
@@ -206,7 +206,7 @@ class StackMapsTest {
     @Test
     void testMethodSwitchToStatic() {
         assertThrows(IllegalArgumentException.class, () ->
-        Classfile.of().build(ClassDesc.of("TestClass"), clb ->
+        ClassFile.of().build(ClassDesc.of("TestClass"), clb ->
                 clb.withMethod("testMethod", MethodTypeDesc.of(ConstantDescs.CD_int, ConstantDescs.CD_int),
                                0, mb ->
                                        mb.withCode(cob -> {
@@ -218,7 +218,7 @@ class StackMapsTest {
 
     @Test
     void testClassVersions() throws Exception {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         var actualVersion = cc.parse(StackMapsTest.class.getResourceAsStream("/testdata/Pattern1.class").readAllBytes());
 
         //test transformation to class version 49 with removal of StackMapTable attributes
@@ -239,7 +239,7 @@ class StackMapsTest {
 
     private static final FileSystem JRT = FileSystems.getFileSystem(URI.create("jrt:/"));
 
-    private static void testTransformedStackMaps(String classPath, Classfile.Option... options) throws Exception {
+    private static void testTransformedStackMaps(String classPath, ClassFile.Option... options) throws Exception {
         testTransformedStackMaps(
                 classPath.startsWith("/")
                             ? StackMapsTest.class.getResourceAsStream(classPath).readAllBytes()
@@ -247,9 +247,9 @@ class StackMapsTest {
                 options);
     }
 
-    private static void testTransformedStackMaps(byte[] originalBytes, Classfile.Option... options) throws Exception {
+    private static void testTransformedStackMaps(byte[] originalBytes, ClassFile.Option... options) throws Exception {
         //transform the class model
-        Classfile cc = Classfile.of(options);
+        ClassFile cc = ClassFile.of(options);
         var classModel = cc.parse(originalBytes);
         var transformedBytes = cc.build(classModel.thisClass().asSymbol(),
                                                cb -> {

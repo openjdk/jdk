@@ -36,7 +36,7 @@ import java.lang.classfile.TypeKind;
 import java.lang.classfile.constantpool.ConstantDynamicEntry;
 import java.lang.classfile.constantpool.DynamicConstantPoolEntry;
 import java.lang.classfile.constantpool.MemberRefEntry;
-import static java.lang.classfile.Classfile.*;
+import static java.lang.classfile.ClassFile.*;
 
 
 public final class StackCounter {

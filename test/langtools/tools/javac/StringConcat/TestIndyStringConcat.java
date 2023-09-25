@@ -100,9 +100,9 @@ public class TestIndyStringConcat {
         return false;
     }
 
-// this version of the code can be used when Classfile API in not in a preview
+// this version of the code can be used when ClassFile API in not in a preview
 //    public static boolean hasStringConcatFactoryCall(String methodName) throws Exception {
-//        ClassModel classFile = Classfile.of().parse(new File(System.getProperty("test.classes", "."),
+//        ClassModel classFile = ClassFile.of().parse(new File(System.getProperty("test.classes", "."),
 //                TestIndyStringConcat.class.getName() + ".class").toPath());
 //
 //        for (MethodModel method : classFile.methods()) {

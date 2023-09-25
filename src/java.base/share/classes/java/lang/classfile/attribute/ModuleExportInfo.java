@@ -34,7 +34,7 @@ import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
 import java.lang.reflect.AccessFlag;
 
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
@@ -56,8 +56,8 @@ public sealed interface ModuleExportInfo
 
     /**
      * {@return the flags associated with this export declaration, as a bit mask}
-     * Valid flags include {@link Classfile#ACC_SYNTHETIC} and
-     * {@link Classfile#ACC_MANDATED}.
+     * Valid flags include {@link ClassFile#ACC_SYNTHETIC} and
+     * {@link ClassFile#ACC_MANDATED}.
      */
     int exportsFlagsMask();
 

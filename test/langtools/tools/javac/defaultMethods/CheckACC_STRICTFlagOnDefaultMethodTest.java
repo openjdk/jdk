@@ -88,13 +88,13 @@ public class CheckACC_STRICTFlagOnDefaultMethodTest {
         }
     }
 
-// this version of the code can be used when Classfile API in not in a preview
+// this version of the code can be used when ClassFile API in not in a preview
 //    void check(String dir, String... fileNames) throws IOException {
 //        for (String fileName : fileNames) {
-//            ClassModel classFileToCheck = Classfile.of().parse(new File(dir, fileName).toPath());
+//            ClassModel classFileToCheck = ClassFile.of().parse(new File(dir, fileName).toPath());
 //
 //            for (MethodModel method : classFileToCheck.methods()) {
-//                if ((method.flags().flagsMask() & Classfile.ACC_STRICT) == 0) {
+//                if ((method.flags().flagsMask() & ClassFile.ACC_STRICT) == 0) {
 //                    errors.add(String.format(offendingMethodErrorMessage,
 //                            method.methodName().stringValue(),
 //                            classFileToCheck.thisClass().asInternalName()));

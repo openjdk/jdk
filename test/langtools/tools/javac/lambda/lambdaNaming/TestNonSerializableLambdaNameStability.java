@@ -83,7 +83,7 @@ public class TestNonSerializableLambdaNameStability {
                 byte[] fileBytes = fm.getFileBytes(StandardLocation.CLASS_OUTPUT, file);
                 try (InputStream in = new ByteArrayInputStream(fileBytes)) {
                     boolean foundLambdaMethod = false;
-                    ClassModel cf = Classfile.of().parse(in.readAllBytes());
+                    ClassModel cf = ClassFile.of().parse(in.readAllBytes());
                     StringBuilder seenMethods = new StringBuilder();
                     String sep = "";
                     for (MethodModel m : cf.methods()) {

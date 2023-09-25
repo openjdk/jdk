@@ -29,7 +29,7 @@ import java.lang.constant.MethodTypeDesc;
 import java.util.function.Consumer;
 
 import java.lang.classfile.BufWriter;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.CodeTransform;
@@ -50,7 +50,7 @@ public final class DirectMethodBuilder
     MethodTypeDesc mDesc;
 
     public DirectMethodBuilder(SplitConstantPool constantPool,
-                               ClassfileImpl context,
+                               ClassFileImpl context,
                                Utf8Entry nameInfo,
                                Utf8Entry typeInfo,
                                int flags,
@@ -63,8 +63,8 @@ public final class DirectMethodBuilder
     }
 
     void setFlags(int flags) {
-        boolean wasStatic = (this.flags & Classfile.ACC_STATIC) != 0;
-        boolean isStatic = (flags & Classfile.ACC_STATIC) != 0;
+        boolean wasStatic = (this.flags & ClassFile.ACC_STATIC) != 0;
+        boolean isStatic = (flags & ClassFile.ACC_STATIC) != 0;
         if (wasStatic != isStatic)
             throw new IllegalArgumentException("Cannot change ACC_STATIC flag of method");
         this.flags = flags;

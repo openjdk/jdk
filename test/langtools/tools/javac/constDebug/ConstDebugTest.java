@@ -37,7 +37,7 @@ public class ConstDebugTest {
     public static final long l = 12;
 
     public static void main(String args[]) throws Exception {
-        ClassModel classModel = Classfile.of().parse(Paths.get(System.getProperty("test.classes"),
+        ClassModel classModel = ClassFile.of().parse(Paths.get(System.getProperty("test.classes"),
                 ConstDebugTest.class.getSimpleName() + ".class"));
         for (MethodModel method: classModel.methods()) {
             if (method.methodName().equalsString("<clinit>")) {

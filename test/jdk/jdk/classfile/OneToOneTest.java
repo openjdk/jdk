@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile class writing and reading.
+ * @summary Testing ClassFile class writing and reading.
  * @run junit OneToOneTest
  */
 import java.lang.constant.ClassDesc;
@@ -34,7 +34,7 @@ import java.util.List;
 import java.lang.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
 import java.lang.classfile.ClassModel;
-import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Label;
 import java.lang.classfile.MethodModel;
@@ -61,7 +61,7 @@ class OneToOneTest {
 
     @Test
     void testClassWriteRead() {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         byte[] bytes = cc.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);

@@ -27,7 +27,7 @@ public class NestedLineNumberTest {
     }
 
     static List<LineNumberInfo> findEntries() throws IOException {
-        ClassModel self = Classfile.of().parse(NestedLineNumberTest.Test.class.getResourceAsStream("NestedLineNumberTest$Test.class").readAllBytes());
+        ClassModel self = ClassFile.of().parse(NestedLineNumberTest.Test.class.getResourceAsStream("NestedLineNumberTest$Test.class").readAllBytes());
         for (MethodModel m : self.methods()) {
             if ("<init>".equals(m.methodName().stringValue())) {
                 CodeAttribute code_attribute = m.findAttribute(Attributes.CODE).orElseThrow();

@@ -204,7 +204,7 @@ public class JavaBaseTest {
         jct.files(tb.findJavaFiles(src1))
             .run(Task.Expect.SUCCESS);
 
-        ClassModel cm1 = Classfile.of().parse(modules1.resolve("module-info.class"));
+        ClassModel cm1 = ClassFile.of().parse(modules1.resolve("module-info.class"));
 
         ModuleAttribute modAttr1 = cm1.findAttribute(Attributes.MODULE).orElseThrow();
         List<ModuleRequireInfo> requires = Arrays.asList(new ModuleRequireInfo[modAttr1.requires().size()]);
@@ -215,8 +215,8 @@ public class JavaBaseTest {
             if (e1.requires().name().equalsString("java.base")) {
                 for (String mod : mods) {
                     switch (mod) {
-                        case "static" -> flags |= Classfile.ACC_STATIC_PHASE;
-                        case "transitive" -> flags |= Classfile.ACC_TRANSITIVE;
+                        case "static" -> flags |= ClassFile.ACC_STATIC_PHASE;
+                        case "transitive" -> flags |= ClassFile.ACC_TRANSITIVE;
                     }
                 }
                 e2 = ModuleRequireInfo.of(e1.requires(), flags, e1.requiresVersion().orElse(null));
@@ -237,7 +237,7 @@ public class JavaBaseTest {
                 modAttr1.provides());
         Path modInfo = base.resolve("test-modules").resolve("module-info.class");
         Files.createDirectories(modInfo.getParent());
-        byte[] newBytes = Classfile.of().transform(cm1, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
+        byte[] newBytes = ClassFile.of().transform(cm1, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
                 andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(modAttr2))));
         try (OutputStream out = Files.newOutputStream(modInfo)) {
             out.write(newBytes);

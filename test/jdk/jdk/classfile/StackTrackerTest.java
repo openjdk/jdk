@@ -43,7 +43,7 @@ class StackTrackerTest {
 
     @Test
     void testStackTracker() {
-        Classfile.of().build(ClassDesc.of("Foo"), clb ->
+        ClassFile.of().build(ClassDesc.of("Foo"), clb ->
             clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_Void), 0, cob -> {
                 var stackTracker = CodeStackTracker.of(DoubleType, FloatType); //initial stack tracker pre-set
                 cob.transforming(stackTracker, stcb -> {
@@ -79,7 +79,7 @@ class StackTrackerTest {
 
     @Test
     void testTrackingLost() {
-        Classfile.of().build(ClassDesc.of("Foo"), clb ->
+        ClassFile.of().build(ClassDesc.of("Foo"), clb ->
             clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_Void), 0, cob -> {
                 var stackTracker = CodeStackTracker.of();
                 cob.transforming(stackTracker, stcb -> {

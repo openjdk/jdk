@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile LDC instructions.
+ * @summary Testing ClassFile LDC instructions.
  * @run junit LDCTest
  */
 import java.lang.constant.ClassDesc;
@@ -44,7 +44,7 @@ import java.lang.classfile.instruction.ConstantInstruction;
 class LDCTest {
     @Test
     void testLDCisConvertedToLDCW() throws Exception {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         byte[] bytes = cc.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
