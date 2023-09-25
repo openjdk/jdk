@@ -4047,7 +4047,7 @@ public class Check {
 
                 // super()/this() calls must be a top level statement
                 if (scanDepth != MATCH_SCAN_DEPTH) {
-                    log.error(apply.pos(), Errors.CallsNotAllowedHere(methodName));
+                    log.error(apply.pos(), Errors.CtorCallsNotAllowedHere(methodName));
                     break;
                 }
 

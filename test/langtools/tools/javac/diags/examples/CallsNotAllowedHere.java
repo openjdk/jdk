@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.calls.not.allowed.here
+// key: compiler.err.ctor.calls.not.allowed.here
 
 class CallsNotAllowedHere {
     public CallsNotAllowedHere() {
