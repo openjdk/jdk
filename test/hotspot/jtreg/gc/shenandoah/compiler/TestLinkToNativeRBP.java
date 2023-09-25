@@ -28,7 +28,7 @@
  * @summary guarantee(loc != NULL) failed: missing saved register with native invoke
  *
  * @requires vm.flavor == "server"
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "ppc64le"
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm --enable-native-access=ALL-UNNAMED -XX:+UnlockDiagnosticVMOptions
@@ -50,7 +50,7 @@ public class TestLinkToNativeRBP {
 
     final static Linker abi = Linker.nativeLinker();
     static final SymbolLookup lookup = SymbolLookup.loaderLookup();
-    final static MethodHandle foo = abi.downcallHandle(lookup.lookup("foo").get(),
+    final static MethodHandle foo = abi.downcallHandle(lookup.find("foo").get(),
             FunctionDescriptor.of(ValueLayout.JAVA_INT));
 
     static int foo() throws Throwable {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,6 +229,11 @@ public class ReplToolTesting {
         test(true, args, tests);
     }
 
+    public void test(String[] args, String expectedErrorOutput,
+                     ReplTest... tests) {
+        test(Locale.ROOT, true, args, expectedErrorOutput, DEFAULT_STARTUP_MESSAGE, tests);
+    }
+
     public void test(boolean isDefaultStartUp, String[] args, ReplTest... tests) {
         test(Locale.ROOT, isDefaultStartUp, args, DEFAULT_STARTUP_MESSAGE, tests);
     }
@@ -238,6 +243,11 @@ public class ReplToolTesting {
     }
 
     public void test(Locale locale, boolean isDefaultStartUp, String[] args, String startUpMessage, ReplTest... tests) {
+        test(locale, isDefaultStartUp, args, "", startUpMessage, tests);
+    }
+
+    public void test(Locale locale, boolean isDefaultStartUp, String[] args,
+                     String expectedErrorOutput, String startUpMessage, ReplTest... tests) {
         this.isDefaultStartUp = isDefaultStartUp;
         initSnippets();
         ReplTest[] wtests = new ReplTest[tests.length + 3];
@@ -246,7 +256,7 @@ public class ReplToolTesting {
         wtests[1] = a -> assertCommand(a, "/debug 0", null);
         System.arraycopy(tests, 0, wtests, 2, tests.length);
         wtests[tests.length + 2] = a -> assertCommand(a, "/exit", null);
-        testRaw(locale, args, wtests);
+        testRaw(locale, args, expectedErrorOutput, wtests);
     }
 
     private void initSnippets() {
@@ -291,10 +301,11 @@ public class ReplToolTesting {
                     .promptCapture(true);
     }
 
-    private void testRaw(Locale locale, String[] args, ReplTest... tests) {
+    private void testRaw(Locale locale, String[] args,
+                         String expectedErrorOutput, ReplTest... tests) {
         testRawInit(tests);
         testRawRun(locale, args);
-        testRawCheck(locale);
+        testRawCheck(locale, expectedErrorOutput);
     }
 
     private void testRawInit(ReplTest... tests) {
@@ -316,7 +327,7 @@ public class ReplToolTesting {
         }
     }
 
-    private void testRawCheck(Locale locale) {
+    private void testRawCheck(Locale locale, String expectedErrorOutput) {
         // perform internal consistency checks on state, if desired
         String cos = getCommandOutput();
         String ceos = getCommandErrorOutput();
@@ -324,7 +335,10 @@ public class ReplToolTesting {
         String ueos = getUserErrorOutput();
         assertTrue((cos.isEmpty() || cos.startsWith("|  Goodbye") || !locale.equals(Locale.ROOT)),
                 "Expected a goodbye, but got: " + cos);
-        assertTrue(ceos.isEmpty(), "Expected empty command error output, got: " + ceos);
+        assertEquals(ceos,
+                     expectedErrorOutput,
+                     "Expected \"" + expectedErrorOutput +
+                     "\" command error output, got: \"" + ceos + "\"");
         assertTrue(uos.isEmpty(), "Expected empty user output, got: " + uos);
         assertTrue(ueos.isEmpty(), "Expected empty user error output, got: " + ueos);
     }
@@ -491,6 +505,26 @@ public class ReplToolTesting {
             assertCommand(false, cmd, null);
         } else {
             String got = getCommandOutput();
+            check.accept(got);
+            assertCommand(true, cmd, null);
+        }
+    }
+
+    public void assertCommandUserOutputContains(boolean after, String cmd, String... hasThese) {
+        assertCommandCheckUserOutput(after, cmd, (s)
+                -> assertTrue(Arrays.stream(hasThese)
+                        .allMatch(has -> s.contains(has)),
+                "User output: \'" + s + "' does not contain: "
+                        + Arrays.stream(hasThese)
+                        .filter(has -> !s.contains(has))
+                        .collect(Collectors.joining(", "))));
+    }
+
+    public void assertCommandCheckUserOutput(boolean after, String cmd, Consumer<String> check) {
+        if (!after) {
+            assertCommand(false, cmd, null);
+        } else {
+            String got = getUserOutput();
             check.accept(got);
             assertCommand(true, cmd, null);
         }

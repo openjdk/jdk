@@ -13,6 +13,7 @@
         <folder name="Window">
             <file name="BytecodeViewAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Window/com-sun-hotspot-igv-bytecodes-BytecodeViewAction.instance"/>
+                <attr name="position" intvalue="1"/>
             </file>
         </folder>
     </folder>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ enum CompilerType : u1 {
 };
 
 extern const char* compilertype2name_tab[compiler_number_of_types];     // Map CompilerType to its name
-inline const char* compilertype2name(CompilerType t) { return (uint)t < compiler_number_of_types ? compilertype2name_tab[t] : NULL; }
+inline const char* compilertype2name(CompilerType t) { return (uint)t < compiler_number_of_types ? compilertype2name_tab[t] : nullptr; }
 
 // Handy constants for deciding which compiler mode to use.
 enum MethodCompilation {
@@ -121,10 +121,12 @@ public:
   // Returns threshold scaled with CompileThresholdScaling
   static intx scaled_compile_threshold(intx threshold, double scale);
   static intx scaled_compile_threshold(intx threshold);
+  static intx jvmflag_scaled_compile_threshold(intx threshold);
 
   // Returns freq_log scaled with CompileThresholdScaling
   static intx scaled_freq_log(intx freq_log, double scale);
   static intx scaled_freq_log(intx freq_log);
+  static intx jvmflag_scaled_freq_log(intx freq_log);
 
   static bool check_args_consistency(bool status);
 

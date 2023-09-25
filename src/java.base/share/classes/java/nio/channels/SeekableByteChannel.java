@@ -64,6 +64,7 @@ public interface SeekableByteChannel
      * @throws  ClosedChannelException      {@inheritDoc}
      * @throws  AsynchronousCloseException  {@inheritDoc}
      * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonReadableChannelException {@inheritDoc}
      */
     @Override
     int read(ByteBuffer dst) throws IOException;
@@ -83,6 +84,7 @@ public interface SeekableByteChannel
      * @throws  ClosedChannelException      {@inheritDoc}
      * @throws  AsynchronousCloseException  {@inheritDoc}
      * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonWritableChannelException {@inheritDoc}
      */
     @Override
     int write(ByteBuffer src) throws IOException;

@@ -24,30 +24,38 @@
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.visitor.AcceptChildren;
+import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
+
+import java.lang.reflect.Method;
+import java.util.List;
 
 /**
- * This base class represents an IR matching result of all IR rules of a method.
+ * This class represents a matching result of an {@link IRMethod}. It contains a list of all IR rule match results
+ * which could have been applied on different compile phases.
  *
- * @see IRRuleMatchResult
  * @see IRMethod
  */
-abstract public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, MatchResult {
-    protected final IRMethod irMethod;
+public class IRMethodMatchResult implements MatchResult {
+    private final AcceptChildren acceptChildren;
+    private final boolean failed;
+    private final Method method;
+    private final int failedIRRules;
 
-    IRMethodMatchResult(IRMethod irMethod) {
-        this.irMethod = irMethod;
+    public IRMethodMatchResult(Method method, List<MatchResult> matchResults) {
+        this.acceptChildren = new AcceptChildren(matchResults);
+        this.failed = !matchResults.isEmpty();
+        this.method = method;
+        this.failedIRRules = matchResults.size();
     }
 
-    abstract public String getMatchedCompilationOutput();
-
-    abstract public int getFailedIRRuleCount();
-
-    /**
-     * Used to sort the failed IR methods alphabetically.
-     */
     @Override
-    public int compareTo(IRMethodMatchResult other) {
-        return this.irMethod.getMethod().getName().compareTo(other.irMethod.getMethod().getName());
+    public boolean fail() {
+        return failed;
+    }
+
+    @Override
+    public void accept(MatchResultVisitor visitor) {
+        visitor.visitIRMethod(acceptChildren, method, failedIRRules);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import static org.testng.Assert.*;
  * @modules java.management/javax.management.loading:open
  * @run testng MLetInternalsTest
  */
+@SuppressWarnings("removal")
 public class MLetInternalsTest {
     private final static String CONSTRUCT_PARAMETER = "constructParameter";
 

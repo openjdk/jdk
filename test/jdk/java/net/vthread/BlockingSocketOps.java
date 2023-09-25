@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,23 @@
  * @test id=default
  * @bug 8284161
  * @summary Test virtual threads doing blocking I/O on java.net sockets
- * @enablePreview
  * @library /test/lib
- * @run testng/othervm BlockingSocketOps
+ * @run junit BlockingSocketOps
  */
 
 /**
  * @test id=direct-register
  * @summary Test virtual threads doing blocking I/O on java.net sockets and with
  *    the I/O poller configured to use direct registration
- * @enablePreview
  * @library /test/lib
- * @run testng/othervm -Djdk.useDirectRegister BlockingSocketOps
+ * @run junit/othervm -Djdk.useDirectRegister BlockingSocketOps
  */
 
 /**
  * @test id=no-vmcontinuations
  * @requires vm.continuations
- * @enablePreview
  * @library /test/lib
- * @run testng/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BlockingSocketOps
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BlockingSocketOps
  */
 
 import java.io.Closeable;
@@ -62,16 +59,16 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
 import jdk.test.lib.thread.VThreadRunner;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class BlockingSocketOps {
+class BlockingSocketOps {
 
     /**
      * Socket read/write, no blocking.
      */
     @Test
-    public void testSocketReadWrite1() throws Exception {
+    void testSocketReadWrite1() throws Exception {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s1 = connection.socket1();
@@ -94,7 +91,7 @@ public class BlockingSocketOps {
      * Virtual thread blocks in read.
      */
     @Test
-    public void testSocketRead1() throws Exception {
+    void testSocketRead1() throws Exception {
         testSocketRead(0);
     }
 
@@ -102,7 +99,7 @@ public class BlockingSocketOps {
      * Virtual thread blocks in timed read.
      */
     @Test
-    public void testSocketRead2() throws Exception {
+    void testSocketRead2() throws Exception {
         testSocketRead(60_000);
     }
 
@@ -132,7 +129,7 @@ public class BlockingSocketOps {
      * Virtual thread blocks in write.
      */
     @Test
-    public void testSocketWrite1() throws Exception {
+    void testSocketWrite1() throws Exception {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s1 = connection.socket1();
@@ -161,7 +158,7 @@ public class BlockingSocketOps {
      * Virtual thread blocks in read, peer closes connection gracefully.
      */
     @Test
-    public void testSocketReadPeerClose1() throws Exception {
+    void testSocketReadPeerClose1() throws Exception {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s1 = connection.socket1();
@@ -181,7 +178,7 @@ public class BlockingSocketOps {
      * Virtual thread blocks in read, peer closes connection abruptly.
      */
     @Test
-    public void testSocketReadPeerClose2() throws Exception {
+    void testSocketReadPeerClose2() throws Exception {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s1 = connection.socket1();
@@ -206,7 +203,7 @@ public class BlockingSocketOps {
      * Socket close while virtual thread blocked in read.
      */
     @Test
-    public void testSocketReadAsyncClose1() throws Exception {
+    void testSocketReadAsyncClose1() throws Exception {
         testSocketReadAsyncClose(0);
     }
 
@@ -214,7 +211,7 @@ public class BlockingSocketOps {
      * Socket close while virtual thread blocked in timed read.
      */
     @Test
-    public void testSocketReadAsyncClose2() throws Exception {
+    void testSocketReadAsyncClose2() throws Exception {
         testSocketReadAsyncClose(0);
     }
 
@@ -242,7 +239,7 @@ public class BlockingSocketOps {
      * Virtual thread interrupted while blocked in Socket read.
      */
     @Test
-    public void testSocketReadInterrupt1() throws Exception {
+    void testSocketReadInterrupt1() throws Exception {
         testSocketReadInterrupt(0);
     }
 
@@ -250,7 +247,7 @@ public class BlockingSocketOps {
      * Virtual thread interrupted while blocked in Socket read with timeout
      */
     @Test
-    public void testSocketReadInterrupt2() throws Exception {
+    void testSocketReadInterrupt2() throws Exception {
         testSocketReadInterrupt(60_000);
     }
 
@@ -283,7 +280,7 @@ public class BlockingSocketOps {
      * Socket close while virtual thread blocked in write.
      */
     @Test
-    public void testSocketWriteAsyncClose() throws Exception {
+    void testSocketWriteAsyncClose() throws Exception {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s = connection.socket1();
@@ -307,7 +304,7 @@ public class BlockingSocketOps {
      * Virtual thread interrupted while blocked in Socket write.
      */
     @Test
-    public void testSocketWriteInterrupt() throws Exception {
+    void testSocketWriteInterrupt() throws Exception {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s = connection.socket1();
@@ -335,7 +332,7 @@ public class BlockingSocketOps {
      * Virtual thread reading urgent data when SO_OOBINLINE is enabled.
      */
     @Test
-    public void testSocketReadUrgentData() throws Exception {
+    void testSocketReadUrgentData() throws Exception {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s1 = connection.socket1();
@@ -367,7 +364,7 @@ public class BlockingSocketOps {
      * ServerSocket accept, no blocking.
      */
     @Test
-    public void testServerSocketAccept1() throws Exception {
+    void testServerSocketAccept1() throws Exception {
         VThreadRunner.run(() -> {
             try (var listener = new ServerSocket()) {
                 InetAddress loopback = InetAddress.getLoopbackAddress();
@@ -388,7 +385,7 @@ public class BlockingSocketOps {
      * Virtual thread blocks in accept.
      */
     @Test
-    public void testServerSocketAccept2() throws Exception {
+    void testServerSocketAccept2() throws Exception {
         testServerSocketAccept(0);
     }
 
@@ -396,7 +393,7 @@ public class BlockingSocketOps {
      * Virtual thread blocks in timed accept.
      */
     @Test
-    public void testServerSocketAccept3() throws Exception {
+    void testServerSocketAccept3() throws Exception {
         testServerSocketAccept(60_000);
     }
 
@@ -426,7 +423,7 @@ public class BlockingSocketOps {
      * ServerSocket close while virtual thread blocked in accept.
      */
     @Test
-    public void testServerSocketAcceptAsyncClose1() throws Exception {
+    void testServerSocketAcceptAsyncClose1() throws Exception {
         testServerSocketAcceptAsyncClose(0);
     }
 
@@ -434,7 +431,7 @@ public class BlockingSocketOps {
      * ServerSocket close while virtual thread blocked in timed accept.
      */
     @Test
-    public void testServerSocketAcceptAsyncClose2() throws Exception {
+    void testServerSocketAcceptAsyncClose2() throws Exception {
         testServerSocketAcceptAsyncClose(60_000);
     }
 
@@ -463,7 +460,7 @@ public class BlockingSocketOps {
      * Virtual thread interrupted while blocked in ServerSocket accept.
      */
     @Test
-    public void testServerSocketAcceptInterrupt1() throws Exception {
+    void testServerSocketAcceptInterrupt1() throws Exception {
         testServerSocketAcceptInterrupt(0);
     }
 
@@ -471,7 +468,7 @@ public class BlockingSocketOps {
      * Virtual thread interrupted while blocked in ServerSocket accept with timeout.
      */
     @Test
-    public void testServerSocketAcceptInterrupt2() throws Exception {
+    void testServerSocketAcceptInterrupt2() throws Exception {
         testServerSocketAcceptInterrupt(60_000);
     }
 
@@ -504,7 +501,7 @@ public class BlockingSocketOps {
      * DatagramSocket receive/send, no blocking.
      */
     @Test
-    public void testDatagramSocketSendReceive1() throws Exception {
+    void testDatagramSocketSendReceive1() throws Exception {
         VThreadRunner.run(() -> {
             try (DatagramSocket s1 = new DatagramSocket(null);
                  DatagramSocket s2 = new DatagramSocket(null)) {
@@ -523,7 +520,7 @@ public class BlockingSocketOps {
                 byte[] ba = new byte[100];
                 DatagramPacket p2 = new DatagramPacket(ba, ba.length);
                 s2.receive(p2);
-                assertEquals(p2.getSocketAddress(), s1.getLocalSocketAddress());
+                assertEquals(s1.getLocalSocketAddress(), p2.getSocketAddress());
                 assertTrue(ba[0] == 'X');
             }
         });
@@ -533,7 +530,7 @@ public class BlockingSocketOps {
      * Virtual thread blocks in DatagramSocket receive.
      */
     @Test
-    public void testDatagramSocketSendReceive2() throws Exception {
+    void testDatagramSocketSendReceive2() throws Exception {
         testDatagramSocketSendReceive(0);
     }
 
@@ -541,7 +538,7 @@ public class BlockingSocketOps {
      * Virtual thread blocks in DatagramSocket receive with timeout.
      */
     @Test
-    public void testDatagramSocketSendReceive3() throws Exception {
+    void testDatagramSocketSendReceive3() throws Exception {
         testDatagramSocketSendReceive(60_000);
     }
 
@@ -567,7 +564,7 @@ public class BlockingSocketOps {
                 byte[] ba = new byte[100];
                 DatagramPacket p2 = new DatagramPacket(ba, ba.length);
                 s2.receive(p2);
-                assertEquals(p2.getSocketAddress(), s1.getLocalSocketAddress());
+                assertEquals(s1.getLocalSocketAddress(), p2.getSocketAddress());
                 assertTrue(ba[0] == 'X');
             }
         });
@@ -577,7 +574,7 @@ public class BlockingSocketOps {
      * Virtual thread blocks in DatagramSocket receive that times out.
      */
     @Test
-    public void testDatagramSocketReceiveTimeout() throws Exception {
+    void testDatagramSocketReceiveTimeout() throws Exception {
         VThreadRunner.run(() -> {
             try (DatagramSocket s = new DatagramSocket(null)) {
                 InetAddress lh = InetAddress.getLoopbackAddress();
@@ -597,7 +594,7 @@ public class BlockingSocketOps {
      * DatagramSocket close while virtual thread blocked in receive.
      */
     @Test
-    public void testDatagramSocketReceiveAsyncClose1() throws Exception {
+    void testDatagramSocketReceiveAsyncClose1() throws Exception {
         testDatagramSocketReceiveAsyncClose(0);
     }
 
@@ -605,7 +602,7 @@ public class BlockingSocketOps {
      * DatagramSocket close while virtual thread blocked with timeout.
      */
     @Test
-    public void testDatagramSocketReceiveAsyncClose2() throws Exception {
+    void testDatagramSocketReceiveAsyncClose2() throws Exception {
         testDatagramSocketReceiveAsyncClose(60_000);
     }
 
@@ -636,7 +633,7 @@ public class BlockingSocketOps {
      * Virtual thread interrupted while blocked in DatagramSocket receive.
      */
     @Test
-    public void testDatagramSocketReceiveInterrupt1() throws Exception {
+    void testDatagramSocketReceiveInterrupt1() throws Exception {
         testDatagramSocketReceiveInterrupt(0);
     }
 
@@ -644,7 +641,7 @@ public class BlockingSocketOps {
      * Virtual thread interrupted while blocked in DatagramSocket receive with timeout.
      */
     @Test
-    public void testDatagramSocketReceiveInterrupt2() throws Exception {
+    void testDatagramSocketReceiveInterrupt2() throws Exception {
         testDatagramSocketReceiveInterrupt(60_000);
     }
 

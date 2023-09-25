@@ -29,6 +29,7 @@
  * @library /test/lib
  * @modules java.base/sun.security.tools.keytool
  *          java.base/sun.security.x509
+ * @run main/othervm SecureValidation
  */
 import jdk.test.lib.Asserts;
 import jdk.test.lib.security.XMLUtils;

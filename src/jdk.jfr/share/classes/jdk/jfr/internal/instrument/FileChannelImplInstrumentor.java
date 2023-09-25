@@ -45,7 +45,6 @@ final class FileChannelImplInstrumentor {
 
     private String path;
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public void force(boolean metaData) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.FILE_FORCE;
@@ -65,7 +64,6 @@ final class FileChannelImplInstrumentor {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int read(ByteBuffer dst) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.FILE_READ;
@@ -90,7 +88,6 @@ final class FileChannelImplInstrumentor {
         return bytesRead;
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int read(ByteBuffer dst, long position) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.FILE_READ;
@@ -115,7 +112,6 @@ final class FileChannelImplInstrumentor {
         return bytesRead;
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.FILE_READ;
@@ -140,7 +136,6 @@ final class FileChannelImplInstrumentor {
         return bytesRead;
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int write(ByteBuffer src) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.FILE_WRITE;
@@ -162,7 +157,6 @@ final class FileChannelImplInstrumentor {
         return bytesWritten;
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int write(ByteBuffer src, long position) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.FILE_WRITE;
@@ -185,7 +179,6 @@ final class FileChannelImplInstrumentor {
         return bytesWritten;
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.FILE_WRITE;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
 
 package java.lang;
 
+import jdk.internal.util.ArraysSupport;
+
 import java.io.DataInputStream;
 import java.io.InputStream;
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
-import java.util.Locale;
 import java.util.zip.InflaterInputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -59,7 +60,7 @@ class CharacterName {
             int bkNum = dis.readInt();
             int cpNum = dis.readInt();
             int cpEnd = dis.readInt();
-            byte ba[] = new byte[cpEnd];
+            byte[] ba = new byte[cpEnd];
             lookup = new int[bkNum * 256];
             bkIndices = new int[(Character.MAX_CODE_POINT + 1) >> 8];
             strPool = new byte[total - cpEnd];
@@ -76,9 +77,9 @@ class CharacterName {
             int bk = -1;
             int prevBk = -1;   // prev bkNo;
             int idx = 0;
-            int next = -1;
-            int hash = 0;
-            int hsh = 0;
+            int next;
+            int hash;
+            int hsh;
             do {
                 int len = ba[cpOff++] & 0xff;
                 if (len == 0) {
@@ -111,12 +112,8 @@ class CharacterName {
         }
     }
 
-    private static final int hashN(byte[] a, int off, int len) {
-        int h = 1;
-        while (len-- > 0) {
-            h = 31 * h + a[off++];
-        }
-        return h;
+    private static int hashN(byte[] a, int off, int len) {
+        return ArraysSupport.vectorizedHashCode(a, off, len, 1, ArraysSupport.T_BYTE);
     }
 
     private int addCp(int idx, int hash, int next, int cp) {
@@ -132,7 +129,7 @@ class CharacterName {
 
     public static CharacterName getInstance() {
         SoftReference<CharacterName> ref = refCharName;
-        CharacterName cname = null;
+        CharacterName cname;
         if (ref == null || (cname = ref.get()) == null) {
             cname = new CharacterName();
             refCharName = new SoftReference<>(cname);
@@ -141,7 +138,7 @@ class CharacterName {
     }
 
     public String getName(int cp) {
-        int off = 0;
+        int off;
         int bk = bkIndices[cp >> 8];
         if (bk == -1 || (off = lookup[(bk << 8) + (cp & 0xff)]) == 0)
             return null;
@@ -157,7 +154,7 @@ class CharacterName {
         while (idx != -1) {
             if (getCpHash(idx) == hsh) {
                 int cp = getCp(idx);
-                int off = -1;
+                int off;
                 int bk = bkIndices[cp >> 8];
                 if (bk != -1 && (off = lookup[(bk << 8) + (cp & 0xff)]) != 0) {
                     int len = off & 0xff;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,8 +91,8 @@ public interface Shape {
      *
      * <p>
      * Note that the
-     * <a href="{@docRoot}/java.desktop/java/awt/Shape.html#def_insideness">
-     * definition of insideness</a> can lead to situations where points
+     * {@linkplain Shape##def_insideness
+     * definition of insideness} can lead to situations where points
      * on the defining outline of the {@code shape} may not be considered
      * contained in the returned {@code bounds} object, but only in cases
      * where those points are also not considered contained in the original
@@ -137,8 +137,8 @@ public interface Shape {
      *
      * <p>
      * Note that the
-     * <a href="{@docRoot}/java.desktop/java/awt/Shape.html#def_insideness">
-     * definition of insideness</a> can lead to situations where points
+     * {@linkplain Shape##def_insideness
+     * definition of insideness} can lead to situations where points
      * on the defining outline of the {@code shape} may not be considered
      * contained in the returned {@code bounds} object, but only in cases
      * where those points are also not considered contained in the original
@@ -171,8 +171,7 @@ public interface Shape {
     /**
      * Tests if the specified coordinates are inside the boundary of the
      * {@code Shape}, as described by the
-     * <a href="{@docRoot}/java.desktop/java/awt/Shape.html#def_insideness">
-     * definition of insideness</a>.
+     * {@linkplain Shape##def_insideness definition of insideness}.
      * @param x the specified X coordinate to be tested
      * @param y the specified Y coordinate to be tested
      * @return {@code true} if the specified coordinates are inside

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,7 +173,7 @@ public class BaseLdapServer implements Closeable {
             if (!isRunning()) {
                 logger.log(INFO, "Connection Handler exit {0}", t.getMessage());
             } else {
-                t.printStackTrace();
+                handleSocketException(socket, t);
             }
         }
 
@@ -188,6 +188,15 @@ public class BaseLdapServer implements Closeable {
      * Override to customize the behavior.
      */
     protected void beforeConnectionHandled(Socket socket) { /* empty */ }
+
+    /*
+     * Called to handle exceptions observed on an established client connection.
+     *
+     * By default, an exception stack trace is printed.
+     */
+    protected void handleSocketException(Socket socket, Throwable exception) {
+        exception.printStackTrace();
+    }
 
     /*
      * Called after an LDAP request has been read in `handleConnection()`.

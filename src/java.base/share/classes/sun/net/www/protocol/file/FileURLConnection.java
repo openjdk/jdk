@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,17 +36,16 @@ import java.net.FileNameMap;
 import java.io.*;
 import java.text.Collator;
 import java.security.Permission;
-import sun.net.*;
 import sun.net.www.*;
 import java.util.*;
 import java.text.SimpleDateFormat;
 
 public class FileURLConnection extends URLConnection {
 
-    static String CONTENT_LENGTH = "content-length";
-    static String CONTENT_TYPE = "content-type";
-    static String TEXT_PLAIN = "text/plain";
-    static String LAST_MODIFIED = "last-modified";
+    private static final String CONTENT_LENGTH = "content-length";
+    private static final String CONTENT_TYPE = "content-type";
+    private static final String TEXT_PLAIN = "text/plain";
+    private static final String LAST_MODIFIED = "last-modified";
 
     String contentType;
     InputStream is;
@@ -82,20 +81,18 @@ public class FileURLConnection extends URLConnection {
                         throw new FileNotFoundException(filename + " exists, but is not accessible");
                     files = Arrays.<String>asList(fileList);
                 } else {
-
                     is = new BufferedInputStream(new FileInputStream(filename));
-
-                    // Check if URL should be metered
-                    boolean meteredInput = ProgressMonitor.getDefault().shouldMeterInput(url, "GET");
-                    if (meteredInput)   {
-                        ProgressSource pi = new ProgressSource(url, "GET", file.length());
-                        is = new MeteredStream(is, pi, file.length());
-                    }
                 }
             } catch (IOException e) {
                 throw e;
             }
             connected = true;
+        }
+    }
+
+    public synchronized void closeInputStream() throws IOException {
+        if (is != null) {
+            is.close();
         }
     }
 

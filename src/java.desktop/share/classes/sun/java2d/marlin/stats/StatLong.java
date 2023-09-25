@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@ package sun.java2d.marlin.stats;
 public class StatLong {
 
     public final String name;
-    public long count = 0l;
-    public long sum = 0l;
+    public long count = 0L;
+    public long sum = 0L;
     public long min = Integer.MAX_VALUE;
     public long max = Integer.MIN_VALUE;
 
@@ -41,8 +41,8 @@ public class StatLong {
     }
 
     public void reset() {
-        count = 0l;
-        sum = 0l;
+        count = 0L;
+        sum = 0L;
         min = Integer.MAX_VALUE;
         max = Integer.MIN_VALUE;
     }

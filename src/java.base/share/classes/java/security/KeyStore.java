@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,7 +292,7 @@ public class KeyStore {
          * @param protectionAlgorithm the encryption algorithm name, for
          *     example, {@code PBEWithHmacSHA256AndAES_256}.
          *     See the Cipher section in the <a href=
-         * "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+         * "{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
          * Java Security Standard Algorithm Names Specification</a>
          *     for information about standard encryption algorithm names.
          * @param protectionParameters the encryption algorithm parameter
@@ -817,7 +817,7 @@ public class KeyStore {
         this.type = type;
 
         if (!skipDebug && pdebug != null) {
-            pdebug.println("KeyStore." + type.toUpperCase() + " type from: " +
+            pdebug.println("KeyStore." + type.toUpperCase(Locale.ROOT) + " type from: " +
                 getProviderName());
         }
     }

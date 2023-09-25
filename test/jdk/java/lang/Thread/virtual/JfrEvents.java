@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @summary Basic test for JFR jdk.VirtualThreadXXX events
  * @requires vm.continuations
  * @modules jdk.jfr java.base/java.lang:+open
- * @compile --enable-preview -source ${jdk.version} JfrEvents.java
- * @run testng/othervm --enable-preview JfrEvents
+ * @run junit/othervm JfrEvents
  */
 
 import java.io.IOException;
@@ -40,6 +39,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
 
@@ -48,17 +48,17 @@ import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class JfrEvents {
+class JfrEvents {
     private static final Object lock = new Object();
 
     /**
      * Test jdk.VirtualThreadStart and jdk.VirtualThreadEnd events.
      */
     @Test
-    public void testVirtualThreadStartAndEnd() throws Exception {
+    void testVirtualThreadStartAndEnd() throws Exception {
         try (Recording recording = new Recording()) {
             recording.enable("jdk.VirtualThreadStart");
             recording.enable("jdk.VirtualThreadEnd");
@@ -76,12 +76,12 @@ public class JfrEvents {
             }
 
             Map<String, Integer> events = sumEvents(recording);
-            System.out.println(events);
+            System.err.println(events);
 
             int startCount = events.getOrDefault("jdk.VirtualThreadStart", 0);
             int endCount = events.getOrDefault("jdk.VirtualThreadEnd", 0);
-            assertTrue(startCount == 100);
-            assertTrue(endCount == 100);
+            assertEquals(100, startCount);
+            assertEquals(100, endCount);
         }
     }
 
@@ -89,36 +89,52 @@ public class JfrEvents {
      * Test jdk.VirtualThreadPinned event.
      */
     @Test
-    public void testVirtualThreadPinned() throws Exception {
+    void testVirtualThreadPinned() throws Exception {
+        Runnable[] parkers = new Runnable[] {
+            () -> LockSupport.park(),
+            () -> LockSupport.parkNanos(Duration.ofDays(1).toNanos())
+        };
+
         try (Recording recording = new Recording()) {
-            recording.enable("jdk.VirtualThreadPinned")
-                     .withThreshold(Duration.ofMillis(500));
+            recording.enable("jdk.VirtualThreadPinned");
 
-            // execute task in a virtual thread, carrier thread is pinned 3 times.
             recording.start();
-            ThreadFactory factory = Thread.ofVirtual().factory();
-            try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
-                executor.submit(() -> {
-                    synchronized (lock) {
-                        // pinned, duration < 500ms
-                        Thread.sleep(1);
+            try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+                for (Runnable parker : parkers) {
+                    // execute parking task in virtual thread
+                    var threadRef = new AtomicReference<Thread>();
+                    executor.submit(() -> {
+                        threadRef.set(Thread.currentThread());
+                        synchronized (lock) {
+                            parker.run();   // should pin carrier
+                        }
+                    });
 
-                        // pinned, duration > 500ms
-                        Thread.sleep(Duration.ofSeconds(3));
-                        Thread.sleep(Duration.ofSeconds(3));
+                    // wait for the task to start and the virtual thread to park
+                    Thread thread;
+                    while ((thread = threadRef.get()) == null) {
+                        Thread.sleep(10);
                     }
-                    return null;
-                });
+                    try {
+                        Thread.State state = thread.getState();
+                        while (state != Thread.State.WAITING && state != Thread.State.TIMED_WAITING) {
+                            Thread.sleep(10);
+                            state = thread.getState();
+                        }
+                    } finally {
+                        LockSupport.unpark(thread);
+                    }
+                }
             } finally {
                 recording.stop();
             }
 
             Map<String, Integer> events = sumEvents(recording);
-            System.out.println(events);
+            System.err.println(events);
 
-            // should have two pinned events recorded
+            // should have a pinned event for each park
             int pinnedCount = events.getOrDefault("jdk.VirtualThreadPinned", 0);
-            assertTrue(pinnedCount == 2);
+            assertEquals(parkers.length, pinnedCount);
         }
     }
 
@@ -126,7 +142,7 @@ public class JfrEvents {
      * Test jdk.VirtualThreadSubmitFailed event.
      */
     @Test
-    public void testVirtualThreadSubmitFailed() throws Exception {
+    void testVirtualThreadSubmitFailed() throws Exception {
         try (Recording recording = new Recording()) {
             recording.enable("jdk.VirtualThreadSubmitFailed");
 
@@ -165,10 +181,10 @@ public class JfrEvents {
             }
 
             Map<String, Integer> events = sumEvents(recording);
-            System.out.println(events);
+            System.err.println(events);
 
             int count = events.getOrDefault("jdk.VirtualThreadSubmitFailed", 0);
-            assertTrue(count == 2);
+            assertEquals(2, count);
         }
     }
 

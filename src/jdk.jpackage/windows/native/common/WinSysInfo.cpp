@@ -30,7 +30,7 @@
 #include "FileUtils.h"
 #include "WinErrorHandling.h"
 
-#pragma comment(lib, "Shell32")
+// Requires linking with Shell32
 
 namespace SysInfo {
 

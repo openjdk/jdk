@@ -26,7 +26,8 @@
 #define SHARE_GC_SERIAL_MARKSWEEP_HPP
 
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/genOopClosures.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/iterator.hpp"
@@ -36,10 +37,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/stack.hpp"
 
-class ReferenceProcessor;
 class DataLayout;
-class Method;
-class nmethod;
 class SerialOldTracer;
 class STWGCTimer;
 
@@ -89,7 +87,6 @@ class MarkSweep : AllStatic {
   //
   friend class AdjustPointerClosure;
   friend class KeepAliveClosure;
-  friend class VM_MarkSweep;
 
   //
   // Vars
@@ -103,12 +100,12 @@ class MarkSweep : AllStatic {
   static Stack<ObjArrayTask, mtGC>             _objarray_stack;
 
   // Space for storing/restoring mark word
-  static Stack<PreservedMark, mtGC>      _preserved_overflow_stack;
+  static PreservedMarksSet               _preserved_overflow_stack_set;
   static size_t                          _preserved_count;
   static size_t                          _preserved_count_max;
   static PreservedMark*                  _preserved_marks;
 
-  // Reference processing (used in ...follow_contents)
+  static AlwaysTrueClosure               _always_true_closure;
   static ReferenceProcessor*             _ref_processor;
 
   static STWGCTimer*                     _gc_timer;
@@ -135,8 +132,7 @@ class MarkSweep : AllStatic {
   static uint total_invocations() { return _total_invocations; }
 
   // Reference Processing
-  static ReferenceProcessor* const ref_processor() { return _ref_processor; }
-  static void set_ref_processor(ReferenceProcessor* rp);
+  static ReferenceProcessor* ref_processor() { return _ref_processor; }
 
   static STWGCTimer* gc_timer() { return _gc_timer; }
   static SerialOldTracer* gc_tracer() { return _gc_tracer; }
@@ -149,10 +145,6 @@ class MarkSweep : AllStatic {
   static size_t adjust_pointers(oop obj);
 
   static void follow_stack();   // Empty marking stack.
-
-  static void follow_klass(Klass* klass);
-
-  static void follow_cld(ClassLoaderData* cld);
 
   template <class T> static inline void adjust_pointer(T* p);
 
@@ -174,17 +166,13 @@ class MarkSweep : AllStatic {
   static void follow_array_chunk(objArrayOop array, int index);
 };
 
-class MarkAndPushClosure: public OopIterateClosure {
+class MarkAndPushClosure: public ClaimMetadataVisitingOopIterateClosure {
 public:
-  template <typename T> void do_oop_work(T* p);
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
+  MarkAndPushClosure(int claim) : ClaimMetadataVisitingOopIterateClosure(claim) {}
 
-  virtual bool do_metadata() { return true; }
-  virtual void do_klass(Klass* k);
-  virtual void do_cld(ClassLoaderData* cld);
-  virtual void do_method(Method* m);
-  virtual void do_nmethod(nmethod* nm);
+  template <typename T> void do_oop_work(T* p);
+  virtual void do_oop(      oop* p);
+  virtual void do_oop(narrowOop* p);
 
   void set_ref_discoverer(ReferenceDiscoverer* rd) {
     set_ref_discoverer_internal(rd);
@@ -197,17 +185,6 @@ class AdjustPointerClosure: public BasicOopIterateClosure {
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
-};
-
-class PreservedMark {
-private:
-  oop _obj;
-  markWord _mark;
-
-public:
-  PreservedMark(oop obj, markWord mark) : _obj(obj), _mark(mark) {}
-  void adjust_pointer();
-  void restore();
 };
 
 #endif // SHARE_GC_SERIAL_MARKSWEEP_HPP

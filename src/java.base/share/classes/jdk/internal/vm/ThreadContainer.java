@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.internal.vm;
 
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -39,6 +40,13 @@ public abstract class ThreadContainer extends StackableScope {
      */
     protected ThreadContainer(boolean shared) {
         super(shared);
+    }
+
+    /**
+     * Return the name of this container, may be null.
+     */
+    public String name() {
+        return null;
     }
 
     /**
@@ -89,9 +97,20 @@ public abstract class ThreadContainer extends StackableScope {
     }
 
     /**
-     * The extent locals captured when the thread container was created.
+     * The scoped values captured when the thread container was created.
      */
-    public ExtentLocalContainer.BindingsSnapshot extentLocalBindings() {
+    public ScopedValueContainer.BindingsSnapshot scopedValueBindings() {
         return null;
+    }
+
+    @Override
+    public String toString() {
+        String name = name();
+        if (name != null && name.indexOf('@') >= 0) {
+            return name;
+        } else {
+            String id = Objects.toIdentityString(this);
+            return (name != null) ? name + "/" + id : id;
+        }
     }
 }

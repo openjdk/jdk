@@ -291,7 +291,7 @@ class GTKEngine {
         } else if (c instanceof JSeparator) {
             JSeparator separator = (JSeparator)c;
 
-            /* We should return correrct WidgetType if the seperator is inserted
+            /* We should return correct WidgetType if the separator is inserted
              * in Menu/PopupMenu/ToolBar. BugID: 6465603
              */
             if (separator.getParent() instanceof JPopupMenu) {

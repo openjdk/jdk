@@ -24,8 +24,8 @@
 #ifndef SHARE_JFR_RECORDER_REPOSITORY_JFRREPOSITORY_HPP
 #define SHARE_JFR_RECORDER_REPOSITORY_JFRREPOSITORY_HPP
 
-#include "jni.h"
 #include "jfr/utilities/jfrAllocation.hpp"
+#include "jni.h"
 
 class JfrChunkWriter;
 class JfrPostBox;

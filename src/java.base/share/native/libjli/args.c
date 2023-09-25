@@ -379,7 +379,7 @@ static JLI_List expandArgFile(const char *arg) {
 
     /* error occurred reading the file */
     if (rv == NULL) {
-        JLI_ReportMessage(DLL_ERROR4, arg);
+        JLI_ReportMessage(ARG_ERROR18, arg);
         exit(1);
     }
     fclose(fptr);

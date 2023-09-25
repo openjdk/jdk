@@ -100,7 +100,6 @@ static ImageInfo sDefaultImageInfo[sun_java2d_OSXOffScreenSurfaceData_TYPE_3BYTE
 
 static jfieldID        rgbID;
 static jfieldID        mapSizeID;
-static jfieldID        CMpDataID;
 static jfieldID        allGrayID;
 
 static jclass jc_OSXOffScreenSurfaceData = NULL;
@@ -767,7 +766,7 @@ PRINT("    copyARGB_PRE_32bitToGray_16bit")
 
 // 1. first "dither" the true color down by creating a 16 bit value of the real color that will serve as an index into the cache of indexes
 // 2. if the cache has a valid entry use it otherwise go through 3 and 4
-// 3. go through the color table and calculate Euclidian distance between the true color and the indexed colors
+// 3. go through the color table and calculate Euclidean distance between the true color and the indexed colors
 // 4. map the shortest distance into the one and true index color and stick it into the dst (and cache)
 IMAGE_SURFACE_INLINE UInt16* copyARGB_PRE_bitToIndexed_8bit(jint w, jint h, jint nativePixelsBytesPerRow, Pixel32bit *pixelsSrc, jint javaPixelsBytesPerRow, jint javaPixelBytes, Pixel8bit *pixelsDst, Pixel32bit* lutdata, UInt32 lutDataSize, UInt16 *indexedColorTable)
 {
@@ -1022,7 +1021,7 @@ PRINT("syncFromJavaPixels")
             size_t bitsPerComponent = isdo->imageInfo.bitsPerComponent;
             size_t bitsPerPixel = isdo->imageInfo.bitsPerPixel;
             size_t bytesPerRow = 0;
-            size_t extraBytesPerRow = 0; // these are the extra bytesPerRow used for alignement
+            size_t extraBytesPerRow = 0; // these are the extra bytesPerRow used for alignment
 
             switch (isdo->type)
             {
@@ -1614,7 +1613,6 @@ JNIEXPORT void JNICALL Java_sun_java2d_OSXOffScreenSurfaceData_initIDs(JNIEnv *e
         CHECK_NULL(rgbID = (*env)->GetFieldID(env, icm, "rgb", "[I"));
         CHECK_NULL(allGrayID = (*env)->GetFieldID(env, icm, "allgrayopaque", "Z"));
         CHECK_NULL(mapSizeID = (*env)->GetFieldID(env, icm, "map_size", "I"));
-        CHECK_NULL(CMpDataID = (*env)->GetFieldID(env, icm, "pData", "J"));
     }
 
     gColorspaceRGB = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);

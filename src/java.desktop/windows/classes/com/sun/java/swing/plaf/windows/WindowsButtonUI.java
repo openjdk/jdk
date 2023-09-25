@@ -292,7 +292,7 @@ public class WindowsButtonUI extends BasicButtonUI
     /**
      * returns - b.getBorderInsets(c) if border is opaque
      *         - null if border is completely non-opaque
-     *         - somewhere inbetween if border is compound and
+     *         - somewhere in between if border is compound and
      *              outside border is opaque and inside isn't
      */
     private static Insets getOpaqueInsets(Border b, Component c) {

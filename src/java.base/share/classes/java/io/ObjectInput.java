@@ -79,6 +79,9 @@ public interface ObjectInput extends DataInput, AutoCloseable {
      *          {@code -1} if there is no more data because the end of
      *          the stream has been reached.
      * @throws  IOException If an I/O error has occurred.
+     * @throws  IndexOutOfBoundsException If {@code off} is negative,
+     *          {@code len} is negative, or {@code len} is greater than
+     *          {@code b.length - off}
      */
     public int read(byte[] b, int off, int len) throws IOException;
 

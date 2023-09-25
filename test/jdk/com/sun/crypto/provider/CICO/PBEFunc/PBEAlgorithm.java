@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,16 +50,23 @@ public enum PBEAlgorithm {
     HMAC_SHA256_AES_128("PBEWithHmacSHA256AndAES_128", "", "", AbstractPBEWrapper.AES),
     HMAC_SHA384_AES_128("PBEWithHmacSHA384AndAES_128", "", "", AbstractPBEWrapper.AES),
     HMAC_SHA512_AES_128("PBEWithHmacSHA512AndAES_128", "", "", AbstractPBEWrapper.AES),
+    HMAC_SHA512_224_AES_128("PBEWithHmacSHA512/224AndAES_128", "", "", AbstractPBEWrapper.AES),
+    HMAC_SHA512_256_AES_128("PBEWithHmacSHA512/256AndAES_128", "", "", AbstractPBEWrapper.AES),
     HMAC_SHA1_AES_256("PBEWithHmacSHA1AndAES_256", "", "", AbstractPBEWrapper.AES),
     HMAC_SHA224_AES_256("PBEWithHmacSHA224AndAES_256", "", "", AbstractPBEWrapper.AES),
     HMAC_SHA256_AES_256("PBEWithHmacSHA256AndAES_256", "", "", AbstractPBEWrapper.AES),
     HMAC_SHA384_AES_256("PBEWithHmacSHA384AndAES_256", "", "", AbstractPBEWrapper.AES),
     HMAC_SHA512_AES_256("PBEWithHmacSHA512AndAES_256", "", "", AbstractPBEWrapper.AES),
+    HMAC_SHA512_224_AES_256("PBEWithHmacSHA512/224AndAES_256", "", "", AbstractPBEWrapper.AES),
+    HMAC_SHA512_256_AES_256("PBEWithHmacSHA512/256AndAES_256", "", "", AbstractPBEWrapper.AES),
     PBKDF_HMAC_SHA1("PBKDF2WithHmacSHA1", "", "", AbstractPBEWrapper.PBKDF2),
     PBKDF_HMAC_SHA224("PBKDF2WithHmacSHA224", "", "", AbstractPBEWrapper.PBKDF2),
     PBKDF_HMAC_SHA256("PBKDF2WithHmacSHA256", "", "", AbstractPBEWrapper.PBKDF2),
     PBKDF_HMAC_SHA384("PBKDF2WithHmacSHA384", "", "", AbstractPBEWrapper.PBKDF2),
-    PBKDF_HMAC_SHA512("PBKDF2WithHmacSHA512", "", "", AbstractPBEWrapper.PBKDF2);
+    PBKDF_HMAC_SHA512("PBKDF2WithHmacSHA512", "", "", AbstractPBEWrapper.PBKDF2),
+    PBKDF_HMAC_SHA512_224("PBKDF2WithHmacSHA512/224", "", "", AbstractPBEWrapper.PBKDF2),
+    PBKDF_HMAC_SHA512_256("PBKDF2WithHmacSHA512/256", "", "", AbstractPBEWrapper.PBKDF2);
+
     final String baseAlgo;
     final String mode;
     final String padding;

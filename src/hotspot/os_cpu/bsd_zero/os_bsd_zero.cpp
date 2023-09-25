@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,19 +23,14 @@
  *
  */
 
-#if !defined(__APPLE__) && !defined(__NetBSD__)
-#include <pthread.h>
-# include <pthread_np.h> /* For pthread_attr_get_np */
-#endif
-
 // no precompiled headers
-#include "jvm.h"
 #include "asm/assembler.inline.hpp"
 #include "atomic_bsd_zero.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_zero.hpp"
 #include "os_bsd.hpp"
@@ -57,6 +52,11 @@
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 
+#if !defined(__APPLE__) && !defined(__NetBSD__)
+#include <pthread.h>
+# include <pthread_np.h> /* For pthread_attr_get_np */
+#endif
+
 address os::current_stack_pointer() {
   address dummy = (address) &dummy;
   return dummy;
@@ -75,7 +75,7 @@ frame os::current_frame() {
   //     set the sp to a close approximation of the real value in
   //     order to allow this step to complete.
   //   - Step 120 (printing native stack) tries to walk the stack.
-  //     The frame we create has a NULL pc, which is ignored as an
+  //     The frame we create has a null pc, which is ignored as an
   //     invalid frame.
   frame dummy = frame();
   dummy.set_sp((intptr_t *) current_stack_pointer());
@@ -92,7 +92,7 @@ char* os::non_memory_address_word() {
 
 address os::Posix::ucontext_get_pc(const ucontext_t* uc) {
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }
 
 void os::Posix::ucontext_set_pc(ucontext_t * uc, address pc) {
@@ -103,7 +103,7 @@ address os::fetch_frame_from_context(const void* ucVoid,
                                      intptr_t** ret_sp,
                                      intptr_t** ret_fp) {
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }
 
 frame os::fetch_frame_from_context(const void* ucVoid) {
@@ -114,7 +114,7 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
 
-  if (info != NULL && thread != NULL) {
+  if (info != nullptr && thread != nullptr) {
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV || sig == SIGBUS) {
       address addr = (address) info->si_addr;
@@ -176,26 +176,24 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
   return s;
 }
 
-static void current_stack_region(address *bottom, size_t *size) {
-  address stack_bottom;
-  address stack_top;
-  size_t stack_bytes;
+void os::current_stack_base_and_size(address* base, size_t* size) {
+  address bottom;
 
 #ifdef __APPLE__
   pthread_t self = pthread_self();
-  stack_top = (address) pthread_get_stackaddr_np(self);
-  stack_bytes = pthread_get_stacksize_np(self);
-  stack_bottom = stack_top - stack_bytes;
+  *base = (address) pthread_get_stackaddr_np(self);
+  *size = pthread_get_stacksize_np(self);
+  bottom = *base - *size;
 #elif defined(__OpenBSD__)
   stack_t ss;
   int rslt = pthread_stackseg_np(pthread_self(), &ss);
 
   if (rslt != 0)
-    fatal("pthread_stackseg_np failed with error = " INT32_FORMAT, rslt);
+    fatal("pthread_stackseg_np failed with error = %d", rslt);
 
-  stack_top = (address) ss.ss_sp;
-  stack_bytes  = ss.ss_size;
-  stack_bottom = stack_top - stack_bytes;
+  *base = (address) ss.ss_sp;
+  *size  = ss.ss_size;
+  bottom = *base - *size;
 #else
   pthread_attr_t attr;
 
@@ -203,43 +201,25 @@ static void current_stack_region(address *bottom, size_t *size) {
 
   // JVM needs to know exact stack location, abort if it fails
   if (rslt != 0)
-    fatal("pthread_attr_init failed with error = " INT32_FORMAT, rslt);
+    fatal("pthread_attr_init failed with error = %d", rslt);
 
   rslt = pthread_attr_get_np(pthread_self(), &attr);
 
   if (rslt != 0)
-    fatal("pthread_attr_get_np failed with error = " INT32_FORMAT, rslt);
+    fatal("pthread_attr_get_np failed with error = %d", rslt);
 
-  if (pthread_attr_getstackaddr(&attr, (void **) &stack_bottom) != 0 ||
-      pthread_attr_getstacksize(&attr, &stack_bytes) != 0) {
+  if (pthread_attr_getstackaddr(&attr, (void **) &bottom) != 0 ||
+      pthread_attr_getstacksize(&attr, size) != 0) {
     fatal("Can not locate current stack attributes!");
   }
 
+  *base = bottom + *size;
+
   pthread_attr_destroy(&attr);
 
-  stack_top = stack_bottom + stack_bytes;
 #endif
-
-  assert(os::current_stack_pointer() >= stack_bottom, "should do");
-  assert(os::current_stack_pointer() < stack_top, "should do");
-
-  *bottom = stack_bottom;
-  *size = stack_top - stack_bottom;
-}
-
-address os::current_stack_base() {
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return bottom + size;
-}
-
-size_t os::current_stack_size() {
-  // stack size includes normal stack and HotSpot guard pages
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return size;
+  assert(os::current_stack_pointer() >= bottom &&
+         os::current_stack_pointer() < *base, "just checking");
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -253,7 +233,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   ShouldNotCallThis();
 }
 
-void os::print_register_info(outputStream *st, const void *context) {
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
   ShouldNotCallThis();
 }
 

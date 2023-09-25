@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -521,7 +521,7 @@ AC_DEFUN([UTIL_REMOVE_SYMBOLIC_LINKS],
       sym_link_dir=`pwd -P`
       # Resolve file symlinks
       while test $COUNTER -lt 20; do
-        ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
+        ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP -e '->' | $SED -e 's/.*-> \(.*\)/\1/'`
         if test "x$ISLINK" == x; then
           # This is not a symbolic link! We are done!
           break

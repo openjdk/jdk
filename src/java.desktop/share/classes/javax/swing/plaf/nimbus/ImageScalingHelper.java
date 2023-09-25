@@ -62,8 +62,6 @@ class ImageScalingHelper {
         PAINT9_TILE
     }
 
-    ;
-
     private static final Insets EMPTY_INSETS = new Insets(0, 0, 0, 0);
 
     static final int PAINT_TOP_LEFT = 1;
@@ -82,7 +80,7 @@ class ImageScalingHelper {
     static final int PAINT_ALL = 512;
 
     /**
-     * Paints using the algorightm specified by <code>paintType</code>.
+     * Paints using the algorithm specified by <code>paintType</code>.
      *
      * @param g         Graphics to render to
      * @param x         X-coordinate

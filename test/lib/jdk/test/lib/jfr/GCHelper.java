@@ -175,6 +175,7 @@ public class GCHelper {
 
         // old GarbageCollectionMXBeans.
         beanCollectorTypes.put("G1 Old Generation", false);
+        beanCollectorTypes.put("G1 Concurrent GC", false);
         beanCollectorTypes.put("PS MarkSweep", false);
         beanCollectorTypes.put("MarkSweepCompact", false);
 

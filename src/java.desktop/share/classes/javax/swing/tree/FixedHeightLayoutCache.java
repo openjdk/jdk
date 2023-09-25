@@ -642,10 +642,10 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
     }
 
     /**
-     * Ensures that all the path components in path are expanded, accept
+     * Ensures that all the path components in path are expanded, except
      * for the last component which will only be expanded if expandLast
      * is true.
-     * Returns true if succesful in finding the path.
+     * Returns true if successful in finding the path.
      */
     private boolean ensurePathIsExpanded(TreePath aPath,
                                            boolean expandLast) {
@@ -769,7 +769,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
         }
 
         //
-        // Overriden DefaultMutableTreeNode methods
+        // Overridden DefaultMutableTreeNode methods
         //
 
         /**
@@ -1090,7 +1090,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
         // This can be rather expensive, but is needed for the collapse
         // case this is resulting from a remove (although I could fix
         // that by having instances of FHTreeStateNode hold a ref to
-        // the number of children). I prefer this though, making determing
+        // the number of children). I prefer this though, making determining
         // the row of a particular node fast is very nice!
         protected void resetChildrenRowsFrom(int newRow, int childIndex,
                                             int modelIndex) {
@@ -1273,7 +1273,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
         }
 
         /**
-         * Adjusts the child indexs of the receivers children by
+         * Adjusts the child indices of the receivers children by
          * <code>amount</code>, starting at <code>index</code>.
          */
         protected void adjustChildIndexs(int index, int amount) {
@@ -1481,7 +1481,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
     private class VisibleFHTreeStateNodeEnumeration
         implements Enumeration<TreePath>
     {
-        /** Parent thats children are being enumerated. */
+        /** Parent whose children are being enumerated. */
         protected FHTreeStateNode     parent;
         /** Index of next child. An index of -1 signifies parent should be
          * visibled next. */
@@ -1535,7 +1535,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
 
         /**
          * Determines the next object by invoking <code>updateNextIndex</code>
-         * and if not succesful <code>findNextValidParent</code>.
+         * and if not successful <code>findNextValidParent</code>.
          */
         protected void updateNextObject() {
             if(!updateNextIndex()) {

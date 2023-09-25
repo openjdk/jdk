@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,6 @@ class ExpandRule;
 class RewriteRule;
 class ConstructRule;
 class FormatRule;
-class Peephole;
-class PeepMatch;
-class PeepConstraint;
 class EncClass;
 class Interface;
 class RegInterface;
@@ -67,7 +64,10 @@ class ResourceForm;
 class PipeClassForm;
 class PipeClassOperandForm;
 class PipeClassResourceForm;
+class Peephole;
+class PeepPredicate;
 class PeepMatch;
+class PeepProcedure;
 class PeepConstraint;
 class PeepReplace;
 class MatchList;
@@ -283,8 +283,8 @@ public:
 
   virtual void set_stack_version(bool flag) {
     RegClass::set_stack_version(flag);
-    assert((_rclasses[0] != NULL), "Register class NULL for condition code == true");
-    assert((_rclasses[1] != NULL), "Register class NULL for condition code == false");
+    assert((_rclasses[0] != nullptr), "Register class null for condition code == true");
+    assert((_rclasses[1] != nullptr), "Register class null for condition code == false");
     _rclasses[0]->set_stack_version(flag);
     _rclasses[1]->set_stack_version(flag);
   }
@@ -401,6 +401,13 @@ public:
 class ResourceForm : public Form {
 public:
   unsigned mask() const { return _resmask; };
+
+  // A discrete resource is a simple definition of a resource, while compound resources can be composed of multiple resources.
+  // A discrete resource will always have a power of two mask, so this check succeeds in that case.
+  // As compound resources have different masks added together, this check will not succeed there.
+  bool is_discrete() const {
+    return (_resmask & (_resmask - 1)) == 0;
+  }
 
 private:
   // Public Data
@@ -526,7 +533,9 @@ class Peephole : public Form {
 private:
   static int      _peephole_counter;// Incremented by each peephole rule parsed
   int             _peephole_number;// Remember my order in architecture description
+  PeepPredicate  *_predicate;      // Predicate to apply peep rule
   PeepMatch      *_match;          // Instruction pattern to match
+  PeepProcedure  *_procedure;      // The detailed procedure to perform the rule
   PeepConstraint *_constraint;     // List of additional constraints
   PeepReplace    *_replace;        // Instruction pattern to substitute in
 
@@ -541,13 +550,17 @@ public:
   void append_peephole(Peephole *next_peephole);
 
   // Store the components of this peephole rule
+  void add_predicate(PeepPredicate *only_one_predicate);
   void add_match(PeepMatch *only_one_match);
+  void add_procedure(PeepProcedure *only_one_procedure);
   void append_constraint(PeepConstraint *next_constraint);
   void add_replace(PeepReplace *only_one_replacement);
 
   // Access the components of this peephole rule
   int             peephole_number() { return _peephole_number; }
+  PeepPredicate  *predicate()   { return _predicate; }
   PeepMatch      *match()       { return _match; }
+  PeepProcedure  *procedure()   { return _procedure; }
   PeepConstraint *constraints() { return _constraint; }
   PeepReplace    *replacement() { return _replace; }
   Peephole       *next()        { return _next; }
@@ -556,6 +569,19 @@ public:
   void output(FILE *fp);           // Write info to output files
 };
 
+class PeepPredicate : public Form {
+private:
+  const char* _rule;
+public:
+  // Public Methods
+  PeepPredicate(const char* rule);
+  ~PeepPredicate();
+
+  const char* rule() const;
+
+  void dump();
+  void output(FILE* fp);
+};
 
 class PeepMatch : public Form {
 private:
@@ -588,6 +614,19 @@ public:
   void output(FILE *fp);
 };
 
+class PeepProcedure : public Form {
+private:
+  const char* _name;
+public:
+  // Public Methods
+  PeepProcedure(const char* name);
+  ~PeepProcedure();
+
+  const char* name() const;
+
+  void dump();
+  void output(FILE* fp);
+};
 
 class PeepConstraint : public Form {
 private:
@@ -650,12 +689,12 @@ public:
 class PeepChild : public Form {
 public:
   const int   _inst_num;         // Number of instruction (-1 if only named)
-  const char *_inst_op;          // Instruction's operand, NULL if number == -1
+  const char *_inst_op;          // Instruction's operand, null if number == -1
   const char *_inst_name;        // Name of the instruction
 
 public:
   PeepChild(char *inst_name)
-    : _inst_num(-1), _inst_op(NULL), _inst_name(inst_name) {};
+    : _inst_num(-1), _inst_op(nullptr), _inst_name(inst_name) {};
   PeepChild(int inst_num, char *inst_op, char *inst_name)
     : _inst_num(inst_num), _inst_op(inst_op), _inst_name(inst_name) {};
   ~PeepChild();

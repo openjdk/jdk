@@ -419,7 +419,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
         // REMIND: somewhere a puppy died
         class Status {
             boolean success = false;
-        };
+        }
         final Status status = new Status();
         D3DRenderQueue rq = D3DRenderQueue.getInstance();
         rq.lock();

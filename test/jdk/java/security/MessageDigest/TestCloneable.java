@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,16 @@
 
 /*
  * @test
- * @bug 8246077
+ * @bug 8246077 8300416
  * @summary Make sure that digest spi and the resulting digest impl are
- * consistent in the impl of Cloneable interface
+ * consistent in the impl of Cloneable interface, and that clones do not
+ * share memory.
  * @run testng TestCloneable
  */
+import java.nio.ByteBuffer;
 import java.security.*;
+import java.util.Arrays;
+import java.util.Random;
 import java.util.Objects;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -53,7 +57,7 @@ public class TestCloneable {
     @Test(dataProvider = "testData")
     public void test(String algo, String provName)
             throws NoSuchProviderException, NoSuchAlgorithmException,
-            CloneNotSupportedException {
+            CloneNotSupportedException, InterruptedException {
         System.out.print("Testing " + algo + " impl from " + provName);
         Provider p = Security.getProvider(provName);
         Provider.Service s = p.getService("MessageDigest", algo);
@@ -71,6 +75,52 @@ public class TestCloneable {
             System.out.println(": NOT Cloneable");
             Assert.assertThrows(CNSE, ()->md.clone());
         }
+
+        System.out.print("Testing " + algo + " impl from " + provName);
+        final var d1 = MessageDigest.getInstance(algo, provName);
+        final var buffer = ByteBuffer.allocateDirect(1024);
+        final var r = new Random(1024);
+
+        fillBuffer(r, buffer);
+        d1.update(buffer); // this statement triggers tempArray allocation
+        final var d2 = (MessageDigest) d1.clone();
+        assert Arrays.equals(d1.digest(), d2.digest());
+
+        final var t1 = updateThread(d1);
+        final var t2 = updateThread(d2);
+        t1.join();
+        t2.join();
+
+        System.out.println(": Shared data check");
+        // Random is producing the same sequence of bytes for each thread,
+        // and thus each MessageDigest should be equal. When the memory is
+        // shared, they inevitably overwrite each other's tempArray and
+        // you get different results.
+        if (!Arrays.equals(d1.digest(), d2.digest())) {
+            throw new AssertionError("digests differ");
+        }
+
         System.out.println("Test Passed");
+    }
+
+    private static void fillBuffer(final Random r, final ByteBuffer buffer) {
+        final byte[] bytes = new byte[buffer.capacity()];
+        r.nextBytes(bytes);
+        buffer.clear();
+        buffer.put(bytes);
+        buffer.flip();
+    }
+
+    public static Thread updateThread(final MessageDigest d) {
+        final var t = new Thread(() -> {
+            final var r = new Random(1024);
+            final ByteBuffer buffer = ByteBuffer.allocateDirect(1024);
+            for (int i = 0; i < 1024; i++) {
+                fillBuffer(r, buffer);
+                d.update(buffer);
+            }
+        });
+        t.start();
+        return t;
     }
 }

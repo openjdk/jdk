@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,4 +114,13 @@ Java_sun_nio_ch_DatagramDispatcher_writev0(JNIEnv *env, jclass clazz,
         return IOS_THROWN;
     }
     return convertLongReturnVal(env, (jlong)result, JNI_FALSE);
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_ch_DatagramDispatcher_dup0(JNIEnv* env, jclass clazz,
+    jobject fdo1, jobject fdo2)
+{
+    if (dup2(fdval(env, fdo1), fdval(env, fdo2)) < 0) {
+        JNU_ThrowIOExceptionWithLastError(env, "dup2 failed");
+    }
 }

@@ -23,16 +23,26 @@
 
 package compiler.lib.ir_framework.shared;
 
+import compiler.lib.ir_framework.IR;
+
 import java.util.function.BiPredicate;
-import java.util.function.Function;
 
 /**
- * Comparison result of parsing a constraint with {@link ComparisonConstraintParser#parse(String, Function, String)}.
+ * Comparison result of parsing a {@link IR#counts} constraint with {@link ComparisonConstraintParser}
+ *
+ * @see ComparisonConstraintParser
+ * @see IR#counts
  */
 public class Comparison<T extends Comparable<T>> {
     private final T givenValue; // Right hand side
     private final BiPredicate<T, T> comparisonPredicate;
     private final String comparator;
+
+    public enum Bound {
+        LOWER,
+        UPPER,
+        EQUAL,
+    }
 
     public Comparison(T givenValue, String comparator, BiPredicate<T, T> comparisonPredicate) {
         this.givenValue = givenValue;

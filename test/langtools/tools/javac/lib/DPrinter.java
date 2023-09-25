@@ -601,6 +601,7 @@ public class DPrinter {
     protected Object getField(Object o, Class<?> clazz, String name) {
         try {
             Field f = clazz.getDeclaredField(name);
+            @SuppressWarnings("deprecation")
             boolean prev = f.isAccessible();
             f.setAccessible(true);
             try {
@@ -618,6 +619,7 @@ public class DPrinter {
     protected Object callMethod(Object o, Class<?> clazz, String name) {
         try {
             Method m = clazz.getDeclaredMethod(name);
+            @SuppressWarnings("deprecation")
             boolean prev = m.isAccessible();
             m.setAccessible(true);
             try {

@@ -33,6 +33,7 @@
 #include "utilities/resourceHash.hpp"
 
 class LogFileStreamOutput;
+
 //
 // ASYNC LOGGING SUPPORT
 //
@@ -60,7 +61,7 @@ class AsyncLogWriter : public NonJavaThread {
   class AsyncLogLocker;
 
   // account for dropped messages
-  template <ResourceObj::allocation_type ALLOC_TYPE>
+  template <AnyObj::allocation_type ALLOC_TYPE>
   using AsyncLogMap = ResourceHashtable<LogFileStreamOutput*,
                           uint32_t, 17, /*table_size*/
                           ALLOC_TYPE, mtLogging>;
@@ -155,7 +156,7 @@ class AsyncLogWriter : public NonJavaThread {
   PlatformMonitor _lock;
   bool _data_available;
   volatile bool _initialized;
-  AsyncLogMap<ResourceObj::C_HEAP> _stats;
+  AsyncLogMap<AnyObj::C_HEAP> _stats;
 
   // ping-pong buffers
   Buffer* _buffer;

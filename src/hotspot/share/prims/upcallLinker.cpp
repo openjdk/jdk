@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #define FOREIGN_ABI "jdk/internal/foreign/abi/"
@@ -49,7 +50,7 @@ struct UpcallContext {
 
   UpcallContext() {} // Explicit constructor to address XL C compiler bug.
   ~UpcallContext() {
-    if (attachedThread != NULL) {
+    if (attachedThread != nullptr) {
       JavaVM_ *vm = (JavaVM *)(&main_vm);
       vm->functions->DetachCurrentThread(vm);
     }
@@ -75,6 +76,7 @@ JavaThread* UpcallLinker::maybe_attach_and_get_thread() {
 // modelled after JavaCallWrapper::JavaCallWrapper
 JavaThread* UpcallLinker::on_entry(UpcallStub::FrameData* context) {
   JavaThread* thread = maybe_attach_and_get_thread();
+  guarantee(thread->thread_state() == _thread_in_native, "wrong thread state for upcall");
   context->thread = thread;
 
   assert(thread->can_call_java(), "must be able to call Java");
@@ -97,7 +99,7 @@ JavaThread* UpcallLinker::on_entry(UpcallStub::FrameData* context) {
   context->old_handles = thread->active_handles();
 
   // For the profiler, the last_Java_frame information in thread must always be in
-  // legal state. We have no last Java frame if last_Java_sp == NULL so
+  // legal state. We have no last Java frame if last_Java_sp == nullptr so
   // the valid transition is to clear _last_Java_sp and then reset the rest of
   // the (platform specific) state.
 

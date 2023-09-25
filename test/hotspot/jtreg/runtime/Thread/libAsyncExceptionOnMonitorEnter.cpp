@@ -34,7 +34,7 @@ Java_AsyncExceptionOnMonitorEnter_createRawMonitor(JNIEnv *jni, jclass cls) {
   jvmtiError err;
   char name[32];
 
-  sprintf(name, "MyRawMonitor");
+  snprintf(name, sizeof(name), "MyRawMonitor");
   err = jvmti->CreateRawMonitor(name, &monitor);
   if (err != JVMTI_ERROR_NONE) {
     printf("CreateRawMonitor unexpected error: (%d)\n", err);

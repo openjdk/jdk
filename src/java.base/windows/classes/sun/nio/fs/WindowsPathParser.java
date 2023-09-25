@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,20 @@ class WindowsPathParser {
      *          Indicates if the path requires to be normalized
      */
     private static Result parse(String input, boolean requireToNormalize) {
+        // if a prefix is present, remove it and note the expected path type
+        final WindowsPathType expectedType;
+        if (input.startsWith("\\\\?\\")) {
+            if (input.startsWith("UNC\\", 4)) {
+                expectedType = WindowsPathType.UNC;
+                input = "\\\\" + input.substring(8);
+            } else {
+                expectedType = WindowsPathType.ABSOLUTE;
+                input = input.substring(4);
+            }
+        } else {
+            expectedType = null;
+        }
+
         String root = "";
         WindowsPathType type = null;
 
@@ -144,6 +158,14 @@ class WindowsPathParser {
                 root = "\\";
             } else {
                 type = WindowsPathType.RELATIVE;
+            }
+        }
+
+        if (expectedType != null && type != expectedType) {
+            if (expectedType == WindowsPathType.ABSOLUTE) { // long path prefix
+                throw new InvalidPathException(input, "Long path prefix can only be used with an absolute path");
+            } else if (expectedType == WindowsPathType.UNC) { // long UNC path prefix
+                throw new InvalidPathException(input, "Long UNC path prefix can only be used with a UNC path");
             }
         }
 

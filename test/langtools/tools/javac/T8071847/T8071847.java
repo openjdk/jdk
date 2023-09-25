@@ -83,9 +83,9 @@ public class T8071847 {
 
     File writeHexFile(String classFileName, String hexString) throws IOException {
         File f = new File(classFileName);
-        FileOutputStream output  = new FileOutputStream(f);
-        output.write(hexToByte(hexString));
-        output.close();
+        try (FileOutputStream output = new FileOutputStream(f)) {
+            output.write(hexToByte(hexString));
+        }
         return f;
     }
 

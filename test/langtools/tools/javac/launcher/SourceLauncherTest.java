@@ -553,7 +553,7 @@ public class SourceLauncherTest extends TestRunner {
         tb.writeJavaFiles(base,
                 "class NotPublic { static void main(String... args) { } }");
         testError(base.resolve("NotPublic.java"), "",
-                "error: 'main' method is not declared 'public static'");
+                "error: can't find main(String[]) method in class: NotPublic");
     }
 
     @Test

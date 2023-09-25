@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,7 @@ public class HtmlIds {
     static final HtmlId CONSTRUCTOR_SUMMARY = HtmlId.of("constructor-summary");
     static final HtmlId ENUM_CONSTANT_DETAIL = HtmlId.of("enum-constant-detail");
     static final HtmlId ENUM_CONSTANT_SUMMARY = HtmlId.of("enum-constant-summary");
+    static final HtmlId EXTERNAL_SPECS = HtmlId.of("external-specs");
     static final HtmlId FIELD_DETAIL = HtmlId.of("field-detail");
     static final HtmlId FIELD_SUMMARY = HtmlId.of("field-summary");
     static final HtmlId FOR_REMOVAL = HtmlId.of("for-removal");
@@ -105,8 +106,6 @@ public class HtmlIds {
     static final HtmlId SERVICES = HtmlId.of("services-summary");
     static final HtmlId SKIP_NAVBAR_TOP = HtmlId.of("skip-navbar-top");
     static final HtmlId UNNAMED_PACKAGE_ANCHOR = HtmlId.of("unnamed-package");
-
-    private static final String ENUM_CONSTANTS_INHERITANCE = "enum-constants-inherited-from-class-";
     private static final String FIELDS_INHERITANCE = "fields-inherited-from-class-";
     private static final String METHODS_INHERITANCE = "methods-inherited-from-class-";
     private static final String NESTED_CLASSES_INHERITANCE = "nested-classes-inherited-from-class-";
@@ -323,17 +322,6 @@ public class HtmlIds {
     }
 
     /**
-     * Returns an id for the list of enum constants inherited from a class or interface.
-     *
-     * @param element the class or interface
-     *
-     * @return the id
-     */
-    HtmlId forInheritedEnumConstants(TypeElement element) {
-        return forInherited(ENUM_CONSTANTS_INHERITANCE, element);
-    }
-
-    /**
      * Returns an id for the list of methods inherited from a class or interface.
      *
      * @param element the class or interface
@@ -393,7 +381,7 @@ public class HtmlIds {
      *
      * @return the id
      */
-    static HtmlId forParam(String paramName) {
+    public static HtmlId forParam(String paramName) {
         return HtmlId.of("param-" + paramName);
     }
 
@@ -406,7 +394,7 @@ public class HtmlIds {
      *
      * @return the id
      */
-    static HtmlId forText(String text, Map<String, Integer> counts) {
+    public static HtmlId forText(String text, Map<String, Integer> counts) {
         String base = text.replaceAll("\\s+", "");
         int count = counts.compute(base, (k, v) -> v == null ? 0 : v + 1);
         return HtmlId.of(count == 0 ? base : base + "-" + count);
@@ -485,7 +473,6 @@ public class HtmlIds {
     public static HtmlId forTabPanel(HtmlId tableId) {
         return HtmlId.of(tableId.name() + ".tabpanel");
     }
-
 
     /**
      * Returns an id for the "preview" section for an element.

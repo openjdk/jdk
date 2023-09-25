@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import javadoc.tester.JavadocTester;
 public class TestJavaFX extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestJavaFX tester = new TestJavaFX();
+        var tester = new TestJavaFX();
         tester.setAutomaticCheckAccessibility(false);
         tester.setAutomaticCheckLinks(false);
         tester.runTests();
@@ -63,7 +63,7 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="#getRate()"><code>getRate()</code></a></li>
                     <li><a href="#setRate(double)"><code>setRate(double)</code></a></li>
                     </ul>
@@ -268,7 +268,7 @@ public class TestJavaFX extends JavadocTester {
                         <dl class="notes">
                         <dt>See Also:</dt>
                         <dd>
-                        <ul class="see-list">
+                        <ul class="tag-list">
                         <li><a href="#betaProperty()"><code>betaProperty()</code></a></li>
                         </ul>
                         </dd>
@@ -284,7 +284,7 @@ public class TestJavaFX extends JavadocTester {
                         <dl class="notes">
                         <dt>See Also:</dt>
                         <dd>
-                        <ul class="see-list">
+                        <ul class="tag-list">
                         <li><a href="#gammaProperty()"><code>gammaProperty()</code></a></li>
                         </ul>
                         </dd>
@@ -300,7 +300,7 @@ public class TestJavaFX extends JavadocTester {
                         <dl class="notes">
                         <dt>See Also:</dt>
                         <dd>
-                        <ul class="see-list">
+                        <ul class="tag-list">
                         <li><a href="#deltaProperty()"><code>deltaProperty()</code></a></li>
                         </ul>
                         </dd>
@@ -369,16 +369,16 @@ public class TestJavaFX extends JavadocTester {
                     <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
                     2 method-summary-table-tab4">&nbsp;</div>
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4"><code>final java.util.List&lt;java.util.Set&lt;? \
-                    super java.lang.Object&gt;&gt;</code></div>
+                    ab2 method-summary-table-tab4"><code>final java.util.List<wbr>&lt;java.util.Set&\
+                    lt;? super java.lang.Object&gt;&gt;</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#deltaProperty()" class="member-n\
                     ame-link">deltaProperty</a>()</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-ta\
                     b2 method-summary-table-tab4">&nbsp;</div>
                     <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
-                    b2 method-summary-table-tab4"><code>final java.util.List&lt;java.lang.String&gt;\
-                    </code></div>
+                    b2 method-summary-table-tab4"><code>final java.util.List<wbr>&lt;java.lang.Strin\
+                    g&gt;</code></div>
                     <div class="col-second odd-row-color method-summary-table method-summary-table-t\
                     ab2 method-summary-table-tab4"><code><a href="#gammaProperty()" class="member-na\
                     me-link">gammaProperty</a>()</code></div>

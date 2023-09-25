@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,24 +82,5 @@ public class CDSPluginTest {
             helper.checkImage(image, module, null, null,
                       new String[] { subDir + "classes.jsa" });
         }
-
-       // Simulate different platforms between current runtime and target image.
-       if (Platform.isLinux()) {
-           System.out.println("---- Test different platforms scenario ----");
-           String jlinkPath = JDKToolFinder.getJDKTool("jlink");
-           String[] cmd = {jlinkPath, "--add-modules", "java.base,java.logging",
-                           "-J-Dos.name=windows", "--generate-cds-archive",
-                           "--output", System.getProperty("test.classes") + sep + module + "-tmp"};
-           StringBuilder cmdLine = new StringBuilder();
-           for (String s : cmd) {
-               cmdLine.append(s).append(' ');
-           }
-           System.out.println("Command line: [" + cmdLine.toString() + "]");
-           ProcessBuilder pb = new ProcessBuilder(cmd);
-           OutputAnalyzer out = new OutputAnalyzer(pb.start());
-           System.out.println("    stdout: " + out.getStdout());
-           out.shouldMatch("Error: Cannot generate CDS archives: target image platform linux-.*is different from runtime platform windows-.*");
-           out.shouldHaveExitValue(1);
-       }
     }
 }

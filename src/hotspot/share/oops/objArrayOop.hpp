@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ class Klass;
 // Evaluating "String arg[10]" will create an objArrayOop.
 
 class objArrayOopDesc : public arrayOopDesc {
+  friend class ArchiveHeapWriter;
   friend class ObjArrayKlass;
   friend class Runtime1;
   friend class psPromotionManager;
@@ -90,7 +91,7 @@ private:
 
   void obj_at_put(int index, oop value);
 
-  oop atomic_compare_exchange_oop(int index, oop exchange_value, oop compare_value);
+  oop replace_if_null(int index, oop exchange_value);
 
   // Sizing
   static int header_size()    { return arrayOopDesc::header_size(T_OBJECT); }

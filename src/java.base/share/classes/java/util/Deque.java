@@ -201,7 +201,7 @@ package java.util;
  * @since  1.6
  * @param <E> the type of elements held in this deque
  */
-public interface Deque<E> extends Queue<E> {
+public interface Deque<E> extends Queue<E>, SequencedCollection<E> {
     /**
      * Inserts the specified element at the front of this deque if it is
      * possible to do so immediately without violating capacity restrictions,
@@ -363,10 +363,10 @@ public interface Deque<E> extends Queue<E> {
      * @return {@code true} if an element was removed as a result of this call
      * @throws ClassCastException if the class of the specified element
      *         is incompatible with this deque
-     * (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>)
+     *         ({@linkplain Collection##optional-restrictions optional})
      * @throws NullPointerException if the specified element is null and this
      *         deque does not permit null elements
-     * (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>)
+     *         ({@linkplain Collection##optional-restrictions optional})
      */
     boolean removeFirstOccurrence(Object o);
 
@@ -382,10 +382,10 @@ public interface Deque<E> extends Queue<E> {
      * @return {@code true} if an element was removed as a result of this call
      * @throws ClassCastException if the class of the specified element
      *         is incompatible with this deque
-     * (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>)
+     *         ({@linkplain Collection##optional-restrictions optional})
      * @throws NullPointerException if the specified element is null and this
      *         deque does not permit null elements
-     * (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>)
+     *         ({@linkplain Collection##optional-restrictions optional})
      */
     boolean removeLastOccurrence(Object o);
 
@@ -565,10 +565,10 @@ public interface Deque<E> extends Queue<E> {
      * @return {@code true} if an element was removed as a result of this call
      * @throws ClassCastException if the class of the specified element
      *         is incompatible with this deque
-     * (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>)
+     *         ({@linkplain Collection##optional-restrictions optional})
      * @throws NullPointerException if the specified element is null and this
      *         deque does not permit null elements
-     * (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>)
+     *         ({@linkplain Collection##optional-restrictions optional})
      */
     boolean remove(Object o);
 
@@ -581,10 +581,10 @@ public interface Deque<E> extends Queue<E> {
      * @return {@code true} if this deque contains the specified element
      * @throws ClassCastException if the class of the specified element
      *         is incompatible with this deque
-     * (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>)
+     *         ({@linkplain Collection##optional-restrictions optional})
      * @throws NullPointerException if the specified element is null and this
      *         deque does not permit null elements
-     * (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>)
+     *         ({@linkplain Collection##optional-restrictions optional})
      */
     boolean contains(Object o);
 
@@ -613,4 +613,23 @@ public interface Deque<E> extends Queue<E> {
      */
     Iterator<E> descendingIterator();
 
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec
+     * The implementation in this interface returns a reverse-ordered Deque
+     * view. The {@code reversed()} method of the view returns a reference
+     * to this Deque. Other operations on the view are implemented via calls to
+     * public methods on this Deque. The exact relationship between calls on the
+     * view and calls on this Deque is unspecified. However, order-sensitive
+     * operations generally delegate to the appropriate method with the opposite
+     * orientation. For example, calling {@code getFirst} on the view results in
+     * a call to {@code getLast} on this Deque.
+     *
+     * @return a reverse-ordered view of this collection, as a {@code Deque}
+     * @since 21
+     */
+    default Deque<E> reversed() {
+        return ReverseOrderDequeView.of(this);
+    }
 }

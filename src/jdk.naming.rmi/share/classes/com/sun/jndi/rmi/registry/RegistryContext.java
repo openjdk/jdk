@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package com.sun.jndi.rmi.registry;
 
+
+import com.sun.naming.internal.NamingManagerHelper;
+import com.sun.naming.internal.ObjectFactoriesFilter;
 
 import java.util.Hashtable;
 import java.util.Properties;
@@ -498,8 +501,8 @@ public class RegistryContext implements Context, Referenceable {
                     "The object factory is untrusted. Set the system property" +
                     " 'com.sun.jndi.rmi.object.trustURLCodebase' to 'true'.");
             }
-            return NamingManager.getObjectInstance(obj, name, this,
-                                                   environment);
+            return NamingManagerHelper.getObjectInstance(obj, name, this,
+                    environment, ObjectFactoriesFilter::checkRmiFilter);
         } catch (NamingException e) {
             throw e;
         } catch (RemoteException e) {

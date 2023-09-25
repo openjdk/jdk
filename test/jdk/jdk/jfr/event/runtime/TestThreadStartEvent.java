@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@ import jdk.test.lib.jfr.Events;
  * @key jfr
  * @requires vm.hasJFR & vm.continuations
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} TestThreadStartEvent.java LatchedThread.java
- * @run main/othervm --enable-preview jdk.jfr.event.runtime.TestThreadStartEvent
+ * @compile TestThreadStartEvent.java LatchedThread.java
+ * @run main/othervm jdk.jfr.event.runtime.TestThreadStartEvent
  */
 public class TestThreadStartEvent {
     private final static String EVENT_NAME_THREAD_START = EventNames.ThreadStart;

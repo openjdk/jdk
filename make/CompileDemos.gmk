@@ -171,41 +171,41 @@ $(BUILD_DEMO_CodePointIM_JAR): $(CODEPOINT_METAINF_SERVICE_FILE)
 
 $(eval $(call SetupBuildDemo, FileChooserDemo, \
     DEMO_SUBDIR := jfc, \
-    DISABLED_WARNINGS := rawtypes deprecation unchecked, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked this-escape, \
 ))
 
 $(eval $(call SetupBuildDemo, SwingSet2, \
     DEMO_SUBDIR := jfc, \
     EXTRA_COPY_TO_JAR := .java, \
     EXTRA_MANIFEST_ATTR := SplashScreen-Image: resources/images/splash.png, \
-    DISABLED_WARNINGS := rawtypes deprecation unchecked static serial cast, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked static serial cast this-escape, \
 ))
 
 $(eval $(call SetupBuildDemo, Font2DTest, \
-    DISABLED_WARNINGS := rawtypes deprecation unchecked serial cast, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked serial cast this-escape, \
     DEMO_SUBDIR := jfc, \
 ))
 
 $(eval $(call SetupBuildDemo, J2Ddemo, \
     DEMO_SUBDIR := jfc, \
     MAIN_CLASS := java2d.J2Ddemo, \
-    DISABLED_WARNINGS := rawtypes deprecation unchecked cast lossy-conversions, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked cast lossy-conversions this-escape, \
     JAR_NAME := J2Ddemo, \
 ))
 
 $(eval $(call SetupBuildDemo, Metalworks, \
-    DISABLED_WARNINGS := rawtypes unchecked, \
+    DISABLED_WARNINGS := rawtypes unchecked this-escape, \
     DEMO_SUBDIR := jfc, \
 ))
 
 $(eval $(call SetupBuildDemo, Notepad, \
-    DISABLED_WARNINGS := rawtypes, \
+    DISABLED_WARNINGS := rawtypes this-escape, \
     DEMO_SUBDIR := jfc, \
 ))
 
 $(eval $(call SetupBuildDemo, Stylepad, \
     DEMO_SUBDIR := jfc, \
-    DISABLED_WARNINGS := rawtypes unchecked, \
+    DISABLED_WARNINGS := rawtypes unchecked this-escape, \
     EXTRA_SRC_DIR := $(DEMO_SHARE_SRC)/jfc/Notepad, \
     EXCLUDE_FILES := $(DEMO_SHARE_SRC)/jfc/Notepad/README.txt, \
 ))
@@ -215,11 +215,12 @@ $(eval $(call SetupBuildDemo, SampleTree, \
 ))
 
 $(eval $(call SetupBuildDemo, TableExample, \
-    DISABLED_WARNINGS := rawtypes unchecked deprecation, \
+    DISABLED_WARNINGS := rawtypes unchecked deprecation this-escape, \
     DEMO_SUBDIR := jfc, \
 ))
 
 $(eval $(call SetupBuildDemo, TransparentRuler, \
+    DISABLED_WARNINGS := this-escape, \
     DEMO_SUBDIR := jfc, \
     MAIN_CLASS := transparentruler.Ruler, \
 ))

@@ -49,8 +49,6 @@ void GCTraceTimeLoggerImpl::log_start(Ticks start) {
 
 void GCTraceTimeLoggerImpl::log_end(Ticks end) {
   double duration_in_ms = TimeHelper::counter_to_millis(end.value() - _start.value());
-  double start_time_in_secs = TimeHelper::counter_to_seconds(_start.value());
-  double stop_time_in_secs = TimeHelper::counter_to_seconds(end.value());
 
   LogStream out(_out_end);
 

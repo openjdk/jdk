@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -49,13 +49,16 @@ on:
         required: false
         type: string
         default: ''
-      apt-gcc-version:
-        required: true
-        type: string
       apt-architecture:
         required: false
         type: string
       apt-extra-packages:
+        required: false
+        type: string
+      configure-arguments:
+        required: false
+        type: string
+      make-arguments:
         required: false
         type: string
 
@@ -96,7 +99,7 @@ jobs:
         run: |
           # Set a proper suffix for packages if using a different architecture
           if [[ '${{ inputs.apt-architecture }}' != '' ]]; then
-            echo '::set-output name=suffix:::${{ inputs.apt-architecture }}'
+            echo 'suffix=:${{ inputs.apt-architecture }}' >> $GITHUB_OUTPUT
           fi
 
       # Upgrading apt to solve libc6 installation bugs, see JDK-8260460.
@@ -108,7 +111,7 @@ jobs:
           fi
           sudo apt-get update
           sudo apt-get install --only-upgrade apt
-          sudo apt-get install gcc-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }}=${{ inputs.apt-gcc-version }} g++-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }}=${{ inputs.apt-gcc-version }} libxrandr-dev${{ steps.arch.outputs.suffix }} libxtst-dev${{ steps.arch.outputs.suffix }} libcups2-dev${{ steps.arch.outputs.suffix }} libasound2-dev${{ steps.arch.outputs.suffix }} ${{ inputs.apt-extra-packages }}
+          sudo apt-get install gcc-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }} g++-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }} libxrandr-dev${{ steps.arch.outputs.suffix }} libxtst-dev${{ steps.arch.outputs.suffix }} libcups2-dev${{ steps.arch.outputs.suffix }} libasound2-dev${{ steps.arch.outputs.suffix }} ${{ inputs.apt-extra-packages }}
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
 
       - name: 'Configure'
@@ -120,10 +123,9 @@ jobs:
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
           --with-jtreg=${{ steps.jtreg.outputs.path }}
           --with-gtest=${{ steps.gtest.outputs.path }}
-          --enable-jtreg-failure-handler
           --with-zlib=system
           --with-jmod-compress=zip-1
-          ${{ inputs.extra-conf-options }} || (
+          ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
           echo "Dumping config.log:" &&
           cat config.log &&
           exit 1)
@@ -132,7 +134,7 @@ jobs:
         id: build
         uses: ./.github/actions/do-build
         with:
-          make-target: '${{ inputs.make-target }}'
+          make-target: '${{ inputs.make-target }} ${{ inputs.make-arguments }}'
           platform: ${{ inputs.platform }}
           debug-suffix: '${{ matrix.suffix }}'
 

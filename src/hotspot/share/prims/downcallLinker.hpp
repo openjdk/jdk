@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,13 @@ public:
                                          int num_args,
                                          BasicType ret_bt,
                                          const ABIDescriptor& abi,
-                                         const GrowableArray<VMReg>& input_registers,
-                                         const GrowableArray<VMReg>& output_registers,
-                                         bool needs_return_buffer);
+                                         const GrowableArray<VMStorage>& input_registers,
+                                         const GrowableArray<VMStorage>& output_registers,
+                                         bool needs_return_buffer,
+                                         int captured_state_mask,
+                                         bool needs_transition);
+
+  static void capture_state(int32_t* value_ptr, int captured_state_mask);
 };
 
 #endif // SHARE_VM_PRIMS_DOWNCALLLINKER_HPP

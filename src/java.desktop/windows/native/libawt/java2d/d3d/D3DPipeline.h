@@ -28,43 +28,16 @@
 #define D3D_DEBUG_INFO
 #endif // DEBUG
 
-#ifdef D3D_PPL_DLL
+// this include ensures that with debug build we get
+// awt's overridden debug "new" and "delete" operators
+#include "awt.h"
 
+#include <windows.h>
+#include <d3d9.h>
+#include "Trace.h"
 
-    #ifndef WIN32_LEAN_AND_MEAN
-    #define WIN32_LEAN_AND_MEAN
-    #endif
-
-    #ifdef D3DPIPELINE_EXPORTS
-    #define D3DPIPELINE_API __declspec(dllexport)
-    #else
-    #define D3DPIPELINE_API __declspec(dllimport)
-    #endif
-
-    #include <windows.h>
-    #include <d3d9.h>
-    #include <DDErr.h>
-    #include "..\Import\Trace.h"
-
-    #define DebugPrintD3DError(res, msg) \
-        DXTRACE_ERR(msg, res)
-
-#else
-
-    #define D3DPIPELINE_API __declspec(dllexport)
-
-    // this include ensures that with debug build we get
-    // awt's overridden debug "new" and "delete" operators
-    #include "awt.h"
-
-    #include <windows.h>
-    #include <d3d9.h>
-    #include "Trace.h"
-
-    #define DebugPrintD3DError(res, msg) \
-        J2dTraceLn1(J2D_TRACE_ERROR, "D3D Error: " msg " res=%d", res)
-
-#endif /*D3D_PPL_DLL*/
+#define DebugPrintD3DError(res, msg) \
+    J2dTraceLn1(J2D_TRACE_ERROR, "D3D Error: " msg " res=%d", res)
 
 // some helper macros
 #define SAFE_RELEASE(RES) \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,9 @@ class CompilerThread : public JavaThread {
 
   virtual bool can_call_java() const;
 
-  // Hide native compiler threads from external view.
-  bool is_hidden_from_external_view() const      { return !can_call_java(); }
+  // Returns true if this CompilerThread is hidden from JVMTI and FlightRecorder.  C1 and C2 are
+  // always hidden but JVMCI compiler threads might be hidden.
+  virtual bool is_hidden_from_external_view() const;
 
   void set_compiler(AbstractCompiler* c)         { _compiler = c; }
   AbstractCompiler* compiler() const             { return _compiler; }
@@ -92,7 +93,7 @@ class CompilerThread : public JavaThread {
   CompileLog*   log()                            { return _log; }
   void          init_log(CompileLog* log) {
     // Set once, for good.
-    assert(_log == NULL, "set only once");
+    assert(_log == nullptr, "set only once");
     _log = log;
   }
 

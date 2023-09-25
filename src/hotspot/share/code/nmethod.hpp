@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ class nmethod : public CompiledMethod {
   //
   // _oops_do_mark_link special values:
   //
-  //   _oops_do_mark_link == NULL: the nmethod has not been visited at all yet, i.e.
+  //   _oops_do_mark_link == nullptr: the nmethod has not been visited at all yet, i.e.
   //      is Unclaimed.
   //
   // For other values, its lowest two bits indicate the following states of the nmethod:
@@ -173,7 +173,7 @@ class nmethod : public CompiledMethod {
 
   // Attempt Unclaimed -> N|SD transition. Returns the current link.
   oops_do_mark_link* oops_do_try_claim_strong_done();
-  // Attempt N|WR -> X|WD transition. Returns NULL if successful, X otherwise.
+  // Attempt N|WR -> X|WD transition. Returns nullptr if successful, X otherwise.
   nmethod* oops_do_try_add_to_list_as_weak_done();
 
   // Attempt X|WD -> N|SR transition. Returns the current link.
@@ -221,7 +221,7 @@ class nmethod : public CompiledMethod {
 #endif
   int _nmethod_end_offset;
 
-  int code_offset() const { return (address) code_begin() - header_begin(); }
+  int code_offset() const { return int(code_begin() - header_begin()); }
 
   // location in frame (offset for sp) that deopt can store the original
   // pc during a deopt.
@@ -260,6 +260,8 @@ class nmethod : public CompiledMethod {
   // Protected by CompiledMethod_lock
   volatile signed char _state;         // {not_installed, in_use, not_used, not_entrant}
 
+  int _skipped_instructions_size;
+
   // For native wrappers
   nmethod(Method* method,
           CompilerType type,
@@ -290,18 +292,22 @@ class nmethod : public CompiledMethod {
           AbstractCompiler* compiler,
           CompLevel comp_level
 #if INCLUDE_JVMCI
-          , char* speculations,
-          int speculations_len,
-          int jvmci_data_size
+          , char* speculations = nullptr,
+          int speculations_len = 0,
+          JVMCINMethodData* jvmci_data = nullptr
 #endif
           );
 
   // helper methods
   void* operator new(size_t size, int nmethod_size, int comp_level) throw();
+  // For method handle intrinsics: Try MethodNonProfiled, MethodProfiled and NonNMethod.
+  // Attention: Only allow NonNMethod space for special nmethods which don't need to be
+  // findable by nmethod iterators! In particular, they must not contain oops!
+  void* operator new(size_t size, int nmethod_size, bool allow_NonNMethod_space) throw();
 
   const char* reloc_string_for(u_char* begin, u_char* end);
 
-  bool try_transition(int new_state);
+  bool try_transition(signed char new_state);
 
   // Returns true if this thread changed the state of the nmethod or
   // false if another thread performed the transition.
@@ -315,7 +321,7 @@ class nmethod : public CompiledMethod {
   void init_defaults();
 
   // Offsets
-  int content_offset() const                  { return content_begin() - header_begin(); }
+  int content_offset() const                  { return int(content_begin() - header_begin()); }
   int data_offset() const                     { return _data_offset; }
 
   address header_end() const                  { return (address)    header_begin() + header_size(); }
@@ -337,11 +343,9 @@ class nmethod : public CompiledMethod {
                               AbstractCompiler* compiler,
                               CompLevel comp_level
 #if INCLUDE_JVMCI
-                              , char* speculations = NULL,
+                              , char* speculations = nullptr,
                               int speculations_len = 0,
-                              int nmethod_mirror_index = -1,
-                              const char* nmethod_mirror_name = NULL,
-                              FailedSpeculation** failed_speculations = NULL
+                              JVMCINMethodData* jvmci_data = nullptr
 #endif
   );
 
@@ -374,7 +378,7 @@ class nmethod : public CompiledMethod {
   address stub_begin            () const          { return           header_begin() + _stub_offset          ; }
   address stub_end              () const          { return           header_begin() + _oops_offset          ; }
   address exception_begin       () const          { return           header_begin() + _exception_offset     ; }
-  address unwind_handler_begin  () const          { return _unwind_handler_offset != -1 ? (header_begin() + _unwind_handler_offset) : NULL; }
+  address unwind_handler_begin  () const          { return _unwind_handler_offset != -1 ? (header_begin() + _unwind_handler_offset) : nullptr; }
   oop*    oops_begin            () const          { return (oop*)   (header_begin() + _oops_offset)         ; }
   oop*    oops_end              () const          { return (oop*)   (header_begin() + _metadata_offset)     ; }
 
@@ -389,6 +393,9 @@ class nmethod : public CompiledMethod {
   address handler_table_begin   () const          { return           header_begin() + _handler_table_offset ; }
   address handler_table_end     () const          { return           header_begin() + _nul_chk_table_offset ; }
   address nul_chk_table_begin   () const          { return           header_begin() + _nul_chk_table_offset ; }
+
+  int skipped_instructions_size () const          { return           _skipped_instructions_size             ; }
+
 #if INCLUDE_JVMCI
   address nul_chk_table_end     () const          { return           header_begin() + _speculations_offset  ; }
   address speculations_begin    () const          { return           header_begin() + _speculations_offset  ; }
@@ -400,12 +407,12 @@ class nmethod : public CompiledMethod {
 #endif
 
   // Sizes
-  int oops_size         () const                  { return (address)  oops_end         () - (address)  oops_begin         (); }
-  int metadata_size     () const                  { return (address)  metadata_end     () - (address)  metadata_begin     (); }
-  int dependencies_size () const                  { return            dependencies_end () -            dependencies_begin (); }
+  int oops_size         () const                  { return int((address)  oops_end         () - (address)  oops_begin         ()); }
+  int metadata_size     () const                  { return int((address)  metadata_end     () - (address)  metadata_begin     ()); }
+  int dependencies_size () const                  { return int(           dependencies_end () -            dependencies_begin ()); }
 #if INCLUDE_JVMCI
-  int speculations_size () const                  { return            speculations_end () -            speculations_begin (); }
-  int jvmci_data_size   () const                  { return            jvmci_data_end   () -            jvmci_data_begin   (); }
+  int speculations_size () const                  { return int(           speculations_end () -            speculations_begin ()); }
+  int jvmci_data_size   () const                  { return int(           jvmci_data_end   () -            jvmci_data_begin   ()); }
 #endif
 
   int     oops_count() const { assert(oops_size() % oopSize == 0, "");  return (oops_size() / oopSize) + 1; }
@@ -458,7 +465,7 @@ class nmethod : public CompiledMethod {
   }
 
   bool has_dependencies()                         { return dependencies_size() != 0; }
-  void print_dependencies()                       PRODUCT_RETURN;
+  void print_dependencies_on(outputStream* out) PRODUCT_RETURN;
   void flush_dependencies();
   bool has_flushed_dependencies()                 { return _has_flushed_dependencies; }
   void set_has_flushed_dependencies()             {
@@ -482,7 +489,7 @@ class nmethod : public CompiledMethod {
 
   // Support for meta data in scopes and relocs:
   // Note: index 0 is reserved for null.
-  Metadata*     metadata_at(int index) const      { return index == 0 ? NULL: *metadata_addr_at(index); }
+  Metadata*     metadata_at(int index) const      { return index == 0 ? nullptr: *metadata_addr_at(index); }
   Metadata**  metadata_addr_at(int index) const {  // for GC
     // relocation indexes are biased by 1 (because 0 is reserved)
     assert(index > 0 && index <= metadata_count(), "must be a valid non-zero index");
@@ -499,7 +506,7 @@ private:
 
 public:
   void fix_oop_relocations(address begin, address end) { fix_oop_relocations(begin, end, false); }
-  void fix_oop_relocations()                           { fix_oop_relocations(NULL, NULL, false); }
+  void fix_oop_relocations()                           { fix_oop_relocations(nullptr, nullptr, false); }
 
   // On-stack replacement support
   int   osr_entry_bci() const                     { assert(is_osr_method(), "wrong kind of nmethod"); return _entry_bci; }
@@ -533,10 +540,10 @@ public:
   void update_speculation(JavaThread* thread);
 
   // Gets the data specific to a JVMCI compiled method.
-  // This returns a non-NULL value iff this nmethod was
+  // This returns a non-nullptr value iff this nmethod was
   // compiled by the JVMCI compiler.
   JVMCINMethodData* jvmci_nmethod_data() const {
-    return jvmci_data_size() == 0 ? NULL : (JVMCINMethodData*) jvmci_data_begin();
+    return jvmci_data_size() == 0 ? nullptr : (JVMCINMethodData*) jvmci_data_begin();
   }
 #endif
 
@@ -592,7 +599,7 @@ public:
   void post_compiled_method(CompileTask* task);
 
   // jvmti support:
-  void post_compiled_method_load_event(JvmtiThreadState* state = NULL);
+  void post_compiled_method_load_event(JvmtiThreadState* state = nullptr);
 
   // verify operations
   void verify();
@@ -692,9 +699,9 @@ public:
   }
 
   // support for code generation
-  static int verified_entry_point_offset()        { return offset_of(nmethod, _verified_entry_point); }
-  static int osr_entry_point_offset()             { return offset_of(nmethod, _osr_entry_point); }
-  static int state_offset()                       { return offset_of(nmethod, _state); }
+  static ByteSize verified_entry_point_offset() { return byte_offset_of(nmethod, _verified_entry_point); }
+  static ByteSize osr_entry_point_offset()      { return byte_offset_of(nmethod, _osr_entry_point); }
+  static ByteSize state_offset()                { return byte_offset_of(nmethod, _state); }
 
   virtual void metadata_do(MetadataClosure* f);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ inline void os::map_stack_shadow_pages(address sp) {
   // If we decrement stack pointer more than one page
   // the OS may not map an intervening page into our space
   // and may fault on a memory access to interior of our frame.
-  const int page_size = os::vm_page_size();
+  const size_t page_size = os::vm_page_size();
   const size_t n_pages = StackOverflow::stack_shadow_zone_size() / page_size;
   for (size_t pages = 1; pages <= n_pages; pages++) {
     sp -= page_size;
@@ -57,17 +57,12 @@ inline void os::map_stack_shadow_pages(address sp) {
   }
 }
 
-inline bool os::numa_has_static_binding()   { return true;   }
 inline bool os::numa_has_group_homing()     { return false;  }
 
 // Platform Mutex/Monitor implementation
 
 inline PlatformMutex::PlatformMutex() {
   InitializeCriticalSection(&_mutex);
-}
-
-inline PlatformMutex::~PlatformMutex() {
-  DeleteCriticalSection(&_mutex);
 }
 
 inline PlatformMonitor::PlatformMonitor() {
@@ -97,5 +92,9 @@ inline void PlatformMonitor::notify() {
 inline void PlatformMonitor::notify_all() {
   WakeAllConditionVariable(&_cond);
 }
+
+// Trim-native support, stubbed out for now, may be enabled later
+inline bool os::can_trim_native_heap() { return false; }
+inline bool os::trim_native_heap(os::size_change_t* rss_change) { return false; }
 
 #endif // OS_WINDOWS_OS_WINDOWS_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,10 +123,13 @@ public class ExceptionTest {
         } finally {
             try {
                 // Close JMX Connector Client
-                cc.close();
+                if (cc != null) {
+                    cc.close();
+                }
                 // Stop connertor server
-                cs.stop();
-
+                if (cs != null) {
+                    cs.stop();
+                }
             } catch (Exception e) {
                 Utils.printThrowable(e, true);
                 throw new RuntimeException(

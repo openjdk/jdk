@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -31,31 +31,69 @@ source_hpp %{
 %}
 
 source %{
+#include "gc/z/zBarrierSetAssembler.hpp"
 
-static void z_load_barrier(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref, Register tmp, int barrier_data) {
-  if (barrier_data == ZLoadBarrierElided) {
+static void z_color(MacroAssembler& _masm, const MachNode* node, Register dst, Register src, Register tmp) {
+  assert_different_registers(dst, tmp);
+
+  __ relocate(barrier_Relocation::spec(), [&] {
+    __ li16u(tmp, barrier_Relocation::unpatched);
+  }, ZBarrierRelocationFormatStoreGoodBits);
+  __ slli(dst, src, ZPointerLoadShift);
+  __ orr(dst, dst, tmp);
+}
+
+static void z_uncolor(MacroAssembler& _masm, const MachNode* node, Register ref) {
+  __ srli(ref, ref, ZPointerLoadShift);
+}
+
+static void check_color(MacroAssembler& _masm, Register ref, bool on_non_strong, Register result) {
+  int format = on_non_strong ? ZBarrierRelocationFormatMarkBadMask
+                             : ZBarrierRelocationFormatLoadBadMask;
+  __ relocate(barrier_Relocation::spec(), [&] {
+    __ li16u(result, barrier_Relocation::unpatched);
+  }, format);
+  __ andr(result, ref, result);
+}
+
+static void z_load_barrier(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref, Register tmp) {
+  const bool on_non_strong =
+      ((node->barrier_data() & ZBarrierWeak) != 0) ||
+      ((node->barrier_data() & ZBarrierPhantom) != 0);
+
+  if (node->barrier_data() == ZBarrierElided) {
+    z_uncolor(_masm, node, ref);
     return;
   }
-  ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref, tmp, barrier_data);
-  __ ld(tmp, Address(xthread, ZThreadLocalData::address_bad_mask_offset()));
-  __ andr(tmp, tmp, ref);
-  __ bnez(tmp, *stub->entry(), true /* far */);
-  __ bind(*stub->continuation());
-}
 
-static void z_load_barrier_slow_path(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref, Register tmp) {
-  ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref, tmp, ZLoadBarrierStrong);
+  ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
+  Label good;
+  check_color(_masm, ref, on_non_strong, tmp);
+  __ beqz(tmp, good);
   __ j(*stub->entry());
+
+  __ bind(good);
+  z_uncolor(_masm, node, ref);
   __ bind(*stub->continuation());
 }
 
+static void z_store_barrier(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register rnew_zaddress, Register rnew_zpointer, Register tmp, bool is_atomic) {
+  if (node->barrier_data() == ZBarrierElided) {
+    z_color(_masm, node, rnew_zpointer, rnew_zaddress, t0);
+  } else {
+    bool is_native = (node->barrier_data() & ZBarrierNative) != 0;
+    ZStoreBarrierStubC2* const stub = ZStoreBarrierStubC2::create(node, ref_addr, rnew_zaddress, rnew_zpointer, is_native, is_atomic);
+    ZBarrierSetAssembler* bs_asm = ZBarrierSet::assembler();
+    bs_asm->store_barrier_fast(&_masm, ref_addr, rnew_zaddress, rnew_zpointer, tmp, true /* in_nmethod */, is_atomic, *stub->entry(), *stub->continuation());
+  }
+}
 %}
 
 // Load Pointer
 instruct zLoadP(iRegPNoSp dst, memory mem)
 %{
   match(Set dst (LoadP mem));
-  predicate(UseZGC && (n->as_Load()->barrier_data() != 0));
+  predicate(UseZGC && ZGenerational && n->as_Load()->barrier_data() != 0);
   effect(TEMP dst);
 
   ins_cost(4 * DEFAULT_COST);
@@ -63,19 +101,36 @@ instruct zLoadP(iRegPNoSp dst, memory mem)
   format %{ "ld  $dst, $mem, #@zLoadP" %}
 
   ins_encode %{
-    const Address ref_addr (as_Register($mem$$base), $mem$$disp);
+    const Address ref_addr(as_Register($mem$$base), $mem$$disp);
     __ ld($dst$$Register, ref_addr);
-    z_load_barrier(_masm, this, ref_addr, $dst$$Register, t0 /* tmp */, barrier_data());
+    z_load_barrier(_masm, this, ref_addr, $dst$$Register, t0);
   %}
 
   ins_pipe(iload_reg_mem);
 %}
 
-instruct zCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
+// Store Pointer
+instruct zStoreP(memory mem, iRegP src, iRegPNoSp tmp, rFlagsReg cr)
+%{
+  predicate(UseZGC && ZGenerational && n->as_Store()->barrier_data() != 0);
+  match(Set mem (StoreP mem src));
+  effect(TEMP tmp, KILL cr);
+
+  ins_cost(125); // XXX
+  format %{ "sd    $mem, $src\t# ptr" %}
+  ins_encode %{
+    const Address ref_addr(as_Register($mem$$base), $mem$$disp);
+    z_store_barrier(_masm, this, ref_addr, $src$$Register, $tmp$$Register, t1, false /* is_atomic */);
+    __ sd($tmp$$Register, ref_addr);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct zCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp oldval_tmp, iRegPNoSp newval_tmp, rFlagsReg cr) %{
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
-  predicate(UseZGC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == ZLoadBarrierStrong);
-  effect(KILL cr, TEMP_DEF res);
+  predicate(UseZGC && ZGenerational && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
+  effect(TEMP oldval_tmp, TEMP newval_tmp, KILL cr, TEMP_DEF res);
 
   ins_cost(2 * VOLATILE_REF_COST);
 
@@ -83,35 +138,21 @@ instruct zCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newva
             "mv $res, $res == $oldval" %}
 
   ins_encode %{
-    Label failed;
-    guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
-               Assembler::relaxed /* acquire */, Assembler::rl /* release */, $res$$Register,
-               true /* result_as_bool */);
-    __ beqz($res$$Register, failed);
-    __ mv(t0, $oldval$$Register);
-    __ bind(failed);
-    if (barrier_data() != ZLoadBarrierElided) {
-      Label good;
-      __ ld(t1, Address(xthread, ZThreadLocalData::address_bad_mask_offset()), t1 /* tmp */);
-      __ andr(t1, t1, t0);
-      __ beqz(t1, good);
-      z_load_barrier_slow_path(_masm, this, Address($mem$$Register), t0 /* ref */, t1 /* tmp */);
-      __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
-                 Assembler::relaxed /* acquire */, Assembler::rl /* release */, $res$$Register,
-                 true /* result_as_bool */);
-      __ bind(good);
-    }
+    guarantee($mem$$disp == 0, "impossible encoding");
+    Address ref_addr($mem$$Register);
+    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register, t0);
+    z_store_barrier(_masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, t1, true /* is_atomic */);
+    __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::int64, Assembler::relaxed /* acquire */, Assembler::rl /* release */, $res$$Register, true /* result_as_bool */);
   %}
 
   ins_pipe(pipe_slow);
 %}
 
-instruct zCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
+instruct zCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp oldval_tmp, iRegPNoSp newval_tmp, rFlagsReg cr) %{
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
-  predicate(UseZGC && needs_acquiring_load_reserved(n) && (n->as_LoadStore()->barrier_data() == ZLoadBarrierStrong));
-  effect(KILL cr, TEMP_DEF res);
+  predicate(UseZGC && ZGenerational && needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
+  effect(TEMP oldval_tmp, TEMP newval_tmp, KILL cr, TEMP_DEF res);
 
   ins_cost(2 * VOLATILE_REF_COST);
 
@@ -119,81 +160,53 @@ instruct zCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
             "mv $res, $res == $oldval" %}
 
   ins_encode %{
-    Label failed;
-    guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
-               Assembler::aq /* acquire */, Assembler::rl /* release */, $res$$Register,
-               true /* result_as_bool */);
-    __ beqz($res$$Register, failed);
-    __ mv(t0, $oldval$$Register);
-    __ bind(failed);
-    if (barrier_data() != ZLoadBarrierElided) {
-      Label good;
-      __ ld(t1, Address(xthread, ZThreadLocalData::address_bad_mask_offset()), t1 /* tmp */);
-      __ andr(t1, t1, t0);
-      __ beqz(t1, good);
-      z_load_barrier_slow_path(_masm, this, Address($mem$$Register), t0 /* ref */, t1 /* tmp */);
-      __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
-                 Assembler::aq /* acquire */, Assembler::rl /* release */, $res$$Register,
-                 true /* result_as_bool */);
-      __ bind(good);
-    }
+    guarantee($mem$$disp == 0, "impossible encoding");
+    Address ref_addr($mem$$Register);
+    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register, t0);
+    z_store_barrier(_masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, t1, true /* is_atomic */);
+    __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::int64, Assembler::aq /* acquire */, Assembler::rl /* release */, $res$$Register, true /* result_as_bool */);
   %}
 
   ins_pipe(pipe_slow);
 %}
 
-instruct zCompareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval) %{
+instruct zCompareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp oldval_tmp, iRegPNoSp newval_tmp, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
-  predicate(UseZGC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == ZLoadBarrierStrong);
-  effect(TEMP_DEF res);
+  predicate(UseZGC && ZGenerational && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
+  effect(TEMP oldval_tmp, TEMP newval_tmp, KILL cr, TEMP_DEF res);
 
   ins_cost(2 * VOLATILE_REF_COST);
 
   format %{ "cmpxchg $res = $mem, $oldval, $newval, #@zCompareAndExchangeP" %}
 
   ins_encode %{
-    guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
-               Assembler::relaxed /* acquire */, Assembler::rl /* release */, $res$$Register);
-    if (barrier_data() != ZLoadBarrierElided) {
-      Label good;
-      __ ld(t0, Address(xthread, ZThreadLocalData::address_bad_mask_offset()));
-      __ andr(t0, t0, $res$$Register);
-      __ beqz(t0, good);
-      z_load_barrier_slow_path(_masm, this, Address($mem$$Register), $res$$Register /* ref */, t0 /* tmp */);
-      __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
-                 Assembler::relaxed /* acquire */, Assembler::rl /* release */, $res$$Register);
-      __ bind(good);
-    }
+    guarantee($mem$$disp == 0, "impossible encoding");
+    Address ref_addr($mem$$Register);
+    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register, t0);
+    z_store_barrier(_masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, t1, true /* is_atomic */);
+    __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::int64, Assembler::relaxed /* acquire */, Assembler::rl /* release */, $res$$Register);
+    z_uncolor(_masm, this, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
 %}
 
-instruct zCompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval) %{
+instruct zCompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp oldval_tmp, iRegPNoSp newval_tmp, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
-  predicate(UseZGC && needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == ZLoadBarrierStrong);
-  effect(TEMP_DEF res);
+  predicate(UseZGC && ZGenerational && needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
+  effect(TEMP oldval_tmp, TEMP newval_tmp, KILL cr, TEMP_DEF res);
 
   ins_cost(2 * VOLATILE_REF_COST);
 
   format %{ "cmpxchg $res = $mem, $oldval, $newval, #@zCompareAndExchangePAcq" %}
 
   ins_encode %{
-    guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
-               Assembler::aq /* acquire */, Assembler::rl /* release */, $res$$Register);
-    if (barrier_data() != ZLoadBarrierElided) {
-      Label good;
-      __ ld(t0, Address(xthread, ZThreadLocalData::address_bad_mask_offset()));
-      __ andr(t0, t0, $res$$Register);
-      __ beqz(t0, good);
-      z_load_barrier_slow_path(_masm, this, Address($mem$$Register), $res$$Register /* ref */, t0 /* tmp */);
-      __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
-                 Assembler::aq /* acquire */, Assembler::rl /* release */, $res$$Register);
-      __ bind(good);
-    }
+    guarantee($mem$$disp == 0, "impossible encoding");
+    Address ref_addr($mem$$Register);
+    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register, t0);
+    z_store_barrier(_masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, t1, true /* is_atomic */);
+    __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::int64, Assembler::aq /* acquire */, Assembler::rl /* release */, $res$$Register);
+    z_uncolor(_masm, this, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -201,7 +214,7 @@ instruct zCompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iReg
 
 instruct zGetAndSetP(indirect mem, iRegP newv, iRegPNoSp prev, rFlagsReg cr) %{
   match(Set prev (GetAndSetP mem newv));
-  predicate(UseZGC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
+  predicate(UseZGC && ZGenerational && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
   effect(TEMP_DEF prev, KILL cr);
 
   ins_cost(2 * VOLATILE_REF_COST);
@@ -209,8 +222,9 @@ instruct zGetAndSetP(indirect mem, iRegP newv, iRegPNoSp prev, rFlagsReg cr) %{
   format %{ "atomic_xchg  $prev, $newv, [$mem], #@zGetAndSetP" %}
 
   ins_encode %{
-    __ atomic_xchg($prev$$Register, $newv$$Register, as_Register($mem$$base));
-    z_load_barrier(_masm, this, Address(noreg, 0), $prev$$Register, t0 /* tmp */, barrier_data());
+    z_store_barrier(_masm, this, Address($mem$$Register), $newv$$Register, $prev$$Register, t1, true /* is_atomic */);
+    __ atomic_xchg($prev$$Register, $prev$$Register, $mem$$Register);
+    z_uncolor(_masm, this, $prev$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -218,16 +232,17 @@ instruct zGetAndSetP(indirect mem, iRegP newv, iRegPNoSp prev, rFlagsReg cr) %{
 
 instruct zGetAndSetPAcq(indirect mem, iRegP newv, iRegPNoSp prev, rFlagsReg cr) %{
   match(Set prev (GetAndSetP mem newv));
-  predicate(UseZGC && needs_acquiring_load_reserved(n) && (n->as_LoadStore()->barrier_data() != 0));
+  predicate(UseZGC && ZGenerational && needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
   effect(TEMP_DEF prev, KILL cr);
 
-  ins_cost(VOLATILE_REF_COST);
+  ins_cost(2 * VOLATILE_REF_COST);
 
   format %{ "atomic_xchg_acq  $prev, $newv, [$mem], #@zGetAndSetPAcq" %}
 
   ins_encode %{
-    __ atomic_xchgal($prev$$Register, $newv$$Register, as_Register($mem$$base));
-    z_load_barrier(_masm, this, Address(noreg, 0), $prev$$Register, t0 /* tmp */, barrier_data());
+    z_store_barrier(_masm, this, Address($mem$$Register), $newv$$Register, $prev$$Register, t1, true /* is_atomic */);
+    __ atomic_xchgal($prev$$Register, $prev$$Register, $mem$$Register);
+    z_uncolor(_masm, this, $prev$$Register);
   %}
   ins_pipe(pipe_serial);
 %}

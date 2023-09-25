@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@
  * array index.
  */
 
+#include <cmath> // ceil()
 #include <awt.h>
-#include <sun_awt_Win32GraphicsDevice.h>
 #include "awt_Canvas.h"
 #include "awt_Win32GraphicsDevice.h"
 #include "awt_Window.h"
@@ -46,7 +46,6 @@
 #include "java_awt_color_ColorSpace.h"
 #include "sun_awt_Win32GraphicsDevice.h"
 #include "java_awt_image_DataBuffer.h"
-#include "dither.h"
 #include "img_util_md.h"
 #include "Devices.h"
 #include "systemScale.h"
@@ -578,7 +577,7 @@ void AwtWin32GraphicsDevice::RealizePalette(HDC hDC)
 }
 
 /**
- * Deterine which device the HWND exists on and return the
+ * Determine which device the HWND exists on and return the
  * appropriate index into the devices array.
  */
 int AwtWin32GraphicsDevice::DeviceIndexForWindow(HWND hWnd)
@@ -899,7 +898,7 @@ BOOL AwtWin32GraphicsDevice::AreSameMonitors(HMONITOR mon1, HMONITOR mon2) {
     {
         if (::EqualRect(&mi1.rcMonitor, &mi2.rcMonitor) &&
             ::EqualRect(&mi1.rcWork, &mi2.rcWork) &&
-            (mi1.dwFlags  == mi1.dwFlags))
+            (mi1.dwFlags == mi2.dwFlags))
         {
 
             J2dTraceLn(J2D_TRACE_VERBOSE, "  the monitors are the same");

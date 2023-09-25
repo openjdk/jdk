@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,9 @@
 
 G1SurvRateGroup::G1SurvRateGroup() :
   _stats_arrays_length(0),
-  _accum_surv_rate_pred(NULL),
+  _accum_surv_rate_pred(nullptr),
   _last_pred(0.0),
-  _surv_rate_predictors(NULL),
+  _surv_rate_predictors(nullptr),
   _num_added_regions(0) {
   reset();
   start_adding_regions();
@@ -57,7 +57,7 @@ void G1SurvRateGroup::reset() {
 
   // Seed initial _surv_rate_pred and _accum_surv_rate_pred values
   guarantee(_stats_arrays_length == 1, "invariant" );
-  guarantee(_surv_rate_predictors[0] != NULL, "invariant" );
+  guarantee(_surv_rate_predictors[0] != nullptr, "invariant" );
   const double initial_surv_rate = 0.4;
   _surv_rate_predictors[0]->add(initial_surv_rate);
   _last_pred = _accum_surv_rate_pred[0] = initial_surv_rate;

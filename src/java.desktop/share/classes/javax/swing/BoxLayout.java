@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,9 @@ import java.io.PrintStream;
  * arranged when the frame is resized.
  * <div style="float:right;text-align:center">
  *   <p><b>Example:</b>
- *   <p><img src="doc-files/BoxLayout-1.gif"
+ *   <p><img src="doc-files/BoxLayout-1.svg"
  *      alt="The following text describes this graphic."
- *      width="191" height="201">
+ *      width="160" height="160">
  * </div>
  * <p>
  * Nesting multiple panels with different combinations of horizontal and
@@ -498,9 +498,9 @@ public class BoxLayout implements LayoutManager2, Serializable {
 
     /**
      * Given one of the 4 axis values, resolve it to an absolute axis.
-     * The relative axis values, PAGE_AXIS and LINE_AXIS are converted
-     * to their absolute couterpart given the target's ComponentOrientation
-     * value.  The absolute axes, X_AXIS and Y_AXIS are returned unmodified.
+     * The relative axis values, PAGE_AXIS and LINE_AXIS, are converted
+     * to their absolute counterpart given the target's ComponentOrientation
+     * value.  The absolute axes, X_AXIS and Y_AXIS, are returned unmodified.
      *
      * @param axis the axis to resolve
      * @param o the ComponentOrientation to resolve against

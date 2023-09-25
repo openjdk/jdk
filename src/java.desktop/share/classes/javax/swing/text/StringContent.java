@@ -336,7 +336,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
     /**
      * This really wants to be a weak reference but
      * in 1.1 we don't have a 100% pure solution for
-     * this... so this class trys to hack a solution
+     * this... so this class tries to hack a solution
      * to causing the marks to be collected.
      */
     final class StickyPosition implements Position {

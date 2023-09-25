@@ -74,10 +74,6 @@ typedef union {
 /************************************************************************
  * Functions
  */
-
-int NET_Connect(int s, struct sockaddr *addr, int addrlen);
-int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout);
-
 void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
                                                const char* hostname,
                                                int gai_error);

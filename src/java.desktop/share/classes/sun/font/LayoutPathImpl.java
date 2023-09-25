@@ -104,7 +104,7 @@ public abstract class LayoutPathImpl extends LayoutPath {
         public boolean isPinned() { return this == PINNED; }
         public boolean isExtended() { return this == EXTENDED; }
         public boolean isClosed() { return this == CLOSED; }
-    };
+    }
 
     //
     // Top level construction.

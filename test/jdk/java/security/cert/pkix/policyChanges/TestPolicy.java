@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
  */
 
 import java.io.*;
+import java.text.DateFormat;
 import java.util.*;
 
 import java.security.Security;
@@ -96,6 +97,10 @@ public class TestPolicy {
             PKIXParameters params = new PKIXParameters(Collections.singleton(new TrustAnchor(anchor, null)));
             params.setRevocationEnabled(false);
             params.setInitialPolicies(testCase.initialPolicies);
+
+            // Certs expired on 7th Nov 2022
+            params.setDate(DateFormat.getDateInstance(DateFormat.MEDIUM,
+                    Locale.US).parse("June 01, 2022"));
 
             CertPath path = factory.generateCertPath(Arrays.asList(new X509Certificate[] {ee, ca}));
 

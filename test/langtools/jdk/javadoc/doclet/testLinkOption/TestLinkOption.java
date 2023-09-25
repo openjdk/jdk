@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class TestLinkOption extends JavadocTester {
      * @param args the array of command line arguments.
      */
     public static void main(String... args) throws Exception {
-        TestLinkOption tester = new TestLinkOption();
+        var tester = new TestLinkOption();
         tester.runTests();
     }
 
@@ -89,7 +89,7 @@ public class TestLinkOption extends JavadocTester {
         checkOutput("pkg/B.html", true,
                 """
                     <div class="block">A method with html tag the method <a href=\"""" + url + """
-                    java/lang/ClassLoader.html#getSystemClassLoader()" title="class or interface in \
+                    java/lang/ClassLoader.html#getSystemClassLoader--" title="class or interface in \
                     java.lang" class="external-link"><code><b>getSystemClassLoader()</b></code></a> \
                     as the parent class loader.</div>""",
                 """
@@ -102,7 +102,7 @@ public class TestLinkOption extends JavadocTester {
                 "<code>createTempFile(prefix,&nbsp;suffix,&nbsp;null)</code>",
                 """
                     <dd>
-                    <ul class="see-list-long">
+                    <ul class="tag-list-long">
                     <li><a href="http://www.ietf.org/rfc/rfc2279.txt"><i>RFC&nbsp;2279: UTF-8, a
                      transformation format of ISO 10646</i></a></li>
                     <li><a href="http://www.ietf.org/rfc/rfc2373.txt"><i>RFC&nbsp;2373: IPv6 Addressing

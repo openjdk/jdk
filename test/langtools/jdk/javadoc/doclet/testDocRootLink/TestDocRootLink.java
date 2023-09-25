@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import javadoc.tester.JavadocTester;
 public class TestDocRootLink extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestDocRootLink tester = new TestDocRootLink();
+        var tester = new TestDocRootLink();
 
         // The test files intentionally contain examples of links that should
         // or should not be affected by the -Xdocrootparent option, and the

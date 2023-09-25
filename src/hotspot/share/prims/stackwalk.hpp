@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public:
   }
 
   jlong address_value() {
-    return (jlong) castable_address(this);
+    return (jlong) this;
   }
 
   static BaseFrameStream* from_current(JavaThread* thread, jlong magic, objArrayHandle frames_array);
@@ -90,7 +90,7 @@ private:
   bool                  _need_method_info;
 
 public:
-  JavaFrameStream(JavaThread* thread, int mode, Handle cont_scope, Handle cont);
+  JavaFrameStream(JavaThread* thread, jlong mode, Handle cont_scope, Handle cont);
 
   const RegisterMap* reg_map() override { return _vfst.reg_map(); };
 
@@ -130,11 +130,11 @@ public:
   const RegisterMap* reg_map() override { return _map; };
 
   void next()   override;
-  bool at_end() override { return _jvf == NULL; }
+  bool at_end() override { return _jvf == nullptr; }
 
   Method* method() override { return _jvf->method(); }
   int bci()        override { return _jvf->bci(); }
-  oop cont() override { return continuation() != NULL ? continuation(): ContinuationEntry::cont_oop_or_null(_cont_entry); }
+  oop cont()       override { return continuation() != nullptr ? continuation(): ContinuationEntry::cont_oop_or_null(_cont_entry, _map->thread()); }
 
   void fill_frame(int index, objArrayHandle  frames_array,
                   const methodHandle& method, TRAPS) override;
@@ -147,21 +147,21 @@ private:
                             objArrayHandle frames_array,
                             int& end_index, TRAPS);
 
-  static inline bool get_caller_class(int mode) {
+  static inline bool get_caller_class(jlong mode) {
     return (mode & JVM_STACKWALK_GET_CALLER_CLASS) != 0;
   }
-  static inline bool skip_hidden_frames(int mode) {
+  static inline bool skip_hidden_frames(jlong mode) {
     return (mode & JVM_STACKWALK_SHOW_HIDDEN_FRAMES) == 0;
   }
-  static inline bool live_frame_info(int mode) {
+  static inline bool live_frame_info(jlong mode) {
     return (mode & JVM_STACKWALK_FILL_LIVE_STACK_FRAMES) != 0;
   }
 
 public:
-  static inline bool need_method_info(int mode) {
+  static inline bool need_method_info(jlong mode) {
     return (mode & JVM_STACKWALK_FILL_CLASS_REFS_ONLY) == 0;
   }
-  static inline bool use_frames_array(int mode) {
+  static inline bool use_frames_array(jlong mode) {
     return (mode & JVM_STACKWALK_FILL_CLASS_REFS_ONLY) == 0;
   }
   static oop walk(Handle stackStream, jlong mode, int skip_frames, Handle cont_scope, Handle cont,

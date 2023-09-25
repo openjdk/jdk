@@ -38,7 +38,7 @@ import java.util.Set;
 public abstract class Font2D {
 
     /* Note: JRE and FONT_CONFIG ranks are identical. I don't know of a reason
-     * to distingish these. Possibly if a user adds fonts to the JRE font
+     * to distinguish these. Possibly if a user adds fonts to the JRE font
      * directory that are the same font as the ones specified in the font
      * configuration but that is more likely to be the legitimate intention
      * than a problem. One reason why these should be the same is that on
@@ -102,7 +102,7 @@ public abstract class Font2D {
      * typically SunGraphics2D instances) are using the same font, then
      * as may be typical of many UIs, they are probably using it in the
      * same style, so it can be a win to first quickly check if the last
-     * strike obtained from this Font2D satifies the needs of the next
+     * strike obtained from this Font2D satisfies the needs of the next
      * client too.
      * This pre-supposes that a FontStrike is a shareable object, which
      * it should.
@@ -254,7 +254,7 @@ public abstract class Font2D {
      * population of the strikes. However since users of these strikes are
      * transient, then the one that was overwritten would soon be freed.
      * If there is any problem then a small synchronized block would be
-     * required with its attendant consequences for MP scaleability.
+     * required with its attendant consequences for MP scalability.
      */
     public FontStrike getStrike(Font font, AffineTransform devTx,
                                 int aa, int fm) {

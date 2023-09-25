@@ -23,22 +23,15 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
-import java.awt.Dimension;
-import java.awt.Rectangle;
-import java.awt.Canvas;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.util.*;
-import com.sun.hotspot.igv.layout.Cluster;
-import com.sun.hotspot.igv.layout.LayoutGraph;
 import com.sun.hotspot.igv.layout.LayoutManager;
-import com.sun.hotspot.igv.layout.Link;
-import com.sun.hotspot.igv.layout.Vertex;
+import com.sun.hotspot.igv.layout.*;
+import java.awt.*;
+import java.util.*;
 
 public class HierarchicalCFGLayoutManager implements LayoutManager {
 
     private static final int BLOCK_BORDER = 5;
-    private FontMetrics fontMetrics;
+    private final FontMetrics fontMetrics;
     // Lays out nodes within a single cluster (basic block).
     private LayoutManager subManager;
     // Lays out clusters in the CFG.
@@ -78,13 +71,12 @@ public class HierarchicalCFGLayoutManager implements LayoutManager {
         // Compute layout for each cluster.
         for (Cluster c : clusters) {
             ClusterNode n = clusterNode.get(c);
-            subManager.doLayout(new LayoutGraph(n.getSubEdges(), n.getSubNodes()), new HashSet<Link>());
+            subManager.doLayout(new LayoutGraph(n.getSubEdges(), n.getSubNodes()), new HashSet<>());
             n.updateSize();
         }
 
         // Compute inter-cluster layout.
-        manager.doLayout(new LayoutGraph(clusterEdges, new HashSet<>(clusterNode.values())),
-                         new HashSet<Link>());
+        manager.doLayout(new LayoutGraph(clusterEdges, new HashSet<>(clusterNode.values())), new HashSet<>());
 
         // Write back results.
         writeBackClusterBounds(clusterNode);
@@ -144,11 +136,11 @@ public class HierarchicalCFGLayoutManager implements LayoutManager {
         // Map from "primitive" cluster edges to their input links.
         Map<AbstractMap.SimpleEntry<Cluster, Cluster>, Link> inputLink = new HashMap<>();
         for (Link l : graph.getLinks()) {
-            inputLink.put(new AbstractMap.SimpleEntry<Cluster, Cluster>(l.getFromCluster(), l.getToCluster()), l);
+            inputLink.put(new AbstractMap.SimpleEntry<>(l.getFromCluster(), l.getToCluster()), l);
         }
         for (ClusterEdge ce : clusterEdges) {
             assert (ce.getControlPoints() != null);
-            Link l = inputLink.get(new AbstractMap.SimpleEntry<Cluster, Cluster>(ce.getFromCluster(), ce.getToCluster()));
+            Link l = inputLink.get(new AbstractMap.SimpleEntry<>(ce.getFromCluster(), ce.getToCluster()));
             l.setControlPoints(ce.getControlPoints());
         }
     }

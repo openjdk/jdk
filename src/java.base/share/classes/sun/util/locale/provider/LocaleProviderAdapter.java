@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.text.spi.DateFormatSymbolsProvider;
 import java.text.spi.DecimalFormatSymbolsProvider;
 import java.text.spi.NumberFormatProvider;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -110,12 +109,6 @@ public abstract class LocaleProviderAdapter {
     private static final Map<Type, LocaleProviderAdapter> adapterInstances = new ConcurrentHashMap<>();
 
     /**
-     * Default fallback adapter type, which should return something meaningful in any case.
-     * This is either CLDR or FALLBACK.
-     */
-    static volatile LocaleProviderAdapter.Type defaultLocaleProviderAdapter;
-
-    /**
      * Adapter lookup cache.
      */
     private static final ConcurrentMap<Class<? extends LocaleServiceProvider>, ConcurrentMap<Locale, LocaleProviderAdapter>>
@@ -125,13 +118,15 @@ public abstract class LocaleProviderAdapter {
         String order = GetPropertyAction.privilegedGetProperty("java.locale.providers");
         ArrayList<Type> typeList = new ArrayList<>();
         String invalidTypeMessage = null;
+        String compatWarningMessage = null;
 
         // Check user specified adapter preference
         if (order != null && !order.isEmpty()) {
             String[] types = order.split(",");
             for (String type : types) {
                 type = type.trim().toUpperCase(Locale.ROOT);
-                if (type.equals("COMPAT")) {
+                if (type.equals("COMPAT") || type.equals("JRE")) {
+                    compatWarningMessage = "COMPAT locale provider will be removed in a future release";
                     type = "JRE";
                 }
                 try {
@@ -146,13 +141,11 @@ public abstract class LocaleProviderAdapter {
             }
         }
 
-        defaultLocaleProviderAdapter = Type.CLDR;
         if (!typeList.isEmpty()) {
             // bona fide preference exists
             if (!(typeList.contains(Type.CLDR) || typeList.contains(Type.JRE))) {
                 // Append FALLBACK as the last resort when no ResourceBundleBasedAdapter is available.
                 typeList.add(Type.FALLBACK);
-                defaultLocaleProviderAdapter = Type.FALLBACK;
             }
         } else {
             // Default preference list.
@@ -168,6 +161,10 @@ public abstract class LocaleProviderAdapter {
             // provider name or format in the system property
             getLogger(LocaleProviderAdapter.class.getCanonicalName())
                 .log(Logger.Level.INFO, invalidTypeMessage);
+        }
+        if (compatWarningMessage != null) {
+            getLogger(LocaleProviderAdapter.class.getCanonicalName())
+                .log(Logger.Level.WARNING, compatWarningMessage);
         }
     }
 
@@ -340,10 +337,10 @@ public abstract class LocaleProviderAdapter {
     public abstract BreakIteratorProvider getBreakIteratorProvider();
 
     /**
-     * Returns a ollatorProvider for this LocaleProviderAdapter, or null if no
-     * ollatorProvider is available.
+     * Returns a CollatorProvider for this LocaleProviderAdapter, or null if no
+     * CollatorProvider is available.
      *
-     * @return a ollatorProvider
+     * @return a collatorProvider
      */
     public abstract CollatorProvider getCollatorProvider();
 

@@ -21,8 +21,8 @@
  * questions.
  */
 #include "precompiled.hpp"
-#include "unittest.hpp"
 #include "runtime/arguments.hpp"
+#include "unittest.hpp"
 
 // Tests Arguments::verify_special_jvm_flags(true)
 // If this test fails it means that an obsoleted or expired flag

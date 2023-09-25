@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,10 @@ import com.sun.hotspot.igv.view.DiagramViewer;
 import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JComboBox;
+import javax.swing.JTextField;
 import javax.swing.plaf.basic.BasicComboBoxUI;
 
 public final class ZoomLevelAction extends JComboBox<String> implements ChangedListener<DiagramViewer> {
@@ -36,6 +39,8 @@ public final class ZoomLevelAction extends JComboBox<String> implements ChangedL
     private static final String[] CHOICES = { "25%", "50%", "75%", "100%", "125%", "150%", "200%", "400%"};
 
     private final DiagramViewer diagramScene;
+
+    boolean updateZoomInScene = true;
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -55,6 +60,9 @@ public final class ZoomLevelAction extends JComboBox<String> implements ChangedL
             level = Math.max(level, minLevel);
             level = Math.min(level, maxLevel);
             setZoomLevel(level);
+            if (updateZoomInScene) {
+                diagramScene.setZoomPercentage(level);
+            }
         } catch(NumberFormatException exception) {
             changed(diagramScene);
         }
@@ -81,11 +89,12 @@ public final class ZoomLevelAction extends JComboBox<String> implements ChangedL
 
     private void setZoomLevel(int zoomLevel) {
         setSelectedItem(zoomLevel + "%");
-        diagramScene.setZoomPercentage(zoomLevel);
     }
 
     @Override
     public void changed(DiagramViewer diagramViewer) {
-        setSelectedItem(diagramViewer.getZoomPercentage() + "%");
+        updateZoomInScene = false;
+        setZoomLevel(diagramViewer.getZoomPercentage());
+        updateZoomInScene = true;
     }
 }

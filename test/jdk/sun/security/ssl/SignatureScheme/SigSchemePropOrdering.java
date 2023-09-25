@@ -231,7 +231,7 @@ public class SigSchemePropOrdering extends SSLEngineTemplate {
      *
      * @param data the ByteBuffer containing the ClientHello bytes
      *
-     * @returns A List of the signature schemes in string form.  If no
+     * @return A List of the signature schemes in string form.  If no
      * signature_algorithms extension is present in the client hello then
      * an empty list will be returned.
      */
@@ -302,7 +302,7 @@ public class SigSchemePropOrdering extends SSLEngineTemplate {
      *
      * @param data the ByteBuffer containing the CertificateRequest bytes
      *
-     * @returns A List of the signature schemes in string form.  If no
+     * @return A List of the signature schemes in string form.  If no
      * signature_algorithms extension is present in the CertificateRequest
      * then an empty list will be returned.
      */

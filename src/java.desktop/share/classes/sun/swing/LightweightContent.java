@@ -117,7 +117,7 @@ public interface LightweightContent {
      * @param height the logical height of the image
      * @param linestride the line stride of the pixel buffer
      * @param scale the scale factor of the pixel buffer
-     * @Depricated replaced by
+     * @Deprecated replaced by
      * {@link #imageBufferReset(int[],int,int,int,int,int,double,double)}
      */
     @Deprecated(since = "9")

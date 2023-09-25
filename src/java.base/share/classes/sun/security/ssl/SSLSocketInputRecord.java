@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -255,7 +255,11 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
         // Decrypt the fragment
         //
         ByteBuffer fragment;
+        recordLock.lock();
         try {
+            if (isClosed) {
+                return null;
+            }
             Plaintext plaintext =
                     readCipher.decrypt(contentType, recordBody, null);
             fragment = plaintext.fragment;
@@ -264,6 +268,8 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
             throw bpe;
         } catch (GeneralSecurityException gse) {
             throw new SSLProtocolException("Unexpected exception", gse);
+        } finally {
+            recordLock.unlock();
         }
 
         if (contentType != ContentType.HANDSHAKE.id &&
@@ -278,6 +284,12 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
         //
         if (contentType == ContentType.HANDSHAKE.id) {
             ByteBuffer handshakeFrag = fragment;
+            if (contentLen == 0) {
+                // From RFC 8446: "Implementations MUST NOT send zero-length fragments
+                // of Handshake types, even if those fragments contain padding."
+                throw new SSLProtocolException("Handshake fragments must not be zero length.");
+            }
+
             if ((handshakeBuffer != null) &&
                     (handshakeBuffer.remaining() != 0)) {
                 ByteBuffer bb = ByteBuffer.wrap(new byte[

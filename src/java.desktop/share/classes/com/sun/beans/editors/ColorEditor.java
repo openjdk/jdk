@@ -67,13 +67,13 @@ public class ColorEditor extends Panel implements PropertyEditor {
         text.reshape(ourWidth,0,100,30);
         ourWidth += 100 + hPad;
 
-        choser = new Choice();
+        chooser = new Choice();
         int active = 0;
         for (int i = 0; i < colorNames.length; i++) {
-            choser.addItem(colorNames[i]);
+            chooser.addItem(colorNames[i]);
         }
-        add(choser);
-        choser.reshape(ourWidth,0,100,30);
+        add(chooser);
+        chooser.reshape(ourWidth,0,100,30);
         ourWidth += 100 + hPad;
 
         resize(ourWidth,40);
@@ -126,8 +126,8 @@ public class ColorEditor extends Panel implements PropertyEditor {
 
     @SuppressWarnings("deprecation")
     public boolean action(Event e, Object arg) {
-        if (e.target == choser) {
-            changeColor(colors[choser.getSelectedIndex()]);
+        if (e.target == chooser) {
+            changeColor(colors[chooser.getSelectedIndex()]);
         }
         return false;
     }
@@ -157,7 +157,7 @@ public class ColorEditor extends Panel implements PropertyEditor {
                 active = i;
             }
         }
-        choser.select(active);
+        chooser.select(active);
 
         sample.setBackground(color);
         sample.repaint();
@@ -226,7 +226,7 @@ public class ColorEditor extends Panel implements PropertyEditor {
 
     private Color color;
     private TextField text;
-    private Choice choser;
+    private Choice chooser;
 
     private PropertyChangeSupport support = new PropertyChangeSupport(this);
 }

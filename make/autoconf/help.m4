@@ -278,6 +278,11 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
     printf "using default settings.\n"
   fi
 
+  if test "x$REAL_CONFIGURE_COMMAND_EXEC_FULL" != x; then
+    printf "\n"
+    printf "The original configure invocation was '$REAL_CONFIGURE_COMMAND_EXEC_SHORT $REAL_CONFIGURE_COMMAND_LINE'.\n"
+  fi
+
   printf "\n"
   printf "Configuration summary:\n"
   printf "* Name:           $CONF_NAME\n"

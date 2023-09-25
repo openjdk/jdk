@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/**
- * FTP stream opener.
  */
 
 package sun.net.www.protocol.ftp;
@@ -56,8 +52,6 @@ import sun.net.www.URLConnection;
 import sun.net.www.protocol.http.HttpURLConnection;
 import sun.net.ftp.FtpClient;
 import sun.net.ftp.FtpProtocolException;
-import sun.net.ProgressSource;
-import sun.net.ProgressMonitor;
 import sun.net.www.ParseUtil;
 import sun.security.action.GetPropertyAction;
 
@@ -86,7 +80,7 @@ public class FtpURLConnection extends URLConnection {
 
     // In case we have to use proxies, we use HttpURLConnection
     HttpURLConnection http = null;
-    private Proxy instProxy;
+    private final Proxy instProxy;
 
     InputStream is = null;
     OutputStream os = null;
@@ -159,17 +153,15 @@ public class FtpURLConnection extends URLConnection {
         }
     }
 
-    static URL checkURL(URL u) throws IllegalArgumentException {
+    private static URL checkURL(URL u) throws MalformedURLException {
         if (u != null) {
             if (u.toExternalForm().indexOf('\n') > -1) {
-                Exception mfue = new MalformedURLException("Illegal character in URL");
-                throw new IllegalArgumentException(mfue.getMessage(), mfue);
+                throw new MalformedURLException("Illegal character in URL");
             }
         }
-        String s = IPAddressUtil.checkAuthority(u);
-        if (s != null) {
-            Exception mfue = new MalformedURLException(s);
-            throw new IllegalArgumentException(mfue.getMessage(), mfue);
+        String errMsg = IPAddressUtil.checkAuthority(u);
+        if (errMsg != null) {
+            throw new MalformedURLException(errMsg);
         }
         return u;
     }
@@ -179,14 +171,14 @@ public class FtpURLConnection extends URLConnection {
      *
      * @param   url     The {@code URL} to retrieve or store.
      */
-    public FtpURLConnection(URL url) {
+    public FtpURLConnection(URL url) throws MalformedURLException {
         this(url, null);
     }
 
     /**
      * Same as FtpURLconnection(URL) with a per connection proxy specified
      */
-    FtpURLConnection(URL url, Proxy p) {
+    FtpURLConnection(URL url, Proxy p) throws MalformedURLException {
         super(checkURL(url));
         instProxy = p;
         host = url.getHost();
@@ -468,17 +460,7 @@ public class FtpURLConnection extends URLConnection {
 
                     // Wrap input stream with MeteredStream to ensure read() will always return -1
                     // at expected length.
-
-                    // Check if URL should be metered
-                    boolean meteredInput = ProgressMonitor.getDefault().shouldMeterInput(url, "GET");
-                    ProgressSource pi = null;
-
-                    if (meteredInput) {
-                        pi = new ProgressSource(url, "GET", l);
-                        pi.beginTracking();
-                    }
-
-                    is = new MeteredStream(is, pi, l);
+                    is = new MeteredStream(is, l);
                 }
             } catch (Exception e) {
                 e.printStackTrace();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
 
 package java.security;
 
+import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.io.*;
 import java.net.URL;
 
+import jdk.internal.access.JavaSecurityPropertiesAccess;
 import jdk.internal.event.EventHelper;
 import jdk.internal.event.SecurityPropertyModificationEvent;
 import jdk.internal.access.SharedSecrets;
@@ -63,6 +65,9 @@ public final class Security {
     /* The java.security properties */
     private static Properties props;
 
+    /* cache a copy for recording purposes */
+    private static Properties initialSecurityProperties;
+
     // An element in the cache
     private static class ProviderProperty {
         String className;
@@ -78,6 +83,13 @@ public final class Security {
         var dummy = AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
             initialize();
             return null;
+        });
+        // Set up JavaSecurityPropertiesAccess in SharedSecrets
+        SharedSecrets.setJavaSecurityPropertiesAccess(new JavaSecurityPropertiesAccess() {
+            @Override
+            public Properties getInitialProperties() {
+                return initialSecurityProperties;
+            }
         });
     }
 
@@ -104,6 +116,14 @@ public final class Security {
             }
             loadProps(null, extraPropFile, overrideAll);
         }
+        initialSecurityProperties = (Properties) props.clone();
+        if (sdebug != null) {
+            for (String key : props.stringPropertyNames()) {
+                sdebug.println("Initial security property: " + key + "=" +
+                    props.getProperty(key));
+            }
+        }
+
     }
 
     private static boolean loadProps(File masterFile, String extraPropFile, boolean overrideAll) {
@@ -116,10 +136,10 @@ public final class Security {
                 File propFile = new File(extraPropFile);
                 URL propURL;
                 if (propFile.exists()) {
-                    propURL = new URL
+                    propURL = newURL
                             ("file:" + propFile.getCanonicalPath());
                 } else {
-                    propURL = new URL(extraPropFile);
+                    propURL = newURL(extraPropFile);
                 }
 
                 is = propURL.openStream();
@@ -276,7 +296,10 @@ public final class Security {
      * Adds a new provider, at a specified position. The position is
      * the preference order in which providers are searched for
      * requested algorithms.  The position is 1-based, that is,
-     * 1 is most preferred, followed by 2, and so on.
+     * 1 is most preferred, followed by 2, and so on.  If the position
+     * is less than 1 or greater than n, where n is the number of installed
+     * providers, the provider (if not already installed) is inserted at
+     * the end of the list, or at the n + 1 position.
      *
      * <p>If the given provider is installed at the requested position,
      * the provider that used to be at that position, and all providers
@@ -682,14 +705,15 @@ public final class Security {
      *
      * @param key the key of the property being retrieved.
      *
-     * @return the value of the security property corresponding to key.
+     * @return the value of the security property, or {@code null} if there
+     *          is no property with that key.
      *
      * @throws  SecurityException
      *          if a security manager exists and its {@link
      *          java.lang.SecurityManager#checkPermission} method
      *          denies
      *          access to retrieve the specified security property value
-     * @throws  NullPointerException is key is {@code null}
+     * @throws  NullPointerException if key is {@code null}
      *
      * @see #setProperty
      * @see java.security.SecurityPermission
@@ -973,5 +997,10 @@ public final class Security {
             }
         }
         return Collections.unmodifiableSet(result);
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
     }
 }

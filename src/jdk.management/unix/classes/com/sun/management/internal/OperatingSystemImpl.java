@@ -49,8 +49,8 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     private ContainerCpuTicks processLoadTicks = new ProcessCpuTicks();
 
     private abstract class ContainerCpuTicks {
-        private long usageTicks = 0;
-        private long totalTicks = 0;
+        private volatile long usageTicks;
+        private volatile long totalTicks;
 
         private double getUsageDividesTotal(long usageTicks, long totalTicks) {
             // If cpu quota or cpu shares are in effect. Calculate the cpu load

@@ -801,7 +801,7 @@ abstract class XScrollbar {
             factor = trueSize / range;
 
             // A naive notion of the size of the slider in pixels
-            // in thermo, slider_size is 0 ans is ignored
+            // in thermo, slider_size is 0 and is ignored
             slideSize = vis * factor;
 
         if (alignment == ALIGNMENT_HORIZONTAL) {

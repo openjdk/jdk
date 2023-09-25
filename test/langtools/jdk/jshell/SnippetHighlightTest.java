@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8274148
+ * @bug 8274148 8301580
  * @summary Check snippet highlighting
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -97,6 +97,21 @@ public class SnippetHighlightTest extends KullaTesting {
         assertHighlights("void method() {}",
                          "Highlight[start=0, end=4, attributes=[KEYWORD]]",
                          "Highlight[start=5, end=11, attributes=[DECLARATION]]");
+    }
+
+    public void testClassErrorRecovery() { //JDK-8301580
+        assertHighlights("""
+                         class C {
+                            void m
+                            {
+                                return ;
+                            }
+                         }
+                         """,
+                         "Highlight[start=0, end=5, attributes=[KEYWORD]]",
+                         "Highlight[start=6, end=7, attributes=[DECLARATION]]",
+                         "Highlight[start=13, end=17, attributes=[KEYWORD]]",
+                         "Highlight[start=32, end=38, attributes=[KEYWORD]]");
     }
 
     private void assertHighlights(String code, String... expected) {

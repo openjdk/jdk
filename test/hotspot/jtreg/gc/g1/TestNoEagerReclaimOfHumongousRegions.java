@@ -78,10 +78,7 @@ public class TestNoEagerReclaimOfHumongousRegions {
         garbageAndRefList.clear();
 
         // Run a concurrent mark cycle to mark all references but the static one as dead.
-        wb.g1StartConcMarkCycle();
-        while (wb.g1InConcurrentMark()) {
-            Thread.sleep(100);
-        }
+        wb.g1RunConcurrentGC();
 
         // Run a young collection to make sure humongous object still can't be eagerly reclaimed.
         wb.youngGC();

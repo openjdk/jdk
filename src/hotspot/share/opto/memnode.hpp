@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ class PhaseCCP;
 class PhaseTransform;
 
 //------------------------------MemNode----------------------------------------
-// Load or Store, possibly throwing a NULL pointer exception
+// Load or Store, possibly throwing a null pointer exception
 class MemNode : public Node {
 private:
   bool _unaligned_access; // Unaligned access from unsafe
@@ -92,8 +92,8 @@ protected:
     debug_only(_adr_type=at; adr_type();)
   }
 
-  virtual Node* find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const { return NULL; }
-  ArrayCopyNode* find_array_copy_clone(PhaseTransform* phase, Node* ld_alloc, Node* mem) const;
+  virtual Node* find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const { return nullptr; }
+  ArrayCopyNode* find_array_copy_clone(Node* ld_alloc, Node* mem) const;
   static bool check_if_adr_maybe_raw(Node* adr);
 
 public:
@@ -111,10 +111,10 @@ public:
   virtual const class TypePtr *adr_type() const;  // returns bottom_type of address
 
   // Shared code for Ideal methods:
-  Node *Ideal_common(PhaseGVN *phase, bool can_reshape);  // Return -1 for short-circuit NULL.
+  Node *Ideal_common(PhaseGVN *phase, bool can_reshape);  // Return -1 for short-circuit null.
 
   // Helper function for adr_type() implementations.
-  static const TypePtr* calculate_adr_type(const Type* t, const TypePtr* cross_check = NULL);
+  static const TypePtr* calculate_adr_type(const Type* t, const TypePtr* cross_check = nullptr);
 
   // Raw access function, to allow copying of adr_type efficiently in
   // product builds and retain the debug info for debug builds.
@@ -146,11 +146,11 @@ public:
   // Search through memory states which precede this node (load or store).
   // Look for an exact match for the address, with no intervening
   // aliased stores.
-  Node* find_previous_store(PhaseTransform* phase);
+  Node* find_previous_store(PhaseValues* phase);
 
   // Can this node (load or store) accurately see a stored value in
   // the given memory state?  (The state may or may not be in(Memory).)
-  Node* can_see_stored_value(Node* st, PhaseTransform* phase) const;
+  Node* can_see_stored_value(Node* st, PhaseValues* phase) const;
 
   void set_unaligned_access() { _unaligned_access = true; }
   bool is_unaligned_access() const { return _unaligned_access; }
@@ -199,7 +199,7 @@ private:
   // this field.
   const MemOrd _mo;
 
-  AllocateNode* is_new_object_mark_load(PhaseGVN *phase) const;
+  AllocateNode* is_new_object_mark_load() const;
 
 protected:
   virtual bool cmp(const Node &n) const;
@@ -208,7 +208,7 @@ protected:
   virtual bool can_remove_control() const;
   const Type* const _type;      // What kind of value is loaded?
 
-  virtual Node* find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const;
+  virtual Node* find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const;
 public:
 
   LoadNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *rt, MemOrd mo, ControlDependency control_dependency)
@@ -244,8 +244,11 @@ public:
   // try to hook me up to the exact initializing store.
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
+  // Return true if it's possible to split the Load through a Phi merging the bases
+  bool can_split_through_phi_base(PhaseGVN *phase);
+
   // Split instance field load through Phi.
-  Node* split_through_phi(PhaseGVN *phase);
+  Node* split_through_phi(PhaseGVN *phase, bool ignore_missing_instance_id = false);
 
   // Recover original value from boxed values
   Node *eliminate_autobox(PhaseIterGVN *igvn);
@@ -262,13 +265,13 @@ public:
   virtual const Type *bottom_type() const;
   // Following method is copied from TypeNode:
   void set_type(const Type* t) {
-    assert(t != NULL, "sanity");
+    assert(t != nullptr, "sanity");
     debug_only(uint check_hash = (VerifyHashTableKeys && _hash_lock) ? hash() : NO_HASH);
     *(const Type**)&_type = t;   // cast away const-ness
     // If this node is in the hash table, make sure it doesn't need a rehash.
     assert(check_hash == NO_HASH || check_hash == hash(), "type change must preserve hash code");
   }
-  const Type* type() const { assert(_type != NULL, "sanity"); return _type; };
+  const Type* type() const { assert(_type != nullptr, "sanity"); return _type; };
 
   // Do not match memory edge
   virtual uint match_edge(uint idx) const;
@@ -633,7 +636,7 @@ public:
   virtual int store_Opcode() const { return Opcode(); }
 
   // have all possible loads of the value stored been optimized away?
-  bool value_never_loaded(PhaseTransform *phase) const;
+  bool value_never_loaded(PhaseValues* phase) const;
 
   bool  has_reinterpret_variant(const Type* vt);
   Node* convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Type* vt);
@@ -785,7 +788,7 @@ public:
     StoreNode(c, mem, adr, at, val, oop_store, MemNode::release),
     _oop_alias_idx(oop_alias_idx) {
     assert(_oop_alias_idx >= Compile::AliasIdxRaw ||
-           _oop_alias_idx == Compile::AliasIdxBot && Compile::current()->AliasLevel() == 0,
+           _oop_alias_idx == Compile::AliasIdxBot && !Compile::current()->do_aliasing(),
            "bad oop alias idx");
   }
   virtual int Opcode() const;
@@ -808,7 +811,7 @@ public:
   virtual const Type *bottom_type() const {return Type::MEMORY;}
   virtual const TypePtr *adr_type() const {
     Node* ctrl = in(0);
-    if (ctrl == NULL)  return NULL; // node is dead
+    if (ctrl == nullptr)  return nullptr; // node is dead
     return ctrl->in(MemNode::Memory)->adr_type();
   }
   virtual uint ideal_reg() const { return 0;} // memory projections don't have a register
@@ -1117,7 +1120,7 @@ public:
                             PhaseGVN* phase);
   // Return allocation input memory edge if it is different instance
   // or itself if it is the one we are looking for.
-  static bool step_through(Node** np, uint instance_id, PhaseTransform* phase);
+  static bool step_through(Node** np, uint instance_id, PhaseValues* phase);
 };
 
 //------------------------------MemBar-----------------------------------------
@@ -1168,7 +1171,7 @@ public:
   // Optional 'precedent' becomes an extra edge if not null.
   static MemBarNode* make(Compile* C, int opcode,
                           int alias_idx = Compile::AliasIdxBot,
-                          Node* precedent = NULL);
+                          Node* precedent = nullptr);
 
   MemBarNode* trailing_membar() const;
   MemBarNode* leading_membar() const;
@@ -1296,26 +1299,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------BlackholeNode----------------------------
-// Blackhole all arguments. This node would survive through the compiler
-// the effects on its arguments, and would be finally matched to nothing.
-class BlackholeNode : public MemBarNode {
-public:
-  BlackholeNode(Compile* C, int alias_idx, Node* precedent)
-    : MemBarNode(C, alias_idx, precedent) {}
-  virtual int   Opcode() const;
-  virtual uint ideal_reg() const { return 0; } // not matched in the AD file
-  const RegMask &in_RegMask(uint idx) const {
-    // Fake the incoming arguments mask for blackholes: accept all registers
-    // and all stack slots. This would avoid any redundant register moves
-    // for blackhole inputs.
-    return RegMask::All;
-  }
-#ifndef PRODUCT
-  virtual void format(PhaseRegAlloc* ra, outputStream* st) const;
-#endif
-};
-
 // Isolation of object setup after an AllocateNode and before next safepoint.
 // (See comment in memnode.cpp near InitializeNode::InitializeNode for semantics.)
 class InitializeNode: public MemBarNode {
@@ -1374,7 +1357,7 @@ public:
 
 #ifdef ASSERT
   // ensure all non-degenerate stores are ordered and non-overlapping
-  bool stores_are_sane(PhaseTransform* phase);
+  bool stores_are_sane(PhaseValues* phase);
 #endif //ASSERT
 
   // See if this store can be captured; return offset where it initializes.
@@ -1382,13 +1365,13 @@ public:
   intptr_t can_capture_store(StoreNode* st, PhaseGVN* phase, bool can_reshape);
 
   // Capture another store; reformat it to write my internal raw memory.
-  // Return the captured copy, else NULL if there is some sort of problem.
+  // Return the captured copy, else null if there is some sort of problem.
   Node* capture_store(StoreNode* st, intptr_t start, PhaseGVN* phase, bool can_reshape);
 
   // Find captured store which corresponds to the range [start..start+size).
   // Return my own memory projection (meaning the initial zero bits)
-  // if there is no such store.  Return NULL if there is a problem.
-  Node* find_captured_store(intptr_t start, int size_in_bytes, PhaseTransform* phase);
+  // if there is no such store.  Return null if there is a problem.
+  Node* find_captured_store(intptr_t start, int size_in_bytes, PhaseValues* phase);
 
   // Called when the associated AllocateNode is expanded into CFG.
   Node* complete_stores(Node* rawctl, Node* rawmem, Node* rawptr,
@@ -1400,11 +1383,11 @@ public:
 
   // Find out where a captured store should be placed (or already is placed).
   int captured_store_insertion_point(intptr_t start, int size_in_bytes,
-                                     PhaseTransform* phase);
+                                     PhaseValues* phase);
 
-  static intptr_t get_store_offset(Node* st, PhaseTransform* phase);
+  static intptr_t get_store_offset(Node* st, PhaseValues* phase);
 
-  Node* make_raw_address(intptr_t offset, PhaseTransform* phase);
+  Node* make_raw_address(intptr_t offset, PhaseGVN* phase);
 
   bool detect_init_independence(Node* value, PhaseGVN* phase);
 
@@ -1451,7 +1434,7 @@ public:
   static Node* make_empty_memory(); // where the sentinel comes from
   bool is_empty_memory(Node* n) const { assert((n == empty_memory()) == n->is_top(), "sanity"); return n->is_top(); }
   // hook for the iterator, to perform any necessary setup
-  void iteration_setup(const MergeMemNode* other = NULL);
+  void iteration_setup(const MergeMemNode* other = nullptr);
   // push sentinels until I am at least as long as the other (semantic no-op)
   void grow_to_match(const MergeMemNode* other);
   bool verify_sparse() const PRODUCT_RETURN0;
@@ -1471,7 +1454,7 @@ class MergeMemStream : public StackObj {
   Node*               _mem2;
   int                 _cnt2;
 
-  void init(MergeMemNode* mm, const MergeMemNode* mm2 = NULL) {
+  void init(MergeMemNode* mm, const MergeMemNode* mm2 = nullptr) {
     // subsume_node will break sparseness at times, whenever a memory slice
     // folds down to a copy of the base ("fat") memory.  In such a case,
     // the raw edge will update to base, although it should be top.
@@ -1485,15 +1468,15 @@ class MergeMemStream : public StackObj {
     //
     // Also, iteration_setup repairs sparseness.
     assert(mm->verify_sparse(), "please, no dups of base");
-    assert(mm2==NULL || mm2->verify_sparse(), "please, no dups of base");
+    assert(mm2==nullptr || mm2->verify_sparse(), "please, no dups of base");
 
     _mm  = mm;
     _mm_base = mm->base_memory();
     _mm2 = mm2;
     _cnt = mm->req();
     _idx = Compile::AliasIdxBot-1; // start at the base memory
-    _mem = NULL;
-    _mem2 = NULL;
+    _mem = nullptr;
+    _mem2 = nullptr;
   }
 
 #ifdef ASSERT
@@ -1551,7 +1534,7 @@ class MergeMemStream : public StackObj {
     return _mm_base;
   }
   const MergeMemNode* all_memory2() const {
-    assert(_mm2 != NULL, "");
+    assert(_mm2 != nullptr, "");
     return _mm2;
   }
   bool at_base_memory() const {
@@ -1622,7 +1605,7 @@ class MergeMemStream : public StackObj {
  private:
   // find the next item, which might be empty
   bool next(bool have_mm2) {
-    assert((_mm2 != NULL) == have_mm2, "use other next");
+    assert((_mm2 != nullptr) == have_mm2, "use other next");
     assert_synch();
     if (++_idx < _cnt) {
       // Note:  This iterator allows _mm to be non-sparse.

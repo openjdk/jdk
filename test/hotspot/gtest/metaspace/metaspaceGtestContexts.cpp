@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,9 +65,6 @@ void ChunkGtestContext::checked_alloc_chunk_0(Metachunk** p_return_value, chunkl
       // Needs lock EXPECT_NULL(c->next_in_vs());
       // Needs lock EXPECT_NULL(c->prev_in_vs());
       ASSERT_TRUE(c->is_root_chunk() || c->is_leader());
-    }
-    if (Settings::new_chunks_are_fully_committed()) {
-      ASSERT_TRUE(c->is_fully_committed());
     }
 
     _num_chunks_allocated++;

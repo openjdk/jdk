@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ class ClassInstanceInfo : public StackObj {
 
  public:
   ClassInstanceInfo() {
-    _dynamic_nest_host = NULL;
+    _dynamic_nest_host = nullptr;
     _class_data = Handle();
   }
   ClassInstanceInfo(InstanceKlass* dynamic_nest_host, Handle class_data) {
@@ -62,7 +62,7 @@ class ClassLoadInfo : public StackObj {
  public:
   ClassLoadInfo(Handle protection_domain) {
     _protection_domain = protection_domain;
-    _class_hidden_info._dynamic_nest_host = NULL;
+    _class_hidden_info._dynamic_nest_host = nullptr;
     _class_hidden_info._class_data = Handle();
     _is_hidden = false;
     _is_strong_hidden = false;

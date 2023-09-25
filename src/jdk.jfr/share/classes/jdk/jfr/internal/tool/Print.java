@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import jdk.jfr.EventType;
+import jdk.jfr.internal.util.UserDataException;
+import jdk.jfr.internal.util.UserSyntaxException;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -116,7 +118,7 @@ final class Print extends Command {
                 foundEventFilter = true;
                 String filter = options.remove();
                 warnForWildcardExpansion("--events", filter);
-                eventFilters.add(Filters.createEventTypeFilter(filter));
+                eventFilters.add(Filters.createEventTypeFilter(filter, List.of()));
             }
             if (acceptFilterOption(options, "--categories")) {
                 if (foundCategoryFilter) {
@@ -125,7 +127,7 @@ final class Print extends Command {
                 foundCategoryFilter = true;
                 String filter = options.remove();
                 warnForWildcardExpansion("--categories", filter);
-                eventFilters.add(Filters.createCategoryFilter(filter));
+                eventFilters.add(Filters.createCategoryFilter(filter, List.of()));
             }
             if (acceptOption(options, "--stack-depth")) {
                 String value = options.pop();

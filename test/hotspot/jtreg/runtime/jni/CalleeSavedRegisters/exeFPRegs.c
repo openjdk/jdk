@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
 #include <jni.h>
 #include <stdlib.h>
 
+#ifdef AIX
+#include <pthread.h>
+#endif //AIX
 #ifdef WINDOWS
 #include <windows.h>
 #else
@@ -104,7 +107,15 @@ long long unsigned int d2l(double d) {
 
 #define print_reg(r) printf("%s = %f (0x%llX)\n", #r, r, d2l(r));
 
-int main(int argc, const char** argv) {
+typedef struct {
+  int argc;
+  char **argv;
+} args_list;
+
+static void* run(void* argp) {
+  args_list *arg = (args_list*) argp;
+  int argc =  arg->argc;
+  char **argv = arg->argv;
   JavaVM* jvm;
   JNIEnv* env;
   JavaVMInitArgs vm_args;
@@ -239,3 +250,24 @@ int main(int argc, const char** argv) {
   return 0;
 }
 
+int main(int argc, char *argv[]) {
+  args_list args;
+  args.argc = argc;
+  args.argv = argv;
+#ifdef AIX
+  size_t adjusted_stack_size = 1024*1024;
+  pthread_t id;
+  int result;
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  pthread_attr_setstacksize(&attr, adjusted_stack_size);
+  result = pthread_create(&id, &attr, run, (void *)&args);
+  if (result != 0) {
+    fprintf(stderr, "Error: pthread_create failed with error code %d \n", result);
+    return -1;
+  }
+  pthread_join(id, NULL);
+#else
+  run(&args);
+#endif //AIX
+}

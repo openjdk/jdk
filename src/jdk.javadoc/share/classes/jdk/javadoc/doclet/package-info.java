@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,10 +79,13 @@
  *   </dd>
  *
  *   <dt><a id="included"></a>Included</dt>
- *   <dd>An element is considered to be <em>included</em>, if it is
- *       <em>specified</em> if it contains a <em>specified</em> element,
- *       or it is enclosed in a <em>specified</em> element, and is <em>selected</em>.
- *       Included elements will be documented.
+ *   <dd>An element is considered to be <em>included</em>, if it is <em>selected</em> and any of the following is true:
+ *     <ul>
+ *       <li>the element is <em>specified</em>, or
+ *       <li>the element contains a <em>specified</em> element, or
+ *       <li>the element is enclosed in a <em>specified</em> element.
+ *     </ul>
+ *     Included elements will be documented.
  *   </dd>
  *
  * </dl>

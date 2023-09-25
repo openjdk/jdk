@@ -95,7 +95,7 @@ typedef struct ShenandoahSharedFlag {
 private:
   volatile ShenandoahSharedValue* operator&() {
     fatal("Use addr_of() instead");
-    return NULL;
+    return nullptr;
   }
 
   bool operator==(ShenandoahSharedFlag& other) { fatal("Use is_set() instead"); return false; }
@@ -188,7 +188,7 @@ typedef struct ShenandoahSharedBitmap {
 private:
   volatile ShenandoahSharedValue* operator&() {
     fatal("Use addr_of() instead");
-    return NULL;
+    return nullptr;
   }
 
   bool operator==(ShenandoahSharedFlag& other) { fatal("Use is_set() instead"); return false; }
@@ -233,7 +233,7 @@ struct ShenandoahSharedEnumFlag {
 private:
   volatile T* operator&() {
     fatal("Use addr_of() instead");
-    return NULL;
+    return nullptr;
   }
 
   bool operator==(ShenandoahSharedEnumFlag& other) { fatal("Use get() instead"); return false; }

@@ -25,7 +25,6 @@
 
 package sun.security.util;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
@@ -59,11 +58,7 @@ public final class NamedCurve extends ECParameterSpec {
         this.oid = ko.value();
 
         DerOutputStream out = new DerOutputStream();
-        try {
-            out.putOID(ObjectIdentifier.of(ko));
-        } catch (IOException e) {
-            throw new RuntimeException("Internal error", e);
-        }
+        out.putOID(ObjectIdentifier.of(ko));
         encoded = out.toByteArray();
     }
 

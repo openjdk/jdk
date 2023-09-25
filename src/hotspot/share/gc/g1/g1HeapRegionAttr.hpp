@@ -101,7 +101,6 @@ public:
 #ifdef ASSERT
   bool is_default() const              { return type() == NotInCSet; }
   bool is_valid() const                { return (type() >= Optional && type() < Num); }
-  bool is_valid_gen() const            { return (type() >= Young && type() <= Old); }
 #endif
 };
 

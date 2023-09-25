@@ -41,6 +41,8 @@
 import sun.text.Normalizer;
 import jdk.internal.icu.text.NormalizerBase;
 
+import java.util.HexFormat;
+
 import static java.text.Normalizer.Form.*;
 
 public class ICUBasicTest extends IntlTest {
@@ -149,7 +151,8 @@ public class ICUBasicTest extends IntlTest {
 
         if (!expected.equals(result)) {
             errln("Reordering of combining marks failed. Expected: " +
-                  toHexString(expected) + " Got: "+ toHexString(result));
+                  HexFormat.of().withDelimiter(" ").formatHex(expected.getBytes())
+                    + " Got: "+ HexFormat.of().withDelimiter(" ").formatHex(result.getBytes()));
         }
     }
 
@@ -191,16 +194,22 @@ public class ICUBasicTest extends IntlTest {
 
             String result = NormalizerBase.normalize(input, NFD);
             if (!result.equals(output)) {
-                errln("FAIL input: " + toHexString(input) + "\n" +
-                      " decompose: " + toHexString(result) + "\n" +
-                      "  expected: " + toHexString(output));
+                errln("FAIL input: " + HexFormat.of().withDelimiter(" ")
+                        .formatHex(input.getBytes()) + "\n" +
+                      " decompose: " + HexFormat.of().withDelimiter(" ")
+                        .formatHex(result.getBytes()) + "\n" +
+                      "  expected: " + HexFormat.of().withDelimiter(" ")
+                        .formatHex(output.getBytes()));
             }
 
             result = NormalizerBase.normalize(input, NFC);
             if (!result.equals(output)) {
-                errln("FAIL input: " + toHexString(input) + "\n" +
-                      "   compose: " + toHexString(result) + "\n" +
-                      "  expected: " + toHexString(output));
+                errln("FAIL input: " + HexFormat.of().withDelimiter(" ")
+                        .formatHex(input.getBytes()) + "\n" +
+                      "   compose: " + HexFormat.of().withDelimiter(" ")
+                        .formatHex(output.getBytes()) + "\n" +
+                      "  expected: " + HexFormat.of().withDelimiter(" ")
+                        .formatHex(output.getBytes()));
             }
         }
     }
@@ -231,21 +240,27 @@ public class ICUBasicTest extends IntlTest {
             String exp = DATA[i+1];
 
             if (b.equals(exp)) {
-                logln("Ok: " + toHexString(a) + " x COMPOSE_COMPAT => " +
-                      toHexString(b));
+                logln("Ok: " + HexFormat.of().withDelimiter(" ")
+                        .formatHex(a.getBytes()) + " x COMPOSE_COMPAT => " +
+                      HexFormat.of().withDelimiter(" ")
+                              .formatHex(b.getBytes()));
             } else {
-                errln("FAIL: " + toHexString(a) + " x COMPOSE_COMPAT => " +
-                      toHexString(b) + ", expect " + toHexString(exp));
+                errln("FAIL: " + HexFormat.of().withDelimiter(" ")
+                        .formatHex(b.getBytes()) + " x COMPOSE_COMPAT => " +
+                      HexFormat.of().withDelimiter(" ")
+                              .formatHex(a.getBytes()) + ", expect " +
+                        HexFormat.of().withDelimiter(" ")
+                                .formatHex(exp.getBytes()));
             }
 
             a = NormalizerBase.normalize(b, NFD);
             exp = DATA[i+2];
             if (a.equals(exp)) {
-                logln("Ok: " + toHexString(b) + " x DECOMP => " +
-                      toHexString(a));
+                logln("Ok: " + HexFormat.of().withDelimiter(" ").formatHex(b.getBytes()) + " x DECOMP => " +
+                      HexFormat.of().withDelimiter(" ").formatHex(a.getBytes()));
             } else {
-                errln("FAIL: " + toHexString(b) + " x DECOMP => " +
-                      toHexString(a) + ", expect " + toHexString(exp));
+                errln("FAIL: " + HexFormat.of().withDelimiter(" ").formatHex(b.getBytes()) + " x DECOMP => " +
+                      HexFormat.of().withDelimiter(" ").formatHex(a.getBytes()) + ", expect " + HexFormat.of().withDelimiter(" ").formatHex(exp.getBytes()));
             }
         }
     }
@@ -382,25 +397,33 @@ public class ICUBasicTest extends IntlTest {
         String c = NormalizerBase.normalize(b, NFC);
 
         if (c.equals(a)) {
-            errln("FAIL: " + toHexString(a) + " x DECOMP_COMPAT => " +
-                  toHexString(b) + " x COMPOSE => " +
-                  toHexString(c) + " for the latest Unicode");
+            errln("FAIL: " + HexFormat.of().withDelimiter(" ")
+                    .formatHex(a.getBytes()) + " x DECOMP_COMPAT => " +
+                  HexFormat.of().withDelimiter(" ")
+                          .formatHex(b.getBytes()) + " x COMPOSE => " +
+                  HexFormat.of().withDelimiter(" ")
+                          .formatHex(c.getBytes()) + " for the latest Unicode");
         } else if (verbose) {
-            logln("Ok: " + toHexString(a) + " x DECOMP_COMPAT => " +
-                  toHexString(b) + " x COMPOSE => " +
-                  toHexString(c) + " for the latest Unicode");
+            logln("Ok: " + HexFormat.of().withDelimiter(" ")
+                    .formatHex(a.getBytes()) + " x DECOMP_COMPAT => " +
+                  HexFormat.of().withDelimiter(" ")
+                          .formatHex(b.getBytes()) + " x COMPOSE => " +
+                  HexFormat.of().withDelimiter(" ")
+                          .formatHex(c.getBytes()) + " for the latest Unicode");
         }
 
         b = NormalizerBase.normalize(a, NFKD, Normalizer.UNICODE_3_2);
         c = NormalizerBase.normalize(b, NFC, Normalizer.UNICODE_3_2);
         if (c.equals(a)) {
-            errln("FAIL: " + toHexString(a) + " x DECOMP_COMPAT => " +
-                  toHexString(b) + " x COMPOSE => " +
-                  toHexString(c) + " for Unicode 3.2.0");
+            errln("FAIL: " + HexFormat.of().withDelimiter(" ")
+                    .formatHex(a.getBytes()) + " x DECOMP_COMPAT => " +
+                  HexFormat.of().withDelimiter(" ").formatHex(b.getBytes()) + " x COMPOSE => " +
+                  HexFormat.of().withDelimiter(" ").formatHex(c.getBytes()) + " for Unicode 3.2.0");
         } else if (verbose) {
-            logln("Ok: " + toHexString(a) + " x DECOMP_COMPAT => " +
-                  toHexString(b) + " x COMPOSE => " +
-                  toHexString(c) + " for Unicode 3.2.0");
+            logln("Ok: " + HexFormat.of().withDelimiter(" ")
+                    .formatHex(a.getBytes()) + " x DECOMP_COMPAT => " +
+                  HexFormat.of().withDelimiter(" ").formatHex(b.getBytes()) + " x COMPOSE => " +
+                  HexFormat.of().withDelimiter(" ").formatHex(c.getBytes()) + " for Unicode 3.2.0");
         }
     }
 
@@ -572,15 +595,18 @@ public class ICUBasicTest extends IntlTest {
                             int outCol) throws Exception {
         for (int i = 0; i < tests.length; i++) {
             String input = tests[i][0];
-            logln("Normalizing '" + input + "' (" + toHexString(input) + ")" );
+            logln("Normalizing '" + input + "' (" + HexFormat.of()
+                    .withDelimiter(" ").formatHex(input.getBytes()) + ")" );
 
             String expect =tests[i][outCol];
             String output = java.text.Normalizer.normalize(input, form);
 
             if (!output.equals(expect)) {
                 errln("FAIL: case " + i
-                    + " expected '" + expect + "' (" + toHexString(expect) + ")"
-                    + " but got '" + output + "' (" + toHexString(output) + ")"
+                    + " expected '" + expect + "' (" + HexFormat.of()
+                        .withDelimiter(" ").formatHex(expect.getBytes()) + ")"
+                    + " but got '" + output + "' (" + HexFormat.of()
+                        .withDelimiter(" ").formatHex(output.getBytes()) + ")"
 );
             }
         }

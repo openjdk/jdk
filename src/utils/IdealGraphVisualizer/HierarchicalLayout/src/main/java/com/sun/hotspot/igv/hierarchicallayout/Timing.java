@@ -31,7 +31,7 @@ public class Timing {
 
     private long lastValue;
     private long sum;
-    private String name;
+    private final String name;
 
     public Timing(String name) {
         this.name = name;
@@ -49,7 +49,7 @@ public class Timing {
     }
 
     public void print() {
-        System.out.println(toString());
+        System.out.println();
     }
 
     public void start() {

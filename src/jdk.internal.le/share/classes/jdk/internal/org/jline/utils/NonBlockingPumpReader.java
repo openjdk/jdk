@@ -106,10 +106,12 @@ public class NonBlockingPumpReader extends NonBlockingReader {
     }
 
     @Override
-    public int readBuffered(char[] b) throws IOException {
+    public int readBuffered(char[] b, int off, int len, long timeout) throws IOException {
         if (b == null) {
             throw new NullPointerException();
-        } else if (b.length == 0) {
+        } else if (off < 0 || len < 0 || off + len < b.length) {
+            throw new IllegalArgumentException();
+        } else if (len == 0) {
             return 0;
         } else {
             final ReentrantLock lock = this.lock;
@@ -117,7 +119,13 @@ public class NonBlockingPumpReader extends NonBlockingReader {
             try {
                 if (!closed && count == 0) {
                     try {
-                        notEmpty.await();
+                        if (timeout > 0) {
+                            if (!notEmpty.await(timeout, TimeUnit.MILLISECONDS)) {
+                                throw new IOException( "Timeout reading" );
+                            }
+                        } else {
+                            notEmpty.await();
+                        }
                     } catch (InterruptedException e) {
                         throw (IOException) new InterruptedIOException().initCause(e);
                     }
@@ -127,9 +135,9 @@ public class NonBlockingPumpReader extends NonBlockingReader {
                 } else if (count == 0) {
                     return READ_EXPIRED;
                 } else {
-                    int r = Math.min(b.length, count);
+                    int r = Math.min(len, count);
                     for (int i = 0; i < r; i++) {
-                        b[i] = buffer[read++];
+                        b[off + i] = buffer[read++];
                         if (read == buffer.length) {
                             read = 0;
                         }

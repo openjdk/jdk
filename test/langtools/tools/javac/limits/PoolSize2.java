@@ -3331,6 +3331,4 @@ class PoolSize2 {
             ,32762.0,32763.0,32764.0,32765.0,32766.0,32767.0
         };
     }
-    public static void main(String args[]) {
-    System.out.println("Ok"); }
 }

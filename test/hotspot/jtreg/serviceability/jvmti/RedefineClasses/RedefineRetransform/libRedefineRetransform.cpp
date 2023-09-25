@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,7 +166,7 @@ public:
                 result = nullptr;
             } else {
                 memcpy(arrayPtr, savedClassBytes, savedClassBytesLen);
-                env->ReleaseByteArrayElements(result, arrayPtr, JNI_COMMIT);
+                env->ReleaseByteArrayElements(result, arrayPtr, 0);
             }
         }
         return result;

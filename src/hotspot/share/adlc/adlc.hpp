@@ -100,4 +100,8 @@ typedef unsigned int uintptr_t;
 // it everywhere it needs to be available.
 extern ArchDesc* globalAD;
 
+// Performs snprintf and asserts the result is non-negative (so there was not
+// an encoding error) and that the output was not truncated.
+extern int snprintf_checked(char* buf, size_t len, const char* fmt, ...);
+
 #endif // SHARE_ADLC_ADLC_HPP

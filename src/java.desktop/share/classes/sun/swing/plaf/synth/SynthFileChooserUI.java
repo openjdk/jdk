@@ -50,7 +50,7 @@ import javax.swing.plaf.basic.BasicFileChooserUI;
  * these classes, developers cannot depend on their availability in
  * non-Sun implementations. Additionally this API may change in
  * incompatible ways between releases. While this class is public, it
- * shoud be considered an implementation detail, and subject to change.
+ * should be considered an implementation detail, and subject to change.
  *
  * @author Leif Samuelsson
  * @author Jeff Dinkins
@@ -193,6 +193,9 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
 
     protected void uninstallDefaults(JFileChooser fc) {
         super.uninstallDefaults(fc);
+        if (fc.getFont() instanceof UIResource) {
+            fc.setFont(null);
+        }
 
         SynthContext context = getContext(getFileChooser(), ENABLED);
         style.uninstallDefaults(context);

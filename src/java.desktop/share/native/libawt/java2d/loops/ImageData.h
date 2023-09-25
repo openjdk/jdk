@@ -372,7 +372,7 @@ JNIEXPORT void JNICALL unlockBitImageData(
     JNIEnv *env, ImageDataBitLockInfo *lockInfo);
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 #endif

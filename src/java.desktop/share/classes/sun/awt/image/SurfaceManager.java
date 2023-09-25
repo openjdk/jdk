@@ -89,7 +89,7 @@ public abstract class SurfaceManager {
         imgaccessor.setSurfaceManager(img, mgr);
     }
 
-    private ConcurrentHashMap<Object,Object> cacheMap;
+    private volatile ConcurrentHashMap<Object,Object> cacheMap;
 
     /**
      * Return an arbitrary cached object for an arbitrary cache key.

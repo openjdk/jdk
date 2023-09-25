@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,21 +38,21 @@
   #include "decoder_elf.hpp"
 #endif
 
-AbstractDecoder*  Decoder::_shared_decoder = NULL;
-AbstractDecoder*  Decoder::_error_handler_decoder = NULL;
+AbstractDecoder*  Decoder::_shared_decoder = nullptr;
+AbstractDecoder*  Decoder::_error_handler_decoder = nullptr;
 NullDecoder       Decoder::_do_nothing_decoder;
 
 AbstractDecoder* Decoder::get_shared_instance() {
   assert(shared_decoder_lock()->owned_by_self(), "Require DecoderLock to enter");
 
-  if (_shared_decoder == NULL) {
+  if (_shared_decoder == nullptr) {
     _shared_decoder = create_decoder();
   }
   return _shared_decoder;
 }
 
 AbstractDecoder* Decoder::get_error_handler_instance() {
-  if (_error_handler_decoder == NULL) {
+  if (_error_handler_decoder == nullptr) {
     _error_handler_decoder = create_decoder();
   }
   return _error_handler_decoder;
@@ -69,8 +69,8 @@ AbstractDecoder* Decoder::create_decoder() {
   decoder = new (std::nothrow)ElfDecoder();
 #endif
 
-  if (decoder == NULL || decoder->has_error()) {
-    if (decoder != NULL) {
+  if (decoder == nullptr || decoder->has_error()) {
+    if (decoder != nullptr) {
       delete decoder;
     }
     decoder = &_do_nothing_decoder;
@@ -79,7 +79,7 @@ AbstractDecoder* Decoder::create_decoder() {
 }
 
 Mutex* Decoder::shared_decoder_lock() {
-  assert(SharedDecoder_lock != NULL, "Just check");
+  assert(SharedDecoder_lock != nullptr, "Just check");
   return SharedDecoder_lock;
 }
 

@@ -45,27 +45,17 @@
 #define fstatvfs64 fstatvfs
 #endif
 
+#if defined(__linux__)
+#include <linux/fs.h>
+#include <sys/ioctl.h>
+#endif
+
 #include "jni.h"
 #include "nio.h"
 #include "nio_util.h"
 #include "sun_nio_ch_UnixFileDispatcherImpl.h"
 #include "java_lang_Long.h"
 #include <assert.h>
-
-static int preCloseFD = -1;     /* File descriptor to which we dup other fd's
-                                   before closing them for real */
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_UnixFileDispatcherImpl_init(JNIEnv *env, jclass cl)
-{
-    int sp[2];
-    if (socketpair(PF_UNIX, SOCK_STREAM, 0, sp) < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "socketpair failed");
-        return;
-    }
-    preCloseFD = sp[0];
-    close(sp[1]);
-}
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_UnixFileDispatcherImpl_read0(JNIEnv *env, jclass clazz,
@@ -184,7 +174,7 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_size0(JNIEnv *env, jobject this, jobject 
     if (fstat64(fd, &fbuf) < 0)
         return handle(env, -1, "Size failed");
 
-#ifdef BLKGETSIZE64
+#if defined(__linux__)
     if (S_ISBLK(fbuf.st_mode)) {
         uint64_t size;
         if (ioctl(fd, BLKGETSIZE64, &size) < 0)
@@ -257,37 +247,11 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_release0(JNIEnv *env, jobject this,
     }
 }
 
-
 static void closeFileDescriptor(JNIEnv *env, int fd) {
     if (fd != -1) {
         int result = close(fd);
         if (result < 0)
             JNU_ThrowIOExceptionWithLastError(env, "Close failed");
-    }
-}
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_UnixFileDispatcherImpl_close0(JNIEnv *env, jclass clazz, jobject fdo)
-{
-    jint fd = fdval(env, fdo);
-    closeFileDescriptor(env, fd);
-}
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_UnixFileDispatcherImpl_preClose0(JNIEnv *env, jclass clazz, jobject fdo)
-{
-    jint fd = fdval(env, fdo);
-    if (preCloseFD >= 0) {
-        if (dup2(preCloseFD, fd) < 0)
-            JNU_ThrowIOExceptionWithLastError(env, "dup2 failed");
-    }
-}
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_UnixFileDispatcherImpl_dup0(JNIEnv *env, jobject this, jobject fdo1, jobject fdo2)
-{
-    if (dup2(fdval(env, fdo1), fdval(env, fdo2)) < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "dup2 failed");
     }
 }
 

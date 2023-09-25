@@ -46,7 +46,7 @@ public class TestHtmlDocument extends JavadocTester {
 
     // Entry point
     public static void main(String... args) throws Exception {
-        TestHtmlDocument tester = new TestHtmlDocument();
+        var tester = new TestHtmlDocument();
         tester.runTests();
     }
 

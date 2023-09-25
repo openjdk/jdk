@@ -217,7 +217,7 @@ public class FindHeaderEndVsManifestDigesterFindFirstSection {
      * <li>which is then passed on as the third parameter to the constructor
      * of a new {@link ManifestDigester.Section#Section} by
      * <pre>new Section(0, pos.endOfSection + 1, pos.startOfNext, rawBytes)));</pre>
-     * in in ManifestDigester.java:128</li>
+     * in ManifestDigester.java:128</li>
      * <li>where it is assigned to
      * {@link ManifestDigester.Section#lengthWithBlankLine} by
      * <pre>this.lengthWithBlankLine = lengthWithBlankLine;</pre>

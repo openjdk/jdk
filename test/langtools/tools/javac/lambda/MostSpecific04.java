@@ -20,7 +20,7 @@ public class MostSpecific04 {
         void map(LongMapper<? super E> m) { }
     }
 
-    public static void main(String[] args) {
+    public static void meth() {
         MyList<String> ls = new MyList<String>();
         ls.map(e->e.length()); //ambiguous - implicit
         ls.map((String e)->e.length()); //ok

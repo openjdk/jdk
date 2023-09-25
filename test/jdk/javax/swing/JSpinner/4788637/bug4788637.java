@@ -21,11 +21,16 @@
  * questions.
  */
 
+import java.io.File;
+
+import java.awt.image.BufferedImage;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 
 import javax.swing.JFrame;
@@ -38,7 +43,9 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import javax.imageio.ImageIO;
 import static javax.swing.UIManager.getInstalledLookAndFeels;
+
 
 /**
  * @test
@@ -52,15 +59,15 @@ public final class bug4788637 {
     private static JFrame fr;
 
     private static Robot robot;
-    private int step;
-    private boolean spinnerValueChanged[] = {false, false, false};
+    private int step = 0;
+    private volatile boolean spinnerValueChanged[] = {false, false, false};
 
-    private static Point p;
-    private static Rectangle rect;
+    private static volatile Point p;
+    private static volatile Rectangle rect;
 
     public static void main(final String[] args) throws Exception {
         robot = new Robot();
-        robot.setAutoDelay(50);
+        robot.setAutoDelay(100);
         robot.setAutoWaitForIdle(true);
         for (final UIManager.LookAndFeelInfo laf : getInstalledLookAndFeels()) {
             SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
@@ -68,6 +75,7 @@ public final class bug4788637 {
             try {
                 SwingUtilities.invokeAndWait(app::createAndShowGUI);
                 robot.waitForIdle();
+                robot.delay(1000);
                 SwingUtilities.invokeAndWait(()-> {
                     spinner.requestFocus();
                     p = spinner.getLocationOnScreen();
@@ -106,9 +114,11 @@ public final class bug4788637 {
     public void start() {
         try {
             Thread.sleep(1000);
+            System.out.println("p " + p + " rect " + rect);
             // Move mouse to the up arrow button
             robot.mouseMove(p.x+rect.width-3, p.y+3);
-            robot.mousePress(InputEvent.BUTTON1_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+
             synchronized (bug4788637.this) {
                 if (!spinnerValueChanged[step]) {
                     bug4788637.this.wait(3000);
@@ -123,6 +133,7 @@ public final class bug4788637 {
                     bug4788637.this.wait(3000);
                 }
             }
+            robot.waitForIdle();
 
             // Move mouse to the up arrow button
             robot.mouseMove(p.x+rect.width-3, p.y+3);
@@ -132,8 +143,10 @@ public final class bug4788637 {
                     bug4788637.this.wait(3000);
                 }
             }
+            robot.waitForIdle();
 
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.waitForIdle();
         } catch(Throwable t) {
             throw new RuntimeException(t);
         }
@@ -145,6 +158,15 @@ public final class bug4788637 {
             if (!spinnerValueChanged[0] ||
                     spinnerValueChanged[1] ||
                     !spinnerValueChanged[2]) {
+                System.out.println("!spinnerValueChanged[0] " + !spinnerValueChanged[0] +
+                                   " spinnerValueChanged[1] " + spinnerValueChanged[1] +
+                                   " !spinnerValueChanged[2] " + !spinnerValueChanged[2]);
+                try {
+                    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+                    Rectangle screen = new Rectangle(0, 0, (int) screenSize.getWidth(), (int) screenSize.getHeight());
+                    BufferedImage fullScreen = robot.createScreenCapture(screen);
+                    ImageIO.write(fullScreen, "png", new File("fullScreen.png"));
+                } catch (Exception e) {}
                 throw new Error("JSpinner buttons don't conform to most platform conventions");
             }
         }

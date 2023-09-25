@@ -632,7 +632,7 @@ public class GIFImageWriter extends ImageWriter {
                         imageMetadata.transparentColorIndex = index;
                     }
                     /* NB: transparentColorFlag might have not beed reset for
-                       greyscale images but explicitly reseting it here
+                       greyscale images but explicitly resetting it here
                        is potentially not right thing to do until we have way
                        to find whether current value was explicitly set by
                        the user.
@@ -659,7 +659,7 @@ public class GIFImageWriter extends ImageWriter {
                 streamMetadata.version = "89a";
             }
 
-            // Set the Logical Screen Desriptor if not set.
+            // Set the Logical Screen Descriptor if not set.
             if (streamMetadata.logicalScreenWidth ==
                 GIFMetadata.UNDEFINED_INTEGER_VALUE)
             {

@@ -41,13 +41,13 @@ import javax.swing.UIManager;
 
 public class bug5049549 {
 
-    private static ImageIcon DE = new ImageIcon(bug5049549.class.getResource("DE1.GIF"));
-    private static ImageIcon DI = new ImageIcon(bug5049549.class.getResource("DI1.GIF"));
-    private static ImageIcon DS = new ImageIcon(bug5049549.class.getResource("DS1.GIF"));
-    private static ImageIcon RO = new ImageIcon(bug5049549.class.getResource("RO1.GIF"));
-    private static ImageIcon RS = new ImageIcon(bug5049549.class.getResource("RS1.GIF"));
-    private static ImageIcon SE = new ImageIcon(bug5049549.class.getResource("SE1.GIF"));
-    private static ImageIcon PR = new ImageIcon(bug5049549.class.getResource("PR1.GIF"));
+    private static ImageIcon DE = new ImageIcon(bug5049549.class.getResource("DE1.gif"));
+    private static ImageIcon DI = new ImageIcon(bug5049549.class.getResource("DI1.gif"));
+    private static ImageIcon DS = new ImageIcon(bug5049549.class.getResource("DS1.gif"));
+    private static ImageIcon RO = new ImageIcon(bug5049549.class.getResource("RO1.gif"));
+    private static ImageIcon RS = new ImageIcon(bug5049549.class.getResource("RS1.gif"));
+    private static ImageIcon SE = new ImageIcon(bug5049549.class.getResource("SE1.gif"));
+    private static ImageIcon PR = new ImageIcon(bug5049549.class.getResource("PR1.gif"));
 
     private static Blocker blocker = new Blocker();
 

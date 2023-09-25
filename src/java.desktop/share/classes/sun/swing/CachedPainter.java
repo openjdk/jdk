@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,10 +54,10 @@ import java.util.Map;
  * </ol>
  * The two ways to use this class are:
  * <ol>
- * <li>Invoke <code>paint</code> to draw the cached reprensentation at
+ * <li>Invoke <code>paint</code> to draw the cached representation at
  *     the specified location.
- * <li>Invoke <code>getImage</code> to get the cached reprensentation and
- *     draw the image yourself.  This is primarly useful when you are not
+ * <li>Invoke <code>getImage</code> to get the cached representation and
+ *     draw the image yourself.  This is primarily useful when you are not
  *     using <code>VolatileImage</code>.
  * </ol>
  *
@@ -314,8 +314,9 @@ public abstract class CachedPainter {
 
         @Override
         public Image getResolutionVariant(double destWidth, double destHeight) {
-            int w = (int) Math.ceil(destWidth);
-            int h = (int) Math.ceil(destHeight);
+            int w = (int) Math.floor(destWidth + 0.5);
+            int h = (int) Math.floor(destHeight + 0.5);
+
             return getImage(PainterMultiResolutionCachedImage.class,
                     c, baseWidth, baseHeight, w, h, args);
         }

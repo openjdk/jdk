@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ Boolean  awt_ModLockIsShiftLock = False;
 static int32_t num_buttons = 0;
 int32_t getNumButtons();
 
-extern JavaVM *jvm;
+extern JavaVM *jvm_xawt;
 
 // Tracing level
 static int tracing = 0;
@@ -130,7 +130,7 @@ JNIEXPORT jlong JNICALL Java_sun_awt_X11_XToolkit_getDefaultXColormap
 JNIEXPORT jint JNICALL
 DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
 {
-    jvm = vm;
+    jvm_xawt = vm;
 
     //Set the gtk backend to x11 on all the systems
     putenv("GDK_BACKEND=x11");
@@ -382,7 +382,7 @@ static jlong        poll_wakeup_time = 0LL; // Used for tracing
 // considered by schedulers as zero, so this might cause unnecessary
 // CPU consumption by Java.  The values between 10 - 50 are suggested
 // for single client desktop configurations.  For SunRay servers, it
-// is highly recomended to use aging algorithm (set static poll timeout
+// is highly recommended to use aging algorithm (set static poll timeout
 // to 0).
 static int32_t static_poll_timeout = 0;
 
@@ -698,7 +698,7 @@ performPoll(JNIEnv *env, jlong nextTaskTime) {
  */
 void awt_output_flush() {
     if (awt_next_flush_time == 0) {
-        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm_xawt, JNI_VERSION_1_2);
 
         jlong curTime = awtJNI_TimeMillis(); // current time
         jlong l_awt_last_flush_time = awt_last_flush_time; // last time we flushed queue
@@ -845,7 +845,7 @@ int32_t getNumButtons() {
     int32_t local_num_buttons = 0;
 
     /* 4700242:
-     * If XTest is asked to press a non-existant mouse button
+     * If XTest is asked to press a non-existent mouse button
      * (i.e. press Button3 on a system configured with a 2-button mouse),
      * then a crash may happen.  To avoid this, we use the XInput
      * extension to query for the number of buttons on the XPointer, and check

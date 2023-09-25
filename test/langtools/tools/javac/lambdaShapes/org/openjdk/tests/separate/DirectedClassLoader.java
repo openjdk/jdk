@@ -75,24 +75,18 @@ class DirectedClassLoader extends ClassLoader {
     }
 
     private Class<?> defineFrom(String name, File file) {
-        FileInputStream fis = null;
-        try {
-            try {
-                fis = new FileInputStream(file);
-                byte[] bytes = new byte[fis.available()];
-                int read = fis.read(bytes);
-                if (read != bytes.length) {
-                    return null;
-                }
-                if (preprocessors != null) {
-                    for (ClassFilePreprocessor cfp : preprocessors) {
-                        bytes = cfp.preprocess(name, bytes);
-                    }
-                 }
-                return defineClass(name, bytes, 0, bytes.length);
-            } finally {
-                fis.close();
+        try (FileInputStream fis = new FileInputStream(file)) {
+            byte[] bytes = new byte[fis.available()];
+            int read = fis.read(bytes);
+            if (read != bytes.length) {
+                return null;
             }
+            if (preprocessors != null) {
+                for (ClassFilePreprocessor cfp : preprocessors) {
+                    bytes = cfp.preprocess(name, bytes);
+                }
+             }
+            return defineClass(name, bytes, 0, bytes.length);
         } catch (IOException e) {}
         return null;
     }

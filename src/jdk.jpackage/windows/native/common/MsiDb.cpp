@@ -29,7 +29,7 @@
 #include "Log.h"
 
 
-#pragma comment(lib, "msi.lib")
+// Code in this file requires linking with msi.lib
 
 
 namespace msi {

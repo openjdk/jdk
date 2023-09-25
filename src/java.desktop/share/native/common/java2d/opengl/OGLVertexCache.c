@@ -118,7 +118,7 @@ OGLVertexCache_FlushVertexCache()
  *
  * The reason this is a problem for us is that we do not want to flush the
  * vertex array (in the case of mask/glyph operations) or issue a glEnd()
- * (in the case of non-antialiased primitives) everytime the current color
+ * (in the case of non-antialiased primitives) every time the current color
  * changes, which would defeat any benefit from batching in the first place.
  * We handle this in practice by not calling CHECK/RESET_PREVIOUS_OP() when
  * the simple color state is changing in OGLPaints_SetColor().  This is

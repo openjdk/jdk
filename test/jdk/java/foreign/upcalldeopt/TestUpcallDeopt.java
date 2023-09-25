@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test id=default_gc
  * @enablePreview
  * @bug 8277602
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @library /test/lib
  * @library ../
  * @build jdk.test.whitebox.WhiteBox
@@ -40,10 +40,10 @@
  *   TestUpcallDeopt
  */
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.MemorySegment;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -79,8 +79,8 @@ public class TestUpcallDeopt extends NativeTestHelper {
     // we need to deoptimize through an uncommon trap in the callee of the optimized upcall stub
     // that is created when calling upcallStub below
     public static void main(String[] args) throws Throwable {
-        try (MemorySession session = MemorySession.openConfined()) {
-            Addressable stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(C_INT, C_INT, C_INT, C_INT), session);
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(C_INT, C_INT, C_INT, C_INT), arena);
             armed = false;
             for (int i = 0; i < 20_000; i++) {
                 payload(stub); // warmup
@@ -91,8 +91,8 @@ public class TestUpcallDeopt extends NativeTestHelper {
         }
     }
 
-    static void payload(Addressable cb) throws Throwable {
-        MH_foo.invokeExact((Addressable) cb, 0, 1, 2, 3);
+    static void payload(MemorySegment cb) throws Throwable {
+        MH_foo.invokeExact(cb, 0, 1, 2, 3);
         Reference.reachabilityFence(cb); // keep oop alive across call
     }
 

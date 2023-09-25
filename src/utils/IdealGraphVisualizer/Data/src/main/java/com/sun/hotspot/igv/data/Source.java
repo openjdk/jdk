@@ -31,8 +31,8 @@ import java.util.*;
  */
 public class Source {
 
-    private List<InputNode> sourceNodes;
-    private Set<Integer> set;
+    private final List<InputNode> sourceNodes;
+    private final Set<Integer> set;
 
     public Source() {
         sourceNodes = new ArrayList<>(1);
@@ -56,12 +56,7 @@ public class Source {
 
     public interface Provider {
 
-        public Source getSource();
+        Source getSource();
     }
 
-    public void addSourceNodes(Source s) {
-        for (InputNode n : s.getSourceNodes()) {
-            addSourceNode(n);
-        }
-    }
 }

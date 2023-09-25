@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
@@ -60,38 +58,15 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      * class.
      *
      * @param configuration The current configuration
-     * @param filename Path to the file which is getting generated.
      * @param indexBuilder Unicode based Index from {@link IndexBuilder}
      */
-    public AllClassesIndexWriter(HtmlConfiguration configuration,
-            DocPath filename, IndexBuilder indexBuilder) {
-        super(configuration, filename);
+    public AllClassesIndexWriter(HtmlConfiguration configuration, IndexBuilder indexBuilder) {
+        super(configuration, DocPaths.ALLCLASSES_INDEX);
         this.indexBuilder = indexBuilder;
     }
 
-    /**
-     * Create AllClassesIndexWriter object.
-     *
-     * @param configuration The current configuration
-     * @param indexBuilder IndexBuilder object for all classes index.
-     * @throws DocFileIOException
-     */
-    public static void generate(HtmlConfiguration configuration,
-            IndexBuilder indexBuilder) throws DocFileIOException {
-        generate(configuration, indexBuilder, DocPaths.ALLCLASSES_INDEX);
-    }
-
-    private static void generate(HtmlConfiguration configuration, IndexBuilder indexBuilder,
-            DocPath fileName) throws DocFileIOException {
-        AllClassesIndexWriter allClassGen = new AllClassesIndexWriter(configuration,
-                fileName, indexBuilder);
-        allClassGen.buildAllClassesFile();
-    }
-
-    /**
-     * Print all the classes in the file.
-     */
-    protected void buildAllClassesFile() throws DocFileIOException {
+    @Override
+    public void buildPage() throws DocFileIOException {
         String label = resources.getText("doclet.All_Classes_And_Interfaces");
         Content allClassesContent = new ContentBuilder();
         addContents(allClassesContent);
@@ -111,16 +86,16 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      * @param target the content to which the links will be added
      */
     protected void addContents(Content target) {
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<TypeElement>(HtmlStyle.summaryTable)
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                 .setId(HtmlIds.ALL_CLASSES_TABLE)
                 .setDefaultTab(contents.allClassesAndInterfacesLabel)
                 .addTab(contents.interfaces, utils::isPlainInterface)
-                .addTab(contents.classes, e -> utils.isNonThrowableClass((TypeElement)e))
+                .addTab(contents.classes, utils::isNonThrowableClass)
                 .addTab(contents.enums, utils::isEnum)
-                .addTab(contents.records, e -> utils.isRecord((TypeElement)e))
-                .addTab(contents.exceptionClasses, e -> utils.isThrowable((TypeElement)e))
+                .addTab(contents.records, utils::isRecord)
+                .addTab(contents.exceptionClasses, utils::isThrowable)
                 .addTab(contents.annotationTypes, utils::isAnnotationInterface);
         for (Character unicode : indexBuilder.getFirstCharacters()) {
             for (IndexItem indexItem : indexBuilder.getItems(unicode)) {
@@ -146,10 +121,10 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      * @param table the table to which the row will be added
      * @param klass the type to be added to the table
      */
-    protected void addTableRow(Table table, TypeElement klass) {
+    protected void addTableRow(Table<TypeElement> table, TypeElement klass) {
         List<Content> rowContents = new ArrayList<>();
         Content classLink = getLink(new HtmlLinkInfo(
-                configuration, HtmlLinkInfo.Kind.INDEX, klass));
+                configuration, HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_IN_LABEL, klass));
         ContentBuilder description = new ContentBuilder();
         Set<ElementFlag> flags = utils.elementFlags(klass);
         if (flags.contains(ElementFlag.PREVIEW)) {

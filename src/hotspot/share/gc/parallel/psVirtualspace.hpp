@@ -35,7 +35,7 @@
 
 class PSVirtualSpace : public CHeapObj<mtGC> {
   friend class VMStructs;
- protected:
+
   // The space is committed/uncommitted in chunks of size _alignment.  The
   // ReservedSpace passed to initialize() must be aligned to this value.
   const size_t _alignment;
@@ -51,9 +51,6 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
   // The entire space has been committed and pinned in memory, no
   // os::commit_memory() or os::uncommit_memory().
   bool _special;
-
-  // Convenience wrapper.
-  inline static size_t pointer_delta(const char* left, const char* right);
 
  public:
   PSVirtualSpace(ReservedSpace rs, size_t alignment);
@@ -94,10 +91,7 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
 
 #ifndef PRODUCT
   // Debugging
-  static  bool is_aligned(size_t val, size_t align);
-          bool is_aligned(size_t val) const;
-          bool is_aligned(char* val) const;
-          void verify() const;
+  void verify() const;
 
   // Helper class to verify a space when entering/leaving a block.
   class PSVirtualSpaceVerifier: public StackObj {
@@ -127,17 +121,13 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
 //
 // PSVirtualSpace inlines.
 //
-inline size_t
-PSVirtualSpace::pointer_delta(const char* left, const char* right) {
-  return ::pointer_delta((void *)left, (void*)right, sizeof(char));
-}
 
 inline size_t PSVirtualSpace::committed_size() const {
-  return pointer_delta(committed_high_addr(), committed_low_addr());
+  return pointer_delta(committed_high_addr(), committed_low_addr(), sizeof(char));
 }
 
 inline size_t PSVirtualSpace::reserved_size() const {
-  return pointer_delta(reserved_high_addr(), reserved_low_addr());
+  return pointer_delta(reserved_high_addr(), reserved_low_addr(), sizeof(char));
 }
 
 inline size_t PSVirtualSpace::uncommitted_size() const {

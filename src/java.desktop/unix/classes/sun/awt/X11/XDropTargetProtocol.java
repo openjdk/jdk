@@ -275,16 +275,16 @@ abstract class XDropTargetProtocol {
     public abstract boolean isXEmbedSupported();
 
     protected static final class EmbedderRegistryEntry {
-        private final boolean overriden;
+        private final boolean overridden;
         private final int version;
         private final long proxy;
-        EmbedderRegistryEntry(boolean overriden, int version, long proxy) {
-            this.overriden = overriden;
+        EmbedderRegistryEntry(boolean overridden, int version, long proxy) {
+            this.overridden = overridden;
             this.version = version;
             this.proxy = proxy;
         }
         public boolean isOverriden() {
-            return overriden;
+            return overridden;
         }
         public int getVersion() {
             return version;
@@ -299,12 +299,12 @@ abstract class XDropTargetProtocol {
         new HashMap<>();
 
     protected final void putEmbedderRegistryEntry(long embedder,
-                                                  boolean overriden,
+                                                  boolean overridden,
                                                   int version,
                                                   long proxy) {
         synchronized (this) {
             embedderRegistry.put(Long.valueOf(embedder),
-                                 new EmbedderRegistryEntry(overriden, version,
+                                 new EmbedderRegistryEntry(overridden, version,
                                                            proxy));
         }
     }

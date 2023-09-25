@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 #include "precompiled.hpp"
 #include "memory/virtualspace.hpp"
-#include "runtime/os.hpp"
 #include "oops/oop.hpp"
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "concurrentTestRunner.inline.hpp"
 #include "unittest.hpp"
@@ -96,7 +96,7 @@ namespace {
   static void test_reserved_size_alignment_page_type(size_t size, size_t alignment, bool maybe_large) {
     if (size < alignment) {
       // Tests might set -XX:LargePageSizeInBytes=<small pages> and cause unexpected input arguments for this test.
-      ASSERT_EQ((size_t) os::vm_page_size(), os::large_page_size()) << "Test needs further refinement";
+      ASSERT_EQ(os::vm_page_size(), os::large_page_size()) << "Test needs further refinement";
       return;
     }
 
@@ -402,7 +402,7 @@ class TestReservedSpace : AllStatic {
   static void test_reserved_space3(size_t size, size_t alignment, bool maybe_large) {
     if (size < alignment) {
       // Tests might set -XX:LargePageSizeInBytes=<small pages> and cause unexpected input arguments for this test.
-      ASSERT_EQ((size_t)os::vm_page_size(), os::large_page_size()) << "Test needs further refinement";
+      ASSERT_EQ(os::vm_page_size(), os::large_page_size()) << "Test needs further refinement";
       return;
     }
 

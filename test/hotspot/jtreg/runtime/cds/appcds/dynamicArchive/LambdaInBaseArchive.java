@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,8 +83,8 @@ public class LambdaInBaseArchive extends DynamicArchiveTestBase {
             "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
                 output.shouldContain("LambHello source: shared objects file")
-                      .shouldMatch("class.load.*LambHello[$][$]Lambda[$].*0x.*source:.shared.objects.file")
-                      .shouldNotMatch("class.load.*LambHello[$][$]Lambda[$].*0x.*source:.shared.objects.file.*(top)");
+                      .shouldMatch("class.load.*LambHello[$][$]Lambda.*0x.*source:.shared.objects.file")
+                      .shouldNotMatch("class.load.*LambHello[$][$]Lambda.*0x.*source:.shared.objects.file.*(top)");
                 });
 
     }

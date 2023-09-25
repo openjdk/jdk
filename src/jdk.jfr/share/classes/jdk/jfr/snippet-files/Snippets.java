@@ -25,12 +25,16 @@
 package jdk.jfr.snippets;
 
 import jdk.jfr.AnnotationElement;
+import jdk.jfr.BooleanFlag;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.EventFactory;
+import jdk.jfr.EventType;
 import jdk.jfr.Event;
 import jdk.jfr.Name;
 import jdk.jfr.Label;
+import jdk.jfr.DataAmount;
 import jdk.jfr.Description;
+import jdk.jfr.Enabled;
 import jdk.jfr.Category;
 import jdk.jfr.ContentType;
 import jdk.jfr.Period;
@@ -39,6 +43,7 @@ import jdk.jfr.StackTrace;
 import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Relational;
 import jdk.jfr.consumer.RecordingFile;
+import jdk.jfr.consumer.RecordingStream;
 import jdk.jfr.Configuration;
 import jdk.jfr.SettingDefinition;
 import jdk.jfr.SettingControl;
@@ -53,10 +58,13 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -81,6 +89,77 @@ public class Snippets {
         Event event = f.newEvent();
         event.commit();
         // @end
+    }
+
+    // @start region="BooleanFlagOverview"
+    @BooleanFlag
+    @Name("example.Rollback")
+    @Label("Rollback")
+    @Description("Include transactions that are rollbacked")
+    public static class RollbackSetting extends SettingControl {
+        private boolean value = true;
+
+        @Override
+        public String combine(Set<String> values) {
+            return values.contains("true") ? "true" : "false";
+        }
+
+        @Override
+        public void setValue(String settingValue) {
+            value = "true".equals(settingValue);
+        }
+
+        @Override
+        public String getValue() {
+            return Boolean.toString(value);
+        }
+
+        public boolean shouldEmit() {
+            return value;
+        }
+    }
+
+    @Name("example.Transaction")
+    public static class TransactionEvent extends Event {
+        @Label("Context")
+        String context;
+
+        @Label("Rollback")
+        boolean rollback;
+
+        @SettingDefinition
+        @Name("rollback")
+        public boolean rollback(RollbackSetting rollbackSetting) {
+            return rollback && rollbackSetting.shouldEmit();
+        }
+    }
+    // @end
+
+    static class ConfigurationOverview {
+    // @start region="ConfigurationxsOverview"
+    public static void main(String... args) throws Exception {
+        if (args.length == 0) {
+            System.out.println("Configurations:");
+            for (Configuration c : Configuration.getConfigurations()) {
+                System.out.println("Name: " + c.getName());
+                System.out.println("Label: " + c.getLabel());
+                System.out.println("Description: " + c.getDescription());
+                System.out.println("Provider: " + c.getProvider());
+                System.out.println();
+            }
+        } else {
+            String name = args[0];
+            Configuration c = Configuration.getConfiguration(name);
+            try (Recording r = new Recording(c)) {
+                System.out.println("Starting recording with settings:");
+                for (Map.Entry<String, String> setting : c.getSettings().entrySet()) {
+                    System.out.println(setting.getKey() + " = " + setting.getValue());
+                }
+                r.start();
+            }
+        }
+    }
+    // @end
     }
 
     record CPU(String id, float temperature) {
@@ -161,6 +240,47 @@ public class Snippets {
     }
     // @end
 
+    // @start region="DataAmountOverview"
+    @Name("com.example.ImageRender")
+    @Label("Image Render")
+    public class ImageRender extends Event {
+        @Label("Height")
+        long height;
+
+        @Label("Width")
+        long width;
+
+        @Label("Color Depth")
+        @DataAmount(DataAmount.BITS)
+        int colorDepth;
+
+        @Label("Memory Size")
+        @DataAmount // bytes by default
+        long memorySize;
+    }
+    // @end
+
+    // @start region="EnabledOverview"
+    @Name("StopWatch")
+    @Label("Stop Watch")
+    @Category("Debugging")
+    @StackTrace(false)
+    @Enabled(false)
+    static public class StopWatchEvent extends Event {
+    }
+
+    public void update() {
+        StopWatchEvent e = new StopWatchEvent();
+        e.begin();
+        code: // @replace regex='code:' replacement="..."
+        e.commit();
+    }
+    // @end
+    /*
+    // @start region="EnabledOverviewCommandLine"
+    java -XX:StartFlightRecording:StopWatch#enabled=true ...
+    // @end
+    */
     // @start region="EventOverview"
     public class Example {
 
@@ -205,16 +325,40 @@ public class Snippets {
 
     void EventSettingOverview() throws Exception {
         // @start region="EventSettingOverview"
-        Recording r = new Recording();
-        r.enable("jdk.CPULoad")
-         .withPeriod(Duration.ofSeconds(1));
-        r.enable("jdk.FileWrite")
-         .withoutStackTrace()
-         .withThreshold(Duration.ofNanos(10));
-        r.start();
-        Thread.sleep(10_000);
-        r.stop();
-        r.dump(Files.createTempFile("recording", ".jfr"));
+        try (Recording r = new Recording()) {
+            r.enable("jdk.CPULoad")
+             .withPeriod(Duration.ofSeconds(1));
+            r.enable("jdk.FileWrite")
+             .withoutStackTrace()
+             .withThreshold(Duration.ofNanos(10));
+            r.start();
+            Thread.sleep(10_000);
+            r.stop();
+            r.dump(Files.createTempFile("recording", ".jfr"));
+        }
+        // @end
+    }
+    void EventTypeOverview() {
+        // @start region="EventTypeOverview"
+        for (EventType eventType : FlightRecorder.getFlightRecorder().getEventTypes()) {
+            System.out.println("Event Type: " + eventType.getName());
+            if (eventType.getLabel() != null) {
+                System.out.println("Label: " + eventType.getLabel());
+            }
+            if (eventType.getDescription() != null) {
+                System.out.println("Description: " + eventType.getDescription());
+            }
+            StringJoiner s = new StringJoiner(" / ");
+            for (String category : eventType.getCategoryNames()) {
+                s.add(category);
+            }
+            System.out.println("Category: " + s);
+            System.out.println("Fields: " + eventType.getFields().size());
+            System.out.println("Annotations: " + eventType.getAnnotationElements().size());
+            System.out.println("Settings: " + eventType.getSettingDescriptors().size());
+            System.out.println("Enabled: " + eventType.isEnabled());
+            System.out.println();
+        }
         // @end
     }
 
@@ -261,6 +405,54 @@ public class Snippets {
     }
     // @end
 
+    void PeriodOverview() {
+        // @start region = "PeriodOverview"
+        @Period("1 s")
+        @Name("Counter")
+        class CountEvent extends Event {
+            int count;
+        }
+        @Period("3 s")
+        @Name("Fizz")
+        class FizzEvent extends Event {
+        }
+        @Period("5 s")
+        @Name("Buzz")
+        class BuzzEvent extends Event {
+        }
+
+        var counter = new AtomicInteger();
+        FlightRecorder.addPeriodicEvent(CountEvent.class, () -> {
+            CountEvent event = new CountEvent();
+            event.count = counter.incrementAndGet();
+            event.commit();
+        });
+        FlightRecorder.addPeriodicEvent(FizzEvent.class, () -> {
+            new FizzEvent().commit();
+        });
+        FlightRecorder.addPeriodicEvent(BuzzEvent.class, () -> {
+            new BuzzEvent().commit();
+        });
+
+        var sb = new StringBuilder();
+        var last = new AtomicInteger();
+        var current = new AtomicInteger();
+        try (var r = new RecordingStream()) {
+            r.onEvent("Counter", e -> current.set(e.getValue("count")));
+            r.onEvent("Fizz", e -> sb.append("Fizz"));
+            r.onEvent("Buzz", e -> sb.append("Buzz"));
+            r.onFlush(() -> {
+                if (current.get() != last.get()) {
+                    System.out.println(sb.isEmpty() ? current : sb);
+                    last.set(current.get());
+                    sb.setLength(0);
+                }
+            });
+            r.start();
+        }
+        // @end
+    }
+
     // @start region="RelationalOverview"
     @MetadataDefinition
     @Relational
@@ -303,12 +495,13 @@ public class Snippets {
  void RecordingnOverview() throws Exception {
      // @start region="RecordingOverview"
      Configuration c = Configuration.getConfiguration("default");
-     Recording r = new Recording(c);
-     r.start();
-     System.gc();
-     Thread.sleep(5000);
-     r.stop();
-     r.dump(Files.createTempFile("my-recording", ".jfr"));
+     try (Recording r = new Recording(c)) {
+         r.start();
+         System.gc();
+         Thread.sleep(5000);
+         r.stop();
+         r.dump(Files.createTempFile("my-recording", ".jfr"));
+     }
      // @end
  }
 
@@ -410,4 +603,42 @@ public class Snippets {
      }
  }
  // @end
+
+ static class ValueDsecriptorOverview {
+     // @start region="ValueDescriptorOverview"
+     void printTypes() {
+         Map<String, List<ValueDescriptor>> typeMap = new LinkedHashMap<>();
+         for (EventType eventType : FlightRecorder.getFlightRecorder().getEventTypes()) {
+             findTypes(typeMap, eventType.getName(), eventType.getFields());
+         }
+         for (String type : typeMap.keySet()) {
+             System.out.println("Type: " + type);
+             for (ValueDescriptor field : typeMap.get(type)) {
+                 System.out.println(" Field: " + field.getName());
+                 String arrayBrackets = field.isArray() ? "[]" : "";
+                 System.out.println("  Type: " + field.getTypeName() + arrayBrackets);
+                 if (field.getLabel() != null) {
+                     System.out.println("  Label: " + field.getLabel());
+                 }
+                 if (field.getDescription() != null) {
+                     System.out.println("  Description: " + field.getDescription());
+                 }
+                 if (field.getContentType() != null) {
+                     System.out.println("  Content Types: " + field.getContentType());
+                 }
+             }
+             System.out.println();
+         }
+     }
+
+     void findTypes(Map<String, List<ValueDescriptor>> typeMap, String typeName, List<ValueDescriptor> fields) {
+         if (!typeMap.containsKey(typeName)) {
+             typeMap.put(typeName, fields);
+             for (ValueDescriptor subField : fields) {
+                 findTypes(typeMap, subField.getTypeName(), subField.getFields());
+             }
+         }
+     }
+     // @end
+ }
 }

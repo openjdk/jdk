@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ class JfrConcurrentLinkedListHost : public AllocPolicy {
   bool initialize();
   void insert_head(NodePtr node, NodePtr head, ConstNodePtr tail) const;
   void insert_tail(NodePtr node, NodePtr head, NodePtr last, ConstNodePtr tail) const;
-  NodePtr remove(NodePtr head, ConstNodePtr tail, NodePtr last = NULL, bool insert_is_head = true);
+  NodePtr remove(NodePtr head, ConstNodePtr tail, NodePtr last = nullptr, bool insert_is_head = true);
   template <typename Callback>
   void iterate(NodePtr head, ConstNodePtr tail, Callback& cb);
   bool in_list(ConstNodePtr node, NodePtr head, ConstNodePtr tail) const;

@@ -103,3 +103,7 @@ JVM_FEATURES_server := cds compiler1 compiler2 g1gc serialgc
 override EXTRA_CFLAGS :=
 override EXTRA_CXXFLAGS :=
 override EXTRA_LDFLAGS :=
+
+# hsdis is not needed
+HSDIS_BACKEND := none
+ENABLE_HSDIS_BUNDLING := false

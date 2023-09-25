@@ -44,7 +44,7 @@ import javadoc.tester.JavadocTester;
 public class TestRelativeLinks extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestRelativeLinks tester = new TestRelativeLinks();
+        var tester = new TestRelativeLinks();
         tester.runTests();
     }
 

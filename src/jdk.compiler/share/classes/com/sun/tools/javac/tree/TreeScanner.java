@@ -27,6 +27,7 @@ package com.sun.tools.javac.tree;
 
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.tree.JCTree.*;
+import jdk.internal.javac.PreviewFeature;
 
 /** A subclass of Tree.Visitor, this class defines
  *  a general tree scanner pattern. Translation proceeds recursively in
@@ -178,6 +179,7 @@ public class TreeScanner extends Visitor {
 
     public void visitCase(JCCase tree) {
         scan(tree.labels);
+        scan(tree.guard);
         scan(tree.stats);
     }
 
@@ -319,21 +321,17 @@ public class TreeScanner extends Visitor {
     @Override
     public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
         scan(tree.pat);
-        scan(tree.guard);
     }
 
     @Override
-    public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
-        scan(tree.pattern);
+    @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED)
+    public void visitAnyPattern(JCAnyPattern that) {
     }
 
     @Override
     public void visitRecordPattern(JCRecordPattern that) {
         scan(that.deconstructor);
         scan(that.nested);
-        if (that.var != null) {
-            scan(that.var);
-        }
     }
 
     public void visitIndexed(JCArrayAccess tree) {
@@ -354,6 +352,11 @@ public class TreeScanner extends Visitor {
     }
 
     public void visitLiteral(JCLiteral tree) {
+    }
+
+    public void visitStringTemplate(JCStringTemplate tree) {
+        scan(tree.processor);
+        scan(tree.expressions);
     }
 
     public void visitTypeIdent(JCPrimitiveTypeTree tree) {

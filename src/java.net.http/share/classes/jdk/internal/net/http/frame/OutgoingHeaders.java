@@ -80,4 +80,8 @@ public class OutgoingHeaders<T> extends Http2Frame {
         return system;
     }
 
+    @Override
+    public String toString() {
+        return "OutgoingHeaders()";
+    }
 }

@@ -2,74 +2,82 @@
 <!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.1//EN" "http://www.netbeans.org/dtds/filesystem-1_1.dtd">
 <filesystem>
       <folder name="Filters">
-        <file name="Color by category" url="filters/color.filter">
+        <file name="Color by category.js" url="filters/color.filter">
             <attr name="enabled" boolvalue="true"/>
         </file>
-        <file name="Color by execution frequency" url="filters/colorFrequency.filter">
+        <file name="Color by execution frequency.js" url="filters/colorFrequency.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Color by category"/>
         </file>
-        <file name="Show node warnings" url="filters/showWarnings.filter">
+        <file name="Show node warnings.js" url="filters/showWarnings.filter">
             <attr name="enabled" boolvalue="true"/>
             <attr name="after" stringvalue="Color by execution frequency"/>
         </file>
-        <file name="Simplify graph" url="filters/structural.filter">
-            <attr name="enabled" boolvalue="false"/>
-            <attr name="after" stringvalue="Show node warnings"/>
+        <file name="Show custom node info.js" url="filters/customNodeInfo.filter">
+            <attr name="enabled" boolvalue="true"/>
+            <attr name="after" stringvalue="Color by execution frequency"/>
         </file>
-        <file name="Hide data subgraph" url="filters/hideData.filter">
+        <file name="Simplify graph.js" url="filters/simplifyGraph.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Show custom node info"/>
+        </file>
+        <file name="Condense graph.js" url="filters/condenseGraph.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Simplify graph"/>
         </file>
-        <file name="Hide memory subgraph" url="filters/hideMemory.filter">
+        <file name="Hide data subgraph.js" url="filters/hideData.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Condense graph"/>
+        </file>
+        <file name="Hide memory subgraph.js" url="filters/hideMemory.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Hide data subgraph"/>
         </file>
-        <file name="Hide control subgraph" url="filters/hideControl.filter">
+        <file name="Hide control subgraph.js" url="filters/hideControl.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Hide memory subgraph"/>
         </file>
-        <file name="Hide mixed subgraph" url="filters/hideMixed.filter">
+        <file name="Hide mixed subgraph.js" url="filters/hideMixed.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Hide control subgraph"/>
         </file>
-        <file name="Hide other subgraph" url="filters/hideOther.filter">
+        <file name="Hide other subgraph.js" url="filters/hideOther.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Hide mixed subgraph"/>
         </file>
-        <file name="Show control flow only" url="filters/onlyControlFlow.filter">
+        <file name="Show control flow only.js" url="filters/onlyControlFlow.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Hide other subgraph"/>
         </file>
-        <file name="Hide data edges" url="filters/hideDataEdges.filter">
+        <file name="Hide data edges.js" url="filters/hideDataEdges.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Show control flow only"/>
         </file>
-        <file name="Hide memory edges" url="filters/hideMemoryEdges.filter">
+        <file name="Hide memory edges.js" url="filters/hideMemoryEdges.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Hide data edges"/>
         </file>
-        <file name="Hide control edges" url="filters/hideControlEdges.filter">
+        <file name="Hide control edges.js" url="filters/hideControlEdges.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Hide memory edges"/>
         </file>
-        <file name="Hide mixed edges" url="filters/hideMixedEdges.filter">
+        <file name="Hide mixed edges.js" url="filters/hideMixedEdges.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Hide control edges"/>
         </file>
-        <file name="Hide other edges" url="filters/hideOtherEdges.filter">
+        <file name="Hide other edges.js" url="filters/hideOtherEdges.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Hide mixed edges"/>
         </file>
-        <file name="Hide root block" url="filters/hideRootBlock.filter">
+        <file name="Hide root block.js" url="filters/hideRootBlock.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Hide other edges"/>
         </file>
-        <file name="Hide uncommon trap blocks" url="filters/hideUncommonTrapBlocks.filter">
+        <file name="Hide uncommon trap blocks.js" url="filters/hideUncommonTrapBlocks.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Hide root block"/>
         </file>
-        <file name="Hide exception blocks" url="filters/hideExceptionBlocks.filter">
+        <file name="Hide exception blocks.js" url="filters/hideExceptionBlocks.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Hide uncommon trap blocks"/>
         </file>

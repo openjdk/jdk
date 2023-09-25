@@ -44,7 +44,7 @@ ShenandoahCollectorPolicy::ShenandoahCollectorPolicy() :
 
   Copy::zero_to_bytes(_degen_points, sizeof(size_t) * ShenandoahGC::_DEGENERATED_LIMIT);
 
-  _tracer = new (ResourceObj::C_HEAP, mtGC) ShenandoahTracer();
+  _tracer = new ShenandoahTracer();
 
 }
 

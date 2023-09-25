@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,25 @@ abstract class KeyWrapCipher extends CipherSpi {
         public AES256_KWP_NoPadding() {
             super(new AESKeyWrapPadded(), null, 32);
         }
+    }
+
+    // validate the key algorithm/encoding and then returns the key bytes
+    // which callers should erase after use
+    private static byte[] checkKey(Key key, int fixedKeySize)
+            throws InvalidKeyException {
+
+        byte[] keyBytes = key.getEncoded();
+        if (keyBytes == null) {
+            throw new InvalidKeyException("Null key");
+        }
+        int keyLen = keyBytes.length;
+        if (!key.getAlgorithm().equalsIgnoreCase("AES") ||
+            !AESCrypt.isKeySizeValid(keyLen) ||
+            (fixedKeySize != -1 && fixedKeySize != keyLen)) {
+                throw new InvalidKeyException("Invalid key length: " +
+                        keyLen + " bytes");
+        }
+        return keyBytes;
     }
 
     // store the specified bytes, e.g. in[inOfs...(inOfs+inLen-1)] into
@@ -292,10 +311,8 @@ abstract class KeyWrapCipher extends CipherSpi {
     // actual impl for various engineInit(...) methods
     private void implInit(int opmode, Key key, byte[] iv, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
-        byte[] keyBytes = key.getEncoded();
-        if (keyBytes == null) {
-            throw new InvalidKeyException("Null key");
-        }
+        byte[] keyBytes = checkKey(key, fixedKeySize);
+
         this.opmode = opmode;
         boolean decrypting = (opmode == Cipher.DECRYPT_MODE ||
                 opmode == Cipher.UNWRAP_MODE);
@@ -656,21 +673,11 @@ abstract class KeyWrapCipher extends CipherSpi {
      * @exception InvalidKeyException if <code>key</code> is invalid.
      */
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
-        byte[] encoded = key.getEncoded();
-        if (encoded == null)  {
-            throw new InvalidKeyException("Cannot decide key length");
-        }
+        byte[] keyBytes = checkKey(key, fixedKeySize);
+        // only need length; erase immediately
+        Arrays.fill(keyBytes, (byte) 0);
+        return Math.multiplyExact(keyBytes.length, 8);
 
-        // only need length
-        Arrays.fill(encoded, (byte) 0);
-        int keyLen = encoded.length;
-        if (!key.getAlgorithm().equalsIgnoreCase("AES") ||
-            !AESCrypt.isKeySizeValid(keyLen) ||
-            (fixedKeySize != -1 && fixedKeySize != keyLen)) {
-            throw new InvalidKeyException("Invalid key length: " +
-                    keyLen + " bytes");
-        }
-        return Math.multiplyExact(keyLen, 8);
     }
 
     /**

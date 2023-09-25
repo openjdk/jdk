@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,26 +52,23 @@ void G1RemSetSummary::update() {
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   g1h->concurrent_refine()->threads_do(&collector);
-
-  set_sampling_task_vtime(g1h->rem_set()->sampling_task_vtime());
 }
 
 void G1RemSetSummary::set_rs_thread_vtime(uint thread, double value) {
-  assert(_rs_threads_vtimes != NULL, "just checking");
+  assert(_rs_threads_vtimes != nullptr, "just checking");
   assert(thread < _num_vtimes, "just checking");
   _rs_threads_vtimes[thread] = value;
 }
 
 double G1RemSetSummary::rs_thread_vtime(uint thread) const {
-  assert(_rs_threads_vtimes != NULL, "just checking");
+  assert(_rs_threads_vtimes != nullptr, "just checking");
   assert(thread < _num_vtimes, "just checking");
   return _rs_threads_vtimes[thread];
 }
 
 G1RemSetSummary::G1RemSetSummary(bool should_update) :
   _num_vtimes(G1ConcurrentRefine::max_num_threads()),
-  _rs_threads_vtimes(NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC)),
-  _sampling_task_vtime(0.0f) {
+  _rs_threads_vtimes(NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC)) {
 
   memset(_rs_threads_vtimes, 0, sizeof(double) * _num_vtimes);
 
@@ -85,23 +82,19 @@ G1RemSetSummary::~G1RemSetSummary() {
 }
 
 void G1RemSetSummary::set(G1RemSetSummary* other) {
-  assert(other != NULL, "just checking");
+  assert(other != nullptr, "just checking");
   assert(_num_vtimes == other->_num_vtimes, "just checking");
 
   memcpy(_rs_threads_vtimes, other->_rs_threads_vtimes, sizeof(double) * _num_vtimes);
-
-  set_sampling_task_vtime(other->sampling_task_vtime());
 }
 
 void G1RemSetSummary::subtract_from(G1RemSetSummary* other) {
-  assert(other != NULL, "just checking");
+  assert(other != nullptr, "just checking");
   assert(_num_vtimes == other->_num_vtimes, "just checking");
 
   for (uint i = 0; i < _num_vtimes; i++) {
     set_rs_thread_vtime(i, other->rs_thread_vtime(i) - rs_thread_vtime(i));
   }
-
-  _sampling_task_vtime = other->sampling_task_vtime() - _sampling_task_vtime;
 }
 
 class RegionTypeCounter {
@@ -194,7 +187,6 @@ private:
   RegionTypeCounter _humongous;
   RegionTypeCounter _free;
   RegionTypeCounter _old;
-  RegionTypeCounter _archive;
   RegionTypeCounter _all;
 
   size_t _max_rs_mem_sz;
@@ -218,9 +210,9 @@ private:
 
 public:
   HRRSStatsIter() : _young("Young"), _humongous("Humongous"),
-    _free("Free"), _old("Old"), _archive("Archive"), _all("All"),
-    _max_rs_mem_sz(0), _max_rs_mem_sz_region(NULL),
-    _max_code_root_mem_sz(0), _max_code_root_mem_sz_region(NULL)
+    _free("Free"), _old("Old"), _all("All"),
+    _max_rs_mem_sz(0), _max_rs_mem_sz_region(nullptr),
+    _max_code_root_mem_sz(0), _max_code_root_mem_sz_region(nullptr)
   {}
 
   bool do_heap_region(HeapRegion* r) {
@@ -242,7 +234,7 @@ public:
     }
     size_t code_root_elems = hrrs->code_roots_list_length();
 
-    RegionTypeCounter* current = NULL;
+    RegionTypeCounter* current = nullptr;
     if (r->is_free()) {
       current = &_free;
     } else if (r->is_young()) {
@@ -251,8 +243,6 @@ public:
       current = &_humongous;
     } else if (r->is_old()) {
       current = &_old;
-    } else if (r->is_archive()) {
-      current = &_archive;
     } else {
       ShouldNotReachHere();
     }
@@ -265,7 +255,7 @@ public:
   }
 
   void print_summary_on(outputStream* out) {
-    RegionTypeCounter* counters[] = { &_young, &_humongous, &_free, &_old, &_archive, NULL };
+    RegionTypeCounter* counters[] = { &_young, &_humongous, &_free, &_old, nullptr };
 
     out->print_cr(" Current rem set statistics");
     out->print_cr("  Total per region rem sets sizes = " SIZE_FORMAT
@@ -273,13 +263,13 @@ public:
                   total_rs_mem_sz(),
                   max_rs_mem_sz(),
                   total_rs_unused_mem_sz());
-    for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
+    for (RegionTypeCounter** current = &counters[0]; *current != nullptr; current++) {
       (*current)->print_rs_mem_info_on(out, total_rs_mem_sz());
     }
 
     out->print_cr("    " SIZE_FORMAT " occupied cards represented.",
                   total_cards_occupied());
-    for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
+    for (RegionTypeCounter** current = &counters[0]; *current != nullptr; current++) {
       (*current)->print_cards_occupied_info_on(out, total_cards_occupied());
     }
 
@@ -292,7 +282,8 @@ public:
                   rem_set->occupied());
 
     HeapRegionRemSet::print_static_mem_size(out);
-    G1CardSetFreePool::free_list_pool()->print_on(out);
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    g1h->card_set_freelist_pool()->print_on(out);
 
     // Code root statistics
     HeapRegionRemSet* max_code_root_rem_set = max_code_root_mem_sz_region()->rem_set();
@@ -302,13 +293,13 @@ public:
                   proper_unit_for_byte_size(total_code_root_mem_sz()),
                   byte_size_in_proper_unit(max_code_root_rem_set->code_roots_mem_size()),
                   proper_unit_for_byte_size(max_code_root_rem_set->code_roots_mem_size()));
-    for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
+    for (RegionTypeCounter** current = &counters[0]; *current != nullptr; current++) {
       (*current)->print_code_root_mem_info_on(out, total_code_root_mem_sz());
     }
 
     out->print_cr("    " SIZE_FORMAT " code roots represented.",
                   total_code_root_elems());
-    for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
+    for (RegionTypeCounter** current = &counters[0]; *current != nullptr; current++) {
       (*current)->print_code_root_elems_info_on(out, total_code_root_elems());
     }
 
@@ -329,8 +320,6 @@ void G1RemSetSummary::print_on(outputStream* out, bool show_thread_times) {
       out->print("    %5.2f", rs_thread_vtime(i));
     }
     out->cr();
-    out->print_cr(" Sampling task time (ms)");
-    out->print_cr("         %5.3f", sampling_task_vtime() * MILLIUNITS);
   }
 
   HRRSStatsIter blk;

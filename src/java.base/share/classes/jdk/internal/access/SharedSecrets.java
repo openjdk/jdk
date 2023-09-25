@@ -30,6 +30,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.ObjectInputFilter;
 import java.lang.invoke.MethodHandles;
 import java.lang.module.ModuleDescriptor;
+import java.security.Security;
 import java.security.spec.EncodedKeySpec;
 import java.util.ResourceBundle;
 import java.util.concurrent.ForkJoinPool;
@@ -83,10 +84,12 @@ public class SharedSecrets {
     private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
     private static JavaSecurityAccess javaSecurityAccess;
+    private static JavaSecurityPropertiesAccess javaSecurityPropertiesAccess;
     private static JavaSecuritySignatureAccess javaSecuritySignatureAccess;
     private static JavaSecuritySpecAccess javaSecuritySpecAccess;
     private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
     private static JavaxCryptoSpecAccess javaxCryptoSpecAccess;
+    private static JavaTemplateAccess javaTemplateAccess;
 
     public static void setJavaUtilCollectionAccess(JavaUtilCollectionAccess juca) {
         javaUtilCollectionAccess = juca;
@@ -343,6 +346,19 @@ public class SharedSecrets {
         return access;
     }
 
+    public static void setJavaSecurityPropertiesAccess(JavaSecurityPropertiesAccess jspa) {
+        javaSecurityPropertiesAccess = jspa;
+    }
+
+    public static JavaSecurityPropertiesAccess getJavaSecurityPropertiesAccess() {
+        var access = javaSecurityPropertiesAccess;
+        if (access == null) {
+            ensureClassInitialized(Security.class);
+            access = javaSecurityPropertiesAccess;
+        }
+        return access;
+    }
+
     public static JavaUtilZipFileAccess getJavaUtilZipFileAccess() {
         var access = javaUtilZipFileAccess;
         if (access == null) {
@@ -497,6 +513,21 @@ public class SharedSecrets {
         if (access == null) {
             ensureClassInitialized(SealedObject.class);
             access = javaxCryptoSealedObjectAccess;
+        }
+        return access;
+    }
+
+    public static void setJavaTemplateAccess(JavaTemplateAccess jta) {
+        javaTemplateAccess = jta;
+    }
+
+    public static JavaTemplateAccess getJavaTemplateAccess() {
+        var access = javaTemplateAccess;
+        if (access == null) {
+            try {
+                Class.forName("java.lang.runtime.TemplateSupport", true, null);
+                access = javaTemplateAccess;
+            } catch (ClassNotFoundException e) {}
         }
         return access;
     }

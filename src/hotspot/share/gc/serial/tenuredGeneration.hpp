@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
 
 class BlockOffsetSharedArray;
 class CardTableRS;
-class CompactibleSpace;
+class ContiguousSpace;
 
 // TenuredGeneration models the heap containing old (promoted/tenured) objects
 // contained in a single contiguous space. This generation is covered by a card
@@ -65,13 +65,13 @@ class TenuredGeneration: public Generation {
 
   void assert_correct_size_change_locking();
 
-  ContiguousSpace*    _the_space;       // Actual space holding objects
+  TenuredSpace*       _the_space;       // Actual space holding objects
 
   GenerationCounters* _gen_counters;
   CSpaceCounters*     _space_counters;
 
   // Accessing spaces
-  ContiguousSpace* space() const { return _the_space; }
+  TenuredSpace* space() const { return _the_space; }
 
   // Attempt to expand the generation by "bytes".  Expand by at a
   // minimum "expand_bytes".  Return true if some amount (not
@@ -103,7 +103,7 @@ class TenuredGeneration: public Generation {
 
   bool is_in(const void* p) const;
 
-  CompactibleSpace* first_compaction_space() const;
+  ContiguousSpace* first_compaction_space() const;
 
   TenuredGeneration(ReservedSpace rs,
                     size_t initial_byte_size,
@@ -132,7 +132,7 @@ class TenuredGeneration: public Generation {
   void oop_since_save_marks_iterate(OopClosureType* cl);
 
   void save_marks();
-  void reset_saved_marks();
+
   bool no_allocs_since_save_marks();
 
   inline size_t block_size(const HeapWord* addr) const;

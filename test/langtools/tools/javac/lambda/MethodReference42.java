@@ -34,7 +34,7 @@ public class MethodReference42 {
     static void m4(SAM2 s) { }
     static void m4(SAM3 s) { }
 
-    public static void main(String[] args) {
+    public static void meth() {
         m1(Foo::new);
         m2(Foo::new);
         m3(Foo::new);

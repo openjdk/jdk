@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,8 @@ class XHandler: public CompilationResourceObj {
   // creation
   XHandler(ciExceptionHandler* desc)
     : _desc(desc)
-    , _entry_block(NULL)
-    , _entry_code(NULL)
+    , _entry_block(nullptr)
+    , _entry_code(nullptr)
     , _entry_pco(-1)
     , _phi_operand(-1)
     , _scope_count(-1)
@@ -137,7 +137,7 @@ class IRScope: public CompilationResourceObj {
  private:
   // hierarchy
   Compilation*  _compilation;                    // the current compilation
-  IRScope*      _caller;                         // the caller scope, or NULL
+  IRScope*      _caller;                         // the caller scope, or null
   int           _level;                          // the inlining level
   ciMethod*     _method;                         // the corresponding method
   IRScopeList   _callees;                        // the inlined method scopes
@@ -169,13 +169,13 @@ class IRScope: public CompilationResourceObj {
   BitMap&       requires_phi_function()          { return _requires_phi_function; }
 
   // hierarchy
-  bool          is_top_scope() const             { return _caller == NULL; }
+  bool          is_top_scope() const             { return _caller == nullptr; }
   void          add_callee(IRScope* callee)      { _callees.append(callee); }
   int           number_of_callees() const        { return _callees.length(); }
   IRScope*      callee_no(int i) const           { return _callees.at(i); }
 
   // accessors, graph
-  bool          is_valid() const                 { return start() != NULL; }
+  bool          is_valid() const                 { return start() != nullptr; }
   XHandlers*    xhandlers() const                { return _xhandlers; }
   int           number_of_locks() const          { return _number_of_locks; }
   void          set_min_number_of_locks(int n)   { if (n > _number_of_locks) _number_of_locks = n; }
@@ -233,7 +233,7 @@ class IRScopeDebugInfo: public CompilationResourceObj {
   bool should_reexecute();
 
   void record_debug_info(DebugInformationRecorder* recorder, int pc_offset, bool reexecute, bool is_method_handle_invoke = false) {
-    if (caller() != NULL) {
+    if (caller() != nullptr) {
       // Order is significant:  Must record caller first.
       caller()->record_debug_info(recorder, pc_offset, false/*reexecute*/);
     }
@@ -273,7 +273,7 @@ class CodeEmitInfo: public CompilationResourceObj {
   CodeEmitInfo(ValueStack* stack, XHandlers* exception_handlers, bool deoptimize_on_exception = false);
 
   // make a copy
-  CodeEmitInfo(CodeEmitInfo* info, ValueStack* stack = NULL);
+  CodeEmitInfo(CodeEmitInfo* info, ValueStack* stack = nullptr);
 
   // accessors
   OopMap* oop_map()                              { return _oop_map; }
@@ -331,7 +331,7 @@ class IR: public CompilationResourceObj {
 
   // The linear-scan order and the code emission order are equal, but
   // this may change in future
-  BlockList* linear_scan_order() {  assert(_code != NULL, "not computed"); return _code; }
+  BlockList* linear_scan_order() {  assert(_code != nullptr, "not computed"); return _code; }
 
   // iteration
   void iterate_preorder   (BlockClosure* closure);

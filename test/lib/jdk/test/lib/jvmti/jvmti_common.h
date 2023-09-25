@@ -36,6 +36,18 @@
 #include <unistd.h>
 #endif
 
+#include "jvmti.h"
+
+/**
+ * Additional Java basic types
+ */
+
+#ifdef _WIN32
+    typedef unsigned __int64 julong;
+#else
+    typedef unsigned long long julong;
+#endif
+
 #define LOG(...) \
   { \
     printf(__VA_ARGS__); \
@@ -51,8 +63,14 @@ const char* TranslateError(jvmtiError err);
 static jvmtiExtensionFunction GetVirtualThread_func = NULL;
 static jvmtiExtensionFunction GetCarrierThread_func = NULL;
 
-char*
-jlong_to_string(jlong value, char *string) {
+/**
+ * Convert the digits of the given value argument to a null-terminated
+ * character string and store the result (up to 32 bytes) in string.
+ * If value is negative, the first character of the stored string is
+ * the minus sign (-). The function returns a pointer to the begining
+ * of the result string.
+ */
+char* jlong_to_string(jlong value, char *string) {
   char buffer[32];
   char *pbuf, *pstr;
 
@@ -76,6 +94,33 @@ jlong_to_string(jlong value, char *string) {
   *pstr = '\0';
 
   return string;
+}
+
+/**
+ * Convert the digits of the given value argument to a null-terminated
+ * character string and store the result (up to 32 bytes) in string.
+ * The function returns a pointer to the begining of the result string.
+ */
+char* julong_to_string(julong value, char *string) {
+    char buffer[32];
+    char *pbuf, *pstr;
+
+    pstr = string;
+    if (value == 0) {
+        *pstr++ = '0';
+    } else {
+        pbuf = buffer;
+        while (value != 0) {
+            *pbuf++ = '0' + (char)(value % 10);
+            value = value / 10;
+        }
+        while (pbuf != buffer) {
+            *pstr++ = *--pbuf;
+        }
+    }
+    *pstr = '\0';
+
+    return string;
 }
 
 static void
@@ -249,7 +294,16 @@ get_thread_name(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
   }
   check_jvmti_status(jni, err, "get_thread_name: error in JVMTI GetThreadInfo call");
 
-  return thr_info.name == NULL ? (char*)"<Unnamed thread>" : thr_info.name;
+  static const char* UNNAMED_STR = "<Unnamed thread>";
+  static size_t UNNAMED_LEN = strlen(UNNAMED_STR);
+  char* tname = thr_info.name;
+  if (tname == NULL) {
+    err = jvmti->Allocate((jlong)(UNNAMED_LEN + 1), (unsigned char**)&tname);
+    check_jvmti_status(jni, err, "get_method_class_name: error in JVMTI Allocate");
+    strncpy(tname, UNNAMED_STR, UNNAMED_LEN);
+    tname[UNNAMED_LEN] = '\0';
+  }
+  return tname;
 }
 
 static char*

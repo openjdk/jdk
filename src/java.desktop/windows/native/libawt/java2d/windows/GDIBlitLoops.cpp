@@ -101,7 +101,7 @@ static void retryingSetDIBitsToDevice(
     printf("with retry time: %zd\n", (ts2.QuadPart-ts1.QuadPart));
 #endif
 
-};
+}
 
 /*
  * Class:     sun_java2d_windows_GDIBlitLoops

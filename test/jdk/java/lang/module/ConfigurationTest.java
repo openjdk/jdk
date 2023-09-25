@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,14 @@
 
 /**
  * @test
- * @library /test/lib
  * @modules java.base/jdk.internal.access
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
  *          java.base/jdk.internal.module
+ * @library /test/lib
  * @build ConfigurationTest
+ *        jdk.test.lib.util.ModuleInfoWriter
  *        jdk.test.lib.util.ModuleUtils
  * @run testng ConfigurationTest
  * @summary Basic tests for java.lang.module.Configuration
@@ -47,10 +51,10 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
 
+import jdk.test.lib.util.ModuleInfoWriter;
 import jdk.test.lib.util.ModuleUtils;
 
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.module.ModuleInfoWriter;
 import jdk.internal.module.ModuleTarget;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;

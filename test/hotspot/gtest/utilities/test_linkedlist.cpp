@@ -62,7 +62,7 @@ const Integer one(1), two(2), three(3), four(4), five(5), six(6), notfound(404);
 
 // Test regular linked list
 TEST(LinkedList, simple) {
-  LinkedListImpl<Integer, ResourceObj::C_HEAP, mtTest> ll;
+  LinkedListImpl<Integer, AnyObj::C_HEAP, mtTest> ll;
 
   ASSERT_TRUE(ll.is_empty()) << "Start with empty list";
 
@@ -102,8 +102,8 @@ TEST(LinkedList, generic) {
   EXPECT_EQ(il.size(), (size_t)N);
   EXPECT_EQ(*(il.head()->peek()), N-1);
 
-  typedef LinkedListImpl<Integer, ResourceObj::C_HEAP, mtTest> list_t;
-  LinkedList<Integer>* list = new(ResourceObj::C_HEAP, mtTest) list_t();
+  typedef LinkedListImpl<Integer, AnyObj::C_HEAP, mtTest> list_t;
+  LinkedList<Integer>* list = new (mtTest) list_t();
   list->add(Integer(1));
   list->add(Integer(2));
   EXPECT_EQ(list->size(), (size_t)2);
@@ -149,7 +149,7 @@ TEST(LinkedList, algorithm) {
   EXPECT_TRUE(il.remove(1));
   EXPECT_FALSE(il.remove(404));
 
-  LinkedListImpl<Integer, ResourceObj::C_HEAP, mtTest> ll;
+  LinkedListImpl<Integer, AnyObj::C_HEAP, mtTest> ll;
   ll.add(one);
 
   EXPECT_TRUE(ll.find(one));
@@ -163,7 +163,7 @@ TEST(LinkedList, algorithm) {
 
 // Test sorted linked list
 TEST(SortedLinkedList, simple) {
-  LinkedListImpl<Integer, ResourceObj::C_HEAP, mtTest> ll;
+  LinkedListImpl<Integer, AnyObj::C_HEAP, mtTest> ll;
   ll.add(one);
   ll.add(six);
   ll.add(three);
@@ -171,7 +171,7 @@ TEST(SortedLinkedList, simple) {
   ll.add(four);
   ll.add(five);
 
-  SortedLinkedList<Integer, Integer::compare, ResourceObj::C_HEAP, mtTest> sl;
+  SortedLinkedList<Integer, Integer::compare, AnyObj::C_HEAP, mtTest> sl;
   ASSERT_TRUE(sl.is_empty()) << "Start with empty list";
 
   size_t ll_size = ll.size();

@@ -24,19 +24,35 @@
  */
 
 /*
- * @test id=global-limit
+ * @test id=global-limit-fatal
  * @summary Verify -XX:MallocLimit with a global limit
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver MallocLimitTest global-limit
+ * @run driver MallocLimitTest global-limit-fatal
  */
 
 /*
- * @test id=compiler-limit
+ * @test id=global-limit-oom
+ * @summary Verify -XX:MallocLimit with a global limit
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @run driver MallocLimitTest global-limit-oom
+ */
+
+/*
+ * @test id=compiler-limit-fatal
  * @summary Verify -XX:MallocLimit with a compiler-specific limit (for "mtCompiler" category)
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver MallocLimitTest compiler-limit
+ * @run driver MallocLimitTest compiler-limit-fatal
+ */
+
+/*
+ * @test id=compiler-limit-oom
+ * @summary Verify -XX:MallocLimit with a compiler-specific limit (for "mtCompiler" category)
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @run driver MallocLimitTest compiler-limit-oom
  */
 
 /*
@@ -45,22 +61,6 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver MallocLimitTest multi-limit
- */
-
-/*
- * @test id=valid-settings
- * @summary Verify -XX:MallocLimit rejects invalid settings
- * @modules java.base/jdk.internal.misc
- * @library /test/lib
- * @run driver MallocLimitTest valid-settings
- */
-
-/*
- * @test id=invalid-settings
- * @summary Verify -XX:MallocLimit rejects invalid settings
- * @modules java.base/jdk.internal.misc
- * @library /test/lib
- * @run driver MallocLimitTest invalid-settings
  */
 
 /*
@@ -96,126 +96,48 @@ public class MallocLimitTest {
         return pb;
     }
 
-    private static void testGlobalLimit() throws IOException {
-        long smallMemorySize = 1024*1024; // 1m
-        ProcessBuilder pb = processBuilderWithSetting("-XX:MallocLimit=" + smallMemorySize);
+    private static void testGlobalLimitFatal() throws IOException {
+        ProcessBuilder pb = processBuilderWithSetting("-XX:MallocLimit=1m");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotHaveExitValue(0);
-        output.shouldContain("[nmt] MallocLimit: total limit: 1024K"); // printed by byte_size_in_proper_unit()
-        String s = output.firstMatch(".*MallocLimit: reached limit \\(size: (\\d+), limit: " + smallMemorySize + "\\).*", 1);
-        Asserts.assertNotNull(s);
-        long size = Long.parseLong(s);
-        Asserts.assertGreaterThan(size, smallMemorySize);
+        output.shouldContain("[nmt] MallocLimit: total limit: 1024K (fatal)");
+        output.shouldMatch("#  fatal error: MallocLimit: reached global limit \\(triggering allocation size: \\d+[BKM], allocated so far: \\d+[BKM], limit: 1024K\\)");
     }
 
-    private static void testCompilerLimit() throws IOException {
-        // Here, we count on the VM, running with -Xcomp and with 1m of arena space allowed, will start a compilation
-        // and then trip over the limit.
-        // If limit is too small, Compiler stops too early and we won't get a Retry file (see below, we check that).
-        // If limit is too large, we may not trigger it for java -version.
-        // 1m seems to work out fine.
-        long smallMemorySize = 1024*1024; // 1m
-        ProcessBuilder pb = processBuilderWithSetting("-XX:MallocLimit=compiler:" + smallMemorySize,
-                "-Xcomp" // make sure we hit the compiler category limit
-        );
+    private static void testGlobalLimitOOM() throws IOException {
+        ProcessBuilder pb = processBuilderWithSetting("-XX:MallocLimit=1m:oom");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotHaveExitValue(0);
-        output.shouldContain("[nmt] MallocLimit: category \"Compiler\" limit: 1024K"); // printed by byte_size_in_proper_unit
-        String s = output.firstMatch(".*MallocLimit: category \"Compiler\" reached limit \\(size: (\\d+), limit: " + smallMemorySize + "\\).*", 1);
-        Asserts.assertNotNull(s);
-        long size = Long.parseLong(s);
-        output.shouldContain("Compiler replay data is saved as");
-        Asserts.assertGreaterThan(size, smallMemorySize);
+        output.shouldContain("[nmt] MallocLimit: total limit: 1024K (oom)");
+        output.shouldMatch(".*\\[warning\\]\\[nmt\\] MallocLimit: reached global limit \\(triggering allocation size: \\d+[BKM], allocated so far: \\d+[BKM], limit: 1024K\\)");
+        // The rest is fuzzy. We may get SIGSEGV or a native OOM message, depending on how the failing allocation was handled.
+    }
+
+    private static void testCompilerLimitFatal() throws IOException {
+        ProcessBuilder pb = processBuilderWithSetting("-XX:MallocLimit=compiler:1234k", "-Xcomp");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldNotHaveExitValue(0);
+        output.shouldContain("[nmt] MallocLimit: category \"mtCompiler\" limit: 1234K (fatal)");
+        output.shouldMatch("#  fatal error: MallocLimit: reached category \"mtCompiler\" limit \\(triggering allocation size: \\d+[BKM], allocated so far: \\d+[BKM], limit: 1234K\\)");
+    }
+
+    private static void testCompilerLimitOOM() throws IOException {
+        ProcessBuilder pb = processBuilderWithSetting("-XX:MallocLimit=compiler:1234k:oom", "-Xcomp");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldNotHaveExitValue(0);
+        output.shouldContain("[nmt] MallocLimit: category \"mtCompiler\" limit: 1234K (oom)");
+        output.shouldMatch(".*\\[warning\\]\\[nmt\\] MallocLimit: reached category \"mtCompiler\" limit \\(triggering allocation size: \\d+[BKM], allocated so far: \\d+[BKM], limit: 1234K\\)");
+        // The rest is fuzzy. We may get SIGSEGV or a native OOM message, depending on how the failing allocation was handled.
     }
 
     private static void testMultiLimit() throws IOException {
-        long smallMemorySize = 1024; // 1k
-        ProcessBuilder pb = processBuilderWithSetting("-XX:MallocLimit=mtOther:2g,compiler:1g,internal:" + smallMemorySize);
+        ProcessBuilder pb = processBuilderWithSetting("-XX:MallocLimit=other:2g,compiler:1g:oom,internal:1k");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotHaveExitValue(0);
-        output.shouldContain("[nmt] MallocLimit: category \"Compiler\" limit: 1024M");
-        output.shouldContain("[nmt] MallocLimit: category \"Internal\" limit: 1024B");
-        output.shouldContain("[nmt] MallocLimit: category \"Other\" limit: 2048M");
-        String s = output.firstMatch(".*MallocLimit: category \"Internal\" reached limit \\(size: (\\d+), limit: " + smallMemorySize + "\\).*", 1);
-        long size = Long.parseLong(s);
-        Asserts.assertGreaterThan(size, smallMemorySize);
-    }
-
-    private static void testValidSetting(String setting, String... expected_output) throws IOException {
-        ProcessBuilder pb = processBuilderWithSetting("-XX:MallocLimit=" + setting);
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
-        for (String expected : expected_output) {
-            output.shouldContain(expected);
-        }
-    }
-
-    private static void testValidSettings() throws IOException {
-        // Test a number of valid settings.
-        testValidSetting(
-                "2097152k",
-                "[nmt] MallocLimit: total limit: 2048M",
-                "[nmt] NMT initialized: summary"
-        );
-        testValidSetting(
-                "gc:1234567891,mtInternal:987654321,Object Monitors:1g",
-                "[nmt] MallocLimit: category \"GC\" limit: 1177M",
-                "[nmt] MallocLimit: category \"Internal\" limit: 941M",
-                "[nmt] MallocLimit: category \"Object Monitors\" limit: 1024M",
-                "[nmt] NMT initialized: summary"
-        );
-        // Set all categories individually:
-        testValidSetting(
-                "JavaHeap:1024m,Class:1025m,Thread:1026m,ThreadStack:1027m,Code:1028m,GC:1029m,GCCardSet:1030m,Compiler:1031m,JVMCI:1032m," +
-                        "Internal:1033m,Other:1034m,Symbol:1035m,NMT:1036m,ClassShared:1037m,Chunk:1038m,Test:1039m,Tracing:1040m,Logging:1041m," +
-                        "Statistics:1042m,Arguments:1043m,Module:1044m,Safepoint:1045m,Synchronizer:1046m,Serviceability:1047m,Metaspace:1048m,StringDedup:1049m,ObjectMonitor:1050m",
-                "[nmt] MallocLimit: category \"Java Heap\" limit: 1024M",
-                "[nmt] MallocLimit: category \"Class\" limit: 1025M",
-                "[nmt] MallocLimit: category \"Thread\" limit: 1026M",
-                "[nmt] MallocLimit: category \"Thread Stack\" limit: 1027M",
-                "[nmt] MallocLimit: category \"Code\" limit: 1028M",
-                "[nmt] MallocLimit: category \"GC\" limit: 1029M",
-                "[nmt] MallocLimit: category \"GCCardSet\" limit: 1030M",
-                "[nmt] MallocLimit: category \"Compiler\" limit: 1031M",
-                "[nmt] MallocLimit: category \"JVMCI\" limit: 1032M",
-                "[nmt] MallocLimit: category \"Internal\" limit: 1033M",
-                "[nmt] MallocLimit: category \"Other\" limit: 1034M",
-                "[nmt] MallocLimit: category \"Symbol\" limit: 1035M",
-                "[nmt] MallocLimit: category \"Native Memory Tracking\" limit: 1036M",
-                "[nmt] MallocLimit: category \"Shared class space\" limit: 1037M",
-                "[nmt] MallocLimit: category \"Arena Chunk\" limit: 1038M",
-                "[nmt] MallocLimit: category \"Test\" limit: 1039M",
-                "[nmt] MallocLimit: category \"Tracing\" limit: 1040M",
-                "[nmt] MallocLimit: category \"Logging\" limit: 1041M",
-                "[nmt] MallocLimit: category \"Statistics\" limit: 1042M",
-                "[nmt] MallocLimit: category \"Arguments\" limit: 1043M",
-                "[nmt] MallocLimit: category \"Module\" limit: 1044M",
-                "[nmt] MallocLimit: category \"Safepoint\" limit: 1045M",
-                "[nmt] MallocLimit: category \"Synchronization\" limit: 1046M",
-                "[nmt] MallocLimit: category \"Serviceability\" limit: 1047M",
-                "[nmt] MallocLimit: category \"Metaspace\" limit: 1048M",
-                "[nmt] MallocLimit: category \"String Deduplication\" limit: 1049M",
-                "[nmt] MallocLimit: category \"Object Monitors\" limit: 1050M",
-                "[nmt] NMT initialized: summary"
-        );
-    }
-
-    private static void testInvalidSetting(String setting, String expected_error) throws IOException {
-        ProcessBuilder pb = processBuilderWithSetting("-XX:MallocLimit=" + setting);
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.reportDiagnosticSummary();
-        output.shouldNotHaveExitValue(0);
-        output.shouldContain(expected_error);
-    }
-
-    private static void testInvalidSettings() throws IOException {
-        // Test a number of invalid settings the parser should catch. VM should abort in initialization.
-        testInvalidSetting("gc", "MallocLimit: colon missing: gc");
-        testInvalidSetting("gc:abc", "Invalid MallocLimit size: abc");
-        testInvalidSetting("abcd:10m", "MallocLimit: invalid nmt category: abcd");
-        testInvalidSetting("nmt:100m,abcd:10m", "MallocLimit: invalid nmt category: abcd");
-        testInvalidSetting("0", "MallocLimit: limit must be > 0");
-        testInvalidSetting("GC:0", "MallocLimit: limit must be > 0");
+        output.shouldContain("[nmt] MallocLimit: category \"mtCompiler\" limit: 1024M (oom)");
+        output.shouldContain("[nmt] MallocLimit: category \"mtInternal\" limit: 1024B (fatal)");
+        output.shouldContain("[nmt] MallocLimit: category \"mtOther\" limit: 2048M (fatal)");
+        output.shouldMatch("#  fatal error: MallocLimit: reached category \"mtInternal\" limit \\(triggering allocation size: \\d+[BKM], allocated so far: \\d+[BKM], limit: 1024B\\)");
     }
 
     private static void testLimitWithoutNmt() throws IOException {
@@ -229,16 +151,16 @@ public class MallocLimitTest {
 
     public static void main(String args[]) throws Exception {
 
-        if (args[0].equals("global-limit")) {
-            testGlobalLimit();
-        } else if (args[0].equals("compiler-limit")) {
-            testCompilerLimit();
+        if (args[0].equals("global-limit-fatal")) {
+            testGlobalLimitFatal();
+        } else if (args[0].equals("global-limit-oom")) {
+            testGlobalLimitOOM();
+        } else if (args[0].equals("compiler-limit-fatal")) {
+            testCompilerLimitFatal();
+        } else if (args[0].equals("compiler-limit-oom")) {
+            testCompilerLimitOOM();
         } else if (args[0].equals("multi-limit")) {
             testMultiLimit();
-        } else if (args[0].equals("valid-settings")) {
-            testValidSettings();
-        } else if (args[0].equals("invalid-settings")) {
-            testInvalidSettings();
         } else if (args[0].equals("limit-without-nmt")) {
             testLimitWithoutNmt();
         } else {

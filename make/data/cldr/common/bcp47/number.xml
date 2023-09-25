@@ -49,6 +49,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="jpanfin" description="Japanese financial numerals — algorithmic"/>
             <type name="jpanyear" description="Japanese first-year Gannen numbering for Japanese calendar" since="35"/>
             <type name="kali" description="Kayah Li digits" since="21"/>
+            <type name="kawi" description="Kawi digits" since="42"/>
             <type name="khmr" description="Khmer digits"/>
             <type name="knda" description="Kannada digits"/>
             <type name="lana" description="Tai Tham Hora (secular) digits" since="21"/>
@@ -70,6 +71,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="mymr" description="Myanmar digits"/>
             <type name="mymrshan" description="Myanmar Shan digits" since="21"/>
             <type name="mymrtlng" description="Myanmar Tai Laing digits" since="28"/>
+            <type name="nagm" description="Nag Mundari digits" since="42"/>
             <type name="native" description="Native digits" since="21"/>
             <type name="newa" description="Newa digits" since="30"/>
             <type name="nkoo" description="N'Ko digits" since="21"/>

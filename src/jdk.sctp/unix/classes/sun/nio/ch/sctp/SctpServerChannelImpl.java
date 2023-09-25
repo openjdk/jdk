@@ -41,14 +41,12 @@ import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpServerChannel;
 import com.sun.nio.sctp.SctpSocketOption;
 import com.sun.nio.sctp.SctpStandardSocketOptions;
-import sun.nio.ch.DirectBuffer;
 import sun.nio.ch.NativeThread;
 import sun.nio.ch.IOStatus;
 import sun.nio.ch.IOUtil;
 import sun.nio.ch.Net;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
-import sun.nio.ch.Util;
 
 /**
  * An implementation of SctpServerChannel
@@ -61,7 +59,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
     private final int fdVal;
 
     /* IDs of native thread doing accept, for signalling */
-    private volatile long thread = 0;
+    private volatile long thread;
 
     /* Lock held by thread currently blocked in this channel */
     private final Object lock = new Object();
@@ -81,7 +79,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
 
     /* Binding: Once bound the port will remain constant. */
     int port = -1;
-    private HashSet<InetSocketAddress> localAddresses = new HashSet<InetSocketAddress>();
+    private final HashSet<InetSocketAddress> localAddresses = new HashSet<>();
     /* Has the channel been bound to the wildcard address */
     private boolean wildcard; /* false */
 
@@ -200,7 +198,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
 
     private boolean isBound() {
         synchronized (stateLock) {
-            return port == -1 ? false : true;
+            return port != -1;
         }
     }
 
@@ -389,19 +387,13 @@ public class SctpServerChannelImpl extends SctpServerChannel
         }
     }
 
-    private static class DefaultOptionsHolder {
-        static final Set<SctpSocketOption<?>> defaultOptions = defaultOptions();
-
-        private static Set<SctpSocketOption<?>> defaultOptions() {
-            HashSet<SctpSocketOption<?>> set = new HashSet<SctpSocketOption<?>>(1);
-            set.add(SctpStandardSocketOptions.SCTP_INIT_MAXSTREAMS);
-            return Collections.unmodifiableSet(set);
-        }
-    }
-
     @Override
     public final Set<SctpSocketOption<?>> supportedOptions() {
-        return DefaultOptionsHolder.defaultOptions;
+        final class Holder {
+            static final Set<SctpSocketOption<?>> DEFAULT_OPTIONS =
+                    Set.of(SctpStandardSocketOptions.SCTP_INIT_MAXSTREAMS);
+        }
+        return Holder.DEFAULT_OPTIONS;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import javax.swing.plaf.FontUIResource;
 
+import sun.awt.OSInfo;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -64,11 +65,10 @@ public final class FontUtilities {
             @SuppressWarnings("deprecation") // PlatformLogger.setLevel is deprecated.
             @Override
             public Object run() {
-                String osName = System.getProperty("os.name", "unknownOS");
 
-                isLinux = osName.startsWith("Linux");
+                isLinux = OSInfo.getOSType() == OSInfo.OSType.LINUX;
 
-                isMacOSX = osName.contains("OS X"); // TODO: MacOSX
+                isMacOSX = OSInfo.getOSType() == OSInfo.OSType.MACOSX;
                 if (isMacOSX) {
                     // os.version has values like 10.13.6, 10.14.6
                     // If it is not positively recognised as 10.13 or less,
@@ -100,7 +100,7 @@ public final class FontUtilities {
                 } else {
                     useJDKScaler = false;
                 }
-                isWindows = osName.startsWith("Windows");
+                isWindows = OSInfo.getOSType() == OSInfo.OSType.WINDOWS;
                 String debugLevel =
                     System.getProperty("sun.java2d.debugfonts");
 

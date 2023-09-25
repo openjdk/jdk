@@ -183,7 +183,7 @@ public class BasicToggleButtonUI extends BasicButtonUI {
     }
 
     /**
-     * Overriden so that the text will not be rendered as shifted for
+     * Overridden so that the text will not be rendered as shifted for
      * Toggle buttons and subclasses.
      */
     protected int getTextShiftOffset() {

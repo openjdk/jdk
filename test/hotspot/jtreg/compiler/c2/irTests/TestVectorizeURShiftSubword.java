@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,11 +65,12 @@ public class TestVectorizeURShiftSubword {
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:CompileCommand=exclude,*.urshift");
+        TestFramework framework = new TestFramework(TestVectorizeURShiftSubword.class);
+        framework.setDefaultWarmup(1).addFlags("-XX:CompileCommand=exclude,*.urshift").start();
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.RSHIFT_VB, ">0", IRNode.STORE_VECTOR, ">0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_B, ">0", IRNode.RSHIFT_VB, ">0", IRNode.STORE_VECTOR, ">0"})
     public void testByte0() {
         for(int i = 0; i < NUM; i++) {
             byteb[i] = (byte) (bytea[i] >>> 3);
@@ -76,7 +78,7 @@ public class TestVectorizeURShiftSubword {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.RSHIFT_VB, ">0", IRNode.STORE_VECTOR, ">0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_B, ">0", IRNode.RSHIFT_VB, ">0", IRNode.STORE_VECTOR, ">0"})
     public void testByte1() {
         for(int i = 0; i < NUM; i++) {
             byteb[i] = (byte) (bytea[i] >>> 24);
@@ -84,7 +86,7 @@ public class TestVectorizeURShiftSubword {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.RSHIFT_VB, IRNode.STORE_VECTOR})
+    @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.RSHIFT_VB, IRNode.STORE_VECTOR})
     public void testByte2() {
         for(int i = 0; i < NUM; i++) {
             byteb[i] = (byte) (bytea[i] >>> 25);
@@ -92,7 +94,7 @@ public class TestVectorizeURShiftSubword {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.RSHIFT_VS, ">0", IRNode.STORE_VECTOR, ">0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_S, ">0", IRNode.RSHIFT_VS, ">0", IRNode.STORE_VECTOR, ">0"})
     public void testShort0() {
         for(int i = 0; i < NUM; i++) {
             shortb[i] = (short) (shorta[i] >>> 10);
@@ -100,7 +102,7 @@ public class TestVectorizeURShiftSubword {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.RSHIFT_VS, ">0", IRNode.STORE_VECTOR, ">0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_S, ">0", IRNode.RSHIFT_VS, ">0", IRNode.STORE_VECTOR, ">0"})
     public void testShort1() {
         for(int i = 0; i < NUM; i++) {
             shortb[i] = (short) (shorta[i] >>> 16);
@@ -108,7 +110,7 @@ public class TestVectorizeURShiftSubword {
     }
 
     @Test
-    @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.RSHIFT_VS, IRNode.STORE_VECTOR})
+    @IR(failOn = {IRNode.LOAD_VECTOR_S, IRNode.RSHIFT_VS, IRNode.STORE_VECTOR})
     public void testShort2() {
         for(int i = 0; i < NUM; i++) {
             shortb[i] = (short) (shorta[i] >>> 17);

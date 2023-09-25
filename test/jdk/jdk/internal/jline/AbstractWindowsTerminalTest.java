@@ -56,7 +56,7 @@ public class AbstractWindowsTerminalTest {
                 return is.read();
             }
         };
-        var t = new AbstractWindowsTerminal(out, "test", "vt100", null, -1, false, SignalHandler.SIG_DFL, isWrapper) {
+        var t = new AbstractWindowsTerminal(out, "test", "vt100", null, false, SignalHandler.SIG_DFL, isWrapper) {
             @Override
             protected int getConsoleMode() {
                 return -1;

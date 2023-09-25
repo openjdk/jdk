@@ -430,7 +430,7 @@ public class BasicButtonUI extends ButtonUI{
     /**
      * Method which renders the text of the current button.
      *
-     * As of Java 2 platform v 1.4 this method should not be used or overriden.
+     * As of Java 2 platform v 1.4 this method should not be used or overridden.
      * Use the paintText method which takes the AbstractButton argument.
      *
      * @param g an instance of {@code Graphics}
@@ -476,7 +476,7 @@ public class BasicButtonUI extends ButtonUI{
         paintText(g, (JComponent)b, textRect, text);
     }
 
-    // Method signature defined here overriden in subclasses.
+    // Method signature defined here overridden in subclasses.
     // Perhaps this class should be abstract?
     /**
      * Paints a focused button.

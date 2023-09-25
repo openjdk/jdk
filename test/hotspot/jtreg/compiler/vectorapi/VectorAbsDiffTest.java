@@ -82,7 +82,7 @@ public class VectorAbsDiffTest {
     }
 
     @Test
-    @IR(counts = {"vfabd", "> 0"})
+    @IR(counts = {IRNode.VFABD, "> 0"})
     public static void testFloatAbsDiff() {
         for (int i = 0; i < LENGTH; i += F_SPECIES.length()) {
             FloatVector av = FloatVector.fromArray(F_SPECIES, fa, i);
@@ -100,7 +100,7 @@ public class VectorAbsDiffTest {
     }
 
     @Test
-    @IR(counts = {"vfabd_masked", "> 0"}, applyIf = {"UseSVE", "> 0"})
+    @IR(counts = {IRNode.VFABD_MASKED, "> 0"}, applyIf = {"UseSVE", "> 0"})
     public static void testFloatAbsDiffMasked() {
         for (int i = 0; i < LENGTH; i += F_SPECIES.length()) {
             FloatVector av = FloatVector.fromArray(F_SPECIES, fa, i);
@@ -123,7 +123,7 @@ public class VectorAbsDiffTest {
     }
 
     @Test
-    @IR(counts = {"vfabd", "> 0"})
+    @IR(counts = {IRNode.VFABD, "> 0"})
     public static void testDoubleAbsDiff() {
         for (int i = 0; i < LENGTH; i += D_SPECIES.length()) {
             DoubleVector av = DoubleVector.fromArray(D_SPECIES, da, i);
@@ -141,7 +141,7 @@ public class VectorAbsDiffTest {
     }
 
     @Test
-    @IR(counts = {"vfabd_masked", "> 0"}, applyIf = {"UseSVE", "> 0"})
+    @IR(counts = {IRNode.VFABD_MASKED, "> 0"}, applyIf = {"UseSVE", "> 0"})
     public static void testDoubleAbsDiffMasked() {
         for (int i = 0; i < LENGTH; i += D_SPECIES.length()) {
             DoubleVector av = DoubleVector.fromArray(D_SPECIES, da, i);

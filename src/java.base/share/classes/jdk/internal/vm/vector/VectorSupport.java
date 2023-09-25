@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,6 +150,9 @@ public class VectorSupport {
 
     public static class VectorSpecies<E> {}
 
+    /**
+     * @hidden
+     */
     public static class VectorPayload {
         private final Object payload; // array of primitives
 
@@ -162,17 +165,26 @@ public class VectorSupport {
         }
     }
 
+    /**
+     * @hidden
+     */
     public static class Vector<E> extends VectorPayload {
         public Vector(Object payload) {
             super(payload);
         }
     }
 
+    /**
+     * @hidden
+     */
     public static class VectorShuffle<E> extends VectorPayload {
         public VectorShuffle(Object payload) {
             super(payload);
         }
     }
+    /**
+     * @hidden
+     */
     public static class VectorMask<E> extends VectorPayload {
         public VectorMask(Object payload) {
             super(payload);
@@ -196,6 +208,23 @@ public class VectorSupport {
                        FromBitsCoercedOperation<VM, S> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.fromBits(bits, s);
+    }
+
+    /* ============================================================================ */
+    public interface IndexPartiallyInUpperRangeOperation<E,
+                                                         M extends VectorMask<E>> {
+        M apply(long offset, long limit);
+    }
+
+    @IntrinsicCandidate
+    public static
+    <E,
+     M extends VectorMask<E>>
+    M indexPartiallyInUpperRange(Class<? extends M> mClass, Class<E> eClass,
+                                 int length, long offset, long limit,
+                                 IndexPartiallyInUpperRangeOperation<E, M> defaultImpl) {
+        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+        return defaultImpl.apply(offset, limit);
     }
 
     /* ============================================================================ */
@@ -240,7 +269,7 @@ public class VectorSupport {
         V index(V v, int step, S s);
     }
 
-    //FIXME @IntrinsicCandidate
+    @IntrinsicCandidate
     public static
     <V extends Vector<E>,
      E,
@@ -277,20 +306,20 @@ public class VectorSupport {
 
     /* ============================================================================ */
 
-    public interface VecExtractOp<V extends Vector<?>> {
-        long apply(V v, int i);
+    public interface VecExtractOp<VM extends VectorPayload> {
+        long apply(VM vm, int i);
     }
 
     @IntrinsicCandidate
     public static
-    <V extends Vector<E>,
+    <VM extends VectorPayload,
      E>
-    long extract(Class<? extends V> vClass, Class<E> eClass,
+    long extract(Class<? extends VM> vClass, Class<E> eClass,
                  int length,
-                 V v, int i,
-                 VecExtractOp<V> defaultImpl) {
+                 VM vm, int i,
+                 VecExtractOp<VM> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
-        return defaultImpl.apply(v, i);
+        return defaultImpl.apply(vm, i);
     }
 
     /* ============================================================================ */

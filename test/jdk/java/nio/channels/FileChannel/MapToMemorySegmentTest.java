@@ -30,8 +30,8 @@
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -61,21 +61,21 @@ public class MapToMemorySegmentTest {
 
     @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testCustomFileChannel() throws IOException {
-        var session = MemorySession.openConfined();
+        var arena = Arena.ofConfined();
         var fc = FileChannel.open(tempPath, StandardOpenOption.WRITE, StandardOpenOption.READ);
         var fileChannel = new CustomFileChannel(fc);
-        try (session; fileChannel){
-            fileChannel.map(FileChannel.MapMode.READ_WRITE, 1L, 10L, session);
+        try (arena; fileChannel){
+            fileChannel.map(FileChannel.MapMode.READ_WRITE, 1L, 10L, arena);
         }
     }
 
     @Test
     public void testCustomFileChannelOverride() throws IOException {
-        var session = MemorySession.openConfined();
+        var arena = Arena.ofConfined();
         var fc = FileChannel.open(tempPath, StandardOpenOption.WRITE, StandardOpenOption.READ);
         var fileChannel = new CustomFileChannelOverride(fc);
-        try (session; fileChannel){
-            fileChannel.map(FileChannel.MapMode.READ_WRITE, 1L, 10L, session);
+        try (arena; fileChannel){
+            fileChannel.map(FileChannel.MapMode.READ_WRITE, 1L, 10L, arena);
         }
     }
 
@@ -160,10 +160,10 @@ public class MapToMemorySegmentTest {
         public CustomFileChannelOverride(FileChannel fc) { super(fc); }
 
         @Override
-        public MemorySegment map(MapMode mode, long offset, long size, MemorySession session)
+        public MemorySegment map(MapMode mode, long offset, long size, Arena arena)
                 throws IOException, UnsupportedOperationException
         {
-            return fc.map(mode, offset, size, session);
+            return fc.map(mode, offset, size, arena);
         }
     }
 }

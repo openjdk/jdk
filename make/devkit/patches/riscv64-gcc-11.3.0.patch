@@ -1,0 +1,14 @@
+diff -ur a/libsanitizer/sanitizer_common/sanitizer_platform_limits_posix.cpp b/libsanitizer/sanitizer_common/sanitizer_platform_limits_posix.cpp
+--- a/libsanitizer/sanitizer_common/sanitizer_platform_limits_posix.cpp	2022-11-30 12:25:37.363419659 +0100
++++ b/libsanitizer/sanitizer_common/sanitizer_platform_limits_posix.cpp	2022-11-30 12:42:48.135412054 +0100
+@@ -59,7 +59,9 @@
+ 
+ #if !SANITIZER_ANDROID
+ #include <fstab.h>
+-#include <sys/mount.h>
++// sys/mount.h conflicts with linux/fs.h in glibc 2.36+
++// See https://sourceware.org/glibc/wiki/Release/2.36#Usage_of_.3Clinux.2Fmount.h.3E_and_.3Csys.2Fmount.h.3E
++// This has been fixed elsewhere, but apparently not in Fedora riscv.
+ #include <sys/timeb.h>
+ #include <utmpx.h>
+ #endif

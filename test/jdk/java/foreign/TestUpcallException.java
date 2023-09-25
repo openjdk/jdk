@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,80 +24,101 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @library /test/lib
- * @build ThrowingUpcall TestUpcallException
+ * @build TestUpcallException
  *
  * @run testng/othervm/native
  *   --enable-native-access=ALL-UNNAMED
  *   TestUpcallException
  */
 
-import jdk.test.lib.Utils;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.file.Paths;
-import java.util.List;
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemorySegment;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotEquals;
-import static org.testng.Assert.assertTrue;
+public class TestUpcallException extends UpcallTestHelper {
 
-public class TestUpcallException {
-
-    @Test
-    public void testExceptionInterpreted() throws InterruptedException, IOException {
-        run(/* useSpec = */ false, /* isVoid = */ true);
-        run(/* useSpec = */ false, /* isVoid = */ false);
+    @Test(dataProvider = "exceptionCases")
+    public void testException(Class<?> target, boolean useSpec) throws InterruptedException, IOException {
+        runInNewProcess(target, useSpec)
+                .assertStdErrContains("Testing upcall exceptions");
     }
 
-    @Test
-    public void testExceptionSpecialized() throws IOException, InterruptedException {
-        run(/* useSpec = */ true, /* isVoid = */ true);
-        run(/* useSpec = */ true, /* isVoid = */ false);
+    @DataProvider
+    public static Object[][] exceptionCases() {
+        return new Object[][]{
+            { VoidUpcallRunner.class,    false },
+            { NonVoidUpcallRunner.class, false },
+            { VoidUpcallRunner.class,    true  },
+            { NonVoidUpcallRunner.class, true  }
+        };
     }
 
-    private void run(boolean useSpec, boolean isVoid) throws IOException, InterruptedException {
-        Process process = new ProcessBuilder()
-            .command(
-                Paths.get(Utils.TEST_JDK)
-                     .resolve("bin")
-                     .resolve("java")
-                     .toAbsolutePath()
-                     .toString(),
-                "--enable-preview",
-                "--enable-native-access=ALL-UNNAMED",
-                "-Djava.library.path=" + System.getProperty("java.library.path"),
-                "-Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=" + useSpec,
-                "-cp", Utils.TEST_CLASS_PATH,
-                "ThrowingUpcall",
-                isVoid ? "void" : "non-void")
-            .start();
-
-        int result = process.waitFor();
-        assertNotEquals(result, 0);
-
-        List<String> outLines = linesFromStream(process.getInputStream());
-        outLines.forEach(System.out::println);
-        List<String> errLines = linesFromStream(process.getErrorStream());
-        errLines.forEach(System.err::println);
-
-        // Exception message would be found in stack trace
-        String shouldInclude = "Testing upcall exceptions";
-        assertTrue(linesContain(errLines, shouldInclude), "Did not find '" + shouldInclude + "' in stderr");
+    public static class VoidUpcallRunner extends ExceptionRunnerBase {
+        public static void main(String[] args) throws Throwable {
+            try (Arena arena = Arena.ofConfined()) {
+                MemorySegment stub = Linker.nativeLinker().upcallStub(VOID_TARGET, FunctionDescriptor.ofVoid(), arena);
+                downcallVoid.invoke(stub); // should call Shutdown.exit(1);
+            }
+        }
     }
 
-    private boolean linesContain(List<String> errLines, String shouldInclude) {
-        return errLines.stream().anyMatch(line -> line.contains(shouldInclude));
+    public static class NonVoidUpcallRunner extends ExceptionRunnerBase {
+        public static void main(String[] args) throws Throwable {
+            try (Arena arena = Arena.ofConfined()) {
+                MemorySegment stub = Linker.nativeLinker().upcallStub(INT_TARGET, FunctionDescriptor.of(C_INT, C_INT), arena);
+                downcallNonVoid.invoke(42, stub); // should call Shutdown.exit(1);
+            }
+        }
     }
 
-    private static List<String> linesFromStream(InputStream stream) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
-            return reader.lines().toList();
+    // where
+
+    private static class ExceptionRunnerBase {
+        static final MethodHandle downcallVoid;
+        static final MethodHandle downcallNonVoid;
+        static final MethodHandle VOID_TARGET;
+        static final MethodHandle INT_TARGET;
+
+        static final Thread.UncaughtExceptionHandler UNCAUGHT_EXCEPTION_HANDLER
+                = (thread, throwable) -> System.out.println("From uncaught exception handler");
+
+        static {
+                System.loadLibrary("TestUpcall");
+            downcallVoid = Linker.nativeLinker().downcallHandle(
+                findNativeOrThrow("f0_V__"),
+                    FunctionDescriptor.ofVoid(C_POINTER)
+            );
+            downcallNonVoid = Linker.nativeLinker().downcallHandle(
+                    findNativeOrThrow("f10_I_I_"),
+                    FunctionDescriptor.of(C_INT, C_INT, C_POINTER)
+            );
+            try {
+                MethodHandles.Lookup lookup = MethodHandles.lookup();
+                VOID_TARGET = lookup.findStatic(ExceptionRunnerBase.class, "throwException",
+                        MethodType.methodType(void.class));
+                INT_TARGET = lookup.findStatic(ExceptionRunnerBase.class, "throwException",
+                        MethodType.methodType(int.class, int.class));
+            } catch (ReflectiveOperationException e) {
+                throw new ExceptionInInitializerError(e);
+            }
+        }
+
+        public static void throwException() {
+            throw new RuntimeException("Testing upcall exceptions");
+        }
+
+        public static int throwException(int x) {
+            throw new RuntimeException("Testing upcall exceptions");
         }
     }
 }

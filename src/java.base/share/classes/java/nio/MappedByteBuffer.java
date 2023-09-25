@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,6 +316,7 @@ public abstract sealed class MappedByteBuffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public final MappedByteBuffer position(int newPosition) {
@@ -325,6 +326,7 @@ public abstract sealed class MappedByteBuffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public final MappedByteBuffer limit(int newLimit) {
@@ -334,6 +336,7 @@ public abstract sealed class MappedByteBuffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public final MappedByteBuffer mark() {
@@ -343,6 +346,7 @@ public abstract sealed class MappedByteBuffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public final MappedByteBuffer reset() {
@@ -352,6 +356,7 @@ public abstract sealed class MappedByteBuffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public final MappedByteBuffer clear() {
@@ -361,6 +366,7 @@ public abstract sealed class MappedByteBuffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public final MappedByteBuffer flip() {
@@ -370,6 +376,7 @@ public abstract sealed class MappedByteBuffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public final MappedByteBuffer rewind() {

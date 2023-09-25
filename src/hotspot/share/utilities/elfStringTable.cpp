@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,12 @@
 // We will try to load whole string table into memory if we can.
 // Otherwise, fallback to more expensive file operation.
 ElfStringTable::ElfStringTable(FILE* const file, Elf_Shdr& shdr, int index) :
-  _next(NULL), _index(index), _section(file, shdr), _fd(file) {
+  _next(nullptr), _index(index), _section(file, shdr), _fd(file) {
   _status = _section.status();
 }
 
 ElfStringTable::~ElfStringTable() {
-  if (_next != NULL) {
+  if (_next != nullptr) {
     delete _next;
   }
 }
@@ -55,7 +55,7 @@ bool ElfStringTable::string_at(size_t pos, char* buf, int buflen) {
   }
 
   const char* data = (const char*)_section.section_data();
-  if (data != NULL) {
+  if (data != nullptr) {
     jio_snprintf(buf, buflen, "%s", data + pos);
     return true;
   } else {  // no cache data, read from file instead

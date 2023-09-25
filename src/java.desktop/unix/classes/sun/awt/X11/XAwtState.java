@@ -72,7 +72,7 @@ class XAwtState {
     /**
      * The XBaseWindow is created with OwnerGrabButtonMask
      * (see X vol. 1, 8.3.3.2) so inside the app Key, Motion, and Button events
-     * are received by the window they actualy happened on, not the grabber.
+     * are received by the window they actually happened on, not the grabber.
      * Then XBaseWindow dispatches them to the grabber. As a result
      * XAnyEvent.get_window() returns actual window the event is originated,
      * though the event is dispatched by  the grabber.

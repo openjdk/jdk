@@ -58,8 +58,8 @@ public:
     virtual MsgRouting WmEraseBkgnd(HDC hDC, BOOL& didErase);
 
     /*
-     * if WM_PAINT was recieving when we can not paint
-     * then setup m_needPaint end when can call this function
+     * if WM_PAINT was received when we cannot paint
+     * then setup m_needPaint and when can paint call this function
      */
     void LazyPaint();
      /*

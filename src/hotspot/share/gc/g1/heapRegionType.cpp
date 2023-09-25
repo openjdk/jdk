@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,6 @@ bool HeapRegionType::is_valid(Tag tag) {
     case StartsHumongousTag:
     case ContinuesHumongousTag:
     case OldTag:
-    case OpenArchiveTag:
-    case ClosedArchiveTag:
       return true;
     default:
       return false;
@@ -56,11 +54,9 @@ const char* HeapRegionType::get_str() const {
     case StartsHumongousTag:    return "HUMS";
     case ContinuesHumongousTag: return "HUMC";
     case OldTag:                return "OLD";
-    case OpenArchiveTag:        return "OARC";
-    case ClosedArchiveTag:      return "CARC";
     default:
       ShouldNotReachHere();
-      return NULL; // keep some compilers happy
+      return nullptr; // keep some compilers happy
   }
 }
 
@@ -73,11 +69,9 @@ const char* HeapRegionType::get_short_str() const {
     case StartsHumongousTag:    return "HS";
     case ContinuesHumongousTag: return "HC";
     case OldTag:                return "O";
-    case OpenArchiveTag:        return "OA";
-    case ClosedArchiveTag:      return "CA";
     default:
       ShouldNotReachHere();
-      return NULL; // keep some compilers happy
+      return nullptr; // keep some compilers happy
   }
 }
 
@@ -90,8 +84,6 @@ G1HeapRegionTraceType::Type HeapRegionType::get_trace_type() {
     case StartsHumongousTag:    return G1HeapRegionTraceType::StartsHumongous;
     case ContinuesHumongousTag: return G1HeapRegionTraceType::ContinuesHumongous;
     case OldTag:                return G1HeapRegionTraceType::Old;
-    case OpenArchiveTag:        return G1HeapRegionTraceType::OpenArchive;
-    case ClosedArchiveTag:      return G1HeapRegionTraceType::ClosedArchive;
     default:
       ShouldNotReachHere();
       return G1HeapRegionTraceType::Free; // keep some compilers happy

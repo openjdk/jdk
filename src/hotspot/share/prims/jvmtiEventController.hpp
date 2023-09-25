@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,14 +210,14 @@ public:
         && ((int)event_type <= TOTAL_MAX_EVENT_TYPE_VAL);
   }
 
-  // Use (thread == NULL) to enable/disable an event globally.
-  // Use (thread != NULL) to enable/disable an event for a particular thread.
+  // Use (thread == nullptr) to enable/disable an event globally.
+  // Use (thread != nullptr) to enable/disable an event for a particular thread.
   // thread is ignored for events that can only be specified globally
   static void set_user_enabled(JvmtiEnvBase *env, JavaThread *thread, oop thread_oop,
                                jvmtiEvent event_type, bool enabled);
 
   // Setting callbacks changes computed enablement and must be done
-  // at a safepoint otherwise a NULL callback could be attempted
+  // at a safepoint otherwise a null callback could be attempted
   static void set_event_callbacks(JvmtiEnvBase *env,
                                   const jvmtiEventCallbacks* callbacks,
                                   jint size_of_callbacks);

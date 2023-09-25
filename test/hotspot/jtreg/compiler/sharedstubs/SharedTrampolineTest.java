@@ -81,24 +81,14 @@ public class SharedTrampolineTest {
         }
     }
 
-    private static String skipTo(Iterator<String> iter, String substring) {
-        while (iter.hasNext()) {
-            String nextLine = iter.next();
-            if (nextLine.contains(substring)) {
-                return nextLine;
-            }
-        }
-        return null;
-    }
-
     private static void checkOutput(OutputAnalyzer output) {
         List<String> addrs = Pattern.compile("\\(trampoline_stub\\) addr=(\\w+) .*\\[trampoline owner")
             .matcher(output.getStdout())
             .results()
             .map(m -> m.group(1))
-            .collect(Collectors.toList());
+            .toList();
         if (addrs.stream().distinct().count() >= addrs.size()) {
-            throw new RuntimeException("No stubs reused");
+            throw new RuntimeException("No runtime trampoline stubs reused: distinct " + addrs.stream().distinct().count() + ", in total " + addrs.size());
         }
     }
 

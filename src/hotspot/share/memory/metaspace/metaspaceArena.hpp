@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -119,6 +119,7 @@ class MetaspaceArena : public CHeapObj<mtClass> {
     // Two eyecatchers to easily spot a corrupted _next pointer
     const uintx _eye1;
     const Fence* const _next;
+    NOT_LP64(uintx _dummy;)
     const uintx _eye2;
   public:
     Fence(const Fence* next) : _eye1(EyeCatcher), _next(next), _eye2(EyeCatcher) {}
@@ -175,7 +176,7 @@ public:
   // 2) Attempt to allocate from the current chunk.
   // 3) Attempt to enlarge the current chunk in place if it is too small.
   // 4) Attempt to get a new chunk and allocate from that chunk.
-  // At any point, if we hit a commit limit, we return NULL.
+  // At any point, if we hit a commit limit, we return null.
   MetaWord* allocate(size_t word_size);
 
   // Prematurely returns a metaspace allocation to the _block_freelists because it is not

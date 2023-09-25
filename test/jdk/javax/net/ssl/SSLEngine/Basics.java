@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,43 +26,53 @@
  * @bug 4495742
  * @summary Add non-blocking SSL/TLS functionality, usable with any
  *      I/O abstraction
- * @ignore JSSE supported cipher suites are changed with CR 6916074,
- *     need to update this test case in JDK 7 soon
- *
  * This is intended to test many of the basic API calls to the SSLEngine
  * interface.  This doesn't really exercise much of the SSL code.
  *
+ * @library /test/lib
  * @author Brad Wetmore
+ * @run main/othervm Basics
  */
 
 import java.security.*;
 import java.io.*;
 import java.nio.*;
+import java.util.Arrays;
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;
 
+import jdk.test.lib.security.SecurityUtils;
+
 public class Basics {
 
-    private static String pathToStores = "../etc";
-    private static String keyStoreFile = "keystore";
-    private static String trustStoreFile = "truststore";
-    private static String passwd = "passphrase";
+    private static final String PATH_TO_STORES = "../etc";
+    private static final String KEY_STORE_FILE = "keystore";
+    private static final String TRUSTSTORE_FILE = "truststore";
 
-    private static String keyFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + keyStoreFile;
-    private static String trustFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + trustStoreFile;
+    private static final String KEYSTORE_PATH =
+            System.getProperty("test.src", "./") + "/" + PATH_TO_STORES +
+                "/" + KEY_STORE_FILE;
+    private static final String TRUSTSTORE_PATH =
+            System.getProperty("test.src", "./") + "/" + PATH_TO_STORES +
+                "/" + TRUSTSTORE_FILE;
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
+        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1");
+
+        runTest("TLSv1.3", "TLS_AES_256_GCM_SHA384");
+        runTest("TLSv1.2", "TLS_RSA_WITH_AES_256_GCM_SHA384");
+        runTest("TLSv1.1", "TLS_DHE_DSS_WITH_AES_128_CBC_SHA");
+    }
+
+    private static void runTest(String protocol, String cipherSuite) throws Exception {
+        System.out.printf("Testing %s with %s%n", protocol, cipherSuite);
 
         KeyStore ks = KeyStore.getInstance("JKS");
         KeyStore ts = KeyStore.getInstance("JKS");
         char[] passphrase = "passphrase".toCharArray();
 
-        ks.load(new FileInputStream(keyFilename), passphrase);
-        ts.load(new FileInputStream(trustFilename), passphrase);
+        ks.load(new FileInputStream(KEYSTORE_PATH), passphrase);
+        ts.load(new FileInputStream(TRUSTSTORE_PATH), passphrase);
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);
@@ -79,75 +89,85 @@ public class Basics {
         System.out.println(ssle);
 
         String [] suites = ssle.getSupportedCipherSuites();
-        String secondSuite = suites[1];
-        String [] oneSuites = new String [] { secondSuite };
+        // sanity check that the ciphersuite we want to use is still supported
+        Arrays.stream(suites)
+                .filter(s -> s.equals(cipherSuite))
+                .findFirst()
+                .orElseThrow((() ->
+                        new RuntimeException(cipherSuite +
+                                " is not a supported ciphersuite.")));
 
         printStrings("Supported Ciphersuites", suites);
         printStrings("Enabled Ciphersuites", ssle.getEnabledCipherSuites());
-        ssle.setEnabledCipherSuites(oneSuites);
+        ssle.setEnabledCipherSuites(new String [] { cipherSuite });
         printStrings("Set Ciphersuites", ssle.getEnabledCipherSuites());
 
         suites = ssle.getEnabledCipherSuites();
         if ((ssle.getEnabledCipherSuites().length != 1) ||
-                !(suites[0].equals(secondSuite))) {
-            throw new Exception("set ciphers not what was expected");
+                !(suites[0].equals(cipherSuite))) {
+            throw new RuntimeException("set ciphers not what was expected");
         }
 
         System.out.println();
 
         String [] protocols = ssle.getSupportedProtocols();
-        String secondProtocol = protocols[1];
-        String [] oneProtocols = new String [] { protocols[1] };
+        // sanity check that the protocol we want is still supported
+        Arrays.stream(protocols)
+                .filter(p -> p.equals(protocol))
+                .findFirst()
+                .orElseThrow(() ->
+                        new RuntimeException(protocol +
+                                " is not a supported TLS protocol."));
 
         printStrings("Supported Protocols", protocols);
         printStrings("Enabled Protocols", ssle.getEnabledProtocols());
-        ssle.setEnabledProtocols(oneProtocols);
+        ssle.setEnabledProtocols(new String[]{ protocol });
         printStrings("Set Protocols", ssle.getEnabledProtocols());
 
         protocols = ssle.getEnabledProtocols();
         if ((ssle.getEnabledProtocols().length != 1) ||
-                !(protocols[0].equals(secondProtocol))) {
-            throw new Exception("set protocols not what was expected");
+                !(protocols[0].equals(protocol))) {
+            throw new RuntimeException("set protocols not what was expected");
         }
 
         System.out.println("Checking get/setUseClientMode");
 
         ssle.setUseClientMode(true);
-        if (ssle.getUseClientMode() != true) {
-            throw new Exception("set/getUseClientMode false");
+        if (!ssle.getUseClientMode()) {
+            throw new RuntimeException("set/getUseClientMode false");
         }
 
         ssle.setUseClientMode(false);
-        if (ssle.getUseClientMode() != false) {
-            throw new Exception("set/getUseClientMode true");
+        if (ssle.getUseClientMode()) {
+            throw new RuntimeException("set/getUseClientMode true");
         }
 
 
         System.out.println("Checking get/setClientAuth");
 
         ssle.setNeedClientAuth(false);
-        if (ssle.getNeedClientAuth() != false) {
-            throw new Exception("set/getNeedClientAuth true");
+        if (ssle.getNeedClientAuth()) {
+            throw new RuntimeException("set/getNeedClientAuth true");
         }
 
         ssle.setNeedClientAuth(true);
-        if (ssle.getNeedClientAuth() != true) {
-            throw new Exception("set/getNeedClientAuth false");
+        if (!ssle.getNeedClientAuth()) {
+            throw new RuntimeException("set/getNeedClientAuth false");
         }
 
         ssle.setWantClientAuth(true);
 
-        if (ssle.getNeedClientAuth() == true) {
-            throw new Exception("set/getWantClientAuth need = true");
+        if (ssle.getNeedClientAuth()) {
+            throw new RuntimeException("set/getWantClientAuth need = true");
         }
 
-        if (ssle.getWantClientAuth() != true) {
-            throw new Exception("set/getNeedClientAuth false");
+        if (!ssle.getWantClientAuth()) {
+            throw new RuntimeException("set/getNeedClientAuth false");
         }
 
         ssle.setWantClientAuth(false);
-        if (ssle.getWantClientAuth() != false) {
-            throw new Exception("set/getNeedClientAuth true");
+        if (ssle.getWantClientAuth()) {
+            throw new RuntimeException("set/getNeedClientAuth true");
         }
 
         /*
@@ -158,13 +178,13 @@ public class Basics {
         System.out.println("checking session creation");
 
         ssle.setEnableSessionCreation(false);
-        if (ssle.getEnableSessionCreation() != false) {
-            throw new Exception("set/getSessionCreation true");
+        if (ssle.getEnableSessionCreation()) {
+            throw new RuntimeException("set/getSessionCreation true");
         }
 
         ssle.setEnableSessionCreation(true);
-        if (ssle.getEnableSessionCreation() != true) {
-            throw new Exception("set/getSessionCreation false");
+        if (!ssle.getEnableSessionCreation()) {
+            throw new RuntimeException("set/getSessionCreation false");
         }
 
         /* Checking for overflow wrap/unwrap() */
@@ -172,18 +192,13 @@ public class Basics {
 
         if (ssle.wrap(smallBB, smallBB).getStatus() !=
                 Status.BUFFER_OVERFLOW) {
-            throw new Exception("wrap should have overflowed");
+            throw new RuntimeException("wrap should have overflowed");
         }
 
         // For unwrap(), the BUFFER_OVERFLOW will not be generated
         // until received SSL/TLS application data.
         // Test test/jdk/javax/net/ssl/SSLEngine/LargePacket.java will check
         // BUFFER_OVERFLOW/UNDERFLOW for both wrap() and unwrap().
-        //
-        //if (ssle.unwrap(smallBB, smallBB).getStatus() !=
-        //      Status.BUFFER_OVERFLOW) {
-        //    throw new Exception("unwrap should have overflowed");
-        //}
 
         SSLSession ssls = ssle.getSession();
 
@@ -198,14 +213,18 @@ public class Basics {
          */
         if (ssle.wrap(appBB, netBB).getHandshakeStatus() !=
                 HandshakeStatus.NEED_UNWRAP) {
-            throw new Exception("initial client hello needs unwrap");
+            throw new RuntimeException("initial client hello needs unwrap");
         }
 
-        /* Checking for overflow wrap/unwrap() */
-
-        if (ssle.wrap(appBB, netBB).getStatus() !=
-                Status.BUFFER_OVERFLOW) {
-            throw new Exception("unwrap should have overflowed");
+        /*
+         * After the first call to wrap(), the handshake status is
+         * NEED_UNWRAP and we need to receive data before doing anymore
+         * handshaking.
+         */
+        SSLEngineResult result = ssle.wrap(appBB, netBB);
+        if (result.getStatus() != Status.OK
+            && result.bytesConsumed() != 0 && result.bytesProduced() != 0) {
+            throw new RuntimeException("wrap should have returned without doing anything");
         }
 
         ByteBuffer ro = appBB.asReadOnlyBuffer();
@@ -220,7 +239,7 @@ public class Basics {
 
         try {
             ssle.unwrap(netBB, ro);
-            throw new Exception("unwrap wasn't ReadOnlyBufferException");
+            throw new RuntimeException("unwrap wasn't ReadOnlyBufferException");
         } catch (ReadOnlyBufferException e) {
             System.out.println("Caught the ReadOnlyBuffer: " + e);
         }
@@ -235,7 +254,7 @@ public class Basics {
                 appBB)).getStatus() !=
                 Status.BUFFER_UNDERFLOW) {
             System.out.println(sslER);
-            throw new Exception("unwrap should underflow");
+            throw new RuntimeException("unwrap should underflow");
         }
 
         if ((sslER =
@@ -243,7 +262,7 @@ public class Basics {
                 appBB)).getStatus() !=
                 Status.BUFFER_UNDERFLOW) {
             System.out.println(sslER);
-            throw new Exception("unwrap should underflow");
+            throw new RuntimeException("unwrap should underflow");
         }
 
         if ((sslER =
@@ -251,15 +270,22 @@ public class Basics {
                 appBB)).getStatus() !=
                 Status.BUFFER_UNDERFLOW) {
             System.out.println(sslER);
-            throw new Exception("unwrap should underflow");
+            throw new RuntimeException("unwrap should underflow");
         }
 
         // junk inbound message
         try {
+            /*
+             * Exceptions are thrown when:
+             *    - the length field is correct but the data can't be decoded.
+             *    - the length field is larger than max allowed.
+             */
             ssle.unwrap(ByteBuffer.wrap(gobblydegook), appBB);
-            throw new Exception("Didn't catch the nasty SSLException");
-        } catch (SSLException e) {
-            System.out.println("caught the nasty SSLException: " + e);
+            throw new RuntimeException("Expected SSLProtocolException was not thrown "
+                    + "for bad input");
+        } catch (SSLProtocolException e) {
+            System.out.println("caught the SSLProtocolException for bad decoding: "
+                    + e);
         }
 
         System.out.println("Test PASSED");
@@ -280,8 +306,8 @@ public class Basics {
         (byte) 0x00 };
 
     static byte [] gobblydegook = new byte [] {
-        // "HELLO HELLO"
-        (byte) 0x48, (byte) 0x45, (byte) 0x4C, (byte) 0x4C, (byte) 0x20,
+        // bad data but correct record length to cause decryption error
+        (byte) 0x48, (byte) 0x45, (byte) 0x4C, (byte) 0x00, (byte) 0x04,
         (byte) 0x48, (byte) 0x45, (byte) 0x4C, (byte) 0x4C };
 
     static void printStrings(String label, String [] strs) {

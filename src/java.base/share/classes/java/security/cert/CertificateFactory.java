@@ -26,14 +26,14 @@
 package java.security.cert;
 
 import java.io.InputStream;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
 import java.security.Provider;
 import java.security.Security;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
 
 import sun.security.jca.*;
 import sun.security.jca.GetInstance.Instance;
@@ -352,7 +352,9 @@ public class CertificateFactory {
     public final Certificate generateCertificate(InputStream inStream)
         throws CertificateException
     {
-        return certFacSpi.engineGenerateCertificate(inStream);
+        Certificate c = certFacSpi.engineGenerateCertificate(inStream);
+        JCAUtil.tryCommitCertEvent(c);
+        return c;
     }
 
     /**

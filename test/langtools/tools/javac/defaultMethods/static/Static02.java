@@ -11,7 +11,7 @@ class Static02 {
         public static void test() { }
     }
 
-    public static void main(String[] args) {
+    public static void meth() {
         I.test(); //ok
         I i = new I() {};
         i.test(); //no!

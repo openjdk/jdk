@@ -115,7 +115,7 @@ public class Group {
      * @param moduleNameFormList List of the module name formats.
      */
     public boolean checkModuleGroups(String groupname, String moduleNameFormList) {
-        String[] mdlPatterns = moduleNameFormList.split(":");
+        String[] mdlPatterns = moduleNameFormList.split("[,:]");
         if (groupList.contains(groupname)) {
             initMessages();
             messages.warning("doclet.Groupname_already_used", groupname);
@@ -161,7 +161,7 @@ public class Group {
      * @param pkgNameFormList List of the package name formats.
      */
     public boolean checkPackageGroups(String groupname, String pkgNameFormList) {
-        String[] pkgPatterns = pkgNameFormList.split(":");
+        String[] pkgPatterns = pkgNameFormList.split("[,:]");
         if (groupList.contains(groupname)) {
             initMessages();
             messages.warning("doclet.Groupname_already_used", groupname);
@@ -326,7 +326,7 @@ public class Group {
      */
     SortedSet<PackageElement> getPkgList(Map<String, SortedSet<PackageElement>> map,
             String groupname) {
-        return map.computeIfAbsent(groupname, g -> new TreeSet<>(configuration.utils.comparators.makePackageComparator()));
+        return map.computeIfAbsent(groupname, g -> new TreeSet<>(configuration.utils.comparators.packageComparator()));
     }
 
     /**
@@ -338,7 +338,7 @@ public class Group {
      */
     SortedSet<ModuleElement> getModuleList(Map<String, SortedSet<ModuleElement>> map,
             String groupname) {
-        return map.computeIfAbsent(groupname, g -> new TreeSet<>(configuration.utils.comparators.makeModuleComparator()));
+        return map.computeIfAbsent(groupname, g -> new TreeSet<>(configuration.utils.comparators.moduleComparator()));
     }
 
     /**

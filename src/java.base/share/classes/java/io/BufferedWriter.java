@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,10 +48,9 @@ import jdk.internal.misc.VM;
  * to wrap a BufferedWriter around any Writer whose write() operations may be
  * costly, such as FileWriters and OutputStreamWriters.  For example,
  *
- * <pre>
- * PrintWriter out
- *   = new PrintWriter(new BufferedWriter(new FileWriter("foo.out")));
- * </pre>
+ * {@snippet lang=java :
+ *     PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("foo.out")));
+ * }
  *
  * will buffer the PrintWriter's output to the file.  Without buffering, each
  * invocation of a print() method would cause characters to be converted into
@@ -73,8 +72,9 @@ public class BufferedWriter extends Writer {
 
     private Writer out;
 
-    private char cb[];
-    private int nChars, nextChar;
+    private char[] cb;
+    private int nChars;
+    private int nextChar;
     private final int maxChars;  // maximum number of buffers chars
 
     /**

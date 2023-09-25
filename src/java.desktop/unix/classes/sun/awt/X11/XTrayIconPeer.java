@@ -539,7 +539,7 @@ public class XTrayIconPeer implements TrayIconPeer,
         public void realDispose(){
             super.dispose();
         }
-    };
+    }
 
     // ***************************************
     // Classes for painting an image on canvas

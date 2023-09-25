@@ -60,9 +60,9 @@ class EffectUtils {
      * Apply Gaussian Blur to Image
      *
      * @param src    The image tp
-     * @param dst    The destination image to draw blured src image into, null if you want a new one created
+     * @param dst    The destination image to draw blurred src image into, null if you want a new one created
      * @param radius The blur kernel radius
-     * @return The blured image
+     * @return The blurred image
      */
     static BufferedImage gaussianBlur(BufferedImage src, BufferedImage dst, int radius) {
         int width = src.getWidth();

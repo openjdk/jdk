@@ -117,13 +117,8 @@ public class ClassUnloadEventTest {
         // Trigger class unloading
         ClassUnloadCommon.triggerUnloading();
 
-        // Do a short delay to make sure all ClassUnloadEvents have been sent
-        // before VMDeathEvent is generated.
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-        }
-
+        // We rely on JVMTI to post all pending ObjectFree events at VM shutdown.
+        // It will trigger the JDWP agent to synthesize expected ClassUnloadEvents events.
         System.out.println("Exiting debuggee");
     }
 

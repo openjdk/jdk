@@ -29,6 +29,7 @@ import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
 import java.util.Arrays;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * A utility class for reading passwords
@@ -51,13 +52,15 @@ public class Password {
         byte[] consoleBytes = null;
 
         try {
-            // Use the new java.io.Console class
+            // Only use Console if `in` is the initial System.in
             Console con;
-            if (!isEchoOn && in == System.in && ((con = System.console()) != null)) {
+            if (!isEchoOn &&
+                    in == SharedSecrets.getJavaLangAccess().initialSystemIn() &&
+                    ((con = System.console()) != null)) {
                 consoleEntered = con.readPassword();
-                // readPassword returns "" if you just print ENTER,
+                // readPassword returns "" if you just press ENTER with the built-in Console,
                 // to be compatible with old Password class, change to null
-                if (consoleEntered != null && consoleEntered.length == 0) {
+                if (consoleEntered == null || consoleEntered.length == 0) {
                     return null;
                 }
                 consoleBytes = convertToBytes(consoleEntered);

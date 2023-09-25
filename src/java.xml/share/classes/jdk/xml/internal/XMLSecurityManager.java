@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -535,22 +535,17 @@ public final class XMLSecurityManager {
     }
 
     /**
-     * Read from system properties, or those in jaxp.properties
+     * Read system properties, or the configuration file
      */
     private void readSystemProperties() {
-
         for (Limit limit : Limit.values()) {
-            if (!getSystemProperty(limit, limit.systemProperty())) {
-                //if system property is not found, try the older form if any
-                for (NameMap nameMap : NameMap.values()) {
-                    String oldName = nameMap.getOldName(limit.systemProperty());
-                    if (oldName != null) {
-                        getSystemProperty(limit, oldName);
-                    }
-                }
+            // attempts to read both the current and old system propery
+            if (!getSystemProperty(limit, limit.systemProperty())
+                    && (!getOldSystemProperty(limit))) {
+                //if system property is not found, try the config file
+                getPropertyConfig(limit, limit.systemProperty());
             }
         }
-
     }
 
     // Array list to store printed warnings for each SAX parser used
@@ -571,9 +566,9 @@ public final class XMLSecurityManager {
     }
 
     /**
-     * Read from system properties, or those in jaxp.properties
+     * Reads a system property, sets value and state if found.
      *
-     * @param property the type of the property
+     * @param limit the limit property
      * @param sysPropertyName the name of system property
      */
     private boolean getSystemProperty(Limit limit, String sysPropertyName) {
@@ -584,8 +579,42 @@ public final class XMLSecurityManager {
                 states[limit.ordinal()] = State.SYSTEMPROPERTY;
                 return true;
             }
+        } catch (NumberFormatException e) {
+            //invalid setting
+            throw new NumberFormatException("Invalid setting for system property: " + limit.systemProperty());
+        }
+        return false;
+    }
 
-            value = SecuritySupport.readJAXPProperty(sysPropertyName);
+    /**
+     * Reads the legacy system property.
+     * @param limit a limit object
+     * @return true if found, false otherwise
+     */
+    private boolean getOldSystemProperty(Limit limit) {
+        boolean found = false;
+        for (NameMap nameMap : NameMap.values()) {
+            String oldName = nameMap.getOldName(limit.systemProperty());
+            if (oldName != null) {
+                if (getSystemProperty(limit, oldName)) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        return found;
+    }
+
+    /**
+     * Reads a property from a configuration file, if any.
+     *
+     * @param limit the limit property
+     * @param sysPropertyName the name of system property
+     * @return
+     */
+    private boolean getPropertyConfig(Limit limit, String sysPropertyName) {
+        try {
+            String value = SecuritySupport.readConfig(sysPropertyName);
             if (value != null && !value.equals("")) {
                 values[limit.ordinal()] = Integer.parseInt(value);
                 states[limit.ordinal()] = State.JAXPDOTPROPERTIES;
@@ -597,7 +626,6 @@ public final class XMLSecurityManager {
         }
         return false;
     }
-
 
     /**
      * Convert a value set through setProperty to XMLSecurityManager.

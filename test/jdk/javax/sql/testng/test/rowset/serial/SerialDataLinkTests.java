@@ -99,7 +99,7 @@ public class SerialDataLinkTests extends BaseTest {
 
     /**
      * Validate that a SerialDatalink that is serialized & deserialized is not equal
-     * to to a SerialDatalink created using a different URL
+     * to a SerialDatalink created using a different URL
      */
     @Test
     public void test05() throws Exception {

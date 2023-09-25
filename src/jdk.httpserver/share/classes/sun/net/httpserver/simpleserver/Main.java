@@ -59,6 +59,7 @@ public class Main {
      */
     public static void main(String... args) {
         setMaxReqTime();
+        JWebServer.setMaxConnectionsIfNotSet();
 
         int ec = SimpleFileServerImpl.start(new PrintWriter(System.out, true, UTF_8), "java", args);
         if (ec != 0) {

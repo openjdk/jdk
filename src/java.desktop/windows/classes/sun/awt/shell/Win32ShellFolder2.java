@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -856,10 +856,18 @@ final class Win32ShellFolder2 extends ShellFolder {
 
     /**
      * @return Whether this shell folder is a link
+     * @implNote Returns {@code true} for {@code .lnk} shortcuts only.
+     * For <i>symbolic links</i> and <i>junctions</i>, it returns
+     * {@code false} even though {@code IShellFolder} returns
+     * {@code true} now. It is a workaround for easier handling of
+     * symbolic links and junctions.
      */
+
     public boolean isLink() {
         if (cachedIsLink == null) {
-            cachedIsLink = hasAttribute(ATTRIB_LINK);
+            cachedIsLink = hasAttribute(ATTRIB_LINK)
+                           && (!isFileSystem()
+                               || getPath().toLowerCase().endsWith(".lnk"));
         }
 
         return cachedIsLink;
@@ -901,7 +909,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                         location =
                                 Win32ShellFolderManager2.createShellFolderFromRelativePIDL(getDesktop(),
                                         linkLocationPIDL);
-                    } catch (InterruptedException e) {
+                    } catch (InterruptedException | FileNotFoundException e) {
                         // Return null
                     } catch (InternalError e) {
                         // Could be a link to a non-bindable object, such as a network connection
@@ -1131,6 +1139,14 @@ final class Win32ShellFolder2 extends ShellFolder {
     }
 
     /**
+     * The data is not available yet.
+     * @see
+     * <a href="https://learn.microsoft.com/en-us/windows/win32/com/com-error-codes-1">COM
+     * Error Codes</a>.
+     */
+    private static final long E_PENDING = 0x8000000AL;
+
+    /**
      * @return The icon image of specified size used to display this shell folder
      */
     public Image getIcon(int width, int height) {
@@ -1155,10 +1171,10 @@ final class Win32ShellFolder2 extends ShellFolder {
                             getRelativePIDL(), s, false);
 
                     // E_PENDING: loading can take time so get the default
-                    if (hIcon <= 0) {
+                    if (hIcon == E_PENDING || hIcon == 0) {
                         hIcon = extractIcon(getParentIShellFolder(),
                                 getRelativePIDL(), s, true);
-                        if (hIcon <= 0) {
+                        if (hIcon == 0) {
                             if (isDirectory()) {
                                 newIcon = getShell32Icon(FOLDER_ICON_ID, size);
                             } else {
@@ -1395,11 +1411,14 @@ final class Win32ShellFolder2 extends ShellFolder {
         final Map<Integer, Image> resolutionVariants = new HashMap<>();
 
         public MultiResolutionIconImage(int baseSize, Map<Integer, Image> resolutionVariants) {
+            assert !resolutionVariants.containsValue(null)
+                   : "There are null icons in the MRI variants map";
             this.baseSize = baseSize;
             this.resolutionVariants.putAll(resolutionVariants);
         }
 
         public MultiResolutionIconImage(int baseSize, Image image) {
+            assert image != null : "Null icon passed as the base image for MRI";
             this.baseSize = baseSize;
             this.resolutionVariants.put(baseSize, image);
         }

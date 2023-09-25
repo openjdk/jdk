@@ -649,7 +649,7 @@ JNIEXPORT extern jint sunHints_INTVAL_STROKE_PURE;
     REGISTER_PRIMITIVE(DrawGlyphListLCD, SRC, COMP, DST, FUNC)
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 #endif /* GraphicsPrimitiveMgr_h_Included */

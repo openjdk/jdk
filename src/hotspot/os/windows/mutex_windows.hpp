@@ -56,7 +56,7 @@ class PlatformMonitor : public PlatformMutex {
  public:
   PlatformMonitor();
   ~PlatformMonitor();
-  int wait(jlong millis);
+  int wait(uint64_t millis);
   void notify();
   void notify_all();
 };

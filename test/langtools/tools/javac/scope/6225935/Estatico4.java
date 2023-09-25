@@ -12,7 +12,7 @@ import static javax.swing.JLabel.*;
 
 public class Estatico4 {
 
-  public static void main(String[] s) {
+  public static void meth() {
     System.out.println(CENTER);
   }
 

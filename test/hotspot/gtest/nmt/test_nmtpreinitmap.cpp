@@ -78,7 +78,7 @@ TEST_VM(NMTPreInit, stress_test_map) {
 
   // look them all up
   for (int i = 0; i < num_allocs; i++) {
-    const NMTPreInitAllocation* a = table.find(allocations[i]->payload());
+    const NMTPreInitAllocation* a = table.find(allocations[i]->payload);
     ASSERT_EQ(a, allocations[i]);
   }
 
@@ -86,7 +86,7 @@ TEST_VM(NMTPreInit, stress_test_map) {
   for (int j = 0; j < num_allocs/2; j++) {
     int pos = os::random() % num_allocs;
     NMTPreInitAllocation* a1 = allocations[pos];
-    NMTPreInitAllocation* a2 = table.find_and_remove(a1->payload());
+    NMTPreInitAllocation* a2 = table.find_and_remove(a1->payload);
     ASSERT_EQ(a1, a2);
     NMTPreInitAllocation* a3 = NMTPreInitAllocation::do_reallocate(a2, small_random_nonzero_size());
     table.add(a3);
@@ -97,13 +97,13 @@ TEST_VM(NMTPreInit, stress_test_map) {
 
   // look them all up
   for (int i = 0; i < num_allocs; i++) {
-    const NMTPreInitAllocation* a = table.find(allocations[i]->payload());
+    const NMTPreInitAllocation* a = table.find(allocations[i]->payload);
     ASSERT_EQ(a, allocations[i]);
   }
 
   // free all
   for (int i = 0; i < num_allocs; i++) {
-    NMTPreInitAllocation* a = table.find_and_remove(allocations[i]->payload());
+    NMTPreInitAllocation* a = table.find_and_remove(allocations[i]->payload);
     ASSERT_EQ(a, allocations[i]);
     NMTPreInitAllocation::do_free(a);
     allocations[i] = NULL;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZMEMORY_HPP
 #define SHARE_GC_Z_ZMEMORY_HPP
 
+#include "gc/z/zAddress.hpp"
 #include "gc/z/zList.hpp"
 #include "gc/z/zLock.hpp"
 #include "memory/allocation.hpp"
@@ -32,15 +33,15 @@ class ZMemory : public CHeapObj<mtGC> {
   friend class ZList<ZMemory>;
 
 private:
-  uintptr_t          _start;
-  uintptr_t          _end;
+  zoffset            _start;
+  zoffset_end        _end;
   ZListNode<ZMemory> _node;
 
 public:
-  ZMemory(uintptr_t start, size_t size);
+  ZMemory(zoffset start, size_t size);
 
-  uintptr_t start() const;
-  uintptr_t end() const;
+  zoffset start() const;
+  zoffset_end end() const;
   size_t size() const;
 
   void shrink_from_front(size_t size);
@@ -70,7 +71,7 @@ private:
   ZList<ZMemory> _freelist;
   Callbacks      _callbacks;
 
-  ZMemory* create(uintptr_t start, size_t size);
+  ZMemory* create(zoffset start, size_t size);
   void destroy(ZMemory* area);
   void shrink_from_front(ZMemory* area, size_t size);
   void shrink_from_back(ZMemory* area, size_t size);
@@ -80,14 +81,16 @@ private:
 public:
   ZMemoryManager();
 
+  bool free_is_contiguous() const;
+
   void register_callbacks(const Callbacks& callbacks);
 
-  uintptr_t peek_low_address() const;
-  uintptr_t alloc_low_address(size_t size);
-  uintptr_t alloc_low_address_at_most(size_t size, size_t* allocated);
-  uintptr_t alloc_high_address(size_t size);
+  zoffset peek_low_address() const;
+  zoffset alloc_low_address(size_t size);
+  zoffset alloc_low_address_at_most(size_t size, size_t* allocated);
+  zoffset alloc_high_address(size_t size);
 
-  void free(uintptr_t start, size_t size);
+  void free(zoffset start, size_t size);
 };
 
 #endif // SHARE_GC_Z_ZMEMORY_HPP
