@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,29 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_CPU_BSD_AARCH64_PAUTH_BSD_AARCH64_INLINE_HPP
-#define OS_CPU_BSD_AARCH64_PAUTH_BSD_AARCH64_INLINE_HPP
+import javax.swing.JScrollPane;
 
-// OS specific Support for ROP Protection in VM code.
-// For more details on PAC see pauth_aarch64.hpp.
+/*
+ * @test
+ * @bug 4247092
+ * @summary JScrollPane.setCorner(corner,null) causes NPE, but defolt getCorner() rtns null
+ * @run main bug4247092
+ */
 
-inline address pauth_strip_pointer(address ptr) {
-  // No PAC support in BSD as of yet.
-  return ptr;
+public class bug4247092 {
+    public static void main(String[] args) {
+        JScrollPane sp = new JScrollPane();
+        sp.setCorner(JScrollPane.LOWER_RIGHT_CORNER, null);
+        if (sp.getCorner(JScrollPane.LOWER_RIGHT_CORNER) != null) {
+            throw new RuntimeException("The corner component should be null");
+        }
+        System.out.println("Test Passed!");
+    }
 }
-
-inline address pauth_sign_return_address(address ret_addr) {
-  // No PAC support in BSD as of yet.
-  return ret_addr;
-}
-
-inline address pauth_authenticate_return_address(address ret_addr) {
-  // No PAC support in BSD as of yet.
-  return ret_addr;
-}
-
-#endif // OS_CPU_BSD_AARCH64_PAUTH_BSD_AARCH64_INLINE_HPP
-

@@ -1721,8 +1721,8 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("# stack bang size=%d\n\t", framesize);
 
   if (VM_Version::use_rop_protection()) {
-    st->print("ldr zr, [lr]\n\t");
-    st->print("pacia  lr, rfp\n\t");
+    st->print("ldr  zr, [lr]\n\t");
+    st->print("paciaz\n\t");
   }
   if (framesize < ((1 << 9) + 2 * wordSize)) {
     st->print("sub  sp, sp, #%d\n\t", framesize);
@@ -1851,8 +1851,8 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("ldp  lr, rfp, [sp],#%d\n\t", (2 * wordSize));
   }
   if (VM_Version::use_rop_protection()) {
-    st->print("autia lr, rfp\n\t");
-    st->print("ldr zr, [lr]\n\t");
+    st->print("autiaz\n\t");
+    st->print("ldr  zr, [lr]\n\t");
   }
 
   if (do_polling() && C->is_method_compilation()) {
