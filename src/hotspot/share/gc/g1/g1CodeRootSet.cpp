@@ -169,7 +169,7 @@ public:
     _table_scanner.do_safepoint_scan(do_value);
   }
 
-  // Removes entries as indicated by the given EVAL closure. Single-threaded.
+  // Removes entries as indicated by the given EVAL closure.
   template <class EVAL>
   void clean(EVAL& eval) {
     // A lot of code root sets are typically empty.
@@ -191,44 +191,13 @@ public:
     }
   }
 
-  struct G1CodeRootSetHashTableDeleteUnlinked : StackObj {
-    size_t _num_retained;
-
-    G1CodeRootSetHashTableDeleteUnlinked() : _num_retained(0) {}
-    bool operator()(G1CodeRootSetHashTableValue* value) {
-      nmethod* unlinked_next = value->_nmethod->unlinked_next();
-      if (unlinked_next != nullptr) {
-        return true;
-      } else {
-        ++_num_retained;
-        return false;
-      }
-    }
-  };
-
-  // Removes unlinked entries, multi-threaded.
+  // Removes dead/unlinked entries.
   void remove_dead_entries() {
-    assert_at_safepoint();
-
-    // A lot of code root sets are typically empty.
-    if (is_empty()) {
-      return;
-    }
-
-    HashTable::BulkDeleteTask bdt(&_table);
-
-    bool locked = bdt.prepare(Thread::current());
-    guarantee(locked, "must be");
-
-    G1CodeRootSetHashTableDeleteUnlinked delete_check;
-    HashTableIgnore ignore;
-    while (bdt.do_task(Thread::current(), delete_check, ignore)) {
-      /* do nothing */
-    }
-    bdt.done(Thread::current());
-
-    Atomic::store(&_num_entries, delete_check._num_retained);
-    shrink_to_match(delete_check._num_retained);
+    auto delete_check =
+      [&] (G1CodeRootSetHashTableValue* value) {
+        return value->_nmethod->unlinked_next() != nullptr;
+      };
+    clean(delete_check);
   }
 
   // Calculate the log2 of the table size we want to shrink to.

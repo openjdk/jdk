@@ -33,16 +33,8 @@ class HeapRegion;
 class nmethod;
 
 // Implements storage for a set of code roots.
-// This class is not thread safe, locks are needed.
+// This class is thread safe.
 class G1CodeRootSet {
-  friend class G1CodeRootSetTest;
-  friend class G1CodeRootSetTest_g1_code_cache_rem_set_vm_Test;
-
- private:
-  const static size_t SmallSize = 32;
-  const static size_t Threshold = 24;
-  const static size_t LargeSize = 512;
-
   G1CodeRootSetHashTable* _table;
   DEBUG_ONLY(mutable bool _is_iterating;)
 
