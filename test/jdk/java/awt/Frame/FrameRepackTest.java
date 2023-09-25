@@ -43,7 +43,7 @@ import javax.swing.SwingUtilities;
  * @run main/manual FrameRepackTest
  */
 
-public class FrameRepackTest  {
+public class FrameRepackTest {
 
     private static final String INSTRUCTIONS = """
             There is a green frame with a menubar.
