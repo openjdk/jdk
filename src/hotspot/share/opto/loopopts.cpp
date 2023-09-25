@@ -2130,7 +2130,7 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       while( use->in(idx) != old ) idx++;
       Node *prev = use->is_CFG() ? use : get_ctrl(use);
       assert(!loop->is_member(get_loop(prev)) && !outer_loop->is_member(get_loop(prev)), "" );
-      Node *cfg = (prev->_idx >= new_counter && prev->is_Region())
+      Node* cfg = (prev->_idx >= new_counter && prev->is_Region())
         ? prev->in(2)
         : idom(prev);
       if( use->is_Phi() )     // Phi use is in prior block
