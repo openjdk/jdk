@@ -2614,6 +2614,12 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
         }
 
         assert(use->is_Proj(), "loop exit should be projection");
+        // lazy_replace() below moves all nodes that are:
+        // - control dependent on the loop exit or
+        // - have control set to the loop exit
+        // below the post-loop merge point. lazy_replace() takes a dead control as first input. To make it
+        // possible to use it, the loop exit projection is cloned and become the new exit projection. The initial one
+        // becomes dead and is "replaced" by the region.
         Node* use_clone = use->clone();
         register_control(use_clone, use_loop, idom(use), dom_depth(use));
         // Now finish up 'r'
