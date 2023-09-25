@@ -6349,6 +6349,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register t1,
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, hdr, t1, t2);
 
+  ldrw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
 #ifdef ASSERT
   {
     // The following checks rely on the fact that LockStack is only ever modified by
@@ -6357,21 +6358,10 @@ void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register t1,
 
     // Check for lock-stack underflow.
     Label stack_ok;
-    ldrw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
     cmpw(t1, (unsigned)LockStack::start_offset());
     br(Assembler::GT, stack_ok);
     STOP("Lock-stack underflow");
     bind(stack_ok);
-  }
-  {
-    // Check if the top of the lock-stack matches the unlocked object.
-    Label tos_ok;
-    subw(t1, t1, oopSize);
-    ldr(t1, Address(rthread, t1));
-    cmpoop(t1, obj);
-    br(Assembler::EQ, tos_ok);
-    STOP("Top of lock-stack does not match the unlocked object");
-    bind(tos_ok);
   }
   {
     // Check that hdr is fast-locked.
@@ -6382,6 +6372,12 @@ void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register t1,
     bind(hdr_ok);
   }
 #endif
+
+  // Check if the top of the lock-stack matches the unlocked object.
+  subw(t1, t1, oopSize);
+  ldr(t2, Address(rthread, t1));
+  cmpoop(t2, obj);
+  br(Assembler::NE, slow);
 
   // Load the new header (unlocked) into t1
   orr(t1, hdr, markWord::unlocked_value);

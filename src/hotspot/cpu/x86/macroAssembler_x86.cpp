@@ -9836,6 +9836,20 @@ void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register tmp
   assert(hdr == rax, "header must be in rax for cmpxchg");
   assert_different_registers(obj, hdr, tmp);
 
+  // Check if the top of the lock-stack matches the unlocked object.
+#ifdef _LP64
+  const Register thread = r15_thread;
+#else
+  const Register thread = rax;
+  // TODO: push hdr and use below from stack
+  // get_thread(thread);
+#endif
+#ifdef _LP64
+  movl(tmp, Address(thread, JavaThread::lock_stack_top_offset()));
+  cmpptr(obj, Address(thread, tmp, Address::times_1, -oopSize));
+  jcc(Assembler::notEqual, slow);
+#endif
+
   // Mark-word must be lock_mask now, try to swing it back to unlocked_value.
   movptr(tmp, hdr); // The expected old value
   orptr(tmp, markWord::unlocked_value);
@@ -9843,10 +9857,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register tmp
   cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
   jcc(Assembler::notEqual, slow);
   // Pop the lock object from the lock-stack.
-#ifdef _LP64
-  const Register thread = r15_thread;
-#else
-  const Register thread = rax;
+#ifndef _LP64
   get_thread(thread);
 #endif
   subl(Address(thread, JavaThread::lock_stack_top_offset()), oopSize);
