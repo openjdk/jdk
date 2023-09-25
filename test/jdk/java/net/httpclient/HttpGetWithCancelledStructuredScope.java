@@ -30,12 +30,20 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jdk.internal.net.http.common.OperationTrackers.Tracker;
 import jdk.test.lib.net.SimpleSSLContext;
@@ -48,7 +56,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /*
  * @test
  * @bug 8316580
- * @enablePreview
  * @library /test/lib
  * @run junit/othervm -Djdk.tracePinnedThreads=full
  *                   -DuseReferenceTracker=false
@@ -56,12 +63,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @run junit/othervm -Djdk.tracePinnedThreads=full
  *                   -DuseReferenceTracker=true
  *                   HttpGetWithCancelledStructuredScope
- * @summary This test verifies that when the HttpClient is used in a
- *  StructuredScope, and the scope gets cancelled due to some exception, all
- *  operations started by the client are properly cancelled and the client
- *  can exit. Note that enabling logging makes the original issue difficult
- *  (or impossible) to reproduce.
- *
+ * @summary This test verifies that cancelling a future that
+ * does an HTTP request using the HttpClient doesn't cause
+ * HttpClient::close to block forever.
  */
 public class HttpGetWithCancelledStructuredScope {
 
@@ -109,10 +113,109 @@ public class HttpGetWithCancelledStructuredScope {
         runTest(test.url, test.reqCount, test.version);
     }
 
+    static class StructuredTaskScope implements AutoCloseable {
+        final ExecutorService pool = new ForkJoinPool();
+        final Map<Task<?>, Future<?>> tasks = new ConcurrentHashMap<>();
+        final AtomicReference<ExecutionException> failed = new AtomicReference<>();
+
+        class Task<T> implements Callable<T> {
+            final Callable<T> task;
+            final CompletableFuture<T> cf = new CompletableFuture<>();
+            Task(Callable<T>  task) {
+                this.task = task;
+            }
+            @Override
+            public T call() throws Exception {
+                try {
+                    var res = task.call();
+                    cf.complete(res);
+                    return res;
+                } catch (Throwable t) {
+                    cf.completeExceptionally(t);
+                    throw t;
+                }
+            }
+            CompletableFuture<T> cf() {
+                return cf;
+            }
+        }
+
+
+        static class ShutdownOnFailure extends StructuredTaskScope {
+            public ShutdownOnFailure() {}
+
+            @Override
+            protected <T> void completed(Task<T> task, T result, Throwable throwable) {
+                super.completed(task, result, throwable);
+                if (throwable != null) {
+                    if (failed.get() == null) {
+                        ExecutionException ex = throwable instanceof ExecutionException x
+                                ? x : new ExecutionException(throwable);
+                        failed.compareAndSet(null, ex);
+                    }
+                    tasks.entrySet().forEach(this::cancel);
+                }
+            }
+
+            void cancel(Map.Entry<Task<?>, Future<?>> entry) {
+                entry.getValue().cancel(true);
+                entry.getKey().cf().cancel(true);
+                tasks.remove(entry.getKey(), entry.getValue());
+            }
+
+            @Override
+            public <T> CompletableFuture<T> fork(Callable<T> callable) {
+                var ex = failed.get();
+                if (ex == null) {
+                    return super.fork(callable);
+                } // otherwise do nothing
+                return CompletableFuture.failedFuture(new RejectedExecutionException());
+            }
+        }
+
+        public <T> CompletableFuture<T> fork(Callable<T> callable) {
+            var task = new Task<>(callable);
+            var res = pool.submit(task);
+            tasks.put(task, res);
+            task.cf.whenComplete((r,t) -> completed(task, r, t));
+            return task.cf;
+        }
+
+        protected  <T> void completed(Task<T> task, T result, Throwable throwable) {
+            tasks.remove(task);
+        }
+
+        public void join() throws InterruptedException {
+            try {
+                var cfs = tasks.keySet().stream()
+                        .map(Task::cf).toArray(CompletableFuture[]::new);
+                CompletableFuture.allOf(cfs).get();
+            } catch (InterruptedException it) {
+                throw it;
+            } catch (ExecutionException ex) {
+                failed.compareAndSet(null, ex);
+            }
+        }
+
+        public void throwIfFailed() throws ExecutionException {
+            ExecutionException x = failed.get();
+            if (x != null) throw x;
+        }
+
+        public void close() {
+            pool.close();
+        }
+    }
+
+    ExecutorService testExecutor() {
+        // return Executors.newVirtualThreadPerTaskExecutor();
+        return Executors.newCachedThreadPool();
+    }
+
     void runTest(String url, int reqCount, Version version) {
         final var dest = URI.create(url);
-        try (final var virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor()) {
-            var httpClient = makeClient(dest, version, virtualThreadExecutor);
+        try (final var executor = testExecutor()) {
+            var httpClient = makeClient(dest, version, executor);
             TRACKER.track(httpClient);
             Tracker tracker = TRACKER.getTracker(httpClient);
             Throwable failed = null;
