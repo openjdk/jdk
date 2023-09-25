@@ -1104,7 +1104,7 @@ class methodHandle;
    do_signature(vector_extract_sig, "(Ljava/lang/Class;"                                                                                       \
                                      "Ljava/lang/Class;"                                                                                       \
                                      "I"                                                                                                       \
-                                     "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                           \
+                                     "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;"                                                    \
                                      "I"                                                                                                       \
                                      "Ljdk/internal/vm/vector/VectorSupport$VecExtractOp;)"                                                    \
                                      "J")                                                                                                      \

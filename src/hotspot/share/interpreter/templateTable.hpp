@@ -266,7 +266,16 @@ class TemplateTable: AllStatic {
                                       Register cache,    // output for CP cache
                                       Register index,    // output for CP index
                                       size_t index_size); // one of 1,2,4
+  static void resolve_cache_and_index_for_field(int byte_no,
+                                                Register cache,
+                                                Register index);
   static void load_invokedynamic_entry(Register method);
+  static void load_resolved_field_entry(Register obj,
+                                        Register cache,
+                                        Register tos_state,
+                                        Register off,
+                                        Register flags,
+                                        bool is_static);
   static void load_invoke_cp_cache_entry(int byte_no,
                                          Register method,
                                          Register itable_index,

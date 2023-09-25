@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,7 @@ public class BasicTreeUI extends TreeUI
     /** Set to true if the editor has a different size than the renderer. */
     protected boolean           editorHasDifferentSize;
 
-    /** Row correspondin to lead path. */
+    /** Row corresponding to lead path. */
     private int                 leadRow;
     /** If true, the property change event for LEAD_SELECTION_PATH_PROPERTY,
      * or ANCHOR_SELECTION_PATH_PROPERTY will not generate a repaint. */
@@ -984,7 +984,7 @@ public class BasicTreeUI extends TreeUI
     }
 
     /**
-     * Intalls the subcomponents of the tree, which is the renderer pane.
+     * Installs the subcomponents of the tree, which is the renderer pane.
      */
     protected void installComponents() {
         if ((rendererPane = createCellRendererPane()) != null) {

@@ -107,7 +107,6 @@ class java_lang_String : AllStatic {
   static int value_offset() { CHECK_INIT(_value_offset); }
   static int coder_offset() { CHECK_INIT(_coder_offset); }
 
-  static inline void set_value_raw(oop string, typeArrayOop buffer);
   static inline void set_value(oop string, typeArrayOop buffer);
 
   // Set the deduplication_forbidden flag true.  This flag is sticky; once
@@ -1199,7 +1198,6 @@ class jdk_internal_foreign_abi_CallConv: AllStatic {
 // (These are a private interface for Java code to query the class hierarchy.)
 
 #define RESOLVEDMETHOD_INJECTED_FIELDS(macro)                                   \
-  macro(java_lang_invoke_ResolvedMethodName, vmholder, object_signature, false) \
   macro(java_lang_invoke_ResolvedMethodName, vmtarget, intptr_signature, false)
 
 class java_lang_invoke_ResolvedMethodName : AllStatic {
@@ -1288,6 +1286,7 @@ class java_lang_invoke_MemberName: AllStatic {
     MN_IS_TYPE               = 0x00080000, // nested type
     MN_CALLER_SENSITIVE      = 0x00100000, // @CallerSensitive annotation detected
     MN_TRUSTED_FINAL         = 0x00200000, // trusted final field
+    MN_HIDDEN_MEMBER         = 0x00400000, // @Hidden annotation detected
     MN_REFERENCE_KIND_SHIFT  = 24, // refKind
     MN_REFERENCE_KIND_MASK   = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT,
     MN_NESTMATE_CLASS        = 0x00000001,
@@ -1591,6 +1590,26 @@ class Backtrace: AllStatic {
   friend class JavaClasses;
 };
 
+class java_lang_ClassFrameInfo: AllStatic {
+private:
+  static int _classOrMemberName_offset;
+  static int _flags_offset;
+
+public:
+  static oop  classOrMemberName(oop info);
+  static int  flags(oop info);
+
+  // Setters
+  static void init_class(Handle stackFrame, const methodHandle& m);
+  static void init_method(Handle stackFrame, const methodHandle& m, TRAPS);
+
+  static void compute_offsets();
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+
+  // Debugging
+  friend class JavaClasses;
+};
+
 // Interface to java.lang.StackFrameInfo objects
 
 #define STACKFRAMEINFO_INJECTED_FIELDS(macro)                      \
@@ -1598,16 +1617,22 @@ class Backtrace: AllStatic {
 
 class java_lang_StackFrameInfo: AllStatic {
 private:
-  static int _memberName_offset;
+  static int _type_offset;
+  static int _name_offset;
   static int _bci_offset;
   static int _version_offset;
   static int _contScope_offset;
 
-  static Method* get_method(Handle stackFrame, InstanceKlass* holder, TRAPS);
-
 public:
+  // Getters
+  static oop name(oop info);
+  static oop type(oop info);
+  static Method* get_method(oop info);
+
   // Setters
   static void set_method_and_bci(Handle stackFrame, const methodHandle& method, int bci, oop cont, TRAPS);
+  static void set_name(oop info, oop value);
+  static void set_type(oop info, oop value);
   static void set_bci(oop info, int value);
 
   static void set_version(oop info, short value);

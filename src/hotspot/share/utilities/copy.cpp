@@ -236,7 +236,7 @@ void Copy::fill_to_memory_atomic(void* to, size_t size, jubyte value) {
     }
   } else if (bits % sizeof(jshort) == 0) {
     jshort fill = (jushort)( (jubyte)value ); // zero-extend
-    fill += fill << 8;
+    fill += (jshort)(fill << 8);
     //Copy::fill_to_jshorts_atomic((jshort*) dst, size / sizeof(jshort));
     for (uintptr_t off = 0; off < size; off += sizeof(jshort)) {
       *(jshort*)(dst + off) = fill;

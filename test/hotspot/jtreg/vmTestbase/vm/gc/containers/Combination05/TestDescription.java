@@ -33,9 +33,9 @@
  *          /test/lib
  * @run main/othervm
  *      -XX:-UseGCOverheadLimit
+ *      -Xlog:gc*:gc.log::filecount=0
  *      vm.gc.containers.ContainersTest
  *      -ms low
  *      -ct TreeSet(randomString)
  *      -ct LinkedHashSet(random(arrays))
  */
-

@@ -68,6 +68,9 @@ import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
  * <p>
  * Complex class instrumentation sample chaining multiple transformations:
  * {@snippet lang="java" class="PackageSnippets" region="classInstrumentation"}
+ * @param <C> the transform type
+ * @param <E> the element type
+ * @param <B> the builder type
  */
 public sealed interface ClassfileTransform<
         C extends ClassfileTransform<C, E, B>,

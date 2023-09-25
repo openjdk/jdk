@@ -1525,7 +1525,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             interestOps |= newOps;
             pending.add(e);
             if (debug.on())
-                debug.log("Registering %s for %d (%s)",
+                debug.log("Registering %s for %s (%s)",
                         e, Utils.describeOps(newOps), reRegister);
             if (reRegister) {
                 // first time registration happens here also

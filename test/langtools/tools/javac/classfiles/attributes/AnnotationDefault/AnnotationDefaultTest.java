@@ -28,24 +28,31 @@
  * @library /tools/lib /tools/javac/lib ../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @build AnnotationDefaultTest AnnotationDefaultVerifier
  * @run main AnnotationDefaultTest
  */
 
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.RetentionPolicy;
 import java.nio.file.Files;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.sun.tools.classfile.*;
 
 public class AnnotationDefaultTest extends TestResult {
 
@@ -68,14 +75,13 @@ public class AnnotationDefaultTest extends TestResult {
             // Map <method-name, expected-annotation-default-values>
             Map<String, ExpectedValues> expectedValues =
                     getExpectedValues(forName(className, fileManager));
-            ClassFile classFile = readClassFile(fileManager.getClasses().get(className));
+            ClassModel classFile = readClassFile(fileManager.getClasses().get(className));
 
-            for (Method method : classFile.methods) {
-                String methodName = method.getName(classFile.constant_pool);
+            for (MethodModel method : classFile.methods()) {
+                String methodName = method.methodName().stringValue();
                 printf("Testing method : %s\n", methodName);
-                AnnotationDefault_attribute attr =
-                        (AnnotationDefault_attribute) method.attributes
-                                .get(Attribute.AnnotationDefault);
+                AnnotationDefaultAttribute attr =
+                        method.findAttribute(Attributes.ANNOTATION_DEFAULT).orElse(null);
 
                 if (hasDefault && !checkNotNull(attr, "Attribute is not null")
                         || !hasDefault && checkNull(attr, "Attribute is null")) {
@@ -83,20 +89,19 @@ public class AnnotationDefaultTest extends TestResult {
                     continue;
                 }
 
-                checkEquals(countNumberOfAttributes(method.attributes.attrs),
-                        1l,
+                checkEquals(countNumberOfAttributes(method.attributes()),
+                        1L,
                         "Number of AnnotationDefault attribute");
-                checkEquals(classFile.constant_pool
-                        .getUTF8Value(attr.attribute_name_index),
+                checkEquals(attr.attributeName(),
                         "AnnotationDefault", "attribute_name_index");
 
                 ExpectedValues expectedValue = expectedValues.get(methodName);
-                checkEquals((char) attr.default_value.tag, expectedValue.tag(),
+                checkEquals(attr.defaultValue().tag(), expectedValue.tag(),
                         String.format("check tag : %c %s", expectedValue.tag(), expectedValue.name()));
-                verifier.testElementValue(attr.default_value.tag,
-                        this, classFile, attr.default_value,
+                verifier.testElementValue((int)attr.defaultValue().tag(),
+                        this, classFile, attr.defaultValue(),
                         expectedValue.values());
-                verifier.testLength(attr.default_value.tag, this, attr);
+                verifier.testLength((int)attr.defaultValue().tag(), this, attr);
             }
         } catch (Exception e) {
             addFailure(e);
@@ -124,9 +129,9 @@ public class AnnotationDefaultTest extends TestResult {
         return ans;
     }
 
-    private long countNumberOfAttributes(Attribute[] attrs) {
-        return Stream.of(attrs)
-                .filter(x -> x instanceof AnnotationDefault_attribute)
+    private long countNumberOfAttributes(List<Attribute<?>> attrs) {
+        return attrs.stream()
+                .filter(x -> x instanceof AnnotationDefaultAttribute)
                 .count();
     }
 
