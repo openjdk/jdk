@@ -59,15 +59,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @library /test/lib
  * @run junit/othervm -Djdk.tracePinnedThreads=full
  *                   -DuseReferenceTracker=false
- *                   HttpGetWithCancelledStructuredScope
+ *                   HttpGetInCancelledFuture
  * @run junit/othervm -Djdk.tracePinnedThreads=full
  *                   -DuseReferenceTracker=true
- *                   HttpGetWithCancelledStructuredScope
+ *                   HttpGetInCancelledFuture
  * @summary This test verifies that cancelling a future that
  * does an HTTP request using the HttpClient doesn't cause
  * HttpClient::close to block forever.
  */
-public class HttpGetWithCancelledStructuredScope {
+public class HttpGetInCancelledFuture {
 
     static final boolean useTracker = Boolean.getBoolean("useReferenceTracker");
 
@@ -113,7 +113,7 @@ public class HttpGetWithCancelledStructuredScope {
         runTest(test.url, test.reqCount, test.version);
     }
 
-    static class StructuredTaskScope implements AutoCloseable {
+    static class TestTaskScope implements AutoCloseable {
         final ExecutorService pool = new ForkJoinPool();
         final Map<Task<?>, Future<?>> tasks = new ConcurrentHashMap<>();
         final AtomicReference<ExecutionException> failed = new AtomicReference<>();
@@ -141,7 +141,7 @@ public class HttpGetWithCancelledStructuredScope {
         }
 
 
-        static class ShutdownOnFailure extends StructuredTaskScope {
+        static class ShutdownOnFailure extends TestTaskScope {
             public ShutdownOnFailure() {}
 
             @Override
@@ -208,7 +208,6 @@ public class HttpGetWithCancelledStructuredScope {
     }
 
     ExecutorService testExecutor() {
-        // return Executors.newVirtualThreadPerTaskExecutor();
         return Executors.newCachedThreadPool();
     }
 
@@ -220,7 +219,7 @@ public class HttpGetWithCancelledStructuredScope {
             Tracker tracker = TRACKER.getTracker(httpClient);
             Throwable failed = null;
             try {
-                try (final var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+                try (final var scope = new TestTaskScope.ShutdownOnFailure()) {
                     launchAndProcessRequests(scope, httpClient, reqCount, dest);
                 } finally {
                     System.out.printf("StructuredTaskScope closed: STARTED=%s, SUCCESS=%s, INTERRUPT=%s, FAILED=%s%n",
@@ -278,7 +277,7 @@ public class HttpGetWithCancelledStructuredScope {
     }
 
     private void launchAndProcessRequests(
-            StructuredTaskScope.ShutdownOnFailure scope,
+            TestTaskScope.ShutdownOnFailure scope,
             HttpClient httpClient,
             int reqCount,
             URI dest) {
