@@ -28,9 +28,6 @@
  * @run main bug4248723
  */
 
-import javax.swing.ComponentInputMap;
-import javax.swing.JButton;
-import javax.swing.KeyStroke;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.ByteArrayInputStream;
@@ -38,6 +35,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import javax.swing.ComponentInputMap;
+import javax.swing.JButton;
+import javax.swing.KeyStroke;
 
 public class bug4248723 {
     public static Object serializeAndDeserialize(Object toWrite)
@@ -62,8 +62,8 @@ public class bug4248723 {
                 KeyEvent.VK_B, InputEvent.CTRL_DOWN_MASK), "A");
         try {
             cim = (ComponentInputMap)serializeAndDeserialize(cim);
-        } catch (ClassNotFoundException e) {
-        } catch (IOException e) {
+        } catch (ClassNotFoundException|IOException ignore) {
+            // Should not cause test to fail so silently ignore these
         }
     }
 }

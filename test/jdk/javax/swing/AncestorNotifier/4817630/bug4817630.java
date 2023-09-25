@@ -29,13 +29,12 @@
  *  @run main bug4817630
  */
 
+import java.lang.reflect.InvocationTargetException;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
-import java.lang.reflect.InvocationTargetException;
-
 
 public class bug4817630 {
 
@@ -77,20 +76,20 @@ public class bug4817630 {
                     bug4817630.this.wait();
                 }
             }
-        } catch (Exception e) {
+        } catch(Exception e) {
             throw new RuntimeException("Test failed because of "
                     + e.getLocalizedMessage());
         }
     }
 
     public void destroy() {
-        if (!isPassed()) {
-            throw new RuntimeException("ancestorAdded() method shouldn't be "
-                    + "called before the frame is shown.");
-        }
         if (fr != null) {
             fr.setVisible(false);
             fr.dispose();
+        }
+        if (!isPassed()) {
+            throw new RuntimeException("ancestorAdded() method shouldn't be "
+                    + "called before the frame is shown.");
         }
     }
 
@@ -109,7 +108,7 @@ public class bug4817630 {
             SwingUtilities.invokeAndWait(test::init);
             test.start();
         } finally {
-            test.destroy();
+            SwingUtilities.invokeAndWait(test::destroy);
         }
     }
 }

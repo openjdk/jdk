@@ -29,13 +29,13 @@
  * @run main bug4191948
  */
 
+import java.awt.BorderLayout;
+import java.lang.reflect.InvocationTargetException;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-import java.awt.BorderLayout;
-import java.lang.reflect.InvocationTargetException;
 
 public class bug4191948 {
     JFrame frame;
