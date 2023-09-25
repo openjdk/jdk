@@ -4340,7 +4340,7 @@ class StubGenerator: public StubCodeGenerator {
     // Put 16 here, as com.sun.crypto.providerChaCha20Cipher.KS_MAX_LEN is 1024
     // in java level.
     __ li(avl, 16);
-    __ vsetvli(length, avl, Assembler::e32, Assembler::m1, Assembler::ma, Assembler::ta);
+    __ vsetvli(length, avl, Assembler::e32, Assembler::m1);
 
     // Load from source state
     __ mv(tmp_addr, state);
