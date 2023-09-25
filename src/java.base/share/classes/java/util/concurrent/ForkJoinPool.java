@@ -1296,9 +1296,9 @@ public class ForkJoinPool extends AbstractExecutorService {
          */
         final void push(ForkJoinTask<?> task, ForkJoinPool pool,
                         boolean internal) {
-            int s = top++, cap, m; ForkJoinTask<?>[] a;
+            int s = top++, cap, m, room; ForkJoinTask<?>[] a;
             if ((a = array) != null && (cap = a.length) > 0) {
-                if ((m = cap - 1) == s - base)
+                if ((room = (m = cap - 1) - (s - base)) == 0)
                     growAndPush(task, a, s, internal);
                 else {
                     long pos = slotOffset(m & s);
@@ -1308,9 +1308,9 @@ public class ForkJoinPool extends AbstractExecutorService {
                         U.putReference(a, pos, task);          // inside lock
                         unlockPhase();
                     }
-                    if (a[m & (s - 1)] == null && pool != null)
-                        pool.signalWork();
                 }
+                if ((room == 0 || a[m & (s - 1)] == null) && pool != null)
+                    pool.signalWork();
             }
         }
 
@@ -1321,6 +1321,7 @@ public class ForkJoinPool extends AbstractExecutorService {
          */
         private void growAndPush(ForkJoinTask<?> task, ForkJoinTask<?>[] a,
                                  int s, boolean internal) {
+            U.storeFence();                  // ensure task publishable
             int cap;                         // rapidly grow until large
             if (a != null && (cap = a.length) > 0) {
                 int newCap = (cap < 1 << 24) ? cap << 2 : cap << 1;
