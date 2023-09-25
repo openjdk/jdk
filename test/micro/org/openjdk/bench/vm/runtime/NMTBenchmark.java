@@ -21,7 +21,7 @@
  * questions.
  */
 
-package org.openjdk.bench.java.util;
+package org.openjdk.bench.vm.runtime;
 
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
