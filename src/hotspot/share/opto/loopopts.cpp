@@ -2624,7 +2624,7 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
         set_idom(r, (side_by_side_idom == nullptr) ? newuse->in(0) : side_by_side_idom, dd_r);
         lazy_replace(use, r);
         // Map the (cloned) old use to the new merge point
-        old_new.map( use_clone->_idx, r );
+        old_new.map(use_clone->_idx, r);
       } // End of if a loop-exit test
     }
   }
