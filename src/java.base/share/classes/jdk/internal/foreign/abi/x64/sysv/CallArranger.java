@@ -207,7 +207,7 @@ public class CallArranger {
                 return typeClass.classes.stream().map(c -> stackAlloc()).toArray(VMStorage[]::new);
             }
 
-            //ok, let's pass pass on registers
+            //ok, let's pass on registers
             VMStorage[] storage = new VMStorage[(int)(nIntegerReg + nVectorReg)];
             for (int i = 0 ; i < typeClass.classes.size() ; i++) {
                 boolean sse = typeClass.classes.get(i) == ArgumentClassImpl.SSE;

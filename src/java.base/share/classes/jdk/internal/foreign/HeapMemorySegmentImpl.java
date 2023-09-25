@@ -40,7 +40,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * Implementation for heap memory segments. A heap memory segment is composed by an offset and
  * a base object (typically an array). To enhance performances, the access to the base object needs to feature
  * sharp type information, as well as sharp null-check information. For this reason, many concrete subclasses
- * of {@link HeapMemorySegmentImpl} are defined (e.g. {@link OfFloat}, so that each subclass can override the
+ * of {@link HeapMemorySegmentImpl} are defined (e.g. {@link OfFloat}), so that each subclass can override the
  * {@link HeapMemorySegmentImpl#unsafeGetBase()} method so that it returns an array of the correct (sharp) type. Note that
  * the field type storing the 'base' coordinate is just Object; similarly, all the constructor in the subclasses
  * accept an Object 'base' parameter instead of a sharper type (e.g. {@code byte[]}). This is deliberate, as

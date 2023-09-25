@@ -148,7 +148,7 @@ public class LinuxRISCV64CallArranger {
             this.forArguments = forArguments;
         }
 
-        // Aggregates or scalars passed on the stack are aligned to the greater of
+        // Aggregates or scalars passed on the stack are aligned to the greatest of
         // the type alignment and XLEN bits, but never more than the stack alignment.
         void alignStack(long alignment) {
             alignment = Utils.alignUp(Math.clamp(alignment, STACK_SLOT_SIZE, 16), STACK_SLOT_SIZE);
