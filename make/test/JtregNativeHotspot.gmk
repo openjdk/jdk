@@ -1504,6 +1504,8 @@ else
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libCompleteExit += -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libnativeStack += -lpthread
   BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeGetCreatedJavaVMs := -ljvm -lpthread
+
+  BUILD_HOTSPOT_JTREG_EXCLUDE += libNativeException.c
 endif
 
 ifeq ($(ASAN_ENABLED), true)
