@@ -1136,7 +1136,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
       ld(header, oopDesc::mark_offset_in_bytes(), object);
       andi_(R0, header, markWord::monitor_value);
       bne(CCR0, slow_case);
-      lightweight_unlock(object, header, slow_case);
+      lightweight_unlock(object, header, tmp, slow_case);
     } else {
       addi(object_mark_addr, object, oopDesc::mark_offset_in_bytes());
 

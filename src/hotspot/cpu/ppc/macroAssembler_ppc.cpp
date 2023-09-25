@@ -2334,7 +2334,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
     b(success);
   } else {
     assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-    lightweight_unlock(oop, current_header, failure);
+    lightweight_unlock(oop, current_header, /* temp */ displaced_header, failure);
     b(success);
   }
 
@@ -4032,7 +4032,7 @@ void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register t1, L
 //
 // - obj: the object to be unlocked
 // - hdr: the (pre-loaded) header of the object, will be destroyed
-void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Label& slow) {
+void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register t1, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, hdr);
 
@@ -4045,7 +4045,12 @@ void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Label& slow)
     stop("Header is not fast-locked");
     bind(hdr_ok);
   }
-  Register t1 = hdr; // Reuse in debug build.
+#endif
+
+  Register temp = (t1 != noreg) ? t1 : hdr; // Reuse if no temp reg given.
+  lwz(temp, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
+
+#ifdef ASSERT
   {
     // The following checks rely on the fact that LockStack is only ever modified by
     // its owning thread, even if the lock got inflated concurrently; removal of LockStack
@@ -4053,34 +4058,31 @@ void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Label& slow)
 
     // Check for lock-stack underflow.
     Label stack_ok;
-    lwz(t1, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
-    cmplwi(CCR0, t1, LockStack::start_offset());
+    cmplwi(CCR0, temp, LockStack::start_offset());
     bgt(CCR0, stack_ok);
     stop("Lock-stack underflow");
     bind(stack_ok);
   }
-  {
-    // Check if the top of the lock-stack matches the unlocked object.
-    Label tos_ok;
-    addi(t1, t1, -oopSize);
-    ldx(t1, t1, R16_thread);
-    cmpd(CCR0, t1, obj);
-    beq(CCR0, tos_ok);
-    stop("Top of lock-stack does not match the unlocked object");
-    bind(tos_ok);
-  }
 #endif
+
+  // Check if the top of the lock-stack matches the unlocked object.
+  addi(temp, temp, -oopSize);
+  ldx(R0, temp, R16_thread);
+  cmpd(CCR0, R0, obj);
+  bne(CCR0, slow);
 
   // Release the lock.
   atomically_flip_locked_state(/* is_unlock */ true, obj, hdr, slow, MacroAssembler::MemBarRel);
 
   // After successful unlock, pop object from lock-stack
-  Register t2 = hdr;
-  lwz(t2, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
-  addi(t2, t2, -oopSize);
+  if (temp == hdr) {
+    // Need to reload if we killed it due to lack of registers.
+    lwz(temp, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
+    addi(temp, temp, -oopSize);
+  }
 #ifdef ASSERT
   li(R0, 0);
-  stdx(R0, t2, R16_thread);
+  stdx(R0, temp, R16_thread);
 #endif
-  stw(t2, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
+  stw(temp, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
 }
