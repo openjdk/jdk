@@ -1055,17 +1055,22 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                         (b,t) -> debugCompleted("ClientImpl (async)", start, userRequest));
             }
 
-            // makes sure that any dependent actions happen in the CF default
-            // executor. This is only needed for sendAsync(...), when
-            // exchangeExecutor is non-null.
-            if (exchangeExecutor != null) {
-                res = res.whenCompleteAsync((r, t) -> { /* do nothing */}, ASYNC_POOL);
-            }
-
             // The mexCf is the Cf we need to abort if the SelectorManager thread
             // is aborted.
             PendingRequest pending = new PendingRequest(id, requestImpl, mexCf, mex, this);
-            return registerPending(pending, res);
+            res = registerPending(pending, res);
+
+            if (exchangeExecutor != null) {
+                // makes sure that any dependent actions happen in the CF default
+                // executor. This is only needed for sendAsync(...), when
+                // exchangeExecutor is non-null.
+                return res.isDone() ? res
+                        : res.whenCompleteAsync((r, t) -> { /* do nothing */}, ASYNC_POOL);
+            } else {
+                // make a defensive copy that can be safely canceled
+                // by the caller
+                return res.isDone() ? res : res.copy();
+            }
         } catch (Throwable t) {
             requestUnreference();
             debugCompleted("ClientImpl (async)", start, userRequest);
