@@ -248,7 +248,6 @@ public final class FormatProcessor implements Processor<String, RuntimeException
             }
 
             if (off > 0) {
-                // if (!group.equals("%%") && !group.equals("%n")) {
                 if (i + off == max && needed) {
                     return true;
                 }
