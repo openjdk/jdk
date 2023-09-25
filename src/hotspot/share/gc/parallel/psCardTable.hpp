@@ -85,7 +85,8 @@ class PSCardTable: public CardTable {
                                    PSPromotionManager* pm,
                                    HeapWord* stripe_addr,
                                    HeapWord* stripe_end_addr,
-                                   HeapWord* space_top);
+                                   HeapWord* space_top,
+                                   bool first_card_already_cleared);
 
   bool addr_is_marked_imprecise(void *addr);
   bool addr_is_marked_precise(void *addr);

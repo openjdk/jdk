@@ -292,7 +292,8 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
       // elements on the stripe.
       oop large_obj = cast_to_oop(start_array->object_start(cur_stripe_addr));
       if (is_large_obj_array(large_obj)) {
-        scavenge_large_array_stripe(objArrayOop(large_obj), pm, cur_stripe_addr, cur_stripe_end_addr, space_top);
+        scavenge_large_array_stripe(objArrayOop(large_obj), pm, cur_stripe_addr, cur_stripe_end_addr,
+                                    space_top, false /* first_card_already_cleared */);
       }
       continue;
     }
@@ -327,6 +328,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
     assert(cur_stripe_addr <= first_obj_addr, "inside this stripe");
     assert(first_obj_addr <= cur_stripe_end_addr, "can be empty");
 
+    bool large_arr_cleared_first_card = false;
     {
       // Identify right ends.
       HeapWord* obj_addr = start_array->object_start(cur_stripe_end_addr - 1);
@@ -349,9 +351,10 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
         assert(obj_addr >= cur_stripe_addr &&
                obj_end_addr >= cur_stripe_end_addr, "overlapping work");
         large_arr = objArrayOop(cast_to_oop(obj_addr));
-        // Exclude the large array and process it separately.
-        clear_limit_r = byte_for(obj_addr);
-        iter_limit_r = byte_for(obj_addr - 1) + 1;
+        // Clear the first card of the large array if it is shared with other objects.
+        large_arr_cleared_first_card =
+            !is_card_aligned(obj_addr) && *byte_for(obj_addr) != PSCardTable::clean_card_val();
+        clear_limit_r = iter_limit_r = byte_for(obj_addr - 1) + 1;
       } else {
         assert(obj_end_addr >= cur_stripe_end_addr, "inv");
         clear_limit_r = byte_for(obj_end_addr);
@@ -405,7 +408,8 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
     }
 
     if (large_arr != nullptr) {
-      scavenge_large_array_stripe(large_arr, pm, cur_stripe_addr, cur_stripe_end_addr, space_top);
+      scavenge_large_array_stripe(large_arr, pm, cur_stripe_addr, cur_stripe_end_addr,
+                                  space_top, large_arr_cleared_first_card);
     }
   }
 }
@@ -414,7 +418,8 @@ void PSCardTable::scavenge_large_array_stripe(objArrayOop large_arr,
                                               PSPromotionManager* pm,
                                               HeapWord* stripe_addr,
                                               HeapWord* stripe_end_addr,
-                                              HeapWord* space_top) {
+                                              HeapWord* space_top,
+                                              bool first_card_already_cleared) {
   HeapWord* arr_addr = cast_from_oop<HeapWord*>(large_arr);
   HeapWord* arr_end_addr = arr_addr + large_arr->size();
   if (arr_end_addr <= stripe_end_addr) {
@@ -436,11 +441,20 @@ void PSCardTable::scavenge_large_array_stripe(objArrayOop large_arr,
   HeapWord* scan_limit_r = stripe_end_addr;
   HeapWord* next_stripe = stripe_end_addr;
   HeapWord* next_stripe_end = MIN2(next_stripe + stripe_size_in_words, space_top);
+  assert(is_card_aligned(stripe_addr), "assumption");
+  assert(is_card_aligned(stripe_end_addr) || stripe_end_addr == space_top, "assumption");
 
   bool arr_starts_in_stripe = stripe_addr <= arr_addr;
   if (arr_starts_in_stripe) {
-    iter_limit_l = byte_for(arr_addr);
-    clear_limit_l = byte_for(arr_addr - 1) + 1;
+    if (first_card_already_cleared) {
+      // We have to scan the corresponding array elements if the first card was cleared
+      assert(!is_card_aligned(arr_addr), "first card is not shared with other objects");
+      clear_limit_l = iter_limit_l = byte_for(arr_addr) + 1;
+      pm->push_objArray_contents(large_arr, arr_addr, align_up(arr_addr, card_size_in_words() * HeapWordSize));
+    } else {
+      iter_limit_l = byte_for(arr_addr);
+      clear_limit_l = byte_for(arr_addr - 1) + 1;
+    }
   }
 
   // Scan to end if it is in the following stripe.
