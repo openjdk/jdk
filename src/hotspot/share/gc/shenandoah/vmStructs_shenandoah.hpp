@@ -26,6 +26,7 @@
 
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 
@@ -60,6 +61,7 @@
                             declare_toplevel_type,                            \
                             declare_integer_type)                             \
   declare_type(ShenandoahHeap, CollectedHeap)                                 \
+  declare_type(ShenandoahGenerationalHeap, ShenandoahHeap)                    \
   declare_toplevel_type(ShenandoahHeapRegion)                                 \
   declare_toplevel_type(ShenandoahHeap*)                                      \
   declare_toplevel_type(ShenandoahHeapRegion*)                                \
