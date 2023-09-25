@@ -204,8 +204,8 @@ void PSCardTable::scan_objects_in_range(PSPromotionManager* pm,
 void PSCardTable::prepare_scavenge(int active_workers, size_t old_gen_used_words) {
   const int stripe_count_per_worker = 100;
   int stripe_count = active_workers * stripe_count_per_worker;
-  size_t sz = MAX2(old_gen_used_words / stripe_count, 128 * (size_t)_card_size_in_words);
-  stripe_size_in_words = align_up(sz, _card_size_in_words);
+  size_t sz = MAX2(old_gen_used_words / stripe_count, 128 * (size_t)card_size_in_words());
+  stripe_size_in_words = align_up(sz, card_size_in_words());
   large_obj_arr_min_words = 2 * stripe_size_in_words + 1;
   log_trace(gc, scavenge)("stripe count:%d stripe size:" SIZE_FORMAT "K",
                           stripe_count, (stripe_size_in_words * HeapWordSize) / K);
@@ -315,10 +315,9 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
     {
       // Identify right ends.
       HeapWord* obj_addr = start_array->object_start(cur_stripe_end_addr - 1);
-      size_t obj_sz = cast_to_oop(obj_addr)->size();
-      HeapWord* obj_end_addr = obj_addr + obj_sz;
+      HeapWord* obj_end_addr = obj_addr + cast_to_oop(obj_addr)->size();
       // Scan the elements of a large array to the stripe end.
-      if (obj_sz >= large_obj_arr_min_words && cast_to_oop(obj_addr)->is_objArray()) {
+      if (is_large_obj_array(cast_to_oop(obj_addr))) {
         if (first_obj_addr >= cur_stripe_end_addr) {
           // Nothing to scan according to constraints given above.
           // We reach here only for the last stripe below space_top where
