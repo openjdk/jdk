@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6450193
+ * @key headful
  * @summary JTableHeader doesn't uninstall UI after first serialization
  * @run main SerializeJTableHeader
  */
@@ -52,7 +53,7 @@ public class SerializeJTableHeader {
     public static void main(String[] args) throws Exception {
         for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
             System.out.println("Testing L&F: " + laf);
-            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+            setLookAndFeel(laf);
             JTableHeader jth = new JTableHeader();
             for (int i = 0; i < 10; i++) {
                 try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
