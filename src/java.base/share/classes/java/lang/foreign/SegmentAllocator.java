@@ -375,7 +375,7 @@ public interface SegmentAllocator {
     /**
      * {@return a new memory segment initialized with the elements in the provided byte array.}
      * <p>
-     * The size of the allocated memory segment is the {@code elementLayout.byteSize() * elements.length}.
+     * The size of the allocated memory segment is {@code elementLayout.byteSize() * elements.length}.
      * The contents of the source array is copied into the result segment element by element, according to the byte
      * order and alignment constraint of the given element layout.
      *
@@ -397,7 +397,7 @@ public interface SegmentAllocator {
     /**
      * {@return a new memory segment initialized with the elements in the provided short array.}
      * <p>
-     * The size of the allocated memory segment is the {@code elementLayout.byteSize() * elements.length}.
+     * The size of the allocated memory segment is {@code elementLayout.byteSize() * elements.length}.
      * The contents of the source array is copied into the result segment element by element, according to the byte
      * order and alignment constraint of the given element layout.
      *
@@ -419,7 +419,7 @@ public interface SegmentAllocator {
     /**
      * {@return a new memory segment initialized with the elements in the provided char array.}
      * <p>
-     * The size of the allocated memory segment is the {@code elementLayout.byteSize() * elements.length}.
+     * The size of the allocated memory segment is {@code elementLayout.byteSize() * elements.length}.
      * The contents of the source array is copied into the result segment element by element, according to the byte
      * order and alignment constraint of the given element layout.
      *
@@ -441,7 +441,7 @@ public interface SegmentAllocator {
     /**
      * {@return a new memory segment initialized with the elements in the provided int array.}
      * <p>
-     * The size of the allocated memory segment is the {@code elementLayout.byteSize() * elements.length}.
+     * The size of the allocated memory segment is {@code elementLayout.byteSize() * elements.length}.
      * The contents of the source array is copied into the result segment element by element, according to the byte
      * order and alignment constraint of the given element layout.
      *
@@ -463,7 +463,7 @@ public interface SegmentAllocator {
     /**
      * {@return a new memory segment initialized with the elements in the provided float array.}
      * <p>
-     * The size of the allocated memory segment is the {@code elementLayout.byteSize() * elements.length}.
+     * The size of the allocated memory segment is {@code elementLayout.byteSize() * elements.length}.
      * The contents of the source array is copied into the result segment element by element, according to the byte
      * order and alignment constraint of the given element layout.
      *
@@ -485,7 +485,7 @@ public interface SegmentAllocator {
     /**
      * {@return a new memory segment initialized with the elements in the provided long array.}
      * <p>
-     * The size of the allocated memory segment is the {@code elementLayout.byteSize() * elements.length}.
+     * The size of the allocated memory segment is {@code elementLayout.byteSize() * elements.length}.
      * The contents of the source array is copied into the result segment element by element, according to the byte
      * order and alignment constraint of the given element layout.
      *
@@ -507,7 +507,7 @@ public interface SegmentAllocator {
     /**
      * {@return a new memory segment initialized with the elements in the provided double array.}
      * <p>
-     * The size of the allocated memory segment is the {@code elementLayout.byteSize() * elements.length}.
+     * The size of the allocated memory segment is {@code elementLayout.byteSize() * elements.length}.
      * The contents of the source array is copied into the result segment element by element, according to the byte
      * order and alignment constraint of the given element layout.
      *
