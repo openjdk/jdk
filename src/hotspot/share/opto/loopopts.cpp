@@ -2618,7 +2618,7 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
         register_control(use_clone, use_loop, idom(use), dom_depth(use));
         // Now finish up 'r'
         r->set_req(1, newuse);
-        r->set_req(2,    use_clone);
+        r->set_req(2, use_clone);
         _igvn.register_new_node_with_optimizer(r);
         set_loop(r, use_loop);
         set_idom(r, (side_by_side_idom == nullptr) ? newuse->in(0) : side_by_side_idom, dd_r);
