@@ -4277,6 +4277,129 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
+  // rotate vector register left with shift bits, 32-bit version
+  void rotate_left_imm(VectorRegister rv, uint32_t shift, VectorRegister tmp_vr) {
+    __ vsrl_vi(tmp_vr, rv, 32 - shift);
+    __ vsll_vi(rv, rv, shift);
+    __ vor_vv(rv, rv, tmp_vr);
+  }
+
+  void quarter_round(VectorRegister aVec, VectorRegister bVec,
+                          VectorRegister cVec, VectorRegister dVec, VectorRegister tmp_vr) {
+    // a += b, d ^= a, d <<<= 16
+    __ vadd_vv(aVec, aVec, bVec);
+    __ vxor_vv(dVec, dVec, aVec);
+    rotate_left_imm(dVec, 16, tmp_vr);
+
+    // rev32(dVec, T8H, dVec);
+
+    // c += d, b ^= c, b <<<= 12
+    __ vadd_vv(cVec, cVec, dVec);
+    __ vxor_vv(bVec, bVec, cVec);
+    rotate_left_imm(bVec, 12, tmp_vr);
+
+    // a += b, d ^= a, d <<<= 8
+    __ vadd_vv(aVec, aVec, bVec);
+    __ vxor_vv(dVec, dVec, aVec);
+    rotate_left_imm(dVec, 8, tmp_vr);
+
+    // c += d, b ^= c, b <<<= 7
+    __ vadd_vv(cVec, cVec, dVec);
+    __ vxor_vv(bVec, bVec, cVec);
+    rotate_left_imm(bVec, 7, tmp_vr);
+  }
+
+  /**
+   * int com.sun.crypto.provider.ChaCha20Cipher.implChaCha20Block(int[] initState, byte[] result)
+   *
+   *  Input arguments:
+   *  c_rarg0   - state, the starting state
+   *  c_rarg1   - key_stream, the array that will hold the result of the ChaCha20 block function
+   */
+  address generate_chacha20Block() {
+    Label L_Rounds;
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "chacha20Block");
+    address start = __ pc();
+
+    const int states_len = 16;
+    const int step = 4;
+    const Register state = c_rarg0;
+    const Register key_stream = c_rarg1;
+    const Register loop = t0;
+    const Register tmp_addr = t1;
+    const Register length = t2;
+    const Register avl = x28;
+    const Register stride = x29;
+
+    const VectorRegister work_vrs[16] = {
+      v4,  v5,  v6,  v7,  v16, v17, v18, v19,
+      v20, v21, v22, v23, v24, v25, v26, v27
+    };
+    const VectorRegister tmp_vr = v29;
+    const VectorRegister counter = v30;
+
+
+    RegSet saved_regs;
+    __ push_reg(saved_regs, sp);
+
+    // Put 16 here, as com.sun.crypto.providerChaCha20Cipher.KS_MAX_LEN is 1024
+    // in java level.
+    __ li(avl, 16);
+    __ vsetvli(length, avl, Assembler::e32, Assembler::m1, Assembler::ma, Assembler::ta);
+
+    // Load from source state
+    __ mv(tmp_addr, state);
+    for (int i = 0; i < states_len; i += 1) {
+      __ vlse32_v(work_vrs[i], tmp_addr, zr);
+      __ addi(tmp_addr, tmp_addr, step);
+    }
+    __ vid_v(counter);
+    __ vadd_vv(work_vrs[12], work_vrs[12], counter);
+
+    // Perform 10 iterations of the 8 quarter round set
+    __ li(loop, 10);
+    __ BIND(L_Rounds);
+
+    quarter_round(work_vrs[0], work_vrs[4], work_vrs[8], work_vrs[12], tmp_vr);
+    quarter_round(work_vrs[1], work_vrs[5], work_vrs[9], work_vrs[13], tmp_vr);
+    quarter_round(work_vrs[2], work_vrs[6], work_vrs[10], work_vrs[14], tmp_vr);
+    quarter_round(work_vrs[3], work_vrs[7], work_vrs[11], work_vrs[15], tmp_vr);
+
+    quarter_round(work_vrs[0], work_vrs[5], work_vrs[10], work_vrs[15], tmp_vr);
+    quarter_round(work_vrs[1], work_vrs[6], work_vrs[11], work_vrs[12], tmp_vr);
+    quarter_round(work_vrs[2], work_vrs[7], work_vrs[8], work_vrs[13], tmp_vr);
+    quarter_round(work_vrs[3], work_vrs[4], work_vrs[9], work_vrs[14], tmp_vr);
+
+    __ sub(loop, loop, 1);
+    __ bnez(loop, L_Rounds);
+
+    // Add the end working state back into the original state
+    __ mv(tmp_addr, state);
+    for (int i = 0; i < states_len; i += 1) {
+      __ vlse32_v(tmp_vr, tmp_addr, zr);
+      __ addi(tmp_addr, tmp_addr, step);
+      __ vadd_vv(work_vrs[i], work_vrs[i], tmp_vr);
+    }
+    __ vadd_vv(work_vrs[12], work_vrs[12], counter);
+
+    // Store result to key stream
+    __ li(stride, 64);
+    for (int i = 0; i < states_len; i += 1) {
+      __ vsse32_v(work_vrs[i], key_stream, stride);
+      __ addi(key_stream, key_stream, step);
+    }
+
+    // Return length of output key_stream
+    __ slli(c_rarg0, length, 6);
+
+    __ pop_reg(saved_regs, sp);
+    __ ret();
+
+    return (address) start;
+  }
+
 #if INCLUDE_JFR
 
   static void jfr_prologue(address the_pc, MacroAssembler* _masm, Register thread) {
@@ -4496,6 +4619,11 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_md5_implCompress   = generate_md5_implCompress(false, "md5_implCompress");
       StubRoutines::_md5_implCompressMB = generate_md5_implCompress(true,  "md5_implCompressMB");
     }
+
+    if (UseChaCha20Intrinsics) {
+      StubRoutines::_chacha20Block = generate_chacha20Block();
+    }
+
 #endif // COMPILER2_OR_JVMCI
   }
 

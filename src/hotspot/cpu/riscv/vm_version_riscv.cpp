@@ -186,6 +186,10 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
   }
 
+  if (UseRVV && FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+    FLAG_SET_DEFAULT(UseChaCha20Intrinsics, true);
+  }
+
   if (UseRVV) {
     if (!ext_V.enabled()) {
       warning("RVV is not supported on this CPU");
