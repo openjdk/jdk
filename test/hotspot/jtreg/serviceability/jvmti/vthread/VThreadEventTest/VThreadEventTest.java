@@ -149,12 +149,12 @@ public class VThreadEventTest {
             }
             await(ready0);
             mready.countDown();
-            await(ready1); // to guaranty state is not State.WAITING after await(mready) in test1()
-            // wait for test1 threads to reach WAITING state in sleep()
+            await(ready1); // to guarantee state is not State.TIMED_WAITING after await(mready) in test1()
+            // wait for test1 threads to reach TIMED_WAITING state in sleep()
             for (Thread t : test1Threads) {
                 Thread.State state = t.getState();
                 log("DBG: state: " + state);
-                while (state != Thread.State.WAITING) {
+                while (state != Thread.State.TIMED_WAITING) {
                     Thread.sleep(10);
                     state = t.getState();
                     log("DBG: state: " + state);

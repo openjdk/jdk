@@ -39,6 +39,11 @@ public sealed interface DynamicConstantPoolEntry extends PoolEntry
     BootstrapMethodEntry bootstrap();
 
     /**
+     * {@return index of the entry in the bootstrap method table for this constant}
+     */
+    int bootstrapMethodIndex();
+
+    /**
      * {@return the invocation name and type}
      */
     NameAndTypeEntry nameAndType();
