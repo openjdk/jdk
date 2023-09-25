@@ -400,8 +400,6 @@ void CollectedHeap::set_gc_cause(GCCause::Cause v) {
   _gc_cause = v;
 }
 
-// Should only be called with constants as argument
-// (will not constant fold otherwise)
 // Returns the header size in words aligned to the requirements of the
 // array object type.
 static int int_array_header_size() {
