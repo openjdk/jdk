@@ -464,7 +464,6 @@ java/awt/JAWT/JAWT.sh 8197798 windows-all,linux-all
 java/awt/Debug/DumpOnKey/DumpOnKey.java 8202667 windows-all
 java/awt/Focus/WindowUpdateFocusabilityTest/WindowUpdateFocusabilityTest.java 8202926 linux-all
 java/awt/datatransfer/ConstructFlavoredObjectTest/ConstructFlavoredObjectTest.java 8202860 linux-all
-java/awt/dnd/DisposeFrameOnDragCrash/DisposeFrameOnDragTest.java 8202790 macosx-all,linux-all
 java/awt/FileDialog/FilenameFilterTest/FilenameFilterTest.java 8202882,8255898 linux-all,macosx-all
 java/awt/Choice/ChoicePopupLocation/ChoicePopupLocation.java 8202931 macosx-all,linux-all
 java/awt/Focus/NonFocusableBlockedOwnerTest/NonFocusableBlockedOwnerTest.java 7124275 macosx-all
