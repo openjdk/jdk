@@ -482,7 +482,7 @@ public class Flow {
 
         // Do something with all static or non-static field initializers and initialization blocks.
         // Note: This method also sends nested class definitions to the handler.
-        protected void forEachInitializer(JCClassDecl classDef, boolean statik, Consumer<? super JCTree> handler) {
+        protected void forEachInitializer(JCClassDecl classDef, boolean isStatic, Consumer<? super JCTree> handler) {
             if (classDef == initScanClass)          // avoid infinite loops
                 return;
             JCClassDecl initScanClassPrev = initScanClass;
@@ -490,7 +490,7 @@ public class Flow {
             try {
                 for (List<JCTree> defs = classDef.defs; defs.nonEmpty(); defs = defs.tail) {
                     JCTree def = defs.head;
-                    if (!def.hasTag(METHODDEF) && ((TreeInfo.flags(def) & STATIC) != 0) == statik)
+                    if (!def.hasTag(METHODDEF) && ((TreeInfo.flags(def) & STATIC) != 0) == isStatic)
                         handler.accept(def);
                 }
             } finally {
