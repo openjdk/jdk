@@ -32,6 +32,7 @@ import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException ;
 import java.util.BitSet;
 import java.util.Objects;
+import java.util.HexFormat;
 import java.util.function.IntPredicate;
 
 import jdk.internal.util.ImmutableBitSetPredicate;
@@ -81,7 +82,6 @@ import jdk.internal.util.StaticProperty;
  */
 public class URLEncoder {
     private static final IntPredicate DONT_NEED_ENCODING;
-    private static final int CASE_DIFF = ('a' - 'A');
     private static final String DEFAULT_ENCODING_NAME;
 
     static {
@@ -136,6 +136,11 @@ public class URLEncoder {
         DONT_NEED_ENCODING = ImmutableBitSetPredicate.of(bitSet);
 
         DEFAULT_ENCODING_NAME = StaticProperty.fileEncoding();
+    }
+
+    private static void encodeByte(StringBuilder out, byte b) {
+        out.append('%');
+        HexFormat.of().withUpperCase().toHexDigits(out, b);
     }
 
     /**
@@ -222,20 +227,30 @@ public class URLEncoder {
     public static String encode(String s, Charset charset) {
         Objects.requireNonNull(charset, "charset");
 
-        boolean needToChange = false;
-        StringBuilder out = new StringBuilder(s.length());
-        CharArrayWriter charArrayWriter = new CharArrayWriter();
+        int i;
+        for (i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (!DONT_NEED_ENCODING.test(c) || c == ' ') {
+                break;
+            }
+        }
+        if (i == s.length()) {
+            return s;
+        }
 
-        for (int i = 0; i < s.length();) {
-            int c = s.charAt(i);
-            //System.out.println("Examining character: " + c);
+        StringBuilder out = new StringBuilder(s.length() << 1);
+        CharArrayWriter charArrayWriter = new CharArrayWriter();
+        if (i > 0) {
+            out.append(s, 0, i);
+        }
+
+        while (i < s.length()) {
+            char c = s.charAt(i);
             if (DONT_NEED_ENCODING.test(c)) {
                 if (c == ' ') {
                     c = '+';
-                    needToChange = true;
                 }
-                //System.out.println("Storing: " + c);
-                out.append((char)c);
+                out.append(c);
                 i++;
             } else {
                 // convert to external encoding before hex conversion
@@ -245,27 +260,14 @@ public class URLEncoder {
                      * If this character represents the start of a Unicode
                      * surrogate pair, then pass in two characters. It's not
                      * clear what should be done if a byte reserved in the
-                     * surrogate pairs range occurs outside of a legal
+                     * surrogate pairs range occurs outside a legal
                      * surrogate pair. For now, just treat it as if it were
                      * any other character.
                      */
-                    if (c >= 0xD800 && c <= 0xDBFF) {
-                        /*
-                          System.out.println(Integer.toHexString(c)
-                          + " is high surrogate");
-                        */
-                        if ( (i+1) < s.length()) {
-                            int d = s.charAt(i+1);
-                            /*
-                              System.out.println("\tExamining "
-                              + Integer.toHexString(d));
-                            */
-                            if (d >= 0xDC00 && d <= 0xDFFF) {
-                                /*
-                                  System.out.println("\t"
-                                  + Integer.toHexString(d)
-                                  + " is low surrogate");
-                                */
+                    if (Character.isHighSurrogate(c)) {
+                        if ((i + 1) < s.length()) {
+                            char d = s.charAt(i + 1);
+                            if (Character.isLowSurrogate(d)) {
                                 charArrayWriter.write(d);
                                 i++;
                             }
@@ -274,29 +276,15 @@ public class URLEncoder {
                     i++;
                 } while (i < s.length() && !DONT_NEED_ENCODING.test((c = s.charAt(i))));
 
-                charArrayWriter.flush();
                 String str = charArrayWriter.toString();
                 byte[] ba = str.getBytes(charset);
                 for (byte b : ba) {
-                    out.append('%');
-                    char ch = Character.forDigit((b >> 4) & 0xF, 16);
-                    // converting to use uppercase letter as part of
-                    // the hex value if ch is a letter.
-                    if (Character.isLetter(ch)) {
-                        ch -= CASE_DIFF;
-                    }
-                    out.append(ch);
-                    ch = Character.forDigit(b & 0xF, 16);
-                    if (Character.isLetter(ch)) {
-                        ch -= CASE_DIFF;
-                    }
-                    out.append(ch);
+                    encodeByte(out, b);
                 }
                 charArrayWriter.reset();
-                needToChange = true;
             }
         }
 
-        return (needToChange? out.toString() : s);
+        return out.toString();
     }
 }

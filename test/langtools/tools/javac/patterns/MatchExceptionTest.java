@@ -44,6 +44,7 @@ import jdk.internal.classfile.*;
 import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ConstantPool;
 import java.util.Arrays;
+import jdk.internal.classfile.constantpool.PoolEntry;
 
 import toolbox.JavacTask;
 import toolbox.TestRunner;
@@ -118,9 +119,8 @@ public class MatchExceptionTest extends TestRunner {
                 cf = Classfile.of().parse(curPath.resolve("Test.class"));
                 boolean incompatibleClassChangeErrror = false;
                 boolean matchException = false;
-                ConstantPool cp = cf.constantPool();
-                for (int i = 1; i < cp.entryCount(); i += cp.entryByIndex(i).width()) {
-                    if (cp.entryByIndex(i) instanceof ClassEntry clazz) {
+                for (PoolEntry pe : cf.constantPool()) {
+                    if (pe instanceof ClassEntry clazz) {
                         incompatibleClassChangeErrror |= clazz.name().equalsString(
                                 "java/lang/IncompatibleClassChangeError");
                         matchException |= clazz.name().equalsString("java/lang/MatchException");
