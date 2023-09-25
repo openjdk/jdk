@@ -104,7 +104,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
     b(cont);
   } else {
     assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-    lightweight_lock(oop, disp_hdr, tmp, rscratch1, no_count);
+    lightweight_lock(oop, disp_hdr, tmp, rscratch2, no_count);
     b(count);
   }
 

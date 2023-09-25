@@ -734,7 +734,7 @@ void InterpreterMacroAssembler::remove_activation(
 //
 // Kills:
 //      r0
-//      c_rarg0, c_rarg1, c_rarg2, c_rarg3, .. (param regs)
+//      c_rarg0, c_rarg1, c_rarg2, c_rarg3, c_rarg4, .. (param regs)
 //      rscratch1, rscratch2 (scratch regs)
 void InterpreterMacroAssembler::lock_object(Register lock_reg)
 {
@@ -749,6 +749,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     const Register swap_reg = r0;
     const Register tmp = c_rarg2;
     const Register obj_reg = c_rarg3; // Will contain the oop
+    const Register tmp2 = c_rarg4;
 
     const int obj_offset = in_bytes(BasicObjectLock::obj_offset());
     const int lock_offset = in_bytes(BasicObjectLock::lock_offset());
@@ -769,7 +770,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
     if (LockingMode == LM_LIGHTWEIGHT) {
       ldr(tmp, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      lightweight_lock(obj_reg, tmp, rscratch1, rscratch2, slow_case);
+      lightweight_lock(obj_reg, tmp, tmp2, rscratch2, slow_case);
       b(count);
     } else if (LockingMode == LM_LEGACY) {
       // Load (object->mark() | 1) into swap_reg
@@ -900,7 +901,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
       ldr(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       tbnz(header_reg, exact_log2(markWord::monitor_value), slow_case);
-      lightweight_unlock(obj_reg, header_reg, swap_reg, rscratch1, slow_case);
+      lightweight_unlock(obj_reg, header_reg, swap_reg, rscratch2, slow_case);
       b(count);
       bind(slow_case);
     } else if (LockingMode == LM_LEGACY) {

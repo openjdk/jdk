@@ -1813,7 +1813,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
       __ ldr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      __ lightweight_lock(obj_reg, swap_reg, tmp, rscratch1, slow_path_lock);
+      __ lightweight_lock(obj_reg, swap_reg, tmp, rscratch2, slow_path_lock);
     }
     __ bind(count);
     __ increment(Address(rthread, JavaThread::held_monitor_count_offset()));
@@ -1954,7 +1954,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       assert(LockingMode == LM_LIGHTWEIGHT, "");
       __ ldr(old_hdr, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       __ tbnz(old_hdr, exact_log2(markWord::monitor_value), slow_path_unlock);
-      __ lightweight_unlock(obj_reg, old_hdr, swap_reg, rscratch1, slow_path_unlock);
+      __ lightweight_unlock(obj_reg, old_hdr, swap_reg, rscratch2, slow_path_unlock);
       __ decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
     }
 
