@@ -4587,7 +4587,11 @@ public class Resolve {
     class StaticError extends InvalidSymbolError {
 
         StaticError(Symbol sym) {
-            super(STATICERR, sym, "static error");
+            this(sym, "static error");
+        }
+
+        StaticError(Symbol sym, String debugName) {
+            super(STATICERR, sym, debugName);
         }
 
         @Override
@@ -4610,10 +4614,10 @@ public class Resolve {
      * Specialization of {@link InvalidSymbolError} for illegal
      * early accesses within a constructor prologue.
      */
-    class RefBeforeCtorCalledError extends InvalidSymbolError {
+    class RefBeforeCtorCalledError extends StaticError {
 
         RefBeforeCtorCalledError(Symbol sym) {
-            super(STATICERR, sym, "prologue error");
+            super(sym, "prologue error");
         }
 
         @Override
@@ -4745,7 +4749,7 @@ public class Resolve {
         boolean unboundLookup;
 
         public BadMethodReferenceError(Symbol sym, boolean unboundLookup) {
-            super(sym);
+            super(sym, "bad method ref error");
             this.unboundLookup = unboundLookup;
         }
 
