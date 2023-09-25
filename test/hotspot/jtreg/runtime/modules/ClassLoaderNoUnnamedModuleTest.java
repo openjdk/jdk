@@ -25,6 +25,7 @@
  * @test
  * @bug 8202758
  * @summary Ensure that if the JVM encounters a ClassLoader whose unnamedModule field is not set an InternalError results.
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile ClassLoaderNoUnnamedModule.java
