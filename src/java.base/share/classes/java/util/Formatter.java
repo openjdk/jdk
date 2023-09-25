@@ -2941,7 +2941,6 @@ public final class Formatter implements Closeable, Flushable {
                         if (c == '$') {
                             ++off;
                             argSize = size + 1;
-                            size = 0;
                             if (off < max) {
                                 c = s.charAt(off);
                             }
@@ -2961,7 +2960,6 @@ public final class Formatter implements Closeable, Flushable {
                             } else {
                                 widthSize = size;
                             }
-                            size = 0;
                         }
                     }
                     break;
@@ -2974,7 +2972,6 @@ public final class Formatter implements Closeable, Flushable {
             for (int size = 0; off < max; ++off, c = s.charAt(off), size++) {
                 if (!Flags.isFlag(c)) {
                     flagSize = size;
-                    size = 0;
                     break;
                 }
             }
