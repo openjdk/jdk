@@ -1100,6 +1100,11 @@ void VMError::report(outputStream* st, bool _verbose) {
     print_stack_location(st, _context, continuation);
     st->cr();
 
+  STEP_IF("printing lock stack", _verbose && _thread != nullptr && _thread->is_Java_thread() && LockingMode == LM_LIGHTWEIGHT);
+    st->print_cr("Lock stack of current Java thread (top to bottom):");
+    JavaThread::cast(_thread)->lock_stack().print_on(st);
+    st->cr();
+
   STEP_IF("printing code blobs if possible", _verbose)
     const int printed_capacity = max_error_log_print_code;
     address printed[printed_capacity];
@@ -1166,10 +1171,6 @@ void VMError::report(outputStream* st, bool _verbose) {
       callback->call(st);
       st->cr();
     }
-
-  STEP_IF("printing fast locked objects", _verbose && _thread != nullptr && _thread->is_Java_thread() && LockingMode == LM_LIGHTWEIGHT);
-    st->print_cr("Objects fast locked by this thread (top to bottom):");
-    JavaThread::cast(_thread)->lock_stack().print_on(st);
 
   STEP_IF("printing process", _verbose)
     st->cr();
