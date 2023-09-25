@@ -535,39 +535,35 @@ public final class String
             this.coder = "".coder;
         } else if (charset == UTF_8.INSTANCE) {
             if (COMPACT_STRINGS) {
-                int dp = StringCoding.countPositives(bytes, offset, length);
+                byte[] dst = Arrays.copyOfRange(bytes, offset, offset + length);
+                int dp = StringCoding.countPositives(dst, 0, length);
                 if (dp == length) {
-                    this.value = Arrays.copyOfRange(bytes, offset, offset + length);
+                    this.value = dst;
                     this.coder = LATIN1;
                     return;
                 }
-                int sl = offset + length;
-                byte[] dst = new byte[length];
-                if (dp > 0) {
-                    System.arraycopy(bytes, offset, dst, 0, dp);
-                    offset += dp;
-                }
-                while (offset < sl) {
-                    int b1 = bytes[offset++];
+                int i = dp; // invariant: dp <= i
+                while (i < length) {
+                    int b1 = dst[i++];
                     if (b1 >= 0) {
                         dst[dp++] = (byte)b1;
                         continue;
                     }
-                    if ((b1 & 0xfe) == 0xc2 && offset < sl) { // b1 either 0xc2 or 0xc3
-                        int b2 = bytes[offset];
+                    if ((b1 & 0xfe) == 0xc2 && i < length) { // b1 either 0xc2 or 0xc3
+                        int b2 = dst[i];
                         if (b2 < -64) { // continuation bytes are always negative values in the range -128 to -65
                             dst[dp++] = (byte)decode2(b1, b2);
-                            offset++;
+                            i++;
                             continue;
                         }
                     }
                     // anything not a latin1, including the REPL
                     // we have to go with the utf16
-                    offset--;
+                    i--;
                     break;
                 }
-                if (offset == sl) {
-                    if (dp != dst.length) {
+                if (i == length) {
+                    if (dp != length) {
                         dst = Arrays.copyOf(dst, dp);
                     }
                     this.value = dst;
@@ -576,8 +572,8 @@ public final class String
                 }
                 byte[] buf = new byte[length << 1];
                 StringLatin1.inflate(dst, 0, buf, 0, dp);
+                dp = decodeUTF8_UTF16(dst, i, length, buf, dp, true);
                 dst = buf;
-                dp = decodeUTF8_UTF16(bytes, offset, sl, dst, dp, true);
                 if (dp != length) {
                     dst = Arrays.copyOf(dst, dp << 1);
                 }
@@ -653,6 +649,7 @@ public final class String
                 char[] ca = new char[en];
                 int clen = ad.decode(bytes, offset, length, ca);
                 if (COMPACT_STRINGS) {
+                    // ArrayDecoder is trusted
                     byte[] bs = StringUTF16.compress(ca, 0, clen);
                     if (bs != null) {
                         value = bs;
@@ -683,13 +680,13 @@ public final class String
                 // Substitution is enabled, so this shouldn't happen
                 throw new Error(x);
             }
+
             if (COMPACT_STRINGS) {
-                byte[] bs = StringUTF16.compress(ca, 0, caLen);
-                if (bs != null) {
-                    value = bs;
-                    coder = LATIN1;
-                    return;
-                }
+                // ca leaked to arbitrary decoder implementation
+                byte[] bs = StringUTF16.maybeCompressUntrusted(ca, 0, caLen);
+                value = bs;
+                coder = bs.length == caLen ? LATIN1 : UTF16;
+                return;
             }
             coder = UTF16;
             value = StringUTF16.toBytes(ca, 0, caLen);
@@ -827,10 +824,9 @@ public final class String
             throw new IllegalArgumentException(x);
         }
         if (COMPACT_STRINGS) {
-            byte[] bs = StringUTF16.compress(ca, 0, caLen);
-            if (bs != null) {
-                return new String(bs, LATIN1);
-            }
+            // ca leaked to arbitrary decoder implementation
+            byte[] bs = StringUTF16.maybeCompressUntrusted(ca, 0, caLen);
+            return new String(bs, bs.length == caLen ? LATIN1 : UTF16);
         }
         return new String(StringUTF16.toBytes(ca, 0, caLen), UTF16);
     }
@@ -4761,12 +4757,11 @@ public final class String
             return;
         }
         if (COMPACT_STRINGS) {
-            byte[] val = StringUTF16.compress(value, off, len);
-            if (val != null) {
-                this.value = val;
-                this.coder = LATIN1;
-                return;
-            }
+            // user-supplied, untrusted value
+            byte[] val = StringUTF16.maybeCompressUntrusted(value, off, len);
+            this.value = val;
+            this.coder = val.length == len ? LATIN1 : UTF16;
+            return;
         }
         this.coder = UTF16;
         this.value = StringUTF16.toBytes(value, off, len);
@@ -4785,12 +4780,11 @@ public final class String
         } else {
             // only try to compress val if some characters were deleted.
             if (COMPACT_STRINGS && asb.maybeLatin1) {
-                byte[] buf = StringUTF16.compress(val, 0, length);
-                if (buf != null) {
-                    this.coder = LATIN1;
-                    this.value = buf;
-                    return;
-                }
+                // asb may be mutated by user
+                byte[] buf = StringUTF16.maybeCompressUntrusted(val, 0, length);
+                this.value = buf;
+                this.coder = buf.length == length ? LATIN1 : UTF16;
+                return;
             }
             this.coder = UTF16;
             this.value = Arrays.copyOfRange(val, 0, length << 1);

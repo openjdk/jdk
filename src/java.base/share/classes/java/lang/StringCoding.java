@@ -41,6 +41,9 @@ class StringCoding {
     /**
      * Count the number of leading positive bytes in the range.
      *
+     * <br><strong>Warning: Make sure the byte array is not leaked to public,
+     * Or the bytes may be non-positive when the caller reads the array again!</strong>
+     *
      * @implSpec the implementation must return len if there are no negative
      *   bytes in the range. If there are negative bytes, the implementation must return
      *   a value that is less than or equal to the index of the first negative byte

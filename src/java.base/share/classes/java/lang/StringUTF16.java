@@ -158,6 +158,45 @@ final class StringUTF16 {
         return val;
     }
 
+    /**
+     * Compresses a UTF16 array to LATIN1 if possible. Will not return
+     * a compressible UTF16 array with any 0-valued significant bytes,
+     * which is erroneous if COMPACT_STRING is enabled.
+     */
+    public static byte[] maybeCompressUntrusted(char[] val, int off, int len) {
+        byte[] compressed = new byte[len];
+        if (compress(val, off, compressed, 0, len) == len) {
+            return compressed;
+        }
+
+        byte[] trusted = toBytes(val, off, len); // now not leaked
+        if (compress(trusted, 0, compressed, 0, len) == len) {
+            return compressed;
+        }
+        return trusted;
+    }
+
+    /**
+     * Compresses a UTF16 array to LATIN1 if possible. Will not return
+     * a compressible UTF16 array with any 0-valued significant bytes,
+     * which is erroneous if COMPACT_STRING is enabled.
+     *
+     * <p>The off and len are in char array/UTF16 coder units.
+     */
+    public static byte[] maybeCompressUntrusted(byte[] val, int off, int len) {
+        byte[] compressed = new byte[len];
+        if (compress(val, off, compressed, 0, len) == len) {
+            return compressed;
+        }
+
+        byte[] trusted = Arrays.copyOfRange(val, off << 1, len << 1); // now not leaked
+        if (compress(trusted, 0, compressed, 0, len) == len) {
+            return compressed;
+        }
+        return trusted;
+    }
+
+    // must not be used with leaked arrays
     public static byte[] compress(char[] val, int off, int len) {
         byte[] ret = new byte[len];
         if (compress(val, off, ret, 0, len) == len) {
@@ -166,6 +205,7 @@ final class StringUTF16 {
         return null;
     }
 
+    // must not be used with leaked arrays
     public static byte[] compress(byte[] val, int off, int len) {
         byte[] ret = new byte[len];
         if (compress(val, off, ret, 0, len) == len) {
@@ -1163,6 +1203,7 @@ final class StringUTF16 {
         }
     }
 
+    // val must not be leaked
     public static String newString(byte[] val, int index, int len) {
         if (len == 0) {
             return "";
