@@ -4277,36 +4277,29 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
-  // rotate vector register left with shift bits, 32-bit version
-  void rotate_left_imm(VectorRegister rv, uint32_t shift, VectorRegister tmp_vr) {
-    __ vsrl_vi(tmp_vr, rv, 32 - shift);
-    __ vsll_vi(rv, rv, shift);
-    __ vor_vv(rv, rv, tmp_vr);
-  }
-
-  void quarter_round(VectorRegister aVec, VectorRegister bVec,
+  void chacha20_quarter_round(VectorRegister aVec, VectorRegister bVec,
                           VectorRegister cVec, VectorRegister dVec, VectorRegister tmp_vr) {
     // a += b, d ^= a, d <<<= 16
     __ vadd_vv(aVec, aVec, bVec);
     __ vxor_vv(dVec, dVec, aVec);
-    rotate_left_imm(dVec, 16, tmp_vr);
+    __ vrol_vwi(dVec, 16, tmp_vr);
 
     // rev32(dVec, T8H, dVec);
 
     // c += d, b ^= c, b <<<= 12
     __ vadd_vv(cVec, cVec, dVec);
     __ vxor_vv(bVec, bVec, cVec);
-    rotate_left_imm(bVec, 12, tmp_vr);
+    __ vrol_vwi(bVec, 12, tmp_vr);
 
     // a += b, d ^= a, d <<<= 8
     __ vadd_vv(aVec, aVec, bVec);
     __ vxor_vv(dVec, dVec, aVec);
-    rotate_left_imm(dVec, 8, tmp_vr);
+    __ vrol_vwi(dVec, 8, tmp_vr);
 
     // c += d, b ^= c, b <<<= 7
     __ vadd_vv(cVec, cVec, dVec);
     __ vxor_vv(bVec, bVec, cVec);
-    rotate_left_imm(bVec, 7, tmp_vr);
+    __ vrol_vwi(bVec, 7, tmp_vr);
   }
 
   /**
@@ -4362,15 +4355,15 @@ class StubGenerator: public StubCodeGenerator {
     __ li(loop, 10);
     __ BIND(L_Rounds);
 
-    quarter_round(work_vrs[0], work_vrs[4], work_vrs[8], work_vrs[12], tmp_vr);
-    quarter_round(work_vrs[1], work_vrs[5], work_vrs[9], work_vrs[13], tmp_vr);
-    quarter_round(work_vrs[2], work_vrs[6], work_vrs[10], work_vrs[14], tmp_vr);
-    quarter_round(work_vrs[3], work_vrs[7], work_vrs[11], work_vrs[15], tmp_vr);
+    chacha20_quarter_round(work_vrs[0], work_vrs[4], work_vrs[8], work_vrs[12], tmp_vr);
+    chacha20_quarter_round(work_vrs[1], work_vrs[5], work_vrs[9], work_vrs[13], tmp_vr);
+    chacha20_quarter_round(work_vrs[2], work_vrs[6], work_vrs[10], work_vrs[14], tmp_vr);
+    chacha20_quarter_round(work_vrs[3], work_vrs[7], work_vrs[11], work_vrs[15], tmp_vr);
 
-    quarter_round(work_vrs[0], work_vrs[5], work_vrs[10], work_vrs[15], tmp_vr);
-    quarter_round(work_vrs[1], work_vrs[6], work_vrs[11], work_vrs[12], tmp_vr);
-    quarter_round(work_vrs[2], work_vrs[7], work_vrs[8], work_vrs[13], tmp_vr);
-    quarter_round(work_vrs[3], work_vrs[4], work_vrs[9], work_vrs[14], tmp_vr);
+    chacha20_quarter_round(work_vrs[0], work_vrs[5], work_vrs[10], work_vrs[15], tmp_vr);
+    chacha20_quarter_round(work_vrs[1], work_vrs[6], work_vrs[11], work_vrs[12], tmp_vr);
+    chacha20_quarter_round(work_vrs[2], work_vrs[7], work_vrs[8], work_vrs[13], tmp_vr);
+    chacha20_quarter_round(work_vrs[3], work_vrs[4], work_vrs[9], work_vrs[14], tmp_vr);
 
     __ sub(loop, loop, 1);
     __ bnez(loop, L_Rounds);

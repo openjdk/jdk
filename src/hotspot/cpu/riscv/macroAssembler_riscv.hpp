@@ -1289,6 +1289,9 @@ public:
   }
 
   // vector pseudo instructions
+  // rotate vector register left with shift bits, 32-bit version
+  void vrol_vwi(VectorRegister vd, uint32_t shift, VectorRegister tmp_vr);
+
   inline void vl1r_v(VectorRegister vd, Register rs) {
     vl1re8_v(vd, rs);
   }

@@ -2016,6 +2016,13 @@ void MacroAssembler::andi(Register Rd, Register Rn, int64_t imm, Register tmp) {
   }
 }
 
+// rotate vector register left with shift bits, 32-bit version
+void MacroAssembler::vrol_vwi(VectorRegister vd, uint32_t shift, VectorRegister tmp_vr) {
+  vsrl_vi(tmp_vr, vd, 32 - shift);
+  vsll_vi(vd, vd, shift);
+  vor_vv(vd, vd, tmp_vr);
+}
+
 void MacroAssembler::orptr(Address adr, RegisterOrConstant src, Register tmp1, Register tmp2) {
   ld(tmp1, adr);
   if (src.is_register()) {
