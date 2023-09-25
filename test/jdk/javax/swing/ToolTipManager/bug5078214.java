@@ -32,7 +32,6 @@
  */
 
 import java.awt.BorderLayout;
-import java.awt.event.MouseEvent;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
@@ -41,6 +40,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.Window;
+import java.awt.event.MouseEvent;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
@@ -48,6 +48,9 @@ import javax.swing.ToolTipManager;
 
 public class bug5078214 {
     static volatile boolean passed = false;
+    static GraphicsEnvironment ge;
+    static GraphicsDevice[] gs;
+    static GraphicsConfiguration testGraphicsConfig;
 
     static volatile JFrame mainFrame;
     static volatile Rectangle bounds;
@@ -56,25 +59,10 @@ public class bug5078214 {
 
     public static void main(String[] args) throws Exception {
         try {
-            SwingUtilities.invokeAndWait(() -> {
-                GraphicsEnvironment ge = GraphicsEnvironment.
-                        getLocalGraphicsEnvironment();
-                GraphicsDevice[] gs = ge.getScreenDevices();
-                GraphicsConfiguration testGraphics = null;
-                for (int j = 0; j < gs.length; j++) {
-                    GraphicsDevice gd = gs[j];
-                    GraphicsConfiguration[] gc =
-                            gd.getConfigurations();
-                    for (int i = 0; i < gc.length; i++) {
-                        insets = Toolkit.getDefaultToolkit().getScreenInsets(gc[i]);
-                        if (insets.bottom != 0) {
-                            testGraphics = gc[i];
-                            break;
-                        }
-                    }
-                }
+            graphicsConfigHelper();
 
-                if (testGraphics == null) {
+            SwingUtilities.invokeAndWait(() -> {
+                if (testGraphicsConfig == null) {
                     System.out.print("We need at least one screen with ");
                     System.out.println("the taskbar at the bottom position.");
                     System.out.println("Testing skipped.");
@@ -94,7 +82,7 @@ public class bug5078214 {
 
                 // Position frame
                 mainFrame.setSize(200, 200);
-                bounds = testGraphics.getBounds();
+                bounds = testGraphicsConfig.getBounds();
                 int x = bounds.x + 200;
                 int y = bounds.y + bounds.height - insets.bottom - 100;
                 mainFrame.setLocation(x, y);
@@ -107,8 +95,6 @@ public class bug5078214 {
             r.delay(1000);
 
             test(bounds, insets);
-            r.waitForIdle();
-            r.delay(1000);
 
             if (!passed) {
                 throw new RuntimeException("ToolTip shown outside of the visible area. Test failed.");
@@ -122,24 +108,41 @@ public class bug5078214 {
         }
     }
 
-    public static void test(Rectangle b, Insets i) {
-        r.delay(500);
-        ToolTipManager.sharedInstance().setLightWeightPopupEnabled(false);
-        ToolTipManager.sharedInstance().setInitialDelay(100);
+    public static void test(Rectangle b, Insets i) throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            ToolTipManager.sharedInstance().setLightWeightPopupEnabled(false);
+            ToolTipManager.sharedInstance().setInitialDelay(100);
+        });
         r.mouseMove(b.x + 300, b.y + b.height - i.bottom - 10);
-        r.delay(2000);
+        r.delay(500);
         Window[] ow = mainFrame.getOwnedWindows();
         if (ow == null || ow.length < 1) {
-            System.out.println("No owned windows for JFrame - no tooltip shown?");
-            passed = true;
-            return;
+            throw new RuntimeException("No owned windows for JFrame - no tooltip shown?");
         }
 
         Window ttwnd = ow[0];
         int wy = ttwnd.getBounds().y + ttwnd.getBounds().height - 1;
-        if (wy < (b.y + b.height - i.bottom)) {
-            // Position is Ok!
-            passed = true;
-        }
+        passed = wy < (b.y + b.height - i.bottom));
+    }
+
+    public static void graphicsConfigHelper() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            gs = ge.getScreenDevices();
+            testGraphicsConfig = null;
+
+            for (int j = 0; j < gs.length; j++) {
+                GraphicsDevice gd = gs[j];
+                GraphicsConfiguration[] gc = gd.getConfigurations();
+                for (int i = 0; i < gc.length; i++) {
+                    insets = Toolkit.getDefaultToolkit().getScreenInsets(gc[i]);
+                    if (insets.bottom != 0) {
+                        testGraphicsConfig = gc[i];
+                        break;
+                    }
+                }
+            }
+        });
+
     }
 }

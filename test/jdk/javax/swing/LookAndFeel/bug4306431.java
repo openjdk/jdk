@@ -34,10 +34,10 @@ import javax.swing.plaf.metal.DefaultMetalTheme;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
 public class bug4306431 {
-    static Font FONT = new Font(Font.MONOSPACED, Font.ITALIC, 24);
+    static final Font FONT = new Font(Font.MONOSPACED, Font.ITALIC, 24);
 
     public static void main(String[] argv) throws Exception {
-        MetalLookAndFeel.setCurrentTheme(new MetalTheme());
+        MetalLookAndFeel.setCurrentTheme(new TestMetalTheme());
         LookAndFeel laf = new MetalLookAndFeel();
         Font font = laf.getDefaults().getFont("List.font");
         if (!font.equals(FONT)) {
@@ -45,7 +45,7 @@ public class bug4306431 {
         }
     }
 
-    static class MetalTheme extends DefaultMetalTheme {
+    static class TestMetalTheme extends DefaultMetalTheme {
         public FontUIResource getControlTextFont() {
             return new FontUIResource(FONT);
         }

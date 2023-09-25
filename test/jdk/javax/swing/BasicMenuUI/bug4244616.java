@@ -37,6 +37,9 @@ import javax.swing.JMenu;
 import javax.swing.plaf.basic.BasicMenuUI;
 
 public class bug4244616 {
+    static PrintStream oldOut;
+    static PrintStream oldErr;
+
     public static void main(String[] argv) throws Exception {
         JMenu menu = new JMenu();
         BasicMenuUI ui = new BasicMenuUI();
@@ -54,8 +57,8 @@ public class bug4244616 {
              PrintStream out = new PrintStream(bout);
              PrintStream err = new PrintStream(berr)) {
 
-            PrintStream oldOut = System.out;
-            PrintStream oldErr = System.err;
+            oldOut = System.out;
+            oldErr = System.err;
             System.setOut(out);
             System.setErr(err);
 
@@ -67,13 +70,15 @@ public class bug4244616 {
                 }
             }
 
+            if (bout.size() != 0 || berr.size() != 0) {
+                System.out.println("bout: " + bout);
+                System.out.println("berr: " + berr);
+                throw new RuntimeException("Failed: some debug output occurred");
+            }
+        } finally {
             // Restore streams, check results
             System.setOut(oldOut);
             System.setErr(oldErr);
-
-            if (bout.size() != 0 || berr.size() != 0) {
-                throw new RuntimeException("Failed: some debug output occurred");
-            }
         }
     }
 }
