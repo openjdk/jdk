@@ -24,8 +24,8 @@
 import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Color;
+import java.awt.EventQueue;
 import java.awt.Frame;
-import javax.swing.SwingUtilities;
 
 /*
  * @test
@@ -61,7 +61,7 @@ public class FrameResizeTest_1 {
                 .columns(45)
                 .build();
 
-        SwingUtilities.invokeAndWait(() -> {
+        EventQueue.invokeAndWait(() -> {
             FrameResize_1 frame = new FrameResize_1();
 
             PassFailJFrame.addTestWindow(frame);

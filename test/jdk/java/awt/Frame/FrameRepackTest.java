@@ -23,6 +23,7 @@
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Label;
 import java.awt.Menu;
@@ -32,7 +33,6 @@ import java.awt.Panel;
 import java.awt.ScrollPane;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import javax.swing.SwingUtilities;
 
 /*
  * @test
@@ -85,7 +85,7 @@ public class FrameRepackTest {
                 .columns(45)
                 .build();
 
-        SwingUtilities.invokeAndWait(() -> {
+        EventQueue.invokeAndWait(() -> {
             FrameRepack frame = new FrameRepack();
 
             PassFailJFrame.addTestWindow(frame);

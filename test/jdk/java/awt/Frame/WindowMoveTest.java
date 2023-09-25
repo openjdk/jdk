@@ -54,7 +54,7 @@ public class WindowMoveTest {
         EventQueue.invokeAndWait(() ->
                 frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING)));
 
-        if (!WindowMove.latch.await(10, TimeUnit.SECONDS)) {
+        if (!WindowMove.latch.await(2, TimeUnit.SECONDS)) {
             throw new RuntimeException("Test timeout.");
         }
 
