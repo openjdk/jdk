@@ -1538,18 +1538,14 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
     Label L_skip;
 
     ldrw(rscratch1, Address(rthread, JavaThread::backoff_secondary_super_miss_offset()));
-    subsw(rscratch1, rscratch1, 1);
-    br(Assembler::GT, L_skip);
+    subw(rscratch1, rscratch1, 1);
+    tbz(rscratch1, 31, L_skip);
 
     str(super_klass, super_cache_addr);
     movw(rscratch1, super_cache_backoff);
 
     bind(L_skip);
     strw(rscratch1, Address(rthread, JavaThread::backoff_secondary_super_miss_offset()));
-
-    // The operations above destroy condition codes set by scan.
-    // This is the success path, restore them ourselves.
-    cmp(zr, zr); // Set Z flag
   } else {
     str(super_klass, super_cache_addr);
   }
