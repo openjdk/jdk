@@ -121,8 +121,10 @@ public:
   ShenandoahControlThread();
   ~ShenandoahControlThread();
 
-  // Handle allocation failure from normal allocation.
-  // Optionally blocks while collector is handling the failure.
+  // Handle allocation failure from a mutator allocation.
+  // Optionally blocks while collector is handling the failure. If the GC
+  // threshold has been exceeded, the mutator allocation will not block so
+  // that the out of memory error can be raised promptly.
   void handle_alloc_failure(ShenandoahAllocRequest& req, bool block = true);
 
   // Handle allocation failure from evacuation path.
