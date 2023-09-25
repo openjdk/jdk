@@ -2613,7 +2613,7 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
           l -= uses_found;    // we deleted 1 or more copies of this edge
         }
 
-        assert(use->is_Proj(), "loop exit should be projections");
+        assert(use->is_Proj(), "loop exit should be projection");
         Node* use_clone = use->clone();
         register_control(use_clone, use_loop, idom(use), dom_depth(use));
         // Now finish up 'r'
