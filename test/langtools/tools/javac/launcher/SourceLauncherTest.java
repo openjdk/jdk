@@ -539,7 +539,7 @@ public class SourceLauncherTest extends TestRunner {
                 "error: can't find main(String[]) method in class: NoMain");
     }
 
-    @Test
+    //@Test temporary disabled as enabled preview allows no-param main
     public void testMainBadParams(Path base) throws IOException {
         tb.writeJavaFiles(base,
                 "class BadParams { public static void main() { } }");
@@ -547,7 +547,7 @@ public class SourceLauncherTest extends TestRunner {
                 "error: can't find main(String[]) method in class: BadParams");
     }
 
-    @Test
+    //@Test temporary disabled as enabled preview allows non-public main
     public void testMainNotPublic(Path base) throws IOException {
         tb.writeJavaFiles(base,
                 "class NotPublic { static void main(String... args) { } }");
@@ -555,7 +555,7 @@ public class SourceLauncherTest extends TestRunner {
                 "error: can't find main(String[]) method in class: NotPublic");
     }
 
-    @Test
+    //@Test temporary disabled as enabled preview allows non-static main
     public void testMainNotStatic(Path base) throws IOException {
         tb.writeJavaFiles(base,
                 "class NotStatic { public void main(String... args) { } }");

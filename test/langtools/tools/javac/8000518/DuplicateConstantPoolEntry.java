@@ -34,6 +34,7 @@
 import com.sun.source.util.JavacTask;
 import java.lang.classfile.*;
 import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.PoolEntry;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -43,7 +44,6 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
-import jdk.internal.classfile.constantpool.PoolEntry;
 
 /*
  * This bug was reproduced having two classes B and C referenced from a class A
