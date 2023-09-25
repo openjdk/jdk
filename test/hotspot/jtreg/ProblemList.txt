@@ -133,6 +133,7 @@ serviceability/sa/TestJmapCoreMetaspace.java 8267433 macosx-x64
 serviceability/sa/ClhsdbDumpclass.java 8316342 generic-all
 
 serviceability/attach/ConcAttachTest.java 8290043 linux-all
+serviceability/jvmti/RedefineClasses/RedefineLeakThrowable.java 8316658 generic-all
 
 #############################################################################
 
