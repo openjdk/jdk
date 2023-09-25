@@ -46,6 +46,7 @@ import sun.reflect.generics.repository.ConstructorRepository;
  * A shared superclass for the common functionality of {@link Method}
  * and {@link Constructor}.
  *
+ * @sealedGraph
  * @since 1.8
  */
 public abstract sealed class Executable extends AccessibleObject
