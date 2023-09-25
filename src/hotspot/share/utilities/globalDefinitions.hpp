@@ -1044,7 +1044,7 @@ const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap
 #define       badHeapWord       (::badHeapWordVal)
 
 // Default TaskQueue size is 16K (32-bit) or 128K (64-bit)
-const size_t TASKQUEUE_SIZE = (NOT_LP64(1<<14) LP64_ONLY(1<<17));
+const uint TASKQUEUE_SIZE = (NOT_LP64(1<<14) LP64_ONLY(1<<17));
 
 //----------------------------------------------------------------------------------------------------
 // Utility functions for bitfield manipulations

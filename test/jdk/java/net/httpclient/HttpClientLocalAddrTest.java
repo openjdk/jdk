@@ -54,7 +54,7 @@ import static java.net.http.HttpClient.Version.HTTP_2;
  * @test
  * @summary Tests HttpClient usage when configured with a local address to bind
  *          to, when sending requests
- * @bug 8209137
+ * @bug 8209137 8316031
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  *
  * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.IPSupport

@@ -25,6 +25,7 @@
  * @test
  * @bug 8299959
  * @summary In CmpU::Value, the sub computation may be narrower than the overflow computation.
+ * @requires vm.compiler2.enabled
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressCCP -Xcomp -XX:-TieredCompilation
  *                   -XX:CompileCommand=compileonly,compiler.rangechecks.TestRangeCheckCmpUOverflowVsSub::test

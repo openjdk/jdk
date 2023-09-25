@@ -1296,9 +1296,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     assert(data != nullptr,                "need data for type check");
     assert(data->is_ReceiverTypeData(), "need ReceiverTypeData for type check");
   }
-  Label profile_cast_success, profile_cast_failure;
-  Label *success_target = should_profile ? &profile_cast_success : success;
-  Label *failure_target = should_profile ? &profile_cast_failure : failure;
+  Label* success_target = success;
+  Label* failure_target = failure;
 
   if (obj == k_RInfo) {
     k_RInfo = dst;
@@ -1314,24 +1313,33 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
   assert_different_registers(obj, k_RInfo, klass_RInfo);
 
-    if (should_profile) {
-      Label not_null;
-      __ cbnz(obj, not_null);
-      // Object is null; update MDO and exit
-      Register mdo  = klass_RInfo;
-      __ mov_metadata(mdo, md->constant_encoding());
-      Address data_addr
-        = __ form_address(rscratch2, mdo,
-                          md->byte_offset_of_slot(data, DataLayout::flags_offset()),
-                          0);
-      __ ldrb(rscratch1, data_addr);
-      __ orr(rscratch1, rscratch1, BitData::null_seen_byte_constant());
-      __ strb(rscratch1, data_addr);
-      __ b(*obj_is_null);
-      __ bind(not_null);
-    } else {
-      __ cbz(obj, *obj_is_null);
-    }
+  if (should_profile) {
+    Register mdo  = klass_RInfo;
+    __ mov_metadata(mdo, md->constant_encoding());
+    Label not_null;
+    __ cbnz(obj, not_null);
+    // Object is null; update MDO and exit
+    Address data_addr
+      = __ form_address(rscratch2, mdo,
+                        md->byte_offset_of_slot(data, DataLayout::flags_offset()),
+                        0);
+    __ ldrb(rscratch1, data_addr);
+    __ orr(rscratch1, rscratch1, BitData::null_seen_byte_constant());
+    __ strb(rscratch1, data_addr);
+    __ b(*obj_is_null);
+    __ bind(not_null);
+
+    Label update_done;
+    Register recv = k_RInfo;
+    __ load_klass(recv, obj);
+    type_profile_helper(mdo, md, data, recv, &update_done);
+    Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
+    __ addptr(counter_addr, DataLayout::counter_increment);
+
+    __ bind(update_done);
+  } else {
+    __ cbz(obj, *obj_is_null);
+  }
 
   if (!k->is_loaded()) {
     klass2reg_with_patching(k_RInfo, op->info_for_patch());
@@ -1385,26 +1393,6 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       // successful cast, fall through to profile or jump
     }
   }
-  if (should_profile) {
-    Register mdo  = klass_RInfo, recv = k_RInfo;
-    __ bind(profile_cast_success);
-    __ mov_metadata(mdo, md->constant_encoding());
-    __ load_klass(recv, obj);
-    Label update_done;
-    type_profile_helper(mdo, md, data, recv, success);
-    __ b(*success);
-
-    __ bind(profile_cast_failure);
-    __ mov_metadata(mdo, md->constant_encoding());
-    Address counter_addr
-      = __ form_address(rscratch2, mdo,
-                        md->byte_offset_of_slot(data, CounterData::count_offset()),
-                        0);
-    __ ldr(rscratch1, counter_addr);
-    __ sub(rscratch1, rscratch1, DataLayout::counter_increment);
-    __ str(rscratch1, counter_addr);
-    __ b(*failure);
-  }
   __ b(*success);
 }
 
@@ -1436,16 +1424,16 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       assert(data != nullptr,                "need data for type check");
       assert(data->is_ReceiverTypeData(), "need ReceiverTypeData for type check");
     }
-    Label profile_cast_success, profile_cast_failure, done;
-    Label *success_target = should_profile ? &profile_cast_success : &done;
-    Label *failure_target = should_profile ? &profile_cast_failure : stub->entry();
+    Label done;
+    Label* success_target = &done;
+    Label* failure_target = stub->entry();
 
     if (should_profile) {
       Label not_null;
-      __ cbnz(value, not_null);
-      // Object is null; update MDO and exit
       Register mdo  = klass_RInfo;
       __ mov_metadata(mdo, md->constant_encoding());
+      __ cbnz(value, not_null);
+      // Object is null; update MDO and exit
       Address data_addr
         = __ form_address(rscratch2, mdo,
                           md->byte_offset_of_slot(data, DataLayout::flags_offset()),
@@ -1455,6 +1443,14 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       __ strb(rscratch1, data_addr);
       __ b(done);
       __ bind(not_null);
+
+      Label update_done;
+      Register recv = k_RInfo;
+      __ load_klass(recv, value);
+      type_profile_helper(mdo, md, data, recv, &update_done);
+      Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
+      __ addptr(counter_addr, DataLayout::counter_increment);
+      __ bind(update_done);
     } else {
       __ cbz(value, done);
     }
@@ -1474,25 +1470,6 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     // result is a boolean
     __ cbzw(k_RInfo, *failure_target);
     // fall through to the success case
-
-    if (should_profile) {
-      Register mdo  = klass_RInfo, recv = k_RInfo;
-      __ bind(profile_cast_success);
-      __ mov_metadata(mdo, md->constant_encoding());
-      __ load_klass(recv, value);
-      Label update_done;
-      type_profile_helper(mdo, md, data, recv, &done);
-      __ b(done);
-
-      __ bind(profile_cast_failure);
-      __ mov_metadata(mdo, md->constant_encoding());
-      Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
-      __ lea(rscratch2, counter_addr);
-      __ ldr(rscratch1, Address(rscratch2));
-      __ sub(rscratch1, rscratch1, DataLayout::counter_increment);
-      __ str(rscratch1, Address(rscratch2));
-      __ b(*stub->entry());
-    }
 
     __ bind(done);
   } else if (code == lir_checkcast) {

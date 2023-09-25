@@ -34,6 +34,7 @@
 #include "memory/universe.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -4281,7 +4282,7 @@ void TemplateTable::monitorenter() {
   // check for null object
   __ null_check(Robj, Rtemp);
 
-  const int entry_size = (frame::interpreter_frame_monitor_size() * wordSize);
+  const int entry_size = (frame::interpreter_frame_monitor_size_in_bytes());
   assert (entry_size % StackAlignmentInBytes == 0, "keep stack alignment");
   Label allocate_monitor, allocated;
 
@@ -4392,7 +4393,7 @@ void TemplateTable::monitorexit() {
   // check for null object
   __ null_check(Robj, Rtemp);
 
-  const int entry_size = (frame::interpreter_frame_monitor_size() * wordSize);
+  const int entry_size = (frame::interpreter_frame_monitor_size_in_bytes());
   Label found, throw_exception;
 
   // find matching slot
