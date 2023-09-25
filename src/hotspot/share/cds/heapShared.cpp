@@ -658,7 +658,7 @@ void HeapShared::serialize_subgraph_info_table_header(SerializeClosure* soc) {
 }
 
 static void verify_the_heap(Klass* k, const char* which) {
-  if (VerifyArchivedFields) {
+  if (VerifyArchivedFields > 0) {
     ResourceMark rm;
     log_info(cds, heap)("Verify heap %s initializing static field(s) in %s",
                         which, k->external_name());
@@ -666,15 +666,20 @@ static void verify_the_heap(Klass* k, const char* which) {
     VM_Verify verify_op;
     VMThread::execute(&verify_op);
 
-    if (!FLAG_IS_DEFAULT(VerifyArchivedFields)) {
-      // If VerifyArchivedFields has a non-default value (e.g., specified on the command-line), do
-      // more expensive checks.
-      if (is_init_completed()) {
-        FlagSetting fs1(VerifyBeforeGC, true);
-        FlagSetting fs2(VerifyDuringGC, true);
-        FlagSetting fs3(VerifyAfterGC,  true);
-        Universe::heap()->collect(GCCause::_java_lang_system_gc);
-      }
+    if (VerifyArchivedFields > 1 && is_init_completed()) {
+      // At this time, the oop->klass() of some archived objects in the heap may not
+      // have been loaded into the system dictionary yet. Nevertheless, oop->klass() should
+      // have enough information (object size, oop maps, etc) so that a GC can be safely
+      // performed.
+      //
+      // -XX:VerifyArchivedFields=2 force a GC to happen in such an early stage
+      // to check for GC safety.
+      log_info(cds, heap)("Trigger GC %s initializing static field(s) in %s",
+                          which, k->external_name());
+      FlagSetting fs1(VerifyBeforeGC, true);
+      FlagSetting fs2(VerifyDuringGC, true);
+      FlagSetting fs3(VerifyAfterGC,  true);
+      Universe::heap()->collect(GCCause::_java_lang_system_gc);
     }
   }
 }

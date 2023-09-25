@@ -412,6 +412,8 @@ public class TestCommon extends CDSTestUtils {
             cmd.add(opts.appJar);
         }
 
+        CDSTestUtils.addVerifyArchivedFields(cmd);
+
         for (String s : opts.suffix) cmd.add(s);
 
         if (RUN_WITH_JFR) {
