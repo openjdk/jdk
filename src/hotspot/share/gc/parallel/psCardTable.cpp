@@ -202,9 +202,22 @@ void PSCardTable::scan_objects_in_range(PSPromotionManager* pm,
 }
 
 void PSCardTable::prepare_scavenge(int active_workers, size_t old_gen_used_words) {
+  // For parallel scanning of large object arrays the size of stripes is
+  // increased inversely to the number of threads. Especially with just 2
+  // threads the cost of work partitioning is otherwise too high. It cannot be
+  // amortized by just 2 threads when scanning very large arrays.
+  // We limit the stripe size to a maximum of 1M (with 512b cards) if there are
+  // more than 8 active worker threads because we want to make sure that large
+  // arrays of only a few megabytes are also scanned in parallel. This prevents
+  // regressions due to cache thrashing caused by work stealing.
+  const size_t stripe_min_size_in_words = 128 * card_size_in_words(); // 64K by default
+  const size_t stripe_max_size_in_words = 16 * stripe_min_size_in_words;
   const int stripe_count_per_worker = 100;
   int stripe_count = active_workers * stripe_count_per_worker;
-  size_t sz = MAX2(old_gen_used_words / stripe_count, 128 * (size_t)card_size_in_words());
+  size_t sz = MAX2(old_gen_used_words / stripe_count, stripe_min_size_in_words);
+  if (active_workers >= 8 && sz > stripe_max_size_in_words) {
+    sz = stripe_max_size_in_words;
+  }
   stripe_size_in_words = align_up(sz, card_size_in_words());
   large_obj_arr_min_words = 2 * stripe_size_in_words + 1;
   log_trace(gc, scavenge)("stripe count:%d stripe size:" SIZE_FORMAT "K",
