@@ -625,7 +625,10 @@ class SocketChannelImpl
         }
         long start = SocketWriteEvent.timestamp();
         int nbytes = implWrite(buf);
-        SocketWriteEvent.offer(start, nbytes, remoteAddress());
+        long duration = SocketWriteEvent.timestamp() - start;
+        if (SocketWriteEvent.shouldCommit(duration)) {
+            SocketWriteEvent.emit(start, duration, nbytes, remoteAddress());
+        }
         return nbytes;
     }
 
@@ -638,7 +641,10 @@ class SocketChannelImpl
         }
         long start = SocketWriteEvent.timestamp();
         long nbytes = implWrite(srcs, offset, length);
-        SocketWriteEvent.offer(start, nbytes, remoteAddress());
+        long duration = SocketWriteEvent.timestamp() - start;
+        if (SocketWriteEvent.shouldCommit(duration)) {
+            SocketWriteEvent.emit(start, duration, nbytes, remoteAddress());
+        }
         return nbytes;
     }
 

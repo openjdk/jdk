@@ -1212,7 +1212,10 @@ public class Socket implements java.io.Closeable {
             }
             long start = SocketWriteEvent.timestamp();
             implWrite(b, off, len);
-            SocketWriteEvent.offer(start, len, parent.getRemoteSocketAddress());
+            long duration = SocketWriteEvent.timestamp() - start;
+            if (SocketWriteEvent.shouldCommit(duration)) {
+                SocketWriteEvent.emit(start, duration, len, parent.getRemoteSocketAddress());
+            }
         }
 
         private void implWrite(byte[] b, int off, int len) throws IOException {
