@@ -42,10 +42,12 @@ public class FrameResizeTest_1 {
     private static final String INSTRUCTIONS = """
         To the right of this frame is an all-white 200x200 frame.
 
-        This is actually a white canvas component of the frame.
+        This is actually a white canvas component in the frame.
         The frame itself is red.
         The red should never show.
         In particular, after you resize the frame, you should see all white and no red.
+        (During very fast window resizing, red color may appear briefly,
+        which is not a failure.)
 
         Upon test completion, click Pass or Fail appropriately.
         """;
@@ -55,7 +57,7 @@ public class FrameResizeTest_1 {
                 .title("FrameResizeTest_1 Instructions")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(5)
-                .rows(9)
+                .rows(12)
                 .columns(45)
                 .build();
 

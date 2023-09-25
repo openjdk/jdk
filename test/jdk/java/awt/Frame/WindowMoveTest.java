@@ -29,6 +29,7 @@ import java.awt.Robot;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /*
  * @test
@@ -53,7 +54,9 @@ public class WindowMoveTest {
         EventQueue.invokeAndWait(() ->
                 frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING)));
 
-        WindowMove.latch.await();
+        if (!WindowMove.latch.await(10, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Test timeout.");
+        }
 
         if (WindowMove.failMessage != null) {
             throw new RuntimeException(WindowMove.failMessage);
@@ -66,7 +69,7 @@ class WindowMove extends Frame implements WindowListener {
             new Rectangle(100, 100, 300, 300);
 
     static CountDownLatch latch = new CountDownLatch(1);
-    static volatile String failMessage = null;
+    static String failMessage = null;
 
     private boolean layoutCheck;
     private boolean visibleCheck;
@@ -92,7 +95,7 @@ class WindowMove extends Frame implements WindowListener {
         if (checkBounds()) {
             visibleCheck = true;
         }
-        System.out.println("setVisible  bounds: " + getBounds());
+        System.out.println("setVisible bounds: " + getBounds());
     }
 
     private boolean checkBounds() {
@@ -105,7 +108,7 @@ class WindowMove extends Frame implements WindowListener {
                 && openedCheck
                 && closingCheck
                 && closedCheck) {
-            System.out.println("Test passed");
+            System.out.println("Test passed.");
         } else {
             failMessage = """
                     Some of the checks failed:

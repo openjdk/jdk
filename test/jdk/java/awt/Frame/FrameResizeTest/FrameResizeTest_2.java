@@ -84,20 +84,20 @@ class FrameResize_2 extends Frame {
     FrameResize_2() {
         super("FrameResize_2");
 
-        setLayout( new GridBagLayout() );
+        setLayout(new GridBagLayout());
 
         GridBagConstraints c = new GridBagConstraints();
         c.fill = GridBagConstraints.BOTH;
         c.weightx = 1;
         c.weighty = 1;
 
-        Container dumbc = new DumbC();
-        add( dumbc, c );
+        Container dumbContainer = new DumbContainer();
+        add(dumbContainer, c);
 
-        Panel dump = new DumbPanel();
-        add( dump, c );
+        Panel dumbPanel = new DumbPanel();
+        add(dumbPanel, c);
 
-        setSize( new Dimension( 300, 300));
+        setSize(300, 300);
     }
 }
 
@@ -115,8 +115,8 @@ class Fake extends Canvas {
     }
 }
 
-class DumbC extends Container {
-    public DumbC() {
+class DumbContainer extends Container {
+    public DumbContainer() {
         setLayout(new BorderLayout());
         add("Center", new Fake("dumbc", Color.red));
     }

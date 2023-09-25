@@ -50,7 +50,7 @@ public class FrameRepackTest {
             The menubar has one menu, labelled 'Flip'.
             The menu has two items, labelled 'visible' and 'not visible'.
             The frame also contains a red panel that contains two line labels,
-            ' This panel is always displayed' and ' it is a test'.
+            'This panel is always displayed' and 'it is a test'.
 
             If you select the menu item 'Flip->visible', then another panel is
             added below the red panel.
@@ -61,7 +61,7 @@ public class FrameRepackTest {
 
             You can repeatedly add and remove the second panel in this way.
             After such an addition or removal, the frame's location on the screen
-            should not have changed, while the size changes to accommodate
+            should not change, while the size changes to accommodate
             either just the red panel or both the red and the blue panels.
 
             If you resize the frame larger, the red panel remains at the
@@ -113,7 +113,6 @@ class FrameRepack extends Frame implements ActionListener {
         // create the options
         Menu flip = new Menu("Flip");
         MenuItem mi;
-        flip.addSeparator();
         mi = new MenuItem("visible");
         mi.addActionListener(this);
         flip.add(mi);
@@ -130,8 +129,8 @@ class FrameRepack extends Frame implements ActionListener {
         Panel north = new Panel();
         north.setBackground(Color.red);
         north.setLayout(new BorderLayout(2, 2));
-        north.add("North", new Label(" This panel is always displayed"));
-        north.add("Center", new Label(" it is a test "));
+        north.add("North", new Label("This panel is always displayed"));
+        north.add("Center", new Label("it is a test"));
         north.setSize(200, 200);
         add("North", north);
 
@@ -161,16 +160,15 @@ class FrameRepack extends Frame implements ActionListener {
         pack();
     }
 
+    @Override
     public void actionPerformed(ActionEvent evt) {
         if (evt.getSource() instanceof MenuItem) {
             if (evt.getActionCommand().equals("visible")) {
                 south.setVisible(true);
                 pack();
-                setVisible(true);
             } else if (evt.getActionCommand().equals("not visible")) {
                 south.setVisible(false);
                 pack();
-                setVisible(true);
             }
         }
     }
