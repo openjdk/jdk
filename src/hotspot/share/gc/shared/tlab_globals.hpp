@@ -73,7 +73,7 @@
   /* Limit the lower bound of this flag to 1 as it is used  */              \
   /* in a division expression.                              */              \
   product(uintx, TLABWasteTargetPercent, 1,                                 \
-          "Percentage of Eden that can be wasted")                          \
+          "Percentage of Eden that can be wasted (half-full TLABs at GC)"   \
           range(1, 100)                                                     \
                                                                             \
   product(uintx, TLABRefillWasteFraction,    64,                            \
