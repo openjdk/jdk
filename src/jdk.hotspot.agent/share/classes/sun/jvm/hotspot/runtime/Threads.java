@@ -241,7 +241,10 @@ public class Threads {
                         return thread;
                      }
                 }
-                throw new InternalError("We should have found a thread that owns the anonymous lock");
+                // We should have found the owner. However, the code can run concurrently with
+                // Java code and locking state can change at any time. This code is not
+                // expected to be precise, so we return null here.
+                return null;
             }
             // Owner can only be threads at this point.
             Address o = monitor.owner();
