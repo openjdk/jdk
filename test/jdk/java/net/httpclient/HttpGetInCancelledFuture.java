@@ -121,7 +121,7 @@ public class HttpGetInCancelledFuture {
         class Task<T> implements Callable<T> {
             final Callable<T> task;
             final CompletableFuture<T> cf = new CompletableFuture<>();
-            Task(Callable<T>  task) {
+            Task(Callable<T> task) {
                 this.task = task;
             }
             @Override
