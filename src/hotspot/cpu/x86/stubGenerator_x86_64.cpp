@@ -576,7 +576,7 @@ address StubGenerator::generate_verify_mxcsr() {
 
   const Address mxcsr_save(rsp, 0);
 
-  // if (CheckJNICalls) {
+  if (CheckJNICalls) {
     Label ok_ret;
     ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
     __ push(rax);
@@ -594,7 +594,7 @@ address StubGenerator::generate_verify_mxcsr() {
     __ bind(ok_ret);
     __ addptr(rsp, wordSize);
     __ pop(rax);
-  // }
+  }
 
   __ ret(0);
 
@@ -3899,8 +3899,10 @@ void StubGenerator::create_control_words() {
   StubRoutines::x86::_mxcsr_std = 0x1F80;
   // Round to zero, 64-bit mode, exceptions masked
   StubRoutines::x86::_mxcsr_rz = 0x7F80;
-  StubRoutines::x86::_unity = 0x1.0p-1020;
-  StubRoutines::x86::_thresh = 0x0.0000000000003p-1022;
+  StubRoutines::x86::_unity
+    = jdouble_cast(0x0030000000000000); // 0x1.0p-1020;
+  StubRoutines::x86::_thresh
+    = jdouble_cast(0x0000000000000003); // 0x0.0000000000003p-1022;
 }
 
 // Initialization

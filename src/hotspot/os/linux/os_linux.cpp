@@ -1795,9 +1795,6 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   return nullptr;
 }
 
-static const double unity = 0x1.0p-1020;
-static const volatile double thresh = 0x0.0000000000003p-1022;
-
 void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
                                 int ebuflen) {
   // Save and restore the floating-point environment around dlopen().
@@ -1846,11 +1843,11 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
     event.commit();
 #endif
 
-  fenv_t other_fenv;
-  {
-    int rtn = fegetenv(&other_fenv);
-    assert(rtn == 0, "fegetnv must succeed");
-  }
+    // Quickly test to make sure denormals re correctly handled.
+    static const double unity
+      = jdouble_cast(0x0030000000000000); // 0x1.0p-1020;
+    static const volatile double thresh
+      = jdouble_cast(0x0000000000000003); // 0x0.0000000000003p-1022;
     if (unity + thresh == unity || -unity - thresh == -unity) {
       // We just dlopen()ed a library that mangled the floating-point
       // flags. Silently fix things now.

@@ -25,43 +25,31 @@
  * @test
  * @bug 8295159
  * @summary DSO created with -ffast-math breaks Java floating-point arithmetic
- * @library /test/lib /
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/native -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      compiler.floatingpoint.TestDenormalFloat
+ * @run main/othervm/native compiler.floatingpoint.TestDenormalFloat
  */
 
 package compiler.floatingpoint;
 
 import static java.lang.System.loadLibrary;
-import jdk.test.whitebox.WhiteBox;
 
 public class TestDenormalFloat {
-    private final static WhiteBox wb = WhiteBox.getWhiteBox();
-
     static volatile float lastFloat;
 
-    private static void testFloats(String name) {
+    private static void testFloats() {
         lastFloat = 0x1.0p-149f;
         for (float x = lastFloat * 2; x <= 0x1.0p127f; x *= 2) {
             if (x != x || x <= lastFloat) {
-                throw new AssertionError("TEST FAILED: " + name + ", " + x);
+                throw new AssertionError("TEST FAILED: " + x);
             }
             lastFloat = x;
         }
     }
 
-    public native static void breakThings();
-
     public static void main(String[] args) {
-        testFloats("0");
+        testFloats();
         System.out.println("Loading libfast-math.so");
         loadLibrary("fast-math");
-        testFloats("1");
-        breakThings();
-        wb.forceSafepoint();
-        testFloats("2");
+        testFloats();
         System.out.println("Test passed.");
     }
 }

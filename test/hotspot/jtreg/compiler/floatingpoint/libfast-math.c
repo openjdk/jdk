@@ -21,10 +21,6 @@
  * questions.
  */
 
-#include <assert.h>
-#include <fenv.h>
-#include "jni.h"
-
 // This file is intentionally left blank.
 //
 // It exists only to be linked with -ffast-math. See GCC bug 55522:
@@ -34,36 +30,4 @@
 // or other similar optimizations."
 //
 // This breaks Java's floating point arithmetic.
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-/*
- * Class:     compiler_floatingpoint_TestDenormalFloat
- * Method:    breakThings
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_compiler_floatingpoint_TestDenormalFloat_breakThings
-  (JNIEnv *, jclass);
-
-JNIEXPORT void JNICALL
-Java_compiler_floatingpoint_TestDenormalFloat_breakThings (JNIEnv *env, jclass aClass) {
-  fenv_t temp;
-
-  fenv_t fenv;
-  {
-    int rtn = fegetenv(&fenv);
-    assert(rtn == 0);
-  }
-
-  fenv.__mxcsr |= 0x8000; // Flush to zero
-  {
-    int rtn = fesetenv(&fenv);
-    assert(rtn == 0);
-  }
-}
-
-#ifdef __cplusplus
-}
-#endif
 

@@ -5162,41 +5162,6 @@ void MacroAssembler::restore_cpu_control_state_after_jni(Register rscratch) {
   // or verify that it wasn't changed (with -Xcheck:jni flag).
   if (VM_Version::supports_sse()) {
     if (RestoreMXCSROnJNICalls) {
-      // 0x00007ffff673a7d3 <+51>:	movsd  xmm9,QWORD PTR [rip+0x46c3e5]        # 0x7ffff6ba6bc0
-      // 0x00007ffff673a7db <+59>:	movsd  xmm8,QWORD PTR [rip+0x9bb82d]        # 0x7ffff70f6010 <_ZL6thresh>
-
-      // 0x00007ffff673a7e6 <+70>:	addsd  xmm8,xmm9
-      // 0x00007ffff673a7ea <+74>:	ucomisd xmm8,xmm9
-      // 0x00007ffff673a7ee <+78>:	jnp    0x7ffff673a860 <_ZN2os5Linux13dlopen_helperEPKcPci+192>
-      // 0x00007ffff673a7f0 <+80>:	movsd  xmm8,QWORD PTR [rip+0x46c3d0]        # 0x7ffff6ba6bc8
-      // 0x00007ffff673a7f8 <+88>:	movsd  xmm9,QWORD PTR [rip+0x9bb810]        # 0x7ffff70f6010 <_ZL6thresh>
-      // 0x00007ffff673a800 <+96>:	movapd xmm10,xmm8
-      // 0x00007ffff673a804 <+100>:	subsd  xmm10,xmm9
-      // 0x00007ffff673a808 <+104>:	ucomisd xmm10,xmm8
-      // 0x00007ffff673a80c <+108>:	jp     0x7ffff673a818 <_ZN2os5Linux13dlopen_helperEPKcPci+120>
-      // 0x00007ffff673a80e <+110>:	jne    0x7ffff673a818 <_ZN2os5Linux13dlopen_helperEPKcPci+120>
-
-      // constexpr int MXCSR_MASK = 0xFFC0;  // Mask out any pending exceptions
-
-      // {
-      //   Label ok_ret;
-      //   ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
-      //   const Address mxcsr_save(rsp, 0);
-
-      //   push(rax);
-      //   subptr(rsp, wordSize);      // allocate a temp location
-      //   stmxcsr(mxcsr_save);
-      //   movl(rax, mxcsr_save);
-      //   andl(rax, MXCSR_MASK);
-      //   cmp32(rax, mxcsr_std, rsi);
-      //   jcc(Assembler::equal, ok_ret);
-
-      //   ldmxcsr(mxcsr_std, rsi);
-
-      //   bind(ok_ret);
-      //   addptr(rsp, wordSize);
-      //   pop(rax);
-      // }
 
     Label FAIL, DONE;
       movsd(xmm9, ExternalAddress(StubRoutines::x86::addr_unity()), rsi);
@@ -5209,10 +5174,9 @@ void MacroAssembler::restore_cpu_control_state_after_jni(Register rscratch) {
       ucomisd(xmm8, xmm9);
       jcc(Assembler::notEqual, DONE);
 
-      bind(FAIL);
+    bind(FAIL);
       ldmxcsr(ExternalAddress(StubRoutines::x86::addr_mxcsr_std()), rscratch);
-      bind(DONE);
-
+    bind(DONE);
     } else if (CheckJNICalls) {
       call(RuntimeAddress(StubRoutines::x86::verify_mxcsr_entry()));
     }
