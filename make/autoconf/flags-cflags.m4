@@ -213,7 +213,8 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
           -Wunused-function -Wundef -Wunused-value -Woverloaded-virtual"
       WARNINGS_ENABLE_ALL="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
 
-      DISABLED_WARNINGS="unknown-warning-option unused-parameter unused"
+      DISABLED_WARNINGS="unknown-warning-option unused-parameter unused \
+          c++17-extensions deprecated-non-prototype"
       ;;
 
     xlc)
