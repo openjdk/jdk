@@ -100,7 +100,7 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
     }
     if (BootstrapJVMCI && (TieredStopAtLevel < CompLevel_full_optimization)) {
       jio_fprintf(defaultStream::error_stream(),
-          "-XX:+BootstrapJVMCI is not compatible with -XX:TieredStopAtLevel=%d\n", TieredStopAtLevel);
+          "-XX:+BootstrapJVMCI is not compatible with -XX:TieredStopAtLevel=" INTX_FORMAT "\n", TieredStopAtLevel);
       return false;
     }
   }

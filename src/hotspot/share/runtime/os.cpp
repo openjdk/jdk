@@ -205,8 +205,8 @@ char* os::iso8601_time(jlong milliseconds_since_19700101, char* buffer, size_t b
   // Print an ISO 8601 date and time stamp into the buffer
   const int year = 1900 + time_struct.tm_year;
   const int month = 1 + time_struct.tm_mon;
-  const int printed = jio_snprintf(buffer, buffer_length,
-                                   "%04d-%02d-%02dT%02d:%02d:%02d.%03d%c%02d%02d",
+  const int printed = os::snprintf(buffer, buffer_length,
+                                   "%04d-%02d-%02dT%02d:%02d:%02d.%03d%c%02ld%02ld",
                                    year,
                                    month,
                                    time_struct.tm_mday,

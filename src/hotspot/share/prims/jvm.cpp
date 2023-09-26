@@ -2855,7 +2855,6 @@ JVM_END
 // Printing support //////////////////////////////////////////////////
 extern "C" {
 
-ATTRIBUTE_PRINTF(3, 0)
 int jio_vsnprintf(char *str, size_t count, const char *fmt, va_list args) {
   // Reject count values that are negative signed values converted to
   // unsigned; see bug 4399518, 4417214
@@ -2869,7 +2868,6 @@ int jio_vsnprintf(char *str, size_t count, const char *fmt, va_list args) {
   return result;
 }
 
-ATTRIBUTE_PRINTF(3, 4)
 int jio_snprintf(char *str, size_t count, const char *fmt, ...) {
   va_list args;
   int len;
@@ -2879,7 +2877,6 @@ int jio_snprintf(char *str, size_t count, const char *fmt, ...) {
   return len;
 }
 
-ATTRIBUTE_PRINTF(2, 3)
 int jio_fprintf(FILE* f, const char *fmt, ...) {
   int len;
   va_list args;
@@ -2889,7 +2886,6 @@ int jio_fprintf(FILE* f, const char *fmt, ...) {
   return len;
 }
 
-ATTRIBUTE_PRINTF(2, 0)
 int jio_vfprintf(FILE* f, const char *fmt, va_list args) {
   if (Arguments::vfprintf_hook() != nullptr) {
      return Arguments::vfprintf_hook()(f, fmt, args);
@@ -2898,7 +2894,6 @@ int jio_vfprintf(FILE* f, const char *fmt, va_list args) {
   }
 }
 
-ATTRIBUTE_PRINTF(1, 2)
 JNIEXPORT int jio_printf(const char *fmt, ...) {
   int len;
   va_list args;

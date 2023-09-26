@@ -276,7 +276,7 @@ TypedMethodOptionMatcher* TypedMethodOptionMatcher::parse_method_pattern(char*& 
   TypedMethodOptionMatcher* tom = new TypedMethodOptionMatcher();
   MethodMatcher::parse_method_pattern(line, error_msg, tom);
   if (error_msg != nullptr) {
-    jio_snprintf(errorbuf, buf_size, error_msg);
+    ::strncpy(errorbuf, error_msg, buf_size);
     delete tom;
     return nullptr;
   }
