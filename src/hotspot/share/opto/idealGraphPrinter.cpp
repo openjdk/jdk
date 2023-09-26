@@ -346,7 +346,7 @@ void IdealGraphPrinter::set_traverse_outs(bool b) {
   _traverse_outs = b;
 }
 
-void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set, const Type_Array* types) {
+void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 
   if (edges) {
 
@@ -384,8 +384,10 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set, con
       stringStream bottom_type_stream(buffer, sizeof(buffer) - 1);
       t->dump_on(&bottom_type_stream);
       print_prop("bottom_type", buffer);
-      if (types != nullptr) {
-        const Type* pt = (*types)[node->_idx];
+      if (C->types() != nullptr && C->matcher() == nullptr) {
+        // Phase types maintained during optimization (GVN, IGVN, CCP) are
+        // available and valid (not in code generation phase).
+        const Type* pt = (*C->types())[node->_idx];
         if (pt != nullptr) {
           buffer[0] = 0;
           stringStream phase_type_stream(buffer, sizeof(buffer) - 1);
@@ -741,7 +743,7 @@ Node* IdealGraphPrinter::get_load_node(const Node* node) {
   return load;
 }
 
-void IdealGraphPrinter::walk_nodes(Node* start, bool edges, VectorSet* temp_set, const Type_Array* types) {
+void IdealGraphPrinter::walk_nodes(Node* start, bool edges, VectorSet* temp_set) {
   VectorSet visited;
   GrowableArray<Node *> nodeStack(Thread::current()->resource_area(), 0, 0, nullptr);
   nodeStack.push(start);
@@ -762,7 +764,7 @@ void IdealGraphPrinter::walk_nodes(Node* start, bool edges, VectorSet* temp_set,
       continue;
     }
 
-    visit_node(n, edges, temp_set, types);
+    visit_node(n, edges, temp_set);
 
     if (_traverse_outs) {
       for (DUIterator i = n->outs(); n->has_out(i); i++) {
@@ -780,20 +782,14 @@ void IdealGraphPrinter::walk_nodes(Node* start, bool edges, VectorSet* temp_set,
 
 void IdealGraphPrinter::print_method(const char *name, int level) {
   if (C->should_print_igv(level)) {
-    print(name, (Node *) C->root(), C->types());
+    print(name, (Node *) C->root());
   }
 }
 
 // Print current ideal graph
-void IdealGraphPrinter::print(const char *name, Node *node, const Type_Array* types) {
+void IdealGraphPrinter::print(const char *name, Node *node) {
 
   if (!_current_method || !_should_send_method || node == nullptr) return;
-
-  if (C->matcher() != nullptr) {
-    // Code generation phase, the types maintained during optimization (GVN,
-    // IGVN, CCP) are not valid anymore.
-    types = nullptr;
-  }
 
   // Warning, unsafe cast?
   _chaitin = (PhaseChaitin *)C->regalloc();
@@ -815,11 +811,11 @@ void IdealGraphPrinter::print(const char *name, Node *node, const Type_Array* ty
       }
     }
   }
-  walk_nodes(node, false, &temp_set, types);
+  walk_nodes(node, false, &temp_set);
   tail(NODES_ELEMENT);
 
   head(EDGES_ELEMENT);
-  walk_nodes(node, true, &temp_set, types);
+  walk_nodes(node, true, &temp_set);
   tail(EDGES_ELEMENT);
   if (C->cfg() != nullptr) {
     head(CONTROL_FLOW_ELEMENT);
