@@ -584,15 +584,18 @@ public class AutomaticModulesTest {
 
         assertTrue(a.reads().size() == 3);
         assertTrue(a.reads().contains(base));
+        assertFalse(a.reads().contains(a));  // should not read itself
         assertTrue(a.reads().contains(b));
         assertTrue(a.reads().contains(c));
 
         assertTrue(b.reads().contains(a));
+        assertFalse(b.reads().contains(b));  // should not read itself
         assertTrue(b.reads().contains(c));
         testReadAllBootModules(cf, "b");  // b reads all modules in boot layer
 
         assertTrue(c.reads().contains(a));
         assertTrue(c.reads().contains(b));
+        assertFalse(c.reads().contains(c));  // should not read itself
         testReadAllBootModules(cf, "c");  // c reads all modules in boot layer
 
     }

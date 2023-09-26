@@ -564,14 +564,6 @@ final class Resolver {
                         assert requires.modifiers().contains(Modifier.STATIC);
                         continue;
                     }
-
-                    // m2 is automatic module in parent configuration => m1 reads
-                    // all automatic modules that m2 reads.
-                    if (m2.descriptor().isAutomatic()) {
-                        m2.reads().stream()
-                                .filter(d -> d.descriptor().isAutomatic())
-                                .forEach(reads::add);
-                    }
                 }
 
                 // m1 requires m2 => m1 reads m2
@@ -580,41 +572,6 @@ final class Resolver {
                 // m1 requires transitive m2
                 if (requires.modifiers().contains(Modifier.TRANSITIVE)) {
                     requiresTransitive.add(m2);
-                }
-
-            }
-
-            // automatic modules read all selected modules and all modules
-            // in parent configurations
-            if (descriptor.isAutomatic()) {
-
-                // reads all selected modules
-                // `requires transitive` all selected automatic modules
-                for (ModuleReference mref2 : nameToReference.values()) {
-                    ModuleDescriptor descriptor2 = mref2.descriptor();
-                    String name2 = descriptor2.name();
-
-                    if (!name.equals(name2)) {
-                        ResolvedModule m2
-                            = computeIfAbsent(nameToResolved, name2, cf, mref2);
-                        reads.add(m2);
-                        if (descriptor2.isAutomatic())
-                            requiresTransitive.add(m2);
-                    }
-                }
-
-                // reads all modules in parent configurations
-                // `requires transitive` all automatic modules in parent
-                // configurations
-                for (Configuration parent : parents) {
-                    parent.configurations()
-                            .map(Configuration::modules)
-                            .flatMap(Set::stream)
-                            .forEach(m -> {
-                                reads.add(m);
-                                if (m.reference().descriptor().isAutomatic())
-                                    requiresTransitive.add(m);
-                            });
                 }
             }
 
@@ -648,6 +605,77 @@ final class Resolver {
                 }
             }
         } while (changed);
+
+        // Handle automatic modules in a separate step
+
+        // automatic modules read all selected modules and all modules
+        // in parent configurations
+        for (Map.Entry<ResolvedModule, Set<ResolvedModule>> entry : g1.entrySet()) {
+            ResolvedModule m1 = entry.getKey();
+
+            if (!m1.descriptor().isAutomatic()) {
+                continue;
+            }
+
+            String name = m1.name();
+            Set<ResolvedModule> m1Reads = entry.getValue();
+
+            // reads all selected modules
+            for (ModuleReference mref2 : nameToReference.values()) {
+                ModuleDescriptor descriptor2 = mref2.descriptor();
+                String name2 = descriptor2.name();
+
+                if (!name.equals(name2)) {
+                    ResolvedModule m2 = nameToResolved.get(name2);
+                    assert m2 != null;
+                    m1Reads.add(m2);
+                }
+            }
+
+            // reads all modules in parent configurations
+            for (Configuration parent : parents) {
+                parent.configurations()
+                        .map(Configuration::modules)
+                        .flatMap(Set::stream)
+                        .forEach(m1Reads::add);
+            }
+        }
+
+        // m2 is automatic module => m1 reads all automatic modules that m2 reads
+        for (Map.Entry<ResolvedModule, Set<ResolvedModule>> entry : g1.entrySet()) {
+            ResolvedModule m1 = entry.getKey();
+
+            if (m1.descriptor().isAutomatic()) {
+                continue;
+            }
+
+            Set<ResolvedModule> m1Reads = entry.getValue();
+
+            for (ResolvedModule m2 : m1Reads) {
+                if (!m2.descriptor().isAutomatic()) {
+                    continue;
+                }
+
+                Set<ResolvedModule> m2Reads;
+                if (m2.configuration() == cf) {
+                    // this configuration
+                    m2Reads = g1.get(m2);
+                } else {
+                    // parent configuration, already resolved
+                    // TODO: does this allocate a copy of the set every time?
+                    m2Reads = m2.reads();
+                }
+
+                m2Reads.stream()
+                        .filter(d -> d.descriptor().isAutomatic())
+                        .forEach(toAdd::add);
+            }
+
+            if (!toAdd.isEmpty()) {
+                m1Reads.addAll(toAdd);
+                toAdd.clear();
+            }
+        }
 
         return g1;
     }
