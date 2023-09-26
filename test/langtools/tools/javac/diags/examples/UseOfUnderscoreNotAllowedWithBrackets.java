@@ -22,7 +22,6 @@
  */
 
 // key: compiler.err.use.of.underscore.not.allowed.with.brackets
-// options: -Xlint:preview
 
 class UseOfUnderscoreNotAllowedWithBrackets {
     void test() {

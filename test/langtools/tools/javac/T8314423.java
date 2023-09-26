@@ -2,6 +2,7 @@
  * @test  /nodynamiccopyright/
  * @bug 8314423
  * @summary Multiple patterns without unnamed variables
+ * @compile/fail/ref=T8314423.out -XDrawDiagnostics --release 21 T8314423.java
  * @compile T8314423.java
  */
 

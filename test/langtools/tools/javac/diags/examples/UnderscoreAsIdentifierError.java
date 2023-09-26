@@ -22,8 +22,7 @@
  */
 
 // key: compiler.err.underscore.as.identifier
-// key: compiler.warn.source.no.system.modules.path
-// options: -source 20
+// options: --release 21
 
 class UnderscoreAsIdentifierError {
     String _ = null;
