@@ -59,7 +59,7 @@ public class AttachSetGetFlag {
 
     // Test a non-manageable size_t flag.
     // Since it is not manageable, we can't test the setFlag functionality.
-    testGetFlag("StringDeduplicationCleanupDeadMinimum", "128");
+    testGetFlag("LargePageSizeInBytes", "128");
 
     // Test a uint flag.
     testGetFlag("ParallelGCThreads", "10");
