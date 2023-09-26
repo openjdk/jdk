@@ -76,7 +76,7 @@ public class TestPlatformFeatureCheck {
     @Test
     @IR(counts = {IRNode.ADD_VI, "> 0"},
         applyIfPlatformFeatureOr = {"linux", "true", "mac", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "avx2", "true"})
     public static void test3() {
         for (int i = 0; i < SIZE; i++) {
             res[i] = a[i] + b[i];
