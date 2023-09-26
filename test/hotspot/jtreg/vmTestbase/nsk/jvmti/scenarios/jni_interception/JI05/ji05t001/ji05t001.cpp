@@ -41,7 +41,7 @@ extern "C" {
 
 #define TRIES 30
 #define AGENTS 2
-
+#define STACK_SIZE 1024*1024
 static JavaVM *vm;
 
 static jvmtiEnv *jvmti[AGENTS]; /* JVMTI env of an agent */
@@ -248,9 +248,8 @@ static void startAgent(int indx) {
     NSK_DISPLAY1("\nstartAgent: the agent %s thread started\n",
         (indx == 0) ? "A" : "B");
 }
-
 /* agent thread procedures */
-static int agentA(void *context) {
+static void  *agentA_1(void *context) {
     JNIEnv *env;
     jint res;
     int tries = 0;
@@ -312,10 +311,27 @@ static int agentA(void *context) {
     if (res != 0) {
         NSK_COMPLAIN1("TEST WARNING: agent A: DetachCurrentThread() returns: %d\n", res);
     }
-    return exitCode;
+    return 0;
 }
-
-static int agentB(void *context) {
+static int agentA(void *context){
+    size_t adjusted_stack_size = 1024*1024;
+    pthread_t id;
+    int result;
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setstacksize(&attr, adjusted_stack_size);
+    if ((result = pthread_create(&id, &attr, agentA_1, NULL)) != 0) {
+      fprintf(stderr, "Error: agentA thread failed with error code %d \n", result);
+       exit(-1);
+    }
+    pthread_attr_destroy(&attr);
+    if ((result = pthread_join(id, NULL)) != 0) {
+       fprintf(stderr, "Error : failed to join thread %d \n", result);
+       exit(-1);
+    }
+    return 0;
+ }
+static  void  *agentB_1(void *context) {
     JNIEnv *env;
     jint res;
     int tries = 0;
@@ -376,8 +392,28 @@ static int agentB(void *context) {
     if (res != 0) {
         NSK_COMPLAIN1("TEST WARNING: agent B: DetachCurrentThread() returns: %d\n", res);
     }
-    return exitCode;
+    return 0;
 }
+
+static int agentB(void* unused){
+   size_t adjusted_stack_size = 1024*1024;
+   pthread_t id;
+   int result;
+   pthread_attr_t attr;
+   pthread_attr_init(&attr);
+   pthread_attr_setstacksize(&attr, adjusted_stack_size);
+   if ((result = pthread_create(&id, &attr, agentB_1, NULL)) != 0) {
+     fprintf(stderr, "Error: agentB thread failed with error code %d \n", result);
+     exit(-1);
+   }
+   pthread_attr_destroy(&attr);
+   if ((result = pthread_join(id, NULL)) != 0) {
+     fprintf(stderr, "Error : failed to join thread %d \n", result);
+     exit(-1);
+   }
+   return 0;
+}
+
 /*********************/
 
 /* callback functions */

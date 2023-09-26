@@ -40,6 +40,7 @@ extern "C" {
 
 #define TRIES 30
 #define MAX_THREADS 5
+#define STACK_SIZE 1024*1024
 
 static const char *javaField = "_setjniftab001a";
 static const char *classSig =
@@ -213,7 +214,7 @@ void checkCall(int step, int exMonEntCalls, const char *msg) {
 }
 
 /* thread procedures */
-static int waitingThread(void *context) {
+static void *waitingThread1(void *context) {
     JNIEnv *env;
     int exitCode = PASSED;
     jint res;
@@ -227,7 +228,7 @@ static int waitingThread(void *context) {
     if (res != 0) {
         printf("(%s,%d): TEST FAILURE: waitingThread: AttachCurrentThread() returns: %d\n",
             __FILE__, __LINE__, res);
-        return STATUS_FAILED;
+        exit(STATUS_FAILED);
     }
 
     thrStarted[indx-1] = 1;
@@ -238,12 +239,29 @@ static int waitingThread(void *context) {
     if (res != 0) {
         printf("(%s,%d): TEST FAILURE: waitingThread: DetachCurrentThread() returns: %d\n",
             __FILE__, __LINE__, res);
-        return STATUS_FAILED;
+         exit(STATUS_FAILED);
     }
     if (verbose)
         printf("waitingThread: the thread #%d exits with %d\n",
             indx, exitCode);
-    return exitCode;
+    return 0;
+}
+
+static int waitingThread(void *context) {
+   pthread_t id;
+   int result;
+   pthread_attr_t attr;
+   pthread_attr_init(&attr);
+   pthread_attr_setstacksize(&attr, STACK_SIZE);
+   if ((result = pthread_create(&id, &attr, waitingThread1, NULL)) != 0) {
+      fprintf(stderr, "Error: waitingThread failed with error code %d \n", result);
+      exit(-1);
+   }
+   if ((result = pthread_join(id, NULL)) != 0) {
+      fprintf(stderr, "Failed to join thread %d \n", result);
+      exit(-1);
+   }
+   return 0;
 }
 /*********************/
 
@@ -319,6 +337,35 @@ void waitThreads() {
     }
 }
 
+static void *run(void *unused){
+    JNIEnv *nextEnv = NULL;
+    int res = vm->AttachCurrentThread((void **) &nextEnv, (void *) 0);
+    if (res != 0) {
+       printf("(%s,%d): TEST FAILURE: waitingThread: AttachCurrentThread() returns: %d\n",
+             __FILE__, __LINE__, res);
+       exit(STATUS_FAILED);
+    }
+    return 0;
+}
+
+static int attachCurrentThread(){
+   pthread_t id;
+   int result;
+   pthread_attr_t attr;
+   pthread_attr_init(&attr);
+   pthread_attr_setstacksize(&attr, STACK_SIZE);
+   if ((result = pthread_create(&id, &attr, run, NULL)) != 0) {
+      fprintf(stderr, "Error: pthread_create failed with error code %d \n", result);
+      exit(-1);
+   }
+   pthread_attr_destroy(&attr);
+   if ((result = pthread_join(id, NULL)) != 0) {
+      fprintf(stderr, "Failed to join thread %d \n", result);
+      exit(-1);
+   }
+   return 0;
+}
+
 JNIEXPORT jint JNICALL
 Java_nsk_jvmti_SetJNIFunctionTable_setjniftab001_check(JNIEnv *env, jobject obj) {
     int exitCode = PASSED;
@@ -366,12 +413,7 @@ Java_nsk_jvmti_SetJNIFunctionTable_setjniftab001_check(JNIEnv *env, jobject obj)
     } else {
         if (verbose)
             printf("\nattaching the main thread again ...\n");
-        res = vm->AttachCurrentThread((void **) &nextEnv, (void *) 0);
-        if (res != 0) {
-            printf("(%s,%d): TEST FAILURE: waitingThread: AttachCurrentThread() returns: %d\n",
-                __FILE__, __LINE__, res);
-            return STATUS_FAILED;
-        }
+        attachCurrentThread();
 
         zeroCounter();
         doExec(nextEnv, 0);

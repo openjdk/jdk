@@ -29,6 +29,8 @@
 
 #include "jni.h"
 
+#define STACK_SIZE 1024*1024
+
 JavaVM* jvm;
 jobject nativeThread;
 
@@ -80,10 +82,15 @@ Java_TestTerminatedThread_createTerminatedThread
     exit(1);
   }
 
-  if ((res = pthread_create(&thread, NULL, thread_start, NULL)) != 0) {
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  pthread_attr_setstacksize(&attr, STACK_SIZE);
+  if ((res = pthread_create(&thread, &attr, thread_start, NULL)) != 0) {
     fprintf(stderr, "TEST ERROR: pthread_create failed: %s (%d)\n", strerror(res), res);
     exit(1);
   }
+
+  pthread_attr_destroy(&attr);
 
   if ((res = pthread_join(thread, NULL)) != 0) {
     fprintf(stderr, "TEST ERROR: pthread_join failed: %s (%d)\n", strerror(res), res);
