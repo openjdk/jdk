@@ -2201,8 +2201,6 @@ void C2_MacroAssembler::VFLOATCVT##_safe(VectorRegister dst, VectorRegister src)
 }
 
 VFCVT_SAFE(vfcvt_rtz_x_f_v);
-VFCVT_SAFE(vfwcvt_rtz_x_f_v);
-VFCVT_SAFE(vfncvt_rtz_x_f_w);
 
 #undef VFCVT_SAFE
 
