@@ -1254,8 +1254,18 @@ static inline bool is_clz_non_subword_predicate_evex(BasicType bt, int vlen_byte
 class Node::PD {
 public:
   enum NodeFlags {
-    Flag_intel_jcc_erratum = Node::_last_flag << 1,
-    _last_flag             = Flag_intel_jcc_erratum
+    Flag_intel_jcc_erratum    = Node::_last_flag << 1,
+    Flag_sets_carry_flag      = Node::_last_flag << 2,
+    Flag_sets_parity_flag     = Node::_last_flag << 3,
+    Flag_sets_zero_flag       = Node::_last_flag << 4,
+    Flag_sets_overflow_flag   = Node::_last_flag << 5,
+    Flag_sets_sign_flag       = Node::_last_flag << 6,
+    Flag_clears_carry_flag    = Node::_last_flag << 7,
+    Flag_clears_parity_flag   = Node::_last_flag << 8,
+    Flag_clears_zero_flag     = Node::_last_flag << 9,
+    Flag_clears_overflow_flag = Node::_last_flag << 10,
+    Flag_clears_sign_flag     = Node::_last_flag << 11,
+    _last_flag                = Flag_clears_sign_flag
   };
 };
 
