@@ -73,6 +73,9 @@ public class TestJmapCore {
     static void test(String type) throws Throwable {
         ProcessBuilder pb = ProcessTools.createTestJvm("-XX:+CreateCoredumpOnCrash",
                 "-Xmx512m", "-XX:MaxMetaspaceSize=64m", "-XX:+CrashOnOutOfMemoryError",
+                // The test loads lots of small classes to exhaust Metaspace, skip method
+                // dependency verification to improve performance in debug builds.
+                Platform.isDebugBuild() ? "-XX:-VerifyDependencies" : "--show-version",
                 TestJmapCore.class.getName(), type);
 
         // If we are going to force a core dump, apply "ulimit -c unlimited" if we can.
