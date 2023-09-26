@@ -23,6 +23,9 @@
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
@@ -47,6 +50,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import jdk.internal.net.http.common.OperationTrackers.Tracker;
 import jdk.test.lib.net.SimpleSSLContext;
+import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -94,15 +98,44 @@ public class HttpGetInCancelledFuture {
                 .build();
     }
 
-    static final String HOST = "localhost:62057";
     record TestCase(String url, int reqCount, Version version) {}
+    // A server that doesn't accept
+    static volatile ServerSocket NOT_ACCEPTING;
+
     static List<TestCase> parameters() {
+        ServerSocket ss = NOT_ACCEPTING;
+        if (ss == null) {
+            synchronized (HttpGetInCancelledFuture.class) {
+                if ((ss = NOT_ACCEPTING) == null) {
+                    try {
+                        ss = new ServerSocket();
+                        var loopback = InetAddress.getLoopbackAddress();
+                        ss.bind(new InetSocketAddress(loopback, 0), 10);
+                        NOT_ACCEPTING = ss;
+                    } catch (IOException io) {
+                        throw new UncheckedIOException(io);
+                    }
+                }
+            }
+        }
+        URI http = URIBuilder.newBuilder()
+                .loopback()
+                .scheme("http")
+                .port(ss.getLocalPort())
+                .path("/not-accepting/")
+                .buildUnchecked();
+        URI https = URIBuilder.newBuilder()
+                .loopback()
+                .scheme("https")
+                .port(ss.getLocalPort())
+                .path("/not-accepting/")
+                .buildUnchecked();
         // use all HTTP versions, without and with TLS
         return List.of(
-                new TestCase("http://%s/greet".formatted(HOST), 200, Version.HTTP_2),
-                new TestCase("http://%s/greet".formatted(HOST), 200, Version.HTTP_1_1),
-                new TestCase("https://%s/greet".formatted(HOST), 200, Version.HTTP_2),
-                new TestCase("https://%s/greet".formatted(HOST), 200, Version.HTTP_1_1)
+                new TestCase(http.toString(), 200, Version.HTTP_2),
+                new TestCase(http.toString(), 200, Version.HTTP_1_1),
+                new TestCase(https.toString(), 200, Version.HTTP_2),
+                new TestCase(https.toString(), 200, Version.HTTP_1_1)
                 );
     }
 
@@ -272,7 +305,7 @@ public class HttpGetInCancelledFuture {
         if (SUCCESS.get() > 0) {
             // we don't expect any server to be listening and responding
             System.out.println("WARNING: got some unexpected successful responses from "
-                    + "\"" + HOST + "\": " + SUCCESS.get());
+                    + "\"" + NOT_ACCEPTING.getLocalSocketAddress() + "\": " + SUCCESS.get());
         }
     }
 
@@ -335,9 +368,24 @@ public class HttpGetInCancelledFuture {
 
     @AfterAll
     static void tearDown() {
-        System.gc();
-        var error = TRACKER.check(5000);
-        if (error != null) throw error;
+        try {
+            System.gc();
+            var error = TRACKER.check(5000);
+            if (error != null) throw error;
+        } finally {
+            ServerSocket ss;
+            synchronized (HttpGetInCancelledFuture.class) {
+                ss = NOT_ACCEPTING;
+                NOT_ACCEPTING = null;
+            }
+            if (ss != null) {
+                try {
+                    ss.close();
+                } catch (IOException io) {
+                    throw new UncheckedIOException(io);
+                }
+            }
+        }
     }
 }
 
