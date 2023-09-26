@@ -88,7 +88,10 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
   // in order to keep the same relativized locals pointer, we don't need to change it here.
 
   relativize_one(vfp, hfp, ijava_idx(monitors));
-  relativize_one(vfp, hfp, ijava_idx(esp));
+
+  // Make sure that esp is already relativized.
+  assert(hf.at_absolute(ijava_idx(esp)) <= hf.at_absolute(ijava_idx(monitors)), "");
+
   // top_frame_sp is already relativized
 
   // hfp == hf.sp() + (f.fp() - f.sp()) is not true on ppc because the stack frame has room for
@@ -543,7 +546,10 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
   intptr_t* vfp = f.fp();
 
   derelativize_one(vfp, ijava_idx(monitors));
-  derelativize_one(vfp, ijava_idx(esp));
+
+  // Make sure that esp is still relativized.
+  assert(f.at_absolute(ijava_idx(esp)) <= f.at_absolute(ijava_idx(monitors)), "");
+
   // Keep top_frame_sp relativized.
 }
 
