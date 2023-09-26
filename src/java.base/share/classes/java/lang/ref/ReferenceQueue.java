@@ -180,6 +180,12 @@ public class ReferenceQueue<T> {
      * available without further delay then it is removed from the queue and
      * returned.  Otherwise this method immediately returns {@code null}.
      *
+     * @apiNote
+     * If the returned reference was added to this queue by a call to
+     * {@link Reference#enqueue()} instead of by the garbage collector, its
+     * former referent (which has since been cleared) could still be strongly
+     * reachable.
+     *
      * @return  A reference object, if one was immediately available,
      *          otherwise {@code null}
      */
@@ -200,6 +206,12 @@ public class ReferenceQueue<T> {
      *
      * <p> This method does not offer real-time guarantees: It schedules the
      * timeout as if by invoking the {@link Object#wait(long)} method.
+     *
+     * @apiNote
+     * If the returned reference was added to this queue by a call to
+     * {@link Reference#enqueue()} instead of by the garbage collector, its
+     * former referent (which has since been cleared) could still be strongly
+     * reachable.
      *
      * @param  timeout  If positive, block for up to {@code timeout}
      *                  milliseconds while waiting for a reference to be
@@ -231,6 +243,12 @@ public class ReferenceQueue<T> {
     /**
      * Removes the next reference object in this queue, blocking until one
      * becomes available.
+     *
+     * @apiNote
+     * If the returned reference was added to this queue by a call to
+     * {@link Reference#enqueue()} instead of by the garbage collector, its
+     * former referent (which has since been cleared) could still be strongly
+     * reachable.
      *
      * @return A reference object, blocking until one becomes available
      * @throws  InterruptedException  If the wait is interrupted

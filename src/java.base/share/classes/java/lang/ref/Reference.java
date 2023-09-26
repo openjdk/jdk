@@ -481,8 +481,8 @@ public abstract sealed class Reference<T>
     }
 
     /**
-     * Clears this reference object and adds it to the queue with which
-     * it is registered, if any.
+     * Clears this reference object, then attempts to add it to the queue with
+     * which it is registered, if any.
      *
      * <p>If this reference was already enqueued (by the garbage collector, or a
      * previous call to {@code enqueue}), this method is <b><i>not successful</i></b>,
