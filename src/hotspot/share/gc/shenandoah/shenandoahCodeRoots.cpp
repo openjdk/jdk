@@ -299,7 +299,7 @@ void ShenandoahCodeRoots::unlink(WorkerThreads* workers, bool unloading_occurred
 void ShenandoahCodeRoots::purge() {
   assert(ShenandoahHeap::heap()->unload_classes(), "Only when running concurrent class unloading");
 
-  CodeCache::flush_unlinked_nmethods();
+  CodeCache::flush_unlinked_nmethods(true /* do_unregister_nmethods */);
 }
 
 ShenandoahCodeRootsIterator::ShenandoahCodeRootsIterator() :

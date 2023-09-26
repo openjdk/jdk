@@ -186,9 +186,10 @@ class CodeCache : AllStatic {
   class UnloadingScope: StackObj {
     ClosureIsUnloadingBehaviour _is_unloading_behaviour;
     IsUnloadingBehaviour*       _saved_behaviour;
+    bool                        _do_unregister_nmethods;
 
   public:
-    UnloadingScope(BoolObjectClosure* is_alive);
+    UnloadingScope(BoolObjectClosure* is_alive, bool do_unregister_nmethods);
     ~UnloadingScope();
   };
 
@@ -213,10 +214,10 @@ class CodeCache : AllStatic {
   //    nmethod::is_cold.
   static void arm_all_nmethods();
 
-  // do_unregister_nmethod controls whether CollectedHeap::unregister_nmethod is
+  // do_unregister_nmethods controls whether CollectedHeap::unregister_nmethod is
   // called for every unlinked nmethod. If false, the caller is responsible to
-  // do an equivalent operation before calling this.
-  static void flush_unlinked_nmethods(bool do_unregister_nmethod = true);
+  // perform an equivalent operation at the appropriate time.
+  static void flush_unlinked_nmethods(bool do_unregister_nmethods);
   static void register_unlinked(nmethod* nm);
   static void do_unloading(bool unloading_occurred);
   static uint8_t unloading_cycle() { return _unloading_cycle; }
