@@ -21,11 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @modules jdk.jpackage
- */
-
 package jdk.jpackage.internal;
 
 import java.io.IOException;
