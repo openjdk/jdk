@@ -386,13 +386,16 @@ public sealed abstract class CalendarDate implements Cloneable
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        CalendarUtils.sprintf0d(sb, year, 4).append('-');
-        CalendarUtils.sprintf0d(sb, month, 2).append('-');
-        CalendarUtils.sprintf0d(sb, dayOfMonth, 2).append('T');
-        CalendarUtils.sprintf0d(sb, hours, 2).append(':');
-        CalendarUtils.sprintf0d(sb, minutes, 2).append(':');
-        CalendarUtils.sprintf0d(sb, seconds, 2).append('.');
-        CalendarUtils.sprintf0d(sb, millis, 3);
+        if (year < 0) {
+            sb.append('-');
+        }
+        sb.append(Math.abs(year), 4, '0').append('-')
+          .append(month, 2, '0').append('-')
+          .append(dayOfMonth, 2, '0').append('T')
+          .append(hours, 2, '0').append(':')
+          .append(minutes, 2, '0').append(':')
+          .append(seconds, 2, '0').append('.')
+          .append(millis, 3, '0');
         if (zoneOffset == 0) {
             sb.append('Z');
         } else if (zoneOffset != FIELD_UNDEFINED) {
@@ -406,9 +409,9 @@ public sealed abstract class CalendarDate implements Cloneable
                 sign = '-';
             }
             offset /= 60000;
-            sb.append(sign);
-            CalendarUtils.sprintf0d(sb, offset / 60, 2);
-            CalendarUtils.sprintf0d(sb, offset % 60, 2);
+            sb.append(sign)
+              .append(offset / 60, 2, '0')
+              .append(offset % 60, 2, '0');
         } else {
             sb.append(" local time");
         }

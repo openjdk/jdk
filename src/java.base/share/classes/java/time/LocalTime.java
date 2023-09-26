@@ -1634,18 +1634,18 @@ public final class LocalTime
         int minuteValue = minute;
         int secondValue = second;
         int nanoValue = nano;
-        buf.append(hourValue < 10 ? "0" : "").append(hourValue)
-            .append(minuteValue < 10 ? ":0" : ":").append(minuteValue);
+        buf.append(hourValue, 2, '0')
+            .append(':').append(minuteValue, 2, '0');
         if (secondValue > 0 || nanoValue > 0) {
-            buf.append(secondValue < 10 ? ":0" : ":").append(secondValue);
+            buf.append(':').append(secondValue, 2, '0');
             if (nanoValue > 0) {
                 buf.append('.');
                 if (nanoValue % 1000_000 == 0) {
-                    buf.append(Integer.toString((nanoValue / 1000_000) + 1000).substring(1));
+                    buf.append(nanoValue / 1000_000, 3, '0');
                 } else if (nanoValue % 1000 == 0) {
-                    buf.append(Integer.toString((nanoValue / 1000) + 1000_000).substring(1));
+                    buf.append(nanoValue / 1000, 6, '0');
                 } else {
-                    buf.append(Integer.toString((nanoValue) + 1000_000_000).substring(1));
+                    buf.append(nanoValue, 9, '0');
                 }
             }
         }

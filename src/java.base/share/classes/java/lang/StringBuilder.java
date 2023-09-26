@@ -254,6 +254,16 @@ public final class StringBuilder
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     * @since 22
+     */
+    @Override
+    public StringBuilder append(int i, int width, char pad) {
+        super.append(i, width, pad);
+        return this;
+    }
+
     @Override
     public StringBuilder append(long lng) {
         super.append(lng);

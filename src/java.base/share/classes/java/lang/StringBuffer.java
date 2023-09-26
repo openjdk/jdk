@@ -435,6 +435,16 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
     }
 
     /**
+     * {@inheritDoc}
+     * @since 22
+     */
+    @Override
+    public synchronized StringBuffer append(int i, int width, char pad) {
+        super.append(i, width, pad);
+        return this;
+    }
+
+    /**
      * @since 1.5
      */
     @Override

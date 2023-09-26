@@ -841,6 +841,43 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     /**
+     * Appends the string representation of the specified integer value to this
+     * sequence with a specified width and padding character.
+     *
+     * @param   i   the integer value to be appended
+     * @param width the width of the resulting string (including the number)
+     * @param pad the padding character to be used for alignment (if necessary)
+     * @return  a reference to this object.
+     *
+     * @since 22
+     */
+    public AbstractStringBuilder append(int i, int width, char pad) {
+        int count = this.count;
+        int integerSize = Integer.stringSize(i);
+        int padSize = width - integerSize;
+
+        int spaceNeeded = count + Math.max(integerSize, width);
+        ensureCapacityInternal(spaceNeeded);
+
+        if (isLatin1() && StringLatin1.canEncode(pad)) {
+            StringLatin1.getChars(i, spaceNeeded, value);
+            for (int j = 0; j < padSize; j++) {
+                value[count + j] = (byte) pad;
+            }
+        } else {
+            if (isLatin1()) {
+                inflate();
+            }
+            StringUTF16.getChars(i, spaceNeeded, value);
+            for (int j = 0; j < padSize; j++) {
+                StringUTF16.putCharSB(value, count + j, pad);
+            }
+        }
+        this.count = spaceNeeded;
+        return this;
+    }
+
+    /**
      * Appends the string representation of the {@code long}
      * argument to this sequence.
      * <p>

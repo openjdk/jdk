@@ -1035,11 +1035,10 @@ public class Date
         }
         convertToAbbr(sb, wtb[index]).append(' ');                        // EEE
         convertToAbbr(sb, wtb[date.getMonth() - 1 + 2 + 7]).append(' ');  // MMM
-        CalendarUtils.sprintf0d(sb, date.getDayOfMonth(), 2).append(' '); // dd
-
-        CalendarUtils.sprintf0d(sb, date.getHours(), 2).append(':');   // HH
-        CalendarUtils.sprintf0d(sb, date.getMinutes(), 2).append(':'); // mm
-        CalendarUtils.sprintf0d(sb, date.getSeconds(), 2).append(' '); // ss
+        sb.append(date.getDayOfMonth(), 2, '0').append(' ') // dd
+          .append(date.getHours(), 2, '0').append(':') // HH
+          .append(date.getMinutes(), 2, '0').append(':') // mm
+          .append(date.getSeconds(), 2, '0').append(' '); // ss
         TimeZone zi = date.getZone();
         if (zi != null) {
             sb.append(zi.getDisplayName(date.isDaylightTime(), TimeZone.SHORT, Locale.US)); // zzz
@@ -1122,13 +1121,13 @@ public class Date
         BaseCalendar.Date date =
             (BaseCalendar.Date) cal.getCalendarDate(getTime(), (TimeZone)null);
         StringBuilder sb = new StringBuilder(32);
-        CalendarUtils.sprintf0d(sb, date.getDayOfMonth(), 1).append(' '); // d
+        sb.append(date.getDayOfMonth()).append(' '); // d
         convertToAbbr(sb, wtb[date.getMonth() - 1 + 2 + 7]).append(' ');  // MMM
-        sb.append(date.getYear()).append(' ');                            // yyyy
-        CalendarUtils.sprintf0d(sb, date.getHours(), 2).append(':');      // HH
-        CalendarUtils.sprintf0d(sb, date.getMinutes(), 2).append(':');    // mm
-        CalendarUtils.sprintf0d(sb, date.getSeconds(), 2);                // ss
-        sb.append(" GMT");                                                // ' GMT'
+        sb.append(date.getYear()).append(' ')                             // yyyy
+          .append(date.getHours(), 2, '0').append(':')                    // HH
+          .append(date.getMinutes(), 2, '0').append(':')                  // mm
+          .append(date.getSeconds(), 2, '0')                              // ss
+          .append(" GMT");                                                // ' GMT'
         return sb.toString();
     }
 

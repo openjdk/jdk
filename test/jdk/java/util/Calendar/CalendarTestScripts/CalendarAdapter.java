@@ -370,20 +370,25 @@ public class CalendarAdapter extends Calendar {
         }
 
         sb.append(eraNames[cal.get(ERA)]);
-        if (sb.length() > 0)
+        if (sb.length() > 0) {
             sb.append(' ');
-        CalendarUtils.sprintf0d(sb, cal.get(YEAR), 4).append('-');
-        CalendarUtils.sprintf0d(sb, cal.get(MONTH)+1, 2).append('-');
-        CalendarUtils.sprintf0d(sb, cal.get(DAY_OF_MONTH), 2);
+        }
+        int year = cal.get(YEAR);
+        if (year < 0) {
+            sb.append('-');
+        }
+        sb.append(Math.abs(year), 4, '0').append('-')
+          .append(cal.get(MONTH) + 1, 2, '0').append('-')
+          .append(cal.get(DAY_OF_MONTH), 2, '0');
         return sb.toString();
     }
 
     String toTimeString() {
-        StringBuffer sb = new StringBuffer();
-        CalendarUtils.sprintf0d(sb, cal.get(HOUR_OF_DAY), 2).append(':');
-        CalendarUtils.sprintf0d(sb, cal.get(MINUTE), 2).append(':');
-        CalendarUtils.sprintf0d(sb, cal.get(SECOND),2 ).append('.');
-        CalendarUtils.sprintf0d(sb, cal.get(MILLISECOND), 3);
+        StringBuffer sb = new StringBuffer()
+                .append(get(HOUR_OF_DAY), 2, '0').append(':')
+                .append(get(MINUTE), 2, '0').append(':')
+                .append(get(SECOND), 2, '0').append('.')
+                .append(cal.get(MILLISECOND), 3, '0');
         int zoneOffset = cal.get(ZONE_OFFSET) + cal.get(DST_OFFSET);
         if (zoneOffset == 0) {
             sb.append('Z');
@@ -398,9 +403,9 @@ public class CalendarAdapter extends Calendar {
                 sign = '-';
             }
             offset /= 60000;
-            sb.append(sign);
-            CalendarUtils.sprintf0d(sb, offset / 60, 2);
-            CalendarUtils.sprintf0d(sb, offset % 60, 2);
+            sb.append(sign)
+              .append(offset / 60, 2, '0')
+              .append(offset % 60, 2, '0');
         }
         return sb.toString();
     }
