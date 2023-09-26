@@ -1439,6 +1439,8 @@ public:
       Assembler::evpsrlvd(dst, mask, nds, src, merge, vector_len);
     }
   }
+  
+  using Assembler::evpsrlq;
   void evpsrlq(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
     if (!is_varshift) {
       Assembler::evpsrlq(dst, mask, nds, src, merge, vector_len);
@@ -1460,6 +1462,7 @@ public:
       Assembler::evpsravd(dst, mask, nds, src, merge, vector_len);
     }
   }
+  using Assembler::evpsraq;
   void evpsraq(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
     if (!is_varshift) {
       Assembler::evpsraq(dst, mask, nds, src, merge, vector_len);

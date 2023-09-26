@@ -637,7 +637,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_base64_decodeBlock();
   case vmIntrinsics::_poly1305_processBlocks:
     return inline_poly1305_processBlocks();
-
+  case vmIntrinsics::_intpoly_montgomeryMult_P256:
+    return inline_intpoly_montgomeryMult_P256();
   case vmIntrinsics::_encodeISOArray:
   case vmIntrinsics::_encodeByteISOArray:
     return inline_encodeISOArray(false);
@@ -7510,6 +7511,42 @@ bool LibraryCallKit::inline_poly1305_processBlocks() {
                                  OptoRuntime::poly1305_processBlocks_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  input_start, len, acc_start, r_start);
+  return true;
+}
+
+bool LibraryCallKit::inline_intpoly_montgomeryMult_P256() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseIntPolyIntrinsics, "need intpoly intrinsics support");
+  assert(callee()->signature()->size() == 3, "intpoly_montgomeryMult_P256 has %d parameters", callee()->signature()->size());
+  stubAddr = StubRoutines::intpoly_montgomeryMult_P256();
+  stubName = "intpoly_montgomeryMult_P256";
+
+  if (!stubAddr) return false;
+  null_check_receiver();  // null-check receiver
+  if (stopped())  return true;
+
+  Node* a = argument(1);
+  Node* b = argument(2);
+  Node* r = argument(3);
+
+  a = must_be_not_null(a, true);
+  b = must_be_not_null(b, true);
+  r = must_be_not_null(r, true);
+
+  Node* a_start = array_element_address(a, intcon(0), T_LONG);
+  assert(a_start, "a array is NULL");
+  Node* b_start = array_element_address(b, intcon(0), T_LONG);
+  assert(b_start, "b array is NULL");
+  Node* r_start = array_element_address(r, intcon(0), T_LONG);
+  assert(r_start, "r array is NULL");
+
+  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
+                                 OptoRuntime::intpoly_montgomeryMult_P256_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 a_start, b_start, r_start);
+  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  set_result(result);
   return true;
 }
 

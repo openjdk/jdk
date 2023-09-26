@@ -25,6 +25,7 @@
 package sun.security.ec.point;
 
 import sun.security.util.math.*;
+import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * Elliptic curve point in projective coordinates (X, Y, Z) where
@@ -145,6 +146,7 @@ public abstract class ProjectivePoint
             return conditionalSet(pp, set);
         }
 
+        @ForceInline
         private <T extends IntegerModuloP>
         Mutable conditionalSet(ProjectivePoint<T> pp, int set) {
 
@@ -187,4 +189,46 @@ public abstract class ProjectivePoint
 
     }
 
+    public static class MontgomeryImmutable extends Immutable {
+        private final IntegerMontgomeryFieldModuloP montField;
+
+        public MontgomeryImmutable(IntegerMontgomeryFieldModuloP montField,
+                ImmutableIntegerModuloP x,
+                ImmutableIntegerModuloP y,
+                ImmutableIntegerModuloP z) {
+            super(x, y, z);
+            this.montField = montField;
+        }
+
+        public AffinePoint asAffine() {
+            IntegerModuloP zInv = z.multiplicativeInverse();
+            ImmutableIntegerModuloP xResidue = montField.fromMontgomery(x.multiply(zInv));
+            ImmutableIntegerModuloP yResidue = montField.fromMontgomery(y.multiply(zInv));
+            return new AffinePoint(xResidue, yResidue);
+        }
+    }
+
+    public static class MontgomeryMutable extends Mutable {
+        private final IntegerMontgomeryFieldModuloP montField;
+
+        public MontgomeryMutable(IntegerMontgomeryFieldModuloP montField,
+                MutableIntegerModuloP x,
+                MutableIntegerModuloP y,
+                MutableIntegerModuloP z) {
+            super(x, y, z);
+            this.montField = montField;
+        }
+
+        public AffinePoint asAffine() {
+            IntegerModuloP zInv = z.multiplicativeInverse();
+            ImmutableIntegerModuloP xResidue = montField.fromMontgomery(x.multiply(zInv));
+            ImmutableIntegerModuloP yResidue = montField.fromMontgomery(y.multiply(zInv));
+            return new AffinePoint(xResidue, yResidue);
+        }
+
+        @Override
+        public Immutable fixed() {
+            return new MontgomeryImmutable(montField, x.fixed(), y.fixed(), z.fixed());
+        }
+    }
 }

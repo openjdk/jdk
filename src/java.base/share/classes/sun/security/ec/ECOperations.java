@@ -40,6 +40,11 @@ import java.security.spec.ECPoint;
 import java.security.spec.EllipticCurve;
 import java.util.Map;
 import java.util.Optional;
+import java.util.WeakHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import jdk.internal.vm.annotation.ForceInline;
 
 /*
  * Elliptic curve point arithmetic for prime-order curves where a=-3.
@@ -48,10 +53,39 @@ import java.util.Optional;
  */
 
 public class ECOperations {
-    private static final ECOperations secp256r1Ops =
-        new ECOperations(IntegerPolynomialP256.ONE.getElement(
-                CurveDB.lookup(KnownOIDs.secp256r1.value()).getCurve().getB()),
-                P256OrderField.ONE);
+    public static void debugPrint(String prefix, ProjectivePoint.Mutable p) {
+        MutableIntegerModuloP x = p.getX();
+        MutableIntegerModuloP y = p.getY();
+        MutableIntegerModuloP z = p.getZ();
+
+        if (x.getField() instanceof MontgomeryIntegerPolynomialP256) {
+            x = MontgomeryIntegerPolynomialP256.ONE.fromMontgomery(x.fixed()).mutable();
+            y = MontgomeryIntegerPolynomialP256.ONE.fromMontgomery(y.fixed()).mutable();
+            z = MontgomeryIntegerPolynomialP256.ONE.fromMontgomery(z.fixed()).mutable();
+        }
+        
+        System.out.println(prefix + " X:" + x.asBigInteger().toString(16) 
+                                  + " Y:" + y.asBigInteger().toString(16)
+                                  + " Z:" + z.asBigInteger().toString(16));
+    }
+
+    private static void debugPrint(String prefix, MutableIntegerModuloP x) {
+        MutableIntegerModuloP y = x;
+
+        if (x.getField() instanceof MontgomeryIntegerPolynomialP256) {
+            y = MontgomeryIntegerPolynomialP256.ONE.fromMontgomery(x.fixed()).mutable();
+        }
+        MontgomeryIntegerPolynomialP256.debugRow(prefix, y.getLimbs(), 0, 5);
+        System.out.println(prefix + y.asBigInteger().toString(16));
+    }
+
+    // private static final ECOperations secp256r1Ops =
+    //     new ECOperations(IntegerPolynomialP256.ONE.getElement(
+    //             CurveDB.lookup(KnownOIDs.secp256r1.value()).getCurve().getB()),
+    //             P256OrderField.ONE);
+    
+    // private final //DEBUG
+    public ECOperations montgomeryOps;
 
     /*
      * An exception indicating a problem with an intermediate value produced
@@ -67,6 +101,12 @@ public class ECOperations {
         IntegerPolynomialP256.MODULUS, IntegerPolynomialP256.ONE,
         IntegerPolynomialP384.MODULUS, IntegerPolynomialP384.ONE,
         IntegerPolynomialP521.MODULUS, IntegerPolynomialP521.ONE
+    );
+
+    static final Map<BigInteger, IntegerResidueMontgomeryFieldModuloP> montgomeryFields = Map.of(
+        IntegerPolynomialP256.MODULUS, MontgomeryIntegerPolynomialP256.ONE //,
+        // IntegerPolynomialP384.MODULUS, IntegerPolynomialP384.ONE,
+        // IntegerPolynomialP521.MODULUS, IntegerPolynomialP521.ONE
     );
 
     static final Map<BigInteger, IntegerFieldModuloP> orderFields = Map.of(
@@ -96,8 +136,13 @@ public class ECOperations {
             return Optional.empty();
         }
 
+        IntegerResidueMontgomeryFieldModuloP montField = montgomeryFields.get(primeField.getP());
         ImmutableIntegerModuloP b = field.getElement(curve.getB());
-        ECOperations ecOps = new ECOperations(b, orderField);
+        ECOperations montOps = null;
+        if (montField != null && params.montgomery2) {
+            montOps = new ECOperations(montField.toMontgomery(montField.getElement(curve.getB())), orderField);
+        }
+        ECOperations ecOps = new ECOperations(b, orderField, montOps);
         return Optional.of(ecOps);
     }
 
@@ -110,6 +155,11 @@ public class ECOperations {
     private final IntegerFieldModuloP orderField;
 
     public ECOperations(IntegerModuloP b, IntegerFieldModuloP orderField) {
+        this(b, orderField, null);
+    }
+
+    private ECOperations(IntegerModuloP b, IntegerFieldModuloP orderField, ECOperations montgomeryOps) {
+        this.montgomeryOps = montgomeryOps;
         this.b = b.fixed();
         this.orderField = orderField;
 
@@ -277,8 +327,28 @@ public class ECOperations {
         MutableIntegerModuloP t2 = zero.mutable();
         MutableIntegerModuloP t3 = zero.mutable();
         MutableIntegerModuloP t4 = zero.mutable();
-        setSum((ProjectivePoint.Mutable) p, p2, t0, t1, t2, t3, t4);
 
+        ECOperations ops = this;
+        if (this.montgomeryOps != null) { //also ASSERT if p2 is in montgomery domain?
+            ops = this.montgomeryOps;
+        }
+        ops.setSum((ProjectivePoint.Mutable) p, p2, t0, t1, t2, t3, t4);
+    }
+
+    public void setSum(MutablePoint p, MutablePoint p2) {
+
+        IntegerModuloP zero = p.getField().get0();
+        MutableIntegerModuloP t0 = zero.mutable();
+        MutableIntegerModuloP t1 = zero.mutable();
+        MutableIntegerModuloP t2 = zero.mutable();
+        MutableIntegerModuloP t3 = zero.mutable();
+        MutableIntegerModuloP t4 = zero.mutable();
+        
+        ECOperations ops = this;
+        if (this.montgomeryOps != null) {
+            ops = this.montgomeryOps;
+        }
+        ops.setSum((ProjectivePoint.Mutable) p, (ProjectivePoint.Mutable) p2, t0, t1, t2, t3, t4);
     }
 
     /*
@@ -412,10 +482,37 @@ public class ECOperations {
         return isNeutral(this.multiply(ap, scalar));
     }
 
-    sealed interface PointMultiplier {
+    public sealed interface PointMultiplier {
         Map<ECPoint, PointMultiplier> multipliers = Map.of(
-                Secp256R1GeneratorMultiplier.generator,
-                Secp256R1GeneratorMultiplier.multiplier);
+                Secp256R1GeneratorMontgomeryMultiplier.generator,
+                Secp256R1GeneratorMontgomeryMultiplier.multiplier);
+        // Map<ECPoint, PointMultiplier> multipliersOld = Map.of(
+        //         Secp256R1GeneratorMontgomeryMultiplier.generator,
+        //         new Default(secp256r1Ops, 
+        //                 AffinePoint.fromECPoint(Secp256R1GeneratorMontgomeryMultiplier.generator, IntegerPolynomialP256.ONE)));
+                // Secp256R1GeneratorMultiplier.multiplier);
+        
+        WeakHashMap<ECPoint, PointMultiplier> tempMultipliers = new WeakHashMap<ECPoint, PointMultiplier>();
+        Lock tempMultipliersLock = new ReentrantLock();
+        static PointMultiplier getMultiplier(ECPoint point) {
+            // return null;
+            // try {
+                //tempMultipliersLock.lock();
+                return tempMultipliers.get(point);
+            // } finally {
+                //tempMultipliersLock.unlock();
+            // }
+        }
+
+        static PointMultiplier putMultiplier(ECPoint point, PointMultiplier multiplier) {
+            // return null;
+            // try {
+                //tempMultipliersLock.lock();
+                return tempMultipliers.put(point, multiplier);
+            // } finally {
+            //     //tempMultipliersLock.unlock();
+            // }
+        }
 
         // Multiply the point by a scalar and return the result as a mutable
         // point.  The multiplier point is specified by the implementation of
@@ -430,8 +527,22 @@ public class ECOperations {
         ProjectivePoint.Mutable pointMultiply(byte[] scalar);
 
         static PointMultiplier of(ECOperations ecOps, AffinePoint affPoint) {
-            PointMultiplier multiplier = multipliers.get(affPoint.toECPoint());
-            if (multiplier == null) {
+            ECPoint ecPoint = affPoint.toECPoint();
+            PointMultiplier multiplier;
+            if (ecOps.montgomeryOps != null) {
+                multiplier = multipliers.get(ecPoint);
+            } else {
+                multiplier = null;
+                //multiplier = multipliers.get(ecPoint);
+                // multiplier = multipliersOld.get(ecPoint);
+            }
+            if (multiplier == null && ecOps.montgomeryOps != null) {
+                multiplier = getMultiplier(ecPoint);
+                if (multiplier == null) {
+                    multiplier = new DefaultMontgomery(ecOps.montgomeryOps, ecPoint);
+                    putMultiplier(ecPoint, multiplier);
+                }
+            } else if (multiplier == null && ecOps.montgomeryOps == null) {
                 multiplier = new Default(ecOps, affPoint);
             }
 
@@ -439,11 +550,23 @@ public class ECOperations {
         }
 
         static PointMultiplier of(ECOperations ecOps, ECPoint ecPoint) {
-            PointMultiplier multiplier = multipliers.get(ecPoint);
-            if (multiplier == null) {
-                AffinePoint affPoint =
-                        AffinePoint.fromECPoint(ecPoint, ecOps.getField());
-                multiplier = new Default(ecOps, affPoint);
+            PointMultiplier multiplier;
+            if (ecOps.montgomeryOps != null) {
+                multiplier = multipliers.get(ecPoint);
+            } else {
+                multiplier = null;
+                // multiplier = multipliersOld.get(ecPoint);
+            }
+            if (multiplier == null && ecOps.montgomeryOps != null) {
+                // AffinePoint affPoint = AffinePoint.fromECPoint(ecPoint, ecOps.getField());
+                multiplier = getMultiplier(ecPoint);
+                if (multiplier == null) {
+                    multiplier = new DefaultMontgomery(ecOps.montgomeryOps, ecPoint);
+                    putMultiplier(ecPoint, multiplier);
+                    // System.err.println("VP here");
+                }
+            } else if (multiplier == null && ecOps.montgomeryOps == null) {
+                multiplier = new Default(ecOps, AffinePoint.fromECPoint(ecPoint, ecOps.getField()));
             }
 
             return multiplier;
@@ -466,22 +589,18 @@ public class ECOperations {
             }
         }
 
-        final class Default implements PointMultiplier {
+        sealed abstract class SmallWindowMultiplier implements PointMultiplier 
+            permits Default, DefaultMontgomery {
             private final AffinePoint affineP;
             private final ECOperations ecOps;
+            private final ProjectivePoint.Immutable[] pointMultiples;
 
-            private Default(ECOperations ecOps, AffinePoint affineP) {
+            protected SmallWindowMultiplier(ECOperations ecOps, AffinePoint affineP) {
                 this.ecOps = ecOps;
                 this.affineP = affineP;
-            }
+                this.pointMultiples = new ProjectivePoint.Immutable[16];
 
-            @Override
-            public ProjectivePoint.Mutable pointMultiply(byte[] s) {
-                // 4-bit windowed multiply with branchless lookup.
-                // The mixed addition is faster, so it is used to construct
-                // the array at the beginning of the operation.
-
-                IntegerFieldModuloP field = affineP.getX().getField();
+                IntegerFieldModuloP field = ecOps.getField();
                 ImmutableIntegerModuloP zero = field.get0();
                 // temporaries
                 MutableIntegerModuloP t0 = zero.mutable();
@@ -490,16 +609,12 @@ public class ECOperations {
                 MutableIntegerModuloP t3 = zero.mutable();
                 MutableIntegerModuloP t4 = zero.mutable();
 
-                ProjectivePoint.Mutable result =
-                        new ProjectivePoint.Mutable(field);
-                result.getY().setValue(field.get1().mutable());
-
-                ProjectivePoint.Immutable[] pointMultiples =
-                        new ProjectivePoint.Immutable[16];
-                // 0P is neutral---same as initial result value
-                pointMultiples[0] = result.fixed();
-
                 ProjectivePoint.Mutable ps = new ProjectivePoint.Mutable(field);
+                ps.getY().setValue(field.get1().mutable());
+
+                // 0P is neutral---same as initial result value
+                pointMultiples[0] = ps.fixed();
+
                 ps.setValue(affineP);
                 // 1P = P
                 pointMultiples[1] = ps.fixed();
@@ -509,8 +624,32 @@ public class ECOperations {
                     ecOps.setSum(ps, affineP, t0, t1, t2, t3, t4);
                     pointMultiples[i] = ps.fixed();
                 }
+            }
 
-                ProjectivePoint.Mutable lookupResult = ps.mutable();
+            private static void debugPrint(String prefix, ProjectivePoint.Mutable p) {
+                System.out.println(prefix + " X:" + p.getX().asBigInteger().toString(16) 
+                                          + " Y:" + p.getY().asBigInteger().toString(16)
+                                          + " Z:" + p.getZ().asBigInteger().toString(16));
+            }
+
+            @Override
+            public ProjectivePoint.Mutable pointMultiply(byte[] s) {
+                // 4-bit windowed multiply with branchless lookup.
+                // The mixed addition is faster, so it is used to construct
+                // the array at the beginning of the operation.
+
+                IntegerFieldModuloP field = ecOps.getField();
+                ImmutableIntegerModuloP zero = field.get0();
+                // temporaries
+                MutableIntegerModuloP t0 = zero.mutable();
+                MutableIntegerModuloP t1 = zero.mutable();
+                MutableIntegerModuloP t2 = zero.mutable();
+                MutableIntegerModuloP t3 = zero.mutable();
+                MutableIntegerModuloP t4 = zero.mutable();
+
+                ProjectivePoint.Mutable result = new ProjectivePoint.Mutable(field);
+                result.getY().setValue(field.get1().mutable());
+                ProjectivePoint.Mutable lookupResult = new ProjectivePoint.Mutable(field);
 
                 for (int i = s.length - 1; i >= 0; i--) {
                     double4(result, t0, t1, t2, t3, t4);
@@ -539,18 +678,40 @@ public class ECOperations {
             }
         }
 
-        final class Secp256R1GeneratorMultiplier implements PointMultiplier {
-            private static final ECPoint generator =
-                    CurveDB.P_256.getGenerator();
-            private static final PointMultiplier multiplier =
-                    new Secp256R1GeneratorMultiplier();
+        final public class Default extends SmallWindowMultiplier {
+            public Default(ECOperations ecOps, AffinePoint affineP) {
+                super(ecOps, affineP);
+            }
+        }
 
-            private static final ImmutableIntegerModuloP zero =
-                    IntegerPolynomialP256.ONE.get0();
-            private static final ImmutableIntegerModuloP one =
-                    IntegerPolynomialP256.ONE.get1();
+        final public class DefaultMontgomery extends SmallWindowMultiplier {
+            private final IntegerMontgomeryFieldModuloP montField;
+
+            public DefaultMontgomery(ECOperations ecOps, ECPoint ecPoint) {
+                super(ecOps, new AffinePoint(
+                    ((IntegerResidueMontgomeryFieldModuloP)ecOps.getField()).toMontgomery(ecOps.getField().getElement(ecPoint.getAffineX())), 
+                    ((IntegerResidueMontgomeryFieldModuloP)ecOps.getField()).toMontgomery(ecOps.getField().getElement(ecPoint.getAffineY()))));
+                this.montField = (IntegerMontgomeryFieldModuloP)ecOps.getField();
+            }
 
             @Override
+            public ProjectivePoint.Mutable pointMultiply(byte[] s) {
+                ProjectivePoint.Mutable result = super.pointMultiply(s);
+                return new ProjectivePoint.MontgomeryMutable(montField,
+                    result.getX(),
+                    result.getY(),
+                    result.getZ());
+            }
+        }
+
+
+        sealed abstract class P256LargeTableMultiplier implements PointMultiplier 
+            permits /*Secp256R1GeneratorMultiplier,*/ Secp256R1GeneratorMontgomeryMultiplier {
+
+            private final ImmutableIntegerModuloP zero;
+            private final ImmutableIntegerModuloP one;
+            private final ECOperations secp256r1Ops;
+
             public ProjectivePoint.Mutable pointMultiply(byte[] s) {
                 MutableIntegerModuloP t0 = zero.mutable();
                 MutableIntegerModuloP t1 = zero.mutable();
@@ -572,7 +733,7 @@ public class ECOperations {
                                     (bit(s, pos +  64) << 1) |
                                      bit(s, pos);
 
-                        lookup(P256.points[j], index, r);
+                        lookup(points[j], index, r);
                         secp256r1Ops.setSum(d, r, t0, t1, t2, t3, t4);
                     }
                 }
@@ -584,8 +745,13 @@ public class ECOperations {
                 return (k[i >> 3] >> (i & 0x07)) & 0x01;
             }
 
-            // Lazy loading of the tables.
-            private static final class P256 {
+            private final ProjectivePoint.Immutable[][] points;
+
+            protected P256LargeTableMultiplier(ECOperations secp256r1Ops, IntegerFieldModuloP field, PointMultiplier smallTableMultiplier) {
+                zero = field.get0();
+                one = field.get1();
+                this.secp256r1Ops = secp256r1Ops;
+
                 // Pre-computed table to speed up the point multiplication.
                 //
                 // This is a 4x16 array of ProjectivePoint.Immutable elements.
@@ -612,88 +778,149 @@ public class ECOperations {
                 // 0x000F  | (2^192 + 2^128 + 2^64 + 1)G
                 //
                 // For the other 3 rows, points[i][j] = 2^16 * (points[i-1][j].
-                private static final ProjectivePoint.Immutable[][] points;
 
                 // Generate the pre-computed tables.  This block may be
                 // replaced with hard-coded tables in order to speed up
                 // the class loading.
-                static {
-                    points = new ProjectivePoint.Immutable[4][16];
-                    BigInteger[] factors = new BigInteger[] {
-                            BigInteger.ONE,
-                            BigInteger.TWO.pow(64),
-                            BigInteger.TWO.pow(128),
-                            BigInteger.TWO.pow(192)
-                    };
+                points = new ProjectivePoint.Immutable[4][16];
+                BigInteger[] factors = new BigInteger[] {
+                        BigInteger.ONE,
+                        BigInteger.TWO.pow(64),
+                        BigInteger.TWO.pow(128),
+                        BigInteger.TWO.pow(192)
+                };
 
-                    BigInteger[] base = new BigInteger[16];
-                    base[0] = BigInteger.ZERO;
-                    base[1] = BigInteger.ONE;
-                    base[2] = factors[1];
-                    for (int i = 3; i < 16; i++) {
-                        base[i] = BigInteger.ZERO;
-                        for (int k = 0; k < 4; k++) {
-                            if (((i >>> k) & 0x01) != 0) {
-                                base[i] = base[i].add(factors[k]);
-                            }
+                base = new BigInteger[16];
+                base[0] = BigInteger.ZERO;
+                base[1] = BigInteger.ONE;
+                base[2] = factors[1];
+                for (int i = 3; i < 16; i++) {
+                    base[i] = BigInteger.ZERO;
+                    for (int k = 0; k < 4; k++) {
+                        if (((i >>> k) & 0x01) != 0) {
+                            base[i] = base[i].add(factors[k]);
                         }
-                    }
-
-                    for (int d = 0; d < 4; d++) {
-                        for (int w = 0; w < 16; w++) {
-                            BigInteger bi = base[w];
-                            if (d != 0) {
-                                bi = bi.multiply(BigInteger.TWO.pow(d * 16));
-                            }
-                            if (w == 0) {
-                                points[d][0] = new ProjectivePoint.Immutable(
-                                    zero.fixed(), one.fixed(), zero.fixed());
-                            } else {
-                                PointMultiplier multiplier = new Default(
-                                    secp256r1Ops, AffinePoint.fromECPoint(
-                                        generator, zero.getField()));
-                                byte[] s = bi.toByteArray();
-                                ArrayUtil.reverse(s);
-                                ProjectivePoint.Mutable m =
-                                        multiplier.pointMultiply(s);
-                                points[d][w] = m.setValue(m.asAffine()).fixed();
-                            }
-                        }
-                    }
-
-                    // Check that the tables are correctly generated.
-                    if (ECOperations.class.desiredAssertionStatus()) {
-                        verifyTables(base);
                     }
                 }
 
-                private static void verifyTables(BigInteger[] base) {
-                    for (int d = 0; d < 4; d++) {
-                        for (int w = 0; w < 16; w++) {
-                            BigInteger bi = base[w];
-                            if (d != 0) {
-                                bi = bi.multiply(BigInteger.TWO.pow(d * 16));
-                            }
-                            if (w != 0) {
-                                byte[] s = new byte[32];
-                                byte[] b = bi.toByteArray();
-                                ArrayUtil.reverse(b);
-                                System.arraycopy(b, 0, s, 0, b.length);
+                for (int d = 0; d < 4; d++) {
+                    for (int w = 0; w < 16; w++) {
+                        BigInteger bi = base[w];
+                        if (d != 0) {
+                            bi = bi.multiply(BigInteger.TWO.pow(d * 16));
+                        }
+                        if (w == 0) {
+                            points[d][0] = new ProjectivePoint.Immutable(zero.fixed(), one.fixed(), zero.fixed());
+                        } else {
+                            byte[] s = bi.toByteArray();
+                            ArrayUtil.reverse(s);
+                            ProjectivePoint.Mutable m = smallTableMultiplier.pointMultiply(s);
+                            points[d][w] = m.fixed();
+                        }
+                    }
+                }
+            }
 
-                                ProjectivePoint.Mutable m =
-                                        multiplier.pointMultiply(s);
-                                ProjectivePoint.Immutable v =
-                                        m.setValue(m.asAffine()).fixed();
-                                if (!v.getX().asBigInteger().equals(
-                                        points[d][w].getX().asBigInteger()) ||
-                                    !v.getY().asBigInteger().equals(
-                                        points[d][w].getY().asBigInteger())) {
-                                    throw new RuntimeException();
-                                }
+            private final BigInteger[] base;
+            protected void verifyTables(PointMultiplier multiplier) {
+                for (int d = 0; d < 4; d++) {
+                    for (int w = 0; w < 16; w++) {
+                        BigInteger bi = base[w];
+                        if (d != 0) {
+                            bi = bi.multiply(BigInteger.TWO.pow(d * 16));
+                        }
+                        if (w != 0) {
+                            byte[] s = new byte[32];
+                            byte[] b = bi.toByteArray();
+                            ArrayUtil.reverse(b);
+                            System.arraycopy(b, 0, s, 0, b.length);
+
+                            // Compare this multiplier to the table (generated by Default multiplier)
+                            AffinePoint m = multiplier.pointMultiply(s).asAffine();
+                            AffinePoint v = points[d][w].asAffine();
+                            if (!v.getX().asBigInteger().equals(m.getX().asBigInteger()) ||
+                                !v.getY().asBigInteger().equals(m.getY().asBigInteger())) {
+                                java.util.HexFormat hex = java.util.HexFormat.of();
+                                throw new RuntimeException("Bad multiple found at ["+d+"]["+w+"]" + hex.formatHex(s) + " " + m.getX().asBigInteger());
                             }
                         }
                     }
                 }
+            }
+        }
+
+        // DEBUG (commented out, because having it enabled decreases ECDSA.sign performance ~3%)
+        // final public class Secp256R1GeneratorMultiplier extends P256LargeTableMultiplier {
+        //     private static final ECOperations secp256r1Ops = new ECOperations(IntegerPolynomialP256.ONE.getElement(
+        //         CurveDB.lookup(KnownOIDs.secp256r1.value()).getCurve().getB()),
+        //         P256OrderField.ONE);
+        //     public static final ECPoint generator = CurveDB.P_256.getGenerator();
+        //     public static final PointMultiplier multiplier = new Secp256R1GeneratorMultiplier();
+
+        //     private Secp256R1GeneratorMultiplier() {
+        //         super(
+        //             secp256r1Ops, 
+        //             IntegerPolynomialP256.ONE, 
+        //             new Default(secp256r1Ops, AffinePoint.fromECPoint(generator, IntegerPolynomialP256.ONE)));
+
+        //         // Check that the tables are correctly generated.
+        //         if (ECOperations.class.desiredAssertionStatus()) {
+        //             verifyTables(this);
+        //         }
+        //     }
+
+        //     @Override
+        //     public ProjectivePoint.Mutable pointMultiply(byte[] s) {
+        //         return super.pointMultiplyBase(s);
+        //     }
+        // }
+
+        final public class Secp256R1GeneratorMontgomeryMultiplier extends P256LargeTableMultiplier {
+            private static final ECOperations secp256r1Ops = new ECOperations(MontgomeryIntegerPolynomialP256.ONE.toMontgomery(
+                    MontgomeryIntegerPolynomialP256.ONE.getElement(CurveDB.P_256.getCurve().getB())),
+                    P256OrderField.ONE);
+            public static final ECPoint generator = CurveDB.P_256.getGenerator();
+            public static final PointMultiplier multiplier = new Secp256R1GeneratorMontgomeryMultiplier();
+
+            private Secp256R1GeneratorMontgomeryMultiplier() {
+                super(
+                    secp256r1Ops, 
+                    MontgomeryIntegerPolynomialP256.ONE, 
+                    new DefaultMontgomery(secp256r1Ops, generator));
+
+                // Check that the tables are correctly generated.
+                if (ECOperations.class.desiredAssertionStatus()) {
+                    verifyTables(this);
+                }
+
+                // java.util.HexFormat hex = java.util.HexFormat.of();
+                // byte[] multiple = hex.parseHex("0100000000000000000000000000000000000000000000000000000000000000");
+                // // ProjectivePoint.Mutable mRef = (new DefaultMontgomery(secp256r1Ops, generator)).pointMultiply(multiple);
+                // // ProjectivePoint.Mutable m = this.pointMultiply(multiple);
+                // // System.out.println("VP>> multiple: " + hex.formatHex(multiple) + " " + mRef.getX().asBigInteger() + " " + m.getX().asBigInteger());
+
+                // ECOperations secp256r1OpsResidue = new ECOperations(IntegerPolynomialP256.ONE.getElement(
+                //     CurveDB.lookup(KnownOIDs.secp256r1.value()).getCurve().getB()),
+                //     P256OrderField.ONE);
+
+
+                // AffinePoint mRef = (new DefaultMontgomery(secp256r1Ops, generator)).pointMultiply(multiple).asAffine();
+                // AffinePoint mRef2 = (new Default(secp256r1OpsResidue, AffinePoint.fromECPoint(generator, IntegerPolynomialP256.ONE))).pointMultiply(multiple).asAffine();
+                // AffinePoint m = this.pointMultiply(multiple).asAffine();
+                // System.out.println("VP>> multiple: " + hex.formatHex(multiple) 
+                // + "\n" + mRef.getX().asBigInteger() 
+                // + "\n" + mRef2.getX().asBigInteger() 
+                // + "\n" + m.getX().asBigInteger());
+                // throw new RuntimeException();
+            }
+
+            @Override
+            public ProjectivePoint.Mutable pointMultiply(byte[] s) {
+                ProjectivePoint.Mutable result = super.pointMultiply/*Base*/(s);
+                return new ProjectivePoint.MontgomeryMutable(MontgomeryIntegerPolynomialP256.ONE,
+                    result.getX(),
+                    result.getY(),
+                    result.getZ());
             }
         }
     }

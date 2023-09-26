@@ -252,7 +252,7 @@ public class ECDSAOperations {
         MutablePoint p1 = ecOps.multiply(basePoint, temp1);
         MutablePoint p2 = ecOps.multiply(pp, temp2);
 
-        ecOps.setSum(p1, p2.asAffine());
+        ecOps.setSum(p1, p2);
         IntegerModuloP result = p1.asAffine().getX();
         b2a(result, orderField, temp1);
         return MessageDigest.isEqual(temp1, r);

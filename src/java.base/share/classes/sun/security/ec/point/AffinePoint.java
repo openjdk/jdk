@@ -86,4 +86,10 @@ public class AffinePoint {
         return "(" + x.asBigInteger().toString() + "," +
             y.asBigInteger().toString() + ")";
     }
+
+    public static class BasePoint extends AffinePoint {
+        public BasePoint(ImmutableIntegerModuloP x, ImmutableIntegerModuloP y) {
+            super(x,y);
+        }
+    }
 }

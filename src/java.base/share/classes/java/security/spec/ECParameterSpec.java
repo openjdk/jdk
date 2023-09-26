@@ -110,4 +110,9 @@ public class ECParameterSpec implements AlgorithmParameterSpec {
     public int getCofactor() {
         return h;
     }
+
+    /**
+     * DEBUG
+     */
+    public boolean montgomery2;
 }

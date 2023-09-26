@@ -54,6 +54,12 @@ public class ECGenParameterSpec extends NamedParameterSpec {
      */
     public ECGenParameterSpec(String stdName) {
         super(stdName);
+        montgomery = false;
     }
+
+    /**
+     * DEBUG
+     */
+    public boolean montgomery;
 }
 

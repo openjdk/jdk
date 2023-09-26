@@ -131,11 +131,12 @@ public sealed class IntegerPolynomialModBinP extends IntegerPolynomial {
     }
 
     @Override
-    protected void mult(long[] a, long[] b, long[] r) {
+    protected int mult(long[] a, long[] b, long[] r) {
 
         long[] c = new long[2 * numLimbs];
         multOnly(a, b, c);
         carryReduce(c, r);
+        return 0;
     }
 
     private void modReduceInBits(long[] limbs, int index, int bits, long x) {
@@ -188,7 +189,7 @@ public sealed class IntegerPolynomialModBinP extends IntegerPolynomial {
     }
 
     @Override
-    protected void square(long[] a, long[] r) {
+    protected int square(long[] a, long[] r) {
 
         long[] c = new long[2 * numLimbs];
         for (int i = 0; i < numLimbs; i++) {
@@ -199,7 +200,7 @@ public sealed class IntegerPolynomialModBinP extends IntegerPolynomial {
         }
 
         carryReduce(c, r);
-
+        return 0;
     }
 
     /**
