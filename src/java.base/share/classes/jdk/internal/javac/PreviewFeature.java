@@ -78,7 +78,7 @@ public @interface PreviewFeature {
         SCOPED_VALUES,
         @JEP(number=453, title="Structured Concurrency", status="Preview")
         STRUCTURED_CONCURRENCY,
-        @JEP(number=999, title="ClassFile API", status="Preview")
+        @JEP(number=457, title="ClassFile API", status="Preview")
         CLASSFILE_API,
         /**
          * A key for testing.
