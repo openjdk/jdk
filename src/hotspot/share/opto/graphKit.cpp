@@ -3996,11 +3996,7 @@ void GraphKit::add_parse_predicate(Deoptimization::DeoptReason reason, const int
     return;
   }
 
-  Node* cont = _gvn.intcon(1);
-  Node* opaq = _gvn.transform(new Opaque1Node(C, cont));
-  C->add_parse_predicate_opaq(opaq);
-  Node* bol = _gvn.transform(new Conv2BNode(opaq));
-  ParsePredicateNode* parse_predicate = new ParsePredicateNode(control(), bol, reason);
+  ParsePredicateNode* parse_predicate = new ParsePredicateNode(control(), reason, &_gvn);
   _gvn.set_type(parse_predicate, parse_predicate->Value(&_gvn));
   Node* if_false = _gvn.transform(new IfFalseNode(parse_predicate));
   {

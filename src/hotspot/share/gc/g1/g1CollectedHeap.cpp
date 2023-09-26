@@ -2199,8 +2199,8 @@ void G1CollectedHeap::print_heap_regions() const {
 void G1CollectedHeap::print_on(outputStream* st) const {
   size_t heap_used = Heap_lock->owned_by_self() ? used() : used_unlocked();
   st->print(" %-20s", "garbage-first heap");
-  st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
-            capacity()/K, heap_used/K);
+  st->print(" total reserved %zuK, committed %zuK, used %zuK",
+            _hrm.reserved().byte_size()/K, capacity()/K, heap_used/K);
   st->print(" [" PTR_FORMAT ", " PTR_FORMAT ")",
             p2i(_hrm.reserved().start()),
             p2i(_hrm.reserved().end()));

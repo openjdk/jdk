@@ -511,7 +511,7 @@ public:
   // running.
   void abort_marking_threads();
 
-  void update_accum_task_vtime(int i, double vtime) {
+  void update_accum_task_vtime(uint i, double vtime) {
     _accum_task_vtime[i] += vtime;
   }
 
