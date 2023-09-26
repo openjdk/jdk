@@ -24,10 +24,9 @@
 import com.sun.jdi.*;
 import com.sun.jdi.request.*;
 import com.sun.jdi.event.*;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.io.*;
-import java.util.concurrent.ThreadFactory;
+
 
 /**
  * Framework used by all JDI regression tests
@@ -67,7 +66,6 @@ abstract public class TestScaffold extends TargetAdapter {
     final String[] args;
     protected boolean testFailed = false;
     protected long startTime;
-    public static final String OLD_MAIN_THREAD_NAME = "old-m-a-i-n";
 
     static private class ArgInfo {
         String targetVMArgs = "";
@@ -513,8 +511,8 @@ abstract public class TestScaffold extends TargetAdapter {
         //     argInfo.targetAppCommandLine : Frames2Targ
         //     argInfo.targetVMArgs : -Xss4M
         // The result with wrapper enabled:
-        //     argInfo.targetAppCommandLine : TestScaffold Virtual Frames2Targ
-        //     argInfo.targetVMArgs : -Xss4M
+        //     argInfo.targetAppCommandLine : DebuggeeWrapper Frames2Targ
+        //     argInfo.targetVMArgs : -Xss4M -Dmain.wrapper=Virtual
         boolean classNameParsed = false;
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].trim();
@@ -549,12 +547,12 @@ abstract public class TestScaffold extends TargetAdapter {
             }
         }
 
-        // Need to change args to run wrapper using command like 'TestScaffold Virtual <app-name>'
-        String mainWrapper = System.getProperty("main.wrapper");
+        // Need to change args to run wrapper using command like 'DebuggeeWrapper <app-name>'
+        // and set property 'main.wrapper' so test could use DebuggeeWrapper.isVirtual() method
+        String mainWrapper = DebuggeeWrapper.getWrapperName();
         if (mainWrapper != null && !argInfo.targetAppCommandLine.isEmpty()) {
-            argInfo.targetVMArgs += "-Dmain.wrapper=" + mainWrapper;
-            argInfo.targetAppCommandLine = TestScaffold.class.getName() + ' '
-                    + mainWrapper + ' ' + argInfo.targetAppCommandLine;
+            argInfo.targetVMArgs += "-D" + DebuggeeWrapper.PROPERTY_NAME + "=" + mainWrapper;
+            argInfo.targetAppCommandLine = DebuggeeWrapper.class.getName() + ' ' + argInfo.targetAppCommandLine;
         } else if ("true".equals(System.getProperty("test.enable.preview"))) {
             // the test specified @enablePreview.
             argInfo.targetVMArgs += "--enable-preview ";
@@ -1044,86 +1042,4 @@ abstract public class TestScaffold extends TargetAdapter {
         vmDisconnected = true;
     }
 
-    private static ThreadFactory threadFactory = r -> new Thread(r);
-
-    public static void main(String[] args) throws Throwable {
-        String wrapper = args[0];
-        String className = args[1];
-        String[] classArgs = new String[args.length - 2];
-        System.arraycopy(args, 2, classArgs, 0, args.length - 2);
-        Class c = Class.forName(className);
-        java.lang.reflect.Method mainMethod = c.getMethod("main", new Class[] { String[].class });
-        mainMethod.setAccessible(true);
-
-        if (wrapper.equals("Virtual")) {
-            threadFactory = Thread.ofVirtual().factory();
-            MainThreadGroup tg = new MainThreadGroup();
-            // TODO fix to set virtual scheduler group when become available
-            Thread vthread = Thread.ofVirtual().unstarted(() -> {
-                try {
-                    mainMethod.invoke(null, new Object[] { classArgs });
-                } catch (InvocationTargetException e) {
-                    tg.uncaughtThrowable = e.getCause();
-                } catch (Throwable error) {
-                    tg.uncaughtThrowable = error;
-                }
-            });
-            Thread.currentThread().setName(OLD_MAIN_THREAD_NAME);
-            vthread.setName("main");
-            vthread.start();
-            vthread.join();
-            if (tg.uncaughtThrowable != null) {
-                // Note we cant just rethrow tg.uncaughtThrowable because there are tests
-                // that track ExceptionEvents, and they will complain about the extra
-                // exception. So instead mimic what happens when the main thread exits
-                // with an exception.
-                System.out.println("Uncaught Exception: " + tg.uncaughtThrowable);
-                tg.uncaughtThrowable.printStackTrace(System.out);
-                System.exit(1);
-            }
-        } else if (wrapper.equals("Kernel")) {
-            MainThreadGroup tg = new MainThreadGroup();
-            Thread t = new Thread(tg, () -> {
-                try {
-                    mainMethod.invoke(null, new Object[] { classArgs });
-                } catch (InvocationTargetException e) {
-                    tg.uncaughtThrowable = e.getCause();
-                } catch (Throwable error) {
-                    tg.uncaughtThrowable = error;
-                }
-            });
-            t.start();
-            t.join();
-            if (tg.uncaughtThrowable != null) {
-                throw new RuntimeException(tg.uncaughtThrowable);
-            }
-        } else {
-            mainMethod.invoke(null, new Object[] { classArgs });
-        }
-    }
-
-    static class MainThreadGroup extends ThreadGroup {
-        MainThreadGroup() {
-            super("MainThreadGroup");
-        }
-
-        public void uncaughtException(Thread t, Throwable e) {
-            if (e instanceof ThreadDeath) {
-                return;
-            }
-            e.printStackTrace(System.err);
-            uncaughtThrowable = e;
-        }
-        Throwable uncaughtThrowable = null;
-    }
-
-    public static Thread newThread(Runnable task) {
-        return threadFactory.newThread(task);
-    }
-
-    public static Thread newThread(Runnable task, String name) {
-        Thread t = newThread(task);
-        t.setName(name);
-        return t;
-    }
 }
