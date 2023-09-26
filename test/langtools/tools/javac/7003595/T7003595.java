@@ -158,7 +158,7 @@ public class T7003595 {
             String filename = cks[i].getClassfileName(cnames, cks, i);
             File compiledTest = new File(filename + ".class");
             try {
-                ClassModel cf = Classfile.of().parse(compiledTest.toPath());
+                ClassModel cf = ClassFile.of().parse(compiledTest.toPath());
                 if (cf == null) {
                     throw new Error("Classfile not found: " + filename);
                 }

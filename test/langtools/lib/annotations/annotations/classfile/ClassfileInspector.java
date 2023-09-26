@@ -1173,7 +1173,7 @@ public class ClassfileInspector {
         final URL url = host.getResource(name);
         assert url != null;
         try (InputStream in = url.openStream()) {
-            return Classfile.of().parse(in.readAllBytes());
+            return ClassFile.of().parse(in.readAllBytes());
         }
     }
 
