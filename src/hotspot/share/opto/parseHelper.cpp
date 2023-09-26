@@ -573,21 +573,6 @@ PEAState& PEAState::operator=(const PEAState& init) {
   return *this;
 }
 
-// Inspired by GraphKit::replace_in_map. Besides the replacement of old object
-// we also need to scout map() and find loaded fields of old object. they may
-// lay in stack, locals or even argument section.
-static void replace_in_map(GraphKit* kit, Node* old, Node* neww) {
-  SafePointNode* map = kit->jvms()->map();
-
-  for (uint i = 0; i < map->req(); ++i) {
-    Node* x = map->in(i);
-
-    if (x == old) {
-      map->set_req(i, neww); // safepointNode is not hashashable.
-      map->record_replaced_node(old, neww); // flush to caller.
-    }
-  }
-}
 void PEAState::put_field(GraphKit* kit, ciField* field, Node* objx, Node* val) {
   Compile* C = kit->C;
   PartialEscapeAnalysis* pea = C->PEA();
@@ -630,7 +615,6 @@ void PEAState::put_field(GraphKit* kit, ciField* field, Node* objx, Node* val) {
   kit->access_store_at(objx, adr, adr_type, val, field_type, bt, decorators);
 }
 
-
 // Because relevant objects may form a directed cyclic graph, materialization is a DFS process.
 // PEA clones the object and marks escaped in allocation state. PEA then iterates all fields
 // and recursively materializes the references which are still aliasing with virtual objects in
@@ -639,6 +623,7 @@ Node* PEAState::materialize(GraphKit* kit, Node* var) {
   Compile* C = kit->C;
   PartialEscapeAnalysis* pea = C->PEA();
   ObjID alloc = pea->is_alias(var);
+  VirtualState* virt = static_cast<VirtualState*>(get_object_state(alloc));
 
   assert(alloc != nullptr && get_object_state(alloc)->is_virtual(), "sanity check");
 #ifndef PRODUCT
@@ -650,12 +635,44 @@ Node* PEAState::materialize(GraphKit* kit, Node* var) {
 
   const TypeOopPtr* oop_type = var->as_Type()->type()->is_oopptr();
   Node* objx = kit->materialize_object(alloc, oop_type);
-  VirtualState* virt = static_cast<VirtualState*>(get_object_state(alloc));
 
   // we save VirtualState beforehand.
   escape(alloc, objx, true);
-  replace_in_map(kit, var, objx);
   pea->add_alias(alloc, objx);
+
+  if (virt->lockcnt() > 0 && GenerateSynchronizationCode) {
+    if (PEAVerbose) {
+      tty->print_cr("materializing an object with unbalanced monitor");
+    }
+
+    int mon_id = 0;
+    JVMState* jvms = kit->jvms();
+    int cnt = 0;
+    // It's possible that the locked moninitor is not in the youngest JVMState,
+    // so we have to follow the stacktrace to discover them all.
+    //
+    // PEA Materialization steals those monitors from the original object. Here is the scheme:
+    // 1. unlock the original object.
+    // 2. lock the materialized object.
+    // 3. backfill the obj for Monitor 'obj|box' pair when Parse translates 'monitor-exit'.
+    // 4. split Phi-Unlock in the upcoming monitor_exit (Parse::do_monitor_exit).
+    //
+    while (jvms != nullptr) {
+      for (mon_id = 0;  mon_id < jvms->nof_monitors() && jvms->map()->monitor_obj(jvms, mon_id) != var; ++mon_id);
+
+      if (mon_id < jvms->nof_monitors()) {
+        cnt++;
+        Node* box = jvms->map()->monitor_box(jvms, mon_id);
+        kit->shared_unlock(box, var, true/*preserve_monitor*/); // PEA pops the monitor in Parse::monitor_exit().
+        kit->clone_shared_lock(box, objx);
+      }
+      jvms = jvms->caller();
+    }
+    assert(cnt == virt->lockcnt(), "steal all locks from var");
+  }
+
+  kit->replace_in_map(var, objx);
+
 #ifndef PRODUCT
   if (PEAVerbose) {
     tty->print("new object: ");
@@ -709,6 +726,7 @@ Node* PEAState::materialize(GraphKit* kit, Node* var) {
       }
       return true;
     });
+
     // if var is associated with MemBarRelease, copy it for objx
     for (DUIterator_Fast kmax, k = var->fast_outs(kmax); k < kmax; k++) {
       Node* use = var->fast_out(k);

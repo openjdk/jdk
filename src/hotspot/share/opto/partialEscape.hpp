@@ -84,6 +84,15 @@ class VirtualState: public ObjectState {
 
   ObjectState& merge(ObjectState* newin, GraphKit* kit, RegionNode* region, int pnum) override;
 
+  void lock_inc() { _lockcnt++; }
+  void lock_dec() {
+    assert(_lockcnt > 0, "sanity check");
+    --_lockcnt;
+  }
+  int lockcnt() const {
+    return _lockcnt;
+  }
+
 #ifndef PRODUCT
   void print_on(outputStream* os) const;
 #endif

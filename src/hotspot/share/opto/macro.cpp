@@ -1949,24 +1949,32 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
   if (EliminateNestedLocks ||
       oldbox->as_BoxLock()->is_simple_lock_region(nullptr, obj, nullptr)) {
     // Box is used only in one lock region. Mark this box as eliminated.
-    _igvn.hash_delete(oldbox);
-    oldbox->as_BoxLock()->set_eliminated(); // This changes box's hash value
-     _igvn.hash_insert(oldbox);
-
+    int locks = 0;
     for (uint i = 0; i < oldbox->outcnt(); i++) {
       Node* u = oldbox->raw_out(i);
       if (u->is_AbstractLock() && !u->as_AbstractLock()->is_non_esc_obj()) {
         AbstractLockNode* alock = u->as_AbstractLock();
         // Check lock's box since box could be referenced by Lock's debug info.
         if (alock->box_node() == oldbox) {
-          // Mark eliminated all related locks and unlocks.
+          locks++;
+
+          if (alock->obj_node() == obj) {
+            // Mark eliminated all related locks and unlocks.
 #ifdef ASSERT
-          alock->log_lock_optimization(C, "eliminate_lock_set_non_esc4");
+            alock->log_lock_optimization(C, "eliminate_lock_set_non_esc4");
 #endif
-          alock->set_non_esc_obj();
+            alock->set_non_esc_obj();
+            locks--;
+          }
         }
       }
     }
+    if (locks == 0) {
+      _igvn.hash_delete(oldbox);
+      oldbox->as_BoxLock()->set_eliminated(); // This changes box's hash value
+      _igvn.hash_insert(oldbox);
+    }
+
     return;
   }
 
@@ -2111,7 +2119,7 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
   if (!alock->is_coarsened()) {
     // Check that new "eliminated" BoxLock node is created.
     BoxLockNode* oldbox = alock->box_node()->as_BoxLock();
-    assert(oldbox->is_eliminated(), "should be done already");
+    assert(oldbox->is_eliminated() || DoPartialEscapeAnalysis, "should be done already");
   }
 #endif
 

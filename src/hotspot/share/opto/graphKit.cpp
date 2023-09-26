@@ -3513,11 +3513,51 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
 
   return flock;
 }
+// Clone LockNode for PEA materialization.
+// LockNode is a safepoint, so it's location sensitive. We can't just clone it.
+// We create it using the current JVMState and mark bytecode non-reexecute.
+//
+// It is worthy noting that we reuse BoxNode. It represents the slot on stack.
+// PhaseMacroExpand::mark_eliminated_box() can't eliminate BoxLockNode and its
+// associated AbstractLockNodes until share prove that the 'eliminated' BoxLockNode
+// is exclusive.
+void GraphKit::clone_shared_lock(Node* box, Node* obj) {
+  kill_dead_locals();
 
+  Node* mem = reset_memory();
+
+  FastLockNode * flock = _gvn.transform(new FastLockNode(0, obj, box) )->as_FastLock();
+  const TypeFunc *tf = LockNode::lock_type();
+  LockNode *lock = new LockNode(C, tf);
+
+  lock->set_req(TypeFunc::Control, control());
+  lock->set_req(TypeFunc::Memory , mem);
+  lock->set_req(TypeFunc::I_O    , top())     ;   // does no i/o
+  lock->set_req(TypeFunc::FramePtr, frameptr());
+  lock->set_req(TypeFunc::ReturnAdr, top());
+
+  lock->set_req(TypeFunc::Parms + 0, obj);
+  lock->set_req(TypeFunc::Parms + 1, box);
+  lock->set_req(TypeFunc::Parms + 2, flock);
+
+  // we can't reexecute current bc. it's not monitorenter.
+  jvms()->set_should_reexecute(false);
+  add_safepoint_edges(lock);
+
+  lock = _gvn.transform( lock )->as_Lock();
+
+  // lock has no side-effects, sets few values
+  set_predefined_output_for_runtime_call(lock, mem, TypeRawPtr::BOTTOM);
+
+  insert_mem_bar(Op_MemBarAcquireLock);
+
+  // Add this to the worklist so that the lock can be eliminated
+  record_for_igvn(lock);
+}
 
 //------------------------------shared_unlock----------------------------------
 // Emit unlocking code.
-void GraphKit::shared_unlock(Node* box, Node* obj) {
+void GraphKit::shared_unlock(Node* box, Node* obj, bool preserve_monitor) {
   // bci is either a monitorenter bc or InvocationEntryBci
   // %%% SynchronizationEntryBCI is redundant; use InvocationEntryBci in interfaces
   assert(SynchronizationEntryBCI == InvocationEntryBci, "");
@@ -3525,7 +3565,9 @@ void GraphKit::shared_unlock(Node* box, Node* obj) {
   if( !GenerateSynchronizationCode )
     return;
   if (stopped()) {               // Dead monitor?
-    map()->pop_monitor();        // Kill monitor from debug info
+    if (!preserve_monitor) {
+      map()->pop_monitor();        // Kill monitor from debug info
+    }
     return;
   }
 
@@ -3552,9 +3594,10 @@ void GraphKit::shared_unlock(Node* box, Node* obj) {
 
   // unlock has no side-effects, sets few values
   set_predefined_output_for_runtime_call(unlock, mem, TypeRawPtr::BOTTOM);
-
-  // Kill monitor from debug info
-  map()->pop_monitor( );
+  if (!preserve_monitor) {
+    // Kill monitor from debug info
+    map()->pop_monitor();
+  }
 }
 
 //-------------------------------get_layout_helper-----------------------------
