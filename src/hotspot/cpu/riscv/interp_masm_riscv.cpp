@@ -836,7 +836,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
     if (LockingMode == LM_LIGHTWEIGHT) {
       ld(tmp, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      fast_lock(obj_reg, tmp, t0, t1, slow_case);
+      lightweight_lock(obj_reg, tmp, t0, t1, slow_case);
       j(count);
     } else if (LockingMode == LM_LEGACY) {
       // Load (object->mark() | 1) into swap_reg
@@ -949,7 +949,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
       ld(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       test_bit(t0, header_reg, exact_log2(markWord::monitor_value));
       bnez(t0, slow_case);
-      fast_unlock(obj_reg, header_reg, swap_reg, t0, slow_case);
+      lightweight_unlock(obj_reg, header_reg, swap_reg, t0, slow_case);
       j(count);
 
       bind(slow_case);

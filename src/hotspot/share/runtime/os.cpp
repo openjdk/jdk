@@ -1439,7 +1439,7 @@ bool os::write(int fd, const void *buf, size_t nBytes) {
     if (res == OS_ERR) {
       return false;
     }
-    buf = (void *)((char *)buf + nBytes);
+    buf = (void *)((char *)buf + res);
     nBytes -= res;
   }
 

@@ -47,7 +47,7 @@ class InterruptHangTarg {
     public static void main(String[] args){
         int answer = 0;
         System.out.println("Howdy!");
-        Thread interruptorThread = TestScaffold.newThread(new Interruptor(Thread.currentThread()));
+        Thread interruptorThread = DebuggeeWrapper.newThread(new Interruptor(Thread.currentThread()));
 
         synchronized(sync) {
             interruptorThread.start();

@@ -134,7 +134,7 @@ void HeapRegionRemSet::remove_code_root(nmethod* nm) {
   assert(nm != nullptr, "sanity");
   assert_locked_or_safepoint(CodeCache_lock);
 
-  MutexLocker ml(CodeCache_lock->owned_by_self() ? nullptr : &_m, Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(&_m, !CodeCache_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   _code_roots.remove(nm);
 
   // Check that there were no duplicates

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,14 @@ class CopyMoveHelper {
             }
             return result;
         }
+
+        CopyOption[] replaceExistingOrEmpty() {
+            if (replaceExisting) {
+                return new CopyOption[] { StandardCopyOption.REPLACE_EXISTING };
+            } else {
+                return new CopyOption[0];
+            }
+        }
     }
 
     /**
@@ -129,18 +137,14 @@ class CopyMoveHelper {
         if (sourceAttrs.isSymbolicLink())
             throw new IOException("Copying of symbolic links not supported");
 
-        // delete target if it exists and REPLACE_EXISTING is specified
-        if (opts.replaceExisting) {
-            Files.deleteIfExists(target);
-        } else if (Files.exists(target))
-            throw new FileAlreadyExistsException(target.toString());
-
         // create directory or copy file
         if (sourceAttrs.isDirectory()) {
+            if (opts.replaceExisting)
+                Files.deleteIfExists(target);
             Files.createDirectory(target);
         } else {
             try (InputStream in = Files.newInputStream(source)) {
-                Files.copy(in, target);
+                Files.copy(in, target, opts.replaceExistingOrEmpty());
             }
         }
 
