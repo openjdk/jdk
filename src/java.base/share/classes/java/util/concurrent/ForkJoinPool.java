@@ -1246,7 +1246,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             U.putIntOpaque(this, SOURCE, 0);
         }
         final void updateArray(ForkJoinTask<?>[] a) {
-            U.putReferenceVolatile(this, ARRAY, a);
+            U.getAndSetReference(this, ARRAY, a);
         }
         final void unlockPhase() {
             U.getAndAddInt(this, PHASE, IDLE);
@@ -2058,7 +2058,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5;  // xorshift
                 if ((runState & STOP) != 0)                // terminating
                     break;
-                if ((window == (window = scan(w, window, r))) &&
+                if (window == (window = scan(w, window, r)) &&
                     window >= 0L) {                        // empty scan
                     long c = ctl;                          // try to inactivate
                     int idlePhase = phase + IDLE;
@@ -2105,15 +2105,11 @@ public class ForkJoinPool extends AbstractExecutorService {
                         Object o;                 // to check identities
                         int nb = b + 1, nk = nb & (cap - 1);
                         if (t == null) {
-                            if (q.array != a) {   // resized
-                                next |= RESCAN;
-                                break;
-                            }
-                            if (contended)        // reduce incoming contention
-                                break;
                             if (a[k] == null) {   // revisit if nonempty
-                                if (next >= 0L &&
-                                    (a[nk] != null || q.top - b > 0))
+                                if (next >= 0L && //  and resized or uncontended
+                                    (q.array != a ||
+                                     (!contended &&
+                                      (a[nk] != null || q.top - b > 0))))
                                     next |= RESCAN;
                                 break;
                             }
@@ -2159,14 +2155,12 @@ public class ForkJoinPool extends AbstractExecutorService {
                 LockSupport.setCurrentBlocker(this);
                 w.parker = Thread.currentThread();
                 for (;;) {
-                    if ((p = w.phase) != idlePhase)
+                    if ((runState & STOP) != 0 || (p = w.phase) != idlePhase)
                         break;
                     U.park(quiescent, deadline);
-                    if ((p = w.phase) != idlePhase)
+                    if ((p = w.phase) != idlePhase || (runState & STOP) != 0)
                         break;
                     Thread.interrupted();       // clear status for next park
-                    if ((runState & STOP) != 0)
-                        break;
                     if (quiescent &&            // trim on timeout
                         deadline - System.currentTimeMillis() < TIMEOUT_SLOP) {
                         int id = idlePhase & SMASK;
