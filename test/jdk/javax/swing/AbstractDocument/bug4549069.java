@@ -112,8 +112,8 @@ public class bug4549069 {
             robot.mouseMove(p.x, p.y);
             robot.waitForIdle();
 
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
 
             robot.keyPress(KeyEvent.VK_SPACE);
