@@ -43,10 +43,9 @@ class PSCardTable: public CardTable {
   };
 
   static size_t stripe_size_in_words;
-  static size_t large_obj_arr_min_words;
 
   static bool is_large_obj_array(oop obj) {
-    return obj->is_objArray() && obj->size() >= large_obj_arr_min_words;
+    return obj->is_objArray() && obj->size() >= stripe_size_in_words;
   }
 
   CardValue* find_first_dirty_card(CardValue* const start_card,
@@ -80,13 +79,12 @@ class PSCardTable: public CardTable {
                                   uint stripe_index,
                                   uint n_stripes);
   // Scavenge the elements of a large object array on dirty cards of the stripe.
-  // Scan to end if it is in the next stripe.
-  void scavenge_large_array_stripe(objArrayOop large_arr,
-                                   PSPromotionManager* pm,
-                                   HeapWord* stripe_addr,
-                                   HeapWord* stripe_end_addr,
-                                   HeapWord* space_top,
-                                   bool first_card_already_cleared);
+  void scavenge_large_array_contents(objArrayOop large_arr,
+                                     PSPromotionManager* pm,
+                                     HeapWord* stripe_addr,
+                                     HeapWord* stripe_end_addr,
+                                     HeapWord* space_top,
+                                     bool first_card_already_cleared);
 
   bool addr_is_marked_imprecise(void *addr);
   bool addr_is_marked_precise(void *addr);
