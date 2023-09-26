@@ -460,7 +460,8 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * All bytes in {@code digesta} are examined to determine equality.
      * The calculation time depends only on the length of {@code digesta}.
      * It does not depend on the length of {@code digestb} or the contents
-     * of {@code digesta} and {@code digestb}.
+     * of {@code digesta} and {@code digestb}, unless {@code digestb} is null
+     * or has a length of zero bytes.
      *
      * @param digesta one of the digests to compare.
      *
