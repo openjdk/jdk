@@ -136,6 +136,14 @@ void SafepointMechanism::process(JavaThread *thread, bool allow_suspend, bool ch
   // Read global poll and has_handshake after local poll
   OrderAccess::loadload();
 
+#ifdef X86
+  typedef void (*verify_mxcsr_t)(void);
+  verify_mxcsr_t verify_mxcsr_fn = CAST_TO_FN_PTR(verify_mxcsr_t, StubRoutines::x86::verify_mxcsr_entry());
+  if (verify_mxcsr_fn != nullptr) {
+    verify_mxcsr_fn();
+  }
+#endif // X86
+
   // local poll already checked, if used.
   bool need_rechecking;
   do {

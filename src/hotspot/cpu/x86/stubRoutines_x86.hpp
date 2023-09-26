@@ -125,11 +125,11 @@ class x86 {
 #endif // !LP64
 
  private:
-  static jint   _mxcsr_std;
+  static jint    _mxcsr_std;
 #ifdef _LP64
-  static jint   _mxcsr_rz;
-  static double _unity;
-  static double _thresh;
+  static jint    _mxcsr_rz;
+  static double  _unity;
+  static double  _thresh;
 #endif // _LP64
 
   static address _verify_mxcsr_entry;

@@ -576,7 +576,7 @@ address StubGenerator::generate_verify_mxcsr() {
 
   const Address mxcsr_save(rsp, 0);
 
-  if (CheckJNICalls) {
+  // if (CheckJNICalls) {
     Label ok_ret;
     ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
     __ push(rax);
@@ -594,7 +594,7 @@ address StubGenerator::generate_verify_mxcsr() {
     __ bind(ok_ret);
     __ addptr(rsp, wordSize);
     __ pop(rax);
-  }
+  // }
 
   __ ret(0);
 

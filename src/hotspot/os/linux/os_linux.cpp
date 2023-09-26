@@ -1846,11 +1846,18 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
     event.commit();
 #endif
 
-    if (unity + (thresh) == unity || -unity - (thresh) == -unity) {
-      asm("nop");
-      // int rtn = fesetenv(&default_fenv);
-      // assert(rtn == 0, "fesetenv must succeed");
-      // assert(epsilon + hide(epsilon) != 0, "fsetenv didn't work");
+  fenv_t other_fenv;
+  {
+    int rtn = fegetenv(&other_fenv);
+    assert(rtn == 0, "fegetnv must succeed");
+  }
+    if (unity + thresh == unity || -unity - thresh == -unity) {
+      // We just dlopen()ed a library that mangled the floating-point
+      // flags. Silently fix things now.
+      int rtn = fesetenv(&default_fenv);
+      assert(rtn == 0, "fesetenv must succeed");
+      assert(unity + thresh != unity && -unity - thresh != -unity,
+             "fsetenv didn't work");
     }
   }
   return result;
