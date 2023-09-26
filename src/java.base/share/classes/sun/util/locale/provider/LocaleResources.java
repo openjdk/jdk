@@ -843,7 +843,7 @@ public class LocaleResources {
         String typeStr = type.toString().toLowerCase(Locale.ROOT);
         String styleStr = style.toString().toLowerCase(Locale.ROOT);
         String[] lpArray;
-        String cacheKey = LIST_PATTERN + typeStr;
+        String cacheKey = LIST_PATTERN + typeStr + styleStr;
 
         removeEmptyReferences();
         ResourceReference data = cache.get(cacheKey);
@@ -867,6 +867,7 @@ public class LocaleResources {
                     }
                 }
             }
+            cache.put(cacheKey, new ResourceReference(cacheKey, lpArray, referenceQueue));
         }
 
         return lpArray;
