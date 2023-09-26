@@ -181,7 +181,7 @@ public class HttpGetInCancelledFuture {
             return task.cf;
         }
 
-        protected  <T> void completed(Task<T> task, T result, Throwable throwable) {
+        protected <T> void completed(Task<T> task, T result, Throwable throwable) {
             tasks.remove(task);
         }
 
