@@ -81,18 +81,17 @@ inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T volatile* dest __attri
                                                         T exchange_value,
                                                         atomic_memory_order order) const {
   STATIC_ASSERT(byte_size == sizeof(T));
-  T value = compare_value;
   if (order != memory_order_relaxed) {
     FULL_MEM_BARRIER;
   }
 
-  __atomic_compare_exchange(dest, &value, &exchange_value, /* weak */ false,
+  __atomic_compare_exchange(dest, &compare_value, &exchange_value, /* weak */ false,
                             __ATOMIC_RELAXED, __ATOMIC_RELAXED);
 
   if (order != memory_order_relaxed) {
     FULL_MEM_BARRIER;
   }
-  return value;
+  return compare_value;
 }
 
 template<size_t byte_size>
