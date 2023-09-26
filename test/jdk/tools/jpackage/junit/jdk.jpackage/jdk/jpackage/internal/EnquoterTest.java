@@ -21,6 +21,11 @@
  * questions.
  */
 
+/*
+ * @test
+ * @modules jdk.jpackage
+ */
+
 package jdk.jpackage.internal;
 
 import static org.junit.Assert.assertEquals;

@@ -20,6 +20,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * @test
+ * @modules jdk.jpackage
+ */
+
 package jdk.jpackage.internal;
 
 import java.util.ArrayList;
