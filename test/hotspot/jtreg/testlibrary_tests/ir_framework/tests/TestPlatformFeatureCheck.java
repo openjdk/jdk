@@ -52,7 +52,9 @@ public class TestPlatformFeatureCheck {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, "> 0"}, applyIfPlatformFeature = {"x64", "true"})
+    @IR(counts = {IRNode.ADD_VI, "> 0"},
+        applyIfPlatformFeature = {"x64", "true"},
+        applyIfCPUFeature = {"sse4.1", "true"})
     public static void test1() {
         for (int i = 0; i < SIZE; i++) {
             res[i] = a[i] + b[i];
@@ -61,7 +63,9 @@ public class TestPlatformFeatureCheck {
 
     // IR rule is enforced if all the feature conditions holds good
     @Test
-    @IR(counts = {IRNode.ADD_VI, "> 0"}, applyIfPlatformFeatureAnd = {"x64", "true", "linux", "true"})
+    @IR(counts = {IRNode.ADD_VI, "> 0"},
+        applyIfPlatformFeatureAnd = {"x64", "true", "linux", "true"},
+        applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "true"})
     public static void test2() {
         for (int i = 0; i < SIZE; i++) {
             res[i] = a[i] + b[i];
@@ -70,7 +74,9 @@ public class TestPlatformFeatureCheck {
 
     // IR rule is enforced if any of the feature condition holds good
     @Test
-    @IR(counts = {IRNode.ADD_VI, "> 0"}, applyIfPlatformFeatureOr = {"x64", "true", "x86", "true"})
+    @IR(counts = {IRNode.ADD_VI, "> 0"},
+        applyIfPlatformFeatureOr = {"linux", "true", "mac", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     public static void test3() {
         for (int i = 0; i < SIZE; i++) {
             res[i] = a[i] + b[i];
