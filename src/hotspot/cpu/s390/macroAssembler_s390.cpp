@@ -3205,7 +3205,7 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
     z_bru(done);
   } else {
     assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-    fast_lock(oop, displacedHeader, temp, done);
+    lightweight_lock(oop, displacedHeader, temp, done);
     z_bru(done);
   }
 
@@ -3285,7 +3285,7 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
     // don't load currentHead again from stack-top after monitor check, as it is possible
     // some other thread modified it.
     // currentHeader is altered, but it's contents are copied in temp as well
-    fast_unlock(oop, temp, currentHeader, done);
+    lightweight_unlock(oop, temp, currentHeader, done);
     z_bru(done);
   }
 
@@ -5645,14 +5645,14 @@ SkipIfEqual::~SkipIfEqual() {
   _masm->bind(_label);
 }
 
-// Implements fast-locking.
+// Implements lightweight-locking.
 // Branches to slow upon failure to lock the object.
 // Falls through upon success.
 //
 //  - obj: the object to be locked, contents preserved.
 //  - hdr: the header, already loaded from obj, contents destroyed.
 //  Note: make sure Z_R1 is not manipulated here when C2 compiler is in play
-void MacroAssembler::fast_lock(Register obj, Register hdr, Register temp, Label& slow_case) {
+void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register temp, Label& slow_case) {
 
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, hdr, temp);
@@ -5662,7 +5662,7 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register temp, Label&
 
   compareU32_and_branch(temp, (unsigned)LockStack::end_offset()-1, bcondHigh, slow_case);
 
-  // attempting a fast_lock
+  // attempting a lightweight_lock
   // Load (object->mark() | 1) into hdr
   z_oill(hdr, markWord::unlocked_value);
 
@@ -5684,26 +5684,26 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register temp, Label&
   z_cr(temp, temp);
 }
 
-// Implements fast-unlocking.
+// Implements lightweight-unlocking.
 // Branches to slow upon failure.
 // Falls through upon success.
 //
 // - obj: the object to be unlocked
 // - hdr: the (pre-loaded) header of the object, will be destroyed
 // - Z_R1_scratch: will be killed in case of Interpreter & C1 Compiler
-void MacroAssembler::fast_unlock(Register obj, Register hdr, Register tmp, Label& slow) {
+void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register tmp, Label& slow) {
 
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, hdr, tmp);
 
 #ifdef ASSERT
   {
-    // Check that hdr is fast-locked.
+    // Check that hdr is lightweight-locked.
     Label hdr_ok;
     z_lgr(tmp, hdr);
     z_nill(tmp, markWord::lock_mask_in_place);
     z_bre(hdr_ok);
-    stop("Header is not fast-locked");
+    stop("Header is not lightweight-locked");
     bind(hdr_ok);
   }
   {
