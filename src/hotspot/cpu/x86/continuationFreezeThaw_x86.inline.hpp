@@ -127,9 +127,7 @@ void FreezeBase::adjust_interpreted_frame_unextended_sp(frame& f) {
 }
 
 inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, const frame& hf) {
-  intptr_t* vfp = f.fp();
-  intptr_t* hfp = hf.fp();
-  assert(hfp == hf.unextended_sp() + (f.fp() - f.unextended_sp()), "");
+  assert(hf.fp() == hf.unextended_sp() + (f.fp() - f.unextended_sp()), "");
   assert((f.at(frame::interpreter_frame_last_sp_offset) != 0)
     || (f.unextended_sp() == f.sp()), "");
   assert(f.fp() > (intptr_t*)f.at_relative(frame::interpreter_frame_initial_sp_offset), "");
@@ -269,8 +267,6 @@ inline void ThawBase::patch_pd(frame& f, const frame& caller) {
 }
 
 inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, const frame& f) {
-  intptr_t* vfp = f.fp();
-
   // Make sure that last_sp is kept relativized.
   assert((intptr_t*)f.at_relative(frame::interpreter_frame_last_sp_offset) == f.unextended_sp(), "");
 

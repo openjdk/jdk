@@ -701,7 +701,7 @@ void InterpreterMacroAssembler::remove_activation(
     // We use c_rarg1 so that if we go slow path it will be the correct
     // register for unlock_object to pass to VM directly
     ld(c_rarg1, monitor_block_top); // derelativize pointer
-    shadd(c_rarg1, c_rarg1, fp,  c_rarg1, LogBytesPerWord);
+    shadd(c_rarg1, c_rarg1, fp, c_rarg1, LogBytesPerWord);
     // c_rarg1 points to current entry, starting with top-most entry
 
     la(x9, monitor_block_bot);  // points to word before bottom of
