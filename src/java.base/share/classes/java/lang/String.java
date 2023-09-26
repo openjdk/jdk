@@ -2156,8 +2156,8 @@ public final class String
              (ooffset > (long)other.length() - len)) {
             return false;
         }
-        // Any strings match if len < 0
-        if (len < 0) {
+        // Any strings match if len <= 0
+        if (len <= 0) {
            return true;
         }
         byte[] tv = value;
