@@ -23,18 +23,36 @@
 
 /**
  * @test
- * @bug 4016509
- * @summary test regionMatches corner case
+ * @bug 4016509 8316879
+ * @summary test regionMatches corner cases
+ * @run testng RegionMatches
  */
 
+import java.io.UnsupportedEncodingException;
+import org.testng.annotations.Test;
 
+@Test
 public class RegionMatches {
 
-  public static void main (String args[]) throws Exception {
-      String s1="abc";
-      String s2="def";
+  private final String s1_LATIN1 = "abc";
+  private final String s2_LATIN1 = "def";
 
-      if (!s1.regionMatches(0,s2,0,Integer.MIN_VALUE))
-          throw new RuntimeException("Integer overflow in RegionMatches");
+  private final byte[] b1_UTF16 = new byte[]{0x04, 0x3d, 0x04, 0x30, 0x04, 0x36, 0x04, 0x34};
+  private final byte[] b2_UTF16 = new byte[]{0x04, 0x32, 0x00, 0x20, 0x04, 0x41, 0x04, 0x42};
+
+  @Test
+  public void TestLATIN1() {
+      // Test for 4016509
+      if (!s1_LATIN1.regionMatches(0, s2_LATIN1, 0, Integer.MIN_VALUE))
+          throw new RuntimeException("Integer overflow in RegionMatches when comparing LATIN1 strings");
+  }
+
+  @Test
+  public void TestUTF16() throws UnsupportedEncodingException{
+      // Test for 8316879
+      String s1_UTF16 = new String(b1_UTF16, "UTF-16");
+      String s2_UTF16 = new String(b2_UTF16, "UTF-16");
+      if (!s1_UTF16.regionMatches(0, s2_UTF16, 0, Integer.MIN_VALUE + 1))
+          throw new RuntimeException("Integer overflow in RegionMatches when comparing UTF16 strings");
   }
 }
