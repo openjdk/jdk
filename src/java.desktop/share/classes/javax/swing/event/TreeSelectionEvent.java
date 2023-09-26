@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public class TreeSelectionEvent extends EventObject
     /**
       * Returns the paths that have been added or removed from the selection.
       *
-      * @return copy of the array of {@code TreePath} obects for this event.
+      * @return copy of the array of {@code TreePath} objects for this event.
       */
     public TreePath[] getPaths()
     {

@@ -219,7 +219,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
         if (disposer != null) {
             // Note that we're likely calling removePropertyChangeListener()
             // during the course of AppContext.firePropertyChange().
-            // However, EventListenerAggreggate has code to safely modify
+            // However, EventListenerAggregate has code to safely modify
             // the list under such circumstances.
             context.removePropertyChangeListener(AppContext.GUI_DISPOSED,
                                                  disposer);
