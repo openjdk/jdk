@@ -481,8 +481,12 @@ public abstract sealed class Reference<T>
     }
 
     /**
-     * Clears this reference object and adds it to the queue with which
-     * it is registered, if any.
+     * Clears this reference object, then attempts to add it to the queue with
+     * which it is registered, if any.
+     *
+     * <p>If this reference was already enqueued (by the garbage collector, or a
+     * previous call to {@code enqueue}), this method is <b><i>not successful</i></b>,
+     * and returns false.
      *
      * <p>Memory consistency effects: Actions in a thread prior to calling
      * {@code enqueue} <b><i>successfully</i></b>
@@ -490,24 +494,15 @@ public abstract sealed class Reference<T>
      * the reference is removed from the queue by {@link ReferenceQueue#poll}
      * or {@link ReferenceQueue#remove}.
      *
-     * There is a potential race condition with the garbage collector.
-     * When this method is called, the garbage collector
-     * may already be in the process of (or already completed)
-     * enqueueing this reference.
-     *
-     * This can result in an
-     * <b><i></i></b>unsuccessful</i></b> {@code enqueue()}.
-     *
-     *
-     * Avoid this race by ensuring the referent remains strongly-reachable until after the call to clear(), using {@link #reachabilityFence(Object)} if necessary.
-     *
-     *
-     * <p> This method is invoked only by Java code; when the garbage collector
+     * <p>This method is invoked only by Java code; when the garbage collector
      * enqueues references it does so directly, without invoking this method.
      *
      * @apiNote
-     * Unexpected behavior can result if this method is called while the
-     * referent is still in use.
+     * Use of this method allows the registered queue's
+     * {@link ReferenceQueue#poll} and {@link ReferenceQueue#remove} methods
+     * to return this reference even though the referent is still strongly
+     * reachable. That is, before the referent has reached the expected
+     * reachability level.
      *
      * @return   {@code true} if this reference object was successfully
      *           enqueued; {@code false} if it was already enqueued or if
