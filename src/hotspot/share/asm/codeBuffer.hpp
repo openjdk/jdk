@@ -391,8 +391,8 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // CodeBuffers must be allocated on the stack except for a single
   // special case during expansion which is handled internally.  This
   // is done to guarantee proper cleanup of resources.
-  void* operator new(size_t size) noexcept { return resource_allocate_bytes(size); }
-  void  operator delete(void* p)           { ShouldNotCallThis(); }
+  void* operator new(size_t size) noexcept{ return resource_allocate_bytes(size); }
+  void  operator delete(void* p)          { ShouldNotCallThis(); }
 
  public:
   typedef int csize_t;  // code size type; would be size_t except for history
