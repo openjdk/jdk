@@ -44,7 +44,7 @@ private:
 public:
   int offset() { return _offset; }
 
-  void* operator new(size_t ignore, DebugInformationRecorder* dir) throw() {
+  void* operator new(size_t ignore, DebugInformationRecorder* dir) noexcept {
     assert(ignore == sizeof(DIR_Chunk), "");
     if (dir->_next_chunk >= dir->_next_chunk_limit) {
       const int CHUNK = 100;

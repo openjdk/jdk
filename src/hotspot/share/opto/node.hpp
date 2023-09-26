@@ -243,7 +243,7 @@ public:
   // field is a local cache of a value defined in some "program fragment" for
   // which these Nodes are just a part of.
 
-  inline void* operator new(size_t x) throw() {
+  inline void* operator new(size_t x) noexcept {
     Compile* C = Compile::current();
     Node* n = (Node*)C->node_arena()->AmallocWords(x);
     return (void*)n;

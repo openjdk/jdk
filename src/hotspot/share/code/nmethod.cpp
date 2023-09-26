@@ -746,11 +746,11 @@ nmethod::nmethod(
   }
 }
 
-void* nmethod::operator new(size_t size, int nmethod_size, int comp_level) throw () {
+void* nmethod::operator new(size_t size, int nmethod_size, int comp_level) noexcept {
   return CodeCache::allocate(nmethod_size, CodeCache::get_code_blob_type(comp_level));
 }
 
-void* nmethod::operator new(size_t size, int nmethod_size, bool allow_NonNMethod_space) throw () {
+void* nmethod::operator new(size_t size, int nmethod_size, bool allow_NonNMethod_space) noexcept {
   // Try MethodNonProfiled and MethodProfiled.
   void* return_value = CodeCache::allocate(nmethod_size, CodeBlobType::MethodNonProfiled);
   if (return_value != nullptr || !allow_NonNMethod_space) return return_value;

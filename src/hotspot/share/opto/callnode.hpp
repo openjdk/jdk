@@ -215,7 +215,7 @@ public:
   // Because JVMState objects live over the entire lifetime of the
   // Compile object, they are allocated into the comp_arena, which
   // does not get resource marked or reset during the compile process
-  void *operator new( size_t x, Compile* C ) throw() { return C->comp_arena()->Amalloc(x); }
+  void *operator new( size_t x, Compile* C ) noexcept { return C->comp_arena()->Amalloc(x); }
   void operator delete( void * ) { } // fast deallocation
 
   // Create a new JVMState, ready for abstract interpretation.

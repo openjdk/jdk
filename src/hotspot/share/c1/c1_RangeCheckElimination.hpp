@@ -47,8 +47,8 @@ private:
   class Verification : public BlockClosure {
   // RangeCheckEliminator::Verification should never get instatiated on the heap.
   private:
-    void* operator new(size_t size) throw();
-    void* operator new[](size_t size) throw();
+    void* operator new(size_t size) noexcept;
+    void* operator new[](size_t size) noexcept;
     void operator delete(void* p) { ShouldNotReachHere(); }
     void operator delete[](void* p) { ShouldNotReachHere(); }
 

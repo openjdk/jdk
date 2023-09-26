@@ -630,7 +630,7 @@ class UnstableIfTrap {
   int _next_bci;
 
 public:
-  UnstableIfTrap(CallStaticJavaNode* call, Parse::Block* path): _unc(call), _modified(false) {
+  UnstableIfTrap(CallStaticJavaNode* call, Parse::Block* path) noexcept : _unc(call), _modified(false) {
     assert(_unc != nullptr && Deoptimization::trap_request_reason(_unc->uncommon_trap_request()) == Deoptimization::Reason_unstable_if,
           "invalid uncommon_trap call!");
     _next_bci = path != nullptr ? path->start() : -1;
@@ -654,7 +654,7 @@ public:
     return _unc;
   }
 
-  inline void* operator new(size_t x) throw() {
+  inline void* operator new(size_t x) noexcept {
     Compile* C = Compile::current();
     return C->comp_arena()->AmallocWords(x);
   }

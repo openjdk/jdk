@@ -490,7 +490,7 @@ int get_legal_text(FileBuff &fbuf, char **legal_text)
 }
 
 #if !defined(_WIN32) || defined(_WIN64)
-void *operator new( size_t size, int, const char *, int ) throw() {
+void *operator new( size_t size, int, const char *, int ) noexcept {
   return ::operator new( size );
 }
 #endif

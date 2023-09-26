@@ -93,21 +93,21 @@ void JfrCHeapObj::on_memory_allocation(const void* allocation, size_t size) {
   hook_memory_allocation((const char*)allocation, size);
 }
 
-void* JfrCHeapObj::operator new(size_t size) throw() {
+void* JfrCHeapObj::operator new(size_t size) noexcept {
   return operator new(size, std::nothrow);
 }
 
-void* JfrCHeapObj::operator new (size_t size, const std::nothrow_t&  nothrow_constant) throw() {
+void* JfrCHeapObj::operator new (size_t size, const std::nothrow_t&  nothrow_constant) noexcept {
   void* const memory = CHeapObj<mtTracing>::operator new(size, nothrow_constant, CALLER_PC);
   hook_memory_allocation((const char*)memory, size);
   return memory;
 }
 
-void* JfrCHeapObj::operator new [](size_t size) throw() {
+void* JfrCHeapObj::operator new [](size_t size) noexcept {
   return operator new[](size, std::nothrow);
 }
 
-void* JfrCHeapObj::operator new [](size_t size, const std::nothrow_t&  nothrow_constant) throw() {
+void* JfrCHeapObj::operator new [](size_t size, const std::nothrow_t&  nothrow_constant) noexcept {
   void* const memory = CHeapObj<mtTracing>::operator new[](size, nothrow_constant, CALLER_PC);
   hook_memory_allocation((const char*)memory, size);
   return memory;

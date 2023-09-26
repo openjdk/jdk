@@ -31,7 +31,7 @@
 #include "memory/metaspace.hpp"
 
 template <typename T>
-inline void* Array<T>::operator new(size_t size, ClassLoaderData* loader_data, int length, TRAPS) throw() {
+inline void* Array<T>::operator new(size_t size, ClassLoaderData* loader_data, int length, TRAPS) noexcept {
   size_t word_size = Array::size(length);
   return (void*) Metaspace::allocate(loader_data, word_size,
                                      MetaspaceObj::array_type(sizeof(T)), THREAD);

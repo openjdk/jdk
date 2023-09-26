@@ -821,7 +821,7 @@ public:
     return AnyObj::operator new(size, F);
   }
 
-  void* operator new(size_t size, const std::nothrow_t&  nothrow_constant) throw() {
+  void* operator new(size_t size, const std::nothrow_t&  nothrow_constant) noexcept {
     return AnyObj::operator new(size, nothrow_constant, F);
   }
   void operator delete(void *p) {

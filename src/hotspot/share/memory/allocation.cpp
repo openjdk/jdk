@@ -73,14 +73,14 @@ void* MetaspaceObj::_shared_metaspace_top  = nullptr;
 
 void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  size_t word_size,
-                                 MetaspaceObj::Type type, TRAPS) throw() {
+                                 MetaspaceObj::Type type, TRAPS) noexcept {
   // Klass has its own operator new
   return Metaspace::allocate(loader_data, word_size, type, THREAD);
 }
 
 void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  size_t word_size,
-                                 MetaspaceObj::Type type) throw() {
+                                 MetaspaceObj::Type type) noexcept {
   assert(!Thread::current()->is_Java_thread(), "only allowed by non-Java thread");
   return Metaspace::allocate(loader_data, word_size, type);
 }
@@ -103,7 +103,7 @@ void MetaspaceObj::print_address_on(outputStream* st) const {
 // ArenaObj
 //
 
-void* ArenaObj::operator new(size_t size, Arena *arena) throw() {
+void* ArenaObj::operator new(size_t size, Arena *arena) noexcept {
   return arena->Amalloc(size);
 }
 
@@ -111,20 +111,20 @@ void* ArenaObj::operator new(size_t size, Arena *arena) throw() {
 // AnyObj
 //
 
-void* AnyObj::operator new(size_t size, Arena *arena) throw() {
+void* AnyObj::operator new(size_t size, Arena *arena) {
   address res = (address)arena->Amalloc(size);
   DEBUG_ONLY(set_allocation_type(res, ARENA);)
   return res;
 }
 
-void* AnyObj::operator new(size_t size, MEMFLAGS flags) throw() {
+void* AnyObj::operator new(size_t size, MEMFLAGS flags) noexcept {
   address res = (address)AllocateHeap(size, flags, CALLER_PC);
   DEBUG_ONLY(set_allocation_type(res, C_HEAP);)
   return res;
 }
 
 void* AnyObj::operator new(size_t size, const std::nothrow_t&  nothrow_constant,
-    MEMFLAGS flags) throw() {
+    MEMFLAGS flags) noexcept {
   // should only call this with std::nothrow, use other operator new() otherwise
     address res = (address)AllocateHeap(size, flags, CALLER_PC, AllocFailStrategy::RETURN_NULL);
     DEBUG_ONLY(if (res!= nullptr) set_allocation_type(res, C_HEAP);)

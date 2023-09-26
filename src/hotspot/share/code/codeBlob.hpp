@@ -408,7 +408,7 @@ class BufferBlob: public RuntimeBlob {
   // below two-argument operator delete will be treated as a placement
   // delete rather than an ordinary sized delete; see C++14 3.7.4.2/p2.
   void operator delete(void* p);
-  void* operator new(size_t s, unsigned size) throw();
+  void* operator new(size_t s, unsigned size) noexcept;
 
  public:
   // Creation
@@ -449,7 +449,7 @@ class VtableBlob: public BufferBlob {
 private:
   VtableBlob(const char*, int);
 
-  void* operator new(size_t s, unsigned size) throw();
+  void* operator new(size_t s, unsigned size) noexcept;
 
 public:
   // Creation
@@ -496,7 +496,7 @@ class RuntimeStub: public RuntimeBlob {
   // below two-argument operator delete will be treated as a placement
   // delete rather than an ordinary sized delete; see C++14 3.7.4.2/p2.
   void operator delete(void* p);
-  void* operator new(size_t s, unsigned size) throw();
+  void* operator new(size_t s, unsigned size) noexcept;
 
  public:
   // Creation
@@ -536,7 +536,7 @@ class SingletonBlob: public RuntimeBlob {
   // below two-argument operator delete will be treated as a placement
   // delete rather than an ordinary sized delete; see C++14 3.7.4.2/p2.
   void operator delete(void* p);
-  void* operator new(size_t s, unsigned size) throw();
+  void* operator new(size_t s, unsigned size) noexcept;
 
  public:
    SingletonBlob(
@@ -754,7 +754,7 @@ class UpcallStub: public RuntimeBlob {
   // below two-argument operator delete will be treated as a placement
   // delete rather than an ordinary sized delete; see C++14 3.7.4.2/p2.
   void operator delete(void* p);
-  void* operator new(size_t s, unsigned size) throw();
+  void* operator new(size_t s, unsigned size) noexcept;
 
   struct FrameData {
     JavaFrameAnchor jfa;

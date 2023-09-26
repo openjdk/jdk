@@ -289,7 +289,7 @@ BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
   return blob;
 }
 
-void* BufferBlob::operator new(size_t s, unsigned size) throw() {
+void* BufferBlob::operator new(size_t s, unsigned size) noexcept {
   return CodeCache::allocate(size, CodeBlobType::NonNMethod);
 }
 
@@ -323,7 +323,7 @@ AdapterBlob* AdapterBlob::create(CodeBuffer* cb) {
   return blob;
 }
 
-void* VtableBlob::operator new(size_t s, unsigned size) throw() {
+void* VtableBlob::operator new(size_t s, unsigned size) noexcept {
   // Handling of allocation failure stops compilation and prints a bunch of
   // stuff, which requires unlocking the CodeCache_lock, so that the Compile_lock
   // can be locked, and then re-locking the CodeCache_lock. That is not safe in
@@ -430,14 +430,14 @@ RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
 }
 
 
-void* RuntimeStub::operator new(size_t s, unsigned size) throw() {
+void* RuntimeStub::operator new(size_t s, unsigned size) noexcept {
   void* p = CodeCache::allocate(size, CodeBlobType::NonNMethod);
   if (!p) fatal("Initial size of CodeCache is too small");
   return p;
 }
 
 // operator new shared by all singletons:
-void* SingletonBlob::operator new(size_t s, unsigned size) throw() {
+void* SingletonBlob::operator new(size_t s, unsigned size) noexcept {
   void* p = CodeCache::allocate(size, CodeBlobType::NonNMethod);
   if (!p) fatal("Initial size of CodeCache is too small");
   return p;
@@ -744,7 +744,7 @@ UpcallStub::UpcallStub(const char* name, CodeBuffer* cb, int size,
   CodeCache::commit(this);
 }
 
-void* UpcallStub::operator new(size_t s, unsigned size) throw() {
+void* UpcallStub::operator new(size_t s, unsigned size) noexcept {
   return CodeCache::allocate(size, CodeBlobType::NonNMethod);
 }
 

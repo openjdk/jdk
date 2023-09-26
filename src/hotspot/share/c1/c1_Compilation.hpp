@@ -316,8 +316,8 @@ class InstructionMark: public StackObj {
 // Base class for objects allocated by the compiler in the compilation arena
 class CompilationResourceObj {
  public:
-  void* operator new(size_t size) throw() { return Compilation::current()->arena()->Amalloc(size); }
-  void* operator new(size_t size, Arena* arena) throw() {
+  void* operator new(size_t size) noexcept { return Compilation::current()->arena()->Amalloc(size); }
+  void* operator new(size_t size, Arena* arena) noexcept {
     return arena->Amalloc(size);
   }
   void  operator delete(void* p) {} // nothing to do

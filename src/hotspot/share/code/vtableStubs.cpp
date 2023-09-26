@@ -52,7 +52,7 @@ address VtableStub::_chunk_end         = nullptr;
 VMReg   VtableStub::_receiver_location = VMRegImpl::Bad();
 
 
-void* VtableStub::operator new(size_t size, int code_size) throw() {
+void* VtableStub::operator new(size_t size, int code_size) noexcept {
   assert_lock_strong(VtableStubs_lock);
   assert(size == sizeof(VtableStub), "mismatched size");
   // compute real VtableStub size (rounded to nearest word)

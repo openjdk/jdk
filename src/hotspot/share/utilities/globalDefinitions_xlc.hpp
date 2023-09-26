@@ -139,12 +139,12 @@ inline int g_isfinite(jdouble f)                 { return finite(f); }
 // Be aware that for function/method declarations, xlC only supports the following
 // syntax (i.e. the attribute must be placed AFTER the function/method declarator):
 //
-//   void* operator new(size_t size) throw() NOINLINE;
+//   void* operator new(size_t size) noexcept NOINLINE;
 //
 // For function/method definitions, the more common placement BEFORE the
 // function/method declarator seems to be supported as well:
 //
-//   NOINLINE void* CHeapObj<F>::operator new(size_t size) throw() {...}
+//   NOINLINE void* CHeapObj<F>::operator new(size_t size) noexcept {...}
 
 #define NOINLINE     __attribute__((__noinline__))
 #define ALWAYSINLINE inline __attribute__((__always_inline__))

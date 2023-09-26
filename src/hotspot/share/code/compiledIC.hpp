@@ -172,8 +172,8 @@ class CompiledIC: public ResourceObj {
   bool          _is_optimized;  // an optimized virtual call (i.e., no compiled IC)
   CompiledMethod* _method;
 
-  CompiledIC(CompiledMethod* cm, NativeCall* ic_call);
-  CompiledIC(RelocIterator* iter);
+  CompiledIC(CompiledMethod* cm, NativeCall* call) noexcept;
+  CompiledIC(RelocIterator* iter) noexcept;
 
   void initialize_from_iter(RelocIterator* iter);
 
@@ -392,7 +392,7 @@ private:
 
   NativeCall* _call;
 
-  CompiledDirectStaticCall(NativeCall* call) : _call(call) {}
+  CompiledDirectStaticCall(NativeCall* call) noexcept : _call(call) {}
 
  public:
   static inline CompiledDirectStaticCall* before(address return_addr) {

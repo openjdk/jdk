@@ -129,7 +129,7 @@ class VtableStub {
   bool           _is_vtable_stub;    // True if vtable stub, false, is itable stub
   /* code follows here */            // The vtableStub code
 
-  void* operator new(size_t size, int code_size) throw();
+  void* operator new(size_t size, int code_size) noexcept;
 
   VtableStub(bool is_vtable_stub, short index)
         : _next(nullptr), _index(index), _ame_offset(-1), _npe_offset(-1),
