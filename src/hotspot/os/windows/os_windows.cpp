@@ -3838,7 +3838,7 @@ void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint)    { }
 bool os::numa_topology_changed()                       { return false; }
 size_t os::numa_get_groups_num()                       { return MAX2(numa_node_list_holder.get_count(), 1); }
 int os::numa_get_group_id()                            { return 0; }
-size_t os::numa_get_leaf_groups(int *ids, size_t size) {
+size_t os::numa_get_leaf_groups(uint *ids, size_t size) {
   if (numa_node_list_holder.get_count() == 0 && size > 0) {
     // Provide an answer for UMA systems
     ids[0] = 0;
@@ -3847,7 +3847,8 @@ size_t os::numa_get_leaf_groups(int *ids, size_t size) {
     // check for size bigger than actual groups_num
     size = MIN2(size, numa_get_groups_num());
     for (int i = 0; i < (int)size; i++) {
-      ids[i] = numa_node_list_holder.get_node_list_entry(i);
+      int node_id = numa_node_list_holder.get_node_list_entry(i);
+      ids[i] = checked_cast<uint>(node_id);
     }
     return size;
   }
