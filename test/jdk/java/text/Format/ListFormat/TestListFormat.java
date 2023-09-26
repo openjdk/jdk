@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8041488
+ * @bug 8041488 8316974
  * @summary Tests for ListFormat class
  * @run junit TestListFormat
  */
@@ -33,6 +33,7 @@ import java.text.FieldPosition;
 import java.text.ListFormat;
 import java.text.ParseException;
 import java.text.ParsePosition;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -200,7 +201,19 @@ public class TestListFormat {
                 arguments(CUSTOM_PATTERNS_MINIMAL, SAMPLE4),
         };
     }
-
+    static Arguments[] getInstance_3Arg_InheritPatterns() {
+        return new Arguments[] {
+                arguments(ListFormat.Type.STANDARD, ListFormat.Style.FULL),
+                arguments(ListFormat.Type.STANDARD, ListFormat.Style.SHORT),
+                arguments(ListFormat.Type.STANDARD, ListFormat.Style.NARROW),
+                arguments(ListFormat.Type.OR, ListFormat.Style.FULL),
+                arguments(ListFormat.Type.OR, ListFormat.Style.SHORT),
+                arguments(ListFormat.Type.OR, ListFormat.Style.NARROW),
+                arguments(ListFormat.Type.UNIT, ListFormat.Style.FULL),
+                arguments(ListFormat.Type.UNIT, ListFormat.Style.SHORT),
+                arguments(ListFormat.Type.UNIT, ListFormat.Style.NARROW),
+        };
+    }
     @ParameterizedTest
     @MethodSource
     void getInstance_1Arg(String[] patterns, List<String> input, String expected) throws ParseException {
@@ -287,6 +300,15 @@ public class TestListFormat {
         parsed = f.parseObject(testStr, pp);
         assertNotEquals(input, parsed);
         assertEquals(-1, pp.getErrorIndex());
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void getInstance_3Arg_InheritPatterns(ListFormat.Type type, ListFormat.Style style) {
+        // No IAE should be thrown for all locales. Some locales in CLDR
+        // have partial patterns (start, middle, end) in it. Lacking ones
+        // should be inherited from parent locales.
+        Locale.availableLocales().forEach(l -> ListFormat.getInstance(l, type, style));
     }
 
     private static void compareResult(ListFormat f, List<String> input, String expected, boolean roundTrip) throws ParseException {
