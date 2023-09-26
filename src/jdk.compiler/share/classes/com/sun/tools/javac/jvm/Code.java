@@ -2189,6 +2189,8 @@ public class Code {
                 ((var.sym.owner.flags() & Flags.LAMBDA_METHOD) == 0 ||
                  (var.sym.flags() & Flags.PARAMETER) == 0);
         if (ignoredSyntheticVar) return;
+        //don't include unnamed variables:
+        if (var.sym.name == var.sym.name.table.names.empty) return ;
         if (varBuffer == null)
             varBuffer = new LocalVar[20];
         else

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,42 +130,26 @@ public class HostAddresses implements Cloneable {
         return false;
     }
 
+    @Override
     public int hashCode() {
-        if (hashCode == 0) {
-            int result = 17;
-            if (addresses != null) {
-                for (int i=0; i < addresses.length; i++)  {
-                    result = 37*result + addresses[i].hashCode();
-                }
-            }
-            hashCode = result;
+        int h = hashCode;
+        if (h == 0) {
+            hashCode = h = Arrays.hashCode(addresses);
         }
-        return hashCode;
-
+        return h;
     }
 
-
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
 
-        if (!(obj instanceof HostAddresses)) {
+        if (!(obj instanceof HostAddresses addrs)) {
             return false;
         }
 
-        HostAddresses addrs = (HostAddresses)obj;
-        if ((addresses == null && addrs.addresses != null) ||
-            (addresses != null && addrs.addresses == null))
-            return false;
-        if (addresses != null && addrs.addresses != null) {
-            if (addresses.length != addrs.addresses.length)
-                return false;
-            for (int i = 0; i < addresses.length; i++)
-                if (!addresses[i].equals(addrs.addresses[i]))
-                    return false;
-        }
-        return true;
+        return Arrays.equals(addresses, addrs.addresses);
     }
 
    /**

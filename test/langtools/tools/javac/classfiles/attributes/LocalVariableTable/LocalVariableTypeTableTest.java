@@ -29,14 +29,19 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestBase LocalVariableTestBase
  * @compile -g LocalVariableTypeTableTest.java
  * @run main LocalVariableTypeTableTest
  */
 
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.LocalVariableTypeTable_attribute;
+import jdk.internal.classfile.attribute.*;
+import jdk.internal.classfile.impl.BoundAttribute;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -58,10 +63,10 @@ public class LocalVariableTypeTableTest<THIS> extends LocalVariableTestBase {
     }
 
     @Override
-    protected List<VariableTable> getVariableTables(Code_attribute codeAttribute) {
-        return Stream.of(codeAttribute.attributes.attrs)
-                .filter(at -> at instanceof LocalVariableTypeTable_attribute)
-                .map(at -> (LocalVariableTypeTable_attribute) at)
+    protected List<VariableTable> getVariableTables(CodeAttribute codeAttribute) {
+        return codeAttribute.attributes().stream()
+                .filter(at -> at instanceof LocalVariableTypeTableAttribute)
+                .map(at -> (LocalVariableTypeTableAttribute) at)
                 .map(LocalVariableTypeTable::new).collect(toList());
     }
 
@@ -135,59 +140,59 @@ public class LocalVariableTypeTableTest<THIS> extends LocalVariableTestBase {
 
     class LocalVariableTypeTable implements VariableTable {
 
-        final LocalVariableTypeTable_attribute att;
+        final LocalVariableTypeTableAttribute att;
 
 
-        public LocalVariableTypeTable(LocalVariableTypeTable_attribute att) {
+        public LocalVariableTypeTable(LocalVariableTypeTableAttribute att) {
             this.att = att;
         }
 
         @Override
         public int localVariableTableLength() {
-            return att.local_variable_table_length;
+            return att.localVariableTypes().size();
         }
 
         @Override
         public List<Entry> entries() {
-            return Stream.of(att.local_variable_table).map(LocalVariableTypeTableEntry::new).collect(toList());
+            return att.localVariableTypes().stream().map(LocalVariableTypeTableEntry::new).collect(toList());
         }
 
         @Override
         public int attributeLength() {
-            return att.attribute_length;
+            return ((BoundAttribute<?>)att).payloadLen();
         }
 
         private class LocalVariableTypeTableEntry implements Entry {
 
-            final LocalVariableTypeTable_attribute.Entry entry;
+            final LocalVariableTypeInfo entry;
 
-            private LocalVariableTypeTableEntry(LocalVariableTypeTable_attribute.Entry entry) {
+            private LocalVariableTypeTableEntry(LocalVariableTypeInfo entry) {
                 this.entry = entry;
             }
 
             @Override
             public int index() {
-                return entry.index;
+                return entry.slot();
             }
 
             @Override
             public int startPC() {
-                return entry.start_pc;
+                return entry.startPc();
             }
 
             @Override
             public int length() {
-                return entry.length;
+                return entry.length();
             }
 
             @Override
             public String name() {
-                return getString(entry.name_index);
+                return entry.name().stringValue();
             }
 
             @Override
             public String type() {
-                return getString(entry.signature_index);
+                return entry.signature().stringValue();
             }
 
             @Override

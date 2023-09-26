@@ -325,7 +325,7 @@ public final class FlightRecorder {
         if (JVMSupport.isNotAvailable()) {
             return false;
         }
-        return JVM.getJVM().isAvailable();
+        return JVM.isAvailable();
     }
 
     /**

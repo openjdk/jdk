@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,102 +23,127 @@
 
 /*
  * @test
- * @bug 4884238
- * @summary Test standard charset name constants.
+ * @bug 4884238 8310047
+ * @summary Test standard charset name constants and class qualities.
  * @author Mike Duigou
- * @run main Standard
+ * @run junit Standard
  */
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.io.*;
-import java.nio.charset.*;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Standard {
 
-    private final static String standardCharsets[] = {
-        "US-ASCII", "ISO-8859-1", "UTF-8",
-        "UTF-16BE", "UTF-16LE", "UTF-16" };
+    // These are the charsets StandardCharsets.java is expected to contain.
+    private static final String[] expectedCharsets = {
+            "US-ASCII", "ISO-8859-1", "UTF-8",
+            "UTF-16BE", "UTF-16LE", "UTF-16",
+            "UTF-32BE", "UTF-32LE", "UTF-32"
+    };
 
-    public static void realMain(String[] args) {
-        check(StandardCharsets.US_ASCII instanceof Charset);
-        check(StandardCharsets.ISO_8859_1 instanceof Charset);
-        check(StandardCharsets.UTF_8 instanceof Charset);
-        check(StandardCharsets.UTF_16BE instanceof Charset);
-        check(StandardCharsets.UTF_16LE instanceof Charset);
-        check(StandardCharsets.UTF_16 instanceof Charset);
+    private static final Field[] standardCharsetFields =
+            StandardCharsets.class.getFields();
 
-        check("US-ASCII".equals(StandardCharsets.US_ASCII.name()));
-        check("ISO-8859-1".equals(StandardCharsets.ISO_8859_1.name()));
-        check("UTF-8".equals(StandardCharsets.UTF_8.name()));
-        check("UTF-16BE".equals(StandardCharsets.UTF_16BE.name()));
-        check("UTF-16LE".equals(StandardCharsets.UTF_16LE.name()));
-        check("UTF-16".equals(StandardCharsets.UTF_16.name()));
+    /**
+     * Validates that the Charset constants from the data provider
+     * are of type Charset.
+     */
+    @ParameterizedTest
+    @MethodSource("charsetProvider")
+    public void typeTest(Charset charset) {
+        // Doubly checked, as it is validated when passed as a param
+        assertTrue(charset instanceof Charset);
+    }
 
-        check(Charset.forName("US-ASCII") == StandardCharsets.US_ASCII);
-        check(Charset.forName("ISO-8859-1") == StandardCharsets.ISO_8859_1);
-        check(Charset.forName("UTF-8") == StandardCharsets.UTF_8);
-        check(Charset.forName("UTF-16BE") == StandardCharsets.UTF_16BE);
-        check(Charset.forName("UTF-16LE") == StandardCharsets.UTF_16LE);
-        check(Charset.forName("UTF-16") == StandardCharsets.UTF_16);
+    /**
+     * Validates that calling .name() on a Charset constant is equal
+     * to the matching String value from the data provider.
+     */
+    @ParameterizedTest
+    @MethodSource("charsetProvider")
+    public void nameMethodTest(Charset charset, String charString) {
+        assertEquals(charset.name(), charString);
+    }
 
-        Set<String> charsets = new HashSet<>();
-        Field standardCharsetFields[] = StandardCharsets.class.getFields();
+    /**
+     * Validates that calling Charset.forName() on a String is equal
+     * to the matching Charset constant from the data provider.
+     */
+    @ParameterizedTest
+    @MethodSource("charsetProvider")
+    public void forNameMethodTest(Charset charset, String charString) {
+        assertEquals(Charset.forName(charString), charset);
+    }
 
-        for(Field charsetField : standardCharsetFields) {
-            check(StandardCharsets.class == charsetField.getDeclaringClass());
-            check(Modifier.isFinal(charsetField.getModifiers()));
-            check(Modifier.isStatic(charsetField.getModifiers()));
-            check(Modifier.isPublic(charsetField.getModifiers()));
-            Object value;
+    /**
+     * Validates the qualities of a StandardCharsets field are as expected:
+     * The field is final, static, public, and one can access
+     * the underlying value of the field.
+     */
+    @ParameterizedTest
+    @MethodSource("charsetFields")
+    public void charsetModifiersTest(Field charsetField) throws IllegalAccessException {
+        // Check modifiers
+        assertEquals(StandardCharsets.class, charsetField.getDeclaringClass());
+        assertTrue(Modifier.isFinal(charsetField.getModifiers()));
+        assertTrue(Modifier.isStatic(charsetField.getModifiers()));
+        assertTrue(Modifier.isPublic(charsetField.getModifiers()));
+        // Check that the value can be accessed, and it is a Charset
+        Object valueOfField = charsetField.get(null);
+        assertTrue(valueOfField instanceof Charset);
+    }
+
+    /**
+     * Validates that the Charsets contained in StandardCharsets are equal
+     * to the expected Charsets list defined in the test. This test should fail if
+     * either the actual or expected (standard) Charsets are modified, and
+     * the others are not.
+     */
+    @Test
+    public void correctCharsetsTest() {
+        // Grab the value from each Standard Charset field
+        List<String> actualCharsets = charsetFields().map(field -> {
             try {
-                value = charsetField.get(null);
-            } catch(IllegalAccessException failure) {
-                unexpected(failure);
-                continue;
+                return ((Charset) field.get(null)).name();
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("Can not test correctCharsetsTest() due to %s", e);
             }
-            check(value instanceof Charset);
-            charsets.add(((Charset)value).name());
-        }
-
-        check(charsets.containsAll(Arrays.asList(standardCharsets)));
-        charsets.removeAll(Arrays.asList(standardCharsets));
-        check(charsets.isEmpty());
+        }).toList();
+        assertEquals(actualCharsets, Arrays.asList(expectedCharsets));
     }
 
-    //--------------------- Infrastructure ---------------------------
-    static volatile int passed = 0, failed = 0;
-    static void pass() { passed++; }
-    static void fail() { failed++; Thread.dumpStack(); }
-    static void fail(String msg) { System.out.println(msg); fail(); }
-    static void unexpected(Throwable t) { failed++; t.printStackTrace(); }
-    static void check(boolean cond) { if (cond) pass(); else fail(); }
-    static void equal(Object x, Object y) {
-        if (x == null ? y == null : x.equals(y)) pass();
-        else {System.out.println(x + " not equal to " + y); fail();}}
-    static void equal2(Object x, Object y) {equal(x, y); equal(y, x);}
-    public static void main(String[] args) throws Throwable {
-        try { realMain(args); } catch (Throwable t) { unexpected(t); }
-
-        System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
-        if (failed > 0) throw new Exception("Some tests failed");
+    /**
+     * Provides the constant Charset and associated String value of
+     * the standard charsets.
+     */
+    private static Stream<Arguments> charsetProvider() {
+        return Stream.of(
+                Arguments.of(StandardCharsets.US_ASCII, "US-ASCII"),
+                Arguments.of(StandardCharsets.ISO_8859_1, "ISO-8859-1"),
+                Arguments.of(StandardCharsets.UTF_8, "UTF-8"),
+                Arguments.of(StandardCharsets.UTF_16BE, "UTF-16BE"),
+                Arguments.of(StandardCharsets.UTF_16LE, "UTF-16LE"),
+                Arguments.of(StandardCharsets.UTF_16, "UTF-16"),
+                Arguments.of(StandardCharsets.UTF_32BE, "UTF-32BE"),
+                Arguments.of(StandardCharsets.UTF_32LE, "UTF-32LE"),
+                Arguments.of(StandardCharsets.UTF_32, "UTF-32")
+        );
     }
-    static byte[] serializedForm(Object obj) {
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            new ObjectOutputStream(baos).writeObject(obj);
-            return baos.toByteArray();
-        } catch (IOException e) { throw new Error(e); }}
-    static Object readObject(byte[] bytes)
-        throws IOException, ClassNotFoundException {
-        InputStream is = new ByteArrayInputStream(bytes);
-        return new ObjectInputStream(is).readObject();}
-    @SuppressWarnings("unchecked")
-    static <T> T serialClone(T obj) {
-        try { return (T) readObject(serializedForm(obj)); }
-        catch (Exception e) { throw new Error(e); }}
 
+    private static Stream<Field> charsetFields() {
+        return Arrays.stream(standardCharsetFields);
+    }
 }

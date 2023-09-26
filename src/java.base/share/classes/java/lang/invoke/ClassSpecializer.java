@@ -268,11 +268,10 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof ClassSpecializer.SpeciesData)) {
+            if (!(obj instanceof ClassSpecializer<?, ?, ?>.SpeciesData that)) {
                 return false;
             }
-            @SuppressWarnings("rawtypes")
-            ClassSpecializer.SpeciesData that = (ClassSpecializer.SpeciesData) obj;
+
             return this.outer() == that.outer() && this.key.equals(that.key);
         }
 
@@ -648,11 +647,24 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                         int n = vars.size();
                         return (n == 0 ? this : vars.get(n-1));
                     }
-                     List<Var> fromTypes(List<Class<?>> types) {
+                    <X> List<Var> fromTypes(List<X> types) {
                         Var prev = this;
                         ArrayList<Var> result = new ArrayList<>(types.size());
-                        for (Class<?> vt : types) {
-                            prev = new Var(name, vt, prev);
+                        int i = 0;
+                        for (X x : types) {
+                            String vn = name;
+                            Class<?> vt;
+                            if (x instanceof Class<?> cl) {
+                                vt = cl;
+                                // make the names friendlier if debugging
+                                assert((vn = vn + "_" + (i++)) != null);
+                            } else {
+                                @SuppressWarnings("unchecked")
+                                Var v = (Var) x;
+                                vn = v.name;
+                                vt = v.type;
+                            }
+                            prev = new Var(vn, vt, prev);
                             result.add(prev);
                         }
                         return result;

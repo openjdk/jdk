@@ -39,12 +39,14 @@ class outputStream;
   LOG_TAG(alloc) \
   LOG_TAG(annotation) \
   LOG_TAG(arguments) \
+  LOG_TAG(array) \
   LOG_TAG(attach) \
   LOG_TAG(barrier) \
   LOG_TAG(blocks) \
   LOG_TAG(bot) \
   LOG_TAG(breakpoint) \
   LOG_TAG(bytecode) \
+  LOG_TAG(cause) \
   LOG_TAG(cds) \
   LOG_TAG(census) \
   LOG_TAG(class) \
@@ -88,6 +90,7 @@ class outputStream;
   LOG_TAG(handshake) \
   LOG_TAG(hashtables) \
   LOG_TAG(heap) \
+  LOG_TAG(heapdump) \
   NOT_PRODUCT(LOG_TAG(heapsampling)) \
   LOG_TAG(humongous) \
   LOG_TAG(ihop) \
@@ -124,6 +127,7 @@ class outputStream;
   LOG_TAG(module) \
   LOG_TAG(monitorinflation) \
   LOG_TAG(monitormismatch) \
+  LOG_TAG(native) \
   LOG_TAG(nestmates) \
   LOG_TAG(nmethod) \
   LOG_TAG(nmt) \
@@ -196,6 +200,7 @@ class outputStream;
   LOG_TAG(timer) \
   LOG_TAG(tlab) \
   LOG_TAG(tracking) \
+  LOG_TAG(trimnative) /* trim native heap */ \
   LOG_TAG(unload) /* Trace unloading of classes */ \
   LOG_TAG(unmap) \
   LOG_TAG(unshareable) \

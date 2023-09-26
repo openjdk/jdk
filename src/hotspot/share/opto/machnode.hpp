@@ -898,9 +898,9 @@ public:
   float        _cnt;          // Estimate of number of times called
   bool         _guaranteed_safepoint; // Do we need to observe safepoint?
 
-  const TypeFunc* tf()        const { return _tf; }
-  const address entry_point() const { return _entry_point; }
-  const float   cnt()         const { return _cnt; }
+  const TypeFunc* tf()  const { return _tf; }
+  address entry_point() const { return _entry_point; }
+  float   cnt()         const { return _cnt; }
 
   void set_tf(const TypeFunc* tf)       { _tf = tf; }
   void set_entry_point(address p)       { _entry_point = p; }

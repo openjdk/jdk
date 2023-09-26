@@ -1962,7 +1962,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 #ifndef PRODUCT
-  int * get_arraycopy_counter(int bytes_per_count) {
+  uint * get_arraycopy_counter(int bytes_per_count) {
     switch (bytes_per_count) {
       case 1:
         return &SharedRuntime::_jbyte_array_copy_ctr;
@@ -2383,7 +2383,7 @@ class StubGenerator: public StubCodeGenerator {
     // Do a linear scan of the secondary super-klass chain.
 
 #ifndef PRODUCT
-    int* pst_counter = &SharedRuntime::_partial_subtype_ctr;
+    uint* pst_counter = &SharedRuntime::_partial_subtype_ctr;
     __ inc_counter((address) pst_counter, tmp1, tmp2);
 #endif
 
@@ -3072,6 +3072,46 @@ class StubGenerator: public StubCodeGenerator {
     return stub;
   }
 
+  // For c2: call to return a leased buffer.
+  static RuntimeStub* generate_jfr_return_lease() {
+    enum layout {
+      r1_off,
+      r2_off,
+      return_off,
+      framesize // inclusive of return address
+    };
+
+    CodeBuffer code("jfr_return_lease", 512, 64);
+    MacroAssembler* masm = new MacroAssembler(&code);
+
+    address start = __ pc();
+    __ raw_push(R1, R2, LR);
+    address the_pc = __ pc();
+
+    int frame_complete = the_pc - start;
+
+    __ set_last_Java_frame(SP, FP, true, Rtemp);
+    __ mov(c_rarg0, Rthread);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), c_rarg0);
+    __ reset_last_Java_frame(Rtemp);
+
+    __ raw_pop(R1, R2, LR);
+    __ ret();
+
+    OopMapSet* oop_maps = new OopMapSet();
+    OopMap* map = new OopMap(framesize, 1);
+    oop_maps->add_gc_map(frame_complete, map);
+
+    RuntimeStub* stub =
+      RuntimeStub::new_runtime_stub(code.name(),
+                                    &code,
+                                    frame_complete,
+                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                    oop_maps,
+                                    false);
+    return stub;
+  }
+
 #endif // INCLUDE_JFR
 
   //---------------------------------------------------------------------------
@@ -3116,9 +3156,17 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
 
-    JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
-    JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
+    JFR_ONLY(generate_jfr_stubs();)
   }
+
+#if INCLUDE_JFR
+  void generate_jfr_stubs() {
+    StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
+    StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
+    StubRoutines::_jfr_return_lease_stub = generate_jfr_return_lease();
+    StubRoutines::_jfr_return_lease = StubRoutines::_jfr_return_lease_stub->entry_point();
+  }
+#endif // INCLUDE_JFR
 
   void generate_final_stubs() {
     // Generates all stubs and initializes the entry points

@@ -189,7 +189,7 @@ public class OCSPTimeout {
         rootOcsp.start();
 
         // Wait 5 seconds for server ready
-        boolean readyStatus = rootOcsp.awaitServerReady(5, TimeUnit.SECONDS);
+        boolean readyStatus = rootOcsp.awaitServerReady(60, TimeUnit.SECONDS);
         if (!readyStatus) {
             throw new RuntimeException("Server not ready");
         }

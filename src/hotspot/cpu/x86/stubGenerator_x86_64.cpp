@@ -326,6 +326,16 @@ address StubGenerator::generate_call_stub(address& return_address) {
   __ jcc(Assembler::equal, is_float);
   __ cmpl(c_rarg1, T_DOUBLE);
   __ jcc(Assembler::equal, is_double);
+#ifdef ASSERT
+  // make sure the type is INT
+  {
+    Label L;
+    __ cmpl(c_rarg1, T_INT);
+    __ jcc(Assembler::equal, L);
+    __ stop("StubRoutines::call_stub: unexpected result type");
+    __ bind(L);
+  }
+#endif
 
   // handle T_INT case
   __ movl(Address(c_rarg0, 0), rax);
@@ -3750,6 +3760,47 @@ RuntimeStub* StubGenerator::generate_jfr_write_checkpoint() {
   return stub;
 }
 
+// For c2: call to return a leased buffer.
+RuntimeStub* StubGenerator::generate_jfr_return_lease() {
+  enum layout {
+    rbp_off,
+    rbpH_off,
+    return_off,
+    return_off2,
+    framesize // inclusive of return address
+  };
+
+  CodeBuffer code("jfr_return_lease", 1024, 64);
+  MacroAssembler* _masm = new MacroAssembler(&code);
+  address start = __ pc();
+
+  __ enter();
+  address the_pc = __ pc();
+
+  int frame_complete = the_pc - start;
+
+  __ set_last_Java_frame(rsp, rbp, the_pc, rscratch2);
+  __ movptr(c_rarg0, r15_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), 1);
+  __ reset_last_Java_frame(true);
+
+  __ leave();
+  __ ret(0);
+
+  OopMapSet* oop_maps = new OopMapSet();
+  OopMap* map = new OopMap(framesize, 1);
+  oop_maps->add_gc_map(frame_complete, map);
+
+  RuntimeStub* stub =
+    RuntimeStub::new_runtime_stub(code.name(),
+                                  &code,
+                                  frame_complete,
+                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                  oop_maps,
+                                  false);
+  return stub;
+}
+
 #endif // INCLUDE_JFR
 
 // Continuation point for throwing of implicit exceptions that are
@@ -3856,6 +3907,8 @@ address StubGenerator::generate_throw_exception(const char* name,
 void StubGenerator::create_control_words() {
   // Round to nearest, 64-bit mode, exceptions masked
   StubRoutines::x86::_mxcsr_std = 0x1F80;
+  // Round to zero, 64-bit mode, exceptions masked
+  StubRoutines::x86::_mxcsr_rz = 0x7F80;
 }
 
 // Initialization
@@ -3938,9 +3991,7 @@ void StubGenerator::generate_initial_stubs() {
 
   generate_libm_stubs();
 
-  if ((UseAVX >= 1) && (VM_Version::supports_avx512vlbwdq() || VM_Version::supports_fma())) {
-    StubRoutines::_fmod = generate_libmFmod(); // from stubGenerator_x86_64_fmod.cpp
-  }
+  StubRoutines::_fmod = generate_libmFmod(); // from stubGenerator_x86_64_fmod.cpp
 }
 
 void StubGenerator::generate_continuation_stubs() {
@@ -3949,9 +4000,17 @@ void StubGenerator::generate_continuation_stubs() {
   StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
   StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
 
-  JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
-  JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
+  JFR_ONLY(generate_jfr_stubs();)
 }
+
+#if INCLUDE_JFR
+void StubGenerator::generate_jfr_stubs() {
+  StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
+  StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
+  StubRoutines::_jfr_return_lease_stub = generate_jfr_return_lease();
+  StubRoutines::_jfr_return_lease = StubRoutines::_jfr_return_lease_stub->entry_point();
+}
+#endif
 
 void StubGenerator::generate_final_stubs() {
   // Generates the rest of stubs and initializes the entry points

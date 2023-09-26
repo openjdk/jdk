@@ -58,4 +58,3 @@ double G1PhaseDependentSeq::predict(const G1Predictions* predictor, bool use_you
 }
 
 #endif /* SHARE_GC_G1_G1ANALYTICSSEQUENCES_INLINE_HPP */
-

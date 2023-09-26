@@ -177,11 +177,6 @@ public interface JavaLangAccess {
     Package definePackage(ClassLoader cl, String name, Module module);
 
     /**
-     * Invokes Long.fastUUID
-     */
-    String fastUUID(long lsb, long msb);
-
-    /**
      * Record the non-exported packages of the modules in the given layer
      */
     void addNonExportedPackages(ModuleLayer layer);

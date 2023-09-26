@@ -387,7 +387,7 @@ inline int stackChunkOopDesc::relativize_address(intptr_t* p) const {
   assert(start_address() <= p && p <= base, "start_address: " PTR_FORMAT " p: " PTR_FORMAT " base: " PTR_FORMAT,
          p2i(start_address()), p2i(p), p2i(base));
   assert(0 <= offset && offset <= std::numeric_limits<int>::max(), "offset: " PTR_FORMAT, offset);
-  return offset;
+  return (int)offset;
 }
 
 inline void stackChunkOopDesc::relativize_frame(frame& fr) const {

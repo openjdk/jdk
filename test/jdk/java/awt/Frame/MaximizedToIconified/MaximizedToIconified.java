@@ -45,7 +45,7 @@ import java.awt.event.WindowStateListener;
 
 public class MaximizedToIconified
 {
-    static volatile int lastFrameState = Frame.NORMAL;
+    static volatile int lastFrameState;
     static volatile boolean failed = false;
     static volatile Toolkit myKit;
     private static Robot robot;
@@ -76,6 +76,8 @@ public class MaximizedToIconified
         Frame frame = new Frame("test");
         frame.setSize(200, 200);
         frame.setVisible(true);
+
+        lastFrameState = Frame.NORMAL;
 
         robot.waitForIdle();
 
@@ -114,7 +116,12 @@ public class MaximizedToIconified
         //    because Toolkit.isFrameStateSupported() method reports these states
         //    as not supported. And such states will simply be skipped.
         examineStates(new int[] {Frame.MAXIMIZED_BOTH, Frame.ICONIFIED, Frame.NORMAL});
+        System.out.println("------");
         examineStates(new int[] {Frame.ICONIFIED, Frame.MAXIMIZED_BOTH, Frame.NORMAL});
+        System.out.println("------");
+        examineStates(new int[] {Frame.NORMAL, Frame.MAXIMIZED_BOTH, Frame.ICONIFIED});
+        System.out.println("------");
+        examineStates(new int[] {Frame.NORMAL, Frame.ICONIFIED, Frame.MAXIMIZED_BOTH});
 
     }
 

@@ -268,6 +268,20 @@ import jdk.internal.classfile.CodeBuilder;
     private Class<?> spinInnerClass() throws LambdaConversionException {
         // CDS does not handle disableEagerInitialization or useImplMethodHandle
         if (!disableEagerInitialization && !useImplMethodHandle) {
+            if (CDS.isSharingEnabled()) {
+                // load from CDS archive if present
+                Class<?> innerClass = LambdaProxyClassArchive.find(targetClass,
+                                                                   interfaceMethodName,
+                                                                   factoryType,
+                                                                   interfaceMethodType,
+                                                                   implementation,
+                                                                   dynamicMethodType,
+                                                                   isSerializable,
+                                                                   altInterfaces,
+                                                                   altMethods);
+                if (innerClass != null) return innerClass;
+            }
+
             // include lambda proxy class in CDS archive at dump time
             if (CDS.isDumpingArchive()) {
                 Class<?> innerClass = generateInnerClass();
@@ -284,17 +298,6 @@ import jdk.internal.classfile.CodeBuilder;
                 return innerClass;
             }
 
-            // load from CDS archive if present
-            Class<?> innerClass = LambdaProxyClassArchive.find(targetClass,
-                                                               interfaceMethodName,
-                                                               factoryType,
-                                                               interfaceMethodType,
-                                                               implementation,
-                                                               dynamicMethodType,
-                                                               isSerializable,
-                                                               altInterfaces,
-                                                               altMethods);
-            if (innerClass != null) return innerClass;
         }
         return generateInnerClass();
     }
