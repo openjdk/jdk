@@ -4624,9 +4624,9 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
     subl(Address(r15_thread, JavaThread::backoff_secondary_super_miss_offset()), 1);
     jccb(Assembler::greaterEqual, L_skip);
-    movl(Address(r15_thread, JavaThread::backoff_secondary_super_miss_offset()), super_cache_backoff);
 
     movptr(super_cache_addr, super_klass);
+    movl(Address(r15_thread, JavaThread::backoff_secondary_super_miss_offset()), super_cache_backoff);
 
     bind(L_skip);
 
