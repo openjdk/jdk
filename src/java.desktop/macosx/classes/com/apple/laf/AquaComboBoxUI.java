@@ -133,7 +133,14 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         return new ItemListener() {
             long lastBlink = 0L;
             public void itemStateChanged(final ItemEvent e) {
+
                 if (e.getStateChange() != ItemEvent.SELECTED) return;
+
+                AccessibleContext ac = ((Accessible)arrowButton).getAccessibleContext();
+                if (ac != null && !comboBox.isEditable() && comboBox.getSelectedItem() != null) {
+                    ac.setAccessibleName(String.valueOf(comboBox.getSelectedItem()));
+                }
+
                 if (!popup.isVisible()) return;
 
                 // sometimes, multiple selection changes can occur while the popup is up,

@@ -86,6 +86,12 @@ class AquaComboBoxButton extends JButton {
         });
 
         setEnabled(comboBox.isEnabled());
+
+        AccessibleContext ac = this.getAccessibleContext();
+        if (ac != null && !comboBox.isEditable() && list.getModel().getSize() > 0) {
+            ac.setAccessibleName(String.valueOf(list.getModel()
+                    .getElementAt(0)));
+        }
     }
 
     @Override
@@ -248,16 +254,6 @@ class AquaComboBoxButton extends JButton {
         if (inhibitBackground) c.setBackground(new Color(0, 0, 0, 0));
 
         rendererPane.paintComponent(g, c, this, left, top, cWidth, height, shouldValidate); // h - (insets.top + insets.bottom) );
-
-        // set the accessible name to the displayed text in JComboBox.
-        // screen magnifier queries to get the accessible name to display magnified text.
-
-        AccessibleContext ac = this.getAccessibleContext();
-        if (ac != null && !editable && c instanceof JLabel label) {
-            if (label.getText() != null) {
-                ac.setAccessibleName(label.getText());
-            }
-        }
 
         if (inhibitBackground) c.setBackground(bg);
 
