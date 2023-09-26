@@ -26,7 +26,7 @@
  * @bug 4243802
  * @summary confirm that Calendar.setTimeInMillis() and getTimeInMillis()
  *          can be called from a user program. They used to be protected methods.
- * @run junit bug4243802
+ * @run junit SetTimeAndGetTimeInMillis
  */
 
 import java.util.Calendar;
@@ -40,7 +40,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class bug4243802 {
+public class SetTimeAndGetTimeInMillis {
 
     private static final TimeZone savedTz = TimeZone.getDefault();
     private static final Locale savedLocale = Locale.getDefault();

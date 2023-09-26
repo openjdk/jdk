@@ -23,30 +23,31 @@
 
 /*
  * @test
- * @bug 4100311
- * @summary Ensure set(DAY_OF_YEAR, 1) works.
- * @run junit bug4100311
+ * @bug 4028518
+ * @summary Ensure cloned GregorianCalendar is unchanged when modifying its original.
+ * @run junit ClonedGregorianUnchanged
  */
 
-import java.util.Calendar;
 import java.util.GregorianCalendar;
-import java.util.Date;
+
+import static java.util.Calendar.DAY_OF_MONTH;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-public class bug4100311 {
+public class ClonedGregorianUnchanged {
 
-    // GregorianCalendar should be able to date to january 1st properly
-    @SuppressWarnings("deprecation")
+    /*
+     * Ensure modifying the original GregorianCalendar does not
+     * modify the cloned one as well
+     */
     @Test
-    public void dayOfYearIsOneTest() {
-        GregorianCalendar cal = new GregorianCalendar();
-        cal.set(Calendar.YEAR, 1997);
-        cal.set(Calendar.DAY_OF_YEAR, 1);
-        Date d = cal.getTime();
-        assertEquals(0, d.getMonth(), "Date: "+d+" isn't January 1st");
-        assertEquals(1, d.getDate(),"Date: "+d+" isn't January 1st");
+    public void clonedShouldNotChangeOriginalTest() {
+        GregorianCalendar cal1 = new GregorianCalendar() ;
+        GregorianCalendar cal2 = (GregorianCalendar) cal1.clone() ;
+        cal1.add(DAY_OF_MONTH, 1) ;
+        assertNotEquals(cal1.get(DAY_OF_MONTH), cal2.get(DAY_OF_MONTH),
+                "Cloned calendar should not have same value as original");
     }
 }

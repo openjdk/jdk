@@ -25,7 +25,7 @@
  * @test
  * @bug 4316678
  * @summary test that Calendar's Serialization works correctly.
- * @run junit bug4316678
+ * @run junit CalendarSerialization
  */
 
 import java.io.FileInputStream;
@@ -43,7 +43,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class bug4316678 {
+public class CalendarSerialization {
 
     private static final String serializedData = "bug4316678.ser";
     private static final TimeZone savedTz = TimeZone.getDefault();

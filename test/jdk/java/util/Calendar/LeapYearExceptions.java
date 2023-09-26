@@ -27,7 +27,7 @@
  * @summary Make sure that GregorianCalendar doesn't cause
  *          IllegalArgumentException at some special situations which are
  *          related to the Leap Year.
- * @run junit bug4401223
+ * @run junit LeapYearExceptions
  */
 
 import java.util.Date;
@@ -45,7 +45,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class bug4401223 {
+public class LeapYearExceptions {
 
     // Ensure IAE not thrown for date: 12-29-00
     @SuppressWarnings("deprecation")

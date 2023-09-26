@@ -25,7 +25,7 @@
  * @test
  * @bug 4372743
  * @summary test that checks transitions of ERA and YEAR which are caused by add(MONTH).
- * @run junit bug4372743
+ * @run junit AddMonthShouldTransitionEra
  */
 
 import java.util.GregorianCalendar;
@@ -59,7 +59,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class bug4372743 {
+public class AddMonthShouldTransitionEra {
 
     private static final TimeZone savedTz = TimeZone.getDefault();
 
