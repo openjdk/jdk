@@ -4323,8 +4323,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register loop = t0;
     const Register tmp_addr = t1;
     const Register length = t2;
-    const Register avl = x28;
-    const Register stride = x29;
+    const Register avl = t3;
+    const Register stride = t4;
 
     const VectorRegister work_vrs[16] = {
       v4,  v5,  v6,  v7,  v16, v17, v18, v19,
@@ -4332,10 +4332,6 @@ class StubGenerator: public StubCodeGenerator {
     };
     const VectorRegister tmp_vr = v29;
     const VectorRegister counter = v30;
-
-
-    RegSet saved_regs;
-    __ push_reg(saved_regs, sp);
 
     // Put 16 here, as com.sun.crypto.providerChaCha20Cipher.KS_MAX_LEN is 1024
     // in java level.
@@ -4387,7 +4383,6 @@ class StubGenerator: public StubCodeGenerator {
     // Return length of output key_stream
     __ slli(c_rarg0, length, 6);
 
-    __ pop_reg(saved_regs, sp);
     __ ret();
 
     return (address) start;

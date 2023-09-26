@@ -143,6 +143,10 @@ constexpr Register x19_sender_sp = x19; // Sender's SP while in interpreter
 constexpr Register t0 = x5;
 constexpr Register t1 = x6;
 constexpr Register t2 = x7;
+constexpr Register t3 = x28;
+constexpr Register t4 = x29;
+constexpr Register t5 = x30;
+constexpr Register t6 = x31;
 
 const Register g_INTArgReg[Argument::n_int_register_parameters_c] = {
   c_rarg0, c_rarg1, c_rarg2, c_rarg3, c_rarg4, c_rarg5, c_rarg6, c_rarg7
