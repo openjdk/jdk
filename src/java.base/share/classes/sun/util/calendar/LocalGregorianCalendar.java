@@ -131,10 +131,10 @@ public final class LocalGregorianCalendar extends BaseCalendar {
                     sb.append(abbr);
                 }
             }
-            sb.append(getYear()).append('.');
-            CalendarUtils.sprintf0d(sb, getMonth(), 2).append('.');
-            CalendarUtils.sprintf0d(sb, getDayOfMonth(), 2);
-            sb.append(time);
+            sb.append(getYear()).append('.')
+              .append(getMonth(), 2, '0').append('.')
+              .append(getDayOfMonth(), 2, '0')
+              .append(time);
             return sb.toString();
         }
     }

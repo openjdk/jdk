@@ -4274,8 +4274,7 @@ public final class DateTimeFormatterBuilder {
         }
 
         private static StringBuilder appendHMS(StringBuilder buf, int t) {
-            return buf.append((char)(t / 10 + '0'))
-                      .append((char)(t % 10 + '0'));
+            return buf.append(t, 2, '0');
         }
 
         @Override

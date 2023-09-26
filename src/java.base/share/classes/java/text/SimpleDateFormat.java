@@ -1312,15 +1312,9 @@ public class SimpleDateFormat extends DateFormat {
             value = (calendar.get(Calendar.ZONE_OFFSET) +
                      calendar.get(Calendar.DST_OFFSET)) / 60000;
 
-            int width = 4;
-            if (value >= 0) {
-                buffer.append('+');
-            } else {
-                width++;
-            }
-
+            buffer.append(value >= 0 ? '+' : '-');
             int num = (value / 60) * 100 + (value % 60);
-            CalendarUtils.sprintf0d(buffer, num, width);
+            buffer.append(Math.abs(num), 4, '0');
             break;
 
         case PATTERN_ISO_ZONE:   // 'X'
@@ -1340,7 +1334,7 @@ public class SimpleDateFormat extends DateFormat {
                 value = -value;
             }
 
-            CalendarUtils.sprintf0d(buffer, value / 60, 2);
+            buffer.append(value / 60, 2, '0');
             if (count == 1) {
                 break;
             }
@@ -1348,7 +1342,7 @@ public class SimpleDateFormat extends DateFormat {
             if (count == 3) {
                 buffer.append(':');
             }
-            CalendarUtils.sprintf0d(buffer, value % 60, 2);
+            buffer.append(value % 60, 2, '0');
             break;
 
         default:
