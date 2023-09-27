@@ -2894,7 +2894,7 @@ public final class Formatter implements Closeable, Flushable {
             parseFlag();
             parseWidth();
 
-            if (c == '.' && off + 1 < max) {
+            if (c == '.') {
                 // (\.\d+)?
                 precisionSize = parsePrecision();
                 if (precisionSize == 0) {
@@ -2930,58 +2930,48 @@ public final class Formatter implements Closeable, Flushable {
 
         private void parseArgument() {
             // (\d+\$)?
-            for (int size = 0; off < max; c = next(++off), size++) {
-                if (!isDigit(c)) {
-                    if (size > 0) {
-                        if (c == '$') {
-                            ++off;
-                            argSize = size + 1;
-                            if (off < max) {
-                                c = s.charAt(off);
-                            }
-                        } else {
-                            off = start;
-                            c = first;
-                        }
+            int i = off;
+            for (; i < max && isDigit(c); c = next(++i));  // empty body
+            if (i > off) {
+                if (c == '$') {
+                    ++i;
+                    if (i < max) {
+                        c = s.charAt(i);
                     }
-                    break;
+
+                    argSize = i - off;
+                    off = i;
+                } else {
+                    c = first;
                 }
             }
         }
 
         private void parseFlag() {
             // ([-#+ 0,(\<]*)?
-            for (int size = 0; off < max; c = next(++off), size++) {
-                if (!Flags.isFlag(c)) {
-                    flagSize = size;
-                    break;
-                }
-            }
+            int i = off;
+            for (; i < max && Flags.isFlag(c); c = next(++i));  // empty body
+            flagSize = i - off;
+            off = i;
         }
 
         private void parseWidth() {
             // (\d+)?
-            for (int size = 0; off < max; c = next(++off), size++) {
-                if (!isDigit(c)) {
-                    widthSize = size;
-                    break;
-                }
-            }
+            int i = off;
+            for (; i < max && isDigit(c); c = next(++i));  // empty body
+            widthSize = i - off;
+            off = i;
         }
 
         private int parsePrecision() {
             // (\.\d+)?
-            c = s.charAt(++off);
-            for (int size = 0; off < max; c = next(++off), size++) {
-                if (!isDigit(c)) {
-                    if (size > 0) {
-                        return size + 1;
-                    } else {
-                        break;
-                    }
-                }
+            int i = ++off;
+            for (; i < max && isDigit(c = s.charAt(i)); ++i);  // empty body
+            if (i != off) {
+                int size = i - off + 1;
+                off = i;
+                return size;
             }
-
             return 0;
         }
 

@@ -399,5 +399,11 @@ public class BasicInt extends Basic {
         tryCatch("%%%", UnknownFormatConversionException.class);
         // perhaps an IllegalFormatArgumentIndexException should be defined?
         tryCatch("%<%", IllegalFormatFlagsException.class);
+
+        // non-conversion
+        tryCatch("%12", UnknownFormatConversionException.class);
+        tryCatch("% ", UnknownFormatConversionException.class);
+        tryCatch("%,", UnknownFormatConversionException.class);
+        tryCatch("%03.2", UnknownFormatConversionException.class);
     }
 }
