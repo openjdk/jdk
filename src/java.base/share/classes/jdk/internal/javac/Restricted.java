@@ -34,6 +34,6 @@ import java.lang.annotation.Target;
  * (e.g. {@link java.lang.foreign.MemorySegment#reinterpret(long)}).
  */
 @Target({ElementType.METHOD})
-@Retention(RetentionPolicy.CLASS)
+@Retention(RetentionPolicy.RUNTIME)
 public @interface Restricted {
 }
