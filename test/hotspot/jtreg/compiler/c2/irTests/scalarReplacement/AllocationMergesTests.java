@@ -1224,7 +1224,7 @@ public class AllocationMergesTests {
     }
 
     @Test
-    @IR(failnOn = { IRNode.ALLOC })
+    @IR(failOn = { IRNode.ALLOC })
     char testString_one_C2(boolean cond1) { return testString_one(cond1); }
 
     @DontCompile
