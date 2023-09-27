@@ -113,7 +113,7 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
 
     // factories
 
-    public static MemorySegment makeNativeSegment(long byteSize, long byteAlignment, MemorySessionImpl sessionImpl,
+    public static MemorySegment makeNativeSegmentNoZeroing(long byteSize, long byteAlignment, MemorySessionImpl sessionImpl,
                                                   boolean shouldReserve) {
         sessionImpl.checkValidState();
         if (VM.isDirectMemoryPageAligned()) {

@@ -321,11 +321,10 @@ public final class Module implements AnnotatedElement {
                 String mtd = cls + "::" + methodName;
                 String mod = isNamed() ? "module " + getName() : "an unnamed module";
                 String modflag = isNamed() ? getName() : "ALL-UNNAMED";
-                String caller = currentClass != null ?
-                        " by " + currentClass.getName() : "";
+                String caller = currentClass != null ? currentClass.getName() : "code";
                 System.err.printf("""
                         WARNING: A restricted method in %s has been called
-                        WARNING: %s has been called%s in %s
+                        WARNING: %s has been called by %s in %s
                         WARNING: Use --enable-native-access=%s to avoid a warning for callers in this module
                         WARNING: Restricted methods will be blocked in a future release unless native access is enabled
                         %n""", cls, mtd, caller, mod, modflag);

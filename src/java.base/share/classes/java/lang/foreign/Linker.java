@@ -32,7 +32,6 @@ import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.reflect.CallerSensitive;
 
 import java.lang.invoke.MethodHandle;
-import java.nio.ByteOrder;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -730,8 +729,8 @@ public sealed interface Linker permits AbstractLinker {
          *     // use errno
          * }
          * }
-         *
-         * @apiNote This linker option can not be combined with {@link #critical}.
+         * <p>
+         * This linker option can not be combined with {@link #critical}.
          *
          * @param capturedState the names of the values to save.
          * @throws IllegalArgumentException if at least one of the provided {@code capturedState} names
