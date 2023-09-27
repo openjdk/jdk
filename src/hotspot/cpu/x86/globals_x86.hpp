@@ -96,7 +96,7 @@ define_pd_global(bool, PreserveFramePointer, false);
 
 define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
 
-define_pd_global(bool, SecondarySuperMissBackoff, 1000);
+define_pd_global(uint, SecondarySuperMissBackoff, 1000);
 
 #define ARCH_FLAGS(develop,                                                 \
                    product,                                                 \
