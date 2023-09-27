@@ -174,8 +174,10 @@ void RuntimeBlob::free(RuntimeBlob* blob) {
 }
 
 void CodeBlob::flush() {
-  FREE_C_HEAP_ARRAY(unsigned char, _oop_maps);
-  _oop_maps = nullptr;
+  if (_oop_maps != nullptr) {
+    delete _oop_maps;
+    _oop_maps = nullptr;
+  }
   NOT_PRODUCT(_asm_remarks.clear());
   NOT_PRODUCT(_dbg_strings.clear());
 }
@@ -190,7 +192,6 @@ void CodeBlob::set_oop_maps(OopMapSet* p) {
   }
 }
 
-
 void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const char* name2) {
   // Do not hold the CodeCache lock during name formatting.
   assert(!CodeCache_lock->owned_by_self(), "release CodeCache before registering the stub");
@@ -204,7 +205,8 @@ void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const cha
     if (PrintStubCode) {
       ttyLocker ttyl;
       tty->print_cr("- - - [BEGIN] - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
-      tty->print_cr("Decoding %s " INTPTR_FORMAT, stub_id, (intptr_t) stub);
+      tty->print_cr("Decoding %s " PTR_FORMAT " [" PTR_FORMAT ", " PTR_FORMAT "] (%d bytes)",
+                    stub_id, p2i(stub), p2i(stub->code_begin()), p2i(stub->code_end()), stub->code_size());
       Disassembler::decode(stub->code_begin(), stub->code_end(), tty
                            NOT_PRODUCT(COMMA &stub->asm_remarks()));
       if ((stub->oop_maps() != nullptr) && AbstractDisassembler::show_structs()) {

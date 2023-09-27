@@ -2131,7 +2131,7 @@ void StubGenerator::aesctr_encrypt(Register src_addr, Register dest_addr, Regist
 
   __ evmovdquq(xmm19, ExternalAddress(counter_mask_linc0_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
   ev_add128(xmm8, xmm8, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
-  __ evmovdquq(xmm19, ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit);
+  __ evmovdquq(xmm19, ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
   ev_add128(xmm9,  xmm8,  xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
   ev_add128(xmm10, xmm9,  xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
   ev_add128(xmm11, xmm10, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);

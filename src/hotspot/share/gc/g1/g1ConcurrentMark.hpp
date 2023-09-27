@@ -635,8 +635,6 @@ private:
     // The regular clock call is called once the number of visited
     // references reaches this limit
     refs_reached_period           = 1024,
-    // Initial value for the hash seed, used in the work stealing code
-    init_hash_seed                = 17
   };
 
   G1CMObjArrayProcessor       _objArray_processor;

@@ -273,4 +273,9 @@ public final class Utils {
     public static boolean containsNullChars(String s) {
         return s.indexOf('\u0000') >= 0;
     }
+
+    public static String toHexString(long value) {
+        return "0x" + Long.toHexString(value);
+    }
+
 }

@@ -186,7 +186,16 @@ class MallocMemorySnapshot : public ResourceObj {
     return s->by_type(mtThreadStack)->malloc_count();
   }
 
-  void copy_to(MallocMemorySnapshot* s);
+  void copy_to(MallocMemorySnapshot* s) {
+     // Need to make sure that mtChunks don't get deallocated while the
+     // copy is going on, because their size is adjusted using this
+     // buffer in make_adjustment().
+     ThreadCritical tc;
+     s->_all_mallocs = _all_mallocs;
+     for (int index = 0; index < mt_number_of_types; index ++) {
+       s->_malloc[index] = _malloc[index];
+     }
+   }
 
   // Make adjustment by subtracting chunks used by arenas
   // from total chunks to get total free chunk size
