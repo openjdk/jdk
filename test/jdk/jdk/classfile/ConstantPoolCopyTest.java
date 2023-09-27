@@ -102,9 +102,9 @@ class ConstantPoolCopyTest {
         ConstantPool cp = c.constantPool();
         ConstantPoolBuilder cp2 = new SplitConstantPool((ClassReader) cp);
 
-        assertEquals(cp2.entryCount(), cp.entryCount(), "Cloned constant pool must be same size");
+        assertEquals(cp2.size(), cp.size(), "Cloned constant pool must be same size");
 
-        for (int i = 1; i < cp.entryCount();) {
+        for (int i = 1; i < cp.size();) {
             PoolEntry cp1i = cp.entryByIndex(i);
             PoolEntry cp2i = cp2.entryByIndex(i);
             assertTrue(representsTheSame(cp1i, cp2i), cp2i + " does not represent the same constant pool entry as " + cp1i);
