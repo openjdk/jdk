@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,109 +78,119 @@ public class Klist {
      */
     public static void main(String[] args) {
         Klist klist = new Klist();
-        if ((args == null) || (args.length == 0)) {
-            klist.action = 'c'; // default will list default credentials cache.
-        } else {
-            klist.processArgs(args);
-        }
-        switch (klist.action) {
-        case 'c':
-            if (klist.name == null) {
-                klist.target = CredentialsCache.getInstance();
-                klist.name = CredentialsCache.cacheName();
-            } else
-                klist.target = CredentialsCache.getInstance(klist.name);
-
-            if (klist.target != null)  {
-                klist.displayCache();
-            } else {
-                klist.displayMessage("Credentials cache");
-                System.exit(-1);
-            }
-            break;
-        case 'k':
-            KeyTab ktab = KeyTab.getInstance(klist.name);
-            if (ktab.isMissing()) {
-                System.out.println("KeyTab " + klist.name + " not found.");
-                System.exit(-1);
-            } else if (!ktab.isValid()) {
-                System.out.println("KeyTab " + klist.name
-                        + " format not supported.");
-                System.exit(-1);
-            }
-            klist.target = ktab;
-            klist.name = ktab.tabName();
-            klist.displayTab();
-            break;
-        default:
-            if (klist.name != null) {
-                klist.printHelp();
-                System.exit(-1);
-            } else {
-                klist.target = CredentialsCache.getInstance();
-                klist.name = CredentialsCache.cacheName();
-                if (klist.target != null) {
-                    klist.displayCache();
-                } else {
-                    klist.displayMessage("Credentials cache");
-                    System.exit(-1);
-                }
-            }
+        try {
+            klist.run(args);
+        } catch (ExitException ee) {
+            System.exit(ee.errorCode);
         }
     }
 
-    /**
-     * Parses the command line arguments.
-     */
-    void processArgs(String[] args) {
-        Character arg;
-        for (int i = 0; i < args.length; i++) {
-            if (args[i].equals("-?") ||
-                args[i].equals("-h") ||
-                args[i].equals("--help")) {
-                printHelp();
-                System.exit(0);
-            }
-            if ((args[i].length() >= 2) && (args[i].startsWith("-"))) {
-                arg = Character.valueOf(args[i].charAt(1));
-                switch (arg.charValue()) {
-                case 'c':
-                    action = 'c';
-                    break;
-                case 'k':
-                    action = 'k';
-                    break;
-                case 'a':
-                    options[2] = 'a';
-                    break;
-                case 'n':
-                    options[3] = 'n';
-                    break;
-                case 'f':
-                    options[1] = 'f';
-                    break;
-                case 'e':
-                    options[0] = 'e';
-                    break;
-                case 'K':
-                    options[1] = 'K';
-                    break;
-                case 't':
-                    options[2] = 't';
-                    break;
-                default:
-                    printHelp();
-                    System.exit(-1);
-                }
+    private static class ExitException extends RuntimeException {
+        @java.io.Serial
+        static final long serialVersionUID = 0L;
+        private final int errorCode;
+        public ExitException(int errorCode) {
+            this.errorCode = errorCode;
+        }
+    }
 
-            } else {
-                if (!args[i].startsWith("-") && (i == args.length - 1)) {
-                    // the argument is the last one.
-                    name = args[i];
-                    arg = null;
+    public void run(String[] args) throws ExitException {
+        if ((args == null) || (args.length == 0)) {
+            action = 'c'; // default will list default credentials cache.
+        } else {
+            Character arg;
+            for (int i = 0; i < args.length; i++) {
+                if (args[i].equals("-?") ||
+                        args[i].equals("-h") ||
+                        args[i].equals("--help")) {
+                    printHelp();
+                    return;
+                }
+                if ((args[i].length() >= 2) && (args[i].startsWith("-"))) {
+                    arg = Character.valueOf(args[i].charAt(1));
+                    switch (arg.charValue()) {
+                        case 'c':
+                            action = 'c';
+                            break;
+                        case 'k':
+                            action = 'k';
+                            break;
+                        case 'a':
+                            options[2] = 'a';
+                            break;
+                        case 'n':
+                            options[3] = 'n';
+                            break;
+                        case 'f':
+                            options[1] = 'f';
+                            break;
+                        case 'e':
+                            options[0] = 'e';
+                            break;
+                        case 'K':
+                            options[1] = 'K';
+                            break;
+                        case 't':
+                            options[2] = 't';
+                            break;
+                        default:
+                            printHelp();
+                            throw new ExitException(-1);
+                    }
+
                 } else {
-                    printHelp(); // incorrect input format.
-                    System.exit(-1);
+                    if (!args[i].startsWith("-") && (i == args.length - 1)) {
+                        // the argument is the last one.
+                        name = args[i];
+                        arg = null;
+                    } else {
+                        printHelp(); // incorrect input format.
+                        throw new ExitException(-1);
+                    }
+                }
+            }
+        }
+        switch (action) {
+        case 'c':
+            if (name == null) {
+                target = CredentialsCache.getInstance();
+                name = CredentialsCache.cacheName();
+            } else
+                target = CredentialsCache.getInstance(name);
+
+            if (target != null)  {
+                displayCache();
+            } else {
+                displayMessage("Credentials cache");
+                throw new ExitException(-1);
+            }
+            break;
+        case 'k':
+            KeyTab ktab = KeyTab.getInstance(name);
+            if (ktab.isMissing()) {
+                System.out.println("KeyTab " + name + " not found.");
+                throw new ExitException(-1);
+            } else if (!ktab.isValid()) {
+                System.out.println("KeyTab " + name
+                        + " format not supported.");
+                throw new ExitException(-1);
+            }
+            target = ktab;
+            name = ktab.tabName();
+            displayTab();
+            break;
+        default:
+            if (name != null) {
+                printHelp();
+                throw new ExitException(-1);
+            } else {
+                target = CredentialsCache.getInstance();
+                name = CredentialsCache.cacheName();
+                if (target != null) {
+                    displayCache();
+                } else {
+                    displayMessage("Credentials cache");
+                    throw new ExitException(-1);
                 }
             }
         }
@@ -230,7 +240,7 @@ public class Klist {
         if (creds == null) {
             System.out.println ("No credentials available in the cache " +
                                 name);
-            System.exit(-1);
+            throw new ExitException(-1);
         }
         System.out.println("\nCredentials cache: " +  name);
         String defaultPrincipal = cache.getPrimaryPrincipal().toString();
@@ -327,7 +337,7 @@ public class Klist {
                     if (DEBUG) {
                         e.printStackTrace();
                     }
-                    System.exit(-1);
+                    throw new ExitException(-1);
                 }
             }
         } else {
@@ -359,7 +369,7 @@ public class Klist {
      * the day, mm is the minute within the hour,
      * ss is the second within the minute, zzz is the time zone,
      * and yyyy is the year.
-     * @param date the string form of Date object.
+     * @param kt the string form of Date object.
      */
     private String format(KerberosTime kt) {
         String date = kt.toDate().toString();

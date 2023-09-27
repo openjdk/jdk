@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,14 +92,49 @@ public class Kinit {
      */
 
     public static void main(String[] args) {
+        Kinit kinit = new Kinit();
         try {
-            Kinit self = new Kinit(args);
+            kinit.run(args);
+        } catch (Exception e) {
+            System.exit(-1);
         }
-        catch (Exception e) {
+    }
+
+    /**
+     * Run the Kinit command.
+     * @param args array of ticket request options.
+     * Available options are: -f, -p, -c, principal, password.
+     * @exception IOException if an I/O error occurs.
+     * @exception RealmException if the Realm could not be instantiated.
+     * @exception KrbException if error occurs during Kerberos operation.
+     */
+    public void run(String[] args)
+            throws IOException, RealmException, KrbException {
+        try {
+            if (args == null || args.length == 0) {
+                options = new KinitOptions();
+            } else {
+                options = new KinitOptions(args);
+            }
+            switch (options.action) {
+                case 0:
+                    // Help, already displayed in new KinitOptions().
+                    break;
+                case 1:
+                    acquire();
+                    break;
+                case 2:
+                    renew();
+                    break;
+                default:
+                    throw new KrbException("kinit does not support action "
+                            + options.action);
+            }
+        } catch (Exception e) {
             String msg = null;
             if (e instanceof KrbException) {
                 msg = ((KrbException)e).krbErrorMessage() + " " +
-                    ((KrbException)e).returnCodeMessage();
+                        ((KrbException)e).returnCodeMessage();
             } else  {
                 msg = e.getMessage();
             }
@@ -109,36 +144,7 @@ public class Kinit {
                 System.out.println("Exception: " + e);
             }
             e.printStackTrace();
-            System.exit(-1);
-        }
-        return;
-    }
-
-    /**
-     * Constructs a new Kinit object.
-     * @param args array of ticket request options.
-     * Available options are: -f, -p, -c, principal, password.
-     * @exception IOException if an I/O error occurs.
-     * @exception RealmException if the Realm could not be instantiated.
-     * @exception KrbException if error occurs during Kerberos operation.
-     */
-    private Kinit(String[] args)
-        throws IOException, RealmException, KrbException {
-        if (args == null || args.length == 0) {
-            options = new KinitOptions();
-        } else {
-            options = new KinitOptions(args);
-        }
-        switch (options.action) {
-            case 1:
-                acquire();
-                break;
-            case 2:
-                renew();
-                break;
-            default:
-                throw new KrbException("kinit does not support action "
-                        + options.action);
+            throw e;
         }
     }
 

@@ -135,7 +135,24 @@ public class Main {
     // This is the entry that get launched by the security tool jarsigner.
     public static void main(String args[]) throws Exception {
         Main js = new Main();
-        js.run(args);
+        try {
+            js.run(args);
+        } catch (ExitException ee) {
+            System.exit(ee.errorCode);
+        }
+    }
+
+    private static class ExitException extends RuntimeException {
+        @java.io.Serial
+        static final long serialVersionUID = 0L;
+        private final int errorCode;
+        public ExitException(int errorCode) {
+            this.errorCode = errorCode;
+        }
+    }
+
+    private static void exit(int exitCode) {
+        throw new ExitException(exitCode);
     }
 
     X509Certificate[] certChain;    // signer's cert chain (when composing)
@@ -232,11 +249,11 @@ public class Main {
 
     public void run(String args[]) {
         try {
-            args = parseArgs(args);
+            parseArgs(args);
 
             // Try to load and install the specified providers
             if (providers != null) {
-                for (String provName: providers) {
+                for (String provName : providers) {
                     try {
                         KeyStoreUtil.loadProviderByName(provName,
                                 providerArgs.get(provName));
@@ -263,7 +280,7 @@ public class Main {
                 } else {
                     cl = ClassLoader.getSystemClassLoader();
                 }
-                for (String provClass: providerClasses) {
+                for (String provClass : providerClasses) {
                     try {
                         KeyStoreUtil.loadProviderByClass(provClass,
                                 providerArgs.get(provClass), cl);
@@ -285,19 +302,9 @@ public class Main {
                     loadKeyStore(keystore, false);
                 } catch (Exception e) {
                     if ((keystore != null) || (storepass != null)) {
-                        System.out.println(rb.getString("jarsigner.error.") +
-                                        e.getMessage());
-                        if (debug) {
-                            e.printStackTrace();
-                        }
-                        System.exit(1);
+                        throw e;
                     }
                 }
-                /*              if (debug) {
-                    SignatureFileVerifier.setDebug(true);
-                    ManifestEntryVerifier.setDebug(true);
-                }
-                */
                 verifyJar(jarfile);
             } else {
                 loadKeyStore(keystore, true);
@@ -305,12 +312,18 @@ public class Main {
 
                 signJar(jarfile, alias);
             }
+        } catch (ExitException ee) {
+            if (ee.errorCode == 0) {
+                return;
+            } else {
+                throw ee;
+            }
         } catch (Exception e) {
             System.out.println(rb.getString("jarsigner.error.") + e);
             if (debug) {
                 e.printStackTrace();
             }
-            System.exit(1);
+            exit(1);
         } finally {
             // zero-out private key password
             if (keypass != null) {
@@ -344,7 +357,7 @@ public class Main {
                 exitCode |= 64;
             }
             if (exitCode != 0) {
-                System.exit(exitCode);
+                exit(exitCode);
             }
         }
     }
@@ -612,12 +625,12 @@ public class Main {
     static void usage() {
         System.out.println();
         System.out.println(rb.getString("Please.type.jarsigner.help.for.usage"));
-        System.exit(1);
+        exit(1);
     }
 
     static void doPrintVersion() {
         System.out.println("jarsigner " + System.getProperty("java.version"));
-        System.exit(0);
+        exit(0);
     }
 
     static void fullusage() {
@@ -719,7 +732,7 @@ public class Main {
                 (".print.this.help.message"));
         System.out.println();
 
-        System.exit(0);
+        exit(0);
     }
 
     void verifyJar(String jarName)
@@ -1105,19 +1118,11 @@ public class Main {
             } else {
                 displayMessagesAndResult(false);
             }
-            return;
-        } catch (Exception e) {
-            System.out.println(rb.getString("jarsigner.") + e);
-            if (debug) {
-                e.printStackTrace();
-            }
         } finally { // close the resource
             if (jf != null) {
                 jf.close();
             }
         }
-
-        System.exit(1);
     }
 
     private void displayMessagesAndResult(boolean isSigning) {
@@ -2469,7 +2474,7 @@ public class Main {
 
     void error(String message) {
         System.out.println(rb.getString("jarsigner.")+message);
-        System.exit(1);
+        exit(1);
     }
 
 
@@ -2478,7 +2483,7 @@ public class Main {
         if (debug) {
             e.printStackTrace();
         }
-        System.exit(1);
+        exit(1);
     }
 
     /**
