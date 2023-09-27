@@ -25,6 +25,7 @@
 /*
  * @test ClassResolutionTest
  * @bug 8144874
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver ClassResolutionTest

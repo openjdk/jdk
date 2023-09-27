@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Test -Xlog:methodhandles with a test that contains both a condy and indy.
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile CondyIndyMathOperation.jasm

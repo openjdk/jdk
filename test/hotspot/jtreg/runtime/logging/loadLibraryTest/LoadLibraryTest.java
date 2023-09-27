@@ -25,6 +25,7 @@
  * @test
  * @bug 8187305
  * @summary Tests logging of shared library loads and unloads.
+ * @requires vm.flagless
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

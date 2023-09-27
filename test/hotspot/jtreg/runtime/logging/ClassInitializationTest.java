@@ -25,6 +25,7 @@
 /*
  * @test ClassInitializationTest
  * @bug 8142976
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile BadMap50.jasm

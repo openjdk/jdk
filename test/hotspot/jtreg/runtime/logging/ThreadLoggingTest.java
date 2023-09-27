@@ -26,6 +26,7 @@
  * @test
  * @bug 8149036 8150619
  * @summary os+thread output should contain logging calls for thread start stop attaches detaches
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
