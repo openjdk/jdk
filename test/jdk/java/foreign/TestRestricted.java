@@ -24,7 +24,6 @@
 /*
  * @test
  * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @modules java.base/jdk.internal.javac
  * @modules java.base/jdk.internal.reflect
  * @run testng TestRestricted
