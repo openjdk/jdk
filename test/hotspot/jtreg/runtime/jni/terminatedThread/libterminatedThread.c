@@ -84,7 +84,7 @@ Java_TestTerminatedThread_createTerminatedThread
   pthread_attr_t attr;
   pthread_attr_init(&attr);
   pthread_attr_setstacksize(&attr, STACK_SIZE);
-  if ((res = pthread_create(&thread, NULL, thread_start, NULL)) != 0) {
+  if ((res = pthread_create(&thread, &attr, thread_start, NULL)) != 0) {
     fprintf(stderr, "TEST ERROR: pthread_create failed: %s (%d)\n", strerror(res), res);
     exit(1);
   }
