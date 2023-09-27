@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
  * @test
  * @bug 4016509 8316879
  * @summary test regionMatches corner cases
- * @run testng RegionMatches
+ * @run junit RegionMatches
  */
 
 import java.io.UnsupportedEncodingException;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Test
 public class RegionMatches {
 
   private final String s1_LATIN1 = "abc";
@@ -43,8 +43,8 @@ public class RegionMatches {
   @Test
   public void TestLATIN1() {
       // Test for 4016509
-      if (!s1_LATIN1.regionMatches(0, s2_LATIN1, 0, Integer.MIN_VALUE))
-          throw new RuntimeException("Integer overflow in RegionMatches when comparing LATIN1 strings");
+      boolean result = s1_LATIN1.regionMatches(0, s2_LATIN1, 0, Integer.MIN_VALUE);
+      assertTrue(result, "Integer overflow in RegionMatches when comparing LATIN1 strings");
   }
 
   @Test
@@ -52,7 +52,7 @@ public class RegionMatches {
       // Test for 8316879
       String s1_UTF16 = new String(b1_UTF16, "UTF-16");
       String s2_UTF16 = new String(b2_UTF16, "UTF-16");
-      if (!s1_UTF16.regionMatches(0, s2_UTF16, 0, Integer.MIN_VALUE + 1))
-          throw new RuntimeException("Integer overflow in RegionMatches when comparing UTF16 strings");
+      boolean result = s1_UTF16.regionMatches(0, s2_UTF16, 0, Integer.MIN_VALUE + 1);
+      assertTrue(result, "Integer overflow in RegionMatches when comparing UTF16 strings");
   }
 }
