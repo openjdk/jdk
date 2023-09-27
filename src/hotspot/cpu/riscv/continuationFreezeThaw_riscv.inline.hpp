@@ -127,20 +127,11 @@ void FreezeBase::adjust_interpreted_frame_unextended_sp(frame& f) {
   }
 }
 
-static inline void relativize_one(intptr_t* const vfp, intptr_t* const hfp, int offset) {
-  assert(*(hfp + offset) == *(vfp + offset), "");
-  intptr_t* addr = hfp + offset;
-  intptr_t value = *(intptr_t**)addr - vfp;
-  *addr = value;
-}
-
 inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, const frame& hf) {
-  intptr_t* vfp = f.fp();
-  intptr_t* hfp = hf.fp();
-  assert(hfp == hf.unextended_sp() + (f.fp() - f.unextended_sp()), "");
+  assert(hf.fp() == hf.unextended_sp() + (f.fp() - f.unextended_sp()), "");
   assert((f.at(frame::interpreter_frame_last_sp_offset) != 0)
     || (f.unextended_sp() == f.sp()), "");
-  assert(f.fp() > (intptr_t*)f.at(frame::interpreter_frame_initial_sp_offset), "");
+  assert(f.fp() > (intptr_t*)f.at_relative(frame::interpreter_frame_initial_sp_offset), "");
 
   // On RISCV, we may insert padding between the locals and the rest of the frame
   // (see TemplateInterpreterGenerator::generate_normal_entry, and AbstractInterpreter::layout_activation)
@@ -150,7 +141,8 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
   // Make sure that last_sp is already relativized.
   assert((intptr_t*)hf.at_relative(frame::interpreter_frame_last_sp_offset) == hf.unextended_sp(), "");
 
-  relativize_one(vfp, hfp, frame::interpreter_frame_initial_sp_offset); // == block_top == block_bottom
+  // Make sure that monitor_block_top is already relativized.
+  assert(hf.at_absolute(frame::interpreter_frame_monitor_block_top_offset) <= frame::interpreter_frame_initial_sp_offset, "");
 
   // extended_sp is already relativized by TemplateInterpreterGenerator::generate_normal_entry or
   // AbstractInterpreter::layout_activation
@@ -287,18 +279,12 @@ inline void ThawBase::patch_pd(frame& f, const frame& caller) {
   patch_callee_link(caller, caller.fp());
 }
 
-static inline void derelativize_one(intptr_t* const fp, int offset) {
-  intptr_t* addr = fp + offset;
-  *addr = (intptr_t)(fp + *addr);
-}
-
 inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, const frame& f) {
-  intptr_t* vfp = f.fp();
-
   // Make sure that last_sp is kept relativized.
   assert((intptr_t*)f.at_relative(frame::interpreter_frame_last_sp_offset) == f.unextended_sp(), "");
 
-  derelativize_one(vfp, frame::interpreter_frame_initial_sp_offset);
+  // Make sure that monitor_block_top is still relativized.
+  assert(f.at_absolute(frame::interpreter_frame_monitor_block_top_offset) <= frame::interpreter_frame_initial_sp_offset, "");
 
   // Make sure that extended_sp is kept relativized.
   assert((intptr_t*)f.at_relative(frame::interpreter_frame_extended_sp_offset) < f.unextended_sp(), "");

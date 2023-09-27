@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import javax.lang.model.element.TypeElement;
 
@@ -39,8 +40,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
-import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
 
 /**
@@ -49,24 +48,18 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
 public class AllClassesIndexWriter extends HtmlDocletWriter {
 
     /**
-     * Index of all the classes.
-     */
-    protected IndexBuilder indexBuilder;
-
-    /**
      * Construct AllClassesIndexWriter object. Also initializes the indexBuilder variable in this
      * class.
      *
      * @param configuration The current configuration
-     * @param indexBuilder Unicode based Index from {@link IndexBuilder}
      */
-    public AllClassesIndexWriter(HtmlConfiguration configuration, IndexBuilder indexBuilder) {
+    public AllClassesIndexWriter(HtmlConfiguration configuration) {
         super(configuration, DocPaths.ALLCLASSES_INDEX);
-        this.indexBuilder = indexBuilder;
     }
 
     @Override
     public void buildPage() throws DocFileIOException {
+        messages.notice("doclet.Building_Index_For_All_Classes");
         String label = resources.getText("doclet.All_Classes_And_Interfaces");
         Content allClassesContent = new ContentBuilder();
         addContents(allClassesContent);
@@ -97,13 +90,9 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
                 .addTab(contents.records, utils::isRecord)
                 .addTab(contents.exceptionClasses, utils::isThrowable)
                 .addTab(contents.annotationTypes, utils::isAnnotationInterface);
-        for (Character unicode : indexBuilder.getFirstCharacters()) {
-            for (IndexItem indexItem : indexBuilder.getItems(unicode)) {
-                TypeElement typeElement = (TypeElement) indexItem.getElement();
-                if (typeElement != null && utils.isCoreClass(typeElement)) {
-                    addTableRow(table, typeElement);
-                }
-            }
+        Set<TypeElement> typeElements = getTypeElements();
+        for (TypeElement typeElement : typeElements) {
+            addTableRow(table, typeElement);
         }
         Content titleContent = contents.allClassesAndInterfacesLabel;
         var pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
@@ -113,6 +102,24 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         if (!table.isEmpty()) {
             target.add(table);
         }
+    }
+
+    private Set<TypeElement> getTypeElements() {
+        Set<TypeElement> classes = new TreeSet<>(utils.comparators.allClassesComparator());
+        boolean noDeprecated = options.noDeprecated();
+        Set<TypeElement> includedTypes = configuration.getIncludedTypeElements();
+        for (TypeElement typeElement : includedTypes) {
+            if (utils.hasHiddenTag(typeElement) || !utils.isCoreClass(typeElement)) {
+                continue;
+            }
+            if (noDeprecated
+                    && (utils.isDeprecated(typeElement)
+                    || utils.isDeprecated(utils.containingPackage(typeElement)))) {
+                continue;
+            }
+            classes.add(typeElement);
+        }
+        return classes;
     }
 
     /**

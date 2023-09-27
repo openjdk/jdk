@@ -87,7 +87,8 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
   // frame, because we freeze the padding (see recurse_freeze_interpreted_frame)
   // in order to keep the same relativized locals pointer, we don't need to change it here.
 
-  relativize_one(vfp, hfp, ijava_idx(monitors));
+  // Make sure that monitors is already relativized.
+  assert(hf.at_absolute(ijava_idx(monitors)) <= -(frame::ijava_state_size / wordSize), "");
 
   // Make sure that esp is already relativized.
   assert(hf.at_absolute(ijava_idx(esp)) <= hf.at_absolute(ijava_idx(monitors)), "");
@@ -545,7 +546,8 @@ static inline void derelativize_one(intptr_t* const fp, int offset) {
 inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, const frame& f) {
   intptr_t* vfp = f.fp();
 
-  derelativize_one(vfp, ijava_idx(monitors));
+  // Make sure that monitors is still relativized.
+  assert(f.at_absolute(ijava_idx(monitors)) <= -(frame::ijava_state_size / wordSize), "");
 
   // Make sure that esp is still relativized.
   assert(f.at_absolute(ijava_idx(esp)) <= f.at_absolute(ijava_idx(monitors)), "");

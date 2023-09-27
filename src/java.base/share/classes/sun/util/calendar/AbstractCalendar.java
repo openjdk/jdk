@@ -44,7 +44,8 @@ import java.util.TimeZone;
  * @since 1.5
  */
 
-public abstract class AbstractCalendar extends CalendarSystem {
+public sealed abstract class AbstractCalendar extends CalendarSystem
+        permits BaseCalendar {
 
     // The constants assume no leap seconds support.
     static final int SECOND_IN_MILLIS = 1000;
@@ -60,6 +61,7 @@ public abstract class AbstractCalendar extends CalendarSystem {
     protected AbstractCalendar() {
     }
 
+    @Override
     public Era getEra(String eraName) {
         if (eras != null) {
             for (Era era : eras) {
@@ -71,6 +73,7 @@ public abstract class AbstractCalendar extends CalendarSystem {
         return null;
     }
 
+    @Override
     public Era[] getEras() {
         Era[] e = null;
         if (eras != null) {
@@ -84,19 +87,23 @@ public abstract class AbstractCalendar extends CalendarSystem {
         this.eras = eras;
     }
 
+    @Override
     public CalendarDate getCalendarDate() {
         return getCalendarDate(System.currentTimeMillis(), newCalendarDate());
     }
 
+    @Override
     public CalendarDate getCalendarDate(long millis) {
         return getCalendarDate(millis, newCalendarDate());
     }
 
+    @Override
     public CalendarDate getCalendarDate(long millis, TimeZone zone) {
         CalendarDate date = newCalendarDate(zone);
         return getCalendarDate(millis, date);
     }
 
+    @Override
     public CalendarDate getCalendarDate(long millis, CalendarDate date) {
         int ms = 0;             // time of day
         int zoneOffset = 0;
@@ -156,6 +163,7 @@ public abstract class AbstractCalendar extends CalendarSystem {
         return date;
     }
 
+    @Override
     public long getTime(CalendarDate date) {
         long gd = getFixedDate(date);
         long ms = (gd - EPOCH_OFFSET) * DAY_IN_MILLIS + getTimeOfDay(date);
@@ -165,31 +173,18 @@ public abstract class AbstractCalendar extends CalendarSystem {
             if (date.isNormalized()) {
                 return ms - date.getZoneOffset();
             }
+
             // adjust time zone and daylight saving
-            int[] offsets = new int[2];
-            if (date.isStandardTime()) {
-                // 1) 2:30am during starting-DST transition is
-                //    intrepreted as 2:30am ST
-                // 2) 5:00pm during DST is still interpreted as 5:00pm ST
-                // 3) 1:30am during ending-DST transition is interpreted
-                //    as 1:30am ST (after transition)
-                if (zi instanceof ZoneInfo) {
-                    ((ZoneInfo)zi).getOffsetsByStandard(ms, offsets);
-                    zoneOffset = offsets[0];
-                } else {
-                    zoneOffset = zi.getOffset(ms - zi.getRawOffset());
-                }
+            // 1) 2:30am during starting-DST transition is
+            //    interpreted as 3:30am DT
+            // 2) 5:00pm during DST is interpreted as 5:00pm DT
+            // 3) 1:30am during ending-DST transition is interpreted
+            //    as 1:30am DT/0:30am ST (before transition)
+            if (zi instanceof ZoneInfo zInfo) {
+                // Offset value adjusts accordingly depending on DST status of date
+                zoneOffset = zInfo.getOffsetsByWall(ms, new int[2]);
             } else {
-                // 1) 2:30am during starting-DST transition is
-                //    intrepreted as 3:30am DT
-                // 2) 5:00pm during DST is intrepreted as 5:00pm DT
-                // 3) 1:30am during ending-DST transition is interpreted
-                //    as 1:30am DT/0:30am ST (before transition)
-                if (zi instanceof ZoneInfo) {
-                    zoneOffset = ((ZoneInfo)zi).getOffsetsByWall(ms, offsets);
-                } else {
-                    zoneOffset = zi.getOffset(ms - zi.getRawOffset());
-                }
+                zoneOffset = zi.getOffset(ms - zi.getRawOffset());
             }
         }
         ms -= zoneOffset;
@@ -245,6 +240,7 @@ public abstract class AbstractCalendar extends CalendarSystem {
 
     protected abstract boolean isLeapYear(CalendarDate date);
 
+    @Override
     public CalendarDate getNthDayOfWeek(int nth, int dayOfWeek, CalendarDate date) {
         CalendarDate ndate = (CalendarDate) date.clone();
         normalize(ndate);

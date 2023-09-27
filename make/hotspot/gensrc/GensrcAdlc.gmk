@@ -62,7 +62,7 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   ADLC_CFLAGS += -I$(TOPDIR)/src/hotspot/share
 
   # Add file macro mappings
-  ADLC_CFLAGS += $(FILE_MACRO_CFLAGS)
+  ADLC_CFLAGS += $(FILE_MACRO_CFLAGS) $(REPRODUCIBLE_CFLAGS)
 
   ifeq ($(UBSAN_ENABLED), true)
     ADLC_CFLAGS += $(UBSAN_CFLAGS)

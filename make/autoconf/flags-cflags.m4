@@ -818,6 +818,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
             REPRODUCIBLE_CFLAGS=
         ]
     )
+    AC_SUBST(REPRODUCIBLE_CFLAGS)
   fi
 
   # Prevent the __FILE__ macro from generating absolute paths into the built
