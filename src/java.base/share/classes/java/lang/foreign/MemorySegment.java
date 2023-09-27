@@ -383,7 +383,7 @@ import jdk.internal.vm.annotation.ForceInline;
  *     of memory whose size is not known, any access operations involving these segments cannot be validated.
  *     In effect, a zero-length memory segment <em>wraps</em> an address, and it cannot be used without explicit intent
  *     (see below);</li>
- *     <li>The segment is associated with a fresh scope that is always alive. Thus, while zero-length
+ *     <li>The segment is associated with a scope that is always alive. Thus, while zero-length
  *     memory segments cannot be accessed directly, they can be passed, opaquely, to other pointer-accepting foreign functions.</li>
  * </ul>
  * <p>
@@ -635,7 +635,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * MemorySegment cleanupSegment = MemorySegment.ofAddress(this.address())
      *                                             .reinterpret(byteSize());
      * }
-     * That is, the cleanup action receives a segment that is associated with a fresh scope that is always alive,
+     * That is, the cleanup action receives a segment that is associated with a scope that is always alive,
      * and is accessible from any thread. The size of the segment accepted by the cleanup action is {@link #byteSize()}.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
@@ -674,7 +674,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * MemorySegment cleanupSegment = MemorySegment.ofAddress(this.address())
      *                                             .reinterpret(newSize);
      * }
-     * That is, the cleanup action receives a segment that is associated with a fresh scope that is always alive,
+     * That is, the cleanup action receives a segment that is associated with a scope that is always alive,
      * and is accessible from any thread. The size of the segment accepted by the cleanup action is {@code newSize}.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
@@ -1718,7 +1718,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Reads an address from this segment at the given offset, with the given layout. The read address is wrapped in
-     * a native segment, associated with a fresh scope that is always alive. Under normal conditions,
+     * a native segment, associated with a scope that is always alive. Under normal conditions,
      * the size of the returned segment is {@code 0}. However, if the provided address layout has a
      * {@linkplain AddressLayout#targetLayout() target layout} {@code T}, then the size of the returned segment
      * is set to {@code T.byteSize()}.
@@ -2157,7 +2157,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Reads an address from this segment at the given at the given index, scaled by the given layout size. The read address is wrapped in
-     * a native segment, associated with a fresh scope that is always alive. Under normal conditions,
+     * a native segment, associated with a scope that is always alive. Under normal conditions,
      * the size of the returned segment is {@code 0}. However, if the provided address layout has a
      * {@linkplain AddressLayout#targetLayout() target layout} {@code T}, then the size of the returned segment
      * is set to {@code T.byteSize()}.
@@ -2370,6 +2370,26 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * Scope instances can be compared for equality. That is, two scopes
      * are considered {@linkplain #equals(Object)} if they denote the same lifetime.
+     * <p>
+     * If two memory segments are obtained from the same {@linkplain #ofBuffer(Buffer) buffer}
+     * or {@linkplain #ofArray(int[]) array}, the scopes associated with said segments are considered
+     * {@linkplain #equals(Object) equal}, as the two segments have the same lifetime:
+     * {@snippet lang=java :
+     * byte[] arr = new byte[10];
+     * MemorySegment segment1 = MemorySegment.ofArray(arr);
+     * MemorySegment segment2 = MemorySegment.ofArray(arr);
+     * assert segment1.scope().equals(segment2.scope());
+     * }
+     * <p>
+     * If two distinct memory segments are <a href="#wrapping-addresses">zero-length memory segments</a>, their scopes
+     * are always considered {@linkplain #equals(Object) equal}:
+     * {@snippet lang=java :
+     * MemorySegment segment1 = MemorySegment.ofAddress(42L);
+     * MemorySegment segment2 = MemorySegment.ofAddress(1000L);
+     * assert segment1.scope().equals(segment2.scope());
+     * }
+     * The scope of a zero-length memory segment can always be overridden using the
+     * {@link MemorySegment#reinterpret(Arena, Consumer)} method.
      */
     sealed interface Scope permits MemorySessionImpl {
         /**

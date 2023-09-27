@@ -460,7 +460,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * </ul>
      * <p>
      * If the selected layout is an {@linkplain AddressLayout address layout}, calling {@link VarHandle#get(Object...)}
-     * on the returned var handle will return a new memory segment. The segment is associated with a fresh scope that is
+     * on the returned var handle will return a new memory segment. The segment is associated with a scope that is
      * always alive. Moreover, the size of the segment depends on whether the address layout has a
      * {@linkplain AddressLayout#targetLayout() target layout}. More specifically:
      * <ul>

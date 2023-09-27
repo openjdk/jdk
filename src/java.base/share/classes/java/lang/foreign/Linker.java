@@ -365,7 +365,7 @@ import java.util.stream.Stream;
  *
  * The size of the segment returned by the {@code malloc} downcall method handle is
  * <a href="MemorySegment.html#wrapping-addresses">zero</a>. Moreover, the scope of the
- * returned segment is a fresh scope that is always alive. To provide safe access to the segment, we must,
+ * returned segment is a scope that is always alive. To provide safe access to the segment, we must,
  * unsafely, resize the segment to the desired size (100, in this case). It might also be desirable to
  * attach the segment to some existing {@linkplain Arena arena}, so that the lifetime of the region of memory
  * backing the segment can be managed automatically, as for any other native segment created directly from Java code.
@@ -602,7 +602,7 @@ public sealed interface Linker permits AbstractLinker {
      * upcall stub segment will be deallocated when the provided confined arena is {@linkplain Arena#close() closed}.
      * <p>
      * An upcall stub argument whose corresponding layout is an {@linkplain AddressLayout address layout}
-     * is a native segment associated with a fresh scope that is always alive.
+     * is a native segment associated with a scope that is always alive.
      * Under normal conditions, the size of this segment argument is {@code 0}.
      * However, if the address layout has a {@linkplain AddressLayout#targetLayout() target layout} {@code T}, then the size of the
      * segment argument is set to {@code T.byteSize()}.
