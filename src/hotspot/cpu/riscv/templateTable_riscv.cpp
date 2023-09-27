@@ -3810,7 +3810,7 @@ void TemplateTable::monitorenter() {
    {
      Label entry, loop, exit, notUsed;
      __ ld(c_rarg3, monitor_block_top); // derelativize pointer
-     __ shadd(c_rarg3, c_rarg3, fp,  c_rarg3, LogBytesPerWord);
+     __ shadd(c_rarg3, c_rarg3, fp, c_rarg3, LogBytesPerWord);
      // Now c_rarg3 points to current entry, starting with top-most entry
 
      __ la(c_rarg2, monitor_block_bot); // points to word before bottom
@@ -3851,7 +3851,7 @@ void TemplateTable::monitorenter() {
      __ sd(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
 
      __ ld(c_rarg1, monitor_block_bot);    // derelativize pointer
-     __ shadd(c_rarg1, c_rarg1, fp,  c_rarg1, LogBytesPerWord);
+     __ shadd(c_rarg1, c_rarg1, fp, c_rarg1, LogBytesPerWord);
      // Now c_rarg1 points to the old expression stack bottom
 
      __ sub(esp, esp, entry_size);         // move expression stack top
@@ -3914,7 +3914,7 @@ void TemplateTable::monitorexit() {
   {
     Label entry, loop;
     __ ld(c_rarg1, monitor_block_top); // derelativize pointer
-    __ shadd(c_rarg1, c_rarg1, fp,  c_rarg1, LogBytesPerWord);
+    __ shadd(c_rarg1, c_rarg1, fp, c_rarg1, LogBytesPerWord);
     // Now c_rarg1 points to current entry, starting with top-most entry
 
     __ la(c_rarg2, monitor_block_bot); // points to word before bottom
