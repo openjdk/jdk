@@ -33,6 +33,7 @@ import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.TypeKind;
+import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.Wrapper;
 import static sun.invoke.util.Wrapper.*;
@@ -48,8 +49,10 @@ class TypeConvertingMethodAdapter {
     private static final String NAME_BOX_METHOD = "valueOf";
 
     // Table of opcodes for widening primitive conversions; NOP = no conversion
+    @Stable
     private static final Opcode[][] wideningOpcodes = new Opcode[NUM_WRAPPERS][NUM_WRAPPERS];
 
+    @Stable
     private static final Wrapper[] FROM_WRAPPER_NAME = new Wrapper[16];
 
     // Map of TypeKind to Wrapper for primitives

@@ -575,7 +575,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
         }
 
         // These are named like constants because there is only one per specialization scheme:
-        private final ClassDesc SPECIES_DATA_DESC = ClassDesc.ofDescriptor(metaType.descriptorString());
+        private final ClassDesc SPECIES_DATA_DESC = metaType.describeConstable().get();
         private final String SPECIES_DATA_NAME = sdAccessor.getName();
         private final int SPECIES_DATA_MODS = sdAccessor.getModifiers();
         private final List<String> TRANSFORM_NAMES;  // derived from transformMethods
@@ -602,7 +602,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
         /*non-public*/
         byte[] generateConcreteSpeciesCodeFile(String className0, ClassSpecializer<T,K,S>.SpeciesData speciesData) {
             final ClassDesc classDesc = ClassDesc.of(className0);
-            final ClassDesc superClassDesc = ClassDesc.ofDescriptor(speciesData.deriveSuperClass().descriptorString());
+            final ClassDesc superClassDesc = speciesData.deriveSuperClass().describeConstable().get();
             final int NOT_ACC_PUBLIC = 0;  // not ACC_PUBLIC
             return Classfile.of().build(classDesc, clb -> {
                 clb.withFlags(NOT_ACC_PUBLIC + ACC_FINAL + ACC_SUPER);
@@ -796,7 +796,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                                               "invokeBasic",
                                               MethodTypeDesc.ofDescriptor(invokeBasicType.toMethodDescriptorString()));
                             if (rbt == BasicType.L_TYPE) {
-                                cob.checkcast(ClassDesc.ofDescriptor(rtype.descriptorString()))
+                                cob.checkcast(rtype.describeConstable().get())
                                    .areturn();
                             } else {
                                 throw newInternalError("NYI: transform of type "+rtype);

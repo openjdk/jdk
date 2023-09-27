@@ -267,7 +267,7 @@ class InvokerBytecodeGenerator {
     /**
      * Set up class file generation.
      */
-    private byte[] classFilePrologue(Consumer<? super ClassBuilder> config) {
+    private byte[] classFileSetup(Consumer<? super ClassBuilder> config) {
         final int NOT_ACC_PUBLIC = 0;  // not ACC_PUBLIC
         try {
             return Classfile.of().build(classDesc, new Consumer<>() {
@@ -285,7 +285,7 @@ class InvokerBytecodeGenerator {
         }
     }
 
-    private void methodPrologue(ClassBuilder clb, Consumer<? super MethodBuilder> config) {
+    private void methodSetup(ClassBuilder clb, Consumer<? super MethodBuilder> config) {
         var invokerDesc = MethodTypeDesc.ofDescriptor(invokerType.toMethodDescriptorString());
         clb.withMethod(invokerName, invokerDesc, ACC_STATIC, config);
     }
@@ -558,7 +558,7 @@ class InvokerBytecodeGenerator {
      * Generate an invoker method for the passed {@link LambdaForm}.
      */
     private byte[] generateCustomizedCodeBytes() {
-        final byte[] classFile = classFilePrologue(new Consumer<ClassBuilder>() {
+        final byte[] classFile = classFileSetup(new Consumer<ClassBuilder>() {
             @Override
             public void accept(ClassBuilder clb) {
                 addMethod(clb);
@@ -570,7 +570,7 @@ class InvokerBytecodeGenerator {
     }
 
     void addMethod(ClassBuilder clb) {
-        methodPrologue(clb, new Consumer<MethodBuilder>() {
+        methodSetup(clb, new Consumer<MethodBuilder>() {
             @Override
             public void accept(MethodBuilder mb) {
 
@@ -1635,10 +1635,10 @@ class InvokerBytecodeGenerator {
     }
 
     private byte[] generateLambdaFormInterpreterEntryPointBytes() {
-        final byte[] classFile = classFilePrologue(new Consumer<ClassBuilder>() {
+        final byte[] classFile = classFileSetup(new Consumer<ClassBuilder>() {
             @Override
             public void accept(ClassBuilder clb) {
-                methodPrologue(clb, new Consumer<MethodBuilder>() {
+                methodSetup(clb, new Consumer<MethodBuilder>() {
                     @Override
                     public void accept(MethodBuilder mb) {
 
@@ -1703,10 +1703,10 @@ class InvokerBytecodeGenerator {
 
     private byte[] generateNamedFunctionInvokerImpl(MethodTypeForm typeForm) {
         MethodType dstType = typeForm.erasedType();
-        final byte[] classFile = classFilePrologue(new Consumer<ClassBuilder>() {
+        final byte[] classFile = classFileSetup(new Consumer<ClassBuilder>() {
             @Override
             public void accept(ClassBuilder clb) {
-                methodPrologue(clb, new Consumer<MethodBuilder>() {
+                methodSetup(clb, new Consumer<MethodBuilder>() {
                     @Override
                     public void accept(MethodBuilder mb) {
 

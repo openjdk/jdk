@@ -2296,7 +2296,7 @@ public class MethodHandles {
                     ClassModel cm = Classfile.of().parse(bytes);
                     name = cm.thisClass().asInternalName();
                     accessFlags = cm.flags().flagsMask();
-                } catch (RuntimeException e) {
+                } catch (IllegalArgumentException e) {
                     ClassFormatError cfe = new ClassFormatError();
                     cfe.initCause(e);
                     throw cfe;
