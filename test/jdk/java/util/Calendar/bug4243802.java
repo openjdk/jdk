@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,20 +27,21 @@
  * @summary confirm that Calendar.setTimeInMillis() and
  * getTimeInMillis() can be called from a user program. (They used to
  * be protected methods.)
- * @library /java/text/testlib
+ * @run junit bug4243802
  */
 
 import java.util.*;
 
-public class bug4243802 extends IntlTest {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        new bug4243802().run(args);
-    }
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class bug4243802 {
 
     /**
      * 4243802: RFE: need way to set the date of a calendar without a Date object
      */
+    @Test
     public void Test4243802() {
         TimeZone saveZone = TimeZone.getDefault();
         Locale saveLocale = Locale.getDefault();
@@ -62,7 +63,7 @@ public class bug4243802 extends IntlTest {
                 (cal2.get(Calendar.MINUTE) != 23) ||
                 (cal2.get(Calendar.SECOND) != 45) ||
                 (cal2.get(Calendar.MILLISECOND) != 0)) {
-                 errln("Failed: expected 1/25/2001 1:23:45.000" +
+                 fail("Failed: expected 1/25/2001 1:23:45.000" +
                        ", got " + (cal2.get(Calendar.MONTH)+1) + "/" +
                        cal2.get(Calendar.DAY_OF_MONTH) +"/" +
                        cal2.get(Calendar.YEAR) + " " +
@@ -71,7 +72,7 @@ public class bug4243802 extends IntlTest {
                        cal2.get(Calendar.SECOND) + "." +
                        toMillis(cal2.get(Calendar.MILLISECOND)));
             }
-            logln("Passed.");
+            System.out.println("Passed.");
         }
         finally {
             Locale.setDefault(saveLocale);

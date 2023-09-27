@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4401223
  * @summary Make sure that GregorianCalendar doesn't cause IllegalArgumentException at some special situations which are related to the Leap Year.
- * @library /java/text/testlib
+ * @run junit bug4401223
  */
 
 import java.util.Date;
@@ -33,8 +33,13 @@ import java.util.GregorianCalendar;
 
 import static java.util.GregorianCalendar.*;
 
-public class bug4401223 extends IntlTest {
+import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class bug4401223 {
+
+    @Test
     public void Test4401223a() {
         int status = 0;
         String s = null;
@@ -52,12 +57,13 @@ public class bug4401223 extends IntlTest {
             s = "Exception occurred for 2/29/00 & set(YEAR,2001): " + ex;
         }
         if (status > 0) {
-            errln(s);
+            fail(s);
         } else {
-            logln(s);
+            System.out.println(s);
         }
     }
 
+    @Test
     public void Test4401223b() {
         int status = 0;
         String s = null;
@@ -84,13 +90,10 @@ public class bug4401223 extends IntlTest {
             s = "Exception occurred for 12/31/00 & set(YEAR,2001) : " + ex;
         }
         if (status > 0) {
-            errln(s);
+            fail(s);
         } else {
-            logln(s);
+            System.out.println(s);
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        new bug4401223().run(args);
-    }
 }

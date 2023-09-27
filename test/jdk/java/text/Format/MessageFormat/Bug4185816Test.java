@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
  * @test
  * @bug 4185816
  * @library /java/text/testlib
- * @build Bug4185816Test IntlTest HexDumpReader
- * @run main Bug4185816Test
+ * @build Bug4185816Test HexDumpReader
+ * @run junit Bug4185816Test
  * @summary test that MessageFormat invariants are preserved across serialization
  */
 /*
@@ -68,30 +68,27 @@ import java.io.*;
 import java.text.ChoiceFormat;
 import java.text.MessageFormat;
 
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
 /**
  *  A Locale can never contains language codes of he, yi or id.
  */
-public class Bug4185816Test extends IntlTest {
+public class Bug4185816Test {
     private static final String FILE_NAME = "Bug4185816.ser";
     private static final String CORRUPT_FILE_NAME = "Bug4185816Corrupt.ser";
 
-    public static void main(String[] args) throws Exception {
-        if (args.length == 1 && args[0].equals("prepTest")) {
-            prepTest();
-        } else {
-            new Bug4185816Test().run(args);
-        }
-    }
-
+    @Test
     public void testIt() throws Exception {
         Exception e = checkStreaming(FILE_NAME);
         if (e != null) {
-            errln("MessageFormat did not stream in valid stream: "+e);
+            fail("MessageFormat did not stream in valid stream: "+e);
             e.printStackTrace();
         }
         e = checkStreaming(CORRUPT_FILE_NAME);
         if (!(e instanceof InvalidObjectException)) {
-            errln("MessageFormat did NOT detect corrupt stream: "+e);
+            fail("MessageFormat did NOT detect corrupt stream: "+e);
             e.printStackTrace();
         }
     }

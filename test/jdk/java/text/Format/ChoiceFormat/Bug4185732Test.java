@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
  * @test
  * @bug 4185732
  * @library /java/text/testlib
- * @build Bug4185732Test IntlTest HexDumpReader
- * @run main Bug4185732Test
+ * @build Bug4185732Test HexDumpReader
+ * @run junit Bug4185732Test
  * @summary test that ChoiceFormat invariants are preserved across serialization
  */
 /*
@@ -67,35 +67,32 @@ import java.util.*;
 import java.io.*;
 import java.text.ChoiceFormat;
 
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
 /**
  *  A Locale can never contains language codes of he, yi or id.
  */
-public class Bug4185732Test extends IntlTest {
-    public static void main(String[] args) throws Exception {
-        if (args.length == 1 && args[0].equals("prepTest")) {
-            prepTest();
-        } else {
-            new Bug4185732Test().run(args);
-        }
-    }
-
+public class Bug4185732Test {
+    @Test
     public void testIt() throws Exception {
         try {
             final ObjectInputStream in
                 = new ObjectInputStream(HexDumpReader.getStreamFromHexDump("Bug4185732.ser.txt"));
             final ChoiceFormat loc = (ChoiceFormat)in.readObject();
             if (loc.getFormats().length != loc.getLimits().length) {
-                errln("ChoiceFormat did not properly check stream");
+                fail("ChoiceFormat did not properly check stream");
             } else {
                 //for some reason, the data file was VALID.  This test
                 //requires a corrupt data file the format and limit
                 //arrays are of different length.
-                errln("Test data file was not properly created");
+                fail("Test data file was not properly created");
             }
         } catch (InvalidObjectException e) {
             //this is what we want to have happen
         } catch (Exception e) {
-            errln(e.toString());
+            fail(e.toString());
         }
     }
 

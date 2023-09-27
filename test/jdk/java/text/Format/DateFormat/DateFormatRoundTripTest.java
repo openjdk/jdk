@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,17 @@
  * @test
  * @summary test Date Format (Round Trip)
  * @bug 8008577
- * @library /java/text/testlib
- * @run main/othervm -Djava.locale.providers=COMPAT,SPI DateFormatRoundTripTest
+ * @run junit/othervm -Djava.locale.providers=COMPAT,SPI DateFormatRoundTripTest
  */
 
 import java.text.*;
 import java.util.*;
 
-public class DateFormatRoundTripTest extends IntlTest {
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class DateFormatRoundTripTest {
 
     static Random RANDOM = null;
 
@@ -93,54 +96,6 @@ public class DateFormatRoundTripTest extends IntlTest {
             country = country.substring(0, i);
         }
         return Locale.of(name, country, variant);
-    }
-
-    public static void main(String[] args) throws Exception {
-        // Command-line parameters
-        Locale loc = null;
-        boolean infinite = false;
-        boolean random = false;
-        long seed = FIXED_SEED;
-        String pat = null;
-        Date date = null;
-
-        List<String> newArgs = new ArrayList<>();
-        for (int i=0; i<args.length; ++i) {
-            if (args[i].equals("-locale")
-                && (i+1) < args.length) {
-                loc = createLocale(args[i+1]);
-                ++i;
-            } else if (args[i].equals("-date")
-                       && (i+1) < args.length) {
-                date = new Date(Long.parseLong(args[i+1]));
-                ++i;
-            } else if (args[i].equals("-pattern")
-                && (i+1) < args.length) {
-                pat = args[i+1];
-                ++i;
-            } else if (args[i].equals("-INFINITE")) {
-                infinite = true;
-            } else if (args[i].equals("-random")) {
-                random = true;
-            } else if (args[i].equals("-randomseed")) {
-                random = true;
-                seed = System.currentTimeMillis();
-            } else if (args[i].equals("-seed")
-                       && (i+1) < args.length) {
-                random = true;
-                seed = Long.parseLong(args[i+1]);
-                ++i;
-            } else {
-                newArgs.add(args[i]);
-            }
-        }
-
-        if (newArgs.size() != args.length) {
-            args = new String[newArgs.size()];
-            newArgs.addAll(Arrays.asList(args));
-        }
-
-        new DateFormatRoundTripTest(random, seed, infinite, date, pat, loc).run(args);
     }
 
     /**
@@ -308,10 +263,11 @@ public class DateFormatRoundTripTest extends IntlTest {
                      }}, false),
     };
 
+    @Test
     public void TestDateFormatRoundTrip() {
         avail = DateFormat.getAvailableLocales();
-        logln("DateFormat available locales: " + avail.length);
-        logln("Default TimeZone: " +
+        System.out.println("DateFormat available locales: " + avail.length);
+        System.out.println("Default TimeZone: " +
               (defaultZone = TimeZone.getDefault()).getID());
 
         if (random || initialDate != null) {
@@ -333,7 +289,7 @@ public class DateFormatRoundTripTest extends IntlTest {
      * TimeZone must be set to tc.zone before this method is called.
      */
     private void doTestInZone(TestCase tc) {
-        logln(escape(tc.toString()));
+        System.out.println(escape(tc.toString()));
         Locale save = Locale.getDefault();
         try {
             if (locale != null) {
@@ -368,10 +324,10 @@ public class DateFormatRoundTripTest extends IntlTest {
         if (INFINITE) {
             // Special infinite loop test mode for finding hard to reproduce errors
             if (locale != null) {
-                logln("ENTERING INFINITE TEST LOOP, LOCALE " + locale.getDisplayName());
+                System.out.println("ENTERING INFINITE TEST LOOP, LOCALE " + locale.getDisplayName());
                 for (;;) doTest(locale);
             } else {
-                logln("ENTERING INFINITE TEST LOOP, ALL LOCALES");
+                System.out.println("ENTERING INFINITE TEST LOOP, ALL LOCALES");
                 for (;;) {
                     for (int i=0; i<avail.length; ++i) {
                         doTest(avail[i]);
@@ -393,7 +349,7 @@ public class DateFormatRoundTripTest extends IntlTest {
     }
 
     void doTest(Locale loc) {
-        if (!INFINITE) logln("Locale: " + loc.getDisplayName());
+        if (!INFINITE) System.out.println("Locale: " + loc.getDisplayName());
 
         if (pattern != null) {
             doTest(loc, new SimpleDateFormat(pattern, loc));
@@ -604,12 +560,12 @@ public class DateFormatRoundTripTest extends IntlTest {
                                    (j>0&&d[j].getTime()==d[j-1].getTime()?" d==":"") +
                                    (j>0&&s[j].equals(s[j-1])?" s==":""));
                     }
-                    errln(escape(out.toString()));
+                    fail(escape(out.toString()));
                 }
             }
         }
         catch (ParseException e) {
-            errln(e.toString());
+            fail(e.toString());
         }
     }
 
