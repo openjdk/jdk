@@ -2930,7 +2930,7 @@ public final class Formatter implements Closeable, Flushable {
 
         private void parseArgument() {
             // (\d+\$)?
-            for (int size = 0; off < max; c = s.charAt(++off), size++) {
+            for (int size = 0; off < max; c = next(++off), size++) {
                 if (!isDigit(c)) {
                     if (size > 0) {
                         if (c == '$') {
@@ -2951,7 +2951,7 @@ public final class Formatter implements Closeable, Flushable {
 
         private void parseFlag() {
             // ([-#+ 0,(\<]*)?
-            for (int size = 0; off < max; c = s.charAt(++off), size++) {
+            for (int size = 0; off < max; c = next(++off), size++) {
                 if (!Flags.isFlag(c)) {
                     flagSize = size;
                     break;
@@ -2961,7 +2961,7 @@ public final class Formatter implements Closeable, Flushable {
 
         private void parseWidth() {
             // (\d+)?
-            for (int size = 0; off < max; c = s.charAt(++off), size++) {
+            for (int size = 0; off < max; c = next(++off), size++) {
                 if (!isDigit(c)) {
                     widthSize = size;
                     break;
@@ -2972,7 +2972,7 @@ public final class Formatter implements Closeable, Flushable {
         private int parsePrecision() {
             // (\.\d+)?
             c = s.charAt(++off);
-            for (int size = 0; off < max; ++off, c = s.charAt(off), size++) {
+            for (int size = 0; off < max; c = next(++off), size++) {
                 if (!isDigit(c)) {
                     if (size > 0) {
                         return size + 1;
@@ -2983,6 +2983,10 @@ public final class Formatter implements Closeable, Flushable {
             }
 
             return 0;
+        }
+
+        private char next(int off) {
+            return off < s.length() ? s.charAt(off) : '\0';
         }
     }
 
