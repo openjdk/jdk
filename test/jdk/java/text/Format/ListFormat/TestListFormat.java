@@ -309,6 +309,18 @@ public class TestListFormat {
         // should be inherited from parent locales.
         Locale.availableLocales().forEach(l -> ListFormat.getInstance(l, type, style));
     }
+    @Test
+    void getInstance_3Arg_InheritanceValidation() {
+        // Tests if inheritance works as expected.
+        // World English ("en-001") has non-Oxford-comma pattern for "end", while
+        // English ("en") has Oxford-comma "end" pattern. Thus missing "standard"/"middle"
+        // should be inherited from "en", but "end" should stay non-Oxford for "en-001"
+        // Note that this test depends on a particular version of CLDR data.
+        assertEquals("""
+            ListFormat [locale: "English (world)", start: "{0}, {1}", middle: "{0}, {1}", end: "{0} and {1}", two: "{0} and {1}", three: "{0}, {1} and {2}"]
+            """,
+            ListFormat.getInstance(Locale.forLanguageTag("en-001"), ListFormat.Type.STANDARD, ListFormat.Style.FULL).toString());
+    }
 
     private static void compareResult(ListFormat f, List<String> input, String expected, boolean roundTrip) throws ParseException {
         var result = f.format(input);

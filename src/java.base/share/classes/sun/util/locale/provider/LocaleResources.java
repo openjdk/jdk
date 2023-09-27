@@ -859,7 +859,7 @@ public class LocaleResources {
                     // make sure there is at least one parent locale
                     if (candList.size() >= 2) {
                         var parentPatterns = adapter.getLocaleResources(candList.get(1)).getListPatterns(type, style);
-                        for (int i = 0; i < lpArray.length; i++) {
+                        for (int i = 0; i < 3; i++) { // exclude optional ones, ie, "two"/"three"
                             if (lpArray[i].isEmpty()) {
                                 lpArray[i] = parentPatterns[i];
                             }
