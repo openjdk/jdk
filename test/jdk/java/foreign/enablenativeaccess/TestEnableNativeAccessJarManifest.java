@@ -99,7 +99,8 @@ public class TestEnableNativeAccessJarManifest extends TestEnableNativeAccessBas
                     List.of(), List.of(), List.of() },
             { "panama_unnamed_module_native_access", UNNAMED, successNoWarning(),
                     List.of(new Attribute("Enable-Native-Access", "ALL-UNNAMED")), List.of(), List.of() },
-            { "panama_unnamed_module_native_access_invalid", UNNAMED, failWithError("Only ALL-UNNAMED allowed as value for Enable-Native-Access"),
+            { "panama_unnamed_module_native_access_invalid", UNNAMED,
+                    failWithError("Error: illegal value \"asdf\" for Enable-Native-Access manifest attribute. Only ALL-UNNAMED is allowed"),
                     List.of(new Attribute("Enable-Native-Access", "asdf")), List.of(), List.of() },
 
             // more complex cases where a jar invokes a module on the module path that does native access

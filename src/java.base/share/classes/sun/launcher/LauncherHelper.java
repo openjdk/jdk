@@ -636,7 +636,7 @@ public final class LauncherHelper {
             String enableNativeAccess = mainAttrs.getValue(ENABLE_NATIVE_ACCESS);
             if (enableNativeAccess != null) {
                 if (!enableNativeAccess.equals("ALL-UNNAMED")) {
-                    throw new IllegalArgumentException("Only ALL-UNNAMED allowed as value for " + ENABLE_NATIVE_ACCESS);
+                    abort(null, "java.launcher.jar.error.illegal.ena.value", enableNativeAccess);
                 }
                 Modules.addEnableNativeAccessToAllUnnamed();
             }
