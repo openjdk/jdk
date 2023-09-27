@@ -33,6 +33,7 @@ import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -1612,7 +1613,7 @@ final class StringUTF16 {
     }
 
     private static void putPair(byte[] buf, int charPos, int v) {
-        int packed = (int) StringLatin1.PACKED_DIGITS[v];
+        int packed = (int) DecimalDigits.digitPair(v);
         putChar(buf, charPos, packed & 0xFF);
         putChar(buf, charPos + 1, packed >> 8);
     }

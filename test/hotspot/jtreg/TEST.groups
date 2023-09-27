@@ -537,6 +537,7 @@ tier1_serviceability = \
   serviceability/ \
   -serviceability/dcmd/compiler/CompilerQueueTest.java \
   -serviceability/jvmti/RedefineClasses/RedefineLeak.java \
+  -serviceability/jvmti/RedefineClasses/RedefineLeakThrowable.java \
   -serviceability/jvmti/RedefineClasses/RedefinePreviousVersions.java \
   -serviceability/jvmti/RedefineClasses/RedefineRunningMethods.java \
   -serviceability/jvmti/RedefineClasses/RedefineRunningMethodsWithBacktrace.java \

@@ -75,14 +75,10 @@ public class CPoolRefClassContainingInlinedCts {
         File file = new File(testClasses,
                 CPoolRefClassContainingInlinedCts.class.getName() + ".class");
         ClassModel classFile = Classfile.of().parse(file.toPath());
-        int i = 1;
-        PoolEntry cpInfo;
-        while (i < classFile.constantPool().entryCount()) {
-            cpInfo = classFile.constantPool().entryByIndex(i);
+        for (PoolEntry cpInfo : classFile.constantPool()) {
             if (cpInfo instanceof ClassEntry classEntry) {
                 checkClassName(classEntry.asInternalName());
             }
-            i += cpInfo.width();
         }
         if (numberOfReferencedClassesToBeChecked != 16) {
             throw new AssertionError("Class reference missing in the constant pool");

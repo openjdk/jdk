@@ -632,8 +632,10 @@ void InterpreterMacroAssembler::remove_activation(
     bind(restart);
     // We use c_rarg1 so that if we go slow path it will be the correct
     // register for unlock_object to pass to VM directly
-    ldr(c_rarg1, monitor_block_top); // points to current entry, starting
-                                     // with top-most entry
+    ldr(c_rarg1, monitor_block_top); // derelativize pointer
+    lea(c_rarg1, Address(rfp, c_rarg1, Address::lsl(Interpreter::logStackElementSize)));
+    // c_rarg1 points to current entry, starting with top-most entry
+
     lea(r19, monitor_block_bot);  // points to word before bottom of
                                   // monitor block
     b(entry);
@@ -767,7 +769,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
     if (LockingMode == LM_LIGHTWEIGHT) {
       ldr(tmp, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      fast_lock(obj_reg, tmp, rscratch1, rscratch2, slow_case);
+      lightweight_lock(obj_reg, tmp, rscratch1, rscratch2, slow_case);
       b(count);
     } else if (LockingMode == LM_LEGACY) {
       // Load (object->mark() | 1) into swap_reg
@@ -898,7 +900,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
       ldr(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       tbnz(header_reg, exact_log2(markWord::monitor_value), slow_case);
-      fast_unlock(obj_reg, header_reg, swap_reg, rscratch1, slow_case);
+      lightweight_unlock(obj_reg, header_reg, swap_reg, rscratch1, slow_case);
       b(count);
       bind(slow_case);
     } else if (LockingMode == LM_LEGACY) {
