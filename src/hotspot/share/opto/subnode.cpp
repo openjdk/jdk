@@ -30,6 +30,7 @@
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/intrinsicnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/movenode.hpp"
@@ -1965,3 +1966,16 @@ Node* ReverseLNode::Identity(PhaseGVN* phase) {
   }
   return this;
 }
+
+#ifdef ASSERT
+void ScopedValueGetHitsInCacheNode::verify() const {
+  ScopedValueGetLoadFromCacheNode* load = load_from_cache();
+  if (load != nullptr) {
+    assert(load->in(0)->Opcode() == Op_IfTrue, "");
+    assert(load->in(0)->in(0)->in(1)->is_Bool(), "");
+    assert(load->in(0)->in(0)->in(1)->in(1) == this, "");
+  }
+}
+#endif
+
+

@@ -40,6 +40,7 @@
   flags(INCREMENTAL_INLINE_CLEANUP,   "Incremental Inline Cleanup") \
   flags(INCREMENTAL_INLINE,           "Incremental Inline") \
   flags(INCREMENTAL_BOXING_INLINE,    "Incremental Boxing Inline") \
+  flags(INCREMENTAL_SCOPED_VALUE_INLINE, "Incremental Scoped Value Inline") \
   flags(EXPAND_VUNBOX,                "Expand VectorUnbox") \
   flags(SCALARIZE_VBOX,               "Scalarize VectorBox") \
   flags(INLINE_VECTOR_REBOX,          "Inline Vector Rebox Calls") \

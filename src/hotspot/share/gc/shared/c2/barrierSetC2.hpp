@@ -187,18 +187,18 @@ public:
 // C2Access for optimization time calls to the BarrierSetC2 backend.
 class C2OptAccess: public C2Access {
   PhaseGVN& _gvn;
-  MergeMemNode* _mem;
+  Node* _mem;
   Node* _ctl;
 
 public:
-  C2OptAccess(PhaseGVN& gvn, Node* ctl, MergeMemNode* mem, DecoratorSet decorators,
+  C2OptAccess(PhaseGVN& gvn, Node* ctl, Node* mem, DecoratorSet decorators,
               BasicType type, Node* base, C2AccessValuePtr& addr) :
     C2Access(decorators, type, base, addr),
     _gvn(gvn), _mem(mem), _ctl(ctl) {
     fixup_decorators();
   }
 
-  MergeMemNode* mem() const { return _mem; }
+  Node* mem() const { return _mem; }
   Node* ctl() const { return _ctl; }
 
   virtual PhaseGVN& gvn() const { return _gvn; }

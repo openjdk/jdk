@@ -675,6 +675,11 @@ public class IRNode {
         beforeMatchingNameRegex(LOAD_P, "LoadP");
     }
 
+    public static final String LOAD_P_OR_N = PREFIX + "LOAD_P_OR_N" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(LOAD_P_OR_N, "Load[PN]");
+    }
+
     public static final String LOAD_P_OF_CLASS = COMPOSITE_PREFIX + "LOAD_P_OF_CLASS" + POSTFIX;
     static {
         loadOfNodes(LOAD_P_OF_CLASS, "LoadP");

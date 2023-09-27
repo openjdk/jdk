@@ -701,9 +701,9 @@ public:
 
   // Return TRUE or FALSE if the loop should be peeled or not. Peel if we can
   // move some loop-invariant test (usually a null-check) before the loop.
-  bool policy_peeling(PhaseIdealLoop *phase);
+  bool policy_peeling(PhaseIdealLoop* phase, bool scoped_value_only);
 
-  uint estimate_peeling(PhaseIdealLoop *phase);
+  uint estimate_peeling(PhaseIdealLoop* phase, bool scoped_value_only);
 
   // Return TRUE or FALSE if the loop should be maximally unrolled. Stash any
   // known trip count in the counted loop node.
@@ -890,6 +890,7 @@ private:
   // clear out dead code after build_loop_late
   Node_List _deadlist;
   Node_List _zero_trip_guard_opaque_nodes;
+  Node_List _scoped_value_get_nodes;
 
   // Support for faster execution of get_late_ctrl()/dom_lca()
   // when a node has many uses and dominator depth is deep.
@@ -1737,6 +1738,27 @@ public:
   void update_addp_chain_base(Node* x, Node* old_base, Node* new_base);
 
   bool can_move_to_inner_loop(Node* n, LoopNode* n_loop, Node* x);
+  void expand_get_from_sv_cache(ScopedValueGetHitsInCacheNode* get_from_cache);
+  void test_and_load_from_cache(Node* load_of_cache, Node* mem, Node* index, Node* c, float prob, float cnt,
+                                Node* sv, Node*& failure, Node*& hit, Node*& res);
+
+  bool is_uncommon_trap_if_pattern(IfProjNode* proj);
+
+  bool optimize_scoped_value_get_nodes();
+
+  bool expand_scoped_value_get_nodes();
+
+  void remove_scoped_value_get_at(uint i);
+
+  bool
+  loop_predication_for_scoped_value_get(IdealLoopTree* loop, IfProjNode* if_success_proj,
+                                        ParsePredicateSuccessProj* parse_predicate_proj,
+                                        Invariance &invar, Deoptimization::DeoptReason reason,
+                                        IfNode* iff, IfProjNode*&new_predicate_proj);
+
+  void
+  move_scoped_value_nodes_to_not_peel(VectorSet &peel, VectorSet &not_peel, Node_List &peel_list,
+                                      Node_List &sink_list, uint i) const;
 };
 
 

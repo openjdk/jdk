@@ -974,6 +974,18 @@ Node* Node::find_out_with(int opcode) {
   return nullptr;
 }
 
+Node* Node::find_unique_out_with(int opcode) const {
+  Node* res = nullptr;
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    Node* use = fast_out(i);
+    if (use->Opcode() == opcode) {
+      assert(res == nullptr, "only one match");
+      res = use;
+    }
+  }
+  return res;
+}
+
 // Return true if the current node has an out that matches opcode.
 bool Node::has_out_with(int opcode) {
   return (find_out_with(opcode) != nullptr);

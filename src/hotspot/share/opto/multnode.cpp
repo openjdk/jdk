@@ -227,3 +227,44 @@ ProjNode* ProjNode::other_if_proj() const {
   assert(_con == 0 || _con == 1, "not an if?");
   return in(0)->as_If()->proj_out(1-_con);
 }
+
+bool ProjNode::is_multi_uncommon_trap_if_pattern() {
+  Node* iff = in(0);
+  if (!iff->is_If() || iff->outcnt() < 2) {
+    // Not a projection of an If or variation of a dead If node.
+    return false;
+  }
+  return other_if_proj()->is_multi_uncommon_trap_proj();
+}
+
+bool ProjNode::is_multi_uncommon_trap_proj() {
+  ResourceMark rm;
+  Unique_Node_List wq;
+  wq.push(this);
+  const int path_limit = 100;
+  uint unc_count = 0;
+  for (uint i = 0; i < wq.size(); ++i) {
+    Node* n = wq.at(i);
+    if (n->is_CallStaticJava()) {
+      CallStaticJavaNode* call = n->as_CallStaticJava();
+      int req = call->uncommon_trap_request();
+      if (req == 0) {
+        return false;
+      }
+      unc_count++;
+    } else if (n->is_Region() || n->is_If() || n->is_IfProj()) {
+      for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
+        Node* u = n->fast_out(j);
+        if (u->is_CFG()) {
+          if (wq.size() >= path_limit) {
+            return false;
+          }
+          wq.push(u);
+        }
+      }
+    } else if (n->Opcode() != Op_Halt) {
+      return false;
+    }
+  }
+  return unc_count > 0;
+}

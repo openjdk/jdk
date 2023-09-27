@@ -354,6 +354,8 @@ class Compile : public Phase {
   RTMState              _rtm_state;             // State of Restricted Transactional Memory usage
   int                   _loop_opts_cnt;         // loop opts round
   uint                  _stress_seed;           // Seed for stress testing
+  bool                  _has_scoped_value_invalidate; // Did we encounter a call to ScopedValue$Cache.invalidate()?
+  bool                  _has_scoped_value_get_nodes; // Are we optimizing ScopedValue.get() calls?
 
   // Compilation environment.
   Arena                 _comp_arena;            // Arena with lifetime equivalent to Compile
@@ -456,6 +458,7 @@ private:
   GrowableArray<CallGenerator*> _boxing_late_inlines; // same but for boxing operations
 
   GrowableArray<CallGenerator*> _vector_reboxing_late_inlines; // same but for vector reboxing operations
+  GrowableArray<CallGenerator*> _scoped_value_late_inlines; // same but for operations related to ScopedValue.get()
 
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
   uint                          _number_of_mh_late_inlines; // number of method handle late inlining still pending
@@ -671,6 +674,10 @@ private:
   void          set_clinit_barrier_on_entry(bool z) { _clinit_barrier_on_entry = z; }
   bool              has_monitors() const         { return _has_monitors; }
   void          set_has_monitors(bool v)         { _has_monitors = v; }
+  bool              has_scoped_value_invalidate() const { return _has_scoped_value_invalidate; }
+  void          set_has_scoped_value_invalidate(bool v) { _has_scoped_value_invalidate = v; }
+  bool              has_scoped_value_get_nodes() const { return _has_scoped_value_get_nodes; }
+  void          set_has_scoped_value_get_nodes(bool v) { _has_scoped_value_get_nodes = v; }
 
   // check the CompilerOracle for special behaviours for this compile
   bool          method_has_option(enum CompileCommand option) {
@@ -1039,6 +1046,10 @@ private:
     _vector_reboxing_late_inlines.push(cg);
   }
 
+  void              add_scoped_value_late_inline(CallGenerator* cg) {
+    _scoped_value_late_inlines.push(cg);
+  }
+  
   template<typename N, ENABLE_IF(std::is_base_of<Node, N>::value)>
   void remove_useless_nodes(GrowableArray<N*>& node_list, Unique_Node_List& useful);
 
@@ -1072,6 +1083,7 @@ private:
   bool should_delay_inlining() { return AlwaysIncrementalInline || (StressIncrementalInlining && (random() % 2) == 0); }
   void inline_string_calls(bool parse_time);
   void inline_boxing_calls(PhaseIterGVN& igvn);
+  void inline_scoped_value_calls(PhaseIterGVN& igvn);
   bool optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode);
   void remove_root_to_sfpts_edges(PhaseIterGVN& igvn);
 

@@ -297,6 +297,89 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
+// Does a ScopedValue.get() hits in the cache?
+class ScopedValueGetLoadFromCacheNode;
+class ScopedValueGetHitsInCacheNode : public CmpNode {
+private:
+  // There are multiple checks involved, keep track of their profile data
+  struct {
+      float _cnt;
+      float _prob;
+  } _profile_data[3];
+
+  virtual uint size_of() const { return sizeof(*this); }
+  uint hash() const { return NO_HASH; }
+
+public:
+  enum {
+      ScopedValue = 3, // What ScopedValue object is it for?
+      Memory, // Memory for the cache loads
+      Index1, // index for the first check
+      Index2  // index for the second check
+  };
+
+  ScopedValueGetHitsInCacheNode(Compile* C, Node* c, Node* scoped_value_cache, Node* null_con, Node* mem, Node* sv,
+                                Node* index1, Node* index2) :
+          CmpNode(scoped_value_cache, null_con) {
+    init_req(0, c);
+    assert(req() == ScopedValue, "");
+    add_req(sv);
+    assert(req() == Memory, "");
+    add_req(mem);
+    assert(req() == Index1, "");
+    add_req(index1);
+    assert(req() == Index2, "");
+    add_req(index2);
+  }
+
+  Node* scoped_value() const {
+    return in(ScopedValue);
+  }
+
+  Node* mem() const {
+    return in(Memory);
+  }
+
+  Node* index1() const {
+    return in(Index1);
+  }
+
+  Node* index2() const {
+    return in(Index2);
+  }
+
+  ScopedValueGetLoadFromCacheNode* load_from_cache() const {
+    return (ScopedValueGetLoadFromCacheNode*)find_unique_out_with(Op_ScopedValueGetLoadFromCache);
+  }
+
+  virtual int Opcode() const;
+
+
+  const Type* sub(const Type* type, const Type* type1) const {
+    return CmpNode::bottom_type();
+  }
+  void set_profile_data(uint i, float cnt, float prob) {
+    assert(i < sizeof(_profile_data) / sizeof(_profile_data[0]), "");
+    _profile_data[i]._cnt = cnt;
+    _profile_data[i]._prob = prob;
+  }
+
+ float prob(uint i) const {
+    assert(i < sizeof(_profile_data) / sizeof(_profile_data[0]), "");
+    return _profile_data[i]._prob;
+  }
+
+ float cnt(uint i) const {
+    assert(i < sizeof(_profile_data) / sizeof(_profile_data[0]), "");
+    return _profile_data[i]._cnt;
+  }
+
+  void verify() const PRODUCT_RETURN;
+
+  virtual bool depends_only_on_test() const {
+    return false;
+  }
+};
 
 //------------------------------BoolTest---------------------------------------
 // Convert condition codes to a boolean test value (0 or -1).

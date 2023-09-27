@@ -105,7 +105,8 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
     assert(access.is_opt_access(), "either parse or opt access");
     C2OptAccess& opt_access = static_cast<C2OptAccess&>(access);
     Node* ctl = opt_access.ctl();
-    MergeMemNode* mm = opt_access.mem();
+    assert(opt_access.mem()->is_MergeMem(), "");
+    MergeMemNode* mm = opt_access.mem()->as_MergeMem();
     PhaseGVN& gvn = opt_access.gvn();
     const TypePtr* adr_type = access.addr().type();
     int alias = gvn.C->get_alias_index(adr_type);
@@ -168,9 +169,11 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
     assert(access.is_opt_access(), "either parse or opt access");
     C2OptAccess& opt_access = static_cast<C2OptAccess&>(access);
     Node* control = control_dependent ? opt_access.ctl() : nullptr;
-    MergeMemNode* mm = opt_access.mem();
+    Node* mem = opt_access.mem();
     PhaseGVN& gvn = opt_access.gvn();
-    Node* mem = mm->memory_at(gvn.C->get_alias_index(adr_type));
+    if (mem->is_MergeMem()) {
+      mem = mem->as_MergeMem()->memory_at(gvn.C->get_alias_index(adr_type));
+    }
     load = LoadNode::make(gvn, control, mem, adr, adr_type, val_type, access.type(), mo, dep,
                           requires_atomic_access, unaligned, mismatched, unsafe, access.barrier_data());
     load = gvn.transform(load);

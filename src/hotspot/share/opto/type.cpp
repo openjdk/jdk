@@ -614,6 +614,16 @@ void Type::Initialize_shared(Compile* current) {
   TypeInstKlassPtr::OBJECT = TypeInstKlassPtr::make(TypePtr::NotNull, current->env()->Object_klass(), 0);
   TypeInstKlassPtr::OBJECT_OR_NULL = TypeInstKlassPtr::make(TypePtr::BotPTR, current->env()->Object_klass(), 0);
 
+  const Type **fgetfromcache =(const Type**)shared_type_arena->AmallocWords(3*sizeof(Type*));
+  fgetfromcache[0] = TypeInt::BOOL;
+  fgetfromcache[1] = TypeInstPtr::BOTTOM;
+  fgetfromcache[2] = TypeAryPtr::OOPS;
+  TypeTuple::make(3, fgetfromcache);
+  const Type **fsvgetresult =(const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
+  fsvgetresult[0] = Type::CONTROL;
+  fsvgetresult[1] = TypeInstPtr::BOTTOM;
+  TypeTuple::SV_GET_RESULT = TypeTuple::make(2, fsvgetresult);
+
   const Type **fi2c = TypeTuple::fields(2);
   fi2c[TypeFunc::Parms+0] = TypeInstPtr::BOTTOM; // Method*
   fi2c[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM; // argument pointer
@@ -2122,6 +2132,7 @@ const TypeTuple *TypeTuple::INT_PAIR;
 const TypeTuple *TypeTuple::LONG_PAIR;
 const TypeTuple *TypeTuple::INT_CC_PAIR;
 const TypeTuple *TypeTuple::LONG_CC_PAIR;
+const TypeTuple* TypeTuple::SV_GET_RESULT;
 
 //------------------------------make-------------------------------------------
 // Make a TypeTuple from the range of a method signature

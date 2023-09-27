@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/c2/barrierSetC2.hpp"
 #include "memory/allocation.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/addnode.hpp"
@@ -1147,7 +1149,7 @@ void PhaseIdealLoop::loop_predication_follow_branches(Node *n, IdealLoopTree *lo
           stack.push(in, 1);
           break;
         } else if (in->is_IfProj() &&
-                   in->as_Proj()->is_uncommon_trap_if_pattern() &&
+                   is_uncommon_trap_if_pattern(in->as_IfProj()) &&
                    (in->in(0)->Opcode() == Op_If ||
                     in->in(0)->Opcode() == Op_RangeCheck)) {
           if (pf.to(in) * loop_trip_cnt >= 1) {
@@ -1276,7 +1278,8 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
       loop->dump_head();
     }
 #endif
-  } else {
+  } else if (!loop_predication_for_scoped_value_get(loop, if_success_proj, parse_predicate_proj, invar, reason, iff,
+                                                    new_predicate_proj)) {
     // Loop variant check (for example, range check in non-counted loop)
     // with uncommon trap.
     return false;
@@ -1422,8 +1425,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
       IfProjNode* if_proj = n->as_IfProj();
       IfNode* iff = if_proj->in(0)->as_If();
 
-      CallStaticJavaNode* call = if_proj->is_uncommon_trap_if_pattern();
-      if (call == nullptr) {
+      if (!is_uncommon_trap_if_pattern(if_proj)) {
         if (loop->is_loop_exit(iff)) {
           // stop processing the remaining projs in the list because the execution of them
           // depends on the condition of "iff" (iff->in(1)).
@@ -1439,8 +1441,8 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
           continue;
         }
       }
-      Deoptimization::DeoptReason reason = Deoptimization::trap_request_reason(call->uncommon_trap_request());
-      if (reason == Deoptimization::Reason_predicate) {
+      CallStaticJavaNode* call = if_proj->is_uncommon_trap_if_pattern();
+      if (call != nullptr && Deoptimization::trap_request_reason(call->uncommon_trap_request()) == Deoptimization::Reason_predicate) {
         break;
       }
 
@@ -1460,7 +1462,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
     while (if_proj_list.size() > 0) {
       Node* if_proj = if_proj_list.pop();
       float f = pf.to(if_proj);
-      if (if_proj->as_Proj()->is_uncommon_trap_if_pattern() &&
+      if (is_uncommon_trap_if_pattern(if_proj->as_IfProj()) &&
           f * loop_trip_cnt >= 1) {
         ParsePredicateSuccessProj* profiled_loop_parse_predicate_proj =
             profiled_loop_predicate_block->parse_predicate_success_proj();
@@ -1545,4 +1547,102 @@ bool IdealLoopTree::loop_predication( PhaseIdealLoop *phase) {
 
 bool IdealLoopTree::can_apply_loop_predication() {
   return _head->is_Loop() && !_irreducible && !tail()->is_top();
+}
+
+bool PhaseIdealLoop::is_uncommon_trap_if_pattern(IfProjNode* proj) {
+  if (proj->is_uncommon_trap_if_pattern()) {
+    return true;
+  }
+  if (proj->in(0)->in(1)->is_Bool() && proj->in(0)->in(1)->in(1)->Opcode() == Op_ScopedValueGetHitsInCache &&
+      proj->is_multi_uncommon_trap_if_pattern()) {
+    return true;
+  }
+  return false;
+}
+
+
+bool PhaseIdealLoop::loop_predication_for_scoped_value_get(IdealLoopTree* loop, IfProjNode* if_success_proj,
+                                                           ParsePredicateSuccessProj* parse_predicate_proj,
+                                                           Invariance &invar, Deoptimization::DeoptReason reason,
+                                                           IfNode* iff, IfProjNode*&new_predicate_proj) {
+  // A ScopedValueGetHitsInCache check is loop invariant if the scoped value object it is applied to is loop invariant
+  BoolNode* bol = iff->in(1)->as_Bool();
+  if (bol->in(1)->Opcode() == Op_ScopedValueGetHitsInCache && invar.is_invariant(((ScopedValueGetHitsInCacheNode*)bol->in(1))->scoped_value()) &&
+      invar.is_invariant(((ScopedValueGetHitsInCacheNode*)bol->in(1))->index1()) && invar.is_invariant(((ScopedValueGetHitsInCacheNode*)bol->in(1))->index2())) {
+    ScopedValueGetHitsInCacheNode* hits_in_the_cache = (ScopedValueGetHitsInCacheNode*) bol->in(1);
+    Node* load_from_cache = if_success_proj->find_unique_out_with(Op_ScopedValueGetLoadFromCache);
+    assert(load_from_cache->in(1) == hits_in_the_cache, "");
+    assert(if_success_proj->is_IfTrue(), "");
+    new_predicate_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr,
+                                                     reason,
+                                                     iff->Opcode());
+    Node* ctrl = new_predicate_proj->in(0)->in(0);
+    Node* new_bol = bol->clone();
+    register_new_node(new_bol, ctrl);
+    Node* new_hits_in_the_cache = hits_in_the_cache->clone();
+    register_new_node(new_hits_in_the_cache, ctrl);
+    _igvn.replace_input_of(load_from_cache, 1, new_hits_in_the_cache);
+
+    CallStaticJavaNode* call = new_predicate_proj->is_uncommon_trap_if_pattern();
+    assert(call != nullptr, "");
+
+    Node* all_mem = call->in(TypeFunc::Memory);
+    MergeMemNode* mm = all_mem->is_MergeMem() ? all_mem->as_MergeMem() : nullptr;
+    Node* raw_mem = mm != nullptr ? mm->memory_at(Compile::AliasIdxRaw) : all_mem;
+
+    // It is easier to re-create the cache load subgraph rather than trying to change the inputs of the existing one to
+    // move it out of loops
+    Node* thread = new ThreadLocalNode();
+    register_new_node(thread, C->root());
+    Node* scoped_value_cache_offset = _igvn.MakeConX(in_bytes(JavaThread::scopedValueCache_offset()));
+    set_ctrl(scoped_value_cache_offset, C->root());
+    Node* p = new AddPNode(C->top(), thread, scoped_value_cache_offset);
+    register_new_node(p, C->root());
+    Node* handle_load = LoadNode::make(_igvn, nullptr, raw_mem, p, p->bottom_type()->is_ptr(), TypeRawPtr::NOTNULL,
+                                       T_ADDRESS, MemNode::unordered);
+    _igvn.register_new_node_with_optimizer(handle_load);
+    set_subtree_ctrl(handle_load, true);
+
+    ciInstanceKlass* object_klass = ciEnv::current()->Object_klass();
+    const TypeOopPtr* etype = TypeOopPtr::make_from_klass(object_klass);
+    const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
+    const TypeAryPtr* objects_type = TypeAryPtr::make(TypePtr::BotPTR, arr0, nullptr, true, 0);
+
+    DecoratorSet decorators = C2_READ_ACCESS | IN_NATIVE;
+    C2AccessValuePtr addr(handle_load, TypeRawPtr::NOTNULL);
+    C2OptAccess access(_igvn, nullptr, raw_mem, decorators, T_OBJECT, nullptr, addr);
+    BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+    Node* load_of_cache = bs->load_at(access, objects_type);
+    set_subtree_ctrl(load_of_cache, true);
+
+    _igvn.replace_input_of(new_hits_in_the_cache, 1, load_of_cache);
+    Node* oop_mem = mm != nullptr ? mm->memory_at(C->get_alias_index(TypeAryPtr::OOPS)) : all_mem;
+    _igvn.replace_input_of(new_hits_in_the_cache, ScopedValueGetHitsInCacheNode::Memory, oop_mem);
+    _igvn.replace_input_of(new_hits_in_the_cache, 0, ctrl);
+    _igvn.replace_input_of(new_hits_in_the_cache, ScopedValueGetHitsInCacheNode::ScopedValue,
+                           invar.clone(hits_in_the_cache->scoped_value(), ctrl));
+    _igvn.replace_input_of(new_hits_in_the_cache, ScopedValueGetHitsInCacheNode::Index1,
+                           invar.clone(hits_in_the_cache->index1(), ctrl));
+    _igvn.replace_input_of(new_hits_in_the_cache, ScopedValueGetHitsInCacheNode::Index2,
+                           invar.clone(hits_in_the_cache->index2(), ctrl));
+
+    _igvn.replace_input_of(new_bol, 1, new_hits_in_the_cache);
+
+    assert(invar.is_invariant(new_bol), "");
+
+    IfNode* new_predicate_iff = new_predicate_proj->in(0)->as_If();
+    _igvn.hash_delete(new_predicate_iff);
+    new_predicate_iff->set_req(1, new_bol);
+#ifndef PRODUCT
+    if (TraceLoopPredicate) {
+      tty->print("Predicate invariant if: %d ", new_predicate_iff->_idx);
+      loop->dump_head();
+    } else if (TraceLoopOpts) {
+      tty->print("Predicate IC ");
+      loop->dump_head();
+    }
+#endif
+    return true;
+  }
+  return false;
 }

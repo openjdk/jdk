@@ -712,5 +712,42 @@ public:
 #endif
 };
 
+// The result of a ScopedValue.get()
+class ScopedValueGetResultNode : public  MultiNode {
+public:
+  enum {
+      Control = 0,
+      ScopedValue, // which ScopedValue object is this for?
+      GetResult // subgraph that produces the result
+  };
+  enum {
+      ControlOut = 0,
+      Result // The ScopedValue.get() result
+  };
+  ScopedValueGetResultNode(Compile* C, Node* ctrl, Node* sv, Node* res) : MultiNode(3) {
+    init_req(Control, ctrl);
+    init_req(ScopedValue, sv);
+    init_req(GetResult, res);
+  }
+  virtual int   Opcode() const;
+  virtual const Type* bottom_type() const { return TypeTuple::SV_GET_RESULT; }
+
+  ProjNode* result_out() {
+    return proj_out_or_null(Result);
+  }
+
+  ProjNode* control_out() {
+    return proj_out(ControlOut);
+  }
+
+  Node* scoped_value() const {
+    return in(ScopedValue);
+  }
+  Node* result_in() const {
+    return in(GetResult);
+  }
+
+  const Type* Value(PhaseGVN* phase) const;
+};
 
 #endif // SHARE_OPTO_CFGNODE_HPP

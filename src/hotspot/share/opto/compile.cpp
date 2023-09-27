@@ -403,6 +403,7 @@ void Compile::remove_useless_node(Node* dead) {
     remove_useless_late_inlines(         &_string_late_inlines, dead);
     remove_useless_late_inlines(         &_boxing_late_inlines, dead);
     remove_useless_late_inlines(&_vector_reboxing_late_inlines, dead);
+    remove_useless_late_inlines(   &_scoped_value_late_inlines, dead);
 
     if (dead->is_CallStaticJava()) {
       remove_unstable_if_trap(dead->as_CallStaticJava(), false);
@@ -461,6 +462,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
   remove_useless_late_inlines(         &_string_late_inlines, useful);
   remove_useless_late_inlines(         &_boxing_late_inlines, useful);
   remove_useless_late_inlines(&_vector_reboxing_late_inlines, useful);
+  remove_useless_late_inlines(          &_scoped_value_late_inlines, useful);
   debug_only(verify_graph_edges(true/*check for no_dead_code*/);)
 }
 
@@ -663,6 +665,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _string_late_inlines(comp_arena(), 2, 0, nullptr),
                   _boxing_late_inlines(comp_arena(), 2, 0, nullptr),
                   _vector_reboxing_late_inlines(comp_arena(), 2, 0, nullptr),
+                  _scoped_value_late_inlines(comp_arena(), 2, 0, nullptr),
                   _late_inlines_pos(0),
                   _number_of_mh_late_inlines(0),
                   _oom(false),
@@ -1108,6 +1111,8 @@ void Compile::Init(bool aliasing) {
   Copy::zero_to_bytes(_alias_cache, sizeof(_alias_cache));
   // A null adr_type hits in the cache right away.  Preload the right answer.
   probe_alias_cache(nullptr)->_index = AliasIdxTop;
+  _has_scoped_value_invalidate = false;
+  _has_scoped_value_get_nodes = false;
 }
 
 //---------------------------init_start----------------------------------------
@@ -2021,6 +2026,73 @@ void Compile::inline_boxing_calls(PhaseIterGVN& igvn) {
   }
 }
 
+void Compile::inline_scoped_value_calls(PhaseIterGVN& igvn) {
+  if (_scoped_value_late_inlines.length() > 0) {
+    PhaseGVN* gvn = initial_gvn();
+    set_inlining_incrementally(true);
+
+    igvn_worklist()->ensure_empty(); // should be done with igvn
+
+    _late_inlines_pos = _late_inlines.length();
+
+    while (_scoped_value_late_inlines.length() > 0) {
+      CallGenerator* cg = _scoped_value_late_inlines.pop();
+      if (has_scoped_value_invalidate()) {
+        // ScopedValue$Cache.invalidate() is called so pessimistically assume we can't optimize ScopedValue.get() and
+        // enqueue the call for regular late inlining
+        cg->set_process_result(false);
+        C->add_late_inline(cg);
+        continue;
+      }
+      C->set_has_scoped_value_get_nodes(true);
+      CallNode* call = cg->call_node();
+      CallProjections projs;
+      call->extract_projections(&projs, true);
+      Node* sv = call->in(TypeFunc::Parms);
+      Node* control_out = projs.fallthrough_catchproj;
+      Node* res = projs.resproj;
+      if (res == nullptr) {
+        res = gvn->transform(new ProjNode(call, TypeFunc::Parms));
+      }
+      control_out = control_out->clone();
+      gvn->set_type_bottom(control_out);
+      gvn->record_for_igvn(control_out);
+      res = res->clone();
+      gvn->set_type_bottom(res);
+      gvn->record_for_igvn(res);
+
+      // Add a ScopedValueGetResult node after the call with the result of ScopedValue.get() as input
+      ScopedValueGetResultNode* sv_get_result = new ScopedValueGetResultNode(C, control_out, sv, res);
+      Node* sv_get_resultx = gvn->transform(sv_get_result);
+      assert(sv_get_resultx == sv_get_result, "");
+      Node* control_proj = gvn->transform(new ProjNode(sv_get_result, ScopedValueGetResultNode::ControlOut));
+      Node* res_proj = gvn->transform(new ProjNode(sv_get_result, ScopedValueGetResultNode::Result));
+
+      C->gvn_replace_by(projs.fallthrough_catchproj, control_proj);
+      if (projs.resproj != nullptr) {
+        C->gvn_replace_by(projs.resproj, res_proj);
+      }
+
+      Node* control_projx = gvn->transform(control_proj);
+      assert(control_projx == control_proj, "");
+      Node* res_projx = gvn->transform(res_proj);
+      assert(res_projx == res_proj, "");
+
+      // Inline the call to ScopedValue.get(). That triggers the execution of LateInlineScopedValueCallGenerator::process_result()
+      cg->do_late_inline();
+      if (failing()) return;
+
+      C->set_has_split_ifs(true);
+    }
+
+    inline_incrementally_cleanup(igvn);
+
+    set_inlining_incrementally(false);
+
+    inline_incrementally(igvn);
+  }
+}
+
 bool Compile::inline_incrementally_one() {
   assert(IncrementalInline, "incremental inlining should be on");
 
@@ -2255,6 +2327,12 @@ void Compile::Optimize() {
   inline_incrementally(igvn);
 
   print_method(PHASE_INCREMENTAL_INLINE, 2);
+
+  if (failing())  return;
+
+  inline_scoped_value_calls(igvn);
+
+  print_method(PHASE_INCREMENTAL_SCOPED_VALUE_INLINE, 2);
 
   if (failing())  return;
 
@@ -3840,6 +3918,12 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       Node* cmp = new CmpLNode(andl, n->in(2));
       n->subsume_by(cmp, this);
     }
+    break;
+  }
+  case Op_ScopedValueGetResult:
+  case Op_ScopedValueGetHitsInCache:
+  case Op_ScopedValueGetLoadFromCache: {
+    ShouldNotReachHere();
     break;
   }
   default:

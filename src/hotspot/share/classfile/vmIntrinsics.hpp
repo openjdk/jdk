@@ -294,6 +294,11 @@ class methodHandle;
    do_signature(setScopedValueCache_signature,                   "([Ljava/lang/Object;)V")                              \
   do_intrinsic(_findScopedValueBindings,  java_lang_Thread,       findScopedValueBindings_name, void_object_signature, F_SN) \
    do_name(     findScopedValueBindings_name,                    "findScopedValueBindings")                             \
+  do_intrinsic(_SVget,                   java_lang_ScopedValue,   get_name, void_object_signature, F_R)                 \
+  do_intrinsic(_SVslowGet,               java_lang_ScopedValue,   slowGet_name, void_object_signature, F_R)             \
+   do_name(     slowGet_name,                                    "slowGet")                                             \
+  do_intrinsic(_SVCacheInvalidate,       java_lang_ScopedValue_Cache, invalidate_name, int_void_signature, F_S)         \
+   do_name(     invalidate_name,                                 "invalidate")                                          \
                                                                                                                         \
   do_intrinsic(_setCurrentThread,         java_lang_Thread,       setCurrentThread_name, thread_void_signature,   F_RN) \
    do_name(     setCurrentThread_name,                           "setCurrentThread")                                    \

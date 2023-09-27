@@ -28,6 +28,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/subnode.hpp"
 #include "utilities/population_count.hpp"
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -368,3 +369,22 @@ const Type* ExpandBitsNode::Value(PhaseGVN* phase) const {
 
   return bitshuffle_value(src_type, mask_type, Op_ExpandBits, bt);
 }
+
+Node* ScopedValueGetLoadFromCacheNode::scoped_value() const {
+  Node* hits_in_cache = in(1);
+  assert(hits_in_cache->Opcode() == Op_ScopedValueGetHitsInCache, "");
+  return ((ScopedValueGetHitsInCacheNode*)hits_in_cache)->scoped_value();
+}
+
+IfNode* ScopedValueGetLoadFromCacheNode::iff() const {
+  return in(0)->in(0)->as_If();
+}
+
+#ifdef ASSERT
+void ScopedValueGetLoadFromCacheNode::verify() const {
+  assert(in(0)->Opcode() == Op_IfTrue, "");
+  assert(in(0)->in(0)->in(1)->is_Bool(), "");
+  assert(in(0)->in(0)->in(1)->in(1)->Opcode() == Op_ScopedValueGetHitsInCache, "");
+  assert(in(0)->in(0)->in(1)->in(1) == in(1), "");
+}
+#endif
