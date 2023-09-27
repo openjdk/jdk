@@ -244,6 +244,8 @@ public class Threads {
                 // We should have found the owner. However, the code can run concurrently with
                 // Java code and locking state can change at any time. This code is not
                 // expected to be precise, so we return null here.
+                System.out.println("Warning: We failed to find a thread that owns an anonymous lock. This is likely");
+                System.out.println("due to the JVM currently running a GC. Locking information may not be accurate.");
                 return null;
             }
             // Owner can only be threads at this point.
