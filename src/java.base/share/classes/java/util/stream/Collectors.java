@@ -336,9 +336,12 @@ public final class Collectors {
      * {@code String}, in encounter order
      */
     public static Collector<CharSequence, ?, String> joining() {
-        return new CollectorImpl<CharSequence, StringBuilder, String>(
+        return new CollectorImpl<>(
                 StringBuilder::new, StringBuilder::append,
-                (r1, r2) -> { r1.append(r2); return r1; },
+                (r1, r2) -> {
+                    r1.append(r2);
+                    return r1;
+                },
                 StringBuilder::toString, CH_NOID);
     }
 
@@ -902,9 +905,12 @@ public final class Collectors {
             }
         }
 
-        return new CollectorImpl<T, OptionalBox, Optional<T>>(
+        return new CollectorImpl<>(
                 OptionalBox::new, OptionalBox::accept,
-                (a, b) -> { if (b.present) a.accept(b.value); return a; },
+                (a, b) -> {
+                    if (b.present) a.accept(b.value);
+                    return a;
+                },
                 a -> Optional.ofNullable(a.value), CH_NOID);
     }
 
@@ -1816,10 +1822,13 @@ public final class Collectors {
      */
     public static <T>
     Collector<T, ?, IntSummaryStatistics> summarizingInt(ToIntFunction<? super T> mapper) {
-        return new CollectorImpl<T, IntSummaryStatistics, IntSummaryStatistics>(
+        return new CollectorImpl<>(
                 IntSummaryStatistics::new,
                 (r, t) -> r.accept(mapper.applyAsInt(t)),
-                (l, r) -> { l.combine(r); return l; }, CH_ID);
+                (l, r) -> {
+                    l.combine(r);
+                    return l;
+                }, CH_ID);
     }
 
     /**
@@ -1836,10 +1845,13 @@ public final class Collectors {
      */
     public static <T>
     Collector<T, ?, LongSummaryStatistics> summarizingLong(ToLongFunction<? super T> mapper) {
-        return new CollectorImpl<T, LongSummaryStatistics, LongSummaryStatistics>(
+        return new CollectorImpl<>(
                 LongSummaryStatistics::new,
                 (r, t) -> r.accept(mapper.applyAsLong(t)),
-                (l, r) -> { l.combine(r); return l; }, CH_ID);
+                (l, r) -> {
+                    l.combine(r);
+                    return l;
+                }, CH_ID);
     }
 
     /**
@@ -1856,10 +1868,13 @@ public final class Collectors {
      */
     public static <T>
     Collector<T, ?, DoubleSummaryStatistics> summarizingDouble(ToDoubleFunction<? super T> mapper) {
-        return new CollectorImpl<T, DoubleSummaryStatistics, DoubleSummaryStatistics>(
+        return new CollectorImpl<>(
                 DoubleSummaryStatistics::new,
                 (r, t) -> r.accept(mapper.applyAsDouble(t)),
-                (l, r) -> { l.combine(r); return l; }, CH_ID);
+                (l, r) -> {
+                    l.combine(r);
+                    return l;
+                }, CH_ID);
     }
 
     /**
