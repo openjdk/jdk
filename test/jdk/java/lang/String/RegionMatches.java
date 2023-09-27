@@ -37,8 +37,8 @@ public class RegionMatches {
   private final String s1_LATIN1 = "abc";
   private final String s2_LATIN1 = "def";
 
-  private final byte[] b1_UTF16 = new byte[]{0x04, 0x3d, 0x04, 0x30, 0x04, 0x36, 0x04, 0x34};
-  private final byte[] b2_UTF16 = new byte[]{0x04, 0x32, 0x00, 0x20, 0x04, 0x41, 0x04, 0x42};
+  private final String s1_UTF16 = "\u041e\u0434\u043d\u0430\u0436\u0434\u044b";
+  private final String s2_UTF16 = "\u0432\u0441\u0442\u0443\u0434\u0435\u043d";
 
   @Test
   public void TestLATIN1() {
@@ -50,8 +50,6 @@ public class RegionMatches {
   @Test
   public void TestUTF16() throws UnsupportedEncodingException{
       // Test for 8316879
-      String s1_UTF16 = new String(b1_UTF16, "UTF-16");
-      String s2_UTF16 = new String(b2_UTF16, "UTF-16");
       boolean result = s1_UTF16.regionMatches(0, s2_UTF16, 0, Integer.MIN_VALUE + 1);
       assertTrue(result, "Integer overflow in RegionMatches when comparing UTF16 strings");
   }
