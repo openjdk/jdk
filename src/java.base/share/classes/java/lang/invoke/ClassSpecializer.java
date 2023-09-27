@@ -946,7 +946,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
     }
 
     static MethodTypeDesc methodSig(MethodType mt) {
-        return MethodTypeDesc.ofDescriptor(mt.toMethodDescriptorString());
+        return mt.describeConstable().get();
     }
     static String classSig(Class<?> cls) {
         if (cls.isPrimitive() || cls.isArray())
