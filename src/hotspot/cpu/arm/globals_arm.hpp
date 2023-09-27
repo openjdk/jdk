@@ -73,6 +73,9 @@ define_pd_global(bool, CompactStrings, false);
 
 define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
 
+// Not implemented yet
+define_pd_global(bool, SecondarySuperMissBackoff, 0);
+
 #define ARCH_FLAGS(develop,     \
                    product,     \
                    notproduct,  \

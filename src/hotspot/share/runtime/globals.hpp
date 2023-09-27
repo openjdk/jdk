@@ -1992,7 +1992,7 @@ const int ObjectAlignmentInBytes = 8;
           "(default) disables native heap trimming.")                       \
           range(0, UINT_MAX)                                                \
                                                                             \
-  product(uint, SecondarySuperMissBackoff, 1000, EXPERIMENTAL,              \
+  product_pd(uint, SecondarySuperMissBackoff, DIAGNOSTIC,                   \
           "How many misses to accept before updating the secondary super "  \
           "cache slot. This mitigates cache slot contention in "            \
           "pathological cases. Use 0 to disable.")                          \
