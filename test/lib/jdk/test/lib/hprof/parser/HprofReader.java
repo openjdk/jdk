@@ -914,19 +914,5 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
     private void warn(String msg) {
         System.out.println("WARNING: " + msg);
     }
-/*
-    //
-    // A trivial data-holder class for HPROF_GC_ROOT_THREAD_OBJ.
-    //
-    private class ThreadObject {
 
-        long threadId;
-        int stackSeq;
-
-        ThreadObject(long threadId, int stackSeq) {
-            this.threadId = threadId;
-            this.stackSeq = stackSeq;
-        }
-    }
-*/
 }

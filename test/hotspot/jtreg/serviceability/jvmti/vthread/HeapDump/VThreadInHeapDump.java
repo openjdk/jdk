@@ -48,10 +48,10 @@ import jdk.test.lib.hprof.parser.Reader;
  * @library /test/lib
  * @run main/othervm
  *      -Djdk.virtualThreadScheduler.parallelism=1
- *      VtreadInHeapDump
+ *      VThreadInHeapDump
  */
 
-class VtreadInHeapDumpTarg extends LingeredApp {
+class VThreadInHeapDumpTarg extends LingeredApp {
 
     public static class VThreadUnmountedReferenced {
     }
@@ -150,14 +150,14 @@ class VtreadInHeapDumpTarg extends LingeredApp {
     }
 
     public static void main(String[] args) {
-        VtreadInHeapDumpTarg test = new VtreadInHeapDumpTarg();
+        VThreadInHeapDumpTarg test = new VThreadInHeapDumpTarg();
         test.runTest(args);
     }
 
 }
 
 
-public class VtreadInHeapDump {
+public class VThreadInHeapDump {
 
     public static void main(String[] args) throws Exception {
         File dumpFile = new File("Myheapdump.hprof");
@@ -168,7 +168,7 @@ public class VtreadInHeapDump {
     private static void createDump(File dumpFile) throws Exception {
         LingeredApp theApp = null;
         try {
-            theApp = new VtreadInHeapDumpTarg();
+            theApp = new VThreadInHeapDumpTarg();
 
             LingeredApp.startApp(theApp, "-Djdk.virtualThreadScheduler.parallelism=1");
 
@@ -236,9 +236,9 @@ public class VtreadInHeapDump {
             }
 
             // Verify objects from thread stacks are dumped.
-            test(snapshot, VtreadInHeapDumpTarg.VThreadMountedReferenced.class);
-            test(snapshot, VtreadInHeapDumpTarg.PThreadReferenced.class);
-            //test(snapshot, VtreadInHeapDumpTarg.VThreadUnmountedReferenced.class);
+            test(snapshot, VThreadInHeapDumpTarg.VThreadMountedReferenced.class);
+            test(snapshot, VThreadInHeapDumpTarg.PThreadReferenced.class);
+            //test(snapshot, VThreadInHeapDumpTarg.VThreadUnmountedReferenced.class);
         }
 
     }
