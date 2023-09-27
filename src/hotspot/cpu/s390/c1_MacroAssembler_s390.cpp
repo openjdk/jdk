@@ -107,7 +107,7 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   assert(LockingMode != LM_MONITOR, "LM_MONITOR is already handled, by emit_lock()");
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    fast_lock(Roop, Rmark, tmp, slow_case);
+    lightweight_lock(Roop, Rmark, tmp, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     NearLabel done;
     // and mark it as unlocked.
@@ -171,7 +171,7 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
     z_lgr(tmp, Rmark);
     z_nill(tmp, markWord::monitor_value);
     z_brnz(slow_case);
-    fast_unlock(Roop, Rmark, tmp, slow_case);
+    lightweight_unlock(Roop, Rmark, tmp, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     // Test if object header is pointing to the displaced header, and if so, restore
     // the displaced header in the object. If the object header is not pointing to

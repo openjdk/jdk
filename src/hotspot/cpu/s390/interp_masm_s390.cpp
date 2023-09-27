@@ -1030,7 +1030,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   }
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    fast_lock(object, /* mark word */ header, tmp, slow_case);
+    lightweight_lock(object, /* mark word */ header, tmp, slow_case);
   } else if (LockingMode == LM_LEGACY) {
 
     // Set header to be (markWord of object | UNLOCK_VALUE).
@@ -1088,7 +1088,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   // slow case of monitor enter.
   bind(slow_case);
   if (LockingMode == LM_LIGHTWEIGHT) {
-    // for fast locking we need to use monitorenter_obj, see interpreterRuntime.cpp
+    // for lightweight locking we need to use monitorenter_obj, see interpreterRuntime.cpp
     call_VM(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj),
             object);
@@ -1187,7 +1187,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
     z_nill(tmp, markWord::monitor_value);
     z_brne(slow_case);
 
-    fast_unlock(object, header, tmp, slow_case);
+    lightweight_unlock(object, header, tmp, slow_case);
 
     z_bru(done);
   } else {

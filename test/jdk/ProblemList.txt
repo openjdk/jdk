@@ -413,6 +413,7 @@ java/awt/Modal/ToBack/ToBackNonModal3Test.java 8196441 macosx-all,linux-all
 java/awt/Modal/ToBack/ToBackNonModal4Test.java 8196441 macosx-all,linux-all
 java/awt/Modal/ToBack/ToBackNonModal5Test.java 8196441 macosx-all
 javax/print/PrintSEUmlauts/PrintSEUmlauts.java 8135174 generic-all
+java/awt/font/Rotate/RotatedTextTest.java 8219641 linux-all
 java/awt/font/TextLayout/LigatureCaretTest.java 8266312  generic-all
 java/awt/image/VolatileImage/CustomCompositeTest.java 8199002 windows-all,linux-all
 java/awt/image/VolatileImage/GradientPaints.java 8199003 linux-all
