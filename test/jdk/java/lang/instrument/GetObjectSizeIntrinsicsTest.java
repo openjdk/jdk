@@ -278,12 +278,12 @@
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm -Xmx8g
+ * @run main/othervm/timeout=240 -Xmx8g
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -Xint
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest large
  *
- * @run main/othervm -Xmx8g
+ * @run main/othervm/timeout=240 -Xmx8g
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -Xbatch -XX:TieredStopAtLevel=1
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest large
