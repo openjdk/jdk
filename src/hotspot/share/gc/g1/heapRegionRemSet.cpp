@@ -123,10 +123,6 @@ void HeapRegionRemSet::clean_code_roots(HeapRegion* hr) {
   _code_roots.clean(hr);
 }
 
-void HeapRegionRemSet::remove_dead_entries() {
-  _code_roots.remove_dead_entries();
-}
-
 size_t HeapRegionRemSet::code_roots_mem_size() {
   return _code_roots.mem_size();
 }

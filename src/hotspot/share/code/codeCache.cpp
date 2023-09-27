@@ -985,14 +985,14 @@ void CodeCache::register_unlinked(nmethod* nm) {
 }
 
 // Flush all the nmethods the GC unlinked
-void CodeCache::flush_unlinked_nmethods(bool do_unregister_nmethods) {
+void CodeCache::flush_unlinked_nmethods() {
   nmethod* nm = _unlinked_head;
   _unlinked_head = nullptr;
   size_t freed_memory = 0;
   while (nm != nullptr) {
     nmethod* next = nm->unlinked_next();
     freed_memory += nm->total_size();
-    nm->flush(do_unregister_nmethods);
+    nm->flush();
     if (next == nm) {
       // Self looped means end of list
       break;
@@ -1023,8 +1023,8 @@ void CodeCache::increment_unloading_cycle() {
   }
 }
 
-CodeCache::UnloadingScope::UnloadingScope(BoolObjectClosure* is_alive, bool do_unregister_nmethods)
-  : _is_unloading_behaviour(is_alive), _do_unregister_nmethods(do_unregister_nmethods)
+CodeCache::UnloadingScope::UnloadingScope(BoolObjectClosure* is_alive)
+  : _is_unloading_behaviour(is_alive)
 {
   _saved_behaviour = IsUnloadingBehaviour::current();
   IsUnloadingBehaviour::set_current(&_is_unloading_behaviour);
@@ -1035,7 +1035,7 @@ CodeCache::UnloadingScope::UnloadingScope(BoolObjectClosure* is_alive, bool do_u
 CodeCache::UnloadingScope::~UnloadingScope() {
   IsUnloadingBehaviour::set_current(_saved_behaviour);
   DependencyContext::cleaning_end();
-  CodeCache::flush_unlinked_nmethods(_do_unregister_nmethods);
+  CodeCache::flush_unlinked_nmethods();
 }
 
 void CodeCache::verify_oops() {

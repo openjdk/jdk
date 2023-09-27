@@ -1811,7 +1811,7 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
                                           ShenandoahPhaseTimings::full_gc_purge_class_unload :
                                           ShenandoahPhaseTimings::degen_gc_purge_class_unload;
     ShenandoahIsAliveSelector is_alive;
-    CodeCache::UnloadingScope scope(is_alive.is_alive_closure(), true /* do_unregister_nmethods */);
+    CodeCache::UnloadingScope scope(is_alive.is_alive_closure());
     ShenandoahGCPhase gc_phase(phase);
     ShenandoahGCWorkerPhase worker_phase(phase);
     bool purged_class = SystemDictionary::do_unloading(gc_timer());

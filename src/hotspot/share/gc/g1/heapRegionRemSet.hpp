@@ -156,8 +156,6 @@ public:
   void code_roots_do(CodeBlobClosure* blk) const;
   // Clean out code roots not having an oop pointing into this region any more.
   void clean_code_roots(HeapRegion* hr);
-  // Removes all unlinked nmethods from code roots.
-  void remove_dead_entries();
 
   // Returns the number of elements in _code_roots
   size_t code_roots_list_length() const {

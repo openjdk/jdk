@@ -174,9 +174,7 @@ protected:
 
   void* _gc_data;
 
-  // The parameter controls whether CollectedHeap::unregister_nmethod() is called
-  // during flush. If not, the caller is responsible for doing this.
-  virtual void flush(bool do_unregister_nmethod = true) = 0;
+  virtual void flush() = 0;
 
 private:
   DeoptimizationStatus deoptimization_status() const {

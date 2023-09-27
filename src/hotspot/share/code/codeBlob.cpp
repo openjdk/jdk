@@ -173,7 +173,7 @@ void RuntimeBlob::free(RuntimeBlob* blob) {
   MemoryService::track_code_cache_memory_usage();
 }
 
-void CodeBlob::flush(bool do_unregister_nmethod) {
+void CodeBlob::flush() {
   if (_oop_maps != nullptr) {
     delete _oop_maps;
     _oop_maps = nullptr;

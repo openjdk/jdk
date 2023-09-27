@@ -1442,7 +1442,7 @@ void nmethod::unlink() {
   CodeCache::register_unlinked(this);
 }
 
-void nmethod::flush(bool do_unregister_nmethod) {
+void nmethod::flush() {
   MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // completely deallocate this method
@@ -1462,12 +1462,10 @@ void nmethod::flush(bool do_unregister_nmethod) {
     ec = next;
   }
 
-  if (do_unregister_nmethod) {
-    Universe::heap()->unregister_nmethod(this);
-  }
+  Universe::heap()->unregister_nmethod(this);
   CodeCache::unregister_old_nmethod(this);
 
-  CodeBlob::flush(do_unregister_nmethod);
+  CodeBlob::flush();
   CodeCache::free(this);
 }
 

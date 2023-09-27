@@ -1264,9 +1264,6 @@ public:
   // Performs cleaning of data structures after class unloading.
   void complete_cleaning(bool class_unloading_occurred);
 
-  // Removes unlinked nmethods from all code root sets after class unloading.
-  void remove_dead_entries_from_code_root_sets();
-
   // Verification
 
   // Perform any cleanup actions necessary before allowing a verification.

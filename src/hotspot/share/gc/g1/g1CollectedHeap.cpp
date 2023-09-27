@@ -2595,35 +2595,6 @@ void G1CollectedHeap::complete_cleaning(bool class_unloading_occurred) {
   workers()->run_task(&unlink_task);
 }
 
-class G1RemoveDeadFromCodeRootSetsTask : public WorkerTask {
-  HeapRegionClaimer _hrclaimer;
-
-  class RemoveDeadHeapRegionClosure : public HeapRegionClosure {
-  public:
-    RemoveDeadHeapRegionClosure() { }
-
-    bool do_heap_region(HeapRegion* hr) {
-      hr->rem_set()->remove_dead_entries();
-      return false;
-    }
-  } _cl;
-
-public:
-  G1RemoveDeadFromCodeRootSetsTask(uint num_workers)
-  : WorkerTask("G1 Remove Dead From Code Root Set Task"),
-    _hrclaimer(num_workers) { }
-
-  void work(uint worker_id) {
-    G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&_cl, &_hrclaimer, worker_id);
-  }
-};
-
-void G1CollectedHeap::remove_dead_entries_from_code_root_sets() {
-  uint num_workers = workers()->active_workers();
-  G1RemoveDeadFromCodeRootSetsTask remove_dead_task(num_workers);
-  workers()->run_task(&remove_dead_task);
-}
-
 bool G1STWSubjectToDiscoveryClosure::do_object_b(oop obj) {
   assert(obj != nullptr, "must not be null");
   assert(_g1h->is_in_reserved(obj), "Trying to discover obj " PTR_FORMAT " not in heap", p2i(obj));

@@ -53,8 +53,6 @@ class G1CodeRootSet {
 
   // Remove all nmethods which no longer contain pointers into our "owner" region.
   void clean(HeapRegion* owner);
-  // Remove all nmethods which were unlinked after class unloading.
-  void remove_dead_entries();
 
   bool is_empty() { return length() == 0;}
 

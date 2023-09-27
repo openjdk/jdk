@@ -2052,7 +2052,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
 
   {
     GCTraceTime(Debug, gc, phases) tm_m("Class Unloading", &_gc_timer);
-    CodeCache::UnloadingScope scope(is_alive_closure(), true /* do_unregister_nmethods */);
+    CodeCache::UnloadingScope scope(is_alive_closure());
 
     // Follow system dictionary roots and unload classes.
     bool purged_class = SystemDictionary::do_unloading(&_gc_timer);

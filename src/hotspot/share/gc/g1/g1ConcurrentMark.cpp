@@ -1694,10 +1694,9 @@ void G1ConcurrentMark::weak_refs_work() {
   // Unload Klasses, String, Code Cache, etc.
   if (ClassUnloadingWithConcurrentMark) {
     GCTraceTime(Debug, gc, phases) debug("Class Unloading", _gc_timer_cm);
-    CodeCache::UnloadingScope scope(&g1_is_alive, false /* do_unregister_nmethods */);
+    CodeCache::UnloadingScope scope(&g1_is_alive);
     bool purged_classes = SystemDictionary::do_unloading(_gc_timer_cm);
     _g1h->complete_cleaning(purged_classes);
-    _g1h->remove_dead_entries_from_code_root_sets();
   }
 }
 

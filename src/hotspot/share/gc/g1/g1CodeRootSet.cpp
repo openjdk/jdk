@@ -191,15 +191,6 @@ public:
     }
   }
 
-  // Removes dead/unlinked entries.
-  void remove_dead_entries() {
-    auto delete_check =
-      [&] (G1CodeRootSetHashTableValue* value) {
-        return value->_nmethod->unlinked_next() != nullptr;
-      };
-    clean(delete_check);
-  }
-
   // Calculate the log2 of the table size we want to shrink to.
   size_t log2_target_shrink_size(size_t current_size) const {
     // A table with the new size should be at most filled by this factor. Otherwise
@@ -266,11 +257,6 @@ G1CodeRootSet::~G1CodeRootSet() {
 bool G1CodeRootSet::remove(nmethod* method) {
   assert(!_is_iterating, "should not mutate while iterating the table");
   return _table->remove(method);
-}
-
-void G1CodeRootSet::remove_dead_entries() {
-  assert(!_is_iterating, "should not mutate while iterating the table");
-  _table->remove_dead_entries();
 }
 
 bool G1CodeRootSet::contains(nmethod* method) {
