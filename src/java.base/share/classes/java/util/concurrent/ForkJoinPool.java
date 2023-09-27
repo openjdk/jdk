@@ -1631,18 +1631,21 @@ public class ForkJoinPool extends AbstractExecutorService {
         // misc
 
         /**
-         * Unless already closed, sets closed status, cancels tasks,
-         * and interrupts if a worker
+         * Sets closed status, interrupts if a worker, and unless
+         * already closed, cancels tasks,
          */
         final void close() {
-            Thread o;
-            if (closed == 0 && U.getAndSetInt(this, CLOSED, 1) == 0) {
-                if ((o = owner) != null) {
-                    try {
-                        o.interrupt();
-                    } catch (Throwable ignore) {
-                    }
+            Thread o = owner;
+            int wasClosed = closed;
+            if (wasClosed == 0)
+                wasClosed = U.getAndSetInt(this, CLOSED, 1);
+            if (o != null && (wasClosed == 0 || !o.isInterrupted())) {
+                try {
+                    o.interrupt();
+                } catch (Throwable ignore) {
                 }
+            }
+            if (wasClosed == 0) {
                 for (ForkJoinTask<?> t; (t = poll(null)) != null; ) {
                     try {
                         t.cancel(false);
@@ -1979,8 +1982,9 @@ public class ForkJoinPool extends AbstractExecutorService {
     }
 
     /**
-     * Reactivates the given worker, and possibly others if not top of
-     * ctl stack. Needed during shutdown to ensure release on termination.
+     * Reactivates the given worker, and possibly interrupts others if
+     * not top of ctl stack. Called only during shutdown to ensure release
+     * on termination.
      */
     private void reactivate(WorkQueue w) {
         for (long c = ctl;;) {
@@ -1994,8 +1998,12 @@ public class ForkJoinPool extends AbstractExecutorService {
                               (v.stackPred & LMASK))))) {
                 Thread t;
                 v.phase = sp;
-                if ((t = v.parker) != null)
-                    U.unpark(t);
+                if ((t = v.parker) != null) {
+                    try {
+                        t.interrupt();
+                    } catch (Throwable ignore) {
+                    }
+                }
                 if (v == w)
                     break;
             }
@@ -2058,8 +2066,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5;  // xorshift
                 if ((runState & STOP) != 0)                // terminating
                     break;
-                if (window == (window = scan(w, window, r)) &&
-                    window >= 0L) {                        // empty scan
+                if ((window = scan(w, window, r)) >= 0L) { // empty scan
                     long c = ctl;                          // try to inactivate
                     int idlePhase = phase + IDLE;
                     long qc = (((phase + (IDLE << 1)) & LMASK) |
@@ -2773,7 +2780,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         int e, isShutdown;
         if (((e = runState) & STOP) == 0) {
             if (now)
-                getAndBitwiseOrRunState(e = STOP | SHUTDOWN);
+                runState = e = (lockRunState() + RS_LOCK) | STOP | SHUTDOWN;
             else {
                 if ((isShutdown = (e & SHUTDOWN)) == 0 && enable)
                     getAndBitwiseOrRunState(isShutdown = SHUTDOWN);
@@ -2782,10 +2789,11 @@ public class ForkJoinPool extends AbstractExecutorService {
             }
         }
         if ((e & (STOP | TERMINATED)) == STOP) { // help terminate
+            int r = (int)Thread.currentThread().threadId(); // stagger traversals
             WorkQueue[] qs = queues; WorkQueue q;
             int n = (qs == null) ? 0 : qs.length;
-            for (int i = 0; i < n; ++i) {
-                if ((q = qs[i]) != null)
+            for (int l = n; l > 0; --l, ++r) {
+                if ((q = qs[r & SMASK & (n - 1)]) != null)
                     q.close();
             }
             if (((e = runState) & TERMINATED) == 0 && ctl == 0L) {
