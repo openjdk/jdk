@@ -178,7 +178,7 @@ ifeq ($(TEST_JOBS), 0)
       c = c * $(TEST_JOBS_FACTOR_JDL); \
       c = c * $(TEST_JOBS_FACTOR_MACHINE); \
       if (c < 1) c = 1; \
-      printf "%.0f", c; \
+      printf "%d", c; \
     }')
 endif
 
