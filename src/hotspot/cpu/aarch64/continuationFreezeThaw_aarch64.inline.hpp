@@ -62,7 +62,7 @@ inline frame FreezeBase::sender(const frame& f) {
   intptr_t** link_addr = link_address<FKind>(f);
 
   intptr_t* sender_sp = (intptr_t*)(link_addr + frame::sender_sp_offset); //  f.unextended_sp() + (fsize/wordSize); //
-  address sender_pc = (address) *(sender_sp-1);
+  address sender_pc = ContinuationHelper::return_address_at(sender_sp - 1);
   assert(sender_sp != f.sp(), "must have changed");
 
   int slot = 0;
