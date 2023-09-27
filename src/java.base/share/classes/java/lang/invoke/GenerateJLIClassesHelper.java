@@ -516,18 +516,15 @@ class GenerateJLIClassesHelper {
      * a class with a specified name.
      */
     private static byte[] generateCodeBytesForLFs(String className, String[] names, LambdaForm[] forms) {
-        return Classfile.of().build(ClassDesc.ofInternalName(className), new Consumer<ClassBuilder>() {
-            @Override
-            public void accept(ClassBuilder clb) {
-                clb.withFlags(Classfile.ACC_PRIVATE + Classfile.ACC_FINAL + Classfile.ACC_SUPER);
-                clb.withSuperclass(InvokerBytecodeGenerator.INVOKER_SUPER_DESC);
-                clb.withVersion(CLASSFILE_VERSION, 0);
-                clb.with(SourceFileAttribute.of(clb.constantPool().utf8Entry(className.substring(className.lastIndexOf('/') + 1))));
-                for (int i = 0; i < forms.length; i++) {
-                    InvokerBytecodeGenerator g
-                            = new InvokerBytecodeGenerator(className, names[i], forms[i], forms[i].methodType());
-                    g.addMethod(clb);
-                }
+        return Classfile.of().build(ClassDesc.ofInternalName(className), clb -> {
+            clb.withFlags(Classfile.ACC_PRIVATE + Classfile.ACC_FINAL + Classfile.ACC_SUPER);
+            clb.withSuperclass(InvokerBytecodeGenerator.INVOKER_SUPER_DESC);
+            clb.withVersion(CLASSFILE_VERSION, 0);
+            clb.with(SourceFileAttribute.of(clb.constantPool().utf8Entry(className.substring(className.lastIndexOf('/') + 1))));
+            for (int i = 0; i < forms.length; i++) {
+                InvokerBytecodeGenerator g
+                        = new InvokerBytecodeGenerator(className, names[i], forms[i], forms[i].methodType());
+                g.addMethod(clb);
             }
         });
     }
