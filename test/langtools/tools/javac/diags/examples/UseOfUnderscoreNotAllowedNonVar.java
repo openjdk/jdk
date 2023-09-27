@@ -21,8 +21,10 @@
  * questions.
  */
 
-// key: compiler.err.use.of.underscore.not.allowed
+// key: compiler.err.use.of.underscore.not.allowed.non.variable
 
-class UseOfUnderscoreNotAllowed {
-    private int a = 0, _ = 1;
+import java.util.function.*;
+
+class UseOfUnderscoreNotAllowedNonVar {
+    IntBinaryOperator f = (int x, int y) -> _ + x;
 }

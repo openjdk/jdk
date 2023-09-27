@@ -110,6 +110,12 @@ public class UnnamedErrors {
         for (int _[] : new int[][]{new int[]{1}, new int[]{2}}) { }
     }
 
+    void testUnderscoreInExpression() {
+        for(String s : _) {
+            int i = 1;
+        }
+    }
+
     class Lock implements AutoCloseable {
         @Override
         public void close() {}
