@@ -619,8 +619,8 @@ class InvokerBytecodeGenerator {
                                 case SELECT_ALTERNATIVE:
                                     assert lambdaForm.isSelectAlternative(i);
                                     if (PROFILE_GWT) {
-                                        assert(name.arguments[0] instanceof Name &&
-                                                ((Name)name.arguments[0]).refersTo(MethodHandleImpl.class, "profileBoolean"));
+                                        assert(name.arguments[0] instanceof Name n &&
+                                                n.refersTo(MethodHandleImpl.class, "profileBoolean"));
                                         mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(INJECTEDPROFILE)));
                                     }
                                     onStack = emitSelectAlternative(cob, name, lambdaForm.names[i+1]);
