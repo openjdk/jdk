@@ -271,7 +271,7 @@ public class EATests extends TestScaffold {
         public final boolean EliminateAllocations;
         public final boolean DeoptimizeObjectsALot;
         public final boolean DoEscapeAnalysis;
-        public final boolean ZGCIsSelected;
+        public final boolean ConcurrentGCIsSelected;
         public final boolean StressReflectiveCode;
 
         public TargetVMOptions(EATests env, ClassType testCaseBaseTargetClass) {
@@ -285,8 +285,8 @@ public class EATests extends TestScaffold {
             DeoptimizeObjectsALot = ((PrimitiveValue) val).booleanValue();
             val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("UseJVMCICompiler"));
             UseJVMCICompiler = ((PrimitiveValue) val).booleanValue();
-            val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("ZGCIsSelected"));
-            ZGCIsSelected = ((PrimitiveValue) val).booleanValue();
+            val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("ConcurrentGCIsSelected"));
+            ConcurrentGCIsSelected = ((PrimitiveValue) val).booleanValue();
             val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("StressReflectiveCode"));
             StressReflectiveCode = ((PrimitiveValue) val).booleanValue();
         }
@@ -772,7 +772,7 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
     public static final boolean DoEscapeAnalysis = unbox(WB.getBooleanVMFlag("DoEscapeAnalysis"), UseJVMCICompiler);
     public static final boolean EliminateAllocations = unbox(WB.getBooleanVMFlag("EliminateAllocations"), UseJVMCICompiler);
     public static final boolean DeoptimizeObjectsALot = WB.getBooleanVMFlag("DeoptimizeObjectsALot");
-    public static final boolean ZGCIsSelected = GC.Z.isSelected();
+    public static final boolean ConcurrentGCIsSelected = GC.Z.isSelected() || GC.Shenandoah.isSelected();
     public static final boolean StressReflectiveCode = unbox(WB.getBooleanVMFlag("StressReflectiveCode"), false);
 
     public String testMethodName;
@@ -2450,8 +2450,8 @@ class EAPopFrameNotInlinedReallocFailure extends EATestCaseBaseDebugger {
         // And Graal currently doesn't provide all information about non-escaping objects in debug info
         return super.shouldSkip() ||
                 !env.targetVMOptions.EliminateAllocations ||
-                // With ZGC the OOME is not always thrown as expected
-                env.targetVMOptions.ZGCIsSelected ||
+                // With ZGC or Shenandoah the OOME is not always thrown as expected
+                env.targetVMOptions.ConcurrentGCIsSelected ||
                 env.targetVMOptions.DeoptimizeObjectsALot ||
                 env.targetVMOptions.UseJVMCICompiler;
     }
@@ -2495,8 +2495,8 @@ class EAPopFrameNotInlinedReallocFailureTarget extends EATestCaseBaseTarget {
         // And Graal currently doesn't provide all information about non-escaping objects in debug info
         return super.shouldSkip() ||
                 !EliminateAllocations ||
-                // With ZGC the OOME is not always thrown as expected
-                ZGCIsSelected ||
+                // With ZGC or Shenandoah the OOME is not always thrown as expected
+                ConcurrentGCIsSelected ||
                 DeoptimizeObjectsALot ||
                 UseJVMCICompiler;
     }
@@ -2548,8 +2548,8 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailure extends EATestCa
         // And Graal currently doesn't provide all information about non-escaping objects in debug info
         return super.shouldSkip() ||
                 !env.targetVMOptions.EliminateAllocations ||
-                // With ZGC the OOME is not always thrown as expected
-                env.targetVMOptions.ZGCIsSelected ||
+                // With ZGC or Shenandoah the OOME is not always thrown as expected
+                env.targetVMOptions.ConcurrentGCIsSelected ||
                 env.targetVMOptions.DeoptimizeObjectsALot ||
                 env.targetVMOptions.UseJVMCICompiler;
     }
@@ -2609,8 +2609,8 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailureTarget extends EA
         // And Graal currently doesn't provide all information about non-escaping objects in debug info
         return super.shouldSkip() ||
                 !EliminateAllocations ||
-                // With ZGC the OOME is not always thrown as expected
-                ZGCIsSelected ||
+                // With ZGC or Shenandoah the OOME is not always thrown as expected
+                ConcurrentGCIsSelected ||
                 DeoptimizeObjectsALot ||
                 UseJVMCICompiler;
     }
@@ -2815,8 +2815,8 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjectsReallocFailure e
         // And Graal currently doesn't support Force Early Return
         return super.shouldSkip() ||
                 !env.targetVMOptions.EliminateAllocations ||
-                // With ZGC the OOME is not always thrown as expected
-                env.targetVMOptions.ZGCIsSelected ||
+                // With ZGC or Shenandoah the OOME is not always thrown as expected
+                env.targetVMOptions.ConcurrentGCIsSelected ||
                 env.targetVMOptions.DeoptimizeObjectsALot ||
                 env.targetVMOptions.UseJVMCICompiler;
     }
@@ -2877,8 +2877,8 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjectsReallocFailureTa
         // And Graal currently doesn't support Force Early Return
         return super.shouldSkip() ||
                 !EliminateAllocations ||
-                // With ZGC the OOME is not always thrown as expected
-                ZGCIsSelected ||
+                // With ZGC or Shenandoah the OOME is not always thrown as expected
+                ConcurrentGCIsSelected ||
                 DeoptimizeObjectsALot ||
                 UseJVMCICompiler;
     }
