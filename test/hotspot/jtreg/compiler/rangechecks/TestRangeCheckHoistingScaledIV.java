@@ -28,7 +28,6 @@
  * @library /test/lib /
  * @requires vm.debug & vm.compiler2.enabled & (os.simpleArch == "x64" | os.arch == "aarch64")
  * @modules jdk.incubator.vector
- * @compile -source ${jdk.version} TestRangeCheckHoistingScaledIV.java
  * @run main/othervm compiler.rangechecks.TestRangeCheckHoistingScaledIV
  */
 
