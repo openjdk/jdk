@@ -4335,7 +4335,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Put 16 here, as com.sun.crypto.providerChaCha20Cipher.KS_MAX_LEN is 1024
     // in java level.
-    __ li(avl, 16);
+    __ mv(avl, 16);
     __ vsetvli(length, avl, Assembler::e32, Assembler::m1);
 
     // Load from source state
@@ -4348,7 +4348,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vadd_vv(work_vrs[12], work_vrs[12], counter);
 
     // Perform 10 iterations of the 8 quarter round set
-    __ li(loop, 10);
+    __ mv(loop, 10);
     __ BIND(L_Rounds);
 
     chacha20_quarter_round(work_vrs[0], work_vrs[4], work_vrs[8], work_vrs[12], tmp_vr);
@@ -4374,7 +4374,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vadd_vv(work_vrs[12], work_vrs[12], counter);
 
     // Store result to key stream
-    __ li(stride, 64);
+    __ mv(stride, 64);
     for (int i = 0; i < states_len; i += 1) {
       __ vsse32_v(work_vrs[i], key_stream, stride);
       __ addi(key_stream, key_stream, step);
