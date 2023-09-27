@@ -388,7 +388,7 @@ abstract class DoublePipeline<E_IN>
     public final DoubleStream limit(long maxSize) {
         if (maxSize < 0)
             throw new IllegalArgumentException(Long.toString(maxSize));
-        return SliceOps.makeDouble(this, 0, maxSize);
+        return SliceOps.makeDouble(this, 0L, maxSize);
     }
 
     @Override
