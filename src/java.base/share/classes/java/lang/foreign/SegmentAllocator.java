@@ -109,7 +109,7 @@ public interface SegmentAllocator {
      * @param str     the Java string to be converted into a C string.
      * @param charset the charset used to {@linkplain Charset#newEncoder() encode} the string bytes.
      * @return a new native segment containing the converted C string.
-     * @throws UnsupportedOperationException if {@code charset} is not a {@linkplain StandardCharsets standard charset}.
+     * @throws IllegalArgumentException if {@code charset} is not a {@linkplain StandardCharsets standard charset}.
      * @implSpec The default implementation for this method copies the contents of the provided Java string
      * into a new memory segment obtained by calling {@code this.allocate(B + N)}, where:
      * <ul>

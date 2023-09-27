@@ -1096,11 +1096,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *     <li>{@code N} is the size (in bytes) of the terminator char according to the provided charset. For instance,
      *     this is 1 for {@link StandardCharsets#US_ASCII} and 2 for {@link StandardCharsets#UTF_16}.</li>
      * </ul>
-     * @throws IllegalStateException         if the {@linkplain #scope() scope} associated with this segment is not
-     *                                       {@linkplain Scope#isAlive() alive}.
-     * @throws WrongThreadException          if this method is called from a thread {@code T},
-     *                                       such that {@code isAccessibleBy(T) == false}.
-     * @throws UnsupportedOperationException if {@code charset} is not a {@linkplain StandardCharsets standard charset}.
+     * @throws IllegalStateException    if the {@linkplain #scope() scope} associated with this segment is not
+     *                                  {@linkplain Scope#isAlive() alive}.
+     * @throws WrongThreadException     if this method is called from a thread {@code T},
+     *                                  such that {@code isAccessibleBy(T) == false}.
+     * @throws IllegalArgumentException if {@code charset} is not a {@linkplain StandardCharsets standard charset}.
      */
     default String getString(long offset, Charset charset) {
         Objects.requireNonNull(charset);
@@ -1157,11 +1157,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *     <li>{@code N} is the size (in bytes) of the terminator char according to the provided charset. For instance,
      *     this is 1 for {@link StandardCharsets#US_ASCII} and 2 for {@link StandardCharsets#UTF_16}.</li>
      * </ul>
-     * @throws IllegalStateException         if the {@linkplain #scope() scope} associated with this segment is not
-     *                                       {@linkplain Scope#isAlive() alive}.
-     * @throws WrongThreadException          if this method is called from a thread {@code T},
-     *                                       such that {@code isAccessibleBy(T) == false}.
-     * @throws UnsupportedOperationException if {@code charset} is not a {@linkplain StandardCharsets standard charset}.
+     * @throws IllegalStateException    if the {@linkplain #scope() scope} associated with this segment is not
+     *                                  {@linkplain Scope#isAlive() alive}.
+     * @throws WrongThreadException     if this method is called from a thread {@code T},
+     *                                  such that {@code isAccessibleBy(T) == false}.
+     * @throws IllegalArgumentException if {@code charset} is not a {@linkplain StandardCharsets standard charset}.
      */
     default void setString(long offset, String str, Charset charset) {
         Objects.requireNonNull(charset);

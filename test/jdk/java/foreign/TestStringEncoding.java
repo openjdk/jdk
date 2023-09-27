@@ -65,7 +65,7 @@ public class TestStringEncoding {
                     }
                 }
             } else {
-                assertThrows(UnsupportedOperationException.class, () -> Arena.global().allocateFrom(testString, charset));
+                assertThrows(IllegalArgumentException.class, () -> Arena.global().allocateFrom(testString, charset));
             }
         }
     }

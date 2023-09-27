@@ -147,7 +147,7 @@ public class StringSupport {
             } else if (charset == StandardCharsets.UTF_32LE || charset == StandardCharsets.UTF_32BE || charset == StandardCharsets.UTF_32) {
                 return CharsetKind.QUAD_BYTE;
             } else {
-                throw new UnsupportedOperationException("Unsupported charset: " + charset);
+                throw new IllegalArgumentException("Unsupported charset: " + charset);
             }
         }
     }
