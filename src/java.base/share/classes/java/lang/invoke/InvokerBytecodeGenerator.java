@@ -329,7 +329,7 @@ class InvokerBytecodeGenerator {
             clb.withField(p.name, p.desc, ACC_STATIC|ACC_FINAL);
         }
 
-        clb.withMethodBody("<clinit>", MethodTypeDesc.of(CD_void), ACC_STATIC, new Consumer<CodeBuilder>() {
+        clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, new Consumer<CodeBuilder>() {
             @Override
             public void accept(CodeBuilder cob) {
                 cob.constantInstruction(classDesc)
