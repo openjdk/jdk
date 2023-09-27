@@ -98,6 +98,7 @@ final class WinNTFileSystem extends FileSystem {
        This way we iterate through the whole pathname string only once. */
     @Override
     public String normalize(String path) {
+        path = stripLongOrUNCPrefix(path);
         int n = path.length();
         char slash = this.slash;
         char altSlash = this.altSlash;
@@ -223,6 +224,7 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public int prefixLength(String path) {
+        path = stripLongOrUNCPrefix(path);
         char slash = this.slash;
         int n = path.length();
         if (n == 0) return 0;
@@ -242,6 +244,7 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public String resolve(String parent, String child) {
+        parent = stripLongOrUNCPrefix(parent);
         int pn = parent.length();
         if (pn == 0) return child;
         int cn = child.length();

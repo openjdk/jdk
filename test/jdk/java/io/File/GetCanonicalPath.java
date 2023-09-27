@@ -81,7 +81,7 @@ public class GetCanonicalPath {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"\\\\?", "\\\\?\\", "\\\\?\\UNC", "\\\\?\\UNC\\"})
+    @ValueSource(strings = {"\\\\?", "\\\\?\\UNC", "\\\\?\\UNC\\"})
     void badPaths(String pathname) {
         assertThrows(IOException.class, () -> new File(pathname).getCanonicalPath());
     }

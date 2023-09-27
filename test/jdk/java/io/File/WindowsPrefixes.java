@@ -55,7 +55,8 @@ public class WindowsPrefixes {
     }
 
     private static Stream<Arguments> paths() {
-        return Stream.of(Arguments.of("C:\\"),
+        return Stream.of(Arguments.of(""),
+                         Arguments.of("C:\\"),
                          Arguments.of("C:"),
                          Arguments.of("foo"),
                          Arguments.of("foo\\bar"),
@@ -63,27 +64,6 @@ public class WindowsPrefixes {
                          Arguments.of("C:foo"),
                          Arguments.of("C:\\foo\\bar"));
     }
-
-/*
-    private void test(String prefix, String path) throws IOException {
-        File file = new File(path);
-        File that = new File(prefix + path);
-        System.err.printf("file: %s, that: %s%n", file, that);
-        //assertTrue(file.compareTo(that) == 0);
-        //assertTrue(that.compareTo(file) == 0);
-        //assertTrue(file.equals(that));
-        //assertTrue(that.equals(file));
-        assertEquals(file.getAbsolutePath(), that.getAbsolutePath());
-        assertEquals(file.getCanonicalPath(), that.getCanonicalPath());
-        assertEquals(file.getName(), that.getName());
-        assertEquals(file.getParent(), that.getParent());
-        assertEquals(file.isAbsolute(), that.isAbsolute());
-        assertEquals(file.toPath(), that.toPath());
-        assertEquals(file.toString(), that.toString());
-        assertEquals(file.toURI(), that.toURI());
-        assertEquals(file.toURL(), that.toURL());
-    }
-*/
 
     //@EnabledOnOs(OS.WINDOWS)
     @ParameterizedTest
