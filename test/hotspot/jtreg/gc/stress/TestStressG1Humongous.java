@@ -75,19 +75,19 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestStressG1Humongous{
 
     public static void main(String[] args) throws Exception {
+        if (args.length != 4) {
+            throw new IllegalArgumentException("Test expects 4 arguments");
+        }
+
         // Limit heap size on 32-bit platforms
         int heapSize = Platform.is32bit() ? 512 : 1024;
+
         // Region size, threads, humongous size, and timeout passed as @run arguments
         int regionSize = Integer.parseInt(args[0]);
         int threads = Integer.parseInt(args[1]);
         double humongousSize = Double.parseDouble(args[2]);
         int timeout = Integer.parseInt(args[3]);
-        
-        run(heapSize, regionSize, threads, humongousSize, timeout);
-    }
 
-    private static void run(int heapSize, int regionSize, int threads, double humongousSize, int timeout)
-            throws Exception {
         ArrayList<String> options = new ArrayList<>();
         Collections.addAll(options, Utils.getTestJavaOpts());
         Collections.addAll(options,
