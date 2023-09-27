@@ -26,10 +26,6 @@
 #include "opto/convertnode.hpp"
 #include "opto/vmaskloop.hpp"
 
-//        L O O P   V E C T O R   M A S K   T R A N S F O R M A T I O N
-// ============================================================================
-
-// -------------------------------- Constructor -------------------------------
 VectorMaskedLoop::VectorMaskedLoop(PhaseIdealLoop* phase) :
   _phase(phase),
   _igvn(&(phase->_igvn)),
@@ -50,38 +46,40 @@ VectorMaskedLoop::VectorMaskedLoop(PhaseIdealLoop* phase) :
   _size_stats(_arena)
 {}
 
-// ------------------- Entry function of vector masked loop -------------------
+// Try vectorizing loop with vector masks - entry function of the vectorizer
 void VectorMaskedLoop::try_vectorize_loop(IdealLoopTree* lpt) {
   assert(UseMaskedLoop, "Option should be enabled");
   assert(lpt->is_counted(), "Loop must be counted");
   assert(lpt->is_innermost(), "Loop must be innermost");
 
-  CountedLoopNode* cl = lpt->_head->as_CountedLoop();
-  assert(cl->is_post_loop() && !cl->is_vector_masked(),
+  // Reset basic loop info
+  _lpt = lpt;
+  _cl = lpt->_head->as_CountedLoop();
+  _cle = _cl->loopexit();
+  _iv = _cle->phi();
+  assert(_cl->is_post_loop() && !_cl->is_vector_masked(),
          "Current loop should be a post loop and not vector masked");
 
-  if (!cl->is_valid_counted_loop(T_INT)) {
-    trace_msg(nullptr, "Loop is not a valid counted loop");
+  if (!_cl->is_valid_counted_loop(T_INT)) {
+    trace_msg("Loop is not a valid counted loop");
     return;
   }
-  if (abs(cl->stride_con()) != 1) {
-    trace_msg(nullptr, "Loop has unsupported stride value");
+  if (abs(_cl->stride_con()) != 1) {
+    trace_msg("Loop has unsupported stride value", _cl->stride());
     return;
   }
-  if (cl->loopexit()->in(0) != cl) {
-    trace_msg(nullptr, "Loop has unsupported control flow");
+  if (_cl->loopexit()->in(0) != _cl) {
+    trace_msg("Loop has unsupported control flow");
     return;
   }
-  if (cl->back_control()->outcnt() != 1) {
-    trace_msg(nullptr, "Loop has node pinned to the backedge");
+  if (_cl->back_control()->outcnt() != 1) {
+    trace_msg("Loop has node pinned to the backedge");
     return;
   }
 
-  // Init data structures and collect loop nodes
-  init(lpt);
+  // Collect loop info data structures and analyze vectorizability
+  reset();
   if (!collect_loop_nodes()) return;
-
-  // Collect loop statements and analyze vectorizability
   if (!collect_statements()) return;
   if (!analyze_vectorizability()) return;
 
@@ -91,21 +89,19 @@ void VectorMaskedLoop::try_vectorize_loop(IdealLoopTree* lpt) {
 
   // Transform the loop and set flags
   transform_loop(t_vmask);
-  cl->mark_loop_vectorized();
-  cl->mark_vector_masked();
+  _cl->mark_loop_vectorized();
+  _cl->mark_vector_masked();
   _phase->C->set_max_vector_size(MaxVectorSize);
-  trace_msg(nullptr, "Loop is vector masked");
+  trace_msg("Loop is vector masked");
 }
 
-// ----------------------------------- Init -----------------------------------
-void VectorMaskedLoop::init(IdealLoopTree* lpt) {
-  // Set current loop info
-  _lpt = lpt;
-  _cl = lpt->_head->as_CountedLoop();
-  _cle = _cl->loopexit();
-  _iv = _cle->phi();
 
-  // Reset data structures
+// Below are loop vectorizable analysis functions. At the analysis stage, we
+// collect enough loop information and check the vectorizability of the whole
+// loop. The ideal graph is "read-only" at this time.
+
+// reset: all loop info should be reset at this point
+void VectorMaskedLoop::reset() {
   _core_set.clear();
   _body_set.clear();
   _body_nodes.clear();
@@ -116,7 +112,6 @@ void VectorMaskedLoop::init(IdealLoopTree* lpt) {
   _size_stats.clear();
 }
 
-// ------------------- Loop vectorizable analysis functions -------------------
 // Collect loop nodes into an array with reverse postorder for convenience of
 // future traversal. Do early bail out if unsupported node is found.
 bool VectorMaskedLoop::collect_loop_nodes() {
@@ -131,7 +126,7 @@ bool VectorMaskedLoop::collect_loop_nodes() {
   for (int i = 0; i < node_cnt; i++) {
     Node* n = _lpt->_body.at(i);
     if (n->is_LoadStore() || n->is_RangeCheck() || n->is_Call()) {
-      trace_msg(n, "Found unsupported node in the loop");
+      trace_msg("Found unsupported node in the loop", n);
       return false;
     }
     _body_set.push(n);
@@ -177,7 +172,7 @@ bool VectorMaskedLoop::collect_loop_nodes() {
 
   // Bail out if loop has unreachable node while traversing from head
   if (idx != -1) {
-    trace_msg(nullptr, "Loop has unreachable node while traversing from head");
+    trace_msg("Loop has unreachable node while traversing from head");
     return false;
   }
   // Create a real index map for future use
@@ -216,13 +211,13 @@ bool VectorMaskedLoop::collect_statements_helper(
     if (VectorNode::is_populate_index_supported(bt)) {
       return true;
     } else {
-      trace_msg(in, "Populate index operation is not supported");
+      trace_msg("Populate index operation is not supported", in);
       return false;
     }
   } else if (in->is_Phi()) {
     // 2) We don't support phi nodes except the iv phi of the loop and memory
     //    phi's cannot be reached
-    trace_msg(in, "Found unsupported phi input");
+    trace_msg("Found unsupported phi input", in);
     return false;
   } else if (in->is_Load()) {
     // 3) Ok to include a load node if it's supported memory access
@@ -230,12 +225,12 @@ bool VectorMaskedLoop::collect_statements_helper(
       stmt->push(in);
       return true;
     } else {
-      trace_msg(in, "Found unsupported memory load input");
+      trace_msg("Found unsupported memory load input", in);
       return false;
     }
   } else if (VectorNode::is_shift(in) && in_body(in->in(2))) {
     // 4) We don't support shift operations with variant shift count
-    trace_msg(in, "Variant shift count is not supported");
+    trace_msg("Variant shift count is not supported", in);
     return false;
   } else {
     // 5) For other general inputs, include it and also push it into the
@@ -262,7 +257,7 @@ bool VectorMaskedLoop::collect_statements() {
   // Do early bail out if no statement is created
   int num_stmts = _stmts.length();
   if (num_stmts == 0) {
-    trace_msg(nullptr, "No vectorizable statement is found");
+    trace_msg("No vectorizable statement is found");
     return false;
   }
 
@@ -310,7 +305,7 @@ bool VectorMaskedLoop::analyze_vectorizability() {
   }
   // Delegate data dependence check to VPointer utility
   if (VPointer::has_potential_dependence(_vptrs)) {
-    trace_msg(nullptr, "Potential data dependence is found in the loop");
+    trace_msg("Potential data dependence is found in the loop");
     return false;
   }
   if (!analyze_loop_body_nodes()) {
@@ -341,7 +336,7 @@ bool VectorMaskedLoop::find_vector_element_types() {
           // For load node, check if it has the same vector element size with
           // the bottom type of the statement
           if (!same_element_size(mem_type, stmt_bottom_type)) {
-            trace_msg(node, "Vector element size does not match");
+            trace_msg("Vector element size does not match", node);
             return false;
           }
         }
@@ -360,7 +355,7 @@ bool VectorMaskedLoop::find_vector_element_types() {
             BasicType mem_type = in1->as_Mem()->memory_type();
             set_elem_bt(node, mem_type);
           } else {
-            trace_msg(node, "Subword operand does not have precise type");
+            trace_msg("Subword operand does not have precise type", node);
             return false;
           }
         } else {
@@ -370,7 +365,7 @@ bool VectorMaskedLoop::find_vector_element_types() {
           } else {
             BasicType self_type = node->bottom_type()->array_element_basic_type();
             if (!same_element_size(self_type, stmt_bottom_type)) {
-              trace_msg(node, "Inconsistent vector element size in one statement");
+              trace_msg("Inconsistent vector element size in one statement", node);
               return false;
             }
             set_elem_bt(node, self_type);
@@ -417,7 +412,7 @@ bool VectorMaskedLoop::vector_nodes_implemented() {
         BasicType in_bt = is_loop_iv_or_incr(in) ? T_INT : elem_bt(in);
         if (in_bt == T_ILLEGAL || !same_element_size(in_bt, bt) ||
             !VectorCastNode::implemented(opc, vlen, in_bt, bt)) {
-          trace_msg(node, "Found unimplemented vector cast node");
+          trace_msg("Found unimplemented vector cast node", node);
           return false;
         }
       } else if (VectorNode::is_minmax_opcode(opc) && is_subword_type(bt)) {
@@ -430,14 +425,14 @@ bool VectorMaskedLoop::vector_nodes_implemented() {
           assert(node->is_Load() || node->is_Store(), "Must be load or store");
           vopc = node->is_Store() ? Op_StoreVectorMasked : Op_LoadVectorMasked;
           if (!Matcher::match_rule_supported_vector_masked(vopc, vlen, bt)) {
-            trace_msg(node, "Vector masked memory access is not implemented");
+            trace_msg("Vector masked memory access is not implemented", node);
             return false;
           }
         } else {
           vopc = VectorNode::opcode(opc, bt);
           if (vopc == 0 ||
             !Matcher::match_rule_supported_vector(vopc, vlen, bt)) {
-            trace_msg(node, "Vector replacement node is not implemented");
+            trace_msg("Vector replacement node is not implemented", node);
             return false;
           }
         }
@@ -482,7 +477,7 @@ bool VectorMaskedLoop::analyze_loop_body_nodes() {
       for (DUIterator_Fast imax, i = node->fast_outs(imax); i < imax; i++) {
         Node* out = node->fast_out(i);
         if (!in_body(out)) {
-          trace_msg(node, "Node has out-of-loop user found");
+          trace_msg("Node has out-of-loop user found", node);
           return false;
         }
       }
@@ -492,7 +487,7 @@ bool VectorMaskedLoop::analyze_loop_body_nodes() {
   for (int idx = 0; idx < n_nodes; idx++) {
     Node* node = _body_nodes.at(idx);
     if (!tracked.test(idx) && !in_core(node) && !node->is_memory_phi()) {
-      trace_msg(node, "Found extra loop node in loop body");
+      trace_msg("Found extra loop node in loop body", node);
       return false;
     }
   }
@@ -519,7 +514,7 @@ bool VectorMaskedLoop::supported_mem_access(MemNode* mem) {
     }
   }
   // If not found, try creating a new VPointer and insert it
-  VPointer* ptr = mem_access_to_VPointer(mem);
+  VPointer* ptr = mem_access_to_vpointer(mem);
   if (ptr != nullptr) {
     _vptrs.push(ptr);
     return true;
@@ -529,18 +524,18 @@ bool VectorMaskedLoop::supported_mem_access(MemNode* mem) {
 
 // This tries creating an VPointer object associated to the memory access.
 // Return nullptr if it fails or the VPointer is not valid.
-VPointer* VectorMaskedLoop::mem_access_to_VPointer(MemNode* mem) {
+VPointer* VectorMaskedLoop::mem_access_to_vpointer(MemNode* mem) {
   // Should access memory of a Java primitive value
   BasicType mem_type = mem->memory_type();
   if (!is_java_primitive(mem_type)) {
-    trace_msg(mem, "Only memory accesses of primitive types are supported");
+    trace_msg("Only memory accesses of primitive types are supported", mem, false);
     return nullptr;
   }
   // addp: memory address for loading/storing an array element. It should be an
   // AddP node operating on an array of specific type
   Node* addp = mem->in(MemNode::Address);
   if (!addp->is_AddP() || !operates_on_array_of_type(addp, mem_type)) {
-    trace_msg(mem, "Memory access has inconsistent type");
+    trace_msg("Memory access has inconsistent type", mem, false);
     return nullptr;
   }
   // Create a Node_Stack for VPointer's initial stack
@@ -552,7 +547,7 @@ VPointer* VectorMaskedLoop::mem_access_to_VPointer(MemNode* mem) {
   if (addp2->is_AddP()) {
     if (!operates_on_array_of_type(addp2, mem_type) ||
         addp->in(AddPNode::Base) != addp2->in(AddPNode::Base)) {
-      trace_msg(mem, "Memory access has inconsistent type or base");
+      trace_msg("Memory access has inconsistent type or base", mem, false);
       return nullptr;
     }
     nstack->push(addp2, 1);
@@ -565,19 +560,19 @@ VPointer* VectorMaskedLoop::mem_access_to_VPointer(MemNode* mem) {
   //  4) The loop increment node is on the VPointer's node stack
   VPointer* ptr = new (_arena) VPointer(mem, _phase, _lpt, nstack, true);
   if (!ptr->valid()) {
-    trace_msg(mem, "Memory access has unsupported address pattern");
+    trace_msg("Memory access has unsupported address pattern", mem, false);
     return nullptr;
   }
   int scale_in_bytes = ptr->scale_in_bytes();
   int element_size = type2aelembytes(mem_type);
   if (scale_in_bytes * _cl->stride_con() < 0 ||
       abs(scale_in_bytes) != element_size) {
-    trace_msg(mem, "Memory access has unsupported direction or scale");
+    trace_msg("Memory access has unsupported direction or scale", mem, false);
     return nullptr;
   }
   for (uint i = 0; i < nstack->size(); i++) {
     if (nstack->node_at(i) == _cl->incr()) {
-      trace_msg(mem, "Memory access unexpectedly uses loop increment node");
+      trace_msg("Memory access unexpectedly uses loop increment node", mem, false);
       return nullptr;
     }
   }
@@ -595,7 +590,11 @@ bool VectorMaskedLoop::operates_on_array_of_type(Node* node, BasicType bt) {
   return same_type_or_subword_size(elem_bt, bt);
 }
 
-// ------------------- Actual loop transformation functions -------------------
+
+// Below are actual loop transformation functions. Ideal graph transformations
+// will be performed in this stage. The functions should be called only after
+// the loop is considered vectorizable after the whole analysis.
+
 // Create a tree of vector masks for use of vectorized operations in the loop
 Node_List* VectorMaskedLoop::create_vmask_tree(const TypeVectMask* t_vmask) {
   // Create the root vector mask node from given vector type
@@ -987,10 +986,14 @@ void VectorMaskedLoop::transform_loop(const TypeVectMask* t_vmask) {
   _igvn->replace_node(_cl->incr(), new_incr);
 }
 
-// ------------------------------ Debug printing ------------------------------
-void VectorMaskedLoop::trace_msg(Node* n, const char* msg) {
+
+// Function for debug printing
+void VectorMaskedLoop::trace_msg(const char* msg, Node* n, bool dump_head) {
 #ifndef PRODUCT
   if (TraceMaskedLoop) {
+    if (dump_head) {
+      _lpt->dump_head();
+    }
     tty->print_cr("%s", msg);
     if (n != nullptr) {
       n->dump();

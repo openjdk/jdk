@@ -28,7 +28,17 @@
 #include "opto/vectorization.hpp"
 #include "opto/vectornode.hpp"
 
-// ----------------------------- VectorMaskedLoop -----------------------------
+//        L O O P   V E C T O R   M A S K   T R A N S F O R M A T I O N
+//
+// This implements yet another loop vectorizer which is different from SLP (or
+// SuperWord) in the C2 compiler. We name it "VectorMaskedLoop" as it can take
+// advantage of vector mask (predicate) features of some hardware platforms,
+// such as x86 AVX-512 and AArch64 SVE, to vectorize loops with more elegant
+// native code generated. The main idea of this vectorizer is widening scalar
+// operations in the loop and adding vector masks to them. This vectorization
+// approach does not require many pre-requisite loop transformations, such as
+// loop iteration-split or unrolling.
+
 class VectorMaskedLoop : public ResourceObj {
  private:
   // Useful handles
@@ -89,7 +99,7 @@ class VectorMaskedLoop : public ResourceObj {
     return n == _iv || n == _cl->incr();
   }
 
-  bool is_loop_incr_pattern (const Node* n) const {
+  bool is_loop_incr_pattern(const Node* n) const {
     if (n != nullptr && n->is_Add() && n->in(1) == _iv && n->in(2)->is_Con()) {
       const Type* t = n->in(2)->bottom_type();
       return t->is_int()->get_con() == _cl->stride_con();
@@ -98,7 +108,7 @@ class VectorMaskedLoop : public ResourceObj {
   }
 
   // Methods for loop vectorizable analysis
-  void init(IdealLoopTree* lpt);
+  void reset();
   bool collect_loop_nodes();
 
   bool collect_statements_helper(const Node* node, const uint idx,
@@ -113,7 +123,7 @@ class VectorMaskedLoop : public ResourceObj {
   const TypeVectMask* create_vector_mask_type();
 
   bool supported_mem_access(MemNode* mem);
-  VPointer* mem_access_to_VPointer(MemNode* mem);
+  VPointer* mem_access_to_vpointer(MemNode* mem);
   bool operates_on_array_of_type(Node* node, BasicType bt);
 
   // Methods for vector masked loop transformation
@@ -126,7 +136,7 @@ class VectorMaskedLoop : public ResourceObj {
   void transform_loop(const TypeVectMask* t_vmask);
 
   // Debug printing
-  void trace_msg(Node* n, const char* msg);
+  void trace_msg(const char* msg, Node* n = nullptr, bool dump_head = true);
 
  public:
   VectorMaskedLoop(PhaseIdealLoop* phase);
