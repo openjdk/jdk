@@ -27,6 +27,8 @@
 #define CPU_RISCV_REGISTER_RISCV_HPP
 
 #include "asm/register.hpp"
+#include "utilities/population_count.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 #define CSR_FFLAGS   0x001        // Floating-Point Accrued Exceptions.
 #define CSR_FRM      0x002        // Floating-Point Dynamic Rounding Mode.
@@ -318,6 +320,8 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
   static const int max_vpr;
 };
 
+template <class RegImpl> class RegSetIterator;
+
 // A set of registers
 template<class RegImpl>
 class AbstractRegSet {
@@ -325,7 +329,7 @@ class AbstractRegSet {
 
   AbstractRegSet(uint32_t bitset) : _bitset(bitset) { }
 
- public:
+public:
   AbstractRegSet() : _bitset(0) { }
 
   AbstractRegSet(RegImpl r1) : _bitset(1 << r1->encoding()) { }
@@ -375,11 +379,73 @@ class AbstractRegSet {
     return AbstractRegSet(bits);
   }
 
+  uint size() const { return population_count(_bitset); }
+
   uint32_t bits() const { return _bitset; }
+
+private:
+
+  RegImpl first();
+
+public:
+
+  friend class RegSetIterator<RegImpl>;
+
+  RegSetIterator<RegImpl> begin();
 };
 
 typedef AbstractRegSet<Register> RegSet;
 typedef AbstractRegSet<FloatRegister> FloatRegSet;
 typedef AbstractRegSet<VectorRegister> VectorRegSet;
+
+template <class RegImpl>
+class RegSetIterator {
+  AbstractRegSet<RegImpl> _regs;
+
+public:
+  RegSetIterator(AbstractRegSet<RegImpl> x): _regs(x) {}
+  RegSetIterator(const RegSetIterator& mit) : _regs(mit._regs) {}
+
+  RegSetIterator& operator++() {
+    RegImpl r = _regs.first();
+    if (r->is_valid())
+      _regs -= r;
+    return *this;
+  }
+
+  bool operator==(const RegSetIterator& rhs) const {
+    return _regs.bits() == rhs._regs.bits();
+  }
+  bool operator!=(const RegSetIterator& rhs) const {
+    return ! (rhs == *this);
+  }
+
+  RegImpl operator*() {
+    return _regs.first();
+  }
+};
+
+template <class RegImpl>
+inline RegSetIterator<RegImpl> AbstractRegSet<RegImpl>::begin() {
+  return RegSetIterator<RegImpl>(*this);
+}
+
+template <>
+inline Register AbstractRegSet<Register>::first() {
+  uint32_t first = _bitset & -_bitset;
+  return first ? as_Register(exact_log2(first)) : noreg;
+}
+
+template <>
+inline FloatRegister AbstractRegSet<FloatRegister>::first() {
+  uint32_t first = _bitset & -_bitset;
+  return first ? as_FloatRegister(exact_log2(first)) : fnoreg;
+}
+
+template<>
+inline VectorRegister AbstractRegSet<VectorRegister>::first() {
+  uint32_t first = _bitset & -_bitset;
+  return first ? as_VectorRegister(exact_log2(first)) : vnoreg;
+}
 
 #endif // CPU_RISCV_REGISTER_RISCV_HPP
