@@ -42,9 +42,10 @@ class PSCardTable: public CardTable {
     verify_card       = CT_MR_BS_last_reserved + 5
   };
 
-  static size_t stripe_size_in_words;
+  static size_t const num_cards_in_stripe = 128;
 
   static bool is_large_obj_array(oop obj) {
+    const size_t stripe_size_in_words = num_cards_in_stripe * _card_size_in_words;
     return obj->is_objArray() && obj->size() >= stripe_size_in_words;
   }
 
@@ -71,7 +72,6 @@ class PSCardTable: public CardTable {
   static CardValue verify_card_val()     { return verify_card; }
 
   // Scavenge support
-  void prepare_scavenge(int active_workers, size_t old_gen_used_words);
   void scavenge_contents_parallel(ObjectStartArray* start_array,
                                   MutableSpace* sp,
                                   HeapWord* space_top,

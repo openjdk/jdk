@@ -35,8 +35,6 @@
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/align.hpp"
 
-size_t PSCardTable::stripe_size_in_words;
-
 // Checks an individual oop for missing precise marks. Mark
 // may be either dirty or newgen.
 class CheckForUnmarkedOops : public BasicOopIterateClosure {
@@ -203,28 +201,6 @@ void PSCardTable::scan_objects_in_range(PSPromotionManager* pm,
   pm->drain_stacks_cond_depth();
 }
 
-void PSCardTable::prepare_scavenge(int active_workers, size_t old_gen_used_words) {
-  // For parallel scanning of large object arrays the size of stripes is
-  // increased inversely to the number of threads. Especially with just 2
-  // threads the cost of work partitioning is otherwise too high. It cannot be
-  // amortized by just 2 threads when scanning very large arrays.
-  // We limit the stripe size to a maximum of 1M (with 512b cards) if there are
-  // more than 8 active worker threads because we want to make sure that large
-  // arrays of only a few megabytes are also scanned in parallel. This prevents
-  // regressions due to cache thrashing caused by work stealing.
-  const size_t stripe_min_size_in_words = 128 * card_size_in_words(); // 64K by default
-  const size_t stripe_max_size_in_words = 16 * stripe_min_size_in_words;
-  const int stripe_count_per_worker = 100;
-  int stripe_count = active_workers * stripe_count_per_worker;
-  size_t sz = MAX2(old_gen_used_words / stripe_count, stripe_min_size_in_words);
-  if (active_workers >= 8 && sz > stripe_max_size_in_words) {
-    sz = stripe_max_size_in_words;
-  }
-  stripe_size_in_words = align_up(sz, card_size_in_words());
-  log_trace(gc, scavenge)("stripe size:" SIZE_FORMAT "K",
-                          (stripe_size_in_words * HeapWordSize) / K);
-}
-
 // We get passed the space_top value to prevent us from traversing into
 // the old_gen promotion labs, which cannot be safely parsed.
 
@@ -274,9 +250,28 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
                                              PSPromotionManager* pm,
                                              uint stripe_index,
                                              uint n_stripes) {
+  const size_t stripe_size_in_words = num_cards_in_stripe * _card_size_in_words;
   const size_t slice_size_in_words = stripe_size_in_words * n_stripes;
 
   HeapWord* cur_stripe_addr = sp->bottom() + stripe_index * stripe_size_in_words;
+
+  // Cache object start information from previous stripe to avoid expensive and
+  // repetitive start array queries.
+  struct StartCache {
+      HeapWord* obj_start;
+      HeapWord* obj_end;
+      DEBUG_ONLY(HeapWord* prev_query);
+      StartCache() : obj_start(nullptr), obj_end(nullptr) DEBUG_ONLY(COMMA prev_query(nullptr)) {}
+      HeapWord* object_start(HeapWord* addr, ObjectStartArray* start_array) {
+        assert(prev_query == nullptr || prev_query <= addr, "inv");
+        if (addr >= obj_end) {
+          obj_start = start_array->object_start(addr);
+          obj_end = obj_start + cast_to_oop(obj_start)->size();
+        }
+        DEBUG_ONLY(prev_query = addr);
+        return obj_start;
+      }
+  } start_cache;
 
   for (/* empty */; cur_stripe_addr < space_top; cur_stripe_addr += slice_size_in_words) {
     // exclusive
@@ -287,7 +282,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
       // No object start means nothing to do. Except if the large object that
       // covers the stripe is a large object array. In that case we scavenge its
       // elements on the stripe.
-      oop large_obj = cast_to_oop(start_array->object_start(cur_stripe_addr));
+      oop large_obj = cast_to_oop(start_cache.object_start(cur_stripe_addr, start_array));
       if (is_large_obj_array(large_obj)) {
         scavenge_large_array_contents(objArrayOop(large_obj), pm, cur_stripe_addr, cur_stripe_end_addr,
                                       space_top, false /* first_card_already_cleared */);
