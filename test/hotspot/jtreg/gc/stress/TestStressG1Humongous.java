@@ -23,7 +23,7 @@
 
 package gc.stress;
 
- /*
+/*
  * @test
  * @key stress
  * @summary Stress G1 by humongous allocations in situation near OOM
@@ -34,7 +34,7 @@ package gc.stress;
  * @run driver/timeout=180 gc.stress.TestStressG1Humongous 4 3 1.1 120
  */
 
- /*
+/*
  * @test
  * @requires vm.gc.G1
  * @requires !vm.flightRecorder
@@ -43,7 +43,7 @@ package gc.stress;
  * @run driver/timeout=180 gc.stress.TestStressG1Humongous 16 5 2.1 120
  */
 
- /*
+/*
  * @test
  * @requires vm.gc.G1
  * @requires !vm.flightRecorder
@@ -52,7 +52,7 @@ package gc.stress;
  * @run driver/timeout=180 gc.stress.TestStressG1Humongous 32 4 0.6 120
  */
 
- /*
+/*
  * @test
  * @requires vm.gc.G1
  * @requires !vm.flightRecorder
