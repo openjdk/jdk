@@ -1621,12 +1621,11 @@ public class File
      * file attributes including file permissions. This may be used when finer
      * manipulation of file permissions is required.
      *
-     * <p> If setting the read permission is supported, but the user does not
-     * have permission to change the access permissions of this abstract
-     * pathname, then the operation will fail. If the platform or underlying
-     * file system does not support setting a file's read permission, this
-     * method does nothing and returns the value of the {@code readable}
-     * parameter.
+     * <p> If the platform supports setting a file's read permission, but
+     * the user does not have permission to change the access permissions of
+     * this abstract pathname, then the operation will fail. If the platform
+     * does not support setting a file's read permission, this method does
+     * nothing and returns the value of the {@code readable} parameter.
      *
      * @param   readable
      *          If {@code true}, sets the access permission to allow read
@@ -1675,12 +1674,11 @@ public class File
      *     file.setReadable(arg, true)
      * }
      *
-     * <p> If setting the read permission is supported, but the user does not
-     * have permission to change the access permissions of this abstract
-     * pathname, then the operation will fail. If the platform or underlying
-     * file system does not support setting a file's read permission, this
-     * method does nothing and returns the value of the {@code readable}
-     * parameter.
+     * <p> If the platform supports setting a file's read permission, but
+     * the user does not have permission to change the access permissions of
+     * this abstract pathname, then the operation will fail. If the platform
+     * does not support setting a file's read permission, this method does
+     * nothing and returns the value of the {@code readable} parameter.
      *
      * @param  readable
      *          If {@code true}, sets the access permission to allow read
@@ -1711,12 +1709,11 @@ public class File
      * file attributes including file permissions. This may be used when finer
      * manipulation of file permissions is required.
      *
-     * <p> If setting the execute permission is supported, but the user does not
-     * have permission to change the access permissions of this abstract
-     * pathname, then the operation will fail. If the platform or underlying
-     * file system does not support setting a file's execute permission, this
-     * method does nothing and returns the value of the {@code executable}
-     * parameter.
+     * <p> If the platform supports setting a file's execute permission, but
+     * the user does not have permission to change the access permissions of
+     * this abstract pathname, then the operation will fail. If the platform
+     * does not support setting a file's execute permission, this method does
+     * nothing and returns the value of the {@code executable} parameter.
      *
      * @param   executable
      *          If {@code true}, sets the access permission to allow execute
@@ -1765,12 +1762,11 @@ public class File
      *     file.setExecutable(arg, true)
      * }
      *
-     * <p> If setting the execute permission is supported, but the user does not
-     * have permission to change the access permissions of this abstract
-     * pathname, then the operation will fail. If the platform or underlying
-     * file system does not support setting a file's execute permission, this
-     * method does nothing and returns the value of the {@code executable}
-     * parameter.
+     * <p> If the platform supports setting a file's execute permission, but
+     * the user does not have permission to change the access permissions of
+     * this abstract pathname, then the operation will fail. If the platform
+     * does not support setting a file's execute permission, this method does
+     * nothing and returns the value of the {@code executable} parameter.
      *
      * @param   executable
      *          If {@code true}, sets the access permission to allow execute
