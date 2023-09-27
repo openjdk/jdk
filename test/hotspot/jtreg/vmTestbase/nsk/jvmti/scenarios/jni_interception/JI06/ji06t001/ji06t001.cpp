@@ -36,27 +36,28 @@
 
 extern "C" {
 
-#define PASSED 0
+#define PASSED  0
+#define STATUS_FAILED  2
 
 #define TRIES 30
 #define MAX_THREADS 5
-#define STACK_SIZE 1024*1024
 
 // Helper for thread detach and terminate
 #define THREAD_return(status) \
   do { \
       int res = vm->DetachCurrentThread(); \
-      if (res == 0) \
+      if (res != 0) \
+          NSK_COMPLAIN1("TEST WARNING: DetachCurrentThread() returns: %d\n", res); \
+      else \
           NSK_DISPLAY0("Detaching thread ...\n"); \
-          return 0; \
-      exit(-1); \
-  } while(0)
+      return status; \
+  } while (0)
+
 
 static const char *javaField = "_ji06t001a";
 static const char *classSig =
     "Lnsk/jvmti/scenarios/jni_interception/JI06/ji06t001a;";
 
-static int STATUS_FAILED = 2;
 static JavaVM *vm;
 static jvmtiEnv *jvmti = NULL;
 
@@ -187,7 +188,7 @@ static void checkCall(int exMonEntCalls) {
 }
 
 /* thread procedures */
-static void *waitingThread1(void *context) {
+static int waitingThread(void *context) {
     JNIEnv *env;
     int exitCode = PASSED;
     jint res;
@@ -203,7 +204,7 @@ static void *waitingThread1(void *context) {
     if (res != 0) {
         NSK_COMPLAIN1("TEST FAILURE: waitingThread: AttachCurrentThread() returns: %d\n",
             res);
-        exit(STATUS_FAILED);
+        return STATUS_FAILED;
     }
 
     NSK_DISPLAY1("waitingThread: thread #%d is trying to enter the monitor ...\n",
@@ -224,25 +225,7 @@ static void *waitingThread1(void *context) {
     THREAD_return(exitCode);
 }
 
-static int waitingThread(void *unused){
-    pthread_t id;
-    int result;
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setstacksize(&attr, STACK_SIZE);
-    if ((result = pthread_create(&id, &attr, waitingThread1, NULL)) != 0) {
-     fprintf(stderr, "Error: waitingThread failed with error code %d \n", result);
-     exit( -1);
-   }
-   pthread_attr_destroy(&attr);
-   if ((result = pthread_join(id, NULL)) != 0) {
-     fprintf(stderr, "Failed to join thread %d \n", result);
-     exit(-1);
-   }
-   return 0;
-}
-
-static void *ownerThread1(void *context) {
+static int ownerThread(void *context) {
     JNIEnv *env;
     int exitCode = PASSED;
     jint res;
@@ -253,7 +236,7 @@ static void *ownerThread1(void *context) {
     if (res != 0) {
         NSK_COMPLAIN1("TEST FAILURE: ownerThread: AttachCurrentThread() returns: %d\n",
             res);
-        exit(STATUS_FAILED);
+        return STATUS_FAILED;
     }
 
     NSK_DISPLAY0("ownerThread: trying to enter the monitor ...\n");
@@ -284,26 +267,7 @@ static void *ownerThread1(void *context) {
     THREAD_return(exitCode);
 }
 
-static int ownerThread(void *unused){
-    pthread_t id;
-    int result;
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setstacksize(&attr, STACK_SIZE);
-    if ((result = pthread_create(&id, &attr, ownerThread1, NULL)) != 0) {
-        fprintf(stderr, "Error: ownerThread failed with error code %d \n", result);
-        exit(-1);
-    }
-    pthread_attr_destroy(&attr);
-    if ((result = pthread_join(id, NULL)) != 0){
-        fprintf(stderr, "Failed to join thread %d \n", result);
-        exit(-1);
-    }
-
-    return 0;
-}
-
-static void *redirectorThread1(void *context) {
+static int redirectorThread(void *context) {
     JNIEnv *env;
     int exitCode = PASSED;
     jint res;
@@ -314,7 +278,7 @@ static void *redirectorThread1(void *context) {
     if (res != 0) {
         NSK_COMPLAIN1("TEST FAILURE: redirectorThread: AttachCurrentThread() returns: %d\n",
             res);
-        exit(STATUS_FAILED);
+        return STATUS_FAILED;
     }
 
     NSK_DISPLAY0("redirectorThread: trying to redirect the MonitorEnter() ...\n");
@@ -324,24 +288,6 @@ static void *redirectorThread1(void *context) {
         exitCode);
 
     THREAD_return(exitCode);
-}
-
-static int redirectorThread(void *context) {
-    pthread_t id;
-    int result;
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setstacksize(&attr, STACK_SIZE);
-    if ((result = pthread_create(&id, &attr, redirectorThread1, NULL)) != 0) {
-        fprintf(stderr, "Error: redirectorThread failed with error code %d \n", result);
-        exit(-1);
-    }
-    pthread_attr_destroy(&attr);
-    if ((result = pthread_join(id, NULL)) != 0){
-        fprintf(stderr, "Failed to join thread %d \n", result);
-        exit(-1);
-    }
-    return 0;
 }
 /*********************/
 
