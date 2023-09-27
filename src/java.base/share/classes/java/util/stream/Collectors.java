@@ -223,7 +223,7 @@ public final class Collectors {
      */
     public static <T, C extends Collection<T>>
     Collector<T, ?, C> toCollection(Supplier<C> collectionFactory) {
-        return new CollectorImpl<>(collectionFactory, Collection<T>::add,
+        return new CollectorImpl<>(collectionFactory, Collection::add,
                                    (r1, r2) -> { r1.addAll(r2); return r1; },
                                    CH_ID);
     }
@@ -1106,7 +1106,7 @@ public final class Collectors {
             A container = m.computeIfAbsent(key, k -> downstreamSupplier.get());
             downstreamAccumulator.accept(container, t);
         };
-        BinaryOperator<Map<K, A>> merger = Collectors.<K, A, Map<K, A>>mapMerger(downstream.combiner());
+        BinaryOperator<Map<K, A>> merger = Collectors.mapMerger(downstream.combiner());
         @SuppressWarnings("unchecked")
         Supplier<Map<K, A>> mangledFactory = (Supplier<Map<K, A>>) mapFactory;
 
@@ -1259,7 +1259,7 @@ public final class Collectors {
                                             Collector<? super T, A, D> downstream) {
         Supplier<A> downstreamSupplier = downstream.supplier();
         BiConsumer<A, ? super T> downstreamAccumulator = downstream.accumulator();
-        BinaryOperator<ConcurrentMap<K, A>> merger = Collectors.<K, A, ConcurrentMap<K, A>>mapMerger(downstream.combiner());
+        BinaryOperator<ConcurrentMap<K, A>> merger = Collectors.mapMerger(downstream.combiner());
         @SuppressWarnings("unchecked")
         Supplier<ConcurrentMap<K, A>> mangledFactory = (Supplier<ConcurrentMap<K, A>>) mapFactory;
         BiConsumer<ConcurrentMap<K, A>, T> accumulator;
