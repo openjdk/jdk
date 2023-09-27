@@ -21,9 +21,11 @@
  * questions.
  */
 
-// This file is intentionally left blank.
-//
-// It exists only to be linked with -ffast-math. See GCC bug 55522:
+#include <assert.h>
+#include <fenv.h>
+#include "jni.h"
+
+// See GCC bug 55522:
 //
 // "When used at link-time, [ GCC with -ffast-math ] may include
 // libraries or startup files that change the default FPU control word
@@ -31,3 +33,18 @@
 //
 // This breaks Java's floating point arithmetic.
 
+#if defined(__GNUC__) && defined(__x86_64__) && defined(__GNU_LIBRARY__)
+
+void set_flush_to_zero(void) __attribute__((constructor));
+void set_flush_to_zero(void) {
+  fenv_t fenv;
+  int rtn = fegetenv(&fenv);
+  assert(rtn == 0);
+
+  fenv.__mxcsr |= 0x8000; // Flush to zero
+
+  rtn = fesetenv(&fenv);
+  assert(rtn == 0);
+}
+
+#endif // defined(__GNUC__) && defined(__x86_64__) && defined(__GNU_LIBRARY__)
