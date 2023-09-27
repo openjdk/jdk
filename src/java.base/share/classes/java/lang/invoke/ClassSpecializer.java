@@ -675,7 +675,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                     int nextSlotIndex() { return slotIndex >= 0 ? slotIndex + slotSize() : slotIndex; }
                     boolean isInHeap() { return slotIndex < 0; }
                     void emitLoadInstruction(CodeBuilder cob) {
-                        cob.loadInstruction(TypeKind.fromDescriptor(basicType.btChar + ""), slotIndex);
+                        cob.loadInstruction(basicType.btKind, slotIndex);
                     }
                 }
 
