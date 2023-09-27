@@ -5162,8 +5162,11 @@ void MacroAssembler::restore_cpu_control_state_after_jni(Register rscratch) {
   // or verify that it wasn't changed (with -Xcheck:jni flag).
   if (VM_Version::supports_sse()) {
     if (RestoreMXCSROnJNICalls) {
-
-    Label FAIL, DONE;
+      Label FAIL, DONE;
+#ifdef _LP64
+      // Perform a little arithmetic to make sure that denormal
+      // numbers are handled correctly, i.e. that the "Denormals Are
+      // Zeros" flag has not been set.
       movsd(xmm9, ExternalAddress(StubRoutines::x86::addr_unity()), rsi);
       movsd(xmm8, ExternalAddress(StubRoutines::x86::addr_thresh()), rsi);
       addsd(xmm8, xmm9);
@@ -5173,10 +5176,10 @@ void MacroAssembler::restore_cpu_control_state_after_jni(Register rscratch) {
       subsd(xmm9, xmm8);
       ucomisd(xmm8, xmm9);
       jcc(Assembler::notEqual, DONE);
-
-    bind(FAIL);
+#endif
+      bind(FAIL);
       ldmxcsr(ExternalAddress(StubRoutines::x86::addr_mxcsr_std()), rscratch);
-    bind(DONE);
+      bind(DONE);
     } else if (CheckJNICalls) {
       call(RuntimeAddress(StubRoutines::x86::verify_mxcsr_entry()));
     }

@@ -1843,7 +1843,7 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
     event.commit();
 #endif
 
-    // Quickly test to make sure denormals re correctly handled.
+    // Quickly test to make sure denormals are correctly handled.
     static const double unity
       = jdouble_cast(0x0030000000000000); // 0x1.0p-1020;
     static const volatile double thresh
