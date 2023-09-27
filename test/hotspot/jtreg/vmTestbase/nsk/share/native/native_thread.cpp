@@ -128,7 +128,11 @@ void* THREAD_start(void* t) {
         return NULL;
     }
 #else // !windows & !sun
-    int result = pthread_create(&(thread->id),NULL,procedure,thread);
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    size_t stack_size = 0x100000;
+    pthread_attr_setstacksize(&attr, stack_size);
+    int result = pthread_create(&(thread->id),&attr,procedure,thread);
     if (result != 0) {
         perror("failed to create a native thread");
         return NULL;
