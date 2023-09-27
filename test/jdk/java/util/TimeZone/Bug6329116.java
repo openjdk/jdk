@@ -43,7 +43,8 @@ public class Bug6329116 {
     static Locale[] locales = Locale.getAvailableLocales();
     static String[] timezones = TimeZone.getAvailableIDs();
 
-    static boolean bug6329116() throws IOException {
+    @Test
+    public void bug6329116() throws IOException {
         boolean err = false;
 
         HashMap<String, String> aliasTable = new HashMap<>();
@@ -196,7 +197,9 @@ public class Bug6329116 {
             }
         }
 
-        return err;
+        if (err) {
+            fail("At least one timezone display name is incorrect.");
+        }
     }
 
     static boolean useLocalzedShortDisplayName(TimeZone tz,

@@ -118,9 +118,6 @@ public class ICUBasicTest {
             if (!output.equals(cases[i].expect)) {
                 fail("unexpected result for case " + i + ". Expected="
                       + cases[i].expect + ", Actual=" + output);
-            } else if (verbose) {
-                System.out.println("expected result for case " + i + ". Expected="
-                      + cases[i].expect + ", Actual=" + output);
             }
         }
     }
@@ -408,24 +405,12 @@ public class ICUBasicTest {
                           .formatHex(b.getBytes()) + " x COMPOSE => " +
                   HexFormat.of().withDelimiter(" ")
                           .formatHex(c.getBytes()) + " for the latest Unicode");
-        } else if (verbose) {
-            System.out.println("Ok: " + HexFormat.of().withDelimiter(" ")
-                    .formatHex(a.getBytes()) + " x DECOMP_COMPAT => " +
-                  HexFormat.of().withDelimiter(" ")
-                          .formatHex(b.getBytes()) + " x COMPOSE => " +
-                  HexFormat.of().withDelimiter(" ")
-                          .formatHex(c.getBytes()) + " for the latest Unicode");
         }
 
         b = NormalizerBase.normalize(a, NFKD, Normalizer.UNICODE_3_2);
         c = NormalizerBase.normalize(b, NFC, Normalizer.UNICODE_3_2);
         if (c.equals(a)) {
             fail("FAIL: " + HexFormat.of().withDelimiter(" ")
-                    .formatHex(a.getBytes()) + " x DECOMP_COMPAT => " +
-                  HexFormat.of().withDelimiter(" ").formatHex(b.getBytes()) + " x COMPOSE => " +
-                  HexFormat.of().withDelimiter(" ").formatHex(c.getBytes()) + " for Unicode 3.2.0");
-        } else if (verbose) {
-            System.out.println("Ok: " + HexFormat.of().withDelimiter(" ")
                     .formatHex(a.getBytes()) + " x DECOMP_COMPAT => " +
                   HexFormat.of().withDelimiter(" ").formatHex(b.getBytes()) + " x COMPOSE => " +
                   HexFormat.of().withDelimiter(" ").formatHex(c.getBytes()) + " for Unicode 3.2.0");

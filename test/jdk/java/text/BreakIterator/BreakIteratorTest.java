@@ -87,6 +87,7 @@ public class BreakIteratorTest
     private BreakIterator wordBreak;
     private BreakIterator lineBreak;
     private BreakIterator sentenceBreak;
+    private int errorCount;
 
     public BreakIteratorTest()
     {
@@ -99,6 +100,15 @@ public class BreakIteratorTest
     //=========================================================================
     // general test subroutines
     //=========================================================================
+
+    private int getErrorCount() {
+        return errorCount;
+    }
+
+    private void err(String message) {
+        errorCount++;
+        fail(message);
+    }
 
     private void generalIteratorTest(BreakIterator bi, Vector expectedResult) {
         StringBuffer buffer = new StringBuffer();
@@ -145,19 +155,19 @@ public class BreakIteratorTest
         Vector<String> result = new Vector<String>();
 
         if (p != 0)
-            fail("first() returned " + p + " instead of 0");
+            err("first() returned " + p + " instead of 0");
         while (p != BreakIterator.DONE) {
             p = bi.next();
             if (p != BreakIterator.DONE) {
                 if (p <= lastP)
-                    fail("next() failed to move forward: next() on position "
+                    err("next() failed to move forward: next() on position "
                                     + lastP + " yielded " + p);
 
                 result.addElement(text.substring(lastP, p));
             }
             else {
                 if (lastP != text.length())
-                    fail("next() returned DONE prematurely: offset was "
+                    err("next() returned DONE prematurely: offset was "
                                     + lastP + " instead of " + text.length());
             }
             lastP = p;
@@ -171,19 +181,19 @@ public class BreakIteratorTest
         Vector<String> result = new Vector<String>();
 
         if (p != text.length())
-            fail("last() returned " + p + " instead of " + text.length());
+            err("last() returned " + p + " instead of " + text.length());
         while (p != BreakIterator.DONE) {
             p = bi.previous();
             if (p != BreakIterator.DONE) {
                 if (p >= lastP)
-                    fail("previous() failed to move backward: previous() on position "
+                    err("previous() failed to move backward: previous() on position "
                                     + lastP + " yielded " + p);
 
                 result.insertElementAt(text.substring(p, lastP), 0);
             }
             else {
                 if (lastP != 0)
-                    fail("previous() returned DONE prematurely: offset was "
+                    err("previous() returned DONE prematurely: offset was "
                                     + lastP + " instead of 0");
             }
             lastP = p;
@@ -240,7 +250,7 @@ public class BreakIteratorTest
                     debugLogln(" ***** >" + s2 + "<");
                     ++p2;
                 }
-                fail("Discrepancy between " + f1Name + " and " + f2Name + "\n---\n" + f1 +"\n---\n" + f2);
+                err("Discrepancy between " + f1Name + " and " + f2Name + "\n---\n" + f1 +"\n---\n" + f2);
             }
         }
     }
@@ -257,11 +267,11 @@ public class BreakIteratorTest
                 int b = bi.following(i);
                 System.out.println("bi.following(" + i + ") -> " + b);
                 if (b != boundaries[p])
-                    fail("Wrong result from following() for " + i + ": expected " + boundaries[p]
+                    err("Wrong result from following() for " + i + ": expected " + boundaries[p]
                           + ", got " + b);
             }
         } catch (IllegalArgumentException illargExp) {
-            fail("IllegalArgumentException caught from following() for offset: " + i);
+            err("IllegalArgumentException caught from following() for offset: " + i);
         }
     }
 
@@ -274,14 +284,14 @@ public class BreakIteratorTest
                 int b = bi.preceding(i);
                 System.out.println("bi.preceding(" + i + ") -> " + b);
                 if (b != boundaries[p])
-                    fail("Wrong result from preceding() for " + i + ": expected " + boundaries[p]
+                    err("Wrong result from preceding() for " + i + ": expected " + boundaries[p]
                           + ", got " + b);
 
                 if (i == boundaries[p + 1])
                     ++p;
             }
         } catch (IllegalArgumentException illargExp) {
-            fail("IllegalArgumentException caught from preceding() for offset: " + i);
+            err("IllegalArgumentException caught from preceding() for offset: " + i);
         }
     }
 
@@ -295,12 +305,12 @@ public class BreakIteratorTest
 
             if (i == boundaries[p]) {
                 if (!isB)
-                    fail("Wrong result from isBoundary() for " + i + ": expected true, got false");
+                    err("Wrong result from isBoundary() for " + i + ": expected true, got false");
                 ++p;
             }
             else {
                 if (isB)
-                    fail("Wrong result from isBoundary() for " + i + ": expected false, got true");
+                    err("Wrong result from isBoundary() for " + i + ": expected false, got true");
             }
         }
     }
@@ -318,7 +328,7 @@ public class BreakIteratorTest
             testOffset = testIterator.next(count);
             System.out.println("next(" + count + ") -> " + testOffset);
             if (offset != testOffset)
-                fail("next(n) and next() not returning consistent results: for step " + count + ", next(n) returned " + testOffset + " and next() had " + offset);
+                err("next(n) and next() not returning consistent results: for step " + count + ", next(n) returned " + testOffset + " and next() had " + offset);
 
             if (offset != BreakIterator.DONE) {
                 count++;
@@ -335,7 +345,7 @@ public class BreakIteratorTest
             testOffset = testIterator.next(count);
             System.out.println("next(" + count + ") -> " + testOffset);
             if (offset != testOffset)
-                fail("next(n) and next() not returning consistent results: for step " + count + ", next(n) returned " + testOffset + " and next() had " + offset);
+                err("next(n) and next() not returning consistent results: for step " + count + ", next(n) returned " + testOffset + " and next() had " + offset);
 
             if (offset != BreakIterator.DONE) {
                 count--;
@@ -381,7 +391,7 @@ public class BreakIteratorTest
                             seen2 = true;
                     }
                     if (!seen2) {
-                        fail("No break between U+" + Integer.toHexString((int)(work.charAt(1)))
+                        err("No break between U+" + Integer.toHexString((int)(work.charAt(1)))
                                     + " and U+" + Integer.toHexString((int)(work.charAt(2))));
                         errorCount++;
                         if (errorCount >= 75)
@@ -405,7 +415,7 @@ public class BreakIteratorTest
                 tb.setText(work.toString());
                 for (int k = tb.first(); k != BreakIterator.DONE; k = tb.next())
                     if (k == 2) {
-                        fail("Break between CR and LF in string U+" + Integer.toHexString(
+                        err("Break between CR and LF in string U+" + Integer.toHexString(
                                 (int)(work.charAt(0))) + ", U+d U+a U+" + Integer.toHexString(
                                 (int)(work.charAt(3))));
                         errorCount++;
@@ -443,7 +453,7 @@ public class BreakIteratorTest
                 tb.setText(work.toString());
                 for (int k = tb.first(); k != BreakIterator.DONE; k = tb.next())
                     if (k == 2) {
-                        fail("Break between U+" + Integer.toHexString((int)(work.charAt(1)))
+                        err("Break between U+" + Integer.toHexString((int)(work.charAt(1)))
                                 + " and U+" + Integer.toHexString((int)(work.charAt(2))));
                         errorCount++;
                         if (errorCount >= 75)
@@ -1028,12 +1038,12 @@ public class BreakIteratorTest
             try {
                 dummy = iter.isBoundary(index);
                 if (index < begin)
-                    fail("Didn't get exception with offset = " + index +
+                    err("Didn't get exception with offset = " + index +
                                     " and begin index = " + begin);
             }
             catch (IllegalArgumentException e) {
                 if (index >= begin)
-                    fail("Got exception with offset = " + index +
+                    err("Got exception with offset = " + index +
                                     " and begin index = " + begin);
             }
         }
@@ -1171,7 +1181,7 @@ public class BreakIteratorTest
                                                                  work.charAt(l) == '\ufeff')) {
                                 continue;
                             }
-                            fail("Got break between U+" + Integer.toHexString((int)
+                            err("Got break between U+" + Integer.toHexString((int)
                                     (work.charAt(l - 1))) + " and U+" + Integer.toHexString(
                                     (int)(work.charAt(l))));
                             errorCount++;
@@ -1224,7 +1234,7 @@ public class BreakIteratorTest
                         if (l == 2)
                             saw2 = true;
                     if (!saw2) {
-                        fail("Didn't get break between U+" + Integer.toHexString((int)
+                        err("Didn't get break between U+" + Integer.toHexString((int)
                                     (work.charAt(1))) + " and U+" + Integer.toHexString(
                                     (int)(work.charAt(2))));
                         errorCount++;
@@ -1263,7 +1273,7 @@ public class BreakIteratorTest
         Locale[] locList = BreakIterator.getAvailableLocales();
 
         if (locList.length == 0)
-            fail("getAvailableLocales() returned an empty list!");
+            err("getAvailableLocales() returned an empty list!");
         // I have no idea how to test this function...
     }
 
@@ -1320,18 +1330,18 @@ public class BreakIteratorTest
             iter.setText(testString.toString());
             int j = iter.first();
             if (j != 0) {
-                fail("ja line break failure: failed to start at 0 and bounced at " + j);
+                err("ja line break failure: failed to start at 0 and bounced at " + j);
             }
             j = iter.next();
             if (j != 1) {
-                fail("ja line break failure: failed to stop before '"
+                err("ja line break failure: failed to stop before '"
                         + precedingChars.charAt(i) + "' (\\u"
                         + Integer.toString(precedingChars.charAt(i), 16)
                         + ") at 1 and bounded at " + j);
             }
             j = iter.next();
             if (j != 3) {
-                fail("ja line break failure: failed to skip position after '"
+                err("ja line break failure: failed to skip position after '"
                         + precedingChars.charAt(i) + "' (\\u"
                         + Integer.toString(precedingChars.charAt(i), 16)
                         + ") at 3 and bounded at " + j);
@@ -1343,18 +1353,18 @@ public class BreakIteratorTest
             iter.setText(testString.toString());
             int j = iter.first();
             if (j != 0) {
-                fail("ja line break failure: failed to start at 0 and bounded at " + j);
+                err("ja line break failure: failed to start at 0 and bounded at " + j);
             }
             j = iter.next();
             if (j != 2) {
-                fail("ja line break failure: failed to skip position before '"
+                err("ja line break failure: failed to skip position before '"
                         + followingChars.charAt(i) + "' (\\u"
                         + Integer.toString(followingChars.charAt(i), 16)
                         + ") at 2 and bounded at " + j);
             }
             j = iter.next();
             if (j != 3) {
-                fail("ja line break failure: failed to stop after '"
+                err("ja line break failure: failed to stop after '"
                         + followingChars.charAt(i) + "' (\\u"
                         + Integer.toString(followingChars.charAt(i), 16)
                         + ") at 3 and bounded at " + j);
@@ -1379,7 +1389,7 @@ public class BreakIteratorTest
         i = iter.first();
         i = iter.next();
         if (i != 5) {
-            fail("Word break failure: failed to stop at 5 and bounded at " + i);
+            err("Word break failure: failed to stop at 5 and bounded at " + i);
         }
 
 
@@ -1392,7 +1402,7 @@ public class BreakIteratorTest
         i = iter.first();
         i = iter.next();
         if (i != 3) {
-            fail("Line break failure: failed to skip before \\u301F(Pe) at 3 and bounded at " + i);
+            err("Line break failure: failed to skip before \\u301F(Pe) at 3 and bounded at " + i);
         }
 
         /* Mongolian <Letter A(Lo)><Todo Soft Hyphen(Pd)><Letter E(Lo)>
@@ -1402,7 +1412,7 @@ public class BreakIteratorTest
         i = iter.first();
         i = iter.next();
         if (i != 2) {
-            fail("Mongolian line break failure: failed to skip position before \\u1806(Pd) at 2 and bounded at " + i);
+            err("Mongolian line break failure: failed to skip position before \\u1806(Pd) at 2 and bounded at " + i);
         }
 
         /* Khmer <ZERO(Nd)><Currency Symbol(Sc)><ONE(Nd)> which have
@@ -1412,11 +1422,11 @@ public class BreakIteratorTest
         i = iter.first();
         i = iter.next();
         if (i != 1) {
-            fail("Khmer line break failure: failed to stop before \\u17DB(Sc) at 1 and bounded at " + i);
+            err("Khmer line break failure: failed to stop before \\u17DB(Sc) at 1 and bounded at " + i);
         }
         i = iter.next();
         if (i != 3) {
-            fail("Khmer line break failure: failed to skip position after \\u17DB(Sc) at 3 and bounded at " + i);
+            err("Khmer line break failure: failed to skip position after \\u17DB(Sc) at 3 and bounded at " + i);
         }
 
         /* Ogham <Letter UR(Lo)><Space Mark(Zs)><Letter OR(Lo)> which have
@@ -1426,7 +1436,7 @@ public class BreakIteratorTest
         i = iter.first();
         i = iter.next();
         if (i != 2) {
-            fail("Ogham line break failure: failed to skip postion before \\u1680(Zs) at 2 and bounded at " + i);
+            err("Ogham line break failure: failed to skip postion before \\u1680(Zs) at 2 and bounded at " + i);
         }
 
 
@@ -1443,11 +1453,11 @@ public class BreakIteratorTest
         i = iter.first();
         i = iter.next();
         if (i != 1) {
-            fail("Thai line break failure: failed to stop before \\u201C(Pi) at 1 and bounded at " + i);
+            err("Thai line break failure: failed to stop before \\u201C(Pi) at 1 and bounded at " + i);
         }
         i = iter.next();
         if (i != 4) {
-            fail("Thai line break failure: failed to stop after \\u201D(Pf) at 4 and bounded at " + i);
+            err("Thai line break failure: failed to stop after \\u201D(Pf) at 4 and bounded at " + i);
         }
     }
 
@@ -1462,11 +1472,11 @@ public class BreakIteratorTest
         wb.setText(testString);
 
         if (wb.first() != 0)
-            fail("Didn't get break at beginning of string.");
+            err("Didn't get break at beginning of string.");
         if (wb.next() != 3)
-            fail("Didn't get break before period in \"boo.\"");
+            err("Didn't get break before period in \"boo.\"");
         if (wb.current() != 4 && wb.next() != 4)
-            fail("Didn't get break at end of string.");
+            err("Didn't get break at end of string.");
     }
 
     // [serialization test has been removed pursuant to bug #4152965]

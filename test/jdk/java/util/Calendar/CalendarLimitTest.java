@@ -129,6 +129,11 @@ public class CalendarLimitTest
     @Test
     public void TestCalendarLimit()
     {
+        Locale locale = Locale.getDefault();
+        if (!TestUtils.usesGregorianCalendar(locale)) {
+            System.out.println("Skipping this test because locale is " + locale);
+            return;
+        }
         ORIGIN = julianDayToMillis(JAN_1_1_JULIAN_DAY);
 
         Calendar cal = Calendar.getInstance();

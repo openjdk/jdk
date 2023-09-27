@@ -31,10 +31,6 @@
 import java.text.*;
 import java.util.*;
 
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.fail;
-
 public class DateFormatRoundTripTest {
 
     static Random RANDOM = null;
@@ -98,6 +94,55 @@ public class DateFormatRoundTripTest {
         return Locale.of(name, country, variant);
     }
 
+    public static void main(String[] args) throws Exception {
+        // Command-line parameters
+        Locale loc = null;
+        boolean infinite = false;
+        boolean random = false;
+        long seed = FIXED_SEED;
+        String pat = null;
+        Date date = null;
+
+        List<String> newArgs = new ArrayList<>();
+        for (int i=0; i<args.length; ++i) {
+            if (args[i].equals("-locale")
+                    && (i+1) < args.length) {
+                loc = createLocale(args[i+1]);
+                ++i;
+            } else if (args[i].equals("-date")
+                    && (i+1) < args.length) {
+                date = new Date(Long.parseLong(args[i+1]));
+                ++i;
+            } else if (args[i].equals("-pattern")
+                    && (i+1) < args.length) {
+                pat = args[i+1];
+                ++i;
+            } else if (args[i].equals("-INFINITE")) {
+                infinite = true;
+            } else if (args[i].equals("-random")) {
+                random = true;
+            } else if (args[i].equals("-randomseed")) {
+                random = true;
+                seed = System.currentTimeMillis();
+            } else if (args[i].equals("-seed")
+                    && (i+1) < args.length) {
+                random = true;
+                seed = Long.parseLong(args[i+1]);
+                ++i;
+            } else {
+                newArgs.add(args[i]);
+            }
+        }
+
+        if (newArgs.size() != args.length) {
+            args = new String[newArgs.size()];
+            newArgs.addAll(Arrays.asList(args));
+        }
+
+        new DateFormatRoundTripTest(random, seed, infinite, date, pat, loc)
+                .TestDateFormatRoundTrip();
+    }
+
     /**
      * Print a usage message for this test class.
      */
@@ -112,7 +157,6 @@ public class DateFormatRoundTripTest {
         System.out.println("-random     Random with fixed seed (same data every run).");
         System.out.println("-randomseed Random with a random seed.");
         System.out.println("-seed <s>   Random using <s> as seed.");
-        super.usage();
     }
 
     static private class TestCase {
@@ -263,7 +307,6 @@ public class DateFormatRoundTripTest {
                      }}, false),
     };
 
-    @Test
     public void TestDateFormatRoundTrip() {
         avail = DateFormat.getAvailableLocales();
         System.out.println("DateFormat available locales: " + avail.length);
@@ -560,12 +603,12 @@ public class DateFormatRoundTripTest {
                                    (j>0&&d[j].getTime()==d[j-1].getTime()?" d==":"") +
                                    (j>0&&s[j].equals(s[j-1])?" s==":""));
                     }
-                    fail(escape(out.toString()));
+                    throw new RuntimeException(escape(out.toString()));
                 }
             }
         }
         catch (ParseException e) {
-            fail(e.toString());
+            throw new RuntimeException(e.toString());
         }
     }
 

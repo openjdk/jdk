@@ -27,7 +27,8 @@
  * @library /java/text/testlib
  * @build Bug4185816Test HexDumpReader
  * @run junit Bug4185816Test
- * @summary test that MessageFormat invariants are preserved across serialization
+ * @summary test that MessageFormat invariants are preserved across serialization.
+ *          Run prepTest() if the invariant files are not yet generated.
  */
 /*
  * This file is available under and governed by the GNU General Public

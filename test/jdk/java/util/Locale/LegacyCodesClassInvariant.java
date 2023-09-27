@@ -23,7 +23,8 @@
 /*
     @test
     @bug 4184873
-    @summary test that locale invariants are preserved across serialization
+    @summary test that locale invariants are preserved across serialization.
+             Run prepTest() if the invariant files are not yet generated.
     @run junit LegacyCodesClassInvariant
 */
 /*

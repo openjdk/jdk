@@ -28,6 +28,7 @@
  * @build Bug4185732Test HexDumpReader
  * @run junit Bug4185732Test
  * @summary test that ChoiceFormat invariants are preserved across serialization
+ *          Run prepTest() if the invariant files are not yet generated.
  */
 /*
  * This file is available under and governed by the GNU General Public

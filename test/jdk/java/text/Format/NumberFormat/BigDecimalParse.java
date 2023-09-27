@@ -108,7 +108,8 @@ public class BigDecimalParse {
     /**
      * Test for normal big numbers which have the fraction part
      */
-    void test_Parse_in_DecimalFormat_BigDecimal() {
+    @Test
+    public void test_Parse_in_DecimalFormat_BigDecimal() {
         df = new DecimalFormat();
         df.setParseBigDecimal(true);
 
@@ -150,7 +151,8 @@ public class BigDecimalParse {
     /**
      * Test for normal big numbers which have the fraction part with multiplier
      */
-    void test_Parse_in_DecimalFormat_BigDecimal_usingMultiplier() {
+    @Test
+    public void test_Parse_in_DecimalFormat_BigDecimal_usingMultiplier() {
         df = new DecimalFormat();
         df.setParseBigDecimal(true);
 
@@ -192,7 +194,8 @@ public class BigDecimalParse {
     /**
      * Test for division by zero (BigDecimal)
      */
-    void test_Parse_in_DecimalFormat_BigDecimal_DivisionByZero() {
+    @Test
+    public void test_Parse_in_DecimalFormat_BigDecimal_DivisionByZero() {
         df = new DecimalFormat();
         df.setParseBigDecimal(true);
         df.setMultiplier(0);
@@ -213,7 +216,8 @@ public class BigDecimalParse {
     /**
      * Test for division by zero (Double)
      */
-    void test_Parse_in_DecimalFormat_Double_DivisionByZero() {
+    @Test
+    public void test_Parse_in_DecimalFormat_Double_DivisionByZero() {
         df = new DecimalFormat();
         df.setParseBigDecimal(false);
         df.setMultiplier(0);
@@ -250,7 +254,8 @@ public class BigDecimalParse {
     /**
      * Test for division by zero (Long)
      */
-    void test_Parse_in_DecimalFormat_Long_DivisionByZero() {
+    @Test
+    public void test_Parse_in_DecimalFormat_Long_DivisionByZero() {
         df = new DecimalFormat();
         df.setParseBigDecimal(false);
         df.setMultiplier(0);
@@ -271,7 +276,8 @@ public class BigDecimalParse {
     /**
      * Test for normal big numbers which don't have the fraction part
      */
-    void test_Parse_in_DecimalFormat_BigInteger() {
+    @Test
+    public void test_Parse_in_DecimalFormat_BigInteger() {
         df = new DecimalFormat();
         df.setParseBigDecimal(true);
 
@@ -296,7 +302,8 @@ public class BigDecimalParse {
      * Test for normal big numbers which don't have the fraction part with
      * multiplier
      */
-    void test_Parse_in_DecimalFormat_BigInteger_usingMultiplier() {
+    @Test
+    public void test_Parse_in_DecimalFormat_BigInteger_usingMultiplier() {
         df = new DecimalFormat();
         df.setParseBigDecimal(true);
 
@@ -337,7 +344,8 @@ public class BigDecimalParse {
      *    Double.POSITIVE_INFINITY
      *    Double.NEGATIVE_INFINITY
      */
-    void test_Parse_in_DecimalFormat_SpecialNumber() {
+    @Test
+    public void test_Parse_in_DecimalFormat_SpecialNumber() {
         df = new DecimalFormat();
         df.setParseBigDecimal(true);
 
@@ -378,7 +386,8 @@ public class BigDecimalParse {
     /**
      * Test for special numbers
      */
-    void test_Parse_in_DecimalFormat_Other() {
+    @Test
+    public void test_Parse_in_DecimalFormat_Other() {
         df = new DecimalFormat();
         df.setParseBigDecimal(true);
 
@@ -472,7 +481,8 @@ public class BigDecimalParse {
     /**
      * Test for MessageFormat: setParseIntegerOnly(false)
      */
-    void test_Parse_in_MessageFormat_NotParseIntegerOnly() {
+    @Test
+    public void test_Parse_in_MessageFormat_NotParseIntegerOnly() {
         for (int i=0; i < patterns.length; i++) {
             pp = new ParsePosition(0);
             Object[] parsed = null;
@@ -558,7 +568,8 @@ public class BigDecimalParse {
     /**
      * Test for MessageFormat: setParseIntegerOnly(true)
      */
-    void test_Parse_in_MessageFormat_ParseIntegerOnly() {
+    @Test
+    public void test_Parse_in_MessageFormat_ParseIntegerOnly() {
         for (int i=0; i < patterns.length; i++) {
             pp = new ParsePosition(0);
             Object[] parsed = null;
@@ -624,7 +635,8 @@ public class BigDecimalParse {
     /**
      * Test for DecimalFormat: setParseIntegerOnly(true)
      */
-    void test_Parse_in_DecimalFormat_ParseIntegerOnly() {
+    @Test
+    public void test_Parse_in_DecimalFormat_ParseIntegerOnly() {
         DecimalFormat df = (DecimalFormat)NumberFormat.getIntegerInstance();
         df.setParseBigDecimal(true);
 
