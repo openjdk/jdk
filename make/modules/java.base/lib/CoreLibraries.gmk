@@ -64,7 +64,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_macosx := -L$(SUPPORT_OUTPUTDIR)/native/$(MODULE)/, \
-    LDFLAGS_windows := -delayload:shell32.dll, \
     LIBS_unix := -ljvm, \
     LIBS_linux := $(LIBDL), \
     LIBS_aix := $(LIBDL) $(LIBM),\
@@ -72,7 +71,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
         -framework Foundation \
         -framework SystemConfiguration, \
     LIBS_windows := jvm.lib \
-        shell32.lib delayimp.lib \
+        shell32.lib ole32.lib \
         advapi32.lib version.lib, \
 ))
 
