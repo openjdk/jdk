@@ -126,12 +126,10 @@ public class bug5078214 {
         GraphicsDevice[] devices = GraphicsEnvironment.getLocalGraphicsEnvironment()
                                                       .getScreenDevices();
         for (GraphicsDevice device : devices) {
-            GraphicsConfiguration[] gc = device.getConfigurations();
-            for (int i = 0; i < gc.length; i++) {
-                insets = Toolkit.getDefaultToolkit().getScreenInsets(gc[i]);
-                if (insets.bottom != 0) {
-                    return gc[i];
-                }
+            GraphicsConfiguration config = device.getDefaultConfiguration();
+            insets = Toolkit.getDefaultToolkit().getScreenInsets(config);
+            if (insets.bottom != 0) {
+                return config;
             }
         }
         return null;
