@@ -354,8 +354,7 @@ public class IREncodingPrinter {
 
         String currentPlatform = os + " " + arch + " " + (Platform.is32bit() ? "32-bit" : "64-bit");
 
-        return (trueValue && currentPlatform.contains(platform))
-	    || (falseValue && !currentPlatform.contains(platform));
+        return (trueValue && currentPlatform.contains(platform)) || (falseValue && !currentPlatform.contains(platform));
     }
 
     private boolean hasAllRequiredCPUFeature(String[] andRules) {
