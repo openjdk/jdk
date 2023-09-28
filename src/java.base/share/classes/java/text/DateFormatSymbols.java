@@ -658,9 +658,8 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     /**
      * {@return the hash code for this {@code DateFormatSymbols}}
      *
-     * Non-transient instance fields of this class are used to calculate
-     * a hash code value which adheres to the contract defined in {@link Objects#hashCode}
-     *
+     * @implSpec Non-transient instance fields of this class are used to calculate
+     * a hash code value which adheres to the contract defined in {@link Objects#hashCode}.
      * @see Object#hashCode()
      */
     @Override
@@ -689,9 +688,10 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * Returns true if the object is also a {@code DateFormatSymbols} and the two
      * {@code DateFormatSymbols} objects represent the same date-time formatting data.
      *
-     * @implSpec The default implementation performs an equality check with a
-     * notion of class identity based on {@code getClass()}, not {@code instanceof};
-     * overriding methods should do so as well.
+     * @implSpec This method performs an equality check with a notion of class
+     * identity based on {@code getClass()}, rather than {@code instanceof}.
+     * Therefore, in the equals methods in subclasses, no instance of this class
+     * should compare as equal to an instance of a subclass.
      * @param  obj object to be compared for equality
      * @return {@code true} if the specified object is equal to this {@code DateFormatSymbols}
      * @see Object#equals(Object)

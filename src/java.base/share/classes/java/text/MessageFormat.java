@@ -1145,9 +1145,10 @@ public class MessageFormat extends Format {
      * Returns true if the object is also a {@code MessageFormat} and the
      * two formats would format any value the same.
      *
-     * @implSpec The default implementation performs an equality check with a
-     * notion of class identity based on {@code getClass()}, not {@code instanceof};
-     * overriding methods should do so as well.
+     * @implSpec This method performs an equality check with a notion of class
+     * identity based on {@code getClass()}, rather than {@code instanceof}.
+     * Therefore, in the equals methods in subclasses, no instance of this class
+     * should compare as equal to an instance of a subclass.
      * @param  obj object to be compared for equality
      * @return {@code true} if the specified object is equal to this {@code MessageFormat}
      * @see Object#equals(Object)
@@ -1170,9 +1171,8 @@ public class MessageFormat extends Format {
     /**
      * {@return the hash code value for this {@code MessageFormat}}
      *
-     * The hash code value is calculated using the value returned by
+     * @implSpec This method calculates the hash code value using the value returned by
      * {@link #toPattern()}.
-     *
      * @see Object#hashCode()
      */
     @Override

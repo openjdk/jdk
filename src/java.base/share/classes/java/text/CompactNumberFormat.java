@@ -217,7 +217,6 @@ public final class CompactNumberFormat extends NumberFormat {
     @java.io.Serial
     private static final long serialVersionUID = 7128367218649234678L;
 
-
     /**
      * The patterns for compact form of numbers for this
      * {@code CompactNumberFormat}. A possible example is
@@ -2348,9 +2347,10 @@ public final class CompactNumberFormat extends NumberFormat {
      * Returns true if the object is also a {@code CompactNumberFormat} and the
      * two formats would format any value the same.
      *
-     * @implSpec The default implementation performs an equality check with a
-     * notion of class identity based on {@code getClass()}, not {@code instanceof};
-     * overriding methods should do so as well.
+     * @implSpec This method performs an equality check with a notion of class
+     * identity based on {@code getClass()}, rather than {@code instanceof}.
+     * Therefore, in the equals methods in subclasses, no instance of this class
+     * should compare as equal to an instance of a subclass.
      * @param obj the object to compare with
      * @return true if this is equal to the other {@code CompactNumberFormat}
      * @see Object#hashCode()
@@ -2379,9 +2379,8 @@ public final class CompactNumberFormat extends NumberFormat {
     /**
      * {@return the hash code for this {@code CompactNumberFormat}}
      *
-     * Non-transient instance fields of this class are used to calculate
+     * @implSpec Non-transient instance fields of this class are used to calculate
      * a hash code value which adheres to the contract defined in {@link Objects#hashCode}
-     *
      * @see Object#hashCode()
      */
     @Override
