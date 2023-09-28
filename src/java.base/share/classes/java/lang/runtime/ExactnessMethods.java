@@ -82,7 +82,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean int_byte(int n)      {return n == (int)(byte)(n);}
+    public static boolean int_byte(int n)      {return n == (int)(byte)n;}
 
     /** Exactness method from int to short
      *
@@ -90,7 +90,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean int_short(int n)     {return n == (int)(short)(n);}
+    public static boolean int_short(int n)     {return n == (int)(short)n;}
 
     /** Exactness method from int to char
      *
@@ -98,7 +98,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean int_char(int n)      {return n == (char)(n);}
+    public static boolean int_char(int n)      {return n == (int)(char)n;}
 
     /** Exactness method from int to float
      *
@@ -114,7 +114,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean long_byte(long n)    {return n == (long)(byte)(n);}
+    public static boolean long_byte(long n)    {return n == (long)(byte)n;}
 
     /** Exactness method from long to short
      *
@@ -122,7 +122,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean long_short(long n)   {return n == (long)(short)(n);}
+    public static boolean long_short(long n)   {return n == (long)(short)n;}
 
     /** Exactness method from long to char
      *
@@ -130,7 +130,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean long_char(long n)    {return n == (char)(n);}
+    public static boolean long_char(long n)    {return n == (long)(char)n;}
 
     /** Exactness method from long to int
      *
@@ -138,7 +138,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean long_int(long n)     {return n == (long)(int)(n);}
+    public static boolean long_int(long n)     {return n == (long)(int)n;}
 
     /** Exactness method from long to float
      *
