@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,46 +21,35 @@
  * questions.
  */
 
-import java.lang.reflect.*;
-import java.util.Hashtable;
-import java.util.Enumeration;
-import java.util.Vector;
-import java.io.*;
 import java.text.*;
 
 /**
- * CollatorTest is a base class for tests that can be run conveniently from
- * the command line as well as under the Java test harness.
- * <p>
- * Sub-classes implement a set of methods named Test<something>. Each
- * of these methods performs some test. Test methods should indicate
- * errors by calling either err or errln.  This will increment the
- * errorCount field and may optionally print a message to the log.
- * Debugging information may also be added to the log via the log
- * and logln methods.  These methods will add their arguments to the
- * log only if the test is being run in verbose mode.
+ * CollatorUtils is a utility class that provides methods that
+ * Collator related tests can use.
  */
-public abstract class CollatorTest extends IntlTest {
+public final class CollatorUtils {
+
+    // Utility class should not be instantiated
+    private CollatorUtils() {}
 
     //------------------------------------------------------------------------
     // These methods are utilities specific to the Collation tests..
     //------------------------------------------------------------------------
 
-    protected void assertEqual(CollationElementIterator i1, CollationElementIterator i2) {
+    public static void assertEqual(CollationElementIterator i1, CollationElementIterator i2) {
         int c1, c2, count = 0;
         do {
             c1 = i1.next();
             c2 = i2.next();
             if (c1 != c2) {
-                errln("    " + count + ": " + c1 + " != " + c2);
-                break;
+                throw new RuntimeException("    " + count + ": " + c1 + " != " + c2);
             }
             count++;
         } while (c1 != CollationElementIterator.NULLORDER);
     }
 
     // Replace nonprintable characters with unicode escapes
-    static protected String prettify(String str) {
+    public static String prettify(String str) {
         StringBuffer result = new StringBuffer();
 
         String zero = "0000";
@@ -79,7 +68,7 @@ public abstract class CollatorTest extends IntlTest {
     }
 
     // Produce a printable representation of a CollationKey
-    static protected String prettify(CollationKey key) {
+    public static String prettify(CollationKey key) {
         StringBuffer result = new StringBuffer();
         byte[] bytes = key.toByteArray();
 
@@ -95,19 +84,15 @@ public abstract class CollatorTest extends IntlTest {
     // to add a new test by simply adding a function to an existing class
     //------------------------------------------------------------------------
 
-    protected void doTest(Collator col, int strength,
+    public static void doTest(Collator col, int strength,
                           String[] source, String[] target, int[] result) {
         if (source.length != target.length) {
-            errln("Data size mismatch: source = " +
-                  source.length + ", target = " + target.length);
-
-            return; // Return if "-nothrow" is specified.
+            throw new RuntimeException("Data size mismatch: source = " +
+                    source.length + ", target = " + target.length);
         }
         if (source.length != result.length) {
-            errln("Data size mismatch: source & target = " +
-                  source.length + ", result = " + result.length);
-
-            return; // Return if "-nothrow" is specified.
+            throw new RuntimeException("Data size mismatch: source & target = " +
+                    source.length + ", result = " + result.length);
         }
 
         col.setStrength(strength);
@@ -116,7 +101,7 @@ public abstract class CollatorTest extends IntlTest {
         }
     }
 
-    protected void doTest(Collator col,
+    public static void doTest(Collator col,
                           String source, String target, int result) {
         char relation = '=';
         if (result <= -1) {
@@ -130,12 +115,12 @@ public abstract class CollatorTest extends IntlTest {
         CollationKey sortKey2 = col.getCollationKey(target);
         int keyResult = sortKey1.compareTo(sortKey2);
         if (compareResult != keyResult) {
-            errln("Compare and Collation Key results are different! Source = " +
-                  source + " Target = " + target);
+            throw new RuntimeException("Compare and Collation Key results are different! Source = " +
+                    source + " Target = " + target);
         }
         if (keyResult != result) {
-            errln("Collation Test failed! Source = " + source + " Target = " +
-                  target + " result should be " + relation);
+            throw new RuntimeException("Collation Test failed! Source = " + source + " Target = " +
+                    target + " result should be " + relation);
         }
     }
 }
