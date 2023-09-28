@@ -111,21 +111,21 @@ public @interface IR {
     /**
      * Accepts a single pair composed of a platform string followed by a true/false
      * value where a true value necessitates that we are currently testing on that platform and vice-versa.
-     * IR verifications checks are enforced only if the specified platform constraint is met.
+     * IR checks are enforced only if the specified platform constraint is met.
      */
     String[] applyIfPlatform() default {};
 
     /**
      * Accepts a list of pairs where each pair is composed of a platform string followed by a true/false
      * value where a true value necessitates that we are currently testing on that platform and vice-versa.
-     * IR verifications checks are enforced only if all the specified platform constraints are met.
+     * IR checks are enforced only if all the specified platform constraints are met.
      */
     String[] applyIfPlatformAnd() default {};
 
     /**
      * Accepts a list of pairs where each pair is composed of a platform string followed by a true/false
      * value where a true value necessitates that we are currently testing on that platform and vice-versa.
-     * IR verifications checks are enforced if any of the specified platform constraints are met.
+     * IR checks are enforced if any of the specified platform constraints are met.
      */
     String[] applyIfPlatformOr() default {};
 

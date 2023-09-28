@@ -105,7 +105,7 @@ public class TestPreconditions {
     @IR(applyIfPlatform = {"aarch64", "true"},
         applyIfAnd = {"UseSVE", "= 0", "LoopMaxUnroll", "= 0"},
         counts = {IRNode.LOOP, ">= 1000"})
-    public static void testApplyBothPlatformSVE() {}
+    public static void testApplyPlatformSVE() {}
 
     @Test
     @IR(applyIfPlatform = {"x64", "true"},
