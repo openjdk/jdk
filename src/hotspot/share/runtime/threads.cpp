@@ -692,16 +692,29 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // initialize compiler(s)
 #if defined(COMPILER1) || COMPILER2_OR_JVMCI
+  bool init_compilation = true;
 #if INCLUDE_JVMCI
   bool force_JVMCI_initialization = false;
   if (EnableJVMCI) {
     // Initialize JVMCI eagerly when it is explicitly requested.
     // Or when JVMCILibDumpJNIConfig or JVMCIPrintProperties is enabled.
     force_JVMCI_initialization = EagerJVMCI || JVMCIPrintProperties || JVMCILibDumpJNIConfig;
+    if (!force_JVMCI_initialization && UseJVMCICompiler && !UseJVMCINativeLibrary && (!UseInterpreter || !BackgroundCompilation)) {
+      // Force initialization of jarjvmci otherwise requests for blocking
+      // compilations will not actually block until jarjvmci is initialized.
+      force_JVMCI_initialization = true;
+    }
+    if (JVMCIPrintProperties || JVMCILibDumpJNIConfig) {
+      // Both JVMCILibDumpJNIConfig and JVMCIPrintProperties exit the VM
+      // so compilation should be disabled. This prevents dumping or
+      // printing from happening more than once.
+      init_compilation = false;
+    }
   }
 #endif
-  CompileBroker::compilation_init_phase1(CHECK_JNI_ERR);
-  CompileBroker::compilation_init_phase2();
+  if (init_compilation) {
+    CompileBroker::compilation_init(CHECK_JNI_ERR);
+  }
 #endif
 
   // Start string deduplication thread if requested.
