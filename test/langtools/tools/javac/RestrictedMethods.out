@@ -1,0 +1,7 @@
+RestrictedMethods.java:13:44: compiler.warn.restricted.method.call: reinterpret(long)
+RestrictedMethods.java:18:27: compiler.warn.restricted.method.call: reinterpret(long)
+- compiler.err.warnings.and.werror
+- compiler.note.preview.filename: RestrictedMethods.java, DEFAULT
+- compiler.note.preview.recompile
+1 error
+2 warnings

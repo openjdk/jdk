@@ -390,6 +390,11 @@ public class Flags {
     public static final long SEALED = 1L<<62; // ClassSymbols
 
     /**
+     * Flag to indicate sealed class/interface declaration.
+     */
+    public static final long RESTRICTED = 1L<<62; // MethodSymbols
+
+    /**
      * Flag to indicate that the class/interface was declared with the non-sealed modifier.
      */
     public static final long NON_SEALED = 1L<<63; // ClassSymbols
