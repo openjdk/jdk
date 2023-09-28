@@ -46,13 +46,14 @@ WeakHandle::WeakHandle(OopStorage* storage, oop obj) :
   NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(_obj, obj);
 }
 
-void WeakHandle::release(OopStorage* storage) const {
+void WeakHandle::release(OopStorage* storage) {
   // Only release if the pointer to the object has been created.
   if (_obj != nullptr) {
     // Clear the WeakHandle.  For race in creating ClassLoaderData, we can release this
     // WeakHandle before it is cleared by GC.
     NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(_obj, nullptr);
     storage->release(_obj);
+    _obj = nullptr;
   }
 }
 

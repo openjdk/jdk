@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,29 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP
-#define SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP
+/*
+ * @test
+ * @bug 4243927
+ * @summary Tests that methods getAccessibleChild() and getAccessibleAt()
+ *          of class JTableHeader.AccessibleJTableHeader do not throw NPE
+ */
 
-#include "gc/serial/defNewGeneration.hpp"
+import javax.accessibility.AccessibleComponent;
+import javax.accessibility.AccessibleContext;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableColumn;
 
-#include "gc/serial/cardTableRS.hpp"
-#include "gc/shared/space.inline.hpp"
-#include "oops/access.inline.hpp"
-#include "utilities/devirtualizer.inline.hpp"
+public class bug4243927 {
+    public static void main(String[] argv) {
+        JTableHeader header = new JTableHeader();
+        header.getColumnModel().addColumn(new TableColumn(0));
 
-// Methods of protected closure types
-
-template <typename OopClosureType>
-void DefNewGeneration::oop_since_save_marks_iterate(OopClosureType* cl) {
-  // No allocation in eden and from spaces, so no iteration required.
-  assert(eden()->saved_mark_at_top(), "inv");
-  assert(from()->saved_mark_at_top(), "inv");
-
-  to()->oop_since_save_marks_iterate(cl);
-  to()->set_saved_mark();
+        AccessibleContext c = header.getAccessibleContext();
+        c.getAccessibleChild(0);
+        ((AccessibleComponent)c).getAccessibleAt(new java.awt.Point(0,0));
+    }
 }
-
-#endif // SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP
