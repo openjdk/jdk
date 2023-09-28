@@ -132,11 +132,12 @@ void* THREAD_start(void* t) {
     pthread_attr_init(&attr);
     size_t stack_size = 0x100000;
     pthread_attr_setstacksize(&attr, stack_size);
-    int result = pthread_create(&(thread->id),&attr,procedure,thread);
+    int result = pthread_create(&(thread->id), &attr, procedure, thread);
     if (result != 0) {
         perror("failed to create a native thread");
         return NULL;
     }
+    pthread_attr_destroy(&attr);
 #endif // !windows & !sun
     };
     return thread;
