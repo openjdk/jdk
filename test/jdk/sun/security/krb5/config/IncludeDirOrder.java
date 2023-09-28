@@ -58,7 +58,7 @@ public class IncludeDirOrder {
         for (var i : list) {
             write(xdir, i);
         }
-        // K10 should always to read first
+        // K10 should always be read first
         System.setProperty("java.security.krb5.conf", "main.conf");
         Asserts.assertEQ(Config.getInstance().getDefaultRealm(), "K10");
     }
