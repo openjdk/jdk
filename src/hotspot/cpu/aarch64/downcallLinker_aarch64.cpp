@@ -171,6 +171,7 @@ void DowncallStubGenerator::add_offsets_to_oops(GrowableArray<VMStorage>& java_r
   int reg_idx = 0;
   for (int sig_idx = 0; sig_idx < _num_args; sig_idx++) {
     if (_signature[sig_idx] == T_OBJECT) {
+      assert(_signature[sig_idx + 1] == T_LONG, "expected offset after oop");
       VMStorage reg_oop = java_regs.at(reg_idx++);
       VMStorage reg_offset = java_regs.at(reg_idx++);
       sig_idx++; // skip offset

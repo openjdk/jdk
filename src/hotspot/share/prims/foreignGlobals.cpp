@@ -161,7 +161,7 @@ GrowableArray<VMStorage> ForeignGlobals::replace_place_holders(const GrowableArr
 }
 
 GrowableArray<VMStorage> ForeignGlobals::upcall_filter_receiver_reg(const GrowableArray<VMStorage>& unfiltered_regs) {
-  GrowableArray<VMStorage> out;
+  GrowableArray<VMStorage> out(unfiltered_regs.length() - 1);
   // drop first arg reg
   for (int i = 1; i < unfiltered_regs.length(); i++) {
     out.push(unfiltered_regs.at(i));
@@ -286,9 +286,9 @@ class ArgumentShuffle::ComputeMoveOrder: public StackObj {
   }
 
   void compute() {
-    for (int in_idx = _in_regs.length() - 1, out_idx = _out_regs.length() - 1; in_idx >= 0; in_idx--, out_idx--) {
-      VMStorage in_reg = _in_regs.at(in_idx);
-      VMStorage out_reg = _out_regs.at(out_idx);
+    for (int i = 0; i < _in_regs.length(); i++) {
+      VMStorage in_reg = _in_regs.at(i);
+      VMStorage out_reg = _out_regs.at(i);
 
       if (out_reg.is_stack() || out_reg.is_frame_data()) {
         // Move operations where the dest is the stack can all be

@@ -120,7 +120,7 @@ Java_jdk_internal_foreign_abi_fallback_LibFallback_doDowncall(JNIEnv* env, jclas
     for (int i = 0; i < numArgs; i++) {
       jarray hb = (jarray) (*env)->GetObjectArrayElement(env, heapBases, i);
       if (hb != NULL) {
-        (*env)->ReleasePrimitiveArrayCritical(env, hb, carrays[i], JNI_COMMIT );
+        (*env)->ReleasePrimitiveArrayCritical(env, hb, carrays[i], JNI_COMMIT);
       }
     }
     free(carrays);

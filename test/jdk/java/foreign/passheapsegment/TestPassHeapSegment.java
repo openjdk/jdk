@@ -32,11 +32,10 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
-import static org.testng.Assert.*;
+import static java.lang.foreign.ValueLayout.ADDRESS;
 
 public class TestPassHeapSegment extends UpcallTestHelper  {
 
@@ -47,9 +46,9 @@ public class TestPassHeapSegment extends UpcallTestHelper  {
     @Test(expectedExceptions = IllegalArgumentException.class,
         expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
     public void testNoHeapArgs() throws Throwable {
-        MethodHandle handle = downcallHandle("test_args", FunctionDescriptor.ofVoid(C_POINTER));
+        MethodHandle handle = downcallHandle("test_args", FunctionDescriptor.ofVoid(ADDRESS));
         MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
-        handle.invokeExact(segment); // should throw
+        handle.invoke(segment); // should throw
     }
 
     @Test(dataProvider = "specs")
@@ -64,8 +63,8 @@ public class TestPassHeapSegment extends UpcallTestHelper  {
         }
 
         public static void main(String[] args) throws Throwable {
-            MethodHandle handle = downcallHandle("test_return", FunctionDescriptor.ofVoid(C_POINTER));
-            MemorySegment upcallStub = upcallStub(Runner.class, "target", FunctionDescriptor.of(C_POINTER));
+            MethodHandle handle = downcallHandle("test_return", FunctionDescriptor.ofVoid(ADDRESS));
+            MemorySegment upcallStub = upcallStub(Runner.class, "target", FunctionDescriptor.of(ADDRESS));
             handle.invoke(upcallStub);
         }
 
