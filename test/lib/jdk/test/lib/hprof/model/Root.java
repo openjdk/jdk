@@ -141,7 +141,7 @@ public class Root {
         return referer;
     }
 
-    public long getReferrerId() {
+    public long getRefererId() {
         return refererId;
     }
 

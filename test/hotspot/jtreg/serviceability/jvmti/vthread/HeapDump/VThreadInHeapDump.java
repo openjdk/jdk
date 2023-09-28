@@ -246,7 +246,7 @@ public class VThreadInHeapDump {
     private static List<Root> findStackRoot(List<Root> roots, ThreadObject thread) {
         List<Root> result = new ArrayList<>();
         for (Root root: roots) {
-            if (root.getReferrerId() == thread.getId()) {
+            if (root.getRefererId() == thread.getId()) {
                 result.add(root);
             }
         }
