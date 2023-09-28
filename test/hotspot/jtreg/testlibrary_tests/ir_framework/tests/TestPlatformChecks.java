@@ -30,10 +30,10 @@ import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
  * @test 8280120
  * @summary Add attribute to IR to enable/disable IR matching based on the architecture
  * @library /test/lib /
- * @run driver ir_framework.tests.TestPlatformFeatureCheck
+ * @run driver ir_framework.tests.TestPlatformChecks
  */
 
-public class TestPlatformFeatureCheck {
+public class TestPlatformChecks {
     private static final int SIZE = 1000;
     private static int[] a = new int[SIZE];
     private static int[] b = new int[SIZE];
@@ -53,7 +53,7 @@ public class TestPlatformFeatureCheck {
 
     @Test
     @IR(counts = {IRNode.ADD_VI, "> 0"},
-        applyIfPlatformFeature = {"x64", "true"},
+        applyIfPlatform = {"x64", "true"},
         applyIfCPUFeature = {"sse4.1", "true"})
     public static void test1() {
         for (int i = 0; i < SIZE; i++) {
@@ -61,10 +61,10 @@ public class TestPlatformFeatureCheck {
         }
     }
 
-    // IR rule is enforced if all the feature conditions holds good
+    // IR rule is enforced if all the platform constraints hold
     @Test
     @IR(counts = {IRNode.ADD_VI, "> 0"},
-        applyIfPlatformFeatureAnd = {"x64", "true", "linux", "true"},
+        applyIfPlatformAnd = {"x64", "true", "linux", "true"},
         applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "true"})
     public static void test2() {
         for (int i = 0; i < SIZE; i++) {
@@ -72,10 +72,10 @@ public class TestPlatformFeatureCheck {
         }
     }
 
-    // IR rule is enforced if any of the feature condition holds good
+    // IR rule is enforced if any of the platform constraints hold
     @Test
     @IR(counts = {IRNode.ADD_VI, "> 0"},
-        applyIfPlatformFeatureOr = {"linux", "true", "mac", "true"},
+        applyIfPlatformOr = {"linux", "true", "mac", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "avx2", "true"})
     public static void test3() {
         for (int i = 0; i < SIZE; i++) {
