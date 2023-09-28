@@ -228,7 +228,12 @@ inline intptr_t* frame::interpreter_frame_esp() const {
 }
 
 // Convenient setters
-inline void frame::interpreter_frame_set_monitor_end(BasicObjectLock* end)    { get_ijava_state()->monitors = (intptr_t) end;}
+inline void frame::interpreter_frame_set_monitor_end(BasicObjectLock* end) {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized monitors
+  get_ijava_state()->monitors = (intptr_t) ((intptr_t*)end - fp());
+}
+
 inline void frame::interpreter_frame_set_cpcache(ConstantPoolCache* cp)       { *interpreter_frame_cache_addr() = cp; }
 inline void frame::interpreter_frame_set_esp(intptr_t* esp)                   { get_ijava_state()->esp = (intptr_t) esp; }
 
