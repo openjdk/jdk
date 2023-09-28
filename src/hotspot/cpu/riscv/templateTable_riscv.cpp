@@ -3809,8 +3809,10 @@ void TemplateTable::monitorenter() {
    // find a free slot in the monitor block (result in c_rarg1)
    {
      Label entry, loop, exit, notUsed;
-     __ ld(c_rarg3, monitor_block_top); // points to current entry,
-                                        // starting with top-most entry
+     __ ld(c_rarg3, monitor_block_top); // derelativize pointer
+     __ shadd(c_rarg3, c_rarg3, fp, c_rarg3, LogBytesPerWord);
+     // Now c_rarg3 points to current entry, starting with top-most entry
+
      __ la(c_rarg2, monitor_block_bot); // points to word before bottom
 
      __ j(entry);
@@ -3848,11 +3850,16 @@ void TemplateTable::monitorenter() {
      __ srai(t0, t0, Interpreter::logStackElementSize);
      __ sd(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
 
-     __ ld(c_rarg1, monitor_block_bot);    // c_rarg1: old expression stack bottom
+     __ ld(c_rarg1, monitor_block_bot);    // derelativize pointer
+     __ shadd(c_rarg1, c_rarg1, fp, c_rarg1, LogBytesPerWord);
+     // Now c_rarg1 points to the old expression stack bottom
+
      __ sub(esp, esp, entry_size);         // move expression stack top
      __ sub(c_rarg1, c_rarg1, entry_size); // move expression stack bottom
      __ mv(c_rarg3, esp);                  // set start value for copy loop
-     __ sd(c_rarg1, monitor_block_bot);    // set new monitor block bottom
+     __ sub(t0, c_rarg1, fp);              // relativize pointer
+     __ srai(t0, t0, Interpreter::logStackElementSize);
+     __ sd(t0, monitor_block_bot);         // set new monitor block bottom
 
      __ j(entry);
      // 2. move expression stack contents
@@ -3906,8 +3913,10 @@ void TemplateTable::monitorexit() {
   // find matching slot
   {
     Label entry, loop;
-    __ ld(c_rarg1, monitor_block_top); // points to current entry,
-                                        // starting with top-most entry
+    __ ld(c_rarg1, monitor_block_top); // derelativize pointer
+    __ shadd(c_rarg1, c_rarg1, fp, c_rarg1, LogBytesPerWord);
+    // Now c_rarg1 points to current entry, starting with top-most entry
+
     __ la(c_rarg2, monitor_block_bot); // points to word before bottom
                                         // of monitor block
     __ j(entry);
