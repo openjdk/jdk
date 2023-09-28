@@ -103,7 +103,7 @@ class G1Policy: public CHeapObj<mtGC> {
 
   uint _free_regions_at_end_of_collection;
 
-  size_t _rs_length;
+  size_t _card_rs_length;
 
   size_t _pending_cards_at_gc_start;
 
@@ -132,8 +132,8 @@ public:
     hr->install_surv_rate_group(_survivor_surv_rate_group);
   }
 
-  void record_rs_length(size_t rs_length) {
-    _rs_length = rs_length;
+  void record_card_rs_length(size_t card_rs_length) {
+    _card_rs_length = card_rs_length;
   }
 
   double predict_base_time_ms(size_t pending_cards) const;
@@ -142,7 +142,7 @@ private:
   // Base time contains handling remembered sets and constant other time of the
   // whole young gen, refinement buffers, and copying survivors.
   // Basically everything but copying eden regions.
-  double predict_base_time_ms(size_t pending_cards, size_t rs_length, size_t code_root_length) const;
+  double predict_base_time_ms(size_t pending_cards, size_t card_rs_length, size_t code_root_length) const;
 
   // Copy time for a region is copying live data.
   double predict_region_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
@@ -213,15 +213,14 @@ private:
   // If no parameters are passed, predict pending cards, card set remset length and
   // code root remset length using the prediction model.
   void update_young_length_bounds();
-  void update_young_length_bounds(size_t pending_cards, size_t rs_length, size_t code_root_rs_length);
+  void update_young_length_bounds(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length);
 
   // Calculate and return the minimum desired eden length based on the MMU target.
   uint calculate_desired_eden_length_by_mmu() const;
 
   // Calculate the desired eden length meeting the pause time goal.
-  // The parameters are: rs_length represents the prediction of how large the
-  // young RSet lengths will be, min_eden_length and max_eden_length are the bounds
-  // (inclusive) within eden can grow.
+  // Min_eden_length and max_eden_length are the bounds
+  // (inclusive) within which eden can grow.
   uint calculate_desired_eden_length_by_pause(double base_time_ms,
                                               uint min_eden_length,
                                               uint max_eden_length) const;
@@ -241,7 +240,7 @@ private:
 
   // Calculate desired young length based on current situation without taking actually
   // available free regions into account.
-  uint calculate_young_desired_length(size_t pending_cards, size_t rs_length, size_t code_root_rs_length) const;
+  uint calculate_young_desired_length(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length) const;
   // Limit the given desired young length to available free regions.
   uint calculate_young_target_length(uint desired_young_length) const;
   // The GCLocker might cause us to need more regions than the target. Calculate
@@ -304,7 +303,7 @@ public:
   // Check the current value of the young list RSet length and
   // compare it against the last prediction. If the current value is
   // higher, recalculate the young list target length prediction.
-  void revise_young_list_target_length(size_t rs_length, size_t code_root_rs_length);
+  void revise_young_list_target_length(size_t card_rs_length, size_t code_root_rs_length);
 
   // This should be called after the heap is resized.
   void record_new_heap_size(uint new_number_of_regions);

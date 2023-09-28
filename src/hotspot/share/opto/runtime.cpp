@@ -1563,10 +1563,7 @@ address OptoRuntime::handle_exception_C(JavaThread* current) {
 //
 address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address ret_pc) {
   // ret_pc will have been loaded from the stack, so for AArch64 will be signed.
-  // This needs authenticating, but to do that here requires the fp of the previous frame.
-  // A better way of doing it would be authenticate in the caller by adding a
-  // AuthPAuthNode and using it in GraphKit::gen_stub. For now, just strip it.
-  AARCH64_PORT_ONLY(ret_pc = pauth_strip_pointer(ret_pc));
+  AARCH64_PORT_ONLY(ret_pc = pauth_strip_verifiable(ret_pc));
 
 #ifndef PRODUCT
   SharedRuntime::_rethrow_ctr++;               // count rethrows
