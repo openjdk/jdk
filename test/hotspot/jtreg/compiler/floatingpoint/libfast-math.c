@@ -33,18 +33,17 @@
 //
 // This breaks Java's floating point arithmetic.
 
-#if defined(__GNUC__) && defined(__x86_64__) && defined(__GNU_LIBRARY__)
+#define MXCSR_DAZ (1 << 6)	/* Enable denormals are zero mode */
+#define MXCSR_FTZ (1 << 15)	/* Enable flush to zero mode */
 
 void set_flush_to_zero(void) __attribute__((constructor));
 void set_flush_to_zero(void) {
-  fenv_t fenv;
-  int rtn = fegetenv(&fenv);
-  assert(rtn == 0);
+#if defined(__GNUC__) && defined(__x86_64__) \
+  && defined(SSE) && defined(__GNU_LIBRARY__)
 
-  fenv.__mxcsr |= 0x8000; // Flush to zero
-
-  rtn = fesetenv(&fenv);
-  assert(rtn == 0);
-}
+  unsigned int mxcsr = __builtin_ia32_stmxcsr ();
+  mxcsr |= MXCSR_DAZ | MXCSR_FTZ;
+  __builtin_ia32_ldmxcsr (mxcsr);
 
 #endif // defined(__GNUC__) && defined(__x86_64__) && defined(__GNU_LIBRARY__)
+}
