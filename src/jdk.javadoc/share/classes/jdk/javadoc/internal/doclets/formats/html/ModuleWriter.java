@@ -875,8 +875,10 @@ public class ModuleWriter extends HtmlDocletWriter {
                     .setId(HtmlIds.MODULE_DESCRIPTION);
             addDeprecationInfo(tree);
             tree.add(MarkerComments.START_OF_MODULE_DESCRIPTION);
-            addInlineComment(mdle, tree);
-            addTagsInfo(mdle, tree);
+            Content scrollBox = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+            addInlineComment(mdle, scrollBox);
+            addTagsInfo(mdle, scrollBox);
+            tree.add(scrollBox);
             moduleContent.add(tree);
         }
     }

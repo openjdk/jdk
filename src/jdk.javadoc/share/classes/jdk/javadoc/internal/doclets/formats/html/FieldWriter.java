@@ -83,13 +83,13 @@ public class FieldWriter extends AbstractMemberWriter {
             for (Element element : fields) {
                 currentElement = (VariableElement)element;
                 Content fieldContent = getFieldHeaderContent(currentElement);
-
-                buildSignature(fieldContent);
-                buildDeprecationInfo(fieldContent);
-                buildPreviewInfo(fieldContent);
-                buildFieldComments(fieldContent);
-                buildTagInfo(fieldContent);
-
+                Content scrollBox = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+                buildSignature(scrollBox);
+                buildDeprecationInfo(scrollBox);
+                buildPreviewInfo(scrollBox);
+                buildFieldComments(scrollBox);
+                buildTagInfo(scrollBox);
+                fieldContent.add(scrollBox);
                 memberList.add(getMemberListItem(fieldContent));
             }
             Content fieldDetails = getFieldDetails(fieldDetailsHeader, memberList);

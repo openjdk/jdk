@@ -76,7 +76,7 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
 
         checkOrder("index.html",
                 """
-                    <header role="banner" class="flex-header">
+                    <header role="banner">
                     <nav role="navigation">""",
                 """
                     <main role="main">
@@ -106,7 +106,7 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
 
         checkOrder("index.html",
                 """
-                    <header role="banner" class="flex-header">
+                    <header role="banner">
                     <nav role="navigation">""",
                 """
                     <main role="main">
@@ -144,7 +144,7 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
 
         checkOrder("pkg1/doc-files/s.html",
                 """
-                    <header role="banner" class="flex-header">
+                    <header role="banner">
                     <nav role="navigation">
                     """,
                 """

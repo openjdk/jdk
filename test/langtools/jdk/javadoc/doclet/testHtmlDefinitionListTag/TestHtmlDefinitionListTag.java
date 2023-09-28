@@ -386,12 +386,14 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type">void</span>&nbsp;<span class="element-name">readObject</span>()
                                     throws <span class="exceptions">java.io.IOException</span></div>
+                    </div>
                     </section>
                     </li>""");
 
         checkOutput("pkg1/C2.html", expectFound,
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">C2</span>()</div>
+                    </div>
                     </section>
                     </li>""");
 

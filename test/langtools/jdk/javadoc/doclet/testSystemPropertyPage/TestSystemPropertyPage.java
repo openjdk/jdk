@@ -67,11 +67,9 @@ public class TestSystemPropertyPage extends JavadocTester {
 
         checkOutput("system-properties.html", true,
                 """
-                    <div class="flex-box">
-                    <header role="banner" class="flex-header">""",
+                    <header role="banner">""",
 
                 """
-                    <div class="flex-content">
                     <main role="main">
                     <div class="header">
                     <h1>System Properties</h1>

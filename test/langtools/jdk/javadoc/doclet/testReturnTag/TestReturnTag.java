@@ -292,6 +292,7 @@ public class TestReturnTag extends JavadocTester {
         checkOutput("C.html", true,
                 """
                     <div class="block">Some text. Returns the result. More text.</div>
+                    </div>
                     </section>
                     """);
     }

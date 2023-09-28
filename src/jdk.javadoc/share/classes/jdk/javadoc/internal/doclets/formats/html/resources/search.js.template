@@ -447,6 +447,7 @@ $(function() {
     $(window).on("orientationchange", collapse).on("resize", function(e) {
         if (expanded && windowWidth !== window.innerWidth) collapse();
     });
+    $(":not(input)[id]").css("scroll-margin-top", Math.ceil($("header").height()) + "px");
     var search = $("#search-input");
     var reset = $("#reset-button");
     search.catcomplete({

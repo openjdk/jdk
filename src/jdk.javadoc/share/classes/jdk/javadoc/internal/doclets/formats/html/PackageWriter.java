@@ -222,7 +222,7 @@ public class PackageWriter extends HtmlDocletWriter {
     }
 
     protected Content getContentHeader() {
-        return new ContentBuilder();
+        return HtmlTree.DIV(HtmlStyle.horizontalScroll);
     }
 
     private void computePackageData() {

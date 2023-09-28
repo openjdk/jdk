@@ -94,9 +94,9 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
             for (Element member : members) {
                 currentMember = member;
                 Content annotationContent = getAnnotationHeaderContent(currentMember);
-
-                buildAnnotationTypeMemberChildren(annotationContent);
-
+                Content scrollBox = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+                buildAnnotationTypeMemberChildren(scrollBox);
+                annotationContent.add(scrollBox);
                 memberList.add(writer.getMemberListItem(annotationContent));
             }
             Content annotationDetails = getAnnotationDetails(annotationDetailsHeader, memberList);

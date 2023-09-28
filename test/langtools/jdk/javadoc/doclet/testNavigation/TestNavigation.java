@@ -91,7 +91,6 @@ public class TestNavigation extends JavadocTester {
                     <!-- ========= END OF TOP NAVBAR ========= -->
                     <span class="skip-nav" id="skip-navbar-top"></span></nav>
                     </header>
-                    <div class="flex-content">
                     <main role="main">
                     <!-- ======== START OF CLASS DATA ======== -->""");
 
@@ -100,7 +99,6 @@ public class TestNavigation extends JavadocTester {
                     <!-- ========= END OF TOP NAVBAR ========= -->
                     <span class="skip-nav" id="skip-navbar-top"></span></nav>
                     </header>
-                    <div class="flex-content">
                     <main role="main">
                     <div class="header">""");
     }
@@ -120,7 +118,6 @@ public class TestNavigation extends JavadocTester {
                     <!-- ========= END OF TOP NAVBAR ========= -->
                     <span class="skip-nav" id="skip-navbar-top"></span></nav>
                     </header>
-                    <div class="flex-content">
                     <main role="main">
                     <!-- ======== START OF CLASS DATA ======== -->""");
 

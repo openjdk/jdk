@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -507,6 +507,7 @@ public class TestModules extends JavadocTester {
                     <div class="deprecation-comment">This module is deprecated.</div>
                     </div>
                     <!-- ============ MODULE DESCRIPTION =========== -->
+                    <div class="horizontal-scroll">
                     <div class="block">This is a test description for the moduleA module with a Sear\
                     ch phrase <span id="searchphrase" class="search-tag-result">search phrase</span>\
                     .</div>""");
@@ -514,6 +515,7 @@ public class TestModules extends JavadocTester {
                 """
                     <section class="module-description" id="module-description">
                     <!-- ============ MODULE DESCRIPTION =========== -->
+                    <div class="horizontal-scroll">
                     <div class="block">This is a test description for the moduleB module. Search wor\
                     d <span id="search_word" class="search-tag-result">search_word</span> with no de\
                     scription.</div>""");
@@ -521,7 +523,6 @@ public class TestModules extends JavadocTester {
                 """
                     </nav>
                     </header>
-                    <div class="flex-content">
                     <main role="main">
                     <div class="block">The overview summary page header.</div>
                     <div id="all-modules-table">
@@ -707,7 +708,6 @@ public class TestModules extends JavadocTester {
                 """
                     </nav>
                     </header>
-                    <div class="flex-content">
                     <main role="main">
                     <div class="block">The overview summary page header.</div>
                     <div id="all-packages-table">
@@ -1354,11 +1354,13 @@ public class TestModules extends JavadocTester {
         checkOutput("moduleA/testpkgmdlA/TestClassInModuleA.html", true,
                 """
                     <section class="class-description" id="class-description">
+                    <div class="horizontal-scroll">
                     <hr>
                     <div class="type-signature"><span class="modifiers">public class </span><span cl\
                     ass="element-name"><a href="../../src-html/moduleA/testpkgmdlA/TestClassInModule\
                     A.html#line-25">TestClassInModuleA</a></span>
                     <span class="extends-implements">extends java.lang.Object</span></div>
+                    </div>
                     </section>""");
         checkOutput("src-html/moduleA/testpkgmdlA/TestClassInModuleA.html", true,
                 """
