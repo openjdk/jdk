@@ -3998,7 +3998,7 @@ public class Check {
 
                 // Verify no 'return' seen prior to an explicit super()/this() call
                 if (constructor && earlyReturn != null && initCall != null)
-                    log.error(earlyReturn.pos(), Errors.ReturnBeforeSuperclassInitialized(initCall));
+                    log.error(earlyReturn.pos(), Errors.ReturnBeforeSuperclassInitialized);
             } finally {
                 firstStatement = false;
                 constructor = false;
@@ -4028,19 +4028,19 @@ public class Check {
 
                 // super()/this() calls must only appear in a constructor
                 if (!constructor) {
-                    log.error(apply.pos(), Errors.CallMustOnlyAppearInCtor(methodName));
+                    log.error(apply.pos(), Errors.CallMustOnlyAppearInCtor);
                     break;
                 }
 
                 // super()/this() calls must be a top level statement
                 if (scanDepth != MATCH_SCAN_DEPTH) {
-                    log.error(apply.pos(), Errors.CtorCallsNotAllowedHere(methodName));
+                    log.error(apply.pos(), Errors.CtorCallsNotAllowedHere);
                     break;
                 }
 
                 // super()/this() calls must not appear more than once
                 if (initCall != null) {
-                    log.error(apply.pos(), Errors.RedundantSuperclassInit(methodName, initCall));
+                    log.error(apply.pos(), Errors.RedundantSuperclassInit);
                     break;
                 }
 
