@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ struct SimpleTestLookup {
   uintx get_hash() {
     return Pointer::get_hash(_val, NULL);
   }
-  bool equals(const uintptr_t* value) {
+  bool equals(const uintptr_t* value, bool* is_dead) {
     return _val == *value;
   }
   bool is_dead(const uintptr_t* value) {
@@ -564,7 +564,7 @@ struct TestLookup {
   uintx get_hash() {
     return TestInterface::get_hash(_val, NULL);
   }
-  bool equals(const uintptr_t* value) {
+  bool equals(const uintptr_t* value, bool* is_dead) {
     return _val == *value;
   }
   bool is_dead(const uintptr_t* value) {

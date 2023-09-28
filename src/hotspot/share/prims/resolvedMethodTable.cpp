@@ -126,9 +126,11 @@ class ResolvedMethodTableLookup : StackObj {
   uintx get_hash() const {
     return _hash;
   }
-  bool equals(WeakHandle* value) {
+  bool equals(WeakHandle* value, bool* is_dead) {
     oop val_oop = value->peek();
     if (val_oop == nullptr) {
+      // dead oop, mark this oop dead for cleaning
+      *is_dead = true;
       return false;
     }
     bool equals = _method == java_lang_invoke_ResolvedMethodName::vmtarget(val_oop);

@@ -378,18 +378,20 @@ public:
   // needed to ensure that the symbol is kept alive before equals() returns to the caller,
   // so that another thread cannot clean the symbol up concurrently. The caller is
   // responsible for decrementing the refcount, when the symbol is no longer needed.
-  bool equals(Symbol* value) {
+  bool equals(Symbol* value, bool* sym_is_dead) {
     assert(value != nullptr, "expected valid value");
-    Symbol *sym = value;
+    Symbol* sym = value;
     if (sym->equals(_str, _len)) {
       if (sym->try_increment_refcount()) {
         // something is referencing this symbol now.
         return true;
       } else {
         assert(sym->refcount() == 0, "expected dead symbol");
+        *sym_is_dead = true;
         return false;
       }
     } else {
+      *sym_is_dead = (sym->refcount() == 0);
       return false;
     }
   }

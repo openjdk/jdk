@@ -229,7 +229,7 @@ public:
   uintx get_hash() const {
     return _name->identity_hash();
   }
-  bool equals(DictionaryEntry** value) {
+  bool equals(DictionaryEntry** value, bool* is_dead) {
     DictionaryEntry *entry = *value;
     return (entry->instance_klass()->name() == _name);
   }
