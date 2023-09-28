@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,6 +232,12 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   const Register exception_pc_callee_saved = Z_R12;
   // Other registers used in this stub.
   const Register handler_addr = Z_R4;
+
+  if (AbortVMOnException) {
+    save_live_registers(sasm);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, check_abort_on_vm_exception), Z_EXC_OOP);
+    restore_live_registers(sasm);
+  }
 
   // Verify that only exception_oop, is valid at this time.
   __ invalidate_registers(Z_EXC_OOP, Z_EXC_PC);
@@ -807,7 +813,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
 
       // Load issuing PC (the return address for this stub).
       const int frame_size_in_bytes = sasm->frame_size() * VMRegImpl::slots_per_word * VMRegImpl::stack_slot_size;
-      __ z_lg(Z_EXC_PC, Address(Z_SP, frame_size_in_bytes + _z_abi16(return_pc)));
+      __ z_lg(Z_EXC_PC, Address(Z_SP, frame_size_in_bytes + _z_common_abi(return_pc)));
       DEBUG_ONLY(__ z_lay(reg_fp, Address(Z_SP, frame_size_in_bytes));)
 
       // Make sure that the vm_results are cleared (may be unnecessary).
@@ -850,7 +856,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
 
 #ifdef ASSERT
   { NearLabel ok;
-    __ z_cg(Z_EXC_PC, Address(reg_fp, _z_abi16(return_pc)));
+    __ z_cg(Z_EXC_PC, Address(reg_fp, _z_common_abi(return_pc)));
     __ branch_optimized(Assembler::bcondEqual, ok);
     __ stop("use throwing pc as return address (has bci & oop map)");
     __ bind(ok);

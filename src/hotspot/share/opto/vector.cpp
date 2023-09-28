@@ -36,6 +36,11 @@ static bool is_vector_mask(ciKlass* klass) {
   return klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
 }
 
+static bool is_vector_shuffle(ciKlass* klass) {
+  return klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
+}
+
+
 void PhaseVector::optimize_vector_boxes() {
   Compile::TracePhase tp("vector_elimination", &timers[_t_vector_elimination]);
 
@@ -43,8 +48,7 @@ void PhaseVector::optimize_vector_boxes() {
   assert(C->inlining_incrementally() == false, "sanity");
   C->set_inlining_incrementally(true);
 
-  C->for_igvn()->clear();
-  C->initial_gvn()->replace_with(&_igvn);
+  C->igvn_worklist()->ensure_empty(); // should be done with igvn
 
   expand_vunbox_nodes();
   scalarize_vbox_nodes();
@@ -64,12 +68,12 @@ void PhaseVector::do_cleanup() {
   {
     Compile::TracePhase tp("vector_pru", &timers[_t_vector_pru]);
     ResourceMark rm;
-    PhaseRemoveUseless pru(C->initial_gvn(), C->for_igvn());
+    PhaseRemoveUseless pru(C->initial_gvn(), *C->igvn_worklist());
     if (C->failing())  return;
   }
   {
     Compile::TracePhase tp("incrementalInline_igvn", &timers[_t_vector_igvn]);
-    _igvn = PhaseIterGVN(C->initial_gvn());
+    _igvn.reset_from_gvn(C->initial_gvn());
     _igvn.optimize();
     if (C->failing())  return;
   }
@@ -272,11 +276,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
     SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
 
     uint first_ind = (sfpt->req() - sfpt->jvms()->scloff());
-    Node* sobj = new SafePointScalarObjectNode(vec_box->box_type(),
-#ifdef ASSERT
-                                               vec_box,
-#endif // ASSERT
-                                               first_ind, n_fields);
+    Node* sobj = new SafePointScalarObjectNode(vec_box->box_type(), vec_box, first_ind, n_fields);
     sobj->init_req(0, C->root());
     sfpt->add_req(vec_value);
 
@@ -299,9 +299,11 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
 
 void PhaseVector::expand_vbox_node(VectorBoxNode* vec_box) {
   if (vec_box->outcnt() > 0) {
+    VectorSet visited;
     Node* vbox = vec_box->in(VectorBoxNode::Box);
     Node* vect = vec_box->in(VectorBoxNode::Value);
-    Node* result = expand_vbox_node_helper(vbox, vect, vec_box->box_type(), vec_box->vec_type());
+    Node* result = expand_vbox_node_helper(vbox, vect, vec_box->box_type(),
+                                           vec_box->vec_type(), visited);
     C->gvn_replace_by(vec_box, result);
     C->print_method(PHASE_EXPAND_VBOX, 3, vec_box);
   }
@@ -311,39 +313,64 @@ void PhaseVector::expand_vbox_node(VectorBoxNode* vec_box) {
 Node* PhaseVector::expand_vbox_node_helper(Node* vbox,
                                            Node* vect,
                                            const TypeInstPtr* box_type,
-                                           const TypeVect* vect_type) {
-  if (vbox->is_Phi() && vect->is_Phi()) {
-    assert(vbox->as_Phi()->region() == vect->as_Phi()->region(), "");
-    Node* new_phi = new PhiNode(vbox->as_Phi()->region(), box_type);
-    for (uint i = 1; i < vbox->req(); i++) {
-      Node* new_box = expand_vbox_node_helper(vbox->in(i), vect->in(i), box_type, vect_type);
-      new_phi->set_req(i, new_box);
-    }
-    new_phi = C->initial_gvn()->transform(new_phi);
-    return new_phi;
-  } else if (vbox->is_Phi() && (vect->is_Vector() || vect->is_LoadVector())) {
-    // Handle the case when the allocation input to VectorBoxNode is a phi
-    // but the vector input is not, which can definitely be the case if the
-    // vector input has been value-numbered. It seems to be safe to do by
-    // construction because VectorBoxNode and VectorBoxAllocate come in a
-    // specific order as a result of expanding an intrinsic call. After that, if
-    // any of the inputs to VectorBoxNode are value-numbered they can only
-    // move up and are guaranteed to dominate.
-    Node* new_phi = new PhiNode(vbox->as_Phi()->region(), box_type);
-    for (uint i = 1; i < vbox->req(); i++) {
-      Node* new_box = expand_vbox_node_helper(vbox->in(i), vect, box_type, vect_type);
-      new_phi->set_req(i, new_box);
-    }
-    new_phi = C->initial_gvn()->transform(new_phi);
-    return new_phi;
-  } else if (vbox->is_Proj() && vbox->in(0)->Opcode() == Op_VectorBoxAllocate) {
+                                           const TypeVect* vect_type,
+                                           VectorSet &visited) {
+  // JDK-8304948 shows an example that there may be a cycle in the graph.
+  if (visited.test_set(vbox->_idx)) {
+    assert(vbox->is_Phi(), "should be phi");
+    return vbox; // already visited
+  }
+
+  // Handle the case when the allocation input to VectorBoxNode is a Proj.
+  // This is the normal case before expanding.
+  if (vbox->is_Proj() && vbox->in(0)->Opcode() == Op_VectorBoxAllocate) {
     VectorBoxAllocateNode* vbox_alloc = static_cast<VectorBoxAllocateNode*>(vbox->in(0));
     return expand_vbox_alloc_node(vbox_alloc, vect, box_type, vect_type);
-  } else {
-    assert(!vbox->is_Phi(), "");
-    // TODO: assert that expanded vbox is initialized with the same value (vect).
-    return vbox; // already expanded
   }
+
+  // Handle the case when both the allocation input and vector input to
+  // VectorBoxNode are Phi. This case is generated after the transformation of
+  // Phi: Phi (VectorBox1 VectorBox2) => VectorBox (Phi1 Phi2).
+  // With this optimization, the relative two allocation inputs of VectorBox1 and
+  // VectorBox2 are gathered into Phi1 now. Similarly, the original vector
+  // inputs of two VectorBox nodes are in Phi2.
+  //
+  // See PhiNode::merge_through_phi in cfg.cpp for more details.
+  if (vbox->is_Phi() && vect->is_Phi()) {
+    assert(vbox->as_Phi()->region() == vect->as_Phi()->region(), "");
+    for (uint i = 1; i < vbox->req(); i++) {
+      Node* new_box = expand_vbox_node_helper(vbox->in(i), vect->in(i),
+                                              box_type, vect_type, visited);
+      if (!new_box->is_Phi()) {
+        C->initial_gvn()->hash_delete(vbox);
+        vbox->set_req(i, new_box);
+      }
+    }
+    return C->initial_gvn()->transform(vbox);
+  }
+
+  // Handle the case when the allocation input to VectorBoxNode is a phi
+  // but the vector input is not, which can definitely be the case if the
+  // vector input has been value-numbered. It seems to be safe to do by
+  // construction because VectorBoxNode and VectorBoxAllocate come in a
+  // specific order as a result of expanding an intrinsic call. After that, if
+  // any of the inputs to VectorBoxNode are value-numbered they can only
+  // move up and are guaranteed to dominate.
+  if (vbox->is_Phi() && (vect->is_Vector() || vect->is_LoadVector())) {
+    for (uint i = 1; i < vbox->req(); i++) {
+      Node* new_box = expand_vbox_node_helper(vbox->in(i), vect,
+                                              box_type, vect_type, visited);
+      if (!new_box->is_Phi()) {
+        C->initial_gvn()->hash_delete(vbox);
+        vbox->set_req(i, new_box);
+      }
+    }
+    return C->initial_gvn()->transform(vbox);
+  }
+
+  assert(!vbox->is_Phi(), "should be expanded");
+  // TODO: assert that expanded vbox is initialized with the same value (vect).
+  return vbox; // already expanded
 }
 
 Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
@@ -433,6 +460,8 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
 
     if (is_vector_mask(from_kls)) {
       bt = T_BOOLEAN;
+    } else if (is_vector_shuffle(from_kls)) {
+      bt = T_BYTE;
     }
 
     ciField* field = ciEnv::current()->vector_VectorPayload_klass()->get_field_by_name(ciSymbols::payload_name(),
@@ -477,6 +506,9 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
 
     if (is_vector_mask(from_kls)) {
       vec_val_load = gvn.transform(new VectorLoadMaskNode(vec_val_load, TypeVect::makemask(masktype, num_elem)));
+    } else if (is_vector_shuffle(from_kls) && !vec_unbox->is_shuffle_to_vector()) {
+      assert(vec_unbox->bottom_type()->is_vect()->element_basic_type() == masktype, "expect shuffle type consistency");
+      vec_val_load = gvn.transform(new VectorLoadShuffleNode(vec_val_load, TypeVect::make(masktype, num_elem)));
     }
 
     gvn.hash_delete(vec_unbox);

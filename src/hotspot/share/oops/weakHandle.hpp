@@ -54,6 +54,7 @@ class WeakHandle {
   inline oop peek() const;
   void release(OopStorage* storage) const;
   bool is_null() const { return _obj == nullptr; }
+  void set_null() { _obj = nullptr; }
 
   void replace(oop with_obj);
 

@@ -373,6 +373,10 @@ struct hb_no_trace_t {
 #define HB_DEBUG_FT (HB_DEBUG+0)
 #endif
 
+#ifndef HB_DEBUG_JUSTIFY
+#define HB_DEBUG_JUSTIFY (HB_DEBUG+0)
+#endif
+
 #ifndef HB_DEBUG_OBJECT
 #define HB_DEBUG_OBJECT (HB_DEBUG+0)
 #endif

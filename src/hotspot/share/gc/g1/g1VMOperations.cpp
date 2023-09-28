@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,7 @@ bool VM_G1CollectFull::skip_operation() const {
 void VM_G1CollectFull::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   GCCauseSetter x(g1h, _gc_cause);
-  _gc_succeeded = g1h->do_full_collection(true  /* explicit_gc */,
-                                          false /* clear_all_soft_refs */,
+  _gc_succeeded = g1h->do_full_collection(false /* clear_all_soft_refs */,
                                           false /* do_maximal_compaction */);
 }
 
@@ -128,9 +127,13 @@ void VM_G1CollectForAllocation::doit() {
 
   if (_word_size > 0) {
     // An allocation has been requested. So, try to do that first.
+    // During the execution of this VM operation, there may have been a concurrent active
+    // GCLocker, potentially leading to expansion of the Eden space by other mutators.
+    // If the Eden space were expanded, this allocation request might succeed without
+    // the need for triggering a garbage collection.
     _result = g1h->attempt_allocation_at_safepoint(_word_size,
                                                    false /* expect_null_cur_alloc_region */);
-    if (_result != NULL) {
+    if (_result != nullptr) {
       // If we can successfully allocate before we actually do the
       // pause then we will consider this pause successful.
       _gc_succeeded = true;

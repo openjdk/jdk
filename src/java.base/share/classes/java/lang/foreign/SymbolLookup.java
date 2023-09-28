@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.lang.foreign;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.NativeLibrary;
@@ -52,21 +53,23 @@ import java.util.function.BiFunction;
  * <ul>
  *     <li>It can be passed to a {@link Linker} to create a downcall method handle, which can then be used to call the foreign function at the segment's address.</li>
  *     <li>It can be passed to an existing {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...) downcall method handle}, as an argument to the underlying foreign function.</li>
- *     <li>It can be {@linkplain MemorySegment#set(ValueLayout.OfAddress, long, MemorySegment) stored} inside another memory segment.</li>
- *     <li>It can be used to access the region of memory backing a global variable (this might require
- *     {@link MemorySegment#ofAddress(long, long, SegmentScope) resizing} the segment first).</li>
+ *     <li>It can be {@linkplain MemorySegment#set(AddressLayout, long, MemorySegment) stored} inside another memory segment.</li>
+ *     <li>It can be used to access the region of memory backing a global variable (this requires
+ *     {@linkplain MemorySegment#reinterpret(long) resizing} the segment first).</li>
  * </ul>
  *
  * <h2 id="obtaining">Obtaining a symbol lookup</h2>
  *
- * The factory methods {@link #libraryLookup(String, SegmentScope)} and {@link #libraryLookup(Path, SegmentScope)}
+ * The factory methods {@link #libraryLookup(String, Arena)} and {@link #libraryLookup(Path, Arena)}
  * create a symbol lookup for a library known to the operating system. The library is specified by either its name or a path.
- * The library is loaded if not already loaded. The symbol lookup, which is known as a <em>library lookup</em>, is associated
- * with a {@linkplain  SegmentScope scope}; when the scope becomes not {@link SegmentScope#isAlive()}, the library is unloaded:
+ * The library is loaded if not already loaded. The symbol lookup, which is known as a <em>library lookup</em>, and its
+ * lifetime is controlled by an {@linkplain Arena arena}. For instance, if the provided arena is a
+ * confined arena, the library associated with the symbol lookup is unloaded when the confined arena
+ * is {@linkplain Arena#close() closed}:
  *
  * {@snippet lang = java:
- * try (Arena arena = Arena.openConfined()) {
- *     SymbolLookup libGL = SymbolLookup.libraryLookup("libGL.so", arena.scope()); // libGL.so loaded here
+ * try (Arena arena = Arena.ofConfined()) {
+ *     SymbolLookup libGL = SymbolLookup.libraryLookup("libGL.so", arena); // libGL.so loaded here
  *     MemorySegment glGetString = libGL.find("glGetString").orElseThrow();
  *     ...
  * } //  libGL.so unloaded here
@@ -92,7 +95,7 @@ import java.util.function.BiFunction;
  * that were loaded in the course of creating a library lookup:
  *
  * {@snippet lang = java:
- * libraryLookup("libGL.so", scope).find("glGetString").isPresent(); // true
+ * libraryLookup("libGL.so", arena).find("glGetString").isPresent(); // true
  * loaderLookup().find("glGetString").isPresent(); // false
  *}
  *
@@ -101,7 +104,7 @@ import java.util.function.BiFunction;
  *
  * {@snippet lang = java:
  * System.loadLibrary("GL"); // libGL.so loaded here
- * libraryLookup("libGL.so", scope).find("glGetString").isPresent(); // true
+ * libraryLookup("libGL.so", arena).find("glGetString").isPresent(); // true
  *}
  *
  * <p>
@@ -115,6 +118,8 @@ import java.util.function.BiFunction;
  * SymbolLookup stdlib = nativeLinker.defaultLookup();
  * MemorySegment malloc = stdlib.find("malloc").orElseThrow();
  *}
+ *
+ * @since 19
  */
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 @FunctionalInterface
@@ -128,6 +133,28 @@ public interface SymbolLookup {
     Optional<MemorySegment> find(String name);
 
     /**
+     * {@return a composed symbol lookup that returns result of finding the symbol with this lookup if found,
+     * otherwise returns the result of finding the symbol with the other lookup}
+     *
+     * @apiNote This method could be used to chain multiple symbol lookups together, e.g. so that symbols could
+     * be retrieved, in order, from multiple libraries:
+     * {@snippet lang = java:
+     * var lookup = SymbolLookup.libraryLookup("foo", arena)
+     *         .or(SymbolLookup.libraryLookup("bar", arena))
+     *         .or(SymbolLookup.loaderLookup());
+     *}
+     * The above code creates a symbol lookup that first searches for symbols in the "foo" library. If no symbol is found
+     * in "foo" then "bar" is searched. Finally, if a symbol is not found in neither "foo" nor "bar", the {@linkplain
+     * SymbolLookup#loaderLookup() loader lookup} is used.
+     *
+     * @param other the symbol lookup that should be used to look for symbols not found in this lookup.
+     */
+    default SymbolLookup or(SymbolLookup other) {
+        Objects.requireNonNull(other);
+        return name -> find(name).or(() -> other.find(name));
+    }
+
+    /**
      * Returns a symbol lookup for symbols in the libraries associated with the caller's class loader.
      * <p>
      * A library is associated with a class loader {@code CL} when the library is loaded via an invocation of
@@ -139,9 +166,10 @@ public interface SymbolLookup {
      * <p>
      * Libraries associated with a class loader are unloaded when the class loader becomes
      * <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>. The symbol lookup
-     * returned by this method is backed by a scope that is always alive and which keeps the caller's
-     * class loader reachable. Therefore, libraries associated with the caller's class
-     * loader are kept loaded (and their symbols available) as long as a loader lookup for that class loader is reachable.
+     * returned by this method is associated with a fresh {@linkplain MemorySegment.Scope scope} which keeps the caller's
+     * class loader reachable. Therefore, libraries associated with the caller's class loader are kept loaded
+     * (and their symbols available) as long as a loader lookup for that class loader, or any of the segments
+     * obtained by it, is reachable.
      * <p>
      * In cases where this method is called from a context where there is no caller frame on the stack
      * (e.g. when called directly from a JNI attached thread), the caller's class loader defaults to the
@@ -158,49 +186,66 @@ public interface SymbolLookup {
         ClassLoader loader = caller != null ?
                 caller.getClassLoader() :
                 ClassLoader.getSystemClassLoader();
-        SegmentScope loaderScope = (loader == null || loader instanceof BuiltinClassLoader) ?
-                SegmentScope.global() : // builtin loaders never go away
-                MemorySessionImpl.heapSession(loader);
+        Arena loaderArena;// builtin loaders never go away
+        if ((loader == null || loader instanceof BuiltinClassLoader)) {
+            loaderArena = Arena.global();
+        } else {
+            MemorySessionImpl session = MemorySessionImpl.heapSession(loader);
+            loaderArena = session.asArena();
+        }
         return name -> {
             Objects.requireNonNull(name);
+            if (Utils.containsNullChars(name)) return Optional.empty();
             JavaLangAccess javaLangAccess = SharedSecrets.getJavaLangAccess();
             // note: ClassLoader::findNative supports a null loader
             long addr = javaLangAccess.findNative(loader, name);
             return addr == 0L ?
                     Optional.empty() :
-                    Optional.of(MemorySegment.ofAddress(addr, 0L, loaderScope));
+                    Optional.of(MemorySegment.ofAddress(addr)
+                                    .reinterpret(loaderArena, null));
         };
     }
 
     /**
      * Loads a library with the given name (if not already loaded) and creates a symbol lookup for symbols in that library.
-     * The library will be unloaded when the provided scope becomes
-     * not {@linkplain SegmentScope#isAlive() alive}, if no other library lookup is still using it.
-     * @implNote The process of resolving a library name is OS-specific. For instance, in a POSIX-compliant OS,
-     * the library name is resolved according to the specification of the {@code dlopen} function for that OS.
-     * In Windows, the library name is resolved according to the specification of the {@code LoadLibrary} function.
+     * The lifetime of the returned library lookup is controlled by the provided arena.
+     * For instance, if the provided arena is a confined arena, the library
+     * associated with the returned lookup will be unloaded when the provided confined arena is
+     * {@linkplain Arena#close() closed}.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      *
+     * @implNote The process of resolving a library name is OS-specific. For instance, in a POSIX-compliant OS,
+     * the library name is resolved according to the specification of the {@code dlopen} function for that OS.
+     * In Windows, the library name is resolved according to the specification of the {@code LoadLibrary} function.
+     *
      * @param name the name of the library in which symbols should be looked up.
-     * @param scope the scope associated with symbols obtained from the returned lookup.
+     * @param arena the arena associated with symbols obtained from the returned lookup.
      * @return a new symbol lookup suitable to find symbols in a library with the given name.
+     * @throws IllegalStateException if {@code arena.scope().isAlive() == false}
+     * @throws WrongThreadException if {@code arena} is a confined arena, and this method is called from a
+     * thread {@code T}, other than the arena's owner thread.
      * @throws IllegalArgumentException if {@code name} does not identify a valid library.
      * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
     @CallerSensitive
-    static SymbolLookup libraryLookup(String name, SegmentScope scope) {
+    static SymbolLookup libraryLookup(String name, Arena arena) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass(), SymbolLookup.class, "libraryLookup");
-        return libraryLookup(name, RawNativeLibraries::load, scope);
+        if (Utils.containsNullChars(name)) {
+            throw new IllegalArgumentException("Cannot open library: " + name);
+        }
+        return libraryLookup(name, RawNativeLibraries::load, arena);
     }
 
     /**
      * Loads a library from the given path (if not already loaded) and creates a symbol lookup for symbols
-     * in that library. The library will be unloaded when the provided scope becomes
-     * not {@linkplain SegmentScope#isAlive() alive}, if no other library lookup is still using it.
+     * in that library. The lifetime of the returned library lookup is controlled by the provided arena.
+     * For instance, if the provided arena is a confined arena, the library
+     * associated with the returned lookup will be unloaded when the provided confined arena is
+     * {@linkplain Arena#close() closed}.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
@@ -210,20 +255,23 @@ public interface SymbolLookup {
      * @implNote On Linux, the functionalities provided by this factory method and the returned symbol lookup are
      * implemented using the {@code dlopen}, {@code dlsym} and {@code dlclose} functions.
      * @param path the path of the library in which symbols should be looked up.
-     * @param scope the scope associated with symbols obtained from the returned lookup.
+     * @param arena the arena associated with symbols obtained from the returned lookup.
      * @return a new symbol lookup suitable to find symbols in a library with the given path.
+     * @throws IllegalStateException if {@code arena.scope().isAlive() == false}
+     * @throws WrongThreadException if {@code arena} is a confined arena, and this method is called from a
+     * thread {@code T}, other than the arena's owner thread.
      * @throws IllegalArgumentException if {@code path} does not point to a valid library.
      * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
     @CallerSensitive
-    static SymbolLookup libraryLookup(Path path, SegmentScope scope) {
+    static SymbolLookup libraryLookup(Path path, Arena arena) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass(), SymbolLookup.class, "libraryLookup");
-        return libraryLookup(path, RawNativeLibraries::load, scope);
+        return libraryLookup(path, RawNativeLibraries::load, arena);
     }
 
-    private static <Z> SymbolLookup libraryLookup(Z libDesc, BiFunction<RawNativeLibraries, Z, NativeLibrary> loadLibraryFunc, SegmentScope libScope) {
+    private static <Z> SymbolLookup libraryLookup(Z libDesc, BiFunction<RawNativeLibraries, Z, NativeLibrary> loadLibraryFunc, Arena libArena) {
         Objects.requireNonNull(libDesc);
-        Objects.requireNonNull(libScope);
+        Objects.requireNonNull(libArena);
         // attempt to load native library from path or name
         RawNativeLibraries nativeLibraries = RawNativeLibraries.newInstance(MethodHandles.lookup());
         NativeLibrary library = loadLibraryFunc.apply(nativeLibraries, libDesc);
@@ -231,7 +279,7 @@ public interface SymbolLookup {
             throw new IllegalArgumentException("Cannot open library: " + libDesc);
         }
         // register hook to unload library when 'libScope' becomes not alive
-        ((MemorySessionImpl) libScope).addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
+        MemorySessionImpl.toMemorySession(libArena).addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
             @Override
             public void cleanup() {
                 nativeLibraries.unload(library);
@@ -239,10 +287,12 @@ public interface SymbolLookup {
         });
         return name -> {
             Objects.requireNonNull(name);
+            if (Utils.containsNullChars(name)) return Optional.empty();
             long addr = library.find(name);
             return addr == 0L ?
                     Optional.empty() :
-                    Optional.of(MemorySegment.ofAddress(addr, 0, libScope));
+                    Optional.of(MemorySegment.ofAddress(addr)
+                            .reinterpret(libArena, null));
         };
     }
 }

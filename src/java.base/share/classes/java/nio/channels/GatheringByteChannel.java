@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,10 +58,11 @@ public interface GatheringByteChannel
      * where <i>r</i> is the total number of bytes remaining in the specified
      * subsequence of the given buffer array, that is,
      *
-     * <blockquote><pre>
-     * srcs[offset].remaining()
-     *     + srcs[offset+1].remaining()
-     *     + ... + srcs[offset+length-1].remaining()</pre></blockquote>
+     * {@snippet lang=java :
+     *     srcs[offset].remaining()
+     *         + srcs[offset+1].remaining()
+     *         + ... + srcs[offset+length-1].remaining()
+     * }
      *
      * at the moment that this method is invoked.
      *
@@ -134,8 +135,9 @@ public interface GatheringByteChannel
      * <p> An invocation of this method of the form {@code c.write(srcs)}
      * behaves in exactly the same manner as the invocation
      *
-     * <blockquote><pre>
-     * c.write(srcs, 0, srcs.length);</pre></blockquote>
+     * {@snippet lang=java :
+     *     c.write(srcs, 0, srcs.length);
+     * }
      *
      * @param  srcs
      *         The buffers from which bytes are to be retrieved

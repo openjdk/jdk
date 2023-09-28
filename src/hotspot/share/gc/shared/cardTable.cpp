@@ -74,15 +74,10 @@ CardTable::CardTable(MemRegion whole_heap) :
   _byte_map_size(0),
   _byte_map(nullptr),
   _byte_map_base(nullptr),
-  _covered(MemRegion::create_array(max_covered_regions, mtGC)),
   _guard_region()
 {
   assert((uintptr_t(_whole_heap.start())  & (_card_size - 1))  == 0, "heap must start at card boundary");
   assert((uintptr_t(_whole_heap.end()) & (_card_size - 1))  == 0, "heap must end at card boundary");
-}
-
-CardTable::~CardTable() {
-  MemRegion::destroy_array(_covered, max_covered_regions);
 }
 
 void CardTable::initialize(void* region0_start, void* region1_start) {
@@ -102,7 +97,7 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
   MemTracker::record_virtual_memory_type((address)heap_rs.base(), mtGC);
 
   os::trace_page_sizes("Card Table", num_bytes, num_bytes,
-                       _page_size, heap_rs.base(), heap_rs.size());
+                       heap_rs.base(), heap_rs.size(), _page_size);
   if (!heap_rs.is_reserved()) {
     vm_exit_during_initialization("Could not reserve enough space for the "
                                   "card marking array");

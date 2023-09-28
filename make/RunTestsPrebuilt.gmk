@@ -295,6 +295,11 @@ test-prebuilt:
 	@cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -f make/RunTests.gmk run-test \
 	    TEST="$(TEST)"
 
+test-prebuilt-with-exit-code: test-prebuilt
+	@if test -f $(MAKESUPPORT_OUTPUTDIR)/exit-with-error ; then \
+	  exit 1 ; \
+	fi
+
 all: test-prebuilt
 
 .PHONY: default all test-prebuilt

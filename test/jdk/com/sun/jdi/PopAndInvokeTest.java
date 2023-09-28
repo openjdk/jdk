@@ -50,8 +50,9 @@ class PopAndInvokeTarg {
         if (waiting) {
             return;
         }
-        waiting = true;
         System.out.println("    debuggee: in waiter");
+        // No printlns or other calls allowed after this point.
+        waiting = true;
         while (true) {
         }
     }

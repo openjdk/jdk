@@ -78,7 +78,7 @@ public final class SignaturesImpl {
             if (t instanceof ThrowableSig ts)
                 throwsTypes.add(ts);
             else
-                throw new IllegalStateException("not a valid type signature: " + sig);
+                throw new IllegalArgumentException("not a valid type signature: " + sig);
         }
         return new MethodSignatureImpl(typeParamTypes, null2Empty(throwsTypes), returnType, null2Empty(paramTypes));
     }
@@ -157,7 +157,7 @@ public final class SignaturesImpl {
                 return ty;
             case '[': return ArrayTypeSig.of(typeSig());
         }
-        throw new IllegalStateException("not a valid type signature: " + sig);
+        throw new IllegalArgumentException("not a valid type signature: " + sig);
     }
 
     private TypeArg typeArg() {

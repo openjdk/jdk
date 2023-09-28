@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,23 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
+#include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zWeakRootsProcessor.hpp"
 #include "gc/z/zWorkers.hpp"
+#include "memory/iterator.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/debug.hpp"
 
 class ZPhantomCleanOopClosure : public OopClosure {
 public:
   virtual void do_oop(oop* p) {
-    // Read the oop once, to make sure the liveness check
-    // and the later clearing uses the same value.
-    const oop obj = Atomic::load(p);
-    if (ZBarrier::is_alive_barrier_on_phantom_oop(obj)) {
-      ZBarrier::keep_alive_barrier_on_phantom_oop_field(p);
-    } else {
-      // The destination could have been modified/reused, in which case
-      // we don't want to clear it. However, no one could write the same
-      // oop here again (the object would be strongly live and we would
-      // not consider clearing such oops), so therefore we don't have an
-      // ABA problem here.
-      Atomic::cmpxchg(p, obj, oop(NULL));
-    }
+    ZBarrier::clean_barrier_on_phantom_oop_field((zpointer*)p);
+    SuspendibleThreadSet::yield();
   }
 
   virtual void do_oop(narrowOop* p) {
@@ -51,25 +46,26 @@ public:
   }
 };
 
-ZWeakRootsProcessor::ZWeakRootsProcessor(ZWorkers* workers) :
-    _workers(workers) {}
+ZWeakRootsProcessor::ZWeakRootsProcessor(ZWorkers* workers)
+  : _workers(workers) {}
 
 class ZProcessWeakRootsTask : public ZTask {
 private:
-  ZWeakRootsIterator _weak_roots;
+  ZRootsIteratorWeakColored _roots_weak_colored;
 
 public:
-  ZProcessWeakRootsTask() :
-      ZTask("ZProcessWeakRootsTask"),
-      _weak_roots() {}
+  ZProcessWeakRootsTask()
+    : ZTask("ZProcessWeakRootsTask"),
+      _roots_weak_colored(ZGenerationIdOptional::old) {}
 
   ~ZProcessWeakRootsTask() {
-    _weak_roots.report_num_dead();
+    _roots_weak_colored.report_num_dead();
   }
 
   virtual void work() {
+    SuspendibleThreadSetJoiner sts_joiner;
     ZPhantomCleanOopClosure cl;
-    _weak_roots.apply(&cl);
+    _roots_weak_colored.apply(&cl);
   }
 };
 

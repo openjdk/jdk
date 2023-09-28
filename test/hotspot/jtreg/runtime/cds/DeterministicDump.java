@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,15 +54,9 @@ public class DeterministicDump {
         baseArgs.add("-Xmx128M");
 
         if (Platform.is64bit()) {
-            if (!compressed) {
-                System.out.println("CDS archives with uncompressed oops are still non-deterministic");
-                System.out.println("See https://bugs.openjdk.org/browse/JDK-8282828");
-                return;
-            }
-            // These options are available only on 64-bit.
+            // This option is available only on 64-bit.
             String sign = (compressed) ?  "+" : "-";
             baseArgs.add("-XX:" + sign + "UseCompressedOops");
-            baseArgs.add("-XX:" + sign + "UseCompressedClassPointers");
         }
 
         String baseArchive = dump(baseArgs);
@@ -86,7 +80,7 @@ public class DeterministicDump {
         String mapName = logName + ".map";
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-Xlog:cds=debug")
-            .addPrefix("-Xlog:cds+map=trace:file=" + mapName + ":none:filesize=0")
+            .addPrefix("-Xlog:cds+map*=trace:file=" + mapName + ":none:filesize=0")
             .setArchiveName(archiveName)
             .addSuffix(args)
             .addSuffix(more);

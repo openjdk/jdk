@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,8 @@ Java_VThreadUnsupportedTest_isCompletedTestInEvent(JNIEnv *env, jobject obj) {
 }
 
 /*
- * Execute JVMTI functions which currently don't support vthreads and check that they
- * return error code JVMTI_ERROR_INVALID_THREAD or JVMTI_ERROR_OPAQUE_FRAME correctly.
+ * Execute JVMTI functions that don't support vthreads and check they return error
+ * code JVMTI_ERROR_UNSUPPORTED_OPERATION or JVMTI_ERROR_OPAQUE_FRAME correctly.
  */
 static void
 test_unsupported_jvmti_functions(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread) {
@@ -86,18 +86,6 @@ test_unsupported_jvmti_functions(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread) 
   }
 
   LOG("Testing JVMTI functions which should not accept a virtual thread argument\n");
-
-  LOG("Testing StopThread\n");
-  err = jvmti->StopThread(vthread, vthread);
-  check_jvmti_error_unsupported_operation(jni, "StopThread", err);
-
-  LOG("Testing PopFrame\n");
-  err = jvmti->PopFrame(vthread);
-  check_jvmti_error_opaque_frame(jni, "PopFrame", err);
-
-  LOG("Testing ForceEarlyReturnVoid\n");
-  err = jvmti->ForceEarlyReturnVoid(vthread);
-  check_jvmti_error_opaque_frame(jni, "ForceEarlyReturnVoid", err);
 
   LOG("Testing GetThreadCpuTime\n");
   err = jvmti->GetThreadCpuTime(vthread, &nanos);

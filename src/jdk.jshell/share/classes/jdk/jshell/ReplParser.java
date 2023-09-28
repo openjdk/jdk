@@ -229,7 +229,7 @@ class ReplParser extends JavacParser {
                     } else if ((isVoid || (lastmode & TYPE) != 0) && LAX_IDENTIFIER.test(token.kind)) {
                         // we have "Type Ident", so we can assume it is variable or method declaration
                         pos = token.pos;
-                        Name name = ident();
+                        Name name = identOrUnderscore();
                         if (token.kind == LPAREN) {
                         // method declaration
                             //mods.flags |= Flags.STATIC;

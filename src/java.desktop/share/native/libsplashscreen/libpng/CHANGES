@@ -6109,6 +6109,18 @@ Version 1.6.38 [September 14, 2022]
   Implemented many stability improvements across all platforms.
   Updated the internal documentation.
 
+Version 1.6.39 [November 20, 2022]
+  Changed the error handler of oversized chunks (i.e. larger than
+    PNG_USER_CHUNK_MALLOC_MAX) from png_chunk_error to png_benign_error.
+  Fixed a buffer overflow error in contrib/tools/pngfix.
+  Fixed a memory leak (CVE-2019-6129) in contrib/tools/pngcp.
+  Disabled the ARM Neon optimizations by default in the CMake file,
+    following the default behavior of the configure script.
+  Allowed configure.ac to work with the trunk version of autoconf.
+  Removed the support for "install" targets from the legacy makefiles;
+    removed the obsolete makefile.cegcc.
+  Cleaned up the code and updated the internal documentation.
+
 Send comments/corrections/commendations to png-mng-implement at lists.sf.net.
 Subscription is required; visit
 https://lists.sourceforge.net/lists/listinfo/png-mng-implement

@@ -26,13 +26,21 @@
 package java.net;
 
 import java.io.UnsupportedEncodingException;
-import java.io.CharArrayWriter;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CoderResult;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException ;
 import java.util.BitSet;
 import java.util.Objects;
+import java.util.HexFormat;
+import java.util.function.IntPredicate;
 
+import jdk.internal.util.ImmutableBitSetPredicate;
 import jdk.internal.util.StaticProperty;
 
 /**
@@ -78,8 +86,7 @@ import jdk.internal.util.StaticProperty;
  * @since   1.0
  */
 public class URLEncoder {
-    private static final BitSet DONT_NEED_ENCODING;
-    private static final int CASE_DIFF = ('a' - 'A');
+    private static final IntPredicate DONT_NEED_ENCODING;
     private static final String DEFAULT_ENCODING_NAME;
 
     static {
@@ -120,17 +127,18 @@ public class URLEncoder {
          *
          */
 
-        DONT_NEED_ENCODING = new BitSet(128);
-
-        DONT_NEED_ENCODING.set('a', 'z' + 1);
-        DONT_NEED_ENCODING.set('A', 'Z' + 1);
-        DONT_NEED_ENCODING.set('0', '9' + 1);
-        DONT_NEED_ENCODING.set(' '); /* encoding a space to a + is done
+        var bitSet = new BitSet(128);
+        bitSet.set('a', 'z' + 1);
+        bitSet.set('A', 'Z' + 1);
+        bitSet.set('0', '9' + 1);
+        bitSet.set(' '); /* encoding a space to a + is done
                                     * in the encode() method */
-        DONT_NEED_ENCODING.set('-');
-        DONT_NEED_ENCODING.set('_');
-        DONT_NEED_ENCODING.set('.');
-        DONT_NEED_ENCODING.set('*');
+        bitSet.set('-');
+        bitSet.set('_');
+        bitSet.set('.');
+        bitSet.set('*');
+
+        DONT_NEED_ENCODING = ImmutableBitSetPredicate.of(bitSet);
 
         DEFAULT_ENCODING_NAME = StaticProperty.fileEncoding();
     }
@@ -197,6 +205,8 @@ public class URLEncoder {
         }
     }
 
+    private static final int ENCODING_CHUNK_SIZE = 8;
+
     /**
      * Translates a string into {@code application/x-www-form-urlencoded}
      * format using a specific {@linkplain Charset Charset}.
@@ -219,81 +229,109 @@ public class URLEncoder {
     public static String encode(String s, Charset charset) {
         Objects.requireNonNull(charset, "charset");
 
-        boolean needToChange = false;
-        StringBuilder out = new StringBuilder(s.length());
-        CharArrayWriter charArrayWriter = new CharArrayWriter();
+        int i;
+        for (i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (!DONT_NEED_ENCODING.test(c) || c == ' ') {
+                break;
+            }
+        }
+        if (i == s.length()) {
+            return s;
+        }
 
-        for (int i = 0; i < s.length();) {
-            int c = s.charAt(i);
-            //System.out.println("Examining character: " + c);
-            if (DONT_NEED_ENCODING.get(c)) {
+        StringBuilder out = new StringBuilder(s.length() << 1);
+        if (i > 0) {
+            out.append(s, 0, i);
+        }
+
+        CharsetEncoder ce = charset.newEncoder()
+                .onMalformedInput(CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        CharBuffer cb = CharBuffer.allocate(ENCODING_CHUNK_SIZE);
+        ByteBuffer bb = ByteBuffer.allocate((int)(ENCODING_CHUNK_SIZE * ce.maxBytesPerChar()));
+
+        while (i < s.length()) {
+            char c = s.charAt(i);
+            if (DONT_NEED_ENCODING.test(c)) {
                 if (c == ' ') {
                     c = '+';
-                    needToChange = true;
                 }
-                //System.out.println("Storing: " + c);
-                out.append((char)c);
+                out.append(c);
                 i++;
             } else {
                 // convert to external encoding before hex conversion
                 do {
-                    charArrayWriter.write(c);
+                    cb.put(c);
                     /*
                      * If this character represents the start of a Unicode
                      * surrogate pair, then pass in two characters. It's not
                      * clear what should be done if a byte reserved in the
-                     * surrogate pairs range occurs outside of a legal
+                     * surrogate pairs range occurs outside a legal
                      * surrogate pair. For now, just treat it as if it were
                      * any other character.
                      */
-                    if (c >= 0xD800 && c <= 0xDBFF) {
-                        /*
-                          System.out.println(Integer.toHexString(c)
-                          + " is high surrogate");
-                        */
-                        if ( (i+1) < s.length()) {
-                            int d = s.charAt(i+1);
-                            /*
-                              System.out.println("\tExamining "
-                              + Integer.toHexString(d));
-                            */
-                            if (d >= 0xDC00 && d <= 0xDFFF) {
-                                /*
-                                  System.out.println("\t"
-                                  + Integer.toHexString(d)
-                                  + " is low surrogate");
-                                */
-                                charArrayWriter.write(d);
+                    if (Character.isHighSurrogate(c)) {
+                        if ((i + 1) < s.length()) {
+                            char d = s.charAt(i + 1);
+                            if (Character.isLowSurrogate(d)) {
+                                cb.put(d);
                                 i++;
                             }
                         }
                     }
+                    // Limit to ENCODING_CHUNK_SIZE - 1 so that we can always fit in
+                    // a surrogate pair on the next iteration
+                    if (cb.position() >= ENCODING_CHUNK_SIZE - 1) {
+                        flushToStringBuilder(out, ce, cb, bb, false);
+                    }
                     i++;
-                } while (i < s.length() && !DONT_NEED_ENCODING.get((c = s.charAt(i))));
-
-                charArrayWriter.flush();
-                String str = charArrayWriter.toString();
-                byte[] ba = str.getBytes(charset);
-                for (byte b : ba) {
-                    out.append('%');
-                    char ch = Character.forDigit((b >> 4) & 0xF, 16);
-                    // converting to use uppercase letter as part of
-                    // the hex value if ch is a letter.
-                    if (Character.isLetter(ch)) {
-                        ch -= CASE_DIFF;
-                    }
-                    out.append(ch);
-                    ch = Character.forDigit(b & 0xF, 16);
-                    if (Character.isLetter(ch)) {
-                        ch -= CASE_DIFF;
-                    }
-                    out.append(ch);
-                }
-                charArrayWriter.reset();
-                needToChange = true;
+                } while (i < s.length() && !DONT_NEED_ENCODING.test((c = s.charAt(i))));
+                flushToStringBuilder(out, ce, cb, bb, true);
             }
         }
+        return out.toString();
+    }
 
-        return (needToChange? out.toString() : s);
+    /**
+     * Encodes input chars in {@code cb} and appends the byte values in an escaped
+     * format ({@code "%XX"}) to {@code out}. The temporary byte buffer, {@code bb},
+     * must be able to accept {@code cb.position() * ce.maxBytesPerChar()} bytes.
+     *
+     * @param out the StringBuilder to output encoded and escaped bytes to
+     * @param ce charset encoder. Will be reset if endOfInput is true
+     * @param cb input buffer, will be cleared
+     * @param bb output buffer, will be cleared
+     * @param endOfInput true if this is the last flush for an encoding chunk,
+     *                  to all bytes in ce is flushed to out and reset
+     */
+    private static void flushToStringBuilder(StringBuilder out,
+                                             CharsetEncoder ce,
+                                             CharBuffer cb,
+                                             ByteBuffer bb,
+                                             boolean endOfInput) {
+        cb.flip();
+        try {
+            CoderResult cr = ce.encode(cb, bb, endOfInput);
+            if (!cr.isUnderflow())
+                cr.throwException();
+            if (endOfInput) {
+                cr = ce.flush(bb);
+                if (!cr.isUnderflow())
+                    cr.throwException();
+                ce.reset();
+            }
+        } catch (CharacterCodingException x) {
+            throw new Error(x); // Can't happen
+        }
+        HexFormat hex = HexFormat.of().withUpperCase();
+        byte[] bytes = bb.array();
+        int len = bb.position();
+        for (int i = 0; i < len; i++) {
+            out.append('%');
+            hex.toHexDigits(out, bytes[i]);
+        }
+        cb.clear();
+        bb.clear();
     }
 }

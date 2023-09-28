@@ -342,7 +342,6 @@ public final class Instant
      *
      * @param epochMilli  the number of milliseconds from 1970-01-01T00:00:00Z
      * @return an instant, not null
-     * @throws DateTimeException if the instant exceeds the maximum or minimum instant
      */
     public static Instant ofEpochMilli(long epochMilli) {
         long secs = Math.floorDiv(epochMilli, 1000);
@@ -1170,20 +1169,30 @@ public final class Instant
     }
 
     private long microsUntil(Instant end) {
-        long secsDiff = Math.subtractExact(end.seconds, seconds);
-        long totalMicros = Math.multiplyExact(secsDiff, MICROS_PER_SECOND);
-        return Math.addExact(totalMicros, (end.nanos - nanos) / 1000);
+        long microsDiff = Math.multiplyExact(end.seconds - seconds, MICROS_PER_SECOND);
+        int nanosDiff = end.nanos - nanos;
+        if (microsDiff > 0 && nanosDiff < 0) {
+            return (microsDiff - 1_000_000) + (nanosDiff + 1_000_000_000) / 1_000;
+        } else if (microsDiff < 0 && nanosDiff > 0) {
+            return (microsDiff + 1_000_000) + (nanosDiff - 1_000_000_000) / 1_000;
+        }
+        return Math.addExact(microsDiff, nanosDiff / 1_000);
     }
 
     private long millisUntil(Instant end) {
-        long secsDiff = Math.subtractExact(end.seconds, seconds);
-        long totalMillis = Math.multiplyExact(secsDiff, MILLIS_PER_SECOND);
-        return Math.addExact(totalMillis, (end.nanos - nanos) / 1000_000);
+        long millisDiff = Math.multiplyExact(end.seconds - seconds, MILLIS_PER_SECOND);
+        int nanosDiff = end.nanos - nanos;
+        if (millisDiff > 0 && nanosDiff < 0) {
+            return (millisDiff - 1_000) + (nanosDiff + 1_000_000_000) / 1_000_000;
+        } else if (millisDiff < 0 && nanosDiff > 0) {
+            return (millisDiff + 1_000) + (nanosDiff - 1_000_000_000) / 1_000_000;
+        }
+        return Math.addExact(millisDiff, nanosDiff / 1_000_000);
     }
 
     private long secondsUntil(Instant end) {
         long secsDiff = Math.subtractExact(end.seconds, seconds);
-        long nanosDiff = end.nanos - nanos;
+        int nanosDiff = end.nanos - nanos;
         if (secsDiff > 0 && nanosDiff < 0) {
             secsDiff--;
         } else if (secsDiff < 0 && nanosDiff > 0) {
@@ -1263,8 +1272,11 @@ public final class Instant
      * It is "consistent with equals", as defined by {@link Comparable}.
      *
      * @param otherInstant  the other instant to compare to, not null
-     * @return the comparator value, negative if less, positive if greater
+     * @return the comparator value, that is less than zero if this instant is before {@code otherInstant},
+     *          zero if they are equal, or greater than zero if this instant is after {@code otherInstant}
      * @throws NullPointerException if otherInstant is null
+     * @see #isBefore
+     * @see #isAfter
      */
     @Override
     public int compareTo(Instant otherInstant) {

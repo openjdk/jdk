@@ -23,7 +23,8 @@
 
 /**
  * @test
- * @summary Verifies that specific JVMTI functions returns JVMTI_ERROR_INVALID_THREAD if called with virtual threads.
+ * @summary Verifies that specific JVMTI functions return UNSUPPORTED_OPERATION
+ *          or OPAQUE_FRAME if called with virtual threads.
  * @requires vm.continuations
  * @compile VThreadUnsupportedTest.java
  * @run main/othervm/native -agentlib:VThreadUnsupportedTest VThreadUnsupportedTest

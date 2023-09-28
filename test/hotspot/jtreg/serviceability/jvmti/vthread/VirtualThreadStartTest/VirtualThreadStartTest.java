@@ -46,6 +46,7 @@ public class VirtualThreadStartTest {
     private static final String AGENT_LIB = "VirtualThreadStartTest";
     private static final int THREAD_CNT = 10;
 
+    private static native boolean canSupportVirtualThreads();
     private static native int getAndResetStartedThreads();
 
     public static void main(String[] args) throws Exception {
@@ -55,8 +56,6 @@ public class VirtualThreadStartTest {
             String arg = args.length == 2 ? args[1] : "";
             VirtualMachine vm = VirtualMachine.attach(String.valueOf(ProcessHandle.current().pid()));
             vm.loadAgentLibrary(AGENT_LIB, arg);
-        } else {
-            System.loadLibrary(AGENT_LIB);
         }
         getAndResetStartedThreads();
 
@@ -64,11 +63,15 @@ public class VirtualThreadStartTest {
             Thread.ofVirtual().name("Tested-VT-" + i).start(() -> {}).join();
         }
 
+        // No VirtualThreadStart events are expected if can_support_virtual_threads is disabled.
+        int expStartedThreads = canSupportVirtualThreads() ? THREAD_CNT : 0;
         int startedThreads = getAndResetStartedThreads();
-        System.out.println("ThreadStart event count: " + startedThreads + ", expected: " + THREAD_CNT);
-        if (startedThreads != THREAD_CNT) {
+
+        System.out.println("ThreadStart event count: " + startedThreads + ", expected: " + expStartedThreads);
+
+        if (startedThreads != expStartedThreads) {
             throw new RuntimeException("Failed: wrong ThreadStart count: " +
-                                       startedThreads + " expected: " + THREAD_CNT);
+                                       startedThreads + " expected: " + expStartedThreads);
         }
     }
 }

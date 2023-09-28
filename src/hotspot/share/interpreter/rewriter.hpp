@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/constantPool.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -47,10 +48,12 @@ class Rewriter: public StackObj {
   GrowableArray<int>  _method_handle_invokers;
   int                 _resolved_reference_limit;
   int                 _invokedynamic_index;
+  int                 _field_entry_index;
 
   // For collecting information about invokedynamic bytecodes before resolution
   // With this, we can know how many indy calls there are and resolve them later
   GrowableArray<ResolvedIndyEntry> _initialized_indy_entries;
+  GrowableArray<ResolvedFieldEntry> _initialized_field_entries;
 
   void init_maps(int length) {
     _cp_map.trunc_to(0);
@@ -163,6 +166,7 @@ class Rewriter: public StackObj {
   void make_constant_pool_cache(TRAPS);
   void scan_method(Thread* thread, Method* m, bool reverse, bool* invokespecial_error);
   void rewrite_Object_init(const methodHandle& m, TRAPS);
+  void rewrite_field_reference(address bcp, int offset, bool reverse);
   void rewrite_member_reference(address bcp, int offset, bool reverse);
   void maybe_rewrite_invokehandle(address opc, int cp_index, int cache_index, bool reverse);
   void rewrite_invokedynamic(address bcp, int offset, bool reverse);

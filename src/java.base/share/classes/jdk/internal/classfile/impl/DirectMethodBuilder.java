@@ -25,6 +25,7 @@
 
 package jdk.internal.classfile.impl;
 
+import java.lang.constant.MethodTypeDesc;
 import java.util.function.Consumer;
 
 import jdk.internal.classfile.BufWriter;
@@ -46,13 +47,15 @@ public final class DirectMethodBuilder
     final Utf8Entry desc;
     int flags;
     int[] parameterSlots;
+    MethodTypeDesc mDesc;
 
     public DirectMethodBuilder(SplitConstantPool constantPool,
+                               ClassfileImpl context,
                                Utf8Entry nameInfo,
                                Utf8Entry typeInfo,
                                int flags,
                                MethodModel original) {
-        super(constantPool);
+        super(constantPool, context);
         setOriginal(original);
         this.name = nameInfo;
         this.desc = typeInfo;
@@ -78,6 +81,18 @@ public final class DirectMethodBuilder
     }
 
     @Override
+    public MethodTypeDesc methodTypeSymbol() {
+        if (mDesc == null) {
+            if (original instanceof MethodInfo mi) {
+                mDesc = mi.methodTypeSymbol();
+            } else {
+                mDesc = MethodTypeDesc.ofDescriptor(methodType().stringValue());
+            }
+        }
+        return mDesc;
+    }
+
+    @Override
     public int methodFlags() {
         return flags;
     }
@@ -85,13 +100,13 @@ public final class DirectMethodBuilder
     @Override
     public int parameterSlot(int paramNo) {
         if (parameterSlots == null)
-            parameterSlots = Util.parseParameterSlots(methodFlags(), methodType().stringValue());
+            parameterSlots = Util.parseParameterSlots(methodFlags(), methodTypeSymbol());
         return parameterSlots[paramNo];
     }
 
     @Override
     public BufferedCodeBuilder bufferedCodeBuilder(CodeModel original) {
-        return new BufferedCodeBuilder(this, constantPool, original);
+        return new BufferedCodeBuilder(this, constantPool, context, original);
     }
 
     @Override
@@ -102,7 +117,7 @@ public final class DirectMethodBuilder
 
     private MethodBuilder withCode(CodeModel original,
                                   Consumer<? super CodeBuilder> handler) {
-        var cb = DirectCodeBuilder.build(this, handler, constantPool, original);
+        var cb = DirectCodeBuilder.build(this, handler, constantPool, context, original);
         writeAttribute(cb);
         return this;
     }

@@ -1,4 +1,4 @@
-.\" Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JMOD" "1" "2023" "JDK 21-ea" "JDK Commands"
+.TH "JMOD" "1" "2024" "JDK 22-ea" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -223,7 +223,7 @@ create --class-path mods/com.greetings --module-path mlib
   --cmds commands --config configfiles --header-files src/h
   --libs lib --main-class com.greetings.Main
   --man-pages man --module-version 1.0
-  --os-arch \[dq]x86_x64\[dq] --os-name \[dq]Mac OS X\[dq]
+  --os-arch \[dq]x86_x64\[dq] --os-name \[dq]macOS\[dq]
   --os-version \[dq]10.10.5\[dq] greetingsmod
 \f[R]
 .fi
@@ -248,7 +248,7 @@ The following is an example of creating a JMOD file:
 jmod create --class-path mods/com.greetings --cmds commands
   --config configfiles --header-files src/h --libs lib
   --main-class com.greetings.Main --man-pages man --module-version 1.0
-  --os-arch \[dq]x86_x64\[dq] --os-name \[dq]Mac OS X\[dq]
+  --os-arch \[dq]x86_x64\[dq] --os-name \[dq]macOS\[dq]
   --os-version \[dq]10.10.5\[dq] greetingsmod
 \f[R]
 .fi
@@ -396,7 +396,7 @@ from the directory \f[V]jmodhashex\f[R].
 Run the following command from the \f[V]jmodhashex2\f[R] directory:
 .RS 4
 .IP \[bu] 2
-\f[B]Linux and OS X:\f[R]
+\f[B]Linux and macOS:\f[R]
 .RS 2
 .RS
 .PP

@@ -126,6 +126,8 @@ space is required.
 Even for 32-bit builds, it is recommended to use a 64-bit build machine, and
 instead create a 32-bit target using `--with-target-bits=32`.
 
+Note: The Windows 32-bit x86 port is deprecated and may be removed in a future release.
+
 ### Building on aarch64
 
 At a minimum, a machine with 8 cores is advisable, as well as 8 GB of RAM.
@@ -162,11 +164,11 @@ This table lists the OS versions used by Oracle when building the JDK. Such
 information is always subject to change, but this table is up to date at the
 time of writing.
 
- Operating system   Vendor/version used
- -----------------  -------------------------------------------------------
- Linux              Oracle Enterprise Linux 6.4 / 7.6
- macOS              Mac OS X 10.13 (High Sierra)
- Windows            Windows Server 2012 R2
+| Operating system  | Vendor/version used                |
+| ----------------- | ---------------------------------- |
+| Linux             | Oracle Enterprise Linux 6.4 / 7.6  |
+| macOS             | Mac OS X 10.13 (High Sierra)       |
+| Windows           | Windows Server 2012 R2             |
 
 The double version numbers for Linux are due to the hybrid model
 used at Oracle, where header files and external libraries from an older version
@@ -198,6 +200,8 @@ rule also applies to input to the build system, e.g. in arguments to
 `configure`. So, use `--with-msvcr-dll=/cygdrive/c/msvcr100.dll` rather than
 `--with-msvcr-dll=c:\msvcr100.dll`. For details on this conversion, see the section
 on [Fixpath](#fixpath).
+
+Note: The Windows 32-bit x86 port is deprecated and may be removed in a future release.
 
 #### Cygwin
 
@@ -470,6 +474,19 @@ rather than bundling the JDK's own copy.
 
 Use `--with-freetype-include=<path>` and `--with-freetype-lib=<path>`
 if `configure` does not automatically locate the platform FreeType files.
+
+### Fontconfig
+
+Fontconfig from [freedesktop.org Fontconfig](http://fontconfig.org) is required
+on all platforms except Windows and macOS.
+
+  * To install on an apt-based Linux, try running `sudo apt-get install
+    libfontconfig-dev`.
+  * To install on an rpm-based Linux, try running `sudo yum install
+    fontconfig-devel`.
+
+Use `--with-fontconfig-include=<path>` and `--with-fontconfig=<path>`
+if `configure` does not automatically locate the platform Fontconfig files.
 
 ### CUPS
 
@@ -867,11 +884,11 @@ Download the latest `.tar.gz` file, unpack it, and point `--with-jtreg` to the
 Building of Hotspot Gtest suite requires the source code of Google
 Test framework.  The top directory, which contains both `googletest`
 and `googlemock` directories, should be specified via `--with-gtest`.
-The minimum supported version of Google Test is 1.13.0, whose source
+The minimum supported version of Google Test is 1.14.0, whose source
 code can be obtained:
 
- * by downloading and unpacking the source bundle from [here](https://github.com/google/googletest/releases/tag/v1.13.0)
- * or by checking out `v1.13.0` tag of `googletest` project: `git clone -b v1.13.0 https://github.com/google/googletest`
+ * by downloading and unpacking the source bundle from [here](https://github.com/google/googletest/releases/tag/v1.14.0)
+ * or by checking out `v1.14.0` tag of `googletest` project: `git clone -b v1.14.0 https://github.com/google/googletest`
 
 To execute the most basic tests (tier 1), use:
 ```
@@ -970,14 +987,14 @@ https://sourceware.org/autobook/autobook/autobook_17.html). If no
 targets are given, a native toolchain for the current platform will be
 created. Currently, at least the following targets are known to work:
 
- Supported devkit targets
- -------------------------
- x86_64-linux-gnu
- aarch64-linux-gnu
- arm-linux-gnueabihf
- ppc64-linux-gnu
- ppc64le-linux-gnu
- s390x-linux-gnu
+| Supported devkit targets |
+| ------------------------ |
+| x86_64-linux-gnu         |
+| aarch64-linux-gnu        |
+| arm-linux-gnueabihf      |
+| ppc64-linux-gnu          |
+| ppc64le-linux-gnu        |
+| s390x-linux-gnu          |
 
 `BASE_OS` must be one of "OEL6" for Oracle Enterprise Linux 6 or
 "Fedora" (if not specified "OEL6" will be the default). If the base OS
@@ -1204,22 +1221,22 @@ it might require a little nudge with:
 
 Architectures that are known to successfully cross-compile like this are:
 
-  Target        Debian tree  Debian arch   `--openjdk-target=...`   `--with-jvm-variants=...`
-  ------------  ------------ ------------- ------------------------ --------------
-  x86           buster       i386          i386-linux-gnu           (all)
-  arm           buster       armhf         arm-linux-gnueabihf      (all)
-  aarch64       buster       arm64         aarch64-linux-gnu        (all)
-  ppc64le       buster       ppc64el       powerpc64le-linux-gnu    (all)
-  s390x         buster       s390x         s390x-linux-gnu          (all)
-  mipsle        buster       mipsel        mipsel-linux-gnu         zero
-  mips64le      buster       mips64el      mips64el-linux-gnueabi64 zero
-  armel         buster       arm           arm-linux-gnueabi        zero
-  ppc           sid          powerpc       powerpc-linux-gnu        zero
-  ppc64be       sid          ppc64         powerpc64-linux-gnu      (all)
-  m68k          sid          m68k          m68k-linux-gnu           zero
-  alpha         sid          alpha         alpha-linux-gnu          zero
-  sh4           sid          sh4           sh4-linux-gnu            zero
-  riscv64       sid          riscv64       riscv64-linux-gnu        (all)
+| Target       | Debian tree  | Debian arch   | `--openjdk-target=...`   | `--with-jvm-variants=...` |
+| ------------ | ------------ | ------------- | ------------------------ | ------------------------- |
+| x86          | buster       | i386          | i386-linux-gnu           | (all)                     |
+| arm          | buster       | armhf         | arm-linux-gnueabihf      | (all)                     |
+| aarch64      | buster       | arm64         | aarch64-linux-gnu        | (all)                     |
+| ppc64le      | buster       | ppc64el       | powerpc64le-linux-gnu    | (all)                     |
+| s390x        | buster       | s390x         | s390x-linux-gnu          | (all)                     |
+| mipsle       | buster       | mipsel        | mipsel-linux-gnu         | zero                      |
+| mips64le     | buster       | mips64el      | mips64el-linux-gnueabi64 | zero                      |
+| armel        | buster       | arm           | arm-linux-gnueabi        | zero                      |
+| ppc          | sid          | powerpc       | powerpc-linux-gnu        | zero                      |
+| ppc64be      | sid          | ppc64         | powerpc64-linux-gnu      | (all)                     |
+| m68k         | sid          | m68k          | m68k-linux-gnu           | zero                      |
+| alpha        | sid          | alpha         | alpha-linux-gnu          | zero                      |
+| sh4          | sid          | sh4           | sh4-linux-gnu            | zero                      |
+| riscv64      | sid          | riscv64       | riscv64-linux-gnu        | (all)                     |
 
 ### Building for ARM/aarch64
 
@@ -2015,20 +2032,7 @@ First of all: Thank you! We gladly welcome your contribution.
 However, please bear in mind that the JDK is a massive project, and we must ask
 you to follow our rules and guidelines to be able to accept your contribution.
 
-The official place to start is the ['How to contribute' page](
-http://openjdk.org/contribute/). There is also an official (but somewhat
-outdated and skimpy on details) [Developer's Guide](
-http://openjdk.org/guide/).
-
-If this seems overwhelming to you, the Adoption Group is there to help you! A
-good place to start is their ['New Contributor' page](
-https://wiki.openjdk.org/display/Adoption/New+Contributor), or start
-reading the comprehensive [Getting Started Kit](
-https://adoptopenjdk.gitbooks.io/adoptopenjdk-getting-started-kit/en/). The
-Adoption Group will also happily answer any questions you have about
-contributing. Contact them by [mail](
-http://mail.openjdk.org/mailman/listinfo/adoption-discuss) or [IRC](
-http://openjdk.org/irc/).
+The official place to start is the [OpenJDK Developers’ Guide](https://openjdk.org/guide/).
 
 ## Editing this document
 

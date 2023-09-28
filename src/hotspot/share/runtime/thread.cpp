@@ -72,6 +72,7 @@ Thread::Thread() {
   set_stack_size(0);
   set_lgrp_id(-1);
   DEBUG_ONLY(clear_suspendible_thread();)
+  DEBUG_ONLY(clear_indirectly_suspendible_thread();)
 
   // allocated data structures
   set_osthread(nullptr);
@@ -98,6 +99,7 @@ Thread::Thread() {
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
   _current_pending_raw_monitor = nullptr;
+  _vm_error_callbacks = nullptr;
 
   // thread-specific hashCode stream generator state - Marsaglia shift-xor form
   _hashStateX = os::random();
@@ -167,8 +169,11 @@ void Thread::record_stack_base_and_size() {
   // any members being initialized. Do not rely on Thread::current() being set.
   // If possible, refrain from doing anything which may crash or assert since
   // quite probably those crash dumps will be useless.
-  set_stack_base(os::current_stack_base());
-  set_stack_size(os::current_stack_size());
+  address base;
+  size_t size;
+  os::current_stack_base_and_size(&base, &size);
+  set_stack_base(base);
+  set_stack_size(size);
 
   // Set stack limits after thread is initialized.
   if (is_Java_thread()) {
@@ -264,7 +269,7 @@ Thread::~Thread() {
   delete handle_area();
   delete metadata_handles();
 
-  // osthread() can be nullptr, if creation of thread failed.
+  // osthread() can be null, if creation of thread failed.
   if (osthread() != nullptr) os::free_thread(osthread());
 
   // Clear Thread::current if thread is deleting itself and it has not
@@ -448,10 +453,10 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
     }
 
     st->print("cpu=%.2fms ",
-              os::thread_cpu_time(const_cast<Thread*>(this), true) / 1000000.0
+              (double)os::thread_cpu_time(const_cast<Thread*>(this), true) / 1000000.0
               );
     st->print("elapsed=%.2fs ",
-              _statistical_info.getElapsedTime() / 1000.0
+              (double)_statistical_info.getElapsedTime() / 1000.0
               );
     if (is_Java_thread() && (PrintExtendedThreadInfo || print_extended_info)) {
       size_t allocated_bytes = (size_t) const_cast<Thread*>(this)->cooked_allocated_bytes();
@@ -483,10 +488,11 @@ void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
 
   OSThread* os_thr = osthread();
   if (os_thr != nullptr) {
+    st->fill_to(67);
     if (os_thr->get_state() != ZOMBIE) {
-      st->print(" [stack: " PTR_FORMAT "," PTR_FORMAT "]",
-                p2i(stack_end()), p2i(stack_base()));
-      st->print(" [id=%d]", osthread()->thread_id());
+      st->print(" [id=%d, stack(" PTR_FORMAT "," PTR_FORMAT ") (" PROPERFMT ")]",
+                osthread()->thread_id(), p2i(stack_end()), p2i(stack_base()),
+                PROPERFMTARGS(stack_size()));
     } else {
       st->print(" terminated");
     }
@@ -524,6 +530,7 @@ void Thread::print_owned_locks_on(outputStream* st) const {
 // should be revisited, and they should be removed if possible.
 
 bool Thread::is_lock_owned(address adr) const {
+  assert(LockingMode != LM_LIGHTWEIGHT, "should not be called with new lightweight locking");
   return is_in_full_stack(adr);
 }
 

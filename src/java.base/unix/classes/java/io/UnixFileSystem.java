@@ -101,15 +101,23 @@ final class UnixFileSystem extends FileSystem {
         return pathname.startsWith("/") ? 1 : 0;
     }
 
+    // Remove trailing '/' if present and there are at least two characters
+    private static String trimSeparator(String s) {
+        int len = s.length();
+        if (len > 1 && s.charAt(len - 1) == '/')
+            return s.substring(0, len - 1);
+        return s;
+    }
+
     @Override
     public String resolve(String parent, String child) {
         if (child.isEmpty()) return parent;
         if (child.charAt(0) == '/') {
             if (parent.equals("/")) return child;
-            return parent + child;
+            return trimSeparator(parent + child);
         }
-        if (parent.equals("/")) return parent + child;
-        return parent + '/' + child;
+        if (parent.equals("/")) return trimSeparator(parent + child);
+        return trimSeparator(parent + '/' + child);
     }
 
     @Override

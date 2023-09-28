@@ -26,6 +26,7 @@
 #include "opto/addnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/matcher.hpp"
 #include "opto/movenode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
@@ -207,6 +208,11 @@ Node *CMoveINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
+  // If we're late in the optimization process, we may have already expanded Conv2B nodes
+  if (phase->C->post_loop_opts_phase() && !Matcher::match_rule_supported(Op_Conv2B)) {
+    return nullptr;
+  }
+
   // Now check for booleans
   int flip = 0;
 
@@ -238,9 +244,10 @@ Node *CMoveINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Convert to a bool (flipped)
   // Build int->bool conversion
   if (PrintOpto) { tty->print_cr("CMOV to I2B"); }
-  Node *n = new Conv2BNode( cmp->in(1) );
-  if( flip )
-  n = new XorINode( phase->transform(n), phase->intcon(1) );
+  Node* n = new Conv2BNode(cmp->in(1));
+  if (flip) {
+    n = new XorINode(phase->transform(n), phase->intcon(1));
+  }
 
   return n;
 }

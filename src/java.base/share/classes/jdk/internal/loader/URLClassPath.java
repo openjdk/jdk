@@ -53,11 +53,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Properties;
-import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.jar.JarFile;
 import java.util.zip.CRC32;
@@ -209,7 +207,9 @@ public class URLClassPath {
 
         this.unopenedUrls = unopenedUrls;
         this.path = path;
-        this.jarHandler = null;
+        // the application class loader uses the built-in protocol handler to avoid protocol
+        // handler lookup when opening JAR files on the class path.
+        this.jarHandler = new sun.net.www.protocol.jar.Handler();
         this.acc = null;
     }
 

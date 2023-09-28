@@ -372,9 +372,9 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef ASSERT
       char  assertMsg[] = "check BasicType definition in globalDefinitions.hpp";
       __ z_chi(r_arg_result_type, T_BOOLEAN);
-      __ asm_assert_low(assertMsg, 0x0234);
+      __ asm_assert(Assembler::bcondNotLow, assertMsg, 0x0234);
       __ z_chi(r_arg_result_type, T_NARROWOOP);
-      __ asm_assert_high(assertMsg, 0x0235);
+      __ asm_assert(Assembler::bcondNotHigh, assertMsg, 0x0235);
 #endif
       __ add2reg(r_arg_result_type, -T_BOOLEAN);          // Remove offset.
       __ z_larl(Z_R1, firstHandler);                      // location of first handler
@@ -740,7 +740,7 @@ class StubGenerator: public StubCodeGenerator {
   void assert_positive_int(Register count) {
 #ifdef ASSERT
     __ z_srag(Z_R0, count, 31);  // Just leave the sign (must be zero) in Z_R0.
-    __ asm_assert_eq("missing zero extend", 0xAFFE);
+    __ asm_assert(Assembler::bcondZero, "missing zero extend", 0xAFFE);
 #endif
   }
 
@@ -3085,7 +3085,14 @@ class StubGenerator: public StubCodeGenerator {
     Unimplemented();
     return nullptr;
   }
-  #endif // INCLUD_JFR
+
+  RuntimeStub* generate_jfr_return_lease() {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+  #endif // INCLUDE_JFR
 
   void generate_initial_stubs() {
     // Generates all stubs and initializes the entry points.
@@ -3133,9 +3140,17 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
 
-    JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
-    JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
+    JFR_ONLY(generate_jfr_stubs();)
   }
+
+#if INCLUDE_JFR
+  void generate_jfr_stubs() {
+    StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
+    StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
+    StubRoutines::_jfr_return_lease_stub = generate_jfr_return_lease();
+    StubRoutines::_jfr_return_lease = StubRoutines::_jfr_return_lease_stub->entry_point();
+  }
+#endif // INCLUDE_JFR
 
   void generate_final_stubs() {
     // Generates all stubs and initializes the entry points.

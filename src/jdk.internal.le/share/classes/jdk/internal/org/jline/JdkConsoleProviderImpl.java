@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,17 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
      */
     @Override
     public JdkConsole console(boolean isTTY, Charset charset) {
-        return new JdkConsoleImpl(charset);
+        try {
+            Terminal terminal = TerminalBuilder.builder().encoding(charset)
+                                               .exec(false).build();
+            return new JdkConsoleImpl(terminal);
+        } catch (IllegalStateException ise) {
+            //cannot create a non-dumb, non-exec terminal,
+            //use the standard Console:
+            return null;
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe);
+        }
     }
 
     /**
@@ -81,6 +91,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         @Override
         public String readLine(String fmt, Object ... args) {
             try {
+                initJLineIfNeeded();
                 return jline.readLine(fmt.formatted(args));
             } catch (EndOfFileException eofe) {
                 return null;
@@ -95,6 +106,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         @Override
         public char[] readPassword(String fmt, Object ... args) {
             try {
+                initJLineIfNeeded();
                 return jline.readLine(fmt.formatted(args), '\0').toCharArray();
             } catch (EndOfFileException eofe) {
                 return null;
@@ -116,15 +128,23 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
             return terminal.encoding();
         }
 
-        private final LineReader jline;
         private final Terminal terminal;
+        private volatile LineReader jline;
 
-        public JdkConsoleImpl(Charset charset) {
-            try {
-                terminal = TerminalBuilder.builder().encoding(charset).build();
-                jline = LineReaderBuilder.builder().terminal(terminal).build();
-            } catch (IOException ioe) {
-                throw new UncheckedIOException(ioe);
+        public JdkConsoleImpl(Terminal terminal) {
+            this.terminal = terminal;
+        }
+
+        private void initJLineIfNeeded() {
+            LineReader jline = this.jline;
+            if (jline == null) {
+                synchronized (this) {
+                    jline = this.jline;
+                    if (jline == null) {
+                        jline = LineReaderBuilder.builder().terminal(terminal).build();
+                        this.jline = jline;
+                    }
+                }
             }
         }
     }

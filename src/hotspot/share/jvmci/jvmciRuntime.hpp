@@ -40,18 +40,25 @@ class JVMCICompiler;
 class JVMCICompileState;
 class MetadataHandles;
 
-// Encapsulates the JVMCI metadata for an nmethod.
-// JVMCINMethodData objects are inlined into nmethods
-// at nmethod::_jvmci_data_offset.
-class JVMCINMethodData {
+// Encapsulates the JVMCI metadata for an nmethod.  JVMCINMethodData objects are normally inlined
+// into nmethods at nmethod::_jvmci_data_offset but during construction of the nmethod they are
+// resource allocated so they can be passed into the nmethod constructor.
+class JVMCINMethodData : public ResourceObj {
   friend class JVMCIVMStructs;
-  // Index for the HotSpotNmethod mirror in the nmethod's oops table.
-  // This is -1 if there is no mirror in the oops table.
-  int _nmethod_mirror_index;
 
   // Is HotSpotNmethod.name non-null? If so, the value is
   // embedded in the end of this object.
   bool _has_name;
+
+  // Index for the HotSpotNmethod mirror in the nmethod's oops table.
+  // This is -1 if there is no mirror in the oops table.
+  int _nmethod_mirror_index;
+
+  // This is the offset of the patchable part of the nmethod entry barrier sequence.  The meaning is
+  // somewhat platform dependent as the way patching is done varies by architecture.  Older JVMCI
+  // based compilers didn't emit the entry barrier so having a positive value for this offset
+  // confirms that the installed code supports the entry barrier.
+  int _nmethod_entry_patch_offset;
 
   // Address of the failed speculations list to which a speculation
   // is appended when it causes a deoptimization.
@@ -65,7 +72,31 @@ class JVMCINMethodData {
     SPECULATION_LENGTH_MASK = (1 << SPECULATION_LENGTH_BITS) - 1
   };
 
+  // Allocate a temporary data object for use during installation
+  void initialize(int nmethod_mirror_index,
+                   int nmethod_entry_patch_offset,
+                   const char* nmethod_mirror_name,
+                   FailedSpeculation** failed_speculations);
+
+  void* operator new(size_t size, const char* nmethod_mirror_name) {
+    assert(size == sizeof(JVMCINMethodData), "must agree");
+    size_t total_size = compute_size(nmethod_mirror_name);
+    return (address)resource_allocate_bytes(total_size);
+  }
+
 public:
+  static JVMCINMethodData* create(int nmethod_mirror_index,
+                                  int nmethod_entry_patch_offset,
+                                  const char* nmethod_mirror_name,
+                                  FailedSpeculation** failed_speculations) {
+    JVMCINMethodData* result = new (nmethod_mirror_name) JVMCINMethodData();
+    result->initialize(nmethod_mirror_index,
+                       nmethod_entry_patch_offset,
+                       nmethod_mirror_name,
+                       failed_speculations);
+    return result;
+  }
+
   // Computes the size of a JVMCINMethodData object
   static int compute_size(const char* nmethod_mirror_name) {
     int size = sizeof(JVMCINMethodData);
@@ -75,9 +106,12 @@ public:
     return size;
   }
 
-  void initialize(int nmethod_mirror_index,
-             const char* name,
-             FailedSpeculation** failed_speculations);
+  int size() {
+    return compute_size(name());
+  }
+
+  // Copy the contents of this object into data which is normally the storage allocated in the nmethod.
+  void copy(JVMCINMethodData* data);
 
   // Adds `speculation` to the failed speculations list.
   void add_failed_speculation(nmethod* nm, jlong speculation);
@@ -94,6 +128,15 @@ public:
 
   // Sets the mirror in nm's oops table.
   void set_nmethod_mirror(nmethod* nm, oop mirror);
+
+  bool has_entry_barrier() {
+    return _nmethod_entry_patch_offset != -1;
+  }
+
+  int nmethod_entry_patch_offset() {
+    guarantee(_nmethod_entry_patch_offset != -1, "missing entry barrier");
+    return _nmethod_entry_patch_offset;
+  }
 };
 
 // A top level class that represents an initialized JVMCI runtime.
@@ -189,7 +232,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                           bool& is_accessible,
                                           Klass* loading_klass);
   static void   get_field_by_index_impl(InstanceKlass* loading_klass, fieldDescriptor& fd,
-                                        int field_index);
+                                        int field_index, Bytecodes::Code bc);
   static Method*  get_method_by_index_impl(const constantPoolHandle& cpool,
                                            int method_index, Bytecodes::Code bc,
                                            InstanceKlass* loading_klass);
@@ -236,7 +279,9 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // Ensures that a JVMCI shared library JavaVM exists for this runtime.
   // If the JavaVM was created by this call, then the thread-local JNI
   // interface pointer for the JavaVM is returned otherwise null is returned.
-  JNIEnv* init_shared_library_javavm();
+  // If this method tried to create the JavaVM but failed, the error code returned
+  // by JNI_CreateJavaVM is returned in create_JavaVM_err.
+  JNIEnv* init_shared_library_javavm(int* create_JavaVM_err);
 
   // Determines if the JVMCI shared library JavaVM exists for this runtime.
   bool has_shared_library_javavm() { return _shared_library_javavm != nullptr; }
@@ -370,7 +415,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                      bool& is_accessible,
                                      Klass* loading_klass);
   static void   get_field_by_index(InstanceKlass* loading_klass, fieldDescriptor& fd,
-                                   int field_index);
+                                   int field_index, Bytecodes::Code bc);
   static Method*  get_method_by_index(const constantPoolHandle& cpool,
                                       int method_index, Bytecodes::Code bc,
                                       InstanceKlass* loading_klass);
@@ -383,7 +428,10 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
 
   // Helper routine for determining the validity of a compilation
   // with respect to concurrent class loading.
-  static JVMCI::CodeInstallResult validate_compile_task_dependencies(Dependencies* target, JVMCICompileState* task, char** failure_detail);
+  static JVMCI::CodeInstallResult validate_compile_task_dependencies(Dependencies* target,
+                                                                     JVMCICompileState* task,
+                                                                     char** failure_detail,
+                                                                     bool& failing_dep_is_call_site);
 
   // Compiles `target` with the JVMCI compiler.
   void compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, const methodHandle& target, int entry_bci);
@@ -414,7 +462,8 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                            JVMCIObject               nmethod_mirror,
                                            FailedSpeculation**       failed_speculations,
                                            char*                     speculations,
-                                           int                       speculations_len);
+                                           int                       speculations_len,
+                                           int                       nmethod_entry_patch_offset);
 
   // Detach `thread` from this runtime and destroy this runtime's JavaVM
   // if using one JavaVM per JVMCI compilation .
@@ -423,7 +472,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // Reports an unexpected exception and exits the VM with a fatal error.
   static void fatal_exception(JVMCIEnv* JVMCIENV, const char* message);
 
-  static void describe_pending_hotspot_exception(JavaThread* THREAD, bool clear);
+  static void describe_pending_hotspot_exception(JavaThread* THREAD);
 
 #define CHECK_EXIT THREAD); \
   if (HAS_PENDING_EXCEPTION) { \

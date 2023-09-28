@@ -28,7 +28,6 @@
  * @modules java.compiler
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.JavapTask
- * @enablePreview
  * @run main Patterns
  */
 

@@ -49,6 +49,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   UTIL_REQUIRE_PROGS(WC, wc)
 
   # Required tools with some special treatment
+  UTIL_REQUIRE_SPECIAL(GREP, [AC_PROG_GREP])
   UTIL_REQUIRE_SPECIAL(EGREP, [AC_PROG_EGREP])
   UTIL_REQUIRE_SPECIAL(SED, [AC_PROG_SED])
 
@@ -94,7 +95,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_TOOLS],
   UTIL_REQUIRE_PROGS(XARGS, xargs)
 
   # Required tools with some special treatment
-  UTIL_REQUIRE_SPECIAL(GREP, [AC_PROG_GREP])
   UTIL_REQUIRE_SPECIAL(FGREP, [AC_PROG_FGREP])
 
   # Optional tools, we can do without them

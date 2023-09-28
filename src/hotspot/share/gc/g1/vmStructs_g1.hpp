@@ -35,7 +35,7 @@
                         static_field)                                         \
                                                                               \
   static_field(HeapRegion, GrainBytes,        size_t)                         \
-  static_field(HeapRegion, LogOfHRGrainBytes, int)                            \
+  static_field(HeapRegion, LogOfHRGrainBytes, uint)                           \
                                                                               \
   nonstatic_field(HeapRegion, _type,           HeapRegionType)                \
   nonstatic_field(HeapRegion, _bottom,         HeapWord* const)               \
@@ -78,7 +78,6 @@
   declare_constant(HeapRegionType::EdenTag)                                   \
   declare_constant(HeapRegionType::SurvTag)                                   \
   declare_constant(HeapRegionType::HumongousMask)                             \
-  declare_constant(HeapRegionType::PinnedMask)                                \
   declare_constant(HeapRegionType::StartsHumongousTag)                        \
   declare_constant(HeapRegionType::ContinuesHumongousTag)                     \
   declare_constant(HeapRegionType::OldMask)                                   \

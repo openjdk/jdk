@@ -43,10 +43,11 @@ public final class MainWrapper {
 
         // It is needed to register finalizer thread in default thread group
         // So FinalizerThread thread can't be in virtual threads group
-        Finalizer finalizer = new Finalizer(new FinalizableObject());
-        finalizer.activate();
+        FinalizableObject finalizableObject = new FinalizableObject();
+        finalizableObject.registerCleanup();
 
-
+        // Some tests use this property to understand if virtual threads are used
+        System.setProperty("main.wrapper", wrapperName);
 
         Runnable task = () -> {
             try {

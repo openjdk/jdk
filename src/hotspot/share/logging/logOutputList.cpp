@@ -127,17 +127,22 @@ void LogOutputList::add_output(LogOutput* output, LogLevelType level) {
        node->_next = node->_next->_next) {
   }
 
+  // To allow lock-free iteration of the output list the updates in the loops
+  // below require release semantics.
+  OrderAccess::release();
+
   // Update the _level_start index
   for (int l = LogLevel::Last; l >= level; l--) {
-    if (_level_start[l] == nullptr || _level_start[l]->_level < level) {
-      _level_start[l] = node;
+    LogOutputNode* lnode = Atomic::load(&_level_start[l]);
+    if (lnode == nullptr || lnode->_level < level) {
+      Atomic::store(&_level_start[l], node);
     }
   }
 
   // Add the node the list
-  for (LogOutputNode* cur = _level_start[LogLevel::Last]; cur != nullptr; cur = cur->_next) {
-    if (cur != node && cur->_next == node->_next) {
-      cur->_next = node;
+  for (LogOutputNode* cur = Atomic::load(&_level_start[LogLevel::Last]); cur != nullptr; cur = Atomic::load(&cur->_next)) {
+    if (cur != node && Atomic::load(&cur->_next) == node->_next) {
+      Atomic::store(&cur->_next, node);
       break;
     }
   }

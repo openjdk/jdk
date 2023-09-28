@@ -54,7 +54,7 @@ class CodeStub: public CompilationResourceObj {
   // code generation
   void assert_no_unbound_labels()                { assert(!_entry.is_unbound() && !_continuation.is_unbound(), "unbound label"); }
   virtual void emit_code(LIR_Assembler* e) = 0;
-  virtual CodeEmitInfo* info() const             { return NULL; }
+  virtual CodeEmitInfo* info() const             { return nullptr; }
   virtual bool is_exception_throw_stub() const   { return false; }
   virtual bool is_simple_exception_stub() const  { return false; }
   virtual int nr_immediate_oops_patched() const  { return 0; }
@@ -170,7 +170,7 @@ class RangeCheckStub: public CodeStub {
   // For ArrayIndexOutOfBoundsException.
   RangeCheckStub(CodeEmitInfo* info, LIR_Opr index, LIR_Opr array)
     : _index(index), _array(array), _throw_index_out_of_bounds_exception(false) {
-    assert(info != NULL, "must have info");
+    assert(info != nullptr, "must have info");
     _info = new CodeEmitInfo(info);
     FrameMap* f = Compilation::current()->frame_map();
     f->update_reserved_argument_area_size(2 * BytesPerWord);
@@ -178,7 +178,7 @@ class RangeCheckStub: public CodeStub {
   // For IndexOutOfBoundsException.
   RangeCheckStub(CodeEmitInfo* info, LIR_Opr index)
     : _index(index), _array(), _throw_index_out_of_bounds_exception(true) {
-    assert(info != NULL, "must have info");
+    assert(info != nullptr, "must have info");
     _info = new CodeEmitInfo(info);
     FrameMap* f = Compilation::current()->frame_map();
     f->update_reserved_argument_area_size(2 * BytesPerWord);
@@ -423,7 +423,7 @@ class PatchingStub: public CodeStub {
 
   PatchingStub(MacroAssembler* masm, PatchID id, int index = -1):
       _id(id)
-    , _info(NULL)
+    , _info(nullptr)
     , _index(index) {
     // force alignment of patch sites so we
     // can guarantee atomic writes to the patch site.
@@ -443,7 +443,7 @@ class PatchingStub: public CodeStub {
     _info = info;
     _obj = obj;
     masm->bind(_patch_site_continuation);
-    _bytes_to_copy = masm->pc() - pc_start();
+    _bytes_to_copy = pointer_delta_as_int(masm->pc(), pc_start());
     if (_id == PatchingStub::access_field_id) {
       // embed a fixed offset to handle long patches which need to be offset by a word.
       // the patching code will just add the field offset field to this offset so

@@ -68,7 +68,7 @@ class Handle {
 
  protected:
   oop     obj() const                            { return _handle == nullptr ? (oop)nullptr : *_handle; }
-  oop     non_null_obj() const                   { assert(_handle != nullptr, "resolving nullptr handle"); return *_handle; }
+  oop     non_null_obj() const                   { assert(_handle != nullptr, "resolving null handle"); return *_handle; }
 
  public:
   // Constructors
@@ -144,7 +144,7 @@ DEF_HANDLE(typeArray        , is_typeArray_noinline        )
     Thread*   _thread;                           \
    protected:                                    \
     type*        obj() const                     { return _value; } \
-    type*        non_null_obj() const            { assert(_value != nullptr, "resolving nullptr _value"); return _value; } \
+    type*        non_null_obj() const            { assert(_value != nullptr, "resolving null _value"); return _value; } \
                                                  \
    public:                                       \
     /* Constructors */                           \

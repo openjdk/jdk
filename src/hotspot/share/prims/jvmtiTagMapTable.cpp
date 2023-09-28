@@ -35,25 +35,23 @@ JvmtiTagMapKey::JvmtiTagMapKey(oop obj) : _obj(obj) {}
 
 JvmtiTagMapKey::JvmtiTagMapKey(const JvmtiTagMapKey& src) {
   // move object into WeakHandle when copying into the table
-  assert(src._obj != nullptr, "must be set");
+  if (src._obj != nullptr) {
 
-  // obj was read with AS_NO_KEEPALIVE, or equivalent, like during
-  // a heap walk.  The object needs to be kept alive when it is published.
-  Universe::heap()->keep_alive(src._obj);
+    // obj was read with AS_NO_KEEPALIVE, or equivalent, like during
+    // a heap walk.  The object needs to be kept alive when it is published.
+    Universe::heap()->keep_alive(src._obj);
 
-  _wh = WeakHandle(JvmtiExport::weak_tag_storage(), src._obj);
+    _wh = WeakHandle(JvmtiExport::weak_tag_storage(), src._obj);
+  } else {
+    // resizing needs to create a copy.
+    _wh = src._wh;
+  }
+  // obj is always null after a copy.
   _obj = nullptr;
 }
 
-JvmtiTagMapKey::~JvmtiTagMapKey() {
-  // If obj is set null it out, this is called for stack object on lookup,
-  // and it should not have a WeakHandle created for it yet.
-  if (_obj != nullptr) {
-    _obj = nullptr;
-    assert(_wh.is_null(), "WeakHandle should be null");
-  } else {
-    _wh.release(JvmtiExport::weak_tag_storage());
-  }
+void JvmtiTagMapKey::release_weak_handle() const {
+  _wh.release(JvmtiExport::weak_tag_storage());
 }
 
 oop JvmtiTagMapKey::object() const {
@@ -66,11 +64,15 @@ oop JvmtiTagMapKey::object_no_keepalive() const {
   return _wh.peek();
 }
 
-JvmtiTagMapTable::JvmtiTagMapTable() : _table(Constants::_table_size) {}
+static const int INITIAL_TABLE_SIZE = 1007;
+static const int MAX_TABLE_SIZE     = 0x3fffffff;
+
+JvmtiTagMapTable::JvmtiTagMapTable() : _table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {}
 
 void JvmtiTagMapTable::clear() {
   struct RemoveAll {
     bool do_entry(const JvmtiTagMapKey& entry, const jlong& tag) {
+      entry.release_weak_handle();
       return true;
     }
   } remove_all;
@@ -104,29 +106,33 @@ jlong JvmtiTagMapTable::find(oop obj) {
 
 void JvmtiTagMapTable::add(oop obj, jlong tag) {
   JvmtiTagMapKey new_entry(obj);
-  bool is_added = false;
-  _table.put_if_absent(new_entry, tag, &is_added);
-  assert(is_added, "should be added");
-}
-
-void JvmtiTagMapTable::update(oop obj, jlong tag) {
-  JvmtiTagMapKey new_entry(obj);
-  bool is_updated = _table.put(new_entry, tag) == false;
-  assert(is_updated, "should be updated and not added");
+  bool is_added;
+  if (obj->fast_no_hash_check()) {
+    // Can't be in the table so add it fast.
+    is_added = _table.put_when_absent(new_entry, tag);
+  } else {
+    jlong* value = _table.put_if_absent(new_entry, tag, &is_added);
+    *value = tag; // assign the new tag
+  }
+  if (is_added) {
+    if (_table.maybe_grow(5, true /* use_large_table_sizes */)) {
+      int max_bucket_size = DEBUG_ONLY(_table.verify()) NOT_DEBUG(0);
+      log_info(jvmti, table) ("JvmtiTagMap table resized to %d for %d entries max bucket %d",
+                              _table.table_size(), _table.number_of_entries(), max_bucket_size);
+    }
+  }
 }
 
 void JvmtiTagMapTable::remove(oop obj) {
   JvmtiTagMapKey jtme(obj);
-  bool is_removed = _table.remove(jtme);
-  assert(is_removed, "remove not succesfull.");
+  auto clean = [] (const JvmtiTagMapKey& entry, jlong tag) {
+    entry.release_weak_handle();
+  };
+  _table.remove(jtme, clean);
 }
 
 void JvmtiTagMapTable::entry_iterate(JvmtiTagMapKeyClosure* closure) {
   _table.iterate(closure);
-}
-
-void JvmtiTagMapTable::resize_if_needed() {
-  _table.maybe_grow();
 }
 
 void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
@@ -138,6 +144,7 @@ void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
         if (_objects != nullptr) {
           _objects->append(tag);
         }
+        entry.release_weak_handle();
         return true;
       }
       return false;;

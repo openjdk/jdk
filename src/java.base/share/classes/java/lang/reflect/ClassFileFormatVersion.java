@@ -36,6 +36,13 @@ package java.lang.reflect;
  * added to model future releases of the Java Virtual Machine
  * Specification.
  *
+ * @apiNote
+ * The complete version used in a class file includes a major version
+ * and a minor version; this enum only models the major version. A
+ * Java virtual machine implementation is required to support a range
+ * of major versions; see the corresponding edition of the <cite>The
+ * Java Virtual Machine Specification</cite> for details.
+ *
  * @since 20
  * @see System#getProperties System property {@code java.class.version}
  * @see java.compiler/javax.lang.model.SourceVersion
@@ -64,7 +71,7 @@ public enum ClassFileFormatVersion {
     RELEASE_1(45),
 
     /**
-     * The version recognized by the Java 2 Platform, Standard Edition,
+     * The version introduced by the Java 2 Platform, Standard Edition,
      * v 1.2.
      *
      * The format described in <cite>The Java Virtual Machine
@@ -74,19 +81,19 @@ public enum ClassFileFormatVersion {
     RELEASE_2(46),
 
     /**
-     * The version recognized by the Java 2 Platform, Standard Edition,
+     * The version introduced by the Java 2 Platform, Standard Edition,
      * v 1.3.
      */
     RELEASE_3(47),
 
     /**
-     * The version recognized by the Java 2 Platform, Standard Edition,
+     * The version introduced by the Java 2 Platform, Standard Edition,
      * v 1.4.
      */
     RELEASE_4(48),
 
     /**
-     * The version recognized by the Java 2 Platform, Standard
+     * The version introduced by the Java 2 Platform, Standard
      * Edition 5.0.
      *
      * @see <a
@@ -100,7 +107,7 @@ public enum ClassFileFormatVersion {
     RELEASE_5(49),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 6.
      *
      * @see <a
@@ -110,7 +117,7 @@ public enum ClassFileFormatVersion {
     RELEASE_6(50),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 7.
      *
      * @see <a
@@ -120,7 +127,7 @@ public enum ClassFileFormatVersion {
     RELEASE_7(51),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 8.
      *
      * @see <a
@@ -132,7 +139,7 @@ public enum ClassFileFormatVersion {
     RELEASE_8(52),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 9.
      *
      * @see <a
@@ -144,7 +151,7 @@ public enum ClassFileFormatVersion {
      RELEASE_9(53),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 10.
      *
      * @see <a
@@ -154,7 +161,7 @@ public enum ClassFileFormatVersion {
     RELEASE_10(54),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 11.
      *
      * @see <a
@@ -166,7 +173,7 @@ public enum ClassFileFormatVersion {
     RELEASE_11(55),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 12.
      *
      * @see <a
@@ -176,7 +183,7 @@ public enum ClassFileFormatVersion {
     RELEASE_12(56),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 13.
      *
      * @see <a
@@ -186,7 +193,7 @@ public enum ClassFileFormatVersion {
     RELEASE_13(57),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 14.
      *
      * @see <a
@@ -196,7 +203,7 @@ public enum ClassFileFormatVersion {
     RELEASE_14(58),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 15.
      *
      * @see <a
@@ -208,7 +215,7 @@ public enum ClassFileFormatVersion {
     RELEASE_15(59),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 16.
      *
      * @see <a
@@ -218,7 +225,7 @@ public enum ClassFileFormatVersion {
     RELEASE_16(60),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 17.
      *
      * Additions in this release include sealed classes and
@@ -235,7 +242,7 @@ public enum ClassFileFormatVersion {
     RELEASE_17(61),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 18.
      *
      * @see <a
@@ -245,7 +252,7 @@ public enum ClassFileFormatVersion {
     RELEASE_18(62),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 19.
      *
      * @see <a
@@ -255,7 +262,7 @@ public enum ClassFileFormatVersion {
     RELEASE_19(63),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 20.
      *
      * @see <a
@@ -265,7 +272,7 @@ public enum ClassFileFormatVersion {
     RELEASE_20(64),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 21.
      *
      * @since 21
@@ -274,7 +281,20 @@ public enum ClassFileFormatVersion {
      * href="https://docs.oracle.com/javase/specs/jvms/se21/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 21 Edition</cite></a>
      */
-    RELEASE_21(65);
+    RELEASE_21(65),
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 22.
+     *
+     * @since 22
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jvms/se22/html/index.html">
+     * <cite>The Java Virtual Machine Specification, Java SE 22 Edition</cite></a>
+     */
+    RELEASE_22(66),
+    ; // Reduce code churn when appending new constants
 
     // Note to maintainers: when adding constants for newer releases,
     // the implementation of latest() must be updated too.
@@ -289,7 +309,7 @@ public enum ClassFileFormatVersion {
      * {@return the latest class file format version}
      */
     public static ClassFileFormatVersion latest() {
-        return RELEASE_21;
+        return RELEASE_22;
     }
 
     /**
@@ -363,7 +383,7 @@ public enum ClassFileFormatVersion {
     public static ClassFileFormatVersion fromMajor(int major) {
         if (major < 45  // RELEASE_0.major()
             || major > latest().major()) {
-            throw new IllegalArgumentException("Out of range major class file vesion "
+            throw new IllegalArgumentException("Out of range major class file version "
                                                + major);
         }
         // RELEASE_0 and RELEASE_1 both have a major version of 45;
