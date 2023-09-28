@@ -309,6 +309,8 @@ public:
   static void clear_to_frame_pop(JvmtiEnvThreadState *env_thread, JvmtiFramePop fpop);
   static void change_field_watch(jvmtiEvent event_type, bool added);
 
+  static bool is_any_thread_filtered_event_enabled_globally();
+  static void recompute_thread_filtered(JvmtiThreadState *state);
   static void thread_started(JavaThread *thread);
   static void thread_ended(JavaThread *thread);
 
@@ -730,6 +732,20 @@ JvmtiEventControllerPrivate::recompute_enabled() {
   EC_TRACE(("[-] # recompute enabled - after " JULONG_FORMAT_X, any_env_thread_enabled));
 }
 
+bool
+JvmtiEventControllerPrivate::is_any_thread_filtered_event_enabled_globally() {
+  julong global_thread_events = JvmtiEventController::_universal_global_event_enabled.get_bits() & THREAD_FILTERED_EVENT_BITS;
+  return global_thread_events != 0L;
+}
+
+void
+JvmtiEventControllerPrivate::recompute_thread_filtered(JvmtiThreadState *state) {
+  assert(Threads::number_of_threads() == 0 || JvmtiThreadState_lock->is_locked(), "sanity check");
+
+  if (is_any_thread_filtered_event_enabled_globally()) {
+    JvmtiEventControllerPrivate::recompute_thread_enabled(state);
+  }
+}
 
 void
 JvmtiEventControllerPrivate::thread_started(JavaThread *thread) {
@@ -739,16 +755,10 @@ JvmtiEventControllerPrivate::thread_started(JavaThread *thread) {
   EC_TRACE(("[%s] # thread started", JvmtiTrace::safe_get_thread_name(thread)));
 
   // if we have any thread filtered events globally enabled, create/update the thread state
-  if ((JvmtiEventController::_universal_global_event_enabled.get_bits() & THREAD_FILTERED_EVENT_BITS) != 0) {
-    MutexLocker mu(JvmtiThreadState_lock);
-    // create the thread state if missing
-    JvmtiThreadState *state = JvmtiThreadState::state_for_while_locked(thread);
-    if (state != nullptr) {    // skip threads with no JVMTI thread state
-      recompute_thread_enabled(state);
-    }
+  if (is_any_thread_filtered_event_enabled_globally()) { // intentionally racy
+    JvmtiThreadState::state_for(thread);
   }
 }
-
 
 void
 JvmtiEventControllerPrivate::thread_ended(JavaThread *thread) {
@@ -1113,6 +1123,11 @@ void
 JvmtiEventController::change_field_watch(jvmtiEvent event_type, bool added) {
   MutexLocker mu(JvmtiThreadState_lock);
   JvmtiEventControllerPrivate::change_field_watch(event_type, added);
+}
+
+void
+JvmtiEventController::recompute_thread_filtered(JvmtiThreadState *state) {
+  JvmtiEventControllerPrivate::recompute_thread_filtered(state);
 }
 
 void

@@ -52,6 +52,8 @@ public class AbstractDirectBuilder<M> {
     }
 
     public void writeAttribute(Attribute<?> a) {
-        attributes.withAttribute(a);
+        if (Util.isAttributeAllowed(a, context.attributesProcessingOption())) {
+            attributes.withAttribute(a);
+        }
     }
 }
