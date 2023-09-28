@@ -349,7 +349,7 @@ public class VietnameseTest {
 
     @Test
     public void TestPrimary() {
-        CollatorUtils.doTest(myCollation, Collator.PRIMARY, testPS, testPT, testPR);
+        CollatorTestUtils.doTest(myCollation, Collator.PRIMARY, testPS, testPT, testPR);
     }
 
     @Test
@@ -359,7 +359,7 @@ public class VietnameseTest {
         myCollation.setStrength(Collator.TERTIARY);
         for (int i = 0; i < testLength - 1; i++) {
             for (int j = i+1; j < testLength; j++) {
-                CollatorUtils.doTest(myCollation, testT[i], testT[j], -1);
+                CollatorTestUtils.doTest(myCollation, testT[i], testT[j], -1);
             }
         }
     }

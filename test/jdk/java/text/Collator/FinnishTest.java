@@ -88,13 +88,13 @@ public class FinnishTest {
 
     @Test
     public void TestPrimary() {
-        CollatorUtils.doTest(myCollation, Collator.PRIMARY,
+        CollatorTestUtils.doTest(myCollation, Collator.PRIMARY,
                primarySourceData, primaryTargetData, primaryResults);
     }
 
     @Test
     public void TestTertiary() {
-        CollatorUtils.doTest(myCollation, Collator.TERTIARY,
+        CollatorTestUtils.doTest(myCollation, Collator.TERTIARY,
               tertiarySourceData, tertiaryTargetData, tertiaryResults);
     }
 

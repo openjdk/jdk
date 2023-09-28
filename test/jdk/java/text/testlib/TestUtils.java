@@ -39,6 +39,9 @@ import java.util.Locale.Builder;
  */
 public class TestUtils {
 
+    // Utility class should not be instantiated
+    private TestUtils() {}
+
     /**
      * Returns true if the give locale uses Gregorian calendar.
      */

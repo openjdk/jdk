@@ -385,13 +385,13 @@ public class DummyTest {
 
     @Test
     public void TestPrimary() {
-        CollatorUtils.doTest(getCollator(), Collator.PRIMARY,
+        CollatorTestUtils.doTest(getCollator(), Collator.PRIMARY,
                primarySourceData, primaryTargetData, primaryResults);
     }
 
     @Test
     public void TestSecondary() {
-        CollatorUtils.doTest(getCollator(), Collator.SECONDARY,
+        CollatorTestUtils.doTest(getCollator(), Collator.SECONDARY,
                secondarySourceData, secondaryTargetData, secondaryResults);
     }
 
@@ -399,12 +399,12 @@ public class DummyTest {
     public void TestTertiary() {
         Collator col = getCollator();
 
-        CollatorUtils.doTest(col, Collator.TERTIARY,
+        CollatorTestUtils.doTest(col, Collator.TERTIARY,
                tertiarySourceData, tertiaryTargetData, tertiaryResults);
 
         for (int i = 0; i < testData.length-1; i++) {
             for (int j = i+1; j < testData.length; j++) {
-                CollatorUtils.doTest(col, testData[i], testData[j], -1);
+                CollatorTestUtils.doTest(col, testData[i], testData[j], -1);
             }
         }
     }

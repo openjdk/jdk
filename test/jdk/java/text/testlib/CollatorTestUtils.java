@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,13 @@
 import java.text.*;
 
 /**
- * CollatorUtils is a utility class that provides methods that
+ * CollatorTestUtils is a utility class that provides methods that
  * Collator related tests can use.
  */
-public final class CollatorUtils {
+public final class CollatorTestUtils {
 
     // Utility class should not be instantiated
-    private CollatorUtils() {}
+    private CollatorTestUtils() {}
 
     //------------------------------------------------------------------------
     // These methods are utilities specific to the Collation tests..

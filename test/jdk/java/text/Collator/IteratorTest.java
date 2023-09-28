@@ -99,7 +99,7 @@ public class IteratorTest {
 
         // Now set the offset back to the beginning and see if it works
         iter.setOffset(0);
-        CollatorUtils.assertEqual(iter, en_us.getCollationElementIterator(test1));
+        CollatorTestUtils.assertEqual(iter, en_us.getCollationElementIterator(test1));
 
         // TODO: try iterating halfway through a messy string.
     }
@@ -121,7 +121,7 @@ public class IteratorTest {
 
         // Now set it to point to the same string as the first iterator
         iter2.setText(test1);
-        CollatorUtils.assertEqual(iter1, iter2);
+        CollatorTestUtils.assertEqual(iter1, iter2);
     }
 
     /** @bug 4108762

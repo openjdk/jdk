@@ -66,7 +66,7 @@ public class Regression {
         }
         i1.reset();
 
-        CollatorUtils.assertEqual(i1, i2);
+        CollatorTestUtils.assertEqual(i1, i2);
     }
 
 
@@ -116,7 +116,7 @@ public class Regression {
 
         // At this point, BOTH iterators should use NO_DECOMPOSITION, since the
         // collator itself is in that mode
-        CollatorUtils.assertEqual(i1, i2);
+        CollatorTestUtils.assertEqual(i1, i2);
     }
 
     // Collator.IDENTICAL documented but not implemented
@@ -275,7 +275,7 @@ public class Regression {
         c2.setDecomposition(Collator.NO_DECOMPOSITION);
         CollationElementIterator i2 = en_us.getCollationElementIterator(test2);
 
-        CollatorUtils.assertEqual(i1, i2);
+        CollatorTestUtils.assertEqual(i1, i2);
     }
 
     // French secondary collation checking at the end of compare iteration fails
@@ -886,8 +886,8 @@ public class Regression {
         for (int i = 0; i < sortedList.length - 1; i++) {
             if (c.compare(sortedList[i], sortedList[i + 1]) >= 0) {
                 fail("List out of order at element #" + i + ": "
-                        + CollatorUtils.prettify(sortedList[i]) + " >= "
-                        + CollatorUtils.prettify(sortedList[i + 1]));
+                        + CollatorTestUtils.prettify(sortedList[i]) + " >= "
+                        + CollatorTestUtils.prettify(sortedList[i + 1]));
             }
         }
     }
@@ -941,8 +941,8 @@ public class Regression {
             int result = c.compare(tests[i], tests[i+2]);
             if (sign(result) != sign(expect))
             {
-                fail( i/3 + ": compare(" + CollatorUtils.prettify(tests[i])
-                                    + " , " + CollatorUtils.prettify(tests[i+2])
+                fail( i/3 + ": compare(" + CollatorTestUtils.prettify(tests[i])
+                                    + " , " + CollatorTestUtils.prettify(tests[i+2])
                                     + ") got " + result + "; expected " + expect);
             }
             else
@@ -953,11 +953,11 @@ public class Regression {
 
                 result = k1.compareTo(k2);
                 if (sign(result) != sign(expect)) {
-                    fail( i/3 + ": key(" + CollatorUtils.prettify(tests[i])
-                                        + ").compareTo(key(" + CollatorUtils.prettify(tests[i+2])
+                    fail( i/3 + ": key(" + CollatorTestUtils.prettify(tests[i])
+                                        + ").compareTo(key(" + CollatorTestUtils.prettify(tests[i+2])
                                         + ")) got " + result + "; expected " + expect);
 
-                    fail("  " + CollatorUtils.prettify(k1) + " vs. " + CollatorUtils.prettify(k2));
+                    fail("  " + CollatorTestUtils.prettify(k1) + " vs. " + CollatorTestUtils.prettify(k2));
                 }
             }
         }
