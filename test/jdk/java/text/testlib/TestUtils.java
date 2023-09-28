@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 
-import java.util.Locale.Builder;
-
 /**
  * TestUtils provides utility methods to get a locale-dependent attribute.
  * For example,
@@ -37,7 +35,7 @@ import java.util.Locale.Builder;
  * This class was developed to help testing for internationalization &
  * localization and is not versatile.
  */
-public class TestUtils {
+public final class TestUtils {
 
     // Utility class should not be instantiated
     private TestUtils() {}

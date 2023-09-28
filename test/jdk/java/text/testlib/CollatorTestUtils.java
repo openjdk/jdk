@@ -21,7 +21,9 @@
  * questions.
  */
 
-import java.text.*;
+import java.text.CollationElementIterator;
+import java.text.CollationKey;
+import java.text.Collator;
 
 /**
  * CollatorTestUtils is a utility class that provides methods that
@@ -32,10 +34,14 @@ public final class CollatorTestUtils {
     // Utility class should not be instantiated
     private CollatorTestUtils() {}
 
-    //------------------------------------------------------------------------
-    // These methods are utilities specific to the Collation tests..
-    //------------------------------------------------------------------------
+    /*
+     * These methods are utilities specific to the Collation tests..
+     */
 
+    /**
+     * Compares two CollationElementIterators and throws an exception
+     * with a message detailing which collation elements were not equal
+     */
     public static void assertEqual(CollationElementIterator i1, CollationElementIterator i2) {
         int c1, c2, count = 0;
         do {
@@ -48,9 +54,9 @@ public final class CollatorTestUtils {
         } while (c1 != CollationElementIterator.NULLORDER);
     }
 
-    // Replace nonprintable characters with unicode escapes
+    // Replace non-printable characters with unicode escapes
     public static String prettify(String str) {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
 
         String zero = "0000";
 
@@ -59,7 +65,7 @@ public final class CollatorTestUtils {
             if (ch < 0x09 || (ch > 0x0A && ch < 0x20)|| (ch > 0x7E && ch < 0xA0) || ch > 0x100) {
                 String hex = Integer.toString((int)ch,16);
 
-                result.append("\\u" + zero.substring(0, 4 - hex.length()) + hex);
+                result.append("\\u").append(zero.substring(0, 4 - hex.length())).append(hex);
             } else {
                 result.append(ch);
             }
@@ -69,21 +75,25 @@ public final class CollatorTestUtils {
 
     // Produce a printable representation of a CollationKey
     public static String prettify(CollationKey key) {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         byte[] bytes = key.toByteArray();
 
         for (int i = 0; i < bytes.length; i += 2) {
             int val = (bytes[i] << 8) + bytes[i+1];
-            result.append(Integer.toString(val, 16) + " ");
+            result.append(Integer.toString(val, 16)).append(" ");
         }
         return result.toString();
     }
 
-    //------------------------------------------------------------------------
-    // Everything below here is boilerplate code that makes it possible
-    // to add a new test by simply adding a function to an existing class
-    //------------------------------------------------------------------------
+    /*
+     * Everything below here is boilerplate code that makes it possible
+     * to add a new test by simply adding a function to an existing class
+     */
 
+    /**
+     * Utility to test a collator with an array of test values.
+     * See the other doTest() method for specific comparison details.
+     */
     public static void doTest(Collator col, int strength,
                           String[] source, String[] target, int[] result) {
         if (source.length != target.length) {
@@ -101,6 +111,11 @@ public final class CollatorTestUtils {
         }
     }
 
+    /**
+     * Test that a collator returns the correct relation result value when
+     * comparing a source and target string. Also tests that the compare and collation
+     * key results return the same value.
+     */
     public static void doTest(Collator col,
                           String source, String target, int result) {
         char relation = '=';
