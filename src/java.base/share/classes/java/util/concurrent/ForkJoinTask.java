@@ -1629,9 +1629,9 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         transient volatile Thread runner;
         abstract T compute() throws Exception;
         public final boolean exec() {
+            Thread.interrupted();
             Thread t = runner = Thread.currentThread();
             try {
-                Thread.interrupted();
                 if ((t instanceof ForkJoinWorkerThread) &&
                     ForkJoinPool.poolIsStopping(((ForkJoinWorkerThread)t).pool))
                     cancel(true);
