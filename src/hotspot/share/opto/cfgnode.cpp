@@ -2133,10 +2133,12 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // Add casts to carry the control dependency of the Phi that is
       // going away
       Node* cast = nullptr;
+      const TypeTuple* extra_types = collect_types(phase);
       if (phi_type->isa_ptr()) {
         const Type* uin_type = phase->type(uin);
         if (!phi_type->isa_oopptr() && !uin_type->isa_oopptr()) {
-          cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, phi_type, ConstraintCastNode::StrongDependency);
+          cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, phi_type, ConstraintCastNode::StrongDependency,
+                                               extra_types);
         } else {
           // Use a CastPP for a cast to not null and a CheckCastPP for
           // a cast to a new klass (and both if both null-ness and
@@ -2146,7 +2148,8 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           // null, uin's type must be casted to not null
           if (phi_type->join(TypePtr::NOTNULL) == phi_type->remove_speculative() &&
               uin_type->join(TypePtr::NOTNULL) != uin_type->remove_speculative()) {
-            cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, TypePtr::NOTNULL, ConstraintCastNode::StrongDependency);
+            cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, TypePtr::NOTNULL,
+                                                 ConstraintCastNode::StrongDependency, extra_types);
           }
 
           // If the type of phi and uin, both casted to not null,
@@ -2158,14 +2161,16 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
               cast = phase->transform(cast);
               n = cast;
             }
-            cast = ConstraintCastNode::make_cast(Op_CheckCastPP, r, n, phi_type, ConstraintCastNode::StrongDependency);
+            cast = ConstraintCastNode::make_cast(Op_CheckCastPP, r, n, phi_type, ConstraintCastNode::StrongDependency,
+                                                 extra_types);
           }
           if (cast == nullptr) {
-            cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, phi_type, ConstraintCastNode::StrongDependency);
+            cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, phi_type, ConstraintCastNode::StrongDependency,
+                                                 extra_types);
           }
         }
       } else {
-        cast = ConstraintCastNode::make_cast_for_type(r, uin, phi_type, ConstraintCastNode::StrongDependency);
+        cast = ConstraintCastNode::make_cast_for_type(r, uin, phi_type, ConstraintCastNode::StrongDependency, extra_types);
       }
       assert(cast != nullptr, "cast should be set");
       cast = phase->transform(cast);
@@ -2558,6 +2563,52 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   return progress;              // Return any progress
+}
+
+static int compare_types(const Type* const& e1, const Type* const& e2) {
+  return (intptr_t)e1 - (intptr_t)e2;
+}
+
+// Collect types at casts that are going to be eliminated at that Phi and store them in a TypeTuple.
+// Sort the types using an arbitrary order so a list of some types always hashes to the same TypeTuple (and TypeTuple
+// pointer comparison is enough to tell if 2 list of types are the same or not)
+const TypeTuple* PhiNode::collect_types(PhaseGVN* phase) const {
+  const Node* region = in(0);
+  const Type* phi_type = bottom_type();
+  ResourceMark rm;
+  GrowableArray<const Type*> types;
+  for (uint i = 1; i < req(); i++) {
+    if (region->in(i) == nullptr || phase->type(region->in(i)) == Type::TOP) {
+      continue;
+    }
+    Node* in = Node::in(i);
+    const Type* t = phase->type(in);
+    if (in == nullptr || in == this || t == Type::TOP) {
+      continue;
+    }
+    if (t != phi_type && t->higher_equal_speculative(phi_type)) {
+      types.insert_sorted<compare_types>(t);
+    }
+    while (in != nullptr && in->is_ConstraintCast()) {
+      Node* next = in->in(1);
+      if (phase->type(next)->isa_rawptr() && phase->type(in)->isa_oopptr()) {
+        break;
+      }
+      ConstraintCastNode* cast = in->as_ConstraintCast();
+      for (int j = 0; j < cast->extra_types_count(); ++j) {
+        const Type* extra_t = cast->extra_type_at(j);
+        if (extra_t != phi_type && extra_t->higher_equal_speculative(phi_type)) {
+          types.insert_sorted<compare_types>(extra_t);
+        }
+      }
+      in = next;
+    }
+  }
+  const Type **flds = (const Type **)(phase->C->type_arena()->AmallocWords(types.length()*sizeof(Type*)));
+  for (int i = 0; i < types.length(); ++i) {
+    flds[i] = types.at(i);
+  }
+  return TypeTuple::make(types.length(), flds);
 }
 
 Node* PhiNode::clone_through_phi(Node* root_phi, const Type* t, uint c, PhaseIterGVN* igvn) {

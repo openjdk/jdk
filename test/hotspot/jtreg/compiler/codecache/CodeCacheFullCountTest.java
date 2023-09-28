@@ -45,12 +45,20 @@ public class CodeCacheFullCountTest {
         }
     }
 
-    public static void wasteCodeCache()  throws Exception {
+    public static void wasteCodeCache() throws Throwable {
         URL url = CodeCacheFullCountTest.class.getProtectionDomain().getCodeSource().getLocation();
 
-        for (int i = 0; i < 500; i++) {
-            ClassLoader cl = new MyClassLoader(url);
-            refClass(cl.loadClass("SomeClass"));
+        try {
+            for (int i = 0; i < 500; i++) {
+                ClassLoader cl = new MyClassLoader(url);
+                refClass(cl.loadClass("SomeClass"));
+            }
+        } catch (Throwable t) {
+            // Expose the root cause of the Throwable instance.
+            while (t.getCause() != null) {
+                t = t.getCause();
+            }
+            throw t;
         }
     }
 
@@ -59,7 +67,7 @@ public class CodeCacheFullCountTest {
           "-XX:ReservedCodeCacheSize=2496k", "-XX:-UseCodeCacheFlushing", "-XX:-MethodFlushing", "CodeCacheFullCountTest", "WasteCodeCache");
         OutputAnalyzer oa = ProcessTools.executeProcess(pb);
         // Ignore adapter creation failures
-        if (oa.getExitValue() != 0 && !oa.getStderr().contains("Out of space in CodeCache for adapters")) {
+        if (oa.getExitValue() != 0 && !oa.getOutput().contains("Out of space in CodeCache for adapters")) {
             oa.reportDiagnosticSummary();
             throw new RuntimeException("VM finished with exit code " + oa.getExitValue());
         }
