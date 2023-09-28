@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,29 +21,19 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package jdk.internal.javac;
 
-#ifndef SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP
-#define SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-#include "gc/serial/defNewGeneration.hpp"
-
-#include "gc/serial/cardTableRS.hpp"
-#include "gc/shared/space.inline.hpp"
-#include "oops/access.inline.hpp"
-#include "utilities/devirtualizer.inline.hpp"
-
-// Methods of protected closure types
-
-template <typename OopClosureType>
-void DefNewGeneration::oop_since_save_marks_iterate(OopClosureType* cl) {
-  // No allocation in eden and from spaces, so no iteration required.
-  assert(eden()->saved_mark_at_top(), "inv");
-  assert(from()->saved_mark_at_top(), "inv");
-
-  to()->oop_since_save_marks_iterate(cl);
-  to()->set_saved_mark();
+/**
+ * This annotation is used to mark <em>restricted</em> methods in the Java SE API
+ * (e.g. {@link java.lang.foreign.MemorySegment#reinterpret(long)}).
+ */
+@Target({ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Restricted {
 }
-
-#endif // SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP
