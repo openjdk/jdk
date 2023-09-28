@@ -33,17 +33,24 @@
 //
 // This breaks Java's floating point arithmetic.
 
+static void __attribute__((constructor)) set_flush_to_zero(void) {
+#if defined(__GNUC__)
+
+#if defined(__x86_64__) && defined(SSE)
 #define MXCSR_DAZ (1 << 6)	/* Enable denormals are zero mode */
 #define MXCSR_FTZ (1 << 15)	/* Enable flush to zero mode */
-
-void set_flush_to_zero(void) __attribute__((constructor));
-void set_flush_to_zero(void) {
-#if defined(__GNUC__) && defined(__x86_64__) \
-  && defined(SSE) && defined(__GNU_LIBRARY__)
-
   unsigned int mxcsr = __builtin_ia32_stmxcsr ();
   mxcsr |= MXCSR_DAZ | MXCSR_FTZ;
   __builtin_ia32_ldmxcsr (mxcsr);
 
-#endif // defined(__GNUC__) && defined(__x86_64__) && defined(__GNU_LIBRARY__)
+#elif defined(__aarch64__)
+#define _FPU_FPCR_FZ 0x1000000
+#define _FPU_SETCW(fpcr) \
+  {  __asm__ __volatile__ ("msr	fpcr, %0" : : "r" (fpcr)); }
+  /* Flush to zero, round to nearest, IEEE exceptions disabled.  */
+  _FPU_SETCW (_FPU_FPCR_FZ);
+
+#endif // CPU arch
+
+#endif // defined(__GNUC__)
 }
