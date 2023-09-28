@@ -655,6 +655,7 @@ com/sun/security/sasl/gsskerb/ConfSecurityLayer.java            8039280 generic-
 com/sun/security/sasl/gsskerb/NoSecurityLayer.java              8039280 generic-all
 javax/security/auth/kerberos/KerberosHashEqualsTest.java        8039280 generic-all
 javax/security/auth/kerberos/KerberosTixDateTest.java           8039280 generic-all
+javax/security/auth/callback/PasswordCallback/CheckCleanerBound.java 8285785,8286045,8287596 generic-all
 sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
 sun/security/provider/PolicyParser/ExtDirsChange.java           8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
