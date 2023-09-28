@@ -660,7 +660,7 @@ JVMCI::CodeInstallResult CodeInstaller::install_runtime_stub(CodeBlob*& cb,
     JVMCI_ERROR_OK("stub should have a name");
   }
 
-  name = os::strdup(name); // Note: this leaks. See JDK-8289632
+  name = os::strdup(name);
   GrowableArray<RuntimeStub*> *stubs_to_free = nullptr;
 #ifdef ASSERT
   const char* val = Arguments::PropertyList_get_value(Arguments::system_properties(), "test.jvmci.forceRuntimeStubAllocFail");
