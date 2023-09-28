@@ -343,7 +343,7 @@ final class ServerNameExtension {
                         sni, shc.resumingSession.serverNameIndication)) {
                     shc.isResumption = false;
                     shc.resumingSession = null;
-                    // the server is disallowing this session resumption,
+                    // this server is disallowing this session resumption,
                     // so don't include the pre-shared key in the ServerHello handshake message
                     shc.handshakeExtensions.remove(SH_PRE_SHARED_KEY);
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
