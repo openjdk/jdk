@@ -34,15 +34,9 @@
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 
-struct G1CodeRootSetHashTableValue {
-  nmethod* _nmethod;
-
-  G1CodeRootSetHashTableValue(nmethod* nmethod) : _nmethod(nmethod) { }
-};
-
 class G1CodeRootSetHashTableConfig : public StackObj {
 public:
-  using Value = G1CodeRootSetHashTableValue;
+  using Value = nmethod*;
 
   static uintx get_hash(Value const& value, bool* is_dead);
 
@@ -78,14 +72,14 @@ class G1CodeRootSetHashTable : public CHeapObj<mtGC> {
   public:
     explicit HashTableLookUp(nmethod* nmethod) : _nmethod(nmethod) { }
     uintx get_hash() const;
-    bool equals(G1CodeRootSetHashTableValue* value);
-    bool is_dead(G1CodeRootSetHashTableValue* value) const { return false; }
+    bool equals(nmethod** value);
+    bool is_dead(nmethod** value) const { return false; }
   };
 
   class HashTableIgnore : public StackObj {
   public:
     HashTableIgnore() { }
-    void operator()(G1CodeRootSetHashTableValue* value) { /* do nothing */ }
+    void operator()(nmethod** value) { /* do nothing */ }
   };
 
 public:
@@ -123,9 +117,8 @@ public:
 
   void insert(nmethod* method) {
     HashTableLookUp lookup(method);
-    G1CodeRootSetHashTableValue value(method);
     bool grow_hint = false;
-    bool inserted = _table.insert(Thread::current(), lookup, value, &grow_hint);
+    bool inserted = _table.insert(Thread::current(), lookup, method, &grow_hint);
     if (inserted) {
       Atomic::inc(&_num_entries);
     }
@@ -162,8 +155,8 @@ public:
     }
 
     auto do_value =
-      [&] (G1CodeRootSetHashTableValue* value) {
-        blk->do_code_blob(value->_nmethod);
+      [&] (nmethod** value) {
+        blk->do_code_blob(*value);
         return true;
       };
     _table_scanner.do_safepoint_scan(do_value);
@@ -179,7 +172,7 @@ public:
 
     size_t num_deleted = 0;
     auto do_delete =
-      [&] (G1CodeRootSetHashTableValue* value) {
+      [&] (nmethod** value) {
         num_deleted++;
       };
     bool succeeded = _table.try_bulk_delete(Thread::current(), eval, do_delete);
@@ -228,13 +221,13 @@ uintx G1CodeRootSetHashTable::HashTableLookUp::get_hash() const {
   return G1CodeRootSetHashTable::get_hash(_nmethod);
 }
 
-bool G1CodeRootSetHashTable::HashTableLookUp::equals(G1CodeRootSetHashTableValue* value) {
-  return value->_nmethod == _nmethod;
+bool G1CodeRootSetHashTable::HashTableLookUp::equals(nmethod** value) {
+  return *value == _nmethod;
 }
 
 uintx G1CodeRootSetHashTableConfig::get_hash(Value const& value, bool* is_dead) {
   *is_dead = false;
-  return G1CodeRootSetHashTable::get_hash(value._nmethod);
+  return G1CodeRootSetHashTable::get_hash(value);
 }
 
 size_t G1CodeRootSet::length() const { return _table->number_of_entries(); }
@@ -310,9 +303,9 @@ class CleanCallback : public StackObj {
  public:
   CleanCallback(HeapRegion* hr) : _detector(hr), _blobs(&_detector, !CodeBlobToOopClosure::FixRelocations) {}
 
-  bool operator()(G1CodeRootSetHashTableValue* value) {
+  bool operator()(nmethod** value) {
     _detector._points_into = false;
-    _blobs.do_code_blob(value->_nmethod);
+    _blobs.do_code_blob(*value);
     return !_detector._points_into;
   }
 };
