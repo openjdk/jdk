@@ -92,12 +92,13 @@ typedef struct _GProxyResolver GProxyResolver;
 typedef struct _GSocketConnectable GSocketConnectable;
 typedef struct GError GError;
 typedef GProxyResolver* g_proxy_resolver_get_default_func();
-typedef char** g_proxy_resolver_lookup_func();
-typedef GSocketConnectable* g_network_address_parse_uri_func();
-typedef const char* g_network_address_get_hostname_func();
-typedef unsigned short g_network_address_get_port_func();
-typedef void g_strfreev_func();
-typedef void g_clear_error_func();
+typedef char** g_proxy_resolver_lookup_func(void*, void*, void*, void**);
+typedef GSocketConnectable* g_network_address_parse_uri_func(
+    void*, unsigned short, void**);
+typedef const char* g_network_address_get_hostname_func(void*);
+typedef unsigned short g_network_address_get_port_func(void*);
+typedef void g_strfreev_func(char**);
+typedef void g_clear_error_func(void**);
 
 static g_proxy_resolver_get_default_func* g_proxy_resolver_get_default = NULL;
 static g_proxy_resolver_lookup_func* g_proxy_resolver_lookup = NULL;
@@ -343,7 +344,7 @@ static jobjectArray getProxyByGProxyResolver(JNIEnv *env, const char *cproto,
 {
     GProxyResolver* resolver = NULL;
     char** proxies = NULL;
-    GError *error = NULL;
+    void *error = NULL;
 
     size_t protoLen = 0;
     size_t hostLen = 0;
