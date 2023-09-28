@@ -357,8 +357,8 @@ public class JavaValueArray extends JavaLazyReadObject
                 bytes[i] = ((JavaByte)things[i]).value;
             }
             return new String(bytes);
-		}
-		// fallback
-		return valueString();
+        }
+        // fallback
+        return valueString();
     }
 }

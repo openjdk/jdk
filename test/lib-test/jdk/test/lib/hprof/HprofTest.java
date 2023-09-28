@@ -55,7 +55,7 @@ class HprofTestTarg extends LingeredApp {
         HprofTestTarg testObj = new HprofTestTarg();
 
         LingeredApp.main(args);
-        
+
         Reference.reachabilityFence(testObj);
     }
 
