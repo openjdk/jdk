@@ -636,8 +636,12 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
       ShouldNotReachHere();
   }
 
-  // A full fence is generated before icache_flush by default in invalidate_word
-  ICache::invalidate_range(addr, bytes);
+  if (!UseCtxFencei) {
+    // A full fence is generated before icache_flush by default in invalidate_word
+    ICache::invalidate_range(addr, bytes);
+  } else {
+    OrderAccess::fence();
+  }
 }
 
 #ifdef COMPILER2

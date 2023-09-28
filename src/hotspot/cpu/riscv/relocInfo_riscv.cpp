@@ -55,7 +55,10 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
       bytes = MacroAssembler::pd_patch_instruction_size(addr(), x);
       break;
   }
-  ICache::invalidate_range(addr(), bytes);
+
+  if (!UseCtxFencei) {
+    ICache::invalidate_range(addr(), bytes);
+  }
 }
 
 address Relocation::pd_call_destination(address orig_addr) {
