@@ -64,9 +64,12 @@ public class IREncodingPrinter {
         "linux",
         "mac",
         "windows",
-        // vm.simpleArch values
+        // vm.simpleArch
         "aarch64",
+        "arm",
+        "ppc",
         "riscv64",
+        "s390",
         "x64",
         "x86",
         // corresponds to vm.bits
@@ -335,8 +338,14 @@ public class IREncodingPrinter {
         String arch = "";
         if (Platform.isAArch64()) {
             arch = "aarch64";
+        } else if (Platform.isARM()) {
+            arch = "arm";
+        } else if (Platform.isPPC()) {
+            arch = "ppc";
         } else if (Platform.isRISCV64()) {
             arch = "riscv64";
+        } else if (Platform.isS390x()) {
+            arch = "s390";
         } else if (Platform.isX64()) {
             arch = "x64";
         } else if (Platform.isX86()) {
