@@ -112,7 +112,7 @@ public class MouseEnterExitTest {
                 compAt = frame.getLocationOnScreen();
                 compSize = frame.getSize();
             });
-			compAt.y += compSize.getHeight() / 2;
+            compAt.y += compSize.getHeight() / 2;
             int xr = compAt.x + compSize.width + 1;
             for (int i = compAt.x - 5; (i < xr) && passed; i++) {
                 robot.mouseMove(i, compAt.y);
