@@ -59,7 +59,7 @@ public class IREncodingPrinter {
     // Platforms for use in IR preconditions. Please verify that e.g. there is
     // a corresponding use in a jtreg @requires annotation before adding new platforms,
     // as adding non-existent platforms can lead to skipped tests.
-    private static final List<String> irTestingPlatforms = new ArrayList<String>( Arrays.asList(
+    private static final List<String> irTestingPlatforms = new ArrayList<String>(Arrays.asList(
         // os.family
         "linux",
         "mac",
