@@ -387,7 +387,7 @@ public final class ProcessTools {
     }
 
     /*
-      Convert arguments for tests running with virtual threads test thread factory
+      Convert arguments for tests running with virtual threads test thread factory.
       When test is executed with test thread factory the line is changed from
       java <jvm-args> <test-class> <test-args>
       to
