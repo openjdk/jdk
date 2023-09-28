@@ -369,8 +369,12 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
                 return true;
             }
         };
+        component.removePropertyChangeListener(layoutSizeListener);
         contentPane.setLayout(new BorderLayout());
         contentPane.add(component);
+        component.addPropertyChangeListener("preferredSize", layoutSizeListener);
+        component.addPropertyChangeListener("maximumSize", layoutSizeListener);
+        component.addPropertyChangeListener("minimumSize", layoutSizeListener);
         if ("true".equals(AccessController.
             doPrivileged(new GetPropertyAction("swing.jlf.contentPaneTransparent", "false"))))
         {
@@ -378,24 +382,6 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
         }
         setContentPane(contentPane);
 
-        contentPane.addContainerListener(new ContainerListener() {
-            @Override
-            public void componentAdded(ContainerEvent e) {
-                Component c = JLightweightFrame.this.component;
-                if (e.getChild() == c) {
-                    c.addPropertyChangeListener("preferredSize", layoutSizeListener);
-                    c.addPropertyChangeListener("maximumSize", layoutSizeListener);
-                    c.addPropertyChangeListener("minimumSize", layoutSizeListener);
-                }
-            }
-            @Override
-            public void componentRemoved(ContainerEvent e) {
-                Component c = JLightweightFrame.this.component;
-                if (e.getChild() == c) {
-                    c.removePropertyChangeListener(layoutSizeListener);
-                }
-            }
-        });
     }
 
     @SuppressWarnings("deprecation")
