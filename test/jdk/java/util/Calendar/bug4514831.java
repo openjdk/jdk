@@ -26,7 +26,7 @@
  * @bug 4514831
  * @summary Confirm that GregorianCalendar.roll() works properly during
  *          transition from Daylight Saving Time to Standard Time.
- * @run junit RollDuringDaylightTransition
+ * @run junit bug4514831
  */
 
 import java.util.GregorianCalendar;
@@ -46,7 +46,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class RollDuringDaylightTransition {
+public class bug4514831 {
     // Data of 7 rolls in the form of a string for the respective field
     private static final String expectedDayOfYearData = "27-28 28-29 29-30 30-31 31-1 1-2 2-3 ";
     private static final String expectedDayOfWeekData = "27-28 28-29 29-30 30-31 31-25 25-26 26-27 ";

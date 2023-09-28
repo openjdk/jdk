@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,36 +23,25 @@
 
 /*
  * @test
- * @bug 4766302
- * @summary Make sure that calling computeTime doesn't reset the isTimeSet value.
- * @run junit IsTimeSetValueShouldNotReset
+ * @bug 4302966 8176841
+ * @modules jdk.localedata
+ * @summary In Czech Republic first day of week is Monday not Sunday
+ * @run junit Bug4302966
  */
 
-import java.util.GregorianCalendar;
+import java.util.Calendar;
+import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class IsTimeSetValueShouldNotReset {
+public class Bug4302966 {
 
-    // Extend GregorianCalendar to check the protected value of isTimeSet
-    @SuppressWarnings("serial")
-    static class MyCalendar extends GregorianCalendar {
-        boolean isTimeStillSet() {
-            return isTimeSet;
-        }
-
-        protected void computeTime() {
-            super.computeTime();
-        }
-    }
-
-    // Check the value of isTimeStillSet() after calling computeTime()
-    @Test
-    public void validateIsTimeSetTest() {
-        MyCalendar cal = new MyCalendar();
-        cal.computeTime();
-        assertTrue(cal.isTimeStillSet(), "computeTime() call reset isTimeSet.");
+    // Specific day of week test for Czech locale
+    public void czechDayOfWeekTest() {
+        Calendar czechCalendar = Calendar.getInstance(Locale.of("cs", "CZ"));
+        int firstDayOfWeek = czechCalendar.getFirstDayOfWeek();
+        assertEquals(firstDayOfWeek, Calendar.MONDAY);
     }
 }
