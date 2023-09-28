@@ -47,6 +47,19 @@ import java.nio.channels.FileChannel;
 
 public class ClassLoaderHierarchyTest {
 
+    class EmptyDelegatingLoader extends ClassLoader {
+        EmptyDelegatingLoader(String name, ClassLoader parent) {
+            super(name, parent);
+        }
+    }
+
+    static void loadTestClassInLoaderAndCheck(String classname, ClassLoader loader) throws ClassNotFoundException {
+        Class<?> c = Class.forName(classname, true, loader);
+        if (c.getClassLoader() != loader) {
+            Assert.fail(classname + " defined by wrong classloader: " + c.getClassLoader());
+        }
+    }
+
 //+-- <bootstrap>
 //      |
 //      +-- "platform", jdk.internal.loader.ClassLoaders$PlatformClassLoader
@@ -63,39 +76,76 @@ public class ClassLoaderHierarchyTest {
 
     public void run(CommandExecutor executor) throws ClassNotFoundException {
 
+        // A) one unnamed, two named loaders
         ClassLoader unnamed_cl = new TestClassLoader(null, null);
-        Class<?> c1 = Class.forName("TestClass2", true, unnamed_cl);
-        if (c1.getClassLoader() != unnamed_cl) {
-            Assert.fail("TestClass defined by wrong classloader: " + c1.getClassLoader());
-        }
-
         ClassLoader named_cl = new TestClassLoader("Kevin", null);
-        Class<?> c2 = Class.forName("TestClass2", true, named_cl);
-        if (c2.getClassLoader() != named_cl) {
-            Assert.fail("TestClass defined by wrong classloader: " + c2.getClassLoader());
-        }
-
         ClassLoader named_child_cl = new TestClassLoader("Bill", unnamed_cl);
-        Class<?> c3 = Class.forName("TestClass2", true, named_child_cl);
-        if (c3.getClassLoader() != named_child_cl) {
-            Assert.fail("TestClass defined by wrong classloader: " + c3.getClassLoader());
-        }
+        loadTestClassInLoaderAndCheck("TestClass2", unnamed_cl);
+        loadTestClassInLoaderAndCheck("TestClass2", named_cl);
+        loadTestClassInLoaderAndCheck("TestClass2", named_child_cl);
+
+        // B) A named CL with empty loaders as parents (JDK-8293156)
+        EmptyDelegatingLoader emptyLoader1 = new EmptyDelegatingLoader("EmptyLoader1", null);
+        EmptyDelegatingLoader emptyLoader2 = new EmptyDelegatingLoader("EmptyLoader2", emptyLoader1);
+        ClassLoader named_child_2_cl = new TestClassLoader("Child2", emptyLoader2);
+        loadTestClassInLoaderAndCheck("TestClass2", named_child_2_cl);
+
+        // C) Test output for several class loaders, same class, same name, empty parents,
+        //    and all these should be folded by default.
+        EmptyDelegatingLoader emptyLoader3 = new EmptyDelegatingLoader("EmptyLoader3", null);
+        EmptyDelegatingLoader emptyLoader4 = new EmptyDelegatingLoader("EmptyLoader4", emptyLoader3);
+        ClassLoader named_child_3_cl = new TestClassLoader("ChildX", emptyLoader4); // Same names
+        ClassLoader named_child_4_cl = new TestClassLoader("ChildX", emptyLoader4);
+        ClassLoader named_child_5_cl = new TestClassLoader("ChildX", emptyLoader4);
+        ClassLoader named_child_6_cl = new TestClassLoader("ChildX", emptyLoader4);
+        loadTestClassInLoaderAndCheck("TestClass2", named_child_3_cl);
+        loadTestClassInLoaderAndCheck("TestClass2", named_child_4_cl);
+        loadTestClassInLoaderAndCheck("TestClass2", named_child_5_cl);
+        loadTestClassInLoaderAndCheck("TestClass2", named_child_6_cl);
+
+        // D) Test output for several *unnamed* class loaders, same class, same parents,
+        //    and all these should be folded by default too.
+        EmptyDelegatingLoader emptyLoader5 = new EmptyDelegatingLoader(null, null);
+        EmptyDelegatingLoader emptyLoader6 = new EmptyDelegatingLoader(null, emptyLoader5);
+        ClassLoader named_child_7_cl = new TestClassLoader(null, emptyLoader6); // Same names
+        ClassLoader named_child_8_cl = new TestClassLoader(null, emptyLoader6);
+        ClassLoader named_child_9_cl = new TestClassLoader(null, emptyLoader6);
+        ClassLoader named_child_10_cl = new TestClassLoader(null, emptyLoader6);
+        loadTestClassInLoaderAndCheck("TestClass2", named_child_7_cl);
+        loadTestClassInLoaderAndCheck("TestClass2", named_child_8_cl);
+        loadTestClassInLoaderAndCheck("TestClass2", named_child_9_cl);
+        loadTestClassInLoaderAndCheck("TestClass2", named_child_10_cl);
 
         // First test: simple output, no classes displayed
         OutputAnalyzer output = executor.execute("VM.classloaders");
-        output.shouldContain("<bootstrap>");
-        output.shouldMatch(".*TestClassLoader");
-        output.shouldMatch("Kevin.*TestClassLoader");
-        output.shouldMatch("Bill.*TestClassLoader");
+        // (A)
+        output.shouldContain("+-- <bootstrap>");
+        output.shouldContain("      +-- \"platform\", jdk.internal.loader.ClassLoaders$PlatformClassLoader");
+        output.shouldContain("      |     +-- \"app\", jdk.internal.loader.ClassLoaders$AppClassLoader");
+        output.shouldContain("      +-- \"Kevin\", ClassLoaderHierarchyTest$TestClassLoader");
+        output.shouldContain("      +-- ClassLoaderHierarchyTest$TestClassLoader");
+        output.shouldContain("      |     +-- \"Bill\", ClassLoaderHierarchyTest$TestClassLoader");
+        // (B)
+        output.shouldContain("      +-- \"EmptyLoader1\", ClassLoaderHierarchyTest$EmptyDelegatingLoader");
+        output.shouldContain("      |     +-- \"EmptyLoader2\", ClassLoaderHierarchyTest$EmptyDelegatingLoader");
+        output.shouldContain("      |           +-- \"Child2\", ClassLoaderHierarchyTest$TestClassLoader");
+        // (C)
+        output.shouldContain("      +-- \"EmptyLoader3\", ClassLoaderHierarchyTest$EmptyDelegatingLoader");
+        output.shouldContain("      |     +-- \"EmptyLoader4\", ClassLoaderHierarchyTest$EmptyDelegatingLoader");
+        output.shouldContain("      |           +-- \"ChildX\", ClassLoaderHierarchyTest$TestClassLoader (+ 3 more)");
+        // (D)
+        output.shouldContain("      +-- ClassLoaderHierarchyTest$EmptyDelegatingLoader");
+        output.shouldContain("            +-- ClassLoaderHierarchyTest$EmptyDelegatingLoader");
+        output.shouldContain("                  +-- ClassLoaderHierarchyTest$TestClassLoader (+ 3 more)");
 
         // Second test: print with classes.
         output = executor.execute("VM.classloaders show-classes");
         output.shouldContain("<bootstrap>");
         output.shouldContain("java.lang.Object");
-        output.shouldMatch(".*TestClassLoader");
-        output.shouldMatch("Kevin.*TestClassLoader");
-        output.shouldMatch("Bill.*TestClassLoader");
+        output.shouldContain("java.lang.Enum");
+        output.shouldContain("java.lang.NullPointerException");
         output.shouldContain("TestClass2");
+
         output.shouldContain("Hidden Classes:");
     }
 

@@ -123,7 +123,7 @@ public:
   const ClassLoaderData* const _cld;
 
   LoadedClassInfo(Klass* klass, const ClassLoaderData* cld)
-    : _klass(klass), _cld(cld) {}
+    : _next(NULL), _klass(klass), _cld(cld) {}
 
 };
 
@@ -138,7 +138,7 @@ class LoaderTreeNode : public ResourceObj {
   // this parent loader, we fill in all the other details.
 
   const oop _loader_oop;
-  const ClassLoaderData* _cld;
+  const ClassLoaderData* _cld; // May be NULL if loader never loaded anything
 
   LoaderTreeNode* _child;
   LoaderTreeNode* _next;
@@ -155,33 +155,59 @@ class LoaderTreeNode : public ResourceObj {
   // one.
   int _num_folded;
 
-  void print_with_childs(outputStream* st, BranchTracker& branchtracker,
+  // Returns Klass of loader; NULL for bootstrap loader
+  const Klass* loader_klass() const {
+    return (_loader_oop != NULL) ? _loader_oop->klass() : NULL;
+  }
+
+  // Returns ResourceArea-allocated class name of loader class; "" if there is no klass (bootstrap loader)
+  const char* loader_class_name() const {
+    const Klass* klass = loader_klass();
+    return klass != NULL ? klass->external_name() : "";
+  }
+
+  // Returns oop of loader name; NULL for bootstrap; NULL if no name was set
+  oop loader_name_oop() const {
+    return (_loader_oop != NULL) ? java_lang_ClassLoader::name(_loader_oop) : NULL;
+  }
+
+  // Returns ResourceArea-allocated name of loader, "" if none is set
+  const char* loader_name() const {
+    oop name_oop = loader_name_oop();
+    return name_oop != NULL ? java_lang_String::as_utf8_string(name_oop) : "";
+  }
+
+  bool is_bootstrap() const {
+    if (_loader_oop == NULL) {
+      assert(_cld != NULL && _cld->is_boot_class_loader_data(), "bootstrap loader must have CLD");
+      return true;
+    }
+    return false;
+  }
+
+  void print_with_child_nodes(outputStream* st, BranchTracker& branchtracker,
       bool print_classes, bool verbose) const {
+
+    assert(SafepointSynchronize::is_at_safepoint(), "invariant");
 
     ResourceMark rm;
 
-    if (_cld == NULL) {
-      // Not sure how this could happen: we added a preliminary node for a parent but then never encountered
-      // its CLD?
-      return;
-    }
-
     // Retrieve information.
-    const Klass* const loader_klass = _cld->class_loader_klass();
-    const Symbol* const loader_name = _cld->name();
+    const Klass* const the_loader_klass = loader_klass();
+    const char* const the_loader_class_name = loader_class_name();
+    const char* const the_loader_name = loader_name();
 
     branchtracker.print(st);
 
     // e.g. "+--- jdk.internal.reflect.DelegatingClassLoader"
     st->print("+%.*s", BranchTracker::twig_len, "----------");
-    if (_cld->is_the_null_class_loader_data()) {
+    if (is_bootstrap()) {
       st->print(" <bootstrap>");
     } else {
-      assert(!_cld->has_class_mirror_holder(), "_cld must be the primary cld");
-      if (loader_name != NULL) {
-        st->print(" \"%s\",", loader_name->as_C_string());
+      if (the_loader_name[0] != '\0') {
+        st->print(" \"%s\",", the_loader_name);
       }
-      st->print(" %s", loader_klass != NULL ? loader_klass->external_name() : "??");
+      st->print(" %s", the_loader_class_name);
       if (_num_folded > 0) {
         st->print(" (+ %d more)", _num_folded);
       }
@@ -211,7 +237,7 @@ class LoaderTreeNode : public ResourceObj {
         branchtracker.print(st);
         st->print_cr("%*s " PTR_FORMAT, indentation, "Loader Data:", p2i(_cld));
         branchtracker.print(st);
-        st->print_cr("%*s " PTR_FORMAT, indentation, "Loader Klass:", p2i(loader_klass));
+        st->print_cr("%*s " PTR_FORMAT, indentation, "Loader Klass:", p2i(the_loader_klass));
 
         // Empty line
         branchtracker.print(st);
@@ -220,6 +246,7 @@ class LoaderTreeNode : public ResourceObj {
 
       if (print_classes) {
         if (_classes != NULL) {
+          assert(_cld != NULL, "we have classes, we should have a CLD");
           for (LoadedClassInfo* lci = _classes; lci; lci = lci->_next) {
             // non-strong hidden classes should not live in
             // the primary CLD of their loaders.
@@ -252,6 +279,7 @@ class LoaderTreeNode : public ResourceObj {
         }
 
         if (_hidden_classes != NULL) {
+          assert(_cld != NULL, "we have classes, we should have a CLD");
           for (LoadedClassInfo* lci = _hidden_classes; lci; lci = lci->_next) {
             branchtracker.print(st);
             if (lci == _hidden_classes) { // first iteration
@@ -285,7 +313,7 @@ class LoaderTreeNode : public ResourceObj {
     // Print children, recursively
     LoaderTreeNode* c = _child;
     while (c != NULL) {
-      c->print_with_childs(st, branchtracker, print_classes, verbose);
+      c->print_with_child_nodes(st, branchtracker, print_classes, verbose);
       c = c->_next;
     }
 
@@ -294,10 +322,21 @@ class LoaderTreeNode : public ResourceObj {
   // Helper: Attempt to fold this node into the target node. If success, returns true.
   // Folding can be done if both nodes are leaf nodes and they refer to the same loader class
   // and they have the same name or no name (note: leaf check is done by caller).
-  bool can_fold_into(LoaderTreeNode* target_node) const {
+  bool can_fold_into(const LoaderTreeNode* target_node) const {
     assert(is_leaf() && target_node->is_leaf(), "must be leaf");
-    return _cld->class_loader_klass() == target_node->_cld->class_loader_klass() &&
-           _cld->name() == target_node->_cld->name();
+
+    // Must have the same non-null klass
+    const Klass* k = loader_klass();
+    if (k == NULL || k != target_node->loader_klass()) {
+      return false;
+    }
+
+    // Must have the same loader name, or none
+    if (::strcmp(loader_name(), target_node->loader_name()) != 0) {
+      return false;
+    }
+
+    return true;
   }
 
 public:
@@ -309,6 +348,7 @@ public:
     {}
 
   void set_cld(const ClassLoaderData* cld) {
+    assert(_cld == NULL, "there should be only one primary CLD per loader");
     _cld = cld;
   }
 
@@ -343,14 +383,6 @@ public:
     }
   }
 
-  const ClassLoaderData* cld() const {
-    return _cld;
-  }
-
-  const oop loader_oop() const {
-    return _loader_oop;
-  }
-
   LoaderTreeNode* find(const oop loader_oop) {
     LoaderTreeNode* result = NULL;
     if (_loader_oop == loader_oop) {
@@ -373,6 +405,7 @@ public:
   void fold_children() {
     LoaderTreeNode* node = _child;
     LoaderTreeNode* prev = NULL;
+    ResourceMark rm;
     while (node != NULL) {
       LoaderTreeNode* matching_node = NULL;
       if (node->is_leaf()) {
@@ -398,9 +431,9 @@ public:
     }
   }
 
-  void print_with_childs(outputStream* st, bool print_classes, bool print_add_info) const {
+  void print_with_child_nodes(outputStream* st, bool print_classes, bool print_add_info) const {
     BranchTracker bwt;
-    print_with_childs(st, bwt, print_classes, print_add_info);
+    print_with_child_nodes(st, bwt, print_classes, print_add_info);
   }
 
 };
@@ -475,7 +508,7 @@ public:
   }
 
   void print_results(outputStream* st) const {
-    _root->print_with_childs(st, _print_classes, _verbose);
+    _root->print_with_child_nodes(st, _print_classes, _verbose);
   }
 
   void do_cld (ClassLoaderData* cld) {
@@ -492,7 +525,6 @@ public:
 
     // Update CLD in node, but only if this is the primary CLD for this loader.
     if (cld->has_class_mirror_holder() == false) {
-      assert(info->cld() == NULL, "there should be only one primary CLD per loader");
       info->set_cld(cld);
     }
 
