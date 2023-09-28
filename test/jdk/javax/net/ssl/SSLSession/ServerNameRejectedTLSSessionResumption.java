@@ -38,13 +38,16 @@ import javax.net.ssl.StandardConstants;
 /*
  * @test
  * @bug 8301686
- * @summary verifies that if the server rejects session resumption due to SNI mismatch,
- *          during TLS handshake, then the subsequent communication between the server and the
- *          client happens correctly without any errors
+ * @summary verifies that if the server rejects session resumption due to SNI
+ *          mismatch, during TLS handshake, then the subsequent communication
+ *          between the server and the client happens correctly without any
+ *          errors
  * @library /javax/net/ssl/templates
- * @run main/othervm -Djavax.net.debug=all ServerNameRejectedTLSSessionResumption
+ * @run main/othervm -Djavax.net.debug=all
+ *                   ServerNameRejectedTLSSessionResumption
  */
-public class ServerNameRejectedTLSSessionResumption extends SSLContextTemplate {
+public class ServerNameRejectedTLSSessionResumption
+        extends SSLContextTemplate {
 
     private static final String CLIENT_REQUESTED_SNI = "client.local";
     // dummy host, no connection is attempted in this test
@@ -61,53 +64,70 @@ public class ServerNameRejectedTLSSessionResumption extends SSLContextTemplate {
         final SSLContext serverSSLContext = createServerSSLContext();
         // create client and server SSLEngine(s)
         final SSLEngine clientEngine = createClientSSLEngine(clientSSLContext);
-        // use a SNIMatcher on the server's SSLEngine which accepts the SNI name presented
-        // by the client SSLEngine
+        // use a SNIMatcher on the server's SSLEngine which accepts the
+        // SNI name presented by the client SSLEngine
         final SSLEngine serverEngine = createServerSSLEngine(serverSSLContext,
                 new TestSNIMatcher(CLIENT_REQUESTED_SNI));
-        // establish communication, which involves TLS handshake, between the client
-        // and server engines. this communication expected to be successful.
+        // establish communication, which involves TLS handshake, between the
+        // client and server engines. this communication expected to be
+        // successful.
         communicate(clientEngine, serverEngine);
-        // now that the communication has been successful, we expect the client SSLContext's
-        // (internal) cache to have created and cached a SSLSession against the peer host:port
+        // now that the communication has been successful, we expect the client
+        // SSLContext's (internal) cache to have created and cached a
+        // SSLSession against the peer host:port
 
-        // now create the SSLEngine(s) again with the same SSLContext instances as before,
-        // so that the SSLContext instance attempts to reuse the cached SSLSession against the
-        // peer host:port
-        final SSLEngine secondClientEngine = createClientSSLEngine(clientSSLContext);
-        // the newly created SSLEngine for the server will not use any SNIMatcher so as to reject
-        // the session resumption (of the cached SSLSession)
-        final SSLEngine secondServerEngine = createServerSSLEngine(serverSSLContext, null);
-        // attempt communication, which again involves TLS handshake since these are
-        // new engine instances. The session resumption should be rejected and a fresh session
-        // should get created and communication should succeed without any errors
+        // now create the SSLEngine(s) again with the same SSLContext
+        // instances as before, so that the SSLContext instance attempts
+        // to reuse the cached SSLSession against the peer host:port
+        final SSLEngine secondClientEngine =
+                createClientSSLEngine(clientSSLContext);
+        // the newly created SSLEngine for the server will not use any
+        // SNIMatcher so as to reject the session resumption (of the
+        // cached SSLSession)
+        final SSLEngine secondServerEngine =
+                createServerSSLEngine(serverSSLContext, null);
+        // attempt communication, which again involves TLS handshake
+        // since these are new engine instances. The session resumption
+        // should be rejected and a fresh session should get created and
+        // communication should succeed without any errors
         communicate(secondClientEngine, secondServerEngine);
     }
 
     private static void communicate(final SSLEngine clientEngine,
-                                    final SSLEngine serverEngine) throws Exception {
+                                    final SSLEngine serverEngine)
+            throws Exception {
 
-        final ByteBuffer msgFromClient = ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
-        final ByteBuffer msgFromServer = ByteBuffer.wrap("Hello Client, I'm Server".getBytes());
+        final ByteBuffer msgFromClient =
+                ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
+        final ByteBuffer msgFromServer =
+                ByteBuffer.wrap("Hello Client, I'm Server".getBytes());
         final ByteBuffer clientBuffer = ByteBuffer.allocate(1 << 15);
         final ByteBuffer serverBuffer = ByteBuffer.allocate(1 << 15);
         /*
          * For data transport, this test uses local ByteBuffers
          */
-        final ByteBuffer clientToServerTransport = ByteBuffer.allocateDirect(1 << 16);
-        final ByteBuffer serverToClientTransport = ByteBuffer.allocateDirect(1 << 16);
+        final ByteBuffer clientToServerTransport =
+                ByteBuffer.allocateDirect(1 << 16);
+        final ByteBuffer serverToClientTransport =
+                ByteBuffer.allocateDirect(1 << 16);
         boolean isClientToServer = true;
         while (true) {
             if (isClientToServer) {
-                // send client's message over the transport, will initiate a TLS handshake if
-                // necessary
-                SSLEngineResult result = clientEngine.wrap(msgFromClient, clientToServerTransport);
+                // send client's message over the transport, will initiate a
+                // TLS handshake if necessary
+                SSLEngineResult result = clientEngine.wrap(msgFromClient,
+                        clientToServerTransport);
                 // run any delegated tasks
-                final HandshakeStatus hsStatus = checkAndRunTasks(clientEngine, result.getHandshakeStatus());
-                clientToServerTransport.flip(); // will now contain the network data from client to server
+                final HandshakeStatus hsStatus = checkAndRunTasks(clientEngine,
+                        result.getHandshakeStatus());
+                clientToServerTransport.flip(); // will now contain the
+                // network data from
+                // client to server
 
-                // read from the client generated network data into server's buffer
-                result = serverEngine.unwrap(clientToServerTransport, serverBuffer);
+                // read from the client generated network data into
+                // server's buffer
+                result = serverEngine.unwrap(clientToServerTransport,
+                        serverBuffer);
                 checkAndRunTasks(serverEngine, result.getHandshakeStatus());
                 clientToServerTransport.compact();
 
@@ -116,17 +136,24 @@ public class ServerNameRejectedTLSSessionResumption extends SSLContextTemplate {
                 } else if (hsStatus == HandshakeStatus.FINISHED) {
                     break;
                 } else if (hsStatus != HandshakeStatus.NEED_WRAP) {
-                    throw new Exception("Unexpected handshake result " + result);
+                    throw new Exception("Unexpected handshake result "
+                            + result);
                 }
             } else {
                 // send server's message over the transport
-                SSLEngineResult result = serverEngine.wrap(msgFromServer, serverToClientTransport);
+                SSLEngineResult result = serverEngine.wrap(msgFromServer,
+                        serverToClientTransport);
                 // run any delegated tasks on the server side
-                final HandshakeStatus hsStatus = checkAndRunTasks(serverEngine, result.getHandshakeStatus());
-                serverToClientTransport.flip(); // will now contain the network data from server to client
+                final HandshakeStatus hsStatus = checkAndRunTasks(serverEngine,
+                        result.getHandshakeStatus());
+                serverToClientTransport.flip(); // will now contain the
+                // network data from
+                // server to client
 
-                // read from the server generated network data into client's buffer
-                result = clientEngine.unwrap(serverToClientTransport, clientBuffer);
+                // read from the server generated network data into
+                // client's buffer
+                result = clientEngine.unwrap(serverToClientTransport,
+                        clientBuffer);
                 // run any delegated tasks on the client side
                 checkAndRunTasks(clientEngine, result.getHandshakeStatus());
                 serverToClientTransport.compact();
@@ -136,7 +163,8 @@ public class ServerNameRejectedTLSSessionResumption extends SSLContextTemplate {
                 } else if (hsStatus == HandshakeStatus.FINISHED) {
                     break;
                 } else if (hsStatus != HandshakeStatus.NEED_WRAP) {
-                    throw new Exception("Unexpected handshake result " + result);
+                    throw new Exception("Unexpected handshake result "
+                            + result);
                 }
             }
         }
@@ -146,30 +174,35 @@ public class ServerNameRejectedTLSSessionResumption extends SSLContextTemplate {
         serverToClientTransport.compact();
     }
 
-    private static SSLEngine createServerSSLEngine(final SSLContext sslContext,
-                                                   final SNIMatcher sniMatcher) {
+    private static SSLEngine createServerSSLEngine(
+            final SSLContext sslContext, final SNIMatcher sniMatcher) {
         final SSLEngine serverEngine = sslContext.createSSLEngine();
         serverEngine.setUseClientMode(false);
         if (sniMatcher != null) {
-            final SSLParameters sslParameters = serverEngine.getSSLParameters(); // returns a copy
+            final SSLParameters sslParameters =
+                    serverEngine.getSSLParameters(); // returns a copy
             sslParameters.setSNIMatchers(List.of(sniMatcher));
-            serverEngine.setSSLParameters(sslParameters); // use the updated params
+            // use the updated params
+            serverEngine.setSSLParameters(sslParameters);
         }
         return serverEngine;
     }
 
-    private static SSLEngine createClientSSLEngine(final SSLContext sslContext) {
-        final SSLEngine clientEngine = sslContext.createSSLEngine(PEER_HOST, PEER_PORT);
+    private static SSLEngine createClientSSLEngine(
+            final SSLContext sslContext) {
+        final SSLEngine clientEngine = sslContext.createSSLEngine(PEER_HOST,
+                PEER_PORT);
         clientEngine.setUseClientMode(true);
-        final SSLParameters params = clientEngine.getSSLParameters(); // returns a copy
+        final SSLParameters params =
+                clientEngine.getSSLParameters(); // returns a copy
         // setup SNI name that will be used by the client during TLS handshake
         params.setServerNames(List.of(new SNIHostName(CLIENT_REQUESTED_SNI)));
         clientEngine.setSSLParameters(params); // use the updated params
         return clientEngine;
     }
 
-    private static HandshakeStatus checkAndRunTasks(final SSLEngine engine,
-                                                    final HandshakeStatus handshakeStatus) {
+    private static HandshakeStatus checkAndRunTasks(
+            final SSLEngine engine, final HandshakeStatus handshakeStatus) {
         if (handshakeStatus != HandshakeStatus.NEED_TASK) {
             return handshakeStatus;
         }
@@ -193,16 +226,20 @@ public class ServerNameRejectedTLSSessionResumption extends SSLContextTemplate {
         @Override
         public boolean matches(final SNIServerName clientRequestedSNI) {
             Objects.requireNonNull(clientRequestedSNI);
-            System.out.println("Attempting SNI match against client request SNI name: "
-                    + clientRequestedSNI + " against server recognized SNI name "
+            System.out.println("Attempting SNI match against client" +
+                    " request SNI name: " + clientRequestedSNI +
+                    " against server recognized SNI name "
                     + recognizedSNIServerName);
             if (!SNIHostName.class.isInstance(clientRequestedSNI)) {
-                System.out.println("SNI match failed - client request SNI isn't a SNIHostName");
+                System.out.println("SNI match failed - client request" +
+                        " SNI isn't a SNIHostName");
                 // we only support SNIHostName type
                 return false;
             }
-            final String requestedName = ((SNIHostName) clientRequestedSNI).getAsciiName();
-            final boolean matches = recognizedSNIServerName.equals(requestedName);
+            final String requestedName =
+                    ((SNIHostName) clientRequestedSNI).getAsciiName();
+            final boolean matches =
+                    recognizedSNIServerName.equals(requestedName);
             System.out.println("SNI match " + (matches ? "passed" : "failed"));
             return matches;
         }
