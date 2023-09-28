@@ -177,7 +177,6 @@ class PSPromotionManager {
   TASKQUEUE_STATS_ONLY(inline void record_steal(ScannerTask task);)
 
   void push_contents(oop obj);
-  void push_objArray_contents(objArrayOop arr, HeapWord* left, HeapWord* right);
 };
 
 #endif // SHARE_GC_PARALLEL_PSPROMOTIONMANAGER_HPP

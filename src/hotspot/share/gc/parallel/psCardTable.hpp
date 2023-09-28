@@ -26,7 +26,7 @@
 #define SHARE_GC_PARALLEL_PSCARDTABLE_HPP
 
 #include "gc/shared/cardTable.hpp"
-#include "oops/oop.inline.hpp"
+#include "oops/oop.hpp"
 
 class MutableSpace;
 class ObjectStartArray;
@@ -42,19 +42,9 @@ class PSCardTable: public CardTable {
     verify_card       = CT_MR_BS_last_reserved + 5
   };
 
-  static size_t const num_cards_in_stripe = 128;
-
-  static bool is_large_obj_array(oop obj) {
-    const size_t stripe_size_in_words = num_cards_in_stripe * _card_size_in_words;
-    return obj->is_objArray() && obj->size() >= stripe_size_in_words;
-  }
-
   CardValue* find_first_dirty_card(CardValue* const start_card,
                                    CardValue* const end_card);
 
-  CardValue* find_first_clean_card(CardValue* const start_card,
-                                   CardValue* const end_card);
-  // All cards of an object following a dirty card are considered dirty too.
   CardValue* find_first_clean_card(ObjectStartArray* start_array,
                                    CardValue* const start_card,
                                    CardValue* const end_card);
@@ -78,13 +68,6 @@ class PSCardTable: public CardTable {
                                   PSPromotionManager* pm,
                                   uint stripe_index,
                                   uint n_stripes);
-  // Scavenge the elements of a large object array on dirty cards of the stripe.
-  void scavenge_large_array_contents(objArrayOop large_arr,
-                                     PSPromotionManager* pm,
-                                     HeapWord* stripe_addr,
-                                     HeapWord* stripe_end_addr,
-                                     HeapWord* space_top,
-                                     bool first_card_already_cleared);
 
   bool addr_is_marked_imprecise(void *addr);
   bool addr_is_marked_precise(void *addr);
