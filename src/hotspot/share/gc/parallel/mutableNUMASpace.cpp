@@ -160,7 +160,7 @@ size_t MutableNUMASpace::tlab_capacity(Thread *thr) const {
     }
   }
   // That's the normal case, where we know the locality group of the thread.
-  int i = lgrp_spaces()->find(&lgrp_id, LGRPSpace::equals);
+  int i = lgrp_spaces()->find((uint*)&lgrp_id, LGRPSpace::equals);
   if (i == -1) {
     return 0;
   }
@@ -179,7 +179,7 @@ size_t MutableNUMASpace::tlab_used(Thread *thr) const {
       return 0;
     }
   }
-  int i = lgrp_spaces()->find(&lgrp_id, LGRPSpace::equals);
+  int i = lgrp_spaces()->find((uint*)&lgrp_id, LGRPSpace::equals);
   if (i == -1) {
     return 0;
   }
@@ -199,7 +199,7 @@ size_t MutableNUMASpace::unsafe_max_tlab_alloc(Thread *thr) const {
       return 0;
     }
   }
-  int i = lgrp_spaces()->find(&lgrp_id, LGRPSpace::equals);
+  int i = lgrp_spaces()->find((uint*)&lgrp_id, LGRPSpace::equals);
   if (i == -1) {
     return 0;
   }
@@ -583,7 +583,7 @@ HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
     thr->set_lgrp_id(lgrp_id);
   }
 
-  int i = lgrp_spaces()->find(&lgrp_id, LGRPSpace::equals);
+  int i = lgrp_spaces()->find((uint*)&lgrp_id, LGRPSpace::equals);
   // It is possible that a new CPU has been hotplugged and
   // we haven't reshaped the space accordingly.
   if (i == -1) {
