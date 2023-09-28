@@ -4320,11 +4320,8 @@ class StubGenerator: public StubCodeGenerator {
     const int step = 4;
     const Register state = c_rarg0;
     const Register key_stream = c_rarg1;
-    const Register loop = t0;
+    const Register length = t0;
     const Register tmp_addr = t1;
-    const Register length = t2;
-    const Register avl = t3;
-    const Register stride = t4;
 
     const VectorRegister work_vrs[16] = {
       v4,  v5,  v6,  v7,  v16, v17, v18, v19,
@@ -4333,10 +4330,13 @@ class StubGenerator: public StubCodeGenerator {
     const VectorRegister tmp_vr = v29;
     const VectorRegister counter = v30;
 
-    // Put 16 here, as com.sun.crypto.providerChaCha20Cipher.KS_MAX_LEN is 1024
-    // in java level.
-    __ mv(avl, 16);
-    __ vsetvli(length, avl, Assembler::e32, Assembler::m1);
+    {
+      const Register avl = t2; // share t2 with other non-overlapping usages.
+      // Put 16 here, as com.sun.crypto.providerChaCha20Cipher.KS_MAX_LEN is 1024
+      // in java level.
+      __ mv(avl, 16);
+      __ vsetvli(length, avl, Assembler::e32, Assembler::m1);
+    }
 
     // Load from source state
     __ mv(tmp_addr, state);
@@ -4348,21 +4348,24 @@ class StubGenerator: public StubCodeGenerator {
     __ vadd_vv(work_vrs[12], work_vrs[12], counter);
 
     // Perform 10 iterations of the 8 quarter round set
-    __ mv(loop, 10);
-    __ BIND(L_Rounds);
+    {
+      const Register loop = t2; // share t2 with other non-overlapping usages.
+      __ mv(loop, 10);
+      __ BIND(L_Rounds);
 
-    chacha20_quarter_round(work_vrs[0], work_vrs[4], work_vrs[8], work_vrs[12], tmp_vr);
-    chacha20_quarter_round(work_vrs[1], work_vrs[5], work_vrs[9], work_vrs[13], tmp_vr);
-    chacha20_quarter_round(work_vrs[2], work_vrs[6], work_vrs[10], work_vrs[14], tmp_vr);
-    chacha20_quarter_round(work_vrs[3], work_vrs[7], work_vrs[11], work_vrs[15], tmp_vr);
+      chacha20_quarter_round(work_vrs[0], work_vrs[4], work_vrs[8], work_vrs[12], tmp_vr);
+      chacha20_quarter_round(work_vrs[1], work_vrs[5], work_vrs[9], work_vrs[13], tmp_vr);
+      chacha20_quarter_round(work_vrs[2], work_vrs[6], work_vrs[10], work_vrs[14], tmp_vr);
+      chacha20_quarter_round(work_vrs[3], work_vrs[7], work_vrs[11], work_vrs[15], tmp_vr);
 
-    chacha20_quarter_round(work_vrs[0], work_vrs[5], work_vrs[10], work_vrs[15], tmp_vr);
-    chacha20_quarter_round(work_vrs[1], work_vrs[6], work_vrs[11], work_vrs[12], tmp_vr);
-    chacha20_quarter_round(work_vrs[2], work_vrs[7], work_vrs[8], work_vrs[13], tmp_vr);
-    chacha20_quarter_round(work_vrs[3], work_vrs[4], work_vrs[9], work_vrs[14], tmp_vr);
+      chacha20_quarter_round(work_vrs[0], work_vrs[5], work_vrs[10], work_vrs[15], tmp_vr);
+      chacha20_quarter_round(work_vrs[1], work_vrs[6], work_vrs[11], work_vrs[12], tmp_vr);
+      chacha20_quarter_round(work_vrs[2], work_vrs[7], work_vrs[8], work_vrs[13], tmp_vr);
+      chacha20_quarter_round(work_vrs[3], work_vrs[4], work_vrs[9], work_vrs[14], tmp_vr);
 
-    __ sub(loop, loop, 1);
-    __ bnez(loop, L_Rounds);
+      __ sub(loop, loop, 1);
+      __ bnez(loop, L_Rounds);
+    }
 
     // Add the end working state back into the original state
     __ mv(tmp_addr, state);
@@ -4374,10 +4377,13 @@ class StubGenerator: public StubCodeGenerator {
     __ vadd_vv(work_vrs[12], work_vrs[12], counter);
 
     // Store result to key stream
-    __ mv(stride, 64);
-    for (int i = 0; i < states_len; i += 1) {
-      __ vsse32_v(work_vrs[i], key_stream, stride);
-      __ addi(key_stream, key_stream, step);
+    {
+      const Register stride = t2; // share t2 with other non-overlapping usages.
+      __ mv(stride, 64);
+      for (int i = 0; i < states_len; i += 1) {
+        __ vsse32_v(work_vrs[i], key_stream, stride);
+        __ addi(key_stream, key_stream, step);
+      }
     }
 
     // Return length of output key_stream
