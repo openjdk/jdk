@@ -28,6 +28,8 @@ import java.io.PrintStream;
 import nsk.share.*;
 import nsk.share.jvmti.*;
 
+import java.util.concurrent.locks.LockSupport;
+
 public class stopthrd007 extends DebugeeClass {
 
     // run test from command line
