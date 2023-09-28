@@ -29,7 +29,7 @@
  * @run main/othervm -Xint TestUnstructuredLocking
  */
 /*
- * @test id=Xcamp
+ * @test id=Xcomp
  * @summary Check that monitorenter A; monitorenter B; monitorexit A; monitorexit B; works, with -Xcomp
  * @compile TestUnstructuredLocking.jasm
  * @run main/othervm -Xcomp TestUnstructuredLocking
