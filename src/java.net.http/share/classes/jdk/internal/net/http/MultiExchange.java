@@ -382,16 +382,16 @@ class MultiExchange<T> implements Cancelable {
                     }).exceptionallyCompose(this::whenCancelled);
     }
 
-    private CancellationException cancellationException(Throwable cause) {
-        CancellationException original = interrupted.get();
-        var message = original != null
-                ? original.getMessage() : cause.getMessage();
-        var cancel = new CancellationException(message);
-        if (original != null) {
-            // preserve the stack trace of the original exception to
-            // show where the call to cancel(boolean) came from
-            cancel.setStackTrace(original.getStackTrace());
-        }
+    // returns a CancellationExcpetion that wraps the given cause
+    // if cancel(boolean) was called, the given cause otherwise
+    private Throwable wrapIfCancelled(Throwable cause) {
+        CancellationException interrupt = interrupted.get();
+        if (interrupt == null) return cause;
+
+        var cancel = new CancellationException(interrupt.getMessage());
+        // preserve the stack trace of the original exception to
+        // show where the call to cancel(boolean) came from
+        cancel.setStackTrace(interrupt.getStackTrace());
         cancel.initCause(Utils.getCancelCause(cause));
         return cancel;
     }
@@ -399,15 +399,13 @@ class MultiExchange<T> implements Cancelable {
     // if the request failed because the multi exchange was cancelled,
     // make sure the reported exception is wrapped in CancellationException
     private CompletableFuture<HttpResponse<T>> whenCancelled(Throwable t) {
-        if (requestCancelled()) {
-            // make sure to fail with CancellationException if cancel(true)
-            // was called.
-            t = cancellationException(t);
+        var x = wrapIfCancelled(t);
+        if (x instanceof CancellationException) {
             if (debug.on()) {
-                debug.log("MultiExchange interrupted with: " + t.getCause());
+                debug.log("MultiExchange interrupted with: " + x.getCause());
             }
         }
-        return MinimalFuture.failedFuture(t);
+        return MinimalFuture.failedFuture(x);
     }
 
     static class NullSubscription implements Flow.Subscription {
