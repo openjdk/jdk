@@ -158,7 +158,7 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
 }
 
 
-void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rbox, Label& slow_case) {
+void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rbox, Label& slow_case, bool may_be_unordered) {
   assert_different_registers(Rmark, Roop, Rbox);
 
   Label slow_int, done;
@@ -181,7 +181,7 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
     ld(Rmark, oopDesc::mark_offset_in_bytes(), Roop);
     andi_(R0, Rmark, markWord::monitor_value);
     bne(CCR0, slow_int);
-    lightweight_unlock(Roop, Rmark, noreg, slow_int);
+    lightweight_unlock(Roop, Rmark, noreg, slow_int, may_be_unordered);
   } else if (LockingMode == LM_LEGACY) {
     // Check if it is still a light weight lock, this is is true if we see
     // the stack address of the basicLock in the markWord of the object.

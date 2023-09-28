@@ -12168,7 +12168,7 @@ instruct cmpFastUnlock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp
   format %{ "FASTUNLOCK  $oop, $box, $tmp1, $tmp2" %}
   ins_encode %{
     __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
-                                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+                                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, Compile::current()->is_osr_compilation());
     // If unlocking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_unlocking_Java for the case where crx is 'NE'.

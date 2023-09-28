@@ -1127,16 +1127,12 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
       lwz(tmp, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
       cmplwi(CCR0, tmp, (unsigned)LockStack::start_offset());
       ble(CCR0, slow_case);
-      // Then check if the top of the lock-stack matches the unlocked object.
-      addi(tmp, tmp, -oopSize);
-      ldx(tmp, tmp, R16_thread);
-      cmpd(CCR0, tmp, object);
-      bne(CCR0, slow_case);
 
       ld(header, oopDesc::mark_offset_in_bytes(), object);
       andi_(R0, header, markWord::monitor_value);
       bne(CCR0, slow_case);
-      lightweight_unlock(object, header, tmp, slow_case);
+
+      lightweight_unlock(object, header, tmp, slow_case, true);
     } else {
       addi(object_mark_addr, object, oopDesc::mark_offset_in_bytes());
 

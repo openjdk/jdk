@@ -2293,7 +2293,8 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 }
 
 void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
-                                                 Register temp, Register displaced_header, Register current_header) {
+                                                 Register temp, Register displaced_header, Register current_header,
+                                                 bool may_be_unordered) {
   assert_different_registers(oop, box, temp, displaced_header, current_header);
   assert(LockingMode != LM_LIGHTWEIGHT || flag == CCR0, "bad condition register");
   Label success, failure, object_has_monitor, notRecursive;
@@ -2334,7 +2335,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
     b(success);
   } else {
     assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-    lightweight_unlock(oop, current_header, /* temp */ displaced_header, failure);
+    lightweight_unlock(oop, current_header, /* temp */ displaced_header, failure, may_be_unordered);
     b(success);
   }
 
@@ -4032,7 +4033,7 @@ void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register t1, L
 //
 // - obj: the object to be unlocked
 // - hdr: the (pre-loaded) header of the object, will be destroyed
-void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register t1, Label& slow) {
+void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register t1, Label& slow, bool may_be_unordered) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, hdr);
 
@@ -4067,9 +4068,20 @@ void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register t1,
 
   // Check if the top of the lock-stack matches the unlocked object.
   addi(temp, temp, -oopSize);
-  ldx(R0, temp, R16_thread);
-  cmpd(CCR0, R0, obj);
-  bne(CCR0, slow);
+  if (may_be_unordered) {
+    ldx(R0, temp, R16_thread);
+    cmpd(CCR0, R0, obj);
+    bne(CCR0, slow);
+  } else {
+#ifdef ASSERT
+    Label tos_ok;
+    ldx(R0, temp, R16_thread);
+    cmpd(CCR0, R0, obj);
+    beq(CCR0, tos_ok);
+    stop("Top of lock-stack does not match the unlocked object");
+    bind(tos_ok);
+#endif
+  }
 
   // Release the lock.
   atomically_flip_locked_state(/* is_unlock */ true, obj, hdr, slow, MacroAssembler::MemBarRel);

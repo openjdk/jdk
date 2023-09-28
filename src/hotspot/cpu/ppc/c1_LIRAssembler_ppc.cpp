@@ -215,7 +215,7 @@ int LIR_Assembler::emit_unwind_handler() {
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::R4_opr);
     stub = new MonitorExitStub(FrameMap::R4_opr, true, 0);
-    __ unlock_object(R5, R6, R4, *stub->entry());
+    __ unlock_object(R5, R6, R4, *stub->entry(), compilation()->is_osr_compile());
     __ bind(*stub->continuation());
   }
 
@@ -2679,7 +2679,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
     assert (op->code() == lir_unlock, "Invalid code, expected lir_unlock");
     if (LockingMode != LM_MONITOR) {
       assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-      __ unlock_object(hdr, obj, lock, *op->stub()->entry());
+      __ unlock_object(hdr, obj, lock, *op->stub()->entry(), compilation()->is_osr_compile());
     } else {
       // always do slow unlocking
       // note: The slow unlocking code could be inlined here, however if we use

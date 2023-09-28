@@ -44,7 +44,7 @@
 
   // locking/unlocking
   void lock_object  (Register Rmark, Register Roop, Register Rbox, Register Rscratch, Label& slow_case);
-  void unlock_object(Register Rmark, Register Roop, Register Rbox,                    Label& slow_case);
+  void unlock_object(Register Rmark, Register Roop, Register Rbox,                    Label& slow_case, bool may_be_unordered);
 
   void initialize_object(
     Register obj,                      // result: pointer to object after successful allocation

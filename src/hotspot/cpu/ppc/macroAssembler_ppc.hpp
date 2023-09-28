@@ -607,7 +607,7 @@ class MacroAssembler: public Assembler {
   void dec_held_monitor_count(Register tmp);
   void atomically_flip_locked_state(bool is_unlock, Register obj, Register tmp, Label& failed, int semantics);
   void lightweight_lock(Register obj, Register hdr, Register t1, Label& slow);
-  void lightweight_unlock(Register obj, Register hdr, Register t1, Label& slow);
+  void lightweight_unlock(Register obj, Register hdr, Register t1, Label& slow, bool may_be_unordered);
 
   // allocation (for C1)
   void tlab_allocate(
@@ -626,7 +626,7 @@ class MacroAssembler: public Assembler {
                                  Register tmp1, Register tmp2, Register tmp3);
 
   void compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
-                                   Register tmp1, Register tmp2, Register tmp3);
+                                   Register tmp1, Register tmp2, Register tmp3, bool may_be_unoredered);
 
   // Check if safepoint requested and if so branch
   void safepoint_poll(Label& slow_path, Register temp, bool at_return, bool in_nmethod);
