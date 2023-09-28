@@ -37,9 +37,6 @@ import javax.swing.JMenu;
 import javax.swing.plaf.basic.BasicMenuUI;
 
 public class bug4244616 {
-    static PrintStream oldOut;
-    static PrintStream oldErr;
-
     public static void main(String[] argv) throws Exception {
         JMenu menu = new JMenu();
         BasicMenuUI ui = new BasicMenuUI();
@@ -52,16 +49,12 @@ public class bug4244616 {
                 ActionEvent.ACTION_PERFORMED, "test event");
 
         // Stream redirection
+        final PrintStream oldOut = System.out;
+        final PrintStream oldErr = System.err;
         try (ByteArrayOutputStream bout = new ByteArrayOutputStream();
              ByteArrayOutputStream berr = new ByteArrayOutputStream();
              PrintStream out = new PrintStream(bout);
              PrintStream err = new PrintStream(berr)) {
-
-            oldOut = System.out;
-            oldErr = System.err;
-            System.setOut(out);
-            System.setErr(err);
-
             for (int i = 0; i < names.length; i++) {
                 Action action = amap.get(names[i]);
                 try {

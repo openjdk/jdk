@@ -25,8 +25,9 @@
  * @test
  * @bug 5078214
  * @summary ToolTip is shown partially when the application is near the bottom of screen.
- * @library ../regtesthelpers
+ * @library ../regtesthelpers /test/lib
  * @build Util JRobot
+ * @build jtreg.SkippedException
  * @key headful
  * @run main bug5078214
  */
@@ -46,29 +47,25 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
 
+import jtreg.SkippedException;
+
 public class bug5078214 {
     static volatile boolean passed = false;
-    static GraphicsEnvironment ge;
-    static GraphicsDevice[] gs;
-    static GraphicsConfiguration testGraphicsConfig;
 
     static volatile JFrame mainFrame;
     static volatile Rectangle bounds;
     static volatile Insets insets;
-    static volatile JRobot r;
+    static JRobot robot;
 
     public static void main(String[] args) throws Exception {
         try {
-            graphicsConfigHelper();
+            bounds = getGraphicsConfig().getBounds();
+            if (bounds == null) {
+                throw new SkippedException("We need at least one screen " +
+                        "with the taskbar at the bottom position.");
+            }
 
             SwingUtilities.invokeAndWait(() -> {
-                if (testGraphicsConfig == null) {
-                    System.out.print("We need at least one screen with ");
-                    System.out.println("the taskbar at the bottom position.");
-                    System.out.println("Testing skipped.");
-                    return;
-                }
-
                 mainFrame = new JFrame("bug5078214");
                 mainFrame.setLayout(new BorderLayout());
                 mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -82,17 +79,16 @@ public class bug5078214 {
 
                 // Position frame
                 mainFrame.setSize(200, 200);
-                bounds = testGraphicsConfig.getBounds();
                 int x = bounds.x + 200;
                 int y = bounds.y + bounds.height - insets.bottom - 100;
                 mainFrame.setLocation(x, y);
                 mainFrame.setVisible(true);
             });
 
-            r = new JRobot(true);
+            robot = new JRobot(true);
             Util.blockTillDisplayed(mainFrame);
-            r.waitForIdle();
-            r.delay(1000);
+            robot.waitForIdle();
+            robot.delay(1000);
 
             test(bounds, insets);
 
@@ -113,8 +109,9 @@ public class bug5078214 {
             ToolTipManager.sharedInstance().setLightWeightPopupEnabled(false);
             ToolTipManager.sharedInstance().setInitialDelay(100);
         });
-        r.mouseMove(b.x + 300, b.y + b.height - i.bottom - 10);
-        r.delay(500);
+
+        robot.mouseMove(b.x + 300, b.y + b.height - i.bottom - 10);
+        robot.delay(500);
         Window[] ow = mainFrame.getOwnedWindows();
         if (ow == null || ow.length < 1) {
             throw new RuntimeException("No owned windows for JFrame - no tooltip shown?");
@@ -122,27 +119,21 @@ public class bug5078214 {
 
         Window ttwnd = ow[0];
         int wy = ttwnd.getBounds().y + ttwnd.getBounds().height - 1;
-        passed = wy < (b.y + b.height - i.bottom));
+        passed = wy < (b.y + b.height - i.bottom);
     }
 
-    public static void graphicsConfigHelper() throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-            gs = ge.getScreenDevices();
-            testGraphicsConfig = null;
-
-            for (int j = 0; j < gs.length; j++) {
-                GraphicsDevice gd = gs[j];
-                GraphicsConfiguration[] gc = gd.getConfigurations();
-                for (int i = 0; i < gc.length; i++) {
-                    insets = Toolkit.getDefaultToolkit().getScreenInsets(gc[i]);
-                    if (insets.bottom != 0) {
-                        testGraphicsConfig = gc[i];
-                        break;
-                    }
+    public static GraphicsConfiguration getGraphicsConfig() {
+        GraphicsDevice[] devices = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                                                      .getScreenDevices();
+        for (GraphicsDevice device : devices) {
+            GraphicsConfiguration[] gc = device.getConfigurations();
+            for (int i = 0; i < gc.length; i++) {
+                insets = Toolkit.getDefaultToolkit().getScreenInsets(gc[i]);
+                if (insets.bottom != 0) {
+                    return gc[i];
                 }
             }
-        });
-
+        }
+        return null;
     }
 }
