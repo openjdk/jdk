@@ -1292,63 +1292,47 @@ public class ForkJoinPool extends AbstractExecutorService {
          * @param task the task. Caller must ensure non-null.
          * @param pool the pool to signal if was previously empty, else null
          * @param internal if caller owns this queue
-         * @throws RejectedExecutionException if array cannot be resized
+         * @throws RejectedExecutionException if array could not be resized
          */
         final void push(ForkJoinTask<?> task, ForkJoinPool pool,
                         boolean internal) {
             int s = top++, cap, m, room; ForkJoinTask<?>[] a;
-            if ((a = array) != null && (cap = a.length) > 0) {
-                if ((room = (m = cap - 1) - (s - base)) == 0)
-                    growAndPush(task, a, s, internal);
-                else {
-                    long pos = slotOffset(m & s);
-                    if (internal)
-                        U.getAndSetReference(a, pos, task);    // fully fenced
-                    else {
-                        U.putReference(a, pos, task);          // inside lock
-                        unlockPhase();
-                    }
-                }
-                if ((room == 0 || a[m & (s - 1)] == null) && pool != null)
-                    pool.signalWork();
+            if ((a = array) == null || (cap = a.length) <= 0 ||
+                (room = (m = cap - 1) - (s - base)) < 0) {
+                top = s;                              // revert on failure
+                if (!internal)
+                    unlockPhase();
+                throw new RejectedExecutionException("Queue capacity exceeded");
             }
-        }
-
-        /**
-         * Grows the task array if possible and adds the task.
-         * @param a the current task array
-         * @param s the old top value
-         */
-        private void growAndPush(ForkJoinTask<?> task, ForkJoinTask<?>[] a,
-                                 int s, boolean internal) {
-            U.storeFence();                  // ensure task publishable
-            int cap;                         // rapidly grow until large
-            if (a != null && (cap = a.length) > 0) {
-                int newCap = (cap < 1 << 24) ? cap << 2 : cap << 1;
-                int newMask = newCap - 1, k = s, b = k - cap, m = cap - 1;
-                if (newCap > 0) {
-                    ForkJoinTask<?>[] newArray = null;
+            long pos = slotOffset(m & s);
+            if (!internal)
+                U.putReference(a, pos, task);         // inside lock
+            else
+                U.getAndSetReference(a, pos, task);   // fully fenced
+            if (room == 0) {                          // resize for next time
+                int newCap;                           // rapidly grow until large
+                ForkJoinTask<?>[] newArray = null;
+                if ((newCap = (cap < 1 << 24) ? cap << 2 : cap << 1) > 0) {
                     try {
                         newArray = new ForkJoinTask<?>[newCap];
                     } catch (OutOfMemoryError ex) {
                     }
-                    if (newArray != null) {
-                        do { // poll old, push to new; exit if lose to pollers
-                            newArray[k & newMask] = task;
-                        } while (--k != b &&
-                                 (task = (ForkJoinTask<?>)U.getAndSetReference(
-                                     a, slotOffset(k & m), null)) != null);
-                        updateArray(newArray);
-                        if (!internal)
-                            unlockPhase();
-                        return;
-                    }
                 }
+                if (newArray != null) {               // poll old, push to new
+                    for (int nm = newCap - 1, k = s, j = cap; j > 0; --j, --k) {
+                        if ((newArray[k & nm] =
+                             (ForkJoinTask<?>)U.getAndSetReference(
+                                 a, slotOffset(k & m), null)) == null)
+                            break;                    // lost to pollers
+                    }
+                    updateArray(newArray);            // fully fenced
+                } // else will throw on next push unless tasks taken
             }
-            top = s; // revert on failure
             if (!internal)
                 unlockPhase();
-            throw new RejectedExecutionException("Queue capacity exceeded");
+            if ((room == 0 || room == m || a[m & (s - 1)] == null) &&
+                pool != null)
+                pool.signalWork();
         }
 
         /**
@@ -1631,8 +1615,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         // misc
 
         /**
-         * Sets closed status, interrupts if a worker, and unless
-         * already closed, cancels tasks,
+         * Sets closed status, interrupts if a worker, and cancels tasks,
          */
         final void close() {
             Thread o = owner;
@@ -1645,12 +1628,10 @@ public class ForkJoinPool extends AbstractExecutorService {
                 } catch (Throwable ignore) {
                 }
             }
-            if (wasClosed == 0) {
-                for (ForkJoinTask<?> t; (t = poll(null)) != null; ) {
-                    try {
-                        t.cancel(false);
-                    } catch (Throwable ignore) {
-                    }
+            for (ForkJoinTask<?> t; (t = poll(null)) != null; ) {
+                try {
+                    t.cancel(false);
+                } catch (Throwable ignore) {
                 }
             }
         }
@@ -1938,12 +1919,10 @@ public class ForkJoinPool extends AbstractExecutorService {
             }
             unlockRunState();
         }
-        if ((runState & STOP) == 0) {
-            if (replaceable)
-                signalWork(); // may replace unless trimmed or uninitialized
-            if (ex != null)
-                ForkJoinTask.rethrow(ex);
-        }
+        if ((runState & STOP) == 0 && replaceable)
+            signalWork(); // may replace unless trimmed or uninitialized
+        if (ex != null)
+            ForkJoinTask.rethrow(ex);
     }
 
     /**
@@ -2017,7 +1996,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * if shutdown is enabled
      */
     private boolean quiescent() {
-        for (;;) {
+        outer: for (;;) {
             long phaseSum = 0L;
             boolean swept = false;
             for (int e, prevRunState = 0; ; prevRunState = e) {
@@ -2035,9 +2014,11 @@ public class ForkJoinPool extends AbstractExecutorService {
                         if ((q = qs[i]) != null) {
                             if (((p = q.phase) & IDLE) == 0 ||
                                 q.top - q.base > 0) {
-                                if ((i & 1) == 0)
+                                if ((i & 1) == 0 && compareAndSetCtl(c, c))
                                     signalWork();         // ensure live
-                                return false;
+                                if (parallelism == 0)
+                                    return false;
+                                continue outer;
                             }
                             sum += p & 0xffffffffL;
                         }
@@ -2112,12 +2093,10 @@ public class ForkJoinPool extends AbstractExecutorService {
                         Object o;                 // to check identities
                         int nb = b + 1, nk = nb & (cap - 1);
                         if (t == null) {
-                            if (a[k] == null) {   // revisit if nonempty
-                                if (next >= 0L && //  and resized or uncontended
-                                    (q.array != a ||
-                                     (!contended &&
-                                      (a[nk] != null || q.top - b > 0))))
-                                    next |= RESCAN;
+                            if (a[k] == null) {
+                                if (!contended && next >= 0L &&
+                                    (a[nk] != null || q.top - b > 0))
+                                    next |= RESCAN; // revisit
                                 break;
                             }
                         }
@@ -2642,6 +2621,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             else
                 return q;
         }
+        tryTerminate(false, false);
         throw new RejectedExecutionException();
     }
 
@@ -2784,8 +2764,9 @@ public class ForkJoinPool extends AbstractExecutorService {
             else {
                 if ((isShutdown = (e & SHUTDOWN)) == 0 && enable)
                     getAndBitwiseOrRunState(isShutdown = SHUTDOWN);
-                if (isShutdown != 0 && quiescent())
-                    e = runState;
+                if (isShutdown != 0)
+                    quiescent();                 // may trigger STOP
+                e = runState;
             }
         }
         if ((e & (STOP | TERMINATED)) == STOP) { // help terminate

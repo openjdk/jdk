@@ -1629,21 +1629,22 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         transient volatile Thread runner;
         abstract T compute() throws Exception;
         public final boolean exec() {
-            Thread t = Thread.currentThread();
-            if ((t instanceof ForkJoinWorkerThread) &&
-                ForkJoinPool.poolIsStopping(((ForkJoinWorkerThread)t).pool))
-                cancel(false);
-            else {
+            Thread t = runner = Thread.currentThread();
+            try {
                 Thread.interrupted();
-                runner = t;
-                try {
-                    if (status >= 0)
-                        setRawResult(compute());
-                } catch (Exception ex) {
-                   trySetException(ex);
-                } finally {
-                    runner = null;
+                if ((t instanceof ForkJoinWorkerThread) &&
+                    ForkJoinPool.poolIsStopping(((ForkJoinWorkerThread)t).pool))
+                    cancel(true);
+                else {
+                    try {
+                        if (status >= 0)
+                            setRawResult(compute());
+                    } catch (Exception ex) {
+                        trySetException(ex);
+                    }
                 }
+            } finally {
+                runner = null;
             }
             return true;
         }
