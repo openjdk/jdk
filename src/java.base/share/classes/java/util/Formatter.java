@@ -2897,7 +2897,7 @@ public final class Formatter implements Closeable, Flushable {
             if (c == '.') {
                 // (\.\d+)?
                 precisionSize = parsePrecision();
-                if (precisionSize == 0) {
+                if (precisionSize == -1) {
                     return 0;
                 }
             }
@@ -2931,7 +2931,7 @@ public final class Formatter implements Closeable, Flushable {
         private void parseArgument() {
             // (\d+\$)?
             int i = off;
-            for (; i < max && isDigit(c); c = next(++i));  // empty body
+            for (; i < max && isDigit(c = s.charAt(i)); ++i);  // empty body
             if (i > off) {
                 if (c == '$') {
                     ++i;
@@ -2942,6 +2942,7 @@ public final class Formatter implements Closeable, Flushable {
                     argSize = i - off;
                     off = i;
                 } else {
+                    // reset
                     c = first;
                 }
             }
@@ -2950,7 +2951,7 @@ public final class Formatter implements Closeable, Flushable {
         private void parseFlag() {
             // ([-#+ 0,(\<]*)?
             int i = off;
-            for (; i < max && Flags.isFlag(c); c = next(++i));  // empty body
+            for (; i < max && Flags.isFlag(c = s.charAt(i)); ++i);  // empty body
             flagSize = i - off;
             off = i;
         }
@@ -2958,7 +2959,7 @@ public final class Formatter implements Closeable, Flushable {
         private void parseWidth() {
             // (\d+)?
             int i = off;
-            for (; i < max && isDigit(c); c = next(++i));  // empty body
+            for (; i < max && isDigit(c = s.charAt(i)); ++i);  // empty body
             widthSize = i - off;
             off = i;
         }
@@ -2972,11 +2973,7 @@ public final class Formatter implements Closeable, Flushable {
                 off = i;
                 return size;
             }
-            return 0;
-        }
-
-        private char next(int off) {
-            return off < s.length() ? s.charAt(off) : '\0';
+            return -1;
         }
     }
 
@@ -3123,7 +3120,7 @@ public final class Formatter implements Closeable, Flushable {
             int argEnd = i + argSize;
             int flagEnd = argEnd + flagSize;
             int widthEnd = flagEnd + widthSize;
-            int precesionEnd = widthEnd + precisionSize;
+            int precisionEnd = widthEnd + precisionSize;
 
             if (argSize > 0) {
                 index(s, i, argEnd);
@@ -3135,7 +3132,7 @@ public final class Formatter implements Closeable, Flushable {
                 width(s, flagEnd, widthEnd);
             }
             if (precisionSize > 0) {
-                precision(s, widthEnd, precesionEnd);
+                precision(s, widthEnd, precisionEnd);
             }
             if (t != '\0') {
                 dt = true;
