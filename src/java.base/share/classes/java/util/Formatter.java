@@ -2932,20 +2932,18 @@ public final class Formatter implements Closeable, Flushable {
             // (\d+\$)?
             int i = off;
             for (; i < max && isDigit(c = s.charAt(i)); ++i);  // empty body
-            if (i > off) {
-                if (c == '$') {
-                    ++i;
-                    if (i < max) {
-                        c = s.charAt(i);
-                    }
-
-                    argSize = i - off;
-                    off = i;
-                } else {
-                    // reset
-                    c = first;
-                }
+            if (i == off || c != '$') {
+                c = first;
+                return;
             }
+
+            i++; // skip '$'
+            if (i < max) {
+                c = s.charAt(i);
+            }
+
+            argSize = i - off;
+            off = i;
         }
 
         private void parseFlag() {
