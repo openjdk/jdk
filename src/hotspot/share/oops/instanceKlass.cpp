@@ -1633,12 +1633,11 @@ void InstanceKlass::mask_for(const methodHandle& method, int bci,
   // Lock-free access requires load_acquire.
   OopMapCache* oop_map_cache = Atomic::load_acquire(&_oop_map_cache);
   if (oop_map_cache == nullptr) {
-    MutexLocker x(OopMapCacheAlloc_lock);
-    // Check if _oop_map_cache was allocated while we were waiting for this lock
-    if ((oop_map_cache = _oop_map_cache) == nullptr) {
-      oop_map_cache = new OopMapCache();
-      // Ensure _oop_map_cache is stable, since it is examined without a lock
-      Atomic::release_store(&_oop_map_cache, oop_map_cache);
+    oop_map_cache = new OopMapCache();
+    OopMapCache* existing_cache = Atomic::cmpxchg(&_oop_map_cache, (OopMapCache*)nullptr, oop_map_cache);
+    if (existing_cache != nullptr) {
+      delete oop_map_cache;
+      oop_map_cache = existing_cache;
     }
   }
   // _oop_map_cache is constant after init; lookup below does its own locking.
