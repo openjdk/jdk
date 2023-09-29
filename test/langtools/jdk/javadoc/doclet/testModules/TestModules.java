@@ -507,7 +507,6 @@ public class TestModules extends JavadocTester {
                     <div class="deprecation-comment">This module is deprecated.</div>
                     </div>
                     <!-- ============ MODULE DESCRIPTION =========== -->
-                    <div class="horizontal-scroll">
                     <div class="block">This is a test description for the moduleA module with a Sear\
                     ch phrase <span id="searchphrase" class="search-tag-result">search phrase</span>\
                     .</div>""");
@@ -515,7 +514,6 @@ public class TestModules extends JavadocTester {
                 """
                     <section class="module-description" id="module-description">
                     <!-- ============ MODULE DESCRIPTION =========== -->
-                    <div class="horizontal-scroll">
                     <div class="block">This is a test description for the moduleB module. Search wor\
                     d <span id="search_word" class="search-tag-result">search_word</span> with no de\
                     scription.</div>""");
@@ -547,8 +545,10 @@ public class TestModules extends JavadocTester {
                     <h1 title="Module moduleA" class="title">Module moduleA</h1>
                     </div>
                     <hr>
+                    <div class="horizontal-scroll">
                     <div class="module-signature"><span class="annotations">@Deprecated(forRemoval=true)
                     </span>module <span class="element-name">moduleA</span></div>
+                    </div>
                     <section class="summary">
                     <ul class="summary-list">
                     <li>
@@ -560,12 +560,14 @@ public class TestModules extends JavadocTester {
                     <h1 title="Module moduleB" class="title">Module moduleB</h1>
                     </div>
                     <hr>
+                    <div class="horizontal-scroll">
                     <div class="module-signature"><span class="annotations"><a href="testpkgmdlB/Ann\
                     otationType.html" title="annotation interface in testpkgmdlB">@AnnotationType</a\
                     >(<a href="testpkgmdlB/AnnotationType.html#optional()">optional</a>="Module Anno\
                     tation",
                                     <a href="testpkgmdlB/AnnotationType.html#required()">required</a>=2016)
                     </span>module <span class="element-name">moduleB</span></div>
+                    </div>
                     <section class="summary">
                     <ul class="summary-list">
                     <li>
@@ -1129,6 +1131,7 @@ public class TestModules extends JavadocTester {
                     <h1 title="Module moduletags" class="title">Module moduletags</h1>
                     </div>
                     <hr>
+                    <div class="horizontal-scroll">
                     <div class="module-signature"><span class="annotations">@Deprecated
                     </span>module <span class="element-name">moduletags</span></div>""",
                 """
@@ -1142,6 +1145,7 @@ public class TestModules extends JavadocTester {
                     <h1 title="Module moduleB" class="title">Module moduleB</h1>
                     </div>
                     <hr>
+                    <div class="horizontal-scroll">
                     <div class="module-signature"><span class="annotations"><a href="testpkgmdlB/Ann\
                     otationType.html" title="annotation interface in testpkgmdlB">@AnnotationType</a\
                     >(<a href="testpkgmdlB/AnnotationType.html#optional()">optional</a>="Module Anno\

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,6 @@ public class TestValueTagInModule extends JavadocTester {
                 """
                     <section class="module-description" id="module-description">
                     <!-- ============ MODULE DESCRIPTION =========== -->
-                    <div class="horizontal-scroll">
                     <div class="block">value of field CONS : <a href="pkg/A.html#CONS">100</a></div>""");
     }
 

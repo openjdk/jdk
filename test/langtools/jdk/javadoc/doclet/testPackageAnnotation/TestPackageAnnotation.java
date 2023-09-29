@@ -54,8 +54,8 @@ public class TestPackageAnnotation extends JavadocTester {
                     <div class="header">
                     <h1 title="Package pkg1" class="title">Package pkg1</h1>
                     </div>
-                    <div class="horizontal-scroll">
                     <hr>
+                    <div class="horizontal-scroll">
                     <div class="package-signature"><span class="annotations">@Deprecated(since="1&lt;2&gt;3")
                     </span>package <span class="element-name">pkg1</span></div>
                     """);
@@ -91,8 +91,8 @@ public class TestPackageAnnotation extends JavadocTester {
                     <div class="header">
                     <h1 title="Package pkg3" class="title">Package pkg3</h1>
                     </div>
-                    <div class="horizontal-scroll">
                     <hr>
+                    <div class="horizontal-scroll">
                     <div class="package-signature"><span class="annotations">@Deprecated(since="1&lt;2&gt;3")
                     </span>package <span class="element-name">pkg3</span></div>
                     """);

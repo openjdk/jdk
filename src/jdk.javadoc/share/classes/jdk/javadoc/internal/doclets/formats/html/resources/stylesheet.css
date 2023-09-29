@@ -314,6 +314,9 @@ main {
     padding:10px 20px;
     position:relative;
 }
+dl.notes {
+    margin-bottom:10px;
+}
 dl.notes > dt {
     font-family: var(--body-font-family);
     font-size:0.856em;
@@ -855,9 +858,6 @@ span#page-search-link {
 }
 .horizontal-scroll {
     overflow: auto hidden;
-}
-:not(.detail) > .horizontal-scroll > :last-child {
-    margin-bottom: 10px;
 }
 section.class-description {
     line-height: 1.4;
