@@ -20,13 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
-    @test
-    @bug 4184873
-    @summary test that locale invariants are preserved across serialization.
-             Run prepTest() if the invariant files are not yet generated.
-    @run junit LegacyCodesClassInvariant
-*/
+ * @test
+ * @bug 4184873
+ * @summary test that locale invariants are preserved across serialization.
+ * @run junit LegacyCodesClassInvariant
+ */
+
 /*
  * This file is available under and governed by the GNU General Public
  * License version 2 only, as published by the Free Software Foundation.
@@ -63,9 +64,7 @@
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
@@ -112,26 +111,4 @@ public class LegacyCodesClassInvariant {
             return null;
         }
     }
-
-    /**
-     * Create serialized output files of the test locales.  After they are created, these test
-     * files should be corrupted (by hand) to contain invalid locale name values.
-     */
-    private static void prepTest() {
-        outputLocale("he");
-        outputLocale("yi");
-        outputLocale("id");
-    }
-
-    private static void outputLocale(String lang) {
-        try {
-            ObjectOutputStream out = new ObjectOutputStream(
-                    new FileOutputStream("LegacyCodesClassInvariant_"+lang));
-            out.writeObject(Locale.of(lang, "XX"));
-            out.close();
-        } catch (Exception e) {
-            System.out.println(e);
-        }
-    }
-
 }

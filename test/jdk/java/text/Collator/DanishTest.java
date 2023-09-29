@@ -199,18 +199,18 @@ public class DanishTest {
 
     @Test
     public void TestPrimary() {
-        CollatorTestUtils.doTest(myCollation, Collator.PRIMARY,
+        TestUtils.doCollatorTest(myCollation, Collator.PRIMARY,
                primarySourceData, primaryTargetData, primaryResults);
     }
 
     @Test
     public void TestTertiary() {
-        CollatorTestUtils.doTest(myCollation, Collator.TERTIARY,
+        TestUtils.doCollatorTest(myCollation, Collator.TERTIARY,
                tertiarySourceData, tertiaryTargetData, tertiaryResults);
 
         for (int i = 0; i < testData.length-1; i++) {
             for (int j = i+1; j < testData.length; j++) {
-                CollatorTestUtils.doTest(myCollation, testData[i], testData[j], -1);
+                TestUtils.doCollatorTest(myCollation, testData[i], testData[j], -1);
             }
         }
     }

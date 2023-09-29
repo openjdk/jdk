@@ -176,7 +176,7 @@ public class G7Test {
             }
             for (int j = 0; j < FIXEDTESTSET; j++) {
                 for (int n = j+1; n < FIXEDTESTSET; n++) {
-                    CollatorTestUtils.doTest(tblColl1, testCases[G7Results[i][j]],
+                    TestUtils.doCollatorTest(tblColl1, testCases[G7Results[i][j]],
                            testCases[G7Results[i][n]], -1);
                 }
             }
@@ -199,7 +199,7 @@ public class G7Test {
             tblColl = new RuleBasedCollator(newRules);
             for (j = 0; j < FIXEDTESTSET; j++) {
                 for (int n = j+1; n < FIXEDTESTSET; n++) {
-                    CollatorTestUtils.doTest(tblColl, testCases[Test1Results[j]],
+                    TestUtils.doCollatorTest(tblColl, testCases[Test1Results[j]],
                            testCases[Test1Results[n]], -1);
                 }
             }
@@ -224,7 +224,7 @@ public class G7Test {
             RuleBasedCollator tblColl = new RuleBasedCollator(newRules);
             for (int j = 0; j < TOTALTESTSET; j++) {
                 for (int n = j+1; n < TOTALTESTSET; n++) {
-                    CollatorTestUtils.doTest(tblColl, testCases[Test2Results[j]],
+                    TestUtils.doCollatorTest(tblColl, testCases[Test2Results[j]],
                            testCases[Test2Results[n]], -1);
                 }
             }
@@ -249,7 +249,7 @@ public class G7Test {
             tblColl = new RuleBasedCollator(newRules);
             for (int j = 0; j < TOTALTESTSET; j++) {
                 for (int n = j+1; n < TOTALTESTSET; n++) {
-                    CollatorTestUtils.doTest(tblColl, testCases[Test3Results[j]],
+                    TestUtils.doCollatorTest(tblColl, testCases[Test3Results[j]],
                            testCases[Test3Results[n]], -1);
                 }
             }
@@ -274,7 +274,7 @@ public class G7Test {
             tblColl = new RuleBasedCollator(newRules);
             for (int j = 0; j < TOTALTESTSET; j++) {
                 for (int n = j+1; n < TOTALTESTSET; n++) {
-                    CollatorTestUtils.doTest(tblColl, testCases[Test4Results[j]],
+                    TestUtils.doCollatorTest(tblColl, testCases[Test4Results[j]],
                            testCases[Test4Results[n]], -1);
                 }
             }

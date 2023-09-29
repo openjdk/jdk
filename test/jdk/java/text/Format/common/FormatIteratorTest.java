@@ -100,7 +100,12 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class FormatIteratorTest {
 
-    // Change JVM default Locale and TimeZone
+    /*
+     * Change JVM default Locale and TimeZone.
+     * The current tests are only appropriate for US. If tests are
+     * added for other locales are added, then a property should be
+     * added to each file (test) to be able to specify the locale.
+     */
     @BeforeAll
     static void initAll() {
         Locale.setDefault(Locale.US);
@@ -110,15 +115,6 @@ public class FormatIteratorTest {
     private Format format;
     private Object value;
     private String text;
-
-    public static final Object ARG0_FIELD_ID = MessageFormat.
-                                                     Field.ARGUMENT;
-    public static final Object ARG1_FIELD_ID = MessageFormat.
-                                                     Field.ARGUMENT;
-    public static final Object ARG2_FIELD_ID = MessageFormat.
-                                                     Field.ARGUMENT;
-    public static final Object ARG3_FIELD_ID = MessageFormat.
-                                                     Field.ARGUMENT;
 
     public FormatIteratorTest() {
     }

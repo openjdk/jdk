@@ -95,13 +95,13 @@ public class SpanishTest {
 
     @Test
     public void TestPrimary() {
-        CollatorTestUtils.doTest(myCollation, Collator.PRIMARY,
+        TestUtils.doCollatorTest(myCollation, Collator.PRIMARY,
                primarySourceData, primaryTargetData, primaryResults);
     }
 
     @Test
     public void TestTertiary() {
-        CollatorTestUtils.doTest(myCollation, Collator.TERTIARY,
+        TestUtils.doCollatorTest(myCollation, Collator.TERTIARY,
                tertiarySourceData, tertiaryTargetData, tertiaryResults);
     }
 

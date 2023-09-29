@@ -27,8 +27,12 @@
  * @run junit TimeZoneBoundaryTest
  */
 
-import java.text.*;
-import java.util.*;
+import java.text.DateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.SimpleTimeZone;
+import java.util.TimeZone;
 
 import org.junit.jupiter.api.Test;
 
@@ -326,109 +330,37 @@ public class TimeZoneBoundaryTest
             fail("FAIL: Expected boundary at " + expectedBoundary);
     }
 
-    /*
-      static void testUsingMillis(Date d, boolean startsInDST)
-      {
-      long millis = d.getTime();
-      long max = millis + (long)(370 * ONE_DAY); // A year plus extra
-
-      boolean lastDST = startsInDST;
-      while (millis < max)
-      {
-      cal.setTime(new Date(millis));
-      boolean inDaylight = cal.inDaylightTime();
-
-      if (inDaylight != lastDST)
-      {
-      System.out.println("Switch " + (inDaylight ? "into" : "out of")
-      + " DST at " + (new Date(millis)));
-      lastDST = inDaylight;
-      }
-
-      millis += 15*ONE_MINUTE;
-      }
-      }
-      */
-
     /**
      * Test new rule formats.
      */
     @SuppressWarnings("deprecation")
     @Test
-    public void TestNewRules()
-    {
-        //logln(Locale.getDefault().getDisplayName());
-        //logln(TimeZone.getDefault().getID());
-        //logln(new Date(0));
+    public void TestNewRules() {
+        // Doesn't matter what the default TimeZone is here, since we
+        // are creating our own TimeZone objects.
 
-        if (true)
-        {
-            // Doesn't matter what the default TimeZone is here, since we
-            // are creating our own TimeZone objects.
+        SimpleTimeZone tz;
 
-            SimpleTimeZone tz;
+        System.out.println("-----------------------------------------------------------------");
+        System.out.println("Aug 2ndTues .. Mar 15");
+        tz = new SimpleTimeZone(-8*ONE_HOUR, "Test_1",
+                                Calendar.AUGUST, 2, Calendar.TUESDAY, 2*ONE_HOUR,
+                                Calendar.MARCH, 15, 0, 2*ONE_HOUR);
+        System.out.println("========================================");
+        testUsingBinarySearch(tz, new Date(97,0,1), 858416400000L);
+        System.out.println("========================================");
+        testUsingBinarySearch(tz, new Date(97,6,1), 871380000000L);
 
-            System.out.println("-----------------------------------------------------------------");
-            System.out.println("Aug 2ndTues .. Mar 15");
-            tz = new SimpleTimeZone(-8*ONE_HOUR, "Test_1",
-                                    Calendar.AUGUST, 2, Calendar.TUESDAY, 2*ONE_HOUR,
-                                    Calendar.MARCH, 15, 0, 2*ONE_HOUR);
-            //logln(tz.toString());
-            System.out.println("========================================");
-            testUsingBinarySearch(tz, new Date(97,0,1), 858416400000L);
-            System.out.println("========================================");
-            testUsingBinarySearch(tz, new Date(97,6,1), 871380000000L);
-
-            System.out.println("-----------------------------------------------------------------");
-            System.out.println("Apr Wed>=14 .. Sep Sun<=20");
-            tz = new SimpleTimeZone(-8*ONE_HOUR, "Test_2",
-                                    Calendar.APRIL, 14, -Calendar.WEDNESDAY, 2*ONE_HOUR,
-                                    Calendar.SEPTEMBER, -20, -Calendar.SUNDAY, 2*ONE_HOUR);
-            //logln(tz.toString());
-            System.out.println("========================================");
-            testUsingBinarySearch(tz, new Date(97,0,1), 861184800000L);
-            System.out.println("========================================");
-            testUsingBinarySearch(tz, new Date(97,6,1), 874227600000L);
-        }
-
-        /*
-          if (true)
-          {
-          System.out.println("========================================");
-          System.out.println("Stepping using millis");
-          testUsingMillis(new Date(97,0,1), false);
-          }
-
-          if (true)
-          {
-          System.out.println("========================================");
-          System.out.println("Stepping using fields");
-          testUsingFields(1997, false);
-          }
-
-          if (false)
-          {
-          cal.clear();
-          cal.set(1997, 3, 5, 10, 0);
-          //    cal.inDaylightTime();
-          System.out.println("Date = " + cal.getTime());
-          System.out.println("Millis = " + cal.getTime().getTime()/3600000);
-          }
-          */
+        System.out.println("-----------------------------------------------------------------");
+        System.out.println("Apr Wed>=14 .. Sep Sun<=20");
+        tz = new SimpleTimeZone(-8*ONE_HOUR, "Test_2",
+                                Calendar.APRIL, 14, -Calendar.WEDNESDAY, 2*ONE_HOUR,
+                                Calendar.SEPTEMBER, -20, -Calendar.SUNDAY, 2*ONE_HOUR);
+        System.out.println("========================================");
+        testUsingBinarySearch(tz, new Date(97,0,1), 861184800000L);
+        System.out.println("========================================");
+        testUsingBinarySearch(tz, new Date(97,6,1), 874227600000L);
     }
-
-    //----------------------------------------------------------------------
-    //----------------------------------------------------------------------
-    //----------------------------------------------------------------------
-    // Long Bug
-    //----------------------------------------------------------------------
-    //----------------------------------------------------------------------
-    //----------------------------------------------------------------------
-
-    //public void Test3()
-    //{
-    //    findDaylightBoundaryUsingTimeZone(new Date(97,6,1), true);
-    //}
 
     /**
      * Find boundaries by stepping.

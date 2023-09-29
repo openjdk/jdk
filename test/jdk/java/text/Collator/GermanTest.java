@@ -100,13 +100,13 @@ public class GermanTest {
 
     @Test
     public void TestPrimary() {
-        CollatorTestUtils.doTest(myCollation, Collator.PRIMARY,
+        TestUtils.doCollatorTest(myCollation, Collator.PRIMARY,
                testSourceData, testTargetData, primaryResults);
     }
 
     @Test
     public void TestTertiary() {
-        CollatorTestUtils.doTest(myCollation, Collator.TERTIARY,
+        TestUtils.doCollatorTest(myCollation, Collator.TERTIARY,
                testSourceData, testTargetData, tertiaryResults);
     }
 

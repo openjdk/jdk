@@ -28,8 +28,8 @@
  * @build Bug4185816Test HexDumpReader
  * @run junit Bug4185816Test
  * @summary test that MessageFormat invariants are preserved across serialization.
- *          Run prepTest() if the invariant files are not yet generated.
  */
+
 /*
  * This file is available under and governed by the GNU General Public
  * License version 2 only, as published by the Free Software Foundation.
@@ -74,7 +74,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- *  A Locale can never contains language codes of he, yi or id.
+ *  A Locale can never contain language codes of he, yi or id.
  */
 public class Bug4185816Test {
     private static final String FILE_NAME = "Bug4185816.ser";
@@ -106,31 +106,5 @@ public class Bug4185816Test {
             return e;
         }
         return null;
-    }
-
-    /**
-     * Create a data file for this test.  The data file must be corrupted by hand.
-     */
-    private static void prepTest() {
-        writeFormatToFile(FILE_NAME);
-        writeFormatToFile(CORRUPT_FILE_NAME);
-    }
-
-    private static void writeFormatToFile(final String name) {
-        try {
-            ObjectOutputStream out = new ObjectOutputStream(
-                    new FileOutputStream(name));
-
-            MessageFormat fmt = new MessageFormat("The disk \"{1}\" contains {0}.");
-            double[] filelimits = {0,1,2};
-            String[] filepart = {"no files","one file","{0,number} files"};
-            ChoiceFormat fileform = new ChoiceFormat(filelimits, filepart);
-            fmt.setFormat(1,fileform); // NOT zero, see below
-
-            out.writeObject(fmt);
-            out.close();
-        } catch (Exception e) {
-            System.out.println(e);
-        }
     }
 }

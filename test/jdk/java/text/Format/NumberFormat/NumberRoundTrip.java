@@ -28,8 +28,10 @@
  * @run junit NumberRoundTrip
  */
 
-import java.text.*;
-import java.util.*;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 
@@ -48,7 +50,6 @@ public class NumberRoundTrip {
     static final boolean STRING_COMPARE = true;
     static final boolean EXACT_NUMERIC_COMPARE = false;
     static final double MAX_ERROR = 1e-14;
-    static boolean DEBUG = false;
     static double max_numeric_error = 0;
     static double min_numeric_error = 1;
 
@@ -145,11 +146,11 @@ public class NumberRoundTrip {
         Number n = null;
         String err = "";
         try {
-            if (DEBUG) System.out.println("  " + value + " F> " + escape(s));
+            System.out.println("  " + value + " F> " + escape(s));
             n = fmt.parse(s);
-            if (DEBUG) System.out.println("  " + escape(s) + " P> " + n);
+            System.out.println("  " + escape(s) + " P> " + n);
             s2 = fmt.format(n);
-            if (DEBUG) System.out.println("  " + n + " F> " + escape(s2));
+            System.out.println("  " + n + " F> " + escape(s2));
 
             if (STRING_COMPARE) {
                 if (!s.equals(s2)) {
@@ -157,9 +158,9 @@ public class NumberRoundTrip {
                         System.out.println("Text mismatch: expected: " + s + ", got: " + s2 + " --- Try BigDecimal parsing.");
                         ((DecimalFormat)fmt).setParseBigDecimal(true);
                         n = fmt.parse(s);
-                        if (DEBUG) System.out.println("  " + escape(s) + " P> " + n);
+                        System.out.println("  " + escape(s) + " P> " + n);
                         s2 = fmt.format(n);
-                        if (DEBUG) System.out.println("  " + n + " F> " + escape(s2));
+                        System.out.println("  " + n + " F> " + escape(s2));
                         ((DecimalFormat)fmt).setParseBigDecimal(false);
 
                         if (!s.equals(s2)) {

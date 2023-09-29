@@ -151,7 +151,7 @@ public class ThaiTest {
 
     @Test
     public void TestPrimary() {
-        CollatorTestUtils.doTest(myCollation, Collator.PRIMARY,
+        TestUtils.doCollatorTest(myCollation, Collator.PRIMARY,
                primarySourceData, primaryTargetData, primaryResults);
     }
 

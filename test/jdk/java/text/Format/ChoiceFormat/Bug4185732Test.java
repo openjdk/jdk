@@ -27,9 +27,9 @@
  * @library /java/text/testlib
  * @build Bug4185732Test HexDumpReader
  * @run junit Bug4185732Test
- * @summary test that ChoiceFormat invariants are preserved across serialization
- *          Run prepTest() if the invariant files are not yet generated.
+ * @summary test that ChoiceFormat invariants are preserved across serialization.
  */
+
 /*
  * This file is available under and governed by the GNU General Public
  * License version 2 only, as published by the Free Software Foundation.
@@ -73,7 +73,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- *  A Locale can never contains language codes of he, yi or id.
+ *  A Locale can never contain language codes of he, yi or id.
  */
 public class Bug4185732Test {
     @Test
@@ -94,25 +94,6 @@ public class Bug4185732Test {
             //this is what we want to have happen
         } catch (Exception e) {
             fail(e.toString());
-        }
-    }
-
-    /**
-     * Create a data file for this test.  The data file must be corrupted by hand.
-     */
-    private static void prepTest() {
-        try {
-            ObjectOutputStream out = new ObjectOutputStream(
-                    new FileOutputStream("Bug4185732.ser"));
-            final double[] limits = {1,2,3,4,5,6,7};
-            final String[] formats = {"Sun","Mon","Tue","Wed","Thur","Fri","Sat"};
-            final ChoiceFormat fmt = new ChoiceFormat(limits, formats);
-            out.writeObject(fmt);
-            out.close();
-            System.out.println("You must invalidate the output file before running the test");
-            System.out.println("by modifying the length of one of the array");
-        } catch (Exception e) {
-            System.out.println(e);
         }
     }
 }
