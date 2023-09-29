@@ -250,8 +250,6 @@
                         VectorRegister src, BasicType src_bt);
 
   void vfcvt_rtz_x_f_v_safe(VectorRegister dst, VectorRegister src);
-  void vfwcvt_rtz_x_f_v_safe(VectorRegister dst, VectorRegister src);
-  void vfncvt_rtz_x_f_w_safe(VectorRegister dst, VectorRegister src);
 
   void extract_v(Register dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);
   void extract_fp_v(FloatRegister dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);

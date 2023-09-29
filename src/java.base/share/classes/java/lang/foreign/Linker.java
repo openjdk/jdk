@@ -30,6 +30,7 @@ import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.CapturableState;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.javac.Restricted;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
@@ -528,6 +529,7 @@ public sealed interface Linker permits AbstractLinker {
      * @see SymbolLookup
      */
     @CallerSensitive
+    @Restricted
     MethodHandle downcallHandle(MemorySegment address, FunctionDescriptor function, Option... options);
 
     /**
@@ -574,6 +576,7 @@ public sealed interface Linker permits AbstractLinker {
      * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
     @CallerSensitive
+    @Restricted
     MethodHandle downcallHandle(FunctionDescriptor function, Option... options);
 
     /**
@@ -618,6 +621,7 @@ public sealed interface Linker permits AbstractLinker {
      * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
     @CallerSensitive
+    @Restricted
     MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, Arena arena, Linker.Option... options);
 
     /**

@@ -2840,7 +2840,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   #define MAP_FIXED_NOREPLACE MAP_FIXED_NOREPLACE_value
 #else
   // Sanity-check our assumed default value if we build with a new enough libc.
-  static_assert(MAP_FIXED_NOREPLACE == MAP_FIXED_NOREPLACE_value);
+  static_assert(MAP_FIXED_NOREPLACE == MAP_FIXED_NOREPLACE_value, "MAP_FIXED_NOREPLACE != MAP_FIXED_NOREPLACE_value");
 #endif
 
 int os::Linux::commit_memory_impl(char* addr, size_t size,
