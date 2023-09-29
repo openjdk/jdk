@@ -141,7 +141,7 @@ public class TestUnicodeExtension {
             },
 
             {RG_GB, null, null, ISO, null,
-            "Thursday, 10 August 2017, 15:15:00 Pacific Daylight Time"
+            "Thursday 10 August 2017, 15:15:00 Pacific Daylight Time"
             },
 
             // DecimalStyle
@@ -231,7 +231,7 @@ public class TestUnicodeExtension {
             },
 
             {RG_GB, null, null, null, null,
-            "Thursday, 10 August 2017, 15:15:00 Pacific Daylight Time"
+            "Thursday 10 August 2017, 15:15:00 Pacific Daylight Time"
             },
 
             // DecimalStyle
@@ -806,7 +806,7 @@ public class TestUnicodeExtension {
             {Locale.US, FormatStyle.LONG, "MMMM d, y, h:mm:ss\u202fa z"},
             {Locale.US, FormatStyle.MEDIUM, "MMM d, y, h:mm:ss\u202fa"},
             {Locale.US, FormatStyle.SHORT, "M/d/yy, h:mm\u202fa"},
-            {RG_GB, FormatStyle.FULL, "EEEE, d MMMM y, HH:mm:ss zzzz"},
+            {RG_GB, FormatStyle.FULL, "EEEE d MMMM y, HH:mm:ss zzzz"},
             {RG_GB, FormatStyle.LONG, "d MMMM y, HH:mm:ss z"},
             {RG_GB, FormatStyle.MEDIUM, "d MMM y, HH:mm:ss"},
             {RG_GB, FormatStyle.SHORT, "dd/MM/y, HH:mm"},
