@@ -1653,7 +1653,9 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		
 		<!-- Retain und and und+macroregions that are in CLDR locales, except those mapping to en anyway  -->
 		<likelySubtag from="und" to="en_Latn_US"/>
+		<likelySubtag from="und_Latn" to="en_Latn_US"/>
 		<likelySubtag from="und_419" to="es_Latn_419"/>
+		<likelySubtag from="und_Latn_419" to="es_Latn_419"/>
 
 		<!--{ ?; ?; ? } => { English; Latin; United States }-->
 		
@@ -1733,6 +1735,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_Cyrl_MK" to="mk_Cyrl_MK"/>
 		<likelySubtag from="und_Cyrl_MN" to="mn_Cyrl_MN"/>
 		<likelySubtag from="und_Cyrl_RS" to="sr_Cyrl_RS"/>
+		<likelySubtag from="und_Latn_RS" to="sr_Latn_RS"/>
 		<likelySubtag from="und_Cyrl_TJ" to="tg_Cyrl_TJ"/>
 		<likelySubtag from="und_Cyrl_UA" to="uk_Cyrl_UA"/>
 		<likelySubtag from="und_Deva_NP" to="ne_Deva_NP"/>

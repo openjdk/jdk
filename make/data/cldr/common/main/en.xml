@@ -3903,15 +3903,6 @@ annotations.
 			<zone type="Etc/Unknown">
 				<exemplarCity>Unknown City</exemplarCity>
 			</zone>
-			<zone type="Antarctica/DumontDUrville">
-				<exemplarCity>Dumont d’Urville</exemplarCity>
-			</zone>
-			<zone type="America/St_Barthelemy">
-				<exemplarCity>St. Barthélemy</exemplarCity>
-			</zone>
-			<zone type="America/Curacao">
-				<exemplarCity>Curaçao</exemplarCity>
-			</zone>
 			<zone type="Europe/London">
 				<long>
 					<daylight>British Summer Time</daylight>
@@ -3925,20 +3916,8 @@ annotations.
 			<zone type="Asia/Qostanay">
 				<exemplarCity>Kostanay</exemplarCity>
 			</zone>
-			<zone type="America/Asuncion">
-				<exemplarCity>Asunción</exemplarCity>
-			</zone>
-			<zone type="Indian/Reunion">
-				<exemplarCity>Réunion</exemplarCity>
-			</zone>
-			<zone type="Africa/Sao_Tome">
-				<exemplarCity>São Tomé</exemplarCity>
-			</zone>
 			<zone type="Europe/Uzhgorod">
 				<exemplarCity>Uzhhorod</exemplarCity>
-			</zone>
-			<zone type="Europe/Kiev">
-				<exemplarCity>Kyiv</exemplarCity>
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<short>

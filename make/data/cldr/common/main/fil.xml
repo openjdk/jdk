@@ -1377,7 +1377,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="morning2">madaling-araw</dayPeriod>
 							<dayPeriod type="afternoon1">tanghali</dayPeriod>
 							<dayPeriod type="evening1">ng gabi</dayPeriod>
-							<dayPeriod type="night1">gabi</dayPeriod>
+							<dayPeriod type="night1">ng gabi</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="midnight">hatinggabi</dayPeriod>
@@ -1388,20 +1388,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="morning2">madaling-araw</dayPeriod>
 							<dayPeriod type="afternoon1">sa hapon</dayPeriod>
 							<dayPeriod type="evening1">sa gabi</dayPeriod>
-							<dayPeriod type="night1">gabi</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">hatinggabi</dayPeriod>
-							<dayPeriod type="noon">tanghaling-tapat</dayPeriod>
-							<dayPeriod type="morning1">nang umaga</dayPeriod>
-							<dayPeriod type="morning2">madaling-araw</dayPeriod>
-							<dayPeriod type="afternoon1">tanghali</dayPeriod>
-							<dayPeriod type="evening1">ng gabi</dayPeriod>
 							<dayPeriod type="night1">ng gabi</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="morning1">umaga</dayPeriod>
+							<dayPeriod type="morning2">madaling-araw</dayPeriod>
+							<dayPeriod type="afternoon1">hapon</dayPeriod>
+							<dayPeriod type="evening1">gabi</dayPeriod>
+							<dayPeriod type="night1">gabi</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
 							<dayPeriod type="morning1">umaga</dayPeriod>
 							<dayPeriod type="morning2">madaling-araw</dayPeriod>
 							<dayPeriod type="afternoon1">hapon</dayPeriod>

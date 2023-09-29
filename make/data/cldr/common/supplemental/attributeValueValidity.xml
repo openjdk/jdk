@@ -449,15 +449,15 @@
 			<attributeValues dtds='ldml' elements='displayName' attributes='count' type='localeSpecific'>pluralOrdinal</attributeValues>
 			<attributeValues dtds='ldml' elements='relativeTimePattern' attributes='count' type='localeSpecific'>pluralOrdinal</attributeValues>
 			<attributeValues dtds='ldml' elements='unitPattern' attributes='count' type='localeSpecific'>pluralOrdinal</attributeValues>
-			<attributeValues dtds='keyboard' elements='keyboard' attributes='locale' type='TODO'></attributeValues>
-			<!-- <attributeValues dtds='keyboard' elements='map' attributes='longPress' type='TODO'></attributeValues>
-			<attributeValues dtds='keyboard' elements='map' attributes='to' type='TODO'></attributeValues> -->
-			<attributeValues dtds='keyboard' elements='name' attributes='value' type='TODO'></attributeValues>
-			<attributeValues dtds='keyboard' elements='transform' attributes='from' type='TODO'></attributeValues>
-			<attributeValues dtds='keyboard' elements='transform' attributes='to' type='TODO'></attributeValues>
-			<attributeValues dtds='keyboard' elements='transforms' attributes='type' type='choice'>simple</attributeValues>
-			<attributeValues dtds='keyboard' elements='version' attributes='cldrVersion' type='list'>28</attributeValues>
-			<attributeValues dtds='keyboard' elements='version' attributes='number' type='TODO'></attributeValues>
+			<attributeValues dtds='keyboard3' elements='keyboard3' attributes='locale' type='TODO'></attributeValues>
+			<!-- <attributeValues dtds='keyboard3' elements='map' attributes='longPress' type='TODO'></attributeValues>
+			<attributeValues dtds='keyboard3' elements='map' attributes='to' type='TODO'></attributeValues> -->
+			<attributeValues dtds='keyboard3' elements='name' attributes='value' type='TODO'></attributeValues>
+			<attributeValues dtds='keyboard3' elements='transform' attributes='from' type='TODO'></attributeValues>
+			<attributeValues dtds='keyboard3' elements='transform' attributes='to' type='TODO'></attributeValues>
+			<attributeValues dtds='keyboard3' elements='transforms' attributes='type' type='choice'>simple</attributeValues>
+			<attributeValues dtds='keyboard3' elements='version' attributes='cldrVersion' type='list'>28</attributeValues>
+			<attributeValues dtds='keyboard3' elements='version' attributes='number' type='TODO'></attributeValues>
 		</validity>
 	</metadata>
 </supplementalData>

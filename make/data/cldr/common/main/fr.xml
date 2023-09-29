@@ -2184,7 +2184,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="morning1">matin</dayPeriod>
 							<dayPeriod type="afternoon1">après-midi</dayPeriod>
 							<dayPeriod type="evening1">soir</dayPeriod>
-							<dayPeriod type="night1">nuit</dayPeriod>
+							<dayPeriod type="night1">matin</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="midnight">minuit</dayPeriod>
@@ -2192,7 +2192,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="morning1">mat.</dayPeriod>
 							<dayPeriod type="afternoon1">ap.m.</dayPeriod>
 							<dayPeriod type="evening1">soir</dayPeriod>
-							<dayPeriod type="night1">nuit</dayPeriod>
+							<dayPeriod type="night1">matin</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="midnight">minuit</dayPeriod>
@@ -2208,13 +2208,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="morning1">mat.</dayPeriod>
 							<dayPeriod type="afternoon1">ap.m.</dayPeriod>
 							<dayPeriod type="evening1">soir</dayPeriod>
-							<dayPeriod type="night1">nuit</dayPeriod>
+							<dayPeriod type="night1">matin</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="morning1">matin</dayPeriod>
 							<dayPeriod type="afternoon1">après-midi</dayPeriod>
 							<dayPeriod type="evening1">soir</dayPeriod>
-							<dayPeriod type="night1">nuit</dayPeriod>
+							<dayPeriod type="night1">matin</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
