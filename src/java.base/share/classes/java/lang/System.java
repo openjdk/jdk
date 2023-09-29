@@ -2479,8 +2479,8 @@ public final class System {
             public char getUTF16Char(byte[] bytes, int index) {
                 return StringUTF16.getChar(bytes, index);
             }
-            public void putCharUTF16(byte[] buffer, int index, int ch) {
-                StringUTF16.putChar(buffer, index, ch);
+            public void putUTF16Char(byte[] bytes, int index, int ch) {
+                StringUTF16.putChar(bytes, index, ch);
             }
             public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
                 return String.getBytesNoRepl(s, cs);
@@ -2522,24 +2522,12 @@ public final class System {
                 return StringConcatHelper.lookupStatic(name, methodType);
             }
 
-            public long stringConcatHelperPrepend(long indexCoder, byte[] buf, String value, String prefix) {
-                return StringConcatHelper.prepend(indexCoder, buf, value, prefix);
-            }
-
-            public boolean stringConcatHelpeIsLatin1(long lengthCoder) {
-                return StringConcatHelper.isLatin1(lengthCoder);
-            }
-
             public long stringConcatInitialCoder() {
                 return StringConcatHelper.initialCoder();
             }
 
             public long stringConcatMix(long lengthCoder, String constant) {
                 return StringConcatHelper.mix(lengthCoder, constant);
-            }
-
-            public long stringConcatMix(long lengthCoder, char value) {
-                return StringConcatHelper.mix(lengthCoder, value);
             }
 
             @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)

@@ -27,8 +27,6 @@ package jdk.internal.util;
 
 import java.lang.invoke.MethodHandle;
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -36,17 +34,14 @@ import jdk.internal.vm.annotation.Stable;
  *
  * @since 21
  */
-/**
- * Digits provides a fast methodology for converting integers and longs to
- * octal digits ASCII strings.
- *
- * @since 21
- */
-public final class OctalDigits {
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-
+public final class OctalDigits implements Digits {
     @Stable
     private static final short[] DIGITS;
+
+    /**
+     * Singleton instance of OctalDigits.
+     */
+    public static final Digits INSTANCE = new OctalDigits();
 
     static {
         short[] digits = new short[8 * 8];
@@ -69,72 +64,28 @@ public final class OctalDigits {
     private OctalDigits() {
     }
 
-    /**
-     * Insert digits for long value in buffer from high index to low index.
-     *
-     * @param value      value to convert
-     * @param index      insert point + 1
-     * @param buffer     byte buffer to copy into
-     * @param putCharMH  method to put character
-     *
-     * @return the last index used
-     */
-    public static int getCharsLatin1(long value, int index, byte[] buffer){
+    @Override
+    public int digits(long value, byte[] buffer, int index,
+                      MethodHandle putCharMH) throws Throwable {
         while ((value & ~0x3F) != 0) {
-            int digits = DIGITS[((int) value) & 0x3F];
+            int digits = DIGITS[(int) (value & 0x3F)];
             value >>>= 6;
-            buffer[--index] = (byte) (digits >> 8);
-            buffer[--index] = (byte) (digits & 0xFF);
+            putCharMH.invokeExact(buffer, --index, digits >> 8);
+            putCharMH.invokeExact(buffer, --index, digits & 0xFF);
         }
 
         int digits = DIGITS[(int) (value & 0x3F)];
-        buffer[--index] = (byte) (digits >> 8);
+        putCharMH.invokeExact(buffer, --index, digits >> 8);
 
         if (7 < value) {
-            buffer[--index] = (byte) (digits & 0xFF);
+            putCharMH.invokeExact(buffer, --index, digits & 0xFF);
         }
 
         return index;
     }
 
-
-    /**
-     * This is a variant of {@link OctalDigits#getCharsLatin1(int, int, byte[])}, but for
-     * UTF-16 coder.
-     *
-     * @param value      value to convert
-     * @param index      insert point + 1
-     * @param buffer     byte buffer to copy into
-     * @param putCharMH  method to put character
-     *
-     * @return the last index used
-     */
-    public static int getCharsUTF16(long value, int index, byte[] buffer){
-        while ((value & ~0x3F) != 0) {
-            int pair = (int) DIGITS[((int) value) & 0x3F];
-            JLA.putCharUTF16(buffer, --index, pair >> 8);
-            JLA.putCharUTF16(buffer, --index, pair & 0xFF);
-            value >>>= 6;
-        }
-
-        int digits = DIGITS[(int) (value & 0x3F)];
-        JLA.putCharUTF16(buffer, --index, digits >> 8);
-
-        if (7 < value) {
-            JLA.putCharUTF16(buffer, --index, digits & 0xFF);
-        }
-
-        return index;
-    }
-
-    /**
-     * Calculate the number of digits required to represent the long.
-     *
-     * @param value value to convert
-     *
-     * @return number of digits
-     */
-    public static int stringSize(long value) {
+    @Override
+    public int size(long value) {
         return (66 - Long.numberOfLeadingZeros(value)) / 3;
     }
 }

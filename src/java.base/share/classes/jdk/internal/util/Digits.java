@@ -25,34 +25,37 @@
 
 package jdk.internal.util;
 
+import java.lang.invoke.MethodHandle;
+
 /**
- * Implementations of this class provide information necessary to
- * assist {@link java.lang.invoke.StringConcatFactory} perform optimal
- * insertion.
+ * Digits provides a fast methodology for converting integers and longs to
+ * ASCII strings.
  *
  * @since 21
- *
- * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
- *          Do not rely on its availability.
  */
-public interface FormatConcatItem {
+public sealed interface Digits permits DecimalDigits, HexDigits, OctalDigits {
     /**
-     * Calculate the length of the insertion.
+     * Insert digits for long value in buffer from high index to low index.
      *
-     * @param lengthCoder current value of the length + coder
-     * @return adjusted value of the length + coder
+     * @param value      value to convert
+     * @param buffer     byte buffer to copy into
+     * @param index      insert point + 1
+     * @param putCharMH  method to put character
+     *
+     * @return the last index used
+     *
+     * @throws Throwable if putCharMH fails (unusual).
      */
-    long mix(long lengthCoder);
+    int digits(long value, byte[] buffer, int index,
+               MethodHandle putCharMH) throws Throwable;
 
     /**
-     * Insert content into buffer prior to the current length.
+     * Calculate the number of digits required to represent the long.
      *
-     * @param lengthCoder current value of the length + coder
-     * @param buffer      buffer to append to
+     * @param value value to convert
      *
-     * @return adjusted value of the length + coder
-     *
-     * @throws Throwable if fails to prepend value (unusual).
+     * @return number of digits
      */
-    long prepend(long lengthCoder, byte[] buffer) throws Throwable;
+    int size(long value);
+
 }

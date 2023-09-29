@@ -354,6 +354,16 @@ public interface JavaLangAccess {
     char getUTF16Char(byte[] bytes, int index);
 
     /**
+     * Put the char at index in a byte[] in internal UTF-16 representation,
+     * with no bounds checks.
+     *
+     * @param bytes the UTF-16 encoded bytes
+     * @param index of the char to retrieve, 0 <= index < (bytes.length >> 1)
+     * @param ch the Unicode character to be encoded and stored
+     */
+    void putUTF16Char(byte[] bytes, int index, int ch);
+
+    /**
      * Encode the given string into a sequence of bytes using utf8.
      *
      * @param s the string to encode
@@ -407,16 +417,6 @@ public interface JavaLangAccess {
     MethodHandle stringConcatHelper(String name, MethodType methodType);
 
     /**
-     * Returns {@code true} if lengthCoder is Latin1
-     */
-    boolean stringConcatHelpeIsLatin1(long lengthCoder);
-
-    /**
-     * putChar of to buffer as UTF16
-     */
-    void putCharUTF16(byte[] buffer, int index, int ch);
-
-    /**
      * Get the string concat initial coder
      */
     long stringConcatInitialCoder();
@@ -425,17 +425,6 @@ public interface JavaLangAccess {
      * Update lengthCoder for constant
      */
     long stringConcatMix(long lengthCoder, String constant);
-
-    /**
-     * Mix value length and coder into current length and coder.
-     */
-    long stringConcatMix(long lengthCoder, char value);
-
-    /**
-     * Prepends constant and the stringly representation of value into buffer,
-     * given the coder and final index. Index is measured in chars, not in bytes!
-     */
-    long stringConcatHelperPrepend(long indexCoder, byte[] buf, String value, String prefix);
 
    /**
     * Get the coder for the supplied character.

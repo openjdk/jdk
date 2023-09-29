@@ -37,7 +37,7 @@ import jdk.internal.vm.annotation.Stable;
  *
  * @since 21
  */
-public final class DecimalDigits {
+public final class DecimalDigits implements Digits {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     /**
@@ -63,6 +63,11 @@ public final class DecimalDigits {
     @Stable
     private static final short[] DIGITS;
 
+    /**
+     * Singleton instance of DecimalDigits.
+     */
+    public static final Digits INSTANCE = new DecimalDigits();
+
     static {
         short[] digits = new short[10 * 10];
 
@@ -80,6 +85,59 @@ public final class DecimalDigits {
      * Constructor.
      */
     private DecimalDigits() {
+    }
+
+    @Override
+    public int digits(long value, byte[] buffer, int index,
+                      MethodHandle putCharMH) throws Throwable {
+        boolean negative = value < 0;
+        if (!negative) {
+            value = -value;
+        }
+
+        long q;
+        int r;
+        while (value <= Integer.MIN_VALUE) {
+            q = value / 100;
+            r = (int)((q * 100) - value);
+            value = q;
+            int digits = DIGITS[r];
+
+            putCharMH.invokeExact(buffer, --index, digits >> 8);
+            putCharMH.invokeExact(buffer, --index, digits & 0xFF);
+        }
+
+        int iq, ivalue = (int)value;
+        while (ivalue <= -100) {
+            iq = ivalue / 100;
+            r = (iq * 100) - ivalue;
+            ivalue = iq;
+            int digits = DIGITS[r];
+            putCharMH.invokeExact(buffer, --index, digits >> 8);
+            putCharMH.invokeExact(buffer, --index, digits & 0xFF);
+        }
+
+        if (ivalue < 0) {
+            ivalue = -ivalue;
+        }
+
+        int digits = DIGITS[ivalue];
+        putCharMH.invokeExact(buffer, --index, digits >> 8);
+
+        if (9 < ivalue) {
+            putCharMH.invokeExact(buffer, --index, digits & 0xFF);
+        }
+
+        if (negative) {
+            putCharMH.invokeExact(buffer, --index, (int)'-');
+        }
+
+        return index;
+    }
+
+    @Override
+    public int size(long value) {
+        return stringSize(value);
     }
 
     /**
@@ -280,11 +338,11 @@ public final class DecimalDigits {
             charPos -= 2;
             writeDigitPairUTF16(buf, charPos, -i);
         } else {
-            JLA.putCharUTF16(buf, --charPos, '0' - i);
+            JLA.putUTF16Char(buf, --charPos, '0' - i);
         }
 
         if (negative) {
-            JLA.putCharUTF16(buf, --charPos, '-');
+            JLA.putUTF16Char(buf, --charPos, '-');
         }
         return charPos;
     }
@@ -331,11 +389,11 @@ public final class DecimalDigits {
             charPos -= 2;
             writeDigitPairUTF16(buf, charPos, -i2);
         } else {
-            JLA.putCharUTF16(buf, --charPos, '0' - i2);
+            JLA.putUTF16Char(buf, --charPos, '0' - i2);
         }
 
         if (negative) {
-            JLA.putCharUTF16(buf, --charPos, '-');
+            JLA.putUTF16Char(buf, --charPos, '-');
         }
         return charPos;
     }
@@ -348,8 +406,8 @@ public final class DecimalDigits {
 
     private static void writeDigitPairUTF16(byte[] buf, int charPos, int value) {
         int pair = (int) DIGITS[value];
-        JLA.putCharUTF16(buf, charPos, pair & 0xFF);
-        JLA.putCharUTF16(buf, charPos + 1, pair >> 8);
+        JLA.putUTF16Char(buf, charPos, pair & 0xFF);
+        JLA.putUTF16Char(buf, charPos + 1, pair >> 8);
     }
     // End of trusted methods.
 }
