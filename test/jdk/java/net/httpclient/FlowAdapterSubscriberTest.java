@@ -32,6 +32,9 @@ import java.net.http.HttpClient.Version;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.function.Function;
@@ -264,8 +267,8 @@ public class FlowAdapterSubscriberTest implements HttpServerAdapters {
     }
 
     @Test(dataProvider = "uris")
-    void testCollectionWithoutFinisheBlocking(String uri) throws Exception {
-        System.out.printf(now() + "testCollectionWithoutFinisheBlocking(%s) starting%n", uri);
+    void testCollectionWithoutFinisherBlocking(String uri) throws Exception {
+        System.out.printf(now() + "testCollectionWithoutFinisherBlocking(%s) starting%n", uri);
         try (HttpClient client = newHttpClient(uri)) {
             HttpRequest request = newRequestBuilder(uri)
                     .POST(BodyPublishers.ofString("What's the craic?")).build();
@@ -455,15 +458,35 @@ public class FlowAdapterSubscriberTest implements HttpServerAdapters {
             HttpRequest request = newRequestBuilder(uri)
                     .POST(BodyPublishers.ofString("May the wind always be at your back.")).build();
 
-            client.sendAsync(request, BodyHandlers.fromSubscriber(BodySubscribers.ofInputStream(),
-                            ins -> {
-                                InputStream is = ins.getBody().toCompletableFuture().join();
-                                return new String(uncheckedReadAllBytes(is), UTF_8);
-                            }))
-                    .thenApply(FlowAdapterSubscriberTest::assert200ResponseCode)
-                    .thenApply(HttpResponse::body)
-                    .thenAccept(body -> assertEquals(body, "May the wind always be at your back."))
-                    .join();
+            var adaptee = BodySubscribers.ofInputStream();
+            var exec = Executors.newSingleThreadExecutor();
+
+            // Use an executor to pull on the InputStream in order to reach the
+            // point where the Subscriber gets completed and the finisher function
+            // is called. If we didn't use an executor here, the finisher function
+            // may never get called.
+            var futureResult = exec.submit(() -> uncheckedReadAllBytes(
+                    adaptee.getBody().toCompletableFuture().join()));
+            Supplier<byte[]> bytes = () -> {
+                try {
+                    return futureResult.get();
+                } catch (InterruptedException e) {
+                    throw new CompletionException(e);
+                } catch (ExecutionException e) {
+                    throw new CompletionException(e.getCause());
+                }
+            };
+
+            try {
+                var cf = client.sendAsync(request, BodyHandlers.fromSubscriber(adaptee,
+                                ins -> new String(bytes.get(), UTF_8)))
+                        .thenApply(FlowAdapterSubscriberTest::assert200ResponseCode)
+                        .thenApply(HttpResponse::body)
+                        .thenAccept(body -> assertEquals(body, "May the wind always be at your back."))
+                        .join();
+            } finally {
+                exec.close();
+            }
         }
     }
 
