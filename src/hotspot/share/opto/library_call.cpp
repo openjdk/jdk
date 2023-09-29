@@ -118,9 +118,9 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
       kit.try_to_inline(_last_predicate)) {
     const char *inline_msg = is_virtual() ? "(intrinsic, virtual)"
                                           : "(intrinsic)";
-    CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, inline_msg);
+    CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, InliningResult::SUCCESS, inline_msg);
     if (C->print_intrinsics() || C->print_inlining()) {
-      C->print_inlining(callee, jvms->depth() - 1, bci, inline_msg);
+      C->print_inlining(callee, jvms->depth() - 1, bci, InliningResult::SUCCESS, inline_msg);
     }
     C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_worked);
     if (C->log()) {
@@ -146,9 +146,9 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
       msg = is_virtual() ? "failed to inline (intrinsic, virtual), method not annotated"
                          : "failed to inline (intrinsic), method not annotated";
     }
-    CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, msg);
+    CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, InliningResult::FAILURE, msg);
     if (C->print_intrinsics() || C->print_inlining()) {
-      C->print_inlining(callee, jvms->depth() - 1, bci, msg);
+      C->print_inlining(callee, jvms->depth() - 1, bci, InliningResult::FAILURE, msg);
     }
   } else {
     // Root compile
@@ -189,9 +189,9 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms, int predicate) {
   if (!kit.failing()) {
     const char *inline_msg = is_virtual() ? "(intrinsic, virtual, predicate)"
                                           : "(intrinsic, predicate)";
-    CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, inline_msg);
+    CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, InliningResult::SUCCESS, inline_msg);
     if (C->print_intrinsics() || C->print_inlining()) {
-      C->print_inlining(callee, jvms->depth() - 1, bci, inline_msg);
+      C->print_inlining(callee, jvms->depth() - 1, bci, InliningResult::SUCCESS, inline_msg);
     }
     C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_worked);
     if (C->log()) {
@@ -207,9 +207,9 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms, int predicate) {
   if (jvms->has_method()) {
     // Not a root compile.
     const char* msg = "failed to generate predicate for intrinsic";
-    CompileTask::print_inlining_ul(kit.callee(), jvms->depth() - 1, bci, msg);
+    CompileTask::print_inlining_ul(kit.callee(), jvms->depth() - 1, bci, InliningResult::FAILURE, msg);
     if (C->print_intrinsics() || C->print_inlining()) {
-      C->print_inlining(kit.callee(), jvms->depth() - 1, bci, msg);
+      C->print_inlining(kit.callee(), jvms->depth() - 1, bci, InliningResult::FAILURE, msg);
     }
   } else {
     // Root compile
@@ -2890,6 +2890,7 @@ bool LibraryCallKit::inline_native_notify_jvmti_funcs(address funcAddr, const ch
   if (!DoJVMTIVirtualThreadTransitions) {
     return true;
   }
+  Node* vt_oop = _gvn.transform(must_be_not_null(argument(0), true)); // VirtualThread this argument
   IdealKit ideal(this);
 
   Node* ONE = ideal.ConI(1);
@@ -2898,16 +2899,13 @@ bool LibraryCallKit::inline_native_notify_jvmti_funcs(address funcAddr, const ch
   Node* notify_jvmti_enabled = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
 
   ideal.if_then(notify_jvmti_enabled, BoolTest::eq, ONE); {
+    sync_kit(ideal);
     // if notifyJvmti enabled then make a call to the given SharedRuntime function
     const TypeFunc* tf = OptoRuntime::notify_jvmti_vthread_Type();
-    Node* vt_oop = _gvn.transform(must_be_not_null(argument(0), true)); // VirtualThread this argument
-
-    sync_kit(ideal);
     make_runtime_call(RC_NO_LEAF, tf, funcAddr, funcName, TypePtr::BOTTOM, vt_oop, hide);
     ideal.sync_kit(this);
   } ideal.else_(); {
     // set hide value to the VTMS transition bit in current JavaThread and VirtualThread object
-    Node* vt_oop = _gvn.transform(argument(0)); // this argument - VirtualThread oop
     Node* thread = ideal.thread();
     Node* jt_addr = basic_plus_adr(thread, in_bytes(JavaThread::is_in_VTMS_transition_offset()));
     Node* vt_addr = basic_plus_adr(vt_oop, java_lang_Thread::is_in_VTMS_transition_offset());

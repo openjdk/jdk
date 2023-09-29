@@ -151,10 +151,6 @@ public:
 
   // The following two are the building blocks for the allocation method.
 
-  // First-level allocation: Should be called without holding a
-  // lock. It will try to allocate lock-free out of the active region,
-  // or return null if it was unable to.
-  inline HeapWord* attempt_allocation(size_t word_size);
   // Perform an allocation out of the current allocation region, with the given
   // minimum and desired size. Returns the actual size allocated (between
   // minimum and desired size) in actual_word_size if the allocation has been

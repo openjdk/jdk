@@ -56,6 +56,10 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  *   0x0008 (WARN_INCUBATING)
  *  }
  * } </pre>
+ * <p>
+ * The attribute does not permit multiple instances in a given location.
+ * Subsequent occurrence of the attribute takes precedence during the attributed
+ * element build or transformation.
  */
 public sealed interface ModuleResolutionAttribute
         extends Attribute<ModuleResolutionAttribute>, ClassElement
@@ -72,6 +76,7 @@ public sealed interface ModuleResolutionAttribute
      *   0x0002 (WARN_DEPRECATED)
      *   0x0004 (WARN_DEPRECATED_FOR_REMOVAL)
      *   0x0008 (WARN_INCUBATING)
+     * @return the module resolution flags
      */
     int resolutionFlags();
 

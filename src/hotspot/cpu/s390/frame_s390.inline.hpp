@@ -252,15 +252,6 @@ inline int frame::interpreter_frame_monitor_size() {
   return BasicObjectLock::size();
 }
 
-inline int frame::interpreter_frame_monitor_size_in_bytes() {
-  // Number of bytes for a monitor.
-  return frame::interpreter_frame_monitor_size() * wordSize;
-}
-
-inline int frame::interpreter_frame_interpreterstate_size_in_bytes() {
-  return z_ijava_state_size;
-}
-
 inline Method** frame::interpreter_frame_method_addr() const {
   return (Method**)&(ijava_state()->method);
 }
