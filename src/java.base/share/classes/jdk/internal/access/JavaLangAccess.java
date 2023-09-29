@@ -354,6 +354,15 @@ public interface JavaLangAccess {
     char getUTF16Char(byte[] bytes, int index);
 
     /**
+     * Put the char at index in a byte[] in internal UTF-16 representation,
+     * with no bounds checks.
+     *
+     * @param bytes the UTF-16 encoded bytes
+     * @param index of the char to retrieve, 0 <= index < (bytes.length >> 1)
+     */
+    void putCharUTF16(byte[] bytes, int index, int ch);
+
+    /**
      * Encode the given string into a sequence of bytes using utf8.
      *
      * @param s the string to encode

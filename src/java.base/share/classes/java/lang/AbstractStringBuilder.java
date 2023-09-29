@@ -35,6 +35,7 @@ import java.util.Spliterator;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.HexDigits;
 import jdk.internal.util.Preconditions;
 
 import static java.lang.String.COMPACT_STRINGS;
@@ -841,6 +842,31 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     /**
+     * Appends the hexadecimal string representation of the {@code int}
+     * argument to this sequence.
+     * <p>
+     * The overall effect is exactly as if the argument were converted
+     * to a string by the method {@link Integer#toHexString(int)},
+     * and the characters of that string were then
+     * {@link #append(String) appended} to this character sequence.
+     *
+     * @param   i   an {@code int}.
+     * @return  a reference to this object.
+     */
+    public AbstractStringBuilder appendHex(int i) {
+        int count = this.count;
+        int spaceNeeded = count + HexDigits.stringSize(i);
+        ensureCapacityInternal(spaceNeeded);
+        if (isLatin1()) {
+            HexDigits.getCharsLatin1(i, spaceNeeded, value);
+        } else {
+            HexDigits.getCharsUTF16(i, spaceNeeded, value);
+        }
+        this.count = spaceNeeded;
+        return this;
+    }
+
+    /**
      * Appends the string representation of the {@code long}
      * argument to this sequence.
      * <p>
@@ -860,6 +886,31 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
             StringLatin1.getChars(l, spaceNeeded, value);
         } else {
             StringUTF16.getChars(l, count, spaceNeeded, value);
+        }
+        this.count = spaceNeeded;
+        return this;
+    }
+
+    /**
+     * Appends the hexadecimal string representation of the {@code long}
+     * argument to this sequence.
+     * <p>
+     * The overall effect is exactly as if the argument were converted
+     * to a string by the method {@link Long#toHexString(long)},
+     * and the characters of that string were then
+     * {@link #append(String) appended} to this character sequence.
+     *
+     * @param   l   an {@code int}.
+     * @return  a reference to this object.
+     */
+    public AbstractStringBuilder appendHex(long l) {
+        int count = this.count;
+        int spaceNeeded = count + HexDigits.stringSize(l);
+        ensureCapacityInternal(spaceNeeded);
+        if (isLatin1()) {
+            HexDigits.getCharsLatin1(l, spaceNeeded, value);
+        } else {
+            HexDigits.getCharsUTF16(l, spaceNeeded, value);
         }
         this.count = spaceNeeded;
         return this;

@@ -435,6 +435,16 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
     }
 
     /**
+     * {@inheritDoc}
+     * @since 22
+     */
+    @Override
+    public synchronized StringBuffer appendHex(int i) {
+        super.appendHex(i);
+        return this;
+    }
+
+    /**
      * @since 1.5
      */
     @Override
@@ -448,6 +458,16 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
     public synchronized StringBuffer append(long lng) {
         toStringCache = null;
         super.append(lng);
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 22
+     */
+    @Override
+    public synchronized StringBuffer appendHex(long i) {
+        super.appendHex(i);
         return this;
     }
 

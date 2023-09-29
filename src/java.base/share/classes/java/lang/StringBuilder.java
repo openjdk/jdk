@@ -254,9 +254,29 @@ public final class StringBuilder
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     * @since 22
+     */
+    @Override
+    public StringBuilder appendHex(int i) {
+        super.appendHex(i);
+        return this;
+    }
+
     @Override
     public StringBuilder append(long lng) {
         super.append(lng);
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 22
+     */
+    @Override
+    public StringBuilder appendHex(long i) {
+        super.appendHex(i);
         return this;
     }
 
