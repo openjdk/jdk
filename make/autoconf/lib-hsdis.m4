@@ -191,10 +191,10 @@ AC_DEFUN([LIB_BUILD_BINUTILS],
     binutils_cflags="$binutils_cflags $MACHINE_FLAG $JVM_PICFLAG $C_O_FLAG_NORM"
 
     AC_MSG_NOTICE([Running binutils configure])
-    AC_MSG_NOTICE([configure command line: cd $BINUTILS_DIR && $BINUTILS_SRC/configure --without-zstd --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" AR="$AR" $binutils_target])
+    AC_MSG_NOTICE([configure command line: cd $BINUTILS_DIR && $BINUTILS_SRC/configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" AR="$AR" $binutils_target])
     saved_dir=`pwd`
     cd "$BINUTILS_DIR"
-    $BINUTILS_SRC/configure --without-zstd --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" AR="$AR" $binutils_target
+    $BINUTILS_SRC/configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" AR="$AR" $binutils_target
     if test $? -ne 0 || ! test -e $BINUTILS_DIR/Makefile; then
       AC_MSG_NOTICE([Automatic building of binutils failed on configure. Try building it manually])
       AC_MSG_ERROR([Cannot continue])
@@ -260,6 +260,23 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
       fi
     fi
   fi
+
+  AC_MSG_CHECKING([Checking binutils API])
+  if test -n "$BINUTILS_SRC"; then
+    include_dis="#include \"$BINUTILS_SRC/include/dis-asm.h\""
+  else
+    include_dis="#include \"$BINUTILS_DIR/include/dis-asm.h\""
+  fi
+
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([$include_dis],[[void foo() {init_disassemble_info(0, 0, 0, 0);}]])],
+    [
+      AC_MSG_RESULT([New API])
+      HSDIS_CFLAGS="$HSDIS_CFLAGS -DBINUTILS_NEW_API"
+    ],
+    [
+      AC_MSG_RESULT([Old API])
+    ]
+  )
 
   AC_MSG_CHECKING([for binutils to use with hsdis])
   case "x$BINUTILS_DIR" in

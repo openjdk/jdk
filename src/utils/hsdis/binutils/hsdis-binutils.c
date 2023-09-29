@@ -59,7 +59,6 @@
 
 #include <libiberty.h>
 #include <bfd.h>
-#include <bfdver.h>
 #include <dis-asm.h>
 
 #include "hsdis.h"
@@ -559,7 +558,7 @@ static void parse_fake_insn(disassembler_ftype dfn,
 
 static fprintf_ftype target_fprintf_func = NULL;
 
-#if BFD_VERSION >= 239000000
+#ifdef BINUTILS_NEW_API
 static int wrapper_fprintf_styled_ftype(void *v, enum disassembler_style style_unused, const char* fmt, ...) {
   char buffer[1024] = {};
   va_list args;
@@ -580,7 +579,7 @@ static void init_disassemble_info_from_bfd(struct disassemble_info* dinfo,
                                            bfd* abfd,
                                            char* disassembler_options) {
   target_fprintf_func = fprintf_func;
-#if BFD_VERSION >= 239000000
+#ifdef BINUTILS_NEW_API
   init_disassemble_info(dinfo, stream, fprintf_func, wrapper_fprintf_styled_ftype);
 #else
   init_disassemble_info(dinfo, stream, fprintf_func);
