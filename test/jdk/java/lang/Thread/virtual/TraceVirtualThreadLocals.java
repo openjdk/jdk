@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary Test diagnostic option for detecting a virtual thread using thread locals
+ * @requires vm.continuations
  * @library /test/lib
  * @run junit/othervm -Djdk.traceVirtualThreadLocals TraceVirtualThreadLocals
  * @run junit/othervm -Djdk.traceVirtualThreadLocals=true TraceVirtualThreadLocals

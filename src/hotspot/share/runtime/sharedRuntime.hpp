@@ -265,10 +265,11 @@ class SharedRuntime: AllStatic {
   static void throw_and_post_jvmti_exception(JavaThread* current, Symbol* name, const char *message = nullptr);
 
 #if INCLUDE_JVMTI
-  static void notify_jvmti_object_alloc(oopDesc* o, JavaThread* current);
   // Functions for JVMTI notifications
-  static void notify_jvmti_mount(oopDesc* vt, jboolean hide, jboolean first_mount, JavaThread* current);
-  static void notify_jvmti_unmount(oopDesc* vt, jboolean hide, jboolean last_unmount, JavaThread* current);
+  static void notify_jvmti_vthread_start(oopDesc* vt, jboolean hide, JavaThread* current);
+  static void notify_jvmti_vthread_end(oopDesc* vt, jboolean hide, JavaThread* current);
+  static void notify_jvmti_vthread_mount(oopDesc* vt, jboolean hide, JavaThread* current);
+  static void notify_jvmti_vthread_unmount(oopDesc* vt, jboolean hide, JavaThread* current);
 #endif
 
   // RedefineClasses() tracing support for obsolete method entry
@@ -527,34 +528,34 @@ class SharedRuntime: AllStatic {
   static void trace_ic_miss(address at);
 
  public:
-  static int _ic_miss_ctr;                       // total # of IC misses
-  static int _wrong_method_ctr;
-  static int _resolve_static_ctr;
-  static int _resolve_virtual_ctr;
-  static int _resolve_opt_virtual_ctr;
-  static int _implicit_null_throws;
-  static int _implicit_div0_throws;
+  static uint _ic_miss_ctr;                      // total # of IC misses
+  static uint _wrong_method_ctr;
+  static uint _resolve_static_ctr;
+  static uint _resolve_virtual_ctr;
+  static uint _resolve_opt_virtual_ctr;
+  static uint _implicit_null_throws;
+  static uint _implicit_div0_throws;
 
-  static int _jbyte_array_copy_ctr;        // Slow-path byte array copy
-  static int _jshort_array_copy_ctr;       // Slow-path short array copy
-  static int _jint_array_copy_ctr;         // Slow-path int array copy
-  static int _jlong_array_copy_ctr;        // Slow-path long array copy
-  static int _oop_array_copy_ctr;          // Slow-path oop array copy
-  static int _checkcast_array_copy_ctr;    // Slow-path oop array copy, with cast
-  static int _unsafe_array_copy_ctr;       // Slow-path includes alignment checks
-  static int _generic_array_copy_ctr;      // Slow-path includes type decoding
-  static int _slow_array_copy_ctr;         // Slow-path failed out to a method call
+  static uint _jbyte_array_copy_ctr;       // Slow-path byte array copy
+  static uint _jshort_array_copy_ctr;      // Slow-path short array copy
+  static uint _jint_array_copy_ctr;        // Slow-path int array copy
+  static uint _jlong_array_copy_ctr;       // Slow-path long array copy
+  static uint _oop_array_copy_ctr;         // Slow-path oop array copy
+  static uint _checkcast_array_copy_ctr;   // Slow-path oop array copy, with cast
+  static uint _unsafe_array_copy_ctr;      // Slow-path includes alignment checks
+  static uint _generic_array_copy_ctr;     // Slow-path includes type decoding
+  static uint _slow_array_copy_ctr;        // Slow-path failed out to a method call
 
-  static int _new_instance_ctr;            // 'new' object requires GC
-  static int _new_array_ctr;               // 'new' array requires GC
-  static int _multi2_ctr, _multi3_ctr, _multi4_ctr, _multi5_ctr;
-  static int _find_handler_ctr;            // find exception handler
-  static int _rethrow_ctr;                 // rethrow exception
-  static int _mon_enter_stub_ctr;          // monitor enter stub
-  static int _mon_exit_stub_ctr;           // monitor exit stub
-  static int _mon_enter_ctr;               // monitor enter slow
-  static int _mon_exit_ctr;                // monitor exit slow
-  static int _partial_subtype_ctr;         // SubRoutines::partial_subtype_check
+  static uint _new_instance_ctr;           // 'new' object requires GC
+  static uint _new_array_ctr;              // 'new' array requires GC
+  static uint _multi2_ctr, _multi3_ctr, _multi4_ctr, _multi5_ctr;
+  static uint _find_handler_ctr;           // find exception handler
+  static uint _rethrow_ctr;                // rethrow exception
+  static uint _mon_enter_stub_ctr;         // monitor enter stub
+  static uint _mon_exit_stub_ctr;          // monitor exit stub
+  static uint _mon_enter_ctr;              // monitor enter slow
+  static uint _mon_exit_ctr;               // monitor exit slow
+  static uint _partial_subtype_ctr;        // SubRoutines::partial_subtype_check
 
   // Statistics code
   // stats for "normal" compiled calls (non-interface)

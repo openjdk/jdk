@@ -121,11 +121,12 @@ inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f,
   // interpreter_frame_last_sp_offset, points to unextended_sp includes arguments in the frame
   // interpreter_frame_initial_sp_offset excludes expression stack slots
   int expression_stack_sz = expression_stack_size(f, mask);
-  intptr_t* res = *(intptr_t**)f.addr_at(frame::interpreter_frame_initial_sp_offset) - expression_stack_sz;
+  intptr_t* res = (intptr_t*)f.at_relative(frame::interpreter_frame_initial_sp_offset) - expression_stack_sz;
   assert(res == (intptr_t*)f.interpreter_frame_monitor_end() - expression_stack_sz, "");
   assert(res >= f.unextended_sp(),
     "res: " INTPTR_FORMAT " initial_sp: " INTPTR_FORMAT " last_sp: " INTPTR_FORMAT " unextended_sp: " INTPTR_FORMAT " expression_stack_size: %d",
-    p2i(res), p2i(f.addr_at(frame::interpreter_frame_initial_sp_offset)), f.at(frame::interpreter_frame_last_sp_offset), p2i(f.unextended_sp()), expression_stack_sz);
+    p2i(res), p2i(f.addr_at(frame::interpreter_frame_initial_sp_offset)), f.at_relative_or_null(frame::interpreter_frame_last_sp_offset),
+    p2i(f.unextended_sp()), expression_stack_sz);
   return res;
 }
 

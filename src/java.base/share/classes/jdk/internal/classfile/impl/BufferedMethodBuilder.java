@@ -24,6 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -46,18 +47,22 @@ public final class BufferedMethodBuilder
         implements TerminalMethodBuilder, MethodInfo {
     private final List<MethodElement> elements;
     private final SplitConstantPool constantPool;
+    private final ClassfileImpl context;
     private final Utf8Entry name;
     private final Utf8Entry desc;
     private AccessFlags flags;
     private final MethodModel original;
     private int[] parameterSlots;
+    MethodTypeDesc mDesc;
 
     public BufferedMethodBuilder(SplitConstantPool constantPool,
+                                 ClassfileImpl context,
                                  Utf8Entry nameInfo,
                                  Utf8Entry typeInfo,
                                  MethodModel original) {
         this.elements = new ArrayList<>();
         this.constantPool = constantPool;
+        this.context = context;
         this.name = nameInfo;
         this.desc = typeInfo;
         this.flags = AccessFlags.ofMethod();
@@ -92,6 +97,18 @@ public final class BufferedMethodBuilder
     }
 
     @Override
+    public MethodTypeDesc methodTypeSymbol() {
+        if (mDesc == null) {
+            if (original instanceof MethodInfo mi) {
+                mDesc = mi.methodTypeSymbol();
+            } else {
+                mDesc = MethodTypeDesc.ofDescriptor(methodType().stringValue());
+            }
+        }
+        return mDesc;
+    }
+
+    @Override
     public int methodFlags() {
         return flags.flagsMask();
     }
@@ -99,27 +116,27 @@ public final class BufferedMethodBuilder
     @Override
     public int parameterSlot(int paramNo) {
         if (parameterSlots == null)
-            parameterSlots = Util.parseParameterSlots(methodFlags(), methodType().stringValue());
+            parameterSlots = Util.parseParameterSlots(methodFlags(), methodTypeSymbol());
         return parameterSlots[paramNo];
     }
 
     @Override
     public MethodBuilder withCode(Consumer<? super CodeBuilder> handler) {
-        return with(new BufferedCodeBuilder(this, constantPool, null)
+        return with(new BufferedCodeBuilder(this, constantPool, context, null)
                             .run(handler)
                             .toModel());
     }
 
     @Override
     public MethodBuilder transformCode(CodeModel code, CodeTransform transform) {
-        BufferedCodeBuilder builder = new BufferedCodeBuilder(this, constantPool, code);
+        BufferedCodeBuilder builder = new BufferedCodeBuilder(this, constantPool, context, code);
         builder.transform(code, transform);
         return with(builder.toModel());
     }
 
     @Override
     public BufferedCodeBuilder bufferedCodeBuilder(CodeModel original) {
-        return new BufferedCodeBuilder(this, constantPool, original);
+        return new BufferedCodeBuilder(this, constantPool, context, original);
     }
 
     public BufferedMethodBuilder run(Consumer<? super MethodBuilder> handler) {
@@ -159,6 +176,11 @@ public final class BufferedMethodBuilder
         }
 
         @Override
+        public MethodTypeDesc methodTypeSymbol() {
+            return BufferedMethodBuilder.this.methodTypeSymbol();
+        }
+
+        @Override
         public int methodFlags() {
             return flags.flagsMask();
         }
@@ -185,7 +207,7 @@ public final class BufferedMethodBuilder
 
         @Override
         public void writeTo(BufWriter buf) {
-            DirectMethodBuilder mb = new DirectMethodBuilder(constantPool, name, desc, methodFlags(), null);
+            DirectMethodBuilder mb = new DirectMethodBuilder(constantPool, context, name, desc, methodFlags(), null);
             elements.forEach(mb);
             mb.writeTo(buf);
         }

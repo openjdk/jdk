@@ -612,7 +612,8 @@ public class DateFormatSymbols implements Serializable, Cloneable {
         for (int i = 0; i < newZoneStrings.length; ++i) {
             int len = newZoneStrings[i].length;
             if (len < 5) {
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException(String.format(
+                        "Row %s of the input array does not have a length of at least 5", i));
             }
             aCopy[i] = Arrays.copyOf(newZoneStrings[i], len);
         }
@@ -683,6 +684,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     /**
      * Override equals
      */
+    @Override
     public boolean equals(Object obj)
     {
         if (this == obj) return true;
@@ -695,10 +697,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
                 && Arrays.equals(shortWeekdays, that.shortWeekdays)
                 && Arrays.equals(ampms, that.ampms)
                 && Arrays.deepEquals(getZoneStringsWrapper(), that.getZoneStringsWrapper())
-                && ((localPatternChars != null
-                  && localPatternChars.equals(that.localPatternChars))
-                 || (localPatternChars == null
-                  && that.localPatternChars == null)));
+                && Objects.equals(localPatternChars, that.localPatternChars));
     }
 
     // =======================privates===============================

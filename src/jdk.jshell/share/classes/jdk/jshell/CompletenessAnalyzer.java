@@ -272,6 +272,7 @@ class CompletenessAnalyzer {
         DOUBLELITERAL(TokenKind.DOUBLELITERAL, XEXPR1|XTERM),  //
         CHARLITERAL(TokenKind.CHARLITERAL, XEXPR1|XTERM),  //
         STRINGLITERAL(TokenKind.STRINGLITERAL, XEXPR1|XTERM),  //
+        STRINGFRAGMENT(TokenKind.STRINGFRAGMENT, XEXPR1|XTERM),
         TRUE(TokenKind.TRUE, XEXPR1|XTERM),  //  true
         FALSE(TokenKind.FALSE, XEXPR1|XTERM),  //  false
         NULL(TokenKind.NULL, XEXPR1|XTERM),  //  null
@@ -479,8 +480,16 @@ class CompletenessAnalyzer {
 
         private Token advance() {
             Token prev = current;
-            scanner.nextToken();
-            current = scanner.token();
+            if (current != null && current.kind == TokenKind.STRINGFRAGMENT) {
+                int endPos = current.endPos;
+                do {
+                    scanner.nextToken();
+                    current = scanner.token();
+                } while (current != null && current.endPos <= endPos && current.kind != TokenKind.EOF);
+            } else {
+                scanner.nextToken();
+                current = scanner.token();
+            }
             return prev;
         }
 

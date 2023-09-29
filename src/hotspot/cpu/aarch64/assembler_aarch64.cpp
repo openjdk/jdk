@@ -102,7 +102,7 @@ void Assembler::emit_data64(jlong data,
                             RelocationHolder const& rspec,
                             int format) {
 
-  assert(inst_mark() != NULL, "must be inside InstructionMark");
+  assert(inst_mark() != nullptr, "must be inside InstructionMark");
   // Do not use AbstractAssembler::relocate, which is not intended for
   // embedded words.  Instead, relocate to the enclosing instruction.
   code_section()->relocate(inst_mark(), rspec, format);

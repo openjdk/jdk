@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public class MemoryLayoutPrincipalTotalityTest {
             case SequenceLayout sl -> 0; // leaf
             case StructLayout sl -> 0; // leaf
             case UnionLayout ul -> 0; // leaf
-            case OfAddress oa -> 0; // leaf
+            case AddressLayout oa -> 0; // leaf
             case OfBoolean ob -> 0; // leaf
             case OfByte ob -> 0; // leaf
             case OfChar oc -> 0; // leaf
@@ -100,7 +100,7 @@ public class MemoryLayoutPrincipalTotalityTest {
             case GroupLayout gl -> 0;
             case PaddingLayout pl -> 0; // leaf
             case SequenceLayout sl -> 0; // leaf
-            case OfAddress oa -> 0; // leaf
+            case AddressLayout oa -> 0; // leaf
             case OfBoolean ob -> 0; // leaf
             case OfByte ob -> 0; // leaf
             case OfChar oc -> 0; // leaf

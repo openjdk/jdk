@@ -202,7 +202,13 @@ public class ClassReader {
     /** A table to hold the constant pool indices for method parameter
      * names, as given in LocalVariableTable attributes.
      */
-    int[] parameterNameIndices;
+    int[] parameterNameIndicesLvt;
+
+    /**
+     * A table to hold the constant pool indices for method parameter
+     * names, as given in the MethodParameters attribute.
+     */
+    int[] parameterNameIndicesMp;
 
     /**
      * A table to hold the access flags of the method parameters.
@@ -228,18 +234,6 @@ public class ClassReader {
             }
         }
     }
-
-    /**
-     * Whether or not any parameter names have been found.
-     */
-    boolean haveParameterNameIndices;
-
-    /** Set this to false every time we start reading a method
-     * and are saving parameter names.  Set it to true when we see
-     * MethodParameters, if it's set when we see a LocalVariableTable,
-     * then we ignore the parameter names from the LVT.
-     */
-    boolean sawMethodParameters;
 
     /**
      * The set of attribute names for which warnings have been generated for the current class
@@ -939,7 +933,7 @@ public class ClassReader {
             new AttributeReader(names.LocalVariableTable, V45_3, CLASS_OR_MEMBER_ATTRIBUTE) {
                 protected void read(Symbol sym, int attrLen) {
                     int newbp = bp + attrLen;
-                    if (saveParameterNames && !sawMethodParameters) {
+                    if (saveParameterNames) {
                         // Pick up parameter names from the variable table.
                         // Parameter names are not explicitly identified as such,
                         // but all parameter name entries in the LocalVariableTable
@@ -958,14 +952,13 @@ public class ClassReader {
                             int register = nextChar();
                             if (start_pc == 0) {
                                 // ensure array large enough
-                                if (register >= parameterNameIndices.length) {
+                                if (register >= parameterNameIndicesLvt.length) {
                                     int newSize =
-                                            Math.max(register + 1, parameterNameIndices.length + 8);
-                                    parameterNameIndices =
-                                            Arrays.copyOf(parameterNameIndices, newSize);
+                                            Math.max(register + 1, parameterNameIndicesLvt.length + 8);
+                                    parameterNameIndicesLvt =
+                                            Arrays.copyOf(parameterNameIndicesLvt, newSize);
                                 }
-                                parameterNameIndices[register] = nameIndex;
-                                haveParameterNameIndices = true;
+                                parameterNameIndicesLvt[register] = nameIndex;
                             }
                         }
                     }
@@ -1116,11 +1109,9 @@ public class ClassReader {
                 protected void read(Symbol sym, int attrlen) {
                     int newbp = bp + attrlen;
                     if (saveParameterNames) {
-                        sawMethodParameters = true;
                         int numEntries = nextByte();
-                        parameterNameIndices = new int[numEntries];
+                        parameterNameIndicesMp = new int[numEntries];
                         parameterAccessFlags = new int[numEntries];
-                        haveParameterNameIndices = true;
                         int index = 0;
                         for (int i = 0; i < numEntries; i++) {
                             int nameIndex = nextChar();
@@ -1128,7 +1119,7 @@ public class ClassReader {
                             if ((flags & (Flags.MANDATED | Flags.SYNTHETIC)) != 0) {
                                 continue;
                             }
-                            parameterNameIndices[index] = nameIndex;
+                            parameterNameIndicesMp[index] = nameIndex;
                             parameterAccessFlags[index] = flags;
                             index++;
                         }
@@ -2396,13 +2387,11 @@ public class ClassReader {
         final int excessSlots = 4;
         int expectedParameterSlots =
                 Code.width(sym.type.getParameterTypes()) + excessSlots;
-        if (parameterNameIndices == null
-                || parameterNameIndices.length < expectedParameterSlots) {
-            parameterNameIndices = new int[expectedParameterSlots];
+        if (parameterNameIndicesLvt == null
+                || parameterNameIndicesLvt.length < expectedParameterSlots) {
+            parameterNameIndicesLvt = new int[expectedParameterSlots];
         } else
-            Arrays.fill(parameterNameIndices, 0);
-        haveParameterNameIndices = false;
-        sawMethodParameters = false;
+            Arrays.fill(parameterNameIndicesLvt, 0);
     }
 
     /**
@@ -2417,46 +2406,47 @@ public class ClassReader {
      * anonymous synthetic parameters.
      */
     void setParameters(MethodSymbol sym, Type jvmType) {
-        // If we get parameter names from MethodParameters, then we
-        // don't need to skip.
-        int firstParam = 0;
-        if (!sawMethodParameters) {
-            firstParam = ((sym.flags() & STATIC) == 0) ? 1 : 0;
-            // the code in readMethod may have skipped the first
-            // parameter when setting up the MethodType. If so, we
-            // make a corresponding allowance here for the position of
-            // the first parameter.  Note that this assumes the
-            // skipped parameter has a width of 1 -- i.e. it is not
-            // a double width type (long or double.)
-            if (sym.name == names.init && currentOwner.hasOuterInstance()) {
-                // Sometimes anonymous classes don't have an outer
-                // instance, however, there is no reliable way to tell so
-                // we never strip this$n
-                if (!currentOwner.name.isEmpty())
-                    firstParam += 1;
-            }
+        int firstParamLvt = ((sym.flags() & STATIC) == 0) ? 1 : 0;
+        // the code in readMethod may have skipped the first
+        // parameter when setting up the MethodType. If so, we
+        // make a corresponding allowance here for the position of
+        // the first parameter.  Note that this assumes the
+        // skipped parameter has a width of 1 -- i.e. it is not
+        // a double width type (long or double.)
+        if (sym.name == names.init && currentOwner.hasOuterInstance()) {
+            // Sometimes anonymous classes don't have an outer
+            // instance, however, there is no reliable way to tell so
+            // we never strip this$n
+            if (!currentOwner.name.isEmpty())
+                firstParamLvt += 1;
+        }
 
-            if (sym.type != jvmType) {
-                // reading the method attributes has caused the
-                // symbol's type to be changed. (i.e. the Signature
-                // attribute.)  This may happen if there are hidden
-                // (synthetic) parameters in the descriptor, but not
-                // in the Signature.  The position of these hidden
-                // parameters is unspecified; for now, assume they are
-                // at the beginning, and so skip over them. The
-                // primary case for this is two hidden parameters
-                // passed into Enum constructors.
-                int skip = Code.width(jvmType.getParameterTypes())
-                        - Code.width(sym.type.getParameterTypes());
-                firstParam += skip;
-            }
+        if (sym.type != jvmType) {
+            // reading the method attributes has caused the
+            // symbol's type to be changed. (i.e. the Signature
+            // attribute.)  This may happen if there are hidden
+            // (synthetic) parameters in the descriptor, but not
+            // in the Signature.  The position of these hidden
+            // parameters is unspecified; for now, assume they are
+            // at the beginning, and so skip over them. The
+            // primary case for this is two hidden parameters
+            // passed into Enum constructors.
+            int skip = Code.width(jvmType.getParameterTypes())
+                    - Code.width(sym.type.getParameterTypes());
+            firstParamLvt += skip;
         }
         Set<Name> paramNames = new HashSet<>();
         ListBuffer<VarSymbol> params = new ListBuffer<>();
-        int nameIndex = firstParam;
+        // we maintain two index pointers, one for the LocalVariableTable attribute
+        // and the other for the MethodParameters attribute.
+        // This is needed as the MethodParameters attribute may contain
+        // name_index = 0 in which case we want to fall back to the LocalVariableTable.
+        // In such case, we still want to read the flags from the MethodParameters with that index.
+        int nameIndexLvt = firstParamLvt;
+        int nameIndexMp = 0;
         int annotationIndex = 0;
         for (Type t: sym.type.getParameterTypes()) {
-            VarSymbol param = parameter(nameIndex, t, sym, paramNames);
+            VarSymbol param = parameter(nameIndexMp, nameIndexLvt, t, sym, paramNames);
             params.append(param);
             if (parameterAnnotations != null) {
                 ParameterAnnotations annotations = parameterAnnotations[annotationIndex];
@@ -2465,7 +2455,8 @@ public class ClassReader {
                     annotate.normal(new AnnotationCompleter(param, annotations.proxies));
                 }
             }
-            nameIndex += sawMethodParameters ? 1 : Code.width(t);
+            nameIndexLvt += Code.width(t);
+            nameIndexMp++;
             annotationIndex++;
         }
         if (parameterAnnotations != null && parameterAnnotations.length != annotationIndex) {
@@ -2474,24 +2465,34 @@ public class ClassReader {
         Assert.checkNull(sym.params);
         sym.params = params.toList();
         parameterAnnotations = null;
-        parameterNameIndices = null;
+        parameterNameIndicesLvt = null;
+        parameterNameIndicesMp = null;
         parameterAccessFlags = null;
     }
 
-
-    // Returns the name for the parameter at position 'index', either using
-    // names read from the MethodParameters, or by synthesizing a name that
-    // is not on the 'exclude' list.
-    private VarSymbol parameter(int index, Type t, MethodSymbol owner, Set<Name> exclude) {
+    /**
+     * Creates the parameter at the position {@code mpIndex} in the parameter list of the owning method.
+     * Flags are optionally read from the MethodParameters attribute.
+     * Names are optionally read from the MethodParameters attribute. If the constant pool index
+     * of the name is 0, then the name is optionally read from the LocalVariableTable attribute.
+     * @param mpIndex the index of the parameter in the MethodParameters attribute
+     * @param lvtIndex the index of the parameter in the LocalVariableTable attribute
+     */
+    private VarSymbol parameter(int mpIndex, int lvtIndex, Type t, MethodSymbol owner, Set<Name> exclude) {
         long flags = PARAMETER;
         Name argName;
-        if (parameterAccessFlags != null && index < parameterAccessFlags.length
-                && parameterAccessFlags[index] != 0) {
-            flags |= parameterAccessFlags[index];
+        if (parameterAccessFlags != null && mpIndex < parameterAccessFlags.length
+                && parameterAccessFlags[mpIndex] != 0) {
+            flags |= parameterAccessFlags[mpIndex];
         }
-        if (parameterNameIndices != null && index < parameterNameIndices.length
-                && parameterNameIndices[index] != 0) {
-            argName = optPoolEntry(parameterNameIndices[index], poolReader::getName, names.empty);
+        if (parameterNameIndicesMp != null
+                // if name_index is 0, then we might still get a name from the LocalVariableTable
+                && parameterNameIndicesMp[mpIndex] != 0) {
+            argName = optPoolEntry(parameterNameIndicesMp[mpIndex], poolReader::getName, names.empty);
+            flags |= NAME_FILLED;
+        } else if (parameterNameIndicesLvt != null && lvtIndex < parameterNameIndicesLvt.length
+                && parameterNameIndicesLvt[lvtIndex] != 0) {
+            argName = optPoolEntry(parameterNameIndicesLvt[lvtIndex], poolReader::getName, names.empty);
             flags |= NAME_FILLED;
         } else {
             String prefix = "arg";
@@ -2729,6 +2730,14 @@ public class ClassReader {
             signatureBuffer = new byte[ns];
         }
         readClass(c);
+        if (previewClassFile) {
+            if ((c.flags_field & SYNTHETIC) != 0 &&
+                    c.owner.kind == PCK &&
+                    (c.flags_field & AUXILIARY) == 0 &&
+                    (c.flags_field & FINAL) != 0) {
+                c.flags_field |= UNNAMED_CLASS;
+            }
+        }
     }
 
     public void readClassFile(ClassSymbol c) {

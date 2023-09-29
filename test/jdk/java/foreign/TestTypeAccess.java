@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -53,32 +53,32 @@ public class TestTypeAccess {
 
     @Test(expectedExceptions=ClassCastException.class)
     public void testMemoryAddressValueGetAsString() {
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment s = MemorySegment.allocateNative(8, 8, arena.scope());;
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment s = arena.allocate(8, 8);;
             String address = (String)ADDR_HANDLE.get(s);
         }
     }
 
     @Test(expectedExceptions=ClassCastException.class)
     public void testMemoryAddressValueSetAsString() {
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment s = MemorySegment.allocateNative(8, 8, arena.scope());;
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment s = arena.allocate(8, 8);;
             ADDR_HANDLE.set(s, "string");
         }
     }
 
     @Test(expectedExceptions=WrongMethodTypeException.class)
     public void testMemoryAddressValueGetAsPrimitive() {
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment s = MemorySegment.allocateNative(8, 8, arena.scope());;
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment s = arena.allocate(8, 8);;
             int address = (int)ADDR_HANDLE.get(s);
         }
     }
 
     @Test(expectedExceptions=WrongMethodTypeException.class)
     public void testMemoryAddressValueSetAsPrimitive() {
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment s = MemorySegment.allocateNative(8, 8, arena.scope());;
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment s = arena.allocate(8, 8);;
             ADDR_HANDLE.set(s, 1);
         }
     }

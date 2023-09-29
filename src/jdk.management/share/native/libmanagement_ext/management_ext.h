@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,12 @@
 #ifndef _MANAGEMENT_EXT_H_
 #define _MANAGEMENT_EXT_H_
 
-extern const JmmInterface* jmm_interface;
-extern jint jmm_version;
-extern void throw_internal_error(JNIEnv* env, const char* msg);
+// These symbols are global in this library but need to be uniquely named to
+// avoid conflicts with same-named symbols in other native libraries, when
+// statically linking.
+extern const JmmInterface* jmm_interface_management_ext;
+extern jint jmm_version_management_ext;
+
+void throw_internal_error(JNIEnv* env, const char* msg);
 
 #endif

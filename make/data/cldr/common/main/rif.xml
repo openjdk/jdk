@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="rif"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="en" draft="unconfirmed">taglinzit</language>
+			<language type="rif">Tarifit</language>
+		</languages>
+		<scripts>
+			<script type="Latn" draft="unconfirmed">talatinit</script>
+			<script type="Tfng" draft="unconfirmed">tifinaɣ</script>
+		</scripts>
+		<territories>
+			<territory type="MA" draft="unconfirmed">Lmuɣrib</territory>
+			<territory type="TR" draft="unconfirmed">Ṭurkya</territory>
+		</territories>
+		<measurementSystemNames>
+			<measurementSystemName type="metric" draft="unconfirmed">amitrik</measurementSystemName>
+			<measurementSystemName type="UK" draft="unconfirmed">aglinziy</measurementSystemName>
+			<measurementSystemName type="US" draft="unconfirmed">amirikaniy</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language" draft="unconfirmed">tutlayt: {0}</codePattern>
+			<codePattern type="script" draft="unconfirmed">tira: {0}</codePattern>
+			<codePattern type="territory" draft="unconfirmed">jjihet: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a b c d ḍ e ɛ f g ɣ h ḥ i j k l m n p q r s ṣ t ṭ u w x y z ẓ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[á à â ä ç é è ê ë î ï ñ o ó ô ö œ ß ú ù û ü v ʷ ÿ]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B C D Ḍ E Ɛ F G Ɣ H Ḥ I J K L M N P Q R S Ṣ T Ṭ U W X Y Z Ẓ]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” « » ( ) \[ \] \{ \} § @ * / \&amp; # `]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">yennayer</month>
+							<month type="2" draft="unconfirmed">febrayer</month>
+							<month type="3" draft="unconfirmed">mars</month>
+							<month type="4" draft="unconfirmed">yebril</month>
+							<month type="5" draft="unconfirmed">mayyu</month>
+							<month type="6" draft="unconfirmed">yunyu</month>
+							<month type="7" draft="unconfirmed">yulyuz</month>
+							<month type="8" draft="unconfirmed">ɣucct</month>
+							<month type="9" draft="unconfirmed">cutenber</month>
+							<month type="10" draft="unconfirmed">kṭuber</month>
+							<month type="11" draft="unconfirmed">nuwember</month>
+							<month type="12" draft="unconfirmed">dujember</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">lḥed</day>
+							<day type="mon" draft="unconfirmed">letnayen</day>
+							<day type="tue" draft="unconfirmed">ttlat</day>
+							<day type="wed" draft="unconfirmed">larbeɛ</day>
+							<day type="thu" draft="unconfirmed">lexmis</day>
+							<day type="fri" draft="unconfirmed">jjemɛa</day>
+							<day type="sat" draft="unconfirmed">ssebt</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="hm" draft="unconfirmed">h:mm a</dateFormatItem>
+						<dateFormatItem id="yMd" draft="unconfirmed">dd/MM/y</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="unconfirmed">d MMM y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<regionFormat draft="unconfirmed">akud n {0}</regionFormat>
+			<regionFormat type="daylight" draft="unconfirmed">akud unebdu n {0}</regionFormat>
+			<regionFormat type="standard" draft="unconfirmed">akud anaway n {0}</regionFormat>
+			<metazone type="GMT">
+				<long>
+					<standard draft="unconfirmed">GMT</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+		</symbols>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+	</numbers>
+	<personNames>
+		<sampleName item="nativeG">
+			<nameField type="given" draft="unconfirmed">Yamina</nameField>
+		</sampleName>
+		<sampleName item="nativeGS">
+			<nameField type="given" draft="unconfirmed">Faḍma</nameField>
+			<nameField type="surname" draft="unconfirmed">Awraɣ</nameField>
+		</sampleName>
+		<sampleName item="nativeGGS">
+			<nameField type="given" draft="unconfirmed">Ɛellal</nameField>
+		</sampleName>
+		<sampleName item="nativeFull">
+			<nameField type="given" draft="unconfirmed">Muḥemmed Amin</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given" draft="unconfirmed">Sinbad</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given" draft="unconfirmed">Käthe</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given" draft="unconfirmed">Zäzilia</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="given" draft="unconfirmed">Ada Cornelia</nameField>
+		</sampleName>
+	</personNames>
+</ldml>

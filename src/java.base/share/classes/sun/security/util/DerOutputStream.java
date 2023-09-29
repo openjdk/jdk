@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -480,6 +480,23 @@ public final class DerOutputStream
         putLength(data.length);
         writeBytes(data);
         return this;
+    }
+
+    /**
+     * 1/1/1950 is the lowest date that RFC 2630 serializes to UTC time
+     */
+    private static final Date utcLow = new Date(-631152000000L); // Dates before 1/1/1950
+
+    /**
+     * 12/31/2049 is the highest date that RFC 2630 serializes to UTC time
+     */
+    private static final Date utcHigh = new Date(2524607999000L);
+
+    /**
+     * Takes a Date and chooses UTC or GeneralizedTime as per RFC 2630
+     */
+    public DerOutputStream putTime(Date d) {
+        return (d.before(utcLow) || d.after(utcHigh)) ? putGeneralizedTime(d) : putUTCTime(d);
     }
 
     /**

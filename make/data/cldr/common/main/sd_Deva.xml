@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -498,6 +498,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="year-short">
 				<displayName>साल</displayName>
 			</field>
+			<field type="year-narrow">
+				<displayName>साल</displayName>
+			</field>
 			<field type="quarter">
 				<displayName>टिमाही</displayName>
 			</field>
@@ -519,6 +522,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="week">
 				<displayName>हफ्तो</displayName>
 			</field>
+			<field type="week-short">
+				<displayName>हफ्तो</displayName>
+			</field>
+			<field type="week-narrow">
+				<displayName>हफ्तो</displayName>
+			</field>
 			<field type="day">
 				<displayName>दीं॒हुं</displayName>
 				<relative type="-1">कल</relative>
@@ -527,9 +536,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-short">
 				<displayName>दीं॒हुं</displayName>
+				<relative type="-1">कल</relative>
+				<relative type="0">अॼु</relative>
+				<relative type="1">सुभाणे</relative>
 			</field>
 			<field type="day-narrow">
 				<displayName>दीं॒हुं</displayName>
+				<relative type="-1">कल</relative>
+				<relative type="0">अॼु</relative>
+				<relative type="1">सुभाणे</relative>
 			</field>
 			<field type="weekday">
 				<displayName>हफ्ते जो दीं॒हुं</displayName>
@@ -538,6 +553,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>दीं॒हुं/ रातु</displayName>
 			</field>
 			<field type="hour">
+				<displayName>कलाक</displayName>
+			</field>
+			<field type="hour-short">
+				<displayName>कलाक</displayName>
+			</field>
+			<field type="hour-narrow">
 				<displayName>कलाक</displayName>
 			</field>
 			<field type="minute">
@@ -550,6 +571,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>मिंटु</displayName>
 			</field>
 			<field type="second">
+				<displayName>सेकिंडु</displayName>
+			</field>
+			<field type="second-short">
+				<displayName>सेकिंडु</displayName>
+			</field>
+			<field type="second-narrow">
 				<displayName>सेकिंडु</displayName>
 			</field>
 			<field type="zone">
@@ -639,6 +666,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<otherNumberingSystems>
 			<native draft="contributed">latn</native>
 		</otherNumberingSystems>
+		<currencyFormats numberSystem="latn">
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="shrd">
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
 		<currencies>
 			<currency type="BRL">
 				<displayName>ब्राज़ीली रियालु</displayName>
@@ -653,6 +688,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="EUR">
 				<displayName>यूरो</displayName>
+				<displayName count="one">यूरो</displayName>
+				<displayName count="other">यूरो</displayName>
 			</currency>
 			<currency type="GBP">
 				<displayName>बरतानवी पाउंडु</displayName>

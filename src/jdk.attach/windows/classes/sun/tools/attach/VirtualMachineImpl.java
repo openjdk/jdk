@@ -73,6 +73,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         throws AgentLoadException, IOException
     {
         assert args.length <= 3;        // includes null
+        checkNulls(args);
 
         // create a pipe using a random name
         Random rnd = new Random();

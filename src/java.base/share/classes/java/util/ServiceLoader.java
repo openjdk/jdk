@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -386,7 +386,6 @@ import jdk.internal.reflect.Reflection;
  *
  * @author Mark Reinhold
  * @since 1.6
- * @revised 9
  */
 
 public final class ServiceLoader<S>
@@ -422,10 +421,7 @@ public final class ServiceLoader<S>
     // Incremented when reload is called
     private int reloadCount;
 
-    private static JavaLangAccess LANG_ACCESS;
-    static {
-        LANG_ACCESS = SharedSecrets.getJavaLangAccess();
-    }
+    private static final JavaLangAccess LANG_ACCESS = SharedSecrets.getJavaLangAccess();
 
     /**
      * Represents a service provider located by {@code ServiceLoader}.
@@ -1358,8 +1354,6 @@ public final class ServiceLoader<S>
      *
      * @return  An iterator that lazily loads providers for this loader's
      *          service
-     *
-     * @revised 9
      */
     public Iterator<S> iterator() {
 
@@ -1643,8 +1637,6 @@ public final class ServiceLoader<S>
      *         if the service type is not accessible to the caller or the
      *         caller is in an explicit module and its module descriptor does
      *         not declare that it uses {@code service}
-     *
-     * @revised 9
      */
     @CallerSensitive
     @SuppressWarnings("doclint:reference") // cross-module links
@@ -1689,8 +1681,6 @@ public final class ServiceLoader<S>
      *         if the service type is not accessible to the caller or the
      *         caller is in an explicit module and its module descriptor does
      *         not declare that it uses {@code service}
-     *
-     * @revised 9
      */
     @CallerSensitive
     public static <S> ServiceLoader<S> load(Class<S> service) {
@@ -1724,8 +1714,6 @@ public final class ServiceLoader<S>
      *         if the service type is not accessible to the caller or the
      *         caller is in an explicit module and its module descriptor does
      *         not declare that it uses {@code service}
-     *
-     * @revised 9
      */
     @CallerSensitive
     public static <S> ServiceLoader<S> loadInstalled(Class<S> service) {

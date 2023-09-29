@@ -150,7 +150,6 @@ module java.base {
         java.compiler,
         jdk.compiler,
         jdk.incubator.vector, // participates in preview features
-        jdk.jartool, // participates in preview features
         jdk.jshell;
     exports jdk.internal.access to
         java.desktop,
@@ -163,7 +162,6 @@ module java.base {
         jdk.jlink,
         jdk.jfr,
         jdk.net,
-        jdk.incubator.concurrent,
         jdk.sctp,
         jdk.crypto.cryptoki;
     exports jdk.internal.foreign to
@@ -188,15 +186,19 @@ module java.base {
         java.logging;
     exports jdk.internal.classfile to
         jdk.jartool,
+        jdk.jdeps,
         jdk.jlink,
         jdk.jshell;
     exports jdk.internal.classfile.attribute to
         jdk.jartool,
+        jdk.jdeps,
         jdk.jlink;
     exports jdk.internal.classfile.constantpool to
         jdk.jartool,
+        jdk.jdeps,
         jdk.jlink;
     exports jdk.internal.classfile.instruction to
+        jdk.jdeps,
         jdk.jlink,
         jdk.jshell;
     exports jdk.internal.org.objectweb.asm to
@@ -223,7 +225,6 @@ module java.base {
         jdk.charsets,
         jdk.compiler,
         jdk.crypto.cryptoki,
-        jdk.incubator.concurrent,
         jdk.incubator.vector,
         jdk.jfr,
         jdk.jshell,
@@ -246,7 +247,8 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.ref to
         java.desktop,
-        java.net.http;
+        java.net.http,
+        jdk.naming.dns;
     exports jdk.internal.reflect to
         java.logging,
         java.sql,
@@ -256,14 +258,13 @@ module java.base {
         jdk.unsupported;
     exports jdk.internal.vm to
         java.management,
-        jdk.incubator.concurrent,
         jdk.internal.jvmstat,
         jdk.management,
-        jdk.management.agent;
+        jdk.management.agent,
+        jdk.internal.vm.ci;
     exports jdk.internal.vm.annotation to
         java.instrument,
         jdk.internal.vm.ci,
-        jdk.incubator.concurrent,
         jdk.incubator.vector,
         jdk.jfr,
         jdk.unsupported;
@@ -281,6 +282,9 @@ module java.base {
         java.security.jgss,
         java.smartcardio,
         jdk.charsets,
+        jdk.internal.vm.ci,
+        jdk.jlink,
+        jdk.jpackage,
         jdk.net;
     exports sun.net to
         java.net.http,
@@ -322,26 +326,21 @@ module java.base {
         java.sql.rowset;
     exports sun.security.action to
         java.desktop,
-        java.security.jgss,
-        jdk.crypto.ec,
-        jdk.incubator.concurrent;
+        java.security.jgss;
     exports sun.security.internal.interfaces to
         jdk.crypto.cryptoki;
     exports sun.security.internal.spec to
         jdk.crypto.cryptoki;
     exports sun.security.jca to
         java.smartcardio,
-        jdk.crypto.ec,
         jdk.crypto.cryptoki,
         jdk.naming.dns;
     exports sun.security.pkcs to
-        jdk.crypto.ec,
         jdk.jartool;
     exports sun.security.provider to
         java.rmi,
         java.security.jgss,
         jdk.crypto.cryptoki,
-        jdk.crypto.ec,
         jdk.security.auth;
     exports sun.security.provider.certpath to
         java.naming,
@@ -360,17 +359,11 @@ module java.base {
         java.security.sasl,
         java.smartcardio,
         java.xml.crypto,
-        jdk.crypto.ec,
         jdk.crypto.cryptoki,
         jdk.jartool,
         jdk.security.auth,
         jdk.security.jgss;
-    exports sun.security.util.math to
-        jdk.crypto.ec;
-    exports sun.security.util.math.intpoly to
-        jdk.crypto.ec;
     exports sun.security.x509 to
-        jdk.crypto.ec,
         jdk.crypto.cryptoki,
         jdk.jartool;
     exports sun.security.validator to

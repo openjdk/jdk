@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,14 @@
  *          from a custom classloader.
  * @library /test/lib
  * @build jdk.test.lib.Utils
+ *        jdk.test.lib.util.ForceGC
  *        jdk.test.lib.util.JarUtils
  * @build ClassForName ClassForNameLeak
  * @run main/othervm/policy=test.policy -Djava.security.manager ClassForNameLeak
  */
 
 import java.io.IOException;
-import java.lang.ref.PhantomReference;
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -51,6 +50,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.test.lib.Utils;
+import jdk.test.lib.util.ForceGC;
 import jdk.test.lib.util.JarUtils;
 
 /*
@@ -60,35 +60,32 @@ public class ClassForNameLeak {
     private static final long TIMEOUT = (long)(5000.0 * Utils.TIMEOUT_FACTOR);
     private static final int THREADS = 10;
     private static final Path jarFilePath = Paths.get("cfn.jar");
-    private static final ReferenceQueue<ClassLoader> rq = new ReferenceQueue<>();
 
-    static class TestLoader {
-        private final PhantomReference<ClassLoader> ref;
-        TestLoader() {
-            this.ref = loadAndRun();
-        }
-
-        // Use a new classloader to load the ClassForName class, then run its
-        // Runnable.
-        PhantomReference<ClassLoader> loadAndRun() {
+    static class TestLoader extends URLClassLoader {
+        static URL[] toURLs() {
             try {
-                ClassLoader classLoader =
-                    new URLClassLoader("LeakedClassLoader",
-                        new URL[]{jarFilePath.toUri().toURL()},
-                        ClassLoader.getPlatformClassLoader());
-
-                Class<?> loadClass = Class.forName("ClassForName", true, classLoader);
-                ((Runnable) loadClass.newInstance()).run();
-
-                return new PhantomReference<>(classLoader, rq);
-            } catch (MalformedURLException|ReflectiveOperationException e) {
+                return new URL[]{jarFilePath.toUri().toURL()};
+            } catch (MalformedURLException e) {
                 throw new RuntimeException(e);
             }
         }
 
-        PhantomReference<ClassLoader> getRef() {
-            return ref;
+        TestLoader() {
+            super("LeakedClassLoader", toURLs(), ClassLoader.getPlatformClassLoader());
         }
+    }
+
+    // Use a new classloader to load the ClassForName class, then run its
+    // Runnable.
+    static WeakReference<TestLoader> loadAndRun() {
+        TestLoader classLoader = new TestLoader();
+        try {
+            Class<?> loadClass = Class.forName("ClassForName", true, classLoader);
+            ((Runnable) loadClass.newInstance()).run();
+        } catch (ReflectiveOperationException ex) {
+            throw new RuntimeException(ex);
+        }
+        return new WeakReference<>(classLoader);
     }
 
     public static void main(String... args) throws Exception {
@@ -98,30 +95,19 @@ public class ClassForNameLeak {
         // Make simultaneous calls to the test method, to stress things a bit
         ExecutorService es = Executors.newFixedThreadPool(THREADS);
 
-        List<Callable<TestLoader>> callables =
+        List<Callable<WeakReference<TestLoader>>> callables =
                 Stream.generate(() -> {
-                    Callable<TestLoader> cprcl = TestLoader::new;
+                    Callable<WeakReference<TestLoader>> cprcl = ClassForNameLeak::loadAndRun;
                     return cprcl;
                 }).limit(THREADS).collect(Collectors.toList());
 
-        List<Future<TestLoader>> futures = es.invokeAll(callables);
-
-        // Give the GC a chance to enqueue the PhantomReferences
-        for (int i = 0; i < 10; i++) {
-            System.gc();
-        }
-
-        // Make sure all PhantomReferences to the leaked classloader are enqueued
-        for (int j = 0; j < futures.size(); j++) {
-            Reference rmRef = rq.remove(TIMEOUT);
-            if (rmRef == null) {
-                throw new RuntimeException("ClassLoader was never enqueued!");
-            } else {
-                System.out.println("Enqueued " + rmRef);
+        for (Future<WeakReference<TestLoader>> future : es.invokeAll(callables)) {
+            WeakReference<TestLoader> ref = future.get();
+            if (!ForceGC.wait(() -> ref.refersTo(null))) {
+                throw new RuntimeException(ref.get() + " not unloaded");
             }
         }
         es.shutdown();
-        System.out.println("All ClassLoaders successfully enqueued");
     }
 
     private static final String CLASSFILENAME = "ClassForName.class";

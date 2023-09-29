@@ -564,27 +564,16 @@ void ParHeapInspectTask::work(uint worker_id) {
   }
 }
 
-uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *filter, uint parallel_thread_num) {
-
+uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *filter, WorkerThreads* workers) {
   // Try parallel first.
-  if (parallel_thread_num > 1) {
+  if (workers != nullptr) {
     ResourceMark rm;
-
-    WorkerThreads* workers = Universe::heap()->safepoint_workers();
-    if (workers != nullptr) {
-      // The GC provided a WorkerThreads to be used during a safepoint.
-
-      // Can't run with more threads than provided by the WorkerThreads.
-      const uint capped_parallel_thread_num = MIN2(parallel_thread_num, workers->max_workers());
-      WithActiveWorkers with_active_workers(workers, capped_parallel_thread_num);
-
-      ParallelObjectIterator poi(workers->active_workers());
-      ParHeapInspectTask task(&poi, cit, filter);
-      // Run task with the active workers.
-      workers->run_task(&task);
-      if (task.success()) {
-        return task.missed_count();
-      }
+    ParallelObjectIterator poi(workers->active_workers());
+    ParHeapInspectTask task(&poi, cit, filter);
+    // Run task with the active workers.
+    workers->run_task(&task);
+    if (task.success()) {
+      return task.missed_count();
     }
   }
 
@@ -595,13 +584,13 @@ uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *fil
   return ric.missed_count();
 }
 
-void HeapInspection::heap_inspection(outputStream* st, uint parallel_thread_num) {
+void HeapInspection::heap_inspection(outputStream* st, WorkerThreads* workers) {
   ResourceMark rm;
 
   KlassInfoTable cit(false);
   if (!cit.allocation_failed()) {
     // populate table with object allocation info
-    uintx missed_count = populate_table(&cit, nullptr, parallel_thread_num);
+    uintx missed_count = populate_table(&cit, nullptr, workers);
     if (missed_count != 0) {
       log_info(gc, classhisto)("WARNING: Ran out of C-heap; undercounted " UINTX_FORMAT
                                " total instances in data below",

@@ -88,7 +88,7 @@ public abstract class AbstractPlugin implements Plugin {
     ClassModel newClassReader(String path, ResourcePoolEntry resource, Classfile.Option... options) {
         byte[] content = resource.contentBytes();
         try {
-            return Classfile.parse(content, options);
+            return Classfile.of(options).parse(content);
         } catch (Exception e) {
             if (JlinkTask.DEBUG) {
                 System.err.printf("Failed to parse class file: %s from resource of type %s\n", path,
@@ -102,7 +102,7 @@ public abstract class AbstractPlugin implements Plugin {
 
     protected ClassModel newClassReader(String path, byte[] buf, Classfile.Option... options) {
         try {
-            return Classfile.parse(buf, options);
+            return Classfile.of(options).parse(buf);
         } catch (Exception e) {
             if (JlinkTask.DEBUG) {
                 System.err.printf("Failed to parse class file: %s\n", path);

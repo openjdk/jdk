@@ -36,5 +36,4 @@ public class JavaLayouts {
     static final VarHandle VH_INT_UNALIGNED = JAVA_INT_UNALIGNED.arrayElementVarHandle();
 
     static final VarHandle VH_INT = JAVA_INT.arrayElementVarHandle();
-
 }

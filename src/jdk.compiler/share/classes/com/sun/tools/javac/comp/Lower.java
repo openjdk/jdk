@@ -28,7 +28,6 @@ package com.sun.tools.javac.comp;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Kinds.KindSelector;
 import com.sun.tools.javac.code.Scope.WriteableScope;
@@ -3558,18 +3557,13 @@ public class Lower extends TreeTranslator {
             Type elemtype = types.elemtype(tree.expr.type);
             JCExpression loopvarinit = make.Indexed(make.Ident(arraycache),
                                                     make.Ident(index)).setType(elemtype);
-
-            Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
-            JCVariableDecl jcVariableDecl = (JCVariableDecl) tree.varOrRecordPattern;
-
-            JCVariableDecl loopvardef = (JCVariableDecl)make.VarDef(jcVariableDecl.mods,
-                    jcVariableDecl.name,
-                    jcVariableDecl.vartype,
-                    loopvarinit).setType(jcVariableDecl.type);
-            loopvardef.sym = jcVariableDecl.sym;
+            JCVariableDecl loopvardef = (JCVariableDecl)make.VarDef(tree.var.mods,
+                                                  tree.var.name,
+                                                  tree.var.vartype,
+                                                  loopvarinit).setType(tree.var.type);
+            loopvardef.sym = tree.var.sym;
             JCBlock body = make.
-                    Block(0, List.of(loopvardef, tree.body));
-
+                Block(0, List.of(loopvardef, tree.body));
 
             result = translate(make.
                                ForLoop(loopinit,
@@ -3648,26 +3642,22 @@ public class Lower extends TreeTranslator {
                                        itvar.type,
                                        List.nil());
             JCExpression vardefinit = make.App(make.Select(make.Ident(itvar), next));
-
-            Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
-
-            JCVariableDecl var = (JCVariableDecl) tree.varOrRecordPattern;
-            if (var.type.isPrimitive())
+            if (tree.var.type.isPrimitive())
                 vardefinit = make.TypeCast(types.cvarUpperBound(iteratorTarget), vardefinit);
             else
-                vardefinit = make.TypeCast(var.type, vardefinit);
-            JCVariableDecl indexDef = (JCVariableDecl) make.VarDef(var.mods,
-                    var.name,
-                    var.vartype,
-                    vardefinit).setType(var.type);
-            indexDef.sym = var.sym;
+                vardefinit = make.TypeCast(tree.var.type, vardefinit);
+            JCVariableDecl indexDef = (JCVariableDecl)make.VarDef(tree.var.mods,
+                                                  tree.var.name,
+                                                  tree.var.vartype,
+                                                  vardefinit).setType(tree.var.type);
+            indexDef.sym = tree.var.sym;
             JCBlock body = make.Block(0, List.of(indexDef, tree.body));
             body.endpos = TreeInfo.endPos(tree.body);
             result = translate(make.
-                    ForLoop(List.of(init),
-                            cond,
-                            List.nil(),
-                            body));
+                ForLoop(List.of(init),
+                        cond,
+                        List.nil(),
+                        body));
             patchTargets(body, tree, result);
         }
 
@@ -3753,7 +3743,7 @@ public class Lower extends TreeTranslator {
             List<JCExpression> params = matchException ? List.of(makeNull(), makeNull())
                                                        : List.nil();
             JCThrow thr = make.Throw(makeNewClass(exception, params));
-            JCCase c = make.Case(JCCase.STATEMENT, List.of(make.DefaultCaseLabel()), List.of(thr), null);
+            JCCase c = make.Case(JCCase.STATEMENT, List.of(make.DefaultCaseLabel()), null, List.of(thr), null);
             cases = cases.prepend(c);
         }
 
@@ -3780,6 +3770,7 @@ public class Lower extends TreeTranslator {
                     while (patterns.tail.nonEmpty()) {
                         convertedCases.append(make_at(c.pos()).Case(JCCase.STATEMENT,
                                                            List.of(patterns.head),
+                                                           null,
                                                            List.nil(),
                                                            null));
                         patterns = patterns.tail;
@@ -3874,7 +3865,7 @@ public class Lower extends TreeTranslator {
                     VarSymbol label = (VarSymbol)TreeInfo.symbol(((JCConstantCaseLabel) c.labels.head).expr);
                     pat = map.caseValue(label);
                 }
-                newCases.append(make.Case(JCCase.STATEMENT, List.of(make.ConstantCaseLabel(pat)), c.stats, null));
+                newCases.append(make.Case(JCCase.STATEMENT, List.of(make.ConstantCaseLabel(pat)), null, c.stats, null));
             } else {
                 newCases.append(c);
             }
@@ -4046,6 +4037,7 @@ public class Lower extends TreeTranslator {
 
                 caseBuffer.append(make.Case(JCCase.STATEMENT,
                                             List.of(make.ConstantCaseLabel(make.Literal(hashCode))),
+                                            null,
                                             lb.toList(),
                                             null));
             }
@@ -4081,6 +4073,7 @@ public class Lower extends TreeTranslator {
 
                 lb.append(make.Case(JCCase.STATEMENT, caseExpr == null ? List.of(make.DefaultCaseLabel())
                                                                        : List.of(make.ConstantCaseLabel(caseExpr)),
+                                    null,
                                     oneCase.stats, null));
             }
 

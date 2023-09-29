@@ -49,10 +49,14 @@
 /**
  * IP_MULTICAST_ALL supported since 2.6.31 but may not be available at
  * build time.
+ * IPV6_MULTICAST_ALL supported since 4.20
  */
 #ifdef __linux__
   #ifndef IP_MULTICAST_ALL
     #define IP_MULTICAST_ALL    49
+  #endif
+  #ifndef IPV6_MULTICAST_ALL
+    #define IPV6_MULTICAST_ALL    29
   #endif
 #endif
 
@@ -121,6 +125,51 @@ static jboolean isSourceFilterSupported(){
 
 static jclass isa_class;        /* java.net.InetSocketAddress */
 static jmethodID isa_ctorID;    /* InetSocketAddress(InetAddress, int) */
+
+static jint handleSocketErrorWithMessage(JNIEnv *env, jint errorValue,
+                                         const char* message)
+{
+    char *xn;
+    switch (errorValue) {
+        case EINPROGRESS:       /* Non-blocking connect */
+            return 0;
+#ifdef EPROTO
+        case EPROTO:
+            xn = JNU_JAVANETPKG "ProtocolException";
+            break;
+#endif
+        case ECONNREFUSED:
+        case ETIMEDOUT:
+        case ENOTCONN:
+            xn = JNU_JAVANETPKG "ConnectException";
+            break;
+
+        case EHOSTUNREACH:
+            xn = JNU_JAVANETPKG "NoRouteToHostException";
+            break;
+        case EADDRINUSE:  /* Fall through */
+        case EADDRNOTAVAIL:
+        case EACCES:
+            xn = JNU_JAVANETPKG "BindException";
+            break;
+        default:
+            xn = JNU_JAVANETPKG "SocketException";
+            break;
+    }
+    errno = errorValue;
+    if (message == NULL) {
+        JNU_ThrowByNameWithLastError(env, xn, "NioSocketError");
+    } else {
+        JNU_ThrowByNameWithMessageAndLastError(env, xn, message);
+    }
+    return IOS_THROWN;
+}
+
+/* Declared in nio_util.h */
+jint handleSocketError(JNIEnv *env, jint errorValue)
+{
+    return handleSocketErrorWithMessage(env, errorValue, NULL);
+}
 
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_Net_initIDs(JNIEnv *env, jclass clazz)
@@ -252,14 +301,25 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
         }
     }
 
-    /* By default, Linux uses the route default */
     if (domain == AF_INET6 && type == SOCK_DGRAM) {
+        /* By default, Linux uses the route default */
         int arg = 1;
         if (setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &arg,
                        sizeof(arg)) < 0) {
             JNU_ThrowByNameWithLastError(env,
                                          JNU_JAVANETPKG "SocketException",
                                          "Unable to set IPV6_MULTICAST_HOPS");
+            close(fd);
+            return -1;
+        }
+
+        /* Disable IPV6_MULTICAST_ALL if option supported */
+        arg = 0;
+        if ((setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_ALL, (char*)&arg, sizeof(arg)) < 0) &&
+            (errno != ENOPROTOOPT)) {
+            JNU_ThrowByNameWithLastError(env,
+                                     JNU_JAVANETPKG "SocketException",
+                                     "Unable to set IPV6_MULTICAST_ALL");
             close(fd);
             return -1;
         }
@@ -614,7 +674,7 @@ Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobjec
     if (n < 0) {
         if (join && (errno == ENOPROTOOPT || errno == EOPNOTSUPP))
             return IOS_UNAVAILABLE;
-        handleSocketError(env, errno);
+        handleSocketErrorWithMessage(env, errno, "setsockopt failed");
     }
     return 0;
 }
@@ -691,7 +751,7 @@ Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobjec
     if (n < 0) {
         if (join && (errno == ENOPROTOOPT || errno == EOPNOTSUPP))
             return IOS_UNAVAILABLE;
-        handleSocketError(env, errno);
+        handleSocketErrorWithMessage(env, errno, "setsockopt failed");
     }
     return 0;
 }
@@ -912,38 +972,3 @@ Java_sun_nio_ch_Net_sendOOB(JNIEnv* env, jclass this, jobject fdo, jbyte b)
     return convertReturnVal(env, n, JNI_FALSE);
 }
 
-/* Declared in nio_util.h */
-
-jint handleSocketError(JNIEnv *env, jint errorValue)
-{
-    char *xn;
-    switch (errorValue) {
-        case EINPROGRESS:       /* Non-blocking connect */
-            return 0;
-#ifdef EPROTO
-        case EPROTO:
-            xn = JNU_JAVANETPKG "ProtocolException";
-            break;
-#endif
-        case ECONNREFUSED:
-        case ETIMEDOUT:
-        case ENOTCONN:
-            xn = JNU_JAVANETPKG "ConnectException";
-            break;
-
-        case EHOSTUNREACH:
-            xn = JNU_JAVANETPKG "NoRouteToHostException";
-            break;
-        case EADDRINUSE:  /* Fall through */
-        case EADDRNOTAVAIL:
-        case EACCES:
-            xn = JNU_JAVANETPKG "BindException";
-            break;
-        default:
-            xn = JNU_JAVANETPKG "SocketException";
-            break;
-    }
-    errno = errorValue;
-    JNU_ThrowByNameWithLastError(env, xn, "NioSocketError");
-    return IOS_THROWN;
-}

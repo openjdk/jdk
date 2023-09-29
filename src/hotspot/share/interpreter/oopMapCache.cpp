@@ -23,11 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/generateOopMap.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
@@ -332,7 +334,7 @@ void OopMapCacheEntry::fill(const methodHandle& method, int bci) {
   // Flush entry to deallocate an existing entry
   flush();
   set_method(method());
-  set_bci(bci);
+  set_bci(checked_cast<unsigned short>(bci));  // bci is always u2
   if (method->is_native()) {
     // Native method activations have oops only among the parameters and one
     // extra oop following the parameters (the mirror for static native methods).
@@ -405,6 +407,8 @@ void OopMapCacheEntry::flush() {
 void InterpreterOopMap::resource_copy(OopMapCacheEntry* from) {
   assert(_resource_allocate_bit_mask,
     "Should not resource allocate the _bit_mask");
+  assert(from->has_valid_mask(),
+    "Cannot copy entry with an invalid mask");
 
   set_method(from->method());
   set_bci(from->bci());
@@ -610,7 +614,9 @@ void OopMapCache::compute_one_oop_map(const methodHandle& method, int bci, Inter
   OopMapCacheEntry* tmp = NEW_C_HEAP_OBJ(OopMapCacheEntry, mtClass);
   tmp->initialize();
   tmp->fill(method, bci);
-  entry->resource_copy(tmp);
+  if (tmp->has_valid_mask()) {
+    entry->resource_copy(tmp);
+  }
   tmp->flush();
   FREE_C_HEAP_OBJ(tmp);
 }

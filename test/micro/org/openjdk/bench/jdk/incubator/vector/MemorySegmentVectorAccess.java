@@ -26,7 +26,7 @@
 package org.openjdk.bench.jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
+import java.lang.foreign.Arena;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
 import jdk.incubator.vector.ByteVector;
@@ -46,7 +46,7 @@ import org.openjdk.jmh.annotations.Warmup;
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
-@State(org.openjdk.jmh.annotations.Scope.Benchmark)
+@State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 1, jvmArgsAppend = {
     "--add-modules=jdk.incubator.vector",
@@ -69,8 +69,10 @@ public class MemorySegmentVectorAccess {
 
   @Setup
   public void setup() {
-    nativeIn = MemorySegment.allocateNative(size, SegmentScope.auto());
-    nativeOut = MemorySegment.allocateNative(size, SegmentScope.auto());
+      Arena scope1 = Arena.ofAuto();
+      nativeIn = scope1.allocate(size, 1);
+      Arena scope = Arena.ofAuto();
+      nativeOut = scope.allocate(size, 1);
 
     byteIn = new byte[size];
     byteOut = new byte[size];

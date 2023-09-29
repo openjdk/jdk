@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,14 +59,14 @@ import java.io.IOException;
  *
  * <p> <b>Usage Example:</b>
  * Suppose we need to print out the owner and access permissions of a file:
- * <pre>
+ * {@snippet lang=java :
  *     Path file = ...
  *     PosixFileAttributes attrs = Files.getFileAttributeView(file, PosixFileAttributeView.class)
  *         .readAttributes();
  *     System.out.format("%s %s%n",
  *         attrs.owner().getName(),
  *         PosixFilePermissions.toString(attrs.permissions()));
- * </pre>
+ * }
  *
  * <h2> Dynamic Access </h2>
  * <p> Where dynamic access to file attributes is required, the attributes
@@ -118,12 +118,12 @@ import java.io.IOException;
  * asFileAttribute} method to construct a {@code FileAttribute} when creating a
  * file:
  *
- * <pre>
+ * {@snippet lang=java :
  *     Path path = ...
- *     Set&lt;PosixFilePermission&gt; perms =
+ *     Set<PosixFilePermission> perms =
  *         EnumSet.of(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE, GROUP_READ);
  *     Files.createFile(path, PosixFilePermissions.asFileAttribute(perms));
- * </pre>
+ * }
  *
  * <p> When the access permissions are set at file creation time then the actual
  * value of the permissions may differ from the value of the attribute object.

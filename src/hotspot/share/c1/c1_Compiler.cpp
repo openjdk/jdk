@@ -32,6 +32,7 @@
 #include "c1/c1_Runtime1.hpp"
 #include "c1/c1_ValueType.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
 #include "memory/allocation.hpp"
@@ -65,7 +66,7 @@ void Compiler::initialize() {
   BufferBlob* buffer_blob = init_buffer_blob();
 
   if (should_perform_init()) {
-    if (buffer_blob == NULL) {
+    if (buffer_blob == nullptr) {
       // When we come here we are in state 'initializing'; entire C1 compilation
       // can be shut down.
       set_state(failed);
@@ -83,12 +84,12 @@ int Compiler::code_buffer_size() {
 BufferBlob* Compiler::init_buffer_blob() {
   // Allocate buffer blob once at startup since allocation for each
   // compilation seems to be too expensive (at least on Intel win32).
-  assert (CompilerThread::current()->get_buffer_blob() == NULL, "Should initialize only once");
+  assert (CompilerThread::current()->get_buffer_blob() == nullptr, "Should initialize only once");
 
   // setup CodeBuffer.  Preallocate a BufferBlob of size
   // NMethodSizeLimit plus some extra space for constants.
   BufferBlob* buffer_blob = BufferBlob::create("C1 temporary CodeBuffer", code_buffer_size());
-  if (buffer_blob != NULL) {
+  if (buffer_blob != nullptr) {
     CompilerThread::current()->set_buffer_blob(buffer_blob);
   }
 
@@ -103,7 +104,10 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
     // C1 does not support intrinsification of synchronized methods.
     return false;
   }
+  return Compiler::is_intrinsic_supported(id);
+}
 
+bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_compareAndSetLong:
     if (!VM_Version::supports_cx8()) return false;
@@ -244,7 +248,7 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 
 void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci, bool install_code, DirectiveSet* directive) {
   BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
-  assert(buffer_blob != NULL, "Must exist");
+  assert(buffer_blob != nullptr, "Must exist");
   // invoke compilation
   {
     // We are nested here because we need for the destructor

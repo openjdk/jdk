@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package sun.nio.ch;
 import java.nio.channels.Channel;
 import java.io.FileDescriptor;
 import java.io.IOException;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
@@ -90,6 +92,11 @@ public interface SelChImpl extends Channel {
                 millis = -1;
             } else {
                 millis = NANOSECONDS.toMillis(nanos);
+                if (nanos > MILLISECONDS.toNanos(millis)) {
+                    // Round up any excess nanos to the nearest millisecond to
+                    // avoid parking for less than requested.
+                    millis++;
+                }
             }
             Net.poll(getFD(), event, millis);
         }

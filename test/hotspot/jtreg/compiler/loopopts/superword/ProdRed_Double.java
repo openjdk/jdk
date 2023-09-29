@@ -82,11 +82,12 @@ public class ProdRed_Double {
         }
     }
 
-    /* Vectorization is expected but not enabled (SuperWord::implemented).
-       A positive @IR test should be added later. */
     @Test
     @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.MUL_REDUCTION_VD})
+    @IR(applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        applyIfCPUFeature = {"sse2", "true"},
+        counts = {IRNode.MUL_REDUCTION_VD, ">= 1"})
     public static double prodReductionImplement(double[] a, double[] b, double total) {
         for (int i = 0; i < a.length; i++) {
             total *= a[i] - b[i];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -463,8 +463,7 @@ public class PKCS9Attribute implements DerEncoder {
         case 5:     // signing time
             byte elemTag = elems[0].getTag();
             DerInputStream dis = new DerInputStream(elems[0].toByteArray());
-            value = (elemTag == DerValue.tag_GeneralizedTime) ?
-                    dis.getGeneralizedTime() : dis.getUTCTime();
+            value = dis.getTime();
             break;
 
         case 6:     // countersignature
@@ -570,7 +569,7 @@ public class PKCS9Attribute implements DerEncoder {
         case 5:     // signing time
             {
                 DerOutputStream temp2 = new DerOutputStream();
-                temp2.putUTCTime((Date) value);
+                temp2.putTime((Date) value);
                 temp.write(DerValue.tag_Set, temp2.toByteArray());
             }
             break;

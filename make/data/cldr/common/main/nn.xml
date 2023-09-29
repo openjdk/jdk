@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -318,24 +318,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
-				<months>
-					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1">jan.</month>
-							<month type="2">feb.</month>
-							<month type="3">mars</month>
-							<month type="4">apr.</month>
-							<month type="5">mai</month>
-							<month type="6">juni</month>
-							<month type="7">juli</month>
-							<month type="8">aug.</month>
-							<month type="9">sep.</month>
-							<month type="10">okt.</month>
-							<month type="11">nov.</month>
-							<month type="12">des.</month>
-						</monthWidth>
-					</monthContext>
-				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
@@ -346,15 +328,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu">to.</day>
 							<day type="fri">fr.</day>
 							<day type="sat">la.</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">S</day>
-							<day type="mon">M</day>
-							<day type="tue">T</day>
-							<day type="wed">O</day>
-							<day type="thu">T</day>
-							<day type="fri">F</day>
-							<day type="sat">L</day>
 						</dayWidth>
 						<dayWidth type="short">
 							<day type="sun">sø.</day>
@@ -2934,8 +2907,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="angle-arc-second">
 				<displayName>bogesek</displayName>
 			</unit>
+			<unit type="area-square-mile">
+				<perUnitPattern>{0}/mi²</perUnitPattern>
+			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100 km</displayName>
+			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName>eng. mil/gal</displayName>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>eng. mil/brit. gal</displayName>
+			</unit>
+			<unit type="digital-byte">
+				<unitPattern count="one">{0}B</unitPattern>
+				<unitPattern count="other">{0} byte</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<displayName>hå.</displayName>
@@ -2966,23 +2952,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-millisecond">
 				<displayName>millisekund</displayName>
 			</unit>
-			<unit type="length-kilometer">
-				<perUnitPattern>{0}/km</perUnitPattern>
+			<unit type="graphics-dot-per-centimeter">
+				<unitPattern count="one">{0} dpcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
 			</unit>
-			<unit type="length-meter">
-				<perUnitPattern>{0}/m</perUnitPattern>
+			<unit type="graphics-dot-per-inch">
+				<unitPattern count="one">{0} ppt</unitPattern>
+				<unitPattern count="other">{0} ppt</unitPattern>
 			</unit>
-			<unit type="length-decimeter">
-				<displayName>dm</displayName>
+			<unit type="length-picometer">
+				<displayName>pikometer</displayName>
 			</unit>
-			<unit type="length-centimeter">
-				<perUnitPattern>{0}/cm</perUnitPattern>
+			<unit type="length-astronomical-unit">
+				<displayName>au</displayName>
 			</unit>
-			<unit type="length-micrometer">
-				<displayName>μm</displayName>
+			<unit type="length-fathom">
+				<displayName>famner</displayName>
 			</unit>
-			<unit type="length-nanometer">
-				<displayName>nm</displayName>
+			<unit type="mass-stone">
+				<displayName>stones</displayName>
+				<unitPattern count="one">{0} eng. st.</unitPattern>
+				<unitPattern count="other">{0} eng. st.</unitPattern>
 			</unit>
 			<unit type="mass-ounce">
 				<unitPattern count="one">{0} unse</unitPattern>
@@ -2999,7 +2989,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-liter">
 				<displayName>liter</displayName>
 			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>m. koppar</displayName>
+			</unit>
+			<unit type="volume-pint">
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>væskeunse</displayName>
+			</unit>
 			<unit type="volume-fluid-ounce-imperial">
+				<displayName>britisk væskeunse</displayName>
 				<unitPattern count="one">{0} imp. fl oz</unitPattern>
 				<unitPattern count="other">{0} imp. fl oz</unitPattern>
 			</unit>
@@ -3008,19 +3009,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ms</unitPattern>
 				<unitPattern count="other">{0} ms</unitPattern>
 			</unit>
-			<unit type="volume-dessert-spoon">
-				<displayName>bs</displayName>
-				<unitPattern count="one">{0} bs</unitPattern>
-				<unitPattern count="other">{0} bs</unitPattern>
-			</unit>
 			<unit type="volume-dessert-spoon-imperial">
 				<displayName>brit. barneskei</displayName>
-				<unitPattern count="one">{0} imp. bs</unitPattern>
-				<unitPattern count="other">{0} imp. bs</unitPattern>
 			</unit>
 			<unit type="volume-drop">
 				<unitPattern count="one">{0} dr</unitPattern>
 				<unitPattern count="other">{0} drope</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>brit. quart</displayName>
 			</unit>
 		</unitLength>
 	</units>

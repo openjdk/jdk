@@ -35,7 +35,9 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.util.concurrent.TimeUnit;
@@ -48,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)
 public class PointerBench {
 
-    final Arena arena = Arena.openConfined();
+    final Arena arena = Arena.ofConfined();
     static final int ELEM_SIZE = 1_000_000;
     Pointer<Integer> intPointer = Pointer.allocate(NativeType.C_INT, ELEM_SIZE, arena);
     Pointer<Pointer<Integer>> intPointerPointer = Pointer.allocate(NativeType.C_INT_PTR, ELEM_SIZE, arena);
@@ -57,7 +59,8 @@ public class PointerBench {
     MemorySegment intPointerSegment = intPointerPointer.segment();
     MemorySegment pointSegment = pointPointer.segment();
 
-    public static final ValueLayout.OfAddress UNSAFE_ADDRESS = ValueLayout.ADDRESS.asUnbounded();
+    public static final AddressLayout UNSAFE_ADDRESS = ValueLayout.ADDRESS
+            .withTargetLayout(MemoryLayout.sequenceLayout(ValueLayout.JAVA_BYTE));
 
     @Setup
     public void setup() {

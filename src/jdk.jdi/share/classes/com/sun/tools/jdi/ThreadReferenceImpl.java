@@ -273,7 +273,18 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
             JDWP.ThreadReference.Stop.process(vm, this,
                                          (ObjectReferenceImpl)throwable);
         } catch (JDWPException exc) {
-            throw exc.toJDIException();
+            switch (exc.errorCode()) {
+            case JDWP.Error.OPAQUE_FRAME:
+                assert isVirtual(); // can only happen with virtual threads
+                throw new OpaqueFrameException();
+            case JDWP.Error.THREAD_NOT_SUSPENDED:
+                assert isVirtual(); // can only happen with virtual threads
+                throw new IllegalThreadStateException("virtual thread not suspended");
+            case JDWP.Error.INVALID_THREAD:
+                throw new IllegalThreadStateException("thread has terminated");
+            default:
+                throw exc.toJDIException();
+            }
         }
     }
 
@@ -586,11 +597,10 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
         } catch (JDWPException exc) {
             switch (exc.errorCode()) {
             case JDWP.Error.OPAQUE_FRAME:
-                if (meth.isNative()) {
-                    throw new NativeMethodException();
-                } else {
-                    assert isVirtual(); // can only happen with virtual threads
+                if (isVirtual() && !meth.isNative()) {
                     throw new OpaqueFrameException();
+                } else {
+                    throw new NativeMethodException();
                 }
             case JDWP.Error.THREAD_NOT_SUSPENDED:
                 throw new IncompatibleThreadStateException(

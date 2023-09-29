@@ -285,6 +285,13 @@ final class WinNTFileSystem extends FileSystem {
             theChars[parentEnd] = slash;
             child.getChars(childStart, cn, theChars, parentEnd + 1);
         }
+
+        // if present, strip trailing name separator unless after a ':'
+        if (theChars.length > 1
+            && theChars[theChars.length - 1] == slash
+            && theChars[theChars.length - 2] != ':')
+            return new String(theChars, 0, theChars.length - 1);
+
         return new String(theChars);
     }
 

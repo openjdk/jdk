@@ -12,7 +12,7 @@
 # A "headful" test requires a graphical environment to meaningfully
 # run. Tests that are not headful are "headless".
 # A test flagged with key sound needs audio devices on the system, this
-# may be accompanied by the headful keyword since audio device access 
+# may be accompanied by the headful keyword since audio device access
 # is often linked to access to desktop resources and headful systems are
 # also more likely to have audio devices (ie meaning both input and output)
 # A test flagged with key "printer" requires a printer to succeed, else
@@ -31,7 +31,7 @@ exclusiveAccess.dirs=java/math/BigInteger/largeMemory \
 java/rmi/Naming java/util/prefs sun/management/jmxremote \
 sun/tools/jstatd sun/security/mscapi java/util/Arrays/largeMemory \
 java/util/BitSet/stream javax/rmi java/net/httpclient/websocket \
-com/sun/net/httpserver/simpleserver
+com/sun/net/httpserver/simpleserver sun/tools/jhsdb
 
 # Group definitions
 groups=TEST.groups
@@ -46,16 +46,22 @@ requires.extraPropDefns.bootlibs = ../lib/jdk/test/whitebox
 requires.extraPropDefns.libs = \
     ../lib/jdk/test/lib/Platform.java \
     ../lib/jdk/test/lib/Container.java
-requires.extraPropDefns.vmOpts = -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+requires.extraPropDefns.javacOpts = --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
+requires.extraPropDefns.vmOpts = \
+    -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI \
+    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
 requires.properties= \
     sun.arch.data.model \
     java.runtime.name \
+    vm.flagless \
     vm.gc.G1 \
     vm.gc.Serial \
     vm.gc.Parallel \
     vm.gc.Shenandoah \
     vm.gc.Epsilon \
     vm.gc.Z \
+    vm.gc.ZGenerational \
+    vm.gc.ZSinglegen \
     vm.graal.enabled \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
@@ -67,12 +73,15 @@ requires.properties= \
     vm.hasSA \
     vm.hasJFR \
     vm.jvmci \
+    vm.jvmci.enabled \
+    vm.jvmti \
     docker.support \
     release.implementor \
-    jdk.containerized
+    jdk.containerized \
+    jdk.foreign.linker
 
 # Minimum jtreg version
-requiredVersion=7.1.1+1
+requiredVersion=7.3.1+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them

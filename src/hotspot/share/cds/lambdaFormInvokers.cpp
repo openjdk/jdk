@@ -26,6 +26,7 @@
 #include "cds/archiveBuilder.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -51,7 +52,6 @@
 
 GrowableArrayCHeap<char*, mtClassShared>* LambdaFormInvokers::_lambdaform_lines = nullptr;
 Array<Array<char>*>*  LambdaFormInvokers::_static_archive_invokers = nullptr;
-GrowableArrayCHeap<OopHandle, mtClassShared>* LambdaFormInvokers::_regenerated_mirrors = nullptr;
 
 #define NUM_FILTER 4
 static const char* filter[NUM_FILTER] = {"java.lang.invoke.Invokers$Holder",
@@ -77,24 +77,6 @@ void LambdaFormInvokers::append(char* line) {
   _lambdaform_lines->append(line);
 }
 
-// The regenerated Klass is not added to any class loader, so we need
-// to keep its java_mirror alive to avoid class unloading.
-void LambdaFormInvokers::add_regenerated_class(oop regenerated_class) {
-  if (_regenerated_mirrors == nullptr) {
-    _regenerated_mirrors = new GrowableArrayCHeap<OopHandle, mtClassShared>(150);
-  }
-  _regenerated_mirrors->append(OopHandle(Universe::vm_global(), regenerated_class));
-}
-
-void LambdaFormInvokers::cleanup_regenerated_classes() {
-  if (_regenerated_mirrors == nullptr) return;
-
-  for (int i = 0; i < _regenerated_mirrors->length(); i++) {
-    _regenerated_mirrors->at(i).release(Universe::vm_global());
-  }
-  delete _regenerated_mirrors;
-  _regenerated_mirrors = nullptr;
-}
 
 // convenient output
 class PrintLambdaFormMessage {
@@ -207,7 +189,7 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
                                                    CHECK);
 
   assert(result->java_mirror() != nullptr, "must be");
-  add_regenerated_class(result->java_mirror());
+  RegeneratedClasses::add_class(InstanceKlass::cast(klass), result);
 
   result->add_to_hierarchy(THREAD);
 
@@ -266,5 +248,5 @@ void LambdaFormInvokers::read_static_archive_invokers() {
 }
 
 void LambdaFormInvokers::serialize(SerializeClosure* soc) {
-  soc->do_ptr((void**)&_static_archive_invokers);
+  soc->do_ptr(&_static_archive_invokers);
 }

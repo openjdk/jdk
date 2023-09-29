@@ -37,16 +37,19 @@
 #define ARENA_AMALLOC_ALIGNMENT BytesPerLong
 #define ARENA_ALIGN(x) (align_up((x), ARENA_AMALLOC_ALIGNMENT))
 
-//------------------------------Chunk------------------------------------------
+
 // Linked list of raw memory chunks
-class Chunk: CHeapObj<mtChunk> {
+class Chunk {
 
  private:
   Chunk*       _next;     // Next Chunk in list
   const size_t _len;      // Size of this Chunk
- public:
-  void* operator new(size_t size, AllocFailType alloc_failmode, size_t length) throw();
-  void  operator delete(void* p);
+public:
+  NONCOPYABLE(Chunk);
+
+  void operator delete(void*) = delete;
+  void* operator new(size_t) = delete;
+
   Chunk(size_t length);
 
   enum {
@@ -67,8 +70,8 @@ class Chunk: CHeapObj<mtChunk> {
     non_pool_size = init_size + 32 // An initial size which is not one of above
   };
 
-  void chop();                  // Chop this chunk
-  void next_chop();             // Chop next chunk
+  static void chop(Chunk* chunk);                  // Chop this chunk
+  static void next_chop(Chunk* chunk);             // Chop next chunk
   static size_t aligned_overhead_size(void) { return ARENA_ALIGN(sizeof(Chunk)); }
   static size_t aligned_overhead_size(size_t byte_size) { return ARENA_ALIGN(byte_size); }
 
@@ -79,12 +82,8 @@ class Chunk: CHeapObj<mtChunk> {
   char* bottom() const          { return ((char*) this) + aligned_overhead_size();  }
   char* top()    const          { return bottom() + _len; }
   bool contains(char* p) const  { return bottom() <= p && p <= top(); }
-
-  // Start the chunk_pool cleaner task
-  static void start_chunk_pool_cleaner_task();
 };
 
-//------------------------------Arena------------------------------------------
 // Fast allocation of memory
 class Arena : public CHeapObjBase {
 protected:
@@ -94,9 +93,10 @@ protected:
 
   MEMFLAGS    _flags;           // Memory tracking flags
 
-  Chunk *_first;                // First chunk
-  Chunk *_chunk;                // current chunk
-  char *_hwm, *_max;            // High water mark and max in current chunk
+  Chunk* _first;                // First chunk
+  Chunk* _chunk;                // current chunk
+  char* _hwm;                   // High water mark
+  char* _max;                   // and max in current chunk
   // Get a new Chunk of at least size x
   void* grow(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
   size_t _size_in_bytes;        // Size of arena (used for native memory tracking)
@@ -113,6 +113,9 @@ protected:
   }
 
  public:
+  // Start the chunk_pool cleaner task
+  static void start_chunk_pool_cleaner_task();
+
   Arena(MEMFLAGS memflag);
   Arena(MEMFLAGS memflag, size_t init_size);
   ~Arena();
@@ -158,9 +161,6 @@ protected:
   void *Arealloc( void *old_ptr, size_t old_size, size_t new_size,
       AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
-  // Move contents of this arena into an empty arena
-  Arena *move_contents(Arena *empty_arena);
-
   // Determine if pointer belongs to this Arena or not.
   bool contains( const void *ptr ) const;
 
@@ -173,7 +173,7 @@ protected:
 
 private:
   // Reset this Arena to empty, access will trigger grow if necessary
-  void   reset(void) {
+  void reset(void) {
     _first = _chunk = nullptr;
     _hwm = _max = nullptr;
     set_size_in_bytes(0);

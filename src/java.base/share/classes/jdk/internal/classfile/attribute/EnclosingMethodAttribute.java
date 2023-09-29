@@ -36,12 +36,17 @@ import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
+import jdk.internal.classfile.impl.Util;
 
 /**
  * Models the {@code EnclosingMethod} attribute {@jvms 4.7.7}, which can appear
  * on classes, and indicates that the class is a local or anonymous class.
  * Delivered as a {@link ClassElement} when traversing the elements of a {@link
  * jdk.internal.classfile.ClassModel}.
+ * <p>
+ * The attribute does not permit multiple instances in a given location.
+ * Subsequent occurrence of the attribute takes precedence during the attributed
+ * element build or transformation.
  */
 public sealed interface EnclosingMethodAttribute
         extends Attribute<EnclosingMethodAttribute>, ClassElement
@@ -81,7 +86,7 @@ public sealed interface EnclosingMethodAttribute
      * immediately enclosed by a method or constructor}
      */
     default Optional<MethodTypeDesc> enclosingMethodTypeSymbol() {
-        return enclosingMethodType().map(n -> MethodTypeDesc.ofDescriptor(n.stringValue()));
+        return enclosingMethod().map(Util::methodTypeSymbol);
     }
 
     /**

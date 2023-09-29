@@ -194,9 +194,9 @@ void MallocTracker::deaccount(MallocHeader::FreeInfo free_info) {
 
 // Given a pointer, look for the containing malloc block.
 // Print the block. Note that since there is very low risk of memory looking
-// accidentally like a valid malloc block header (canaries and all) this is not
-// totally failproof. Only use this during debugging or when you can afford
-// signals popping up, e.g. when writing an hs_err file.
+// accidentally like a valid malloc block header (canaries and all) so this is not
+// totally failproof and may give a wrong answer. It is safe in that it will never
+// crash, even when encountering unmapped memory.
 bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
   assert(MemTracker::enabled(), "NMT not enabled");
 
@@ -215,7 +215,7 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
     for (; here >= end; here -= smallest_possible_alignment) {
       if (!os::is_readable_pointer(here)) {
         // Probably OOB, give up
-        return false;
+        break;
       }
       const MallocHeader* const candidate = (const MallocHeader*)here;
       if (!candidate->looks_valid()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.net.Authenticator.RequestorType;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.concurrent.locks.ReentrantLock;
 
 import sun.net.www.HeaderParser;
@@ -80,9 +81,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
     public NegotiateAuthentication(HttpCallerInfo hci) {
         super(RequestorType.PROXY==hci.authType ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
               hci.scheme.equalsIgnoreCase("Negotiate") ? NEGOTIATE : KERBEROS,
-              hci.url,
-              "",
-              AuthenticatorKeys.getKey(hci.authenticator));
+              hci.url, "");
         this.hci = hci;
     }
 
@@ -112,7 +111,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
                 supported = new HashMap<>();
             }
             String hostname = hci.host;
-            hostname = hostname.toLowerCase();
+            hostname = hostname.toLowerCase(Locale.ROOT);
             if (supported.containsKey(hostname)) {
                 return supported.get(hostname);
             }

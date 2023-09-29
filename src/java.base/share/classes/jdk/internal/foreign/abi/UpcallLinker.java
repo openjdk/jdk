@@ -28,8 +28,8 @@ package jdk.internal.foreign.abi;
 import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
 import sun.security.action.GetPropertyAction;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -141,9 +141,9 @@ public class UpcallLinker {
                                   ABIDescriptor abi) {}
 
     private static Object invokeInterpBindings(MethodHandle leaf, Object[] lowLevelArgs, InvocationData invData) throws Throwable {
-        Binding.Context allocator = invData.callingSequence.allocationSize() != 0
-                ? Binding.Context.ofBoundedAllocator(invData.callingSequence.allocationSize())
-                : Binding.Context.ofScope();
+        Arena allocator = invData.callingSequence.allocationSize() != 0
+                ? SharedUtils.newBoundedArena(invData.callingSequence.allocationSize())
+                : SharedUtils.newEmptyArena();
         try (allocator) {
             /// Invoke interpreter, got array of high-level arguments back
             Object[] highLevelArgs = new Object[invData.callingSequence.calleeMethodType().parameterCount()];

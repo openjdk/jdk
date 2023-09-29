@@ -34,46 +34,33 @@ import java.util.Set;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 /**
  * @summary Tests for ZoneRulesProvider class.
- * @bug 8299571
+ * @bug 8299571 8302983
  */
 @Test
 public class TestZoneRulesProvider {
-    private static final Set<String> MY_ZONE_IDS =
-        new LinkedHashSet(Arrays.asList(new String[] {"MyID_1", "MyID_2", "CET", "MyID_3"}));
 
     /**
      * Tests whether partially registered zones are cleaned on a provider registration
      * failure, in case a duplicated zone is detected.
+     * @bug 8299571
      */
     @Test
     public void test_registerDuplicatedZone() {
+        Set<String> myZoneIds = new LinkedHashSet<>(Arrays.asList(new String[] {"MyID_1", "MyID_2", "CET", "MyID_3"}));
         try {
-            ZoneRulesProvider.registerProvider(new ZoneRulesProvider() {
-                @Override
-                protected Set<String> provideZoneIds() {
-                    return MY_ZONE_IDS;
-                }
-
-                @Override
-                protected ZoneRules provideRules(String zoneId, boolean forCaching) {
-                    return null;
-                }
-
-                @Override
-                protected NavigableMap<String, ZoneRules> provideVersions(String zoneId) {
-                    return null;
-                }
-            });
+            ZoneRulesProvider.registerProvider(new IdsOnlyZoneRulesProvider(myZoneIds));
             throw new RuntimeException("Registering a provider that duplicates a zone should throw an exception");
         } catch (ZoneRulesException e) {
             // Ignore. Failure on registration is expected.
         }
 
-        MY_ZONE_IDS.stream().forEach(id -> {
+        myZoneIds.stream().forEach(id -> {
             var isCET = id.equals("CET");
 
             // availability check
@@ -90,5 +77,63 @@ public class TestZoneRulesProvider {
                 assertFalse(isCET, "Not possible to obtain a ZoneId for \"CET\".");
             }
         });
+    }
+
+    /**
+     * Tests whether registering a provider twice will still leave it registered.
+     * @bug 8302983
+     */
+    @Test
+    public void test_registerTwice() {
+        String zone = "MyID";
+        var provider = new IdsOnlyZoneRulesProvider(Set.of(zone));
+        assertFalse(ZoneId.getAvailableZoneIds().contains(zone), "Unexpected availability for " + zone);
+        ZoneRulesProvider.registerProvider(provider);
+        assertTrue(ZoneId.getAvailableZoneIds().contains(zone), "Unexpected non-availability for " + zone);
+        try {
+            ZoneId.of(zone);
+        } catch (ZoneRulesException e) {
+            fail("ZoneId instance for " + zone + " should be obtainable");
+        }
+
+        try {
+            ZoneRulesProvider.registerProvider(provider);
+            fail("Registering an already registered provider should throw an exception");
+        } catch (ZoneRulesException e) {
+            // Ignore. Failure on duplicate registration is expected.
+        }
+
+        // availability check
+        assertTrue(ZoneId.getAvailableZoneIds().contains(zone), "Unexpected non-availability for " + zone);
+        // instantiation check
+        try {
+            ZoneId.of(zone);
+        } catch (ZoneRulesException e) {
+            fail("ZoneId instance for " + zone + " should still be obtainable", e);
+        }
+    }
+
+    private static class IdsOnlyZoneRulesProvider extends ZoneRulesProvider {
+
+        private final Set<String> zones;
+
+        IdsOnlyZoneRulesProvider(Set<String> zones) {
+            this.zones = zones;
+        }
+
+        @Override
+        protected Set<String> provideZoneIds() {
+            return zones;
+        }
+
+        @Override
+        protected ZoneRules provideRules(String zoneId, boolean forCaching) {
+            return null;
+        }
+
+        @Override
+        protected NavigableMap<String, ZoneRules> provideVersions(String zoneId) {
+            return null;
+        }
     }
 }

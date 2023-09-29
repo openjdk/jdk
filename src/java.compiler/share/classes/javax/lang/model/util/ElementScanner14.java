@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import javax.lang.model.element.*;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.ElementVisitor;
 import static javax.lang.model.SourceVersion.*;
 
 /**
@@ -77,7 +78,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see ElementScanner9
  * @since 16
  */
-@SupportedSourceVersion(RELEASE_21)
+@SupportedSourceVersion(RELEASE_22)
 public class ElementScanner14<R, P> extends ElementScanner9<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the
@@ -98,15 +99,15 @@ public class ElementScanner14<R, P> extends ElementScanner9<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation scans the type parameters, if
      * any, and then the enclosed elements.
      *
      *
-     * @param e  {@inheritDoc}
-     * @param p  {@inheritDoc}
-     * @return the result of scanning
+     * @param e  {@inheritDoc ElementVisitor}
+     * @param p  {@inheritDoc ElementVisitor}
+     * @return   {@inheritDoc ElementScanner6}
      */
     @Override
     public R visitType(TypeElement e, P p) {
@@ -114,15 +115,16 @@ public class ElementScanner14<R, P> extends ElementScanner9<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation first scans the type parameters, if any, and then
      * the parameters.
      *
-     * @param e  {@inheritDoc}
-     * @param p  {@inheritDoc}
-     * @return the result of scanning
+     * @param e  {@inheritDoc ElementVisitor}
+     * @param p  {@inheritDoc ElementVisitor}
+     * @return   {@inheritDoc ElementScanner6}
      */
+    @Override
     public R visitExecutable(ExecutableElement e, P p) {
         return scan(createScanningList(e, e.getParameters()), p);
     }
@@ -140,13 +142,13 @@ public class ElementScanner14<R, P> extends ElementScanner9<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation scans the enclosed elements.
      *
-     * @param e the element to visit
-     * @param p a visitor-specified parameter
-     * @return  the result of the scan
+     * @param e {@inheritDoc ElementVisitor}
+     * @param p {@inheritDoc ElementVisitor}
+     * @return  {@inheritDoc ElementScanner6}
      */
     @Override
     public R visitRecordComponent(RecordComponentElement e, P p) {

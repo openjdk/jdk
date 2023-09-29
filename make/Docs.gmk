@@ -66,11 +66,6 @@ MODULES_SOURCE_PATH := $(call PathList, $(call GetModuleSrcPath) )
 # In order to get a specific ordering it's necessary to specify the total
 # ordering of tags as the tags are otherwise ordered in order of definition.
 JAVADOC_TAGS := \
-    -tag beaninfo:X \
-    -tag revised:X \
-    -tag since.unbundled:X \
-    -tag Note:X \
-    -tag ToDo:X \
     -tag 'apiNote:a:API Note:' \
     -tag 'implSpec:a:Implementation Requirements:' \
     -tag 'implNote:a:Implementation Note:' \
@@ -110,7 +105,6 @@ JAVA_WARNINGS_ARE_ERRORS ?= -Werror
 JAVADOC_OPTIONS := -use -keywords -notimestamp \
     -encoding ISO-8859-1 -docencoding UTF-8 -breakiterator \
     -splitIndex --system none -javafx --expand-requires transitive \
-    --enable-preview -source $(JDK_SOURCE_TARGET_VERSION) \
     --override-methods=summary \
     --no-external-specs-page
 
@@ -118,7 +112,6 @@ JAVADOC_OPTIONS := -use -keywords -notimestamp \
 # development cycle.
 REFERENCE_OPTIONS := -XDignore.symbol.file=true -use -keywords -notimestamp \
     -encoding ISO-8859-1 -breakiterator -splitIndex --system none \
-    --enable-preview -source $(JDK_SOURCE_TARGET_VERSION) \
     -html5 -javafx --expand-requires transitive \
     --no-external-specs-page
 

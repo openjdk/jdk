@@ -897,8 +897,8 @@ class GraphKit : public Phase {
     return iff;
   }
 
-  void add_empty_predicates(int nargs = 0);
-  void add_empty_predicate_impl(Deoptimization::DeoptReason reason, int nargs);
+  void add_parse_predicates(int nargs = 0);
+  void add_parse_predicate(Deoptimization::DeoptReason reason, int nargs);
 
   Node* make_constant_from_field(ciField* field, Node* obj);
 

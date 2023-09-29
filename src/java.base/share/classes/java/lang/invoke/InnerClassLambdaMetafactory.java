@@ -35,7 +35,6 @@ import sun.security.action.GetBooleanAction;
 import java.io.Serializable;
 import java.lang.constant.ConstantDescs;
 import java.lang.reflect.Modifier;
-import java.nio.file.Path;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -93,7 +92,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         //    -Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles
         // or -Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles=true
         final String dumpProxyClassesKey = "jdk.invoke.LambdaMetafactory.dumpProxyClassFiles";
-        lambdaProxyClassFileDumper = ClassFileDumper.getInstance(dumpProxyClassesKey, Path.of("DUMP_LAMBDA_PROXY_CLASS_FILES"));
+        lambdaProxyClassFileDumper = ClassFileDumper.getInstance(dumpProxyClassesKey, "DUMP_LAMBDA_PROXY_CLASS_FILES");
 
         final String disableEagerInitializationKey = "jdk.internal.lambda.disableEagerInitialization";
         disableEagerInitialization = GetBooleanAction.privilegedGetProperty(disableEagerInitializationKey);
@@ -256,6 +255,20 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     private Class<?> spinInnerClass() throws LambdaConversionException {
         // CDS does not handle disableEagerInitialization or useImplMethodHandle
         if (!disableEagerInitialization && !useImplMethodHandle) {
+            if (CDS.isSharingEnabled()) {
+                // load from CDS archive if present
+                Class<?> innerClass = LambdaProxyClassArchive.find(targetClass,
+                                                                   interfaceMethodName,
+                                                                   factoryType,
+                                                                   interfaceMethodType,
+                                                                   implementation,
+                                                                   dynamicMethodType,
+                                                                   isSerializable,
+                                                                   altInterfaces,
+                                                                   altMethods);
+                if (innerClass != null) return innerClass;
+            }
+
             // include lambda proxy class in CDS archive at dump time
             if (CDS.isDumpingArchive()) {
                 Class<?> innerClass = generateInnerClass();
@@ -272,17 +285,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                 return innerClass;
             }
 
-            // load from CDS archive if present
-            Class<?> innerClass = LambdaProxyClassArchive.find(targetClass,
-                                                               interfaceMethodName,
-                                                               factoryType,
-                                                               interfaceMethodType,
-                                                               implementation,
-                                                               dynamicMethodType,
-                                                               isSerializable,
-                                                               altInterfaces,
-                                                               altMethods);
-            if (innerClass != null) return innerClass;
         }
         return generateInnerClass();
     }
