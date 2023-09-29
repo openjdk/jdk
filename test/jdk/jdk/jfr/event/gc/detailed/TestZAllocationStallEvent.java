@@ -36,7 +36,7 @@ import jdk.test.lib.jfr.Events;
  * @requires vm.hasJFR & vm.gc.ZSinglegen
  * @key jfr
  * @library /test/lib /test/jdk /test/hotspot/jtreg
- * @run main/othervm -XX:+UseZGC -XX:-ZGenerational -Xmx32M jdk.jfr.event.gc.detailed.TestZAllocationStallEvent
+ * @run main/othervm -XX:+UseZGC -XX:-ZGenerational -Xmx32M -Xlog:gc*:gc.log::filecount=0 jdk.jfr.event.gc.detailed.TestZAllocationStallEvent
  */
 
 /**
@@ -44,7 +44,7 @@ import jdk.test.lib.jfr.Events;
  * @requires vm.hasJFR & vm.gc.ZGenerational
  * @key jfr
  * @library /test/lib /test/jdk /test/hotspot/jtreg
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xmx32M jdk.jfr.event.gc.detailed.TestZAllocationStallEvent
+ * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xmx32M -Xlog:gc*:gc.log::filecount=0 jdk.jfr.event.gc.detailed.TestZAllocationStallEvent
  */
 
 public class TestZAllocationStallEvent {

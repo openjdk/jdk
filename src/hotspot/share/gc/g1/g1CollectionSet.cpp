@@ -326,10 +326,14 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
     G1CollectionCandidateRegionList initial_old_regions;
     assert(_optional_old_regions.length() == 0, "must be");
 
-    time_remaining_ms = _policy->select_candidates_from_marking(&candidates()->marking_regions(),
-                                                                time_remaining_ms,
-                                                                &initial_old_regions,
-                                                                &_optional_old_regions);
+    if (collector_state()->in_mixed_phase()) {
+      time_remaining_ms = _policy->select_candidates_from_marking(&candidates()->marking_regions(),
+                                                                  time_remaining_ms,
+                                                                  &initial_old_regions,
+                                                                  &_optional_old_regions);
+    } else {
+      log_debug(gc, ergo, cset)("Do not add marking candidates to collection set due to pause type.");
+    }
 
     _policy->select_candidates_from_retained(&candidates()->retained_regions(),
                                              time_remaining_ms,

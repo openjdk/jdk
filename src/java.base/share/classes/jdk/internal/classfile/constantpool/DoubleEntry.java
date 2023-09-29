@@ -30,6 +30,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 /**
  * Models a {@code CONSTANT_Double_info} constant in the constant pool of a
  * classfile.
+ * @jvms 4.4.5 The CONSTANT_Long_info and CONSTANT_Double_info Structures
  */
 public sealed interface DoubleEntry
         extends AnnotationConstantValueEntry, ConstantValueEntry

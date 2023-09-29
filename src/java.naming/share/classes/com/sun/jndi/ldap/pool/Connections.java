@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.lang.ref.SoftReference;
 
 import javax.naming.NamingException;
 import javax.naming.InterruptedNamingException;
-import javax.naming.CommunicationException;
 
 /**
  * Represents a list of PooledConnections (actually, ConnectionDescs) with the
@@ -318,9 +317,14 @@ final class Connections implements PoolCallback {
      * and leave indicator so that any in-use connections will be closed upon
      * their return.
      */
-    synchronized void close() {
-        expire(System.currentTimeMillis());     // Expire idle connections
-        closed = true;   // Close in-use connections when they are returned
+    void close() {
+        lock.lock();
+        try {
+            expire(System.currentTimeMillis());     // Expire idle connections
+            closed = true;   // Close in-use connections when they are returned
+        } finally {
+            lock.unlock();
+        }
     }
 
     String getStats() {
@@ -330,7 +334,8 @@ final class Connections implements PoolCallback {
         long use = 0;
         int len;
 
-        synchronized (this) {
+        lock.lock();
+        try {
             len = conns.size();
 
             ConnectionDesc entry;
@@ -348,6 +353,8 @@ final class Connections implements PoolCallback {
                     ++expired;
                 }
             }
+        } finally {
+          lock.unlock();
         }
         return "size=" + len + "; use=" + use + "; busy=" + busy
             + "; idle=" + idle + "; expired=" + expired;

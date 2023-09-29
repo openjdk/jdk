@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,14 @@ import java.util.List;
  * Represents the runtime representation of the constant pool that is used by the compiler when
  * parsing bytecode. Provides methods to look up a constant pool entry without performing
  * resolution. They are used during compilation.
+ *
+ * The following convention is used when accessing the ConstantPool with an index:
+ * <ul>
+ * <li>rawIndex - index in the bytecode stream after the opcode (could be rewritten for some opcodes)</li>
+ * <li>cpi - the constant pool index (as specified in JVM Spec)</li>
+ * </ul>
+ *
+ * Some of the methods are currently not using the convention correctly. That will be addressed in JDK-8314172.
  */
 public interface ConstantPool {
 
@@ -44,53 +52,50 @@ public interface ConstantPool {
      * initialized. This can be used to compile time resolve a type. It works for field, method, or
      * type constant pool entries.
      *
-     * @param cpi the index of the constant pool entry that references the type
+     * @param rawIndex index in the bytecode stream after the {@code opcode} (could be rewritten for some opcodes)
      * @param opcode the opcode of the instruction that references the type
      */
-    void loadReferencedType(int cpi, int opcode);
+    void loadReferencedType(int rawIndex, int opcode);
 
     /**
      * Ensures that the type referenced by the specified constant pool entry is loaded. This can be
      * used to compile time resolve a type. It works for field, method, or type constant pool
      * entries.
      *
-     * @param cpi the index of the constant pool entry that references the type
+     * @param rawIndex index in the bytecode stream after the {@code opcode} (could be rewritten for some opcodes)
      * @param opcode the opcode of the instruction that references the type
      * @param initialize if {@code true}, the referenced type is either guaranteed to be initialized
      *            upon return or an initialization exception is thrown
      */
-    default void loadReferencedType(int cpi, int opcode, boolean initialize) {
+    default void loadReferencedType(int rawIndex, int opcode, boolean initialize) {
         if (initialize) {
-            loadReferencedType(cpi, opcode);
+            loadReferencedType(rawIndex, opcode);
         } else {
             throw new UnsupportedOperationException();
         }
     }
 
     /**
-     * Looks up the type referenced by the constant pool entry at {@code cpi} as referenced by the
-     * {@code opcode} bytecode instruction.
+     * Looks up the type referenced by the {@code rawIndex}.
      *
-     * @param cpi the index of a constant pool entry that references a type
-     * @param opcode the opcode of the instruction with {@code cpi} as an operand
+     * @param rawIndex index in the bytecode stream after the {@code opcode} (could be rewritten for some opcodes)
+     * @param opcode the opcode of the instruction with {@code rawIndex} as an operand
      * @return a reference to the compiler interface type
      */
-    JavaType lookupReferencedType(int cpi, int opcode);
+    JavaType lookupReferencedType(int rawIndex, int opcode);
 
     /**
-     * Looks up a reference to a field. If {@code opcode} is non-negative, then resolution checks
+     * Looks up a reference to a field. Resolution checks
      * specific to the bytecode it denotes are performed if the field is already resolved. Checks
      * for some bytecodes require the method that contains the bytecode to be specified. Should any
      * of these checks fail, an unresolved field reference is returned.
      *
-     * @param cpi the constant pool index
-     * @param opcode the opcode of the instruction for which the lookup is being performed or
-     *            {@code -1}
+     * @param rawIndex rewritten index in the bytecode stream after the {@code opcode}
+     * @param opcode the opcode of the instruction for which the lookup is being performed
      * @param method the method for which the lookup is being performed
-     * @return a reference to the field at {@code cpi} in this pool
-     * @throws ClassFormatError if the entry at {@code cpi} is not a field
+     * @return a reference to the field at {@code rawIndex} in this pool
      */
-    JavaField lookupField(int cpi, ResolvedJavaMethod method, int opcode);
+    JavaField lookupField(int rawIndex, ResolvedJavaMethod method, int opcode);
 
     /**
      * Looks up a reference to a method. If {@code opcode} is non-negative, then resolution checks
@@ -126,7 +131,7 @@ public interface ConstantPool {
 
     /**
      * The details for invoking a bootstrap method associated with a {@code CONSTANT_Dynamic_info}
-     * or {@code CONSTANT_InvokeDynamic_info} pool entry .
+     * or {@code CONSTANT_InvokeDynamic_info} pool entry.
      *
      * @jvms 4.4.10 The {@code CONSTANT_Dynamic_info} and {@code CONSTANT_InvokeDynamic_info}
      *       Structures
@@ -160,6 +165,29 @@ public interface ConstantPool {
         /**
          * Gets the static arguments with which the bootstrap method will be invoked.
          *
+         * The {@linkplain JavaConstant#getJavaKind kind} of each argument will be
+         * {@link JavaKind#Object} or {@link JavaKind#Int}. The latter represents an
+         * unresolved {@code CONSTANT_Dynamic_info} entry. To resolve this entry, the
+         * corresponding bootstrap method has to be called first:
+         *
+         * <pre>
+         * List<JavaConstant> args = bmi.getStaticArguments();
+         * List<JavaConstant> resolvedArgs = new ArrayList<>(args.size());
+         * for (JavaConstant c : args) {
+         *     JavaConstant r = c;
+         *     if (c.getJavaKind() == JavaKind.Int) {
+         *         // If needed, access corresponding BootstrapMethodInvocation using
+         *         // cp.lookupBootstrapMethodInvocation(pc.asInt(), -1)
+         *         r = cp.lookupConstant(c.asInt(), true);
+         *     } else {
+         *         assert c.getJavaKind() == JavaKind.Object;
+         *     }
+         *     resolvedArgs.append(r);
+         * }
+         * </pre>
+         *
+         * The other types of entries are already resolved an can be used directly.
+         *
          * @jvms 5.4.3.6
          */
         List<JavaConstant> getStaticArguments();
@@ -167,19 +195,19 @@ public interface ConstantPool {
 
     /**
      * Gets the details for invoking a bootstrap method associated with the
-     * {@code CONSTANT_Dynamic_info} or {@code CONSTANT_InvokeDynamic_info} pool entry {@code cpi}
+     * {@code CONSTANT_Dynamic_info} or {@code CONSTANT_InvokeDynamic_info} pool entry
      * in the constant pool.
      *
-     * @param cpi a constant pool index
-     * @param opcode the opcode of the instruction that has {@code cpi} as an operand or -1 if
-     *            {@code cpi} was not decoded from an instruction stream
-     * @return the bootstrap method invocation details or {@code null} if the entry at {@code cpi}
+     * @param index if {@code opcode} is -1,  {@code index} is a constant pool index. Otherwise {@code opcode}
+     *              must be {@code Bytecodes.INVOKEDYNAMIC}, and {@code index} must be the operand of that
+     *              opcode in the bytecode stream (i.e., a {@code rawIndex}).
+     * @param opcode must be {@code Bytecodes.INVOKEDYNAMIC}, or -1 if
+     *            {@code index} was not decoded from a bytecode stream
+     * @return the bootstrap method invocation details or {@code null} if the entry specified by {@code index}
      *         is not a {@code CONSTANT_Dynamic_info} or @{code CONSTANT_InvokeDynamic_info}
-     * @throws IllegalArgumentException if the bootstrap method invocation makes use of
-     *             {@code java.lang.invoke.BootstrapCallInfo}
      * @jvms 4.7.23 The {@code BootstrapMethods} Attribute
      */
-    default BootstrapMethodInvocation lookupBootstrapMethodInvocation(int cpi, int opcode) {
+    default BootstrapMethodInvocation lookupBootstrapMethodInvocation(int index, int opcode) {
         throw new UnsupportedOperationException();
     }
 
@@ -237,10 +265,9 @@ public interface ConstantPool {
     /**
      * Looks up the appendix at the specified index.
      *
-     * @param cpi the constant pool index
-     * @param opcode the opcode of the instruction for which the lookup is being performed or
-     *            {@code -1}
+     * @param rawIndex index in the bytecode stream after the {@code opcode} (could be rewritten for some opcodes)
+     * @param opcode the opcode of the instruction for which the lookup is being performed
      * @return the appendix if it exists and is resolved or {@code null}
      */
-    JavaConstant lookupAppendix(int cpi, int opcode);
+    JavaConstant lookupAppendix(int rawIndex, int opcode);
 }

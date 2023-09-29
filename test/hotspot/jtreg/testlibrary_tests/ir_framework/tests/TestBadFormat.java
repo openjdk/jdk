@@ -999,7 +999,7 @@ class BadIRAnnotationsAfterTestVM {
     public void missingCountString() {}
 
     @Test
-    @FailCount(45)
+    @FailCount(51)
     @IR(counts = {IRNode.STORE, IRNode.STORE})
     @IR(counts = {IRNode.STORE, IRNode.STORE, IRNode.STORE, IRNode.STORE})
     @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", IRNode.STORE})
@@ -1025,6 +1025,12 @@ class BadIRAnnotationsAfterTestVM {
     @IR(counts = {IRNode.STORE, " > 3.0"})
     @IR(counts = {IRNode.STORE, " > a3"})
     @IR(counts = {IRNode.STORE, " > 0x1"})
+    @IR(counts = {IRNode.STORE, "!= 1000"})
+    @IR(counts = {IRNode.STORE, "< 0"})
+    @IR(counts = {IRNode.STORE, "< 1"})
+    @IR(counts = {IRNode.STORE, "<= 0"})
+    @IR(counts = {IRNode.STORE, "> -1"})
+    @IR(counts = {IRNode.STORE, ">= 0"})
     @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "<"})
     @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "!"})
     @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "!3"})
@@ -1046,6 +1052,27 @@ class BadIRAnnotationsAfterTestVM {
     @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", " > a3"})
     @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", " > 0x1"})
     public void wrongCountString() {}
+
+    @Test
+    @FailCount(8)
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_MAX, "> 0"}) // valid
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_ANY, "> 0"}) // valid
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "", "> 0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "xxx", "> 0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "min()", "> 0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "min(max_for_type)", "> 0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "2,4,8,16,32,64,max_int", "> 0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "2,4,8,16,32,64,-3", "> 0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "min(max_for_type, xxx)", "> 0"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "min(max_for_type, min(max_for_type, max_for_type))", "> 0"})
+    public int[] badVectorNodeSize() {
+        int[] a = new int[1024*8];
+        for (int i = 0; i < a.length; i++) {
+            a[i]++;
+        }
+        return a;
+    }
 }
 
 class BadIRNodeForPhase {
@@ -1096,18 +1123,18 @@ class BadIRNodeForPhase {
 
     @Test
     @FailCount(6)
-    @IR(failOn = IRNode.LOAD_VECTOR, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
+    @IR(failOn = IRNode.LOAD_VECTOR_I, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
     @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
-    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
-    @IR(failOn = IRNode.LOAD_VECTOR, phase = CompilePhase.BEFORE_MATCHING) // works
+    @IR(failOn = IRNode.VECTOR_CAST_B2I, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
+    @IR(failOn = IRNode.LOAD_VECTOR_I, phase = CompilePhase.BEFORE_MATCHING) // works
     @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.BEFORE_MATCHING) // works
-    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = CompilePhase.BEFORE_MATCHING) // works
-    @IR(failOn = IRNode.LOAD_VECTOR, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
+    @IR(failOn = IRNode.VECTOR_CAST_B2I, phase = CompilePhase.BEFORE_MATCHING) // works
+    @IR(failOn = IRNode.LOAD_VECTOR_I, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
     @IR(failOn = IRNode.STORE_VECTOR, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
-    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
-    @IR(failOn = IRNode.LOAD_VECTOR, phase = CompilePhase.FINAL_CODE)
+    @IR(failOn = IRNode.VECTOR_CAST_B2I, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
+    @IR(failOn = IRNode.LOAD_VECTOR_I, phase = CompilePhase.FINAL_CODE)
     @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.FINAL_CODE)
-    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = CompilePhase.FINAL_CODE)
+    @IR(failOn = IRNode.VECTOR_CAST_B2I, phase = CompilePhase.FINAL_CODE)
     public void vector() {}
 
     @Test

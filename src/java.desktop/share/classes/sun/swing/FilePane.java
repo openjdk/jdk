@@ -130,8 +130,8 @@ import sun.awt.shell.ShellFolderColumnInfo;
  * this public API.
  * <p>
  * This component is intended to be used in a subclass of
- * javax.swing.plaf.basic.BasicFileChooserUI. It realies heavily on the
- * implementation of BasicFileChooserUI, and is intended to be API compatible
+ * javax.swing.plaf.basic.BasicFileChooserUI. It relies heavily on the
+ * implementation of BasicFileChooserUI and is intended to be API compatible
  * with earlier implementations of MetalFileChooserUI and WindowsFileChooserUI.
  *
  * @author Leif Samuelsson

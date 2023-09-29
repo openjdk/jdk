@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import jdk.internal.javac.ParticipatesInPreview;
  * Defines an API for expressing computations that can be reliably compiled
  * at runtime into SIMD instructions, such as AVX instructions on x64, and
  * NEON instructions on AArch64.
- * {@Incubating}
+ * {@incubating}
  *
  * @moduleGraph
  */

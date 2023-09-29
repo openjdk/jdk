@@ -252,15 +252,6 @@ inline int frame::interpreter_frame_monitor_size() {
   return BasicObjectLock::size();
 }
 
-inline int frame::interpreter_frame_monitor_size_in_bytes() {
-  // Number of bytes for a monitor.
-  return frame::interpreter_frame_monitor_size() * wordSize;
-}
-
-inline int frame::interpreter_frame_interpreterstate_size_in_bytes() {
-  return z_ijava_state_size;
-}
-
 inline Method** frame::interpreter_frame_method_addr() const {
   return (Method**)&(ijava_state()->method);
 }
@@ -350,12 +341,10 @@ inline frame frame::sender(RegisterMap* map) const {
   // update it accordingly.
   map->set_include_argument_oops(false);
 
-  if (is_entry_frame()) {
-    return sender_for_entry_frame(map);
-  }
-  if (is_interpreted_frame()) {
-    return sender_for_interpreter_frame(map);
-  }
+  if (is_entry_frame())       return sender_for_entry_frame(map);
+  if (is_upcall_stub_frame()) return sender_for_upcall_stub_frame(map);
+  if (is_interpreted_frame()) return sender_for_interpreter_frame(map);
+
   assert(_cb == CodeCache::find_blob(pc()),"Must be the same");
   if (_cb != nullptr) return sender_for_compiled_frame(map);
 

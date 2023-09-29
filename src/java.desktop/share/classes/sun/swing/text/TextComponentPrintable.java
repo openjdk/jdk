@@ -198,7 +198,7 @@ public class TextComponentPrintable implements CountingPrintable {
      * Returns frames under the {@code editor}.
      * The frames are created if necessary.
      *
-     * @param editor the {@JEditorPane} to find the frames for
+     * @param editor the {@link JEditorPane} to find the frames for
      * @return list of all frames
      */
     private static List<JEditorPane> getFrames(final JEditorPane editor) {

@@ -390,8 +390,8 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "20";
-    common.boot_jdk_build_number = "36";
+    common.boot_jdk_version = "21";
+    common.boot_jdk_build_number = "35";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
@@ -1188,9 +1188,9 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "7.3",
+            version: "7.3.1",
             build_number: "1",
-            file: "bundles/jtreg-7.3+1.zip",
+            file: "bundles/jtreg-7.3.1+1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),
@@ -1199,7 +1199,7 @@ var getJibProfilesDependencies = function (input, common) {
         jmh: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "1.35+1.0"
+            revision: "1.37+1.0"
         },
 
         jcov: {
@@ -1270,7 +1270,7 @@ var getJibProfilesDependencies = function (input, common) {
         gtest: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "1.13.0+1.0"
+            revision: "1.14.0+1.0"
         },
 
         libffi: {
