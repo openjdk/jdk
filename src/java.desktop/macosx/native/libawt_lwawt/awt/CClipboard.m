@@ -174,6 +174,47 @@ JNI_COCOA_ENTER(env);
 JNI_COCOA_EXIT(env);
 }
 
+
+/*
+ * Class:     sun_lwawt_macosx_CClipboard
+ * Method:    writeObjects
+ * Signature: ([BJ)V
+*/
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CClipboard_writeObjects
+(JNIEnv *env, jobject inObject, jbyteArray inBytes, jlong inFormat)
+{
+    if (inBytes == NULL) {
+        return;
+    }
+
+JNI_COCOA_ENTER(env);
+    jint nBytes = (*env)->GetArrayLength(env, inBytes);
+    jbyte *rawBytes = (*env)->GetPrimitiveArrayCritical(env, inBytes, NULL);
+    CHECK_NULL(rawBytes);
+    NSData *bytesAsData = [NSData dataWithBytes:rawBytes length:nBytes];
+    (*env)->ReleasePrimitiveArrayCritical(env, inBytes, rawBytes, JNI_ABORT);
+    NSString *format = formatForIndex(inFormat);
+    NSMutableArray *formatArray = [NSMutableArray arrayWithCapacity:2];
+    const char *bytes = [bytesAsData bytes];
+    BOOL isStart=YES;
+    for (int i = 0; i < [bytesAsData length]; i++) {
+        if ((unsigned char)bytes[i] == 0) {
+            isStart = YES;
+        } else {
+            if (isStart) {
+                isStart = NO;
+                NSString *path = [NSString stringWithUTF8String:(const char *)&bytes[i]];
+                NSURL *fileURL = [NSURL fileURLWithPath:path relativeToURL:nil];
+                [formatArray addObject:fileURL];
+            }
+        }
+    }
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^() {
+        [[NSPasteboard generalPasteboard] writeObjects:formatArray];
+    }];
+JNI_COCOA_EXIT(env);
+}
+
 /*
  * Class:     sun_lwawt_macosx_CClipboard
  * Method:    getClipboardFormats
