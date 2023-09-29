@@ -4285,7 +4285,6 @@ void ClassFileParser::check_super_class_access(const InstanceKlass* this_klass, 
           "superclass access check failed: %s",
           msg);
       }
-      return;
     }
   }
 }
