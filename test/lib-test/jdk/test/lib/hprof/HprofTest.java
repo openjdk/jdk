@@ -43,7 +43,7 @@ import jdk.test.lib.hprof.parser.Reader;
  * @test
  * @bug 8316778
  * @library /test/lib
- * @run main/othervm HprofTest
+ * @run main HprofTest
  */
 
 class HprofTestTarg extends LingeredApp {
