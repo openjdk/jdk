@@ -137,10 +137,14 @@ class CopyMoveHelper {
         if (sourceAttrs.isSymbolicLink())
             throw new IOException("Copying of symbolic links not supported");
 
+        // delete target if it exists and REPLACE_EXISTING is specified
+        if (opts.replaceExisting) {
+            Files.deleteIfExists(target);
+        } else if (Files.exists(target))
+            throw new FileAlreadyExistsException(target.toString());
+
         // create directory or copy file
         if (sourceAttrs.isDirectory()) {
-            if (opts.replaceExisting)
-                Files.deleteIfExists(target);
             Files.createDirectory(target);
         } else {
             try (InputStream in = Files.newInputStream(source)) {
