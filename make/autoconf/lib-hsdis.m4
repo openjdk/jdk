@@ -256,19 +256,19 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
       HSDIS_LIBS="$BINUTILS_DIR/bfd/.libs/libbfd.a $BINUTILS_DIR/opcodes/libopcodes.a $BINUTILS_DIR/libiberty/libiberty.a $BINUTILS_DIR/zlib/libz.a"
       # If we have libsframe add it.
       if test -e $BINUTILS_DIR/libsframe/.libs/libsframe.a; then
-        HSDIS_LIBS="$BINUTILS_DIR/bfd/.libs/libbfd.a $BINUTILS_DIR/opcodes/libopcodes.a $BINUTILS_DIR/libiberty/libiberty.a $BINUTILS_DIR/zlib/libz.a $BINUTILS_DIR/libsframe/.libs/libsframe.a"
+        HSDIS_LIBS="$HSDIS_LIBS $BINUTILS_DIR/libsframe/.libs/libsframe.a"
       fi
     fi
   fi
 
   AC_MSG_CHECKING([Checking binutils API])
   if test -n "$BINUTILS_SRC"; then
-    include_dis="#include \"$BINUTILS_SRC/include/dis-asm.h\""
+    binutils_include_dir=$BINUTILS_SRC/include
   else
-    include_dis="#include \"$BINUTILS_DIR/include/dis-asm.h\""
+    binutils_include_dir=$BINUTILS_DIR/include
   fi
 
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([$include_dis],[[void foo() {init_disassemble_info(0, 0, 0, 0);}]])],
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include "$binutils_include_dir/dis-asm.h"],[[void foo() {init_disassemble_info(0, 0, 0, 0);}]])],
     [
       AC_MSG_RESULT([New API])
       HSDIS_CFLAGS="$HSDIS_CFLAGS -DBINUTILS_NEW_API"
