@@ -330,6 +330,15 @@ jobs:
       bootjdk-platform: windows-x64
       runs-on: windows-2019
 
+  test-libgraal-linux-x64:
+    name: linux-x64
+    needs:
+      - build-linux-x64
+    uses: ./.github/workflows/test-libgraal.yml
+    with:
+      runs-on: ubuntu-22.04
+      platform: linux-x64
+
   # Remove bundles so they are not misconstrued as binary distributions from the JDK project
   remove-bundles:
     name: 'Remove bundle artifacts'
