@@ -59,11 +59,11 @@ public class bug5078214 {
 
     public static void main(String[] args) throws Exception {
         try {
-            bounds = getGraphicsConfig().getBounds();
-            if (bounds == null) {
+            if (getGraphicsConfig() == null) {
                 throw new SkippedException("We need at least one screen " +
                         "with the taskbar at the bottom position.");
             }
+            bounds = getGraphicsConfig().getBounds();
 
             SwingUtilities.invokeAndWait(() -> {
                 mainFrame = new JFrame("bug5078214");

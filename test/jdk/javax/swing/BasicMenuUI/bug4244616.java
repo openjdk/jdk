@@ -69,7 +69,7 @@ public class bug4244616 {
                 throw new RuntimeException("Failed: some debug output occurred");
             }
         } finally {
-            // Restore streams, check results
+            // Restore streams
             System.setOut(oldOut);
             System.setErr(oldErr);
         }
