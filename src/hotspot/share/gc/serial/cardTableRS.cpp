@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/serial/cardTableRS.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
+#include "gc/serial/serialHeap.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "memory/allocation.inline.hpp"
@@ -132,7 +132,7 @@ void CardTableRS::verify_used_region_at_save_marks(Space* sp) const {
 #endif
 
 void CardTableRS::maintain_old_to_young_invariant(Generation* old_gen, bool is_young_gen_empty) {
-  assert(GenCollectedHeap::heap()->is_old_gen(old_gen), "precondition");
+  assert(SerialHeap::heap()->is_old_gen(old_gen), "precondition");
 
   if (is_young_gen_empty) {
     clear_MemRegion(old_gen->prev_used_region());
@@ -193,13 +193,13 @@ public:
   virtual void do_space(Space* s) { _ct->verify_space(s, _boundary); }
 };
 
-class VerifyCTGenClosure: public GenCollectedHeap::GenClosure {
+class VerifyCTGenClosure: public SerialHeap::GenClosure {
   CardTableRS* _ct;
 public:
   VerifyCTGenClosure(CardTableRS* ct) : _ct(ct) {}
   void do_generation(Generation* gen) {
     // Skip the youngest generation.
-    if (GenCollectedHeap::heap()->is_young_gen(gen)) {
+    if (SerialHeap::heap()->is_young_gen(gen)) {
       return;
     }
     // Normally, we're interested in pointers to younger generations.
@@ -416,7 +416,7 @@ void CardTableRS::verify() {
   // At present, we only know how to verify the card table RS for
   // generational heaps.
   VerifyCTGenClosure blk(this);
-  GenCollectedHeap::heap()->generation_iterate(&blk, false);
+  SerialHeap::heap()->generation_iterate(&blk, false);
 }
 
 CardTableRS::CardTableRS(MemRegion whole_heap) :
@@ -439,5 +439,5 @@ void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
 }
 
 bool CardTableRS::is_in_young(const void* p) const {
-  return GenCollectedHeap::heap()->is_in_young(p);
+  return SerialHeap::heap()->is_in_young(p);
 }

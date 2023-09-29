@@ -21,14 +21,19 @@
  * questions.
  */
 
-import static com.sun.tools.classfile.TypeAnnotation.TargetType.*;
+import static jdk.internal.classfile.TypeAnnotation.TargetType.*;
 import static java.lang.System.lineSeparator;
 
 /*
  * @test
  * @bug 8042451
  * @summary Test population of reference info for method type parameters
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java MethodTypeParam.java
  * @run main Driver MethodTypeParam
  */
