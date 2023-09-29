@@ -711,7 +711,6 @@ Java_sun_nio_fs_UnixNativeDispatcher_lstat0(JNIEnv* env, jclass this,
         RESTARTABLE(statx_wrapper(AT_FDCWD, path, flags, mask, &statx_buf, NO_FOLLOW_SYMLINK), err);
         if (err == 0) {
             copy_statx_attributes(env, &statx_buf, attrs);
-            return 0;
         } else {
             throwUnixException(env, errno);
         }
@@ -782,7 +781,6 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd
         RESTARTABLE(statx_wrapper((int)dfd, path, flags, mask, &statx_buf, f_symlink), err);
         if (err == 0) {
             copy_statx_attributes(env, &statx_buf, attrs);
-            return 0;
         } else {
             throwUnixException(env, errno);
         }
