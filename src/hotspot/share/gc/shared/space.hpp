@@ -221,65 +221,6 @@ class Space: public CHeapObj<mtGC> {
   virtual void verify() const = 0;
 };
 
-// A dirty card to oop closure for contiguous spaces (ContiguousSpace and
-// sub-classes). It knows how to filter out objects that are outside of the
-// _boundary.
-// (Note that because of the imprecise nature of the write barrier, this may
-// iterate over oops beyond the region.)
-//
-// Assumptions:
-// 1. That the actual top of any area in a memory region
-//    contained by the space is bounded by the end of the contiguous
-//    region of the space.
-// 2. That the space is really made up of objects and not just
-//    blocks.
-
-class DirtyCardToOopClosure: public MemRegionClosure {
-protected:
-  OopIterateClosure* _cl;
-  Space* _sp;
-  HeapWord* _min_done;          // Need a downwards traversal to compensate
-                                // imprecise write barrier; this is the
-                                // lowest location already done (or,
-                                // alternatively, the lowest address that
-                                // shouldn't be done again.  null means infinity.)
-  NOT_PRODUCT(HeapWord* _last_bottom;)
-
-  // Get the actual top of the area on which the closure will
-  // operate, given where the top is assumed to be (the end of the
-  // memory region passed to do_MemRegion) and where the object
-  // at the top is assumed to start. For example, an object may
-  // start at the top but actually extend past the assumed top,
-  // in which case the top becomes the end of the object.
-  HeapWord* get_actual_top(HeapWord* top, HeapWord* top_obj);
-
-  // Walk the given memory region from bottom to (actual) top
-  // looking for objects and applying the oop closure (_cl) to
-  // them. The base implementation of this treats the area as
-  // blocks, where a block may or may not be an object. Sub-
-  // classes should override this to provide more accurate
-  // or possibly more efficient walking.
-  void walk_mem_region(MemRegion mr, HeapWord* bottom, HeapWord* top);
-
-  // Walk the given memory region, from bottom to top, applying
-  // the given oop closure to (possibly) all objects found. The
-  // given oop closure may or may not be the same as the oop
-  // closure with which this closure was created, as it may
-  // be a filtering closure which makes use of the _boundary.
-  // We offer two signatures, so the FilteringClosure static type is
-  // apparent.
-  void walk_mem_region_with_cl(MemRegion mr,
-                               HeapWord* bottom, HeapWord* top,
-                               OopIterateClosure* cl);
-public:
-  DirtyCardToOopClosure(Space* sp, OopIterateClosure* cl) :
-    _cl(cl), _sp(sp), _min_done(nullptr) {
-    NOT_PRODUCT(_last_bottom = nullptr);
-  }
-
-  void do_MemRegion(MemRegion mr) override;
-};
-
 // A structure to represent a point at which objects are being copied
 // during compaction.
 class CompactPoint : public StackObj {
