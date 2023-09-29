@@ -63,6 +63,7 @@ import static org.testng.Assert.assertTrue;
 
 /*
  * @test
+ * @bug 8193365 8317295
  * @summary Basic tests for Flow adapter Subscribers
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
