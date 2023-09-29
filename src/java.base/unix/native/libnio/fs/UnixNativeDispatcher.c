@@ -604,6 +604,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_write0(JNIEnv* env, jclass this, jint fd,
     return (jint)n;
 }
 
+#if defined(__linux__)
 /**
  * Copy statx members into sun.nio.fs.UnixFileAttributes
  */
@@ -627,6 +628,7 @@ static void copy_statx_attributes(JNIEnv* env, struct statx* buf, jobject attrs)
     (*env)->SetLongField(env, attrs, attrs_st_dev, (jlong)dev);
     (*env)->SetLongField(env, attrs, attrs_st_rdev, (jlong)rdev);
 }
+#endif
 
 /**
  * Copy stat64 members into sun.nio.fs.UnixFileAttributes
