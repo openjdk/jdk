@@ -55,8 +55,7 @@ public class APITest {
     final void doAssert(boolean condition, String message)
     {
         if (!condition) {
-            fail("ERROR: ");
-            fail(message);
+            fail("ERROR: " + message);
         }
     }
 
@@ -90,8 +89,8 @@ public class APITest {
             doAssert(col.getDecomposition() != Collator.CANONICAL_DECOMPOSITION, "collation object's strength is primary difference");
             doAssert(col.getDecomposition() == Collator.NO_DECOMPOSITION, "collation object has the wrong strength");
         } catch (Exception foo) {
-            fail("Error : " + foo.getMessage());
-            fail("Default Collator creation failed.");
+            fail("Error : " + foo.getMessage()
+            + "\n Default Collator creation failed.");
         }
         System.out.println("Default collation property test ended.");
         System.out.println("Collator.getRules() testing ...");
@@ -111,8 +110,8 @@ public class APITest {
             doAssert(col.getStrength() != Collator.SECONDARY, "collation object's strength is secondary difference");
 
         } catch (Exception bar) {
-            fail("Error :  " + bar.getMessage());
-            fail("Creating French collation failed.");
+            fail("Error :  " + bar.getMessage()
+            + "\n Creating French collation failed.");
         }
 
         System.out.println("Create junk collation: ");
@@ -121,15 +120,15 @@ public class APITest {
         try {
             junk = Collator.getInstance(abcd);
         } catch (Exception err) {
-            fail("Error : " + err.getMessage());
-            fail("Junk collation creation failed, should at least return the collator for the base bundle.");
+            fail("Error : " + err.getMessage()
+            + "\n Junk collation creation failed, should at least return the collator for the base bundle.");
         }
         try {
             col = Collator.getInstance(Locale.ROOT);
             doAssert(col.equals(junk), "The base bundle's collation should be returned.");
         } catch (Exception exc) {
-            fail("Error : " + exc.getMessage());
-            fail("Default collation comparison, caching not working.");
+            fail("Error : " + exc.getMessage()
+            + "\n Default collation comparison, caching not working.");
         }
 
         System.out.println("Collator property test ended.");
@@ -142,24 +141,24 @@ public class APITest {
         try {
             col1 = Collator.getInstance(Locale.ROOT);
         } catch (Exception foo) {
-            fail("Error : " + foo.getMessage());
-            fail("Default collation creation failed.");
+            fail("Error : " + foo.getMessage()
+            + "\n Default collation creation failed.");
         }
         Collator col2 = null;
         Locale dk = Locale.of("da", "DK");
         try {
             col2 = Collator.getInstance(dk);
         } catch (Exception bar) {
-            fail("Error : " + bar.getMessage());
-            fail("Danish collation creation failed.");
+            fail("Error : " + bar.getMessage()
+            + "\n Danish collation creation failed.");
             return;
         }
         Collator col3 = null;
         try {
             col3 = Collator.getInstance(Locale.ROOT);
         } catch (Exception err) {
-            fail("Error : " + err.getMessage());
-            fail("2nd default collation creation failed.");
+            fail("Error : " + err.getMessage()
+            + "\n 2nd default collation creation failed.");
         }
         System.out.println("Collator.hashCode() testing ...");
 
@@ -183,8 +182,8 @@ public class APITest {
         try {
             col = Collator.getInstance(Locale.ROOT);
         } catch (Exception foo) {
-            fail("Error : " + foo.getMessage());
-            fail("Default collation creation failed.");
+            fail("Error : " + foo.getMessage()
+            + "\n Default collation creation failed.");
         }
         if (col == null) {
             return;
@@ -222,8 +221,8 @@ public class APITest {
         try {
             col = Collator.getInstance();
         } catch (Exception foo) {
-            fail("Error : " + foo.getMessage());
-            fail("Default collation creation failed.");
+            fail("Error : " + foo.getMessage()
+            + "\n Default collation creation failed.");
         }
         RuleBasedCollator rbCol;
         if (col instanceof RuleBasedCollator) {

@@ -1183,9 +1183,9 @@ public class CalendarRegression {
 
             boolean is100Leap = calendar.isLeapYear(100);
             if (!is100Leap) {
-                fail("test failed with zone " + zones[i].getID());
-                fail(" cutover date is Date(Long.MAX_VALUE)");
-                fail(" isLeapYear(100) returns: " + is100Leap);
+                fail("test failed with zone " + zones[i].getID()
+                + "\n cutover date is Date(Long.MAX_VALUE)"
+                + "\n isLeapYear(100) returns: " + is100Leap);
             }
         }
     }

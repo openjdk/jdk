@@ -1305,9 +1305,9 @@ public class NumberRegression {
         sdf.applyPattern(pattern);
         int minIntDig = sdf.getMinimumIntegerDigits();
         if (minIntDig != 0) {
-            fail("Test failed");
-            fail(" Minimum integer digits : " + minIntDig);
-            fail(" new pattern: " + sdf.toPattern());
+            fail("Test failed"
+            + "\n Minimum integer digits : " + minIntDig
+            + "\n new pattern: " + sdf.toPattern());
         } else {
             System.out.println("Test passed");
             System.out.println(" Minimum integer digits : " + minIntDig);

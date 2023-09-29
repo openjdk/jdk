@@ -69,6 +69,7 @@ import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEqual;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -88,13 +89,8 @@ public class LegacyCodesClassInvariant {
             if (in != null) {
                 final Locale loc = (Locale)in.readObject();
                 final Locale expected = Locale.of(lang, "XX");
-                if (!(expected.equals(loc))) {
-                    fail("Locale didn't maintain invariants for: "+lang);
-                    fail("         got: "+loc);
-                    fail("    excpeted: "+expected);
-                } else {
-                    System.out.println("Locale "+lang+" worked");
-                }
+                assertEquals(expected, loc,
+                        "Locale didn't maintain invariants for: "+lang);
                 in.close();
             }
         } catch (Exception e) {

@@ -382,10 +382,10 @@ public class TimeZoneTest
                  !name.equals("GMT-8:00") &&
                  !name.equals("GMT-0800") &&
                  !name.equals("GMT-800")) {
-            fail("Fail: Expected GMT-08:00 or something similar");
-            fail("************************************************************");
-            fail("THE ABOVE FAILURE MAY JUST MEAN THE LOCALE DATA HAS CHANGED");
-            fail("************************************************************");
+            fail("Fail: Expected GMT-08:00 or something similar\n"
+            + "************************************************************\n"
+            + "THE ABOVE FAILURE MAY JUST MEAN THE LOCALE DATA HAS CHANGED\n"
+            + "************************************************************\n");
         }
 
         // Now try a non-existent zone
