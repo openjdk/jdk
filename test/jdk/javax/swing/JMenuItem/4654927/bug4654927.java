@@ -59,6 +59,7 @@ public class bug4654927 {
 
             UIManager.setLookAndFeel(systemLAF);
             Robot robot = new Robot();
+            robot.setAutoWaitForIdle(true);
             robot.setAutoDelay(100);
 
             SwingUtilities.invokeAndWait(() -> createAndShowUI());
@@ -92,6 +93,7 @@ public class bug4654927 {
 
                 @Override
                 public Point call() throws Exception {
+                    System.out.println("Menu Location: "+ menu.getLocationOnScreen());
                     return menu.getLocationOnScreen();
                 }
             });
@@ -100,6 +102,7 @@ public class bug4654927 {
 
                 @Override
                 public Point call() throws Exception {
+                    System.out.println("MenuItem Location: "+ menuItem.getLocationOnScreen());
                     return menuItem.getLocationOnScreen();
                 }
             });
