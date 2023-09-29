@@ -4,9 +4,9 @@
 // differs from the bottom type, show it too (prefixed with 'P:').
 
 // Simplify a reference type of the form
-//   "my/package/Class (package1/Class1,package2/Class2,..)"
+//   "[5:]my/package/Class (package1/Class1,package2/Class2,..)"
 // into
-//   "Class"
+//   "[5:]Class"
 function simplify_reference_type(type) {
   // Clean up interface lists in reference types.
   var m = /(.*)\(.*\)(.*)/.exec(type);
@@ -14,9 +14,9 @@ function simplify_reference_type(type) {
     type = m[1] + m[2];
   }
   // Remove package name in reference types.
-  var m2 = /.*\/(.*)/.exec(type);
-  if (m2 != null && typeof m2[1] != 'undefined') {
-    type = m2[1];
+  var m2 = /(\d+:)?.*\/(.*)/.exec(type);
+  if (m2 != null && typeof m2[2] != 'undefined') {
+    type = (typeof m2[1] != 'undefined' ? m2[1] : "") + m2[2];
   }
   return type;
 }
@@ -27,9 +27,18 @@ function simplifyType(type) {
   if (type.startsWith(callTypeStart)) {
     // Exclude types of the first five outputs of call-like nodes.
     type = type.replace(callTypeStart, "").replace("}", "");
-    type = "{" + type.replace(", ", "") + "}";
+    prefix = ", ";
+    if (type.startsWith(prefix)) {
+      type = type.slice(prefix.length);
+    }
+    components = type.split(", ");
+    for (i = 0; i < components.length; i++) {
+      components[i] = simplify_reference_type(components[i]);
+    }
+    type = "{" + components.join(", ") + "}";
+  } else {
+    type = simplify_reference_type(type);
   }
-  type = simplify_reference_type(type);
   return type;
 }
 
@@ -47,8 +56,7 @@ function mergeAndAppendTypeInfo(extra_label, bottom_type, phase_type) {
   return new_extra_label + type;
 }
 
-editProperty(not(or([matches("name", "Start"),
-                     matches("bottom_type", "bottom"),
+editProperty(not(or([matches("bottom_type", "bottom"),
                      matches("bottom_type", "abIO")])),
              ["extra_label", "bottom_type", "phase_type"], "extra_label",
              function(propertyValues) {return mergeAndAppendTypeInfo(propertyValues[0], propertyValues[1], propertyValues[2]);});
