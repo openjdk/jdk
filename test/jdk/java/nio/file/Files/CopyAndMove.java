@@ -22,7 +22,8 @@
  */
 
 /* @test
- * @bug 4313887 6838333 6917021 7006126 6950237 8006645 8201407 8264744 8267820
+ * @bug 4313887 6838333 6917021 7006126 6950237 8006645 8073061 8201407 8264744
+ *      8267820
  * @summary Unit test for java.nio.file.Files copy and move methods (use -Dseed=X to set PRNG seed)
  * @library .. /test/lib
  * @build jdk.test.lib.Platform jdk.test.lib.RandomFactory
@@ -35,8 +36,8 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.file.*;
 import static java.nio.file.Files.*;
-import static java.nio.file.StandardCopyOption.*;
 import static java.nio.file.LinkOption.*;
+import static java.nio.file.StandardCopyOption.*;
 import java.nio.file.attribute.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -813,6 +814,25 @@ public class CopyAndMove {
         delete(source);
         delete(target);
 
+
+        /**
+         * Test: ensure target not deleted if source permissions are zero
+         */
+        source = createSourceFile(dir1);
+        if (getFileStore(source).supportsFileAttributeView("posix")) {
+            Files.setPosixFilePermissions(source, Set.of());
+            target = getTargetFile(dir2);
+            createFile(target);
+            try {
+                Files.copy(source, target, REPLACE_EXISTING);
+                throw new RuntimeException("AccessDeniedException not thrown");
+            } catch (AccessDeniedException expected) {
+            }
+            if (!Files.exists(target))
+                throw new RuntimeException("target deleted");
+            delete(target);
+        }
+        delete(source);
 
         // -- directory --
 
