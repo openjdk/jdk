@@ -43,7 +43,6 @@ import jdk.internal.foreign.abi.Binding.SegmentBase;
 import jdk.internal.foreign.abi.Binding.SegmentOffset;
 import jdk.internal.foreign.abi.Binding.ShiftLeft;
 import jdk.internal.foreign.abi.Binding.ShiftRight;
-import jdk.internal.foreign.abi.Binding.UnboxAddress;
 import jdk.internal.foreign.abi.Binding.VMLoad;
 import jdk.internal.foreign.abi.Binding.VMStore;
 import sun.security.action.GetBooleanAction;
@@ -105,7 +104,7 @@ public class BindingSpecializer {
     private static final MethodTypeDesc MTD_SCOPE = MethodTypeDesc.of(CD_MemorySegment_Scope);
     private static final MethodTypeDesc MTD_SESSION_IMPL = MethodTypeDesc.of(CD_MemorySessionImpl);
     private static final MethodTypeDesc MTD_CLOSE = MTD_void;
-    private static final MethodTypeDesc MTD_UNBOX_SEGMENT = MethodTypeDesc.of(CD_long, CD_MemorySegment);
+    private static final MethodTypeDesc MTD_CHECK_NATIVE = MethodTypeDesc.of(CD_void, CD_MemorySegment);
     private static final MethodTypeDesc MTD_UNSAFE_GET_BASE = MethodTypeDesc.of(CD_Object);
     private static final MethodTypeDesc MTD_UNSAFE_GET_OFFSET = MethodTypeDesc.of(CD_long);
     private static final MethodTypeDesc MTD_COPY = MethodTypeDesc.of(CD_void, CD_MemorySegment, CD_long, CD_MemorySegment, CD_long, CD_long);
@@ -460,20 +459,19 @@ public class BindingSpecializer {
     private void doBindings(List<Binding> bindings) {
         for (Binding binding : bindings) {
             switch (binding) {
-                case VMStore vmStore         -> emitVMStore(vmStore);
-                case VMLoad vmLoad           -> emitVMLoad(vmLoad);
-                case BufferStore bufferStore -> emitBufferStore(bufferStore);
-                case BufferLoad bufferLoad   -> emitBufferLoad(bufferLoad);
-                case Copy copy               -> emitCopyBuffer(copy);
-                case Allocate allocate       -> emitAllocBuffer(allocate);
-                case BoxAddress boxAddress   -> emitBoxAddress(boxAddress);
-                case UnboxAddress unused     -> emitUnboxAddress();
-                case SegmentBase unused      -> emitSegmentBase();
-                case SegmentOffset unused    -> emitSegmentOffset();
-                case Dup unused              -> emitDupBinding();
-                case ShiftLeft shiftLeft     -> emitShiftLeft(shiftLeft);
-                case ShiftRight shiftRight   -> emitShiftRight(shiftRight);
-                case Cast cast               -> emitCast(cast);
+                case VMStore vmStore             -> emitVMStore(vmStore);
+                case VMLoad vmLoad               -> emitVMLoad(vmLoad);
+                case BufferStore bufferStore     -> emitBufferStore(bufferStore);
+                case BufferLoad bufferLoad       -> emitBufferLoad(bufferLoad);
+                case Copy copy                   -> emitCopyBuffer(copy);
+                case Allocate allocate           -> emitAllocBuffer(allocate);
+                case BoxAddress boxAddress       -> emitBoxAddress(boxAddress);
+                case SegmentBase unused          -> emitSegmentBase();
+                case SegmentOffset segmentOffset -> emitSegmentOffset(segmentOffset);
+                case Dup unused                  -> emitDupBinding();
+                case ShiftLeft shiftLeft         -> emitShiftLeft(shiftLeft);
+                case ShiftRight shiftRight       -> emitShiftRight(shiftRight);
+                case Cast cast                   -> emitCast(cast);
             }
         }
     }
@@ -781,12 +779,6 @@ public class BindingSpecializer {
         pushType(toType);
     }
 
-    private void emitUnboxAddress() {
-        popType(MemorySegment.class);
-        cb.invokestatic(CD_SharedUtils, "unboxSegment", MTD_UNBOX_SEGMENT);
-        pushType(long.class);
-    }
-
     private void emitSegmentBase() {
         popType(MemorySegment.class);
         cb.checkcast(CD_AbstractMemorySegmentImpl);
@@ -794,10 +786,16 @@ public class BindingSpecializer {
         pushType(Object.class);
     }
 
-    private void emitSegmentOffset() {
+    private void emitSegmentOffset(SegmentOffset segmentOffset) {
         popType(MemorySegment.class);
+
+        if (!segmentOffset.allowHeap()) {
+            cb.dup();
+            cb.invokestatic(CD_SharedUtils, "checkNative", MTD_CHECK_NATIVE);
+        }
         cb.checkcast(CD_AbstractMemorySegmentImpl);
         cb.invokevirtual(CD_AbstractMemorySegmentImpl, "unsafeGetOffset", MTD_UNSAFE_GET_OFFSET);
+
         pushType(long.class);
     }
 

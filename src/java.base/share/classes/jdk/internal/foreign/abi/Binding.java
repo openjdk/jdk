@@ -269,16 +269,21 @@ public sealed interface Binding {
         return new BoxAddress(byteSize, 1, true);
     }
 
-    static UnboxAddress unboxAddress() {
-        return UnboxAddress.INSTANCE;
+    // alias
+    static SegmentOffset unboxAddress() {
+        return segmentOffsetNoAllowHeap();
     }
 
     static SegmentBase segmentBase() {
         return SegmentBase.INSTANCE;
     }
 
-    static SegmentOffset segmentOffset() {
-        return SegmentOffset.INSTANCE;
+    static SegmentOffset segmentOffsetAllowHeap() {
+        return SegmentOffset.INSTANCE_ALLOW_HEAP;
+    }
+
+    static SegmentOffset segmentOffsetNoAllowHeap() {
+        return SegmentOffset.INSTANCE_NO_ALLOW_HEAP;
     }
 
     static Dup dup() {
@@ -428,8 +433,13 @@ public sealed interface Binding {
             return this;
         }
 
-        public Binding.Builder segmentOffset() {
-            bindings.add(Binding.segmentOffset());
+        public Binding.Builder segmentOffsetAllowHeap() {
+            bindings.add(Binding.segmentOffsetAllowHeap());
+            return this;
+        }
+
+        public Binding.Builder segmentOffsetNoAllowHeap() {
+            bindings.add(Binding.segmentOffsetNoAllowHeap());
             return this;
         }
 
@@ -468,8 +478,10 @@ public sealed interface Binding {
 
     /**
      * VM_STORE([storage location], [type])
-     * Pops a [type] from the operand stack, and moves it to [storage location]
-     * The [type] must be one of byte, short, char, int, long, float, or double
+     *   Pops a [type] from the operand stack, and moves it to [storage location]
+     *   The [type] must be one of byte, short, char, int, long, float, or double.
+     *   [storage location] may be 'null', indicating that this value should be passed
+     *   to the VM stub, but does not have an explicit target register (e.g. oop offsets)
      */
     record VMStore(VMStorage storage, Class<?> type) implements Move {
 
@@ -489,8 +501,8 @@ public sealed interface Binding {
 
     /**
      * VM_LOAD([storage location], [type])
-     * Loads a [type] from [storage location], and pushes it onto the operand stack.
-     * The [type] must be one of byte, short, char, int, long, float, or double
+     *   Loads a [type] from [storage location], and pushes it onto the operand stack.
+     *   The [type] must be one of byte, short, char, int, long, float, or double
      */
     record VMLoad(VMStorage storage, Class<?> type) implements Move {
 
@@ -513,9 +525,9 @@ public sealed interface Binding {
 
     /**
      * BUFFER_STORE([offset into memory region], [type], [width])
-     * Pops a [type] from the operand stack, then pops a MemorySegment from the operand stack.
-     * Stores [width] bytes of the value contained in the [type] to [offset into memory region].
-     * The [type] must be one of byte, short, char, int, long, float, or double
+     *   Pops a [type] from the operand stack, then pops a MemorySegment from the operand stack.
+     *   Stores [width] bytes of the value contained in the [type] to [offset into memory region].
+     *   The [type] must be one of byte, short, char, int, long, float, or double
      */
     record BufferStore(long offset, Class<?> type, int byteWidth) implements Dereference {
 
@@ -570,9 +582,9 @@ public sealed interface Binding {
 
     /**
      * BUFFER_LOAD([offset into memory region], [type], [width])
-     * Pops a MemorySegment from the operand stack,
-     * and then loads [width] bytes from it at [offset into memory region], into a [type].
-     * The [type] must be one of byte, short, char, int, long, float, or double
+     *   Pops a MemorySegment from the operand stack,
+     *   and then loads [width] bytes from it at [offset into memory region], into a [type].
+     *   The [type] must be one of byte, short, char, int, long, float, or double
      */
     record BufferLoad(long offset, Class<?> type, int byteWidth) implements Dereference {
 
@@ -626,8 +638,8 @@ public sealed interface Binding {
     /**
      * COPY([size], [alignment])
      *   Creates a new MemorySegment with the given [size] and [alignment],
-     *     and copies contents from a MemorySegment popped from the top of the operand stack into this new buffer,
-     *     and pushes the new buffer onto the operand stack
+     *   and copies contents from a MemorySegment popped from the top of the operand stack into this new buffer,
+     *   and pushes the new buffer onto the operand stack
      */
     record Copy(long size, long alignment) implements Binding {
         private static MemorySegment copyBuffer(MemorySegment operand, long size, long alignment, SegmentAllocator allocator) {
@@ -673,28 +685,6 @@ public sealed interface Binding {
     }
 
     /**
-     * UNBOX_ADDRESS()
-     *   Pops a native 'MemorySegment' from the operand stack, converts it to a 'long' by calling MemorySegment::address,
-     *   and pushes that onto the operand stack. Heap segments are rejected with an exception. See: SharedUtils::unboxSegment
-     */
-    record UnboxAddress() implements Binding {
-        static final UnboxAddress INSTANCE = new UnboxAddress();
-
-        @Override
-        public void verify(Deque<Class<?>> stack) {
-            Class<?> actualType = stack.pop();
-            SharedUtils.checkType(actualType, MemorySegment.class);
-            stack.push(long.class);
-        }
-
-        @Override
-        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
-                              LoadFunc loadFunc, SegmentAllocator allocator) {
-            stack.push(SharedUtils.unboxSegment((MemorySegment)stack.pop()));
-        }
-    }
-
-    /**
      * SEGMENT_BASE()
      *   Pops a MemorySegment from the stack, retrieves the heap base object from it, or null if there is none
      *   (See: AbstractMemorySegmentImpl::unsafeGetBase), and pushes the result onto the operand stack.
@@ -717,13 +707,15 @@ public sealed interface Binding {
     }
 
     /**
-     * SEGMENT_OFFSET()
+     * SEGMENT_OFFSET([allowHeap])
      *   Pops a MemorySegment from the stack, retrieves the offset from it,
      *   (See: AbstractMemorySegmentImpl::unsafeGetOffset), and pushes the result onto the operand stack.
      *   Note that for heap segments, the offset is a virtual address into the heap base object.
+     *   If [allowHeap] is 'false' an exception will be thrown for heap segments (See SharedUtils::checkNative).
      */
-    record SegmentOffset() implements Binding {
-        static final SegmentOffset INSTANCE = new SegmentOffset();
+    record SegmentOffset(boolean allowHeap) implements Binding {
+        static final SegmentOffset INSTANCE_NO_ALLOW_HEAP = new SegmentOffset(false);
+        static final SegmentOffset INSTANCE_ALLOW_HEAP = new SegmentOffset(true);
 
         @Override
         public void verify(Deque<Class<?>> stack) {
@@ -735,14 +727,18 @@ public sealed interface Binding {
         @Override
         public void interpret(Deque<Object> stack, StoreFunc storeFunc,
                               LoadFunc loadFunc, SegmentAllocator allocator) {
-            stack.push(((AbstractMemorySegmentImpl)stack.pop()).unsafeGetOffset());
+            MemorySegment operand = (MemorySegment) stack.pop();
+            if (!allowHeap) {
+                SharedUtils.checkNative(operand);
+            }
+            stack.push(((AbstractMemorySegmentImpl)operand).unsafeGetOffset());
         }
     }
 
     /**
      * BOX_ADDRESS()
-     * Pops a 'long' from the operand stack, converts it to a 'MemorySegment', with the given size and memory scope
-     * (either the context scope, or the global scope), and pushes that onto the operand stack.
+     *   Pops a 'long' from the operand stack, converts it to a 'MemorySegment', with the given size and memory scope
+     *   (either the context scope, or the global scope), and pushes that onto the operand stack.
      */
     record BoxAddress(long size, long align, boolean needsScope) implements Binding {
 
