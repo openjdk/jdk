@@ -39,6 +39,7 @@ function simplifyType(type) {
   } else {
     type = simplify_reference_type(type);
   }
+  type = type.replace(">=", "≥").replace("<=", "≤");
   return type;
 }
 
