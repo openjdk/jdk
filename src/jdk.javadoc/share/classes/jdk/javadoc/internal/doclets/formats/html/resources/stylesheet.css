@@ -300,11 +300,10 @@ body.module-declaration-page .block-list h2 {
     margin:15px 0;
 }
 body.class-declaration-page .summary h3,
-body.class-declaration-page .details h3,
-body.class-declaration-page .summary .inherited-list h2 {
+body.class-declaration-page .details h3{
     background-color:var(--subnav-background-color);
     border:1px solid var(--border-color);
-    margin:0 0 0 -8px;
+    margin:0 0 6px -8px;
     padding:7px 5px;
 }
 /*
@@ -359,7 +358,7 @@ ul.block-list,
 ul.details-list,
 ul.member-list,
 ul.summary-list {
-    margin:0 0 10px 0;
+    margin:4px 0 10px 0;
     padding:0;
 }
 ul.block-list > li,
@@ -612,7 +611,7 @@ div.block {
 .member-signature {
     font-family:var(--code-font-family);
     font-size:1em;
-    margin:14px 0;
+    margin:8px 0 14px 0;
     white-space: pre-wrap;
 }
 .module-signature,
@@ -856,6 +855,9 @@ span#page-search-link {
 }
 .horizontal-scroll {
     overflow: auto hidden;
+}
+:not(.detail) > .horizontal-scroll > :last-child {
+    margin-bottom: 10px;
 }
 section.class-description {
     line-height: 1.4;
