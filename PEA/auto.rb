@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-PROBLEM_LIST = ["run_composite.sh", "run_merge_if_else_paranoid.sh"]
+PROBLEM_LIST = ["run_composite.sh", "run_merge_if_else_paranoid.sh", "run_wrong_bci_after_motion.sh"]
 
 if $0 == __FILE__
   puts  "using #{%x|which java|}"
