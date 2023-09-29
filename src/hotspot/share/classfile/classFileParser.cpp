@@ -672,6 +672,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
           // Need only to be sure signature is the right type.
           if (Signature::is_method(signature)) {
             throwIllegalSignature("CONSTANT_Dynamic", name, signature, CHECK);
+            return;
           }
         }
         break;
@@ -696,6 +697,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
             // Need only to be sure signature is non-zero length and the right type.
             if (Signature::is_method(signature)) {
               throwIllegalSignature("Field", name, signature, CHECK);
+              return;
             }
           }
         } else {
@@ -705,6 +707,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
             // the right type.
             if (!Signature::is_method(signature)) {
               throwIllegalSignature("Method", name, signature, CHECK);
+              return;
             }
           }
           // If a class method name begins with '<', it must be "<init>" and have void signature.
@@ -718,6 +721,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
               return;
             } else if (!Signature::is_void_method(signature)) { // must have void signature.
               throwIllegalSignature("Method", name, signature, CHECK);
+              return;
             }
           }
         }
@@ -4285,6 +4289,7 @@ void ClassFileParser::check_super_class_access(const InstanceKlass* this_klass, 
           "superclass access check failed: %s",
           msg);
       }
+      return;
     }
   }
 }
@@ -4332,6 +4337,7 @@ void ClassFileParser::check_super_interface_access(const InstanceKlass* this_kla
           "superinterface check failed: %s",
           msg);
       }
+      return;
     }
   }
 }
@@ -4968,6 +4974,7 @@ void ClassFileParser::verify_legal_field_signature(const Symbol* name,
 
   if (p == nullptr || (p - bytes) != (int)length) {
     throwIllegalSignature("Field", name, signature, CHECK);
+    return;
   }
 }
 
@@ -4994,6 +5001,7 @@ void ClassFileParser::verify_legal_name_with_signature(const Symbol* name,
       sig_length > 0 &&
       signature->char_at(sig_length - 1) != JVM_SIGNATURE_VOID) {
     throwIllegalSignature("Method", name, signature, THREAD);
+    return;
   }
 }
 
