@@ -225,7 +225,7 @@ public class RunParams {
                                 iterations = Integer.parseInt(args[++i]);
                 }
                 // Allow to force using vthreads using wrapper property
-                if("Virtual".equals(System.getProperty("test.thread.factory"))) {
+                if ("Virtual".equals(System.getProperty("test.thread.factory"))) {
                         useVirtualThreads = true;
                 }
                 printConfig(System.out);

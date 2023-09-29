@@ -708,7 +708,7 @@ public class Binder extends DebugeeBinder {
 
         String cmdline = classToExecute + " " + ArgumentHandler.joinArguments(rawArgs, quote);
 
-        if(System.getProperty("test.thread.factory") != null) {
+        if (System.getProperty("test.thread.factory") != null) {
             cmdline = MainWrapper.class.getName() + " " + System.getProperty("test.thread.factory") + " " + cmdline;
         }
 
