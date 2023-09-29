@@ -82,6 +82,8 @@ public class StackWalkNativeToJava {
 
         public void callNativeMethod() throws Exception {
             Object obj = new Object();
+            // Trigger a fatal exit due to IllegalMonitorStateException during
+            // a call to the VM from a Java native method.
             obj.wait();
             throw new RuntimeException("Reached statement after obj.wait()");
         }
@@ -115,6 +117,8 @@ public class StackWalkNativeToJava {
         }
 
         public void callVMMethod() throws Exception {
+            // Trigger a fatal exit for trying to synchronize on a value based class
+            // during a call to the VM from a Java method.
             synchronized (counter) {
                 counter++;
             }
