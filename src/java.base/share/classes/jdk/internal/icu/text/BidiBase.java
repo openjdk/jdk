@@ -4704,10 +4704,10 @@ public class BidiBase {
             buf.append(']');
         }
         buf.append(" text: [0x");
-        buf.append(Integer.toHexString(text[0]));
+        buf.appendHex(text[0]);
         for (int i = 1; i < text.length; i++) {
             buf.append(" 0x");
-            buf.append(Integer.toHexString(text[i]));
+            buf.appendHex(text[i]);
         }
         buf.append("]]");
 

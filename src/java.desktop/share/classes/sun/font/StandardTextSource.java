@@ -204,7 +204,7 @@ final class StandardTextSource extends TextSource {
       if (i > chStart) {
         sb.append(" ");
       }
-      sb.append(Integer.toHexString(chars[i]));
+      sb.appendHex(chars[i]);
     }
     sb.append("\"");
     sb.append(", level:");

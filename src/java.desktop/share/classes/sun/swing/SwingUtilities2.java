@@ -1638,15 +1638,15 @@ public class SwingUtilities2 {
             if (fg.getRed() < 16) {
                 rule.append('0');
             }
-            rule.append(Integer.toHexString(fg.getRed()));
+            rule.appendHex(fg.getRed());
             if (fg.getGreen() < 16) {
                 rule.append('0');
             }
-            rule.append(Integer.toHexString(fg.getGreen()));
+            rule.appendHex(fg.getGreen());
             if (fg.getBlue() < 16) {
                 rule.append('0');
             }
-            rule.append(Integer.toHexString(fg.getBlue()));
+            rule.appendHex(fg.getBlue());
             rule.append(" ; ");
         }
         rule.append(" }");

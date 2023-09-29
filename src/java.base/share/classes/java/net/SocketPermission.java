@@ -757,9 +757,9 @@ public final class SocketPermission extends Permission
             StringBuilder sb = new StringBuilder(39);
 
             for (int i = 15; i >= 0; i--) {
-                sb.append(Integer.toHexString(((addr[i]) & 0x0f)));
+                sb.appendHex(((addr[i]) & 0x0f));
                 sb.append('.');
-                sb.append(Integer.toHexString(((addr[i] >> 4) & 0x0f)));
+                sb.appendHex(((addr[i] >> 4) & 0x0f));
                 sb.append('.');
             }
             authHost = "auth." + sb.toString() + "IP6.ARPA";

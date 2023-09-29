@@ -1414,7 +1414,7 @@ public class Textifier extends Printer {
       */
     protected void appendHandle(final Handle handle) {
         int tag = handle.getTag();
-        stringBuilder.append("// handle kind 0x").append(Integer.toHexString(tag)).append(" : ");
+        stringBuilder.append("// handle kind 0x").appendHex(tag).append(" : ");
         boolean isMethodHandle = false;
         switch (tag) {
             case Opcodes.H_GETFIELD:

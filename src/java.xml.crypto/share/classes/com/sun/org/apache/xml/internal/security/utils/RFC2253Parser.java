@@ -317,7 +317,7 @@ public class RFC2253Parser {
             while ((i = sr.read()) > -1) {
                 if (i < 32) {
                     sb.append('\\');
-                    sb.append(Integer.toHexString(i));
+                    sb.appendHex(i);
                 } else {
                     sb.append((char) i);
                 }

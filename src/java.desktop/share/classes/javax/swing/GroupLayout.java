@@ -1243,7 +1243,7 @@ public class GroupLayout implements LayoutManager2 {
                     ", matches=" + paddingSpring.getMatchDescription();
         }
         sb.append(indent).append(spring.getClass().getName()).append(' ')
-                .append(Integer.toHexString(spring.hashCode())).append(' ')
+                .appendHex(spring.hashCode()).append(' ')
                 .append(origin).append(", size=").append(spring.getSize())
                 .append(", alignment=").append(spring.getAlignment())
                 .append(" prefs=[").append(spring.getMinimumSize(axis))

@@ -216,8 +216,8 @@ public abstract class GSSToken {
             int b1 = (bytes[i]>>4) & 0x0f;
             int b2 = bytes[i] & 0x0f;
 
-            sb.append(Integer.toHexString(b1));
-            sb.append(Integer.toHexString(b2));
+            sb.appendHex(b1);
+            sb.appendHex(b2);
             sb.append(' ');
         }
         return sb.toString();

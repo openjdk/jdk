@@ -1911,7 +1911,7 @@ public non-sealed class KeyEvent extends InputEvent {
         str.append(",rawCode=").append(rawCode);
         str.append(",primaryLevelUnicode=").append(primaryLevelUnicode);
         str.append(",scancode=").append(scancode);
-        str.append(",extendedKeyCode=0x").append(Long.toHexString(extendedKeyCode));
+        str.append(",extendedKeyCode=0x").appendHex(extendedKeyCode);
 
         return str.toString();
     }

@@ -1838,7 +1838,7 @@ public class StandardGlyphVector extends GlyphVector {
                 if (i > 0) {
                     buf.append(", ");
                 }
-                buf.append(Integer.toHexString(glyphs[i]));
+                buf.appendHex(glyphs[i]);
             }
             buf.append("]");
             if (positions != null) {

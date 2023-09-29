@@ -57,7 +57,7 @@ class UnixFileKey {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("(dev=")
-          .append(Long.toHexString(st_dev))
+          .appendHex(st_dev)
           .append(",ino=")
           .append(st_ino)
           .append(')');
