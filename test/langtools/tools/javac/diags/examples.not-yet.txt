@@ -217,4 +217,4 @@ compiler.misc.illegal.signature                               # the compiler can
 compiler.err.annotation.unrecognized.attribute.name
 
 # this one is transitional (waiting for FFM API to exit preview)
-compiler.warn.restricted.method.call
+compiler.warn.restricted.method

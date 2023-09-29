@@ -289,7 +289,7 @@ public class Check {
      */
     public void warnRestrictedAPI(DiagnosticPosition pos, Symbol sym) {
         if (lint.isEnabled(LintCategory.RESTRICTED))
-            log.warning(LintCategory.RESTRICTED, pos, Warnings.RestrictedMethodCall(sym.enclClass(), sym));
+            log.warning(LintCategory.RESTRICTED, pos, Warnings.RestrictedMethod(sym.enclClass(), sym));
     }
 
     /** Warn about unchecked operation.
