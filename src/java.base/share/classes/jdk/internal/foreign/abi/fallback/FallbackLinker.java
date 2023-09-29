@@ -182,13 +182,21 @@ public final class FallbackLinker extends AbstractLinker {
                 Object arg = args[argStart + i];
                 MemoryLayout layout = argLayouts.get(i);
                 MemorySegment argSeg = arena.allocate(layout);
-                final int finalI = i;
-                writeValue(arg, layout, argSeg, addr -> {
-                    MemorySessionImpl sessionImpl = ((AbstractMemorySegmentImpl) addr).sessionImpl();
+
+                if (layout instanceof AddressLayout) {
+                    AbstractMemorySegmentImpl ms = (AbstractMemorySegmentImpl) arg;
+                    MemorySessionImpl sessionImpl = ms.sessionImpl();
                     sessionImpl.acquire0();
                     acquiredSessions.add(sessionImpl);
-                },
-                invData.allowsHeapAccess(), hb -> heapBases[finalI] = hb);
+                    if (invData.allowsHeapAccess() && !ms.isNative()) {
+                        heapBases[i] = ms.heapBase().get();
+                        // write the offset to the arg segment, add array ptr to it in native code
+                        layout = JAVA_LONG;
+                        arg = ms.address();
+                    }
+                }
+
+                writeValue(arg, layout, argSeg);
                 argPtrs.setAtIndex(ADDRESS, i, argSeg);
             }
 
@@ -239,12 +247,6 @@ public final class FallbackLinker extends AbstractLinker {
 
     // where
     private static void writeValue(Object arg, MemoryLayout layout, MemorySegment argSeg) {
-        writeValue(arg, layout, argSeg, addr -> {}, false, hb -> {});
-    }
-
-    private static void writeValue(Object arg, MemoryLayout layout, MemorySegment argSeg,
-                                   Consumer<MemorySegment> acquireCallback, boolean allowHeapAccess,
-                                   Consumer<Object> heapBaseCallback) {
         switch (layout) {
             case ValueLayout.OfBoolean bl -> argSeg.set(bl, 0, (Boolean) arg);
             case ValueLayout.OfByte    bl -> argSeg.set(bl, 0, (Byte) arg);
@@ -254,17 +256,7 @@ public final class FallbackLinker extends AbstractLinker {
             case ValueLayout.OfLong    ll -> argSeg.set(ll, 0, (Long) arg);
             case ValueLayout.OfFloat   fl -> argSeg.set(fl, 0, (Float) arg);
             case ValueLayout.OfDouble  dl -> argSeg.set(dl, 0, (Double) arg);
-            case AddressLayout         al -> {
-                MemorySegment addrArg = (MemorySegment) arg;
-                acquireCallback.accept(addrArg);
-                if (allowHeapAccess && arg instanceof MemorySegment ms && !ms.isNative()) {
-                    heapBaseCallback.accept(ms.heapBase().get());
-                    // write the offset to the arg segment, add array ptr to it in native code
-                    argSeg.set(JAVA_LONG, 0, ms.address());
-                } else {
-                    argSeg.set(al, 0, addrArg);
-                }
-            }
+            case AddressLayout         al -> argSeg.set(al, 0, (MemorySegment) arg);
             case GroupLayout           __ ->
                     MemorySegment.copy((MemorySegment) arg, 0, argSeg, 0, argSeg.byteSize()); // by-value struct
             case null, default -> {
