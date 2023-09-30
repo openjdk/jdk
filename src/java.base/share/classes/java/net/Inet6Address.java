@@ -918,7 +918,7 @@ class Inet6Address extends InetAddress {
         StringBuilder sb = new StringBuilder(39);
         for (int i = 0; i < (INADDRSZ / INT16SZ); i++) {
             sb.appendHex(((src[i<<1]<<8) & 0xff00)
-                                          | (src[(i<<1)+1] & 0xff));
+                        | (src[(i<<1)+1] & 0xff));
             if (i < (INADDRSZ / INT16SZ) -1 ) {
                sb.append(":");
             }
