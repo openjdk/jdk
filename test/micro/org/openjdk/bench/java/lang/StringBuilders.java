@@ -224,6 +224,33 @@ public class StringBuilders {
         return result.toString();
     }
 
+    @Benchmark
+    public String appendHexCombine8() {
+        StringBuilder result = new StringBuilder();
+        result.append(Integer.toHexString(2048));
+        result.append(Integer.toHexString(31337));
+        result.append(Integer.toHexString(0xbeefcace));
+        result.append(Integer.toHexString(9000));
+        result.append(Integer.toHexString(4711));
+        result.append(Integer.toHexString(1337));
+        result.append(Integer.toHexString(2100));
+        result.append(Integer.toHexString(2600));
+        return result.toString();
+    }
+
+    @Benchmark
+    public String appendHex8() {
+        StringBuilder result = new StringBuilder();
+        result.appendHex(2048);
+        result.appendHex(31337);
+        result.appendHex(0xbeefcace);
+        result.appendHex(9000);
+        result.appendHex(4711);
+        result.appendHex(1337);
+        result.appendHex(2100);
+        result.appendHex(2600);
+        return result.toString();
+    }
 
     @Benchmark
     public String toStringCharWithBool8() {
