@@ -112,7 +112,7 @@ public:
   void write_on(CompressedWriteStream* stream) {
     stream->write_int(value());
     if(is_callee_saved() || is_derived_oop()) {
-      stream->write_int(checked_cast<int>(content_reg()->value()));
+      stream->write_int(content_reg()->value());
     }
   }
 

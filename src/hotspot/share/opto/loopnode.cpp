@@ -1236,7 +1236,7 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
   set_ctrl(int_zero, this->C->root());
   Node* long_one = _igvn.longcon(1);
   set_ctrl(long_one, this->C->root());
-  Node* int_stride = _igvn.intcon(checked_cast<int>(stride_con));
+  Node* int_stride = _igvn.intcon(stride_con);
   set_ctrl(int_stride, this->C->root());
 
   for (uint i = 0; i < range_checks.size(); i++) {

@@ -709,7 +709,7 @@ void MutableNUMASpace::LGRPSpace::scan_pages(size_t page_size, size_t page_count
 
   os::page_info page_expected, page_found;
   page_expected.size = page_size;
-  page_expected.lgrp_id = checked_cast<uint>(lgrp_id());
+  page_expected.lgrp_id = lgrp_id();
 
   char *s = scan_start;
   while (s < scan_end) {
