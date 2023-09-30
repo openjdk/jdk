@@ -154,7 +154,7 @@ public:
   CodeBuffer* init_buffer();
 
   // Write out basic block data to code buffer
-  void fill_buffer(CodeBuffer* cb, uint* blk_starts);
+  void fill_buffer(C2_MacroAssembler* masm, uint* blk_starts);
 
   // Compute the information for the exception tables
   void FillExceptionTables(uint cnt, uint *call_returns, uint *inct_starts, Label *blk_labels);

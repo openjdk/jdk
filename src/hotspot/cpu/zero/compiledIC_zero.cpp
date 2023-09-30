@@ -43,7 +43,7 @@
 
 // ----------------------------------------------------------------------------
 
-address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) {
+address CompiledStaticCall::emit_to_interp_stub(MacroAssembler *masm, address mark) {
   ShouldNotReachHere(); // Only needed for COMPILER2.
   return nullptr;
 }

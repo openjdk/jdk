@@ -40,7 +40,7 @@ class BoxLockNode : public Node {
 public:
   BoxLockNode( int lock );
   virtual int Opcode() const;
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   virtual uint size(PhaseRegAlloc *ra_) const;
   virtual const RegMask &in_RegMask(uint) const;
   virtual const RegMask &out_RegMask() const;

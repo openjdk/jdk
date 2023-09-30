@@ -1845,8 +1845,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ b(L_exit);
 
     // static stub for the call above
-    CodeBuffer* cbuf = masm->code_section()->outer();
-    stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, c2i_call_pc);
+    stub = CompiledStaticCall::emit_to_interp_stub(masm, c2i_call_pc);
     guarantee(stub != nullptr, "no space for static stub");
   }
 
@@ -1938,8 +1937,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   __ blr();
 
   // static stub for the call above
-  CodeBuffer* cbuf = masm->code_section()->outer();
-  stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, call_pc);
+  stub = CompiledStaticCall::emit_to_interp_stub(masm, call_pc);
   guarantee(stub != nullptr, "no space for static stub");
 }
 

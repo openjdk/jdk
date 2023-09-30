@@ -2896,14 +2896,6 @@ void ADLParser::ins_encode_parse_block(InstructForm& inst) {
     encoding->add_parameter(opForm->_ident, param);
   }
 
-  if (!inst._is_postalloc_expand) {
-    // Define a MacroAssembler instance for use by the encoding.  The
-    // name is chosen to match the __ idiom used for assembly in other
-    // parts of hotspot and assumes the existence of the standard
-    // #define __ _masm.
-    encoding->add_code("    C2_MacroAssembler _masm(&cbuf);\n");
-  }
-
   // Parse the following %{ }% block
   ins_encode_parse_block_impl(inst, encoding, ec_name);
 

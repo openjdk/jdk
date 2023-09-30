@@ -54,13 +54,13 @@ public:
 
 class IntelJccErratumAlignment {
 private:
-  MacroAssembler& _masm;
+  MacroAssembler* _masm;
   uintptr_t       _start_pc;
 
   uintptr_t pc();
 
 public:
-  IntelJccErratumAlignment(MacroAssembler& masm, int jcc_size);
+  IntelJccErratumAlignment(MacroAssembler* masm, int jcc_size);
   ~IntelJccErratumAlignment();
 };
 

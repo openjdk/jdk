@@ -987,8 +987,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
     __ j(exit);
 
-    CodeBuffer* cbuf = masm->code_section()->outer();
-    address stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, tr_call);
+    address stub = CompiledStaticCall::emit_to_interp_stub(masm, tr_call);
     if (stub == nullptr) {
       fatal("CodeCache is full at gen_continuation_enter");
     }
@@ -1053,8 +1052,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ jr(x11); // the exception handler
   }
 
-  CodeBuffer* cbuf = masm->code_section()->outer();
-  address stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, tr_call);
+  address stub = CompiledStaticCall::emit_to_interp_stub(masm, tr_call);
   if (stub == nullptr) {
     fatal("CodeCache is full at gen_continuation_enter");
   }
