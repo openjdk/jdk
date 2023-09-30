@@ -4380,6 +4380,8 @@ public final class String
      *          formatting errors, see the <a
      *          href="../util/Formatter.html#detail">Details</a> section of the
      *          formatter class specification.
+     *          {@link  java.lang.NullPointerException}
+     *          If a format string is null.
      *
      * @return  A formatted string
      *
@@ -4421,6 +4423,8 @@ public final class String
      *          formatting errors, see the <a
      *          href="../util/Formatter.html#detail">Details</a> section of the
      *          formatter class specification
+     *          {@link  java.lang.NullPointerException}
+     *          If a format string is null.
      *
      * @return  A formatted string
      *
