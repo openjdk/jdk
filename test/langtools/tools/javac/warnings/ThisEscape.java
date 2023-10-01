@@ -601,4 +601,11 @@ public class ThisEscape {
         public static final class Sub2 extends ThisEscapeSealed {
         }
     }
+
+    // Verify no assertion error occurs (JDK-8317336)
+    public static class ThisAssertionError {
+        public ThisAssertionError() {
+            System.out.println((Supplier<Object>)() -> this);
+        }
+    }
 }

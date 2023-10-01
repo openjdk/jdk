@@ -1100,7 +1100,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
             // Perform action
             Assert.check(checkInvariants(true, false));
             action.run();
-            Assert.check(checkInvariants(true, promote));
+            Assert.check(checkInvariants(true, true));
 
             // "Promote" ExprRef's to the enclosing lexical scope, if requested
             if (promote) {
