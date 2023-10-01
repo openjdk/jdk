@@ -152,50 +152,17 @@ inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T volatile* dest __attri
 #endif
 
   STATIC_ASSERT(byte_size == sizeof(T));
-  T value = compare_value;
   if (order != memory_order_relaxed) {
     FULL_MEM_BARRIER;
   }
 
-  __atomic_compare_exchange(dest, &value, &exchange_value, /* weak */ false,
+  __atomic_compare_exchange(dest, &compare_value, &exchange_value, /* weak */ false,
                             __ATOMIC_RELAXED, __ATOMIC_RELAXED);
 
   if (order != memory_order_relaxed) {
     FULL_MEM_BARRIER;
   }
-  return value;
-}
-
-template<>
-template<typename T>
-inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest __attribute__((unused)),
-                                                T compare_value,
-                                                T exchange_value,
-                                                atomic_memory_order order) const {
-  STATIC_ASSERT(4 == sizeof(T));
-
-  T old_value;
-  long rc;
-
-  if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
-  }
-
-  __asm__ __volatile__ (
-    "1:  sext.w    %1, %3      \n\t" // sign-extend compare_value
-    "    lr.w      %0, %2      \n\t"
-    "    bne       %0, %1, 2f  \n\t"
-    "    sc.w      %1, %4, %2  \n\t"
-    "    bnez      %1, 1b      \n\t"
-    "2:                        \n\t"
-    : /*%0*/"=&r" (old_value), /*%1*/"=&r" (rc), /*%2*/"+A" (*dest)
-    : /*%3*/"r" (compare_value), /*%4*/"r" (exchange_value)
-    : "memory" );
-
-  if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
-  }
-  return old_value;
+  return compare_value;
 }
 
 template<size_t byte_size>
