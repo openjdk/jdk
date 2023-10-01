@@ -59,13 +59,12 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      *
      * @param configuration the configuration
      * @param mapper a mapper to provide details of where elements are used
-     * @param filename the file to be generated
      * @param pkgElement the package element to be documented
      */
     public PackageUseWriter(HtmlConfiguration configuration,
-                            ClassUseMapper mapper, DocPath filename,
+                            ClassUseMapper mapper,
                             PackageElement pkgElement) {
-        super(configuration, configuration.docPaths.forPackage(pkgElement).resolve(filename));
+        super(configuration, pathFor(configuration, pkgElement));
         this.packageElement = pkgElement;
 
         // by examining all classes in this package, find what packages
@@ -79,7 +78,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                     Set<TypeElement> usedClasses = usingPackageToUsedClasses
                             .get(utils.getPackageName(usingPackage));
                     if (usedClasses == null) {
-                        usedClasses = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+                        usedClasses = new TreeSet<>(comparators.generalPurposeComparator());
                         usingPackageToUsedClasses.put(utils.getPackageName(usingPackage),
                                                       usedClasses);
                     }
@@ -89,27 +88,16 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         }
     }
 
-    /**
-     * Generate a class page.
-     *
-     * @param configuration the current configuration of the doclet.
-     * @param mapper        the mapping of the class usage.
-     * @param pkgElement    the package being documented.
-     * @throws DocFileIOException if there is a problem generating the package use page
-     */
-    public static void generate(HtmlConfiguration configuration,
-                                ClassUseMapper mapper, PackageElement pkgElement)
-            throws DocFileIOException {
-        DocPath filename = DocPaths.PACKAGE_USE;
-        PackageUseWriter pkgusegen = new PackageUseWriter(configuration, mapper, filename, pkgElement);
-        pkgusegen.generatePackageUseFile();
+    private static DocPath pathFor(HtmlConfiguration configuration, PackageElement packageElement) {
+        return configuration.docPaths.forPackage(packageElement).resolve(DocPaths.PACKAGE_USE);
     }
 
     /**
      * Generate the package use list.
      * @throws DocFileIOException if there is a problem generating the package use page
      */
-    protected void generatePackageUseFile() throws DocFileIOException {
+    @Override
+    public void buildPage() throws DocFileIOException {
         HtmlTree body = getBody();
         Content mainContent = new ContentBuilder();
         if (usingPackageToUsedClasses.isEmpty()) {

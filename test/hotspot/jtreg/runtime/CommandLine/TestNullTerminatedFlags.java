@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test TestNullTerminatedFlags
  * @bug 6522873
  * @summary Test that the VM don't allow random junk characters at the end of valid command line flags.
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -64,4 +65,3 @@ public class TestNullTerminatedFlags {
         }
     }
 }
-

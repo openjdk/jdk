@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,17 +128,19 @@ public final class KeyUtil {
      */
     public static final int getKeySize(AlgorithmParameters parameters) {
 
-        String algorithm = parameters.getAlgorithm();
-        switch (algorithm) {
+        switch (parameters.getAlgorithm()) {
             case "EC":
-                try {
-                    ECKeySizeParameterSpec ps = parameters.getParameterSpec(
+                // ECKeySizeParameterSpec is SunEC internal only
+                if (parameters.getProvider().getName().equals("SunEC")) {
+                    try {
+                        ECKeySizeParameterSpec ps = parameters.getParameterSpec(
                             ECKeySizeParameterSpec.class);
-                    if (ps != null) {
-                        return ps.getKeySize();
+                        if (ps != null) {
+                            return ps.getKeySize();
+                        }
+                    } catch (InvalidParameterSpecException ipse) {
+                        // ignore
                     }
-                } catch (InvalidParameterSpecException ipse) {
-                    // ignore
                 }
 
                 try {

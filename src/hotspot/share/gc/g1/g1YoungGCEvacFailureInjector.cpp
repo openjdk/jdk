@@ -44,9 +44,8 @@ public:
     if (_evac_failure_regions_num > 0) {
       _evac_failure_regions.set_bit(r->hrm_index());
       --_evac_failure_regions_num;
-      return false;
     }
-    return true;
+    return _evac_failure_regions_num == 0;
   }
 };
 

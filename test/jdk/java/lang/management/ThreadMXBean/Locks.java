@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,11 @@ import jdk.test.lib.LockFreeLogger;
 
 public class Locks {
 
-    private static final Object OBJA = new Object();
-    private static final Object OBJB = new Object();
+    private static class ObjectA { }
+    private static class ObjectB { }
+
+    private static final Object OBJA = new ObjectA();
+    private static final Object OBJB = new ObjectB();
     private static final EnhancedWaiter OBJC = new EnhancedWaiter();
     private static final ThreadMXBean TM = ManagementFactory.getThreadMXBean();
     private static final LockFreeLogger LOGGER = new LockFreeLogger();
@@ -65,6 +68,8 @@ public class Locks {
                 TM.getThreadInfo(TM.getAllThreadIds(), true, true))
                                             .filter(Objects::nonNull)
                                             .filter(i -> name.equals(i.getLockOwnerName()))
+                                            /* Carrier Thread can hold a lock on a VirtualThread, which we ignore: */
+                                            .filter(i -> !i.getLockName().contains("java.lang.VirtualThread"))
                                             .findAny();
         if (result.isPresent()) {
             throw new RuntimeException("Thread " + t.getName() + " is not "
@@ -117,34 +122,34 @@ public class Locks {
     */
     private static void checkBlockedObject(Thread t, Object lock, Thread owner) {
         long tid = t.getId();
-        String result = TM.getThreadInfo(tid).getLockName();
+        String lockName = TM.getThreadInfo(tid).getLockName();
         final String expectedLock = (lock != null ? getLockName(lock) : null);
         Predicate<String> p = (res) -> ((res != null && !res.equals(expectedLock))
                 || (res == null && expectedLock != null));
 
-        if (p.test(result)) {
+        if (p.test(lockName)) {
             printStackTrace(t);
             int retryCount = 0;
-            while (p.test(result)) {
+            while (p.test(lockName)) {
                 if (retryCount++ > 500) {
                     printStackTrace(t);
                     throw new RuntimeException("Thread " + t.getName() + " is blocked on "
-                            + expectedLock + " but got " + result);
+                            + expectedLock + " but got " + lockName);
                 }
                 goSleep(100);
-                result = TM.getThreadInfo(tid).getLockName();
+                lockName = TM.getThreadInfo(tid).getLockName();
             }
         }
 
-        result = TM.getThreadInfo(tid).getLockOwnerName();
-        final String expectedOwner = (owner != null ? owner.getName() : null);
+        String lockOwnerName = TM.getThreadInfo(tid).getLockOwnerName();
+        final String expectedOwnerName = (owner != null ? owner.getName() : null);
 
-        p = (res) -> ((res != null && !res.equals(expectedOwner))
-                || (res == null && expectedOwner != null));
-        if (p.test(result)) {
+        p = (res) -> ((res != null && !res.equals(expectedOwnerName))
+                || (res == null && expectedOwnerName != null));
+        if (p.test(lockOwnerName)) {
             printStackTrace(t);
             throw new RuntimeException("Owner of " + lock + " should be "
-                    + expectedOwner + " but got " + result);
+                    + expectedOwnerName + " but got " + lockOwnerName);
         }
     }
 
@@ -342,14 +347,13 @@ public class Locks {
     public static void main(String args[]) throws Exception {
         try {
             Thread mainThread = Thread.currentThread();
-
             // Test uncontested case
             LockAThread t1;
             LockBThread t2;
 
             Phaser p = new Phaser(3);
             synchronized(OBJC) {
-                // Make sure the main thread is not holding any lock
+                // Make sure the main thread is not holding any lock (except possibly a VirtualThread)
                 assertNoLock(mainThread);
 
                 // Test deadlock case
@@ -362,15 +366,22 @@ public class Locks {
                 t2.start();
 
                 p.arriveAndAwaitAdvance(); // Phase 1 (blocking)
+
                 assertThreadState(t2, Thread.State.BLOCKED);
-                checkBlockedObject(t2, OBJC, mainThread);
+                if (!mainThread.isVirtual()) {
+                    // ThreadInfo not available for Virtual Threads.
+                    checkBlockedObject(t2, OBJC, mainThread);
+                }
                 assertThreadState(t1, Thread.State.BLOCKED);
                 checkBlockedObject(t1, OBJB, t2);
 
-                long[] expectedThreads = new long[3];
+                long[] expectedThreads = new long[mainThread.isVirtual() ? 2: 3];
                 expectedThreads[0] = t1.getId(); // blocked on lockB
                 expectedThreads[1] = t2.getId(); // owner of lockB blocking on lockC
-                expectedThreads[2] = mainThread.getId(); // owner of lockC
+                if (!mainThread.isVirtual()) {
+                    // ThreadInfo not available for Virtual Threads.
+                    expectedThreads[2] = mainThread.getId(); // owner of lockC
+                }
                 findThreadsBlockedOn(OBJB, expectedThreads);
             }
             p.arriveAndAwaitAdvance(); // Phase 2 (blocking)
@@ -400,6 +411,9 @@ public class Locks {
             throws Exception {
         ThreadInfo ownerInfo = null;
         for (ThreadInfo info : infos) {
+            if (info == null) {
+                continue; // Missing thread, e.g. completed. Ignore.
+            }
             String blockedLock = info.getLockName();
             if (lock.equals(blockedLock)) {
                 long threadId = info.getLockOwnerId();
@@ -421,12 +435,12 @@ public class Locks {
             throws Exception {
         String lock = getLockName(o);
         // Check with ThreadInfo with no stack trace (i.e. no safepoint)
-        ThreadInfo[] infos = TM.getThreadInfo(TM.getAllThreadIds());
-        doCheck(infos, lock, expectedThreads);
+        ThreadInfo[] allThreadInfos = TM.getThreadInfo(TM.getAllThreadIds());
+        doCheck(allThreadInfos, lock, expectedThreads);
 
         // Check with ThreadInfo with stack trace
-        infos = TM.getThreadInfo(TM.getAllThreadIds(), 1);
-        doCheck(infos, lock, expectedThreads);
+        allThreadInfos = TM.getThreadInfo(TM.getAllThreadIds(), 1);
+        doCheck(allThreadInfos, lock, expectedThreads);
     }
 
     private static void doCheck(ThreadInfo[] infos, String lock, long[] expectedThreads)
@@ -434,6 +448,9 @@ public class Locks {
         ThreadInfo ownerInfo = null;
         // Find the thread who is blocking on lock
         for (ThreadInfo info : infos) {
+            if (info == null) {
+                continue; // Missing thread, e.g. completed. Ignore.
+            }
             String blockedLock = info.getLockName();
             if (lock.equals(blockedLock)) {
                 log("%s blocked on %s", info.getThreadName(), blockedLock);
@@ -445,11 +462,19 @@ public class Locks {
                     "Can't retrieve ThreadInfo for the blocked thread");
         }
 
+        // Follow chain of locks:
         long[] threads = new long[10];
         int count = 0;
         threads[count++] = ownerInfo.getThreadId();
         while (ownerInfo.getThreadState() == Thread.State.BLOCKED) {
             ownerInfo = findOwnerInfo(infos, lock);
+            log("ownerInfo = %s", ownerInfo);
+            if (ownerInfo.getThreadName().contains("ForkJoinPool")) {
+                // Ignore e.g. "ForkJoinPool-1-worker-1" waiting on a VirtualThread
+                log ("skipping %s", ownerInfo);
+                lock = ownerInfo.getLockName();
+                continue;
+            }
             threads[count++] = ownerInfo.getThreadId();
             log(" Owner = %s  id = %d",
                     ownerInfo.getThreadName(),
@@ -468,13 +493,18 @@ public class Locks {
             throw new RuntimeException("TEST FAILED: " +
                     "Expected chain of threads not matched; current count =" + count);
         }
+        int failures = 0;
         for (int i = 0; i < count; i++) {
             if (threads[i] != expectedThreads[i]) {
                 log("TEST FAILED: Unexpected thread in the chain %s expected to be %s",
                     threads[i],
                     expectedThreads[i]
                 );
+                failures++;
             }
+        }
+        if (failures > 0) {
+            throw new RuntimeException("TEST FAILED: " + failures + " unexpected thread(s).");
         }
     }
 

@@ -182,6 +182,7 @@ abstract class P11Key implements Key, Length {
 
     abstract byte[] getEncodedInternal();
 
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -212,20 +213,13 @@ abstract class P11Key implements Key, Length {
         return MessageDigest.isEqual(thisEnc, otherEnc);
     }
 
+    @Override
     public int hashCode() {
         // hashCode() should never throw exceptions
         if (!token.isValid()) {
             return 0;
         }
-        byte[] b1 = getEncodedInternal();
-        if (b1 == null) {
-            return 0;
-        }
-        int r = b1.length;
-        for (int i = 0; i < b1.length; i++) {
-            r += (b1[i] & 0xff) * 37;
-        }
-        return r;
+        return Arrays.hashCode(getEncodedInternal());
     }
 
     protected Object writeReplace() throws ObjectStreamException {

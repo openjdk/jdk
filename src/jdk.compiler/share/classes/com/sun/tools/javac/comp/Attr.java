@@ -1683,11 +1683,16 @@ public class Attr extends JCTree.Visitor {
             boolean stringSwitch = types.isSameType(seltype, syms.stringType);
             boolean errorEnumSwitch = TreeInfo.isErrorEnumSwitch(selector, cases);
             boolean intSwitch = types.isAssignable(seltype, syms.intType);
+            boolean errorPrimitiveSwitch = seltype.isPrimitive() && !intSwitch;
             boolean patternSwitch;
-            if (!enumSwitch && !stringSwitch && !errorEnumSwitch && !intSwitch) {
+            if (!enumSwitch && !stringSwitch && !errorEnumSwitch &&
+                !intSwitch && !errorPrimitiveSwitch) {
                 preview.checkSourceLevel(selector.pos(), Feature.PATTERN_SWITCH);
                 patternSwitch = true;
             } else {
+                if (errorPrimitiveSwitch) {
+                    log.error(selector.pos(), Errors.SelectorTypeNotAllowed(seltype));
+                }
                 patternSwitch = cases.stream()
                                      .flatMap(c -> c.labels.stream())
                                      .anyMatch(l -> l.hasTag(PATTERNCASELABEL) ||
@@ -1770,7 +1775,7 @@ public class Attr extends JCTree.Visitor {
                                     } else if (!constants.add(s)) {
                                         log.error(label.pos(), Errors.DuplicateCaseLabel);
                                     }
-                                } else if (!stringSwitch && !intSwitch) {
+                                } else if (!stringSwitch && !intSwitch && !errorPrimitiveSwitch) {
                                     log.error(label.pos(), Errors.ConstantLabelNotCompatible(pattype, seltype));
                                 } else if (!constants.add(pattype.constValue())) {
                                     log.error(c.pos(), Errors.DuplicateCaseLabel);
@@ -1793,7 +1798,9 @@ public class Attr extends JCTree.Visitor {
                         if (!primaryType.hasTag(TYPEVAR)) {
                             primaryType = chk.checkClassOrArrayType(pat.pos(), primaryType);
                         }
-                        checkCastablePattern(pat.pos(), seltype, primaryType);
+                        if (!errorPrimitiveSwitch) {
+                            checkCastablePattern(pat.pos(), seltype, primaryType);
+                        }
                         Type patternType = types.erasure(primaryType);
                         JCExpression guard = c.guard;
                         if (guardBindings == null && guard != null) {

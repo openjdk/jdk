@@ -76,7 +76,6 @@ class os::Linux {
   static GrowableArray<int>* nindex_to_node()  { return _nindex_to_node; }
 
   static bool setup_large_page_type(size_t page_size);
-  static bool transparent_huge_pages_sanity_check(bool warn, size_t pages_size);
   static bool hugetlbfs_sanity_check(bool warn, size_t page_size);
   static bool shm_hugetlbfs_sanity_check(bool warn, size_t page_size);
 
@@ -167,6 +166,8 @@ class os::Linux {
   }
 
   static jlong fast_thread_cpu_time(clockid_t clockid);
+
+  static jlong sendfile(int out_fd, int in_fd, jlong* offset, jlong count);
 
   // Determine if the vmid is the parent pid for a child in a PID namespace.
   // Return the namespace pid if so, otherwise -1.

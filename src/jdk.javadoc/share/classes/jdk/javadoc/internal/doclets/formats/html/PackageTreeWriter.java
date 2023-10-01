@@ -28,14 +28,13 @@ package jdk.javadoc.internal.doclets.formats.html;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
 
@@ -55,12 +54,12 @@ public class PackageTreeWriter extends AbstractTreeWriter {
     /**
      * Constructor.
      * @param configuration the configuration
-     * @param path the docpath to generate files into
      * @param packageElement the current package
      */
-    public PackageTreeWriter(HtmlConfiguration configuration, DocPath path, PackageElement packageElement) {
-        super(configuration, path,
-              new ClassTree(configuration.typeElementCatalog.allClasses(packageElement), configuration));
+    public PackageTreeWriter(HtmlConfiguration configuration, PackageElement packageElement) {
+        super(configuration,
+                configuration.docPaths.forPackage(packageElement).resolve(DocPaths.PACKAGE_TREE),
+                new ClassTree(configuration.typeElementCatalog.allClasses(packageElement), configuration));
         this.packageElement = packageElement;
     }
 
@@ -77,9 +76,10 @@ public class PackageTreeWriter extends AbstractTreeWriter {
     public static void generate(HtmlConfiguration configuration,
                                 PackageElement pkg, boolean noDeprecated)
             throws DocFileIOException {
-        DocPath path = configuration.docPaths.forPackage(pkg).resolve(DocPaths.PACKAGE_TREE);
-        PackageTreeWriter packgen = new PackageTreeWriter(configuration, path, pkg);
-        packgen.generatePackageTreeFile();
+        if (!(noDeprecated && configuration.utils.isDeprecated(pkg))) {
+            var packgen = new PackageTreeWriter(configuration, pkg);
+            packgen.buildPage();
+        }
     }
 
     /**
@@ -87,7 +87,8 @@ public class PackageTreeWriter extends AbstractTreeWriter {
      *
      * @throws DocFileIOException if there is a problem generating the package tree file
      */
-    protected void generatePackageTreeFile() throws DocFileIOException {
+    @Override
+    public void buildPage() throws DocFileIOException {
         HtmlTree body = getPackageTreeHeader();
         Content mainContent = new ContentBuilder();
         Content headContent = packageElement.isUnnamed()

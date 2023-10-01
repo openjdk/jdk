@@ -370,7 +370,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
 
   // ---- Found an implicit null check
 #ifndef PRODUCT
-  extern int implicit_null_checks;
+  extern uint implicit_null_checks;
   implicit_null_checks++;
 #endif
 
