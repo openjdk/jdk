@@ -274,7 +274,7 @@ ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char*
         // bootloader so we have control of this.
         // Resource allocated
         return new ClassFileStream(buffer,
-                                   checked_cast<int>(st.st_size),
+                                   checked_cast<int, true>(st.st_size),
                                    _dir,
                                    ClassFileStream::verify);
       }

@@ -1081,7 +1081,7 @@ protected:
       objArrayOop cache = CacheType::cache(ik);
       assert(cache->length() > 0, "Empty cache");
       _low = BoxType::value(cache->obj_at(0));
-      _high = checked_cast<PrimitiveType>(_low + cache->length() - 1);
+      _high = checked_cast<PrimitiveType, true>(_low + cache->length() - 1);
       _cache = JNIHandles::make_global(Handle(thread, cache));
     }
   }
@@ -1100,7 +1100,7 @@ public:
   }
   oop lookup(PrimitiveType value) {
     if (_low <= value && value <= _high) {
-      int offset = checked_cast<int>(value - _low);
+      int offset = checked_cast<int, true>(value - _low);
       return objArrayOop(JNIHandles::resolve_non_null(_cache))->obj_at(offset);
     }
     return nullptr;
