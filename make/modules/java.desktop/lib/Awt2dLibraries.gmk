@@ -132,6 +132,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     EXCLUDE_FILES := $(LIBAWT_EXFILES), \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_CFLAGS), \
+    CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBAWT_CFLAGS), \
     EXTRA_HEADER_DIRS := $(LIBAWT_EXTRA_HEADER_DIRS), \
     DISABLED_WARNINGS_gcc_awt_LoadLibrary.c := unused-result, \
     DISABLED_WARNINGS_gcc_debug_mem.c := format-nonliteral, \
@@ -245,6 +246,8 @@ ifeq ($(call isTargetOs, windows macosx), false)
         DISABLED_WARNINGS_gcc_gtk3_interface.c := parentheses type-limits unused-function, \
         DISABLED_WARNINGS_gcc_OGLBufImgOps.c := format-nonliteral, \
         DISABLED_WARNINGS_gcc_OGLPaints.c := format-nonliteral, \
+        DISABLED_WARNINGS_gcc_screencast_pipewire.c := undef, \
+        DISABLED_WARNINGS_gcc_screencast_portal.c := undef, \
         DISABLED_WARNINGS_gcc_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
         DISABLED_WARNINGS_gcc_X11SurfaceData.c := implicit-fallthrough pointer-to-int-cast, \
         DISABLED_WARNINGS_gcc_XlibWrapper.c := type-limits pointer-to-int-cast, \
@@ -446,6 +449,7 @@ else
     LIBFREETYPE_LIBS := -lfreetype
   endif
 
+  # gcc_ftobjs.c := maybe-uninitialized required for GCC 7 builds.
   $(eval $(call SetupJdkLibrary, BUILD_LIBFREETYPE, \
       NAME := freetype, \
       OPTIMIZATION := HIGHEST, \
@@ -454,6 +458,7 @@ else
       EXTRA_HEADER_DIRS := $(BUILD_LIBFREETYPE_HEADER_DIRS), \
       DISABLED_WARNINGS_microsoft := 4267 4244 4996, \
       DISABLED_WARNINGS_gcc := dangling-pointer stringop-overflow, \
+      DISABLED_WARNINGS_gcc_ftobjs.c := maybe-uninitialized, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
   ))
@@ -491,7 +496,7 @@ else
    LIBFONTMANAGER_EXCLUDE_FILES += libharfbuzz/hb-ft.cc
 
    HARFBUZZ_DISABLED_WARNINGS_gcc := missing-field-initializers strict-aliasing \
-       unused-result array-bounds
+       unused-result array-bounds parentheses
    # noexcept-type required for GCC 7 builds. Not required for GCC 8+.
    # expansion-to-defined required for GCC 9 builds. Not required for GCC 10+.
    HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := class-memaccess noexcept-type expansion-to-defined dangling-reference
@@ -609,7 +614,9 @@ ifeq ($(call isTargetOs, windows), true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBJAWT, \
       NAME := jawt, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CXXFLAGS_JDKLIB) \
+      CFLAGS := $(CFLAGS_JDKLIB) \
+          $(LIBJAWT_CFLAGS), \
+      CXXFLAGS := $(CXXFLAGS_JDKLIB) \
           $(LIBJAWT_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBJAWT_EXTRA_HEADER_DIRS), \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \
@@ -791,6 +798,8 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       EXCLUDES := $(LIBSPLASHSCREEN_EXCLUDES), \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBSPLASHSCREEN_CFLAGS) \
+          $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
+      CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBSPLASHSCREEN_CFLAGS) \
           $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBSPLASHSCREEN_HEADER_DIRS), \
       DISABLED_WARNINGS_gcc_dgif_lib.c := sign-compare, \

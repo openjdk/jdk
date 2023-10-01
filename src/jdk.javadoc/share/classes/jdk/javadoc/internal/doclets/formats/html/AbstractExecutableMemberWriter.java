@@ -43,6 +43,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.LINK_TYPE_PARAMS;
 import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS;
@@ -51,18 +52,37 @@ import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.SHOW_P
 import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS;
 
 /**
- * Print method and constructor info.
+ * Abstract "member writer" for executable elements.
  */
 public abstract class AbstractExecutableMemberWriter extends AbstractMemberWriter {
 
-    public AbstractExecutableMemberWriter(SubWriterHolderWriter writer, TypeElement typeElement) {
-        super(writer, typeElement);
+    /**
+     * Creates a writer for executable members, for a given enclosing writer, type element, and kind of member.
+     *
+     * @param writer the enclosing "page" writer, with an associated type element
+     * @param typeElement the type element
+     * @param kind the kind of member: one of {@link VisibleMemberTable.Kind#CONSTRUCTORS} or {@link VisibleMemberTable.Kind#METHODS}
+     */
+    protected AbstractExecutableMemberWriter(SubWriterHolderWriter writer, TypeElement typeElement,
+                                          VisibleMemberTable.Kind kind) {
+        super(writer, typeElement, kind);
+
+        // The following would be better before the preceding call to super; see JDK-8300786
+        switch (kind) {
+            case CONSTRUCTORS, METHODS -> { }
+            default -> throw new IllegalArgumentException(kind.toString());
+        }
     }
 
-    public AbstractExecutableMemberWriter(SubWriterHolderWriter writer) {
+    /**
+     * Creates a writer for executable members, for a given enclosing writer.
+     * No type element or kind is provided, limiting the set of methods that can be used.
+     *
+     * @param writer the enclosing "page" writer.
+     */
+    protected AbstractExecutableMemberWriter(SubWriterHolderWriter writer) {
         super(writer);
     }
-
 
     /**
      * Get the type parameters for the executable member.

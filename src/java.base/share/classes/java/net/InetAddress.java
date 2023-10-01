@@ -731,8 +731,8 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * <p>If this InetAddress was created with a host name,
      * this host name will be remembered and returned;
      * otherwise, a reverse name lookup will be performed
-     * and the result will be returned based on the system
-     * configured resolver. If a lookup of the name service
+     * and the result will be returned based on the system-wide
+     * resolver. If a lookup of the name service
      * is required, call
      * {@link #getCanonicalHostName() getCanonicalHostName}.
      *
@@ -785,9 +785,15 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     }
 
     /**
-     * Gets the fully qualified domain name for this IP address.
-     * Best effort method, meaning we may not be able to return
-     * the FQDN depending on the underlying system configuration.
+     * Gets the fully qualified domain name for this
+     * {@linkplain InetAddress#getAddress() IP address} using the system-wide
+     * {@linkplain InetAddressResolver resolver}.
+     *
+     * <p>The system-wide resolver will be used to do a reverse name lookup of the IP address.
+     * The lookup can fail for many reasons that include the host not being registered with the name
+     * service. If the resolver is unable to determine the fully qualified
+     * domain name, this method returns the {@linkplain #getHostAddress() textual representation}
+     * of the IP address.
      *
      * <p>If there is a security manager, this method first
      * calls its {@code checkConnect} method
@@ -797,9 +803,11 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * If the operation is not allowed, it will return
      * the textual representation of the IP address.
      *
-     * @return  the fully qualified domain name for this IP address,
-     *    or if the operation is not allowed by the security check,
-     *    the textual representation of the IP address.
+     * @return  the fully qualified domain name for this IP address.
+     *          If either the operation is not allowed by the security check
+     *          or the system-wide resolver wasn't able to determine the
+     *          fully qualified domain name for the IP address, the textual
+     *          representation of the IP address is returned instead.
      *
      * @see SecurityManager#checkConnect
      *
@@ -814,21 +822,23 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     }
 
     /**
-     * Returns the hostname for this address.
+     * Returns the fully qualified domain name for the given address.
      *
      * <p>If there is a security manager, this method first
      * calls its {@code checkConnect} method
      * with the hostname and {@code -1}
      * as its arguments to see if the calling code is allowed to know
-     * the hostname for this IP address, i.e., to connect to the host.
+     * the hostname for the given IP address, i.e., to connect to the host.
      * If the operation is not allowed, it will return
      * the textual representation of the IP address.
      *
-     * @return  the host name for this IP address, or if the operation
-     *    is not allowed by the security check, the textual
-     *    representation of the IP address.
-     *
      * @param check make security check if true
+     *
+     * @return  the fully qualified domain name for the given IP address.
+     *          If either the operation is not allowed by the security check
+     *          or the system-wide resolver wasn't able to determine the
+     *          fully qualified domain name for the IP address, the textual
+     *          representation of the IP address is returned instead.
      *
      * @see SecurityManager#checkConnect
      */
@@ -1570,7 +1580,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
 
     /**
      * Given the name of a host, returns an array of its IP addresses,
-     * based on the configured system {@linkplain InetAddressResolver resolver}.
+     * based on the system-wide {@linkplain InetAddressResolver resolver}.
      *
      * <p> The host name can either be a machine name, such as
      * "{@code www.example.com}", or a textual representation of its IP

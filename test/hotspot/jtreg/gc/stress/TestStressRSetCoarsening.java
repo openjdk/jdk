@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,23 +139,23 @@ public class TestStressRSetCoarsening {
     /**
      * Initial time.
      */
-    public final long start;
+    public final long startNanos;
 
     /**
      * Time when the test should stop working.
      */
-    public final long finishAt;
+    public final long finishAtNanos;
 
     /**
      * Does pre-calculation and allocate necessary objects.
      *
      * @param objPerRegions how many objects per G1 heap region
      */
-    TestStressRSetCoarsening(int objPerRegions, int regsToRefresh, int timeout) {
+    TestStressRSetCoarsening(int objPerRegions, int regsToRefresh, int timeoutSec) {
         this.K = objPerRegions;
         this.regsToRefresh = regsToRefresh;
-        this.start = System.currentTimeMillis();
-        this.finishAt = start + timeout * 900; // 10% ahead of jtreg timeout
+        this.startNanos = System.nanoTime();
+        this.finishAtNanos = startNanos + (timeoutSec * 900_000_000L); // 10% ahead of jtreg timeout
 
         long regionSize = WB.g1RegionSize();
 
@@ -284,7 +284,7 @@ public class TestStressRSetCoarsening {
                         for (int rn = pre; rn != cur; rn += step) {
                             Object[] rnArray = storage.getArrayAt(getY(to, from, rn));
                             rnArray[getX(to, from, rn)] = celebrity;
-                            if (System.currentTimeMillis() > finishAt) {
+                            if (System.nanoTime() - finishAtNanos > 0) {
                                 throw new TimeoutException();
                             }
                         }
@@ -322,9 +322,9 @@ public class TestStressRSetCoarsening {
         } catch (TimeoutException e) {
             System.out.println("%% TIMEOUT!!!");
         }
-        long now = System.currentTimeMillis();
+        long nowNanos = System.nanoTime();
         System.out.println("%% Summary");
-        System.out.println("%%   Time spent          : " + ((now - start) / 1000) + " seconds");
+        System.out.println("%%   Time spent          : " + ((nowNanos - startNanos) / 1_000_000_000L) + " seconds");
         System.out.println("%%   Free memory left    : " + Runtime.getRuntime().freeMemory() / KB + "K");
         System.out.println("%% Test passed");
     }

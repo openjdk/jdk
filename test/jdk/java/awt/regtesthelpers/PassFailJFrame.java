@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,43 @@
  * questions.
  */
 
+import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Rectangle;
+import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.image.RenderedImage;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.imageio.ImageIO;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.Timer;
-
 
 import static javax.swing.SwingUtilities.invokeAndWait;
 import static javax.swing.SwingUtilities.isEventDispatchThread;
@@ -68,7 +81,9 @@ public class PassFailJFrame {
     private static volatile boolean failed;
     private static volatile boolean timeout;
     private static volatile String testFailedReason;
+    private static final AtomicInteger imgCounter = new AtomicInteger(0);
     private static JFrame frame;
+    private static Robot robot;
 
     public enum Position {HORIZONTAL, VERTICAL, TOP_LEFT_CORNER}
 
@@ -114,16 +129,62 @@ public class PassFailJFrame {
     public PassFailJFrame(String title, String instructions, long testTimeOut,
                           int rows, int columns) throws InterruptedException,
             InvocationTargetException {
+        this(title, instructions, testTimeOut, rows, columns, false);
+    }
+
+    /**
+     * Constructs a JFrame with a given title & serves as test instructional
+     * frame where the user follows the specified test instruction in order
+     * to test the test case & mark the test pass or fail. If the expected
+     * result is seen then the user click on the 'Pass' button else click
+     * on the 'Fail' button and the reason for the failure should be
+     * specified in the JDialog JTextArea.
+     * <p>
+     * The test instruction frame also provides a way for the tester to take
+     * a screenshot (full screen or individual frame) if this feature
+     * is enabled by passing {@code true} as {@code  enableScreenCapture}
+     * parameter.
+     *
+     * @param title        title of the Frame.
+     * @param instructions the instruction for the tester on how to test
+     *                     and what is expected (pass) and what is not
+     *                     expected (fail).
+     * @param testTimeOut  test timeout where time is specified in minutes.
+     * @param rows         number of visible rows of the JTextArea where the
+     *                     instruction is show.
+     * @param columns      Number of columns of the instructional
+     *                     JTextArea
+     * @param enableScreenCapture if set to true, 'Capture Screen' button & its
+     *                            associated UIs are added to test instruction
+     *                            frame
+     * @throws InterruptedException      exception thrown when thread is
+     *                                   interrupted
+     * @throws InvocationTargetException if an exception is thrown while
+     *                                   creating the test instruction frame on
+     *                                   EDT
+     */
+    public PassFailJFrame(String title, String instructions, long testTimeOut,
+                          int rows, int columns,
+                          boolean enableScreenCapture) throws InterruptedException,
+            InvocationTargetException {
         if (isEventDispatchThread()) {
-            createUI(title, instructions, testTimeOut, rows, columns);
+            createUI(title, instructions, testTimeOut, rows, columns,
+                    enableScreenCapture);
         } else {
             invokeAndWait(() -> createUI(title, instructions, testTimeOut,
-                    rows, columns));
+                    rows, columns, enableScreenCapture));
         }
     }
 
+    private PassFailJFrame(Builder builder) throws InterruptedException,
+            InvocationTargetException {
+        this(builder.title, builder.instructions, builder.testTimeOut,
+                builder.rows, builder.columns, builder.screenCapture);
+    }
+
     private static void createUI(String title, String instructions,
-                                 long testTimeOut, int rows, int columns) {
+                                 long testTimeOut, int rows, int columns,
+                                 boolean enableScreenCapture) {
         frame = new JFrame(title);
         frame.setLayout(new BorderLayout());
         JTextArea instructionsText = new JTextArea(instructions, rows, columns);
@@ -167,6 +228,10 @@ public class PassFailJFrame {
         buttonsPanel.add(btnPass);
         buttonsPanel.add(btnFail);
 
+        if (enableScreenCapture) {
+            buttonsPanel.add(createCapturePanel());
+        }
+
         frame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -182,6 +247,91 @@ public class PassFailJFrame {
         frame.pack();
         frame.setLocationRelativeTo(null);
         windowList.add(frame);
+    }
+
+    private static JComponent createCapturePanel() {
+        JComboBox<CaptureType> screenShortType = new JComboBox<>(CaptureType.values());
+
+        JButton capture = new JButton("ScreenShot");
+        capture.addActionListener((e) ->
+                captureScreen((CaptureType) screenShortType.getSelectedItem()));
+
+        JPanel panel = new JPanel();
+        panel.add(screenShortType);
+        panel.add(capture);
+        return panel;
+    }
+
+    private enum CaptureType {
+        FULL_SCREEN("Capture Full Screen"),
+        WINDOWS("Capture Individual Frame");
+
+        private final String type;
+        CaptureType(String type) {
+            this.type = type;
+        }
+
+        @Override
+        public String toString() {
+            return type;
+        }
+    }
+
+    private static Robot createRobot() {
+        if (robot == null) {
+            try {
+                robot = new Robot();
+            } catch (AWTException e) {
+                String errorMsg = "Failed to create an instance of Robot.";
+                JOptionPane.showMessageDialog(frame, errorMsg, "Failed",
+                                              JOptionPane.ERROR_MESSAGE);
+                forceFail(errorMsg + e.getMessage());
+            }
+        }
+        return robot;
+    }
+
+    private static void captureScreen(Rectangle bounds) {
+        Robot robot = createRobot();
+
+        List<Image> imageList = robot.createMultiResolutionScreenCapture(bounds)
+                                     .getResolutionVariants();
+        Image image = imageList.get(imageList.size() - 1);
+
+        File file = new File("CaptureScreen_"
+                             + imgCounter.incrementAndGet() + ".png");
+        try {
+            ImageIO.write((RenderedImage) image, "png", file);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void captureScreen(CaptureType type) {
+        switch (type) {
+            case FULL_SCREEN:
+                Arrays.stream(GraphicsEnvironment.getLocalGraphicsEnvironment()
+                                                 .getScreenDevices())
+                      .map(GraphicsDevice::getDefaultConfiguration)
+                      .map(GraphicsConfiguration::getBounds)
+                      .forEach(PassFailJFrame::captureScreen);
+                break;
+
+            case WINDOWS:
+                windowList.stream()
+                          .filter(Window::isShowing)
+                          .map(Window::getBounds)
+                          .forEach(PassFailJFrame::captureScreen);
+                break;
+
+            default:
+                throw new IllegalStateException("Unexpected value of capture type");
+        }
+
+        JOptionPane.showMessageDialog(frame,
+                                      "Screen Captured Successfully",
+                                      "Screen Capture",
+                                      JOptionPane.INFORMATION_MESSAGE);
     }
 
     private static String convertMillisToTimeStr(long millis) {
@@ -420,5 +570,73 @@ public class PassFailJFrame {
         failed = true;
         testFailedReason = FAILURE_REASON + reason;
         latch.countDown();
+    }
+
+    public static class Builder {
+        private String title;
+        private String instructions;
+        private long testTimeOut;
+        private int rows;
+        private int columns;
+        private boolean screenCapture = false;
+
+        public Builder title(String title) {
+            this.title = title;
+            return this;
+        }
+
+        public Builder instructions(String instructions) {
+            this.instructions = instructions;
+            return this;
+        }
+
+        public Builder testTimeOut(long testTimeOut) {
+            this.testTimeOut = testTimeOut;
+            return this;
+        }
+
+        public Builder rows(int rows) {
+            this.rows = rows;
+            return this;
+        }
+
+        public Builder columns(int columns) {
+            this.columns = columns;
+            return this;
+        }
+
+        public Builder screenCapture() {
+            this.screenCapture = true;
+            return this;
+        }
+
+        public PassFailJFrame build() throws InterruptedException,
+                InvocationTargetException {
+            validate();
+            return new PassFailJFrame(this);
+        }
+
+        private void validate() {
+            if (this.title == null) {
+                this.title = TITLE;
+            }
+
+            if (this.instructions == null || this.instructions.length() == 0) {
+                throw new RuntimeException("Please provide the test " +
+                        "instruction for this manual test");
+            }
+
+            if (this.testTimeOut == 0L) {
+                this.testTimeOut = TEST_TIMEOUT;
+            }
+
+            if (this.rows == 0) {
+                this.rows = ROWS;
+            }
+
+            if (this.columns == 0) {
+                this.columns = COLUMNS;
+            }
+        }
     }
 }

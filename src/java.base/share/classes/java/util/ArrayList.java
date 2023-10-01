@@ -40,11 +40,12 @@ import jdk.internal.util.ArraysSupport;
  * {@code Vector}, except that it is unsynchronized.)
  *
  * <p>The {@code size}, {@code isEmpty}, {@code get}, {@code set},
- * {@code iterator}, and {@code listIterator} operations run in constant
- * time.  The {@code add} operation runs in <i>amortized constant time</i>,
- * that is, adding n elements requires O(n) time.  All of the other operations
- * run in linear time (roughly speaking).  The constant factor is low compared
- * to that for the {@code LinkedList} implementation.
+ * {@code getFirst}, {@code getLast}, {@code removeLast}, {@code iterator},
+ * {@code listIterator}, and {@code reversed} operations run in constant time.
+ * The {@code add}, and {@code addLast} operations runs in <i>amortized
+ * constant time</i>, that is, adding n elements requires O(n) time.  All of
+ * the other operations run in linear time (roughly speaking).  The constant
+ * factor is low compared to that for the {@code LinkedList} implementation.
  *
  * <p>Each {@code ArrayList} instance has a <i>capacity</i>.  The capacity is
  * the size of the array used to store the elements in the list.  It is always

@@ -328,8 +328,6 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
         args.add(classPath);
  */
 
-        args.add("-Xdebug");
-
         String server;
         if (argumentHandler.isAttachingConnector()) {
             server = "y";

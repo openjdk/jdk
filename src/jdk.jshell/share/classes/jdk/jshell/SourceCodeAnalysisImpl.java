@@ -1188,10 +1188,10 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             }
         };
         @SuppressWarnings("unchecked")
-        List<Element> result = Util.stream(scopeIterable)
+        Set<Element> result = Util.stream(scopeIterable)
                              .flatMap(this::localElements)
                              .flatMap(el -> Util.stream((Iterable<Element>)elementConvertor.apply(el)))
-                             .collect(toCollection(ArrayList :: new));
+                             .collect(toCollection(LinkedHashSet :: new));
         result.addAll(listPackages(at, ""));
         return result;
     }

@@ -286,15 +286,15 @@ public abstract class BaseConfiguration {
     private void initModules() {
         Comparators comparators = utils.comparators;
         // Build the modules structure used by the doclet
-        modules = new TreeSet<>(comparators.makeModuleComparator());
+        modules = new TreeSet<>(comparators.moduleComparator());
         modules.addAll(getSpecifiedModuleElements());
 
-        modulePackages = new TreeMap<>(comparators.makeModuleComparator());
+        modulePackages = new TreeMap<>(comparators.moduleComparator());
         for (PackageElement p : packages) {
             ModuleElement mdle = docEnv.getElementUtils().getModuleOf(p);
             if (mdle != null && !mdle.isUnnamed()) {
                 Set<PackageElement> s = modulePackages
-                        .computeIfAbsent(mdle, m -> new TreeSet<>(comparators.makePackageComparator()));
+                        .computeIfAbsent(mdle, m -> new TreeSet<>(comparators.packageComparator()));
                 s.add(p);
             }
         }
@@ -303,7 +303,7 @@ public abstract class BaseConfiguration {
             ModuleElement mdle = docEnv.getElementUtils().getModuleOf(p);
             if (mdle != null && !mdle.isUnnamed()) {
                 Set<PackageElement> s = modulePackages
-                        .computeIfAbsent(mdle, m -> new TreeSet<>(comparators.makePackageComparator()));
+                        .computeIfAbsent(mdle, m -> new TreeSet<>(comparators.packageComparator()));
                 s.add(p);
             }
         }
@@ -319,7 +319,7 @@ public abstract class BaseConfiguration {
     }
 
     private void initPackages() {
-        packages = new TreeSet<>(utils.comparators.makePackageComparator());
+        packages = new TreeSet<>(utils.comparators.packageComparator());
         // add all the included packages
         packages.addAll(includedPackageElements);
     }

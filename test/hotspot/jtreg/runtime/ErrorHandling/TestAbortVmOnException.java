@@ -25,6 +25,7 @@
  * @test TestAbortVmOnException
  * @summary Test -XX:AbortVMOnException=MyAbortException with C1 compilation
  * @library /test/lib
+ * @requires vm.flagless
  * @run driver TestAbortVmOnException
  * @bug 8264899
  */
