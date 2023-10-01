@@ -30,6 +30,8 @@
 package java.math;
 
 import static java.math.BigInteger.LONG_MASK;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -37,6 +39,9 @@ import java.io.ObjectStreamException;
 import java.io.StreamCorruptedException;
 import java.util.Arrays;
 import java.util.Objects;
+
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * Immutable, arbitrary-precision signed decimal numbers.  A {@code
@@ -307,6 +312,8 @@ import java.util.Objects;
  * @since 1.1
  */
 public class BigDecimal extends Number implements Comparable<BigDecimal> {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
     /*
      * Let l = log_2(10).
      * Then, L < l < L + ulp(L) / 2, that is, L = roundTiesToEven(l).
@@ -4154,12 +4161,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     // its intCompact field is not INFLATED.
     static class StringBuilderHelper {
         final StringBuilder sb;    // Placeholder for BigDecimal string
-        final char[] cmpCharArray; // character array to place the intCompact
+        final byte[] cmpCharArray; // character array to place the intCompact
 
         StringBuilderHelper() {
             sb = new StringBuilder(32);
             // All non negative longs can be made to fit into 19 character array.
-            cmpCharArray = new char[19];
+            cmpCharArray = new byte[19];
         }
 
         // Accessors.
@@ -4168,7 +4175,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             return sb;
         }
 
-        char[] getCompactCharArray() {
+        byte[] getCompactCharArray() {
             return cmpCharArray;
         }
 
@@ -4182,66 +4189,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
          * Note: intCompact must be greater or equal to zero.
          */
         int putIntCompact(long intCompact) {
-            assert intCompact >= 0;
-
-            long q;
-            int r;
-            // since we start from the least significant digit, charPos points to
-            // the last character in cmpCharArray.
-            int charPos = cmpCharArray.length;
-
-            // Get 2 digits/iteration using longs until quotient fits into an int
-            while (intCompact > Integer.MAX_VALUE) {
-                q = intCompact / 100;
-                r = (int)(intCompact - q * 100);
-                intCompact = q;
-                cmpCharArray[--charPos] = DIGIT_ONES[r];
-                cmpCharArray[--charPos] = DIGIT_TENS[r];
-            }
-
-            // Get 2 digits/iteration using ints when i2 >= 100
-            int q2;
-            int i2 = (int)intCompact;
-            while (i2 >= 100) {
-                q2 = i2 / 100;
-                r  = i2 - q2 * 100;
-                i2 = q2;
-                cmpCharArray[--charPos] = DIGIT_ONES[r];
-                cmpCharArray[--charPos] = DIGIT_TENS[r];
-            }
-
-            cmpCharArray[--charPos] = DIGIT_ONES[i2];
-            if (i2 >= 10)
-                cmpCharArray[--charPos] = DIGIT_TENS[i2];
-
-            return charPos;
+            return JLA.getCharsLatin1(intCompact, cmpCharArray.length, cmpCharArray);
         }
-
-        static final char[] DIGIT_TENS = {
-            '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
-            '1', '1', '1', '1', '1', '1', '1', '1', '1', '1',
-            '2', '2', '2', '2', '2', '2', '2', '2', '2', '2',
-            '3', '3', '3', '3', '3', '3', '3', '3', '3', '3',
-            '4', '4', '4', '4', '4', '4', '4', '4', '4', '4',
-            '5', '5', '5', '5', '5', '5', '5', '5', '5', '5',
-            '6', '6', '6', '6', '6', '6', '6', '6', '6', '6',
-            '7', '7', '7', '7', '7', '7', '7', '7', '7', '7',
-            '8', '8', '8', '8', '8', '8', '8', '8', '8', '8',
-            '9', '9', '9', '9', '9', '9', '9', '9', '9', '9',
-        };
-
-        static final char[] DIGIT_ONES = {
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        };
     }
 
     /**
@@ -4261,15 +4210,22 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (scale == 2  &&
             intCompact >= 0 && intCompact < Integer.MAX_VALUE) {
             // currency fast path
-            int lowInt = (int)intCompact % 100;
             int highInt = (int)intCompact / 100;
-            return (Integer.toString(highInt) + '.' +
-                    StringBuilderHelper.DIGIT_TENS[lowInt] +
-                    StringBuilderHelper.DIGIT_ONES[lowInt]) ;
+            int lowInt = (int) intCompact - highInt * 100;
+            int highIntSize = JLA.stringSize(highInt);
+            byte[] buf = new byte[highIntSize + 3];
+            JLA.getCharsLatin1(highInt, highIntSize, buf);
+            buf[highIntSize] = '.';
+            JLA.writeDigitPairLatin1(buf, highIntSize + 1, lowInt);
+            try {
+                return JLA.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+            } catch (CharacterCodingException e) {
+                throw new AssertionError(e);
+            }
         }
 
         StringBuilderHelper sbHelper = new StringBuilderHelper();
-        char[] coeff;
+        byte[] coeff;
         int offset;  // offset is the starting index for coeff array
         // Get the significand as an absolute value
         if (intCompact != INFLATED) {
@@ -4277,7 +4233,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             coeff  = sbHelper.getCompactCharArray();
         } else {
             offset = 0;
-            coeff  = intVal.abs().toString().toCharArray();
+            coeff = intVal.abs().toString().getBytes(StandardCharsets.ISO_8859_1);
         }
 
         // Construct a buffer, with sufficient capacity for all cases.
@@ -4297,18 +4253,18 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 for (; pad>0; pad--) {
                     buf.append('0');
                 }
-                buf.append(coeff, offset, coeffLen);
+                JLA.stringBuilderAppend(buf, coeff, offset, coeffLen);
             } else {                         // xx.xx form
-                buf.append(coeff, offset, -pad);
+                JLA.stringBuilderAppend(buf, coeff, offset, -pad);
                 buf.append('.');
-                buf.append(coeff, -pad + offset, scale);
+                JLA.stringBuilderAppend(buf, coeff, -pad + offset, scale);
             }
         } else { // E-notation is needed
             if (sci) {                       // Scientific notation
-                buf.append(coeff[offset]);   // first character
+                buf.append((char) coeff[offset]);   // first character
                 if (coeffLen > 1) {          // more to come
                     buf.append('.');
-                    buf.append(coeff, offset + 1, coeffLen - 1);
+                    JLA.stringBuilderAppend(buf, coeff, offset + 1, coeffLen - 1);
                 }
             } else {                         // Engineering notation
                 int sig = (int)(adjusted % 3);
@@ -4333,15 +4289,15 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         throw new AssertionError("Unexpected sig value " + sig);
                     }
                 } else if (sig >= coeffLen) {   // significand all in integer
-                    buf.append(coeff, offset, coeffLen);
+                    JLA.stringBuilderAppend(buf, coeff, offset, coeffLen);
                     // may need some zeros, too
                     for (int i = sig - coeffLen; i > 0; i--) {
                         buf.append('0');
                     }
                 } else {                     // xx.xxE form
-                    buf.append(coeff, offset, sig);
+                    JLA.stringBuilderAppend(buf, coeff, offset, sig);
                     buf.append('.');
-                    buf.append(coeff, offset + sig, coeffLen - sig);
+                    JLA.stringBuilderAppend(buf, coeff, offset + sig, coeffLen - sig);
                 }
             }
             if (adjusted != 0) {             // [!sci could have made 0]
