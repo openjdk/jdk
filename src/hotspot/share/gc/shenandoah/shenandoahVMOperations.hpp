@@ -81,19 +81,12 @@ public:
   virtual  void doit();
 };
 
-// VM Operation that performs root scan
-class VM_ShenandoahRootScanOperation : public VM_ShenandoahReferenceOperation {
-public:
-  VM_ShenandoahRootScanOperation() : VM_ShenandoahReferenceOperation() {};
-  virtual void doit_epilogue();
-};
-
-class VM_ShenandoahDegeneratedGC: public VM_ShenandoahRootScanOperation {
+class VM_ShenandoahDegeneratedGC: public VM_ShenandoahReferenceOperation {
 private:
   ShenandoahDegenGC* const _gc;
 public:
   VM_ShenandoahDegeneratedGC(ShenandoahDegenGC* gc) :
-    VM_ShenandoahRootScanOperation(),
+    VM_ShenandoahReferenceOperation(),
     _gc(gc) {};
 
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahDegeneratedGC; }
@@ -101,13 +94,13 @@ public:
   virtual  void doit();
 };
 
-class VM_ShenandoahFullGC : public VM_ShenandoahRootScanOperation {
+class VM_ShenandoahFullGC : public VM_ShenandoahReferenceOperation {
 private:
   GCCause::Cause           _gc_cause;
   ShenandoahFullGC* const  _full_gc;
 public:
   VM_ShenandoahFullGC(GCCause::Cause gc_cause, ShenandoahFullGC* full_gc) :
-    VM_ShenandoahRootScanOperation(),
+    VM_ShenandoahReferenceOperation(),
     _gc_cause(gc_cause),
     _full_gc(full_gc) {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFullGC; }

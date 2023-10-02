@@ -45,6 +45,7 @@ void VM_ShenandoahReferenceOperation::doit_epilogue() {
     Heap_lock->notify_all();
   }
   Heap_lock->unlock();
+  OopMapCache::cleanup_old_entries();
 }
 
 void VM_ShenandoahInitMark::doit() {
@@ -55,11 +56,6 @@ void VM_ShenandoahInitMark::doit() {
 void VM_ShenandoahFinalMarkStartEvac::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Final Mark", SvcGCMarker::CONCURRENT);
   _gc->entry_final_mark();
-}
-
-void VM_ShenandoahRootScanOperation::doit_epilogue() {
-  VM_ShenandoahReferenceOperation::doit_epilogue();
-  OopMapCache::cleanup_old_entries();
 }
 
 void VM_ShenandoahFullGC::doit() {
