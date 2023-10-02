@@ -609,11 +609,6 @@ hotspot_nmt = \
   runtime/NMT \
   gtest/NMTGtests.java
 
-hotspot_oome = \
-  runtime/reflect/ReflectOutOfMemoryError.java \
-  gc/InfiniteList.java \
-  runtime/ClassInitErrors/TestOutOfMemoryDuringInit.java
-
 hotspot_rest_runtime = \
   :hotspot_runtime \
   -:tier1_runtime \
