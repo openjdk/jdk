@@ -124,11 +124,10 @@ class Type_Array : public AnyObj {
   uint   _max;
   const Type **_types;
   void grow( uint i );          // Grow array node to fit
-  const Type *operator[] ( uint i ) const // Lookup, or null for not mapped
-  { return (i<_max) ? _types[i] : (Type*)nullptr; }
-  friend class PhaseValues;
 public:
   Type_Array(Arena *a) : _a(a), _max(0), _types(0) {}
+  const Type *operator[] ( uint i ) const // Lookup, or null for not mapped
+  { return (i<_max) ? _types[i] : (Type*)nullptr; }
   const Type *fast_lookup(uint i) const{assert(i<_max,"oob");return _types[i];}
   // Extend the mapping: index i maps to Type *n.
   void map( uint i, const Type *n ) { if( i>=_max ) grow(i); _types[i] = n; }
