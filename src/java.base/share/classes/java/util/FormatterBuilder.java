@@ -320,14 +320,16 @@ final class FormatterBuilder {
             }
             case DECIMAL_INTEGER -> {
                 if ((itype == int.class || itype == long.class) && precision == -1) {
+                    if (flags == 0 && isGenericDFS && width == -1) {
+                        return mh;
+                    }
+
                     if (itype == int.class) {
                         mh = explicitCastArguments(mh,
                                 mh.type().changeReturnType(long.class));
                     }
 
-                    if (flags == 0 && isGenericDFS && width == -1) {
-                        return mh;
-                    } else if (validFlags(flags, PLUS | LEADING_SPACE |
+                    if (validFlags(flags, PLUS | LEADING_SPACE |
                                                  ZERO_PAD | GROUP |
                                                  PARENTHESES)) {
                         handled = true;
