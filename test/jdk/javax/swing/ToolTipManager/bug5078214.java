@@ -26,7 +26,7 @@
  * @bug 5078214
  * @summary ToolTip is shown partially when the application is near the bottom of screen.
  * @library ../regtesthelpers /test/lib
- * @build Util JRobot
+ * @build JRobot
  * @build jtreg.SkippedException
  * @key headful
  * @run main bug5078214
@@ -86,7 +86,6 @@ public class bug5078214 {
             });
 
             robot = new JRobot(true);
-            Util.blockTillDisplayed(mainFrame);
             robot.waitForIdle();
             robot.delay(1000);
 
