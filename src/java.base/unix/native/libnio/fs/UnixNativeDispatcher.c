@@ -236,7 +236,7 @@ typedef int lutimes_func(const char *, const struct timeval *);
 typedef DIR* fdopendir_func(int);
 #if defined(__linux__)
 typedef int statx_func(int dirfd, const char *restrict pathname, int flags,
-                 unsigned int mask, struct statx *restrict statxbuf);
+                       unsigned int mask, struct statx *restrict statxbuf);
 #endif
 
 static openat64_func* my_openat64_func = NULL;
@@ -277,7 +277,8 @@ static int fstatat64_wrapper(int dfd, const char *path,
 
 #if defined(__linux__)
 static int statx_wrapper(int dirfd, const char *restrict pathname, int flags,
-                 unsigned int mask, struct statx *restrict statxbuf, int follow_symlink) {
+                         unsigned int mask, struct statx *restrict statxbuf,
+                         int follow_symlink) {
     if (follow_symlink == NO_FOLLOW_SYMLINK) {
       flags |= AT_SYMLINK_NOFOLLOW;
     }
