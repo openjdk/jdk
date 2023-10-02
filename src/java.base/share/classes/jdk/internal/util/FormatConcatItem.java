@@ -51,8 +51,6 @@ public interface FormatConcatItem {
      * @param buffer      buffer to append to
      *
      * @return adjusted value of the length + coder
-     *
-     * @throws Throwable if fails to prepend value (unusual).
      */
-    long prepend(long lengthCoder, byte[] buffer) throws Throwable;
+    long prepend(long lengthCoder, byte[] buffer);
 }
