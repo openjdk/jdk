@@ -251,8 +251,8 @@
  * <h3>Consistency checks, syntax checks and verification</h3>
  * No consistency checks are performed while building or transforming classfiles
  * (except for null arguments checks). All builders and classfile elements factory
- * methods accepts provided information without implicit validation.
- * However fatal inconsistencies (like for example invalid code sequence or
+ * methods accepts the provided information without implicit validation.
+ * However, fatal inconsistencies (like for example invalid code sequence or
  * unresolved labels) affects internal tools and may cause exceptions later in
  * the classfile building process.
  * <p>
@@ -263,7 +263,7 @@
  * <p>
  * On the other hand it is possible to use builders methods and factories accepting
  * constant pool entries to avoid any form of syntax control. Constant pool entries
- * can be constructed from raw values, where no syntax control is in charge.
+ * can be constructed from raw values, with no additional syntactic checks.
  * {@snippet lang=java :
  * var invalidInternalClassName = constantPoolBuilder.classEntry(
  *                                    constantPoolBuilder.utf8Entry("mypackage.MyClass"));
