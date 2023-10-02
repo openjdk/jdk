@@ -27,10 +27,10 @@
   @summary tests that DropTargetDragEvent.getDropAction() returns correct value
            after DropTargetDragEvent.rejectDrag()
   @key headful
-  @run main RejectDragDropActionTest
+  @run main/timeout=300 RejectDragDropActionTest
 */
 
-import java.awt.AWTException;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Point;
@@ -46,14 +46,13 @@ import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetListener;
 import java.awt.event.InputEvent;
-import java.lang.reflect.InvocationTargetException;
 
 
 public class RejectDragDropActionTest {
 
     private static volatile boolean incorrectActionDetected = false;
 
-    private static final int FRAME_ACTIVATION_TIMEOUT = 3000;
+    private static final int DELAY_TIME = 1000;
 
     private static Frame frame;
     private static DragSource ds;
@@ -74,26 +73,30 @@ public class RejectDragDropActionTest {
         };
     private final DropTarget dt = new DropTarget(frame, dtl);
 
-    public static void main(String[] args) throws InterruptedException,
-            InvocationTargetException, AWTException {
+    public static void main(String[] args) throws Exception {
         EventQueue.invokeAndWait(() -> {
             frame = new Frame("RejectDragDropActionTest");
             ds = DragSource.getDefaultDragSource();
             dgl = dge -> dge.startDrag(null, new StringSelection("OOKK"));
-            dgr = ds.createDefaultDragGestureRecognizer(frame, DnDConstants.ACTION_COPY, dgl);
-            frame.setBounds(100, 100, 200, 200);
+            dgr = ds.createDefaultDragGestureRecognizer(frame,
+                    DnDConstants.ACTION_COPY, dgl);
+            frame.setPreferredSize(new Dimension(200, 200));
+            frame.pack();
+            frame.setLocationRelativeTo(null);
             frame.setVisible(true);
         });
 
         try {
             Robot robot = new Robot();
             robot.waitForIdle();
-            robot.delay(FRAME_ACTIVATION_TIMEOUT);
+            robot.delay(DELAY_TIME);
 
             Point startPoint = frame.getLocationOnScreen();
             Point endPoint = new Point(startPoint);
             startPoint.translate(50, 50);
             endPoint.translate(150, 150);
+
+            robot.delay(DELAY_TIME);
 
             robot.mouseMove(startPoint.x, startPoint.y);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
