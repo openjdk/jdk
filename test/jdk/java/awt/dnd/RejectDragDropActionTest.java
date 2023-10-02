@@ -30,7 +30,6 @@
   @run main/timeout=300 RejectDragDropActionTest
 */
 
-import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Point;
@@ -80,8 +79,7 @@ public class RejectDragDropActionTest {
             dgl = dge -> dge.startDrag(null, new StringSelection("OOKK"));
             dgr = ds.createDefaultDragGestureRecognizer(frame,
                     DnDConstants.ACTION_COPY, dgl);
-            frame.setPreferredSize(new Dimension(200, 200));
-            frame.pack();
+            frame.setSize(200, 200);
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
         });
