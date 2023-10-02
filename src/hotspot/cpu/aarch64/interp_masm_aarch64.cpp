@@ -632,8 +632,10 @@ void InterpreterMacroAssembler::remove_activation(
     bind(restart);
     // We use c_rarg1 so that if we go slow path it will be the correct
     // register for unlock_object to pass to VM directly
-    ldr(c_rarg1, monitor_block_top); // points to current entry, starting
-                                     // with top-most entry
+    ldr(c_rarg1, monitor_block_top); // derelativize pointer
+    lea(c_rarg1, Address(rfp, c_rarg1, Address::lsl(Interpreter::logStackElementSize)));
+    // c_rarg1 points to current entry, starting with top-most entry
+
     lea(r19, monitor_block_bot);  // points to word before bottom of
                                   // monitor block
     b(entry);
