@@ -1432,7 +1432,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     }
 
     /*
-     * Assemble the entry attributes
+     * Populate the entry with additional attributes used by the implementation.
      */
     private void populateAttributes(Entry entry) {
 
