@@ -51,6 +51,8 @@ const double PREF_AVG_LIST_LEN = 8.0;
 const size_t END_SIZE = 24;
 // If a chain gets to 100 something might be wrong
 const size_t REHASH_LEN = 100;
+// If we have as many dead items as 50% of the number of bucket
+const double CLEAN_DEAD_HIGH_WATER_MARK = 0.5;
 
 const size_t ON_STACK_BUFFER_LENGTH = 128;
 
@@ -88,7 +90,7 @@ static size_t _symbols_counted = 0;
 static size_t _current_size = 0;
 
 static volatile size_t _items_count = 0;
-static volatile bool   _has_items_to_clean = false;
+static volatile int    _has_items_to_clean = 0;
 
 
 static volatile bool _alt_hash = false;
@@ -223,9 +225,9 @@ void SymbolTable::create_table ()  {
   }
 }
 
-void SymbolTable::reset_has_items_to_clean() { Atomic::store(&_has_items_to_clean, false); }
-void SymbolTable::mark_has_items_to_clean()  { Atomic::store(&_has_items_to_clean, true); }
-bool SymbolTable::has_items_to_clean()       { return Atomic::load(&_has_items_to_clean); }
+static void reset_has_items_to_clean() { Atomic::store(&_has_items_to_clean, 0); }
+static void mark_has_items_to_clean()  { Atomic::inc(&_has_items_to_clean); }
+static int  has_items_to_clean()       { return Atomic::load(&_has_items_to_clean); }
 
 void SymbolTable::item_added() {
   Atomic::inc(&_items_count);
@@ -238,6 +240,11 @@ void SymbolTable::item_removed() {
 
 double SymbolTable::get_load_factor() {
   return (double)_items_count/(double)_current_size;
+}
+
+static double get_dead_factor() {
+  int num_dead = has_items_to_clean();
+  return double(num_dead)/double(_current_size);
 }
 
 size_t SymbolTable::table_size() {
@@ -774,10 +781,13 @@ void SymbolTable::check_concurrent_work() {
   if (_has_work) {
     return;
   }
+
+  double dead_factor = get_dead_factor();
+  double load_factor = get_load_factor();
   // We should clean/resize if we have
   // more items than preferred load factor or
-  // more dead items than water mark.
-  if (has_items_to_clean() || (get_load_factor() > PREF_AVG_LIST_LEN)) {
+  // more dead items found than water mark.
+  if (dead_factor > CLEAN_DEAD_HIGH_WATER_MARK || load_factor > PREF_AVG_LIST_LEN) {
     log_debug(symboltable)("Concurrent work triggered, load factor: %f, items to clean: %s",
                            get_load_factor(), has_items_to_clean() ? "true" : "false");
     trigger_cleanup();

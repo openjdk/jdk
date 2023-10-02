@@ -547,6 +547,9 @@ inline void ConcurrentHashTable<CONFIG, F>::
   Node* rem_n = bucket->first();
   while (rem_n != nullptr) {
     if (lookup_f.is_dead(rem_n->value())) {
+    //bool is_dead = false;
+    //lookup_f.equals(rem_n->value(), &is_dead);
+    //if (is_dead) {
       ndel[dels++] = rem_n;
       Node* next_node = rem_n->next();
       bucket->release_assign_node_ptr(rem_n_prev, next_node);
@@ -929,8 +932,8 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   if (new_node != nullptr) {
     // CAS failed and a duplicate was inserted, we must free this node.
     Node::destroy_node(_context, new_node);
-  } else if (i == 0 && clean) {
-    // We only do cleaning on fast inserts.
+  } else if (i > 0 && clean) {
+    // We only do cleaning on slow inserts.
     Bucket* bucket = get_bucket_locked(thread, lookup_f.get_hash());
     delete_in_bucket(thread, bucket, lookup_f);
     bucket->unlock();
