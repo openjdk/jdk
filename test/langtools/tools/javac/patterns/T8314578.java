@@ -1,10 +1,10 @@
 /**
  * @test /nodynamiccopyright/
  * @bug 8314578
+ * @enablePreview
  * @summary Parsing of erroneous patterns succeeds
  * @compile/fail/ref=T8314578.out -XDrawDiagnostics T8314578.java
  */
-
 public class T8314578 {
     record R1() {}
     record R2() {}
@@ -30,5 +30,14 @@ public class T8314578 {
             default:
                 break;
         }
+    }
+
+    static int unnamedInGuardsOK(String s) {
+        return switch (s) {
+            case String _ when s instanceof String _ ->  // should be OK
+                    1;
+            default ->
+                    -1;
+        };
     }
 }
