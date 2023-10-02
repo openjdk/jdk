@@ -48,7 +48,7 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * Level of details to print or to export is driven by {@link Verbosity} option.
  * <p>
- * Printing is for debugging purposes only. Printed text schema and tree content and structure
+ * Printing is for debugging purposes only. Printed text schema, tree content and structure
  * not guaranteed. It may change anytime in a future.
  * <p>
  * The most frequent use case is to simply print a class:
