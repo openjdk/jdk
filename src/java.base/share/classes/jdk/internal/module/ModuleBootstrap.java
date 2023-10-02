@@ -141,7 +141,6 @@ public final class ModuleBootstrap {
         return getProperty("jdk.module.upgrade.path") == null &&
                getProperty("jdk.module.path") == null &&
                getProperty("jdk.module.patch.0") == null &&       // --patch-module
-               getProperty("jdk.module.main") == null &&          // --module
                getProperty("jdk.module.addmods.0") == null  &&    // --add-modules
                getProperty("jdk.module.limitmods") == null &&     // --limit-modules
                getProperty("jdk.module.addreads.0") == null &&    // --add-reads
@@ -234,6 +233,11 @@ public final class ModuleBootstrap {
             if (systemModules == null) {
                 // all system modules are observable
                 systemModules = SystemModuleFinders.allSystemModules();
+                if (mainModule != null &&
+                       // only consider modules from JDK
+                       (mainModule.startsWith("jdk.") || mainModule.startsWith("java."))) {
+                    canArchive = true;
+                }
             }
             if (systemModules != null) {
                 // images build
@@ -368,7 +372,12 @@ public final class ModuleBootstrap {
         } else {
             // no resolution case
             finder = systemModuleFinder;
-            roots = null;
+            if (canArchive && mainModule != null) {
+                roots = new HashSet<>();
+                roots.add(mainModule);
+            } else {
+                roots = null;
+            }
         }
 
         Counters.add("jdk.module.boot.3.optionsAndRootsTime");
@@ -379,7 +388,7 @@ public final class ModuleBootstrap {
         // readability graph created at link time.
 
         Configuration cf;
-        if (needResolution) {
+        if (needResolution || (canArchive && mainModule != null)) {
             cf = Modules.newBootLayerConfiguration(finder, roots, traceOutput);
         } else {
             if (archivedModuleGraph != null) {
@@ -471,13 +480,13 @@ public final class ModuleBootstrap {
 
         // Archive module graph and boot layer can be archived at CDS dump time.
         // Only allow the unnamed module case for now.
-        if (canArchive && (mainModule == null)) {
+        if (canArchive) {
             ArchivedModuleGraph.archive(hasSplitPackages,
                                         hasIncubatorModules,
                                         systemModuleFinder,
                                         cf,
                                         clf);
-            if (!hasSplitPackages && !hasIncubatorModules) {
+            if (!hasSplitPackages) {
                 ArchivedBootLayer.archive(bootLayer);
             }
         }

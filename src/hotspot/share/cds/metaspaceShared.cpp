@@ -43,6 +43,7 @@
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/loaderConstraints.hpp"
+#include "classfile/modules.hpp"
 #include "classfile/placeholders.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
@@ -385,9 +386,11 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   SystemDictionaryShared::serialize_vm_classes(soc);
   soc->do_tag(--tag);
 
+  CDS_JAVA_HEAP_ONLY(Modules::serialize(soc);)
   CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc);)
 
   LambdaFormInvokers::serialize(soc);
+
   soc->do_tag(666);
 }
 
@@ -477,6 +480,8 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 
   // Write lambform lines into archive
   LambdaFormInvokers::dump_static_archive_invokers();
+  // Write module name into archive
+  CDS_JAVA_HEAP_ONLY(Modules::dump_module_name();)
   // Write the other data to the output array.
   DumpRegion* ro_region = ArchiveBuilder::current()->ro_region();
   char* start = ro_region->top();
@@ -1159,8 +1164,8 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           static_mapinfo->map_or_load_heap_region();
         }
 #endif // _LP64
-    log_info(cds)("optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
-    log_info(cds)("full module graph: %s", MetaspaceShared::use_full_module_graph() ? "enabled" : "disabled");
+    log_info(cds)("initial optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
+    log_info(cds)("initial full module graph: %s", MetaspaceShared::use_full_module_graph() ? "enabled" : "disabled");
   } else {
     unmap_archive(static_mapinfo);
     unmap_archive(dynamic_mapinfo);

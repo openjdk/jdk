@@ -573,6 +573,12 @@ void ArchiveBuilder::verify_estimate_size(size_t estimate, const char* which) {
   _other_region_used_bytes = 0;
 }
 
+Array<char>* ArchiveBuilder::ro_strdup(const char* s) {
+  Array<char>* archived_str = new_ro_array<char>((int)strlen(s) + 1);
+  strcpy(archived_str->adr_at(0), s);
+  return archived_str;
+}
+
 void ArchiveBuilder::dump_rw_metadata() {
   ResourceMark rm;
   log_info(cds)("Allocating RW objects ... ");
