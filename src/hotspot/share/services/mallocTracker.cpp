@@ -75,8 +75,7 @@ size_t MallocMemorySnapshot::thread_count() const {
     return _thread_count;
   } else {
     assert(_thread_count == 0, "_thread_count can not be used if ThreadStackTracker::track_as_vm() == false");
-    MallocMemorySnapshot* s = const_cast<MallocMemorySnapshot*>(this);
-    return s->by_type(mtThreadStack)->malloc_count();
+    return by_type(mtThreadStack)->malloc_count();
   }
 }
 
