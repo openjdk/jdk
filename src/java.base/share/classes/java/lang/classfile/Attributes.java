@@ -171,7 +171,7 @@ public class Attributes {
     /** RuntimeInvisibleAnnotations */
     public static final String NAME_RUNTIME_INVISIBLE_ANNOTATIONS = "RuntimeInvisibleAnnotations";
 
-    /** RuntimeInvisibleTypeAnnotations */
+    /** RuntimeInvisibleParameterAnnotations */
     public static final String NAME_RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS = "RuntimeInvisibleParameterAnnotations";
 
     /** RuntimeInvisibleTypeAnnotations */
