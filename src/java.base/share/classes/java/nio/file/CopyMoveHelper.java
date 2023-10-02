@@ -69,14 +69,6 @@ class CopyMoveHelper {
             }
             return result;
         }
-
-        CopyOption[] replaceExistingOrEmpty() {
-            if (replaceExisting) {
-                return new CopyOption[] { StandardCopyOption.REPLACE_EXISTING };
-            } else {
-                return new CopyOption[0];
-            }
-        }
     }
 
     /**
@@ -148,7 +140,7 @@ class CopyMoveHelper {
             Files.createDirectory(target);
         } else {
             try (InputStream in = Files.newInputStream(source)) {
-                Files.copy(in, target, opts.replaceExistingOrEmpty());
+                Files.copy(in, target);
             }
         }
 
