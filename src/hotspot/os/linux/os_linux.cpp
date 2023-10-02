@@ -1806,16 +1806,9 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
   // that might depend on these FPU features for performance and/or
   // numerical "accuracy", but we need to protect Java semantics first
   // and foremost. See JDK-8295159.
-#if defined(__i386) && defined(__SSE__)
-  // x86-32 is special: the Flush-To-Zero flag isn't in the fenv, and
-  // C++ code uses extended intermediate precision so the denormal
-  // check used below doesn't work.
-  unsigned int mxcsr = __builtin_ia32_stmxcsr();
-#else
   fenv_t default_fenv;
   int rtn = fegetenv(&default_fenv);
   assert(rtn == 0, "fegetnv must succeed");
-#endif
 
   void * result = ::dlopen(filename, RTLD_LAZY);
 
@@ -1848,12 +1841,6 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
     event.set_errorMessage(nullptr);
     event.commit();
 #endif
-
-#if defined(__i386) && defined(__SSE__)
-    if (__builtin_ia32_stmxcsr() != mxcsr) {
-      __builtin_ia32_ldmxcsr(mxcsr);
-    }
-#else // All other CPUs
     // Quickly test to make sure denormals are correctly handled.
     static const double unity
       = jdouble_cast(0x0030000000000000); // 0x1.0p-1020;
@@ -1867,7 +1854,6 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
       assert(unity + thresh != unity && -unity - thresh != -unity,
              "fsetenv didn't work");
     }
-#endif
   }
   return result;
 }
