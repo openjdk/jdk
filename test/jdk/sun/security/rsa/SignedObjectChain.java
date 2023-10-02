@@ -55,7 +55,7 @@ public class SignedObjectChain {
     public static void main(String argv[]) {
         boolean result = Arrays.stream(tests).parallel().allMatch(Chain::runTest);
 
-        if(result) {
+        if (result) {
             System.out.println("All tests passed");
         } else {
             throw new RuntimeException("Some tests failed");
