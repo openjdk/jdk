@@ -85,6 +85,8 @@ class ShenandoahRegulatorThread: public ConcurrentGCThread {
   double _last_sleep_adjust_time;
 
   void regulator_sleep();
+
+  bool request_concurrent_gc(ShenandoahGenerationType generation);
 };
 
 

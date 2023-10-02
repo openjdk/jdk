@@ -48,6 +48,7 @@
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/metaspaceStats.hpp"
@@ -260,7 +261,7 @@ void ShenandoahControlThread::run_service() {
       heap->soft_ref_policy()->set_should_clear_all_soft_refs(true);
     }
 
-    bool gc_requested = (_mode != none);
+    bool gc_requested = (gc_mode() != none);
     assert (!gc_requested || cause != GCCause::_last_gc_cause, "GC cause should be set");
 
     if (gc_requested) {
@@ -284,7 +285,7 @@ void ShenandoahControlThread::run_service() {
       bool was_aging_cycle = heap->is_aging_cycle();
       heap->set_aging_cycle(false);
 
-      switch (_mode) {
+      switch (gc_mode()) {
         case concurrent_normal: {
           // At this point:
           //  if (generation == YOUNG), this is a normal YOUNG cycle
@@ -901,17 +902,21 @@ bool ShenandoahControlThread::request_concurrent_gc(ShenandoahGenerationType gen
     return false;
   }
 
-  if (_mode == none) {
+  if (gc_mode() == none) {
     _requested_gc_cause = GCCause::_shenandoah_concurrent_gc;
     _requested_generation = generation;
     notify_control_thread();
+
     MonitorLocker ml(&_regulator_lock, Mutex::_no_safepoint_check_flag);
-    ml.wait();
+    while (gc_mode() == none) {
+      ml.wait();
+    }
     return true;
   }
 
   if (preempt_old_marking(generation)) {
     log_info(gc)("Preempting old generation mark to allow %s GC", shenandoah_generation_name(generation));
+    assert(gc_mode() == servicing_old, "Expected to be servicing old, but was: %s.", gc_mode_name(gc_mode()));
     _requested_gc_cause = GCCause::_shenandoah_concurrent_gc;
     _requested_generation = generation;
     _preemption_requested.set();
@@ -919,7 +924,9 @@ bool ShenandoahControlThread::request_concurrent_gc(ShenandoahGenerationType gen
     notify_control_thread();
 
     MonitorLocker ml(&_regulator_lock, Mutex::_no_safepoint_check_flag);
-    ml.wait();
+    while (gc_mode() == servicing_old) {
+      ml.wait();
+    }
     return true;
   }
 
@@ -1087,8 +1094,8 @@ const char* ShenandoahControlThread::gc_mode_name(ShenandoahControlThread::GCMod
 void ShenandoahControlThread::set_gc_mode(ShenandoahControlThread::GCMode new_mode) {
   if (_mode != new_mode) {
     log_info(gc)("Transition from: %s to: %s", gc_mode_name(_mode), gc_mode_name(new_mode));
-    _mode = new_mode;
     MonitorLocker ml(&_regulator_lock, Mutex::_no_safepoint_check_flag);
+    _mode = new_mode;
     ml.notify_all();
   }
 }
