@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @library /test/lib
  * @bug 5052433 8315042
  * @summary NullPointerException for generateCRL and generateCRLs methods.
+ * @library /test/lib
  */
 import java.security.NoSuchProviderException;
 import java.security.cert.*;
@@ -35,26 +35,15 @@ import java.util.Base64;
 import jdk.test.lib.Utils;
 
 public class UnexpectedNPE {
-    CertificateFactory cf = null ;
-    private static final String in = "MAsGCSqGSMP7TQEHAjI1Bgn///////8wCwUyAQ==";
-
-    public UnexpectedNPE() {}
+    static CertificateFactory cf = null ;
 
     public static void main( String[] av ) {
         byte[] encoded_1 = { 0x00, 0x00, 0x00, 0x00 };
         byte[] encoded_2 = { 0x30, 0x01, 0x00, 0x00 };
         byte[] encoded_3 = { 0x30, 0x01, 0x00 };
-        byte[] decodedBytes = Base64.getDecoder().decode(in);
+        byte[] encoded_4 = Base64.getDecoder().decode(
+                "MAsGCSqGSMP7TQEHAjI1Bgn///////8wCwUyAQ==");
 
-        UnexpectedNPE unpe = new UnexpectedNPE() ;
-
-        unpe.run(encoded_1);
-        unpe.run(encoded_2);
-        unpe.run(encoded_3);
-        unpe.run(decodedBytes);
-    }
-
-    private void run(byte[] buf) {
         if (cf == null) {
             try {
                 cf = CertificateFactory.getInstance("X.509", "SUN");
@@ -65,9 +54,13 @@ public class UnexpectedNPE {
             }
         }
 
-        Utils.runAndCheckException(
-                () -> cf.generateCRL(new ByteArrayInputStream(buf)),
-                CRLException.class);
+        run(encoded_1);
+        run(encoded_2);
+        run(encoded_3);
+        run(encoded_4);
+    }
+
+    private static void run(byte[] buf) {
         Utils.runAndCheckException(
                 () -> cf.generateCRLs(new ByteArrayInputStream(buf)),
                 CRLException.class);
