@@ -920,7 +920,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
 # $2 - Prefix for compiler variables (either BUILD_ or nothing).
 AC_DEFUN([FLAGS_SETUP_GCC6_COMPILER_FLAGS],
 [
-  # This flags is required for GCC 6 builds as undefined behavior in OpenJDK code
+  # This flag is required for GCC 6 builds as undefined behavior in OpenJDK code
   # runs afoul of the more aggressive versions of this optimization.
   NO_LIFETIME_DSE_CFLAG="-fno-lifetime-dse"
   FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$NO_LIFETIME_DSE_CFLAG],
