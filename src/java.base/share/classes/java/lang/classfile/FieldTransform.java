@@ -113,8 +113,8 @@ public non-sealed interface FieldTransform
     }
 
     /**
-     * @implSpec The default implementation returns a resolved transform with all
-     *           its parts bound to the given field builder.
+     * @implSpec The default implementation returns a resolved transform bound
+     *           to the given field builder.
      */
     @Override
     default ResolvedTransform<FieldElement> resolve(FieldBuilder builder) {

@@ -173,8 +173,8 @@ public non-sealed interface ClassTransform
     }
 
     /**
-     * @implSpec The default implementation returns a resolved transform with all
-     *           its parts bound to the given class builder.
+     * @implSpec The default implementation returns a resolved transform bound
+     *           to the given class builder.
      */
     @Override
     default ResolvedTransform<ClassElement> resolve(ClassBuilder builder) {

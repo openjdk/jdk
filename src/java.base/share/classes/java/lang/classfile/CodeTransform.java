@@ -98,8 +98,8 @@ public non-sealed interface CodeTransform
     }
 
     /**
-     * @implSpec The default implementation returns a resolved transform that is
-     *           bound to the given code builder.
+     * @implSpec The default implementation returns a resolved transform bound
+     *           to the given code builder.
      */
     @Override
     default ResolvedTransform<CodeElement> resolve(CodeBuilder builder) {

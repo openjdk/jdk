@@ -112,8 +112,8 @@ public non-sealed interface MethodTransform
     }
 
     /**
-     * @implSpec The default implementation returns a resolved transform with all
-     *           its parts bound to the given method builder.
+     * @implSpec The default implementation returns a resolved transform bound
+     *           to the given method builder.
      */
     @Override
     default ResolvedTransform<MethodElement> resolve(MethodBuilder builder) {
