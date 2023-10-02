@@ -491,7 +491,7 @@ void OopMapCache::flush() {
 void OopMapCache::flush_obsolete_entries() {
   GlobalCounter::CriticalSection cs(Thread::current());
   for (int i = 0; i < _size; i++) {
-    OopMapCacheEntry* entry = !entry_at(i);
+    OopMapCacheEntry* entry = entry_at(i);
     if (entry != nullptr && !entry->is_empty() && entry->method()->is_old()) {
       // Cache entry is occupied by an old redefined method and we don't want
       // to pin it down so flush the entry.
@@ -531,7 +531,7 @@ void OopMapCache::lookup(const methodHandle& method,
     // Search hashtable for match
     for(i = 0; i < _probe_depth; i++) {
       entry = entry_at(probe + i);
-      if (entry != nullptr && !entry->is_empty() && !entry->is_old() && entry->match(method, bci)) {
+      if (entry != nullptr && !entry->is_empty() && !entry->method()->is_old() && entry->match(method, bci)) {
         entry_for->resource_copy(entry);
         assert(!entry_for->is_empty(), "A non-empty oop map should be returned");
         log_debug(interpreter, oopmap)("- found at hash %d", probe + i);
@@ -603,6 +603,10 @@ void OopMapCache::enqueue_for_cleanup(OopMapCacheEntry* entry) {
 // list, so no synchronization needed.
 void OopMapCache::cleanup_old_entries() {
   OopMapCacheEntry* entry = Atomic::xchg(&_old_entries, (OopMapCacheEntry*)nullptr);
+  if (entry == nullptr) {
+    return;
+  }
+
   GlobalCounter::write_synchronize();
 
   while (entry != nullptr) {

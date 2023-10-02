@@ -54,7 +54,7 @@ class VM_ShenandoahReferenceOperation : public VM_ShenandoahOperation {
 public:
   VM_ShenandoahReferenceOperation() : VM_ShenandoahOperation() {};
   bool doit_prologue();
-  void doit_epilogue();
+  virtual void doit_epilogue();
 };
 
 class VM_ShenandoahInitMark: public VM_ShenandoahOperation {
@@ -78,7 +78,8 @@ public:
     _gc(gc) {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalMarkStartEvac; }
   const char* name()             const { return "Shenandoah Final Mark and Start Evacuation"; }
-  virtual  void doit();
+  virtual void doit();
+  virtual void doit_epilogue();
 };
 
 class VM_ShenandoahDegeneratedGC: public VM_ShenandoahReferenceOperation {

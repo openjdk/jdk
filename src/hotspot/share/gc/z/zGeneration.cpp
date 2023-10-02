@@ -51,6 +51,7 @@
 #include "gc/z/zUncoloredRoot.inline.hpp"
 #include "gc/z/zVerify.hpp"
 #include "gc/z/zWorkers.hpp"
+#include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiTagMap.hpp"
@@ -447,6 +448,7 @@ public:
 
   virtual void doit_epilogue() {
     Heap_lock->unlock();
+    OopMapCache::cleanup_old_entries();
   }
 
   bool success() const {

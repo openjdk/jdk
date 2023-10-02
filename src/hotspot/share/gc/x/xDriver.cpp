@@ -35,6 +35,7 @@
 #include "gc/x/xServiceability.hpp"
 #include "gc/x/xStat.hpp"
 #include "gc/x/xVerify.hpp"
+#include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "runtime/threads.hpp"
@@ -130,6 +131,7 @@ public:
 
   virtual void doit_epilogue() {
     Heap_lock->unlock();
+    OopMapCache::cleanup_old_entries();
   }
 
   bool gc_locked() const {
