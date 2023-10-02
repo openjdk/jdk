@@ -56,7 +56,7 @@ public sealed interface MethodSignature
     String signatureString();
 
     /**
-     * {@return method signature for a raw (no generic information) method descriptor}
+     * {@return a method signature for a raw (no generic information) method descriptor}
      * @param methodDescriptor the method descriptor
      */
     public static MethodSignature of(MethodTypeDesc methodDescriptor) {
