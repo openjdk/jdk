@@ -513,7 +513,7 @@ public final class ListFormat extends Format {
     public String toString() {
         return
             """
-            ListFormat [locale: "%s", start: "%s", middle: "%s",  end: "%s", two: "%s", three: "%s"]
+            ListFormat [locale: "%s", start: "%s", middle: "%s", end: "%s", two: "%s", three: "%s"]
             """.formatted(locale.getDisplayName(), patterns[START], patterns[MIDDLE], patterns[END], patterns[TWO], patterns[THREE]);
     }
 
