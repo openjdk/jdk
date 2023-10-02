@@ -26,7 +26,6 @@
  * @bug 5078214
  * @summary ToolTip is shown partially when the application is near the bottom of screen.
  * @library ../regtesthelpers /test/lib
- * @build JRobot
  * @build jtreg.SkippedException
  * @key headful
  * @run main bug5078214
@@ -39,6 +38,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.MouseEvent;
@@ -55,7 +55,7 @@ public class bug5078214 {
     static volatile JFrame mainFrame;
     static volatile Rectangle bounds;
     static volatile Insets insets;
-    static JRobot robot;
+    static Robot robot;
 
     public static void main(String[] args) throws Exception {
         try {
@@ -85,7 +85,7 @@ public class bug5078214 {
                 mainFrame.setVisible(true);
             });
 
-            robot = new JRobot(true);
+            robot = new Robot();
             robot.waitForIdle();
             robot.delay(1000);
 
