@@ -54,7 +54,7 @@ class VM_ShenandoahReferenceOperation : public VM_ShenandoahOperation {
 public:
   VM_ShenandoahReferenceOperation() : VM_ShenandoahOperation() {};
   bool doit_prologue();
-  virtual void doit_epilogue();
+  void doit_epilogue();
 };
 
 class VM_ShenandoahInitMark: public VM_ShenandoahOperation {
