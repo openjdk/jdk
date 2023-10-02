@@ -2922,7 +2922,7 @@ LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* excepti
   Thread* thread;
   thread = Thread::current_or_null_safe();
 
-  if (exception_code != EXCEPTION_BREAKPOINT) {
+  if (exceptionCode != EXCEPTION_BREAKPOINT) {
     report_error(thread, exceptionCode, pc, exceptionInfo->ExceptionRecord,
                 exceptionInfo->ContextRecord);
   }
