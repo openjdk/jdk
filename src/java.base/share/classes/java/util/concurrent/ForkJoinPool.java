@@ -1614,27 +1614,6 @@ public class ForkJoinPool extends AbstractExecutorService {
         // misc
 
         /**
-         * Unless already deregistered, interrupts if a worker, and cancels tasks
-         */
-        final void onStop() {
-            Thread o = owner;
-            if (source != DEREGISTERED) {
-                if (o != null) {
-                    try {
-                        o.interrupt();
-                    } catch (Throwable ignore) {
-                    }
-                }
-                for (ForkJoinTask<?> t; (t = poll(null)) != null; ) {
-                    try {
-                        t.cancel(false);
-                    } catch (Throwable ignore) {
-                    }
-                }
-            }
-        }
-
-        /**
          * Returns true if internal and not known to be blocked.
          */
         final boolean isApparentlyUnblocked() {
@@ -1887,12 +1866,6 @@ public class ForkJoinPool extends AbstractExecutorService {
                     replaceable = true;
                     if ((phase & IDLE) != 0)
                         reactivate(w);    // pool stopped before released
-                    for (ForkJoinTask<?> t; (t = w.nextLocalTask()) != null; ) {
-                        try {
-                            t.cancel(false);
-                        } catch (Throwable ignore) {
-                        }
-                    }
                 }
             }
         }
@@ -1904,7 +1877,14 @@ public class ForkJoinPool extends AbstractExecutorService {
                                        (LMASK & c)))));
         else if ((int)c == 0)             // was dropped on timeout
             replaceable = false;
-
+        if (w != null) {                  // cancel remaining tasks
+            for (ForkJoinTask<?> t; (t = w.nextLocalTask()) != null; ) {
+                try {
+                    t.cancel(false);
+                } catch (Throwable ignore) {
+                }
+            }
+        }
         if ((tryTerminate(false, false) & STOP) == 0 && w != null) {
             WorkQueue[] qs; int n, i;     // remove index unless terminating
             long ns = w.nsteals & 0xffffffffL;
@@ -2046,7 +2026,8 @@ public class ForkJoinPool extends AbstractExecutorService {
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5;  // xorshift
                 if ((runState & STOP) != 0)                // terminating
                     break;
-                if ((window = scan(w, window, r)) >= 0L) { // empty scan
+                if (window == (window = scan(w, window, r)) &&
+                    window >= 0L) {                        // empty scan
                     long c = ctl;                          // try to inactivate
                     int idlePhase = phase + IDLE;
                     long qc = (((phase + (IDLE << 1)) & LMASK) |
@@ -2756,29 +2737,30 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return runState on exit
      */
     private int tryTerminate(boolean now, boolean enable) {
-        int e, s, isShutdown;
-        if (((e = runState) & STOP) == 0) {
+        int e = runState;
+        if ((e & STOP) == 0) {
             if (now) {
-                runState = ((s = lockRunState()) + RS_LOCK) | STOP | SHUTDOWN;
+                int s = lockRunState();
+                runState = e = (s + RS_LOCK) | STOP | SHUTDOWN;
                 if ((s & STOP) == 0)
                     interruptAll();
             }
             else {
-                if ((isShutdown = (e & SHUTDOWN)) == 0 && enable)
+                int isShutdown = (e & SHUTDOWN);
+                if (isShutdown == 0 && enable)
                     getAndBitwiseOrRunState(isShutdown = SHUTDOWN);
                 if (isShutdown != 0)
                     quiescent();                 // may trigger STOP
+                e = runState;
             }
-            e = runState;
         }
         if ((e & (STOP | TERMINATED)) == STOP) { // help cancel tasks
             int r = (int)Thread.currentThread().threadId(); // stagger traversals
             WorkQueue[] qs = queues;
             int n = (qs == null) ? 0 : qs.length;
             for (int l = n; l > 0; --l, ++r) {
-                int j; WorkQueue q; ForkJoinTask<?> t;
-                while ((q = qs[r & SMASK & (n - 1)]) != null &&
-                       q.source != DEREGISTERED &&
+                int j = r & SMASK & (n - 1); WorkQueue q; ForkJoinTask<?> t;
+                while ((q = qs[j]) != null && q.source != DEREGISTERED &&
                        (t = q.poll(null)) != null) {
                     try {
                         t.cancel(false);
@@ -3357,6 +3339,15 @@ public class ForkJoinPool extends AbstractExecutorService {
         throws InterruptedException {
         return invokeAll(tasks, 0L);
     }
+    // for jdk version < 22, replace with
+    // /**
+    //  * @throws NullPointerException       {@inheritDoc}
+    //  * @throws RejectedExecutionException {@inheritDoc}
+    //  */
+    // @Override
+    // public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) {
+    //     return invokeAllUninterruptibly(tasks);
+    // }
 
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,
