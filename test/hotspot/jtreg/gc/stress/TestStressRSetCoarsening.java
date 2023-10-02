@@ -30,10 +30,10 @@ import jdk.test.whitebox.WhiteBox;
  * @test
  * @key stress
  * @bug 8146984 8147087
- * @summary Stress G1 Remembered Set by creating a lot of cross region links
  * @requires vm.gc.G1
  * @requires os.maxMemory > 3G
  * @requires vm.opt.MaxGCPauseMillis == "null"
+ * @summary Stress G1 Remembered Set by creating a lot of cross region links
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -41,7 +41,7 @@ import jdk.test.whitebox.WhiteBox;
  * @run main/othervm/timeout=300
  *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
- *     -Xmx500m -XX:G1HeapRegionSize=1m gc.stress.TestStressRSetCoarsening  1  0 300
+ *     -Xmx500m -XX:G1HeapRegionSize=1m gc.stress.TestStressRSetCoarsening 1 0 300
  */
 
 /*
@@ -56,7 +56,7 @@ import jdk.test.whitebox.WhiteBox;
  * @run main/othervm/timeout=300
  *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
- *     -Xmx500m -XX:G1HeapRegionSize=8m gc.stress.TestStressRSetCoarsening  1 10 300
+ *     -Xmx500m -XX:G1HeapRegionSize=8m gc.stress.TestStressRSetCoarsening 1 10 300
  */
 
 /*
@@ -86,7 +86,7 @@ import jdk.test.whitebox.WhiteBox;
  * @run main/othervm/timeout=300
  *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
- *     -Xmx500m -XX:G1HeapRegionSize=1m gc.stress.TestStressRSetCoarsening  2 0 300
+ *     -Xmx500m -XX:G1HeapRegionSize=1m gc.stress.TestStressRSetCoarsening 2 0 300
  */
 
 /*
@@ -101,7 +101,7 @@ import jdk.test.whitebox.WhiteBox;
  * @run main/othervm/timeout=1800
  *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
- *     -Xmx1G -XX:G1HeapRegionSize=1m gc.stress.TestStressRSetCoarsening 500 0  1800
+ *     -Xmx1G -XX:G1HeapRegionSize=1m gc.stress.TestStressRSetCoarsening 500 0 1800
  */
 
 /*
@@ -116,7 +116,7 @@ import jdk.test.whitebox.WhiteBox;
  * @run main/othervm/timeout=1800
  *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
- *     -Xmx1G -XX:G1HeapRegionSize=1m gc.stress.TestStressRSetCoarsening 10  10 1800
+ *     -Xmx1G -XX:G1HeapRegionSize=1m gc.stress.TestStressRSetCoarsening 10 10 1800
  */
 
 /**
@@ -149,7 +149,7 @@ public class TestStressRSetCoarsening {
         }
         int objectsPerRegion = Integer.parseInt(args[0]); // 1 means humongous
         int regsToRefresh = Integer.parseInt(args[1]);  // 0 means no regions to refresh at the end of cycle
-        int timeout = Integer.parseInt(args[2]); // in seconds, test should stop working eariler
+        int timeout = Integer.parseInt(args[2]); // in seconds, test should stop working earlier
         new TestStressRSetCoarsening(objectsPerRegion, regsToRefresh, timeout).go();
     }
 
