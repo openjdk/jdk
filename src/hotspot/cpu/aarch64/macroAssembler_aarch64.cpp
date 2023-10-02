@@ -2839,6 +2839,10 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
     mov(result, expected);
     lse_cas(result, new_val, addr, size, acquire, release, /*not_pair*/ true);
     compare_eq(result, expected, size);
+#ifdef ASSERT
+    // Poison rscratch1 which is written on !UseLSE branch
+    mov(rscratch1, 0x1f1f1f1f1f1f1f1f);
+#endif
   } else {
     Label retry_load, done;
     prfm(Address(addr), PSTL1STRM);
