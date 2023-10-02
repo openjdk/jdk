@@ -71,13 +71,6 @@ void FreezeBase::adjust_interpreted_frame_unextended_sp(frame& f) {
   // nothing to do
 }
 
-static inline void relativize_one(intptr_t* const vfp, intptr_t* const hfp, int offset) {
-  assert(*(hfp + offset) == *(vfp + offset), "");
-  intptr_t* addr = hfp + offset;
-  intptr_t value = *(intptr_t**)addr - vfp;
-  *addr = value;
-}
-
 inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, const frame& hf) {
   intptr_t* vfp = f.fp();
   intptr_t* hfp = hf.fp();
@@ -536,11 +529,6 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
 inline intptr_t* ThawBase::align(const frame& hf, intptr_t* frame_sp, frame& caller, bool bottom) {
   // Unused. Alignment is done directly in new_stack_frame() / finish_thaw().
   return nullptr;
-}
-
-static inline void derelativize_one(intptr_t* const fp, int offset) {
-  intptr_t* addr = fp + offset;
-  *addr = (intptr_t)(fp + *addr);
 }
 
 inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, const frame& f) {
