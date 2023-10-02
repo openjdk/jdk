@@ -32,6 +32,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -67,8 +68,10 @@ public class SwitchBootstraps {
     private static final MethodHandle IS_ZERO;
     private static final MethodHandle CHECK_INDEX;
     private static final MethodHandle MAPPED_ENUM_LOOKUP;
+    private static final HashMap<TypePairs, String> typePairToName;
 
     static {
+        typePairToName = TypePairs.initialize();
         try {
             INSTANCEOF_CHECK = MethodHandles.permuteArguments(LOOKUP.findVirtual(Class.class, "isInstance",
                                                                                  MethodType.methodType(boolean.class, Object.class)),
@@ -243,9 +246,10 @@ public class SwitchBootstraps {
                         } else {
                             MethodHandle exactnessCheck;
                             try {
-                                String methodName = selectorType.toString().substring(selectorType.toString().lastIndexOf(".") + 1) + "_" + currentLabelClass;
-                                MethodType methodType = MethodType.methodType(boolean.class, selectorType);
-                                exactnessCheck = lookup.findStatic(ExactnessMethods.class, methodName, methodType);
+                                TypePairs typePair = TypePairs.of(selectorType, currentLabelClass);
+                                String methodName = typePairToName.get(typePair);
+                                MethodType methodType = MethodType.methodType(boolean.class, typePair.from);
+                                exactnessCheck = lookup.findStatic(ExactnessMethods.class, methodName, methodType).asType(MethodType.methodType(boolean.class, selectorType));
                             }
                             catch (ReflectiveOperationException e) {
                                 throw new ExceptionInInitializerError(e);
@@ -558,5 +562,69 @@ public class SwitchBootstraps {
     private static final class EnumMap {
         @Stable
         public int[] map;
+    }
+
+    static class TypePairs {
+        public Class<?> from, to;
+
+        public static TypePairs of(Class<?> from,  Class<?> to) {
+            if (from == byte.class || from == short.class || from == char.class) {
+                from = int.class;
+            }
+            return new TypePairs(from, to);
+        }
+
+        private TypePairs(Class<?> from,  Class<?> to) {
+            this.from = from;
+            this.to = to;
+        }
+
+        public static HashMap<TypePairs, String> initialize() {
+            HashMap<TypePairs, String> typePairToName = new HashMap<>();
+            typePairToName.put(new TypePairs(byte.class,   char.class),   "int_char");      // redirected
+            typePairToName.put(new TypePairs(short.class,  byte.class),   "int_byte");      // redirected
+            typePairToName.put(new TypePairs(short.class,  char.class),   "int_char");      // redirected
+            typePairToName.put(new TypePairs(char.class,   byte.class),   "int_byte");      // redirected
+            typePairToName.put(new TypePairs(char.class,   short.class),  "int_short");     // redirected
+            typePairToName.put(new TypePairs(int.class,    byte.class),   "int_byte");
+            typePairToName.put(new TypePairs(int.class,    short.class),  "int_short");
+            typePairToName.put(new TypePairs(int.class,    char.class),   "int_char");
+            typePairToName.put(new TypePairs(int.class,    float.class),  "int_float");
+            typePairToName.put(new TypePairs(long.class,   byte.class),   "long_byte");
+            typePairToName.put(new TypePairs(long.class,   short.class),  "long_short");
+            typePairToName.put(new TypePairs(long.class,   char.class),   "long_char");
+            typePairToName.put(new TypePairs(long.class,   int.class),    "long_int");
+            typePairToName.put(new TypePairs(long.class,   float.class),  "long_float");
+            typePairToName.put(new TypePairs(long.class,   double.class), "long_double");
+            typePairToName.put(new TypePairs(float.class,  byte.class),   "float_byte");
+            typePairToName.put(new TypePairs(float.class,  short.class),  "float_short");
+            typePairToName.put(new TypePairs(float.class,  char.class),   "float_char");
+            typePairToName.put(new TypePairs(float.class,  int.class),    "float_int");
+            typePairToName.put(new TypePairs(float.class,  long.class),   "float_long");
+            typePairToName.put(new TypePairs(double.class, byte.class),   "double_byte");
+            typePairToName.put(new TypePairs(double.class, short.class),  "double_short");
+            typePairToName.put(new TypePairs(double.class, char.class),   "double_char");
+            typePairToName.put(new TypePairs(double.class, int.class),    "double_int");
+            typePairToName.put(new TypePairs(double.class, long.class),   "double_long");
+            typePairToName.put(new TypePairs(double.class, float.class),  "double_float");
+            return typePairToName;
+        }
+
+        @Override
+        public int hashCode() {
+            int code = 0;
+            code += from.hashCode();
+            code += to.hashCode();
+            return code;
+        }
+
+        @Override
+        public boolean equals(Object testName) {
+            if ((!(testName instanceof TypePairs testNameAsName))) return false;
+            else {
+                return this.from.equals(testNameAsName.from) &&
+                        this.to.equals(testNameAsName.to);
+            }
+        }
     }
 }

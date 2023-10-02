@@ -36,46 +36,6 @@ public class ExactnessMethods {
 
     private ExactnessMethods() { }
 
-    /** Exactness method from byte to char
-     *
-     * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
-     *
-     * */
-    public static boolean byte_char(byte n)    {return n == (char) n;}
-
-    /** Exactness method from short to byte
-     *
-     * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
-     *
-     * */
-    public static boolean short_byte(short n)  {return n == (short)(byte)(n);}
-
-    /** Exactness method from short to char
-     *
-     * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
-     *
-     * */
-    public static boolean short_char(short n)  {return n == (char)(n);}
-
-    /** Exactness method from char to byte
-     *
-     * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
-     *
-     * */
-    public static boolean char_byte(char n)    {return n == (byte)(n);}
-
-    /** Exactness method from char to short
-     *
-     * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
-     *
-     * */
-    public static boolean char_short(char n)   {return n == (short)(n);}
-
      /** Exactness method from int to byte
      *
      * @param n value

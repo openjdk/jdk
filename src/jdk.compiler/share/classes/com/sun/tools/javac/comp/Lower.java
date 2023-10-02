@@ -103,6 +103,7 @@ public class Lower extends TreeTranslator {
     private final PkgInfo pkginfoOpt;
     private final boolean optimizeOuterThis;
     private final boolean useMatchException;
+    private final HashMap<TypePairs, String> typePairToName;
 
     @SuppressWarnings("this-escape")
     protected Lower(Context context) {
@@ -134,6 +135,7 @@ public class Lower extends TreeTranslator {
         Preview preview = Preview.instance(context);
         useMatchException = Feature.PATTERN_SWITCH.allowedInSource(source) &&
                             (preview.isEnabled() || !preview.isPreview(Feature.PATTERN_SWITCH));
+        typePairToName = TypePairs.initialize(syms);
     }
 
     /** The currently enclosing class.
@@ -2996,15 +2998,81 @@ public class Lower extends TreeTranslator {
         }
     }
 
+    static class TypePairs {
+        public Type from, to;
+
+        public static TypePairs of(Symtab syms, Type from, Type to) {
+            if (from == syms.byteType || from == syms.shortType || from == syms.charType) {
+                from = syms.intType;
+            }
+            return new TypePairs(from, to);
+        }
+
+        private TypePairs(Type from, Type to) {
+            this.from = from;
+            this.to = to;
+        }
+
+        public static HashMap<TypePairs, String> initialize(Symtab syms) {
+            HashMap<TypePairs, String> typePairToName = new HashMap<>();
+            typePairToName.put(new TypePairs(syms.byteType,   syms.charType),   "int_char");      // redirected
+            typePairToName.put(new TypePairs(syms.shortType,  syms.byteType),   "int_byte");      // redirected
+            typePairToName.put(new TypePairs(syms.shortType,  syms.charType),   "int_char");      // redirected
+            typePairToName.put(new TypePairs(syms.charType,   syms.byteType),   "int_byte");      // redirected
+            typePairToName.put(new TypePairs(syms.charType,   syms.shortType),  "int_short");     // redirected
+            typePairToName.put(new TypePairs(syms.intType,    syms.byteType),   "int_byte");
+            typePairToName.put(new TypePairs(syms.intType,    syms.shortType),  "int_short");
+            typePairToName.put(new TypePairs(syms.intType,    syms.charType),   "int_char");
+            typePairToName.put(new TypePairs(syms.intType,    syms.floatType),  "int_float");
+            typePairToName.put(new TypePairs(syms.longType,   syms.byteType),   "long_byte");
+            typePairToName.put(new TypePairs(syms.longType,   syms.shortType),  "long_short");
+            typePairToName.put(new TypePairs(syms.longType,   syms.charType),   "long_char");
+            typePairToName.put(new TypePairs(syms.longType,   syms.intType),    "long_int");
+            typePairToName.put(new TypePairs(syms.longType,   syms.floatType),  "long_float");
+            typePairToName.put(new TypePairs(syms.longType,   syms.doubleType), "long_double");
+            typePairToName.put(new TypePairs(syms.floatType,  syms.byteType),   "float_byte");
+            typePairToName.put(new TypePairs(syms.floatType,  syms.shortType),  "float_short");
+            typePairToName.put(new TypePairs(syms.floatType,  syms.charType),   "float_char");
+            typePairToName.put(new TypePairs(syms.floatType,  syms.intType),    "float_int");
+            typePairToName.put(new TypePairs(syms.floatType,  syms.longType),   "float_long");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.byteType),   "double_byte");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.shortType),  "double_short");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.charType),   "double_char");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.intType),    "double_int");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.longType),   "double_long");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.floatType),  "double_float");
+            return typePairToName;
+        }
+
+        @Override
+        public int hashCode() {
+            int code = 0;
+            code += from.tsym.hashCode();
+            code += to.tsym.hashCode();
+            return code;
+        }
+
+        @Override
+        public boolean equals(Object testName) {
+            if ((!(testName instanceof TypePairs testNameAsName))) return false;
+            else {
+                return this.from.tsym.equals(testNameAsName.from.tsym) &&
+                        this.to.tsym.equals(testNameAsName.to.tsym);
+            }
+        }
+    }
+
     private JCExpression getExactnessCheck(JCInstanceOf tree, JCExpression argument) {
-        Name exactnessFunction = names.fromString(types.unboxedTypeOrType(tree.expr.type).tsym.name.toString() + "_"+ tree.pattern.type.toString());
+        TypePairs pair = TypePairs.of(syms, types.unboxedTypeOrType(tree.expr.type), tree.pattern.type);
+
+        Name exactnessFunction = names.fromString(typePairToName.get(pair));
 
         // Resolve the exactness method
         Symbol ecsym = rs.resolveQualifiedMethod(null,
                 attrEnv,
                 syms.exactnessMethodsType,
                 exactnessFunction,
-                List.of(tree.expr.type),
+                List.of(pair.from),
                 List.nil());
 
         // Generate the method call ExactnessChecks.<exactness method>(<argument>);

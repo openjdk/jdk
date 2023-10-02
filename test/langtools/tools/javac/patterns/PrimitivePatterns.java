@@ -40,6 +40,7 @@ public class PrimitivePatterns {
         assertEquals(42, primitiveSwitch3());
         assertEquals(1,  primitiveSwitch4(0.0f));
         assertEquals(2,  primitiveSwitch4(1.0f));
+        assertEquals(1,  primitiveSwitchUnconditionallyExact(Byte.MAX_VALUE));
         assertEquals(42, exhaustive0());
         assertEquals(1,  exhaustive1WithDefault());
         assertEquals(2,  exhaustive2WithDefault());
@@ -82,6 +83,10 @@ public class PrimitivePatterns {
         assertEquals(2, switchOverPrimitiveFloat((float) Math.pow(0.0f/0.0f, 0)));
         assertEquals(3, switchOverPrimitiveFloat(0.0f));
         assertEquals(4, switchOverPrimitiveFloat(-0.0f));
+        assertEquals(1, switchRedirectedExactnessMethods1('a'));
+        assertEquals(-1, switchRedirectedExactnessMethods1('\u03A9'));
+        assertEquals(1, switchRedirectedExactnessMethods2('\u03A9'));
+        assertEquals(-1, switchRedirectedExactnessMethods2('\uFFFF'));
     }
 
     public static int primitivePattern() {
@@ -135,6 +140,12 @@ public class PrimitivePatterns {
             case 0.0f -> 1;
             case Float fi when fi == 1f -> 2;
             case Float fi -> 3;
+        };
+    }
+
+    public static int primitiveSwitchUnconditionallyExact(byte c) {
+        return switch (c) {
+            case short _ -> 1;
         };
     }
 
@@ -374,6 +385,30 @@ public class PrimitivePatterns {
             case 1.0f -> 2;
             case 0.0f -> 3;
             case -0.0f -> 4;
+            default -> -1;
+        };
+    }
+
+    // tests that Exactness.char_byte is properly redirected to int_byte
+    public static int switchRedirectedExactnessMethods1(char c) {
+        return switch (c) {
+            case byte _ -> 1;
+            default -> -1;
+        };
+    }
+
+    // tests that Exactness.char_short is properly redirected to int_short
+    public static int switchRedirectedExactnessMethods2(char c) {
+        return switch (c) {
+            case short _ -> 1;
+            default -> -1;
+        };
+    }
+
+    // tests that Exactness.short_byte is properly redirected to int_byte
+    public static int switchRedirectedExactnessMethods2(short c) {
+        return switch (c) {
+            case byte _ -> 1;
             default -> -1;
         };
     }
