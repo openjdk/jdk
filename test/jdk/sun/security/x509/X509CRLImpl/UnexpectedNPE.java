@@ -35,24 +35,17 @@ import java.util.Base64;
 import jdk.test.lib.Utils;
 
 public class UnexpectedNPE {
-    static CertificateFactory cf = null ;
+    static CertificateFactory cf = null;
 
-    public static void main( String[] av ) {
+    public static void main(String[] av ) throws CertificateException,
+            NoSuchProviderException {
         byte[] encoded_1 = { 0x00, 0x00, 0x00, 0x00 };
         byte[] encoded_2 = { 0x30, 0x01, 0x00, 0x00 };
         byte[] encoded_3 = { 0x30, 0x01, 0x00 };
         byte[] encoded_4 = Base64.getDecoder().decode(
                 "MAsGCSqGSMP7TQEHAjI1Bgn///////8wCwUyAQ==");
 
-        if (cf == null) {
-            try {
-                cf = CertificateFactory.getInstance("X.509", "SUN");
-            } catch (CertificateException e) {
-                throw new SecurityException("Cannot get CertificateFactory");
-            } catch (NoSuchProviderException npe) {
-                throw new SecurityException("Cannot get CertificateFactory");
-            }
-        }
+        cf = CertificateFactory.getInstance("X.509", "SUN");
 
         run(encoded_1);
         run(encoded_2);
@@ -62,8 +55,10 @@ public class UnexpectedNPE {
 
     private static void run(byte[] buf) {
         Utils.runAndCheckException(
+                () -> cf.generateCRL(new ByteArrayInputStream(buf)),
+                CRLException.class);
+        Utils.runAndCheckException(
                 () -> cf.generateCRLs(new ByteArrayInputStream(buf)),
                 CRLException.class);
-        System.out.println("NPE checking passed");
     }
 }
