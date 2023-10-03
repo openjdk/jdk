@@ -75,13 +75,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         static final long NULL_UTF16;
 
         static {
-            byte[] bytes4 = new byte[4];
+            byte[] bytes4 = new byte[] {'t', 'r', 'u', 'e'};
             byte[] bytes8 = new byte[8];
 
-            bytes4[0] = 't';
-            bytes4[1] = 'r';
-            bytes4[2] = 'u';
-            bytes4[3] = 'e';
             TRUE_LATIN1 = ByteArrayLittleEndian.getInt(bytes4, 0);
             StringLatin1.inflate(bytes4, 0, bytes8, 0, 4);
             TRUE_UTF16 = ByteArrayLittleEndian.getLong(bytes8, 0);
@@ -799,28 +795,30 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(boolean b) {
-        ensureCapacityInternal(count + (b ? 4 : 5));
         int count = this.count;
+        int spaceNeeded = count + (b ? 4 : 5);
+        ensureCapacityInternal(spaceNeeded);
         byte[] val = this.value;
         boolean latin1 = isLatin1();
-        if (b) {
-            if (latin1) {
-                ByteArrayLittleEndian.setInt(val, count, Constants.TRUE_LATIN1);
-            } else {
-                ByteArrayLittleEndian.setLong(val, count << 1, Constants.TRUE_UTF16);
-            }
-            count += 4;
-        } else {
-            if (latin1) {
-                ByteArrayLittleEndian.setInt(val, count, Constants.FALS_LATIN1);
+        if (isLatin1()) {
+            ByteArrayLittleEndian.setInt(
+                    val,
+                    count,
+                    b ? Constants.TRUE_LATIN1 : Constants.FALS_LATIN1);
+            if (!b) {
                 val[count + 4] = 'e';
-            } else {
-                ByteArrayLittleEndian.setLong(val, count << 1, Constants.FALS_UTF16);
+            }
+        } else {
+            ByteArrayLittleEndian.setLong(
+                    val,
+                    count << 1,
+                    b ? Constants.TRUE_UTF16 : Constants.FALS_UTF16
+            );
+            if (!b) {
                 StringUTF16.putChar(val, count + 4, 'e');
             }
-            count += 5;
         }
-        this.count = count;
+        this.count = spaceNeeded;
         return this;
     }
 
