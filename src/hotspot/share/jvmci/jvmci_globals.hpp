@@ -128,7 +128,7 @@ class fileStream;
           "Exclude JVMCI compiler threads from benchmark counters")         \
                                                                             \
   develop(bool, JVMCIUseFastLocking, true,                                  \
-          "Use fast inlined locking code")                                  \
+          "(Deprecated) Use fast inlined locking code")                     \
                                                                             \
   product(intx, JVMCINMethodSizeLimit, (80*K)*wordSize, EXPERIMENTAL,       \
           "Maximum size of a compiled method.")                             \
