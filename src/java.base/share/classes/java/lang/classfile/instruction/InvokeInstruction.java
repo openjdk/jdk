@@ -64,7 +64,7 @@ public sealed interface InvokeInstruction extends Instruction
     boolean isInterface();
 
     /**
-     * {@return for an {@code invokeinterface}, the {@code count} value, as defined in {@jvms 6.5}}
+     * {@return the {@code count} value of an {@code invokeinterface} instruction, as defined in {@jvms 6.5}}
      */
     int count();
 
