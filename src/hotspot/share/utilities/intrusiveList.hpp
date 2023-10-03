@@ -62,18 +62,18 @@ class IntrusiveListImpl;
  * in the list, the actual type of such objects may be more specific
  * than the list's element type.
  *
- * \tparam T is the class of the elements in the list.  Must be a possibly
+ * * T is the class of the elements in the list.  Must be a possibly
  * const-qualified class type.
  *
- * \tparam entry_member is a pointer to class member referring to the
+ * * entry_member is a pointer to class member referring to the
  * IntrusiveListEntry subobject of T used by this list.
  *
- * \tparam has_size determines whether the list has a size()
+ * * has_size determines whether the list has a size()
  * operation, returning the number of elements in the list.  If the
  * operation is present, it has constant-time complexity.  The default
  * is to not provide a constant-time size() operation.
  *
- * \tparam Base is the base class for the list.  This is typically
+ * * Base is the base class for the list.  This is typically
  * used to specify the allocation class.  The default is void, indicating
  * no allocation class for the list.
  *
@@ -86,11 +86,11 @@ class IntrusiveListImpl;
  * added to a list whose value type is not const-qualified, as that would be
  * an implicit casting away of the const qualifier.
  *
- * Some operations that remove elements from a list take a
- * <code>disposer</code> argument.  This is a function or function object that
- * will be called with one argument, a const reference to a removed element.
- * This function should "dispose" of the argument object when called, such as
- * by deleting the object.  The result of the call is ignored.
+ * Some operations that remove elements from a list take a disposer argument.
+ * This is a function or function object that will be called with one
+ * argument, a const reference to a removed element.  This function should
+ * "dispose" of the argument object when called, such as by deleting the
+ * object.  The result of the call is ignored.
  *
  * Usage of IntrusiveList involves defining an element class which
  * contains a IntrusiveListEntry member, and using a corresponding
@@ -119,7 +119,7 @@ class IntrusiveListImpl;
  *   ...
  * public:
  *   ...
- *   using MyList = IntrusiveList<MyClass, &_entry>;
+ *   using MyList = IntrusiveList<MyClass, &MyClass::_entry>;
  *   ...
  * };
  *
