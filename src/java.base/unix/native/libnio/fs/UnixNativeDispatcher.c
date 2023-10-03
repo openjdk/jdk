@@ -347,7 +347,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 #endif
 #if defined (__linux__) // Linux has nsec granularity
     attrs_st_birthtime_nsec = (*env)->GetFieldID(env, clazz, "st_birthtime_nsec", "J");
-    CHECK_NULL_RETURN(attrs_st_birthtime_sec, 0);
+    CHECK_NULL_RETURN(attrs_st_birthtime_nsec, 0);
 #endif
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/UnixFileStoreAttributes");
