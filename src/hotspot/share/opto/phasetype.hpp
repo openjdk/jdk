@@ -67,6 +67,7 @@
   flags(BEFORE_MATCHING,              "Before matching") \
   flags(MATCHING,                     "After matching") \
   flags(GLOBAL_CODE_MOTION,           "Global code motion") \
+  flags(REGISTER_ALLOCATION,          "Register allocation") \
   flags(MACH_ANALYSIS,                "After mach analysis") \
   flags(FINAL_CODE,                   "Final Code") \
   flags(END,                          "End") \

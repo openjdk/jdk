@@ -81,6 +81,7 @@ public enum CompilePhase {
     MATCHING("After matching", RegexType.MACH),
     MACH_ANALYSIS("After mach analysis", RegexType.MACH),
     GLOBAL_CODE_MOTION("Global code motion", RegexType.MACH),
+    REGISTER_ALLOCATION("Register allocation", RegexType.MACH),
     FINAL_CODE("Final Code", RegexType.MACH),
     END("End"),
 
