@@ -694,13 +694,13 @@ Java_sun_nio_fs_UnixNativeDispatcher_stat0(JNIEnv* env, jclass this,
         }
     } else {
 #endif
-    RESTARTABLE(stat64(path, &buf), err);
-    if (err == 0) {
-        copy_stat64_attributes(env, &buf, attrs);
-        return 0;
-    } else {
-        return errno;
-    }
+        RESTARTABLE(stat64(path, &buf), err);
+        if (err == 0) {
+            copy_stat64_attributes(env, &buf, attrs);
+            return 0;
+        } else {
+            return errno;
+        }
 #if defined(__linux__)
     }
 #endif
@@ -728,12 +728,12 @@ Java_sun_nio_fs_UnixNativeDispatcher_lstat0(JNIEnv* env, jclass this,
         }
     } else {
 #endif
-    RESTARTABLE(lstat64(path, &buf), err);
-    if (err == -1) {
-        throwUnixException(env, errno);
-    } else {
-        copy_stat64_attributes(env, &buf, attrs);
-    }
+        RESTARTABLE(lstat64(path, &buf), err);
+        if (err == -1) {
+            throwUnixException(env, errno);
+        } else {
+            copy_stat64_attributes(env, &buf, attrs);
+        }
 #if defined(__linux__)
     }
 #endif
@@ -761,12 +761,12 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstat0(JNIEnv* env, jclass this, jint fd,
         }
     } else {
 #endif
-    RESTARTABLE(fstat64((int)fd, &buf), err);
-    if (err == -1) {
-        throwUnixException(env, errno);
-    } else {
-        copy_stat64_attributes(env, &buf, attrs);
-    }
+        RESTARTABLE(fstat64((int)fd, &buf), err);
+        if (err == -1) {
+            throwUnixException(env, errno);
+        } else {
+            copy_stat64_attributes(env, &buf, attrs);
+        }
 #if defined(__linux__)
     }
 #endif
@@ -798,17 +798,16 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd
         }
     } else {
 #endif
-
-    if (my_fstatat64_func == NULL) {
-        JNU_ThrowInternalError(env, "should not reach here");
-        return;
-    }
-    RESTARTABLE((*my_fstatat64_func)((int)dfd, path, &buf, (int)flag), err);
-    if (err == -1) {
-        throwUnixException(env, errno);
-    } else {
-        copy_stat64_attributes(env, &buf, attrs);
-    }
+        if (my_fstatat64_func == NULL) {
+            JNU_ThrowInternalError(env, "should not reach here");
+            return;
+        }
+        RESTARTABLE((*my_fstatat64_func)((int)dfd, path, &buf, (int)flag), err);
+        if (err == -1) {
+            throwUnixException(env, errno);
+        } else {
+            copy_stat64_attributes(env, &buf, attrs);
+        }
 #if defined(__linux__)
     }
 #endif
