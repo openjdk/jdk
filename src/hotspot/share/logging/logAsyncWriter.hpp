@@ -95,7 +95,7 @@ class AsyncLogWriter : public NonJavaThread {
 
     // Calculate the size for a prospective Message object depending on its message length including the trailing zero
     static constexpr size_t calc_size(size_t message_len) {
-      return align_up(sizeof(Message) + message_len + 1, sizeof(void*));
+      return align_up(sizeof(Message) + message_len + 1, sizeof(Message));
     }
 
     size_t size() const {
@@ -116,6 +116,8 @@ class AsyncLogWriter : public NonJavaThread {
    public:
     Buffer(size_t capacity) :  _pos(0), _capacity(capacity) {
       _buf = NEW_C_HEAP_ARRAY(char, capacity, mtLogging);
+      // Ensure _pos is Message-aligned
+      _pos += align_up(_buf, sizeof(Message)) - _buf;
       assert(capacity >= Message::calc_size(0), "capcity must be great a token size");
     }
 
