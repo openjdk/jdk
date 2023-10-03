@@ -158,16 +158,26 @@ bool CollectedHeap::contains_null(const oop* p) const {
   return *p == nullptr;
 }
 
-void CollectedHeap::inc_total_cpu_time(long diff) {
+void CollectedHeap::inc_total_cpu_time(jlong diff) {
+#if defined(_LP64)
   Atomic::add(&_total_cpu_time_diff, diff);
+#else
+  jlong old_value;
+  jlong fetched_value = Atomic::load(&_total_cpu_time_diff);
+  do {
+    jlong new_value = fetched_value + diff;
+    old_value = fetched_value;
+    fetched_value = Atomic::cmpxchg(&_total_cpu_time_diff, old_value, new_value);
+  } while (old_value != fetched_value);
+#endif
 }
 
 void CollectedHeap::publish_total_cpu_time() {
   // Ensure that we are only incrementing atomically by using Atomic::cmpxchg
   // to set the value to zero after we obtain the new CPU time difference.
-  long old_value;
-  long fetched_value = Atomic::load(&_total_cpu_time_diff);
-  long new_value = 0;
+  jlong old_value;
+  jlong fetched_value = Atomic::load(&_total_cpu_time_diff);
+  jlong new_value = 0;
   do {
     old_value = fetched_value;
     fetched_value = Atomic::cmpxchg(&_total_cpu_time_diff, old_value, new_value);

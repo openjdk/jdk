@@ -488,7 +488,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   virtual void gc_threads_do(ThreadClosure* tc) const = 0;
 
   // Methods to modify and update counter for total CPU time spent doing GC.
-  void inc_total_cpu_time(long diff);
+  void inc_total_cpu_time(jlong diff);
   void publish_total_cpu_time();
 
   // Print any relevant tracing info that flags imply.
