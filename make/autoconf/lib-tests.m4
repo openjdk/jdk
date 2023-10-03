@@ -240,8 +240,8 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_JTREG],
       AC_MSG_ERROR([--with-jtreg-jdk needs a value])
     else
       JTREG_TOOL_JDK="${with_jtreg_jdk}"
+      AC_MSG_RESULT([$JTREG_TOOL_JDK])
       UTIL_FIXUP_PATH(JTREG_TOOL_JDK)
-      AC_MSG_CHECKING([jtreg java existence])
       if test ! -f "$JTREG_TOOL_JDK/bin/java"; then
         AC_MSG_ERROR([Could not find jtreg java at $JTREG_TOOL_JDK/bin/java])
       fi
