@@ -27,8 +27,9 @@
  * @requires vm.compiler2.enabled
  * @bug 8316679
  * @summary In SuperWord::output, LoadVector can be moved before StoreVector, but only if it is proven to be safe.
+ * @key randomness
  * @library /test/lib
- * @run main/othervm -XX:CompileCommand=compileonly,compiler.loopopts.superword.TestMovingLoadBeforeStore::test
+ * @run main/othervm -XX:CompileCommand=compileonly,compiler.loopopts.superword.TestMovingLoadBeforeStore::test*
  *                   -Xbatch -XX:LoopUnrollLimit=100
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressLCM
  *                   compiler.loopopts.superword.TestMovingLoadBeforeStore
@@ -49,16 +50,15 @@ public class TestMovingLoadBeforeStore {
             for (int j = 0; j < a.length; j++) {
                 a[j] = (byte)random.nextInt();
             }
-            System.out.println("i: " + i);
             byte[] a_ref = a.clone();
             byte[] a_res = a.clone();
-            test_ref(a_ref, a_ref, i % 2);
-            test(a_res, a_res, i % 2);
-            verify(a_ref, a_res, a);
+            ref1(a_ref, a_ref, i % 2);
+            test1(a_res, a_res, i % 2);
+            verify("a in test1", a_ref, a_res, a);
         }
     }
 
-    static void verify(byte[] ref, byte[] res, byte[] orig) {
+    static void verify(String name, byte[] ref, byte[] res, byte[] orig) {
         boolean fail = false;
         for (int j = 0; j < ref.length; j++) {
             if (ref[j] != res[j]) {
@@ -67,33 +67,33 @@ public class TestMovingLoadBeforeStore {
             }
         }
         if (fail) {
-            throw new RuntimeException("wrong result");
+            throw new RuntimeException("wrong result for array " + name);
         }
     }
 
-    static void test(byte[] a, byte[] b, int inv) {
+    static void test1(byte[] a, byte[] b, int inv) {
         for (int i = 0; i < RANGE-4; i+=4) {
-            a[i +  0]++;
-            a[i +  1]++;
-            a[i +  2]++;
-            a[i +  3]++;
-            b[inv + i +  0]++;
-            b[inv + i +  1]++;
-            b[inv + i +  2]++;
-            b[inv + i +  3]++;
+            a[i + 0]++;
+            a[i + 1]++;
+            a[i + 2]++;
+            a[i + 3]++;
+            b[inv + i + 0]++;
+            b[inv + i + 1]++;
+            b[inv + i + 2]++;
+            b[inv + i + 3]++;
         }
     }
 
-    static void test_ref(byte[] a, byte[] b, int inv) {
+    static void ref1(byte[] a, byte[] b, int inv) {
         for (int i = 0; i < RANGE-4; i+=4) {
-            a[i +  0]++;
-            a[i +  1]++;
-            a[i +  2]++;
-            a[i +  3]++;
-            b[inv + i +  0]++;
-            b[inv + i +  1]++;
-            b[inv + i +  2]++;
-            b[inv + i +  3]++;
+            a[i + 0]++;
+            a[i + 1]++;
+            a[i + 2]++;
+            a[i + 3]++;
+            b[inv + i + 0]++;
+            b[inv + i + 1]++;
+            b[inv + i + 2]++;
+            b[inv + i + 3]++;
         }
     }
 }
