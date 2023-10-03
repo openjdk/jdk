@@ -799,7 +799,6 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         int spaceNeeded = count + (b ? 4 : 5);
         ensureCapacityInternal(spaceNeeded);
         byte[] val = this.value;
-        boolean latin1 = isLatin1();
         if (isLatin1()) {
             ByteArrayLittleEndian.setInt(
                     val,
