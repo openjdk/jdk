@@ -637,7 +637,6 @@ javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x
 
 javax/net/ssl/SSLEngine/TestAllSuites.java                      8298874 generic-all
 javax/net/ssl/SSLEngine/EngineCloseOnAlert.java                 8298868 generic-all
-javax/net/ssl/SSLEngine/ConnectionTest.java                     8298869 generic-all
 javax/net/ssl/SSLEngine/CheckStatus.java                        8298872 generic-all
 
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
