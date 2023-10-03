@@ -256,17 +256,31 @@
  * unresolved labels) affects internal tools and may cause exceptions later in
  * the classfile building process.
  * <p>
- * Basic syntax control can be achieved using symbolic descriptors. For example
- * using {@link java.lang.constant.ClassDesc} assures the right serial form is
- * used in the particular place inside classfile and also assures the class name
- * has been already syntactically validated.
+ * Syntax validation is applied during symbolic descriptors construction.
+ * For example {@link java.lang.constant.ClassDesc#of} validates the class binary
+ * name or {@link java.lang.constant.ClassDesc#ofDescriptor} validates the class
+ * descriptor syntax.
+ * <p>
+ * Using symbolic descriptors assures the right serial form selection by
+ * the ClassFile API library. For example a class name is stored in its internal
+ * form as constant pool class entry or in a class descriptor form when represents
+ * an array or as constant pool Utf8 entry in a class descriptor form when referenced
+ * from an annotation. The library always converts symbols to the right serial
+ * forms based on the actual context. Following example accepts syntactically
+ * validated class binary name and performs conversion to internal class name.
+ * {@snippet lang=java :
+ * var validClassEntry = constantPoolBuilder.classEntry(ClassDesc.of("mypackage.MyClass"));
+ * }
  * <p>
  * On the other hand it is possible to use builders methods and factories accepting
- * constant pool entries to avoid any form of syntax control. Constant pool entries
- * can be constructed from raw values, with no additional syntactic checks.
+ * constant pool entries to avoid any form of syntax validation or conversion.
+ * Constant pool entries can be constructed from raw values, with no additional
+ * syntactic checks, conversions or validations. In the following example is
+ * wrongly used binary class name and it is serialized without any validation or
+ * conversion.
  * {@snippet lang=java :
- * var invalidInternalClassName = constantPoolBuilder.classEntry(
- *                                    constantPoolBuilder.utf8Entry("mypackage.MyClass"));
+ * var invalidClassEntry = constantPoolBuilder.classEntry(
+ *                             constantPoolBuilder.utf8Entry("mypackage.MyClass"));
  * }
  * <p>
  * More complex verification of a classfile can be achieved by explicit invocation
@@ -383,17 +397,23 @@
  * Such suppression may be beneficial when transformation removes many elements,
  * resulting in many unreferenced constant pool entries.
  *
- * <h3>Transformation handling of unknown classfile elements from a future</h3>
- * To achieve stability of transformations in future JDK releases it is desired
- * to set appropriate response to potential new classfile elements appearing.
- * Transformation designed to handle all situation should be implemented strict way,
- * so it fails when a new classfile element appears. As for example in the following
- * strict compatibility-checking code transformation snippet:
+ * <h3>Transformation handling of unknown classfile elements</h3>
+ * Future JDK releases may introduce new classfile elements, not known at the
+ * development time of a custom transformation code.
+ * To achieve deterministic stability of transformations running on future JDK
+ * releases it is desired to set appropriate response to classfile elements
+ * unknown at the development time.
+ * <p>
+ * Classfile transforms interested in consuming all classfile elements should be
+ * implemented strictly to throw exceptions if a new and unknown classfile
+ * element appears. As for example in the following strict compatibility-checking
+ * code transformation snippet:
  * {@snippet lang="java" class="PackageSnippets" region="strictTransform"}
  * <p>
- * However transformation selectively interested in just some of the classfile
- * elements can pass all other elements by (including new unknown elements from
- * future JDK releases). Following example shows such future-proof code transformation:
+ * Conversely, classfile transforms that are only interested in consuming a portion
+ * of classfile elements do not need to concern with new and unknown classfile
+ * elements and may pass them through. Following example shows such future-proof
+ * code transformation:
  * {@snippet lang="java" class="PackageSnippets" region="benevolentTransform"}
  *
  * <h2>API conventions</h2>
