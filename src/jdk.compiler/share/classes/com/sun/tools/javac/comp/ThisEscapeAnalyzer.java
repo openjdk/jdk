@@ -480,15 +480,19 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitVarDef(JCVariableDecl tree) {
+        visitVarDef(tree.sym, tree.init);
+    }
+
+    private void visitVarDef(VarSymbol sym, JCExpression expr) {
 
         // Skip if ignoring warnings for this field
-        if (suppressed.contains(tree.sym))
+        if (suppressed.contains(sym))
             return;
 
         // Scan initializer, if any
-        scan(tree.init);
-        if (isParamOrVar(tree.sym))
-            refs.replaceExprs(depth, direct -> new VarRef(tree.sym, direct));
+        scan(expr);
+        if (isParamOrVar(sym))
+            refs.replaceExprs(depth, indirection -> new VarRef(sym, indirection));
         else
             refs.discardExprs(depth);           // we don't track fields yet
     }
@@ -678,7 +682,10 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitForeachLoop(JCEnhancedForLoop tree) {
-        visitLooped(tree, super::visitForeachLoop);
+        visitLooped(tree, foreach -> {
+            visitVarDef(foreach.var.sym, foreach.expr);
+            scan(foreach.body);
+        });
     }
 
     @Override

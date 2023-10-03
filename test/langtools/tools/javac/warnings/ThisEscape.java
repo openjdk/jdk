@@ -608,4 +608,13 @@ public class ThisEscape {
             System.out.println((Supplier<Object>)() -> this);
         }
     }
+
+    // Verify no assertion error occurs (JDK-8317336)
+    public static class ThisAssertionError2 {
+        public ThisAssertionError2() {
+            ThisAssertionError2[] array = new ThisAssertionError2[] { this };
+            for (Object obj : array)
+                ;
+        }
+    }
 }
