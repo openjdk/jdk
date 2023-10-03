@@ -73,16 +73,18 @@ public sealed interface CharacterRange extends PseudoInstruction
 
     /**
      * A flags word, indicating the kind of range.  Multiple flag bits
-     * may be set.  Valid flags include
-     * {@link java.lang.classfile.ClassFile#CRT_STATEMENT},
-     * {@link java.lang.classfile.ClassFile#CRT_BLOCK},
-     * {@link java.lang.classfile.ClassFile#CRT_ASSIGNMENT},
-     * {@link java.lang.classfile.ClassFile#CRT_FLOW_CONTROLLER},
-     * {@link java.lang.classfile.ClassFile#CRT_FLOW_TARGET},
-     * {@link java.lang.classfile.ClassFile#CRT_INVOKE},
-     * {@link java.lang.classfile.ClassFile#CRT_CREATE},
-     * {@link java.lang.classfile.ClassFile#CRT_BRANCH_TRUE},
-     * {@link java.lang.classfile.ClassFile#CRT_BRANCH_FALSE}.
+     * may be set.  Valid flags include:
+     * <ul>
+     * <li>{@link java.lang.classfile.ClassFile#CRT_STATEMENT}
+     * <li>{@link java.lang.classfile.ClassFile#CRT_BLOCK}
+     * <li>{@link java.lang.classfile.ClassFile#CRT_ASSIGNMENT}
+     * <li>{@link java.lang.classfile.ClassFile#CRT_FLOW_CONTROLLER}
+     * <li>{@link java.lang.classfile.ClassFile#CRT_FLOW_TARGET}
+     * <li>{@link java.lang.classfile.ClassFile#CRT_INVOKE}
+     * <li>{@link java.lang.classfile.ClassFile#CRT_CREATE}
+     * <li>{@link java.lang.classfile.ClassFile#CRT_BRANCH_TRUE}
+     * <li>{@link java.lang.classfile.ClassFile#CRT_BRANCH_FALSE}
+     * </ul>
      *
      * @see java.lang.classfile.attribute.CharacterRangeInfo#flags()
      *
