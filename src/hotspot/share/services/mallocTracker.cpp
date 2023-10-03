@@ -39,6 +39,8 @@
 #include "services/mallocSiteTable.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
+#include "services/nmtCommon.hpp"
+#include "services/nmt/memoryLogRecorder.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
@@ -141,8 +143,7 @@ bool MallocTracker::initialize(NMT_TrackingLevel level) {
 
 // Record a malloc memory allocation
 void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flags,
-  const NativeCallStack& stack)
-{
+  const NativeCallStack& stack, void* malloc_base_old) {
   assert(MemTracker::enabled(), "precondition");
   assert(malloc_base != nullptr, "precondition");
 
@@ -169,6 +170,9 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
   }
 #endif
 
+#ifdef ASSERT
+    NMT_MemoryLogRecorder::log(size, (address)malloc_base, (address)malloc_base_old, flags, &stack);
+#endif
   return memblock;
 }
 
@@ -182,6 +186,9 @@ void* MallocTracker::record_free_block(void* memblock) {
 
   header->mark_block_as_dead();
 
+#ifdef ASSERT
+    NMT_MemoryLogRecorder::log(0, (address)header);
+#endif
   return (void*)header;
 }
 

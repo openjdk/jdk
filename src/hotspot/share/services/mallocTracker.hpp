@@ -79,7 +79,7 @@ class MemoryCounter {
 
   inline void resize(ssize_t sz) {
     if (sz != 0) {
-      assert(sz >= 0 || size() >= size_t(-sz), "Must be");
+      assert(sz >= 0 || size() >= size_t(-sz), "Must be (%zd >= %zd)", size(), sz);
       size_t sum = Atomic::add(&_size, size_t(sz), memory_order_relaxed);
       DEBUG_ONLY(update_peak(sum, _count);)
     }
@@ -284,7 +284,7 @@ class MallocTracker : AllStatic {
 
   // Record  malloc on specified memory block
   static void* record_malloc(void* malloc_base, size_t size, MEMFLAGS flags,
-    const NativeCallStack& stack);
+    const NativeCallStack& stack, void* malloc_base_old = nullptr);
 
   // Given a block returned by os::malloc() or os::realloc():
   // deaccount block from NMT, mark its header as dead and return pointer to header.

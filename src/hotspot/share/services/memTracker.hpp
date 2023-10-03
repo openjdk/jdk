@@ -29,6 +29,7 @@
 #include "runtime/threadCritical.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/nmtCommon.hpp"
+#include "services/nmt/memoryLogRecorder.hpp"
 #include "services/threadStackTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"
 #include "utilities/debug.hpp"
@@ -94,11 +95,15 @@ class MemTracker : AllStatic {
   }
 
   static inline void* record_malloc(void* mem_base, size_t size, MEMFLAGS flag,
-    const NativeCallStack& stack) {
+    const NativeCallStack& stack, void* malloc_base_old = nullptr) {
     assert(mem_base != nullptr, "caller should handle null");
+
     if (enabled()) {
-      return MallocTracker::record_malloc(mem_base, size, flag, stack);
+      return MallocTracker::record_malloc(mem_base, size, flag, stack, malloc_base_old);
     }
+#ifdef ASSERT
+    NMT_MemoryLogRecorder::log(size, (address)mem_base, (address)malloc_base_old, flag, &stack);
+#endif
     return mem_base;
   }
 
@@ -106,11 +111,16 @@ class MemTracker : AllStatic {
   static inline void* record_free(void* memblock) {
     // Never turned on
     assert(memblock != nullptr, "caller should handle null");
-    if (!enabled()) {
-      return memblock;
+
+    if (enabled()) {
+      return MallocTracker::record_free_block(memblock);
     }
-    return MallocTracker::record_free_block(memblock);
+#ifdef ASSERT
+    NMT_MemoryLogRecorder::log(0, (address)memblock);
+#endif
+    return memblock;
   }
+
   static inline void deaccount(MallocHeader::FreeInfo free_info) {
     assert(enabled(), "NMT must be enabled");
     MallocTracker::deaccount(free_info);

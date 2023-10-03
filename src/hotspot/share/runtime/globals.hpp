@@ -569,6 +569,15 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PrintNMTStatistics, false, DIAGNOSTIC,                      \
           "Print native memory tracking summary data if it is on")          \
                                                                             \
+  product(intx, RecordNMTEntries, 0, DIAGNOSTIC,                            \
+          "Record specified number of NMT allocations and print them "      \
+          "at the exit. Summary statistics is also printed if enabled."     \
+          "0 (the default) disables this feature.")                         \
+          range(0, max_jint)                                                \
+                                                                            \
+  product(bool, PrintRecordedNMTEntries, false, DIAGNOSTIC,                 \
+          "Print the recorded entried at exit")                             \
+                                                                            \
   product(bool, LogCompilation, false, DIAGNOSTIC,                          \
           "Log compilation activity in detail to LogFile")                  \
                                                                             \

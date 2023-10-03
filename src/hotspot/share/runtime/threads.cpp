@@ -93,6 +93,7 @@
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
 #include "services/memTracker.hpp"
+#include "services/nmt/memoryLogRecorder.hpp"
 #include "services/threadIdTable.hpp"
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
@@ -872,6 +873,10 @@ void Threads::destroy_vm() {
       // This wait should make safepoint checks, wait without a timeout.
       nu.wait(0);
   }
+
+#ifdef ASSERT
+  NMT_MemoryLogRecorder::log();
+#endif
 
   EventShutdown e;
   if (e.should_commit()) {

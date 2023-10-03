@@ -76,6 +76,7 @@
 #include "runtime/vm_version.hpp"
 #include "sanitizers/leak.hpp"
 #include "services/memTracker.hpp"
+#include "services/nmt/memoryLogRecorder.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -587,6 +588,9 @@ void vm_exit(int code) {
 void notify_vm_shutdown() {
   // For now, just a dtrace probe.
   HOTSPOT_VM_SHUTDOWN();
+#ifdef ASSERT
+  NMT_MemoryLogRecorder::log();
+#endif
 }
 
 void vm_direct_exit(int code) {
