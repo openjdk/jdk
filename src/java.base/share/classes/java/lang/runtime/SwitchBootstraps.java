@@ -225,7 +225,7 @@ public class SwitchBootstraps {
                     if (unconditionalExactnessCheck(selectorType, currentLabelClass)) {
                         currentTest = trueDef;
                     } else if (currentLabelClass.isPrimitive()) {
-                         if (selectorType.isInstance(Object.class)) {
+                         if (selectorType.equals(Object.class)) {
                             currentTest = INSTANCEOF_CHECK;
                             if (currentLabelClass.isAssignableFrom(byte.class)) { testLabel = Byte.class; }
                             else if (currentLabelClass.isAssignableFrom(short.class)) { testLabel = Short.class; }
@@ -233,15 +233,6 @@ public class SwitchBootstraps {
                             else if (currentLabelClass.isAssignableFrom(int.class)) { testLabel = Integer.class; }
                             else if (currentLabelClass.isAssignableFrom(double.class)) { testLabel = Double.class; }
                             else if (currentLabelClass.isAssignableFrom(float.class)) { testLabel = Float.class; }
-                            else { testLabel = Long.class; }
-                        } else if (!selectorType.isPrimitive()) {
-                            currentTest = INSTANCEOF_CHECK;
-                            if (currentLabelClass.equals(byte.class)) { testLabel = Byte.class; }
-                            else if (currentLabelClass.equals(short.class)) { testLabel = Short.class; }
-                            else if (currentLabelClass.equals(char.class)) { testLabel = Character.class; }
-                            else if (currentLabelClass.equals(int.class)) { testLabel = Integer.class; }
-                            else if (currentLabelClass.equals(double.class)) { testLabel = Double.class; }
-                            else if (currentLabelClass.equals(float.class)) { testLabel = Float.class; }
                             else { testLabel = Long.class; }
                         } else {
                             MethodHandle exactnessCheck;

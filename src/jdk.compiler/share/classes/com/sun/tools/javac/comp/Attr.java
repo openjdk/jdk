@@ -4151,7 +4151,7 @@ public class Attr extends JCTree.Visitor {
 
     public void visitTypeTest(JCInstanceOf tree) {
         Type exprtype = attribExpr(tree.expr, env);
-        if(!allowPrimitivePatterns) {
+        if (!allowPrimitivePatterns) {
             exprtype = chk.checkNullOrRefType(
                     tree.expr.pos(), exprtype);
         } else if (tree.pattern.type != null && exprtype.isPrimitive() && preview.isPreview(Feature.PRIMITIVE_PATTERNS)) {

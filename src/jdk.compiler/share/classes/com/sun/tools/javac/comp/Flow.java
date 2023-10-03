@@ -732,27 +732,17 @@ public class Flow {
                     }
                 }
             }
-            if (tree.selector.type.hasTag(TypeTag.BOOLEAN)) {
-                HashSet<JCTree> labelValues = tree.cases.stream()
-                        .filter(TreeInfo::unguardedCase)
-                        .flatMap(c -> c.labels.stream())
-                        .filter(l -> !l.hasTag(DEFAULTCASELABEL))
-                        .map(l -> l.hasTag(CONSTANTCASELABEL) ? ((JCConstantCaseLabel) l).expr
-                                : ((JCPatternCaseLabel) l).pat)
-                        .collect(Collectors.toCollection(HashSet::new));
 
-                boolean hasBothTrueAndFalse = labelValues.stream().filter(l -> l.hasTag(Tag.LITERAL)).map(l -> ((JCLiteral)l).value).distinct().count() == 2;
+            boolean exhaustive = exhausts(tree.selector, tree.cases);
 
-                tree.isExhaustive = hasBothTrueAndFalse || tree.hasUnconditionalPattern;
-
-                if (hasBothTrueAndFalse && tree.hasUnconditionalPattern) {
-                    log.error(tree, Errors.DefaultLabelNotAllowed);
-                }
-            } else {
-                tree.isExhaustive = tree.hasUnconditionalPattern ||
-                        TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) ||
-                        exhausts(tree.selector, tree.cases);
+            if (tree.selector.type.hasTag(TypeTag.BOOLEAN) && exhaustive && tree.hasUnconditionalPattern) {
+                log.error(tree, Errors.DefaultLabelNotAllowed);
             }
+
+            tree.isExhaustive = tree.hasUnconditionalPattern ||
+                    TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) ||
+                    exhaustive;
+
             if (!tree.isExhaustive) {
                 log.error(tree, Errors.NotExhaustive);
             }
@@ -763,6 +753,7 @@ public class Flow {
         private boolean exhausts(JCExpression selector, List<JCCase> cases) {
             Set<PatternDescription> patternSet = new HashSet<>();
             Map<Symbol, Set<Symbol>> enum2Constants = new HashMap<>();
+            Set<Object> booleanLiterals = new HashSet<>();
             for (JCCase c : cases) {
                 if (!TreeInfo.unguardedCase(c))
                     continue;
@@ -773,19 +764,29 @@ public class Flow {
                             patternSet.add(makePatternDescription(component, patternLabel.pat));
                         }
                     } else if (l instanceof JCConstantCaseLabel constantLabel) {
-                        Symbol s = TreeInfo.symbol(constantLabel.expr);
-                        if (s != null && s.isEnum()) {
-                            enum2Constants.computeIfAbsent(s.owner, x -> {
-                                Set<Symbol> result = new HashSet<>();
-                                s.owner.members()
-                                       .getSymbols(sym -> sym.kind == Kind.VAR && sym.isEnum())
-                                       .forEach(result::add);
-                                return result;
-                            }).remove(s);
+                        if (selector.type.hasTag(TypeTag.BOOLEAN)) {
+                            Object value = ((JCLiteral) constantLabel.expr).value;
+                            booleanLiterals.add(value);
+                        } else {
+                            Symbol s = TreeInfo.symbol(constantLabel.expr);
+                            if (s != null && s.isEnum()) {
+                                enum2Constants.computeIfAbsent(s.owner, x -> {
+                                    Set<Symbol> result = new HashSet<>();
+                                    s.owner.members()
+                                            .getSymbols(sym -> sym.kind == Kind.VAR && sym.isEnum())
+                                            .forEach(result::add);
+                                    return result;
+                                }).remove(s);
+                            }
                         }
                     }
                 }
             }
+
+            if (selector.type.hasTag(TypeTag.BOOLEAN) && booleanLiterals.size() == 2) {
+                return true;
+            }
+
             for (Entry<Symbol, Set<Symbol>> e : enum2Constants.entrySet()) {
                 if (e.getValue().isEmpty()) {
                     patternSet.add(new BindingPattern(e.getKey().type));
