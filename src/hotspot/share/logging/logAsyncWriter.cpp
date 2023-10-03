@@ -135,7 +135,7 @@ void AsyncLogWriter::write(AsyncLogMap<AnyObj::C_HEAP>& snapshot) {
     if (counter > 0) {
       stringStream ss;
       ss.print(UINT32_FORMAT_W(6) " messages dropped due to async logging", counter);
-      output->write_blocking(decorations, ss.as_string(false));
+      output->write_blocking(decorations, ss.freeze());
     }
     return true;
   });
