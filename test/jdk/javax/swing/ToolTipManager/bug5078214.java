@@ -24,10 +24,9 @@
 /*
  * @test
  * @bug 5078214
- * @summary ToolTip is shown partially when the application is near the bottom of screen.
- * @library ../regtesthelpers /test/lib
- * @build jtreg.SkippedException
  * @key headful
+ * @summary ToolTip is shown partially when the application is near the bottom of screen.
+ * @build jtreg.SkippedException
  * @run main bug5078214
  */
 
