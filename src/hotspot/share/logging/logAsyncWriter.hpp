@@ -83,12 +83,14 @@ class AsyncLogWriter : public NonJavaThread {
     ~Message() = delete;
     LogFileStreamOutput* const _output;
     const LogDecorations _decorations;
+    size_t _msglen; // Length of message excluding NUL-byte
    public:
-    Message(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg)
-      : _output(output), _decorations(decorations) {
+    // msglen excludes NUL-byte
+    Message(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg, const size_t msglen)
+      : _output(output), _decorations(decorations),
+        _msglen(msglen) {
       assert(msg != nullptr, "c-str message can not be null!");
-      PRAGMA_STRINGOP_OVERFLOW_IGNORED
-      strcpy(reinterpret_cast<char* >(this+1), msg);
+      memcpy(reinterpret_cast<char* >(this+1), msg, _msglen + 1);
     }
 
     // Calculate the size for a prospective Message object depending on its message length including the trailing zero
@@ -97,7 +99,7 @@ class AsyncLogWriter : public NonJavaThread {
     }
 
     size_t size() const {
-      return calc_size(strlen(message()));
+      return calc_size(_msglen);
     }
 
     inline bool is_token() const { return _output == nullptr; }
