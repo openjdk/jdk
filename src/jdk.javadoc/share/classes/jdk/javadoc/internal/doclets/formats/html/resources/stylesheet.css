@@ -315,11 +315,9 @@ main {
     padding:10px 20px;
     position:relative;
 }
-section[id$=-description] :is(dl, ol, ul, p, div, blockquote, pre):last-child {
+section[id$=-description] :is(dl, ol, ul, p, div, blockquote, pre):last-child,
+section[id$=-description] :is(dl, ol, ul):last-child > :is(li, dd):last-child {
     margin-bottom:4px;
-    & :is(li, dd):last-child {
-          margin-bottom: 4px;
-    }
 }
 dl.notes > dt {
     font-family: var(--body-font-family);
