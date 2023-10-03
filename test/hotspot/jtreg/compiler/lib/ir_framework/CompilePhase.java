@@ -82,6 +82,9 @@ public enum CompilePhase {
     MACH_ANALYSIS("After mach analysis", RegexType.MACH),
     GLOBAL_CODE_MOTION("Global code motion", RegexType.MACH),
     REGISTER_ALLOCATION("Register allocation", RegexType.MACH),
+    BLOCK_ORDERING("Block ordering", RegexType.MACH),
+    PEEPHOLE("Peephole", RegexType.MACH),
+    POSTALLOC_EXPAND("Post-allocation expand", RegexType.MACH),
     FINAL_CODE("Final Code", RegexType.MACH),
     END("End"),
 

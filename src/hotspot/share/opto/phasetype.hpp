@@ -68,6 +68,9 @@
   flags(MATCHING,                     "After matching") \
   flags(GLOBAL_CODE_MOTION,           "Global code motion") \
   flags(REGISTER_ALLOCATION,          "Register allocation") \
+  flags(BLOCK_ORDERING,               "Block ordering") \
+  flags(PEEPHOLE,                     "Peephole") \
+  flags(POSTALLOC_EXPAND,             "Post-allocation expand") \
   flags(MACH_ANALYSIS,                "After mach analysis") \
   flags(FINAL_CODE,                   "Final Code") \
   flags(END,                          "End") \
