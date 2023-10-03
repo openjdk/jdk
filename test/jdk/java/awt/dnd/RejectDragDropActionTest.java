@@ -51,7 +51,7 @@ public class RejectDragDropActionTest {
 
     private static volatile boolean incorrectActionDetected = false;
 
-    private static final int DELAY_TIME = 1000;
+    private static final int DELAY_TIME = 500;
 
     private static Frame frame;
     private static DragSource ds;
@@ -95,15 +95,16 @@ public class RejectDragDropActionTest {
             startPoint.translate(50, 50);
             endPoint.translate(150, 150);
 
-            robot.delay(DELAY_TIME);
-
             robot.mouseMove(startPoint.x, startPoint.y);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             for (Point p = new Point(startPoint); !p.equals(endPoint);
                  p.translate(sign(endPoint.x - p.x),
                          sign(endPoint.y - p.y))) {
                 robot.mouseMove(p.x, p.y);
-                robot.delay(50);
+                if (incorrectActionDetected) {
+                    System.err.println("Incorrect action during loop");
+                    break;
+                }
             }
 
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
