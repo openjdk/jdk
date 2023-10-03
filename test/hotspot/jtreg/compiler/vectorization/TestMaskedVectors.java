@@ -28,14 +28,15 @@
  * @requires vm.compiler2.enabled
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -Xbatch -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,TestMaskedVectors::test* -XX:+StressLCM -XX:+StressGCM -XX:StressSeed=2210259638 TestMaskedVectors
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -Xbatch -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,TestMaskedVectors::test* -XX:+StressLCM -XX:+StressGCM -XX:StressSeed=2210259638 TestMaskedVectors
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -Xbatch -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,TestMaskedVectors::test* -XX:+StressLCM -XX:+StressGCM TestMaskedVectors
  */
 
 import java.lang.reflect.*;
 import java.util.*;
 
 import jdk.internal.misc.Unsafe;
- 
+
 public class TestMaskedVectors {
 
     private static Unsafe UNSAFE = Unsafe.getUnsafe();
