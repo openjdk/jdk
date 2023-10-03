@@ -300,11 +300,12 @@ body.module-declaration-page .block-list h2 {
     margin:15px 0;
 }
 body.class-declaration-page .summary h3,
-body.class-declaration-page .details h3{
+body.class-declaration-page .details h3 {
     background-color:var(--subnav-background-color);
     border:1px solid var(--border-color);
     margin:0 0 6px -8px;
     padding:7px 5px;
+    overflow-x:auto;
 }
 /*
  * Styles for page layout containers.
@@ -314,8 +315,11 @@ main {
     padding:10px 20px;
     position:relative;
 }
-dl.notes {
-    margin-bottom:10px;
+section[id$=-description] :is(dl, ol, ul, p, div, blockquote, pre):last-child {
+    margin-bottom:4px;
+    & :is(li, dd):last-child {
+          margin-bottom: 4px;
+    }
 }
 dl.notes > dt {
     font-family: var(--body-font-family);
@@ -361,7 +365,7 @@ ul.block-list,
 ul.details-list,
 ul.member-list,
 ul.summary-list {
-    margin:4px 0 10px 0;
+    margin:10px 0 10px 0;
     padding:0;
 }
 ul.block-list > li,
