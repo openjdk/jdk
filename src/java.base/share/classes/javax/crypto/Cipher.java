@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2782,10 +2782,10 @@ public class Cipher {
      * {@code len} is greater than the length of the
      * {@code src} byte array
      * @throws IllegalStateException if this {@code Cipher} object
-     * is in a wrong state (e.g., has not been initialized),
-     * does not accept AAD, or if operating in either GCM or CCM mode and
-     * one of the {@code update} methods has already been called for the active
-     * encryption/decryption operation
+     * is in a wrong state (e.g., has not been initialized, or is not in
+     * ENCRYPT_MODE or DECRYPT_MODE), does not accept AAD, or if operating
+     * in either GCM or CCM mode and one of the {@code update} methods has
+     * already been called for the active encryption/decryption operation
      * @throws UnsupportedOperationException if the corresponding method
      * in the {@code CipherSpi} has not been overridden by an
      * implementation
@@ -2828,10 +2828,10 @@ public class Cipher {
      * @throws IllegalArgumentException if the {@code src ByteBuffer}
      * is {@code null}
      * @throws IllegalStateException if this {@code Cipher} object
-     * is in a wrong state (e.g., has not been initialized),
-     * does not accept AAD, or if operating in either GCM or CCM mode and
-     * one of the {@code update} methods has already been called for the active
-     * encryption/decryption operation
+     * is in a wrong state (e.g., has not been initialized, or is not in
+     * ENCRYPT_MODE or DECRYPT_MODE), does not accept AAD, or if operating
+     * in either GCM or CCM mode and one of the {@code update} methods has
+     * already been called for the active encryption/decryption operation
      * @throws UnsupportedOperationException if the corresponding method
      * in the {@code CipherSpi} has not been overridden by an
      * implementation
