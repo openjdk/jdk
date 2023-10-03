@@ -211,6 +211,9 @@ static jfieldID attrs_st_ctime_nsec;
 #if defined(_DARWIN_FEATURE_64_BIT_INODE) || defined(__linux__)
 static jfieldID attrs_st_birthtime_sec;
 #endif
+#if defined(__linux__) // Linux has nsec granularity if supported
+static jfieldID attrs_st_birthtime_nsec;
+#endif
 
 static jfieldID attrs_f_frsize;
 static jfieldID attrs_f_blocks;
@@ -340,6 +343,10 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
 #if defined(_DARWIN_FEATURE_64_BIT_INODE) || defined(__linux__)
     attrs_st_birthtime_sec = (*env)->GetFieldID(env, clazz, "st_birthtime_sec", "J");
+    CHECK_NULL_RETURN(attrs_st_birthtime_sec, 0);
+#endif
+#if defined (__linux__) // Linux has nsec granularity
+    attrs_st_birthtime_nsec = (*env)->GetFieldID(env, clazz, "st_birthtime_nsec", "J");
     CHECK_NULL_RETURN(attrs_st_birthtime_sec, 0);
 #endif
 
@@ -620,6 +627,7 @@ static void copy_statx_attributes(JNIEnv* env, struct statx* buf, jobject attrs)
     (*env)->SetLongField(env, attrs, attrs_st_mtime_sec, (jlong)buf->stx_mtime.tv_sec);
     (*env)->SetLongField(env, attrs, attrs_st_ctime_sec, (jlong)buf->stx_ctime.tv_sec);
     (*env)->SetLongField(env, attrs, attrs_st_birthtime_sec, (jlong)buf->stx_btime.tv_sec);
+    (*env)->SetLongField(env, attrs, attrs_st_birthtime_nsec, (jlong)buf->stx_btime.tv_nsec);
     (*env)->SetLongField(env, attrs, attrs_st_atime_nsec, (jlong)buf->stx_atime.tv_nsec);
     (*env)->SetLongField(env, attrs, attrs_st_mtime_nsec, (jlong)buf->stx_mtime.tv_nsec);
     (*env)->SetLongField(env, attrs, attrs_st_ctime_nsec, (jlong)buf->stx_ctime.tv_nsec);
@@ -649,6 +657,7 @@ static void copy_stat64_attributes(JNIEnv* env, struct stat64* buf, jobject attr
 
 #ifdef _DARWIN_FEATURE_64_BIT_INODE
     (*env)->SetLongField(env, attrs, attrs_st_birthtime_sec, (jlong)buf->st_birthtime);
+    // rely on default value of 0 for st_birthtime_nsec field on Darwin
 #endif
 
 #ifndef MACOSX
