@@ -205,11 +205,11 @@ void ReplacedNodes::clone_stack(Compile* C, Node* initial, Node* improved, const
       prev->set_req(i, clone);
       i = -1;
     }
+    C->record_for_igvn(prev);
     if (is_in_table) {
       C->initial_gvn()->hash_find_insert(prev);
     }
     C->initial_gvn()->set_type_bottom(clone);
-    C->record_for_igvn(clone);
     prev = clone;
   }
   bool is_in_table = C->initial_gvn()->hash_delete(prev);
@@ -221,6 +221,7 @@ void ReplacedNodes::clone_stack(Compile* C, Node* initial, Node* improved, const
     assert(prev->in(i) == initial, "not a use?");
     prev->set_req(i, improved);
   }
+  C->record_for_igvn(prev);
   if (is_in_table) {
     C->initial_gvn()->hash_find_insert(prev);
   }
