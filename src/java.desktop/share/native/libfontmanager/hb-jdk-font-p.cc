@@ -118,16 +118,29 @@ hb_jdk_get_glyph_from_name (hb_font_t *font HB_UNUSED,
   return false;
 }
 
-static hb_font_funcs_t *
-_hb_jdk_get_font_funcs(hb_font_get_nominal_glyph_func_t nominal_fn,
-                       hb_font_get_variation_glyph_func_t variation_fn,
-                       hb_font_get_glyph_h_advance_func_t h_advance_fn,
-                       hb_font_get_glyph_v_advance_func_t v_advance_fn,
-                       hb_font_get_glyph_contour_point_func_t contour_pt_fn)
+extern "C" {
+/*
+ * This is called exactly once, from Java code, and the result is
+ * used by all downcalls to do shaping(), installing the functions
+ * on the hb_font.
+ * The parameters are all FFM upcall stubs.
+ * I was surprised we can cache these native pointers to upcall
+ * stubs on the native side, but it seems to be fine using the global Arena.
+ * These stubs don't need to be bound to a particular font or strike
+ * since they use Scoped Locals to access the data they need to operate on.
+ * This is how we can cache them.
+ * Also caching the hb_font_funcs_t on the Java side means we can
+ * marshall fewer args to the calls to shape().
+ */
+JDKEXPORT hb_font_funcs_t *
+HBCreateFontFuncs(hb_font_get_nominal_glyph_func_t nominal_fn,
+                  hb_font_get_variation_glyph_func_t variation_fn,
+                  hb_font_get_glyph_h_advance_func_t h_advance_fn,
+                  hb_font_get_glyph_v_advance_func_t v_advance_fn,
+                  hb_font_get_glyph_contour_point_func_t contour_pt_fn)
 {
     hb_font_funcs_t *ff = hb_font_funcs_create();
-   
-    /* JDK supplies these and they are bound to the right Font/Strike */
+
     hb_font_funcs_set_nominal_glyph_func(ff, nominal_fn, NULL, NULL);
     hb_font_funcs_set_variation_glyph_func(ff, variation_fn, NULL, NULL);
     hb_font_funcs_set_glyph_h_advance_func(ff, h_advance_fn, NULL, NULL);
@@ -153,6 +166,8 @@ _hb_jdk_get_font_funcs(hb_font_get_nominal_glyph_func_t nominal_fn,
 
   return ff;
 }
+
+} /* extern "C" */
 
 static void _do_nothing(void) {
 }
@@ -208,22 +223,13 @@ hb_font_t* jdk_font_create_hbp(
                hb_face_t* face,
                float ptSize, float devScale,
                hb_destroy_func_t destroy,
-               hb_font_get_nominal_glyph_func_t nominal_fn,
-               hb_font_get_variation_glyph_func_t variation_fn,
-               hb_font_get_glyph_h_advance_func_t h_advance_fn,
-               hb_font_get_glyph_v_advance_func_t v_advance_fn,
-               hb_font_get_glyph_contour_point_func_t contour_pt_fn) {
+               hb_font_funcs_t *font_funcs) {
 
     hb_font_t *font;
 
     font = hb_font_create(face);
     hb_font_set_funcs(font,
-                      _hb_jdk_get_font_funcs(
-                          nominal_fn,
-                          variation_fn,
-                          h_advance_fn,
-                          h_advance_fn,
-                          contour_pt_fn),
+                      font_funcs,
                       NULL,
                       (hb_destroy_func_t)_do_nothing);
     hb_font_set_scale(font,

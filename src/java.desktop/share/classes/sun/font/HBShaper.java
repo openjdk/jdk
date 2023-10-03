@@ -127,13 +127,19 @@ public class HBShaper {
     private static final MethodHandle dispose_face_handle;
     private static final MethodHandle jdk_hb_shape_handle;
 
+    /* hb_jdk_font_funcs_struct is a pointer to a harfbuzz font_funcs
+     * object which references the 5 following upcall stubs.
+     * The singleton shared font_funcs ptr is passed down in each
+     * call to shape() and installed on the hb_font.
+     */
+    private static final MemorySegment hb_jdk_font_funcs_struct;
     private static final MemorySegment get_var_glyph_stub;
     private static final MemorySegment get_nominal_glyph_stub;
     private static final MemorySegment get_h_advance_stub;
     private static final MemorySegment get_v_advance_stub;
     private static final MemorySegment get_contour_pt_stub;
 
-    private static MemorySegment store_layout_results_stub;
+    private static final MemorySegment store_layout_results_stub;
 
    private static FunctionDescriptor
        getFunctionDescriptor(MemoryLayout retType,
@@ -173,6 +179,7 @@ public class HBShaper {
         FunctionDescriptor disposeFaceDescriptor = FunctionDescriptor.ofVoid(ADDRESS);
         Optional<MemorySegment> dispose_face_symbol = SYM_LOOKUP.find("HBDisposeFace");
         dispose_face_handle = LINKER.downcallHandle(dispose_face_symbol.get(), disposeFaceDescriptor);
+
         FunctionDescriptor shapeDesc = FunctionDescriptor.ofVoid(
             //JAVA_INT,    // return type
             JAVA_FLOAT,  // ptSize
@@ -188,11 +195,7 @@ public class HBShaper {
             JAVA_FLOAT,  // startY
             JAVA_INT,    // flags,
             JAVA_INT,    // slot,
-            ADDRESS,     // glyph_fn
-            ADDRESS,     // variation_fn
-            ADDRESS,     // h_advance_fn
-            ADDRESS,     // v_advance_fn
-            ADDRESS,     // contour_pt_fn
+            ADDRESS,     // ptr to harfbuzz font_funcs object.
             ADDRESS);    // store_results_fn
 
         Optional<MemorySegment> shape_sym = SYM_LOOKUP.find("jdk_hb_shape");
@@ -233,6 +236,33 @@ public class HBShaper {
             getMethodHandle("get_glyph_contour_point", get_contour_pt_fd);
         get_contour_pt_stub =
             LINKER.upcallStub(get_contour_pt_mh, get_contour_pt_fd, garena);
+
+       /* Having now created the font upcall stubs, we can call down to create
+        * the native harfbuzz object holding these.
+        */
+        FunctionDescriptor createFontFuncsDescriptor = FunctionDescriptor.of(
+            ADDRESS,     // hb_font_funcs* return type
+            ADDRESS,     // glyph_fn upcall stub
+            ADDRESS,     // variation_fn upcall stub
+            ADDRESS,     // h_advance_fn upcall stub
+            ADDRESS,     // v_advance_fn upcall stub
+            ADDRESS);     // contour_pt_fn upcall stub
+        Optional<MemorySegment> create_font_funcs_symbol = SYM_LOOKUP.find("HBCreateFontFuncs");
+        MethodHandle create_font_funcs_handle =
+            LINKER.downcallHandle(create_font_funcs_symbol.get(), createFontFuncsDescriptor);
+
+        MemorySegment s = null;
+        try {
+            s = (MemorySegment)create_font_funcs_handle.invokeExact(
+                get_nominal_glyph_stub,
+                get_var_glyph_stub,
+                get_h_advance_stub,
+                get_v_advance_stub,
+                get_contour_pt_stub);
+       } catch (Throwable t) {
+          t.printStackTrace();
+       }
+       hb_jdk_font_funcs_struct = s;
 
        FunctionDescriptor store_layout_fd =
           FunctionDescriptor.ofVoid(
@@ -412,7 +442,7 @@ public class HBShaper {
          * ScopedValue is needed so that call backs into Java during
          * shaping can locate the correct instances of these to query or update.
          * The alternative of creating bound method handles is far too slow.
-         */ 
+         */
         ScopedVars vars = new ScopedVars(font2D, fontStrike, gvData, startPt);
         ScopedValue.where(scopedVars, vars)
                    .run(() -> {
@@ -431,11 +461,7 @@ public class HBShaper {
                      ptSize, matrix, hbface, chars, text.length,
                      script, offset, limit,
                      baseIndex, startX, startY, flags, slot,
-                     get_nominal_glyph_stub,
-                     get_var_glyph_stub,
-                     get_h_advance_stub,
-                     get_v_advance_stub,
-                     get_contour_pt_stub,
+                     hb_jdk_font_funcs_struct,
                      store_layout_results_stub);
             } catch (Throwable t) {
             }
@@ -477,7 +503,7 @@ public class HBShaper {
         return len;
     }
 
-    /* WeakHashMap is used so that we do not retain temporary fonts 
+    /* WeakHashMap is used so that we do not retain temporary fonts
      *
      * The value is a class that implements the 2D Disposer, so
      * that the native resources for temp. fonts can be freed.
@@ -507,7 +533,7 @@ public class HBShaper {
         private FaceRef(Font2D font) {
             this.font2D = font;
         }
- 
+
         private synchronized MemorySegment getFace() {
             if (face == null) {
                 createFace();

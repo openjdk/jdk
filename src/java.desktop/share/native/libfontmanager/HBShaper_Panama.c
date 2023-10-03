@@ -77,11 +77,7 @@ JDKEXPORT int jdk_hb_shape(
      float startY,
      int flags,
      int slot,
-     hb_font_get_nominal_glyph_func_t nominal_fn,
-     hb_font_get_variation_glyph_func_t variation_fn,
-     hb_font_get_glyph_h_advance_func_t h_advance_fn,
-     hb_font_get_glyph_v_advance_func_t v_advance_fn,
-     hb_font_get_glyph_contour_point_func_t contour_pt_fn,
+     hb_font_funcs_t* font_funcs,
      store_layoutdata_func_t store_layout_results_fn
     ) {
 
@@ -109,11 +105,7 @@ JDKEXPORT int jdk_hb_shape(
      hbface = (hb_face_t*)pFace;
      hbfont = jdk_font_create_hbp(hbface,
                                   ptSize, devScale, NULL,
-                                  nominal_fn,
-                                  variation_fn,
-                                  h_advance_fn,
-                                  h_advance_fn,
-                                  contour_pt_fn);
+                                  font_funcs);
 
      buffer = hb_buffer_create();
      hb_buffer_set_script(buffer, getHBScriptCode(script));

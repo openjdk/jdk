@@ -54,11 +54,7 @@ hb_font_t* jdk_font_create_hbp(
                hb_face_t* face,
                float ptSize, float devScale,
                hb_destroy_func_t destroy,
-               hb_font_get_nominal_glyph_func_t nominal_fn,
-               hb_font_get_variation_glyph_func_t variation_fn,
-               hb_font_get_glyph_h_advance_func_t h_advance_fn,
-               hb_font_get_glyph_v_advance_func_t v_advance_fn,
-               hb_font_get_glyph_contour_point_func_t contour_pt_fn);
+               hb_font_funcs_t* font_funcs);
 
 
 typedef int (*store_layoutdata_func_t)
@@ -77,17 +73,13 @@ JDKEXPORT int jdk_hb_shape(
      int script,
      int offset,
      int limit,
-     int baseIndex, // used only by storeGVData
-     float startX, // used only by storeGVData
-     float startY, // used only by storeGVData
+     int baseIndex, // used only to store results.
+     float startX, // used only to store results.
+     float startY, // used only to store results.
      int flags,
-     int slot, // used only by storeGVData
+     int slot, // used only to store results
      // Provide upcall Method handles that harfbuzz needs
-     hb_font_get_nominal_glyph_func_t get_nominal_glyph_upcall,
-     hb_font_get_variation_glyph_func_t get_variation_glyph_upcall,
-     hb_font_get_glyph_h_advance_func_t get_glyph_h_advance_upcall,
-     hb_font_get_glyph_v_advance_func_t get_glyph_v_advance_upcall,
-     hb_font_get_glyph_contour_point_func_t get_glyph_contour_point_upcall,
+     hb_font_funcs_t* font_funcs,
      store_layoutdata_func_t store_layout_data_upcall
 );
 
