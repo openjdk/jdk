@@ -33,11 +33,11 @@ import tests.Helper;
  * @summary Test --add-options jlink plugin in jmod-less mode
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
- * @modules java.base/jdk.internal.jimage
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.plugin
  *          jdk.jlink/jdk.tools.jimage
- *          jdk.jdeps/com.sun.tools.classfile
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
  * @run main/othervm -Xmx1g AddOptionsTest
