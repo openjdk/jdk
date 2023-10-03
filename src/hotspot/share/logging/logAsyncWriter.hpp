@@ -66,16 +66,16 @@ class AsyncLogWriter : public NonJavaThread {
                           uint32_t, 17, /*table_size*/
                           ALLOC_TYPE, mtLogging>;
 
-  // Messsage is the envelop of a log line and its associative data.
+  // Messsage is the envelope of a log line and its associative data.
   // Its length is variable because of the zero-terminated c-str. It is only valid when we create it using placement new
   // within a buffer.
   //
   // Example layout:
   // ---------------------------------------------
-  // |_output|_decorations|"a log line", |pad| <- pointer aligned.
-  // |_output|_decorations|"yet another",|pad|
+  // |_output|_decorations|_msglen|"a log line", |pad| <- Message aligned.
+  // |_output|_decorations|_msglen|"yet another",|pad|
   // ...
-  // |nullptr|_decorations|"",|pad| <- flush token
+  // |nullptr|_decorations|0|"",|pad| <- flush token
   // |<- _pos
   // ---------------------------------------------
   class Message {
@@ -95,7 +95,7 @@ class AsyncLogWriter : public NonJavaThread {
 
     // Calculate the size for a prospective Message object depending on its message length including the trailing zero
     static constexpr size_t calc_size(size_t message_len) {
-      return align_up(sizeof(Message) + message_len + 1, sizeof(Message));
+      return align_up(sizeof(Message) + message_len + 1, alignof(Message));
     }
 
     size_t size() const {
@@ -117,7 +117,7 @@ class AsyncLogWriter : public NonJavaThread {
     Buffer(size_t capacity) :  _pos(0), _capacity(capacity) {
       _buf = NEW_C_HEAP_ARRAY(char, capacity, mtLogging);
       // Ensure _pos is Message-aligned
-      _pos += align_up(_buf, sizeof(Message)) - _buf;
+      _pos += align_up(_buf, alignof(Message)) - _buf;
       assert(capacity >= Message::calc_size(0), "capcity must be great a token size");
     }
 
