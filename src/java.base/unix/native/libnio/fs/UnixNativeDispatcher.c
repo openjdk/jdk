@@ -759,7 +759,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstat0(JNIEnv* env, jclass this, jint fd,
         } else {
             throwUnixException(env, errno);
         }
-    } else {
+    }
 #endif
         RESTARTABLE(fstat64((int)fd, &buf), err);
         if (err == -1) {
