@@ -106,12 +106,12 @@ public class TestMaskedVectors {
                 }
             }
             if (error) {
-                throw new RuntimeException("Test failed");
+                throw new RuntimeException("Test LoadVectorMasked failed");
             }
 
             long res = testUnsafeGetLong(src);
             if (res != golden2) {
-                throw new RuntimeException("Incorrect result: Expected " + golden2 + " but got " + res);
+                throw new RuntimeException("Incorrect result in test UnsafeGetLong: Expected " + golden2 + " but got " + res);
             }
         }
     }
