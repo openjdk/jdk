@@ -132,6 +132,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     EXCLUDE_FILES := $(LIBAWT_EXFILES), \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_CFLAGS), \
+    CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBAWT_CFLAGS), \
     EXTRA_HEADER_DIRS := $(LIBAWT_EXTRA_HEADER_DIRS), \
     DISABLED_WARNINGS_gcc_awt_LoadLibrary.c := unused-result, \
     DISABLED_WARNINGS_gcc_debug_mem.c := format-nonliteral, \
@@ -613,7 +614,9 @@ ifeq ($(call isTargetOs, windows), true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBJAWT, \
       NAME := jawt, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CXXFLAGS_JDKLIB) \
+      CFLAGS := $(CFLAGS_JDKLIB) \
+          $(LIBJAWT_CFLAGS), \
+      CXXFLAGS := $(CXXFLAGS_JDKLIB) \
           $(LIBJAWT_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBJAWT_EXTRA_HEADER_DIRS), \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \
@@ -795,6 +798,8 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       EXCLUDES := $(LIBSPLASHSCREEN_EXCLUDES), \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBSPLASHSCREEN_CFLAGS) \
+          $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
+      CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBSPLASHSCREEN_CFLAGS) \
           $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBSPLASHSCREEN_HEADER_DIRS), \
       DISABLED_WARNINGS_gcc_dgif_lib.c := sign-compare, \

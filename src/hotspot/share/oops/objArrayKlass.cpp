@@ -34,7 +34,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/arrayKlass.inline.hpp"
+#include "oops/arrayKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.inline.hpp"
@@ -304,63 +304,6 @@ void ObjArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d,
   }
 }
 
-
-ArrayKlass* ObjArrayKlass::array_klass(int n, TRAPS) {
-
-  assert(dimension() <= n, "check order of chain");
-  int dim = dimension();
-  if (dim == n) return this;
-
-  // lock-free read needs acquire semantics
-  if (higher_dimension_acquire() == nullptr) {
-
-    ResourceMark rm(THREAD);
-    {
-      // Ensure atomic creation of higher dimensions
-      MutexLocker mu(THREAD, MultiArray_lock);
-
-      // Check if another thread beat us
-      if (higher_dimension() == nullptr) {
-
-        // Create multi-dim klass object and link them together
-        ObjArrayKlass* ak =
-          ObjArrayKlass::allocate_objArray_klass(class_loader_data(), dim + 1, this, CHECK_NULL);
-        ak->set_lower_dimension(this);
-        // use 'release' to pair with lock-free load
-        release_set_higher_dimension(ak);
-        assert(ak->is_objArray_klass(), "incorrect initialization of ObjArrayKlass");
-      }
-    }
-  }
-
-  ObjArrayKlass *ak = higher_dimension();
-  THREAD->check_possible_safepoint();
-  return ak->array_klass(n, THREAD);
-}
-
-ArrayKlass* ObjArrayKlass::array_klass_or_null(int n) {
-
-  assert(dimension() <= n, "check order of chain");
-  int dim = dimension();
-  if (dim == n) return this;
-
-  // lock-free read needs acquire semantics
-  if (higher_dimension_acquire() == nullptr) {
-    return nullptr;
-  }
-
-  ObjArrayKlass *ak = higher_dimension();
-  return ak->array_klass_or_null(n);
-}
-
-ArrayKlass* ObjArrayKlass::array_klass(TRAPS) {
-  return array_klass(dimension() +  1, THREAD);
-}
-
-ArrayKlass* ObjArrayKlass::array_klass_or_null() {
-  return array_klass_or_null(dimension() +  1);
-}
-
 bool ObjArrayKlass::can_be_primary_super_slow() const {
   if (!bottom_klass()->can_be_primary_super())
     // array of interfaces
@@ -452,7 +395,7 @@ void ObjArrayKlass::oop_print_on(oop obj, outputStream* st) {
   ArrayKlass::oop_print_on(obj, st);
   assert(obj->is_objArray(), "must be objArray");
   objArrayOop oa = objArrayOop(obj);
-  int print_len = MIN2((intx) oa->length(), MaxElementPrintSize);
+  int print_len = MIN2(oa->length(), MaxElementPrintSize);
   for(int index = 0; index < print_len; index++) {
     st->print(" - %3d : ", index);
     if (oa->obj_at(index) != nullptr) {

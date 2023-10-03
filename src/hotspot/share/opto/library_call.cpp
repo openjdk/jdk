@@ -50,6 +50,7 @@
 #include "opto/runtime.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/unsafe.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -117,9 +118,9 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
       kit.try_to_inline(_last_predicate)) {
     const char *inline_msg = is_virtual() ? "(intrinsic, virtual)"
                                           : "(intrinsic)";
-    CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, inline_msg);
+    CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, InliningResult::SUCCESS, inline_msg);
     if (C->print_intrinsics() || C->print_inlining()) {
-      C->print_inlining(callee, jvms->depth() - 1, bci, inline_msg);
+      C->print_inlining(callee, jvms->depth() - 1, bci, InliningResult::SUCCESS, inline_msg);
     }
     C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_worked);
     if (C->log()) {
@@ -145,9 +146,9 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
       msg = is_virtual() ? "failed to inline (intrinsic, virtual), method not annotated"
                          : "failed to inline (intrinsic), method not annotated";
     }
-    CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, msg);
+    CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, InliningResult::FAILURE, msg);
     if (C->print_intrinsics() || C->print_inlining()) {
-      C->print_inlining(callee, jvms->depth() - 1, bci, msg);
+      C->print_inlining(callee, jvms->depth() - 1, bci, InliningResult::FAILURE, msg);
     }
   } else {
     // Root compile
@@ -188,9 +189,9 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms, int predicate) {
   if (!kit.failing()) {
     const char *inline_msg = is_virtual() ? "(intrinsic, virtual, predicate)"
                                           : "(intrinsic, predicate)";
-    CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, inline_msg);
+    CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, InliningResult::SUCCESS, inline_msg);
     if (C->print_intrinsics() || C->print_inlining()) {
-      C->print_inlining(callee, jvms->depth() - 1, bci, inline_msg);
+      C->print_inlining(callee, jvms->depth() - 1, bci, InliningResult::SUCCESS, inline_msg);
     }
     C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_worked);
     if (C->log()) {
@@ -206,9 +207,9 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms, int predicate) {
   if (jvms->has_method()) {
     // Not a root compile.
     const char* msg = "failed to generate predicate for intrinsic";
-    CompileTask::print_inlining_ul(kit.callee(), jvms->depth() - 1, bci, msg);
+    CompileTask::print_inlining_ul(kit.callee(), jvms->depth() - 1, bci, InliningResult::FAILURE, msg);
     if (C->print_intrinsics() || C->print_inlining()) {
-      C->print_inlining(kit.callee(), jvms->depth() - 1, bci, msg);
+      C->print_inlining(kit.callee(), jvms->depth() - 1, bci, InliningResult::FAILURE, msg);
     }
   } else {
     // Root compile
@@ -2810,6 +2811,13 @@ bool LibraryCallKit::inline_unsafe_writebackSync0(bool is_pre) {
 //----------------------------inline_unsafe_allocate---------------------------
 // public native Object Unsafe.allocateInstance(Class<?> cls);
 bool LibraryCallKit::inline_unsafe_allocate() {
+
+#if INCLUDE_JVMTI
+  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
+    return false;
+  }
+#endif //INCLUDE_JVMTI
+
   if (callee()->is_static())  return false;  // caller must have the capability!
 
   null_check_receiver();  // null-check, then ignore
@@ -2819,6 +2827,24 @@ bool LibraryCallKit::inline_unsafe_allocate() {
   Node* kls = load_klass_from_mirror(cls, false, nullptr, 0);
   kls = null_check(kls);
   if (stopped())  return true;  // argument was like int.class
+
+#if INCLUDE_JVMTI
+    // Don't try to access new allocated obj in the intrinsic.
+    // It causes perfomance issues even when jvmti event VmObjectAlloc is disabled.
+    // Deoptimize and allocate in interpreter instead.
+    Node* addr = makecon(TypeRawPtr::make((address) &JvmtiExport::_should_notify_object_alloc));
+    Node* should_post_vm_object_alloc = make_load(this->control(), addr, TypeInt::INT, T_INT, MemNode::unordered);
+    Node* chk = _gvn.transform(new CmpINode(should_post_vm_object_alloc, intcon(0)));
+    Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::eq));
+    {
+      BuildCutout unless(this, tst, PROB_MAX);
+      uncommon_trap(Deoptimization::Reason_intrinsic,
+                    Deoptimization::Action_make_not_entrant);
+    }
+    if (stopped()) {
+      return true;
+    }
+#endif //INCLUDE_JVMTI
 
   Node* test = nullptr;
   if (LibraryCallKit::klass_needs_init_guard(kls)) {
@@ -2864,6 +2890,7 @@ bool LibraryCallKit::inline_native_notify_jvmti_funcs(address funcAddr, const ch
   if (!DoJVMTIVirtualThreadTransitions) {
     return true;
   }
+  Node* vt_oop = _gvn.transform(must_be_not_null(argument(0), true)); // VirtualThread this argument
   IdealKit ideal(this);
 
   Node* ONE = ideal.ConI(1);
@@ -2872,16 +2899,13 @@ bool LibraryCallKit::inline_native_notify_jvmti_funcs(address funcAddr, const ch
   Node* notify_jvmti_enabled = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
 
   ideal.if_then(notify_jvmti_enabled, BoolTest::eq, ONE); {
+    sync_kit(ideal);
     // if notifyJvmti enabled then make a call to the given SharedRuntime function
     const TypeFunc* tf = OptoRuntime::notify_jvmti_vthread_Type();
-    Node* vt_oop = _gvn.transform(must_be_not_null(argument(0), true)); // VirtualThread this argument
-
-    sync_kit(ideal);
     make_runtime_call(RC_NO_LEAF, tf, funcAddr, funcName, TypePtr::BOTTOM, vt_oop, hide);
     ideal.sync_kit(this);
   } ideal.else_(); {
     // set hide value to the VTMS transition bit in current JavaThread and VirtualThread object
-    Node* vt_oop = _gvn.transform(argument(0)); // this argument - VirtualThread oop
     Node* thread = ideal.thread();
     Node* jt_addr = basic_plus_adr(thread, in_bytes(JavaThread::is_in_VTMS_transition_offset()));
     Node* vt_addr = basic_plus_adr(vt_oop, java_lang_Thread::is_in_VTMS_transition_offset());
@@ -4995,8 +5019,8 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
       PreserveJVMState pjvms(this);
       set_control(array_ctl);
       Node* obj_length = load_array_length(obj);
-      Node* obj_size  = nullptr;
-      Node* alloc_obj = new_array(obj_klass, obj_length, 0, &obj_size, /*deoptimize_on_exception=*/true);
+      Node* array_size = nullptr; // Size of the array without object alignment padding.
+      Node* alloc_obj = new_array(obj_klass, obj_length, 0, &array_size, /*deoptimize_on_exception=*/true);
 
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
       if (bs->array_copy_requires_gc_barriers(true, T_OBJECT, true, false, BarrierSetC2::Parsing)) {
@@ -5029,7 +5053,7 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
       //  the object.)
 
       if (!stopped()) {
-        copy_to_clone(obj, alloc_obj, obj_size, true);
+        copy_to_clone(obj, alloc_obj, array_size, true);
 
         // Present the results of the copy.
         result_reg->init_req(_array_path, control());
@@ -5069,7 +5093,7 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
     if (!stopped()) {
       // It's an instance, and it passed the slow-path tests.
       PreserveJVMState pjvms(this);
-      Node* obj_size  = nullptr;
+      Node* obj_size = nullptr; // Total object size, including object alignment padding.
       // Need to deoptimize on exception from allocation since Object.clone intrinsic
       // is reexecuted if deoptimization occurs and there could be problems when merging
       // exception state between multiple Object.clone versions (reexecute=true vs reexecute=false).

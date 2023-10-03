@@ -247,8 +247,7 @@ public final class Matcher implements MatchResult {
         this.text = text;
 
         // Allocate state storage
-        int parentGroupCount = Math.max(parent.capturingGroupCount, 10);
-        groups = new int[parentGroupCount * 2];
+        groups = new int[parent.capturingGroupCount * 2];
         locals = new int[parent.localCount];
         localsPos = new IntHashSet[parent.localTCNCount];
 
@@ -422,8 +421,7 @@ public final class Matcher implements MatchResult {
         namedGroups = null;
 
         // Reallocate state storage
-        int parentGroupCount = Math.max(newPattern.capturingGroupCount, 10);
-        groups = new int[parentGroupCount * 2];
+        groups = new int[newPattern.capturingGroupCount * 2];
         locals = new int[newPattern.localCount];
         for (int i = 0; i < groups.length; i++)
             groups[i] = -1;

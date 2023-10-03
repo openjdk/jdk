@@ -466,7 +466,6 @@ public abstract class HtmlDocletWriter {
                                   Content body)
             throws DocFileIOException {
         List<DocPath> additionalStylesheets = configuration.getAdditionalStylesheets();
-        additionalStylesheets.addAll(localStylesheets);
         Head head = new Head(path, configuration.getDocletVersion(), configuration.getBuildDate())
                 .setTimestamp(!options.noTimestamp())
                 .setDescription(description)
@@ -474,7 +473,7 @@ public abstract class HtmlDocletWriter {
                 .setTitle(winTitle)
                 .setCharset(options.charset())
                 .addKeywords(metakeywords)
-                .setStylesheets(configuration.getMainStylesheet(), additionalStylesheets)
+                .setStylesheets(configuration.getMainStylesheet(), additionalStylesheets, localStylesheets)
                 .setAdditionalScripts(configuration.getAdditionalScripts())
                 .setIndex(options.createIndex(), mainBodyScript)
                 .addContent(extraHeadContent);
@@ -1471,13 +1470,13 @@ public abstract class HtmlDocletWriter {
             attrs.add("id=\"").add(htmlId.name()).add("\"");
         }
         // Generate index item
-        if (!headingContent.isEmpty() && configuration.mainIndex != null) {
+        if (!headingContent.isEmpty() && configuration.indexBuilder != null) {
             String tagText = headingContent.replaceAll("\\s+", " ");
             IndexItem item = IndexItem.of(element, node, tagText,
                     getTagletWriterInstance(context).getHolderName(element),
                     resources.getText("doclet.Section"),
                     new DocLink(path, id));
-            configuration.mainIndex.add(item);
+            configuration.indexBuilder.add(item);
         }
     }
 
