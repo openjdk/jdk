@@ -301,7 +301,7 @@ class StubRoutines: AllStatic {
   typedef void (*CallStub)(
     address   link,
     intptr_t* result,
-    BasicType result_type,
+    int       result_type, /* BasicType on 4 bytes */
     Method* method,
     address   entry_point,
     intptr_t* parameters,
