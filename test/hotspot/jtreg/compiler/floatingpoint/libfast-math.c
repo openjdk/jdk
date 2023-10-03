@@ -33,8 +33,8 @@
 //
 // This breaks Java's floating point arithmetic.
 
-static void __attribute__((constructor)) set_flush_to_zero(void) {
 #if defined(__GNUC__)
+static void __attribute__((constructor)) set_flush_to_zero(void) {
 
 #if defined(__x86_64__) && defined(SSE)
 #define MXCSR_DAZ (1 << 6)	/* Enable denormals are zero mode */
@@ -52,5 +52,5 @@ static void __attribute__((constructor)) set_flush_to_zero(void) {
 
 #endif // CPU arch
 
-#endif // defined(__GNUC__)
 }
+#endif // defined(__GNUC__)
