@@ -114,29 +114,7 @@ AsyncLogWriter::AsyncLogWriter()
   }
 }
 
-void AsyncLogWriter::write() {
-  ResourceMark rm;
-  AsyncLogMap<AnyObj::RESOURCE_AREA> snapshot;
-
-  // lock protection. This guarantees I/O jobs don't block logsites.
-  {
-    AsyncLogLocker locker;
-
-    _buffer_staging->reset();
-    swap(_buffer, _buffer_staging);
-
-    // move counters to snapshot and reset them.
-    _stats.iterate([&] (LogFileStreamOutput* output, uint32_t& counter) {
-      if (counter > 0) {
-        bool created = snapshot.put(output, counter);
-        assert(created == true, "sanity check");
-        counter = 0;
-      }
-      return true;
-    });
-    _data_available = false;
-  }
-
+void AsyncLogWriter::write(AsyncLogMap<AnyObj::C_HEAP>& snapshot) {
   int req = 0;
   auto it = _buffer_staging->iterator();
   while (it.hasNext()) {
@@ -170,15 +148,30 @@ void AsyncLogWriter::write() {
 
 void AsyncLogWriter::run() {
   while (true) {
+    AsyncLogMap<AnyObj::C_HEAP> snapshot;
     {
       AsyncLogLocker locker;
 
       while (!_data_available) {
         _lock.wait(0/* no timeout */);
       }
-    }
+      // lock protection. This guarantees I/O jobs don't block logsites.
 
-    write();
+      _buffer_staging->reset();
+      swap(_buffer, _buffer_staging);
+
+      // move counters to snapshot and reset them.
+      _stats.iterate([&] (LogFileStreamOutput* output, uint32_t& counter) {
+        if (counter > 0) {
+          bool created = snapshot.put(output, counter);
+          assert(created == true, "sanity check");
+          counter = 0;
+        }
+        return true;
+      });
+      _data_available = false;
+    }
+    write(snapshot);
   }
 }
 
