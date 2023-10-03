@@ -37,8 +37,8 @@
 static void __attribute__((constructor)) set_flush_to_zero(void) {
 
 #if defined(__x86_64__) && defined(SSE)
-#define MXCSR_DAZ (1 << 6)	/* Enable denormals are zero mode */
-#define MXCSR_FTZ (1 << 15)	/* Enable flush to zero mode */
+#define MXCSR_DAZ (1 << 6)      /* Enable denormals are zero mode */
+#define MXCSR_FTZ (1 << 15)     /* Enable flush to zero mode */
   unsigned int mxcsr = __builtin_ia32_stmxcsr ();
   mxcsr |= MXCSR_DAZ | MXCSR_FTZ;
   __builtin_ia32_ldmxcsr (mxcsr);
@@ -46,7 +46,7 @@ static void __attribute__((constructor)) set_flush_to_zero(void) {
 #elif defined(__aarch64__)
 #define _FPU_FPCR_FZ 0x1000000
 #define _FPU_SETCW(fpcr) \
-  {  __asm__ __volatile__ ("msr	fpcr, %0" : : "r" (fpcr)); }
+  {  __asm__ __volatile__ ("msr fpcr, %0" : : "r" (fpcr)); }
   /* Flush to zero, round to nearest, IEEE exceptions disabled.  */
   _FPU_SETCW (_FPU_FPCR_FZ);
 

@@ -1004,7 +1004,7 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode) {
       int rtn = fesetenv(&default_fenv);
       assert(rtn == 0, "fesetenv must succeed");
       assert(unity + thresh != unity && -unity - thresh != -unity,
-	     "fsetenv didn't work");
+             "fsetenv didn't work");
     }
   }
 #endif // defined(__GNUC__)
@@ -1014,7 +1014,6 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode) {
 
 #ifdef __APPLE__
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
-  fprintf(stderr, "#### LOADING 1 %s!\n", filename);
 #ifdef STATIC_BUILD
   return os::get_default_process_handle();
 #else
