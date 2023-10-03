@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,21 +47,22 @@ public class isexceeded001 {
     public static int run(String[] argv, PrintStream out) {
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         Log log = new Log(out, argHandler);
+        log.enableVerbose(true); // show log output
+
         MemoryMonitor monitor = Monitor.getMemoryMonitor(log, argHandler);
         List pools = monitor.getMemoryPoolMBeans();
 
         for (int i = 0; i < pools.size(); i++) {
             Object pool = pools.get(i);
-            log.display(i + " pool " + monitor.getName(pool));
-
+            log.display(i + " pool " + monitor.getName(pool) + " of type: " + monitor.getType(pool));
             if (!monitor.isUsageThresholdSupported(pool)) {
-                log.display("  does not support usage thresholds");
+                log.display("  does not support usage thresholds: skip");
                 continue;
-            } else
-                log.display("  supports usage thresholds");
+            }
 
             // Set a threshold that is greater than used value
             MemoryUsage usage = monitor.getUsage(pool);
+            boolean isExceeded = monitor.isUsageThresholdExceeded(pool);
             long used = usage.getUsed();
             long max = usage.getMax();
             long threshold = used + 1;
@@ -69,49 +70,76 @@ public class isexceeded001 {
             if ( (max > -1) && (threshold > max) ) {
                 // we can't test threshold - not enough memory
                 log.display("not enough memory for testing threshold:" +
-                 " used=" + used +
-                 ", max = " + max );
+                 " used=" + used + ", max=" + max + ": skip");
+                continue;
             }
 
             monitor.setUsageThreshold(pool, threshold);
-            log.display("  threshold " + threshold + " is set, used = " + used );
+            log.display("     used value is " + used     + "      max is " + max + " isExceeded = " + isExceeded);
+            log.display("  threshold set to " + threshold);
+            log.display("  threshold count  " + monitor.getUsageThresholdCount(pool));
 
+            // Reset peak usage so we can use it:
             monitor.resetPeakUsage(pool);
-            log.display("  resetting peak usage");
-            log.display("  peak usage = " + monitor.getPeakUsage(pool).getUsed());
+            isExceeded = monitor.isUsageThresholdExceeded(pool);
+            log.display("  reset peak usage. peak usage = " + monitor.getPeakUsage(pool).getUsed()
+                        + " isExceeded = " + isExceeded);
 
-            // Eat some memory - provoke usage of the pool to cross the
-            // threshold value
-            b = new byte[INCREMENT]; // Eat 100K
+            // Eat some memory - _may_ cause usage of the pool to cross threshold,
+            // but cannot assume this affects the pool we are testing.
+            b = new byte[INCREMENT];
 
-            boolean isExceeded = monitor.isUsageThresholdExceeded(pool);
-            usage = monitor.getPeakUsage(pool);
+            isExceeded = monitor.isUsageThresholdExceeded(pool);
+            log.display("  Allocated heap.  isExceeded = " + isExceeded);
+
+            // Fetch usage information: use peak usage in comparisons below, in case usage went up and then down.
+            // Log used and peak used in case of failure.
+            usage = monitor.getUsage(pool);
+            MemoryUsage peakUsage = monitor.getPeakUsage(pool);
             used = usage.getUsed();
+            max = usage.getMax();
+            long peakUsed = usage.getUsed();
+            long peakMax = usage.getMax();
 
-            log.display("  used value is " + used);
+            log.display("     used value is " + used     + "      max is " + max + " isExceeded = " + isExceeded);
+            log.display("peak used value is " + peakUsed + " peak max is " + peakMax);
+            log.display("  threshold set to " + threshold);
+            long thresholdCount = monitor.getUsageThresholdCount(pool);
+            log.display("  threshold count  " + thresholdCount);
 
-            if (used < threshold && isExceeded) {
-                // There're problems with isUsageThresholdExceeded()
+            // Test can be imprecise, particularly with CodeHeap: usage changes outside our control.
+            if (thresholdCount > 0 && monitor.getType(pool) != MemoryType.HEAP) {
+                log.display("  thresholdCount increasing outside our control for non-heap Pool: skip");
+                continue;
+            }
+
+            // If peak used value is less than threshold, then isUsageThresholdExceeded()
+            // is expected to return false.
+            if (peakUsed < threshold && isExceeded) {
+                // used is commonly less than threshold, but isExceeded should not be true:
                 log.complain("isUsageThresholdExceeded() returned "
                     + "true, while threshold = " + threshold
-                    + " and used peak = " + used);
+                    + " and used peak = " + peakUsed);
+                isExceeded = monitor.isUsageThresholdExceeded(pool);
+                if (isExceeded) {
                     testFailed = true;
-            } else
-            if (used >= threshold && !isExceeded) {
-                // we can introduce some imprecision during pooling memory usage
-                // value at the Code Cache memory pool. Amount of used memory
-                // was changed after we'd calculated isExceeded value
-
-                if (monitor.isUsageThresholdExceeded(pool)) {
-                    // that's mean such imprecision
-                    log.display("isUsageThresholdExceeded() returned false,"
-                        + " while threshold = " + threshold + " and "
-                        + "used peak = " + used);
                 } else {
-                    // some other problems with isUsageThresholdExceeded()
-                    log.complain("isUsageThresholdExceeded() returned false,"
+                    log.complain("isUsageThresholdExceeded() now says false.");
+                }
+            } else
+            // If peak used value is greater or equal than threshold, then
+            // isUsageThresholdExceeded() is expected to return true.
+            if (peakUsed >= threshold && !isExceeded) {
+                isExceeded = monitor.isUsageThresholdExceeded(pool);
+                if (isExceeded) {
+                    log.display("isUsageThresholdExceeded() returned false, then true,"
                         + " while threshold = " + threshold + " and "
-                        + "used peak = " + used);
+                        + "used peak = " + peakUsed);
+                } else {
+                    // Failure:
+                    log.complain("isUsageThresholdExceeded() returned false, and is still false,"
+                        + " while threshold = " + threshold + " and "
+                        + "used peak = " + peakUsed);
                         testFailed = true;
                 }
             }
