@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 5052433 8315042
- * @summary NullPointerException for generateCRL and generateCRLs methods.
+ * @summary Verify that generateCRL and generateCRLs methods do not throw
+ *          NullPointerException. They should throw CRLException instead.
  * @library /test/lib
  */
 import java.security.NoSuchProviderException;
