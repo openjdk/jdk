@@ -86,6 +86,7 @@ public class RejectDragDropActionTest {
 
         try {
             Robot robot = new Robot();
+            robot.setAutoWaitForIdle(true);
             robot.waitForIdle();
             robot.delay(DELAY_TIME);
 
