@@ -132,6 +132,8 @@ ifeq ($(call isTargetOs, linux), true)
   # stripping during the test libraries' build.
   BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libFib := -g
   BUILD_JDK_JTREG_LIBRARIES_STRIP_SYMBOLS_libFib := false
+  # nio tests' libCreationTimeHelper native needs -ldl linker flag
+  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libCreationTimeHelper := -ldl
 endif
 
 ifeq ($(ASAN_ENABLED), true)
