@@ -1672,7 +1672,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Generate an instruction to branch if int comparison succeeds
+     * Generate an instruction to branch if reference comparison succeeds
      * @param target the branch target
      * @return this builder
      */
@@ -1681,7 +1681,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Generate an instruction to branch if int comparison succeeds
+     * Generate an instruction to branch if reference comparison succeeds
      * @param target the branch target
      * @return this builder
      */
