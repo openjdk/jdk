@@ -171,9 +171,6 @@ class CodeHeap : public CHeapObj<mtCode> {
 
   // Containment means "contained in committed space".
   bool contains(const void* p) const             { return low() <= p && p < high(); }
-  bool contains_blob(const CodeBlob* blob) const {
-    return contains((void*)blob);
-  }
 
   void* find_start(void* p)     const;   // returns the block containing p or null
   CodeBlob* find_blob(void* start) const;

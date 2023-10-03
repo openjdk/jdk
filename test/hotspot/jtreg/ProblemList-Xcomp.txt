@@ -27,8 +27,6 @@
 #
 #############################################################################
 
-compiler/codecache/CodeCacheFullCountTest.java 8315576 generic-all
-
 vmTestbase/nsk/jvmti/AttachOnDemand/attach020/TestDescription.java 8287324 generic-all
 vmTestbase/nsk/jvmti/SetFieldAccessWatch/setfldw001/TestDescription.java 8205957 generic-all
 vmTestbase/nsk/jvmti/SetFieldModificationWatch/setfmodw001/TestDescription.java 8205957 linux-x64,windows-x64
