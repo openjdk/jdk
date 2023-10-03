@@ -843,7 +843,7 @@ public class LocaleResources {
         String typeStr = type.toString().toLowerCase(Locale.ROOT);
         String styleStr = style.toString().toLowerCase(Locale.ROOT);
         String[] lpArray;
-        String cacheKey = LIST_PATTERN + typeStr;
+        String cacheKey = LIST_PATTERN + typeStr + styleStr;
 
         removeEmptyReferences();
         ResourceReference data = cache.get(cacheKey);
@@ -851,9 +851,23 @@ public class LocaleResources {
         if (data == null || ((lpArray = (String[]) data.get()) == null)) {
             ResourceBundle rb = localeData.getDateFormatData(locale);
             lpArray = rb.getStringArray("ListPatterns_" + typeStr + (style == ListFormat.Style.FULL ? "" : "-" + styleStr));
-            if (lpArray == null) {
-                cache.put(cacheKey, new ResourceReference(cacheKey, new String[5], referenceQueue));
+
+            if (lpArray[0].isEmpty() || lpArray[1].isEmpty() || lpArray[2].isEmpty()) {
+                var adapter = LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR);
+                if (adapter instanceof ResourceBundleBasedAdapter rbba) {
+                    var candList = rbba.getCandidateLocales("", locale);
+                    // make sure there is at least one parent locale
+                    if (candList.size() >= 2) {
+                        var parentPatterns = adapter.getLocaleResources(candList.get(1)).getListPatterns(type, style);
+                        for (int i = 0; i < 3; i++) { // exclude optional ones, ie, "two"/"three"
+                            if (lpArray[i].isEmpty()) {
+                                lpArray[i] = parentPatterns[i];
+                            }
+                        }
+                    }
+                }
             }
+            cache.put(cacheKey, new ResourceReference(cacheKey, lpArray, referenceQueue));
         }
 
         return lpArray;

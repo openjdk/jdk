@@ -2840,7 +2840,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   #define MAP_FIXED_NOREPLACE MAP_FIXED_NOREPLACE_value
 #else
   // Sanity-check our assumed default value if we build with a new enough libc.
-  static_assert(MAP_FIXED_NOREPLACE == MAP_FIXED_NOREPLACE_value);
+  static_assert(MAP_FIXED_NOREPLACE == MAP_FIXED_NOREPLACE_value, "MAP_FIXED_NOREPLACE != MAP_FIXED_NOREPLACE_value");
 #endif
 
 int os::Linux::commit_memory_impl(char* addr, size_t size,
@@ -2959,7 +2959,7 @@ int os::Linux::get_existing_num_nodes() {
   return num_nodes;
 }
 
-size_t os::numa_get_leaf_groups(int *ids, size_t size) {
+size_t os::numa_get_leaf_groups(uint *ids, size_t size) {
   int highest_node_number = Linux::numa_max_node();
   size_t i = 0;
 
@@ -2968,8 +2968,8 @@ size_t os::numa_get_leaf_groups(int *ids, size_t size) {
   // node number. If the nodes have been bound explicitly using numactl membind,
   // then allocate memory from those nodes only.
   for (int node = 0; node <= highest_node_number; node++) {
-    if (Linux::is_node_in_bound_nodes((unsigned int)node)) {
-      ids[i++] = node;
+    if (Linux::is_node_in_bound_nodes(node)) {
+      ids[i++] = checked_cast<uint>(node);
     }
   }
   return i;

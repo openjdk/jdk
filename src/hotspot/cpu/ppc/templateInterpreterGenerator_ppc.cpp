@@ -1055,7 +1055,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   // Also initialize them for non-native calls for better tool support (even though
   // you may not get the most recent version as described above).
   __ li(R0, 0);
-  __ std(R26_monitor, _ijava_state_neg(monitors), R1_SP);
+  __ li(R12_scratch2, -(frame::ijava_state_size / wordSize));
+  __ std(R12_scratch2, _ijava_state_neg(monitors), R1_SP);
   __ std(R14_bcp, _ijava_state_neg(bcp), R1_SP);
   if (ProfileInterpreter) { __ std(R28_mdx, _ijava_state_neg(mdx), R1_SP); }
   __ std(R15_esp, _ijava_state_neg(esp), R1_SP);
@@ -1288,7 +1289,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
     // Update monitor in state.
     __ ld(R11_scratch1, 0, R1_SP);
-    __ std(R26_monitor, _ijava_state_neg(monitors), R11_scratch1);
+    __ sub(R12_scratch2, R26_monitor, R11_scratch1);
+    __ sradi(R12_scratch2, R12_scratch2, Interpreter::logStackElementSize);
+    __ std(R12_scratch2, _ijava_state_neg(monitors), R11_scratch1);
   }
 
   // jvmti/jvmpi support
