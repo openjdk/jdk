@@ -124,7 +124,8 @@ public class BigDecimalCompatibilityTest {
         test(longString, multiplier);
     }
 
-    // Returns 960 permutations of bigDecimal string values and multipliers
+    // Returns 960 arrangements of bigDecimal string values and multipliers
+    // In the form of (String, int).
     private static Stream<Arguments> bigDecimalProvider() {
         return bigDecimals.stream();
     }
@@ -136,7 +137,8 @@ public class BigDecimalCompatibilityTest {
         test(longString, multiplier);
     }
 
-    // Returns 48 permutations of bigInteger string values and multipliers
+    // Returns 48 arrangements of bigInteger string values and multipliers
+    // In the form of (String, int).
     private static Stream<Arguments> bigIntegerProvider() {
         return bigIntegers.stream();
     }
