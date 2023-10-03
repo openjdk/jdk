@@ -151,7 +151,7 @@ struct AtomicCmpxchg1ByteStressSupport {
   int  _base;
   char _array[7+32+7];
 
-  AtomicCmpxchg1ByteStressSupport() : _default_val(0xaa), _base(7), _array{} {}
+  AtomicCmpxchg1ByteStressSupport() : _default_val(0x7a), _base(7), _array{} {}
 
   void validate(char val, char val2, int index) {
     for (int i = 0; i < 7; i++) {

@@ -46,7 +46,7 @@
 typedef void (MacroAssembler::* chr_insn)(Register Rt, const Address &adr);
 
 void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register tmpReg,
-                                  Register tmp2Reg) {
+                                  Register tmp2Reg, Register tmp3Reg) {
   Register oop = objectReg;
   Register box = boxReg;
   Register disp_hdr = tmpReg;
@@ -104,7 +104,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
     b(cont);
   } else {
     assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-    lightweight_lock(oop, disp_hdr, tmp, rscratch1, no_count);
+    lightweight_lock(oop, disp_hdr, tmp, tmp3Reg, no_count);
     b(count);
   }
 
