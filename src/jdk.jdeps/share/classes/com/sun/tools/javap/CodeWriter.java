@@ -130,7 +130,7 @@ public class CodeWriter extends BasicWriter {
                 case InvokeDynamicInstruction instr ->
                     printConstantPoolRefAndValue(instr.invokedynamic(), 0);
                 case InvokeInstruction instr -> {
-                    if (instr.isInterface() && instr.opcode() != Opcode.INVOKESTATIC)
+                    if (instr.opcode() == Opcode.INVOKEINTERFACE)
                         printConstantPoolRefAndValue(instr.method(), instr.count());
                     else printConstantPoolRef(instr.method());
                 }

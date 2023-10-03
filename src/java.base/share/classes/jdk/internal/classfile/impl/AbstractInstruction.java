@@ -424,7 +424,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public int count() {
-            return Util.parameterSlots(Util.methodTypeSymbol(method().nameAndType()));
+            return 0;
         }
 
         @Override
