@@ -444,8 +444,10 @@ ul.preview-feature-list {
     height:16px;
 }
 div.table-tabs {
-    padding:10px 0 0 1px;
+    padding: 10px 0 0 1px;
     margin: 0;
+}
+div.table-tabs:has(button) {
     overflow: auto hidden;
     white-space: pre;
 }
