@@ -4416,8 +4416,7 @@ public final class Formatter implements Closeable, Flushable {
                     break;
                 }
                 case DateTime.CENTURY:                // 'C' (00 - 99)
-                case DateTime.YEAR_2:                 // 'y' (00 - 99)
-                case DateTime.YEAR_4:               { // 'Y' (0000 - 9999)
+                case DateTime.YEAR_2:               {// 'y' (00 - 99)
                     int i = t.get(ChronoField.YEAR_OF_ERA);
                     int size = 2;
                     switch (c) {
@@ -4426,6 +4425,27 @@ public final class Formatter implements Closeable, Flushable {
                         case DateTime.YEAR_4  -> size = 4;
                     }
                     sb.append(localizedMagnitude(fmt, null, i, Flags.ZERO_PAD, size, l));
+                    break;
+                }
+                case DateTime.YEAR_4:               { // 'Y' (0000 - 9999)
+                    int i = t.get(ChronoField.YEAR);
+                    if (i < 0) {
+                        sb.append('-');
+                        i = -i;
+                    } else if (i > 9999) {
+                        sb.append('+');
+                    }
+
+                    if (i < 1000) {
+                        sb.append('0');
+                        if (i < 100) {
+                            sb.append('0');
+                            if (i < 10) {
+                                sb.append('0');
+                            }
+                        }
+                    }
+                    sb.append(i);
                     break;
                 }
                 case DateTime.DAY_OF_MONTH_0:         // 'd' (01 - 31)

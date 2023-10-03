@@ -34,6 +34,7 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.DateFormatSymbols;
+import java.time.LocalDate;
 import java.util.*;
 
 import static java.util.Calendar.*;
@@ -450,5 +451,13 @@ public class BasicDateTime extends Basic {
         tryCatch("%%%", UnknownFormatConversionException.class);
         // perhaps an IllegalFormatArgumentIndexException should be defined?
         tryCatch("%<%", IllegalFormatFlagsException.class);
+
+        // %tF LocalDate
+        test("%tF", "2023-10-03", LocalDate.of(2023, 10, 3));
+        test("%tF", "-2023-10-03", LocalDate.of(-2023, 10, 3));
+        test("%tF", "0123-10-03", LocalDate.of(123, 10, 3));
+        test("%tF", "-0123-10-03", LocalDate.of(-123, 10, 3));
+        test("%tF", "+12345-10-03", LocalDate.of(12345, 10, 3));
+        test("%tF", "-12345-10-03", LocalDate.of(-12345, 10, 3));
     }
 }
