@@ -118,7 +118,7 @@ class AsyncLogWriter : public NonJavaThread {
     Buffer(size_t capacity) :  _pos(0), _capacity(capacity) {
       _buf = NEW_C_HEAP_ARRAY(char, capacity, mtLogging);
       // Ensure _pos is Message-aligned
-      _pos += align_up(_buf, alignof(Message)) - _buf;
+      _pos = align_up(_buf, alignof(Message)) - _buf;
       assert(capacity >= Message::calc_size(0), "capcity must be great a token size");
     }
 
@@ -129,7 +129,10 @@ class AsyncLogWriter : public NonJavaThread {
     void push_flush_token();
     bool push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg);
 
-    void reset() { _pos = 0; }
+    void reset() {
+      // Ensure _pos is Message-aligned
+      _pos = align_up(_buf, alignof(Message)) - _buf;
+    }
 
     class Iterator {
       const Buffer& _buf;
