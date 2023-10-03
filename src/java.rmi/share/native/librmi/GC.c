@@ -25,8 +25,13 @@
 
 #include <jni.h>
 #include <jvm.h>
+#include "jni_util.h"
 #include "sun_rmi_transport_GC.h"
 
+/*
+ * Declare library specific JNI_Onload entry if static build
+ */
+DEF_STATIC_JNI_OnLoad
 
 JNIEXPORT jlong JNICALL
 Java_sun_rmi_transport_GC_maxObjectInspectionAge(JNIEnv *env, jclass cls)
