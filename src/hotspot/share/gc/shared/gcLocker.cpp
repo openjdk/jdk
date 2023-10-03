@@ -136,6 +136,7 @@ void GCLocker::jni_lock(JavaThread* thread) {
     // in the code, but it's too strong; it's possible that the last thread
     // has called `jni_unlock`, but not yet finished the call, e.g. initiating
     // a GCCause::_gc_locker GC.
+    log_debug_jni("Blocked from entering critical section while waiting on GC.");
     ml.wait();
   }
   thread->enter_critical();
