@@ -28,8 +28,10 @@
  * @enablePreview true
  */
 
+import java.time.*;
 import java.util.FormatProcessor;
 import java.util.Objects;
+import java.util.Date;
 import java.util.Locale;
 
 import static java.util.FormatProcessor.FMT;
@@ -38,10 +40,12 @@ public class FormatterBuilder {
     public static void main(String... args) {
         Locale.setDefault(Locale.US);
         suite(FMT);
+        suiteDateTimes(FMT);
         Locale thai = Locale.forLanguageTag("th-TH-u-nu-thai");
         FormatProcessor thaiFormat = FormatProcessor.create(thai);
         Locale.setDefault(thai);
         suite(thaiFormat);
+        suiteDateTimes(thaiFormat);
     }
 
     static void test(String a, String b) {
@@ -911,5 +915,161 @@ public class FormatterBuilder {
         test(String.format("%-10A", -12345.6), fmt."%-10A\{-12345.6}");
         test(String.format("%-10A", 0.0), fmt."%-10A\{0.0}");
         test(String.format("%-10A", 12345.6), fmt."%-10A\{12345.6}");
+    }
+
+    static void suiteDateTimes(FormatProcessor fmt) {
+        ZoneOffset zoneOffset = ZoneOffset.ofHours(8);
+        ZoneId zoneId = ZoneId.systemDefault();
+
+        int[] years = {-99999, -9999, -999, -99, -9, 0, 9, 99, 999, 1999, 2999, 9999, 99999};
+        for (int year : years) {
+            for (int month = 1; month <= 12; month++) {
+                for (int dayOfMonth = 1; dayOfMonth <= 28; dayOfMonth++) {
+                    LocalDate localDate = LocalDate.of(year, month, dayOfMonth);
+                    LocalDateTime ldt = LocalDateTime.of(localDate, LocalTime.MIN);
+                    OffsetDateTime odt = OffsetDateTime.of(ldt, zoneOffset);
+                    ZonedDateTime zdt = ZonedDateTime.of(ldt, zoneId);
+                    Instant instant = Instant.from(zdt);
+                    Date date = Date.from(instant);
+
+                    // %tF latin1
+                    test("time %tF".formatted(ldt), fmt."time %tF\{ldt}");
+                    test("time %tF".formatted(zdt), fmt."time %tF\{zdt}");
+                    test("time %tF".formatted(odt), fmt."time %tF\{odt}");
+                    test("time %tF".formatted(date), fmt."time %tF\{date}");
+
+                    // %tF utf16
+                    test("\u65f6\u95f4 %tF".formatted(ldt), fmt."\u65f6\u95f4 %tF\{ldt}");
+                    test("\u65f6\u95f4 %tF".formatted(zdt), fmt."\u65f6\u95f4 %tF\{zdt}");
+                    test("\u65f6\u95f4 %tF".formatted(odt), fmt."\u65f6\u95f4 %tF\{odt}");
+                    test("\u65f6\u95f4 %tF".formatted(date), fmt."\u65f6\u95f4 %tF\{date}");
+
+                    // %tD latin1
+                    test("time %tD".formatted(ldt), fmt."time %tD\{ldt}");
+                    test("time %tD".formatted(zdt), fmt."time %tD\{zdt}");
+                    test("time %tD".formatted(odt), fmt."time %tD\{odt}");
+                    test("time %tD".formatted(date), fmt."time %tD\{date}");
+
+                    // %tD utf16
+                    test("\u65f6\u95f4 %tD".formatted(ldt), fmt."\u65f6\u95f4 %tD\{ldt}");
+                    test("\u65f6\u95f4 %tD".formatted(zdt), fmt."\u65f6\u95f4 %tD\{zdt}");
+                    test("\u65f6\u95f4 %tD".formatted(odt), fmt."\u65f6\u95f4 %tD\{odt}");
+                    test("\u65f6\u95f4 %tD".formatted(date), fmt."\u65f6\u95f4 %tD\{date}");
+
+                    // %s latin1
+                    test("date %s".formatted(ldt), fmt."date %s\{ldt}");
+                    test("date %s".formatted(zdt), fmt."date %s\{zdt}");
+                    test("date %s".formatted(odt), fmt."date %s\{odt}");
+                    test("date %s".formatted(localDate), fmt."date %s\{localDate}");
+                    test("date %s".formatted(date), fmt."date %s\{date}");
+                    test("date %s".formatted(instant), fmt."date %s\{instant}");
+
+                    // %s utf16
+                    test("\u65e5\u671f %s".formatted(ldt), fmt."\u65e5\u671f %s\{ldt}");
+                    test("\u65e5\u671f %s".formatted(zdt), fmt."\u65e5\u671f %s\{zdt}");
+                    test("\u65e5\u671f %s".formatted(odt), fmt."\u65e5\u671f %s\{odt}");
+                    test("\u65e5\u671f %s".formatted(localDate), fmt."\u65e5\u671f %s\{localDate}");
+                    test("\u65e5\u671f %s".formatted(date), fmt."\u65e5\u671f %s\{date}");
+                    test("\u65e5\u671f %s".formatted(instant), fmt."\u65e5\u671f %s\{instant}");
+
+                    test("%tc".formatted(date), fmt."%tc\{date}");
+                    test("\u65f6\u95f4%tc".formatted(date), fmt."\u65f6\u95f4%tc\{date}");
+                }
+            }
+        }
+
+        LocalDate localDate = LocalDate.of(2023, 10, 3);
+        int[] nanos = {
+                0, 1, 10, 12, 100, 123,
+                123000, 123010, 123100, 123120, 123123,
+                100000000, 120000000,
+                123000000, 123000001, 123000010, 123000100, 123001000, 123010000, 123100000,
+                123120000, 123120010, 123120100, 123123000, 123123100, 123123120, 123123123,
+                999999999
+        };
+        int[] minutes = {0, 1, 9, 10, 59};
+        int[] seconds = {0, 1, 9, 10, 59};
+        for (int hour = 0; hour < 23; hour++) {
+            for (int minute : minutes) {
+                for (int nano : nanos) {
+                    for (int second : seconds) {
+                        LocalTime localTime = LocalTime.of(hour, minute, second, nano);
+                        OffsetTime offsetTime = OffsetTime.of(localTime, zoneOffset);
+
+                        LocalDateTime ldt = LocalDateTime.of(localDate, localTime);
+                        OffsetDateTime odt = OffsetDateTime.of(ldt, zoneOffset);
+                        ZonedDateTime zdt = ZonedDateTime.of(ldt, zoneId);
+                        Instant instant = Instant.from(zdt);
+                        Date date = Date.from(instant);
+
+                        // %tr latin1
+                        test("time %tr".formatted(localTime), fmt. "time %tr\{ localTime }" );
+                        test("time %tr".formatted(offsetTime), fmt. "time %tr\{ offsetTime }" );
+                        test("time %tr".formatted(ldt), fmt. "time %tr\{ ldt }" );
+                        test("time %tr".formatted(odt), fmt. "time %tr\{ odt }" );
+                        test("time %tr".formatted(zdt), fmt. "time %tr\{ zdt }" );
+
+                        // %tr utf16
+                        test("\u65f6\u95f4 %tr".formatted(localTime), fmt. "\u65f6\u95f4 %tr\{ localTime }" );
+                        test("\u65f6\u95f4 %tr".formatted(offsetTime), fmt. "\u65f6\u95f4 %tr\{ offsetTime }" );
+                        test("\u65f6\u95f4 %tr".formatted(ldt), fmt. "\u65f6\u95f4 %tr\{ ldt }" );
+                        test("\u65f6\u95f4 %tr".formatted(odt), fmt. "\u65f6\u95f4 %tr\{ odt }" );
+                        test("\u65f6\u95f4 %tr".formatted(zdt), fmt. "\u65f6\u95f4 %tr\{ zdt }" );
+
+                        // %tR latin1
+                        test("time %tR".formatted(localTime), fmt. "time %tR\{ localTime }" );
+                        test("time %tR".formatted(offsetTime), fmt. "time %tR\{ offsetTime }" );
+                        test("time %tR".formatted(ldt), fmt. "time %tR\{ ldt }" );
+                        test("time %tR".formatted(odt), fmt. "time %tR\{ odt }" );
+                        test("time %tR".formatted(zdt), fmt. "time %tR\{ zdt }" );
+
+                        // %tR utf16
+                        test("\u65f6\u95f4 %tR".formatted(localTime), fmt. "\u65f6\u95f4 %tR\{ localTime }" );
+                        test("\u65f6\u95f4 %tR".formatted(offsetTime), fmt. "\u65f6\u95f4 %tR\{ offsetTime }" );
+                        test("\u65f6\u95f4 %tR".formatted(ldt), fmt. "\u65f6\u95f4 %tR\{ ldt }" );
+                        test("\u65f6\u95f4 %tR".formatted(odt), fmt. "\u65f6\u95f4 %tR\{ odt }" );
+                        test("\u65f6\u95f4 %tR".formatted(zdt), fmt. "\u65f6\u95f4 %tR\{ zdt }" );
+
+                        // %tT latin1
+                        test("time %tT".formatted(localTime), fmt."time %tT\{localTime}");
+                        test("time %tT".formatted(offsetTime), fmt."time %tT\{offsetTime}");
+                        test("time %tT".formatted(ldt), fmt."time %tT\{ldt}");
+                        test("time %tT".formatted(zdt), fmt."time %tT\{zdt}");
+                        test("time %tT".formatted(odt), fmt."time %tT\{odt}");
+                        test("time %tT".formatted(date), fmt."time %tT\{date}");
+
+                        // %tT utf16
+                        test("\u65f6\u95f4 %tT".formatted(localTime), fmt."\u65f6\u95f4 %tT\{localTime}");
+                        test("\u65f6\u95f4 %tT".formatted(offsetTime), fmt."\u65f6\u95f4 %tT\{offsetTime}");
+                        test("\u65f6\u95f4 %tT".formatted(ldt), fmt."\u65f6\u95f4 %tT\{ldt}");
+                        test("\u65f6\u95f4 %tT".formatted(zdt), fmt."\u65f6\u95f4 %tT\{zdt}");
+                        test("\u65f6\u95f4 %tT".formatted(odt), fmt."\u65f6\u95f4 %tT\{odt}");
+                        test("\u65f6\u95f4 %tT".formatted(date), fmt."\u65f6\u95f4 %tT\{date}");
+
+                        // %s latin1
+                        test("time %s".formatted(localTime), fmt."time %s\{localTime}");
+                        test("time %s".formatted(offsetTime), fmt."time %s\{offsetTime}");
+                        test("time %s".formatted(ldt), fmt."time %s\{ldt}");
+                        test("time %s".formatted(odt), fmt."time %s\{odt}");
+                        test("time %s".formatted(zdt), fmt."time %s\{zdt}");
+                        test("time %s".formatted(date), fmt."time %s\{date}");
+                        test("time %s".formatted(instant), fmt."time %s\{instant}");
+
+                        // %s utf16
+                        test("\u65f6\u95f4 %s".formatted(localTime), fmt."\u65f6\u95f4 %s\{localTime}");
+                        test("\u65f6\u95f4 %s".formatted(offsetTime), fmt."\u65f6\u95f4 %s\{offsetTime}");
+                        test("\u65f6\u95f4 %s".formatted(ldt), fmt."\u65f6\u95f4 %s\{ldt}");
+                        test("\u65f6\u95f4 %s".formatted(odt), fmt."\u65f6\u95f4 %s\{odt}");
+                        test("\u65f6\u95f4 %s".formatted(zdt), fmt."\u65f6\u95f4 %s\{zdt}");
+                        test("\u65f6\u95f4 %s".formatted(date), fmt."\u65f6\u95f4 %s\{date}");
+                        test("\u65f6\u95f4 %s".formatted(instant), fmt."\u65f6\u95f4 %s\{instant}");
+
+                        // %tc
+                        test("time %tc".formatted(date), fmt."time %tc\{date}");
+                        test("\u65f6\u95f4%tc".formatted(date), fmt."\u65f6\u95f4%tc\{date}");
+                    }
+                }
+            }
+        }
     }
 }

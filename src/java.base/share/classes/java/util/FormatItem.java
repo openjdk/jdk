@@ -25,20 +25,26 @@
 
 package java.util;
 
+import static java.util.Formatter.DateTime.*;
 import java.io.IOException;
 import java.lang.invoke.*;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.time.*;
 import java.text.DecimalFormatSymbols;
 import java.util.Formatter.FormatSpecifier;
 
 import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.JavaUtilDateAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.FormatConcatItem;
+import jdk.internal.util.DateTimeUtils;
 import jdk.internal.util.DecimalDigits;
 import jdk.internal.util.HexDigits;
 import jdk.internal.util.OctalDigits;
+
+import sun.util.calendar.BaseCalendar;
 
 import static java.lang.invoke.MethodType.methodType;
 
@@ -53,6 +59,7 @@ import static java.lang.invoke.MethodType.methodType;
  */
 class FormatItem {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+    private static final JavaUtilDateAccess JDA = SharedSecrets.getJavaUtilDateAccess();
 
     private static final MethodHandle CHAR_MIX =
             JLA.stringConcatHelper("mix",
@@ -114,6 +121,10 @@ class FormatItem {
 
     private static void putByte(byte[] buffer, int index, int ch) {
         buffer[index] = (byte)ch;
+    }
+
+    private static boolean isLatin1(long lengthCoder) {
+        return JLA.stringConcatHelpeIsLatin1(lengthCoder);
     }
 
     private FormatItem() {
@@ -537,5 +548,301 @@ class FormatItem {
 
             return lengthCoder;
         }
+    }
+
+    static final class FormatItemLocalDate implements FormatConcatItem {
+        final char c;
+        final LocalDate value;
+        FormatItemLocalDate(char c, LocalDate value) {
+            this.c = c;
+            this.value = value;
+        }
+
+        @Override
+        public long mix(long lengthCoder) {
+            int size = switch (c) {
+                case DATE -> 8;
+                case ISO_STANDARD_DATE -> DateTimeUtils.yearSize(value.getYear()) + 6;
+                default -> throw new UnknownFormatConversionException("Unsupported field: " + c);
+            };
+            return lengthCoder + size;
+        }
+
+        @Override
+        public long prepend(long lengthCoder, byte[] buffer) {
+            boolean latin1 = isLatin1(lengthCoder);
+            switch (c) {
+                case DATE: {
+                    lengthCoder -= 8;
+                    int off = (int) lengthCoder;
+                    int year = value.getYear(), month = value.getMonthValue(), dayOfMonth = value.getDayOfMonth();
+                    if (latin1) {
+                        getDateCharsLatin1(buffer, off, year, month, dayOfMonth);
+                    } else {
+                        getDateCharsUTF16(buffer, off, year, month, dayOfMonth);
+                    }
+                    break;
+                }
+                case ISO_STANDARD_DATE: {
+                    lengthCoder -= DateTimeUtils.yearSize(value.getYear()) + 6;
+                    int off = (int) lengthCoder;
+                    if (latin1) {
+                        DateTimeUtils.getCharsLatin1(buffer, off, value);
+                    } else {
+                        DateTimeUtils.getCharsUTF16(buffer, off, value);
+                    }
+                    break;
+                }
+                default:
+                    throw new UnknownFormatConversionException("Unsupported field: " + c);
+            }
+            return lengthCoder;
+        }
+    }
+
+    static final class FormatItemLocalTime implements FormatConcatItem {
+        final char c;
+        final LocalTime value;
+
+        FormatItemLocalTime(char c, LocalTime value) {
+            this.c = c;
+            this.value = value;
+        }
+
+        @Override
+        public long mix(long lengthCoder) {
+            int size = switch (c) {
+                case TIME         -> 8;
+                case TIME_12_HOUR -> 11;
+                case TIME_24_HOUR -> 5;
+                default -> throw new UnknownFormatConversionException("Unsupported field: " + c);
+            };
+            return lengthCoder + size;
+        }
+
+        @Override
+        public long prepend(long lengthCoder, byte[] buffer) {
+            boolean latin1 = isLatin1(lengthCoder);
+            return switch (c) {
+                case TIME         -> prependTime(lengthCoder, buffer, latin1, value);
+                case TIME_12_HOUR -> prependTime12Hour(lengthCoder, buffer, latin1, value);
+                case TIME_24_HOUR -> prependTime24Hour(lengthCoder, buffer, latin1, value);
+                default -> throw new UnknownFormatConversionException("Unsupported field: " + c);
+            };
+        }
+
+        static long prependTime(long lengthCoder, byte[] buffer, boolean latin1, LocalTime value) {
+            lengthCoder -= 8;
+            int off = (int) lengthCoder;
+            int hour   = value.getHour(),
+                minute = value.getMinute(),
+                second = value.getSecond();
+            if (latin1) {
+                DateTimeUtils.getLocalTimeCharsLatin1(buffer, off, hour, minute, second);
+            } else {
+                DateTimeUtils.getLocalTimeCharsUTF16(buffer, off, hour, minute, second);
+            }
+            return lengthCoder;
+        }
+
+        static long prependTime12Hour(long lengthCoder, byte[] buffer, boolean latin1, LocalTime value) {
+            lengthCoder -= 11;
+            int off = (int) lengthCoder;
+            int hour   = value.getHour(),
+                minute = value.getMinute(),
+                second = value.getSecond();
+            if (latin1) {
+                getTime12HourCharsLatin1(buffer, off, hour, minute, second);
+            } else {
+                getTime12HourCharsUTF16(buffer, off, hour, minute, second);
+            }
+            return lengthCoder;
+        }
+
+        static long prependTime24Hour(long lengthCoder, byte[] buffer, boolean latin1, LocalTime value) {
+            lengthCoder -= 5;
+            int off = (int) lengthCoder;
+            int hour   = value.getHour(),
+                minute = value.getMinute();
+            if (latin1) {
+                getTime24HourCharsLatin1(buffer, off, hour, minute);
+            } else {
+                getTime24HourCharsUTF16(buffer, off, hour, minute);
+            }
+            return lengthCoder;
+        }
+    }
+
+    static final class FormatItemDate implements FormatConcatItem {
+        final char c;
+        final Date value;
+
+        FormatItemDate(char c, Date value) {
+            this.c = c;
+            this.value = value;
+        }
+
+        @Override
+        public long mix(long lengthCoder) {
+            int size = switch (c) {
+                case TIME_12_HOUR      -> 11;
+                case TIME_24_HOUR      -> 5;
+                case TIME, DATE        -> 8;
+                case DATE_TIME         -> DateTimeUtils.stringSize(value);
+                case ISO_STANDARD_DATE -> isoStandardDateSize(JDA.normalize(value));
+                default -> throw new UnknownFormatConversionException("Unsupported field: " + c);
+            };
+            return lengthCoder + size;
+        }
+
+        @Override
+        public long prepend(long lengthCoder, byte[] buffer) {
+            boolean latin1 = isLatin1(lengthCoder);
+            BaseCalendar.Date date = JDA.normalize(value);
+            return switch (c) {
+                case TIME              -> prependTime(lengthCoder, buffer, latin1, date);
+                case TIME_12_HOUR      -> prependTime12Hour(lengthCoder, buffer, latin1, date);
+                case TIME_24_HOUR      -> prependTime24Hour(lengthCoder, buffer, latin1, date);
+                case DATE              -> prependDate(lengthCoder, buffer, latin1, date);
+                case DATE_TIME         -> prependDateTime(lengthCoder, buffer, latin1, date);
+                case ISO_STANDARD_DATE -> prependISODate(lengthCoder, buffer, latin1, date);
+                default -> throw new UnknownFormatConversionException("Unsupported field: " + c);
+            };
+        }
+
+        static int isoStandardDateSize(BaseCalendar.Date value) {
+            return Math.max(4, JLA.stringSize(value.getYear())) + 6;
+        }
+
+        static long prependDate(long lengthCoder, byte[] buffer, boolean latin1, BaseCalendar.Date date) {
+            lengthCoder -= 8;
+            int off = (int) lengthCoder;
+            int year       = date.getYear(),
+                month      = date.getMonth(),
+                dayOfMonth = date.getDayOfMonth();
+            if (latin1) {
+                getDateCharsLatin1(buffer, off, year, month, dayOfMonth);
+            } else {
+                getDateCharsUTF16(buffer, off, year, month, dayOfMonth);
+            }
+            return lengthCoder;
+        }
+
+        static long prependISODate(long lengthCoder, byte[] buffer, boolean latin1, BaseCalendar.Date date) {
+            lengthCoder -= isoStandardDateSize(date);
+            int off = (int) lengthCoder;
+            if (latin1) {
+                DateTimeUtils.getDateCharsLatin1(buffer, off, date);
+            } else {
+                DateTimeUtils.getDateCharsUTF16(buffer, off, date);
+            }
+            return lengthCoder;
+        }
+
+        static long prependTime(long lengthCoder, byte[] buffer, boolean latin1, BaseCalendar.Date date) {
+            lengthCoder -= 8;
+            int off = (int) lengthCoder;
+            int hour   = date.getHours(),
+                minute = date.getMinutes(),
+                second = date.getSeconds();
+            if (latin1) {
+                DateTimeUtils.getLocalTimeCharsLatin1(buffer, off, hour, minute, second);
+            } else {
+                DateTimeUtils.getLocalTimeCharsUTF16(buffer, off, hour, minute, second);
+            }
+            return lengthCoder;
+        }
+
+        static long prependTime12Hour(long lengthCoder, byte[] buffer, boolean latin1, BaseCalendar.Date date) {
+            lengthCoder -= 11;
+            int off = (int) lengthCoder;
+            int hour   = date.getHours(),
+                minute = date.getMinutes(),
+                second = date.getSeconds();
+            if (latin1) {
+                getTime12HourCharsLatin1(buffer, off, hour, minute, second);
+            } else {
+                getTime12HourCharsUTF16(buffer, off, hour, minute, second);
+            }
+            return lengthCoder;
+        }
+
+        static long prependTime24Hour(long lengthCoder, byte[] buffer, boolean latin1, BaseCalendar.Date date) {
+            lengthCoder -= 5;
+            int off = (int) lengthCoder;
+            int hour   = date.getHours(),
+                minute = date.getMinutes();
+            if (latin1) {
+                getTime24HourCharsLatin1(buffer, off, hour, minute);
+            } else {
+                getTime24HourCharsUTF16(buffer, off, hour, minute);
+            }
+            return lengthCoder;
+        }
+
+        static long prependDateTime(long lengthCoder, byte[] buffer, boolean latin1, BaseCalendar.Date date) {
+            lengthCoder -= DateTimeUtils.stringSize(date);
+            int off = (int) lengthCoder;
+            if (latin1) {
+                DateTimeUtils.getCharsLatin1(buffer, off, date);
+            } else {
+                DateTimeUtils.getCharsUTF16(buffer, off, date);
+            }
+            return lengthCoder;
+        }
+    }
+
+    private static void getDateCharsLatin1(byte[] buffer, int off, int year, int month, int dayOfMonth) {
+        JLA.writeDigitPairLatin1(buffer, off, month);
+        buffer[off + 2] = '/';
+        JLA.writeDigitPairLatin1(buffer, off + 3, dayOfMonth);
+        buffer[off + 5] = '/';
+        JLA.writeDigitPairLatin1(buffer, off + 6, year % 100);
+    }
+
+    private static void getDateCharsUTF16(byte[] buffer, int off, int year, int month, int dayOfMonth) {
+        JLA.writeDigitPairUTF16(buffer, off, month);
+        JLA.putCharUTF16(buffer, off + 2, '/');
+        JLA.writeDigitPairUTF16(buffer, off + 3, dayOfMonth);
+        JLA.putCharUTF16(buffer, off + 5, '/');
+        JLA.writeDigitPairUTF16(buffer, off + 6, year % 100);
+    }
+
+    private static void getTime24HourCharsLatin1(byte[] buffer, int off, int hour, int minute) {
+        JLA.writeDigitPairLatin1(buffer, off, hour);
+        buffer[off + 2] = ':';
+        JLA.writeDigitPairLatin1(buffer, off + 3, minute);
+    }
+
+    private static void getTime24HourCharsUTF16(byte[] buffer, int off, int hour, int minute) {
+        JLA.writeDigitPairUTF16(buffer, off, hour);
+        JLA.putCharUTF16(buffer, off + 2, ':');
+        JLA.writeDigitPairUTF16(buffer, off + 3, minute);
+    }
+
+    private static void getTime12HourCharsLatin1(byte[] buffer, int off, int hour, int minute, int second) {
+        int h12 = hour == 0 ? 12
+                : hour > 12 ? hour - 12 : hour;
+        JLA.writeDigitPairLatin1(buffer, off, h12);
+        buffer[off + 2] = ':';
+        JLA.writeDigitPairLatin1(buffer, off + 3, minute);
+        buffer[off + 5] = ':';
+        JLA.writeDigitPairLatin1(buffer, off + 6, second);
+        buffer[off + 8] = ' ';
+        buffer[off + 9] = (byte) (hour < 12 ? 'A' : 'P');
+        buffer[off + 10] = 'M';
+    }
+
+    private static void getTime12HourCharsUTF16(byte[] buffer, int off, int hour, int minute, int second) {
+        int h12 = hour == 0 ? 12
+                : hour > 12 ? hour - 12 : hour;
+        JLA.writeDigitPairUTF16(buffer, off, h12);
+        JLA.putCharUTF16(buffer, off + 2, ':');
+        JLA.writeDigitPairUTF16(buffer, off + 3, minute);
+        JLA.putCharUTF16(buffer, off + 5, ':');
+        JLA.writeDigitPairUTF16(buffer, off + 6, second);
+        JLA.putCharUTF16(buffer, off + 8, ' ');
+        JLA.putCharUTF16(buffer, off + 9, hour < 12 ? 'A' : 'P');
+        JLA.putCharUTF16(buffer, off + 10, 'M');
     }
 }

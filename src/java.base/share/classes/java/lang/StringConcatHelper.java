@@ -27,12 +27,15 @@ package java.lang;
 
 import jdk.internal.misc.Unsafe;
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.util.DateTimeUtils;
 import jdk.internal.util.FormatConcatItem;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.time.*;
+import java.util.Date;
 
 /**
  * Helper for string concatenation. These methods are mostly looked up with private lookups
@@ -140,6 +143,109 @@ final class StringConcatHelper {
         lengthCoder = value.mix(lengthCoder);
 
         return checkOverflow(lengthCoder);
+    }
+
+    /**
+     * Mix value length and coder into current length and coder.
+     * @param lengthCoder String length with coder packed into higher bits
+     *                    the upper word.
+     * @param value       value to mix in
+     * @return            new length and coder
+     * @since 22
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+    static long mix(long lengthCoder, LocalDate value) {
+        return checkOverflow(lengthCoder + DateTimeUtils.stringSize(value));
+    }
+
+    /**
+     * Mix value length and coder into current length and coder.
+     * @param lengthCoder String length with coder packed into higher bits
+     *                    the upper word.
+     * @param value       value to mix in
+     * @return            new length and coder
+     * @since 22
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+    static long mix(long lengthCoder, LocalTime value) {
+        return checkOverflow(lengthCoder + DateTimeUtils.stringSize(value));
+    }
+
+    /**
+     * Mix value length and coder into current length and coder.
+     * @param lengthCoder String length with coder packed into higher bits
+     *                    the upper word.
+     * @param value       value to mix in
+     * @return            new length and coder
+     * @since 22
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+    static long mix(long lengthCoder, LocalDateTime value) {
+        return checkOverflow(lengthCoder + DateTimeUtils.stringSize(value));
+    }
+
+    /**
+     * Mix value length and coder into current length and coder.
+     * @param lengthCoder String length with coder packed into higher bits
+     *                    the upper word.
+     * @param value       value to mix in
+     * @return            new length and coder
+     * @since 22
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+    static long mix(long lengthCoder, Instant value) {
+        return checkOverflow(lengthCoder + DateTimeUtils.stringSize(value));
+    }
+
+    /**
+     * Mix value length and coder into current length and coder.
+     * @param lengthCoder String length with coder packed into higher bits
+     *                    the upper word.
+     * @param value       value to mix in
+     * @return            new length and coder
+     * @since 22
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+    static long mix(long lengthCoder, OffsetTime value) {
+        return checkOverflow(lengthCoder + DateTimeUtils.stringSize(value));
+    }
+
+    /**
+     * Mix value length and coder into current length and coder.
+     * @param lengthCoder String length with coder packed into higher bits
+     *                    the upper word.
+     * @param value       value to mix in
+     * @return            new length and coder
+     * @since 22
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+    static long mix(long lengthCoder, OffsetDateTime value) {
+        return checkOverflow(lengthCoder + DateTimeUtils.stringSize(value));
+    }
+
+    /**
+     * Mix value length and coder into current length and coder.
+     * @param lengthCoder String length with coder packed into higher bits
+     *                    the upper word.
+     * @param value       value to mix in
+     * @return            new length and coder
+     * @since 22
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+    static long mix(long lengthCoder, ZonedDateTime value) {
+        return checkOverflow(lengthCoder + DateTimeUtils.stringSize(value));
+    }
+
+    /**
+     * Mix value length and coder into current length and coder.
+     * @param lengthCoder String length with coder packed into higher bits
+     *                    the upper word.
+     * @param value       value to mix in
+     * @return            new length and coder
+     * @since 22
+     */
+    static long mix(long lengthCoder, Date value) {
+        return checkOverflow(lengthCoder + DateTimeUtils.stringSize(value));
     }
 
     /**
@@ -389,6 +495,299 @@ final class StringConcatHelper {
     }
 
     /**
+     * Prepends the stringly representation of LocalDate value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param indexCoder final char index in the buffer, along with coder packed
+     *                   into higher bits.
+     * @param buf        buffer to append to
+     * @param value      LocalDate value to encode
+     * @return           updated index (coder value retained)
+     */
+    private static long prepend(long indexCoder, byte[] buf, LocalDate value) {
+        indexCoder -= DateTimeUtils.stringSize(value);
+        if (indexCoder < UTF16) {
+            DateTimeUtils.getCharsLatin1(buf, (int)indexCoder, value);
+        } else {
+            DateTimeUtils.getCharsUTF16(buf, (int)indexCoder, value);
+        }
+        return indexCoder;
+    }
+
+    /**
+     * Prepends constant and the stringly representation of value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param indexCoder final char index in the buffer, along with coder packed
+     *                   into higher bits.
+     * @param buf        buffer to append to
+     * @param value      LocalDate value to encode
+     * @param prefix     a constant to prepend before value
+     * @return           updated index (coder value retained)
+     */
+    static long prepend(long indexCoder, byte[] buf, LocalDate value, String prefix) {
+        indexCoder = prepend(indexCoder, buf, value);
+        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
+        return indexCoder;
+    }
+
+    /**
+     * Prepends the stringly representation of LocalTime value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param indexCoder final char index in the buffer, along with coder packed
+     *                   into higher bits.
+     * @param buf        buffer to append to
+     * @param value      LocalTime value to encode
+     * @return           updated index (coder value retained)
+     */
+    private static long prepend(long indexCoder, byte[] buf, LocalTime value) {
+        indexCoder -= DateTimeUtils.stringSize(value);
+        if (indexCoder < UTF16) {
+            DateTimeUtils.getCharsLatin1(buf, (int)indexCoder, value);
+        } else {
+            DateTimeUtils.getCharsUTF16(buf, (int)indexCoder, value);
+        }
+        return indexCoder;
+    }
+
+    /**
+     * Prepends constant and the stringly representation of value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param indexCoder final char index in the buffer, along with coder packed
+     *                   into higher bits.
+     * @param buf        buffer to append to
+     * @param value      LocalTime value to encode
+     * @param prefix     a constant to prepend before value
+     * @return           updated index (coder value retained)
+     */
+    static long prepend(long indexCoder, byte[] buf, LocalTime value, String prefix) {
+        indexCoder = prepend(indexCoder, buf, value);
+        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
+        return indexCoder;
+    }
+
+    /**
+     * Prepends the stringly representation of LocalDateTime value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param indexCoder final char index in the buffer, along with coder packed
+     *                   into higher bits.
+     * @param buf        buffer to append to
+     * @param value      LocalDateTime value to encode
+     * @return           updated index (coder value retained)
+     */
+    private static long prepend(long indexCoder, byte[] buf, LocalDateTime value) {
+        indexCoder -= DateTimeUtils.stringSize(value);
+        if (indexCoder < UTF16) {
+            DateTimeUtils.getCharsLatin1(buf, (int)indexCoder, value);
+        } else {
+            DateTimeUtils.getCharsUTF16(buf, (int)indexCoder, value);
+        }
+        return indexCoder;
+    }
+
+    static long prepend(long indexCoder, byte[] buf, LocalDateTime value, String prefix) {
+        indexCoder = prepend(indexCoder, buf, value);
+        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
+        return indexCoder;
+    }
+
+    /**
+     * Prepends the stringly representation of Instant value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param indexCoder final char index in the buffer, along with coder packed
+     *                   into higher bits.
+     * @param buf        buffer to append to
+     * @param value      Instant value to encode
+     * @return           updated index (coder value retained)
+     */
+    private static long prepend(long indexCoder, byte[] buf, Instant value) {
+        indexCoder -= DateTimeUtils.stringSize(value);
+        if (indexCoder < UTF16) {
+            DateTimeUtils.getCharsLatin1(buf, (int)indexCoder, value);
+        } else {
+            DateTimeUtils.getCharsUTF16(buf, (int)indexCoder, value);
+        }
+        return indexCoder;
+    }
+
+    /**
+     * Prepends constant and the stringly representation of value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param indexCoder final char index in the buffer, along with coder packed
+     *                   into higher bits.
+     * @param buf        buffer to append to
+     * @param value      Instant value to encode
+     * @param prefix     a constant to prepend before value
+     * @return           updated index (coder value retained)
+     */
+    static long prepend(long indexCoder, byte[] buf, Instant value, String prefix) {
+        indexCoder = prepend(indexCoder, buf, value);
+        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
+        return indexCoder;
+    }
+
+    /**
+     * Prepends the stringly representation of OffsetTime value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param indexCoder final char index in the buffer, along with coder packed
+     *                   into higher bits.
+     * @param buf        buffer to append to
+     * @param value      OffsetTime value to encode
+     * @return           updated index (coder value retained)
+     */
+    static long prepend(long indexCoder, byte[] buf, OffsetTime value) {
+        indexCoder = prepend(indexCoder, buf, value.getOffset().getId());
+        LocalTime time = value.toLocalTime();
+        indexCoder -= DateTimeUtils.stringSize(time);
+        if (indexCoder < UTF16) {
+            DateTimeUtils.getCharsLatin1(buf, (int)indexCoder, time);
+        } else {
+            DateTimeUtils.getCharsUTF16(buf, (int)indexCoder, time);
+        }
+
+        return indexCoder;
+    }
+
+    /**
+     * Prepends constant and the stringly representation of value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param indexCoder final char index in the buffer, along with coder packed
+     *                   into higher bits.
+     * @param buf        buffer to append to
+     * @param value      OffsetTime value to encode
+     * @param prefix     a constant to prepend before value
+     * @return           updated index (coder value retained)
+     */
+    static long prepend(long indexCoder, byte[] buf, OffsetTime value, String prefix) {
+        indexCoder = prepend(indexCoder, buf, value);
+        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
+        return indexCoder;
+    }
+
+    /**
+     * Prepends the stringly representation of OffsetDateTime value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param indexCoder final char index in the buffer, along with coder packed
+     *                   into higher bits.
+     * @param buf        buffer to append to
+     * @param value      OffsetDateTime value to encode
+     * @return           updated index (coder value retained)
+     */
+    private static long prepend(long indexCoder, byte[] buf, OffsetDateTime value) {
+        indexCoder = prepend(indexCoder, buf, value.getOffset().getId());
+        LocalDateTime dateTime = value.toLocalDateTime();
+        indexCoder -= DateTimeUtils.stringSize(dateTime);
+        if (indexCoder < UTF16) {
+            DateTimeUtils.getCharsLatin1(buf, (int)indexCoder, dateTime);
+        } else {
+            DateTimeUtils.getCharsUTF16(buf, (int)indexCoder, dateTime);
+        }
+        return indexCoder;
+    }
+
+    /**
+     * Prepends constant and the stringly representation of value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param indexCoder final char index in the buffer, along with coder packed
+     *                   into higher bits.
+     * @param buf        buffer to append to
+     * @param value      OffsetDateTime value to encode
+     * @param prefix     a constant to prepend before value
+     * @return           updated index (coder value retained)
+     */
+    static long prepend(long indexCoder, byte[] buf, OffsetDateTime value, String prefix) {
+        indexCoder = prepend(indexCoder, buf, value);
+        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
+        return indexCoder;
+    }
+
+    /**
+     * Prepends the stringly representation of ZonedDateTime value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param indexCoder final char index in the buffer, along with coder packed
+     *                   into higher bits.
+     * @param buf        buffer to append to
+     * @param value      ZonedDateTime value to encode
+     * @return           updated index (coder value retained)
+     */
+    private static long prepend(long indexCoder, byte[] buf, ZonedDateTime value) {
+        ZoneOffset offset = value.getOffset();
+        ZoneId zone = value.getZone();
+        if (offset != zone) {
+            indexCoder = prepend(indexCoder, buf, ']');
+            indexCoder = prepend(indexCoder, buf, zone.toString());
+            indexCoder = prepend(indexCoder, buf, '[');
+        }
+        indexCoder = prepend(indexCoder, buf, offset.getId());
+        indexCoder = prepend(indexCoder, buf, value.toLocalDateTime());
+        return indexCoder;
+    }
+
+    /**
+     * Prepends constant and the stringly representation of value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param indexCoder final char index in the buffer, along with coder packed
+     *                   into higher bits.
+     * @param buf        buffer to append to
+     * @param value      ZonedDateTime value to encode
+     * @param prefix     a constant to prepend before value
+     * @return           updated index (coder value retained)
+     */
+    static long prepend(long indexCoder, byte[] buf, ZonedDateTime value, String prefix) {
+        indexCoder = prepend(indexCoder, buf, value);
+        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
+        return indexCoder;
+    }
+
+    /**
+     * Prepends the stringly representation of Date value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param indexCoder final char index in the buffer, along with coder packed
+     *                   into higher bits.
+     * @param buf        buffer to append to
+     * @param value      Date value to encode
+     * @return           updated index (coder value retained)
+     */
+    static long prepend(long indexCoder, byte[] buf, Date value) {
+        indexCoder -= (DateTimeUtils.stringSize(value));
+        if (indexCoder < UTF16) {
+            DateTimeUtils.getCharsLatin1(buf, (int)indexCoder, value);
+        } else {
+            DateTimeUtils.getCharsUTF16(buf, (int)indexCoder, value);
+        }
+        return indexCoder;
+    }
+
+    /**
+     * Prepends constant and the stringly representation of value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param indexCoder final char index in the buffer, along with coder packed
+     *                   into higher bits.
+     * @param buf        buffer to append to
+     * @param value      Date value to encode
+     * @param prefix     a constant to prepend before value
+     * @return           updated index (coder value retained)
+     */
+    static long prepend(long indexCoder, byte[] buf, Date value, String prefix) {
+        indexCoder = prepend(indexCoder, buf, value);
+        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
+        return indexCoder;
+    }
+
+    /**
      * Instantiates the String with given buffer and coder
      * @param buf           buffer to use
      * @param indexCoder    remaining index (should be zero) and coder
@@ -544,6 +943,12 @@ final class StringConcatHelper {
             PUTCHAR_UTF16_MH = lookupStatic("putCharUTF16", putCharMT);
         }
 
+    }
+
+    @ForceInline
+    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+    static boolean isLatin1(long indexCoder) {
+        return indexCoder < UTF16;
     }
 
     @ForceInline

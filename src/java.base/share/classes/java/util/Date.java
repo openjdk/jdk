@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.time.Instant;
+import jdk.internal.access.JavaUtilDateAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.util.calendar.BaseCalendar;
 import sun.util.calendar.CalendarSystem;
 import sun.util.calendar.CalendarUtils;
@@ -1376,5 +1378,14 @@ public class Date
      */
     public Instant toInstant() {
         return Instant.ofEpochMilli(getTime());
+    }
+
+    private static class JavaUtilDateAccessImpl implements JavaUtilDateAccess {
+        public BaseCalendar.Date normalize(Date date) {
+            return date.normalize();
+        }
+    }
+    static {
+        SharedSecrets.setJavaUtilDateAccess(new JavaUtilDateAccessImpl());
     }
 }

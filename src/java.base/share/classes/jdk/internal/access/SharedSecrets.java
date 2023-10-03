@@ -80,6 +80,7 @@ public class SharedSecrets {
     private static JavaUtilCollectionAccess javaUtilCollectionAccess;
     private static JavaUtilConcurrentTLRAccess javaUtilConcurrentTLRAccess;
     private static JavaUtilConcurrentFJPAccess javaUtilConcurrentFJPAccess;
+    private static JavaUtilDateAccess javaUtilDateAccess;
     private static JavaUtilJarAccess javaUtilJarAccess;
     private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
@@ -147,6 +148,21 @@ public class SharedSecrets {
 
     public static void setJavaUtilJarAccess(JavaUtilJarAccess access) {
         javaUtilJarAccess = access;
+    }
+
+    public static JavaUtilDateAccess getJavaUtilDateAccess() {
+        var access = javaUtilDateAccess;
+        if (access == null) {
+            // Ensure Date is initialized; we know that this class
+            // provides the shared secret
+            ensureClassInitialized(java.util.Date.class);
+            access = javaUtilDateAccess;
+        }
+        return access;
+    }
+
+    public static void setJavaUtilDateAccess(JavaUtilDateAccess javaUtilDateAccess) {
+        SharedSecrets.javaUtilDateAccess = javaUtilDateAccess;
     }
 
     public static void setJavaLangAccess(JavaLangAccess jla) {

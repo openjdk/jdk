@@ -354,6 +354,15 @@ public interface JavaLangAccess {
     char getUTF16Char(byte[] bytes, int index);
 
     /**
+     * Put the char at index in a byte[] in internal UTF-16 representation,
+     * with no bounds checks.
+     *
+     * @param bytes the UTF-16 encoded bytes
+     * @param index of the char to retrieve, 0 <= index < (bytes.length >> 1)
+     */
+    void putCharUTF16(byte[] bytes, int index, int ch);
+
+    /**
      * Encode the given string into a sequence of bytes using utf8.
      *
      * @param s the string to encode
@@ -407,6 +416,11 @@ public interface JavaLangAccess {
     MethodHandle stringConcatHelper(String name, MethodType methodType);
 
     /**
+     * Returns {@code true} if lengthCoder is Latin1
+     */
+    boolean stringConcatHelpeIsLatin1(long lengthCoder);
+
+    /**
      * Get the string concat initial coder
      */
     long stringConcatInitialCoder();
@@ -445,6 +459,53 @@ public interface JavaLangAccess {
      * @see java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
      */
     Object classData(Class<?> c);
+
+    /**
+     * Returns the string representation size for a given int value.
+     *
+     * @param x int value
+     * @return string size
+     *
+     * @implNote There are other ways to compute this: e.g. binary search,
+     * but values are biased heavily towards zero, and therefore linear search
+     * wins. The iteration results are also routinely inlined in the generated
+     * code after loop unrolling.
+     */
+    int stringSize(int i);
+
+    /**
+     * Places characters representing the integer i into the
+     * character array buf. The characters are placed into
+     * the buffer backwards starting with the least significant
+     * digit at the specified index (exclusive), and working
+     * backwards from there.
+     *
+     * @implNote This method converts positive inputs into negative
+     * values, to cover the Integer.MIN_VALUE case. Converting otherwise
+     * (negative to positive) will expose -Integer.MIN_VALUE that overflows
+     * integer.
+     *
+     * @param i     value to convert
+     * @param index next index, after the least significant digit
+     * @param buf   target buffer, Latin1-encoded
+     * @return index of the most significant digit or minus sign, if present
+     */
+    int getCharsLatin1(long i, int index, byte[] buf);
+
+    /**
+     * This is a variant of {@link StringLatin1#getChars(int, int, byte[])}, but for
+     * UTF-16 coder.
+     *
+     * @param i     value to convert
+     * @param index next index, after the least significant digit
+     * @param buf   target buffer, UTF16-coded.
+     * @return index of the most significant digit or minus sign, if present
+     */
+    int getCharsUTF16(long i, int index, byte[] buf);
+
+    void writeDigitPairLatin1(byte[] buf, int charPos, int value);
+
+    void writeDigitPairUTF16(byte[] buf, int charPos, int value);
 
     long findNative(ClassLoader loader, String entry);
 

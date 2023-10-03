@@ -2479,6 +2479,9 @@ public final class System {
             public char getUTF16Char(byte[] bytes, int index) {
                 return StringUTF16.getChar(bytes, index);
             }
+            public void putCharUTF16(byte[] bytes, int index, int ch) {
+                StringUTF16.putChar(bytes, index, ch);
+            }
             public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
                 return String.getBytesNoRepl(s, cs);
             }
@@ -2519,6 +2522,10 @@ public final class System {
                 return StringConcatHelper.lookupStatic(name, methodType);
             }
 
+            public boolean stringConcatHelpeIsLatin1(long lengthCoder) {
+                return StringConcatHelper.isLatin1(lengthCoder);
+            }
+
             public long stringConcatInitialCoder() {
                 return StringConcatHelper.initialCoder();
             }
@@ -2542,6 +2549,26 @@ public final class System {
             public long stringBuilderConcatPrepend(long lengthCoder, byte[] buf,
                                                    StringBuilder sb) {
                 return sb.prepend(lengthCoder, buf);
+            }
+
+            public int stringSize(int i) {
+                return Integer.stringSize(i);
+            }
+
+            public int getCharsLatin1(long i, int index, byte[] buf) {
+                return StringLatin1.getChars(i, index, buf);
+            }
+
+            public int getCharsUTF16(long i, int index, byte[] buf) {
+                return StringUTF16.getChars(i, index, buf);
+            }
+
+            public void writeDigitPairLatin1(byte[] buf, int charPos, int value) {
+                StringLatin1.writeDigitPair(buf, charPos, value);
+            }
+
+            public void writeDigitPairUTF16(byte[] buf, int charPos, int value) {
+                StringUTF16.putPair(buf, charPos, value);
             }
 
             public String join(String prefix, String suffix, String delimiter, String[] elements, int size) {

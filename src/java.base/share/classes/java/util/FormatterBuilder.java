@@ -32,8 +32,10 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.spi.NumberFormatProvider;
+import java.time.*;
 import java.util.FormatItem.*;
 import java.util.Formatter.*;
+import java.util.Date;
 
 import jdk.internal.util.FormatConcatItem;
 
@@ -80,7 +82,16 @@ final class FormatterBuilder {
     }
 
     private static Class<?> mapType(Class<?> type) {
-        return type.isPrimitive() || type == String.class ? type : Object.class;
+        return type.isPrimitive() || type == String.class
+                || type == LocalDate.class
+                || type == LocalDateTime.class
+                || type == LocalTime.class
+                || type == Instant.class
+                || type == OffsetTime.class
+                || type == OffsetDateTime.class
+                || type == ZonedDateTime.class
+                || type == Date.class
+                ? type : Object.class;
     }
 
     private static MethodHandle findStringConcatItemConstructor(Class<?> cls,
@@ -166,6 +177,18 @@ final class FormatterBuilder {
     private static final MethodHandle FINull_MH =
             findStringConcatItemConstructor(FormatItemNull.class);
 
+    private static final MethodHandle FILocalDate_MH =
+            findStringConcatItemConstructor(FormatItemLocalDate.class,
+                    char.class, LocalDate.class);
+
+    private static final MethodHandle FILocalTime_MH =
+            findStringConcatItemConstructor(FormatItemLocalTime.class,
+                    char.class, LocalTime.class);
+
+    private static final MethodHandle FIDate_MH =
+            findStringConcatItemConstructor(FormatItemDate.class,
+                    char.class, Date.class);
+
     private static final MethodHandle NullCheck_MH =
             findStaticMethod(FormatterBuilder.class, "nullCheck", boolean.class,
                     Object.class);
@@ -181,6 +204,27 @@ final class FormatterBuilder {
     private static final MethodHandle ToString_MH =
             findStaticMethod(String.class, "valueOf", String.class,
                     Object.class);
+
+    private static final MethodHandle ToLocalDate_LDT_MH =
+            findMethod(LocalDateTime.class, "toLocalDate", LocalDate.class);
+
+    private static final MethodHandle ToLocalDate_ZDT_MH =
+            findMethod(ZonedDateTime.class, "toLocalDate", LocalDate.class);
+
+    private static final MethodHandle ToLocalDate_ODT_MH =
+            findMethod(OffsetDateTime.class, "toLocalDate", LocalDate.class);
+
+    private static final MethodHandle ToLocalTime_LDT_MH =
+            findMethod(LocalDateTime.class, "toLocalTime", LocalTime.class);
+
+    private static final MethodHandle ToLocalTime_ZDT_MH =
+            findMethod(ZonedDateTime.class, "toLocalTime", LocalTime.class);
+
+    private static final MethodHandle ToLocalTime_ODT_MH =
+            findMethod(OffsetDateTime.class, "toLocalTime", LocalTime.class);
+
+    private static final MethodHandle ToLocalTime_OT_MH =
+            findMethod(OffsetTime.class, "toLocalTime", LocalTime.class);
 
     private static final MethodHandle HashCode_MH =
             findStaticMethod(Objects.class, "hashCode", int.class,
@@ -281,7 +325,16 @@ final class FormatterBuilder {
             }
             case STRING -> {
                 if (flags == 0 && width == -1 && precision == -1) {
-                    if (isPrimitive || ptype == String.class) {
+                    if (isPrimitive
+                            || ptype == String.class
+                            || ptype == LocalDate.class
+                            || ptype == LocalDateTime.class
+                            || ptype == LocalTime.class
+                            || ptype == OffsetTime.class
+                            || ptype == OffsetDateTime.class
+                            || ptype == ZonedDateTime.class
+                            || ptype == Instant.class
+                            || ptype == Date.class) {
                         return null;
                     } else if (itype.isPrimitive()) {
                         return mh;
@@ -373,6 +426,132 @@ final class FormatterBuilder {
                     boolean hasPrefix = isFlag(flags, ALTERNATE);
                     mh = filterReturnValue(mh,
                             insertArguments(FIHexadecimal_MH, 0, zeroPad, hasPrefix));
+                }
+            }
+            case DATE_TIME -> {
+                if (flags == 0 && isGenericDFS && width == -1) {
+                    char c = fs.c;
+                    if (c == DateTime.ISO_STANDARD_DATE && itype == LocalDate.class) {
+                        return null;
+                    }
+
+                    switch (c) {
+                        case DateTime.DATE:
+                        case DateTime.ISO_STANDARD_DATE: {
+                            if (itype == LocalDate.class) {
+                                handled = true;
+                                mh = filterReturnValue(
+                                        mh,
+                                        insertArguments(FILocalDate_MH, 0, c));
+                            } else if (itype == LocalDateTime.class) {
+                                handled = true;
+                                mh = filterReturnValue(
+                                        mh,
+                                        insertArguments(
+                                                filterArguments(
+                                                        FILocalDate_MH,
+                                                        1,
+                                                        ToLocalDate_LDT_MH),
+                                                0,
+                                                c));
+                            } else if (itype == OffsetDateTime.class) {
+                                handled = true;
+                                mh = filterReturnValue(
+                                        mh,
+                                        insertArguments(
+                                                filterArguments(
+                                                        FILocalDate_MH,
+                                                        1,
+                                                        ToLocalDate_ODT_MH),
+                                                0,
+                                                c));
+                            } else if (itype == ZonedDateTime.class) {
+                                handled = true;
+                                mh = filterReturnValue(
+                                        mh,
+                                        insertArguments(
+                                                filterArguments(
+                                                        FILocalDate_MH,
+                                                        1,
+                                                        ToLocalDate_ZDT_MH),
+                                                0,
+                                                c));
+                            } else if (itype == Date.class) {
+                                handled = true;
+                                mh = filterReturnValue(mh,
+                                        insertArguments(FIDate_MH, 0, c));
+                            }
+                            break;
+                        }
+                        case DateTime.TIME_12_HOUR:
+                        case DateTime.TIME_24_HOUR:
+                        case DateTime.TIME: {
+                            if (itype == LocalTime.class) {
+                                handled = true;
+                                mh = filterReturnValue(mh,
+                                        insertArguments(FILocalTime_MH, 0, c));
+                            } else if (itype == LocalDateTime.class) {
+                                handled = true;
+                                mh = filterReturnValue(
+                                        mh,
+                                        insertArguments(
+                                                filterArguments(
+                                                        FILocalTime_MH,
+                                                        1,
+                                                        ToLocalTime_LDT_MH),
+                                                0,
+                                                c));
+                            } else if (itype == OffsetDateTime.class) {
+                                handled = true;
+                                mh = filterReturnValue(
+                                        mh,
+                                        insertArguments(
+                                                filterArguments(
+                                                        FILocalTime_MH,
+                                                        1,
+                                                        ToLocalTime_ODT_MH),
+                                                0,
+                                                c));
+                            } else if (itype == ZonedDateTime.class) {
+                                handled = true;
+                                mh = filterReturnValue(
+                                        mh,
+                                        insertArguments(
+                                                filterArguments(
+                                                        FILocalTime_MH,
+                                                        1,
+                                                        ToLocalTime_ZDT_MH),
+                                                0,
+                                                c));
+                            } else if (itype == OffsetTime.class) {
+                                handled = true;
+                                mh = filterReturnValue(
+                                        mh,
+                                        insertArguments(
+                                                filterArguments(
+                                                        FILocalTime_MH,
+                                                        1,
+                                                        ToLocalTime_OT_MH),
+                                                0,
+                                                c));
+                            } else if (itype == Date.class) {
+                                handled = true;
+                                mh = filterReturnValue(mh,
+                                        insertArguments(FIDate_MH, 0, c));
+                            }
+                            break;
+                        }
+                        case DateTime.DATE_TIME: {
+                            if (itype == Date.class) {
+                                handled = true;
+                                mh = filterReturnValue(mh,
+                                        insertArguments(FIDate_MH, 0, c));
+                            }
+                            break;
+                        }
+                        default:
+                            break;
+                    }
                 }
             }
             default -> {

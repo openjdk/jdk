@@ -33,7 +33,9 @@ import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
 import java.lang.invoke.MethodHandles.Lookup;
+import java.time.*;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -735,7 +737,15 @@ public final class StringConcatFactory {
             BOOLEAN_IDX = 3,
             STRING_IDX = 4,
             STRING_CONCAT_ITEM = 5,
-            TYPE_COUNT = 6;
+            LOCAL_DATE_IDX = 6,
+            LOCAL_TIME_IDX = 7,
+            LOCAL_DATE_TIME_IDX = 8,
+            INSTANT_IDX = 9,
+            OFFSET_TIME_IDX = 10,
+            OFFSET_DATE_TIME_IDX = 11,
+            ZONED_DATE_TIME_IDX = 12,
+            DATE_IDX = 13,
+            TYPE_COUNT = 14;
     private static int classIndex(Class<?> cl) {
         if (cl == String.class)                          return STRING_IDX;
         if (cl == int.class)                             return INT_IDX;
@@ -743,6 +753,14 @@ public final class StringConcatFactory {
         if (cl == char.class)                            return CHAR_IDX;
         if (cl == long.class)                            return LONG_IDX;
         if (FormatConcatItem.class.isAssignableFrom(cl)) return STRING_CONCAT_ITEM;
+        if (cl == LocalDate.class)                       return LOCAL_DATE_IDX;
+        if (cl == LocalTime.class)                       return LOCAL_TIME_IDX;
+        if (cl == LocalDateTime.class)                   return LOCAL_DATE_TIME_IDX;
+        if (cl == Instant.class)                         return INSTANT_IDX;
+        if (cl == OffsetTime.class)                      return OFFSET_TIME_IDX;
+        if (cl == OffsetDateTime.class)                  return OFFSET_DATE_TIME_IDX;
+        if (cl == ZonedDateTime.class)                   return ZONED_DATE_TIME_IDX;
+        if (cl == Date.class)                            return DATE_IDX;
         throw new IllegalArgumentException("Unexpected class: " + cl);
     }
 
@@ -1091,9 +1109,18 @@ public final class StringConcatFactory {
             }
 
             boolean isSpecialized = ptype.isPrimitive();
+            boolean dt = ptype == LocalDate.class
+                    || ptype == LocalTime.class
+                    || ptype == LocalDateTime.class
+                    || ptype == Instant.class
+                    || ptype == OffsetTime.class
+                    || ptype == OffsetDateTime.class
+                    || ptype == ZonedDateTime.class
+                    || ptype == Date.class;
             boolean isFormatConcatItem = FormatConcatItem.class.isAssignableFrom(ptype);
             Class<?> ttype = isSpecialized ? promoteToIntType(ptype) :
-                             isFormatConcatItem ? FormatConcatItem.class : Object.class;
+                             isFormatConcatItem ? FormatConcatItem.class :
+                             dt ? ptype : Object.class;
             MethodHandle filter = isFormatConcatItem ? null : stringifierFor(ttype);
 
             if (filter != null) {
