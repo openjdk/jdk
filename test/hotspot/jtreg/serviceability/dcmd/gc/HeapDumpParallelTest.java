@@ -47,7 +47,7 @@ import jdk.test.lib.hprof.HprofParser;
 
 public class HeapDumpParallelTest {
 
-    private static void checkAndVerify(OutputAnalyzer dcmdOut, LingeredApp app, File heapDumpFile, boolean expectSerial) throws IOException {
+    private static void checkAndVerify(OutputAnalyzer dcmdOut, LingeredApp app, File heapDumpFile, boolean expectSerial) throws Exception {
         dcmdOut.shouldHaveExitValue(0);
         dcmdOut.shouldContain("Heap dump file created");
         OutputAnalyzer appOut = new OutputAnalyzer(app.getProcessStdout());
@@ -64,7 +64,7 @@ public class HeapDumpParallelTest {
             appOut.shouldNotContain("Dump heap objects in parallel");
             appOut.shouldNotContain("Merge heap files complete");
         }
-        verifyHeapDump(heapDumpFile);
+        HprofParser.parseAndVerify(heapDumpFile);
         if (heapDumpFile.exists()) {
             heapDumpFile.delete();
         }
@@ -124,24 +124,5 @@ public class HeapDumpParallelTest {
         System.out.println("Testing pid " + lingeredAppPid);
         PidJcmdExecutor executor = new PidJcmdExecutor("" + lingeredAppPid);
         return executor.execute("GC.heap_dump " + arg + " " + heapDumpFile.getAbsolutePath());
-    }
-
-    private static void verifyHeapDump(File dump) {
-        Asserts.assertTrue(dump.exists() && dump.isFile(), "Could not create dump file " + dump.getAbsolutePath());
-        try {
-            File out = HprofParser.parse(dump);
-
-            Asserts.assertTrue(out != null && out.exists() && out.isFile(), "Could not find hprof parser output file");
-            List<String> lines = Files.readAllLines(out.toPath());
-            Asserts.assertTrue(lines.size() > 0, "hprof parser output file is empty");
-            for (String line : lines) {
-                Asserts.assertFalse(line.matches(".*WARNING(?!.*Failed to resolve object.*constantPoolOop.*).*"));
-            }
-
-            out.delete();
-        } catch (Exception e) {
-            e.printStackTrace();
-            Asserts.fail("Could not parse dump file " + dump.getAbsolutePath());
-        }
     }
 }

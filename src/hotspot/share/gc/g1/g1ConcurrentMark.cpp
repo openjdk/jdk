@@ -1349,7 +1349,6 @@ void G1ConcurrentMark::remark() {
 }
 
 class G1ReclaimEmptyRegionsTask : public WorkerTask {
-  // Per-region work during the Cleanup pause.
   class G1ReclaimEmptyRegionsClosure : public HeapRegionClosure {
     G1CollectedHeap* _g1h;
     size_t _freed_bytes;
@@ -2317,9 +2316,9 @@ void G1CMTask::drain_local_queue(bool partially) {
   // Decide what the target size is, depending whether we're going to
   // drain it partially (so that other tasks can steal if they run out
   // of things to do) or totally (at the very end).
-  size_t target_size;
+  uint target_size;
   if (partially) {
-    target_size = MIN2((size_t)_task_queue->max_elems()/3, GCDrainStackTargetSize);
+    target_size = GCDrainStackTargetSize;
   } else {
     target_size = 0;
   }

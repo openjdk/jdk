@@ -2436,223 +2436,6 @@ encode %{
     }
   %}
 
-  // Use cr register to indicate the fast_lock result: zero for success; non-zero for failure.
-  enc_class riscv_enc_fast_lock(iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2) %{
-    C2_MacroAssembler _masm(&cbuf);
-    Register flag = t1;
-    Register oop = as_Register($object$$reg);
-    Register box = as_Register($box$$reg);
-    Register disp_hdr = as_Register($tmp1$$reg);
-    Register tmp = as_Register($tmp2$$reg);
-    Label cont;
-    Label object_has_monitor;
-    Label count, no_count;
-
-    assert_different_registers(oop, box, tmp, disp_hdr, t0);
-
-    // Load markWord from object into displaced_header.
-    __ ld(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
-
-    if (DiagnoseSyncOnValueBasedClasses != 0) {
-      __ load_klass(flag, oop);
-      __ lwu(flag, Address(flag, Klass::access_flags_offset()));
-      __ test_bit(flag, flag, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS), tmp /* tmp */);
-      __ bnez(flag, cont, true /* is_far */);
-    }
-
-    // Check for existing monitor
-    __ test_bit(t0, disp_hdr, exact_log2(markWord::monitor_value));
-    __ bnez(t0, object_has_monitor);
-
-    if (LockingMode == LM_MONITOR) {
-      __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow-path
-      __ j(cont);
-    } else if (LockingMode == LM_LEGACY) {
-      // Set tmp to be (markWord of object | UNLOCK_VALUE).
-      __ ori(tmp, disp_hdr, markWord::unlocked_value);
-
-      // Initialize the box. (Must happen before we update the object mark!)
-      __ sd(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
-      // Compare object markWord with an unlocked value (tmp) and if
-      // equal exchange the stack address of our box with object markWord.
-      // On failure disp_hdr contains the possibly locked markWord.
-      __ cmpxchg(/*memory address*/oop, /*expected value*/tmp, /*new value*/box, Assembler::int64, Assembler::aq,
-                 Assembler::rl, /*result*/disp_hdr);
-      __ mv(flag, zr);
-      __ beq(disp_hdr, tmp, cont); // prepare zero flag and goto cont if we won the cas
-
-      assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-
-      // If the compare-and-exchange succeeded, then we found an unlocked
-      // object, will have now locked it will continue at label cont
-      // We did not see an unlocked object so try the fast recursive case.
-
-      // Check if the owner is self by comparing the value in the
-      // markWord of object (disp_hdr) with the stack pointer.
-      __ sub(disp_hdr, disp_hdr, sp);
-      __ mv(tmp, (intptr_t) (~(os::vm_page_size()-1) | (uintptr_t)markWord::lock_mask_in_place));
-      // If (mark & lock_mask) == 0 and mark - sp < page_size, we are stack-locking and goto cont,
-      // hence we can store 0 as the displaced header in the box, which indicates that it is a
-      // recursive lock.
-      __ andr(tmp/*==0?*/, disp_hdr, tmp);
-      __ sd(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-      __ mv(flag, tmp); // we can use the value of tmp as the result here
-      __ j(cont);
-    } else {
-      assert(LockingMode == LM_LIGHTWEIGHT, "");
-      Label slow;
-      __ fast_lock(oop, disp_hdr, tmp, t0, slow);
-
-      // Indicate success on completion.
-      __ mv(flag, zr);
-      __ j(count);
-      __ bind(slow);
-      __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow-path
-      __ j(no_count);
-    }
-
-    // Handle existing monitor.
-    __ bind(object_has_monitor);
-    // The object's monitor m is unlocked iff m->owner == NULL,
-    // otherwise m->owner may contain a thread or a stack address.
-    //
-    // Try to CAS m->owner from NULL to current thread.
-    __ add(tmp, disp_hdr, (in_bytes(ObjectMonitor::owner_offset()) - markWord::monitor_value));
-    __ cmpxchg(/*memory address*/tmp, /*expected value*/zr, /*new value*/xthread, Assembler::int64, Assembler::aq,
-             Assembler::rl, /*result*/flag); // cas succeeds if flag == zr(expected)
-
-    if (LockingMode != LM_LIGHTWEIGHT) {
-      // Store a non-null value into the box to avoid looking like a re-entrant
-      // lock. The fast-path monitor unlock code checks for
-      // markWord::monitor_value so use markWord::unused_mark which has the
-      // relevant bit set, and also matches ObjectSynchronizer::slow_enter.
-      __ mv(tmp, (address)markWord::unused_mark().value());
-      __ sd(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-    }
-
-    __ beqz(flag, cont); // CAS success means locking succeeded
-
-    __ bne(flag, xthread, cont); // Check for recursive locking
-
-    // Recursive lock case
-    __ mv(flag, zr);
-    __ increment(Address(disp_hdr, in_bytes(ObjectMonitor::recursions_offset()) - markWord::monitor_value), 1, t0, tmp);
-
-    __ bind(cont);
-    // zero flag indicates success
-    // non-zero flag indicates failure
-    __ bnez(flag, no_count);
-
-    __ bind(count);
-    __ increment(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp);
-
-    __ bind(no_count);
-  %}
-
-  // Use cr register to indicate the fast_unlock result: zero for success; non-zero for failure.
-  enc_class riscv_enc_fast_unlock(iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2) %{
-    C2_MacroAssembler _masm(&cbuf);
-    Register flag = t1;
-    Register oop = as_Register($object$$reg);
-    Register box = as_Register($box$$reg);
-    Register disp_hdr = as_Register($tmp1$$reg);
-    Register tmp = as_Register($tmp2$$reg);
-    Label cont;
-    Label object_has_monitor;
-    Label count, no_count;
-
-    assert_different_registers(oop, box, tmp, disp_hdr, flag);
-
-    if (LockingMode == LM_LEGACY) {
-      // Find the lock address and load the displaced header from the stack.
-      __ ld(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
-      // If the displaced header is 0, we have a recursive unlock.
-      __ mv(flag, disp_hdr);
-      __ beqz(disp_hdr, cont);
-    }
-
-    // Handle existing monitor.
-    __ ld(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
-    __ test_bit(t0, tmp, exact_log2(markWord::monitor_value));
-    __ bnez(t0, object_has_monitor);
-
-    if (LockingMode == LM_MONITOR) {
-      __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow path
-      __ j(cont);
-    } else if (LockingMode == LM_LEGACY) {
-      // Check if it is still a light weight lock, this is true if we
-      // see the stack address of the basicLock in the markWord of the
-      // object.
-
-      __ cmpxchg(/*memory address*/oop, /*expected value*/box, /*new value*/disp_hdr, Assembler::int64, Assembler::relaxed,
-                 Assembler::rl, /*result*/tmp);
-      __ xorr(flag, box, tmp); // box == tmp if cas succeeds
-      __ j(cont);
-    } else {
-      assert(LockingMode == LM_LIGHTWEIGHT, "");
-      Label slow;
-      __ fast_unlock(oop, tmp, box, disp_hdr, slow);
-
-      // Indicate success on completion.
-      __ mv(flag, zr);
-      __ j(count);
-      __ bind(slow);
-      __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow path
-      __ j(no_count);
-    }
-
-    assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-
-    // Handle existing monitor.
-    __ bind(object_has_monitor);
-    STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
-    __ add(tmp, tmp, -(int)markWord::monitor_value); // monitor
-
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      // If the owner is anonymous, we need to fix it -- in an outline stub.
-      Register tmp2 = disp_hdr;
-      __ ld(tmp2, Address(tmp, ObjectMonitor::owner_offset()));
-      __ test_bit(t0, tmp2, exact_log2(ObjectMonitor::ANONYMOUS_OWNER));
-      C2HandleAnonOMOwnerStub* stub = new (Compile::current()->comp_arena()) C2HandleAnonOMOwnerStub(tmp, tmp2);
-      Compile::current()->output()->add_stub(stub);
-      __ bnez(t0, stub->entry(), /* is_far */ true);
-      __ bind(stub->continuation());
-    }
-
-    __ ld(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset()));
-
-    Label notRecursive;
-    __ beqz(disp_hdr, notRecursive); // Will be 0 if not recursive.
-
-    // Recursive lock
-    __ addi(disp_hdr, disp_hdr, -1);
-    __ sd(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset()));
-    __ mv(flag, zr);
-    __ j(cont);
-
-    __ bind(notRecursive);
-    __ ld(flag, Address(tmp, ObjectMonitor::EntryList_offset()));
-    __ ld(disp_hdr, Address(tmp, ObjectMonitor::cxq_offset()));
-    __ orr(flag, flag, disp_hdr); // Will be 0 if both are 0.
-    __ bnez(flag, cont);
-    // need a release store here
-    __ la(tmp, Address(tmp, ObjectMonitor::owner_offset()));
-    __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-    __ sd(zr, Address(tmp)); // set unowned
-
-    __ bind(cont);
-    // zero flag indicates success
-    // non-zero flag indicates failure
-    __ bnez(flag, no_count);
-
-    __ bind(count);
-    __ decrement(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp);
-
-    __ bind(no_count);
-  %}
-
   // arithmetic encodings
 
   enc_class riscv_enc_divw(iRegI dst, iRegI src1, iRegI src2) %{
@@ -6864,6 +6647,21 @@ instruct mulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2)
   ins_pipe(lmul_reg_reg);
 %}
 
+instruct umulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2)
+%{
+  match(Set dst (UMulHiL src1 src2));
+  ins_cost(IMUL_COST);
+  format %{ "mulhu  $dst, $src1, $src2\t# umulhi, #@umulHiL_rReg" %}
+
+  ins_encode %{
+    __ mulhu(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             as_Register($src2$$reg));
+  %}
+
+  ins_pipe(lmul_reg_reg);
+%}
+
 // Integer Divide
 
 instruct divI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
@@ -7692,6 +7490,20 @@ instruct sqrtD_reg(fRegD dst, fRegD src) %{
   %}
 
   ins_pipe(fp_sqrt_d);
+%}
+
+// Round Instruction
+instruct roundD_reg(fRegD dst, fRegD src, immI rmode, iRegLNoSp tmp1, iRegLNoSp tmp2, iRegLNoSp tmp3) %{
+  match(Set dst (RoundDoubleMode src rmode));
+  ins_cost(2 * XFER_COST + BRANCH_COST);
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3);
+
+  format %{ "RoundDoubleMode $src, $rmode" %}
+  ins_encode %{
+    __ round_double_mode(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src$$reg), $rmode$$constant, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 // Arithmetic Instructions End
@@ -10387,7 +10199,9 @@ instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iReg
   ins_cost(LOAD_COST * 2 + STORE_COST * 3 + ALU_COST * 6 + BRANCH_COST * 3);
   format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2, #@cmpFastLock" %}
 
-  ins_encode(riscv_enc_fast_lock(object, box, tmp1, tmp2));
+  ins_encode %{
+    __ fast_lock($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
+  %}
 
   ins_pipe(pipe_serial);
 %}
@@ -10401,7 +10215,9 @@ instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iR
   ins_cost(LOAD_COST * 2 + STORE_COST + ALU_COST * 2 + BRANCH_COST * 4);
   format %{ "fastunlock $object,$box\t! kills $tmp1, $tmp2, #@cmpFastUnlock" %}
 
-  ins_encode(riscv_enc_fast_unlock(object, box, tmp1, tmp2));
+  ins_encode %{
+    __ fast_unlock($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
+  %}
 
   ins_pipe(pipe_serial);
 %}

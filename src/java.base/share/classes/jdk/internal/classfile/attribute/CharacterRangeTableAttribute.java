@@ -54,6 +54,8 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * several code index ranges, but there will be a smallest code index range, and
  * for each kind of range in which it is enclosed there will be a smallest code
  * index range. The character range entries may appear in any order.
+ * <p>
+ * The attribute permits multiple instances in a given location.
  */
 public sealed interface CharacterRangeTableAttribute
         extends Attribute<CharacterRangeTableAttribute>
