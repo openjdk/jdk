@@ -736,7 +736,10 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitLambda(JCLambda lambda) {
-        visitDeferred(() -> visitScoped(false, () -> super.visitLambda(lambda)));
+        visitDeferred(() -> visitScoped(false, () -> {
+            scan(lambda.body);
+            refs.discardExprs(depth);       // needed in case body is a JCExpression
+        }));
     }
 
     @Override
@@ -1107,7 +1110,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
             // Perform action
             Assert.check(checkInvariants(true, false));
             action.run();
-            Assert.check(checkInvariants(true, true));
+            Assert.check(checkInvariants(true, promote));
 
             // "Promote" ExprRef's to the enclosing lexical scope, if requested
             if (promote) {
