@@ -26,6 +26,7 @@
  * @bug 5078214
  * @key headful
  * @summary ToolTip is shown partially when the application is near the bottom of screen.
+ * @library /test/lib
  * @build jtreg.SkippedException
  * @run main bug5078214
  */
