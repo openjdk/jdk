@@ -25,9 +25,13 @@
 
 package java.nio.file;
 
-import java.nio.file.attribute.*;
 import java.io.InputStream;
 import java.io.IOException;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.spi.FileSystemProvider;
 
 /**
  * Helper class to support copying or moving files when the source and target
@@ -131,6 +135,10 @@ class CopyMoveHelper {
 
         // delete target if it exists and REPLACE_EXISTING is specified
         if (opts.replaceExisting) {
+            // ensure source can be copied
+            FileSystemProvider provider = source.getFileSystem().provider();
+            provider.checkAccess(source, AccessMode.READ);
+
             Files.deleteIfExists(target);
         } else if (Files.exists(target))
             throw new FileAlreadyExistsException(target.toString());
