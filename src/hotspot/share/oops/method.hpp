@@ -27,10 +27,8 @@
 
 #include "code/compressedStream.hpp"
 #include "compiler/compilerDefinitions.hpp"
-#include "interpreter/invocationCounter.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
-#include "oops/methodCounters.hpp"
 #include "oops/methodFlags.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.hpp"
@@ -216,33 +214,11 @@ class Method : public Metadata {
   void clear_all_breakpoints();
   // Tracking number of breakpoints, for fullspeed debugging.
   // Only mutated by VM thread.
-  u2   number_of_breakpoints() const {
-    MethodCounters* mcs = method_counters();
-    if (mcs == nullptr) {
-      return 0;
-    } else {
-      return mcs->number_of_breakpoints();
-    }
-  }
-  void incr_number_of_breakpoints(Thread* current) {
-    MethodCounters* mcs = get_method_counters(current);
-    if (mcs != nullptr) {
-      mcs->incr_number_of_breakpoints();
-    }
-  }
-  void decr_number_of_breakpoints(Thread* current) {
-    MethodCounters* mcs = get_method_counters(current);
-    if (mcs != nullptr) {
-      mcs->decr_number_of_breakpoints();
-    }
-  }
+  inline u2 number_of_breakpoints() const;
+  inline void incr_number_of_breakpoints(Thread* current);
+  inline void decr_number_of_breakpoints(Thread* current);
   // Initialization only
-  void clear_number_of_breakpoints() {
-    MethodCounters* mcs = method_counters();
-    if (mcs != nullptr) {
-      mcs->clear_number_of_breakpoints();
-    }
-  }
+  inline void clear_number_of_breakpoints();
 #endif // !INCLUDE_JVMTI
 
   // index into InstanceKlass methods() array
@@ -280,22 +256,10 @@ class Method : public Metadata {
 
 #if COMPILER2_OR_JVMCI
   // Count of times method was exited via exception while interpreting
-  void interpreter_throwout_increment(Thread* current) {
-    MethodCounters* mcs = get_method_counters(current);
-    if (mcs != nullptr) {
-      mcs->interpreter_throwout_increment();
-    }
-  }
+  inline void interpreter_throwout_increment(Thread* current);
 #endif
 
-  int  interpreter_throwout_count() const        {
-    MethodCounters* mcs = method_counters();
-    if (mcs == nullptr) {
-      return 0;
-    } else {
-      return mcs->interpreter_throwout_count();
-    }
-  }
+  inline int interpreter_throwout_count() const;
 
   u2 size_of_parameters() const { return constMethod()->size_of_parameters(); }
 
@@ -356,36 +320,12 @@ class Method : public Metadata {
 
   bool init_method_counters(MethodCounters* counters);
 
-  int prev_event_count() const {
-    MethodCounters* mcs = method_counters();
-    return mcs == nullptr ? 0 : mcs->prev_event_count();
-  }
-  void set_prev_event_count(int count) {
-    MethodCounters* mcs = method_counters();
-    if (mcs != nullptr) {
-      mcs->set_prev_event_count(count);
-    }
-  }
-  jlong prev_time() const {
-    MethodCounters* mcs = method_counters();
-    return mcs == nullptr ? 0 : mcs->prev_time();
-  }
-  void set_prev_time(jlong time) {
-    MethodCounters* mcs = method_counters();
-    if (mcs != nullptr) {
-      mcs->set_prev_time(time);
-    }
-  }
-  float rate() const {
-    MethodCounters* mcs = method_counters();
-    return mcs == nullptr ? 0 : mcs->rate();
-  }
-  void set_rate(float rate) {
-    MethodCounters* mcs = method_counters();
-    if (mcs != nullptr) {
-      mcs->set_rate(rate);
-    }
-  }
+  inline int prev_event_count() const;
+  inline void set_prev_event_count(int count);
+  inline jlong prev_time() const;
+  inline void set_prev_time(jlong time);
+  inline float rate() const;
+  inline void set_rate(float rate);
 
   int invocation_count() const;
   int backedge_count() const;

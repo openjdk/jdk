@@ -270,11 +270,14 @@ class PredicateBlock : public StackObj {
   Node* _entry;
 
   static Node* skip_regular_predicates(Node* regular_predicate_proj, Deoptimization::DeoptReason deopt_reason);
+  DEBUG_ONLY(void verify_block();)
 
  public:
   PredicateBlock(Node* predicate_proj, Deoptimization::DeoptReason deopt_reason)
       : _parse_predicate(predicate_proj, deopt_reason),
-        _entry(skip_regular_predicates(_parse_predicate.entry(), deopt_reason)) {}
+        _entry(skip_regular_predicates(_parse_predicate.entry(), deopt_reason)) {
+    DEBUG_ONLY(verify_block();)
+  }
 
   // Returns the control input node into this Regular Predicate block. This is either:
   // - The control input to the first If node in the block representing a Runtime Predicate if there is at least one
@@ -354,5 +357,20 @@ class Predicates : public StackObj {
   bool has_any() const {
     return _entry != _loop_entry;
   }
+};
+
+// This class iterates over the Parse Predicates of a loop.
+class ParsePredicateIterator : public StackObj {
+  GrowableArray<ParsePredicateNode*> _parse_predicates;
+  int _current_index;
+
+ public:
+  ParsePredicateIterator(const Predicates& predicates);
+
+  bool has_next() const {
+    return _current_index < _parse_predicates.length();
+  }
+
+  ParsePredicateNode* next();
 };
 #endif // SHARE_OPTO_PREDICATES_HPP

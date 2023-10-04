@@ -22,24 +22,26 @@
  */
 
 /* @test
- * @bug 4770745 6218846 6218848 6237956
+ * @bug 4770745 6218846 6218848 6237956 8313765
  * @summary test for correct detection and reporting of corrupted zip files
  * @author Martin Buchholz
  * @run junit CorruptedZipFiles
  */
 
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -258,9 +260,9 @@ public class CorruptedZipFiles {
      */
     @Test
     public void excessiveExtraFieldLength() throws IOException {
-        short existingExtraLength = buffer.getShort(cenpos + CENEXT);
-        buffer.putShort(cenpos+CENEXT, (short) (existingExtraLength + 1));
-        assertZipException(".*invalid zip64 extra data field size.*");
+        buffer.put(cenpos+CENEXT, (byte) 0xff);
+        buffer.put(cenpos+CENEXT+1, (byte) 0xff);
+        assertZipException(".*extra data field size too long.*");
     }
 
     /*

@@ -27,6 +27,7 @@ package java.lang.foreign;
 
 import jdk.internal.foreign.layout.ValueLayouts;
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.javac.Restricted;
 import jdk.internal.reflect.CallerSensitive;
 
 import java.lang.foreign.Linker.Option;
@@ -108,6 +109,7 @@ public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.O
      * @see #targetLayout()
      */
     @CallerSensitive
+    @Restricted
     AddressLayout withTargetLayout(MemoryLayout layout);
 
     /**

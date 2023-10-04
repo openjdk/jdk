@@ -946,6 +946,13 @@
     <Field type="string" name="errorMessage" label="Error Message" description="In case of a load error, error description" />
   </Event>
 
+  <Event name="NativeLibraryUnload" category="Java Virtual Machine, Runtime" label="Native Library Unload" thread="false" stackTrace="true" startTime="true"
+    description="Information about a dynamic library or other native image unload operation">
+    <Field type="string" name="name" label="Name" />
+    <Field type="boolean" name="success" label="Success" description="Success or failure of the unload operation" />
+    <Field type="string" name="errorMessage" label="Error Message" description="In case of an unload error, error description" />
+  </Event>
+
   <Event name="ModuleRequire" category="Java Virtual Machine, Runtime, Modules" label="Module Require" thread="false" period="everyChunk"
     description="A directed edge representing a dependency">
     <Field type="Module" name="source" label="Source Module" />

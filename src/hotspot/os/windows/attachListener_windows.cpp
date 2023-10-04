@@ -391,11 +391,6 @@ void AttachListener::pd_data_dump() {
   os::signal_notify(SIGBREAK);
 }
 
-jint AttachListener::pd_set_flag(AttachOperation* op, outputStream* out) {
-  out->print_cr("flag '%s' cannot be changed", op->arg(0));
-  return JNI_ERR;
-}
-
 void AttachListener::pd_detachall() {
   // do nothing for now
 }
