@@ -101,7 +101,6 @@ Mutex*   tty_lock                     = nullptr;
 Mutex*   RawMonitor_lock              = nullptr;
 Mutex*   PerfDataMemAlloc_lock        = nullptr;
 Mutex*   PerfDataManager_lock         = nullptr;
-Mutex*   OopMapCacheAlloc_lock        = nullptr;
 
 Mutex*   FreeList_lock                = nullptr;
 Mutex*   OldSets_lock                 = nullptr;
@@ -356,7 +355,6 @@ void mutex_init() {
     MUTEX_DEFL(PSOldGenExpand_lock          , PaddedMutex  , Heap_lock, true);
   }
 #endif
-  MUTEX_DEFN(OopMapCacheAlloc_lock          , PaddedMutex  ,  stackwatermark-1, true);
   MUTEX_DEFL(Module_lock                    , PaddedMutex  ,  ClassLoaderDataGraph_lock);
   MUTEX_DEFL(SystemDictionary_lock          , PaddedMonitor, Module_lock);
   MUTEX_DEFL(JNICritical_lock               , PaddedMonitor, AdapterHandlerLibrary_lock); // used for JNI critical regions
