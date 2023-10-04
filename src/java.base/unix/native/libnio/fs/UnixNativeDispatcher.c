@@ -51,7 +51,6 @@
 
 #ifdef __linux__
 #include <sys/syscall.h>
-#include <asm/unistd.h> // __NR_statx
 #include <sys/sysmacros.h> // makedev macros
 #endif
 
@@ -76,13 +75,14 @@
 #if defined(__linux__)
 // Account for the case where we compile on a system without statx
 // support. We still want to ensure we can call statx at runtime
-// if the runtime glibc version supports it (>= 2.28)
-#ifndef __NR_statx
+// if the runtime glibc version supports it (>= 2.28). We do this
+// by defining binary compatible statx structs in this file and
+// not relying on included headers.
 
 /*
  * Timestamp structure for the timestamps in struct statx.
  */
-struct statx_timestamp {
+struct my_statx_timestamp {
         int64_t   tv_sec;
         __uint32_t  tv_nsec;
         int32_t   __reserved;
@@ -92,7 +92,7 @@ struct statx_timestamp {
  * struct statx used by statx system call on >= glibc 2.28
  * systems
  */
-struct statx
+struct my_statx
 {
   __uint32_t stx_mask;
   __uint32_t stx_blksize;
@@ -106,21 +106,16 @@ struct statx
   __uint64_t stx_size;
   __uint64_t stx_blocks;
   __uint64_t stx_attributes_mask;
-  struct statx_timestamp stx_atime;
-  struct statx_timestamp stx_btime;
-  struct statx_timestamp stx_ctime;
-  struct statx_timestamp stx_mtime;
+  struct my_statx_timestamp stx_atime;
+  struct my_statx_timestamp stx_btime;
+  struct my_statx_timestamp stx_ctime;
+  struct my_statx_timestamp stx_mtime;
   __uint32_t stx_rdev_major;
   __uint32_t stx_rdev_minor;
   __uint32_t stx_dev_major;
   __uint32_t stx_dev_minor;
   __uint64_t __statx_pad2[14];
 };
-#else
-
-#include <linux/stat.h> // statx and related struct defns
-
-#endif // __NR_statx
 
 // statx masks, flags, constants
 
@@ -239,7 +234,7 @@ typedef int lutimes_func(const char *, const struct timeval *);
 typedef DIR* fdopendir_func(int);
 #if defined(__linux__)
 typedef int statx_func(int dirfd, const char *restrict pathname, int flags,
-                       unsigned int mask, struct statx *restrict statxbuf);
+                       unsigned int mask, struct my_statx *restrict statxbuf);
 #endif
 
 static openat64_func* my_openat64_func = NULL;
@@ -280,7 +275,7 @@ static int fstatat64_wrapper(int dfd, const char *path,
 
 #if defined(__linux__)
 static int statx_wrapper(int dirfd, const char *restrict pathname, int flags,
-                         unsigned int mask, struct statx *restrict statxbuf,
+                         unsigned int mask, struct my_statx *restrict statxbuf,
                          int follow_symlink) {
     if (follow_symlink == NO_FOLLOW_SYMLINK) {
       flags |= AT_SYMLINK_NOFOLLOW;
@@ -616,7 +611,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_write0(JNIEnv* env, jclass this, jint fd,
 /**
  * Copy statx members into sun.nio.fs.UnixFileAttributes
  */
-static void copy_statx_attributes(JNIEnv* env, struct statx* buf, jobject attrs) {
+static void copy_statx_attributes(JNIEnv* env, struct my_statx* buf, jobject attrs) {
     (*env)->SetIntField(env, attrs, attrs_st_mode, (jint)buf->stx_mode);
     (*env)->SetLongField(env, attrs, attrs_st_ino, (jlong)buf->stx_ino);
     (*env)->SetIntField(env, attrs, attrs_st_nlink, (jint)buf->stx_nlink);
@@ -679,7 +674,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_stat0(JNIEnv* env, jclass this,
     struct stat64 buf;
     const char* path = (const char*)jlong_to_ptr(pathAddress);
 #if defined(__linux__)
-    struct statx statx_buf;
+    struct my_statx statx_buf;
     int flags = AT_STATX_SYNC_AS_STAT;
     unsigned int mask = STATX_ALL;
 
@@ -711,7 +706,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_lstat0(JNIEnv* env, jclass this,
     struct stat64 buf;
     const char* path = (const char*)jlong_to_ptr(pathAddress);
 #if defined(__linux__)
-    struct statx statx_buf;
+    struct my_statx statx_buf;
     int flags = AT_STATX_SYNC_AS_STAT;
     unsigned int mask = STATX_ALL;
 
@@ -740,7 +735,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstat0(JNIEnv* env, jclass this, jint fd,
     int err;
     struct stat64 buf;
 #if defined(__linux__)
-    struct statx statx_buf;
+    struct my_statx statx_buf;
     int flags = AT_EMPTY_PATH | AT_STATX_SYNC_AS_STAT;
     unsigned int mask = STATX_ALL;
 
@@ -771,7 +766,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd
     struct stat64 buf;
     const char* path = (const char*)jlong_to_ptr(pathAddress);
 #if defined(__linux__)
-    struct statx statx_buf;
+    struct my_statx statx_buf;
     int flags = AT_STATX_SYNC_AS_STAT;
     unsigned int mask = STATX_ALL;
     int f_symlink = FOLLOW_SYMLINK;
