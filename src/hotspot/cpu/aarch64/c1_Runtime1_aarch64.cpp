@@ -385,7 +385,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
 
     // load issuing PC (the return address for this stub) into r3
     __ ldr(exception_pc, Address(rfp, 1*BytesPerWord));
-    __ authenticate_return_address(exception_pc, rscratch1);
+    __ authenticate_return_address(exception_pc);
 
     // make sure that the vm_results are cleared (may be unnecessary)
     __ str(zr, Address(rthread, JavaThread::vm_result_offset()));
@@ -434,7 +434,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   __ str(exception_pc, Address(rthread, JavaThread::exception_pc_offset()));
 
   // patch throwing pc into return address (has bci & oop map)
-  __ protect_return_address(exception_pc, rscratch1);
+  __ protect_return_address(exception_pc);
   __ str(exception_pc, Address(rfp, 1*BytesPerWord));
 
   // compute the exception handler.
@@ -450,7 +450,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   __ invalidate_registers(false, true, true, true, true, true);
 
   // patch the return address, this stub will directly return to the exception handler
-  __ protect_return_address(r0, rscratch1);
+  __ protect_return_address(r0);
   __ str(r0, Address(rfp, 1*BytesPerWord));
 
   switch (id) {

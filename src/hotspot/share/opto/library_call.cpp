@@ -2890,6 +2890,7 @@ bool LibraryCallKit::inline_native_notify_jvmti_funcs(address funcAddr, const ch
   if (!DoJVMTIVirtualThreadTransitions) {
     return true;
   }
+  Node* vt_oop = _gvn.transform(must_be_not_null(argument(0), true)); // VirtualThread this argument
   IdealKit ideal(this);
 
   Node* ONE = ideal.ConI(1);
@@ -2898,16 +2899,13 @@ bool LibraryCallKit::inline_native_notify_jvmti_funcs(address funcAddr, const ch
   Node* notify_jvmti_enabled = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
 
   ideal.if_then(notify_jvmti_enabled, BoolTest::eq, ONE); {
+    sync_kit(ideal);
     // if notifyJvmti enabled then make a call to the given SharedRuntime function
     const TypeFunc* tf = OptoRuntime::notify_jvmti_vthread_Type();
-    Node* vt_oop = _gvn.transform(must_be_not_null(argument(0), true)); // VirtualThread this argument
-
-    sync_kit(ideal);
     make_runtime_call(RC_NO_LEAF, tf, funcAddr, funcName, TypePtr::BOTTOM, vt_oop, hide);
     ideal.sync_kit(this);
   } ideal.else_(); {
     // set hide value to the VTMS transition bit in current JavaThread and VirtualThread object
-    Node* vt_oop = _gvn.transform(argument(0)); // this argument - VirtualThread oop
     Node* thread = ideal.thread();
     Node* jt_addr = basic_plus_adr(thread, in_bytes(JavaThread::is_in_VTMS_transition_offset()));
     Node* vt_addr = basic_plus_adr(vt_oop, java_lang_Thread::is_in_VTMS_transition_offset());

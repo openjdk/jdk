@@ -700,8 +700,10 @@ void InterpreterMacroAssembler::remove_activation(
     bind(restart);
     // We use c_rarg1 so that if we go slow path it will be the correct
     // register for unlock_object to pass to VM directly
-    ld(c_rarg1, monitor_block_top); // points to current entry, starting
-                                     // with top-most entry
+    ld(c_rarg1, monitor_block_top); // derelativize pointer
+    shadd(c_rarg1, c_rarg1, fp, c_rarg1, LogBytesPerWord);
+    // c_rarg1 points to current entry, starting with top-most entry
+
     la(x9, monitor_block_bot);  // points to word before bottom of
                                   // monitor block
 
@@ -2008,6 +2010,7 @@ void InterpreterMacroAssembler::verify_frame_setup() {
   Label L;
   const Address monitor_block_top(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
   ld(t0, monitor_block_top);
+  shadd(t0, t0, fp, t0, LogBytesPerWord);
   beq(esp, t0, L);
   stop("broken stack frame setup in interpreter");
   bind(L);
