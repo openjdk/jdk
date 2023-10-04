@@ -200,7 +200,7 @@ void ReplacedNodes::clone_stack(Compile* C, Node* initial, Node* improved, const
       int replaced = prev->replace_edge(n, clone);
       assert(replaced > 0, "expected some use");
     } else {
-      assert(k == stack.size() -2 && prev->is_Phi(), "");
+      assert(k == (stack.size() - 2) && prev->is_Phi(), "");
       assert(prev->in(i) == n, "not a use?");
       prev->set_req(i, clone);
       i = -1;
