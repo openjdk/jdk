@@ -25,23 +25,21 @@
  * @test
  * @bug 8012723
  * @summary strictfp interface misses strictfp modifer on default method
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @compile -source 16 -target 16 CheckACC_STRICTFlagOnDefaultMethodTest.java
  * @run main CheckACC_STRICTFlagOnDefaultMethodTest
  */
 
-import java.util.ArrayList;
-import java.util.List;
+import jdk.internal.classfile.*;
 import java.io.File;
 import java.io.IOException;
-
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Descriptor;
-import com.sun.tools.classfile.Descriptor.InvalidDescriptor;
-import com.sun.tools.classfile.Method;
-
-import static com.sun.tools.classfile.AccessFlags.ACC_STRICT;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CheckACC_STRICTFlagOnDefaultMethodTest {
     private static final String AssertionErrorMessage =
@@ -52,13 +50,11 @@ public class CheckACC_STRICTFlagOnDefaultMethodTest {
 
     private List<String> errors = new ArrayList<>();
 
-    public static void main(String[] args)
-            throws IOException, ConstantPoolException, InvalidDescriptor {
+    public static void main(String[] args) throws IOException {
         new CheckACC_STRICTFlagOnDefaultMethodTest().run();
     }
 
-    private void run()
-            throws IOException, ConstantPoolException, InvalidDescriptor {
+    private void run() throws IOException {
         String testClasses = System.getProperty("test.classes");
         check(testClasses,
                 "CheckACC_STRICTFlagOnDefaultMethodTest$StrictfpInterface.class");
@@ -70,19 +66,15 @@ public class CheckACC_STRICTFlagOnDefaultMethodTest {
         }
     }
 
-    void check(String dir, String... fileNames)
-        throws
-            IOException,
-            ConstantPoolException,
-            Descriptor.InvalidDescriptor {
+    void check(String dir, String... fileNames) throws IOException {
         for (String fileName : fileNames) {
-            ClassFile classFileToCheck = ClassFile.read(new File(dir, fileName));
+            ClassModel classFileToCheck = Classfile.of().parse(new File(dir, fileName).toPath());
 
-            for (Method method : classFileToCheck.methods) {
-                if ((method.access_flags.flags & ACC_STRICT) == 0) {
+            for (MethodModel method : classFileToCheck.methods()) {
+                if ((method.flags().flagsMask() & Classfile.ACC_STRICT) == 0) {
                     errors.add(String.format(offendingMethodErrorMessage,
-                            method.getName(classFileToCheck.constant_pool),
-                            classFileToCheck.getName()));
+                            method.methodName().stringValue(),
+                            classFileToCheck.thisClass().asInternalName()));
                 }
             }
         }
