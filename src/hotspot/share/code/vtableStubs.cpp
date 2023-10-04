@@ -230,8 +230,9 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index) {
 
       enter(is_vtable_stub, vtable_index, s);
       if (PrintAdapterHandlers) {
-        tty->print_cr("Decoding VtableStub %s[%d]@" INTX_FORMAT,
-                      is_vtable_stub? "vtbl": "itbl", vtable_index, p2i(VtableStub::receiver_location()));
+        tty->print_cr("Decoding VtableStub %s[%d]@" PTR_FORMAT " [" PTR_FORMAT ", " PTR_FORMAT "] (" SIZE_FORMAT " bytes)",
+                      is_vtable_stub? "vtbl": "itbl", vtable_index, p2i(VtableStub::receiver_location()),
+                      p2i(s->code_begin()), p2i(s->code_end()), pointer_delta(s->code_end(), s->code_begin(), 1));
         Disassembler::decode(s->code_begin(), s->code_end());
       }
       // Notify JVMTI about this stub. The event will be recorded by the enclosing
