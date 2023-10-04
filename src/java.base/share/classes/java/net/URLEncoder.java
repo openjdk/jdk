@@ -26,17 +26,21 @@
 package java.net;
 
 import java.io.UnsupportedEncodingException;
-import java.io.CharArrayWriter;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CoderResult;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
-import java.nio.charset.UnsupportedCharsetException ;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.BitSet;
 import java.util.Objects;
 import java.util.HexFormat;
 import java.util.function.IntPredicate;
 
 import jdk.internal.util.ImmutableBitSetPredicate;
-import jdk.internal.util.StaticProperty;
 
 /**
  * Utility class for HTML form encoding. This class contains static methods
@@ -82,7 +86,6 @@ import jdk.internal.util.StaticProperty;
  */
 public class URLEncoder {
     private static final IntPredicate DONT_NEED_ENCODING;
-    private static final String DEFAULT_ENCODING_NAME;
 
     static {
 
@@ -134,13 +137,6 @@ public class URLEncoder {
         bitSet.set('*');
 
         DONT_NEED_ENCODING = ImmutableBitSetPredicate.of(bitSet);
-
-        DEFAULT_ENCODING_NAME = StaticProperty.fileEncoding();
-    }
-
-    private static void encodeByte(StringBuilder out, byte b) {
-        out.append('%');
-        HexFormat.of().withUpperCase().toHexDigits(out, b);
     }
 
     /**
@@ -161,16 +157,7 @@ public class URLEncoder {
      */
     @Deprecated
     public static String encode(String s) {
-
-        String str = null;
-
-        try {
-            str = encode(s, DEFAULT_ENCODING_NAME);
-        } catch (UnsupportedEncodingException e) {
-            // The system should always have the default charset
-        }
-
-        return str;
+        return encode(s, Charset.defaultCharset());
     }
 
     /**
@@ -204,6 +191,8 @@ public class URLEncoder {
             throw new UnsupportedEncodingException(enc);
         }
     }
+
+    private static final int ENCODING_CHUNK_SIZE = 8;
 
     /**
      * Translates a string into {@code application/x-www-form-urlencoded}
@@ -239,10 +228,15 @@ public class URLEncoder {
         }
 
         StringBuilder out = new StringBuilder(s.length() << 1);
-        CharArrayWriter charArrayWriter = new CharArrayWriter();
         if (i > 0) {
             out.append(s, 0, i);
         }
+
+        CharsetEncoder ce = charset.newEncoder()
+                .onMalformedInput(CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        CharBuffer cb = CharBuffer.allocate(ENCODING_CHUNK_SIZE);
+        ByteBuffer bb = ByteBuffer.allocate((int)(ENCODING_CHUNK_SIZE * ce.maxBytesPerChar()));
 
         while (i < s.length()) {
             char c = s.charAt(i);
@@ -255,7 +249,7 @@ public class URLEncoder {
             } else {
                 // convert to external encoding before hex conversion
                 do {
-                    charArrayWriter.write(c);
+                    cb.put(c);
                     /*
                      * If this character represents the start of a Unicode
                      * surrogate pair, then pass in two characters. It's not
@@ -268,23 +262,63 @@ public class URLEncoder {
                         if ((i + 1) < s.length()) {
                             char d = s.charAt(i + 1);
                             if (Character.isLowSurrogate(d)) {
-                                charArrayWriter.write(d);
+                                cb.put(d);
                                 i++;
                             }
                         }
                     }
+                    // Limit to ENCODING_CHUNK_SIZE - 1 so that we can always fit in
+                    // a surrogate pair on the next iteration
+                    if (cb.position() >= ENCODING_CHUNK_SIZE - 1) {
+                        flushToStringBuilder(out, ce, cb, bb, false);
+                    }
                     i++;
                 } while (i < s.length() && !DONT_NEED_ENCODING.test((c = s.charAt(i))));
-
-                String str = charArrayWriter.toString();
-                byte[] ba = str.getBytes(charset);
-                for (byte b : ba) {
-                    encodeByte(out, b);
-                }
-                charArrayWriter.reset();
+                flushToStringBuilder(out, ce, cb, bb, true);
             }
         }
-
         return out.toString();
+    }
+
+    /**
+     * Encodes input chars in {@code cb} and appends the byte values in an escaped
+     * format ({@code "%XX"}) to {@code out}. The temporary byte buffer, {@code bb},
+     * must be able to accept {@code cb.position() * ce.maxBytesPerChar()} bytes.
+     *
+     * @param out the StringBuilder to output encoded and escaped bytes to
+     * @param ce charset encoder. Will be reset if endOfInput is true
+     * @param cb input buffer, will be cleared
+     * @param bb output buffer, will be cleared
+     * @param endOfInput true if this is the last flush for an encoding chunk,
+     *                  to all bytes in ce is flushed to out and reset
+     */
+    private static void flushToStringBuilder(StringBuilder out,
+                                             CharsetEncoder ce,
+                                             CharBuffer cb,
+                                             ByteBuffer bb,
+                                             boolean endOfInput) {
+        cb.flip();
+        try {
+            CoderResult cr = ce.encode(cb, bb, endOfInput);
+            if (!cr.isUnderflow())
+                cr.throwException();
+            if (endOfInput) {
+                cr = ce.flush(bb);
+                if (!cr.isUnderflow())
+                    cr.throwException();
+                ce.reset();
+            }
+        } catch (CharacterCodingException x) {
+            throw new Error(x); // Can't happen
+        }
+        HexFormat hex = HexFormat.of().withUpperCase();
+        byte[] bytes = bb.array();
+        int len = bb.position();
+        for (int i = 0; i < len; i++) {
+            out.append('%');
+            hex.toHexDigits(out, bytes[i]);
+        }
+        cb.clear();
+        bb.clear();
     }
 }

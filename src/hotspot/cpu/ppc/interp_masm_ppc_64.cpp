@@ -583,7 +583,6 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass, Register 
   // Profile the not-null value's klass.
   profile_typecheck(Rsub_klass, Rtmp1, Rtmp2);
   check_klass_subtype(Rsub_klass, Rsuper_klass, Rtmp1, Rtmp2, ok_is_subtype);
-  profile_typecheck_failed(Rtmp1, Rtmp2);
 }
 
 // Separate these two to allow for delay slot in middle.
@@ -1534,7 +1533,7 @@ void InterpreterMacroAssembler::profile_virtual_call(Register Rreceiver,
   }
 
   // Record the receiver type.
-  record_klass_in_profile(Rreceiver, Rscratch1, Rscratch2, true);
+  record_klass_in_profile(Rreceiver, Rscratch1, Rscratch2);
   bind(skip_receiver_profile);
 
   // The method data pointer needs to be updated to reflect the new target.
@@ -1554,29 +1553,11 @@ void InterpreterMacroAssembler::profile_typecheck(Register Rklass, Register Rscr
       mdp_delta = in_bytes(VirtualCallData::virtual_call_data_size());
 
       // Record the object type.
-      record_klass_in_profile(Rklass, Rscratch1, Rscratch2, false);
+      record_klass_in_profile(Rklass, Rscratch1, Rscratch2);
     }
 
     // The method data pointer needs to be updated.
     update_mdp_by_constant(mdp_delta);
-
-    bind (profile_continue);
-  }
-}
-
-void InterpreterMacroAssembler::profile_typecheck_failed(Register Rscratch1, Register Rscratch2) {
-  if (ProfileInterpreter && TypeProfileCasts) {
-    Label profile_continue;
-
-    // If no method data exists, go to profile_continue.
-    test_method_data_pointer(profile_continue);
-
-    int count_offset = in_bytes(CounterData::count_offset());
-    // Back up the address, since we have already bumped the mdp.
-    count_offset -= in_bytes(VirtualCallData::virtual_call_data_size());
-
-    // *Decrement* the counter. We expect to see zero or small negatives.
-    increment_mdp_data_at(count_offset, Rscratch1, Rscratch2, true);
 
     bind (profile_continue);
   }
@@ -1687,23 +1668,20 @@ void InterpreterMacroAssembler::profile_null_seen(Register Rscratch1, Register R
 }
 
 void InterpreterMacroAssembler::record_klass_in_profile(Register Rreceiver,
-                                                        Register Rscratch1, Register Rscratch2,
-                                                        bool is_virtual_call) {
+                                                        Register Rscratch1, Register Rscratch2) {
   assert(ProfileInterpreter, "must be profiling");
   assert_different_registers(Rreceiver, Rscratch1, Rscratch2);
 
   Label done;
-  record_klass_in_profile_helper(Rreceiver, Rscratch1, Rscratch2, 0, done, is_virtual_call);
+  record_klass_in_profile_helper(Rreceiver, Rscratch1, Rscratch2, 0, done);
   bind (done);
 }
 
 void InterpreterMacroAssembler::record_klass_in_profile_helper(
                                         Register receiver, Register scratch1, Register scratch2,
-                                        int start_row, Label& done, bool is_virtual_call) {
+                                        int start_row, Label& done) {
   if (TypeProfileWidth == 0) {
-    if (is_virtual_call) {
-      increment_mdp_data_at(in_bytes(CounterData::count_offset()), scratch1, scratch2);
-    }
+    increment_mdp_data_at(in_bytes(CounterData::count_offset()), scratch1, scratch2);
     return;
   }
 
@@ -1735,19 +1713,14 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
       // Failed the equality check on receiver[n]... Test for null.
       if (start_row == last_row) {
         // The only thing left to do is handle the null case.
-        if (is_virtual_call) {
-          // Scratch1 contains test_out from test_mdp_data_at.
-          cmpdi(CCR0, scratch1, 0);
-          beq(CCR0, found_null);
-          // Receiver did not match any saved receiver and there is no empty row for it.
-          // Increment total counter to indicate polymorphic case.
-          increment_mdp_data_at(in_bytes(CounterData::count_offset()), scratch1, scratch2);
-          b(done);
-          bind(found_null);
-        } else {
-          cmpdi(CCR0, scratch1, 0);
-          bne(CCR0, done);
-        }
+        // Scratch1 contains test_out from test_mdp_data_at.
+        cmpdi(CCR0, scratch1, 0);
+        beq(CCR0, found_null);
+        // Receiver did not match any saved receiver and there is no empty row for it.
+        // Increment total counter to indicate polymorphic case.
+        increment_mdp_data_at(in_bytes(CounterData::count_offset()), scratch1, scratch2);
+        b(done);
+        bind(found_null);
         break;
       }
       // Since null is rare, make it be the branch-taken case.
@@ -1755,7 +1728,7 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
       beq(CCR0, found_null);
 
       // Put all the "Case 3" tests here.
-      record_klass_in_profile_helper(receiver, scratch1, scratch2, start_row + 1, done, is_virtual_call);
+      record_klass_in_profile_helper(receiver, scratch1, scratch2, start_row + 1, done);
 
       // Found a null. Keep searching for a matching receiver,
       // but remember that this is an empty (unused) slot.
@@ -2244,7 +2217,9 @@ void InterpreterMacroAssembler::save_interpreter_state(Register scratch) {
   ld(scratch, 0, R1_SP);
   std(R15_esp, _ijava_state_neg(esp), scratch);
   std(R14_bcp, _ijava_state_neg(bcp), scratch);
-  std(R26_monitor, _ijava_state_neg(monitors), scratch);
+  subf(R0, scratch, R26_monitor);
+  sradi(R0, R0, Interpreter::logStackElementSize);
+  std(R0, _ijava_state_neg(monitors), scratch);
   if (ProfileInterpreter) { std(R28_mdx, _ijava_state_neg(mdx), scratch); }
   // Other entries should be unchanged.
 }
@@ -2275,6 +2250,9 @@ void InterpreterMacroAssembler::restore_interpreter_state(Register scratch, bool
     sldi(R18_locals, R18_locals, Interpreter::logStackElementSize);
     add(R18_locals, R18_locals, scratch);
     ld(R26_monitor, _ijava_state_neg(monitors), scratch);
+    // Derelativize monitors
+    sldi(R26_monitor, R26_monitor, Interpreter::logStackElementSize);
+    add(R26_monitor, R26_monitor, scratch);
   }
 #ifdef ASSERT
   {
