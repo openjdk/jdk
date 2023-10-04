@@ -84,7 +84,7 @@ class G1CodeRootSetHashTable : public CHeapObj<mtGC> {
 
 public:
   G1CodeRootSetHashTable() :
-    _table(Mutex::event,                      // Never takes any lock inside locked sections.
+    _table(Mutex::service-1,
            nullptr,
            Log2DefaultNumBuckets,
            false /* enable_statistics */),
