@@ -31,6 +31,7 @@
  */
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -54,6 +55,7 @@ public class HttpURLConnectionExpect100Test {
 
     private HttpServer server;
     private int port;
+    static final String RESPONSE = "This is default response.";
 
     @BeforeAll
     void setup() throws Exception {
@@ -81,6 +83,8 @@ public class HttpURLConnectionExpect100Test {
         sendRequest(conn);
         getHeaderField(conn);
         assertEquals(1, server.getServerHitCount());
+        // Server rejects the expect 100-continue request with 417 response
+        assertEquals(417, conn.getResponseCode());
     }
 
     @Test
@@ -96,6 +100,11 @@ public class HttpURLConnectionExpect100Test {
         sendRequest(conn);
         getHeaderField(conn);
         assertEquals(1, server.getServerHitCount());
+        assertEquals(200, conn.getResponseCode());
+        try ( InputStream in = conn.getInputStream()) {
+            byte[] data = in.readAllBytes();
+            assertEquals(RESPONSE.length(), data.length);
+        }
     }
 
     private void sendRequest(final HttpURLConnection conn) throws Exception {
@@ -124,7 +133,6 @@ public class HttpURLConnectionExpect100Test {
         private static HttpServer inst;
         private volatile int hitCount;
         private volatile boolean isRunning;
-        private static final String RESPONSE = "This is default response.";
         private final int port;
 
         private HttpServer() throws IOException {
@@ -240,7 +248,6 @@ public class HttpURLConnectionExpect100Test {
             out.print("Connection: close\r\n");
             out.print("Content-Length: " + RESPONSE.length() + "\r\n\r\n");
             out.print(RESPONSE);
-            out.print("\r\n");
             out.flush();
         }
     }
