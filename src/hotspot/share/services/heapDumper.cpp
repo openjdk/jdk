@@ -62,6 +62,9 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#ifdef LINUX
+#include "os_linux.hpp"
+#endif
 
 /*
  * HPROF binary format - description copied from:
@@ -630,6 +633,7 @@ public:
   AbstractCompressor* compressor()             { return _compressor; }
   void set_compressor(AbstractCompressor* p)   { _compressor = p; }
   bool is_overwrite() const                    { return _writer->is_overwrite(); }
+  int get_fd() const                           { return _writer->get_fd(); }
 
   void flush() override;
 };
@@ -1533,6 +1537,7 @@ private:
 private:
   void merge_file(char* path);
   void merge_done();
+  void set_error(const char* msg);
 
 public:
   DumpMerger(const char* path, DumpWriter* writer, int dump_seq) :
@@ -1553,15 +1558,62 @@ void DumpMerger::merge_done() {
   _dump_seq = 0; //reset
 }
 
+void DumpMerger::set_error(const char* msg) {
+  assert(msg != nullptr, "sanity check");
+  log_error(heapdump)("%s (file: %s)", msg, _path);
+  _writer->set_error(msg);
+  _has_error = true;
+}
+
+#ifdef LINUX
+// Merge segmented heap files via sendfile, it's more efficient than the
+// read+write combination, which would require transferring data to and from
+// user space.
+void DumpMerger::merge_file(char* path) {
+  assert(!SafepointSynchronize::is_at_safepoint(), "merging happens outside safepoint");
+  TraceTime timer("Merge segmented heap file directly", TRACETIME_LOG(Info, heapdump));
+
+  int segment_fd = os::open(path, O_RDONLY, 0);
+  if (segment_fd == -1) {
+    set_error("Can not open segmented heap file during merging");
+    return;
+  }
+
+  struct stat st;
+  if (os::stat(path, &st) != 0) {
+    ::close(segment_fd);
+    set_error("Can not get segmented heap file size during merging");
+    return;
+  }
+
+  // A successful call to sendfile may write fewer bytes than requested; the
+  // caller should be prepared to retry the call if there were unsent bytes.
+  jlong offset = 0;
+  while (offset < st.st_size) {
+    int ret = os::Linux::sendfile(_writer->get_fd(), segment_fd, &offset, st.st_size);
+    if (ret == -1) {
+      ::close(segment_fd);
+      set_error("Failed to merge segmented heap file");
+      return;
+    }
+  }
+
+  // As sendfile variant does not call the write method of the global writer,
+  // bytes_written is also incorrect for this variant, we need to explicitly
+  // accumulate bytes_written for the global writer in this case
+  julong accum = _writer->bytes_written() + st.st_size;
+  _writer->set_bytes_written(accum);
+  ::close(segment_fd);
+}
+#else
+// Generic implementation using read+write
 void DumpMerger::merge_file(char* path) {
   assert(!SafepointSynchronize::is_at_safepoint(), "merging happens outside safepoint");
   TraceTime timer("Merge segmented heap file", TRACETIME_LOG(Info, heapdump));
 
   fileStream segment_fs(path, "rb");
   if (!segment_fs.is_open()) {
-    log_error(heapdump)("Can not open segmented heap file %s during merging", path);
-    _writer->set_error("Can not open segmented heap file during merging");
-    _has_error = true;
+    set_error("Can not open segmented heap file during merging");
     return;
   }
 
@@ -1575,12 +1627,10 @@ void DumpMerger::merge_file(char* path) {
 
   _writer->flush();
   if (segment_fs.fileSize() != total) {
-    log_error(heapdump)("Merged heap dump %s is incomplete, expect %ld but read " JLONG_FORMAT " bytes",
-                        path, segment_fs.fileSize(), total);
-    _writer->set_error("Merged heap dump is incomplete");
-    _has_error = true;
+    set_error("Merged heap dump is incomplete");
   }
 }
+#endif
 
 void DumpMerger::do_merge() {
   assert(!SafepointSynchronize::is_at_safepoint(), "merging happens outside safepoint");
@@ -1591,7 +1641,8 @@ void DumpMerger::do_merge() {
   AbstractCompressor* saved_compressor = _writer->compressor();
   _writer->set_compressor(nullptr);
 
-  // merge segmented heap file and remove it anyway
+  // Merge the content of the remaining files into base file. Regardless of whether
+  // the merge process is successful or not, these segmented files will be deleted.
   char path[JVM_MAXPATHLEN];
   for (int i = 0; i < _dump_seq; i++) {
     memset(path, 0, JVM_MAXPATHLEN);
@@ -1599,6 +1650,7 @@ void DumpMerger::do_merge() {
     if (!_has_error) {
       merge_file(path);
     }
+    // Delete selected segmented heap file nevertheless
     remove(path);
   }
 
@@ -2012,6 +2064,7 @@ DumpWriter* VM_HeapDumper::create_local_writer() {
 
   // generate segmented heap file path
   const char* base_path = writer()->get_file_path();
+  // share global compressor, local DumpWriter is not responsible for its life cycle
   AbstractCompressor* compressor = writer()->compressor();
   int seq = Atomic::fetch_then_add(&_dump_seq, 1);
   os::snprintf(path, JVM_MAXPATHLEN, "%s.p%d", base_path, seq);
@@ -2256,6 +2309,9 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
     }
   }
 
+  if (compressor != nullptr) {
+    delete compressor;
+  }
   return (writer.error() == nullptr) ? 0 : -1;
 }
 

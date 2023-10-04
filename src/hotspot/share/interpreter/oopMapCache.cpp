@@ -407,6 +407,8 @@ void OopMapCacheEntry::flush() {
 void InterpreterOopMap::resource_copy(OopMapCacheEntry* from) {
   assert(_resource_allocate_bit_mask,
     "Should not resource allocate the _bit_mask");
+  assert(from->has_valid_mask(),
+    "Cannot copy entry with an invalid mask");
 
   set_method(from->method());
   set_bci(from->bci());
@@ -612,7 +614,9 @@ void OopMapCache::compute_one_oop_map(const methodHandle& method, int bci, Inter
   OopMapCacheEntry* tmp = NEW_C_HEAP_OBJ(OopMapCacheEntry, mtClass);
   tmp->initialize();
   tmp->fill(method, bci);
-  entry->resource_copy(tmp);
+  if (tmp->has_valid_mask()) {
+    entry->resource_copy(tmp);
+  }
   tmp->flush();
   FREE_C_HEAP_OBJ(tmp);
 }

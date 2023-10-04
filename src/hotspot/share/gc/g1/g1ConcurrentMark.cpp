@@ -390,8 +390,8 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   // _num_active_tasks set in set_non_marking_state()
   // _tasks set inside the constructor
 
-  _task_queues(new G1CMTaskQueueSet((int) _max_num_tasks)),
-  _terminator((int) _max_num_tasks, _task_queues),
+  _task_queues(new G1CMTaskQueueSet(_max_num_tasks)),
+  _terminator(_max_num_tasks, _task_queues),
 
   _first_overflow_barrier_sync(),
   _second_overflow_barrier_sync(),
@@ -540,8 +540,8 @@ void G1ConcurrentMark::set_concurrency(uint active_tasks) {
   // Need to update the three data structures below according to the
   // number of active threads for this phase.
   _terminator.reset_for_reuse(active_tasks);
-  _first_overflow_barrier_sync.set_n_workers((int) active_tasks);
-  _second_overflow_barrier_sync.set_n_workers((int) active_tasks);
+  _first_overflow_barrier_sync.set_n_workers(active_tasks);
+  _second_overflow_barrier_sync.set_n_workers(active_tasks);
 }
 
 void G1ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurrent) {
@@ -1349,7 +1349,6 @@ void G1ConcurrentMark::remark() {
 }
 
 class G1ReclaimEmptyRegionsTask : public WorkerTask {
-  // Per-region work during the Cleanup pause.
   class G1ReclaimEmptyRegionsClosure : public HeapRegionClosure {
     G1CollectedHeap* _g1h;
     size_t _freed_bytes;
@@ -2317,9 +2316,9 @@ void G1CMTask::drain_local_queue(bool partially) {
   // Decide what the target size is, depending whether we're going to
   // drain it partially (so that other tasks can steal if they run out
   // of things to do) or totally (at the very end).
-  size_t target_size;
+  uint target_size;
   if (partially) {
-    target_size = MIN2((size_t)_task_queue->max_elems()/3, GCDrainStackTargetSize);
+    target_size = GCDrainStackTargetSize;
   } else {
     target_size = 0;
   }
