@@ -24,9 +24,11 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.net.URL;
-import org.testng.Assert;
 import org.testng.annotations.BeforeTest;
+
+import toolbox.JavacTask;
+import toolbox.TestRunner;
+import toolbox.ToolBox;
 
 /*
  * This class installs a class in a temporary diretory so we can test
@@ -34,44 +36,41 @@ import org.testng.annotations.BeforeTest;
  */
 public class LocalExecutionTestSupport extends ReplToolTesting {
 
-    /*
-     * This is a classfile corresponding to this source:
-     *
-     *      package test;
-     *      public class MyClass {
-     *          public static final String FOO = "bar";
-     *      }
-     */
-    private static final String MYCLASS =
-          "cafebabe0000003400120a0003000e07"
-        + "000f070010010003464f4f0100124c6a"
-        + "6176612f6c616e672f537472696e673b"
-        + "01000d436f6e7374616e7456616c7565"
-        + "0800110100063c696e69743e01000328"
-        + "2956010004436f646501000f4c696e65"
-        + "4e756d6265725461626c6501000a536f"
-        + "7572636546696c6501000c4d79436c61"
-        + "73732e6a6176610c0008000901000c74"
-        + "6573742f4d79436c6173730100106a61"
-        + "76612f6c616e672f4f626a6563740100"
-        + "03626172002100020003000000010019"
-        + "00040005000100060000000200070001"
-        + "0001000800090001000a0000001d0001"
-        + "0001000000052ab70001b10000000100"
-        + "0b000000060001000000020001000c00"
-        + "000002000d";
+    public static final String MY_CLASS_SOURCE = """
+        package test;
+        public class MyClass {
+            public static final String FOO = "bar";
+        }""";
 
-    // The classes directory containing "test/MyClass.class"
-    protected Path classesDir;
+    protected final ToolBox tb = new ToolBox();
+
+    protected Path baseDir;                 // base working directory
+    protected Path sourcesDir;              // sources directory
+    protected Path classesDir;              // classes directory
 
     // Install file "test/MyClass.class" in some temporary directory somewhere
     @BeforeTest
     public void installMyClass() throws IOException {
-        classesDir = Files.createTempDirectory(getClass().getSimpleName()).toAbsolutePath();
-        Path testPkgDir = classesDir.resolve("test");
-        Path myclassFile = testPkgDir.resolve("MyClass.class");
-        Files.createDirectory(testPkgDir);
-        Files.write(myclassFile, string2bytes(MYCLASS));
+
+        // Create directories
+        baseDir = Files.createTempDirectory(getClass().getSimpleName()).toAbsolutePath();
+        sourcesDir = createWorkSubdir("sources");
+        classesDir = createWorkSubdir("classes");
+
+        // Create source file
+        tb.writeJavaFiles(sourcesDir, MY_CLASS_SOURCE);
+
+        // Compile source file
+        new JavacTask(tb)
+            .outdir(classesDir)
+            .files(sourcesDir.resolve("test/MyClass.java"))
+            .run();
+    }
+
+    protected Path createWorkSubdir(String name) throws IOException {
+        Path dir = baseDir.resolve(name);
+        Files.createDirectories(dir);
+        return dir;
     }
 
     protected String[] prependArgs(String[] args, String... prepends) {
@@ -79,14 +78,5 @@ public class LocalExecutionTestSupport extends ReplToolTesting {
         System.arraycopy(prepends, 0, newArgs, 0, prepends.length);
         System.arraycopy(args, 0, newArgs, prepends.length, args.length);
         return newArgs;
-    }
-
-    protected byte[] string2bytes(String string) {
-        byte[] buf = new byte[string.length() / 2];
-        for (int i = 0; i < string.length(); i += 2) {
-            int value = Integer.parseInt(string.substring(i, i + 2), 16);
-            buf[i / 2] = (byte)value;
-        }
-        return buf;
     }
 }

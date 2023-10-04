@@ -25,6 +25,11 @@
  * @test
  * @bug 8314327
  * @summary Verify the "--class-path" flag works properly in local execution mode
+ * @library /tools/lib
+ * @modules
+ *      jdk.compiler/com.sun.tools.javac.api
+ *      jdk.compiler/com.sun.tools.javac.main
+ * @build toolbox.ToolBox toolbox.JavacTask LocalExecutionTestSupport
  * @run testng/othervm LocalExecutionClassPathTest
  */
 

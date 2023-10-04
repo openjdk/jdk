@@ -25,6 +25,11 @@
  * @test
  * @bug 8314327
  * @summary Verify function of LocalExecutionControlProvider "contextLoaderParent" parameter
+ * @library /tools/lib
+ * @modules
+ *      jdk.compiler/com.sun.tools.javac.api
+ *      jdk.compiler/com.sun.tools.javac.main
+ * @build toolbox.ToolBox toolbox.JavacTask LocalExecutionTestSupport
  * @run testng/othervm LocalExecutionContextLoaderParentTest
  */
 
