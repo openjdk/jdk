@@ -27,9 +27,8 @@
  *      8008577 8077685 8098547 8133321 8138716 8148446 8151876 8159684 8166875 8181157
  *      8228469 8274407 8285844 8305113
  * @modules java.base/sun.util.resources
- * @library /java/text/testlib
  * @summary test TimeZone
- * @run main TimeZoneTest -verbose
+ * @run junit TimeZoneTest
  */
 
 import java.io.*;
@@ -37,13 +36,13 @@ import java.text.*;
 import java.util.*;
 import sun.util.resources.LocaleData;
 
-public class TimeZoneTest extends IntlTest
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class TimeZoneTest
 {
     static final int millisPerHour = 3600000;
-
-    public static void main(String[] args) throws Exception {
-        new TimeZoneTest().run(args);
-    }
 
     /**
      * Bug 4130885
@@ -100,6 +99,7 @@ public class TimeZoneTest extends IntlTest
      * else. E.g., EST usually indicates the US Eastern zone, so it cannot be
      * used for Brazil (BET).
      */
+    @Test
     public void TestShortZoneIDs() throws Exception {
 
         ZoneDescriptor[] JDK_116_REFERENCE_LIST = {
@@ -154,10 +154,10 @@ public class TimeZoneTest extends IntlTest
             ZoneDescriptor referenceZone = JDK_116_REFERENCE_LIST[i];
             ZoneDescriptor currentZone = hash.get(referenceZone.getID());
             if (referenceZone.equals(currentZone)) {
-                logln("ok " + referenceZone);
+                System.out.println("ok " + referenceZone);
             }
             else {
-                errln("Fail: Expected " + referenceZone +
+                fail("Fail: Expected " + referenceZone +
                       "; got " + currentZone);
             }
         }
@@ -241,6 +241,7 @@ public class TimeZoneTest extends IntlTest
      * ID "Custom" is no longer used for TimeZone objects created with
      * a custom time zone ID, such as "GMT-8". See 4322313.
      */
+    @Test
     public void TestCustomParse() throws Exception {
         Object[] DATA = {
             // ID               Expected offset in seconds
@@ -271,7 +272,7 @@ public class TimeZoneTest extends IntlTest
             Integer exp = (Integer)DATA[i+1];
             TimeZone zone = TimeZone.getTimeZone(id);
             if (zone.getID().equals("GMT")) {
-                logln(id + " -> generic GMT");
+                System.out.println(id + " -> generic GMT");
                 // When TimeZone.getTimeZone() can't parse the id, it
                 // returns GMT -- a dubious practice, but required for
                 // backward compatibility.
@@ -283,7 +284,7 @@ public class TimeZoneTest extends IntlTest
             else {
                 int ioffset = zone.getRawOffset() / 1_000;
                 String offset = formatSeconds(ioffset);
-                logln(id + " -> " + zone.getID() + " GMT" + offset);
+                System.out.println(id + " -> " + zone.getID() + " GMT" + offset);
                 if (exp == null) {
                     throw new Exception("Expected parse failure for " + id +
                                         ", got offset of " + offset +
@@ -310,12 +311,13 @@ public class TimeZoneTest extends IntlTest
      * 4/21/98 - make smarter, so the test works if the ext resources
      * are present or not.
      */
+    @Test
     public void TestDisplayName() {
         TimeZone zone = TimeZone.getTimeZone("PST");
         String name = zone.getDisplayName(Locale.ENGLISH);
-        logln("PST->" + name);
+        System.out.println("PST->" + name);
         if (!name.equals("Pacific Standard Time"))
-            errln("Fail: Expected \"Pacific Standard Time\"");
+            fail("Fail: Expected \"Pacific Standard Time\"");
 
         //*****************************************************************
         // THE FOLLOWING LINES MUST BE UPDATED IF THE LOCALE DATA CHANGES
@@ -334,7 +336,7 @@ public class TimeZoneTest extends IntlTest
                                        ((Integer)DATA[i+1]).intValue(),
                                        Locale.ENGLISH);
             if (!name.equals(DATA[i+2]))
-                errln("Fail: Expected " + DATA[i+2] + "; got " + name);
+                fail("Fail: Expected " + DATA[i+2] + "; got " + name);
         }
 
         // Make sure that we don't display the DST name by constructing a fake
@@ -342,11 +344,11 @@ public class TimeZoneTest extends IntlTest
         SimpleTimeZone zone2 = new SimpleTimeZone(0, "PST");
         zone2.setStartRule(Calendar.JANUARY, 1, 0);
         zone2.setEndRule(Calendar.DECEMBER, 31, 0);
-        logln("Modified PST inDaylightTime->" + zone2.inDaylightTime(new Date()));
+        System.out.println("Modified PST inDaylightTime->" + zone2.inDaylightTime(new Date()));
         name = zone2.getDisplayName(Locale.ENGLISH);
-        logln("Modified PST->" + name);
+        System.out.println("Modified PST->" + name);
         if (!name.equals("Pacific Standard Time"))
-            errln("Fail: Expected \"Pacific Standard Time\"");
+            fail("Fail: Expected \"Pacific Standard Time\"");
 
         // Make sure we get the default display format for Locales
         // with no display name data.
@@ -357,7 +359,7 @@ public class TimeZoneTest extends IntlTest
         // THE FOLLOWING LINE MUST BE UPDATED IF THE LOCALE DATA CHANGES
         // THE FOLLOWING LINE MUST BE UPDATED IF THE LOCALE DATA CHANGES
         //*****************************************************************
-        logln("PST(zh_CN)->" + name);
+        System.out.println("PST(zh_CN)->" + name);
 
         // Now be smart -- check to see if zh resource is even present.
         // If not, we expect the en fallback behavior.
@@ -369,9 +371,9 @@ public class TimeZoneTest extends IntlTest
         boolean noZH = enRB == zhRB;
 
         if (noZH) {
-            logln("Warning: Not testing the zh_CN behavior because resource is absent");
+            System.out.println("Warning: Not testing the zh_CN behavior because resource is absent");
             if (!name.equals("Pacific Standard Time"))
-                errln("Fail: Expected Pacific Standard Time");
+                fail("Fail: Expected Pacific Standard Time");
         }
         else if (!name.equals("Pacific Standard Time") &&
                  !name.equals("\u592a\u5e73\u6d0b\u6807\u51c6\u65f6\u95f4") &&
@@ -380,48 +382,49 @@ public class TimeZoneTest extends IntlTest
                  !name.equals("GMT-8:00") &&
                  !name.equals("GMT-0800") &&
                  !name.equals("GMT-800")) {
-            errln("Fail: Expected GMT-08:00 or something similar");
-            errln("************************************************************");
-            errln("THE ABOVE FAILURE MAY JUST MEAN THE LOCALE DATA HAS CHANGED");
-            errln("************************************************************");
+            fail("Fail: Expected GMT-08:00 or something similar\n"
+            + "************************************************************\n"
+            + "THE ABOVE FAILURE MAY JUST MEAN THE LOCALE DATA HAS CHANGED\n"
+            + "************************************************************\n");
         }
 
         // Now try a non-existent zone
         zone2 = new SimpleTimeZone(90*60*1000, "xyzzy");
         name = zone2.getDisplayName(Locale.ENGLISH);
-        logln("GMT+90min->" + name);
+        System.out.println("GMT+90min->" + name);
         if (!name.equals("GMT+01:30") &&
             !name.equals("GMT+1:30") &&
             !name.equals("GMT+0130") &&
             !name.equals("GMT+130"))
-            errln("Fail: Expected GMT+01:30 or something similar");
+            fail("Fail: Expected GMT+01:30 or something similar");
     }
 
+    @Test
     public void TestGenericAPI() {
         String id = "NewGMT";
         int offset = 12345;
 
         SimpleTimeZone zone = new SimpleTimeZone(offset, id);
         if (zone.useDaylightTime()) {
-            errln("FAIL: useDaylightTime should return false");
+            fail("FAIL: useDaylightTime should return false");
         }
 
         TimeZone zoneclone = (TimeZone)zone.clone();
         if (!zoneclone.equals(zone)) {
-            errln("FAIL: clone or operator== failed");
+            fail("FAIL: clone or operator== failed");
         }
         zoneclone.setID("abc");
         if (zoneclone.equals(zone)) {
-            errln("FAIL: clone or operator!= failed");
+            fail("FAIL: clone or operator!= failed");
         }
 
         zoneclone = (TimeZone)zone.clone();
         if (!zoneclone.equals(zone)) {
-            errln("FAIL: clone or operator== failed");
+            fail("FAIL: clone or operator== failed");
         }
         zoneclone.setRawOffset(45678);
         if (zoneclone.equals(zone)) {
-            errln("FAIL: clone or operator!= failed");
+            fail("FAIL: clone or operator!= failed");
         }
 
         TimeZone saveDefault = TimeZone.getDefault();
@@ -429,10 +432,10 @@ public class TimeZoneTest extends IntlTest
             TimeZone.setDefault(zone);
             TimeZone defaultzone = TimeZone.getDefault();
             if (defaultzone == zone) {
-                errln("FAIL: Default object is identical, not clone");
+                fail("FAIL: Default object is identical, not clone");
             }
             if (!defaultzone.equals(zone)) {
-                errln("FAIL: Default object is not equal");
+                fail("FAIL: Default object is not equal");
             }
         }
         finally {
@@ -441,13 +444,14 @@ public class TimeZoneTest extends IntlTest
     }
 
     @SuppressWarnings("deprecation")
+    @Test
     public void TestRuleAPI()
     {
         // ErrorCode status = ZERO_ERROR;
 
         int offset = (int)(60*60*1000*1.75); // Pick a weird offset
         SimpleTimeZone zone = new SimpleTimeZone(offset, "TestZone");
-        if (zone.useDaylightTime()) errln("FAIL: useDaylightTime should return false");
+        if (zone.useDaylightTime()) fail("FAIL: useDaylightTime should return false");
 
         // Establish our expected transition times.  Do this with a non-DST
         // calendar with the (above) declared local offset.
@@ -475,18 +479,18 @@ public class TimeZoneTest extends IntlTest
         long expMarchOne = 636251400000L;
         if (marchOne != expMarchOne)
         {
-            errln("FAIL: Expected start computed as " + marchOne +
+            fail("FAIL: Expected start computed as " + marchOne +
                   " = " + new Date(marchOne));
-            logln("      Should be                  " + expMarchOne +
+            System.out.println("      Should be                  " + expMarchOne +
                   " = " + new Date(expMarchOne));
         }
 
         long expJulyOne = 646793100000L;
         if (julyOne != expJulyOne)
         {
-            errln("FAIL: Expected start computed as " + julyOne +
+            fail("FAIL: Expected start computed as " + julyOne +
                   " = " + new Date(julyOne));
-            logln("      Should be                  " + expJulyOne +
+            System.out.println("      Should be                  " + expJulyOne +
                   " = " + new Date(expJulyOne));
         }
 
@@ -497,15 +501,15 @@ public class TimeZoneTest extends IntlTest
 
         if (zone.inDaylightTime(new Date(marchOne - 1000)) ||
             !zone.inDaylightTime(new Date(marchOne)))
-            errln("FAIL: Start rule broken");
+            fail("FAIL: Start rule broken");
         if (!zone.inDaylightTime(new Date(julyOne - 1000)) ||
             zone.inDaylightTime(new Date(julyOne)))
-            errln("FAIL: End rule broken");
+            fail("FAIL: End rule broken");
 
         zone.setStartYear(1991);
         if (zone.inDaylightTime(new Date(marchOne)) ||
             zone.inDaylightTime(new Date(julyOne - 1000)))
-            errln("FAIL: Start year broken");
+            fail("FAIL: Start year broken");
 
         // failure(status, "TestRuleAPI");
         // delete gc;
@@ -518,7 +522,7 @@ public class TimeZoneTest extends IntlTest
         boolean startsInDST = tz.inDaylightTime(new Date(min));
         // if (failure(status, "SimpleTimeZone::inDaylightTime")) return;
         if (tz.inDaylightTime(new Date(max)) == startsInDST) {
-            logln("Error: inDaylightTime(" + new Date(max) + ") != " + (!startsInDST));
+            System.out.println("Error: inDaylightTime(" + new Date(max) + ") != " + (!startsInDST));
             return;
         }
         // if (failure(status, "SimpleTimeZone::inDaylightTime")) return;
@@ -532,52 +536,54 @@ public class TimeZoneTest extends IntlTest
             }
             // if (failure(status, "SimpleTimeZone::inDaylightTime")) return;
         }
-        logln("Binary Search Before: " + min + " = " + new Date(min));
-        logln("Binary Search After:  " + max + " = " + new Date(max));
+        System.out.println("Binary Search Before: " + min + " = " + new Date(min));
+        System.out.println("Binary Search After:  " + max + " = " + new Date(max));
         long mindelta = expectedBoundary - min;
         long maxdelta = max - expectedBoundary;
         if (mindelta >= 0 &&
             mindelta <= INTERVAL &&
             mindelta >= 0 &&
             mindelta <= INTERVAL)
-            logln("PASS: Expected bdry:  " + expectedBoundary + " = " + new Date(expectedBoundary));
+            System.out.println("PASS: Expected bdry:  " + expectedBoundary + " = " + new Date(expectedBoundary));
         else
-            errln("FAIL: Expected bdry:  " + expectedBoundary + " = " + new Date(expectedBoundary));
+            fail("FAIL: Expected bdry:  " + expectedBoundary + " = " + new Date(expectedBoundary));
     }
 
     static final int INTERVAL = 100;
 
     // Bug 006; verify the offset for a specific zone.
+    @Test
     public void TestPRTOffset()
     {
         TimeZone tz = TimeZone.getTimeZone( "PRT" );
         if( tz == null ) {
-            errln( "FAIL: TimeZone(PRT) is null" );
+            fail( "FAIL: TimeZone(PRT) is null" );
         }
         else{
             if (tz.getRawOffset() != (-4*millisPerHour))
-                errln("FAIL: Offset for PRT should be -4");
+                fail("FAIL: Offset for PRT should be -4");
         }
 
     }
 
     // Test various calls
     @SuppressWarnings("deprecation")
+    @Test
     public void TestVariousAPI518()
     {
         TimeZone time_zone = TimeZone.getTimeZone("PST");
         Date d = new Date(97, Calendar.APRIL, 30);
 
-        logln("The timezone is " + time_zone.getID());
+        System.out.println("The timezone is " + time_zone.getID());
 
         if (time_zone.inDaylightTime(d) != true)
-            errln("FAIL: inDaylightTime returned false");
+            fail("FAIL: inDaylightTime returned false");
 
         if (time_zone.useDaylightTime() != true)
-            errln("FAIL: useDaylightTime returned false");
+            fail("FAIL: useDaylightTime returned false");
 
         if (time_zone.getRawOffset() != -8*millisPerHour)
-            errln( "FAIL: getRawOffset returned wrong value");
+            fail( "FAIL: getRawOffset returned wrong value");
 
         GregorianCalendar gc = new GregorianCalendar();
         gc.setTime(d);
@@ -585,10 +591,11 @@ public class TimeZoneTest extends IntlTest
                                 gc.get(gc.DAY_OF_MONTH),
                                 gc.get(gc.DAY_OF_WEEK), 0)
             != -7*millisPerHour)
-            errln("FAIL: getOffset returned wrong value");
+            fail("FAIL: getOffset returned wrong value");
     }
 
     // Test getAvailableID API
+    @Test
     public void TestGetAvailableIDs913()
     {
         StringBuffer buf = new StringBuffer("TimeZone.getAvailableIDs() = { ");
@@ -599,7 +606,7 @@ public class TimeZoneTest extends IntlTest
             buf.append(s[i]);
         }
         buf.append(" };");
-        logln(buf.toString());
+        System.out.println(buf.toString());
 
         buf.setLength(0);
         buf.append("TimeZone.getAvailableIDs(GMT+02:00) = { ");
@@ -610,31 +617,32 @@ public class TimeZoneTest extends IntlTest
             buf.append(s[i]);
         }
         buf.append(" };");
-        logln(buf.toString());
+        System.out.println(buf.toString());
 
         TimeZone tz = TimeZone.getTimeZone("PST");
         if (tz != null)
-            logln("getTimeZone(PST) = " + tz.getID());
+            System.out.println("getTimeZone(PST) = " + tz.getID());
         else
-            errln("FAIL: getTimeZone(PST) = null");
+            fail("FAIL: getTimeZone(PST) = null");
 
         tz = TimeZone.getTimeZone("America/Los_Angeles");
         if (tz != null)
-            logln("getTimeZone(America/Los_Angeles) = " + tz.getID());
+            System.out.println("getTimeZone(America/Los_Angeles) = " + tz.getID());
         else
-            errln("FAIL: getTimeZone(PST) = null");
+            fail("FAIL: getTimeZone(PST) = null");
 
         // Bug 4096694
         tz = TimeZone.getTimeZone("NON_EXISTENT");
         if (tz == null)
-            errln("FAIL: getTimeZone(NON_EXISTENT) = null");
+            fail("FAIL: getTimeZone(NON_EXISTENT) = null");
         else if (!tz.getID().equals("GMT"))
-            errln("FAIL: getTimeZone(NON_EXISTENT) = " + tz.getID());
+            fail("FAIL: getTimeZone(NON_EXISTENT) = " + tz.getID());
     }
 
     /**
      * Bug 4107276
      */
+    @Test
     public void TestDSTSavings() {
         // It might be better to find a way to integrate this test into the main TimeZone
         // tests above, but I don't have time to figure out how to do this (or if it's
@@ -644,43 +652,44 @@ public class TimeZoneTest extends IntlTest
                                                (int)(0.5 * millisPerHour));
 
         if (tz.getRawOffset() != -5 * millisPerHour)
-            errln("Got back a raw offset of " + (tz.getRawOffset() / millisPerHour) +
+            fail("Got back a raw offset of " + (tz.getRawOffset() / millisPerHour) +
                   " hours instead of -5 hours.");
         if (!tz.useDaylightTime())
-            errln("Test time zone should use DST but claims it doesn't.");
+            fail("Test time zone should use DST but claims it doesn't.");
         if (tz.getDSTSavings() != 0.5 * millisPerHour)
-            errln("Set DST offset to 0.5 hour, but got back " + (tz.getDSTSavings() /
+            fail("Set DST offset to 0.5 hour, but got back " + (tz.getDSTSavings() /
                                                                  millisPerHour) + " hours instead.");
 
         int offset = tz.getOffset(GregorianCalendar.AD, 1998, Calendar.JANUARY, 1,
                                   Calendar.THURSDAY, 10 * millisPerHour);
         if (offset != -5 * millisPerHour)
-            errln("The offset for 10 AM, 1/1/98 should have been -5 hours, but we got "
+            fail("The offset for 10 AM, 1/1/98 should have been -5 hours, but we got "
                   + (offset / millisPerHour) + " hours.");
 
         offset = tz.getOffset(GregorianCalendar.AD, 1998, Calendar.JUNE, 1, Calendar.MONDAY,
                               10 * millisPerHour);
         if (offset != -4.5 * millisPerHour)
-            errln("The offset for 10 AM, 6/1/98 should have been -4.5 hours, but we got "
+            fail("The offset for 10 AM, 6/1/98 should have been -4.5 hours, but we got "
                   + (offset / millisPerHour) + " hours.");
 
         tz.setDSTSavings(millisPerHour);
         offset = tz.getOffset(GregorianCalendar.AD, 1998, Calendar.JANUARY, 1,
                               Calendar.THURSDAY, 10 * millisPerHour);
         if (offset != -5 * millisPerHour)
-            errln("The offset for 10 AM, 1/1/98 should have been -5 hours, but we got "
+            fail("The offset for 10 AM, 1/1/98 should have been -5 hours, but we got "
                   + (offset / millisPerHour) + " hours.");
 
         offset = tz.getOffset(GregorianCalendar.AD, 1998, Calendar.JUNE, 1, Calendar.MONDAY,
                               10 * millisPerHour);
         if (offset != -4 * millisPerHour)
-            errln("The offset for 10 AM, 6/1/98 (with a 1-hour DST offset) should have been -4 hours, but we got "
+            fail("The offset for 10 AM, 6/1/98 (with a 1-hour DST offset) should have been -4 hours, but we got "
                   + (offset / millisPerHour) + " hours.");
     }
 
     /**
      * Bug 4107570
      */
+    @Test
     public void TestAlternateRules() {
         // Like TestDSTSavings, this test should probably be integrated somehow with the main
         // test at the top of this class, but I didn't have time to figure out how to do that.
@@ -695,25 +704,25 @@ public class TimeZoneTest extends IntlTest
         int offset = tz.getOffset(GregorianCalendar.AD, 1998, Calendar.MARCH, 5,
                                   Calendar.THURSDAY, 10 * millisPerHour);
         if (offset != -5 * millisPerHour)
-            errln("The offset for 10AM, 3/5/98 should have been -5 hours, but we got "
+            fail("The offset for 10AM, 3/5/98 should have been -5 hours, but we got "
                   + (offset / millisPerHour) + " hours.");
 
         offset = tz.getOffset(GregorianCalendar.AD, 1998, Calendar.MARCH, 15,
                               Calendar.SUNDAY, 10 * millisPerHour);
         if (offset != -4 * millisPerHour)
-            errln("The offset for 10AM, 3/15/98 should have been -4 hours, but we got "
+            fail("The offset for 10AM, 3/15/98 should have been -4 hours, but we got "
                   + (offset / millisPerHour) + " hours.");
 
         offset = tz.getOffset(GregorianCalendar.AD, 1998, Calendar.OCTOBER, 15,
                               Calendar.THURSDAY, 10 * millisPerHour);
         if (offset != -4 * millisPerHour)
-            errln("The offset for 10AM, 10/15/98 should have been -4 hours, but we got "
+            fail("The offset for 10AM, 10/15/98 should have been -4 hours, but we got "
                   + (offset / millisPerHour) + " hours.");
 
         offset = tz.getOffset(GregorianCalendar.AD, 1998, Calendar.OCTOBER, 25,
                               Calendar.SUNDAY, 10 * millisPerHour);
         if (offset != -5 * millisPerHour)
-            errln("The offset for 10AM, 10/25/98 should have been -5 hours, but we got "
+            fail("The offset for 10AM, 10/25/98 should have been -5 hours, but we got "
                   + (offset / millisPerHour) + " hours.");
 
         // test the day-of-week-after-day-in-month API
@@ -723,25 +732,25 @@ public class TimeZoneTest extends IntlTest
         offset = tz.getOffset(GregorianCalendar.AD, 1998, Calendar.MARCH, 11,
                               Calendar.WEDNESDAY, 10 * millisPerHour);
         if (offset != -5 * millisPerHour)
-            errln("The offset for 10AM, 3/11/98 should have been -5 hours, but we got "
+            fail("The offset for 10AM, 3/11/98 should have been -5 hours, but we got "
                   + (offset / millisPerHour) + " hours.");
 
         offset = tz.getOffset(GregorianCalendar.AD, 1998, Calendar.MARCH, 14,
                               Calendar.SATURDAY, 10 * millisPerHour);
         if (offset != -4 * millisPerHour)
-            errln("The offset for 10AM, 3/14/98 should have been -4 hours, but we got "
+            fail("The offset for 10AM, 3/14/98 should have been -4 hours, but we got "
                   + (offset / millisPerHour) + " hours.");
 
         offset = tz.getOffset(GregorianCalendar.AD, 1998, Calendar.OCTOBER, 15,
                               Calendar.THURSDAY, 10 * millisPerHour);
         if (offset != -4 * millisPerHour)
-            errln("The offset for 10AM, 10/15/98 should have been -4 hours, but we got "
+            fail("The offset for 10AM, 10/15/98 should have been -4 hours, but we got "
                   + (offset / millisPerHour) + " hours.");
 
         offset = tz.getOffset(GregorianCalendar.AD, 1998, Calendar.OCTOBER, 17,
                               Calendar.SATURDAY, 10 * millisPerHour);
         if (offset != -5 * millisPerHour)
-            errln("The offset for 10AM, 10/17/98 should have been -5 hours, but we got "
+            fail("The offset for 10AM, 10/17/98 should have been -5 hours, but we got "
                   + (offset / millisPerHour) + " hours.");
     }
 }
