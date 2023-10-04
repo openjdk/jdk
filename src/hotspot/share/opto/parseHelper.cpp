@@ -774,7 +774,38 @@ void PEAState::validate() const {
 }
 #endif
 
-void PEAState::mark_all_escaped() {
+bool safepointContains(SafePointNode* sfpt, Node *oop) {
+  for (uint i = TypeFunc::Parms; i < sfpt->req(); ++i) {
+    if (oop == sfpt->in(i)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void PEAState::mark_all_escaped(PartialEscapeAnalysis* pea, ObjID id, Node* obj) {
+  VirtualState* virt = as_virtual(pea, obj);
+  escape(id, obj, false);
+
+  for (auto&& it = virt->field_iterator(); it.has_next(); ++it) {
+    ciField* field = it.field();
+    Node* val = it.value();
+
+    BasicType bt = field->layout_type();
+    bool is_obj = is_reference_type(bt);
+
+    ObjID alias = pea->is_alias(val);
+    if (is_obj && alias != nullptr) {
+      // recurse if val is a virtual object.
+      if (get_object_state(alias)->is_virtual()) {
+        mark_all_escaped(pea, alias, val);
+      }
+      assert(as_escaped(pea, val) != nullptr, "the object of val is not Escaped");
+    }
+  }
+}
+
+void PEAState::mark_all_live_objects_escaped(PartialEscapeAnalysis *pea, SafePointNode* sfpt) {
   Unique_Node_List objs;
   int sz = objects(objs);
 
@@ -783,7 +814,11 @@ void PEAState::mark_all_escaped() {
     ObjectState* os = get_object_state(id);
 
     if (os->is_virtual()) {
-      escape(id, get_java_oop(id), false);
+      Node *oop = get_java_oop(id);
+      // We only need to mark objects that are live as escaped.
+      if (safepointContains(sfpt, oop)) {
+        mark_all_escaped(pea, id, oop);
+      }
     }
   }
 }

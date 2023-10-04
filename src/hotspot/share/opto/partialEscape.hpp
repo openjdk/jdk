@@ -310,7 +310,8 @@ class PEAState {
   }
 
   // we drop out all virtual objects when we encounter a loop header.
-  void mark_all_escaped();
+  void mark_all_escaped(PartialEscapeAnalysis* pea, ObjID id, Node *obj);
+  void mark_all_live_objects_escaped(PartialEscapeAnalysis *pea, SafePointNode* map);
 
 #ifndef PRODUCT
   void print_on(outputStream* os) const;
