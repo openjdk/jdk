@@ -2918,8 +2918,7 @@ LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* excepti
 #else
     address pc = (address) exceptionInfo->ContextRecord->Eip;
 #endif
-    Thread* thread;
-    thread = Thread::current_or_null_safe();
+    Thread* thread = Thread::current_or_null_safe();
 
     if (exceptionCode != EXCEPTION_BREAKPOINT) {
       report_error(thread, exceptionCode, pc, exceptionInfo->ExceptionRecord,
