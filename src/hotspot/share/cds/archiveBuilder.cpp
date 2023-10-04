@@ -573,9 +573,9 @@ void ArchiveBuilder::verify_estimate_size(size_t estimate, const char* which) {
   _other_region_used_bytes = 0;
 }
 
-Array<char>* ArchiveBuilder::ro_strdup(const char* s) {
-  Array<char>* archived_str = new_ro_array<char>((int)strlen(s) + 1);
-  strcpy(archived_str->adr_at(0), s);
+char* ArchiveBuilder::ro_strdup(const char* s) {
+  char* archived_str = ro_region_alloc((int)strlen(s) + 1);
+  strcpy(archived_str, s);
   return archived_str;
 }
 

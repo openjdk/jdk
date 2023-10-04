@@ -374,7 +374,7 @@ public:
     return align_up(byte_size, SharedSpaceObjectAlignment);
   }
 
-  Array<char>* ro_strdup(const char* s);
+  char* ro_strdup(const char* s);
 
   void dump_rw_metadata();
   void dump_ro_metadata();

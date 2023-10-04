@@ -221,7 +221,7 @@ public final class ModuleBootstrap {
             systemModuleFinder = archivedModuleGraph.finder();
             hasSplitPackages = archivedModuleGraph.hasSplitPackages();
             hasIncubatorModules = archivedModuleGraph.hasIncubatorModules();
-            needResolution = (traceOutput != null);
+            needResolution = (traceOutput != null) || CDS.isDumpingStaticArchive();
         } else {
             if (!haveModulePath && addModules.isEmpty() && limitModules.isEmpty()) {
                 systemModules = SystemModuleFinders.systemModules(mainModule);
@@ -372,12 +372,7 @@ public final class ModuleBootstrap {
         } else {
             // no resolution case
             finder = systemModuleFinder;
-            if (canArchive && mainModule != null) {
-                roots = new HashSet<>();
-                roots.add(mainModule);
-            } else {
-                roots = null;
-            }
+            roots = null;
         }
 
         Counters.add("jdk.module.boot.3.optionsAndRootsTime");
@@ -388,7 +383,7 @@ public final class ModuleBootstrap {
         // readability graph created at link time.
 
         Configuration cf;
-        if (needResolution || (canArchive && mainModule != null)) {
+        if (needResolution) {
             cf = Modules.newBootLayerConfiguration(finder, roots, traceOutput);
         } else {
             if (archivedModuleGraph != null) {

@@ -63,7 +63,7 @@ public:
   static void serialize(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 
 #if INCLUDE_CDS_JAVA_HEAP
-  static Array<char>* _archived_module_name;
+  static char* _archived_main_module_name;
 #endif
 
   // Provides the java.lang.Module for the unnamed module defined

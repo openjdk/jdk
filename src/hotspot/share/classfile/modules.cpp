@@ -561,33 +561,36 @@ void Modules::verify_archived_modules() {
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-Array<char>* Modules::_archived_module_name = nullptr;
+char* Modules::_archived_main_module_name = nullptr;
 #endif
 
 void Modules::dump_module_name() {
   const char* module_name = Arguments::get_property("jdk.module.main");
   if (module_name != nullptr) {
-    _archived_module_name = ArchiveBuilder::current()->ro_strdup(module_name);
+    _archived_main_module_name = ArchiveBuilder::current()->ro_strdup(module_name);
   }
-  ArchivePtrMarker::mark_pointer(&_archived_module_name);
+  ArchivePtrMarker::mark_pointer(&_archived_main_module_name);
 }
 
 void Modules::serialize(SerializeClosure* soc) {
-  soc->do_ptr(&_archived_module_name);
+  soc->do_ptr(&_archived_main_module_name);
   if (soc->reading()) {
-    const char* runtime_module = Arguments::get_property("jdk.module.main");
-    log_info(cds)("_archived_module_name %s",
-      _archived_module_name != nullptr ? _archived_module_name->adr_at(0) : "(null)");
-    if (runtime_module == nullptr && _archived_module_name != nullptr) {
-      log_info(cds)("Module %s specified during dump time but not during runtime", _archived_module_name->adr_at(0));
+    const char* runtime_main_module = Arguments::get_property("jdk.module.main");
+    log_info(cds)("_archived_main_module_name %s",
+      _archived_main_module_name != nullptr ? _archived_main_module_name : "(null)");
+    if (runtime_main_module == nullptr && _archived_main_module_name != nullptr) {
+      log_info(cds)("Module %s specified during dump time but not during runtime", _archived_main_module_name);
+      log_info(cds)("Disabling optimized module handling");
+      MetaspaceShared::disable_optimized_module_handling();
+      MetaspaceShared::disable_full_module_graph();
     }
-    if (runtime_module != nullptr) {
-      if (_archived_module_name == nullptr) {
-        log_info(cds)("Module %s specified during runtime but not during dump time", runtime_module);
+    if (runtime_main_module != nullptr) {
+      if (_archived_main_module_name == nullptr) {
+        log_info(cds)("Module %s specified during runtime but not during dump time", runtime_main_module);
         log_info(cds)("Disabling optimized module handling");
         MetaspaceShared::disable_optimized_module_handling();
-      } else if (strcmp(runtime_module, _archived_module_name->adr_at(0)) != 0) {
-        log_info(cds)("Mismatched modules: runtime %s dump time %s", runtime_module, _archived_module_name->adr_at(0));
+      } else if (strcmp(runtime_main_module, _archived_main_module_name) != 0) {
+        log_info(cds)("Mismatched modules: runtime %s dump time %s", runtime_main_module, _archived_main_module_name);
         log_info(cds)("Disabling optimized module handling");
         MetaspaceShared::disable_optimized_module_handling();
       }
