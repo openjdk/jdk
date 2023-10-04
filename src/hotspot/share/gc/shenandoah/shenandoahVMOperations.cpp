@@ -46,7 +46,6 @@ void VM_ShenandoahReferenceOperation::doit_epilogue() {
     Heap_lock->notify_all();
   }
   Heap_lock->unlock();
-  OopMapCache::cleanup_old_entries();
 }
 
 void VM_ShenandoahInitMark::doit() {
