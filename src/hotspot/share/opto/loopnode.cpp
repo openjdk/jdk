@@ -5359,10 +5359,10 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
         if( !n->is_CallStaticJava() || !n->as_CallStaticJava()->_name ) {
           Node *iff = n->in(0)->in(0);
           // No any calls for vectorized loops.
-          if(C->do_superword() ||
-             !iff->is_If() ||
-             (n->in(0)->Opcode() == Op_IfFalse && (1.0 - iff->as_If()->_prob) >= 0.01) ||
-             iff->as_If()->_prob >= 0.01) {
+          if (C->do_superword() ||
+              !iff->is_If() ||
+              (n->in(0)->Opcode() == Op_IfFalse && (1.0 - iff->as_If()->_prob) >= 0.01) ||
+              iff->as_If()->_prob >= 0.01) {
             innermost->_has_call = 1;
           }
         }
