@@ -152,9 +152,38 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
         }
       }
     }
+
+    bool failed_win = false;
+    if (x == the_clone && region->is_Loop() && n->is_Load()) {
+      // only move LoadI from inner to outer loop
+      Node* n_ctrl = region;
+      IdealLoopTree* n_loop_tree = get_loop(n_ctrl); // wrong -> gives parent, we want region itself
+
+      for (uint j = 1; j < n->req(); j++) {
+        Node* in = n->in(j);
+        if (in->is_Phi() && in->in(0) == region) {
+          Node* x_ctrl = x->in(j); // in->in(i); Use pre-Phi input for the clone
+          if (has_ctrl(x_ctrl)) {
+            x_ctrl = get_ctrl(x_ctrl);
+          }
+          IdealLoopTree* x_loop_tree = get_loop(x_ctrl);
+          // is n_loop_tree (should be inner or same loop) a member of x_loop_tree (should be outer loop)
+          if (!x_loop_tree->is_member(n_loop_tree)) {
+            wins = 0;
+            failed_win = true;
+            //assert(false, "is shouldBeInnerOrSame NOT a member of shouldBeOuter");
+            break;
+          }
+        }
+      }
+    }
+
     if (x != the_clone && the_clone != nullptr)
       _igvn.remove_dead_node(the_clone);
     phi->set_req( i, x );
+    if (failed_win) {
+      break;
+    }
   }
   // Too few wins?
   if (wins <= policy) {
