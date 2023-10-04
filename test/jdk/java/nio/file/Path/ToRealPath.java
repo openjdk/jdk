@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8295753
+ * @bug 8295753 8306882
  * @summary Verify correct operation of Path.toRealPath
  * @library .. /test/lib
  * @build ToRealPath jdk.test.lib.Platform
@@ -143,6 +143,52 @@ public class ToRealPath {
     }
 
     @Test
+    @EnabledIf("supportsLinks")
+    public void noCollapseDots1() throws IOException {
+        Path subPath = DIR.resolve(Path.of("dir", "subdir"));
+        Path sub = Files.createDirectories(subPath);
+        System.out.println("sub: " + sub);
+        Files.createSymbolicLink(LINK, sub);
+        System.out.println("LINK: " + LINK + " -> " + sub);
+        Path p = Path.of("..", "..", FILE.getFileName().toString());
+        System.out.println("p: " + p);
+        Path path = LINK.resolve(p);
+        System.out.println("path:      " + path);
+        System.out.println("no follow: " + path.toRealPath(NOFOLLOW_LINKS));
+        assertEquals(path.toRealPath(NOFOLLOW_LINKS), path);
+
+        Files.delete(sub);
+        Files.delete(sub.getParent());
+        Files.delete(LINK);
+    }
+
+    @Test
+    @EnabledIf("supportsLinks")
+    public void noCollapseDots2() throws IOException {
+        Path subPath = DIR.resolve(Path.of("dir", "subdir"));
+        Path sub = Files.createDirectories(subPath);
+        Path out = Files.createFile(DIR.resolve(Path.of("out.txt")));
+        Path aaa = DIR.resolve(Path.of("aaa"));
+        Files.createSymbolicLink(aaa, sub);
+        System.out.println("aaa: " + aaa + " -> " + sub);
+        Path bbb = DIR.resolve(Path.of("bbb"));
+        Files.createSymbolicLink(bbb, sub);
+        System.out.println("bbb: " + bbb + " -> " + sub);
+        Path p = Path.of("aaa", "..", "..", "bbb", "..", "..", "out.txt");
+        Path path = DIR.resolve(p);
+        System.out.println("path:      " + path);
+        System.out.println("no follow: " + path.toRealPath(NOFOLLOW_LINKS));
+        assertEquals(path.toRealPath(NOFOLLOW_LINKS), path);
+        System.out.println(path.toRealPath());
+
+        Files.delete(sub);
+        Files.delete(sub.getParent());
+        Files.delete(out);
+        Files.delete(aaa);
+        Files.delete(bbb);
+    }
+
+    @Test
     @EnabledOnOs(OS.MAC)
     public final void macOSTests() throws IOException {
         // theTarget = dir/subdir/theTarget
@@ -180,12 +226,14 @@ public class ToRealPath {
         assertEquals(noFollow.getName(nc - 4), Path.of("theLink"));
         assertEquals(noFollow.getName(nc - 1), Path.of("theTarget"));
 
+        Files.delete(theLink);
         Files.delete(theTarget);
     }
 
     @AfterAll
     public static void cleanup() throws IOException {
-        Files.delete(SUBDIR);
         Files.delete(FILE);
+        Files.delete(SUBDIR);
+        Files.delete(DIR);
     }
 }

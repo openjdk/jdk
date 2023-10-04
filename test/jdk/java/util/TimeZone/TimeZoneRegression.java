@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,42 +27,44 @@
  * 4154525 4154537 4154542 4154650 4159922 4162593 4173604 4176686 4184229 4208960
  * 4966229 6433179 6851214 8007520 8008577
  * @library /java/text/testlib
- * @run main/othervm -Djava.locale.providers=COMPAT,SPI TimeZoneRegression
+ * @run junit/othervm -Djava.locale.providers=COMPAT,SPI TimeZoneRegression
  */
 
 import java.util.*;
 import java.io.*;
 import java.text.*;
 
-public class TimeZoneRegression extends IntlTest {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        new TimeZoneRegression().run(args);
-    }
+import static org.junit.jupiter.api.Assertions.fail;
 
+public class TimeZoneRegression {
+
+    @Test
     public void Test4073209() {
         TimeZone z1 = TimeZone.getTimeZone("PST");
         TimeZone z2 = TimeZone.getTimeZone("PST");
         if (z1 == z2) {
-            errln("Fail: TimeZone should return clones");
+            fail("Fail: TimeZone should return clones");
         }
     }
 
     @SuppressWarnings("deprecation")
+    @Test
     public void Test4073215() {
         SimpleTimeZone z = new SimpleTimeZone(0, "GMT");
         if (z.useDaylightTime()) {
-            errln("Fail: Fix test to start with non-DST zone");
+            fail("Fail: Fix test to start with non-DST zone");
         }
         z.setStartRule(Calendar.FEBRUARY, 1, Calendar.SUNDAY, 0);
         z.setEndRule(Calendar.MARCH, -1, Calendar.SUNDAY, 0);
         if (!z.useDaylightTime()) {
-            errln("Fail: DST not active");
+            fail("Fail: DST not active");
         }
         if (z.inDaylightTime(new Date(97, Calendar.JANUARY, 31)) ||
             !z.inDaylightTime(new Date(97, Calendar.MARCH, 1)) ||
             z.inDaylightTime(new Date(97, Calendar.MARCH, 31))) {
-            errln("Fail: DST not working as expected");
+            fail("Fail: DST not working as expected");
         }
     }
 
@@ -74,6 +76,7 @@ public class TimeZoneRegression extends IntlTest {
      *    day of end   0:59 AM STD  = display name 1:59 AM DT
      *                 1:00 AM STD  = display name 1:00 AM ST
      */
+    @Test
     public void Test4084933() {
         // test both SimpleTimeZone and ZoneInfo objects.
         // @since 1.4
@@ -113,10 +116,11 @@ public class TimeZoneRegression extends IntlTest {
             offset3 != SToffset || offset4 != DToffset ||
             offset5 != DToffset || offset6 != SToffset ||
             offset7 != SToffset || offset8 != SToffset)
-            errln("Fail: TimeZone misbehaving"); {
+            fail("Fail: TimeZone misbehaving"); {
         }
     }
 
+    @Test
     public void Test4096952() {
         String[] ZONES = { "GMT", "MET", "IST" };
         boolean pass = true;
@@ -124,7 +128,7 @@ public class TimeZoneRegression extends IntlTest {
             for (int i=0; i<ZONES.length; ++i) {
                 TimeZone zone = TimeZone.getTimeZone(ZONES[i]);
                 if (!zone.getID().equals(ZONES[i]))
-                    errln("Fail: Test broken; zones not instantiating");
+                    fail("Fail: Test broken; zones not instantiating");
 
                 ByteArrayOutputStream baos;
                 ObjectOutputStream ostream =
@@ -140,27 +144,28 @@ public class TimeZoneRegression extends IntlTest {
                 //logln("Zone:        " + zone);
                 //logln("FrankenZone: " + frankenZone);
                 if (!zone.equals(frankenZone)) {
-                    logln("TimeZone " + zone.getID() +
+                    System.out.println("TimeZone " + zone.getID() +
                           " not equal to serialized/deserialized one");
                     pass = false;
                 }
             }
-            if (!pass) errln("Fail: TimeZone serialization/equality bug");
+            if (!pass) fail("Fail: TimeZone serialization/equality bug");
         }
         catch (IOException e) {
-            errln("Fail: " + e);
+            fail("Fail: " + e);
             e.printStackTrace();
         }
         catch (ClassNotFoundException e) {
-            errln("Fail: " + e);
+            fail("Fail: " + e);
             e.printStackTrace();
         }
     }
 
+    @Test
     public void Test4109314() {
         Locale locale = Locale.getDefault();
         if (!TestUtils.usesGregorianCalendar(locale)) {
-            logln("Skipping this test because locale is " + locale);
+            System.out.println("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -190,7 +195,7 @@ public class TimeZoneRegression extends IntlTest {
                 t += 60*60*1000L;
             }
         }
-        if (!pass) errln("Fail: TZ API inconsistent");
+        if (!pass) fail("Fail: TZ API inconsistent");
     }
 
     boolean checkCalendar314(GregorianCalendar testCal, TimeZone testTZ) {
@@ -268,7 +273,7 @@ public class TimeZoneRegression extends IntlTest {
         else
             output += "ERROR";
 
-        if (passed) logln(output); else errln(output);
+        if (passed) System.out.println(output); else fail(output);
         return passed;
     }
 
@@ -284,10 +289,11 @@ public class TimeZoneRegression extends IntlTest {
      *     in the MILLIS field, instead of the STANDARD MILLIS IN DAY.
      * When you fix these two problems, the test passes, as expected.
      */
+    @Test
     public void Test4126678() {
         Locale locale = Locale.getDefault();
         if (!TestUtils.usesGregorianCalendar(locale)) {
-            logln("Skipping this test because locale is " + locale);
+            System.out.println("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -313,7 +319,7 @@ public class TimeZoneRegression extends IntlTest {
         Date dt = new Date(1998-1900, Calendar.APRIL, 5, 10, 0);
         // the dt value is local time in PST.
         if (!tz.inDaylightTime(dt))
-            errln("We're not in Daylight Savings Time and we should be.\n");
+            fail("We're not in Daylight Savings Time and we should be.\n");
 
         cal.setTime(dt);
         int era = cal.get(Calendar.ERA);
@@ -330,7 +336,7 @@ public class TimeZoneRegression extends IntlTest {
         long offset = tz.getOffset(era, year, month, day, dayOfWeek, millis);
         long raw_offset = tz.getRawOffset();
         if (offset == raw_offset) {
-            errln("Offsets should not match when in DST");
+            fail("Offsets should not match when in DST");
         }
     }
 
@@ -338,6 +344,7 @@ public class TimeZoneRegression extends IntlTest {
      * TimeZone.getAvailableIDs(int) throws exception for certain values,
      * due to a faulty constant in TimeZone.java.
      */
+    @Test
     public void Test4151406() {
         int max = 0;
         for (int h=-28; h<=30; ++h) {
@@ -351,21 +358,22 @@ public class TimeZoneRegression extends IntlTest {
             try {
                 String[] ids = TimeZone.getAvailableIDs(rawoffset);
                 if (ids.length > max) max = ids.length;
-                logln(hname + ' ' + ids.length +
+                System.out.println(hname + ' ' + ids.length +
                       ((ids.length > 0) ? (" e.g. " + ids[0]) : ""));
             } catch (Exception e) {
-                errln(hname + ' ' + "Fail: " + e);
+                fail(hname + ' ' + "Fail: " + e);
             }
         }
-        logln("Maximum zones per offset = " + max);
+        System.out.println("Maximum zones per offset = " + max);
     }
 
+    @Test
     public void Test4151429() {
         try {
             TimeZone tz = TimeZone.getTimeZone("GMT");
             String name = tz.getDisplayName(true, Integer.MAX_VALUE,
                                             Locale.getDefault());
-            errln("IllegalArgumentException not thrown by TimeZone.getDisplayName()");
+            fail("IllegalArgumentException not thrown by TimeZone.getDisplayName()");
         } catch(IllegalArgumentException e) {}
     }
 
@@ -373,6 +381,7 @@ public class TimeZoneRegression extends IntlTest {
      * SimpleTimeZone accepts illegal DST savings values.  These values
      * must be non-zero.  There is no upper limit at this time.
      */
+    @Test
     public void Test4154525() {
         final int GOOD = 1, BAD = 0;
         int[] DATA = {
@@ -404,15 +413,15 @@ public class TimeZoneRegression extends IntlTest {
                         break;
                     }
                     if (valid) {
-                        logln("Pass: DST savings of " + savings + " accepted by " + method);
+                        System.out.println("Pass: DST savings of " + savings + " accepted by " + method);
                     } else {
-                        errln("Fail: DST savings of " + savings + " accepted by " + method);
+                        fail("Fail: DST savings of " + savings + " accepted by " + method);
                     }
                 } catch (IllegalArgumentException e) {
                     if (valid) {
-                        errln("Fail: DST savings of " + savings + " to " + method + " gave " + e);
+                        fail("Fail: DST savings of " + savings + " to " + method + " gave " + e);
                     } else {
-                        logln("Pass: DST savings of " + savings + " to " + method + " gave " + e);
+                        System.out.println("Pass: DST savings of " + savings + " to " + method + " gave " + e);
                     }
                 }
             }
@@ -423,6 +432,7 @@ public class TimeZoneRegression extends IntlTest {
      * SimpleTimeZone.hasSameRules() doesn't work for zones with no DST
      * and different DST parameters.
      */
+    @Test
     public void Test4154537() {
         // tz1 and tz2 have no DST and different rule parameters
         SimpleTimeZone tz1 = new SimpleTimeZone(0, "1", 0, 0, 0, 0, 2, 0, 0, 0);
@@ -435,15 +445,15 @@ public class TimeZoneRegression extends IntlTest {
         if (tz1.useDaylightTime() || tz2.useDaylightTime() ||
             !tza.useDaylightTime() || !tzA.useDaylightTime() ||
             !tzb.useDaylightTime()) {
-            errln("Test is broken -- rewrite it");
+            fail("Test is broken -- rewrite it");
         }
         if (!tza.hasSameRules(tzA) || tza.hasSameRules(tzb)) {
-            errln("Fail: hasSameRules() broken for zones with rules");
+            fail("Fail: hasSameRules() broken for zones with rules");
         }
         if (!tz1.hasSameRules(tz2)) {
-            errln("Fail: hasSameRules() returns false for zones without rules");
-            errln("zone 1 = " + tz1);
-            errln("zone 2 = " + tz2);
+            fail("Fail: hasSameRules() returns false for zones without rules");
+            fail("zone 1 = " + tz1);
+            fail("zone 2 = " + tz2);
         }
     }
 
@@ -451,6 +461,7 @@ public class TimeZoneRegression extends IntlTest {
      * SimpleTimeZone constructors, setStartRule(), and setEndRule() don't
      * check for out-of-range arguments.
      */
+    @Test
     public void Test4154542() {
         final int GOOD = 1;
         final int BAD  = 0;
@@ -496,7 +507,7 @@ public class TimeZoneRegression extends IntlTest {
                 ex = e;
             }
             if ((ex == null) != shouldBeGood) {
-                errln("setStartRule(month=" + month + ", day=" + day +
+                fail("setStartRule(month=" + month + ", day=" + day +
                       ", dayOfWeek=" + dayOfWeek + ", time=" + time +
                       (shouldBeGood ? (") should work but throws " + ex)
                        : ") should fail but doesn't"));
@@ -509,7 +520,7 @@ public class TimeZoneRegression extends IntlTest {
                 ex = e;
             }
             if ((ex == null) != shouldBeGood) {
-                errln("setEndRule(month=" + month + ", day=" + day +
+                fail("setEndRule(month=" + month + ", day=" + day +
                       ", dayOfWeek=" + dayOfWeek + ", time=" + time +
                       (shouldBeGood ? (") should work but throws " + ex)
                        : ") should fail but doesn't"));
@@ -524,7 +535,7 @@ public class TimeZoneRegression extends IntlTest {
                 ex = e;
             }
             if ((ex == null) != shouldBeGood) {
-                errln("SimpleTimeZone(month=" + month + ", day=" + day +
+                fail("SimpleTimeZone(month=" + month + ", day=" + day +
                       ", dayOfWeek=" + dayOfWeek + ", time=" + time +
                       (shouldBeGood ? (", <end>) should work but throws " + ex)
                        : ", <end>) should fail but doesn't"));
@@ -539,7 +550,7 @@ public class TimeZoneRegression extends IntlTest {
                 ex = e;
             }
             if ((ex == null) != shouldBeGood) {
-                errln("SimpleTimeZone(<start>, month=" + month + ", day=" + day +
+                fail("SimpleTimeZone(<start>, month=" + month + ", day=" + day +
                       ", dayOfWeek=" + dayOfWeek + ", time=" + time +
                       (shouldBeGood ? (") should work but throws " + ex)
                        : ") should fail but doesn't"));
@@ -550,6 +561,7 @@ public class TimeZoneRegression extends IntlTest {
     /**
      * SimpleTimeZone.getOffset accepts illegal arguments.
      */
+    @Test
     public void Test4154650() {
         final int GOOD=1, BAD=0;
         final int GOOD_ERA=GregorianCalendar.AD, GOOD_YEAR=1998, GOOD_MONTH=Calendar.AUGUST;
@@ -594,7 +606,7 @@ public class TimeZoneRegression extends IntlTest {
                 e = ex;
             }
             if (good != (e == null)) {
-                errln("Fail: getOffset(" +
+                fail("Fail: getOffset(" +
                       DATA[i+1] + ", " + DATA[i+2] + ", " + DATA[i+3] + ", " +
                       DATA[i+4] + ", " + DATA[i+5] + ", " + DATA[i+6] +
                       (good ? (") threw " + e) : ") accepts invalid args"));
@@ -605,6 +617,7 @@ public class TimeZoneRegression extends IntlTest {
     /**
      * TimeZone constructors allow null IDs.
      */
+    @Test
     public void Test4159922() {
         TimeZone z = null;
 
@@ -612,38 +625,38 @@ public class TimeZoneRegression extends IntlTest {
         // allow null.
         try {
             z = TimeZone.getTimeZone((String)null);
-            errln("FAIL: Null allowed in getTimeZone");
+            fail("FAIL: Null allowed in getTimeZone");
         } catch (NullPointerException e) {}
         z = TimeZone.getTimeZone("GMT");
         try {
             z.getDisplayName(false, TimeZone.SHORT, null);
-            errln("FAIL: Null allowed in getDisplayName(3)");
+            fail("FAIL: Null allowed in getDisplayName(3)");
         } catch (NullPointerException e) {}
         try {
             z.getDisplayName(null);
-            errln("FAIL: Null allowed in getDisplayName(1)");
+            fail("FAIL: Null allowed in getDisplayName(1)");
         } catch (NullPointerException e) {}
         try {
             if (z.hasSameRules(null)) {
-                errln("FAIL: hasSameRules returned true");
+                fail("FAIL: hasSameRules returned true");
             }
         } catch (NullPointerException e) {
-            errln("FAIL: Null NOT allowed in hasSameRules");
+            fail("FAIL: Null NOT allowed in hasSameRules");
         }
         try {
             z.inDaylightTime(null);
-            errln("FAIL: Null allowed in inDaylightTime");
+            fail("FAIL: Null allowed in inDaylightTime");
         } catch (NullPointerException e) {}
         try {
             z.setID(null);
-            errln("FAIL: Null allowed in setID");
+            fail("FAIL: Null allowed in setID");
         } catch (NullPointerException e) {}
 
         TimeZone save = TimeZone.getDefault();
         try {
             TimeZone.setDefault(null);
         } catch (NullPointerException e) {
-            errln("FAIL: Null NOT allowed in setDefault");
+            fail("FAIL: Null NOT allowed in setDefault");
         } finally {
             TimeZone.setDefault(save);
         }
@@ -652,15 +665,15 @@ public class TimeZoneRegression extends IntlTest {
         SimpleTimeZone s = null;
         try {
             s = new SimpleTimeZone(0, null);
-            errln("FAIL: Null allowed in SimpleTimeZone(2)");
+            fail("FAIL: Null allowed in SimpleTimeZone(2)");
         } catch (NullPointerException e) {}
         try {
             s = new SimpleTimeZone(0, null, 0, 1, 0, 0, 0, 1, 0, 0);
-            errln("FAIL: Null allowed in SimpleTimeZone(10)");
+            fail("FAIL: Null allowed in SimpleTimeZone(10)");
         } catch (NullPointerException e) {}
         try {
             s = new SimpleTimeZone(0, null, 0, 1, 0, 0, 0, 1, 0, 0, 1000);
-            errln("FAIL: Null allowed in SimpleTimeZone(11)");
+            fail("FAIL: Null allowed in SimpleTimeZone(11)");
         } catch (NullPointerException e) {}
     }
 
@@ -669,6 +682,7 @@ public class TimeZoneRegression extends IntlTest {
      * transitions at midnight correctly.
      */
     @SuppressWarnings("deprecation")
+    @Test
     public void Test4162593() {
         SimpleDateFormat fmt = new SimpleDateFormat("z", Locale.US);
         final int ONE_HOUR = 60*60*1000;
@@ -711,18 +725,18 @@ public class TimeZoneRegression extends IntlTest {
                 Date d = new Date(p[0], p[1], p[2], p[3], p[4]);
                 boolean transitionExpected = ((Boolean)DATA[j+2]).booleanValue();
 
-                logln(tz.getID() + ":");
+                System.out.println(tz.getID() + ":");
                 for (int i=0; i<4; ++i) {
                     zone[i] = fmt.format(d);
-                    logln("" + i + ": " + d);
+                    System.out.println("" + i + ": " + d);
                     d = new Date(d.getTime() + ONE_HOUR);
                 }
                 if (zone[0].equals(zone[1]) &&
                     (zone[1].equals(zone[2]) != transitionExpected) &&
                     zone[2].equals(zone[3])) {
-                    logln("Ok: transition " + transitionExpected);
+                    System.out.println("Ok: transition " + transitionExpected);
                 } else {
-                    errln("Fail: boundary transition incorrect");
+                    fail("Fail: boundary transition incorrect");
                 }
             }
         }
@@ -736,6 +750,7 @@ public class TimeZoneRegression extends IntlTest {
     /**
      * TimeZone broken in last hour of year
      */
+    @Test
     public void Test4173604() {
         // test both SimpleTimeZone and ZoneInfo objects.
         // @since 1.4
@@ -748,7 +763,7 @@ public class TimeZoneRegression extends IntlTest {
         int o23 = pst.getOffset(1, 1998, 11, 31, Calendar.THURSDAY, 23*60*60*1000);
         int o00 = pst.getOffset(1, 1999, 0, 1, Calendar.FRIDAY, 0);
         if (o22 != o23 || o22 != o00) {
-            errln("Offsets should be the same (for PST), but got: " +
+            fail("Offsets should be the same (for PST), but got: " +
                   "12/31 22:00 " + o22 +
                   ", 12/31 23:00 " + o23 +
                   ", 01/01 00:00 " + o00);
@@ -767,12 +782,12 @@ public class TimeZoneRegression extends IntlTest {
                 ++transitions;
                 Calendar t = (Calendar)cal.clone();
                 t.add(Calendar.MINUTE, -delta);
-                logln(t.getTime() + "  " + t.get(Calendar.DST_OFFSET));
-                logln(cal.getTime() + "  " + (lastDST=cal.get(Calendar.DST_OFFSET)));
+                System.out.println(t.getTime() + "  " + t.get(Calendar.DST_OFFSET));
+                System.out.println(cal.getTime() + "  " + (lastDST=cal.get(Calendar.DST_OFFSET)));
             }
         }
         if (transitions != 4) {
-            errln("Saw " + transitions + " transitions; should have seen 4");
+            fail("Saw " + transitions + " transitions; should have seen 4");
         }
     }
 
@@ -780,6 +795,7 @@ public class TimeZoneRegression extends IntlTest {
      * getDisplayName doesn't work with unusual savings/offsets.
      */
     @SuppressWarnings("deprecation")
+    @Test
     public void Test4176686() {
         // Construct a zone that does not observe DST but
         // that does have a DST savings (which should be ignored).
@@ -827,7 +843,7 @@ public class TimeZoneRegression extends IntlTest {
 
         for (int i=0; i<DATA.length; i+=3) {
             if (!DATA[i+1].equals(DATA[i+2])) {
-                errln("FAIL: " + DATA[i] + " -> " + DATA[i+1] + ", exp " + DATA[i+2]);
+                fail("FAIL: " + DATA[i] + " -> " + DATA[i+1] + ", exp " + DATA[i+2]);
             }
         }
     }
@@ -835,57 +851,58 @@ public class TimeZoneRegression extends IntlTest {
     /**
      * SimpleTimeZone allows invalid DOM values.
      */
+    @Test
     public void Test4184229() {
         SimpleTimeZone zone = null;
         try {
             zone = new SimpleTimeZone(0, "A", 0, -1, 0, 0, 0, 0, 0, 0);
-            errln("Failed. No exception has been thrown for DOM -1 startDay");
+            fail("Failed. No exception has been thrown for DOM -1 startDay");
         } catch(IllegalArgumentException e) {
-            logln("(a) " + e.getMessage());
+            System.out.println("(a) " + e.getMessage());
         }
         try {
             zone = new SimpleTimeZone(0, "A", 0, 0, 0, 0, 0, -1, 0, 0);
-            errln("Failed. No exception has been thrown for DOM -1 endDay");
+            fail("Failed. No exception has been thrown for DOM -1 endDay");
         } catch(IllegalArgumentException e) {
-            logln("(b) " + e.getMessage());
+            System.out.println("(b) " + e.getMessage());
         }
         try {
             zone = new SimpleTimeZone(0, "A", 0, -1, 0, 0, 0, 0, 0, 0, 1000);
-            errln("Failed. No exception has been thrown for DOM -1 startDay +savings");
+            fail("Failed. No exception has been thrown for DOM -1 startDay +savings");
         } catch(IllegalArgumentException e) {
-            logln("(c) " + e.getMessage());
+            System.out.println("(c) " + e.getMessage());
         }
         try {
             zone = new SimpleTimeZone(0, "A", 0, 0, 0, 0, 0, -1, 0, 0, 1000);
-            errln("Failed. No exception has been thrown for DOM -1 endDay +savings");
+            fail("Failed. No exception has been thrown for DOM -1 endDay +savings");
         } catch(IllegalArgumentException e) {
-            logln("(d) " + e.getMessage());
+            System.out.println("(d) " + e.getMessage());
         }
         // Make a valid constructor call for subsequent tests.
         zone = new SimpleTimeZone(0, "A", 0, 1, 0, 0, 0, 1, 0, 0);
         try {
             zone.setStartRule(0, -1, 0, 0);
-            errln("Failed. No exception has been thrown for DOM -1 setStartRule +savings");
+            fail("Failed. No exception has been thrown for DOM -1 setStartRule +savings");
         } catch(IllegalArgumentException e) {
-            logln("(e) " + e.getMessage());
+            System.out.println("(e) " + e.getMessage());
         }
         try {
             zone.setStartRule(0, -1, 0);
-            errln("Failed. No exception has been thrown for DOM -1 setStartRule");
+            fail("Failed. No exception has been thrown for DOM -1 setStartRule");
         } catch(IllegalArgumentException e) {
-            logln("(f) " + e.getMessage());
+            System.out.println("(f) " + e.getMessage());
         }
         try {
             zone.setEndRule(0, -1, 0, 0);
-            errln("Failed. No exception has been thrown for DOM -1 setEndRule +savings");
+            fail("Failed. No exception has been thrown for DOM -1 setEndRule +savings");
         } catch(IllegalArgumentException e) {
-            logln("(g) " + e.getMessage());
+            System.out.println("(g) " + e.getMessage());
         }
         try {
             zone.setEndRule(0, -1, 0);
-            errln("Failed. No exception has been thrown for DOM -1 setEndRule");
+            fail("Failed. No exception has been thrown for DOM -1 setEndRule");
         } catch(IllegalArgumentException e) {
-            logln("(h) " + e.getMessage());
+            System.out.println("(h) " + e.getMessage());
         }
     }
 
@@ -893,6 +910,7 @@ public class TimeZoneRegression extends IntlTest {
      * SimpleTimeZone.getOffset() throws IllegalArgumentException when to get
      * of 2/29/1996 (leap day).
      */
+    @Test
     public void Test4208960 () {
         // test both SimpleTimeZone and ZoneInfo objects.
         // @since 1.4
@@ -905,14 +923,14 @@ public class TimeZoneRegression extends IntlTest {
             int offset = tz.getOffset(GregorianCalendar.AD, 1996, Calendar.FEBRUARY, 29,
                                       Calendar.THURSDAY, 0);
         } catch (IllegalArgumentException e) {
-            errln("FAILED: to get TimeZone.getOffset(2/29/96)");
+            fail("FAILED: to get TimeZone.getOffset(2/29/96)");
         }
         try {
             int offset = tz.getOffset(GregorianCalendar.AD, 1997, Calendar.FEBRUARY, 29,
                                       Calendar.THURSDAY, 0);
-            errln("FAILED: TimeZone.getOffset(2/29/97) expected to throw Exception.");
+            fail("FAILED: TimeZone.getOffset(2/29/97) expected to throw Exception.");
         } catch (IllegalArgumentException e) {
-            logln("got IllegalArgumentException");
+            System.out.println("got IllegalArgumentException");
         }
     }
 
@@ -921,6 +939,7 @@ public class TimeZoneRegression extends IntlTest {
      * sun.util.calendar.ZoneInfo doesn't clone properly.
      */
     @SuppressWarnings("deprecation")
+    @Test
     public void Test4966229() {
         TimeZone savedTZ = TimeZone.getDefault();
         try {
@@ -945,7 +964,7 @@ public class TimeZoneRegression extends IntlTest {
             cal2.setTime(d);
             int hourOfDay = cal2.get(cal.HOUR_OF_DAY);
             if (hourOfDay != expectedHourOfDay) {
-                errln("wrong hour of day: got: " + hourOfDay
+                fail("wrong hour of day: got: " + hourOfDay
                       + ", expected: " + expectedHourOfDay);
             }
         } finally {
@@ -956,6 +975,7 @@ public class TimeZoneRegression extends IntlTest {
     /**
      * 6433179: (tz) Incorrect DST end for America/Winnipeg and Canada/Central in 2038+
      */
+    @Test
     public void Test6433179() {
         // Use the old America/Winnipeg rule for testing. Note that
         // startMode is WALL_TIME for testing. It's actually
@@ -974,7 +994,7 @@ public class TimeZoneRegression extends IntlTest {
         cal.set(cal.DAY_OF_WEEK_IN_MONTH, -1);
         cal.add(Calendar.HOUR_OF_DAY, 2);
         if (cal.get(cal.DST_OFFSET) == 0) {
-            errln("Should still be in DST.");
+            fail("Should still be in DST.");
         }
     }
 
