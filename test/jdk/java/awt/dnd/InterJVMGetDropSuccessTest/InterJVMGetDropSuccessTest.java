@@ -266,6 +266,7 @@ class Child {
 
             Robot robot = new Robot();
             robot.mouseMove(sourcePoint.x, sourcePoint.y);
+            robot.waitForIdle();
             robot.mousePress(InputEvent.BUTTON1_MASK);
             for (Point p = new Point(sourcePoint); !p.equals(targetPoint);
                  p.translate(Util.sign(targetPoint.x - p.x),
@@ -287,6 +288,7 @@ class Child {
 
             dragSourceListener.reset();
             robot.mouseMove(sourcePoint.x, sourcePoint.y);
+            robot.waitForIdle();
             robot.mousePress(InputEvent.BUTTON1_MASK);
             for (Point p = new Point(sourcePoint); !p.equals(targetPoint);
                  p.translate(Util.sign(targetPoint.x - p.x),
