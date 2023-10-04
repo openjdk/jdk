@@ -45,6 +45,7 @@ ciTypeArrayKlass::ciTypeArrayKlass(Klass* k) : ciArrayKlass(k) {
 // Implementation of make.
 ciTypeArrayKlass* ciTypeArrayKlass::make_impl(BasicType t) {
   Klass* k = Universe::typeArrayKlassObj(t);
+  assert(CURRENT_ENV->get_type_array_klass(k) != nullptr, "array klass is null");
   return CURRENT_ENV->get_type_array_klass(k);
 }
 
@@ -53,6 +54,5 @@ ciTypeArrayKlass* ciTypeArrayKlass::make_impl(BasicType t) {
 //
 // Make an array klass corresponding to the specified primitive type.
 ciTypeArrayKlass* ciTypeArrayKlass::make(BasicType t) {
-  assert(make_impl(t) != nullptr, "array klass is null");
   GUARDED_VM_ENTRY(return make_impl(t);)
 }
