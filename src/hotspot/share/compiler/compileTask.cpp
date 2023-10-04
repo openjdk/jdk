@@ -221,7 +221,7 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
                              jlong time_queued, jlong time_started) {
   if (!short_form) {
     // Print current time
-    st->print(INT64_FORMAT " ", tty->time_stamp().milliseconds());
+    st->print(UINT64_FORMAT " ", (uint64_t) tty->time_stamp().milliseconds());
     if (Verbose && time_queued != 0) {
       // Print time in queue and time being processed by compiler thread
       jlong now = os::elapsed_counter();
