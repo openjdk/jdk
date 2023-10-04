@@ -97,14 +97,11 @@ public class RejectDragDropActionTest {
 
             robot.mouseMove(startPoint.x, startPoint.y);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            for (Point p = new Point(startPoint); !p.equals(endPoint);
+            for (Point p = new Point(startPoint);
+                 !p.equals(endPoint) || incorrectActionDetected;
                  p.translate(sign(endPoint.x - p.x),
                          sign(endPoint.y - p.y))) {
                 robot.mouseMove(p.x, p.y);
-                if (incorrectActionDetected) {
-                    System.err.println("Incorrect action during loop");
-                    break;
-                }
             }
 
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
