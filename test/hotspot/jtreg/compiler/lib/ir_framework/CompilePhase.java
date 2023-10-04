@@ -70,6 +70,7 @@ public enum CompilePhase {
     PHASEIDEALLOOP1("PhaseIdealLoop 1"),
     PHASEIDEALLOOP2("PhaseIdealLoop 2"),
     PHASEIDEALLOOP3("PhaseIdealLoop 3"),
+    BEFORE_CCP1("Before PhaseCCP 1"),
     CCP1("PhaseCCP 1"),
     ITER_GVN2("Iter GVN 2"),
     PHASEIDEALLOOP_ITERATIONS("PhaseIdealLoop iterations"),

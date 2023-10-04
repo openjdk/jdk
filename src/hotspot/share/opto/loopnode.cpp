@@ -4532,6 +4532,8 @@ void PhaseIdealLoop::build_and_optimize() {
     return;
   }
 
+  // TODO(2023-10-04,dlunde): Before loop unrolling?
+
   if (do_max_unroll) {
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
@@ -4552,6 +4554,8 @@ void PhaseIdealLoop::build_and_optimize() {
     C->restore_major_progress(old_progress);
     return;
   }
+
+  // TODO(2023-10-04,dlunde): After loop unrolling?
 
   if (bs->optimize_loops(this, _mode, visited, nstack, worklist)) {
     return;
@@ -4588,6 +4592,8 @@ void PhaseIdealLoop::build_and_optimize() {
     }
   }
 
+  // TODO(2023-10-04,dlunde): Before split if?
+
   // Check for aggressive application of split-if and other transforms
   // that require basic-block info (like cloning through Phi's)
   if (!C->major_progress() && SplitIfBlocks && do_split_ifs) {
@@ -4596,14 +4602,20 @@ void PhaseIdealLoop::build_and_optimize() {
     DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
   }
 
+  // TODO(2023-10-04,dlunde): After split if?
+
   if (!C->major_progress() && do_expensive_nodes && process_expensive_nodes()) {
     C->set_major_progress();
   }
 
+  // TODO(2023-10-04,dlunde): Before loop predication?
+  //
   // Perform loop predication before iteration splitting
   if (UseLoopPredicate && C->has_loops() && !C->major_progress() && (C->parse_predicate_count() > 0)) {
     _ltree_root->_child->loop_predication(this);
   }
+
+  // TODO(2023-10-04,dlunde): After loop predication?
 
   if (OptimizeFill && UseLoopPredicate && C->has_loops() && !C->major_progress()) {
     if (do_intrinsify_fill()) {
@@ -4662,6 +4674,8 @@ void PhaseIdealLoop::build_and_optimize() {
      C->set_major_progress();
   }
 
+  // TODO(2023-10-04,dlunde): Before Superword?
+
   // Convert scalar to superword operations at the end of all loop opts.
   if (C->do_superword() && C->has_loops() && !C->major_progress()) {
     // SuperWord transform
@@ -4683,6 +4697,8 @@ void PhaseIdealLoop::build_and_optimize() {
       }
     }
   }
+
+  // TODO(2023-10-04,dlunde): After Superword?
 
   // Move UnorderedReduction out of counted loop. Can be introduced by SuperWord.
   if (C->has_loops() && !C->major_progress()) {
