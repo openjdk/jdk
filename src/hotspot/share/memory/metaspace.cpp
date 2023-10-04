@@ -793,6 +793,7 @@ void Metaspace::global_initialize() {
 
     // ...failing that, reserve anywhere, but let platform do optimized placement:
     if (!rs.is_reserved()) {
+      log_info(metaspace)("Reserving compressed class space anywhere");
       rs = Metaspace::reserve_address_space_for_compressed_classes(size, true);
     }
 
