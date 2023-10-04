@@ -146,6 +146,51 @@ TEST(AtomicCmpxchgTest, int64) {
   Support().test();
 }
 
+struct AtomicCmpxchg1ByteStressSupport {
+  char _default_val;
+  int  _base;
+  char _array[7+32+7];
+
+  AtomicCmpxchg1ByteStressSupport() : _default_val(0x7a), _base(7), _array{} {}
+
+  void validate(char val, char val2, int index) {
+    for (int i = 0; i < 7; i++) {
+      EXPECT_EQ(_array[i], _default_val);
+    }
+    for (int i = 7; i < (7+32); i++) {
+      if (i == index) {
+        EXPECT_EQ(_array[i], val2);
+      } else {
+        EXPECT_EQ(_array[i], val);
+      }
+    }
+    for (int i = 0; i < 7; i++) {
+      EXPECT_EQ(_array[i], _default_val);
+    }
+  }
+
+  void test_index(int index) {
+    char one = 1;
+    Atomic::cmpxchg(&_array[index], _default_val, one);
+    validate(_default_val, one, index);
+
+    Atomic::cmpxchg(&_array[index], one, _default_val);
+    validate(_default_val, _default_val, index);
+  }
+
+  void test() {
+    memset(_array, _default_val, sizeof(_array));
+    for (int i = _base; i < (_base+32); i++) {
+      test_index(i);
+    }
+  }
+};
+
+TEST(AtomicCmpxchg1Byte, stress) {
+  AtomicCmpxchg1ByteStressSupport support;
+  support.test();
+}
+
 template<typename T>
 struct AtomicEnumTestSupport {
   volatile T _test_value;
