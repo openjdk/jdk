@@ -2285,6 +2285,8 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     // can edit it's inputs directly.  Hammer in the new limit for the
     // minimum-trip guard.
     assert(opaq->outcnt() == 1, "");
+    // Notify limit -> opaq -> CmpI, it may constant fold.
+    _igvn.add_users_to_worklist(opaq->in(1));
     _igvn.replace_input_of(opaq, 1, new_limit);
   }
 

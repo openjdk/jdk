@@ -41,6 +41,7 @@ bool VM_ShenandoahReferenceOperation::doit_prologue() {
 }
 
 void VM_ShenandoahReferenceOperation::doit_epilogue() {
+  OopMapCache::cleanup_old_entries();
   if (Universe::has_reference_pending_list()) {
     Heap_lock->notify_all();
   }
