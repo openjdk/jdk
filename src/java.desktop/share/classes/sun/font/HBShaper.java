@@ -109,7 +109,8 @@ public class HBShaper {
     private static VarHandle getVarHandle(SequenceLayout layout, String name) {
         return layout.varHandle(
             PathElement.sequenceElement(),
-            PathElement.groupElement(name));
+            PathElement.groupElement(name))
+                 .withInvokeExactBehavior();
     }
 
     private static final VarHandle x_offsetHandle;
@@ -610,16 +611,16 @@ public class HBShaper {
 
          for (int i=0; i<glyphCount; i++) {
              int storei = i + initialCount;
-             int cluster = (int)clusterHandle.get(glyphInfoArr, i) - offset;
+             int cluster = (int)clusterHandle.get(glyphInfoArr, (long)i) - offset;
              gvdata._indices[storei] = baseIndex + cluster;
-             int codePoint = (int)codePointHandle.get(glyphInfoArr, i);
+             int codePoint = (int)codePointHandle.get(glyphInfoArr, (long)i);
              gvdata._glyphs[storei] = (slot | codePoint);
-             int x_offset = (int)x_offsetHandle.get(glyphPosArr, i);
-             int y_offset = (int)y_offsetHandle.get(glyphPosArr, i);
+             int x_offset = (int)x_offsetHandle.get(glyphPosArr, (long)i);
+             int y_offset = (int)y_offsetHandle.get(glyphPosArr, (long)i);
              gvdata._positions[(storei*2)]   = startX + x + (x_offset * scale);
              gvdata._positions[(storei*2)+1] = startY + y + (y_offset * scale);
-             int x_advance = (int)x_advanceHandle.get(glyphPosArr, i);
-             int y_advance = (int)y_advanceHandle.get(glyphPosArr, i);
+             int x_advance = (int)x_advanceHandle.get(glyphPosArr, (long)i);
+             int y_advance = (int)y_advanceHandle.get(glyphPosArr, (long)i);
              x += x_advance * scale;
              y += y_advance * scale;
         }
