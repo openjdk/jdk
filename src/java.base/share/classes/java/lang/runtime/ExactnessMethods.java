@@ -32,7 +32,7 @@ package java.lang.runtime;
  *
  * @since 22
  */
-public class ExactnessMethods {
+final public class ExactnessMethods {
 
     private ExactnessMethods() { }
 
@@ -42,7 +42,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean int_byte(int n)      {return n == (int)(byte)n;}
+    public static boolean intToByteExact(int n)      {return n == (int)(byte)n;}
 
     /** Exactness method from int to short
      *
@@ -50,7 +50,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean int_short(int n)     {return n == (int)(short)n;}
+    public static boolean intToShortExact(int n)     {return n == (int)(short)n;}
 
     /** Exactness method from int to char
      *
@@ -58,7 +58,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean int_char(int n)      {return n == (int)(char)n;}
+    public static boolean intToCharExact(int n)      {return n == (int)(char)n;}
 
     /** Exactness method from int to float
      *
@@ -66,7 +66,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean int_float(int n) { return n == (int)(float)n && n != Integer.MAX_VALUE; }
+    public static boolean intToFloatExact(int n) { return n == (int)(float)n && n != Integer.MAX_VALUE; }
 
     /** Exactness method from long to byte
      *
@@ -74,7 +74,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean long_byte(long n)    {return n == (long)(byte)n;}
+    public static boolean longToByteExact(long n)    {return n == (long)(byte)n;}
 
     /** Exactness method from long to short
      *
@@ -82,7 +82,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean long_short(long n)   {return n == (long)(short)n;}
+    public static boolean longToShortExact(long n)   {return n == (long)(short)n;}
 
     /** Exactness method from long to char
      *
@@ -90,7 +90,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean long_char(long n)    {return n == (long)(char)n;}
+    public static boolean longToCharExact(long n)    {return n == (long)(char)n;}
 
     /** Exactness method from long to int
      *
@@ -98,7 +98,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean long_int(long n)     {return n == (long)(int)n;}
+    public static boolean longToIntExact(long n)     {return n == (long)(int)n;}
 
     /** Exactness method from long to float
      *
@@ -106,7 +106,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean long_float(long n) {
+    public static boolean longToFloatExact(long n) {
         return n == (long)(float)n && n != Long.MAX_VALUE;
     }
 
@@ -116,7 +116,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean long_double(long n) {
+    public static boolean longToDoubleExact(long n) {
         return n == (long)(double)n && n != Long.MAX_VALUE;
     }
 
@@ -126,7 +126,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean float_byte(float n)  {
+    public static boolean floatToByteExact(float n)  {
         return n == (float)(byte)n && !isNegativeZero(n);
     }
 
@@ -136,7 +136,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean float_short(float n) {
+    public static boolean floatToShortExact(float n) {
         return n == (float)(short)n && !isNegativeZero(n);
     }
 
@@ -146,7 +146,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean float_char(float n)  {
+    public static boolean floatToCharExact(float n)  {
         return n == (float)(char)n && !isNegativeZero(n);
     }
 
@@ -156,7 +156,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean float_int(float n) {
+    public static boolean floatToIntExact(float n) {
         return n == (float)(int)n && n != 0x1p31f && !isNegativeZero(n);
     }
 
@@ -166,7 +166,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean float_long(float n) {
+    public static boolean floatToLongExact(float n) {
         return n == (float)(long)n && n != 0x1p63f && !isNegativeZero(n);
     }
 
@@ -176,7 +176,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean double_byte(double n) {
+    public static boolean doubleToByteExact(double n) {
         return n == (double)(byte)n && !isNegativeZero(n);
     }
 
@@ -186,7 +186,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean double_short(double n){
+    public static boolean doubleToShortExact(double n){
         return n == (double)(short)n && !isNegativeZero(n);
     }
 
@@ -196,7 +196,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean double_char(double n) {
+    public static boolean doubleToCharExact(double n) {
         return n == (double)(char)n && !isNegativeZero(n);
     }
 
@@ -206,7 +206,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean double_int(double n)  {
+    public static boolean doubleToIntExact(double n)  {
         return n == (double)(int)n && !isNegativeZero(n);
     }
 
@@ -216,7 +216,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean double_long(double n) {
+    public static boolean doubleToLongExact(double n) {
         return n == (double)(long)n && n != 0x1p63 && !isNegativeZero(n);
     }
 
@@ -226,7 +226,7 @@ public class ExactnessMethods {
      * @return  true if the passed value can be converted exactly to the target type
      *
      * */
-    public static boolean double_float(double n) {
+    public static boolean doubleToFloatExact(double n) {
         return n == (double)(float)n || n != n;
     }
 

@@ -2938,7 +2938,7 @@ public class Lower extends TreeTranslator {
                 // Integer v = ...
                 // if (v instanceof float)
                 // =>
-                // if (let tmp$123 = v; tmp$123 != null <&& if not unconditionally exact> ExactnessChecks.int_float(tmp$123.intValue()))
+                // if (let tmp$123 = v; tmp$123 != null <&& if not unconditionally exact> ExactnessChecks.intToFloatExact(tmp$123.intValue()))
                 VarSymbol dollar_s = new VarSymbol(FINAL | SYNTHETIC,
                         names.fromString("tmp" + tree.pos + this.target.syntheticNameChar()),
                         tree.expr.type,
@@ -2976,7 +2976,7 @@ public class Lower extends TreeTranslator {
                     // int v = ...
                     // if (v instanceof float)
                     // =>
-                    // if (let tmp$123 = v; ExactnessChecks.int_float(tmp$123))
+                    // if (let tmp$123 = v; ExactnessChecks.intToFloatExact(tmp$123))
                     JCIdent argument = make.Ident(dollar_s);
 
                     JCExpression exactnessCheckCall =
@@ -3013,32 +3013,32 @@ public class Lower extends TreeTranslator {
 
         public static HashMap<TypePairs, String> initialize(Symtab syms) {
             HashMap<TypePairs, String> typePairToName = new HashMap<>();
-            typePairToName.put(new TypePairs(syms.byteType,   syms.charType),   "int_char");      // redirected
-            typePairToName.put(new TypePairs(syms.shortType,  syms.byteType),   "int_byte");      // redirected
-            typePairToName.put(new TypePairs(syms.shortType,  syms.charType),   "int_char");      // redirected
-            typePairToName.put(new TypePairs(syms.charType,   syms.byteType),   "int_byte");      // redirected
-            typePairToName.put(new TypePairs(syms.charType,   syms.shortType),  "int_short");     // redirected
-            typePairToName.put(new TypePairs(syms.intType,    syms.byteType),   "int_byte");
-            typePairToName.put(new TypePairs(syms.intType,    syms.shortType),  "int_short");
-            typePairToName.put(new TypePairs(syms.intType,    syms.charType),   "int_char");
-            typePairToName.put(new TypePairs(syms.intType,    syms.floatType),  "int_float");
-            typePairToName.put(new TypePairs(syms.longType,   syms.byteType),   "long_byte");
-            typePairToName.put(new TypePairs(syms.longType,   syms.shortType),  "long_short");
-            typePairToName.put(new TypePairs(syms.longType,   syms.charType),   "long_char");
-            typePairToName.put(new TypePairs(syms.longType,   syms.intType),    "long_int");
-            typePairToName.put(new TypePairs(syms.longType,   syms.floatType),  "long_float");
-            typePairToName.put(new TypePairs(syms.longType,   syms.doubleType), "long_double");
-            typePairToName.put(new TypePairs(syms.floatType,  syms.byteType),   "float_byte");
-            typePairToName.put(new TypePairs(syms.floatType,  syms.shortType),  "float_short");
-            typePairToName.put(new TypePairs(syms.floatType,  syms.charType),   "float_char");
-            typePairToName.put(new TypePairs(syms.floatType,  syms.intType),    "float_int");
-            typePairToName.put(new TypePairs(syms.floatType,  syms.longType),   "float_long");
-            typePairToName.put(new TypePairs(syms.doubleType, syms.byteType),   "double_byte");
-            typePairToName.put(new TypePairs(syms.doubleType, syms.shortType),  "double_short");
-            typePairToName.put(new TypePairs(syms.doubleType, syms.charType),   "double_char");
-            typePairToName.put(new TypePairs(syms.doubleType, syms.intType),    "double_int");
-            typePairToName.put(new TypePairs(syms.doubleType, syms.longType),   "double_long");
-            typePairToName.put(new TypePairs(syms.doubleType, syms.floatType),  "double_float");
+            typePairToName.put(new TypePairs(syms.byteType,   syms.charType),   "intToCharExact");      // redirected
+            typePairToName.put(new TypePairs(syms.shortType,  syms.byteType),   "intToByteExact");      // redirected
+            typePairToName.put(new TypePairs(syms.shortType,  syms.charType),   "intToCharExact");      // redirected
+            typePairToName.put(new TypePairs(syms.charType,   syms.byteType),   "intToByteExact");      // redirected
+            typePairToName.put(new TypePairs(syms.charType,   syms.shortType),  "intToShortExact");     // redirected
+            typePairToName.put(new TypePairs(syms.intType,    syms.byteType),   "intToByteExact");
+            typePairToName.put(new TypePairs(syms.intType,    syms.shortType),  "intToShortExact");
+            typePairToName.put(new TypePairs(syms.intType,    syms.charType),   "intToCharExact");
+            typePairToName.put(new TypePairs(syms.intType,    syms.floatType),  "intToFloatExact");
+            typePairToName.put(new TypePairs(syms.longType,   syms.byteType),   "longToByteExact");
+            typePairToName.put(new TypePairs(syms.longType,   syms.shortType),  "longToShortExact");
+            typePairToName.put(new TypePairs(syms.longType,   syms.charType),   "longToCharExact");
+            typePairToName.put(new TypePairs(syms.longType,   syms.intType),    "longToIntExact");
+            typePairToName.put(new TypePairs(syms.longType,   syms.floatType),  "longToFloatExact");
+            typePairToName.put(new TypePairs(syms.longType,   syms.doubleType), "longToDoubleExact");
+            typePairToName.put(new TypePairs(syms.floatType,  syms.byteType),   "floatToByteExact");
+            typePairToName.put(new TypePairs(syms.floatType,  syms.shortType),  "floatToShortExact");
+            typePairToName.put(new TypePairs(syms.floatType,  syms.charType),   "floatToCharExact");
+            typePairToName.put(new TypePairs(syms.floatType,  syms.intType),    "floatToIntExact");
+            typePairToName.put(new TypePairs(syms.floatType,  syms.longType),   "floatToLongExact");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.byteType),   "doubleToByteExact");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.shortType),  "doubleToShortExact");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.charType),   "doubleToCharExact");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.intType),    "doubleToIntExact");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.longType),   "doubleToLongExact");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.floatType),  "doubleToFloatExact");
             return typePairToName;
         }
 

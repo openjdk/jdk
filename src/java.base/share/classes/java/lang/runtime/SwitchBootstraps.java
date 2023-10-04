@@ -572,32 +572,32 @@ public class SwitchBootstraps {
 
         public static HashMap<TypePairs, String> initialize() {
             HashMap<TypePairs, String> typePairToName = new HashMap<>();
-            typePairToName.put(new TypePairs(byte.class,   char.class),   "int_char");      // redirected
-            typePairToName.put(new TypePairs(short.class,  byte.class),   "int_byte");      // redirected
-            typePairToName.put(new TypePairs(short.class,  char.class),   "int_char");      // redirected
-            typePairToName.put(new TypePairs(char.class,   byte.class),   "int_byte");      // redirected
-            typePairToName.put(new TypePairs(char.class,   short.class),  "int_short");     // redirected
-            typePairToName.put(new TypePairs(int.class,    byte.class),   "int_byte");
-            typePairToName.put(new TypePairs(int.class,    short.class),  "int_short");
-            typePairToName.put(new TypePairs(int.class,    char.class),   "int_char");
-            typePairToName.put(new TypePairs(int.class,    float.class),  "int_float");
-            typePairToName.put(new TypePairs(long.class,   byte.class),   "long_byte");
-            typePairToName.put(new TypePairs(long.class,   short.class),  "long_short");
-            typePairToName.put(new TypePairs(long.class,   char.class),   "long_char");
-            typePairToName.put(new TypePairs(long.class,   int.class),    "long_int");
-            typePairToName.put(new TypePairs(long.class,   float.class),  "long_float");
-            typePairToName.put(new TypePairs(long.class,   double.class), "long_double");
-            typePairToName.put(new TypePairs(float.class,  byte.class),   "float_byte");
-            typePairToName.put(new TypePairs(float.class,  short.class),  "float_short");
-            typePairToName.put(new TypePairs(float.class,  char.class),   "float_char");
-            typePairToName.put(new TypePairs(float.class,  int.class),    "float_int");
-            typePairToName.put(new TypePairs(float.class,  long.class),   "float_long");
-            typePairToName.put(new TypePairs(double.class, byte.class),   "double_byte");
-            typePairToName.put(new TypePairs(double.class, short.class),  "double_short");
-            typePairToName.put(new TypePairs(double.class, char.class),   "double_char");
-            typePairToName.put(new TypePairs(double.class, int.class),    "double_int");
-            typePairToName.put(new TypePairs(double.class, long.class),   "double_long");
-            typePairToName.put(new TypePairs(double.class, float.class),  "double_float");
+            typePairToName.put(new TypePairs(byte.class,   char.class),   "intToCharExact");      // redirected
+            typePairToName.put(new TypePairs(short.class,  byte.class),   "intToByteExact");      // redirected
+            typePairToName.put(new TypePairs(short.class,  char.class),   "intToCharExact");      // redirected
+            typePairToName.put(new TypePairs(char.class,   byte.class),   "intToByteExact");      // redirected
+            typePairToName.put(new TypePairs(char.class,   short.class),  "intToShortExact");     // redirected
+            typePairToName.put(new TypePairs(int.class,    byte.class),   "intToByteExact");
+            typePairToName.put(new TypePairs(int.class,    short.class),  "intToShortExact");
+            typePairToName.put(new TypePairs(int.class,    char.class),   "intToCharExact");
+            typePairToName.put(new TypePairs(int.class,    float.class),  "intToFloatExact");
+            typePairToName.put(new TypePairs(long.class,   byte.class),   "longToByteExact");
+            typePairToName.put(new TypePairs(long.class,   short.class),  "longToShortExact");
+            typePairToName.put(new TypePairs(long.class,   char.class),   "longToCharExact");
+            typePairToName.put(new TypePairs(long.class,   int.class),    "longToIntExact");
+            typePairToName.put(new TypePairs(long.class,   float.class),  "longToFloatExact");
+            typePairToName.put(new TypePairs(long.class,   double.class), "longToDoubleExact");
+            typePairToName.put(new TypePairs(float.class,  byte.class),   "floatToByteExact");
+            typePairToName.put(new TypePairs(float.class,  short.class),  "floatToShortExact");
+            typePairToName.put(new TypePairs(float.class,  char.class),   "floatToCharExact");
+            typePairToName.put(new TypePairs(float.class,  int.class),    "floatToIntExact");
+            typePairToName.put(new TypePairs(float.class,  long.class),   "floatToLongExact");
+            typePairToName.put(new TypePairs(double.class, byte.class),   "doubleToByteExact");
+            typePairToName.put(new TypePairs(double.class, short.class),  "doubleToShortExact");
+            typePairToName.put(new TypePairs(double.class, char.class),   "doubleToCharExact");
+            typePairToName.put(new TypePairs(double.class, int.class),    "doubleToIntExact");
+            typePairToName.put(new TypePairs(double.class, long.class),   "doubleToLongExact");
+            typePairToName.put(new TypePairs(double.class, float.class),  "doubleToFloatExact");
             return typePairToName;
         }
 
