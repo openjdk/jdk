@@ -2996,9 +2996,7 @@ public class Lower extends TreeTranslator {
         }
     }
 
-    static class TypePairs {
-        public Type from, to;
-
+    record TypePairs(TypeSymbol from, TypeSymbol to) {
         public static TypePairs of(Symtab syms, Type from, Type to) {
             if (from == syms.byteType || from == syms.shortType || from == syms.charType) {
                 from = syms.intType;
@@ -3006,9 +3004,8 @@ public class Lower extends TreeTranslator {
             return new TypePairs(from, to);
         }
 
-        private TypePairs(Type from, Type to) {
-            this.from = from;
-            this.to = to;
+        public TypePairs(Type from, Type to) {
+            this(from.tsym, to.tsym);
         }
 
         public static HashMap<TypePairs, String> initialize(Symtab syms) {
@@ -3041,23 +3038,6 @@ public class Lower extends TreeTranslator {
             typePairToName.put(new TypePairs(syms.doubleType, syms.floatType),  "doubleToFloatExact");
             return typePairToName;
         }
-
-        @Override
-        public int hashCode() {
-            int code = 0;
-            code += from.tsym.hashCode();
-            code += to.tsym.hashCode();
-            return code;
-        }
-
-        @Override
-        public boolean equals(Object testName) {
-            if ((!(testName instanceof TypePairs testNameAsName))) return false;
-            else {
-                return this.from.tsym.equals(testNameAsName.from.tsym) &&
-                        this.to.tsym.equals(testNameAsName.to.tsym);
-            }
-        }
     }
 
     private JCExpression getExactnessCheck(JCInstanceOf tree, JCExpression argument) {
@@ -3070,7 +3050,7 @@ public class Lower extends TreeTranslator {
                 attrEnv,
                 syms.exactnessMethodsType,
                 exactnessFunction,
-                List.of(pair.from),
+                List.of(pair.from.type),
                 List.nil());
 
         // Generate the method call ExactnessChecks.<exactness method>(<argument>);

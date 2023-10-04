@@ -555,19 +555,12 @@ public class SwitchBootstraps {
         public int[] map;
     }
 
-    static class TypePairs {
-        public Class<?> from, to;
-
+    record TypePairs(Class<?> from, Class<?> to) {
         public static TypePairs of(Class<?> from,  Class<?> to) {
             if (from == byte.class || from == short.class || from == char.class) {
                 from = int.class;
             }
             return new TypePairs(from, to);
-        }
-
-        private TypePairs(Class<?> from,  Class<?> to) {
-            this.from = from;
-            this.to = to;
         }
 
         public static HashMap<TypePairs, String> initialize() {
@@ -599,23 +592,6 @@ public class SwitchBootstraps {
             typePairToName.put(new TypePairs(double.class, long.class),   "doubleToLongExact");
             typePairToName.put(new TypePairs(double.class, float.class),  "doubleToFloatExact");
             return typePairToName;
-        }
-
-        @Override
-        public int hashCode() {
-            int code = 0;
-            code += from.hashCode();
-            code += to.hashCode();
-            return code;
-        }
-
-        @Override
-        public boolean equals(Object testName) {
-            if ((!(testName instanceof TypePairs testNameAsName))) return false;
-            else {
-                return this.from.equals(testNameAsName.from) &&
-                        this.to.equals(testNameAsName.to);
-            }
         }
     }
 }
