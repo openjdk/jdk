@@ -124,7 +124,7 @@ void ReplacedNodes::apply(Compile* C, Node* ctl) {
       continue;
     }
 
-    // Try to find some use of initial that are dominated by ctl so, initial can be replaced by improved.
+    // Find uses of initial that are dominated by ctl so, initial can be replaced by improved.
     // Proving domination here is not straightforward. To do so, we follow uses of initial, and uses of uses until we
     // encounter a node which is a control node or is pinned at some control. Then, we try to prove this control is
     // dominated by ctl. If that's the case, it's legal to replace initial by improved but for this chain of uses only.
@@ -149,19 +149,19 @@ void ReplacedNodes::apply(Compile* C, Node* ctl) {
               Node* in = region->in(j);
               if (in != nullptr && !in->is_top()) {
                 if (is_dominator(ctl, in)) {
-                  clone_stack(C, initial, improved, stack, j);
+                  clone_uses_and_replace(C, initial, improved, stack, j);
                 }
               }
             }
           }
         } else if (n->is_CFG()) {
           if (is_dominator(ctl, n)) {
-            clone_stack(C, initial, improved, stack, -1);
+            clone_uses_and_replace(C, initial, improved, stack, -1);
           }
         } else if (n->in(0) != nullptr && !n->in(0)->is_top()) {
           Node* c = n->in(0);
           if (is_dominator(ctl, c)) {
-            clone_stack(C, initial, improved, stack, -1);
+            clone_uses_and_replace(C, initial, improved, stack, -1);
           }
         } else {
           uint idx = stack.index();
@@ -190,7 +190,8 @@ void ReplacedNodes::apply(Compile* C, Node* ctl) {
   }
 }
 
-void ReplacedNodes::clone_stack(Compile* C, Node* initial, Node* improved, const Node_Stack& stack, int i) const {
+// Clone all nodes on the stack and replace initial by improved for the use at the bottom of the stack
+void ReplacedNodes::clone_uses_and_replace(Compile* C, Node* initial, Node* improved, const Node_Stack& stack, int i) const {
   Node* prev = stack.node();
   for (uint k = stack.size() - 2; k > 0 ; k--) {
     Node* n = stack.node_at(k);

@@ -79,7 +79,7 @@ class ReplacedNodes {
 
   bool is_dominator(const Node* ctl, Node* n) const;
 
-  void clone_stack(Compile* C, Node* initial, Node* improved, const Node_Stack& stack, int i) const;
+  void clone_uses_and_replace(Compile* C, Node* initial, Node* improved, const Node_Stack& stack, int i) const;
 };
 
 #endif // SHARE_OPTO_REPLACEDNODES_HPP
