@@ -53,7 +53,7 @@ public class bug4654927 {
         try {
             String systemLAF = UIManager.getSystemLookAndFeelClassName();
             // the test is not applicable to Motif L&F
-            if (systemLAF.endsWith("MotifLookAndFeel")){
+            if (systemLAF.endsWith("MotifLookAndFeel")) {
                 return;
             }
 
@@ -89,11 +89,12 @@ public class bug4654927 {
             // test mouse drag
             point = Util.getCenterPoint(menu);
             robot.mouseMove(point.x, point.y);
+	    robot.delay(250);
             Point menuLocation = Util.invokeOnEDT(new Callable<Point>() {
 
                 @Override
                 public Point call() throws Exception {
-                    System.out.println("Menu Location: "+ menu.getLocationOnScreen());
+                    System.out.println("Menu Location: " + menu.getLocationOnScreen());
                     return menu.getLocationOnScreen();
                 }
             });
@@ -102,7 +103,7 @@ public class bug4654927 {
 
                 @Override
                 public Point call() throws Exception {
-                    System.out.println("MenuItem Location: "+ menuItem.getLocationOnScreen());
+                    System.out.println("MenuItem Location: " + menuItem.getLocationOnScreen());
                     return menuItem.getLocationOnScreen();
                 }
             });
