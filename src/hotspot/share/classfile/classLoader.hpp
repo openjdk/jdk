@@ -454,13 +454,6 @@ class PerfClassTraceTime {
     initialize();
   }
 
-  inline PerfClassTraceTime(PerfLongCounter* timep,     /* counter incremented with inclusive time */
-                            elapsedTimer* timers,       /* thread-local timer array */
-                            int type                    /* event type */ ) :
-      _timep(timep), _selftimep(nullptr), _eventp(nullptr), _recursion_counters(nullptr), _timers(timers), _event_type(type) {
-    initialize();
-  }
-
   ~PerfClassTraceTime();
   void initialize();
 };
