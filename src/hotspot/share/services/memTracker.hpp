@@ -26,6 +26,7 @@
 #define SHARE_SERVICES_MEMTRACKER_HPP
 
 #include "services/nmtCommon.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 
@@ -50,17 +51,18 @@ class MemTracker : AllStatic {
  public:
   static inline NMT_TrackingLevel tracking_level() { return NMT_off; }
   static inline bool enabled() { return false; }
+  static size_t overhead_per_malloc() { return 0; }
   static inline void init() { }
   static bool check_launcher_nmt_support(const char* value) { return true; }
   static bool verify_nmt_option() { return true; }
 
   static inline void* record_malloc(void* mem_base, size_t size, MEMFLAGS flag,
-    const NativeCallStack& stack, NMT_TrackingLevel level) { return mem_base; }
+    const NativeCallStack& stack) { return mem_base; }
   static inline size_t malloc_header_size(NMT_TrackingLevel level) { return 0; }
   static inline size_t malloc_header_size(void* memblock) { return 0; }
   static inline size_t malloc_footer_size(NMT_TrackingLevel level) { return 0; }
   static inline void* malloc_base(void* memblock) { return memblock; }
-  static inline void* record_free(void* memblock, NMT_TrackingLevel level) { return memblock; }
+  static inline void* record_free(void* memblock) { return memblock; }
 
   static inline void record_new_arena(MEMFLAGS flag) { }
   static inline void record_arena_free(MEMFLAGS flag) { }
@@ -141,37 +143,29 @@ class MemTracker : AllStatic {
     return _tracking_level > NMT_off;
   }
 
+  // Per-malloc overhead incurred by NMT, depending on the current NMT level
+  static size_t overhead_per_malloc() {
+    return enabled() ? MallocTracker::overhead_per_malloc : 0;
+  }
+
   static inline void* record_malloc(void* mem_base, size_t size, MEMFLAGS flag,
-    const NativeCallStack& stack, NMT_TrackingLevel level) {
-    if (level != NMT_off) {
-      return MallocTracker::record_malloc(mem_base, size, flag, stack, level);
+    const NativeCallStack& stack) {
+    assert(mem_base != NULL, "caller should handle NULL");
+    if (enabled()) {
+      return MallocTracker::record_malloc(mem_base, size, flag, stack);
     }
     return mem_base;
   }
 
-  static inline size_t malloc_header_size(NMT_TrackingLevel level) {
-    return MallocTracker::malloc_header_size(level);
-  }
-
-  // malloc tracking footer size for specific tracking level
-  static inline size_t malloc_footer_size(NMT_TrackingLevel level) {
-    return MallocTracker::malloc_footer_size(level);
-  }
-
-  // To malloc base address, which is the starting address
-  // of malloc tracking header if tracking is enabled.
-  // Otherwise, it returns the same address.
-  static void* malloc_base(void* memblock);
-
   // Record malloc free and return malloc base address
-  static inline void* record_free(void* memblock, NMT_TrackingLevel level) {
+  static inline void* record_free(void* memblock) {
     // Never turned on
-    if (level == NMT_off || memblock == NULL) {
+    assert(memblock != NULL, "caller should handle NULL");
+    if (!enabled()) {
       return memblock;
     }
     return MallocTracker::record_free(memblock);
   }
-
 
   // Record creation of an arena
   static inline void record_new_arena(MEMFLAGS flag) {
