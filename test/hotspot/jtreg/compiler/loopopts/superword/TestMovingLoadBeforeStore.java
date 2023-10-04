@@ -157,15 +157,15 @@ public class TestMovingLoadBeforeStore {
     static void test3(byte[] a) {
         for (int i = 51; i < 6000; i++) {
             int adr = UNSAFE.ARRAY_BYTE_BASE_OFFSET + 42 + i;
-            UNSAFE.putIntUnaligned(a, adr +  0*4, UNSAFE.getIntUnaligned(a, adr +  0*4) + 1);
-            UNSAFE.putIntUnaligned(a, adr +  1*4, UNSAFE.getIntUnaligned(a, adr +  1*4) + 1);
-            UNSAFE.putIntUnaligned(a, adr +  2*4, UNSAFE.getIntUnaligned(a, adr +  2*4) + 1);
-            UNSAFE.putIntUnaligned(a, adr +  3*4, UNSAFE.getIntUnaligned(a, adr +  3*4) + 1);
-            UNSAFE.putIntUnaligned(a, adr +  4*4, UNSAFE.getIntUnaligned(a, adr +  4*4) + 1);
-            UNSAFE.putIntUnaligned(a, adr +  5*4, UNSAFE.getIntUnaligned(a, adr +  5*4) + 1);
-            UNSAFE.putIntUnaligned(a, adr +  6*4, UNSAFE.getIntUnaligned(a, adr +  6*4) + 1);
-            UNSAFE.putIntUnaligned(a, adr +  7*4, UNSAFE.getIntUnaligned(a, adr +  7*4) + 1);
-            UNSAFE.putIntUnaligned(a, adr +  8*4, UNSAFE.getIntUnaligned(a, adr +  8*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 0*4, UNSAFE.getIntUnaligned(a, adr + 0*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 1*4, UNSAFE.getIntUnaligned(a, adr + 1*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 2*4, UNSAFE.getIntUnaligned(a, adr + 2*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 3*4, UNSAFE.getIntUnaligned(a, adr + 3*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 4*4, UNSAFE.getIntUnaligned(a, adr + 4*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 5*4, UNSAFE.getIntUnaligned(a, adr + 5*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 6*4, UNSAFE.getIntUnaligned(a, adr + 6*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 7*4, UNSAFE.getIntUnaligned(a, adr + 7*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 8*4, UNSAFE.getIntUnaligned(a, adr + 8*4) + 1);
         }
     }
 
