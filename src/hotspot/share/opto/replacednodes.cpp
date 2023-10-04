@@ -196,7 +196,7 @@ void ReplacedNodes::clone_stack(Compile* C, Node* initial, Node* improved, const
     Node* n = stack.node_at(k);
     Node* clone = n->clone();
     bool is_in_table = C->initial_gvn()->hash_delete(prev);
-    if (i == -1){
+    if (i == -1) {
       int replaced = prev->replace_edge(n, clone);
       assert(replaced > 0, "expected some use");
     } else {
