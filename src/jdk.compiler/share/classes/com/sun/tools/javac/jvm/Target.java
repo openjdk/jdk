@@ -223,4 +223,10 @@ public enum Target {
     public boolean optimizeOuterThis() {
         return compareTo(JDK1_18) >= 0;
     }
+
+    /** Does the target VM support dynamic class file constants
+     */
+    public boolean hasDynamicConstants() {
+        return compareTo(JDK1_11) >= 0;
+    }
 }

@@ -102,6 +102,7 @@ public class Lower extends TreeTranslator {
     private final PkgInfo pkginfoOpt;
     private final boolean optimizeOuterThis;
     private final boolean useMatchException;
+    private final boolean useDynamicConstants;
 
     @SuppressWarnings("this-escape")
     protected Lower(Context context) {
@@ -133,6 +134,7 @@ public class Lower extends TreeTranslator {
         Preview preview = Preview.instance(context);
         useMatchException = Feature.PATTERN_SWITCH.allowedInSource(source) &&
                             (preview.isEnabled() || !preview.isPreview(Feature.PATTERN_SWITCH));
+        useDynamicConstants = target.hasDynamicConstants();
     }
 
     /** The currently enclosing class.
@@ -2412,6 +2414,7 @@ public class Lower extends TreeTranslator {
         // process each enumeration constant, adding implicit constructor parameters
         int nextOrdinal = 0;
         ListBuffer<JCExpression> values = new ListBuffer<>();
+        ListBuffer<LoadableConstant> constantValues = new ListBuffer<>();
         ListBuffer<JCTree> enumDefs = new ListBuffer<>();
         ListBuffer<JCTree> otherDefs = new ListBuffer<>();
         for (List<JCTree> defs = tree.defs;
@@ -2421,34 +2424,69 @@ public class Lower extends TreeTranslator {
                 JCVariableDecl var = (JCVariableDecl)defs.head;
                 visitEnumConstantDef(var, nextOrdinal++);
                 values.append(make.QualIdent(var.sym));
+                if (TreeInfo.symbol(var.init) instanceof DynamicVarSymbol sym) {
+                    constantValues.add(sym);
+                }
                 enumDefs.append(var);
             } else {
                 otherDefs.append(defs.head);
             }
         }
 
-        // synthetic private static T[] $values() { return new T[] { a, b, c }; }
-        // synthetic private static final T[] $VALUES = $values();
-        Name valuesName = syntheticName(tree, "VALUES");
         Type arrayType = new ArrayType(types.erasure(tree.type), syms.arrayClass);
-        VarSymbol valuesVar = new VarSymbol(PRIVATE|FINAL|STATIC|SYNTHETIC,
-                                            valuesName,
-                                            arrayType,
-                                            tree.type.tsym);
-        JCNewArray newArray = make.NewArray(make.Type(types.erasure(tree.type)),
-                                          List.nil(),
-                                          values.toList());
-        newArray.type = arrayType;
+        VarSymbol valuesVar;
 
-        MethodSymbol valuesMethod = new MethodSymbol(PRIVATE|STATIC|SYNTHETIC,
-                syntheticName(tree, "values"),
-                new MethodType(List.nil(), arrayType, List.nil(), tree.type.tsym),
-                tree.type.tsym);
-        enumDefs.append(make.MethodDef(valuesMethod, make.Block(0, List.of(make.Return(newArray)))));
-        tree.sym.members().enter(valuesMethod);
+        // If all values can be loaded with condy, use condy for the values array
+        if (constantValues.size() == values.size()) {
+            // Create a constant bootstrap method that returns the values array unmodified.
+            // There isn't an obvious way to use a share generic boostrap because we want a T[], not an Enum[]
+            // synthetic private static T[] $values(MethodHandle bootstrapMethod, String name, Class<?> type, T... values) { return values; }
+            List<Type> args = List.of(syms.methodHandleLookupType,
+                    syms.stringType,
+                    new ClassType(syms.classType.getEnclosingType(),
+                            List.of(new WildcardType(syms.objectType, BoundKind.UNBOUND,  syms.boundClass)),
+                            syms.classType.tsym),
+                    types.makeArrayType(tree.type));
+            MethodSymbol valuesMethod = new MethodSymbol(PRIVATE | STATIC | SYNTHETIC | VARARGS,
+                    syntheticName(tree, "values"),
+                    new MethodType(args, types.makeArrayType(tree.type), List.nil(), tree.type.tsym),
+                    tree.type.tsym);
+            ListBuffer<VarSymbol> valuesParams = new ListBuffer<>();
+            int i = 0;
+            for (Type argType : args) {
+                valuesParams.add(new VarSymbol(SYNTHETIC | PARAMETER,
+                        names.fromString("arg" + i++), argType, valuesMethod));
+            }
+            valuesMethod.params = valuesParams.toList();
+            enumDefs.append(make.MethodDef(valuesMethod, make.Block(0, List.of(make.Return(make.Ident(valuesMethod.params.last()))))));
+            tree.sym.members().enter(valuesMethod);
 
-        enumDefs.append(make.VarDef(valuesVar, make.App(make.QualIdent(valuesMethod))));
-        tree.sym.members().enter(valuesVar);
+            valuesVar = new DynamicVarSymbol(valuesMethod.name, valuesMethod.owner, valuesMethod.asHandle(),
+                    valuesMethod.getReturnType(), constantValues.toArray(new LoadableConstant[0]));
+        } else {
+            // synthetic private static T[] $values() { return new T[] { a, b, c }; }
+            // synthetic private static final T[] $VALUES = $values();
+            Name valuesName = syntheticName(tree, "VALUES");
+            valuesVar = new VarSymbol(PRIVATE|FINAL|STATIC|SYNTHETIC,
+                    valuesName,
+                    arrayType,
+                    tree.type.tsym);
+
+            JCNewArray newArray = make.NewArray(make.Type(types.erasure(tree.type)),
+                    List.nil(),
+                    values.toList());
+            newArray.type = arrayType;
+
+            MethodSymbol valuesMethod = new MethodSymbol(PRIVATE | STATIC | SYNTHETIC,
+                    syntheticName(tree, "values"),
+                    new MethodType(List.nil(), arrayType, List.nil(), tree.type.tsym),
+                    tree.type.tsym);
+            enumDefs.append(make.MethodDef(valuesMethod, make.Block(0, List.of(make.Return(newArray)))));
+            tree.sym.members().enter(valuesMethod);
+
+            enumDefs.append(make.VarDef(valuesVar, make.App(make.QualIdent(valuesMethod))));
+            tree.sym.members().enter(valuesVar);
+        }
 
         MethodSymbol valuesSym = lookupMethod(tree.pos(), names.values,
                                         tree.type, List.nil());
@@ -2562,6 +2600,61 @@ public class Lower extends TreeTranslator {
         varDef.args = varDef.args.
             prepend(makeLit(syms.intType, ordinal)).
             prepend(makeLit(syms.stringType, var.name.toString()));
+        if (!useDynamicConstants || !varDef.args.stream().allMatch(a -> foldableEnumConstantArg(a))) {
+            // TODO - synthesize a factory method and use condy
+            return;
+        }
+        if (varDef.def != null) {
+            // TODO - handle initializers that declare anonymous classes
+            return;
+        }
+        if (var.type.tsym.enclClass().packge().modle == syms.java_base) {
+            // avoid using MethodHandle in enums referenced from MethodHandle's clinit
+            return;
+        }
+        ListBuffer<LoadableConstant> params = new ListBuffer<>();
+        for (JCExpression arg : varDef.args) {
+            params.add(foldEnumConstantArg((JCLiteral) arg));
+        }
+
+        List<Type> bsm_staticArgs = List.of(syms.methodHandleLookupType,
+                syms.stringType,
+                new ClassType(syms.classType.getEnclosingType(),
+                        List.of(syms.botType),
+                        syms.classType.tsym),
+                syms.methodHandleType,
+                types.makeArrayType(syms.objectType));
+        MethodSymbol bsm = rs.resolveInternalMethod(var.pos(), attrEnv, syms.constantBootstrapsType,
+                names.invoke, bsm_staticArgs, List.nil());
+        MethodHandleSymbol toCall = ((MethodSymbol) varDef.constructor).asHandle();
+        params.prepend(toCall);
+        DynamicVarSymbol dynSym = new DynamicVarSymbol(bsm.name, bsm.owner, bsm.asHandle(),
+                var.type, params.toArray(new LoadableConstant[0]));
+        JCFieldAccess qualifier = make.Select(make.QualIdent(bsm.owner), dynSym.name);
+        qualifier.sym = dynSym;
+        qualifier.type = bsm.getReturnType();
+        var.init = qualifier;
+    }
+
+    private static boolean foldableEnumConstantArg(JCExpression tree) {
+        return tree instanceof JCLiteral &&
+                switch (((JCLiteral) tree).typetag) {
+                    // TODO - boolean (see ConstantDescs.TRUE), byte, char, short
+                    case INT, FLOAT, LONG, DOUBLE, CLASS -> true;
+                    default -> false;
+                };
+    }
+
+    private static LoadableConstant foldEnumConstantArg(JCLiteral literal) {
+        Object value = literal.value;
+        return switch (literal.typetag) {
+            case INT-> LoadableConstant.Int((Integer) value);
+            case FLOAT -> LoadableConstant.Float((Float) value);
+            case LONG -> LoadableConstant.Long((Long) value);
+            case DOUBLE -> LoadableConstant.Double((Double) value);
+            case CLASS -> LoadableConstant.String((String) value);
+            default -> throw new UnsupportedOperationException("unsupported tag: " + literal.typetag);
+        };
     }
 
     private List<VarSymbol> recordVars(Type t) {
