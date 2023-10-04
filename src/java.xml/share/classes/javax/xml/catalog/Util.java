@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -266,5 +268,35 @@ class Util {
         } else if (f == Feature.FILES) {
             Util.validateUrisSyntax(value.split(";"));
         }
+    }
+
+    /**
+     * Returns the absolute form of the specified uri after resolving it against
+     * the base. Returns the uri as is if it's already absolute.
+     *
+     * @param base the base, that is the system id of the catalog within the
+     * Catalog implementation
+     * @param uri the specified uri
+     * @return Returns the absolute form of the specified uri
+     */
+    static String getAbsoluteURI(String base, String uri) {
+        try {
+            URI baseURI = URI.create(base);
+            URI specURI = URI.create(uri);
+            String temp;
+            if (specURI.isAbsolute()) {
+                temp = specURI.toURL().toString();
+            } else {
+                if (SCHEME_JAR.equalsIgnoreCase(baseURI.getScheme())) {
+                    temp = Paths.get(base, uri).toString();
+                } else {
+                    temp = baseURI.resolve(uri).toString();
+                }
+            }
+            return temp;
+        } catch (MalformedURLException ex) {
+            // no action, shouldn't happen as the base has already been validated
+        }
+        return uri;
     }
 }

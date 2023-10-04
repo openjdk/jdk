@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,12 +77,43 @@ public final class CatalogManager {
     /**
      * Creates an instance of a {@code CatalogResolver} using the specified catalog.
      *
+     * @apiNote Calling this method is equivalent to calling
+     * {@code catalogResolver(Catalog, null)}.
+     *
      * @param catalog the catalog instance
      * @return an instance of a {@code CatalogResolver}
      */
     public static CatalogResolver catalogResolver(Catalog catalog) {
         if (catalog == null) CatalogMessages.reportNPEOnNull("catalog", null);
         return new CatalogResolverImpl(catalog);
+    }
+
+    /**
+     * Creates an instance of a {@code CatalogResolver} using the specified catalog
+     * and the value of the {@link CatalogFeatures.Feature#RESOLVE RESOLVE} property.
+     *
+     * @param catalog the catalog instance
+     * @param resolve the value of the {@link CatalogFeatures.Feature#RESOLVE RESOLVE}
+     * property that overrides the previous setting used for creating the {@code catalog}
+     * object. The supported values are: {@code strict}, {@code continue},
+     * and {@code ignore}. {@code null} may be specified to indicate that the
+     * {@code catalog} object's current {@link CatalogFeatures.Feature#RESOLVE RESOLVE}
+     * value remains unchanged.
+     *
+     * @return an instance of a {@code CatalogResolver}
+     * @throws IllegalArgumentException if the value of the {@code resolve} property is
+     * not a supported value or {@code null}.
+     *
+     * @since 22
+     */
+    public static CatalogResolver catalogResolver(Catalog catalog, String resolve) {
+        if (catalog == null) CatalogMessages.reportNPEOnNull("catalog", null);
+
+        if (resolve != null && GroupEntry.ResolveType.getType(resolve) == null) {
+            CatalogMessages.reportIAE(CatalogMessages.ERR_INVALID_ARGUMENT,
+                    new Object[]{resolve, "RESOLVE"}, null);
+        }
+        return new CatalogResolverImpl(catalog, resolve);
     }
 
     /**

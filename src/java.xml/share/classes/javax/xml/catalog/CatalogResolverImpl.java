@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import org.xml.sax.XMLReader;
  */
 final class CatalogResolverImpl implements CatalogResolver {
     Catalog catalog;
+    GroupEntry.ResolveType resolveType;
 
     /**
      * Construct an instance of the CatalogResolver from a Catalog.
@@ -58,9 +59,24 @@ final class CatalogResolverImpl implements CatalogResolver {
      * @param catalog A Catalog.
      */
     public CatalogResolverImpl(Catalog catalog) {
-        this.catalog = catalog;
+        this(catalog, null);
     }
 
+    /**
+     * Construct an instance of the CatalogResolver from a Catalog and the resolve
+     * property.
+     *
+     * @param catalog a Catalog object
+     * @param resolve the resolve property
+     */
+    public CatalogResolverImpl(Catalog catalog, String resolve) {
+        this.catalog = catalog;
+        if (resolve == null) {
+            resolveType = ((CatalogImpl) catalog).getResolve();
+        } else {
+            resolveType = GroupEntry.ResolveType.getType(resolve);
+        }
+    }
     /*
        Implements the EntityResolver interface
     */
@@ -91,7 +107,6 @@ final class CatalogResolverImpl implements CatalogResolver {
             return new InputSource(resolvedSystemId);
         }
 
-        GroupEntry.ResolveType resolveType = ((CatalogImpl) catalog).getResolve();
         switch (resolveType) {
             case IGNORE:
                 return new InputSource(new StringReader(""));
