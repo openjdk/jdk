@@ -718,6 +718,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_lstat0(JNIEnv* env, jclass this,
         } else {
             throwUnixException(env, errno);
         }
+        // statx was available, so return now
+        return;
     }
 #endif
     RESTARTABLE(lstat64(path, &buf), err);
@@ -748,6 +750,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstat0(JNIEnv* env, jclass this, jint fd,
         } else {
             throwUnixException(env, errno);
         }
+        // statx was available, so return now
+        return;
     }
 #endif
     RESTARTABLE(fstat64((int)fd, &buf), err);
@@ -782,6 +786,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd
         } else {
             throwUnixException(env, errno);
         }
+        // statx was available, so return now
+        return;
     }
 #endif
 
