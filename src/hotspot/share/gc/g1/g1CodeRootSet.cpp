@@ -84,8 +84,10 @@ class G1CodeRootSetHashTable : public CHeapObj<mtGC> {
 
 public:
   G1CodeRootSetHashTable() :
-    _table(Log2DefaultNumBuckets,
-           HashTable::DEFAULT_MAX_SIZE_LOG2),
+    _table(Mutex::event,                      // Never takes any lock inside locked sections.
+           nullptr,
+           Log2DefaultNumBuckets,
+           false /* enable_statistics */),
     _table_scanner(&_table, BucketClaimSize), _num_entries(0) {
     clear();
   }

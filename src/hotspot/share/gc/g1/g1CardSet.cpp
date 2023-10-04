@@ -286,7 +286,10 @@ public:
                      size_t initial_log_table_size = InitialLogTableSize) :
     _inserted_card(false),
     _mm(mm),
-    _table(mm, initial_log_table_size, false),
+    _table(Mutex::event,                      // Never takes any lock inside locked sections.
+           mm,
+           initial_log_table_size,
+           false /* enable_statistics */),
     _table_scanner(&_table, BucketClaimSize) {
   }
 
