@@ -35,6 +35,10 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 /**
  * Models the {@code StackMapTable} attribute {@jvms 4.7.4}, which can appear
  * on a {@code Code} attribute.
+ * <p>
+ * The attribute does not permit multiple instances in a given location.
+ * Subsequent occurrence of the attribute takes precedence during the attributed
+ * element build or transformation.
  */
 public sealed interface StackMapTableAttribute
         extends Attribute<StackMapTableAttribute>, CodeElement
@@ -45,6 +49,10 @@ public sealed interface StackMapTableAttribute
      */
     List<StackMapFrameInfo> entries();
 
+    /**
+     * {@return a stack map table attribute}
+     * @param entries the stack map frames
+     */
     public static StackMapTableAttribute of(List<StackMapFrameInfo> entries) {
         return new UnboundAttribute.UnboundStackMapTableAttribute(entries);
     }

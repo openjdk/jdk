@@ -30,6 +30,7 @@
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/growableArray.hpp"
 
 // Interface for generating the frame map for compiled code.  A frame map
@@ -334,7 +335,10 @@ private:
   address data() const { return (address) this + sizeof(*this) + sizeof(ImmutableOopMapPair) * _count; }
 
 public:
+  void operator delete(void* p);
+
   ImmutableOopMapSet(const OopMapSet* oopmap_set, int size) : _count(oopmap_set->size()), _size(size) {}
+  ~ImmutableOopMapSet() = default;
 
   ImmutableOopMap* oopmap_at_offset(int offset) const {
     assert(offset >= 0 && offset < _size, "must be within boundaries");

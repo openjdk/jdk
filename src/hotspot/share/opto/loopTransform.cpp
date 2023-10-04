@@ -1918,6 +1918,9 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   post_head->set_normal_loop();
   post_head->set_post_loop(main_head);
 
+  // clone_loop() above changes the exit projection
+  main_exit = outer_main_end->proj_out(false);
+
   // Reduce the post-loop trip count.
   CountedLoopEndNode* post_end = old_new[main_end->_idx]->as_CountedLoopEnd();
   post_end->_prob = PROB_FAIR;
@@ -2079,12 +2082,17 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_peeled_loop(const Predi
   Node* control = outer_loop_head->in(LoopNode::EntryControl);
   Node* input_proj = control;
 
+  const Node* parse_predicate_uncommon_trap = predicate_block->parse_predicate()->uncommon_trap();
   Node* next_regular_predicate_proj = predicate_block->skip_parse_predicate();
   while (next_regular_predicate_proj->is_IfProj()) {
     IfNode* iff = next_regular_predicate_proj->in(0)->as_If();
+    ProjNode* uncommon_proj = iff->proj_out(1 - next_regular_predicate_proj->as_Proj()->_con);
+    if (uncommon_proj->unique_ctrl_out() != parse_predicate_uncommon_trap) {
+      // Does not belong to this Predicate Block anymore.
+      break;
+    }
     if (iff->in(1)->Opcode() == Op_Opaque4) {
       assert(assertion_predicate_has_loop_opaque_node(iff), "unexpected");
-      ProjNode* uncommon_proj = iff->proj_out(1 - next_regular_predicate_proj->as_Proj()->_con);
       input_proj = clone_assertion_predicate_and_initialize(iff, init, stride, next_regular_predicate_proj, uncommon_proj, control,
                                                             outer_loop, input_proj);
 
@@ -2277,6 +2285,8 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     // can edit it's inputs directly.  Hammer in the new limit for the
     // minimum-trip guard.
     assert(opaq->outcnt() == 1, "");
+    // Notify limit -> opaq -> CmpI, it may constant fold.
+    _igvn.add_users_to_worklist(opaq->in(1));
     _igvn.replace_input_of(opaq, 1, new_limit);
   }
 
@@ -2957,6 +2967,8 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
         continue;  // Don't rce this check but continue looking for other candidates.
       }
 
+      assert(is_dominator(compute_early_ctrl(limit, limit_c), pre_end), "node pinned on loop exit test?");
+
       // Check for scaled induction variable plus an offset
       Node *offset = nullptr;
 
@@ -2975,6 +2987,8 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
       if (is_dominator(ctrl, offset_c)) {
         continue; // Don't rce this check but continue looking for other candidates.
       }
+
+      assert(is_dominator(compute_early_ctrl(offset, offset_c), pre_end), "node pinned on loop exit test?");
 #ifdef ASSERT
       if (TraceRangeLimitCheck) {
         tty->print_cr("RC bool node%s", flip ? " flipped:" : ":");
@@ -3521,7 +3535,7 @@ void IdealLoopTree::enqueue_data_nodes(PhaseIdealLoop* phase, Unique_Node_List& 
 void IdealLoopTree::collect_loop_core_nodes(PhaseIdealLoop* phase, Unique_Node_List& wq) const {
   uint before = wq.size();
   wq.push(_head->in(LoopNode::LoopBackControl));
-  for (uint i = 0; i < wq.size(); ++i) {
+  for (uint i = before; i < wq.size(); ++i) {
     Node* n = wq.at(i);
     for (uint j = 0; j < n->req(); ++j) {
       Node* in = n->in(j);
