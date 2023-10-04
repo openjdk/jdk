@@ -403,6 +403,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     &nbsp;<span class="return-type"><a href="C1.ModalExclusionType.html" title="enum\
                      class in pkg1">C1.ModalExclusionType</a></span>&nbsp;<span class="element-name">APPLICATION_E\
                     XCLUDE</span></div>
+                    </div>
                     </section>
                     </li>""");
 
