@@ -177,7 +177,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void push(TosState state);       // transition state -> vtos
 
   void empty_expression_stack() {
-    movptr(rsp, Address(rbp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
+    movptr(rcx, Address(rbp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
+    lea(rsp, Address(rbp, rcx, Address::times_ptr));
     // null last_sp until next java call
     movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
     NOT_LP64(empty_FPU_stack());

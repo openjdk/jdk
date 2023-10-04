@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.javac.Restricted;
 import jdk.internal.loader.ClassLoaderValue;
 import jdk.internal.loader.Loader;
 import jdk.internal.loader.LoaderPool;
@@ -325,6 +326,7 @@ public final class ModuleLayer {
          */
         @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
         @CallerSensitive
+        @Restricted
         public Controller enableNativeAccess(Module target) {
             ensureInLayer(target);
             Reflection.ensureNativeAccess(Reflection.getCallerClass(), Module.class,

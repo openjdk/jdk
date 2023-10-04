@@ -174,8 +174,10 @@ void RuntimeBlob::free(RuntimeBlob* blob) {
 }
 
 void CodeBlob::flush() {
-  FREE_C_HEAP_ARRAY(unsigned char, _oop_maps);
-  _oop_maps = nullptr;
+  if (_oop_maps != nullptr) {
+    delete _oop_maps;
+    _oop_maps = nullptr;
+  }
   NOT_PRODUCT(_asm_remarks.clear());
   NOT_PRODUCT(_dbg_strings.clear());
 }
@@ -189,7 +191,6 @@ void CodeBlob::set_oop_maps(OopMapSet* p) {
     _oop_maps = nullptr;
   }
 }
-
 
 void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const char* name2) {
   // Do not hold the CodeCache lock during name formatting.
@@ -413,7 +414,8 @@ RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
                                            int frame_complete,
                                            int frame_size,
                                            OopMapSet* oop_maps,
-                                           bool caller_must_gc_arguments)
+                                           bool caller_must_gc_arguments,
+                                           bool alloc_fail_is_fatal)
 {
   RuntimeStub* stub = nullptr;
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(RuntimeStub));
@@ -421,6 +423,12 @@ RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     stub = new (size) RuntimeStub(stub_name, cb, size, frame_complete, frame_size, oop_maps, caller_must_gc_arguments);
+    if (stub == nullptr) {
+      if (!alloc_fail_is_fatal) {
+        return nullptr;
+      }
+      fatal("Initial size of CodeCache is too small");
+    }
   }
 
   trace_new_stub(stub, "RuntimeStub - ", stub_name);
@@ -430,9 +438,7 @@ RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
 
 
 void* RuntimeStub::operator new(size_t s, unsigned size) throw() {
-  void* p = CodeCache::allocate(size, CodeBlobType::NonNMethod);
-  if (!p) fatal("Initial size of CodeCache is too small");
-  return p;
+  return CodeCache::allocate(size, CodeBlobType::NonNMethod);
 }
 
 // operator new shared by all singletons:

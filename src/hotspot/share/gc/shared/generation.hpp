@@ -322,17 +322,9 @@ class Generation: public CHeapObj<mtGC> {
 
   // Iteration.
 
-  // Iterate over all the ref-containing fields of all objects in the
-  // generation, calling "cl.do_oop" on each.
-  virtual void oop_iterate(OopIterateClosure* cl);
-
   // Iterate over all objects in the generation, calling "cl.do_object" on
   // each.
   virtual void object_iterate(ObjectClosure* cl);
-
-  // Inform a generation that some of its objects have moved.  [e.g. The
-  // generation's spaces were compacted, invalidating the card table.]
-  virtual void invalidate_remembered_set() { }
 
   // Block abstraction.
 
