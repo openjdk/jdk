@@ -157,8 +157,8 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
     }
   } else if (flag == mtNMT) {
     // Count malloc headers in "NMT" category
-    reserved_amount  += _malloc_snapshot->malloc_overhead()->size();
-    committed_amount += _malloc_snapshot->malloc_overhead()->size();
+    reserved_amount  += _malloc_snapshot->malloc_overhead();
+    committed_amount += _malloc_snapshot->malloc_overhead();
   }
 
   if (amount_in_current_scale(reserved_amount) > 0) {
@@ -210,9 +210,9 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
     }
 
     if (flag == mtNMT &&
-      amount_in_current_scale(_malloc_snapshot->malloc_overhead()->size()) > 0) {
+      amount_in_current_scale(_malloc_snapshot->malloc_overhead()) > 0) {
       out->print_cr("%27s (tracking overhead=" SIZE_FORMAT "%s)", " ",
-        amount_in_current_scale(_malloc_snapshot->malloc_overhead()->size()), scale);
+        amount_in_current_scale(_malloc_snapshot->malloc_overhead()), scale);
     } else if (flag == mtClass) {
       // Metadata information
       report_metadata(Metaspace::NonClassType);
