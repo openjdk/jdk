@@ -252,6 +252,8 @@ class CompileBroker: AllStatic {
   static bool wait_for_jvmci_completion(JVMCICompiler* comp, CompileTask* task, JavaThread* thread);
 #endif
 
+  static void free_buffer_blob_if_allocated(CompilerThread* thread);
+
   static void invoke_compiler_on_method(CompileTask* task);
   static void handle_compile_error(CompilerThread* thread, CompileTask* task, ciEnv* ci_env,
                                    int compilable, const char* failure_reason);
@@ -291,8 +293,7 @@ public:
     CompileQueue *q = compile_queue(comp_level);
     return q != nullptr ? q->size() : 0;
   }
-  static void compilation_init_phase1(JavaThread* THREAD);
-  static void compilation_init_phase2();
+  static void compilation_init(JavaThread* THREAD);
   static void init_compiler_thread_log();
   static nmethod* compile_method(const methodHandle& method,
                                  int osr_bci,
@@ -301,7 +302,7 @@ public:
                                  int hot_count,
                                  CompileTask::CompileReason compile_reason,
                                  TRAPS);
-
+private:
   static nmethod* compile_method(const methodHandle& method,
                                    int osr_bci,
                                    int comp_level,
@@ -311,6 +312,7 @@ public:
                                    DirectiveSet* directive,
                                    TRAPS);
 
+public:
   // Acquire any needed locks and assign a compile id
   static int assign_compile_id_unlocked(Thread* thread, const methodHandle& method, int osr_bci);
 

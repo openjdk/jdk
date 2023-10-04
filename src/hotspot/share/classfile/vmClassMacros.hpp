@@ -160,6 +160,7 @@
   /* Stack Walking */                                                                                           \
   do_klass(StackWalker_klass,                           java_lang_StackWalker                                 ) \
   do_klass(AbstractStackWalker_klass,                   java_lang_StackStreamFactory_AbstractStackWalker      ) \
+  do_klass(ClassFrameInfo_klass,                        java_lang_ClassFrameInfo                              ) \
   do_klass(StackFrameInfo_klass,                        java_lang_StackFrameInfo                              ) \
   do_klass(LiveStackFrameInfo_klass,                    java_lang_LiveStackFrameInfo                          ) \
                                                                                                                 \
