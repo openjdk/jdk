@@ -160,6 +160,7 @@ class Stream<T> extends ExchangeImpl<T> {
      */
     private final WindowController windowController;
     private final WindowUpdateSender windowUpdater;
+    private boolean endStreamSeen;
 
     @Override
     HttpConnection connection() {
@@ -478,6 +479,7 @@ class Stream<T> extends ExchangeImpl<T> {
     void incoming(Http2Frame frame) throws IOException {
         if (debug.on()) debug.log("incoming: %s", frame);
         var cancelled = checkRequestCancelled() || closed;
+        endStreamSeen = endStreamSeen || frame.getFlag(HeaderFrame.END_STREAM);
         if ((frame instanceof HeaderFrame hf)) {
             if (hf.endHeaders()) {
                 Log.logTrace("handling response (streamid={0})", streamid);
@@ -573,47 +575,45 @@ class Stream<T> extends ExchangeImpl<T> {
 
     void incoming_reset(ResetFrame frame) {
         Log.logTrace("Received RST_STREAM on stream {0}", streamid);
+        Flow.Subscriber<?> subscriber = responseSubscriber == null ? pendingResponseSubscriber : responseSubscriber;
+        System.err.println(endStreamSeen);
         if (endStreamReceived() && requestBodyCF.isDone()) {
+            // END_STREAM flag may have been seen in the queue before processing this ResetFrame
             Log.logTrace("Ignoring RST_STREAM frame received on remotely closed stream {0}", streamid);
+            System.err.println("1");
         } else if (closed) {
             Log.logTrace("Ignoring RST_STREAM frame received on closed stream {0}", streamid);
-        } else {
-            Flow.Subscriber<?> subscriber =
-                    responseSubscriber == null ? pendingResponseSubscriber : responseSubscriber;
-            if (!requestBodyCF.isDone()) {
-                // If a RST_STREAM is received, complete the requestBody. This will allow the
-                // response to be read before the Reset is handled in the case where the client's
-                // input stream is partially consumed or not consumed at all by the server.
-                if (frame.getErrorCode() != ResetFrame.NO_ERROR) {
-                    if (debug.on()) {
-                        debug.log("completing requestBodyCF exceptionally due to received" +
-                                " RESET(%s) (stream=%s)", frame.getErrorCode(), streamid);
-                    }
-                    requestBodyCF.completeExceptionally(new IOException("RST_STREAM received"));
-                } else {
-                    if (debug.on()) {
-                        debug.log("completing requestBodyCF normally due to received" +
-                                " RESET(NO_ERROR) (stream=%s)", streamid);
-                    }
-                    requestBodyCF.complete(null);
+            System.err.println("2");
+        } else if (subscriber == null && !endStreamSeen) {
+            handleReset(frame, null);
+        } else if (!requestBodyCF.isDone()) {
+            System.err.println("3");
+            if (frame.getErrorCode() != ResetFrame.NO_ERROR) {
+                if (debug.on()) {
+                    debug.log("completing requestBodyCF exceptionally due to received" +
+                            " RESET(%s) (stream=%s)", frame.getErrorCode(), streamid);
                 }
-            }
-            if ((response == null || !finalResponseCodeReceived) && subscriber == null) {
-                // we haven't received the headers yet, and won't receive any!
-                // handle reset now.
-                handleReset(frame, null);
+                System.err.println("4");
+                requestBodyCF.completeExceptionally(new IOException("RST_STREAM received"));
             } else {
-                // put it in the input queue in order to read all
-                // pending data frames first. Indeed, a server may send
-                // RST_STREAM after sending END_STREAM, in which case we should
-                // ignore it. However, we won't know if we have received END_STREAM
-                // or not until all pending data frames are read.
-                receiveResetFrame(frame);
-                // RST_STREAM was pushed to the queue. It will be handled by
-                // asyncReceive after all pending data frames have been
-                // processed.
-                Log.logTrace("RST_STREAM pushed in queue for stream {0}", streamid);
+                if (debug.on()) {
+                    debug.log("completing requestBodyCF normally due to received" +
+                            " RESET(NO_ERROR) (stream=%s)", streamid);
+                }
+                System.err.println("5");
+                requestBodyCF.complete(null);
             }
+        } else if ((response == null || !finalResponseCodeReceived)) {
+            System.err.println("7");
+            // In these cases, ResetFrame will not be taken from the inputQ and so should be
+            // handled immediately
+            handleReset(frame, null);
+        } else {
+            System.err.println("8");
+            // Put ResetFrame into inputQ. Any frames already in the queue will be processed
+            // before the ResetFrame.
+            receiveResetFrame(frame);
+            Log.logTrace("RST_STREAM pushed in queue for stream {0}", streamid);
         }
     }
 
@@ -1081,6 +1081,7 @@ class Stream<T> extends ExchangeImpl<T> {
                     assert b == item;
                 } while (outgoing.peekFirst() != null);
 
+                // TODO: Maybe throw exception here to fix intermittent error?
                 if (state != 0) {
                     t = errorRef.get();
                     if (t == null) t = new IOException(ResetFrame.stringForCode(streamState));
@@ -1102,6 +1103,7 @@ class Stream<T> extends ExchangeImpl<T> {
             }
         }
 
+        // TODO: We could put the check for END_STREAM received here?
         private void complete() throws IOException {
             long remaining = remainingContentLength;
             long written = contentLength - remaining;

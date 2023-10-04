@@ -30,7 +30,8 @@
  * @bug 8309118
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run testng/othervm -Djdk.internal.httpclient.debug=true -Djdk.httpclient.HttpClient.log=errors,headers ExpectContinueResetTest
+ * @run testng/othervm/timeout=2 -Djdk.internal.httpclient.debug=false -Djdk.httpclient.HttpClient.log=trace,errors,headers
+ *                              ExpectContinueResetTest
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
@@ -42,8 +43,8 @@ import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
 
 import jdk.internal.net.http.common.HttpHeadersBuilder;
-import jdk.internal.net.http.frame.HeaderFrame;
 import jdk.internal.net.http.frame.ResetFrame;
+import org.testng.TestException;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
@@ -59,7 +60,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.concurrent.CompletableFuture;
+import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 
 import static java.net.http.HttpClient.Version.HTTP_2;
@@ -69,10 +70,9 @@ import static org.testng.Assert.*;
 public class ExpectContinueResetTest {
 
     Http2TestServer http2TestServer;
-    final String samplePost = "Sample Post";
-
-    URI warmup, postSuccessfully, postExceptionally;
-    URI resetStreamAfter100NoError, resetStreamAfter100Error, resetStreamAfter200NoError, resetStreamAfter200Error;
+    // "NoError" urls complete with an exception. "NoError" or "Error" here refers to the error code in the RST_STREAM frame
+    // and not the outcome of the test.
+    URI warmup, partialResponseResetNoError, partialResponseResetError, fullResponseResetNoError, fullResponseResetError;
 
     static PrintStream err = new PrintStream(System.err);
 
@@ -80,47 +80,19 @@ public class ExpectContinueResetTest {
     public Object[][] testDataUnconsumedBody() {
         // Not consuming the InputStream in the server's handler results in different handling of RST_STREAM client-side
         return new Object[][] {
-                { postSuccessfully, false }, // Checks RST_STREAM is ignored after client sees an END_STREAM
-                { postExceptionally, true }  // Checks RST_STREAM is processed if client sees no END_STREAM
+                { partialResponseResetNoError },
+                { partialResponseResetError },  // Checks RST_STREAM is processed if client sees no END_STREAM
+                { fullResponseResetNoError },
+                { fullResponseResetError }
         };
     }
 
-    @DataProvider(name = "testDataConsumedBody")
-    public Object[][] testDataConsumedBody() {
-        return new Object[][] {
-                // All client requests to these URIs should complete exceptionally
-                { resetStreamAfter100NoError }, // Client receives RST_STREAM before END_STREAM and 200
-                { resetStreamAfter100Error },  // Client receives RST_STREAM before END_STREAM and 200
-                { resetStreamAfter200NoError }, // Client receives RST_STREAM after 200 but before server sends END_STREAM
-                { resetStreamAfter200Error } // Client receives RST_STREAM after 200 but before server sends END_STREAM
-        };
-    }
 
     @Test(dataProvider = "testDataUnconsumedBody")
-    public void testUnconsumedBody(URI uri, boolean exceptionally) {
-        err.printf("\nTesting with Version: %s, URI: %s\n", HTTP_2, uri);
-        HttpRequest.BodyPublisher testPub = HttpRequest.BodyPublishers.ofString(samplePost);
-        HttpResponse<String> resp = null;
-        Throwable testThrowable = null;
-        try {
-            resp = performRequest(testPub, uri);
-        } catch (Exception e) {
-            testThrowable = e.getCause();
-        }
-        if (exceptionally) {
-            assertNotNull(testThrowable, "Request should have completed exceptionally but testThrowable is null");
-            assertEquals(testThrowable.getClass(), IOException.class, "Test should have closed with an IOException");
-        } else {
-            assertNull(testThrowable);
-            assertNotNull(resp);
-            assertEquals(resp.statusCode(), 200);
-        }
-    }
-
-    @Test(dataProvider = "testDataConsumedBody")
-    public void testConsumedBody(URI uri) {
-        err.printf("\nTesting with Version: %s, URI: %s\n", HTTP_2, uri);
-        HttpRequest.BodyPublisher testPub = HttpRequest.BodyPublishers.ofString(samplePost);
+    public void testUnconsumedBody(URI uri) {
+        err.printf("\nTesting with Version: %s, URI: %s\n", HTTP_2, uri.toASCIIString());
+        Iterable<byte[]> iterable = EndlessDataChunks::new;
+        HttpRequest.BodyPublisher testPub = HttpRequest.BodyPublishers.ofByteArrays(iterable);
         Throwable testThrowable = null;
         try {
             performRequest(testPub, uri);
@@ -129,6 +101,24 @@ public class ExpectContinueResetTest {
         }
         assertNotNull(testThrowable, "Request should have completed exceptionally but testThrowable is null");
         assertEquals(testThrowable.getClass(), IOException.class, "Test should have closed with an IOException");
+        testThrowable.printStackTrace();
+    }
+
+    static public class EndlessDataChunks implements Iterator<byte[]> {
+
+        byte[] data = new byte[16];
+        @Override
+        public boolean hasNext() {
+            return true;
+        }
+        @Override
+        public byte[] next() {
+            return data;
+        }
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @BeforeTest
@@ -136,23 +126,16 @@ public class ExpectContinueResetTest {
         http2TestServer = new Http2TestServer(false, 0);
         http2TestServer.setExchangeSupplier(ExpectContinueResetTestExchangeImpl::new);
         http2TestServer.addHandler(new GetHandler().toHttp2Handler(), "/warmup");
+        http2TestServer.addHandler(new NoEndStreamOnPartialResponse(), "/partialResponse/codeNoError");
+        http2TestServer.addHandler(new NoEndStreamOnPartialResponse(), "/partialResponse/codeError");
+        http2TestServer.addHandler(new NoEndStreamOnFullResponse(), "/fullResponse/codeNoError");
+        http2TestServer.addHandler(new NoEndStreamOnFullResponse(), "/fullResponse/codeError");
 
-        http2TestServer.addHandler(new PostHandlerHttp2(), "/http2/resetStreamAfter100NoError");
-        http2TestServer.addHandler(new PostHandlerHttp2(), "/http2/resetStreamAfter100Error");
-        http2TestServer.addHandler(new PostHandlerHttp2(), "/http2/resetStreamAfter200Error");
-        http2TestServer.addHandler(new PostHandlerHttp2(), "/http2/resetStreamAfter200NoError");
-
-        http2TestServer.addHandler(new TestHandlerEndStreamOn200(), "/testHandlerSuccessfully");
-        http2TestServer.addHandler(new TestHandlerNoEndStreamOn200(), "/testHandlerExceptionally");
         warmup = URI.create("http://" + http2TestServer.serverAuthority() + "/warmup");
-
-        resetStreamAfter100NoError = URI.create("http://" + http2TestServer.serverAuthority() + "/http2/resetStreamAfter100NoError");
-        resetStreamAfter100Error = URI.create("http://" + http2TestServer.serverAuthority() + "/http2/resetStreamAfter100Error");
-        resetStreamAfter200NoError = URI.create("http://" + http2TestServer.serverAuthority() + "/http2/resetStreamAfter200NoError");
-        resetStreamAfter200Error = URI.create("http://" + http2TestServer.serverAuthority() + "/http2/resetStreamAfter200Error");
-
-        postSuccessfully = URI.create("http://" + http2TestServer.serverAuthority() + "/testHandlerSuccessfully");
-        postExceptionally = URI.create("http://" + http2TestServer.serverAuthority() + "/testHandlerExceptionally");
+        partialResponseResetNoError = URI.create("http://" + http2TestServer.serverAuthority() + "/partialResponse/codeNoError");
+        partialResponseResetError = URI.create("http://" + http2TestServer.serverAuthority() + "/partialResponse/codeError");
+        fullResponseResetNoError = URI.create("http://" + http2TestServer.serverAuthority() + "/fullResponse/codeNoError");
+        fullResponseResetError = URI.create("http://" + http2TestServer.serverAuthority() + "/fullResponse/codeError");
         http2TestServer.start();
     }
 
@@ -161,7 +144,7 @@ public class ExpectContinueResetTest {
         http2TestServer.stop();
     }
 
-    private HttpResponse<String> performRequest(HttpRequest.BodyPublisher bodyPublisher, URI uri)
+    private void performRequest(HttpRequest.BodyPublisher bodyPublisher, URI uri)
             throws IOException, InterruptedException, ExecutionException {
         try (HttpClient client = HttpClient.newBuilder().proxy(HttpClient.Builder.NO_PROXY).version(HTTP_2).build()) {
             err.printf("Performing warmup request to %s", warmup);
@@ -172,8 +155,8 @@ public class ExpectContinueResetTest {
                     .expectContinue(true)
                     .build();
             err.printf("Sending request (%s): %s%n", HTTP_2, postRequest);
-            CompletableFuture<HttpResponse<String>> cf = client.sendAsync(postRequest, HttpResponse.BodyHandlers.ofString());
-            return cf.get();
+            // TODO: when test is stable and complete, see then if fromSubscriber makes our subscriber non null
+            client.sendAsync(postRequest, HttpResponse.BodyHandlers.ofString()).get();
         }
     }
 
@@ -191,32 +174,27 @@ public class ExpectContinueResetTest {
         }
     }
 
-    static class PostHandlerHttp2 implements Http2Handler {
-
-        @Override
-        public void handle(Http2TestExchange exchange) throws IOException {
-            if (exchange instanceof ExpectContinueResetTestExchangeImpl impl) {
-                String path = exchange.getRequestURI().getPath();
-                impl.handleTestExchange(path);
-            }
-        }
-    }
-
-    static class TestHandlerEndStreamOn200 implements Http2Handler {
+    static class NoEndStreamOnPartialResponse implements Http2Handler {
 
         @Override
         public void handle(Http2TestExchange exchange) throws IOException {
             err.println("Sending 100");
-            exchange.sendResponseHeaders(100, -1);
-            err.println("Sending 200");
-            exchange.sendResponseHeaders(200, -1);
-            // Setting responseLength to -1, sets the END_STREAM flag on the ResponseHeaders before sending a RST_STREAM frame.
-            // Therefore, there is no need to explicitly send a RST_STREAM here as this will be sent by the Server impl.
-            err.println("Sending Reset");
+            exchange.sendResponseHeaders(100, 0);
+            if (exchange instanceof ExpectContinueResetTestExchangeImpl testExchange) {
+                err.println("Sending Reset");
+                err.println(exchange.getRequestURI().getPath());
+                switch (exchange.getRequestURI().getPath()) {
+                    case "/partialResponse/codeNoError" -> testExchange.addResetToOutputQ(ResetFrame.NO_ERROR);
+                    case "/partialResponse/codeError" -> testExchange.addResetToOutputQ(ResetFrame.PROTOCOL_ERROR);
+                    default -> throw new TestException("Invalid Request Path");
+                }
+            } else {
+                throw new TestException("Wrong Exchange type used");
+            }
         }
     }
 
-    static class TestHandlerNoEndStreamOn200 implements Http2Handler {
+    static class NoEndStreamOnFullResponse implements Http2Handler {
 
         @Override
         public void handle(Http2TestExchange exchange) throws IOException {
@@ -226,12 +204,17 @@ public class ExpectContinueResetTest {
             exchange.sendResponseHeaders(200, 0);
             if (exchange instanceof ExpectContinueResetTestExchangeImpl testExchange) {
                 err.println("Sending Reset");
-                testExchange.addResetToOutputQ(ResetFrame.NO_ERROR);
+                switch (exchange.getRequestURI().getPath()) {
+                    case "/fullResponse/codeNoError" -> testExchange.addResetToOutputQ(ResetFrame.NO_ERROR);
+                    case "/fullResponse/codeError" -> testExchange.addResetToOutputQ(ResetFrame.PROTOCOL_ERROR);
+                    default -> throw new TestException("Invalid Request Path");
+                }
             } else {
-                throw new RuntimeException("Wrong Exchange type used");
+                throw new TestException("Wrong Exchange type used");
             }
         }
     }
+
     static class ExpectContinueResetTestExchangeImpl extends Http2TestExchangeImpl {
 
         public ExpectContinueResetTestExchangeImpl(int streamid, String method, HttpHeaders reqheaders, HttpHeadersBuilder rspheadersBuilder, URI uri, InputStream is, SSLSession sslSession, BodyOutputStream os, Http2TestServerConnection conn, boolean pushAllowed) {
@@ -241,65 +224,6 @@ public class ExpectContinueResetTest {
         public void addResetToOutputQ(int code) throws IOException {
             ResetFrame rf = new ResetFrame(streamid, code);
             this.conn.addToOutputQ(rf);
-        }
-
-        public void handleTestExchange(String path) throws IOException {
-            //Based on request path, execute a different response case
-            try (InputStream reqBody = this.getRequestBody()) {
-                switch (path) {
-                    case "/http2/endStream" -> sendEndStreamHeaders();
-                    case "/http2/resetStreamAfter100NoError" -> resetStreamAfter100NoError(reqBody);
-                    case "/http2/resetStreamAfter100Error" -> resetStreamAfter100Error(reqBody);
-                    case "/http2/resetStreamAfter200NoError" -> resetStreamAfter200NoError(reqBody);
-                    case "/http2/resetStreamAfter200Error" -> resetStreamAfter200Error(reqBody);
-                    default -> sendResponseHeaders(400, 0);
-                }
-            }
-        }
-
-        private void sendEndStreamHeaders() throws IOException {
-            this.responseLength = 0;
-            rspheadersBuilder.setHeader(":status", Integer.toString(100));
-            HttpHeaders headers = rspheadersBuilder.build();
-            Http2TestServerConnection.ResponseHeaders response
-                    = new Http2TestServerConnection.ResponseHeaders(headers);
-            response.streamid(streamid);
-            response.setFlag(HeaderFrame.END_HEADERS);
-            response.setFlag(HeaderFrame.END_STREAM);
-            sendResponseHeaders(response);
-        }
-
-        private void resetStreamAfter100NoError(InputStream reqBody) throws IOException {
-            err.println("IN HANDLER");
-            this.sendResponseHeaders(100, 0);
-            reqBody.readAllBytes();
-            // Send Reset Frame immediately after Response Headers
-            addResetToOutputQ(ResetFrame.NO_ERROR);
-        }
-
-        private void resetStreamAfter100Error(InputStream reqBody) throws IOException {
-            this.sendResponseHeaders(100, 0);
-            reqBody.readAllBytes();
-            // Send Reset Frame immediately after Response Headers
-            addResetToOutputQ(ResetFrame.PROTOCOL_ERROR);
-        }
-
-        public void resetStreamAfter200NoError(InputStream reqBody) throws IOException {
-            this.sendResponseHeaders(100, 0);
-            reqBody.readAllBytes();
-            this.sendResponseHeaders(200, 0);
-            // Send Reset after reading data and 200 sent. This means the RST_STREAM will be received by the client before
-            // an empty DATA_FRAME with the END_STREAM flag sent causing the exchange to complete exceptionally.
-            addResetToOutputQ(ResetFrame.NO_ERROR);
-        }
-
-        public void resetStreamAfter200Error(InputStream reqBody) throws IOException {
-            this.sendResponseHeaders(100, 0);
-            reqBody.readAllBytes();
-            this.sendResponseHeaders(200, 0);
-            // Send Reset after reading data and 200 sent. This means the RST_STREAM will be received by the client before
-            // an empty DATA_FRAME with the END_STREAM flag sent causing the exchange to complete exceptionally.
-            addResetToOutputQ(ResetFrame.PROTOCOL_ERROR);
         }
     }
 }
