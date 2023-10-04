@@ -24,6 +24,7 @@
 /* @test
  * @bug 8287843
  * @summary Basic test for Windows path prefixes
+ * @requires (os.family == "windows")
  * @run junit WindowsPrefixes
  */
 
@@ -42,18 +43,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class WindowsPrefixes {
 
-    private static final String USER_DIR = System.getProperty("user.dir");
-
-    private static char driveLetter() {
-        assert System.getProperty("os.name").startsWith("Windows");
-
-        if ((USER_DIR.length() > 2) && (USER_DIR.charAt(1) == ':')
-            && (USER_DIR.charAt(2) == '\\'))
-            return USER_DIR.charAt(0);
-
-        throw new RuntimeException("Current directory has no drive");
-    }
-
     private static Stream<Arguments> paths() {
         return Stream.of(Arguments.of(""),
                          Arguments.of("C:\\"),
@@ -65,7 +54,7 @@ public class WindowsPrefixes {
                          Arguments.of("C:\\foo\\bar"));
     }
 
-    //@EnabledOnOs(OS.WINDOWS)
+    @EnabledOnOs(OS.WINDOWS)
     @ParameterizedTest
     @MethodSource("paths")
     public void getAbsolutePath(String path) throws IOException {
@@ -74,6 +63,7 @@ public class WindowsPrefixes {
         assertEquals(file.getAbsolutePath(), that.getAbsolutePath());
     }
 
+    @EnabledOnOs(OS.WINDOWS)
     @ParameterizedTest
     @MethodSource("paths")
     public void getCanonicalPath(String path) throws IOException {
@@ -82,6 +72,7 @@ public class WindowsPrefixes {
         assertEquals(file.getCanonicalPath(), that.getCanonicalPath());
     }
 
+    @EnabledOnOs(OS.WINDOWS)
     @ParameterizedTest
     @MethodSource("paths")
     public void getName(String path) throws IOException {
@@ -90,6 +81,7 @@ public class WindowsPrefixes {
         assertEquals(file.getName(), that.getName());
     }
 
+    @EnabledOnOs(OS.WINDOWS)
     @ParameterizedTest
     @MethodSource("paths")
     public void getParent(String path) throws IOException {
@@ -98,6 +90,7 @@ public class WindowsPrefixes {
         assertEquals(file.getParent(), that.getParent());
     }
 
+    @EnabledOnOs(OS.WINDOWS)
     @ParameterizedTest
     @MethodSource("paths")
     public void isAbsolute(String path) throws IOException {
