@@ -53,5 +53,6 @@ ciTypeArrayKlass* ciTypeArrayKlass::make_impl(BasicType t) {
 //
 // Make an array klass corresponding to the specified primitive type.
 ciTypeArrayKlass* ciTypeArrayKlass::make(BasicType t) {
+  assert(make_impl(t) != nullptr, "array klass is null");
   GUARDED_VM_ENTRY(return make_impl(t);)
 }
