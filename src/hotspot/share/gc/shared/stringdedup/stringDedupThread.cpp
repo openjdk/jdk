@@ -28,7 +28,6 @@
 #include "gc/shared/stringdedup/stringDedupThread.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/os.hpp"
-#include "runtime/perfData.hpp"
 #include "utilities/exceptions.hpp"
 
 StringDedupThread::StringDedupThread() : JavaThread(thread_entry) {}
