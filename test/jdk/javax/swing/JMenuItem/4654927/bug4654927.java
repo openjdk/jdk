@@ -89,7 +89,7 @@ public class bug4654927 {
             // test mouse drag
             point = Util.getCenterPoint(menu);
             robot.mouseMove(point.x, point.y);
-	    robot.delay(250);
+            robot.delay(250);
             Point menuLocation = Util.invokeOnEDT(new Callable<Point>() {
 
                 @Override
