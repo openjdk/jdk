@@ -236,8 +236,11 @@ public class DNSName implements GeneralNameInterface {
                 constraintType = NAME_MATCH;
             else if (thisName.endsWith(inName)) {
                 int inNdx = thisName.lastIndexOf(inName);
-                if (thisName.charAt(inNdx-1) == '.' )
+                if (thisName.charAt(inNdx-1) == '.' && inName.charAt(0) != '.')
                     constraintType = NAME_WIDENS;
+                else if (thisName.charAt(inNdx-1) != '.' && inName.charAt(0) == '.') {
+                    constraintType = NAME_WIDENS;
+                }
                 else
                     constraintType = NAME_SAME_TYPE;
             } else if (inName.endsWith(thisName)) {
