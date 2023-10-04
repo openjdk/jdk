@@ -5026,8 +5026,8 @@ public class Types {
 
         if (target.isPrimitive()) {
             return (source.isReference() && isSubtype(boxedTypeOrType(erasure(source)), target)) ||
-                    (source.isReference() && isExactPrimitiveWidening(unboxedType(source), target) ) ||
-                    isExactPrimitiveWidening(source, target);
+                    (source.isReference() && checkUnconditionallyExactPrimitives(unboxedType(source), target) ) ||
+                    checkUnconditionallyExactPrimitives(source, target);
         } else {
             return isSubtype(boxedTypeOrType(erasure(source)), target);
         }
@@ -5043,7 +5043,7 @@ public class Types {
      *  @param source     Source primitive type
      *  @param target     Target primitive type
      */
-    public boolean isExactPrimitiveWidening(Type source, Type target) {
+    public boolean checkUnconditionallyExactPrimitives(Type source, Type target) {
         if (isSameType(source, target)) {
             return true;
         }

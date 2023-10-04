@@ -2926,10 +2926,8 @@ public class Lower extends TreeTranslator {
             // However, we still need to emit a null check.
             // This branch covers true unconditionality for the underlying type as well.
             if (types.checkUnconditionallyExact(tree.expr.type, tree.pattern.type) &&
-                !(tree.expr.type.isReference() && types.isExactPrimitiveWidening(types.unboxedType(tree.expr.type), tree.pattern.type))) {
-                if (types.isConvertible(tree.expr.type, tree.pattern.type)) {
-                    exactnessCheck = make.Literal(BOOLEAN, 1).setType(syms.booleanType);
-                }
+                !(tree.expr.type.isReference() && types.checkUnconditionallyExactPrimitives(types.unboxedType(tree.expr.type), tree.pattern.type))) {
+                exactnessCheck = make.Literal(BOOLEAN, 1).setType(syms.booleanType);
             } else if (tree.pattern.type.isPrimitive()) {
                 // Covers cases where the Type of the pattern is primitive e.g., v instanceof int
                 // - case type of v is ReferenceType, null check and unbox

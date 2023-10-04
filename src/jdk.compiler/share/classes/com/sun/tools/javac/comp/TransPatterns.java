@@ -490,21 +490,8 @@ public class TransPatterns extends TreeTranslator {
                                                                     List.of(new WildcardType(syms.objectType, BoundKind.UNBOUND,
                                                                                              syms.boundClass)),
                                                                     syms.classType.tsym)));
-
-            // The boolean flag `hasUnconditionalPattern` is true when either there
-            // is a default case or an unconditional pattern. Consequently, we
-            // disambiguate. The last should be the one before the unconditional or the default case.
-            Stream<JCCase> effectiveCases = null;
-            if (cases.stream().flatMap(c -> c.labels.stream()).noneMatch(p -> p.hasTag(Tag.DEFAULTCASELABEL))) {
-                effectiveCases = cases.stream()
-                        .limit(hasUnconditionalPattern ? cases.size() - 1 : cases.size());
-            } else {
-                effectiveCases = cases.stream()
-                        .limit(cases.size());
-            }
-
             LoadableConstant[] staticArgValues =
-                    effectiveCases
+                    cases.stream()
                          .flatMap(c -> c.labels.stream())
                          .map(l -> toLoadableConstant(l, seltype))
                          .filter(c -> c != null)
