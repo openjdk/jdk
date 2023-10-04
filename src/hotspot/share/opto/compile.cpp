@@ -5127,7 +5127,7 @@ bool Compile::should_print_phase(CompilerPhaseType cpt) {
   return false;
 }
 
-bool Compile::should_print_igv(int level) {
+bool Compile::should_print_igv(const int level) {
 #ifndef PRODUCT
   if (PrintIdealGraphLevel < 0) { // disabled by the user
     return false;

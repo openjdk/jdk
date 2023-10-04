@@ -169,7 +169,7 @@ public class ForceEarlyReturnTest extends TestScaffold {
     protected void runTests() throws Exception {
         BreakpointEvent bpe = startTo("ForceEarlyReturnTestTarg", "loopOrSleep", "()V");
         ThreadReference mainThread = bpe.thread();
-        boolean is_vthread_mode = "Virtual".equals(System.getProperty("main.wrapper"));
+        boolean is_vthread_mode = DebuggeeWrapper.isVirtual();
 
         // Resume main thread until it is in Thread.sleep() or the infinite loop.
         mainThread.resume();
