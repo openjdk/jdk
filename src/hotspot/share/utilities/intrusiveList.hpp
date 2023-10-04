@@ -158,6 +158,13 @@ public:
 
   NONCOPYABLE(IntrusiveListEntry);
 
+  /** Test whether this entry is attached to some list. */
+  bool is_attached() const {
+    bool result = (_prev != nullptr);
+    assert(result == (_next != nullptr), "inconsistent entry");
+    return result;
+  }
+
 private:
   // _prev and _next are the links between elements / root entries in
   // an associated list.  The values of these members are type-erased

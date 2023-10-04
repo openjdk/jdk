@@ -52,6 +52,8 @@ struct TestIntrusiveListValue : public CHeapObj<mtInternal> {
   using Value = TestIntrusiveListValue; // convenience
 
   size_t value() const { return _value; }
+  bool is_attached1() const { return _entry1.is_attached(); }
+  bool is_attached2() const { return _entry2.is_attached(); }
   Value* This() { return this; }
   const Value* This() const { return this; }
 };
@@ -238,7 +240,11 @@ TEST(IntrusiveListBasics, construct_CHeapObj) {
 TEST_F(IntrusiveListTestWithValues, push_front) {
   List1 list1;
   for (size_t i = 0; i < nvalues; ++i) {
+    EXPECT_FALSE(values[i]->is_attached1());
+    EXPECT_FALSE(values[i]->is_attached2());
     list1.push_front(*values[i]);
+    EXPECT_TRUE(values[i]->is_attached1());
+    EXPECT_FALSE(values[i]->is_attached2());
     EXPECT_FALSE(list1.empty());
     EXPECT_EQ(i + 1, list1.length());
     EXPECT_EQ(values[i]->value(), list1.front().value());
