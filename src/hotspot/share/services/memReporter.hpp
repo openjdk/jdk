@@ -82,12 +82,12 @@ class MemReporterBase : public StackObj {
 
   // Print summary total, malloc and virtual memory
   void print_total(size_t reserved, size_t committed) const;
-  void print_malloc(size_t amount, size_t count, MEMFLAGS flag = mtNone) const;
+  void print_malloc(const MemoryCounter* c, MEMFLAGS flag = mtNone) const;
   void print_virtual_memory(size_t reserved, size_t committed) const;
 
-  void print_malloc_line(size_t amount, size_t count) const;
+  void print_malloc_line(const MemoryCounter* c) const;
   void print_virtual_memory_line(size_t reserved, size_t committed) const;
-  void print_arena_line(size_t amount, size_t count) const;
+  void print_arena_line(const MemoryCounter* c) const;
 
   void print_virtual_memory_region(const char* type, address base, size_t size) const;
 };
