@@ -39,10 +39,6 @@ inline address Method::from_interpreted_entry() const {
   return Atomic::load_acquire(&_from_interpreted_entry);
 }
 
-inline void Method::clear_method_data() {
-  _method_data = nullptr;
-}
-
 inline CompiledMethod* Method::code() const {
   assert( check_code(), "" );
   return Atomic::load_acquire(&_code);
