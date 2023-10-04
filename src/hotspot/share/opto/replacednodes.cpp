@@ -230,7 +230,7 @@ void ReplacedNodes::clone_stack(Compile* C, Node* initial, Node* improved, const
 bool ReplacedNodes::is_dominator(const Node* ctl, Node* n) const {
   assert(n->is_CFG(), "should be CFG now");
   int depth = 0;
-  while(n != ctl) {
+  while (n != ctl) {
     n = IfNode::up_one_dom(n);
     depth++;
     // limit search depth
