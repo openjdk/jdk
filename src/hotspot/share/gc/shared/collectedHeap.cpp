@@ -159,7 +159,10 @@ bool CollectedHeap::contains_null(const oop* p) const {
 }
 
 void CollectedHeap::inc_total_cpu_time(jlong diff) {
-#if defined(_LP64)
+// Since Atomic::add() is not implemented for long long (jlong) data types on 32-bit
+// architectures, we have separate handling for the 64-bit vs 32-bit cases.
+// Logically, these statements should be equivalent.
+#ifdef _LP64
   Atomic::add(&_total_cpu_time_diff, diff);
 #else
   jlong old_value;
