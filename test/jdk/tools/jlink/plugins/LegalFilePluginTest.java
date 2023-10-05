@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug 8169925
+ * @bug 8169925 8317634
  * @summary Validate the license files deduplicated in the image
  * @library /test/lib
  * @modules jdk.compiler
  *          jdk.jlink
+ *          java.base/jdk.internal.util
  * @build jdk.test.lib.compiler.CompilerUtils
  * @run testng LegalFilePluginTest
  */
@@ -53,6 +54,8 @@ import java.util.Set;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import jdk.internal.util.OperatingSystem;
 import jdk.test.lib.compiler.CompilerUtils;
 
 import org.testng.annotations.BeforeTest;
@@ -89,7 +92,10 @@ public class LegalFilePluginTest {
                                     "test-license",    "test license v1"),
         List.of("m3"),       Map.of("m3-license.md",   "m3 license",
                                     "test-license",    "test license v3"),
-        List.of("m4"),       Map.of("test-license",    "test license v4")
+        List.of("m4"),       Map.of("test-license",    "test license v4",
+                                    "common-license",    "common"),
+        List.of("m5"),       Map.of("common-license",    "common"),
+        List.of("m6"),       Map.of("common-license",    "common")
     );
 
     @BeforeTest
@@ -247,6 +253,127 @@ public class LegalFilePluginTest {
                          .matches("Error:.*/m4/legal/m4/test-license .*contain different content"));
     }
 
+    private record LicenseFile (String content, boolean symlinkExpected) {}
+
+    /**
+     * Creates an image with --dedup-legal-notices plugin enabled and by passing exclude-modules
+     * option to exclude certain modules' license files from being de-duplicated (symlinked). Test
+     * then verifies that the relevant license files in the generated image aren't symbolic links.
+     */
+    @Test
+    public void testExcludeModules() throws Exception {
+        if (Files.notExists(MODULE_PATH)) {
+            // exploded image
+            return;
+        }
+        String targetImageDir = "test-exclude-modules";
+        String mpath = MODULE_PATH.toString() + File.pathSeparator +
+                JMODS_DIR.toString();
+        List<String> options = Stream.of("--dedup-legal-notices",
+                        "exclude-modules=m1,m5",
+                        "--module-path", mpath,
+                        "--add-modules=m1,m2,m4,m5,m6",
+                        "--output", imageDir(targetImageDir))
+                .collect(Collectors.toList());
+
+        Path image = createImage(targetImageDir, options);
+        boolean symlinkSupported = symlinkSupported(image);
+        // m1 and m5 license files are expected to be actual entries and not symlinks
+        // m6 license file is expected to be a symlink (to m4 license file)
+        Map<String, LicenseFile> expectedLicenses =
+                Map.of("m1/LICENSE", new LicenseFile("m1 LICENSE", false),
+                        "m1/m1-license.txt", new LicenseFile("m1 license", false),
+                        "m1/test-license", new LicenseFile("test license v1", false),
+                        "m2/m2-license", new LicenseFile("m2 license", false),
+                        // symlink to target m1/test-license
+                        "m2/test-license", new LicenseFile("test license v1", true),
+                        "m4/common-license", new LicenseFile("common", false),
+                        "m5/common-license", new LicenseFile("common", false),
+                        // symlink to target m4/common-license
+                        "m6/common-license", new LicenseFile("common", true));
+        Path legalDir = image.resolve("legal");
+        for (Map.Entry<String, LicenseFile> expected : expectedLicenses.entrySet()) {
+            String p = expected.getKey().replace("/", File.separator);
+            Path licenseFilePath = legalDir.resolve(p);
+            assertTrue(Files.exists(licenseFilePath),
+                    licenseFilePath + " is missing in the generated image");
+            assertTrue(Files.isRegularFile(licenseFilePath),
+                    licenseFilePath + " isn't a regular file in the generated image");
+            if (expected.getValue().symlinkExpected) {
+                // check if the platform supports symlink
+                if (symlinkSupported) {
+                    assertTrue(Files.isSymbolicLink(licenseFilePath),
+                            licenseFilePath + " was expected to be a symlink, but isn't");
+                    compareFileContent(licenseFilePath, expected.getValue().content);
+                } else {
+                    // on platforms where symlink isn't supported, this will be a replacement
+                    // file whose text content will point to the target file.
+                    // verify that text content
+                    assertDeduplicatedLicenseNotice(licenseFilePath);
+                }
+            } else {
+                compareFileContent(licenseFilePath, expected.getValue().content);
+            }
+        }
+    }
+
+    /**
+     * Verifies the case where --dedup-legal-notices option of the dedup-legal-notices plugin
+     * is capable to taking more than one argument
+     */
+    @Test
+    public void testMultiArgs() throws Exception {
+        if (Files.notExists(MODULE_PATH)) {
+            // exploded image
+            return;
+        }
+        String targetImageDir = "test-multi-args";
+        String mpath = MODULE_PATH.toString() + File.pathSeparator +
+                JMODS_DIR.toString();
+        // pass both error-if-not-same-content and exclude-modules arguments to the
+        // --dedup-legal-notices option
+        List<String> options = Stream.of(
+                        "--dedup-legal-notices=error-if-not-same-content:exclude-modules=m6",
+                        "--module-path", mpath,
+                        "--add-modules=m4,m5,m6",
+                        "--output", imageDir(targetImageDir))
+                .collect(Collectors.toList());
+
+        Path image = createImage(targetImageDir, options);
+        boolean symlinkSupported = symlinkSupported(image);
+        // m6 license file is expected to be actual entry (even if it's content and license file
+        // name matches the ones in m4 and m5)
+        Map<String, LicenseFile> expectedLicenses =
+                Map.of("m4/common-license", new LicenseFile("common", false),
+                        // symlink to target m4/common-license
+                        "m5/common-license", new LicenseFile("common", true),
+                        "m6/common-license", new LicenseFile("common", false));
+        Path legalDir = image.resolve("legal");
+        for (Map.Entry<String, LicenseFile> expected : expectedLicenses.entrySet()) {
+            String p = expected.getKey().replace("/", File.separator);
+            Path licenseFilePath = legalDir.resolve(p);
+            assertTrue(Files.exists(licenseFilePath),
+                    licenseFilePath + " is missing in the generated image");
+            assertTrue(Files.isRegularFile(licenseFilePath),
+                    licenseFilePath + " isn't a regular file in the generated image");
+            if (expected.getValue().symlinkExpected) {
+                // check if the platform supports symlink
+                if (symlinkSupported) {
+                    assertTrue(Files.isSymbolicLink(licenseFilePath),
+                            licenseFilePath + " was expected to be a symlink, but isn't");
+                    compareFileContent(licenseFilePath, expected.getValue().content);
+                } else {
+                    // on platforms where symlink isn't supported, this will be a replacement
+                    // file whose text content will point to the target file.
+                    // verify that text content
+                    assertDeduplicatedLicenseNotice(licenseFilePath);
+                }
+            } else {
+                compareFileContent(licenseFilePath, expected.getValue().content);
+            }
+        }
+    }
+
     private void compareFileContent(Path file, String content) {
         try {
             byte[] bytes = Files.readAllBytes(file);
@@ -258,6 +385,13 @@ public class LegalFilePluginTest {
         }
     }
 
+    private void assertDeduplicatedLicenseNotice(Path file) throws IOException {
+        // read the content of the file, it should start with "Please see"
+        String content = Files.readString(file);
+        assertTrue(content.startsWith("Please see"),
+                file + " isn't a de-duplicated license notice file");
+    }
+
     private Path createImage(String outputDir, List<String> options) {
         System.out.println("jlink " + options.stream().collect(Collectors.joining(" ")));
         int rc = JLINK_TOOL.run(System.out, System.out,
@@ -265,6 +399,11 @@ public class LegalFilePluginTest {
         assertTrue(rc == 0);
 
         return IMAGES_DIR.resolve(outputDir);
+    }
+
+    private static boolean symlinkSupported(final Path path) {
+        return !OperatingSystem.isWindows()
+                && path.getFileSystem().supportedFileAttributeViews().contains("posix");
     }
 
     private void deleteDirectory(Path dir) throws IOException {

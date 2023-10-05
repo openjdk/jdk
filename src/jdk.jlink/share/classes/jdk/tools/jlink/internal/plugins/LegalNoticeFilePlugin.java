@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -54,10 +55,15 @@ import jdk.tools.jlink.plugin.ResourcePoolModule;
 public final class LegalNoticeFilePlugin extends AbstractPlugin {
 
     private static final String ERROR_IF_NOT_SAME_CONTENT = "error-if-not-same-content";
+    // names of modules whose legal notice files should be excluded from being de-duplicated.
+    // such modules will have those files copied over into the module
+    private static final String EXCLUDE_MODULES = "exclude-modules";
+
     private final Map<String, List<ResourcePoolEntry>> licenseOrNotice =
         new HashMap<>();
 
     private boolean errorIfNotSameContent = false;
+    private List<String> excludeModules;
 
     public LegalNoticeFilePlugin() {
         super("dedup-legal-notices");
@@ -70,10 +76,20 @@ public final class LegalNoticeFilePlugin extends AbstractPlugin {
 
     @Override
     public void configure(Map<String, String> config) {
+        String excludeModulesArgVal = config.get(EXCLUDE_MODULES);
+        if (excludeModulesArgVal != null) {
+            excludeModules = Utils.parseList(excludeModulesArgVal);
+        }
         String arg = config.get(getName());
         if (arg != null) {
             if (arg.equals(ERROR_IF_NOT_SAME_CONTENT)) {
                 errorIfNotSameContent = true;
+            } else if (arg.startsWith(EXCLUDE_MODULES + "=")) {
+                // handle the case where only exclude-modules argument is passed to
+                // --dedup-legal-notices option, like below:
+                // --dedup-legal-notices exclude-modules=x,y
+                String val = arg.substring((EXCLUDE_MODULES + "=").length());
+                excludeModules = Utils.parseList(val);
             } else {
                 throw new IllegalArgumentException(getName() + ": " + arg);
             }
@@ -126,9 +142,15 @@ public final class LegalNoticeFilePlugin extends AbstractPlugin {
             }
             entries.add(entry);
         } else {
-            entries.add(ResourcePoolEntry.createSymLink(entry.path(),
-                                                        entry.type(),
-                                                        otarget.get()));
+            if (excludeModules != null && excludeModules.contains(entry.moduleName())) {
+                // don't de-duplicate and instead add the original entry
+                entries.add(entry);
+            } else {
+                // de-duplicate and add a symlink
+                entries.add(ResourcePoolEntry.createSymLink(entry.path(),
+                        entry.type(),
+                        otarget.get()));
+            }
         }
     }
 
