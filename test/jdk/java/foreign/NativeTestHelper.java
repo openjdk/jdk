@@ -54,6 +54,7 @@ import static java.lang.foreign.MemoryLayout.PathElement.sequenceElement;
 
 public class NativeTestHelper {
 
+    public static final boolean IS_AIX = System.getProperty("os.name").startsWith("AIX");
     public static final boolean IS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
 
     private static final MethodHandle MH_SAVER;
@@ -116,7 +117,8 @@ public class NativeTestHelper {
     /**
      * The layout for the {@code double} C type
      */
-    public static final ValueLayout.OfDouble C_DOUBLE = ValueLayout.JAVA_DOUBLE;
+    public static final ValueLayout.OfDouble C_DOUBLE = ValueLayout.JAVA_DOUBLE.withByteAlignment(IS_AIX ? 4 : 8);
+
     /**
      * The {@code T*} native type.
      */
