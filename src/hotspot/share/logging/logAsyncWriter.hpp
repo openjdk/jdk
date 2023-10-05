@@ -73,10 +73,10 @@ class AsyncLogWriter : public NonJavaThread {
   //
   // Example layout:
   // ---------------------------------------------
-  // |_output|_decorations|_msglen|"a log line", |pad| <- Message aligned.
-  // |_output|_decorations|_msglen|"yet another",|pad|
+  // |_output|_decorations|"a log line", |pad| <- Message aligned.
+  // |_output|_decorations|"yet another",|pad|
   // ...
-  // |nullptr|_decorations|0|"",|pad| <- flush token
+  // |nullptr|_decorations|"",|pad| <- flush token
   // |<- _pos
   // ---------------------------------------------
   class Message {
@@ -84,14 +84,12 @@ class AsyncLogWriter : public NonJavaThread {
     ~Message() = delete;
     LogFileStreamOutput* const _output;
     const LogDecorations _decorations;
-    size_t _msglen; // Length of message excluding NUL-byte
    public:
     // msglen excludes NUL-byte
     Message(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg, const size_t msglen)
-      : _output(output), _decorations(decorations),
-        _msglen(msglen) {
+      : _output(output), _decorations(decorations) {
       assert(msg != nullptr, "c-str message can not be null!");
-      memcpy(reinterpret_cast<char* >(this+1), msg, _msglen + 1);
+      memcpy(reinterpret_cast<char* >(this+1), msg, msglen + 1);
     }
 
     // Calculate the size for a prospective Message object depending on its message length including the trailing zero
@@ -100,7 +98,7 @@ class AsyncLogWriter : public NonJavaThread {
     }
 
     size_t size() const {
-      return calc_size(_msglen);
+      return calc_size(strlen(message()));
     }
 
     inline bool is_token() const { return _output == nullptr; }

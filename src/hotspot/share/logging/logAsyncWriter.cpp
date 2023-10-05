@@ -49,7 +49,7 @@ const LogDecorations& AsyncLogWriter::None = LogDecorations(LogLevel::Warning, L
                                       LogDecorators::None);
 
 bool AsyncLogWriter::Buffer::push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg) {
-  size_t len = strlen(msg);
+  const size_t len = strlen(msg);
   const size_t sz = Message::calc_size(len);
   const bool is_token = output == nullptr;
   // Always leave headroom for the flush token. Pushing a token must succeed.
