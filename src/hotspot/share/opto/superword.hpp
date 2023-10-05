@@ -362,11 +362,9 @@ class SuperWord : public ResourceObj {
   bool     is_trace_loop()         { return (_vector_loop_debug & 8) > 0; }
   bool     is_trace_adjacent()     { return (_vector_loop_debug & 16) > 0; }
   bool     is_trace_cmov()         { return (_vector_loop_debug & 32) > 0; }
-  bool     is_trace_loop_reverse() { return (_vector_loop_debug & 64) > 0; }
   bool     is_trace_align_vector() { return (_vector_loop_debug & 128) > 0; }
 #endif
   bool     do_vector_loop()        { return _do_vector_loop; }
-  bool     do_reserve_copy()       { return _do_reserve_copy; }
 
   const GrowableArray<Node_List*>& packset() const { return _packset; }
   const GrowableArray<Node*>&      block()   const { return _block; }
@@ -380,7 +378,6 @@ class SuperWord : public ResourceObj {
   bool           _race_possible;   // In cases where SDMU is true
   bool           _early_return;    // True if we do not initialize
   bool           _do_vector_loop;  // whether to do vectorization/simd style
-  bool           _do_reserve_copy; // do reserve copy of the graph(loop) before final modification in output
   int            _num_work_vecs;   // Number of non memory vector operations
   int            _num_reductions;  // Number of reduction expressions applied
 #ifndef PRODUCT
@@ -526,10 +523,6 @@ private:
   bool SLP_extract();
   // Find the adjacent memory references and create pack pairs for them.
   void find_adjacent_refs();
-  // Tracing support
-  #ifndef PRODUCT
-  void print_loop(bool whole);
-  #endif
   // Find a memory reference to align the loop induction variable to.
   MemNode* find_align_to_ref(Node_List &memops, int &idx);
   // Calculate loop's iv adjustment for this memory ops.

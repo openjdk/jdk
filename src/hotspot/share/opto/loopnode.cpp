@@ -4640,7 +4640,7 @@ void PhaseIdealLoop::build_and_optimize() {
   }
 
   // Convert scalar to superword operations at the end of all loop opts.
-  if (UseSuperWord && C->has_loops() && !C->major_progress()) {
+  if (C->do_superword() && C->has_loops() && !C->major_progress()) {
     // SuperWord transform
     SuperWord sw(this);
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
@@ -5359,11 +5359,12 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
         if( !n->is_CallStaticJava() || !n->as_CallStaticJava()->_name ) {
           Node *iff = n->in(0)->in(0);
           // No any calls for vectorized loops.
-          if( UseSuperWord || !iff->is_If() ||
-              (n->in(0)->Opcode() == Op_IfFalse &&
-               (1.0 - iff->as_If()->_prob) >= 0.01) ||
-              (iff->as_If()->_prob >= 0.01) )
+          if (C->do_superword() ||
+              !iff->is_If() ||
+              (n->in(0)->Opcode() == Op_IfFalse && (1.0 - iff->as_If()->_prob) >= 0.01) ||
+              iff->as_If()->_prob >= 0.01) {
             innermost->_has_call = 1;
+          }
         }
       } else if( n->is_Allocate() && n->as_Allocate()->_is_scalar_replaceable ) {
         // Disable loop optimizations if the loop has a scalar replaceable
