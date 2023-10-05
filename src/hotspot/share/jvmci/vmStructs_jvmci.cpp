@@ -292,9 +292,10 @@
                                                                                                                                      \
   unchecked_nonstatic_field(ObjectMonitor,     _owner,                                        sizeof(void *)) /* NOTE: no type */    \
   volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intptr_t)                              \
-  volatile_nonstatic_field(ObjectMonitor,      _cxq,                                          ObjectWaiter*)                         \
-  volatile_nonstatic_field(ObjectMonitor,      _EntryList,                                    ObjectWaiter*)                         \
-  volatile_nonstatic_field(ObjectMonitor,      _succ,                                         JavaThread*)                           \
+  volatile_nonstatic_field(ObjectWaiterList,   _head,                                         oop*)                                  \
+  volatile_nonstatic_field(ObjectMonitor,      _succ,                                         oop*)                                  \
+                                                                                                                                     \
+  volatile_nonstatic_field(ObjectMonitor,      _enter_queue,                                  ObjectWaiterList)                      \
                                                                                                                                      \
   volatile_nonstatic_field(oopDesc,            _mark,                                         markWord)                              \
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
@@ -418,7 +419,7 @@
   declare_toplevel_type(JVMCIEnv)                                         \
   declare_toplevel_type(LocalVariableTableElement)                        \
   declare_toplevel_type(narrowKlass)                                      \
-  declare_toplevel_type(ObjectWaiter)                                     \
+  declare_toplevel_type(ObjectWaiterList)                                 \
   declare_toplevel_type(Symbol*)                                          \
   declare_toplevel_type(vtableEntry)                                      \
                                                                           \

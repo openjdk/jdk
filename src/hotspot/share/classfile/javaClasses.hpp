@@ -359,6 +359,7 @@ class java_lang_Thread : AllStatic {
   static int _continuation_offset;
   static int _park_blocker_offset;
   static int _scopedValueBindings_offset;
+  static int _sync_next_offset;
   JFR_ONLY(static int _jfr_epoch_offset;)
 
   static void compute_offsets();
@@ -402,6 +403,10 @@ class java_lang_Thread : AllStatic {
   static ByteSize thread_id_offset();
   // Continuation
   static inline oop continuation(oop java_thread);
+
+  // Synchronized support
+  static oop sync_next(oop java_thread);
+  static void set_sync_next(oop java_thread, oop next_thread);
 
   static JvmtiThreadState* jvmti_thread_state(oop java_thread);
   static void set_jvmti_thread_state(oop java_thread, JvmtiThreadState* state);

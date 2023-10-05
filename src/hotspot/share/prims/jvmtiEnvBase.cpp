@@ -1443,6 +1443,9 @@ JvmtiEnvBase::check_non_suspended_or_opaque_frame(JavaThread* jt, oop thr_obj, b
 
 jvmtiError
 JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject object, jvmtiMonitorUsage* info_ptr) {
+  // NYI
+  return JVMTI_ERROR_INTERNAL;
+#if 0
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
   Thread* current_thread = VMThread::vm_thread();
   assert(current_thread == Thread::current(), "must be");
@@ -1573,6 +1576,8 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
   *info_ptr = ret;
 
   return JVMTI_ERROR_NONE;
+#endif
+
 }
 
 jvmtiError

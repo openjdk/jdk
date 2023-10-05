@@ -28,35 +28,68 @@
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "oops/markWord.hpp"
+#include "oops/oopHandle.hpp"
 #include "oops/weakHandle.hpp"
+#include "runtime/mutex.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "utilities/checkedCast.hpp"
 
 class ObjectMonitor;
+class OopStorage;
 class ParkEvent;
 
-// ObjectWaiter serves as a "proxy" or surrogate thread.
-// TODO-FIXME: Eliminate ObjectWaiter and use the thread-specific
-// ParkEvent instead.  Beware, however, that the JVMTI code
-// knows about ObjectWaiters, so we'll have to reconcile that code.
-// See next_waiter(), first_waiter(), etc.
+// Queue of java.lang.Thread handles linked through its next pointer
+// Conceptually, multiple threads can compete for enqueuing at the head.
+// Dequeuing or asking for the last element happens at the tail, and
+// requires external mutual exclusion.
+// This list is single linked. In order to make both enqueue and dequeue
+// efficient, the list is split into two worlds.
+//
+// = Normal World = (ubi non est periculum)
+// In the normal world, observed by enqueuing operations, the next pointers
+// are produced to point from new to old threads of the list.
+//
+// = The Upside Down = (ubi monstra umbra latent)
+// Dequeuing lazily creates the upside down world, where next pointers go
+// in the opposite direction. The two worlds meet in the _middle, which
+// is the end marking for both worlds. The Upside Down is created when
+// there is more than one thread in the list.
+//
+// The next pointer of a thread is always non-null iff it is on a list
+// and the head is non-null iff the queue isn't empty.
 
-class ObjectWaiter : public StackObj {
- public:
-  enum TStates { TS_UNDEF, TS_READY, TS_RUN, TS_WAIT, TS_ENTER, TS_CXQ };
-  ObjectWaiter* volatile _next;
-  ObjectWaiter* volatile _prev;
-  JavaThread*   _thread;
-  uint64_t      _notifier_tid;
-  ParkEvent *   _event;
-  volatile int  _notified;
-  volatile TStates TState;
-  bool          _active;           // Contention monitoring is enabled
- public:
-  ObjectWaiter(JavaThread* current);
 
-  void wait_reenter_begin(ObjectMonitor *mon);
-  void wait_reenter_end(ObjectMonitor *mon);
+class ObjectWaiterList {
+  friend class JVMCIVMStructs;
+  oop* _head;
+  oop* _tail;
+
+  static oop prev(oop node, oop root);
+  static oop next(oop node);
+  static void set_next(oop node, oop next);
+
+  oop head() const;
+  oop tail() const;
+
+  bool cas_head(oop expected, oop new_value);
+  void set_tail(oop new_value);
+
+  void build_tail(oop h);
+  oop tail_dequeue();
+
+public:
+  ObjectWaiterList(OopStorage* oop_storage);
+  void release_handles(OopStorage* oop_storage);
+
+  bool is_empty() const;
+  oop last();
+  oop dequeue();
+  bool enqueue(oop waiter);
+  bool try_unlink(oop waiter);
+
+  static bool is_in_queue(oop waiter);
+
+  static ByteSize head_offset() { return byte_offset_of(ObjectWaiterList, _head); }
 };
 
 // The ObjectMonitor class implements the heavyweight version of a
@@ -129,11 +162,11 @@ class ObjectWaiter : public StackObj {
 
 class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   friend class ObjectSynchronizer;
-  friend class ObjectWaiter;
   friend class VMStructs;
   JVMCI_ONLY(friend class JVMCIVMStructs;)
 
-  static OopStorage* _oop_storage;
+  static OopStorage* _strong_oop_storage;
+  static OopStorage* _weak_oop_storage;
 
   // The sync code expects the header field to be at offset zero (0).
   // Enforced by the assert() in header_addr().
@@ -171,13 +204,11 @@ private:
                         sizeof(volatile uint64_t));
   ObjectMonitor* _next_om;          // Next ObjectMonitor* linkage
   volatile intx _recursions;        // recursion count, 0 for first entry
-  ObjectWaiter* volatile _EntryList;  // Threads blocked on entry or reentry.
-                                      // The list is actually composed of WaitNodes,
-                                      // acting as proxies for Threads.
+  ObjectWaiterList _enter_queue;    // Threads blocked on entry or reentry.
+                                    // The list is actually composed of WaitNodes,
+                                    // acting as proxies for Threads.
 
-  ObjectWaiter* volatile _cxq;      // LL of recently-arrived threads blocked on entry.
-  JavaThread* volatile _succ;       // Heir presumptive thread - used for futile wakeup throttling
-  JavaThread* volatile _Responsible;
+  oop* volatile _succ;              // Heir presumptive thread - used for futile wakeup throttling
 
   volatile int _Spinner;            // for exit->spinner handoff optimization
   volatile int _SpinDuration;
@@ -186,15 +217,15 @@ private:
                                     // along with other fields to determine if an ObjectMonitor can be
                                     // deflated. It is also used by the async deflation protocol. See
                                     // ObjectMonitor::deflate_monitor().
- protected:
-  ObjectWaiter* volatile _WaitSet;  // LL of threads wait()ing on the monitor
+  ObjectWaiterList _waiter_queue;   // Threads waiting for monitor
   volatile int  _waiters;           // number of waiting threads
- private:
-  volatile int _WaitSetLock;        // protects Wait Queue - simple spinlock
+  PlatformMutex _waiter_dequeue_lock;// protects Wait Queue dequeuing
 
  public:
 
   static void Initialize();
+
+  static void* owner_for(Thread* thread);
 
   // Only perform a PerfData operation if the PerfData object has been
   // allocated and if the PerfDataManager has not freed the PerfData
@@ -220,9 +251,8 @@ private:
 
   static ByteSize owner_offset()       { return byte_offset_of(ObjectMonitor, _owner); }
   static ByteSize recursions_offset()  { return byte_offset_of(ObjectMonitor, _recursions); }
-  static ByteSize cxq_offset()         { return byte_offset_of(ObjectMonitor, _cxq); }
   static ByteSize succ_offset()        { return byte_offset_of(ObjectMonitor, _succ); }
-  static ByteSize EntryList_offset()   { return byte_offset_of(ObjectMonitor, _EntryList); }
+  static ByteSize enter_queue_head_offset() { return byte_offset_of(ObjectMonitor, _enter_queue) + ObjectWaiterList::head_offset(); }
 
   // ObjectMonitor references can be ORed with markWord::monitor_value
   // as part of the ObjectMonitor tagging mechanism. When we combine an
@@ -242,18 +272,7 @@ private:
   volatile markWord* header_addr();
   void               set_header(markWord hdr);
 
-  bool is_busy() const {
-    // TODO-FIXME: assert _owner == null implies _recursions = 0
-    intptr_t ret_code = intptr_t(_waiters) | intptr_t(_cxq) | intptr_t(_EntryList);
-    int cnts = contentions(); // read once
-    if (cnts > 0) {
-      ret_code |= intptr_t(cnts);
-    }
-    if (!owner_is_DEFLATER_MARKER()) {
-      ret_code |= intptr_t(owner_raw());
-    }
-    return ret_code != 0;
-  }
+  bool is_busy() const;
   const char* is_busy_to_string(stringStream* ss);
 
   bool is_entered(JavaThread* current) const;
@@ -267,18 +286,23 @@ private:
   // Returns true if 'this' is being async deflated and false otherwise.
   bool      is_being_async_deflated();
   // Clear _owner field; current value must match old_value.
-  void      release_clear_owner(void* old_value);
+  void      release_clear_owner(Thread* old_thread);
   // Simply set _owner field to new_value; current value must match old_value.
-  void      set_owner_from(void* old_value, void* new_value);
+  void      set_owner_from_raw(void* old_value, void* new_value);
+  void      set_owner_from(void* old_value, Thread* current);
   // Simply set _owner field to current; current value must match basic_lock_p.
-  void      set_owner_from_BasicLock(void* basic_lock_p, JavaThread* current);
+  void      set_owner_from_BasicLock(void* basic_lock_p, Thread* current);
   // Try to set _owner field to new_value if the current value matches
   // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
   // _owner field. Returns the prior value of the _owner field.
-  void*     try_set_owner_from(void* old_value, void* new_value);
+  void*     try_set_owner_from_raw(void* old_value, void* new_value);
+  void*     try_set_owner_from(void* old_value, Thread* current);
+
+  void      set_succ(oop successor);
+  oop       succ() const;
 
   void set_owner_anonymous() {
-    set_owner_from(nullptr, anon_owner_ptr());
+    set_owner_from_raw(nullptr, anon_owner_ptr());
   }
 
   bool is_owner_anonymous() const {
@@ -300,10 +324,10 @@ private:
   void      add_to_contentions(int value);
   intx      recursions() const                                         { return _recursions; }
 
-  // JVM/TI GetObjectMonitorUsage() needs this:
-  ObjectWaiter* first_waiter()                                         { return _WaitSet; }
-  ObjectWaiter* next_waiter(ObjectWaiter* o)                           { return o->_next; }
-  JavaThread* thread_of_waiter(ObjectWaiter* o)                        { return o->_thread; }
+  //// JVM/TI GetObjectMonitorUsage() needs this:
+  //ObjectWaiter* first_waiter()                                         { return _WaitSet; }
+  //ObjectWaiter* next_waiter(ObjectWaiter* o)                           { return o->_next; }
+  //JavaThread* thread_of_waiter(ObjectWaiter* o)                        { return o->_thread; }
 
   ObjectMonitor(oop object);
   ~ObjectMonitor();
@@ -316,15 +340,6 @@ private:
   bool      check_owner(TRAPS);
 
  private:
-  class ExitOnSuspend {
-   protected:
-    ObjectMonitor* _om;
-    bool _om_exited;
-   public:
-    ExitOnSuspend(ObjectMonitor* om) : _om(om), _om_exited(false) {}
-    void operator()(JavaThread* current);
-    bool exited() { return _om_exited; }
-  };
   class ClearSuccOnSuspend {
    protected:
     ObjectMonitor* _om;
@@ -349,22 +364,19 @@ private:
   intx      complete_exit(JavaThread* current);
 
  private:
-  void      AddWaiter(ObjectWaiter* waiter);
-  void      INotify(JavaThread* current);
-  ObjectWaiter* DequeueWaiter();
-  void      DequeueSpecificWaiter(ObjectWaiter* waiter);
-  void      EnterI(JavaThread* current);
-  void      ReenterI(JavaThread* current, ObjectWaiter* current_node);
-  void      UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* current_node);
-  int       TryLock(JavaThread* current);
-  int       NotRunnable(JavaThread* current, JavaThread* Owner);
-  int       TrySpin(JavaThread* current);
-  void      ExitEpilog(JavaThread* current, ObjectWaiter* Wakee);
+  bool      EnterI(JavaThread* current);
+  void      EnterIEgress(JavaThread* current);
+  bool      EnterISuccessor(JavaThread* current);
+  void      NotifyI();
+  bool      has_waiters();
+  int       TryLock(JavaThread* current, void** track_owner);
+  int       TrySpin(JavaThread* current, void** track_owner);
+  void      ExitEpilog(JavaThread* current, oop wakee);
 
   // Deflation support
   bool      deflate_monitor();
   void      install_displaced_markword_in_object(const oop obj);
-  void      release_object() { _object.release(_oop_storage); }
+  void      release_objects();
 };
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_HPP

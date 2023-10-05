@@ -345,7 +345,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
     assert(mon->object() == oop(obj), "invariant");
     if (mon->owner() != current) return false;  // slow-path for IMS exception
 
-    if (mon->first_waiter() != nullptr) {
+    if (mon->has_waiters()) {
       // We have one or more waiters. Since this is an inflated monitor
       // that we own, we can transfer one or more threads from the waitset
       // to the entrylist here and now, avoiding the slow-path.
@@ -356,9 +356,9 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
       }
       int free_count = 0;
       do {
-        mon->INotify(current);
+        mon->NotifyI();
         ++free_count;
-      } while (mon->first_waiter() != nullptr && all);
+      } while (mon->has_waiters() && all);
       OM_PERFDATA_OP(Notifications, inc(free_count));
     }
     return true;
@@ -1477,7 +1477,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
       // Note that a thread can inflate an object
       // that it has stack-locked -- as might happen in wait() -- directly
       // with CAS.  That is, we can avoid the xchg-nullptr .... ST idiom.
-      m->set_owner_from(nullptr, mark.locker());
+      m->set_owner_from_raw(nullptr, mark.locker());
       // TODO-FIXME: assert BasicLock->dhw != 0.
 
       // Must preserve store ordering. The monitor state must

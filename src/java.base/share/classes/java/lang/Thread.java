@@ -347,6 +347,11 @@ public class Thread implements Runnable {
      */
     volatile Interruptible nioBlocker;
 
+    /*
+     * Linked list of threads to support synchronized
+     */
+    volatile Thread syncNext;
+
     /* Set the blocker field; invoked via jdk.internal.access.SharedSecrets
      * from java.nio code
      */

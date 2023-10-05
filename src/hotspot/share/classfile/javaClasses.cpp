@@ -1546,6 +1546,7 @@ int java_lang_Thread::_tid_offset;
 int java_lang_Thread::_continuation_offset;
 int java_lang_Thread::_park_blocker_offset;
 int java_lang_Thread::_scopedValueBindings_offset;
+int java_lang_Thread::_sync_next_offset;
 JFR_ONLY(int java_lang_Thread::_jfr_epoch_offset;)
 
 #define THREAD_FIELDS_DO(macro) \
@@ -1558,7 +1559,8 @@ JFR_ONLY(int java_lang_Thread::_jfr_epoch_offset;)
   macro(_tid_offset,           k, "tid", long_signature, false); \
   macro(_park_blocker_offset,  k, "parkBlocker", object_signature, false); \
   macro(_continuation_offset,  k, "cont", continuation_signature, false); \
-  macro(_scopedValueBindings_offset, k, "scopedValueBindings", object_signature, false);
+  macro(_scopedValueBindings_offset, k, "scopedValueBindings", object_signature, false); \
+  macro(_sync_next_offset,     k, "syncNext", thread_signature, false);
 
 void java_lang_Thread::compute_offsets() {
   assert(_holder_offset == 0, "offsets should be initialized only once");
@@ -1631,6 +1633,14 @@ int java_lang_Thread::is_in_VTMS_transition_offset() {
 void java_lang_Thread::clear_scopedValueBindings(oop java_thread) {
   assert(java_thread != nullptr, "need a java_lang_Thread pointer here");
   java_thread->obj_field_put(_scopedValueBindings_offset, nullptr);
+}
+
+oop java_lang_Thread::sync_next(oop java_thread) {
+  return java_thread->obj_field_access<MO_RELAXED>(_sync_next_offset);
+}
+
+void java_lang_Thread::set_sync_next(oop java_thread, oop next_thread) {
+  return java_thread->obj_field_put_access<MO_RELAXED>(_sync_next_offset, next_thread);
 }
 
 oop java_lang_Thread::holder(oop java_thread) {
