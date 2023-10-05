@@ -34,6 +34,22 @@ class PSPromotionManager;
 
 class PSCardTable: public CardTable {
  private:
+  static constexpr size_t num_cards_in_stripe = 128;
+  static_assert(num_cards_in_stripe >= 1, "progress");
+
+  bool is_dirty(CardValue* card) {
+    return !is_clean(card);
+  }
+
+  bool is_clean(CardValue* card) {
+    return *card == clean_card_val();
+  }
+
+  template <typename T>
+  void process_range(T& start_cache,
+                     PSPromotionManager* pm,
+                     HeapWord* const start,
+                     HeapWord* const end);
 
   void verify_all_young_refs_precise_helper(MemRegion mr);
 
@@ -45,15 +61,20 @@ class PSCardTable: public CardTable {
   CardValue* find_first_dirty_card(CardValue* const start_card,
                                    CardValue* const end_card);
 
-  CardValue* find_first_clean_card(ObjectStartArray* start_array,
+  template <typename T>
+  CardValue* find_first_clean_card(T start_cache,
                                    CardValue* const start_card,
                                    CardValue* const end_card);
 
-  void clear_cards(CardValue* const start, CardValue* const end);
+  void scan_obj(PSPromotionManager* pm,
+                oop obj);
 
-  void scan_objects_in_range(PSPromotionManager* pm,
-                             HeapWord* start,
-                             HeapWord* end);
+  void scan_obj_with_limit(PSPromotionManager* pm,
+                           oop obj,
+                           HeapWord* start,
+                           HeapWord* end);
+
+  void clear_cards(CardValue* const start, CardValue* const end);
 
  public:
   PSCardTable(MemRegion whole_heap) : CardTable(whole_heap) {}
@@ -61,10 +82,12 @@ class PSCardTable: public CardTable {
   static CardValue youngergen_card_val() { return youngergen_card; }
   static CardValue verify_card_val()     { return verify_card; }
 
+  void pre_scavenge(MutableSpace* old_gen, ObjectStartArray* start_array);
+
   // Scavenge support
   void scavenge_contents_parallel(ObjectStartArray* start_array,
-                                  MutableSpace* sp,
-                                  HeapWord* space_top,
+                                  HeapWord* old_gen_bottom,
+                                  HeapWord* old_gen_top,
                                   PSPromotionManager* pm,
                                   uint stripe_index,
                                   uint n_stripes);
