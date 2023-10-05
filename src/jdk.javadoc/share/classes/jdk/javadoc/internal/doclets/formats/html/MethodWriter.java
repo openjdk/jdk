@@ -105,13 +105,13 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
             for (Element method : methods) {
                 currentMethod = (ExecutableElement)method;
                 Content methodContent = getMethodHeader(currentMethod);
-                Content scrollBox = HtmlTree.DIV(HtmlStyle.horizontalScroll);
-                buildSignature(scrollBox);
-                buildDeprecationInfo(scrollBox);
-                buildPreviewInfo(scrollBox);
-                buildMethodComments(scrollBox);
-                buildTagInfo(scrollBox);
-                methodContent.add(scrollBox);
+                Content div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+                buildSignature(div);
+                buildDeprecationInfo(div);
+                buildPreviewInfo(div);
+                buildMethodComments(div);
+                buildTagInfo(div);
+                methodContent.add(div);
                 memberList.add(writer.getMemberListItem(methodContent));
             }
             Content methodDetails = getMethodDetails(methodDetailsHeader, memberList);

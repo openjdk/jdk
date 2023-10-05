@@ -192,10 +192,10 @@ public class ModuleWriter extends HtmlDocletWriter {
     protected void buildContent() {
         Content moduleContent = getContentHeader();
         moduleContent.add(new HtmlTree(TagName.HR));
-        Content scrollBox = HtmlTree.DIV(HtmlStyle.horizontalScroll);
-        addModuleSignature(scrollBox);
-        buildModuleDescription(scrollBox);
-        moduleContent.add(scrollBox);
+        Content div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+        addModuleSignature(div);
+        buildModuleDescription(div);
+        moduleContent.add(div);
         buildSummary(moduleContent);
 
         addModuleContent(moduleContent);

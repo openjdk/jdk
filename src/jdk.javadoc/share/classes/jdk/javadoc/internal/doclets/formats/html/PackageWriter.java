@@ -129,11 +129,11 @@ public class PackageWriter extends HtmlDocletWriter {
     protected void buildContent() {
         Content packageContent = getContentHeader();
         packageContent.add(new HtmlTree(TagName.HR));
-        Content scrollBox = HtmlTree.DIV(HtmlStyle.horizontalScroll);
-        addPackageSignature(scrollBox);
-        buildPackageDescription(scrollBox);
-        buildPackageTags(scrollBox);
-        packageContent.add(scrollBox);
+        Content div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+        addPackageSignature(div);
+        buildPackageDescription(div);
+        buildPackageTags(div);
+        packageContent.add(div);
         buildSummary(packageContent);
 
         addPackageContent(packageContent);
