@@ -106,7 +106,7 @@ public class UDivINodeIdealizationTests {
         Asserts.assertEQ(a, identityAgain(a));
         Asserts.assertEQ(udiv(a, 8), divByPow2(a));
         Asserts.assertEQ(udiv(a, -7), largeDivisorCon(a));
-        Asserts.assertEQ(udiv(a, Math.min((short)b, -1)), largeDivisorVar(a, b));
+        Asserts.assertEQ(udiv(a, Math.min(b, -1)), largeDivisorVar(a, b));
         Asserts.assertEQ(udiv(a, 13), magicDiv13(a));
         Asserts.assertEQ(udiv(a, 7), magicDiv7(a));
         Asserts.assertEQ(udiv((char)a, 13), magicDiv13Bounded(a));

@@ -107,7 +107,7 @@ public class UDivLNodeIdealizationTests {
         Asserts.assertEQ(a, identityAgain(a));
         Asserts.assertEQ(udiv(a, 8), divByPow2(a));
         Asserts.assertEQ(udiv(a, -7), largeDivisorCon(a));
-        Asserts.assertEQ(udiv(a, Math.min((short)b, -1)), largeDivisorVar(a, b));
+        Asserts.assertEQ(udiv(a, Math.min((int)b, -1)), largeDivisorVar(a, b));
         Asserts.assertEQ(udiv(a, 19), magicDiv19(a));
         Asserts.assertEQ(udiv(a, 7), magicDiv7(a));
         Asserts.assertEQ(udiv(a, 28), magicDiv28(a));
@@ -182,7 +182,7 @@ public class UDivLNodeIdealizationTests {
                  })
     // Checks x / d => x u>= d ? 1 : 0 for large d
     public long largeDivisorVar(long x, long y) {
-        return Long.divideUnsigned(x, Math.min(y, -1));
+        return Long.divideUnsigned(x, Math.min((int)y, -1));
     }
 
     @Test
