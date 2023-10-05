@@ -154,7 +154,7 @@ class MallocMemorySnapshot : public ResourceObj {
 
   // Used only for ThreadStackTracker::track_as_vm() == true to report thread
   // count diff during "jcmd <pid> VM.native_memory summary.diff" correctly.
-  int               _thread_count;
+  size_t            _thread_count;
 
  public:
   MallocMemorySnapshot() : _thread_count(0) {  }
