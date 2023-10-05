@@ -115,7 +115,7 @@ AsyncLogWriter::AsyncLogWriter()
   }
 }
 
-void AsyncLogWriter::write(AsyncLogMap<AnyObj::C_HEAP>& snapshot) {
+void AsyncLogWriter::write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot) {
   int req = 0;
   auto it = _buffer_staging->iterator();
   while (it.hasNext()) {
@@ -149,7 +149,8 @@ void AsyncLogWriter::write(AsyncLogMap<AnyObj::C_HEAP>& snapshot) {
 
 void AsyncLogWriter::run() {
   while (true) {
-    AsyncLogMap<AnyObj::C_HEAP> snapshot;
+    ResourceMark rm;
+    AsyncLogMap<AnyObj::RESOURCE_AREA> snapshot;
     {
       AsyncLogLocker locker;
 
