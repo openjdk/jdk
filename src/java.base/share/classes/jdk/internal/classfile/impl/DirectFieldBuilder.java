@@ -28,6 +28,7 @@ package jdk.internal.classfile.impl;
 import java.util.function.Consumer;
 
 import java.lang.classfile.BufWriter;
+import java.lang.classfile.CustomAttribute;
 import java.lang.classfile.FieldBuilder;
 import java.lang.classfile.FieldElement;
 import java.lang.classfile.FieldModel;
@@ -55,7 +56,11 @@ public final class DirectFieldBuilder
 
     @Override
     public FieldBuilder with(FieldElement element) {
-        ((AbstractElement) element).writeTo(this);
+        if (element instanceof AbstractElement ae) {
+            ae.writeTo(this);
+        } else {
+            writeAttribute((CustomAttribute)element);
+        }
         return this;
     }
 

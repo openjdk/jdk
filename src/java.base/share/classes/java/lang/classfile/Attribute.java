@@ -95,7 +95,7 @@ public sealed interface Attribute<A extends Attribute<A>>
                 RuntimeVisibleTypeAnnotationsAttribute, SignatureAttribute,
                 SourceDebugExtensionAttribute, SourceFileAttribute, SourceIDAttribute,
                 StackMapTableAttribute, SyntheticAttribute,
-                UnknownAttribute, BoundAttribute, UnboundAttribute {
+                UnknownAttribute, BoundAttribute, UnboundAttribute, CustomAttribute {
     /**
      * {@return the name of the attribute}
      */

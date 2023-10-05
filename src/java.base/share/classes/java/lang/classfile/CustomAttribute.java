@@ -24,7 +24,6 @@
  */
 package java.lang.classfile;
 
-import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -37,16 +36,37 @@ import jdk.internal.javac.PreviewFeature;
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-@SuppressWarnings("exports")
 public abstract non-sealed class CustomAttribute<T extends CustomAttribute<T>>
-        extends UnboundAttribute.CustomAttribute<T>
-        implements CodeElement, ClassElement, MethodElement, FieldElement {
+        implements Attribute<T>, CodeElement, ClassElement, MethodElement, FieldElement {
+
+    private final AttributeMapper<T> mapper;
 
     /**
      * Construct a {@linkplain CustomAttribute}.
      * @param mapper the attribute mapper
      */
     protected CustomAttribute(AttributeMapper<T> mapper) {
-        super(mapper);
+        this.mapper = mapper;
+    }
+
+    @Override
+    public final AttributeMapper<T> attributeMapper() {
+        return mapper;
+    }
+
+    @Override
+    public final String attributeName() {
+        return mapper.name();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public final void writeTo(BufWriter buf) {
+        mapper.writeAttribute(buf, (T) this);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("CustomAttribute[name=%s]", mapper.name());
     }
 }

@@ -36,6 +36,7 @@ import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.CustomAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.FieldBuilder;
 import java.lang.classfile.FieldModel;
@@ -74,7 +75,11 @@ public final class DirectClassBuilder
 
     @Override
     public ClassBuilder with(ClassElement element) {
-        ((AbstractElement) element).writeTo(this);
+        if (element instanceof AbstractElement ae) {
+            ae.writeTo(this);
+        } else {
+            writeAttribute((CustomAttribute)element);
+        }
         return this;
     }
 
