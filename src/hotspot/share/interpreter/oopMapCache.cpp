@@ -501,10 +501,9 @@ void OopMapCache::flush_obsolete_entries() {
           ("flush: %s(%s): cached entry @%d",
            entry->method()->name()->as_C_string(), entry->method()->signature()->as_C_string(), i);
       }
-
-      if (Atomic::cmpxchg(&_array[i], entry, (OopMapCacheEntry*)nullptr, memory_order_relaxed) == entry) {
-        enqueue_for_cleanup(entry);
-      }
+(??)      _array[i] = nullptr;
+(??)      entry->flush();
+(??)      FREE_C_HEAP_OBJ(entry);
     }
   }
 }
