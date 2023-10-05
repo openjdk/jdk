@@ -26,7 +26,6 @@
 #define SHARE_UTILITIES_CONCURRENTHASHTABLE_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/mutex.hpp"
 #include "utilities/globalCounter.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
@@ -407,11 +406,10 @@ class ConcurrentHashTable : public CHeapObj<F> {
                       size_t log2size_limit = DEFAULT_MAX_SIZE_LOG2,
                       size_t grow_hint = DEFAULT_GROW_HINT,
                       bool enable_statistics = DEFAULT_ENABLE_STATISTICS,
-                      Mutex::Rank rank = Mutex::nosafepoint-2,
                       void* context = nullptr);
 
-  explicit ConcurrentHashTable(Mutex::Rank rank, void* context, size_t log2size = DEFAULT_START_SIZE_LOG2, bool enable_statistics = DEFAULT_ENABLE_STATISTICS) :
-    ConcurrentHashTable(log2size, DEFAULT_MAX_SIZE_LOG2, DEFAULT_GROW_HINT, enable_statistics, rank, context) {}
+  explicit ConcurrentHashTable(void* context, size_t log2size = DEFAULT_START_SIZE_LOG2, bool enable_statistics = DEFAULT_ENABLE_STATISTICS) :
+    ConcurrentHashTable(log2size, DEFAULT_MAX_SIZE_LOG2, DEFAULT_GROW_HINT, enable_statistics, context) {}
 
   ~ConcurrentHashTable();
 

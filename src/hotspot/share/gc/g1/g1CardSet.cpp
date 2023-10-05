@@ -286,10 +286,7 @@ public:
                      size_t initial_log_table_size = InitialLogTableSize) :
     _inserted_card(false),
     _mm(mm),
-    _table(Mutex::service-1,
-           mm,
-           initial_log_table_size,
-           false /* enable_statistics */),
+    _table(mm, initial_log_table_size, false),
     _table_scanner(&_table, BucketClaimSize) {
   }
 
