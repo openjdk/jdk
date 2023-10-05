@@ -1,8 +1,6 @@
 /*
  * Copyright (c) 2021, 2023, Intel Corporation. All rights reserved.
  * Copyright (c) 2021 Serge Sans Paille. All rights reserved.
- * Intel x86-simd-sort source code.
- *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it

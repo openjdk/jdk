@@ -5367,9 +5367,7 @@ void LibraryCallKit::create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_
 //------------------------------inline_array_partition-----------------------
 bool LibraryCallKit::inline_array_partition() {
 
-  address stubAddr = nullptr;
-  const char *stubName;
-  stubName = "array_partition_stub";
+  const char *stubName = "array_partition_stub";
 
   Node* elementType     = null_check(argument(0));
   Node* obj             = argument(1);
@@ -5382,6 +5380,7 @@ bool LibraryCallKit::inline_array_partition() {
   const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
   ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
   BasicType bt = elem_type->basic_type();
+  address stubAddr = nullptr;
   stubAddr = StubRoutines::select_array_partition_function();
   // stub not loaded
   if (stubAddr == nullptr) {
@@ -5395,10 +5394,9 @@ bool LibraryCallKit::inline_array_partition() {
   Node* obj_adr = make_unsafe_address(obj, offset);
 
   // create the pivotIndices array of type int and size = 2
-  Node* pivotIndices = nullptr;
   Node* size = intcon(2);
   Node* klass_node = makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_INT)));
-  pivotIndices = new_array(klass_node, size, 0);  // no arguments to push
+  Node* pivotIndices = new_array(klass_node, size, 0);  // no arguments to push
   AllocateArrayNode* alloc = tightly_coupled_allocation(pivotIndices);
   guarantee(alloc != nullptr, "created above");
   Node* pivotIndices_adr = basic_plus_adr(pivotIndices, arrayOopDesc::base_offset_in_bytes(T_INT));
@@ -5409,7 +5407,8 @@ bool LibraryCallKit::inline_array_partition() {
   // Call the stub
   make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::array_partition_Type(),
                     stubAddr, stubName, TypePtr::BOTTOM,
-                    obj_adr, elemType, fromIndex, toIndex, pivotIndices_adr, indexPivot1, indexPivot2);
+                    obj_adr, elemType, fromIndex, toIndex, pivotIndices_adr,
+                    indexPivot1, indexPivot2);
 
   if (!stopped()) {
     set_result(pivotIndices);
@@ -5422,7 +5421,6 @@ bool LibraryCallKit::inline_array_partition() {
 //------------------------------inline_array_sort-----------------------
 bool LibraryCallKit::inline_array_sort() {
 
-  address stubAddr = nullptr;
   const char *stubName;
   stubName = "arraysort_stub";
 
@@ -5435,6 +5433,7 @@ bool LibraryCallKit::inline_array_sort() {
   const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
   ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
   BasicType bt = elem_type->basic_type();
+  address stubAddr = nullptr;
   stubAddr = StubRoutines::select_arraysort_function();
   //stub not loaded
   if (stubAddr == nullptr) {

@@ -415,40 +415,40 @@ final class DualPivotQuicksort {
         int pivot2 = a[e5];
 
         /*
-        * The first and the last elements to be sorted are moved
-        * to the locations formerly occupied by the pivots. When
-        * partitioning is completed, the pivots are swapped back
-        * into their final positions, and excluded from the next
-        * subsequent sorting.
-        */
+         * The first and the last elements to be sorted are moved
+         * to the locations formerly occupied by the pivots. When
+         * partitioning is completed, the pivots are swapped back
+         * into their final positions, and excluded from the next
+         * subsequent sorting.
+         */
         a[e1] = a[lower];
         a[e5] = a[upper];
 
         /*
-        * Skip elements, which are less or greater than the pivots.
-        */
+         * Skip elements, which are less or greater than the pivots.
+         */
         while (a[++lower] < pivot1);
         while (a[--upper] > pivot2);
 
         /*
-        * Backward 3-interval partitioning
-        *
-        *   left part                 central part          right part
-        * +------------------------------------------------------------+
-                 * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
-        * +------------------------------------------------------------+
-        *             ^       ^                            ^
-        *             |       |                            |
-        *           lower     k                          upper
-        *
-        * Invariants:
-        *
-        *              all in (low, lower] < pivot1
-        *    pivot1 <= all in (k, upper)  <= pivot2
-        *              all in [upper, end) > pivot2
-        *
-        * Pointer k is the last index of ?-part
-        */
+         * Backward 3-interval partitioning
+         *
+         *   left part                 central part          right part
+         * +------------------------------------------------------------+
+                  * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
+         * +------------------------------------------------------------+
+         *             ^       ^                            ^
+         *             |       |                            |
+         *           lower     k                          upper
+         *
+         * Invariants:
+         *
+         *              all in (low, lower] < pivot1
+         *    pivot1 <= all in (k, upper)  <= pivot2
+         *              all in [upper, end) > pivot2
+         *
+         * Pointer k is the last index of ?-part
+         */
         for (int unused = --lower, k = ++upper; --k > lower; ) {
             int ak = a[k];
 
@@ -500,33 +500,33 @@ final class DualPivotQuicksort {
         int pivot = a[e3];
 
         /*
-        * The first element to be sorted is moved to the
-        * location formerly occupied by the pivot. After
-        * completion of partitioning the pivot is swapped
-        * back into its final position, and excluded from
-        * the next subsequent sorting.
-        */
+         * The first element to be sorted is moved to the
+         * location formerly occupied by the pivot. After
+         * completion of partitioning the pivot is swapped
+         * back into its final position, and excluded from
+         * the next subsequent sorting.
+         */
         a[e3] = a[lower];
 
         /*
-        * Traditional 3-way (Dutch National Flag) partitioning
-        *
-        *   left part                 central part    right part
-        * +------------------------------------------------------+
-        * |   < pivot   |     ?     |   == pivot   |   > pivot   |
-        * +------------------------------------------------------+
-        *              ^           ^                ^
-        *              |           |                |
-        *            lower         k              upper
-        *
-        * Invariants:
-        *
-        *   all in (low, lower] < pivot
-        *   all in (k, upper)  == pivot
-        *   all in [upper, end] > pivot
-        *
-        * Pointer k is the last index of ?-part
-        */
+         * Traditional 3-way (Dutch National Flag) partitioning
+         *
+         *   left part                 central part    right part
+         * +------------------------------------------------------+
+         * |   < pivot   |     ?     |   == pivot   |   > pivot   |
+         * +------------------------------------------------------+
+         *              ^           ^                ^
+         *              |           |                |
+         *            lower         k              upper
+         *
+         * Invariants:
+         *
+         *   all in (low, lower] < pivot
+         *   all in (k, upper)  == pivot
+         *   all in [upper, end] > pivot
+         *
+         * Pointer k is the last index of ?-part
+         */
         for (int k = ++upper; --k > lower; ) {
             int ak = a[k];
 
@@ -547,8 +547,8 @@ final class DualPivotQuicksort {
         }
 
         /*
-        * Swap the pivot into its final position.
-        */
+         * Swap the pivot into its final position.
+         */
         a[low] = a[lower]; a[lower] = pivot;
         return new int[] {lower, upper};
     }
@@ -1216,40 +1216,40 @@ final class DualPivotQuicksort {
         long pivot2 = a[e5];
 
         /*
-        * The first and the last elements to be sorted are moved
-        * to the locations formerly occupied by the pivots. When
-        * partitioning is completed, the pivots are swapped back
-        * into their final positions, and excluded from the next
-        * subsequent sorting.
-        */
+         * The first and the last elements to be sorted are moved
+         * to the locations formerly occupied by the pivots. When
+         * partitioning is completed, the pivots are swapped back
+         * into their final positions, and excluded from the next
+         * subsequent sorting.
+         */
         a[e1] = a[lower];
         a[e5] = a[upper];
 
         /*
-        * Skip elements, which are less or greater than the pivots.
-        */
+         * Skip elements, which are less or greater than the pivots.
+         */
         while (a[++lower] < pivot1);
         while (a[--upper] > pivot2);
 
         /*
-        * Backward 3-interval partitioning
-        *
-        *   left part                 central part          right part
-        * +------------------------------------------------------------+
-                 * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
-        * +------------------------------------------------------------+
-        *             ^       ^                            ^
-        *             |       |                            |
-        *           lower     k                          upper
-        *
-        * Invariants:
-        *
-        *              all in (low, lower] < pivot1
-        *    pivot1 <= all in (k, upper)  <= pivot2
-        *              all in [upper, end) > pivot2
-        *
-        * Pointer k is the last index of ?-part
-        */
+         * Backward 3-interval partitioning
+         *
+         *   left part                 central part          right part
+         * +------------------------------------------------------------+
+                  * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
+         * +------------------------------------------------------------+
+         *             ^       ^                            ^
+         *             |       |                            |
+         *           lower     k                          upper
+         *
+         * Invariants:
+         *
+         *              all in (low, lower] < pivot1
+         *    pivot1 <= all in (k, upper)  <= pivot2
+         *              all in [upper, end) > pivot2
+         *
+         * Pointer k is the last index of ?-part
+         */
         for (int unused = --lower, k = ++upper; --k > lower; ) {
             long ak = a[k];
 
@@ -1302,33 +1302,33 @@ final class DualPivotQuicksort {
         long pivot = a[e3];
 
         /*
-        * The first element to be sorted is moved to the
-        * location formerly occupied by the pivot. After
-        * completion of partitioning the pivot is swapped
-        * back into its final position, and excluded from
-        * the next subsequent sorting.
-        */
+         * The first element to be sorted is moved to the
+         * location formerly occupied by the pivot. After
+         * completion of partitioning the pivot is swapped
+         * back into its final position, and excluded from
+         * the next subsequent sorting.
+         */
         a[e3] = a[lower];
 
         /*
-        * Traditional 3-way (Dutch National Flag) partitioning
-        *
-        *   left part                 central part    right part
-        * +------------------------------------------------------+
-        * |   < pivot   |     ?     |   == pivot   |   > pivot   |
-        * +------------------------------------------------------+
-        *              ^           ^                ^
-        *              |           |                |
-        *            lower         k              upper
-        *
-        * Invariants:
-        *
-        *   all in (low, lower] < pivot
-        *   all in (k, upper)  == pivot
-        *   all in [upper, end] > pivot
-        *
-        * Pointer k is the last index of ?-part
-        */
+         * Traditional 3-way (Dutch National Flag) partitioning
+         *
+         *   left part                 central part    right part
+         * +------------------------------------------------------+
+         * |   < pivot   |     ?     |   == pivot   |   > pivot   |
+         * +------------------------------------------------------+
+         *              ^           ^                ^
+         *              |           |                |
+         *            lower         k              upper
+         *
+         * Invariants:
+         *
+         *   all in (low, lower] < pivot
+         *   all in (k, upper)  == pivot
+         *   all in [upper, end] > pivot
+         *
+         * Pointer k is the last index of ?-part
+         */
         for (int k = ++upper; --k > lower; ) {
             long ak = a[k];
 
@@ -1349,8 +1349,8 @@ final class DualPivotQuicksort {
         }
 
         /*
-            * Swap the pivot into its final position.
-            */
+         * Swap the pivot into its final position.
+         */
         a[low] = a[lower]; a[lower] = pivot;
         return new int[] {lower, upper};
     }
@@ -2805,40 +2805,40 @@ final class DualPivotQuicksort {
         float pivot2 = a[e5];
 
         /*
-        * The first and the last elements to be sorted are moved
-        * to the locations formerly occupied by the pivots. When
-        * partitioning is completed, the pivots are swapped back
-        * into their final positions, and excluded from the next
-        * subsequent sorting.
-        */
+         * The first and the last elements to be sorted are moved
+         * to the locations formerly occupied by the pivots. When
+         * partitioning is completed, the pivots are swapped back
+         * into their final positions, and excluded from the next
+         * subsequent sorting.
+         */
         a[e1] = a[lower];
         a[e5] = a[upper];
 
         /*
-        * Skip elements, which are less or greater than the pivots.
-        */
-                while (a[++lower] < pivot1);
-                while (a[--upper] > pivot2);
+         * Skip elements, which are less or greater than the pivots.
+         */
+        while (a[++lower] < pivot1);
+        while (a[--upper] > pivot2);
 
         /*
-        * Backward 3-interval partitioning
-        *
-        *   left part                 central part          right part
-        * +------------------------------------------------------------+
-                 * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
-        * +------------------------------------------------------------+
-        *             ^       ^                            ^
-        *             |       |                            |
-        *           lower     k                          upper
-        *
-        * Invariants:
-        *
-        *              all in (low, lower] < pivot1
-        *    pivot1 <= all in (k, upper)  <= pivot2
-        *              all in [upper, end) > pivot2
-        *
-        * Pointer k is the last index of ?-part
-        */
+         * Backward 3-interval partitioning
+         *
+         *   left part                 central part          right part
+         * +------------------------------------------------------------+
+                  * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
+         * +------------------------------------------------------------+
+         *             ^       ^                            ^
+         *             |       |                            |
+         *           lower     k                          upper
+         *
+         * Invariants:
+         *
+         *              all in (low, lower] < pivot1
+         *    pivot1 <= all in (k, upper)  <= pivot2
+         *              all in [upper, end) > pivot2
+         *
+         * Pointer k is the last index of ?-part
+         */
         for (int unused = --lower, k = ++upper; --k > lower; ) {
             float ak = a[k];
 
@@ -2890,33 +2890,33 @@ final class DualPivotQuicksort {
         float pivot = a[e3];
 
         /*
-        * The first element to be sorted is moved to the
-        * location formerly occupied by the pivot. After
-        * completion of partitioning the pivot is swapped
-        * back into its final position, and excluded from
-        * the next subsequent sorting.
-        */
+         * The first element to be sorted is moved to the
+         * location formerly occupied by the pivot. After
+         * completion of partitioning the pivot is swapped
+         * back into its final position, and excluded from
+         * the next subsequent sorting.
+         */
         a[e3] = a[lower];
 
         /*
-        * Traditional 3-way (Dutch National Flag) partitioning
-        *
-        *   left part                 central part    right part
-        * +------------------------------------------------------+
-        * |   < pivot   |     ?     |   == pivot   |   > pivot   |
-        * +------------------------------------------------------+
-        *              ^           ^                ^
-        *              |           |                |
-        *            lower         k              upper
-        *
-        * Invariants:
-        *
-        *   all in (low, lower] < pivot
-        *   all in (k, upper)  == pivot
-        *   all in [upper, end] > pivot
-        *
-        * Pointer k is the last index of ?-part
-        */
+         * Traditional 3-way (Dutch National Flag) partitioning
+         *
+         *   left part                 central part    right part
+         * +------------------------------------------------------+
+         * |   < pivot   |     ?     |   == pivot   |   > pivot   |
+         * +------------------------------------------------------+
+         *              ^           ^                ^
+         *              |           |                |
+         *            lower         k              upper
+         *
+         * Invariants:
+         *
+         *   all in (low, lower] < pivot
+         *   all in (k, upper)  == pivot
+         *   all in [upper, end] > pivot
+         *
+         * Pointer k is the last index of ?-part
+         */
         for (int k = ++upper; --k > lower; ) {
             float ak = a[k];
 
@@ -2937,8 +2937,8 @@ final class DualPivotQuicksort {
         }
 
         /*
-            * Swap the pivot into its final position.
-            */
+         * Swap the pivot into its final position.
+         */
         a[low] = a[lower]; a[lower] = pivot;
         return new int[] {lower, upper};
     }
@@ -3670,28 +3670,28 @@ final class DualPivotQuicksort {
         /*
         * Skip elements, which are less or greater than the pivots.
         */
-                while (a[++lower] < pivot1);
-                while (a[--upper] > pivot2);
+        while (a[++lower] < pivot1);
+        while (a[--upper] > pivot2);
 
         /*
-        * Backward 3-interval partitioning
-        *
-        *   left part                 central part          right part
-        * +------------------------------------------------------------+
-                 * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
-        * +------------------------------------------------------------+
-        *             ^       ^                            ^
-        *             |       |                            |
-        *           lower     k                          upper
-        *
-        * Invariants:
-        *
-        *              all in (low, lower] < pivot1
-        *    pivot1 <= all in (k, upper)  <= pivot2
-        *              all in [upper, end) > pivot2
-        *
-        * Pointer k is the last index of ?-part
-        */
+         * Backward 3-interval partitioning
+         *
+         *   left part                 central part          right part
+         * +------------------------------------------------------------+
+                  * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
+         * +------------------------------------------------------------+
+         *             ^       ^                            ^
+         *             |       |                            |
+         *           lower     k                          upper
+         *
+         * Invariants:
+         *
+         *              all in (low, lower] < pivot1
+         *    pivot1 <= all in (k, upper)  <= pivot2
+         *              all in [upper, end) > pivot2
+         *
+         * Pointer k is the last index of ?-part
+         */
         for (int unused = --lower, k = ++upper; --k > lower; ) {
             double ak = a[k];
 
@@ -3752,24 +3752,24 @@ final class DualPivotQuicksort {
         a[e3] = a[lower];
 
         /*
-        * Traditional 3-way (Dutch National Flag) partitioning
-        *
-        *   left part                 central part    right part
-        * +------------------------------------------------------+
-        * |   < pivot   |     ?     |   == pivot   |   > pivot   |
-        * +------------------------------------------------------+
-        *              ^           ^                ^
-        *              |           |                |
-        *            lower         k              upper
-        *
-        * Invariants:
-        *
-        *   all in (low, lower] < pivot
-        *   all in (k, upper)  == pivot
-        *   all in [upper, end] > pivot
-        *
-        * Pointer k is the last index of ?-part
-        */
+         * Traditional 3-way (Dutch National Flag) partitioning
+         *
+         *   left part                 central part    right part
+         * +------------------------------------------------------+
+         * |   < pivot   |     ?     |   == pivot   |   > pivot   |
+         * +------------------------------------------------------+
+         *              ^           ^                ^
+         *              |           |                |
+         *            lower         k              upper
+         *
+         * Invariants:
+         *
+         *   all in (low, lower] < pivot
+         *   all in (k, upper)  == pivot
+         *   all in [upper, end] > pivot
+         *
+         * Pointer k is the last index of ?-part
+         */
         for (int k = ++upper; --k > lower; ) {
             double ak = a[k];
 
@@ -3790,8 +3790,8 @@ final class DualPivotQuicksort {
         }
 
         /*
-            * Swap the pivot into its final position.
-            */
+         * Swap the pivot into its final position.
+         */
         a[low] = a[lower]; a[lower] = pivot;
         return new int[] {lower, upper};
     }
