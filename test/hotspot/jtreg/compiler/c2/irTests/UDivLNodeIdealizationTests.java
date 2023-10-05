@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import compiler.lib.ir_framework.*;
  * @summary Test that Ideal transformations of UDivLNode and UModLNode are
  * being performed as expected.
  *
- * @requires os.arch=="amd64" | os.arch=="x86_64"
+ * @requires os.simpleArch=="x64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.UDivLNodeIdealizationTests
  */
@@ -182,7 +182,7 @@ public class UDivLNodeIdealizationTests {
                  })
     // Checks x / d => x u>= d ? 1 : 0 for large d
     public long largeDivisorVar(long x, long y) {
-        return Long.divideUnsigned(x, Math.min((short)y, -1));
+        return Long.divideUnsigned(x, Math.min(y, -1));
     }
 
     @Test

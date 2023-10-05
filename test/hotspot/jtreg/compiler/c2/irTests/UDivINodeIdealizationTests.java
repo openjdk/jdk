@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import compiler.lib.ir_framework.*;
  * @summary Test that Ideal transformations of UDivINode and UModINode are
  * being performed as expected.
  *
- * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.UDivINodeIdealizationTests
  */
@@ -181,7 +180,7 @@ public class UDivINodeIdealizationTests {
                  })
     // Checks x / d => x u>= d ? 1 : 0 for large d
     public int largeDivisorVar(int x, int y) {
-        return Integer.divideUnsigned(x, Math.min((short)y, -1));
+        return Integer.divideUnsigned(x, Math.min(y, -1));
     }
 
     @Test
