@@ -25,19 +25,15 @@
 
 package com.sun.tools.javap;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Descriptor;
-import com.sun.tools.classfile.Descriptor.InvalidDescriptor;
-import com.sun.tools.classfile.Instruction;
-import com.sun.tools.classfile.LocalVariableTable_attribute;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.CodeModel;
+import jdk.internal.classfile.Instruction;
+import jdk.internal.classfile.Signature;
+import jdk.internal.classfile.attribute.LocalVariableInfo;
 
 /**
  * Annotate instructions with details about local variables.
@@ -47,22 +43,24 @@ import java.util.Map;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class LocalVariableTableWriter extends  InstructionDetailWriter {
+public class LocalVariableTableWriter extends InstructionDetailWriter {
     public enum NoteKind {
         START("start") {
-            public boolean match(LocalVariableTable_attribute.Entry entry, int pc) {
-                return (pc == entry.start_pc);
+            @Override
+            public boolean match(LocalVariableInfo entry, int pc) {
+                return (pc == entry.startPc());
             }
         },
         END("end") {
-            public boolean match(LocalVariableTable_attribute.Entry entry, int pc) {
-                return (pc == entry.start_pc + entry.length);
+            @Override
+            public boolean match(LocalVariableInfo entry, int pc) {
+                return (pc == entry.startPc() + entry.length());
             }
         };
         NoteKind(String text) {
             this.text = text;
         }
-        public abstract boolean match(LocalVariableTable_attribute.Entry entry, int pc);
+        public abstract boolean match(LocalVariableInfo entry, int pc);
         public final String text;
     }
 
@@ -79,71 +77,56 @@ public class LocalVariableTableWriter extends  InstructionDetailWriter {
         classWriter = ClassWriter.instance(context);
     }
 
-    public void reset(Code_attribute attr) {
+    public void reset(CodeModel attr) {
         codeAttr = attr;
         pcMap = new HashMap<>();
-        LocalVariableTable_attribute lvt =
-                (LocalVariableTable_attribute) (attr.attributes.get(Attribute.LocalVariableTable));
-        if (lvt == null)
+        var lvt = attr.findAttribute(Attributes.LOCAL_VARIABLE_TABLE);
+
+        if (lvt.isEmpty())
             return;
 
-        for (int i = 0; i < lvt.local_variable_table.length; i++) {
-            LocalVariableTable_attribute.Entry entry = lvt.local_variable_table[i];
-            put(entry.start_pc, entry);
-            put(entry.start_pc + entry.length, entry);
+        for (var entry : lvt.get().localVariables()) {
+            put(entry.startPc(), entry);
+            put(entry.startPc() + entry.length(), entry);
         }
     }
 
-    public void writeDetails(Instruction instr) {
-        int pc = instr.getPC();
+    @Override
+    public void writeDetails(int pc, Instruction instr) {
         writeLocalVariables(pc, NoteKind.END);
         writeLocalVariables(pc, NoteKind.START);
     }
 
     @Override
-    public void flush() {
-        int pc = codeAttr.code_length;
+    public void flush(int pc) {
         writeLocalVariables(pc, NoteKind.END);
     }
 
     public void writeLocalVariables(int pc, NoteKind kind) {
-        ConstantPool constant_pool = classWriter.getClassFile().constant_pool;
         String indent = space(2); // get from Options?
-        List<LocalVariableTable_attribute.Entry> entries = pcMap.get(pc);
+        var entries = pcMap.get(pc);
         if (entries != null) {
-            for (ListIterator<LocalVariableTable_attribute.Entry> iter =
-                    entries.listIterator(kind == NoteKind.END ? entries.size() : 0);
+            for (var iter = entries.listIterator(kind == NoteKind.END ? entries.size() : 0);
                     kind == NoteKind.END ? iter.hasPrevious() : iter.hasNext() ; ) {
-                LocalVariableTable_attribute.Entry entry =
-                        kind == NoteKind.END ? iter.previous() : iter.next();
+                var entry = kind == NoteKind.END ? iter.previous() : iter.next();
                 if (kind.match(entry, pc)) {
                     print(indent);
                     print(kind.text);
                     print(" local ");
-                    print(entry.index);
+                    print(entry.slot());
                     print(" // ");
-                    Descriptor d = new Descriptor(entry.descriptor_index);
-                    try {
-                        print(d.getFieldType(constant_pool));
-                    } catch (InvalidDescriptor e) {
-                        print(report(e));
-                    } catch (ConstantPoolException e) {
-                        print(report(e));
-                    }
+                    print(classWriter.sigPrinter.print(
+                            Signature.parseFrom(entry.type().stringValue())));
                     print(" ");
-                    try {
-                        print(constant_pool.getUTF8Value(entry.name_index));
-                    } catch (ConstantPoolException e) {
-                        print(report(e));
-                    }
+                    print(entry.name().stringValue());
                     println();
                 }
             }
         }
     }
 
-    private void put(int pc, LocalVariableTable_attribute.Entry entry) {
-        List<LocalVariableTable_attribute.Entry> list = pcMap.get(pc);
+    private void put(int pc, LocalVariableInfo entry) {
+        var list = pcMap.get(pc);
         if (list == null) {
             list = new ArrayList<>();
             pcMap.put(pc, list);
@@ -153,6 +136,6 @@ public class LocalVariableTableWriter extends  InstructionDetailWriter {
     }
 
     private ClassWriter classWriter;
-    private Code_attribute codeAttr;
-    private Map<Integer, List<LocalVariableTable_attribute.Entry>> pcMap;
+    private CodeModel codeAttr;
+    private Map<Integer, List<LocalVariableInfo>> pcMap;
 }

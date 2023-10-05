@@ -1470,13 +1470,13 @@ public abstract class HtmlDocletWriter {
             attrs.add("id=\"").add(htmlId.name()).add("\"");
         }
         // Generate index item
-        if (!headingContent.isEmpty() && configuration.mainIndex != null) {
+        if (!headingContent.isEmpty() && configuration.indexBuilder != null) {
             String tagText = headingContent.replaceAll("\\s+", " ");
             IndexItem item = IndexItem.of(element, node, tagText,
                     getTagletWriterInstance(context).getHolderName(element),
                     resources.getText("doclet.Section"),
                     new DocLink(path, id));
-            configuration.mainIndex.add(item);
+            configuration.indexBuilder.add(item);
         }
     }
 

@@ -26,23 +26,23 @@ package com.sun.hotspot.igv.filter;
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.Selector;
-import java.util.function.UnaryOperator;
+import java.util.function.Function;
 import java.util.List;
 
 public class EditPropertyFilter extends AbstractFilter {
 
     private String name;
     private Selector selector;
-    private final String inputPropertyName;
+    private final String[] inputPropertyNames;
     private final String outputPropertyName;
-    private final UnaryOperator<String> editFunction;
+    private final Function<String[], String> editFunction;
 
     public EditPropertyFilter(String name, Selector selector,
-                              String inputPropertyName, String outputPropertyName,
-                              UnaryOperator<String> editFunction) {
+                              String[] inputPropertyNames, String outputPropertyName,
+                              Function<String[], String> editFunction) {
         this.name = name;
         this.selector = selector;
-        this.inputPropertyName = inputPropertyName;
+        this.inputPropertyNames = inputPropertyNames;
         this.outputPropertyName = outputPropertyName;
         this.editFunction = editFunction;
     }
@@ -55,9 +55,12 @@ public class EditPropertyFilter extends AbstractFilter {
     @Override
     public void apply(Diagram diagram) {
         List<Figure> list = selector.selected(diagram);
+        String[] inputVals = new String[inputPropertyNames.length];
         for (Figure f : list) {
-            String inputVal = f.getProperties().get(inputPropertyName);
-            String outputVal = editFunction.apply(inputVal);
+            for (int i = 0; i < inputPropertyNames.length; i++) {
+                inputVals[i] = f.getProperties().get(inputPropertyNames[i]);
+            }
+            String outputVal = editFunction.apply(inputVals);
             f.getProperties().setProperty(outputPropertyName, outputVal);
         }
     }

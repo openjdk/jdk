@@ -36,7 +36,7 @@
  *                   -XX:LoopStripMiningIter=10
  *                   compiler.vectorization.runner.StripMinedLoopTest
  *
- * @requires vm.compiler2.enabled & vm.flagless
+ * @requires vm.compiler2.enabled
  */
 
 package compiler.vectorization.runner;
