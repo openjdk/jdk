@@ -30,8 +30,8 @@ import java.lang.classfile.attribute.StackMapTableAttribute;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * A {@link ClassFileElement} that can appear when traversing the elements
- * of a {@link CodeModel} or be presented to a {@link CodeBuilder}.  Code elements
+ * A marker interface for elements that can appear when traversing
+ * a {@link CodeModel} or be presented to a {@link CodeBuilder}. Code elements
  * are either an {@link Instruction}, which models an instruction in the body
  * of a method, or a {@link PseudoInstruction}, which models metadata from
  * the code attribute, such as line number metadata, local variable metadata,

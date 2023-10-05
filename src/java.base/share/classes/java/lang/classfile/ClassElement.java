@@ -51,8 +51,8 @@ import java.lang.classfile.attribute.UnknownAttribute;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * A {@link ClassFileElement} that can appear when traversing the elements
- * of a {@link ClassModel} or be presented to a {@link ClassBuilder}.
+ * A marker interface for elements that can appear when traversing
+ * a {@link ClassModel} or be presented to a {@link ClassBuilder}.
  *
  * @since 22
  */
