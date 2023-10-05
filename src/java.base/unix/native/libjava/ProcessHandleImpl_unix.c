@@ -488,7 +488,7 @@ void unix_getUserInfo(JNIEnv* env, jobject jinfo, uid_t uid) {
  * The following functions are common on Solaris, Linux and AIX.
  */
 
-#if defined (__linux__) || defined(_AIX)
+#if defined (__linux__)
 
 /*
  * Returns the children of the requested pid and optionally each parent and
@@ -607,7 +607,7 @@ jint unix_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
     return count;
 }
 
-#endif // defined (__linux__) || defined(_AIX)
+#endif // defined (__linux__)
 
 /*
  * The following functions are for AIX.
