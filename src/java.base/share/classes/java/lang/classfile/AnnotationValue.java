@@ -452,10 +452,13 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
 
     /**
      * {@return an annotation element}  The {@code value} parameter must be
-     * a primitive, a String, a ClassDesc, an enum constant, or an array of
-     * one of these.
+     * a primitive, a wrapper of primitive, a String, a ClassDesc, an enum
+     * constant, or an array of one of these.
      *
      * @param value the annotation value
+     * @throws IllegalArgumentException when the {@code value} parameter is not
+     *         a primitive, a wrapper of primitive, a String, a ClassDesc,
+     *         an enum constant, or an array of one of these.
      */
     static AnnotationValue of(Object value) {
         if (value instanceof String s) {
