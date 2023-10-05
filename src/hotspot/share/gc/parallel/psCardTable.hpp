@@ -37,6 +37,8 @@ class PSCardTable: public CardTable {
   static constexpr size_t num_cards_in_stripe = 128;
   static_assert(num_cards_in_stripe >= 1, "progress");
 
+  volatile int _scavenge_phase1_active_workers;
+
   bool is_dirty(CardValue* card) {
     return !is_clean(card);
   }
@@ -77,12 +79,12 @@ class PSCardTable: public CardTable {
   void clear_cards(CardValue* const start, CardValue* const end);
 
  public:
-  PSCardTable(MemRegion whole_heap) : CardTable(whole_heap) {}
+  PSCardTable(MemRegion whole_heap) : CardTable(whole_heap), _scavenge_phase1_active_workers(0) {}
 
   static CardValue youngergen_card_val() { return youngergen_card; }
   static CardValue verify_card_val()     { return verify_card; }
 
-  void pre_scavenge(MutableSpace* old_gen, ObjectStartArray* start_array);
+  void pre_scavenge(uint active_workers);
 
   // Scavenge support
   void scavenge_contents_parallel(ObjectStartArray* start_array,

@@ -212,29 +212,8 @@ class ObjStartCache : public StackObj {
     }
 };
 
-void PSCardTable::pre_scavenge(MutableSpace* old_gen, ObjectStartArray* start_array) {
-  CardValue* cur_card = byte_for(old_gen->bottom());
-  CardValue* const end_card = byte_for(old_gen->top() - 1) + 1;
-
-  // Propagate imprecise marks from object start to the stripes the object extends to.
-  for ( /* empty */ ; cur_card < end_card; cur_card += num_cards_in_stripe) {
-    if (!is_dirty(cur_card)) {
-      HeapWord* stripe_addr = addr_for(cur_card);
-      HeapWord* first_obj_addr = start_array->object_start(stripe_addr);
-      if (first_obj_addr < stripe_addr) {
-        oop first_obj = cast_to_oop(first_obj_addr);
-        if (first_obj->is_array()) {
-          // Arrays are either precisely or never marked. Skip over them.
-          HeapWord* end = first_obj_addr + first_obj->size();
-          cur_card = align_down(byte_for(end), num_cards_in_stripe);
-        } else if (is_dirty(byte_for(first_obj_addr))) {
-          // Potentially imprecisely marked dirty.
-          // Mark first card of stripe dirty too.
-          *cur_card = dirty_card_val();
-        }
-      }
-    }
-  }
+void PSCardTable::pre_scavenge(uint active_workers) {
+  _scavenge_phase1_active_workers = active_workers;
 }
 
 void PSCardTable::clear_cards(CardValue* const start, CardValue* const end) {
@@ -392,13 +371,41 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
                                              PSPromotionManager* pm,
                                              uint stripe_index,
                                              uint n_stripes) {
-  ObjStartCache start_cache(start_array);
-
   const size_t stripe_size_in_words = num_cards_in_stripe * _card_size_in_words;
   const size_t slice_size_in_words = stripe_size_in_words * n_stripes;
 
-  HeapWord* cur_stripe_addr = old_gen_bottom + stripe_index * stripe_size_in_words;
+  // Propagate imprecise marks from object start to the stripes the object extends to.
+  {
+    const size_t num_cards_in_slice = num_cards_in_stripe * n_stripes;
+    CardValue* cur_card = byte_for(old_gen_bottom) + stripe_index * num_cards_in_stripe;
+    CardValue* const space_top_card = byte_for(old_gen_top);
 
+    ObjStartCache start_cache(start_array);
+    for ( /* empty */ ; cur_card < space_top_card; cur_card += num_cards_in_slice) {
+      if (!is_dirty(cur_card)) {
+        HeapWord* stripe_addr = addr_for(cur_card);
+        HeapWord* first_obj_addr = start_cache.object_start(stripe_addr);
+        if (first_obj_addr < stripe_addr) {
+          oop first_obj = cast_to_oop(first_obj_addr);
+          if (!first_obj->is_array() && is_dirty(byte_for(first_obj_addr))) {
+            // Potentially imprecisely marked dirty.
+            // Mark first card of stripe dirty too.
+            *cur_card = dirty_card_val();
+          }
+        }
+      }
+    }
+
+    // Synchronize with co-worker threads.
+    Atomic::dec(&_scavenge_phase1_active_workers);
+    while(_scavenge_phase1_active_workers > 0) {
+      os::naked_short_sleep(0);
+    }
+  }
+
+  // Scavenge
+  HeapWord* cur_stripe_addr = old_gen_bottom + stripe_index * stripe_size_in_words;
+  ObjStartCache start_cache(start_array);
   for (/* empty */; cur_stripe_addr < old_gen_top; cur_stripe_addr += slice_size_in_words) {
     HeapWord* const stripe_l = cur_stripe_addr;
     HeapWord* const stripe_r = MIN2(cur_stripe_addr + stripe_size_in_words,
