@@ -4738,16 +4738,14 @@ public class Check {
         private Type labelType(JCCaseLabel label) {
             return types.erasure(switch (label.getTag()) {
                 case PATTERNCASELABEL -> ((JCPatternCaseLabel) label).pat.type;
-                case CONSTANTCASELABEL -> types.boxedTypeOrType(((JCConstantCaseLabel) label).expr.type);
+                case CONSTANTCASELABEL -> ((JCConstantCaseLabel) label).expr.type;
                 default -> throw Assert.error("Unexpected tree kind: " + label.getTag());
             });
         }
         private boolean patternDominated(JCPattern existingPattern, JCPattern currentPattern) {
             Type existingPatternType = types.erasure(existingPattern.type);
             Type currentPatternType = types.erasure(currentPattern.type);
-
-            boolean unconditionallyExact = types.checkUnconditionallyExact(currentPatternType, existingPatternType);
-            if (!unconditionallyExact) {
+            if (!types.checkUnconditionallyExact(currentPatternType, existingPatternType)) {
                 return false;
             }
             if (currentPattern instanceof JCBindingPattern ||

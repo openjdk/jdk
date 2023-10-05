@@ -5013,8 +5013,11 @@ public class Types {
     /** Check unconditionality between any combination of reference or primitive types.
      *
      *  Rules:
-     *  - widening from one reference type to another,
-     *  - boxing.
+     *    an identity conversion
+     *    a widening reference conversion
+     *    a widening primitive conversion (delegates to `checkUnconditionallyExactPrimitives`)
+     *    a boxing conversion
+     *    a boxing conversion followed by a widening reference conversion
      *
      *  @param source     Source primitive or reference type
      *  @param target     Target primitive or reference type
@@ -5025,8 +5028,7 @@ public class Types {
         }
 
         if (target.isPrimitive()) {
-            return (source.isReference() && isSubtype(boxedTypeOrType(erasure(source)), target)) ||
-                    (source.isReference() && checkUnconditionallyExactPrimitives(unboxedType(source), target) ) ||
+            return (source.isReference() && isSubtype(source, target)) ||
                     checkUnconditionallyExactPrimitives(source, target);
         } else {
             return isSubtype(boxedTypeOrType(erasure(source)), target);
