@@ -45,7 +45,6 @@ ciTypeArrayKlass::ciTypeArrayKlass(Klass* k) : ciArrayKlass(k) {
 // Implementation of make.
 ciTypeArrayKlass* ciTypeArrayKlass::make_impl(BasicType t) {
   Klass* k = Universe::typeArrayKlassObj(t);
-  assert(CURRENT_ENV->get_type_array_klass(k) != nullptr, "array klass is null");
   return CURRENT_ENV->get_type_array_klass(k);
 }
 
