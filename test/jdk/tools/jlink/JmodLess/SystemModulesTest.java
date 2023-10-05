@@ -57,13 +57,13 @@ public class SystemModulesTest extends AbstractJmodLessTest {
     @Override
     void runTest(Helper helper) throws Exception {
         // create an image with a module containing a main entrypoint (jdk.httpserver),
-        // thus producing the SystemModules$0.class. Add jdk.jcmd as a module which
+        // thus producing the SystemModules$0.class. Add jdk.jdwp.agent as a module which
         // isn't resolved by default, so as to generate SystemModules$default.class
         Path javaseJmodless = createJavaImageJmodLess(new BaseJlinkSpecBuilder()
                                                             .helper(helper)
                                                             .name("httpserver-jlink-jmodless-derived")
                                                             .addModule("jdk.httpserver")
-                                                            .addModule("jdk.jcmd")
+                                                            .addModule("jdk.jdwp.agent")
                                                             .addModule("jdk.jlink")
                                                             .validatingModule("java.base")
                                                             .addExtraOption("--run-image-ignore-single-hop")
