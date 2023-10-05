@@ -349,7 +349,8 @@ public final class DateTimeUtils {
         getCharsUTF16(buf, off + dateSize + 1, value.toLocalTime());
     }
 
-    private static final byte[] weeks = {
+    private static final byte[] wtb = {
+            // weeks
             'S', 'u', 'n',
             'M', 'o', 'n',
             'T', 'u', 'e',
@@ -357,9 +358,8 @@ public final class DateTimeUtils {
             'T', 'h', 'u',
             'F', 'r', 'i',
             'S', 'a', 't',
-    };
 
-    private static final byte[] months = {
+            // months
             'J', 'a', 'n',
             'F', 'e', 'b',
             'M', 'a', 'r',
@@ -391,7 +391,7 @@ public final class DateTimeUtils {
     public static void getCharsLatin1(byte[] buf, int off, Date date) {
         getCharsLatin1(buf, off, JDA.normalize(date));
     }
-    
+
     public static void getCharsUTF16(byte[] buf, int off, Date date) {
         getCharsUTF16(buf, off, JDA.normalize(date));
     }
@@ -399,17 +399,17 @@ public final class DateTimeUtils {
     public static void getCharsLatin1(byte[] buf, int off, BaseCalendar.Date date) {
         // EEE
         int weekIndex = (date.getDayOfWeek() - 1) * 3;
-        buf[off] = weeks[weekIndex];
-        buf[off + 1] = weeks[weekIndex + 1];
-        buf[off + 2] = weeks[weekIndex + 2];
+        buf[off] = wtb[weekIndex];
+        buf[off + 1] = wtb[weekIndex + 1];
+        buf[off + 2] = wtb[weekIndex + 2];
 
         buf[off + 3] = ' ';
 
         // MMM
-        int monthIndex = (date.getMonth() - 1) * 3;
-        buf[off + 4] = months[monthIndex];
-        buf[off + 5] = months[monthIndex + 1];
-        buf[off + 6] = months[monthIndex + 2];
+        int monthIndex = (date.getMonth() + 6) * 3;
+        buf[off + 4] = wtb[monthIndex];
+        buf[off + 5] = wtb[monthIndex + 1];
+        buf[off + 6] = wtb[monthIndex + 2];
 
         buf[off + 7] = ' ';
         JLA.writeDigitPairLatin1(buf, off + 8, date.getDayOfMonth()); // dd
@@ -436,17 +436,17 @@ public final class DateTimeUtils {
     public static void getCharsUTF16(byte[] buf, int off, BaseCalendar.Date date) {
         // EEE
         int weekIndex = (date.getDayOfWeek() - 1) * 3;
-        JLA.putCharUTF16(buf, off, weeks[weekIndex]);
-        JLA.putCharUTF16(buf, off + 1, weeks[weekIndex + 1]);
-        JLA.putCharUTF16(buf, off + 2, weeks[weekIndex + 2]);
+        JLA.putCharUTF16(buf, off, wtb[weekIndex]);
+        JLA.putCharUTF16(buf, off + 1, wtb[weekIndex + 1]);
+        JLA.putCharUTF16(buf, off + 2, wtb[weekIndex + 2]);
 
         JLA.putCharUTF16(buf, off + 3, ' ');
 
         // MMM
-        int monthIndex = (date.getMonth() - 1) * 3;
-        JLA.putCharUTF16(buf, off + 4, months[monthIndex]);
-        JLA.putCharUTF16(buf, off + 5, months[monthIndex + 1]);
-        JLA.putCharUTF16(buf, off + 6, months[monthIndex + 2]);
+        int monthIndex = (date.getMonth() + 6) * 3;
+        JLA.putCharUTF16(buf, off + 4, wtb[monthIndex]);
+        JLA.putCharUTF16(buf, off + 5, wtb[monthIndex + 1]);
+        JLA.putCharUTF16(buf, off + 6, wtb[monthIndex + 2]);
 
         JLA.putCharUTF16(buf, off + 7, ' ');
         JLA.writeDigitPairUTF16(buf, off + 8, date.getDayOfMonth()); // dd
