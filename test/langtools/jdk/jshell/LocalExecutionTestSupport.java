@@ -68,7 +68,11 @@ public class LocalExecutionTestSupport extends ReplToolTesting {
     }
 
     protected Path createWorkSubdir(String name) throws IOException {
-        Path dir = baseDir.resolve(name);
+        return createSubdir(baseDir, name);
+    }
+
+    protected Path createSubdir(Path base, String name) throws IOException {
+        Path dir = base.resolve(name);
         Files.createDirectories(dir);
         return dir;
     }

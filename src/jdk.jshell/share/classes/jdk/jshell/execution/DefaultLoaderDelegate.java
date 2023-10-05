@@ -60,7 +60,7 @@ import jdk.jshell.spi.ExecutionControl.InternalException;
  *
  * @author Robert Field
  */
-public class DefaultLoaderDelegate implements LoaderDelegate {
+class DefaultLoaderDelegate implements LoaderDelegate {
 
     private final RemoteClassLoader loader;
     private final Map<String, Class<?>> klasses = new HashMap<>();

@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8314327
- * @summary Verify function of LocalExecutionControlProvider "contextLoaderParent" parameter
+ * @summary Verify function of LocalExecutionControlProvider createExecutionControl() method override
  * @library /tools/lib
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
@@ -33,13 +33,33 @@
  * @run testng/othervm LocalExecutionContextLoaderParentTest
  */
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Locale;
+import java.util.Map;
+import java.nio.file.Files;
+
+import jdk.jshell.execution.LocalExecutionControl;
+import jdk.jshell.execution.LocalExecutionControlProvider;
+import jdk.jshell.spi.ExecutionControl;
+import jdk.jshell.spi.ExecutionControlProvider;
+import jdk.jshell.spi.ExecutionEnv;
+
 import org.testng.annotations.Test;
+import org.testng.annotations.BeforeTest;
 
 public class LocalExecutionContextLoaderParentTest extends LocalExecutionTestSupport {
+
+    @BeforeTest
+    public void installParentTestProvider() throws IOException {
+        Path dir = createSubdir(classesDir, "META-INF/services");
+        Files.write(dir.resolve(ExecutionControlProvider.class.getName()),
+          Arrays.asList(ParentTestExecutionControlProvider.class.getName()));
+    }
 
     @Override
     public void test(Locale locale, boolean defaultStartUp, String[] args, String startMsg, ReplTest... tests) {
@@ -54,7 +74,7 @@ public class LocalExecutionContextLoaderParentTest extends LocalExecutionTestSup
         Thread.currentThread().setContextClassLoader(new URLClassLoader(new URL[] { classesDirURL }));
 
         // Set local execution with context class loader as parent loader
-        args = this.prependArgs(args, "--execution", "local:contextLoaderParent(true)");
+        args = this.prependArgs(args, "--execution", "parentTest");
 
         // Verify the execution engine can find MyClass (we don't care whether the compiler can find it in this test)
         super.test(locale, defaultStartUp, args, startMsg, tests);
@@ -65,5 +85,20 @@ public class LocalExecutionContextLoaderParentTest extends LocalExecutionTestSup
         test(new String[] { "--no-startup" },
             a -> assertCommand(a, "Class.forName(\"test.MyClass\").getField(\"FOO\").get(null)", "$1 ==> \"bar\"")
         );
+    }
+
+// ParentTestExecutionControlProvider
+
+    public static class ParentTestExecutionControlProvider extends LocalExecutionControlProvider {
+
+        @Override
+        public String name() {
+            return "parentTest";
+        }
+
+        @Override
+        public ExecutionControl createExecutionControl(ExecutionEnv env, Map<String, String> parameters) {
+            return new LocalExecutionControl(Thread.currentThread().getContextClassLoader());
+        }
     }
 }
