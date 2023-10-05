@@ -38,6 +38,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.Stable;
+import sun.invoke.util.Wrapper;
 
 import static java.util.Objects.requireNonNull;
 
@@ -227,13 +228,7 @@ public class SwitchBootstraps {
                     } else if (currentLabelClass.isPrimitive()) {
                          if (selectorType.equals(Object.class)) {
                             currentTest = INSTANCEOF_CHECK;
-                            if (currentLabelClass.isAssignableFrom(byte.class)) { testLabel = Byte.class; }
-                            else if (currentLabelClass.isAssignableFrom(short.class)) { testLabel = Short.class; }
-                            else if (currentLabelClass.isAssignableFrom(char.class)) { testLabel = Character.class; }
-                            else if (currentLabelClass.isAssignableFrom(int.class)) { testLabel = Integer.class; }
-                            else if (currentLabelClass.isAssignableFrom(double.class)) { testLabel = Double.class; }
-                            else if (currentLabelClass.isAssignableFrom(float.class)) { testLabel = Float.class; }
-                            else { testLabel = Long.class; }
+                            testLabel = Wrapper.forBasicType(currentLabelClass).wrapperType();
                         } else {
                             MethodHandle exactnessCheck;
                             try {

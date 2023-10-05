@@ -2913,7 +2913,7 @@ public class Lower extends TreeTranslator {
         JCExpression instanceOfExpr = translate(tree.expr);
 
         if (tree.expr.type.isPrimitive() || tree.pattern.type.isPrimitive()) {
-            // preserving the side-effects of the value
+            // preserving the side effects of the value
             VarSymbol dollar_s = new VarSymbol(FINAL | SYNTHETIC,
                     names.fromString("tmp" + tree.pos + this.target.syntheticNameChar()),
                     tree.expr.type,

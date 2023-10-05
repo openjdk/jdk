@@ -32,7 +32,7 @@ package java.lang.runtime;
  *
  * @since 22
  */
-final public class ExactnessMethods {
+public final class ExactnessMethods {
 
     private ExactnessMethods() { }
 
