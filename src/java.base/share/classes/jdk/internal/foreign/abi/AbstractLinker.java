@@ -233,12 +233,12 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         }
     }
 
-    private static void checkSupported(ValueLayout valueLayout) {
+    private void checkSupported(ValueLayout valueLayout) {
         valueLayout = valueLayout.withoutName();
         if (valueLayout instanceof AddressLayout addressLayout) {
             valueLayout = addressLayout.withoutTargetLayout();
         }
-        if (!SUPPORTED_LAYOUTS.contains(valueLayout.withoutName())) {
+        if (!supportedLayouts().contains(valueLayout.withoutName())) {
             throw new IllegalArgumentException("Unsupported layout: " + valueLayout);
         }
     }
@@ -275,7 +275,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                 .orElseGet(() -> FunctionDescriptor.ofVoid(stripNames(function.argumentLayouts())));
     }
 
-    private static final Set<MemoryLayout> SUPPORTED_LAYOUTS = Set.of(
+    protected static final Set<MemoryLayout> DEFAULT_LAYOUTS = Set.of(
             ValueLayout.JAVA_BOOLEAN,
             ValueLayout.JAVA_BYTE,
             ValueLayout.JAVA_CHAR,
@@ -284,7 +284,10 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             ValueLayout.JAVA_FLOAT,
             ValueLayout.JAVA_LONG,
             ValueLayout.JAVA_DOUBLE,
-            ValueLayout.ADDRESS,
-            ValueLayout.JAVA_DOUBLE.withByteAlignment(4) // used by AIX
+            ValueLayout.ADDRESS
     );
+
+    protected Set<MemoryLayout> supportedLayouts() {
+        return DEFAULT_LAYOUTS;
+    }
 }

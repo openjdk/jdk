@@ -30,9 +30,12 @@ import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.ppc64.CallArranger;
 
 import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.nio.ByteOrder;
+import java.util.Set;
 
 public final class AixPPC64Linker extends AbstractLinker {
 
@@ -61,5 +64,23 @@ public final class AixPPC64Linker extends AbstractLinker {
     @Override
     protected ByteOrder linkerByteOrder() {
         return ByteOrder.BIG_ENDIAN;
+    }
+
+    protected static final Set<MemoryLayout> AIX_LAYOUTS = Set.of(
+            ValueLayout.JAVA_BOOLEAN,
+            ValueLayout.JAVA_BYTE,
+            ValueLayout.JAVA_CHAR,
+            ValueLayout.JAVA_SHORT,
+            ValueLayout.JAVA_INT,
+            ValueLayout.JAVA_FLOAT,
+            ValueLayout.JAVA_LONG,
+            ValueLayout.JAVA_DOUBLE,
+            ValueLayout.ADDRESS,
+            ValueLayout.JAVA_DOUBLE.withByteAlignment(4)
+    );
+
+    @Override
+    protected Set<MemoryLayout> supportedLayouts() {
+        return AIX_LAYOUTS;
     }
 }

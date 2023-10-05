@@ -28,7 +28,7 @@ package jdk.internal.foreign.abi.ppc64.aix;
 import jdk.internal.foreign.abi.ppc64.CallArranger;
 
 /**
- * PPC64 CallArranger specialized for ABI v1.
+ * PPC64 CallArranger specialized for AIX.
  */
 public class AixCallArranger extends CallArranger {
 
