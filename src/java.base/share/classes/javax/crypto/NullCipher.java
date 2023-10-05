@@ -30,9 +30,9 @@ package javax.crypto;
  * "identity cipher" -- one that does not transform the plain text.  As
  * a consequence, the ciphertext is identical to the plaintext.  All
  * initialization methods do nothing, while the blocksize is set to 1
- * byte.  Unlike other ciphers, the {@code NullCipher} will not throw an
- * {@code IllegalStateException} when calling {@code Cipher} methods
- * in an incorrect state.
+ * byte.  Unlike other ciphers, the {@code NullCipher} has no state, and
+ * will never throw an {@code IllegalStateException} when {@code Cipher}
+ * methods are called.
  *
  * @author  Li Gong
  * @since 1.4
