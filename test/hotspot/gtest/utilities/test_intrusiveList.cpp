@@ -52,8 +52,10 @@ struct TestIntrusiveListValue : public CHeapObj<mtInternal> {
   using Value = TestIntrusiveListValue; // convenience
 
   size_t value() const { return _value; }
-  bool is_attached1() const { return _entry1.is_attached(); }
-  bool is_attached2() const { return _entry2.is_attached(); }
+  static const Entry& entry1(const Value& v) { return v._entry1; }
+  static const Entry& entry2(const Value& v) { return v._entry2; }
+  bool is_attached1() const { return entry1(*this).is_attached(); }
+  bool is_attached2() const { return entry2(*this).is_attached(); }
   Value* This() { return this; }
   const Value* This() const { return this; }
 };
@@ -61,12 +63,12 @@ struct TestIntrusiveListValue : public CHeapObj<mtInternal> {
 // Convenience type aliases.
 using Value = TestIntrusiveListValue;
 
-using List1 = IntrusiveList<Value, &Value::_entry1>;
-using CHeapList1 = IntrusiveList<Value, &Value::_entry1, false, CHeapObj<mtInternal>>;
-using List2 = IntrusiveList<Value, &Value::_entry2>;
+using List1 = IntrusiveList<Value, &Value::entry1>;
+using CHeapList1 = IntrusiveList<Value, &Value::entry1, false, CHeapObj<mtInternal>>;
+using List2 = IntrusiveList<Value, &Value::entry2>;
 
-using CList1 = IntrusiveList<const Value, &Value::_entry1>;
-using CList2 = IntrusiveList<const Value, &Value::_entry2>;
+using CList1 = IntrusiveList<const Value, &Value::entry1>;
+using CList2 = IntrusiveList<const Value, &Value::entry2>;
 
 ////////////////////
 // Some preliminary tests.
@@ -1494,8 +1496,8 @@ class IntrusiveListTestWithSize : public IntrusiveListTestWithValues {
   typedef IntrusiveListTestWithValues super;
 
 public:
-  typedef IntrusiveList<Value, &Value::_entry1, true> ListWithSize;
-  typedef IntrusiveList<Value, &Value::_entry1, true, CHeapObj<mtInternal> > CHeapListWithSize;
+  typedef IntrusiveList<Value, &Value::entry1, true> ListWithSize;
+  typedef IntrusiveList<Value, &Value::entry1, true, CHeapObj<mtInternal> > CHeapListWithSize;
 
   virtual void SetUp() {
     super::SetUp();

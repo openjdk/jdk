@@ -37,6 +37,15 @@ class IntrusiveListEntry;
 class IntrusiveListImpl;
 
 /**
+ * The type of a function for accessing the list entry of an IntrusiveList's
+ * element type T.  Such a function takes a reference to const T and returns a
+ * reference to const IntrusiveListEntry.
+ */
+template<typename T>
+using IntrusiveListEntryAccessor =
+  const IntrusiveListEntry& (*)(std::add_const_t<T>&);
+
+/**
  * The IntrusiveList class template provides a doubly-linked list in
  * which the links between elements are embedded directly into objects
  * contained in the list.  As a result, there are no copies involved
@@ -65,8 +74,8 @@ class IntrusiveListImpl;
  * * T is the class of the elements in the list.  Must be a possibly
  * const-qualified class type.
  *
- * * entry_member is a pointer to class member referring to the
- * IntrusiveListEntry subobject of T used by this list.
+ * * get_entry is a function of type IntrusiveListEntryAccessor<T> used
+ * for accessing the IntrusiveListEntry subobject of T used by this list.
  *
  * * has_size determines whether the list has a size()
  * operation, returning the number of elements in the list.  If the
@@ -98,28 +107,36 @@ class IntrusiveListImpl;
  *
  * <code>
  * class MyClass {
- * public:
  *   ...
  *   IntrusiveListEntry _entry;
+ *   ...
+ * public:
+ *   ...
+ *   static const IntrusiveListEntry& get_entry(const MyClass& v) {
+ *     return v._entry;
+ *   }
  *   ...
  * };
  *
  *   ...
- *   IntrusiveList<MyClass, &MyClass::_entry> mylist;
+ *   IntrusiveList<MyClass, &MyClass::get_entry> mylist;
  *   ... use mylist ...
  * </code>
  *
- * Alternatively, the scope of the entry member can be limited, with a
+ * Alternatively, the scope of the entry accessor can be limited, with a
  * type alias of a list specialization providing access, e.g.
  *
  * <code>
  * class MyClass {
  *   ...
  *   IntrusiveListEntry _entry;
+ *   static const IntrusiveListEntry& get_entry(const MyClass& v) {
+ *     return v._entry;
+ *   }
  *   ...
  * public:
  *   ...
- *   using MyList = IntrusiveList<MyClass, &MyClass::_entry>;
+ *   usnig MyList = IntrusiveList<MyClass, &get_entry>;
  *   ...
  * };
  *
@@ -129,7 +146,7 @@ class IntrusiveListImpl;
  * </code>
  */
 template<typename T,
-         IntrusiveListEntry T::*entry_member,
+         IntrusiveListEntryAccessor<T> entry_accessor,
          bool has_size = false,
          typename Base = void>
 class IntrusiveList;
@@ -190,7 +207,11 @@ private:
 
   // Nothing for clients to see here, everything is private.  Only
   // the IntrusiveList class template has access, via friendship.
-  template<typename T, Entry T::*, bool, typename> friend class IntrusiveList;
+  template<typename T,
+           IntrusiveListEntryAccessor<T>,
+           bool,
+           typename>
+  friend class IntrusiveList;
 
   using size_type = size_t;
   using difference_type = ptrdiff_t;
@@ -224,10 +245,10 @@ private:
 
   const Entry* root_entry() const { return &_root; }
 
-  static void detach(const Entry* entry) {
-    entry->_prev = nullptr;
-    entry->_next = nullptr;
-    DEBUG_ONLY(entry->_list = nullptr;)
+  static void detach(const Entry& entry) {
+    entry._prev = nullptr;
+    entry._next = nullptr;
+    DEBUG_ONLY(entry._list = nullptr;)
   }
 
   class NoAllocationBase {};
@@ -239,7 +260,7 @@ private:
   // Conversion from T* to Entry*, along with relevant type aliases.  A
   // corresponding specialization is used directly by IntrusiveList,
   // and by the list's iterators.
-  template<typename T, Entry T::*entry_member>
+  template<typename T>
   struct ListTraits : public AllStatic {
     static_assert(std::is_class<T>::value, "precondition");
     // May be const, but not volatile.
@@ -252,10 +273,6 @@ private:
     using const_pointer = std::add_pointer_t<std::add_const_t<value_type>>;
     using reference = std::add_lvalue_reference_t<value_type>;
     using const_reference = std::add_lvalue_reference_t<std::add_const_t<value_type>>;
-
-    static const Entry* get_entry(const_reference value) {
-      return &(value.*entry_member);
-    }
   };
 
   // Stand-in for std::distance.
@@ -269,7 +286,7 @@ private:
   // Iterator support.  IntrusiveList defines its iterator types as
   // specializations of this class.
   template<typename T,
-           Entry T::*entry_member,
+           IntrusiveListEntryAccessor<T> entry_accessor,
            bool is_forward>
   class IteratorImpl;
 
@@ -279,6 +296,8 @@ private:
   // API for iterators.
   template<typename Iterator> class IteratorOperations;
 
+  template<typename Iterator> struct EntryAccess;
+
   // Predicate metafunction for determining whether T is a non-const
   // IntrusiveList type.
   template<typename T>
@@ -286,9 +305,9 @@ private:
 
 #ifdef ASSERT
   // Get entry's containing list; null if entry not in a list.
-  static const IntrusiveListImpl* entry_list(const Entry* entry);
+  static const IntrusiveListImpl* entry_list(const Entry& entry);
   // Set entry's containing list; list may be null.
-  static void set_entry_list(const Entry* entry, IntrusiveListImpl* list);
+  static void set_entry_list(const Entry& entry, IntrusiveListImpl* list);
 #endif // ASSERT
 };
 
@@ -336,29 +355,26 @@ private:
   size_type _size;
 };
 
+// Destructure iterator type to be provide calling the entry accessor.
 template<typename T,
-         IntrusiveListEntry T::*entry_member,
-         bool has_size,
-         typename Base>
-struct IntrusiveListImpl::IsListType<IntrusiveList<T, entry_member, has_size, Base>>
-  : public std::true_type
-{};
+         IntrusiveListEntryAccessor<T> accessor,
+         bool is_forward>
+struct IntrusiveListImpl::EntryAccess<
+  IntrusiveListImpl::IteratorImpl<T, accessor, is_forward>>
+{
+  using const_reference = std::add_lvalue_reference_t<std::add_const_t<T>>;
+  static const Entry& get_entry(const_reference v) {
+    return accessor(v);
+  }
+};
 
-// With MSVC the above specialization doesn't match if T is const-qualified
-// but the entry member's class type isn't (which it seemingly can't be, since
-// the syntax for pointer-to-data-member doesn't support it).  So we need this
-// additional specialization for MSVC.  gcc and clang don't need this.  This
-// seems likely a compiler bug, probably(?) in MSVC, but relevant standardese
-// has so far eluded me.
-#if defined(TARGET_COMPILER_visCPP)
 template<typename T,
-         IntrusiveListEntry T::*entry_member,
+         IntrusiveListEntryAccessor<T> accessor,
          bool has_size,
          typename Base>
-struct IntrusiveListImpl::IsListType<IntrusiveList<const T, entry_member, has_size, Base>>
+struct IntrusiveListImpl::IsListType<IntrusiveList<T, accessor, has_size, Base>>
   : public std::true_type
 {};
-#endif // TARGET_COMPILER_visCPP
 
 // The IteratorOperations class provides operations for encoding,
 // decoding, and manipulating type-erased void* values representing
@@ -430,13 +446,13 @@ class IntrusiveListImpl::IteratorOperations : AllStatic {
     return add_tag_to_root_entry(entry);
   }
 
-  static const Entry* resolve_to_entry(Iterator i) {
+  static const Entry& resolve_to_entry(Iterator i) {
     assert_not_singular(i);
     const void* encoded = encoded_value(i);
     if (is_tagged_root_entry(encoded)) {
-      return remove_tag_from_root_entry(encoded);
+      return *(remove_tag_from_root_entry(encoded));
     } else {
-      return ListTraits::get_entry(dereference_element_ptr(encoded));
+      return get_entry(dereference_element_ptr(encoded));
     }
   }
 
@@ -446,34 +462,34 @@ class IntrusiveListImpl::IteratorOperations : AllStatic {
   }
 
   static Iterator next(Iterator i) {
-    return Iterator(resolve_to_entry(i)->_next);
+    return Iterator(resolve_to_entry(i)._next);
   }
 
   static Iterator prev(Iterator i) {
-    return Iterator(resolve_to_entry(i)->_prev);
+    return Iterator(resolve_to_entry(i)._prev);
   }
 
   static Iterator next(const_reference value) {
-    return Iterator(ListTraits::get_entry(value)->_next);
+    return Iterator(get_entry(value)._next);
   }
 
   static Iterator prev(const_reference value) {
-    return Iterator(ListTraits::get_entry(value)->_prev);
+    return Iterator(get_entry(value)._prev);
   }
 
   static void attach_impl(const_reference prev, Iterator next) {
-    ListTraits::get_entry(prev)->_next = encoded_value(next);
-    resolve_to_entry(next)->_prev = make_encoded_value(prev);
+    get_entry(prev)._next = encoded_value(next);
+    resolve_to_entry(next)._prev = make_encoded_value(prev);
   }
 
   static void attach_impl(Iterator prev, const_reference next) {
-    resolve_to_entry(prev)->_next = make_encoded_value(next);
-    ListTraits::get_entry(next)->_prev = encoded_value(prev);
+    resolve_to_entry(prev)._next = make_encoded_value(next);
+    get_entry(next)._prev = encoded_value(prev);
   }
 
   static void iter_attach_impl(Iterator prev, Iterator next) {
-    resolve_to_entry(prev)->_next = encoded_value(next);
-    resolve_to_entry(next)->_prev = encoded_value(prev);
+    resolve_to_entry(prev)._next = encoded_value(next);
+    resolve_to_entry(next)._prev = encoded_value(prev);
   }
 
 public:
@@ -488,6 +504,10 @@ public:
   }
 
   // Corresponding is_element is not used, so not provided.
+
+  static const Entry& get_entry(const_reference v) {
+    return EntryAccess<Iterator>::get_entry(v);
+  }
 
   static const_reference dereference(Iterator i) {
     assert_not_singular(i);
@@ -586,7 +606,7 @@ public:
  * to a const iterator, but not vice versa.
  */
 template<typename T,
-         IntrusiveListEntry T::*entry_member,
+         IntrusiveListEntryAccessor<T> get_entry,
          bool is_forward>
 class IntrusiveListImpl::IteratorImpl {
   friend class IntrusiveListImpl;
@@ -595,7 +615,7 @@ class IntrusiveListImpl::IteratorImpl {
   static const bool _is_const = std::is_const<T>::value;
 
   using Impl = IntrusiveListImpl;
-  using ListTraits = Impl::ListTraits<T, entry_member>;
+  using ListTraits = Impl::ListTraits<T>;
   using IOps = Impl::IteratorOperations<IteratorImpl>;
 
   // Test whether From is an iterator type different from this type that can
@@ -604,7 +624,7 @@ class IntrusiveListImpl::IteratorImpl {
   // type.
   template<typename From>
   static constexpr bool is_convertible_iterator() {
-    using NonConst = IteratorImpl<std::remove_const_t<T>, entry_member, _is_forward>;
+    using NonConst = IteratorImpl<std::remove_const_t<T>, get_entry, _is_forward>;
     return _is_const && std::is_same<From, NonConst>::value;
   }
 
@@ -786,12 +806,12 @@ private:
 };
 
 template<typename T,
-         IntrusiveListEntry T::*entry_member,
+         IntrusiveListEntryAccessor<T> get_entry,
          bool has_size,
          typename Base>
 class IntrusiveList : public IntrusiveListImpl::SizeBase<has_size, Base> {
   // Give access to other instantiations, for splice().
-  template<typename U, IntrusiveListEntry U::*, bool, typename>
+  template<typename U, IntrusiveListEntryAccessor<U>, bool, typename>
   friend class IntrusiveList;
 
   // Give access for unit testing.
@@ -799,7 +819,7 @@ class IntrusiveList : public IntrusiveListImpl::SizeBase<has_size, Base> {
 
   using Entry = IntrusiveListEntry;
   using Impl = IntrusiveListImpl;
-  using ListTraits = Impl::ListTraits<T, entry_member>;
+  using ListTraits = Impl::ListTraits<T>;
   using Super = Impl::SizeBase<has_size, Base>;
 
   // A subsequence of one list can be transferred to another list via splice
@@ -851,19 +871,19 @@ public:
 
   /** Forward iterator type allowing modification of elements. */
   using iterator =
-    Impl::IteratorImpl<T, entry_member, true>;
+    Impl::IteratorImpl<T, get_entry, true>;
 
   /** Forward iterator type disallowing modification of elements. */
   using const_iterator =
-    Impl::IteratorImpl<std::add_const_t<T>, entry_member, true>;
+    Impl::IteratorImpl<std::add_const_t<T>, get_entry, true>;
 
   /** Reverse iterator type allowing modification of elements. */
   using reverse_iterator =
-    Impl::IteratorImpl<T, entry_member, false>;
+    Impl::IteratorImpl<T, get_entry, false>;
 
   /** Reverse iterator type disallowing modification of elements. */
   using const_reverse_iterator =
-    Impl::IteratorImpl<std::add_const_t<T>, entry_member, false>;
+    Impl::IteratorImpl<std::add_const_t<T>, get_entry, false>;
 
   /** Make an empty list. */
   IntrusiveList() : _impl() {}
@@ -1203,7 +1223,7 @@ private:
 
   template<typename Result, typename Iterator>
   Result insert_impl(Iterator pos, reference value) {
-    assert(Impl::entry_list(ListTraits::get_entry(value)) == nullptr, "precondition");
+    assert(Impl::entry_list(get_entry(value)) == nullptr, "precondition");
     assert_is_iterator(pos);
     using IOps = Impl::IteratorOperations<Iterator>;
     IOps::attach(IOps::iter_predecessor(pos), value);
@@ -1468,14 +1488,14 @@ private:
   }
 
   void assert_is_element(const_reference value) const {
-    assert(Impl::entry_list(ListTraits::get_entry(value)) == &_impl,
+    assert(Impl::entry_list(get_entry(value)) == &_impl,
            "Value " PTR_FORMAT " not in this list " PTR_FORMAT,
            p2i(&value), p2i(this));
   }
 
 #ifdef ASSERT
   void set_list(const_reference value, Impl* list) {
-    Impl::set_entry_list(ListTraits::get_entry(value), list);
+    Impl::set_entry_list(get_entry(value), list);
   }
 #endif
 
@@ -1500,7 +1520,7 @@ private:
 
   void detach(const_reference value) {
     assert_is_element(value);
-    Impl::detach(ListTraits::get_entry(value));
+    Impl::detach(get_entry(value));
     adjust_size(-1);
   }
 };
