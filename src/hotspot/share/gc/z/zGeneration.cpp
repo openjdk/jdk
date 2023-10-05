@@ -447,8 +447,8 @@ public:
   }
 
   virtual void doit_epilogue() {
-    Heap_lock->unlock();
     OopMapCache::cleanup_old_entries();
+    Heap_lock->unlock();
   }
 
   bool success() const {
