@@ -36,14 +36,20 @@ final class LibFallback {
 
     static final boolean SUPPORTED = tryLoadLibrary();
 
+    @SuppressWarnings("removal")
     private static boolean tryLoadLibrary() {
-        try {
-            System.loadLibrary("fallbackLinker");
-        } catch (UnsatisfiedLinkError ule) {
-            return false;
-        }
-        init();
-        return true;
+        return java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedAction<>() {
+                    public Boolean run() {
+                        try {
+                            System.loadLibrary("fallbackLinker");
+                            init();
+                            return true;
+                        } catch (UnsatisfiedLinkError ule) {
+                            return false;
+                        }
+                    }
+                });
     }
 
     static int defaultABI() { return NativeConstants.DEFAULT_ABI; }
@@ -101,6 +107,27 @@ final class LibFallback {
                                          Arena scope) throws IllegalStateException {
         MemorySegment cif = scope.allocate(NativeConstants.SIZEOF_CIF);
         checkStatus(ffi_prep_cif(cif.address(), abi.value(), numArgs, returnType.address(), paramTypes.address()));
+        return cif;
+    }
+
+    /**
+     * Wrapper for {@code ffi_prep_cif_var}. The variadic version of prep_cif
+     *
+     * @param returnType a pointer to an @{code ffi_type} describing the return type
+     * @param numFixedArgs the number of fixed arguments
+     * @param numTotalArgs the number of total arguments
+     * @param paramTypes a pointer to an array of pointers, which each point to an {@code ffi_type} describing a
+     *                parameter type
+     * @param abi the abi to be used
+     * @param scope the scope into which to allocate the returned {@code ffi_cif} struct
+     * @return a pointer to a prepared {@code ffi_cif} struct
+     *
+     * @throws IllegalStateException if the call to {@code ffi_prep_cif} returns a non-zero status code
+     */
+    static MemorySegment prepCifVar(MemorySegment returnType, int numFixedArgs, int numTotalArgs, MemorySegment paramTypes, FFIABI abi,
+                                    Arena scope) throws IllegalStateException {
+        MemorySegment cif = scope.allocate(NativeConstants.SIZEOF_CIF);
+        checkStatus(ffi_prep_cif_var(cif.address(), abi.value(), numFixedArgs, numTotalArgs, returnType.address(), paramTypes.address()));
         return cif;
     }
 
@@ -177,6 +204,7 @@ final class LibFallback {
     private static native void doDowncall(long cif, long fn, long rvalue, long avalues, long capturedState, int capturedStateMask);
 
     private static native int ffi_prep_cif(long cif, int abi, int nargs, long rtype, long atypes);
+    private static native int ffi_prep_cif_var(long cif, int abi, int nfixedargs, int ntotalargs, long rtype, long atypes);
     private static native int ffi_get_struct_offsets(int abi, long type, long offsets);
 
     private static native int ffi_default_abi();

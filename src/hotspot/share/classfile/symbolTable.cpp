@@ -37,6 +37,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/timerTrace.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
@@ -103,6 +104,7 @@ static THREAD_LOCAL bool _lookup_shared_first = false;
 // Static arena for symbols that are not deallocated
 Arena* SymbolTable::_arena = nullptr;
 
+static bool _rehashed = false;
 static uint64_t _alt_hash_seed = 0;
 
 static inline void log_trace_symboltable_helper(Symbol* sym, const char* msg) {
@@ -113,14 +115,14 @@ static inline void log_trace_symboltable_helper(Symbol* sym, const char* msg) {
 }
 
 // Pick hashing algorithm.
-static uintx hash_symbol(const char* s, int len, bool useAlt) {
+static unsigned int hash_symbol(const char* s, int len, bool useAlt) {
   return useAlt ?
   AltHashing::halfsiphash_32(_alt_hash_seed, (const uint8_t*)s, len) :
   java_lang_String::hash_code((const jbyte*)s, len);
 }
 
 #if INCLUDE_CDS
-static uintx hash_shared_symbol(const char* s, int len) {
+static unsigned int hash_shared_symbol(const char* s, int len) {
   return java_lang_String::hash_code((const jbyte*)s, len);
 }
 #endif
@@ -235,7 +237,7 @@ void SymbolTable::item_removed() {
 }
 
 double SymbolTable::get_load_factor() {
-  return (double)_items_count/_current_size;
+  return (double)_items_count/(double)_current_size;
 }
 
 size_t SymbolTable::table_size() {
@@ -336,6 +338,7 @@ Symbol* SymbolTable::lookup_common(const char* name,
 }
 
 Symbol* SymbolTable::new_symbol(const char* name, int len) {
+  assert(len <= Symbol::max_length(), "sanity");
   unsigned int hash = hash_symbol(name, len, _alt_hash);
   Symbol* sym = lookup_common(name, len, hash);
   if (sym == nullptr) {
@@ -351,6 +354,7 @@ Symbol* SymbolTable::new_symbol(const Symbol* sym, int begin, int end) {
   assert(sym->refcount() != 0, "require a valid symbol");
   const char* name = (const char*)sym->base() + begin;
   int len = end - begin;
+  assert(len <= Symbol::max_length(), "sanity");
   unsigned int hash = hash_symbol(name, len, _alt_hash);
   Symbol* found = lookup_common(name, len, hash);
   if (found == nullptr) {
@@ -370,7 +374,11 @@ public:
   uintx get_hash() const {
     return _hash;
   }
-  bool equals(Symbol* value, bool* is_dead) {
+  // Note: When equals() returns "true", the symbol's refcount is incremented. This is
+  // needed to ensure that the symbol is kept alive before equals() returns to the caller,
+  // so that another thread cannot clean the symbol up concurrently. The caller is
+  // responsible for decrementing the refcount, when the symbol is no longer needed.
+  bool equals(Symbol* value) {
     assert(value != nullptr, "expected valid value");
     Symbol *sym = value;
     if (sym->equals(_str, _len)) {
@@ -379,13 +387,14 @@ public:
         return true;
       } else {
         assert(sym->refcount() == 0, "expected dead symbol");
-        *is_dead = true;
         return false;
       }
     } else {
-      *is_dead = (sym->refcount() == 0);
       return false;
     }
+  }
+  bool is_dead(Symbol* value) {
+    return value->refcount() == 0;
   }
 };
 
@@ -653,6 +662,9 @@ void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
 }
 
 size_t SymbolTable::estimate_size_for_archive() {
+  if (_items_count > (size_t)max_jint) {
+    fatal("Too many symbols to be archived: %zu", _items_count);
+  }
   return CompactHashtableWriter::estimate_size(int(_items_count));
 }
 
@@ -736,6 +748,7 @@ void SymbolTable::clean_dead_entries(JavaThread* jt) {
 
   SymbolTableDeleteCheck stdc;
   SymbolTableDoDelete stdd;
+  NativeHeapTrimmer::SuspendMark sm("symboltable");
   {
     TraceTime timer("Clean", TRACETIME_LOG(Debug, symboltable, perf));
     while (bdt.do_task(jt, stdc, stdd)) {
@@ -805,13 +818,39 @@ bool SymbolTable::do_rehash() {
   return true;
 }
 
+bool SymbolTable::should_grow() {
+  return get_load_factor() > PREF_AVG_LIST_LEN && !_local_table->is_max_size_reached();
+}
+
+bool SymbolTable::rehash_table_expects_safepoint_rehashing() {
+  // No rehashing required
+  if (!needs_rehashing()) {
+    return false;
+  }
+
+  // Grow instead of rehash
+  if (should_grow()) {
+    return false;
+  }
+
+  // Already rehashed
+  if (_rehashed) {
+    return false;
+  }
+
+  // Resizing in progress
+  if (!_local_table->is_safepoint_safe()) {
+    return false;
+  }
+
+  return true;
+}
+
 void SymbolTable::rehash_table() {
-  static bool rehashed = false;
   log_debug(symboltable)("Table imbalanced, rehashing called.");
 
   // Grow instead of rehash.
-  if (get_load_factor() > PREF_AVG_LIST_LEN &&
-      !_local_table->is_max_size_reached()) {
+  if (should_grow()) {
     log_debug(symboltable)("Choosing growing over rehashing.");
     trigger_cleanup();
     _needs_rehashing = false;
@@ -819,7 +858,7 @@ void SymbolTable::rehash_table() {
   }
 
   // Already rehashed.
-  if (rehashed) {
+  if (_rehashed) {
     log_warning(symboltable)("Rehashing already done, still long lists.");
     trigger_cleanup();
     _needs_rehashing = false;
@@ -829,7 +868,7 @@ void SymbolTable::rehash_table() {
   _alt_hash_seed = AltHashing::compute_seed();
 
   if (do_rehash()) {
-    rehashed = true;
+    _rehashed = true;
   } else {
     log_info(symboltable)("Resizes in progress rehashing skipped.");
   }
@@ -892,14 +931,14 @@ void SymbolTable::print_histogram() {
   tty->print_cr("  Total removed            " SIZE_FORMAT_W(7), _symbols_removed);
   if (_symbols_counted > 0) {
     tty->print_cr("  Percent removed          %3.2f",
-          ((float)_symbols_removed / _symbols_counted) * 100);
+          ((double)_symbols_removed / (double)_symbols_counted) * 100);
   }
   tty->print_cr("  Reference counts         " SIZE_FORMAT_W(7), Symbol::_total_count);
   tty->print_cr("  Symbol arena used        " SIZE_FORMAT_W(7) "K", arena()->used() / K);
   tty->print_cr("  Symbol arena size        " SIZE_FORMAT_W(7) "K", arena()->size_in_bytes() / K);
   tty->print_cr("  Total symbol length      " SIZE_FORMAT_W(7), hi.total_length);
   tty->print_cr("  Maximum symbol length    " SIZE_FORMAT_W(7), hi.max_length);
-  tty->print_cr("  Average symbol length    %7.2f", ((float)hi.total_length / hi.total_count));
+  tty->print_cr("  Average symbol length    %7.2f", ((double)hi.total_length / (double)hi.total_count));
   tty->print_cr("  Symbol length histogram:");
   tty->print_cr("    %6s %10s %10s", "Length", "#Symbols", "Size");
   for (size_t i = 0; i < hi.results_length; i++) {

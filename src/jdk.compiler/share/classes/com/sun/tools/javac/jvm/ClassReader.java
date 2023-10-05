@@ -1509,6 +1509,9 @@ public class ClassReader {
             } else if (proxy.type.tsym.flatName() == syms.valueBasedInternalType.tsym.flatName()) {
                 Assert.check(sym.kind == TYP);
                 sym.flags_field |= VALUE_BASED;
+            } else if (proxy.type.tsym.flatName() == syms.restrictedType.tsym.flatName()) {
+                Assert.check(sym.kind == MTH);
+                sym.flags_field |= RESTRICTED;
             } else {
                 if (proxy.type.tsym == syms.annotationTargetType.tsym) {
                     target = proxy;
@@ -1522,6 +1525,9 @@ public class ClassReader {
                     setFlagIfAttributeTrue(proxy, sym, names.reflective, PREVIEW_REFLECTIVE);
                 }  else if (proxy.type.tsym == syms.valueBasedType.tsym && sym.kind == TYP) {
                     sym.flags_field |= VALUE_BASED;
+                }  else if (proxy.type.tsym == syms.restrictedType.tsym) {
+                    Assert.check(sym.kind == MTH);
+                    sym.flags_field |= RESTRICTED;
                 }
                 proxies.append(proxy);
             }
@@ -2730,6 +2736,14 @@ public class ClassReader {
             signatureBuffer = new byte[ns];
         }
         readClass(c);
+        if (previewClassFile) {
+            if ((c.flags_field & SYNTHETIC) != 0 &&
+                    c.owner.kind == PCK &&
+                    (c.flags_field & AUXILIARY) == 0 &&
+                    (c.flags_field & FINAL) != 0) {
+                c.flags_field |= UNNAMED_CLASS;
+            }
+        }
     }
 
     public void readClassFile(ClassSymbol c) {

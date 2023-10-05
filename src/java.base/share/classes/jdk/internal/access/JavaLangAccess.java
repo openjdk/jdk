@@ -45,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Stream;
 
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.reflect.ConstantPool;
@@ -174,11 +175,6 @@ public interface JavaLangAccess {
      * Define a Package of the given name and module by the given class loader.
      */
     Package definePackage(ClassLoader cl, String name, Module module);
-
-    /**
-     * Invokes Long.fastUUID
-     */
-    String fastUUID(long lsb, long msb);
 
     /**
      * Record the non-exported packages of the modules in the given layer
@@ -420,6 +416,24 @@ public interface JavaLangAccess {
      */
     long stringConcatMix(long lengthCoder, String constant);
 
+   /**
+    * Get the coder for the supplied character.
+    */
+   @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+   long stringConcatCoder(char value);
+
+   /**
+    * Update lengthCoder for StringBuilder.
+    */
+   @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+   long stringBuilderConcatMix(long lengthCoder, StringBuilder sb);
+
+    /**
+     * Prepend StringBuilder content.
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+   long stringBuilderConcatPrepend(long lengthCoder, byte[] buf, StringBuilder sb);
+
     /**
      * Join strings
      */
@@ -511,15 +525,6 @@ public interface JavaLangAccess {
      * Return the current thread's scoped value bindings.
      */
     Object scopedValueBindings();
-
-    /**
-     * Set the current thread's scoped value bindings.
-     */
-    void setScopedValueBindings(Object bindings);
-
-    Object findScopedValueBindings();
-
-    void ensureMaterializedForStackWalk(Object value);
 
     /**
      * Returns the innermost mounted continuation

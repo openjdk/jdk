@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_BARRIERSETNMETHOD_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/sizes.hpp"
 
@@ -55,6 +56,10 @@ public:
   void set_guard_value(nmethod* nm, int value);
 
   void arm_all_nmethods();
+
+#if INCLUDE_JVMCI
+  bool verify_barrier(nmethod* nm, FormatBuffer<>& msg);
+#endif
 };
 
 

@@ -204,10 +204,14 @@ class ObjectClosure : public Closure {
   virtual void do_object(oop obj) = 0;
 };
 
-
 class BoolObjectClosure : public Closure {
  public:
   virtual bool do_object_b(oop obj) = 0;
+};
+
+class OopFieldClosure {
+public:
+  virtual void do_field(oop base, oop* p) = 0;
 };
 
 class AlwaysTrueClosure: public BoolObjectClosure {
@@ -322,39 +326,6 @@ public:
 
  // Yield on a fine-grain level. The check in case of not yielding should be very fast.
  virtual bool should_return_fine_grain() { return false; }
-};
-
-// Abstract closure for serializing data (read or write).
-
-class SerializeClosure : public Closure {
-public:
-  // Return bool indicating whether closure implements read or write.
-  virtual bool reading() const = 0;
-
-  // Read/write the void pointer pointed to by p.
-  virtual void do_ptr(void** p) = 0;
-
-  // Read/write the 32-bit unsigned integer pointed to by p.
-  virtual void do_u4(u4* p) = 0;
-
-  // Read/write the bool pointed to by p.
-  virtual void do_bool(bool* p) = 0;
-
-  // Read/write the region specified.
-  virtual void do_region(u_char* start, size_t size) = 0;
-
-  // Check/write the tag.  If reading, then compare the tag against
-  // the passed in value and fail is they don't match.  This allows
-  // for verification that sections of the serialized data are of the
-  // correct length.
-  virtual void do_tag(int tag) = 0;
-
-  // Read/write the oop
-  virtual void do_oop(oop* o) = 0;
-
-  bool writing() {
-    return !reading();
-  }
 };
 
 class SymbolClosure : public StackObj {

@@ -89,7 +89,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   start_pc = __ pc();
   { // lookup virtual method
     int entry_offset = in_bytes(Klass::vtable_start_offset()) + vtable_index * vtableEntry::size_in_bytes();
-    int method_offset = vtableEntry::method_offset_in_bytes() + entry_offset;
+    int method_offset = in_bytes(vtableEntry::method_offset()) + entry_offset;
 
     assert ((method_offset & (wordSize - 1)) == 0, "offset should be aligned");
     int offset_mask = 0xfff;

@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +27,7 @@
  * @bug 8202747
  * @summary C2: assert(mode == ControlAroundStripMined && use == sfpt) failed: missed a node
  *
- * @run main/othervm -Xcomp -Xbatch -XX:CompileOnly=UnexpectedNodeInOuterLoopWhenCloning -XX:-TieredCompilation UnexpectedNodeInOuterLoopWhenCloning
+ * @run main/othervm -Xcomp -Xbatch -XX:CompileOnly=UnexpectedNodeInOuterLoopWhenCloning::* -XX:-TieredCompilation UnexpectedNodeInOuterLoopWhenCloning
  *
  */
 

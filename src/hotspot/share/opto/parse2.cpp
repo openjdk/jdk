@@ -46,8 +46,8 @@
 #include "runtime/sharedRuntime.hpp"
 
 #ifndef PRODUCT
-extern int explicit_null_checks_inserted,
-           explicit_null_checks_elided;
+extern uint explicit_null_checks_inserted,
+            explicit_null_checks_elided;
 #endif
 
 //---------------------------------array_load----------------------------------
@@ -734,7 +734,7 @@ void Parse::linear_search_switch_ranges(Node* key_val, SwitchRange*& lo, SwitchR
     // It pays off: emit the test for the most common range
     assert(most_freq.cnt() > 0, "must be taken");
     Node* val = _gvn.transform(new SubINode(key_val, _gvn.intcon(most_freq.lo())));
-    Node* cmp = _gvn.transform(new CmpUNode(val, _gvn.intcon(most_freq.hi() - most_freq.lo())));
+    Node* cmp = _gvn.transform(new CmpUNode(val, _gvn.intcon(java_subtract(most_freq.hi(), most_freq.lo()))));
     Node* tst = _gvn.transform(new BoolNode(cmp, BoolTest::le));
     IfNode* iff = create_and_map_if(control(), tst, if_prob(most_freq.cnt(), total_cnt), if_cnt(most_freq.cnt()));
     jump_if_true_fork(iff, most_freq.dest(), false);
@@ -1580,7 +1580,7 @@ void Parse::maybe_add_predicate_after_if(Block* path) {
     // Add predicates at bci of if dominating the loop so traps can be
     // recorded on the if's profile data
     int bc_depth = repush_if_args();
-    add_empty_predicates();
+    add_parse_predicates();
     dec_sp(bc_depth);
     path->set_has_predicates();
   }
@@ -2779,13 +2779,14 @@ void Parse::do_one_bytecode() {
   }
 
 #ifndef PRODUCT
-  if (C->should_print_igv(1)) {
+  constexpr int perBytecode = 5;
+  if (C->should_print_igv(perBytecode)) {
     IdealGraphPrinter* printer = C->igv_printer();
     char buffer[256];
     jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
     bool old = printer->traverse_outs();
     printer->set_traverse_outs(true);
-    printer->print_method(buffer, 4);
+    printer->print_method(buffer, perBytecode);
     printer->set_traverse_outs(old);
   }
 #endif

@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -68,8 +66,9 @@ public class ReadMetadata extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkReadName(Blackhole bh) {
+        var cc = Classfile.of();
         for (byte[] bytes : classes) {
-            bh.consume(Classfile.parse(bytes).thisClass().asInternalName());
+            bh.consume(cc.parse(bytes).thisClass().asInternalName());
         }
     }
 
@@ -113,9 +112,10 @@ public class ReadMetadata extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkTreeCountFields(Blackhole bh) {
+        var cc = Classfile.of();
         for (byte[] bytes : classes) {
             int count = 0;
-            ClassModel cm = Classfile.parse(bytes);
+            ClassModel cm = cc.parse(bytes);
             for (FieldModel fm : cm.fields())
                 if (!fm.flags().has(AccessFlag.PUBLIC)) {
                     ++count;
@@ -127,9 +127,10 @@ public class ReadMetadata extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkCountFields(Blackhole bh) {
+        var cc = Classfile.of();
         for (byte[] bytes : classes) {
             int count = 0;
-            ClassModel cm = Classfile.parse(bytes);
+            ClassModel cm = cc.parse(bytes);
             for (ClassElement ce : cm) {
                 if (ce instanceof FieldModel fm) {
                     if (!fm.flags().has(AccessFlag.PUBLIC)) {

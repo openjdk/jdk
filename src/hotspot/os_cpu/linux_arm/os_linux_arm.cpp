@@ -483,23 +483,28 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc, Assembler::InstructionSize);
+  print_instructions(st, pc);
   st->cr();
 }
 
-void os::print_register_info(outputStream *st, const void *context) {
-  if (context == nullptr) return;
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
+  const int register_count = ARM_REGS_IN_CONTEXT;
+  int n = continuation;
+  assert(n >= 0 && n <= register_count, "Invalid continuation value");
+  if (context == nullptr || n == register_count) {
+    return;
+  }
 
   const ucontext_t *uc = (const ucontext_t*)context;
-
   intx* reg_area = (intx*)&uc->uc_mcontext.arm_r0;
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-  for (int r = 0; r < ARM_REGS_IN_CONTEXT; r++) {
-    st->print("  %-3s = ", as_Register(r)->name());
-    print_location(st, reg_area[r]);
+
+  while (n < register_count) {
+    // Update continuation with next index before printing location
+    continuation = n + 1;
+    st->print("  %-3s = ", as_Register(n)->name());
+    print_location(st, reg_area[n]);
+    ++n;
   }
-  st->cr();
 }
 
 

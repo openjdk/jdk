@@ -113,7 +113,7 @@ public class TestStringDedupStress {
 
     private static final int TARGET_STRINGS = Integer.getInteger("targetStrings", 2_500_000);
     private static final long MAX_REWRITE_GC_CYCLES = 6;
-    private static final long MAX_REWRITE_TIME = 30*1000; // ms
+    private static final long MAX_REWRITE_TIME_NS = 30L * 1_000_000_000L; // 30s in ns
 
     private static final int UNIQUE_STRINGS = 20;
 
@@ -211,7 +211,7 @@ public class TestStringDedupStress {
         }
 
         long cycleBeforeRewrite = gcCycleMBean.getCollectionCount();
-        long timeBeforeRewrite = System.currentTimeMillis();
+        long timeBeforeRewriteNanos = System.nanoTime();
 
         long loop = 1;
         while (true) {
@@ -229,7 +229,7 @@ public class TestStringDedupStress {
                 }
 
                 // enough time is spent waiting for GC to happen
-                if (System.currentTimeMillis() - timeBeforeRewrite >= MAX_REWRITE_TIME) {
+                if (System.nanoTime() - timeBeforeRewriteNanos >= MAX_REWRITE_TIME_NS) {
                     break;
                 }
             }

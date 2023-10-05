@@ -32,6 +32,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.reflect.ConstantPool;
 import jdk.internal.reflect.ConstantPool.Tag;
+import jdk.vm.ci.hotspot.HotSpotConstantPool.Bytecodes;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -83,6 +84,13 @@ public class ConstantPoolTestsHelper {
                     }
                 }
             }
+            if (constantPoolSS.getTagAt(cpi).equals(Tag.FIELDREF)) {
+                for (int field_index = 0; field_index < WB.getFieldEntriesLength(this.klass); field_index++) {
+                    if (WB.getFieldCPIndex(this.klass, field_index) == cpi) {
+                        return field_index;
+                    }
+                }
+            }
             int cacheLength = WB.getConstantPoolCacheLength(this.klass);
             int indexTag = WB.getConstantPoolCacheIndexTag();
             for (int cpci = indexTag; cpci < cacheLength + indexTag; cpci++) {
@@ -97,6 +105,29 @@ public class ConstantPoolTestsHelper {
         }
     }
 
+    /**
+     *
+     * @param cpType Constant type from the Constant pool
+     * @return a bytecode that's suitable for passing to the following functions for the given cpType:
+     *     - CompilerToVMHelper.lookupNameAndTypeRefIndexInPool()
+     *     - CompilerToVMHelper.lookupNameInPool()
+     *     - CompilerToVMHelper.lookupSignatureInPool()
+     *     - CompilerToVMHelper.lookupKlassRefIndexInPool()
+     */
+    public static int getDummyOpcode(ConstantTypes cpType) {
+        switch (cpType) {
+            case CONSTANT_FIELDREF:
+              return Bytecodes.GETFIELD;
+          case CONSTANT_METHODREF:
+              return Bytecodes.INVOKEVIRTUAL;
+          case CONSTANT_INTERFACEMETHODREF:
+              return Bytecodes.INVOKEINTERFACE;
+          case CONSTANT_INVOKEDYNAMIC:
+              return Bytecodes.INVOKEDYNAMIC;
+          default:
+              throw new IllegalArgumentException("Unexpected constant pool entry type");
+        }
+    }
     /**
      * Obtain a resolved Java method declared by a given type.
      *

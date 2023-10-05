@@ -493,9 +493,12 @@ public class FileInputStream extends InputStream
      * Subclasses requiring that resource cleanup take place after a stream becomes
      * unreachable should use the {@link java.lang.ref.Cleaner} mechanism.
      *
-     * @throws     IOException  {@inheritDoc}
+     * <p>
+     * If this stream has an associated channel then this method will close the
+     * channel, which in turn will close this stream. Subclasses that override
+     * this method should be prepared to handle possible reentrant invocation.
      *
-     * @revised 1.4
+     * @throws     IOException  {@inheritDoc}
      */
     @Override
     public void close() throws IOException {

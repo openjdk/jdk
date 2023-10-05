@@ -129,9 +129,7 @@ public class Binder extends DebugeeBinder {
     public Debugee makeLocalDebugee(Process process) {
         LocalLaunchedDebugee debugee = new LocalLaunchedDebugee(process, this);
 
-        Finalizer finalizer = new Finalizer(debugee);
-        finalizer.activate();
-
+        debugee.registerCleanup();
         return debugee;
     }
 
@@ -710,8 +708,8 @@ public class Binder extends DebugeeBinder {
 
         String cmdline = classToExecute + " " + ArgumentHandler.joinArguments(rawArgs, quote);
 
-        if(System.getProperty("main.wrapper") != null) {
-            cmdline = MainWrapper.class.getName() + " " + System.getProperty("main.wrapper") + " " + cmdline;
+        if (System.getProperty("test.thread.factory") != null) {
+            cmdline = MainWrapper.class.getName() + " " + System.getProperty("test.thread.factory") + " " + cmdline;
         }
 
         arg = (Connector.StringArgument) arguments.get("main");
@@ -751,7 +749,7 @@ public class Binder extends DebugeeBinder {
             vmArgs = vmUserArgs;
         }
 
-        boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+        boolean vthreadMode = "Virtual".equals(System.getProperty("test.thread.factory"));
         if (vthreadMode) {
             /* Some tests need more carrier threads than the default provided. */
             vmArgs += " -Djdk.virtualThreadScheduler.parallelism=15";
@@ -942,8 +940,7 @@ public class Binder extends DebugeeBinder {
 
         RemoteLaunchedDebugee debugee = new RemoteLaunchedDebugee(this);
 
-        Finalizer finalizer = new Finalizer(debugee);
-        finalizer.activate();
+        debugee.registerCleanup();
 
         return debugee;
     }
@@ -956,8 +953,7 @@ public class Binder extends DebugeeBinder {
         ManualLaunchedDebugee debugee = new ManualLaunchedDebugee(this);
         debugee.launchDebugee(cmd);
 
-        Finalizer finalizer = new Finalizer(debugee);
-        finalizer.activate();
+        debugee.registerCleanup();
 
         return debugee;
     }

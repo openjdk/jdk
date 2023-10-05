@@ -30,6 +30,7 @@
 #include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
+#include "oops/compressedKlass.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -716,9 +717,9 @@ public:
 
   // ROP Protection
   void protect_return_address();
-  void protect_return_address(Register return_reg, Register temp_reg);
-  void authenticate_return_address(Register return_reg = lr);
-  void authenticate_return_address(Register return_reg, Register temp_reg);
+  void protect_return_address(Register return_reg);
+  void authenticate_return_address();
+  void authenticate_return_address(Register return_reg);
   void strip_return_address();
   void check_return_address(Register return_reg=lr) PRODUCT_RETURN;
 
@@ -941,6 +942,15 @@ public:
                                Register scan_temp,
                                Label& no_such_interface,
                    bool return_method = true);
+
+  void lookup_interface_method_stub(Register recv_klass,
+                                    Register holder_klass,
+                                    Register resolved_klass,
+                                    Register method_result,
+                                    Register temp_reg,
+                                    Register temp_reg2,
+                                    int itable_index,
+                                    Label& L_no_such_interface);
 
   // virtual method calling
   // n.b. x86 allows RegisterOrConstant for vtable_index
@@ -1393,12 +1403,14 @@ public:
   void char_array_compress(Register src, Register dst, Register len,
                            Register res,
                            FloatRegister vtmp0, FloatRegister vtmp1,
-                           FloatRegister vtmp2, FloatRegister vtmp3);
+                           FloatRegister vtmp2, FloatRegister vtmp3,
+                           FloatRegister vtmp4, FloatRegister vtmp5);
 
   void encode_iso_array(Register src, Register dst,
                         Register len, Register res, bool ascii,
                         FloatRegister vtmp0, FloatRegister vtmp1,
-                        FloatRegister vtmp2, FloatRegister vtmp3);
+                        FloatRegister vtmp2, FloatRegister vtmp3,
+                        FloatRegister vtmp4, FloatRegister vtmp5);
 
   void fast_log(FloatRegister vtmp0, FloatRegister vtmp1, FloatRegister vtmp2,
                 FloatRegister vtmp3, FloatRegister vtmp4, FloatRegister vtmp5,
@@ -1579,6 +1591,9 @@ public:
 
   // Code for java.lang.Thread::onSpinWait() intrinsic.
   void spin_wait();
+
+  void lightweight_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
+  void lightweight_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
 
 private:
   // Check the current thread doesn't need a cross modify fence.

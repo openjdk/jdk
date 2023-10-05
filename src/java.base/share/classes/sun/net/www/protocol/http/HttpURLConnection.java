@@ -162,15 +162,15 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
 
     /* Should we enable buffering of error streams? */
-    private static boolean enableESBuffer = false;
+    private static final boolean enableESBuffer;
 
     /* timeout waiting for read for buffered error stream;
      */
-    private static int timeout4ESBuffer = 0;
+    private static final int timeout4ESBuffer;
 
     /* buffer size for buffered error stream;
      */
-    private static int bufSize4ES = 0;
+    private static final int bufSize4ES;
 
     /*
      * Restrict setting of request headers through the public api
@@ -264,24 +264,26 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
         enableESBuffer = Boolean.parseBoolean(
                 props.getProperty("sun.net.http.errorstream.enableBuffering"));
-        timeout4ESBuffer = GetIntegerAction.privilegedGetProperty(
+        int esBufferTimeout = GetIntegerAction.privilegedGetProperty(
                 "sun.net.http.errorstream.timeout", 300);
-        if (timeout4ESBuffer <= 0) {
-            timeout4ESBuffer = 300; // use the default
+        if (esBufferTimeout <= 0) {
+            esBufferTimeout = 300; // use the default
         }
+        timeout4ESBuffer = esBufferTimeout;
 
-        bufSize4ES = GetIntegerAction.privilegedGetProperty(
+        int esBufSize = GetIntegerAction.privilegedGetProperty(
                 "sun.net.http.errorstream.bufferSize", 4096);
-        if (bufSize4ES <= 0) {
-            bufSize4ES = 4096; // use the default
+        if (esBufSize <= 0) {
+            esBufSize = 4096; // use the default
         }
+        bufSize4ES = esBufSize;
 
         allowRestrictedHeaders = Boolean.parseBoolean(
                 props.getProperty("sun.net.http.allowRestrictedHeaders"));
         if (!allowRestrictedHeaders) {
             restrictedHeaderSet = HashSet.newHashSet(restrictedHeaders.length);
             for (int i=0; i < restrictedHeaders.length; i++) {
-                restrictedHeaderSet.add(restrictedHeaders[i].toLowerCase());
+                restrictedHeaderSet.add(restrictedHeaders[i].toLowerCase(Locale.ROOT));
             }
         } else {
             restrictedHeaderSet = null;
@@ -349,7 +351,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
     /* The headers actually set by the user are recorded here also
      */
-    private MessageHeader userHeaders;
+    private final MessageHeader userHeaders;
 
     /* Headers and request method cannot be changed
      * once this flag is set in :-
@@ -485,7 +487,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             return false;
         }
 
-        key = key.toLowerCase();
+        key = key.toLowerCase(Locale.ROOT);
         if (restrictedHeaderSet.contains(key)) {
             /*
              * Exceptions to restricted headers:
@@ -1312,53 +1314,74 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     }
 
     private void expect100Continue() throws IOException {
-            // Expect: 100-Continue was set, so check the return code for
-            // Acceptance
-            int oldTimeout = http.getReadTimeout();
-            boolean enforceTimeOut = false;
-            boolean timedOut = false;
-            if (oldTimeout <= 0) {
-                // 5s read timeout in case the server doesn't understand
-                // Expect: 100-Continue
-                http.setReadTimeout(5000);
-                enforceTimeOut = true;
+        // Expect: 100-Continue was set, so check the return code for
+        // Acceptance
+        int oldTimeout = http.getReadTimeout();
+        boolean timedOut = false;
+        boolean tempTimeOutSet = false;
+        if (oldTimeout <= 0 || oldTimeout > 5000) {
+            if (logger.isLoggable(PlatformLogger.Level.FINE)) {
+                logger.fine("Timeout currently set to " +
+                        oldTimeout + " temporarily setting it to 5 seconds");
             }
+            // 5s read timeout in case the server doesn't understand
+            // Expect: 100-Continue
+            http.setReadTimeout(5000);
+            tempTimeOutSet = true;
+        }
 
-            try {
-                http.parseHTTP(responses, this);
-            } catch (SocketTimeoutException se) {
-                if (!enforceTimeOut) {
-                    throw se;
-                }
-                timedOut = true;
-                http.setIgnoreContinue(true);
+        try {
+            http.parseHTTP(responses, this);
+        } catch (SocketTimeoutException se) {
+            if (logger.isLoggable(PlatformLogger.Level.FINE)) {
+                logger.fine("SocketTimeoutException caught," +
+                        " will attempt to send body regardless");
             }
-            if (!timedOut) {
-                // Can't use getResponseCode() yet
-                String resp = responses.getValue(0);
-                // Parse the response which is of the form:
-                // HTTP/1.1 417 Expectation Failed
-                // HTTP/1.1 100 Continue
-                if (resp != null && resp.startsWith("HTTP/")) {
-                    String[] sa = resp.split("\\s+");
-                    responseCode = -1;
-                    try {
-                        // Response code is 2nd token on the line
-                        if (sa.length > 1)
-                            responseCode = Integer.parseInt(sa[1]);
-                    } catch (NumberFormatException numberFormatException) {
+            timedOut = true;
+        }
+
+        if (!timedOut) {
+            // Can't use getResponseCode() yet
+            String resp = responses.getValue(0);
+            // Parse the response which is of the form:
+            // HTTP/1.1 417 Expectation Failed
+            // HTTP/1.1 100 Continue
+            if (resp != null && resp.startsWith("HTTP/")) {
+                String[] sa = resp.split("\\s+");
+                responseCode = -1;
+                try {
+                    // Response code is 2nd token on the line
+                    if (sa.length > 1)
+                        responseCode = Integer.parseInt(sa[1]);
+                    if (logger.isLoggable(PlatformLogger.Level.FINE)) {
+                        logger.fine("response code received " + responseCode);
                     }
-                }
-                if (responseCode != 100) {
-                    throw new ProtocolException("Server rejected operation");
+                } catch (NumberFormatException numberFormatException) {
                 }
             }
+            if (responseCode != 100) {
+                // responseCode will be returned to caller
+                throw new ProtocolException("Server rejected operation");
+            }
+        }
 
+        // If timeout was changed, restore to original value
+        if (tempTimeOutSet) {
+            if (logger.isLoggable(PlatformLogger.Level.FINE)) {
+                logger.fine("Restoring original timeout : " + oldTimeout);
+            }
             http.setReadTimeout(oldTimeout);
+        }
 
-            responseCode = -1;
-            responses.reset();
-            // Proceed
+        // Ignore any future 100 continue messages
+        http.setIgnoreContinue(true);
+        if (logger.isLoggable(PlatformLogger.Level.FINE)) {
+            logger.fine("Set Ignore Continue to true");
+        }
+
+        responseCode = -1;
+        responses.reset();
+        // Proceed
     }
 
     /*
@@ -1427,7 +1450,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             boolean expectContinue = false;
             String expects = requests.findValue("Expect");
             if ("100-Continue".equalsIgnoreCase(expects) && streaming()) {
-                http.setIgnoreContinue(false);
                 expectContinue = true;
             }
 
@@ -1436,6 +1458,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
 
             if (expectContinue) {
+                http.setIgnoreContinue(false);
                 expect100Continue();
             }
             ps = (PrintStream)http.getOutputStream();
@@ -1474,6 +1497,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         }
     }
 
+    // Streaming returns true if there is a request body to send
     public boolean streaming () {
         return (fixedContentLength != -1) || (fixedContentLengthLong != -1) ||
                (chunkLength != -1);

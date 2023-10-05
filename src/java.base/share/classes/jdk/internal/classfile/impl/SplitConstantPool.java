@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package jdk.internal.classfile.impl;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import jdk.internal.classfile.Attribute;
 import jdk.internal.classfile.Attributes;
@@ -76,12 +76,12 @@ import static jdk.internal.classfile.Classfile.TAG_MODULE;
 import static jdk.internal.classfile.Classfile.TAG_NAMEANDTYPE;
 import static jdk.internal.classfile.Classfile.TAG_PACKAGE;
 import static jdk.internal.classfile.Classfile.TAG_STRING;
+import jdk.internal.classfile.constantpool.ConstantPoolException;
 
 public final class SplitConstantPool implements ConstantPoolBuilder {
 
     private final ClassReaderImpl parent;
     private final int parentSize, parentBsmSize;
-    final Options options;
 
     private int size, bsmSize;
     private PoolEntry[] myEntries;
@@ -91,10 +91,6 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     private EntryMap<BootstrapMethodEntryImpl> bsmMap;
 
     public SplitConstantPool() {
-        this(new Options(Collections.emptyList()));
-    }
-
-    public SplitConstantPool(Options options) {
         this.size = 1;
         this.bsmSize = 0;
         this.myEntries = new PoolEntry[1024];
@@ -102,13 +98,12 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         this.parent = null;
         this.parentSize = 0;
         this.parentBsmSize = 0;
-        this.options = options;
+        this.doneFullScan = true;
     }
 
     public SplitConstantPool(ClassReader parent) {
-        this.options = ((ClassReaderImpl) parent).options;
         this.parent = (ClassReaderImpl) parent;
-        this.parentSize = parent.entryCount();
+        this.parentSize = parent.size();
         this.parentBsmSize = parent.bootstrapMethodCount();
         this.size = parentSize;
         this.bsmSize = parentBsmSize;
@@ -117,7 +112,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     }
 
     @Override
-    public int entryCount() {
+    public int size() {
         return size;
     }
 
@@ -128,20 +123,26 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public PoolEntry entryByIndex(int index) {
-        return (index < parentSize)
+        if (index <= 0 || index >= size()) {
+            throw new ConstantPoolException("Bad CP index: " + index);
+        }
+        PoolEntry pe = (index < parentSize)
                ? parent.entryByIndex(index)
                : myEntries[index - parentSize];
+        if (pe == null) {
+            throw new ConstantPoolException("Unusable CP index: " + index);
+        }
+        return pe;
     }
 
     @Override
     public BootstrapMethodEntryImpl bootstrapMethodEntry(int index) {
+        if (index < 0 || index >= bootstrapMethodCount()) {
+            throw new ConstantPoolException("Bad BSM index: " + index);
+        }
         return (index < parentBsmSize)
                ? parent.bootstrapMethodEntry(index)
                : myBsmEntries[index - parentBsmSize];
-    }
-
-    public Options options() {
-        return options;
     }
 
     @Override
@@ -181,12 +182,15 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     @Override
     public void writeTo(BufWriter buf) {
         int writeFrom = 1;
-        buf.writeU2(entryCount());
+        if (size() >= 65536) {
+            throw new IllegalArgumentException(String.format("Constant pool is too large %d", size()));
+        }
+        buf.writeU2(size());
         if (parent != null && buf.constantPool().canWriteDirect(this)) {
             parent.writeConstantPoolEntries(buf);
-            writeFrom = parent.entryCount();
+            writeFrom = parent.size();
         }
-        for (int i = writeFrom; i < entryCount(); ) {
+        for (int i = writeFrom; i < size(); ) {
             PoolEntry info = entryByIndex(i);
             info.writeTo(buf);
             i += info.width();
@@ -368,8 +372,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public AbstractPoolEntry.Utf8EntryImpl utf8Entry(String s) {
-        var ce = tryFindUtf8(AbstractPoolEntry.hashString(s.hashCode()), s);
-        return ce == null ? internalAdd(new AbstractPoolEntry.Utf8EntryImpl(this, size, s)) : ce;
+        int hash = AbstractPoolEntry.hashString(s.hashCode());
+        var ce = tryFindUtf8(hash, s);
+        return ce == null ? internalAdd(new AbstractPoolEntry.Utf8EntryImpl(this, size, s, hash)) : ce;
     }
 
     AbstractPoolEntry.Utf8EntryImpl maybeCloneUtf8Entry(Utf8Entry entry) {
@@ -447,7 +452,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public MethodTypeEntry methodTypeEntry(MethodTypeDesc descriptor) {
-        return methodTypeEntry(utf8Entry(descriptor.descriptorString()));
+        var ret = (AbstractPoolEntry.MethodTypeEntryImpl)methodTypeEntry(utf8Entry(descriptor.descriptorString()));
+        ret.sym = descriptor;
+        return ret;
     }
 
     @Override
@@ -464,7 +471,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                 case TAG_FIELDREF -> fieldRefEntry(reference.owner(), reference.nameAndType());
                 case TAG_METHODREF -> methodRefEntry(reference.owner(), reference.nameAndType());
                 case TAG_INTERFACEMETHODREF -> interfaceMethodRefEntry(reference.owner(), reference.nameAndType());
-                default -> throw new IllegalStateException(String.format("Bad tag %d", reference.tag()));
+                default -> throw new IllegalArgumentException(String.format("Bad tag %d", reference.tag()));
             };
         }
 

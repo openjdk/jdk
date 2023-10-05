@@ -39,6 +39,8 @@ import jdk.internal.foreign.abi.Binding.BufferStore;
 import jdk.internal.foreign.abi.Binding.Cast;
 import jdk.internal.foreign.abi.Binding.Copy;
 import jdk.internal.foreign.abi.Binding.Dup;
+import jdk.internal.foreign.abi.Binding.ShiftLeft;
+import jdk.internal.foreign.abi.Binding.ShiftRight;
 import jdk.internal.foreign.abi.Binding.UnboxAddress;
 import jdk.internal.foreign.abi.Binding.VMLoad;
 import jdk.internal.foreign.abi.Binding.VMStore;
@@ -186,7 +188,7 @@ public class BindingSpecializer {
     private static byte[] specializeHelper(MethodType leafType, MethodType callerMethodType,
                                            CallingSequence callingSequence, ABIDescriptor abi) {
         String className = callingSequence.forDowncall() ? CLASS_NAME_DOWNCALL : CLASS_NAME_UPCALL;
-        byte[] bytes = Classfile.build(ClassDesc.ofInternalName(className), clb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.ofInternalName(className), clb -> {
             clb.withFlags(ACC_PUBLIC + ACC_FINAL + ACC_SUPER);
             clb.withSuperclass(CD_Object);
             clb.withVersion(CLASSFILE_VERSION, 0);
@@ -207,7 +209,7 @@ public class BindingSpecializer {
         }
 
         if (PERFORM_VERIFICATION) {
-            List<VerifyError> errors = Classfile.parse(bytes).verify(null);
+            List<VerifyError> errors = Classfile.of().parse(bytes).verify(null);
             if (!errors.isEmpty()) {
                 errors.forEach(System.err::println);
                 throw new IllegalStateException("Verification error(s)");
@@ -463,6 +465,8 @@ public class BindingSpecializer {
                 case BoxAddress boxAddress   -> emitBoxAddress(boxAddress);
                 case UnboxAddress unused     -> emitUnboxAddress();
                 case Dup unused              -> emitDupBinding();
+                case ShiftLeft shiftLeft     -> emitShiftLeft(shiftLeft);
+                case ShiftRight shiftRight   -> emitShiftRight(shiftRight);
                 case Cast cast               -> emitCast(cast);
             }
         }
@@ -725,6 +729,20 @@ public class BindingSpecializer {
         pushType(dupType);
     }
 
+    private void emitShiftLeft(ShiftLeft shiftLeft) {
+        popType(long.class);
+        cb.constantInstruction(shiftLeft.shiftAmount() * Byte.SIZE);
+        cb.lshl();
+        pushType(long.class);
+    }
+
+    private void emitShiftRight(ShiftRight shiftRight) {
+        popType(long.class);
+        cb.constantInstruction(shiftRight.shiftAmount() * Byte.SIZE);
+        cb.lushr();
+        pushType(long.class);
+    }
+
     private void emitCast(Cast cast) {
         Class<?> fromType = cast.fromType();
         Class<?> toType = cast.toType();
@@ -744,6 +762,11 @@ public class BindingSpecializer {
             case INT_TO_BYTE -> cb.i2b();
             case INT_TO_CHAR -> cb.i2c();
             case INT_TO_SHORT -> cb.i2s();
+            case BYTE_TO_LONG, CHAR_TO_LONG, SHORT_TO_LONG, INT_TO_LONG -> cb.i2l();
+            case LONG_TO_BYTE -> { cb.l2i(); cb.i2b(); }
+            case LONG_TO_SHORT -> { cb.l2i(); cb.i2s(); }
+            case LONG_TO_CHAR -> { cb.l2i(); cb.i2c(); }
+            case LONG_TO_INT -> cb.l2i();
             case BOOLEAN_TO_INT, BYTE_TO_INT, CHAR_TO_INT, SHORT_TO_INT -> {
                 // no-op in bytecode
             }

@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.lang.Thread.State;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
@@ -388,31 +387,29 @@ public final class ProcessTools {
     }
 
     /*
-      Convert arguments for tests running with virtual threads main wrapper
-      When test is executed with process wrapper the line is changed from
+      Convert arguments for tests running with virtual threads test thread factory.
+      When test is executed with test thread factory the line is changed from
       java <jvm-args> <test-class> <test-args>
       to
-      java --enable-preview <jvm-args> jdk.test.lib.process.ProcessTools <wrapper-name> <test-class> <test-args>
+      java <jvm-args> -Dtest.thread.factory=<test-thread-factory-name> jdk.test.lib.process.ProcessTools <test-thread-factory-name> <test-class> <test-args>
      */
-    private static List<String> addMainWrapperArgs(String mainWrapper, List<String> command) {
 
-        boolean useModules = command.contains("-m");
-        if (useModules) {
-            return command;
-        }
+    private static List<String> addTestThreadFactoryArgs(String testThreadFactoryName, List<String> command) {
+
+        final List<String> unsupportedArgs = List.of(
+                "-jar", "-cp", "-classpath", "--class-path", "--describe-module", "-d",
+                "--dry-run", "--list-modules","--validate-modules", "-m", "--module", "-version");
+
+        final List<String> doubleWordArgs = List.of(
+                "--add-opens", "--upgrade-module-path", "--add-modules", "--add-exports",
+                "--limit-modules", "--add-reads", "--patch-module", "--module-path", "-p");
 
         ArrayList<String> args = new ArrayList<>();
-        final String[] doubleWordArgs = {"-cp", "-classpath", "--add-opens", "--class-path", "--upgrade-module-path",
-                "--add-modules", "-d", "--add-exports", "--patch-module", "--module-path"};
-
-        if (mainWrapper.equalsIgnoreCase("virtual")) {
-            args.add("--enable-preview");
-        }
 
         boolean expectSecondArg = false;
-        boolean isWrapperClassAdded = false;
+        boolean isTestThreadFactoryAdded = false;
         for (String cmd : command) {
-            if (isWrapperClassAdded) {
+            if (isTestThreadFactoryAdded) {
                 args.add(cmd);
                 continue;
             }
@@ -422,23 +419,33 @@ public final class ProcessTools {
                 args.add(cmd);
                 continue;
             }
-            for (String dWArg : doubleWordArgs) {
-                if (cmd.equals(dWArg)) {
-                    expectSecondArg = true;
-                    args.add(cmd);
-                    break;
-                }
+            if (unsupportedArgs.contains(cmd)) {
+                return command;
+            }
+            if (doubleWordArgs.contains(cmd)) {
+                expectSecondArg = true;
+                args.add(cmd);
+                continue;
             }
             if (expectSecondArg) {
                 continue;
             }
-            if (cmd.startsWith("-")) {
+            // command-line or name command-line file
+            if (cmd.startsWith("-") || cmd.startsWith("@")) {
                 args.add(cmd);
                 continue;
             }
+
+            // if command is like 'java source.java' then return
+            if (cmd.endsWith(".java")) {
+                return command;
+            }
+            // Some tests might check property to understand
+            // if virtual threads are tested
+            args.add("-Dtest.thread.factory=" + testThreadFactoryName);
             args.add("jdk.test.lib.process.ProcessTools");
-            args.add(mainWrapper);
-            isWrapperClassAdded = true;
+            args.add(testThreadFactoryName);
+            isTestThreadFactoryAdded = true;
             args.add(cmd);
         }
         return args;
@@ -463,9 +470,9 @@ public final class ProcessTools {
             args.add(System.getProperty("java.class.path"));
         }
 
-        String mainWrapper = System.getProperty("main.wrapper");
-        if (mainWrapper != null) {
-            args.addAll(addMainWrapperArgs(mainWrapper, Arrays.asList(command)));
+        String testThreadFactoryName = System.getProperty("test.thread.factory");
+        if (testThreadFactoryName != null) {
+            args.addAll(addTestThreadFactoryArgs(testThreadFactoryName, Arrays.asList(command)));
         } else {
             Collections.addAll(args, command);
         }
@@ -871,10 +878,12 @@ public final class ProcessTools {
         }
     }
 
-    // ProcessTools as a wrapper
+    public static final String OLD_MAIN_THREAD_NAME = "old-m-a-i-n";
+
+    // ProcessTools as a wrapper for test execution
     // It executes method main in a separate virtual or platform thread
     public static void main(String[] args) throws Throwable {
-        String wrapper = args[0];
+        String testThreadFactoryName = args[0];
         String className = args[1];
         String[] classArgs = new String[args.length - 2];
         System.arraycopy(args, 2, classArgs, 0, args.length - 2);
@@ -882,11 +891,11 @@ public final class ProcessTools {
         Method mainMethod = c.getMethod("main", new Class[] { String[].class });
         mainMethod.setAccessible(true);
 
-        if (wrapper.equals("Virtual")) {
+        if (testThreadFactoryName.equals("Virtual")) {
             // MainThreadGroup used just as a container for exceptions
             // when main is executed in virtual thread
             MainThreadGroup tg = new MainThreadGroup();
-            Thread vthread = startVirtualThread(() -> {
+            Thread vthread = Thread.ofVirtual().unstarted(() -> {
                     try {
                         mainMethod.invoke(null, new Object[] { classArgs });
                     } catch (InvocationTargetException e) {
@@ -895,11 +904,14 @@ public final class ProcessTools {
                         tg.uncaughtThrowable = error;
                     }
                 });
-            if (tg.uncaughtThrowable != null) {
-                throw new RuntimeException(tg.uncaughtThrowable);
-            }
+            Thread.currentThread().setName(OLD_MAIN_THREAD_NAME);
+            vthread.setName("main");
+            vthread.start();
             vthread.join();
-        } else if (wrapper.equals("Kernel")) {
+            if (tg.uncaughtThrowable != null) {
+                throw tg.uncaughtThrowable;
+            }
+        } else if (testThreadFactoryName.equals("Kernel")) {
             MainThreadGroup tg = new MainThreadGroup();
             Thread t = new Thread(tg, () -> {
                     try {
@@ -913,7 +925,7 @@ public final class ProcessTools {
             t.start();
             t.join();
             if (tg.uncaughtThrowable != null) {
-                throw new RuntimeException(tg.uncaughtThrowable);
+                throw tg.uncaughtThrowable;
             }
         } else {
             mainMethod.invoke(null, new Object[] { classArgs });
@@ -930,18 +942,5 @@ public final class ProcessTools {
             uncaughtThrowable = e;
         }
         Throwable uncaughtThrowable = null;
-    }
-
-    static Thread startVirtualThread(Runnable task) {
-        try {
-            Object builder = Thread.class.getMethod("ofVirtual").invoke(null);
-            Class<?> clazz = Class.forName("java.lang.Thread$Builder");
-            Method start = clazz.getMethod("start", Runnable.class);
-            return (Thread) start.invoke(builder, task);
-        } catch (RuntimeException | Error e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 }

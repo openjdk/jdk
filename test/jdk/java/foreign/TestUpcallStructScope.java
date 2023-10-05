@@ -59,7 +59,7 @@ public class TestUpcallStructScope extends NativeTestHelper {
         C_POINTER.withName("p0"),
         C_DOUBLE.withName("p1"),
         C_INT.withName("p2"),
-        MemoryLayout.paddingLayout(32)
+        MemoryLayout.paddingLayout(4)
     );
 
     static {

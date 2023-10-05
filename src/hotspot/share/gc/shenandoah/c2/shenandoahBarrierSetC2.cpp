@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,11 +97,11 @@ Node* ShenandoahBarrierSetC2::shenandoah_iu_barrier(GraphKit* kit, Node* obj) co
 
 #define __ kit->
 
-bool ShenandoahBarrierSetC2::satb_can_remove_pre_barrier(GraphKit* kit, PhaseTransform* phase, Node* adr,
+bool ShenandoahBarrierSetC2::satb_can_remove_pre_barrier(GraphKit* kit, PhaseValues* phase, Node* adr,
                                                          BasicType bt, uint adr_idx) const {
   intptr_t offset = 0;
   Node* base = AddPNode::Ideal_base_and_offset(adr, phase, offset);
-  AllocateNode* alloc = AllocateNode::Ideal_allocation(base, phase);
+  AllocateNode* alloc = AllocateNode::Ideal_allocation(base);
 
   if (offset == Type::OffsetBot) {
     return false; // cannot unalias unless there are precise offsets
@@ -149,7 +149,7 @@ bool ShenandoahBarrierSetC2::satb_can_remove_pre_barrier(GraphKit* kit, PhaseTra
 
       if (st_base != base
           && MemNode::detect_ptr_independence(base, alloc, st_base,
-                                              AllocateNode::Ideal_allocation(st_base, phase),
+                                              AllocateNode::Ideal_allocation(st_base),
                                               phase)) {
         // Success:  The bases are provably independent.
         mem = mem->in(MemNode::Memory);
@@ -309,7 +309,7 @@ bool ShenandoahBarrierSetC2::is_shenandoah_lrb_call(Node* call) {
          (entry_point == CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom));
 }
 
-bool ShenandoahBarrierSetC2::is_shenandoah_marking_if(PhaseTransform *phase, Node* n) {
+bool ShenandoahBarrierSetC2::is_shenandoah_marking_if(PhaseValues* phase, Node* n) {
   if (n->Opcode() != Op_If) {
     return false;
   }

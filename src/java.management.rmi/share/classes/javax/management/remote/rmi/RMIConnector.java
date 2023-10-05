@@ -185,7 +185,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
      * syntaxes, for example:</p>
      *
      * <pre>
-     * service:jmx:iiop://<em>[host[:port]]</em>/stub/<em>encoded-stub</em>
+     * service:jmx:myprotocolname://<em>[host[:port]]</em>/stub/<em>encoded-stub</em>
      * </pre>
      *
      * @param url the address of the RMI connector server.

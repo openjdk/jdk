@@ -69,6 +69,7 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/jniPeriodicChecker.hpp"
+#include "runtime/lockStack.inline.hpp"
 #include "runtime/monitorDeflationThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
@@ -86,6 +87,7 @@
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/timerTrace.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
@@ -552,14 +554,35 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     return status;
   }
 
+  // Create WatcherThread as soon as we can since we need it in case
+  // of hangs during error reporting.
+  WatcherThread::start();
+
+  // Add main_thread to threads list to finish barrier setup with
+  // on_thread_attach.  Should be before starting to build Java objects in
+  // init_globals2, which invokes barriers.
+  {
+    MutexLocker mu(Threads_lock);
+    Threads::add(main_thread);
+  }
+
+  status = init_globals2();
+  if (status != JNI_OK) {
+    Threads::remove(main_thread, false);
+    // It is possible that we managed to fully initialize Universe but have then
+    // failed by throwing an exception. In that case our caller JNI_CreateJavaVM
+    // will want to report it, so we can't delete the main thread.
+    if (!main_thread->has_pending_exception()) {
+      main_thread->smr_delete();
+    }
+    *canTryAgain = false; // don't let caller call JNI_CreateJavaVM again
+    return status;
+  }
+
   JFR_ONLY(Jfr::on_create_vm_1();)
 
   // Should be done after the heap is fully created
   main_thread->cache_global_variables();
-
-  { MutexLocker mu(Threads_lock);
-    Threads::add(main_thread);
-  }
 
   // Any JVMTI raw monitors entered in onload will transition into
   // real raw monitor. VM is setup enough here for raw monitor enter.
@@ -630,7 +653,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   LogConfiguration::post_initialize();
   Metaspace::post_initialize();
-  MutexLocker::post_initialize();
+  MutexLockerImpl::post_initialize();
 
   HOTSPOT_VM_INIT_END();
 
@@ -657,7 +680,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     JvmtiAgentList::load_xrun_agents();
   }
 
-  Chunk::start_chunk_pool_cleaner_task();
+  Arena::start_chunk_pool_cleaner_task();
 
   // Start the service thread
   // The service thread enqueues JVMTI deferred events and does various hashtable
@@ -669,25 +692,28 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // initialize compiler(s)
 #if defined(COMPILER1) || COMPILER2_OR_JVMCI
+  bool init_compilation = true;
 #if INCLUDE_JVMCI
-  bool force_JVMCI_intialization = false;
+  bool force_JVMCI_initialization = false;
   if (EnableJVMCI) {
     // Initialize JVMCI eagerly when it is explicitly requested.
     // Or when JVMCILibDumpJNIConfig or JVMCIPrintProperties is enabled.
-    force_JVMCI_intialization = EagerJVMCI || JVMCIPrintProperties || JVMCILibDumpJNIConfig;
-
-    if (!force_JVMCI_intialization) {
-      // 8145270: Force initialization of JVMCI runtime otherwise requests for blocking
-      // compilations via JVMCI will not actually block until JVMCI is initialized.
-      force_JVMCI_intialization = UseJVMCICompiler && (!UseInterpreter || !BackgroundCompilation);
+    force_JVMCI_initialization = EagerJVMCI || JVMCIPrintProperties || JVMCILibDumpJNIConfig;
+    if (!force_JVMCI_initialization && UseJVMCICompiler && !UseJVMCINativeLibrary && (!UseInterpreter || !BackgroundCompilation)) {
+      // Force initialization of jarjvmci otherwise requests for blocking
+      // compilations will not actually block until jarjvmci is initialized.
+      force_JVMCI_initialization = true;
+    }
+    if (JVMCIPrintProperties || JVMCILibDumpJNIConfig) {
+      // Both JVMCILibDumpJNIConfig and JVMCIPrintProperties exit the VM
+      // so compilation should be disabled. This prevents dumping or
+      // printing from happening more than once.
+      init_compilation = false;
     }
   }
 #endif
-  CompileBroker::compilation_init_phase1(CHECK_JNI_ERR);
-  // Postpone completion of compiler initialization to after JVMCI
-  // is initialized to avoid timeouts of blocking compilations.
-  if (JVMCI_ONLY(!force_JVMCI_intialization) NOT_JVMCI(true)) {
-    CompileBroker::compilation_init_phase2();
+  if (init_compilation) {
+    CompileBroker::compilation_init(CHECK_JNI_ERR);
   }
 #endif
 
@@ -731,11 +757,14 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #endif
 
 #if INCLUDE_JVMCI
-  if (force_JVMCI_intialization) {
+  if (force_JVMCI_initialization) {
     JVMCI::initialize_compiler(CHECK_JNI_ERR);
-    CompileBroker::compilation_init_phase2();
   }
 #endif
+
+  if (NativeHeapTrimmer::enabled()) {
+    NativeHeapTrimmer::initialize();
+  }
 
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution
@@ -774,19 +803,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     CLEAR_PENDING_EXCEPTION;
   }
 
-  {
-    MutexLocker ml(PeriodicTask_lock);
-    // Make sure the WatcherThread can be started by WatcherThread::start()
-    // or by dynamic enrollment.
-    WatcherThread::make_startable();
-    // Start up the WatcherThread if there are any periodic tasks
-    // NOTE:  All PeriodicTasks should be registered by now. If they
-    //   aren't, late joiners might appear to start slowly (we might
-    //   take a while to process their first tick).
-    if (PeriodicTask::num_tasks() > 0) {
-      WatcherThread::start();
-    }
-  }
+  // Let WatcherThread run all registered periodic tasks now.
+  // NOTE:  All PeriodicTasks should be registered by now. If they
+  //   aren't, late joiners might appear to start slowly (we might
+  //   take a while to process their first tick).
+  WatcherThread::run_all_tasks();
 
   create_vm_timer.end();
 #ifdef ASSERT
@@ -795,7 +816,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   if (DumpSharedSpaces) {
     MetaspaceShared::preload_and_dump();
-    ShouldNotReachHere();
   }
 
   return JNI_OK;
@@ -1177,6 +1197,7 @@ GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
 
 JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
                                                       address owner) {
+  assert(LockingMode != LM_LIGHTWEIGHT, "Not with new lightweight locking");
   // null owner means not locked so we can skip the search
   if (owner == nullptr) return nullptr;
 
@@ -1188,7 +1209,7 @@ JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
   // Cannot assert on lack of success here since this function may be
   // used by code that is trying to report useful problem information
   // like deadlock detection.
-  if (UseHeavyMonitors) return nullptr;
+  if (LockingMode == LM_MONITOR) return nullptr;
 
   // If we didn't find a matching Java thread and we didn't force use of
   // heavyweight monitors, then the owner is the stack address of the
@@ -1206,9 +1227,29 @@ JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
   return the_owner;
 }
 
+JavaThread* Threads::owning_thread_from_object(ThreadsList * t_list, oop obj) {
+  assert(LockingMode == LM_LIGHTWEIGHT, "Only with new lightweight locking");
+  for (JavaThread* q : *t_list) {
+    if (q->lock_stack().contains(obj)) {
+      return q;
+    }
+  }
+  return nullptr;
+}
+
 JavaThread* Threads::owning_thread_from_monitor(ThreadsList* t_list, ObjectMonitor* monitor) {
-  address owner = (address)monitor->owner();
-  return owning_thread_from_monitor_owner(t_list, owner);
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    if (monitor->is_owner_anonymous()) {
+      return owning_thread_from_object(t_list, monitor->object());
+    } else {
+      Thread* owner = reinterpret_cast<Thread*>(monitor->owner());
+      assert(owner == nullptr || owner->is_Java_thread(), "only JavaThreads own monitors");
+      return reinterpret_cast<JavaThread*>(owner);
+    }
+  } else {
+    address owner = (address)monitor->owner();
+    return owning_thread_from_monitor_owner(t_list, owner);
+  }
 }
 
 class PrintOnClosure : public ThreadClosure {

@@ -115,7 +115,7 @@ public class StreamTokenizer {
      *     has been reached.
      * </ul>
      * <p>
-     * The initial value of this field is -4.
+     * The initial value of this field is {@value TT_NOTHING}.
      *
      * @see     java.io.StreamTokenizer#eolIsSignificant(boolean)
      * @see     java.io.StreamTokenizer#nextToken()
@@ -217,10 +217,10 @@ public class StreamTokenizer {
      *
      * @deprecated As of JDK version 1.1, the preferred way to tokenize an
      * input stream is to convert it into a character stream, for example:
-     * <blockquote><pre>
-     *   Reader r = new BufferedReader(new InputStreamReader(is));
-     *   StreamTokenizer st = new StreamTokenizer(r);
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     Reader r = new BufferedReader(new InputStreamReader(is));
+     *     StreamTokenizer st = new StreamTokenizer(r);
+     * }
      *
      * @param      is        an input stream.
      * @see        java.io.BufferedReader
@@ -344,7 +344,7 @@ public class StreamTokenizer {
     }
 
     /**
-     * Specified that the character argument starts a single-line
+     * Specifies that the character argument starts a single-line
      * comment. All characters from the comment character to the end of
      * the line are ignored by this stream tokenizer.
      *
@@ -391,7 +391,7 @@ public class StreamTokenizer {
      * syntax table of this tokenizer is modified so that each of the twelve
      * characters:
      * <blockquote><pre>
-     *      0 1 2 3 4 5 6 7 8 9 . -
+     *     0 1 2 3 4 5 6 7 8 9 . -
      * </pre></blockquote>
      * <p>
      * has the "numeric" attribute.
@@ -478,7 +478,7 @@ public class StreamTokenizer {
      * If the flag argument is {@code true}, then the value in the
      * {@code sval} field is lowercased whenever a word token is
      * returned (the {@code ttype} field has the
-     * value {@code TT_WORD} by the {@code nextToken} method
+     * value {@code TT_WORD}) by the {@code nextToken} method
      * of this tokenizer.
      * <p>
      * If the flag argument is {@code false}, then the
@@ -755,7 +755,7 @@ public class StreamTokenizer {
     }
 
     /**
-     * Return the current line number.
+     * Returns the current line number.
      *
      * @return  the current line number of this stream tokenizer.
      */
@@ -770,7 +770,9 @@ public class StreamTokenizer {
      * <p>The precise string returned is unspecified, although the following
      * example can be considered typical:
      *
-     * <blockquote><pre>Token['a'], line 10</pre></blockquote>
+     * <blockquote><pre>
+     *         Token['a'], line 10
+     * </pre></blockquote>
      *
      * @return  a string representation of the token
      * @see     java.io.StreamTokenizer#nval

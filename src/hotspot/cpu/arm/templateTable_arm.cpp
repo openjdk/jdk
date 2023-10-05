@@ -34,9 +34,11 @@
 #include "memory/universe.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
@@ -2491,6 +2493,16 @@ void TemplateTable::_return(TosState state) {
     __ bind(skip_register_finalizer);
   }
 
+  if (_desc->bytecode() != Bytecodes::_return_register_finalizer) {
+    Label no_safepoint;
+    __ ldr(Rtemp, Address(Rthread, JavaThread::polling_word_offset()));
+    __ tbz(Rtemp, exact_log2(SafepointMechanism::poll_bit()), no_safepoint);
+    __ push(state);
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint));
+    __ pop(state);
+    __ bind(no_safepoint);
+  }
+
   // Narrow result if state is itos but result type is smaller.
   // Need to narrow in the return bytecode rather than in generate_return_entry
   // since compiled code callers expect the result to already be narrowed.
@@ -3689,10 +3701,10 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ profile_virtual_call(R0_tmp, recv_klass);
 
   // get target Method* & entry point
-  const int base = in_bytes(Klass::vtable_start_offset());
+  const ByteSize base = Klass::vtable_start_offset();
   assert(vtableEntry::size() == 1, "adjust the scaling in the code below");
   __ add(Rtemp, recv_klass, AsmOperand(index, lsl, LogHeapWordSize));
-  __ ldr(Rmethod, Address(Rtemp, base + vtableEntry::method_offset_in_bytes()));
+  __ ldr(Rmethod, Address(Rtemp, base + vtableEntry::method_offset()));
   __ jump_from_interpreted(Rmethod);
 }
 
@@ -3801,7 +3813,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   // Get declaring interface class from method
   __ ldr(Rtemp, Address(Rmethod, Method::const_offset()));
   __ ldr(Rtemp, Address(Rtemp, ConstMethod::constants_offset()));
-  __ ldr(Rinterf, Address(Rtemp, ConstantPool::pool_holder_offset_in_bytes()));
+  __ ldr(Rinterf, Address(Rtemp, ConstantPool::pool_holder_offset()));
 
   // Get itable index from method
   __ ldr_s32(Rtemp, Address(Rmethod, Method::itable_index_offset()));
@@ -4270,7 +4282,7 @@ void TemplateTable::monitorenter() {
   // check for null object
   __ null_check(Robj, Rtemp);
 
-  const int entry_size = (frame::interpreter_frame_monitor_size() * wordSize);
+  const int entry_size = (frame::interpreter_frame_monitor_size_in_bytes());
   assert (entry_size % StackAlignmentInBytes == 0, "keep stack alignment");
   Label allocate_monitor, allocated;
 
@@ -4290,7 +4302,7 @@ void TemplateTable::monitorenter() {
                                  // points to word before bottom of monitor block
 
     __ cmp(Rcur, Rbottom);                       // check if there are no monitors
-    __ ldr(Rcur_obj, Address(Rcur, BasicObjectLock::obj_offset_in_bytes()), ne);
+    __ ldr(Rcur_obj, Address(Rcur, BasicObjectLock::obj_offset()), ne);
                                                  // prefetch monitor's object for the first iteration
     __ b(allocate_monitor, eq);                  // there are no monitors, skip searching
 
@@ -4304,7 +4316,7 @@ void TemplateTable::monitorenter() {
     __ add(Rcur, Rcur, entry_size);              // otherwise advance to next entry
 
     __ cmp(Rcur, Rbottom);                       // check if bottom reached
-    __ ldr(Rcur_obj, Address(Rcur, BasicObjectLock::obj_offset_in_bytes()), ne);
+    __ ldr(Rcur_obj, Address(Rcur, BasicObjectLock::obj_offset()), ne);
                                                  // prefetch monitor's object for the next iteration
     __ b(loop, ne);                              // if not at bottom then check this entry
     __ bind(exit);
@@ -4357,7 +4369,7 @@ void TemplateTable::monitorenter() {
   // The object has already been popped from the stack, so the expression stack looks correct.
   __ add(Rbcp, Rbcp, 1);
 
-  __ str(Robj, Address(Rentry, BasicObjectLock::obj_offset_in_bytes()));     // store object
+  __ str(Robj, Address(Rentry, BasicObjectLock::obj_offset()));     // store object
   __ lock_object(Rentry);
 
   // check to make sure this monitor doesn't cause stack overflow after locking
@@ -4381,7 +4393,7 @@ void TemplateTable::monitorexit() {
   // check for null object
   __ null_check(Robj, Rtemp);
 
-  const int entry_size = (frame::interpreter_frame_monitor_size() * wordSize);
+  const int entry_size = (frame::interpreter_frame_monitor_size_in_bytes());
   Label found, throw_exception;
 
   // find matching slot
@@ -4394,7 +4406,7 @@ void TemplateTable::monitorexit() {
                                  // points to word before bottom of monitor block
 
     __ cmp(Rcur, Rbottom);                       // check if bottom reached
-    __ ldr(Rcur_obj, Address(Rcur, BasicObjectLock::obj_offset_in_bytes()), ne);
+    __ ldr(Rcur_obj, Address(Rcur, BasicObjectLock::obj_offset()), ne);
                                                  // prefetch monitor's object for the first iteration
     __ b(throw_exception, eq);                   // throw exception if there are now monitors
 
@@ -4404,7 +4416,7 @@ void TemplateTable::monitorexit() {
     __ b(found, eq);                             // if same object then stop searching
     __ add(Rcur, Rcur, entry_size);              // otherwise advance to next entry
     __ cmp(Rcur, Rbottom);                       // check if bottom reached
-    __ ldr(Rcur_obj, Address(Rcur, BasicObjectLock::obj_offset_in_bytes()), ne);
+    __ ldr(Rcur_obj, Address(Rcur, BasicObjectLock::obj_offset()), ne);
     __ b (loop, ne);                             // if not at bottom then check this entry
   }
 

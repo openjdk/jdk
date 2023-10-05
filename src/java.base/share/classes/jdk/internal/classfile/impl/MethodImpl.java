@@ -24,6 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.constant.MethodTypeDesc;
 import jdk.internal.classfile.*;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
@@ -39,6 +40,7 @@ public final class MethodImpl
     private final int startPos, endPos, attributesPos;
     private List<Attribute<?>> attributes;
     private int[] parameterSlots;
+    private MethodTypeDesc mDesc;
 
     public MethodImpl(ClassReader reader, int startPos, int endPos, int attrStart) {
         this.reader = reader;
@@ -71,6 +73,14 @@ public final class MethodImpl
     }
 
     @Override
+    public MethodTypeDesc methodTypeSymbol() {
+        if (mDesc == null) {
+            mDesc = MethodTypeDesc.ofDescriptor(methodType().stringValue());
+        }
+        return mDesc;
+    }
+
+    @Override
     public int methodFlags() {
         return reader.readU2(startPos);
     }
@@ -78,7 +88,7 @@ public final class MethodImpl
     @Override
     public int parameterSlot(int paramNo) {
         if (parameterSlots == null)
-            parameterSlots = Util.parseParameterSlots(methodFlags(), methodType().stringValue());
+            parameterSlots = Util.parseParameterSlots(methodFlags(), methodTypeSymbol());
         return parameterSlots[paramNo];
     }
 

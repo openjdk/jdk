@@ -49,16 +49,16 @@
 // and eventually should be encapsulated in a proper class (gri 8/18/98).
 
 #ifndef PRODUCT
-int nodes_created              = 0;
-int methods_parsed             = 0;
-int methods_seen               = 0;
-int blocks_parsed              = 0;
-int blocks_seen                = 0;
+uint nodes_created             = 0;
+uint methods_parsed            = 0;
+uint methods_seen              = 0;
+uint blocks_parsed             = 0;
+uint blocks_seen               = 0;
 
-int explicit_null_checks_inserted = 0;
-int explicit_null_checks_elided   = 0;
-int all_null_checks_found         = 0;
-int implicit_null_checks          = 0;
+uint explicit_null_checks_inserted = 0;
+uint explicit_null_checks_elided   = 0;
+uint all_null_checks_found         = 0;
+uint implicit_null_checks          = 0;
 
 bool Parse::BytecodeParseHistogram::_initialized = false;
 uint Parse::BytecodeParseHistogram::_bytecodes_parsed [Bytecodes::number_of_codes];
@@ -69,26 +69,26 @@ uint Parse::BytecodeParseHistogram::_new_values       [Bytecodes::number_of_code
 //------------------------------print_statistics-------------------------------
 void Parse::print_statistics() {
   tty->print_cr("--- Compiler Statistics ---");
-  tty->print("Methods seen: %d  Methods parsed: %d", methods_seen, methods_parsed);
-  tty->print("  Nodes created: %d", nodes_created);
+  tty->print("Methods seen: %u  Methods parsed: %u", methods_seen, methods_parsed);
+  tty->print("  Nodes created: %u", nodes_created);
   tty->cr();
   if (methods_seen != methods_parsed) {
     tty->print_cr("Reasons for parse failures (NOT cumulative):");
   }
-  tty->print_cr("Blocks parsed: %d  Blocks seen: %d", blocks_parsed, blocks_seen);
+  tty->print_cr("Blocks parsed: %u  Blocks seen: %u", blocks_parsed, blocks_seen);
 
   if (explicit_null_checks_inserted) {
-    tty->print_cr("%d original null checks - %d elided (%2d%%); optimizer leaves %d,",
+    tty->print_cr("%u original null checks - %u elided (%2u%%); optimizer leaves %u,",
                   explicit_null_checks_inserted, explicit_null_checks_elided,
                   (100*explicit_null_checks_elided)/explicit_null_checks_inserted,
                   all_null_checks_found);
   }
   if (all_null_checks_found) {
-    tty->print_cr("%d made implicit (%2d%%)", implicit_null_checks,
+    tty->print_cr("%u made implicit (%2u%%)", implicit_null_checks,
                   (100*implicit_null_checks)/all_null_checks_found);
   }
   if (SharedRuntime::_implicit_null_throws) {
-    tty->print_cr("%d implicit null exceptions at runtime",
+    tty->print_cr("%u implicit null exceptions at runtime",
                   SharedRuntime::_implicit_null_throws);
   }
 
@@ -675,7 +675,7 @@ void Parse::do_all_blocks() {
             // Need correct bci for predicate.
             // It is fine to set it here since do_one_block() will set it anyway.
             set_parse_bci(block->start());
-            add_empty_predicates();
+            add_parse_predicates();
           }
           // Add new region for back branches.
           int edges = block->pred_count() - block->preds_parsed() + 1; // +1 for original region
@@ -1011,7 +1011,7 @@ void Parse::do_exits() {
     // and allocation node does not escape the initialize method,
     // then barrier introduced by allocation node can be removed.
     if (DoEscapeAnalysis && alloc_with_final()) {
-      AllocateNode *alloc = AllocateNode::Ideal_allocation(alloc_with_final(), &_gvn);
+      AllocateNode* alloc = AllocateNode::Ideal_allocation(alloc_with_final());
       alloc->compute_MemBar_redundancy(method());
     }
     if (PrintOpto && (Verbose || WizardMode)) {
@@ -1695,9 +1695,9 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
       if (target->is_SEL_head()) {
         DEBUG_ONLY( target->mark_merged_backedge(block()); )
         if (target->start() == 0) {
-          // Add loop predicate for the special case when
+          // Add Parse Predicates for the special case when
           // there are backbranches to the method entry.
-          add_empty_predicates();
+          add_parse_predicates();
         }
       }
       // Add a Region to start the new basic block.  Phis will be added
@@ -2171,7 +2171,7 @@ void Parse::rtm_deopt() {
     // Load the rtm_state from the MethodData.
     const TypePtr* adr_type = TypeMetadataPtr::make(C->method()->method_data());
     Node* mdo = makecon(adr_type);
-    int offset = MethodData::rtm_state_offset_in_bytes();
+    int offset = in_bytes(MethodData::rtm_state_offset());
     Node* adr_node = basic_plus_adr(mdo, mdo, offset);
     Node* rtm_state = make_load(control(), adr_node, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
 

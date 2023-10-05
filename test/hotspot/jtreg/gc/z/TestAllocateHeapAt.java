@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ package gc.z;
 
 /*
  * @test TestAllocateHeapAt
- * @requires vm.gc.Z & os.family == "linux"
+ * @requires vm.gc.ZGenerational & os.family == "linux"
  * @summary Test ZGC with -XX:AllocateHeapAt
  * @library /test/lib
  * @run main/othervm gc.z.TestAllocateHeapAt . true
@@ -43,6 +43,7 @@ public class TestAllocateHeapAt {
 
         ProcessTools.executeProcess(ProcessTools.createJavaProcessBuilder(
                 "-XX:+UseZGC",
+                "-XX:+ZGenerational",
                 "-Xlog:gc*",
                 "-Xms32M",
                 "-Xmx32M",

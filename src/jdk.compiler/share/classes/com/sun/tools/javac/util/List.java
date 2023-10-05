@@ -419,6 +419,9 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
 
     @SuppressWarnings("unchecked")
     public <Z> List<Z> map(Function<A, Z> mapper) {
+        if (isEmpty()) {
+            return (List<Z>)this;
+        }
         boolean changed = false;
         ListBuffer<Z> buf = new ListBuffer<>();
         for (A a : this) {

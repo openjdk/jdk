@@ -376,8 +376,24 @@ class MacroAssembler: public Assembler {
     return ((predecessor & 0x3) << 2) | (successor & 0x3);
   }
 
+  void fence(uint32_t predecessor, uint32_t successor) {
+    if (UseZtso) {
+      if ((pred_succ_to_membar_mask(predecessor, successor) & StoreLoad) == StoreLoad) {
+        // TSO allows for stores to be reordered after loads. When the compiler
+        // generates a fence to disallow that, we are required to generate the
+        // fence for correctness.
+        Assembler::fence(predecessor, successor);
+      } else {
+        // TSO guarantees other fences already.
+      }
+    } else {
+      // always generate fence for RVWMO
+      Assembler::fence(predecessor, successor);
+    }
+  }
+
   void pause() {
-    fence(w, 0);
+    Assembler::fence(w, 0);
   }
 
   // prints msg, dumps registers and stops execution
@@ -429,6 +445,11 @@ class MacroAssembler: public Assembler {
   // Load and store values by size and signed-ness
   void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed);
   void store_sized_value(Address dst, Register src, size_t size_in_bytes);
+
+  // Misaligned loads, will use the best way, according to the AvoidUnalignedAccess flag
+  void load_short_misaligned(Register dst, Address src, Register tmp, bool is_signed, int granularity = 1);
+  void load_int_misaligned(Register dst, Address src, Register tmp, bool is_signed, int granularity = 1);
+  void load_long_misaligned(Register dst, Address src, Register tmp, int granularity = 1);
 
  public:
   // Standard pseudo instructions
@@ -591,7 +612,9 @@ class MacroAssembler: public Assembler {
   void NAME(Register Rs1, Register Rs2, const address dest) {                                            \
     assert_cond(dest != nullptr);                                                                        \
     int64_t offset = dest - pc();                                                                        \
-    guarantee(is_simm13(offset) && ((offset % 2) == 0), "offset is invalid.");                           \
+    guarantee(is_simm13(offset) && is_even(offset),                                                      \
+              "offset is invalid: is_simm_13: %s offset: " INT64_FORMAT,                                 \
+              BOOL_TO_STR(is_simm13(offset)), offset);                                                   \
     Assembler::NAME(Rs1, Rs2, offset);                                                                   \
   }                                                                                                      \
   INSN_ENTRY_RELOC(void, NAME(Register Rs1, Register Rs2, address dest, relocInfo::relocType rtype))     \
@@ -689,6 +712,7 @@ public:
   void la(Register Rd, const address dest);
   void la(Register Rd, const Address &adr);
 
+  void li16u(Register Rd, uint16_t imm);
   void li32(Register Rd, int32_t imm);
   void li64(Register Rd, int64_t imm);
   void li  (Register Rd, int64_t imm);  // optimized load immediate
@@ -755,6 +779,10 @@ public:
   void orrw(Register Rd, Register Rs1, Register Rs2);
   void xorrw(Register Rd, Register Rs1, Register Rs2);
 
+  // logic with negate
+  void andn(Register Rd, Register Rs1, Register Rs2);
+  void orn(Register Rd, Register Rs1, Register Rs2);
+
   // revb
   void revb_h_h(Register Rd, Register Rs, Register tmp = t0);                           // reverse bytes in halfword in lower 16 bits, sign-extend
   void revb_w_w(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);      // reverse bytes in lower word, sign-extend
@@ -766,6 +794,7 @@ public:
   void revb(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);          // reverse bytes in doubleword
 
   void ror_imm(Register dst, Register src, uint32_t shift, Register tmp = t0);
+  void rolw_imm(Register dst, Register src, uint32_t, Register tmp = t0);
   void andi(Register Rd, Register Rn, int64_t imm, Register tmp = t0);
   void orptr(Address adr, RegisterOrConstant src, Register tmp1 = t0, Register tmp2 = t1);
 
@@ -1260,6 +1289,10 @@ public:
   }
 
   // vector pseudo instructions
+  inline void vl1r_v(VectorRegister vd, Register rs) {
+    vl1re8_v(vd, rs);
+  }
+
   inline void vmnot_m(VectorRegister vd, VectorRegister vs) {
     vmnand_mm(vd, vs, vs);
   }
@@ -1268,12 +1301,16 @@ public:
     vnsrl_wx(vd, vs, x0, vm);
   }
 
-  inline void vneg_v(VectorRegister vd, VectorRegister vs) {
-    vrsub_vx(vd, vs, x0);
+  inline void vneg_v(VectorRegister vd, VectorRegister vs, VectorMask vm = unmasked) {
+    vrsub_vx(vd, vs, x0, vm);
   }
 
-  inline void vfneg_v(VectorRegister vd, VectorRegister vs) {
-    vfsgnjn_vv(vd, vs, vs);
+  inline void vfneg_v(VectorRegister vd, VectorRegister vs, VectorMask vm = unmasked) {
+    vfsgnjn_vv(vd, vs, vs, vm);
+  }
+
+  inline void vfabs_v(VectorRegister vd, VectorRegister vs, VectorMask vm = unmasked) {
+    vfsgnjx_vv(vd, vs, vs, vm);
   }
 
   inline void vmsgt_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {
@@ -1332,7 +1369,7 @@ public:
         sign_extend(Rt, Rt, 16);
         break;
       case T_INT    :
-        addw(Rt, Rt, zr);
+        sign_extend(Rt, Rt, 32);
         break;
       case T_LONG   : /* nothing to do */        break;
       case T_VOID   : /* nothing to do */        break;
@@ -1416,8 +1453,12 @@ private:
   int bitset_to_regs(unsigned int bitset, unsigned char* regs);
   Address add_memory_helper(const Address dst, Register tmp);
 
-  void load_reserved(Register addr, enum operand_size size, Assembler::Aqrl acquire);
-  void store_conditional(Register addr, Register new_val, enum operand_size size, Assembler::Aqrl release);
+  void load_reserved(Register dst, Register addr, enum operand_size size, Assembler::Aqrl acquire);
+  void store_conditional(Register dst, Register new_val, Register addr, enum operand_size size, Assembler::Aqrl release);
+
+public:
+  void lightweight_lock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow);
+  void lightweight_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow);
 };
 
 #ifdef ASSERT

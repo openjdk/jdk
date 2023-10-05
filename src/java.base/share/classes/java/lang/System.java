@@ -68,6 +68,7 @@ import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
+import jdk.internal.logger.LoggerFinderLoader.TemporaryLoggerFinder;
 import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.StaticProperty;
@@ -77,10 +78,11 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.misc.VM;
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.logger.LoggerFinderLoader;
 import jdk.internal.logger.LazyLoggers;
 import jdk.internal.logger.LocalizedLoggerWrapper;
+import jdk.internal.misc.VM;
 import jdk.internal.util.SystemProps;
 import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
@@ -752,7 +754,10 @@ public final class System {
      * <tr><th scope="row">{@systemProperty java.specification.name}</th>
      *     <td>Java Runtime Environment specification  name</td></tr>
      * <tr><th scope="row">{@systemProperty java.class.version}</th>
-     *     <td>Java class format version number</td></tr>
+     *     <td>{@linkplain java.lang.reflect.ClassFileFormatVersion#latest() Latest}
+     *     Java class file format version recognized by the Java runtime as {@code "MAJOR.MINOR"}
+     *     where {@link java.lang.reflect.ClassFileFormatVersion#major() MAJOR} and {@code MINOR}
+     *     are both formatted as decimal integers</td></tr>
      * <tr><th scope="row">{@systemProperty java.class.path}</th>
      *     <td>Java class path  (refer to
      *        {@link ClassLoader#getSystemClassLoader()} for details)</td></tr>
@@ -1762,13 +1767,16 @@ public final class System {
             // We do not need to synchronize: LoggerFinderLoader will
             // always return the same instance, so if we don't have it,
             // just fetch it again.
-            if (service == null) {
+            LoggerFinder finder = service;
+            if (finder == null) {
                 PrivilegedAction<LoggerFinder> pa =
                         () -> LoggerFinderLoader.getLoggerFinder();
-                service = AccessController.doPrivileged(pa, null,
+                finder = AccessController.doPrivileged(pa, null,
                         LOGGERFINDER_PERMISSION);
+                if (finder instanceof TemporaryLoggerFinder) return finder;
+                service = finder;
             }
-            return service;
+            return finder;
         }
 
     }
@@ -2391,9 +2399,6 @@ public final class System {
             public Package definePackage(ClassLoader cl, String name, Module module) {
                 return cl.definePackage(name, module);
             }
-            public String fastUUID(long lsb, long msb) {
-                return Long.fastUUID(lsb, msb);
-            }
             @SuppressWarnings("removal")
             public void addNonExportedPackages(ModuleLayer layer) {
                 SecurityManager.addNonExportedPackages(layer);
@@ -2522,6 +2527,23 @@ public final class System {
                 return StringConcatHelper.mix(lengthCoder, constant);
             }
 
+            @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+            public long stringConcatCoder(char value) {
+                return StringConcatHelper.coder(value);
+            }
+
+            @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+            public long stringBuilderConcatMix(long lengthCoder,
+                                               StringBuilder sb) {
+                return sb.mix(lengthCoder);
+            }
+
+            @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+            public long stringBuilderConcatPrepend(long lengthCoder, byte[] buf,
+                                                   StringBuilder sb) {
+                return sb.prepend(lengthCoder, buf);
+            }
+
             public String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
                 return String.join(prefix, suffix, delimiter, elements, size);
             }
@@ -2598,19 +2620,6 @@ public final class System {
 
             public Object scopedValueBindings() {
                 return Thread.scopedValueBindings();
-            }
-
-            public Object findScopedValueBindings() {
-                return Thread.findScopedValueBindings();
-            }
-
-            public void setScopedValueBindings(Object bindings) {
-                Thread.setScopedValueBindings(bindings);
-            }
-
-            @ForceInline
-            public void ensureMaterializedForStackWalk(Object value) {
-                Thread.ensureMaterializedForStackWalk(value);
             }
 
             public Continuation getContinuation(Thread thread) {

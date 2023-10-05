@@ -93,6 +93,10 @@ public class LinkerOptions {
         return fva != null;
     }
 
+    public int firstVariadicArgIndex() {
+        return getOption(FirstVariadicArg.class).index();
+    }
+
     public boolean isTrivial() {
         IsTrivial it = getOption(IsTrivial.class);
         return it != null;

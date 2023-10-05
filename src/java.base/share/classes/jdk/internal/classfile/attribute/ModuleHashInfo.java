@@ -25,12 +25,12 @@
 package jdk.internal.classfile.attribute;
 
 import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.java.lang.constant.ModuleDesc;
+import java.lang.constant.ModuleDesc;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models hash information for a single module in the {@link jdk.internal.classfile.attribute.ModuleHashesAttribute}.
+ * Models hash information for a single module in the {@link ModuleHashesAttribute}.
  */
 public sealed interface ModuleHashInfo
         permits UnboundAttribute.UnboundModuleHashInfo {
@@ -60,6 +60,6 @@ public sealed interface ModuleHashInfo
      * @param hash the hash value
      */
     static ModuleHashInfo of(ModuleDesc moduleDesc, byte[] hash) {
-        return new UnboundAttribute.UnboundModuleHashInfo(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(moduleDesc.moduleName())), hash);
+        return new UnboundAttribute.UnboundModuleHashInfo(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(moduleDesc.name())), hash);
     }
 }

@@ -390,8 +390,8 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "20";
-    common.boot_jdk_build_number = "36";
+    common.boot_jdk_version = "21";
+    common.boot_jdk_build_number = "35";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
@@ -463,7 +463,8 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "x86",
             build_cpu: "x64",
             dependencies: ["devkit", "gtest"],
-            configure_args: concat(common.configure_args_32bit),
+            configure_args: concat(common.configure_args_32bit,
+                "--enable-deprecated-ports"),
         },
 
         "windows-aarch64": {
@@ -944,10 +945,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: input.build_os,
             target_cpu: input.build_cpu,
             dependencies: [ "jtreg", "gnumake", "boot_jdk", "devkit", "jib" ],
-            labels: "test",
-            environment: {
-                "JT_JAVA": common.boot_jdk_home
-            }
+            labels: "test"
         }
     };
     profiles = concatObjects(profiles, testOnlyProfiles);
@@ -1187,9 +1185,9 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "7.2",
+            version: "7.3.1",
             build_number: "1",
-            file: "bundles/jtreg-7.2+1.zip",
+            file: "bundles/jtreg-7.3.1+1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),
@@ -1198,12 +1196,12 @@ var getJibProfilesDependencies = function (input, common) {
         jmh: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "1.35+1.0"
+            revision: "1.37+1.0"
         },
 
         jcov: {
             organization: common.organization,
-            revision: "3.0-14-jdk-asm+1.0",
+            revision: "3.0-15-jdk-asm+1.0",
             ext: "zip",
             environment_name: "JCOV_HOME",
         },
@@ -1269,7 +1267,7 @@ var getJibProfilesDependencies = function (input, common) {
         gtest: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "1.13.0+1.0"
+            revision: "1.14.0+1.0"
         },
 
         libffi: {
@@ -1519,7 +1517,7 @@ var getVersionNumbers = function () {
 var isWsl = function (input) {
     return ( input.build_osenv == "wsl"
              || (input.build_os == "linux"
-                 && java.lang.System.getProperty("os.version").contains("Microsoft")));
+                 && java.lang.System.getProperty("os.version").toLowerCase().contains("microsoft")));
 }
 
 var error = function (s) {

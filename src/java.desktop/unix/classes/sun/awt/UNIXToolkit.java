@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,33 @@
 package sun.awt;
 
 import java.awt.RenderingHints;
-import static java.awt.RenderingHints.*;
+
+import static java.awt.RenderingHints.KEY_TEXT_ANTIALIASING;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HBGR;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_VBGR;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_VRGB;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON;
+
 import java.awt.color.ColorSpace;
-import java.awt.image.*;
+
+import java.awt.Window;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.ComponentColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferByte;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 
+import sun.awt.X11.XBaseWindow;
 import sun.security.action.GetIntegerAction;
 import com.sun.java.swing.plaf.gtk.GTKConstants.TextDirection;
 import sun.java2d.opengl.OGLRenderQueue;
@@ -44,6 +65,11 @@ public abstract class UNIXToolkit extends SunToolkit
     private static final int[] BAND_OFFSETS = { 0, 1, 2 };
     private static final int[] BAND_OFFSETS_ALPHA = { 0, 1, 2, 3 };
     private static final int DEFAULT_DATATRANSFER_TIMEOUT = 10000;
+
+    private static final String GTK2_DEPRECATION_MESSAGE =
+            "WARNING: the GTK 2 library is deprecated and " +
+                    "its support will be removed in a future release";
+    private static volatile boolean gtk2WarningIssued = false;
 
     // Allowed GTK versions
     public enum GtkVersions {
@@ -405,6 +431,10 @@ public abstract class UNIXToolkit extends SunToolkit
         if (version == null) {
             return GtkVersions.ANY;
         } else if (version.startsWith("2")) {
+            if (!gtk2WarningIssued) {
+                System.err.println(GTK2_DEPRECATION_MESSAGE);
+                gtk2WarningIssued = true;
+            }
             return GtkVersions.GTK2;
         } else if("3".equals(version) ){
             return GtkVersions.GTK3;
@@ -420,5 +450,92 @@ public abstract class UNIXToolkit extends SunToolkit
     public static boolean isGtkVerbose() {
         return AccessController.doPrivileged((PrivilegedAction<Boolean>)()
                 -> Boolean.getBoolean("jdk.gtk.verbose"));
+    }
+
+    private static volatile Boolean isOnWayland = null;
+
+    @SuppressWarnings("removal")
+    public static boolean isOnWayland() {
+        Boolean result = isOnWayland;
+        if (result == null) {
+            synchronized (GTK_LOCK) {
+                result = isOnWayland;
+                if (result == null) {
+                    isOnWayland
+                            = result
+                            = AccessController.doPrivileged(
+                            (PrivilegedAction<Boolean>) () -> {
+                                final String display =
+                                        System.getenv("WAYLAND_DISPLAY");
+
+                                return display != null
+                                        && !display.trim().isEmpty();
+                            }
+                    );
+                }
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public boolean isRunningOnWayland() {
+        return isOnWayland();
+    }
+
+    // We rely on the X11 input grab mechanism, but for the Wayland session
+    // it only works inside the XWayland server, so mouse clicks outside of it
+    // will not be detected.
+    // (window decorations, pure Wayland applications, desktop, etc.)
+    //
+    // As a workaround, we can dismiss menus when the window loses focus.
+    //
+    // However, there are "blind spots" though, which, when clicked, don't
+    // transfer the focus away and don't dismiss the menu
+    // (e.g. the window's own title or the area in the side dock without
+    // application icons).
+    private static final WindowFocusListener waylandWindowFocusListener;
+
+    static {
+        if (isOnWayland()) {
+            waylandWindowFocusListener = new WindowAdapter() {
+                @Override
+                public void windowLostFocus(WindowEvent e) {
+                    Window window = e.getWindow();
+                    window.removeWindowFocusListener(this);
+
+                    // AWT
+                    XBaseWindow.ungrabInput();
+
+                    // Swing
+                    window.dispatchEvent(new UngrabEvent(window));
+                }
+            };
+        } else {
+            waylandWindowFocusListener = null;
+        }
+    }
+
+    @Override
+    public void dismissPopupOnFocusLostIfNeeded(Window invoker) {
+        if (!isOnWayland()
+                || invoker == null
+                || Arrays
+                    .asList(invoker.getWindowFocusListeners())
+                    .contains(waylandWindowFocusListener)
+        ) {
+            return;
+        }
+
+        invoker.addWindowFocusListener(waylandWindowFocusListener);
+    }
+
+    @Override
+    public void dismissPopupOnFocusLostIfNeededCleanUp(Window invoker) {
+        if (!isOnWayland() || invoker == null) {
+            return;
+        }
+
+        invoker.removeWindowFocusListener(waylandWindowFocusListener);
     }
 }

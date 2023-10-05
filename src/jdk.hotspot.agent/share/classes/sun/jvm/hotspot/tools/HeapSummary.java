@@ -32,6 +32,7 @@ import sun.jvm.hotspot.gc.parallel.*;
 import sun.jvm.hotspot.gc.serial.*;
 import sun.jvm.hotspot.gc.shenandoah.*;
 import sun.jvm.hotspot.gc.shared.*;
+import sun.jvm.hotspot.gc.x.*;
 import sun.jvm.hotspot.gc.z.*;
 import sun.jvm.hotspot.debugger.JVMDebugger;
 import sun.jvm.hotspot.memory.*;
@@ -85,10 +86,8 @@ public class HeapSummary extends Tool {
       printValMB("MetaspaceSize            = ", getFlagValue("MetaspaceSize", flagMap));
       printValMB("CompressedClassSpaceSize = ", getFlagValue("CompressedClassSpaceSize", flagMap));
       printValMB("MaxMetaspaceSize         = ", getFlagValue("MaxMetaspaceSize", flagMap));
-      if (heap instanceof ShenandoahHeap) {
-         printValMB("ShenandoahRegionSize     = ", ShenandoahHeapRegion.regionSizeBytes());
-      } else {
-         printValMB("G1HeapRegionSize         = ", HeapRegion.grainBytes());
+      if (heap instanceof G1CollectedHeap) {
+        printValMB("G1HeapRegionSize         = ", HeapRegion.grainBytes());
       }
 
       System.out.println();
@@ -137,12 +136,16 @@ public class HeapSummary extends Tool {
          long num_regions = sh.numOfRegions();
          System.out.println("Shenandoah Heap:");
          System.out.println("   regions   = " + num_regions);
+         printValMB("region size = ", ShenandoahHeapRegion.regionSizeBytes());
          printValMB("capacity  = ", num_regions * ShenandoahHeapRegion.regionSizeBytes());
          printValMB("used      = ", sh.used());
          printValMB("committed = ", sh.committed());
       } else if (heap instanceof EpsilonHeap) {
          EpsilonHeap eh = (EpsilonHeap) heap;
          printSpace(eh.space());
+      } else if (heap instanceof XCollectedHeap) {
+         XCollectedHeap zheap = (XCollectedHeap) heap;
+         zheap.printOn(System.out);
       } else if (heap instanceof ZCollectedHeap) {
          ZCollectedHeap zheap = (ZCollectedHeap) heap;
          zheap.printOn(System.out);
@@ -277,14 +280,10 @@ public class HeapSummary extends Tool {
       printValMB(System.out, title, value);
    }
 
-   private static final double FACTOR = 1024*1024;
    private void printValMB(PrintStream tty, String title, long value) {
-      if (value < 0) {
-        tty.println(alignment + title +   (value >>> 20)  + " MB");
-      } else {
-        double mb = value/FACTOR;
-        tty.println(alignment + title + value + " (" + mb + "MB)");
-      }
+       double valueMB = value >>> 20;  // unsigned divide by 1024*1024
+       String valueUnsigned = Long.toUnsignedString(value, 10);
+       tty.println(alignment + title + valueUnsigned + " (" + valueMB + "MB)");
    }
 
    private void printValue(String title, long value) {

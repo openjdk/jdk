@@ -171,11 +171,7 @@ class DigestAuthentication extends AuthenticationInfo {
 
         private static final int cnoncelen = 40; /* number of characters in cnonce */
 
-        private static Random   random;
-
-        static {
-            random = new Random();
-        }
+        private static final Random random = new Random();
 
         Parameters () {
             serverQop = false;
@@ -434,7 +430,7 @@ class DigestAuthentication extends AuthenticationInfo {
             // It really does need to start with an upper case letter
             // here.
             authMethod = Character.toUpperCase(authMethod.charAt(0))
-                        + authMethod.substring(1).toLowerCase();
+                        + authMethod.substring(1).toLowerCase(Locale.ROOT);
         }
 
         if (!setAlgorithmNames(p, params))
@@ -513,7 +509,7 @@ class DigestAuthentication extends AuthenticationInfo {
         String ncstring=null;
 
         if (nccount != -1) {
-            ncstring = Integer.toHexString (nccount).toLowerCase();
+            ncstring = Integer.toHexString(nccount);
             int len = ncstring.length();
             if (len < 8)
                 ncstring = zeroPad [len] + ncstring;

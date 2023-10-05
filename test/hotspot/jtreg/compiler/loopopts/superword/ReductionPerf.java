@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,242 +21,570 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 8074981
- * @summary Add C2 x86 Superword support for scalar product reduction optimizations : int test
- * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
- *      -XX:LoopUnrollLimit=250 -XX:CompileThresholdScaling=0.1
- *      -XX:CompileCommand=exclude,compiler.loopopts.superword.ReductionPerf::main
- *      -XX:+SuperWordReductions
- *      compiler.loopopts.superword.ReductionPerf
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
- *      -XX:LoopUnrollLimit=250 -XX:CompileThresholdScaling=0.1
- *      -XX:CompileCommand=exclude,compiler.loopopts.superword.ReductionPerf::main
- *      -XX:-SuperWordReductions
- *      compiler.loopopts.superword.ReductionPerf
+ * @bug 8074981 8302652
+ * @summary Test SuperWord Reduction Perf.
+ * @requires vm.compiler2.enabled
+ * @requires vm.simpleArch == "x86" | vm.simpleArch == "x64" | vm.simpleArch == "aarch64" | vm.simpleArch == "riscv64"
+ * @library /test/lib /
+ * @run main/othervm -Xbatch -XX:LoopUnrollLimit=250
+ *                   -XX:CompileCommand=exclude,compiler.loopopts.superword.ReductionPerf::main
+ *                   compiler.loopopts.superword.ReductionPerf
  */
 
 package compiler.loopopts.superword;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 public class ReductionPerf {
-    public static void main(String[] args) throws Exception {
-        int[] a1 = new int[8 * 1024];
-        int[] a2 = new int[8 * 1024];
-        int[] a3 = new int[8 * 1024];
-        long[] b1 = new long[8 * 1024];
-        long[] b2 = new long[8 * 1024];
-        long[] b3 = new long[8 * 1024];
-        float[] c1 = new float[8 * 1024];
-        float[] c2 = new float[8 * 1024];
-        float[] c3 = new float[8 * 1024];
-        double[] d1 = new double[8 * 1024];
-        double[] d2 = new double[8 * 1024];
-        double[] d3 = new double[8 * 1024];
+    static final int RANGE = 8192;
+    static Random rand = Utils.getRandomInstance();
 
-        ReductionInit(a1, a2, a3, b1, b2, b3, c1, c2, c3, d1, d2, d3);
+    public static void main(String args[]) {
+        // Please increase iterations for measurement to 2_000 and 100_000.
+        int iter_warmup = 100;
+        int iter_perf   = 1_000;
 
-        int sumIv = sumInt(a1, a2, a3);
-        long sumLv = sumLong(b1, b2, b3);
-        float sumFv = sumFloat(c1, c2, c3);
-        double sumDv = sumDouble(d1, d2, d3);
-        int mulIv = prodInt(a1, a2, a3);
-        long mulLv = prodLong(b1, b2, b3);
-        float mulFv = prodFloat(c1, c2, c3);
-        double mulDv = prodDouble(d1, d2, d3);
+        double[] aDouble = new double[RANGE];
+        double[] bDouble = new double[RANGE];
+        double[] cDouble = new double[RANGE];
+        float[] aFloat = new float[RANGE];
+        float[] bFloat = new float[RANGE];
+        float[] cFloat = new float[RANGE];
+        int[] aInt = new int[RANGE];
+        int[] bInt = new int[RANGE];
+        int[] cInt = new int[RANGE];
+        long[] aLong = new long[RANGE];
+        long[] bLong = new long[RANGE];
+        long[] cLong = new long[RANGE];
 
-        int sumI = 0;
-        long sumL = 0;
-        float sumF = 0.f;
-        double sumD = 0.;
-        int mulI = 0;
-        long mulL = 0;
-        float mulF = 0.f;
-        double mulD = 0.;
+        long start, stop;
 
-        System.out.println("Warmup ...");
-        long start = System.currentTimeMillis();
-
-        for (int j = 0; j < 2000; j++) {
-            sumI = sumInt(a1, a2, a3);
-            sumL = sumLong(b1, b2, b3);
-            sumF = sumFloat(c1, c2, c3);
-            sumD = sumDouble(d1, d2, d3);
-            mulI = prodInt(a1, a2, a3);
-            mulL = prodLong(b1, b2, b3);
-            mulF = prodFloat(c1, c2, c3);
-            mulD = prodDouble(d1, d2, d3);
+        int startIntAdd = init(aInt, bInt, cInt);
+        int goldIntAdd = testIntAdd(aInt, bInt, cInt, startIntAdd);
+        for (int j = 0; j < iter_warmup; j++) {
+            int total = testIntAdd(aInt, bInt, cInt, startIntAdd);
+            verify("int add", total, goldIntAdd);
         }
-
-        long stop = System.currentTimeMillis();
-        System.out.println(" Warmup is done in " + (stop - start) + " msec");
-
-        if (sumIv != sumI) {
-            System.out.println("sum int:    " + sumIv + " != " + sumI);
-        }
-        if (sumLv != sumL) {
-            System.out.println("sum long:   " + sumLv + " != " + sumL);
-        }
-        if (sumFv != sumF) {
-            System.out.println("sum float:  " + sumFv + " != " + sumF);
-        }
-        if (sumDv != sumD) {
-            System.out.println("sum double: " + sumDv + " != " + sumD);
-        }
-        if (mulIv != mulI) {
-            System.out.println("prod int:    " + mulIv + " != " + mulI);
-        }
-        if (mulLv != mulL) {
-            System.out.println("prod long:   " + mulLv + " != " + mulL);
-        }
-        if (mulFv != mulF) {
-            System.out.println("prod float:  " + mulFv + " != " + mulF);
-        }
-        if (mulDv != mulD) {
-            System.out.println("prod double: " + mulDv + " != " + mulD);
-        }
-
         start = System.currentTimeMillis();
-        for (int j = 0; j < 5000; j++) {
-            sumI = sumInt(a1, a2, a3);
+        for (int j = 0; j < iter_perf; j++) {
+            testIntAdd(aInt, bInt, cInt, startIntAdd);
         }
         stop = System.currentTimeMillis();
-        System.out.println("sum int:    " + (stop - start));
+        System.out.println("int add    " + (stop - start));
 
+        int startIntMul = init(aInt, bInt, cInt);
+        int goldIntMul = testIntMul(aInt, bInt, cInt, startIntMul);
+        for (int j = 0; j < iter_warmup; j++) {
+            int total = testIntMul(aInt, bInt, cInt, startIntMul);
+            verify("int mul", total, goldIntMul);
+        }
         start = System.currentTimeMillis();
-        for (int j = 0; j < 5000; j++) {
-            sumL = sumLong(b1, b2, b3);
+        for (int j = 0; j < iter_perf; j++) {
+            testIntMul(aInt, bInt, cInt, startIntMul);
         }
         stop = System.currentTimeMillis();
-        System.out.println("sum long:   " + (stop - start));
+        System.out.println("int mul    " + (stop - start));
 
+        int startIntMin = init(aInt, bInt, cInt);
+        int goldIntMin = testIntMin(aInt, bInt, cInt, startIntMin);
+        for (int j = 0; j < iter_warmup; j++) {
+            int total = testIntMin(aInt, bInt, cInt, startIntMin);
+            verify("int min", total, goldIntMin);
+        }
         start = System.currentTimeMillis();
-        for (int j = 0; j < 5000; j++) {
-            sumF = sumFloat(c1, c2, c3);
+        for (int j = 0; j < iter_perf; j++) {
+            testIntMin(aInt, bInt, cInt, startIntMin);
         }
         stop = System.currentTimeMillis();
-        System.out.println("sum float:  " + (stop - start));
+        System.out.println("int min    " + (stop - start));
 
+        int startIntMax = init(aInt, bInt, cInt);
+        int goldIntMax = testIntMax(aInt, bInt, cInt, startIntMax);
+        for (int j = 0; j < iter_warmup; j++) {
+            int total = testIntMax(aInt, bInt, cInt, startIntMax);
+            verify("int max", total, goldIntMax);
+        }
         start = System.currentTimeMillis();
-        for (int j = 0; j < 5000; j++) {
-            sumD = sumDouble(d1, d2, d3);
+        for (int j = 0; j < iter_perf; j++) {
+            testIntMax(aInt, bInt, cInt, startIntMax);
         }
         stop = System.currentTimeMillis();
-        System.out.println("sum double: " + (stop - start));
+        System.out.println("int max    " + (stop - start));
 
+        int startIntAnd = init(aInt, bInt, cInt);
+        int goldIntAnd = testIntAnd(aInt, bInt, cInt, startIntAnd);
+        for (int j = 0; j < iter_warmup; j++) {
+            int total = testIntAnd(aInt, bInt, cInt, startIntAnd);
+            verify("int and", total, goldIntAnd);
+        }
         start = System.currentTimeMillis();
-        for (int j = 0; j < 5000; j++) {
-            mulI = prodInt(a1, a2, a3);
+        for (int j = 0; j < iter_perf; j++) {
+            testIntAnd(aInt, bInt, cInt, startIntAnd);
         }
         stop = System.currentTimeMillis();
-        System.out.println("prod int:    " + (stop - start));
+        System.out.println("int and    " + (stop - start));
 
+        int startIntOr = init(aInt, bInt, cInt);
+        int goldIntOr = testIntOr(aInt, bInt, cInt, startIntOr);
+        for (int j = 0; j < iter_warmup; j++) {
+            int total = testIntOr(aInt, bInt, cInt, startIntOr);
+            verify("int or", total, goldIntOr);
+        }
         start = System.currentTimeMillis();
-        for (int j = 0; j < 5000; j++) {
-            mulL = prodLong(b1, b2, b3);
+        for (int j = 0; j < iter_perf; j++) {
+            testIntOr(aInt, bInt, cInt, startIntOr);
         }
         stop = System.currentTimeMillis();
-        System.out.println("prod long:   " + (stop - start));
+        System.out.println("int or     " + (stop - start));
 
+        int startIntXor = init(aInt, bInt, cInt);
+        int goldIntXor = testIntXor(aInt, bInt, cInt, startIntXor);
+        for (int j = 0; j < iter_warmup; j++) {
+            int total = testIntXor(aInt, bInt, cInt, startIntXor);
+            verify("int xor", total, goldIntXor);
+        }
         start = System.currentTimeMillis();
-        for (int j = 0; j < 5000; j++) {
-            mulF = prodFloat(c1, c2, c3);
+        for (int j = 0; j < iter_perf; j++) {
+            testIntXor(aInt, bInt, cInt, startIntXor);
         }
         stop = System.currentTimeMillis();
-        System.out.println("prod float:  " + (stop - start));
+        System.out.println("int xor    " + (stop - start));
 
+        long startLongAdd = init(aLong, bLong, cLong);
+        long goldLongAdd = testLongAdd(aLong, bLong, cLong, startLongAdd);
+        for (int j = 0; j < iter_warmup; j++) {
+            long total = testLongAdd(aLong, bLong, cLong, startLongAdd);
+            verify("long add", total, goldLongAdd);
+        }
         start = System.currentTimeMillis();
-        for (int j = 0; j < 5000; j++) {
-            mulD = prodDouble(d1, d2, d3);
+        for (int j = 0; j < iter_perf; j++) {
+            testLongAdd(aLong, bLong, cLong, startLongAdd);
         }
         stop = System.currentTimeMillis();
-        System.out.println("prod double: " + (stop - start));
+        System.out.println("long add   " + (stop - start));
+
+        long startLongMul = init(aLong, bLong, cLong);
+        long goldLongMul = testLongMul(aLong, bLong, cLong, startLongMul);
+        for (int j = 0; j < iter_warmup; j++) {
+            long total = testLongMul(aLong, bLong, cLong, startLongMul);
+            verify("long mul", total, goldLongMul);
+        }
+        start = System.currentTimeMillis();
+        for (int j = 0; j < iter_perf; j++) {
+            testLongMul(aLong, bLong, cLong, startLongMul);
+        }
+        stop = System.currentTimeMillis();
+        System.out.println("long mul   " + (stop - start));
+
+        long startLongMin = init(aLong, bLong, cLong);
+        long goldLongMin = testLongMin(aLong, bLong, cLong, startLongMin);
+        for (int j = 0; j < iter_warmup; j++) {
+            long total = testLongMin(aLong, bLong, cLong, startLongMin);
+            verify("long min", total, goldLongMin);
+        }
+        start = System.currentTimeMillis();
+        for (int j = 0; j < iter_perf; j++) {
+            testLongMin(aLong, bLong, cLong, startLongMin);
+        }
+        stop = System.currentTimeMillis();
+        System.out.println("long min   " + (stop - start));
+
+        long startLongMax = init(aLong, bLong, cLong);
+        long goldLongMax = testLongMax(aLong, bLong, cLong, startLongMax);
+        for (int j = 0; j < iter_warmup; j++) {
+            long total = testLongMax(aLong, bLong, cLong, startLongMax);
+            verify("long max", total, goldLongMax);
+        }
+        start = System.currentTimeMillis();
+        for (int j = 0; j < iter_perf; j++) {
+            testLongMax(aLong, bLong, cLong, startLongMax);
+        }
+        stop = System.currentTimeMillis();
+        System.out.println("long max   " + (stop - start));
+
+        long startLongAnd = init(aLong, bLong, cLong);
+        long goldLongAnd = testLongAnd(aLong, bLong, cLong, startLongAnd);
+        for (int j = 0; j < iter_warmup; j++) {
+            long total = testLongAnd(aLong, bLong, cLong, startLongAnd);
+            verify("long and", total, goldLongAnd);
+        }
+        start = System.currentTimeMillis();
+        for (int j = 0; j < iter_perf; j++) {
+            testLongAnd(aLong, bLong, cLong, startLongAnd);
+        }
+        stop = System.currentTimeMillis();
+        System.out.println("long and   " + (stop - start));
+
+        long startLongOr = init(aLong, bLong, cLong);
+        long goldLongOr = testLongOr(aLong, bLong, cLong, startLongOr);
+        for (int j = 0; j < iter_warmup; j++) {
+            long total = testLongOr(aLong, bLong, cLong, startLongOr);
+            verify("long or", total, goldLongOr);
+        }
+        start = System.currentTimeMillis();
+        for (int j = 0; j < iter_perf; j++) {
+            testLongOr(aLong, bLong, cLong, startLongOr);
+        }
+        stop = System.currentTimeMillis();
+        System.out.println("long or    " + (stop - start));
+
+        long startLongXor = init(aLong, bLong, cLong);
+        long goldLongXor = testLongXor(aLong, bLong, cLong, startLongXor);
+        for (int j = 0; j < iter_warmup; j++) {
+            long total = testLongXor(aLong, bLong, cLong, startLongXor);
+            verify("long xor", total, goldLongXor);
+        }
+        start = System.currentTimeMillis();
+        for (int j = 0; j < iter_perf; j++) {
+            testLongXor(aLong, bLong, cLong, startLongXor);
+        }
+        stop = System.currentTimeMillis();
+        System.out.println("long xor   " + (stop - start));
+
+        float startFloatAdd = init(aFloat, bFloat, cFloat);
+        float goldFloatAdd = testFloatAdd(aFloat, bFloat, cFloat, startFloatAdd);
+        for (int j = 0; j < iter_warmup; j++) {
+            float total = testFloatAdd(aFloat, bFloat, cFloat, startFloatAdd);
+            verify("float add", total, goldFloatAdd);
+        }
+        start = System.currentTimeMillis();
+        for (int j = 0; j < iter_perf; j++) {
+            testFloatAdd(aFloat, bFloat, cFloat, startFloatAdd);
+        }
+        stop = System.currentTimeMillis();
+        System.out.println("float add  " + (stop - start));
+
+        float startFloatMul = init(aFloat, bFloat, cFloat);
+        float goldFloatMul = testFloatMul(aFloat, bFloat, cFloat, startFloatMul);
+        for (int j = 0; j < iter_warmup; j++) {
+            float total = testFloatMul(aFloat, bFloat, cFloat, startFloatMul);
+            verify("float mul", total, goldFloatMul);
+        }
+        start = System.currentTimeMillis();
+        for (int j = 0; j < iter_perf; j++) {
+            testFloatMul(aFloat, bFloat, cFloat, startFloatMul);
+        }
+        stop = System.currentTimeMillis();
+        System.out.println("float mul  " + (stop - start));
+
+        float startFloatMin = init(aFloat, bFloat, cFloat);
+        float goldFloatMin = testFloatMin(aFloat, bFloat, cFloat, startFloatMin);
+        for (int j = 0; j < iter_warmup; j++) {
+            float total = testFloatMin(aFloat, bFloat, cFloat, startFloatMin);
+            verify("float min", total, goldFloatMin);
+        }
+        start = System.currentTimeMillis();
+        for (int j = 0; j < iter_perf; j++) {
+            testFloatMin(aFloat, bFloat, cFloat, startFloatMin);
+        }
+        stop = System.currentTimeMillis();
+        System.out.println("float min  " + (stop - start));
+
+        float startFloatMax = init(aFloat, bFloat, cFloat);
+        float goldFloatMax = testFloatMax(aFloat, bFloat, cFloat, startFloatMax);
+        for (int j = 0; j < iter_warmup; j++) {
+            float total = testFloatMax(aFloat, bFloat, cFloat, startFloatMax);
+            verify("float max", total, goldFloatMax);
+        }
+        start = System.currentTimeMillis();
+        for (int j = 0; j < iter_perf; j++) {
+            testFloatMax(aFloat, bFloat, cFloat, startFloatMax);
+        }
+        stop = System.currentTimeMillis();
+        System.out.println("float max  " + (stop - start));
+
+        double startDoubleAdd = init(aDouble, bDouble, cDouble);
+        double goldDoubleAdd = testDoubleAdd(aDouble, bDouble, cDouble, startDoubleAdd);
+        for (int j = 0; j < iter_warmup; j++) {
+            double total = testDoubleAdd(aDouble, bDouble, cDouble, startDoubleAdd);
+            verify("double add", total, goldDoubleAdd);
+        }
+        start = System.currentTimeMillis();
+        for (int j = 0; j < iter_perf; j++) {
+            testDoubleAdd(aDouble, bDouble, cDouble, startDoubleAdd);
+        }
+        stop = System.currentTimeMillis();
+        System.out.println("double add " + (stop - start));
+
+        double startDoubleMul = init(aDouble, bDouble, cDouble);
+        double goldDoubleMul = testDoubleMul(aDouble, bDouble, cDouble, startDoubleMul);
+        for (int j = 0; j < iter_warmup; j++) {
+            double total = testDoubleMul(aDouble, bDouble, cDouble, startDoubleMul);
+            verify("double mul", total, goldDoubleMul);
+        }
+        start = System.currentTimeMillis();
+        for (int j = 0; j < iter_perf; j++) {
+            testDoubleMul(aDouble, bDouble, cDouble, startDoubleMul);
+        }
+        stop = System.currentTimeMillis();
+        System.out.println("double mul " + (stop - start));
+
+        double startDoubleMin = init(aDouble, bDouble, cDouble);
+        double goldDoubleMin = testDoubleMin(aDouble, bDouble, cDouble, startDoubleMin);
+        for (int j = 0; j < iter_warmup; j++) {
+            double total = testDoubleMin(aDouble, bDouble, cDouble, startDoubleMin);
+            verify("double min", total, goldDoubleMin);
+        }
+        start = System.currentTimeMillis();
+        for (int j = 0; j < iter_perf; j++) {
+            testDoubleMin(aDouble, bDouble, cDouble, startDoubleMin);
+        }
+        stop = System.currentTimeMillis();
+        System.out.println("double min " + (stop - start));
+
+        double startDoubleMax = init(aDouble, bDouble, cDouble);
+        double goldDoubleMax = testDoubleMax(aDouble, bDouble, cDouble, startDoubleMax);
+        for (int j = 0; j < iter_warmup; j++) {
+            double total = testDoubleMax(aDouble, bDouble, cDouble, startDoubleMax);
+            verify("double max", total, goldDoubleMax);
+        }
+        start = System.currentTimeMillis();
+        for (int j = 0; j < iter_perf; j++) {
+            testDoubleMax(aDouble, bDouble, cDouble, startDoubleMax);
+        }
+        stop = System.currentTimeMillis();
+        System.out.println("double max " + (stop - start));
 
     }
 
-    public static void ReductionInit(int[] a1, int[] a2, int[] a3,
-                                     long[] b1, long[] b2, long[] b3,
-                                     float[] c1, float[] c2, float[] c3,
-                                     double[] d1, double[] d2, double[] d3) {
-        for(int i = 0; i < a1.length; i++) {
-            a1[i] =          (i + 0);
-            a2[i] =          (i + 1);
-            a3[i] =          (i + 2);
-            b1[i] =   (long) (i + 0);
-            b2[i] =   (long) (i + 1);
-            b3[i] =   (long) (i + 2);
-            c1[i] =  (float) (i + 0);
-            c2[i] =  (float) (i + 1);
-            c3[i] =  (float) (i + 2);
-            d1[i] = (double) (i + 0);
-            d2[i] = (double) (i + 1);
-            d3[i] = (double) (i + 2);
-        }
-    }
+    // ------------------- Tests -------------------
 
-    public static int sumInt(int[] a1, int[] a2, int[] a3) {
-        int total = 0;
-        for (int i = 0; i < a1.length; i++) {
-            total += (a1[i] * a2[i]) + (a1[i] * a3[i]) + (a2[i] * a3[i]);
+    static int testIntAdd(int[] a, int[] b, int[] c, int total) {
+        for (int i = 0; i < RANGE; i++) {
+            int v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total += v;
         }
         return total;
     }
 
-    public static long sumLong(long[] b1, long[] b2, long[] b3) {
-        long total = 0;
-        for (int i = 0; i < b1.length; i++) {
-            total += (b1[i] * b2[i]) + (b1[i] * b3[i]) + (b2[i] * b3[i]);
+    static int testIntMul(int[] a, int[] b, int[] c, int total) {
+        for (int i = 0; i < RANGE; i++) {
+            int v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total *= v;
         }
         return total;
     }
 
-    public static float sumFloat(float[] c1, float[] c2, float[] c3) {
-        float total = 0;
-        for (int i = 0; i < c1.length; i++) {
-            total += (c1[i] * c2[i]) + (c1[i] * c3[i]) + (c2[i] * c3[i]);
+    static int testIntMin(int[] a, int[] b, int[] c, int total) {
+        for (int i = 0; i < RANGE; i++) {
+            int v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total = Math.min(total, v);
         }
         return total;
     }
 
-    public static double sumDouble(double[] d1, double[] d2, double[] d3) {
-        double total = 0;
-        for (int i = 0; i < d1.length; i++) {
-            total += (d1[i] * d2[i]) + (d1[i] * d3[i]) + (d2[i] * d3[i]);
+    static int testIntMax(int[] a, int[] b, int[] c, int total) {
+        for (int i = 0; i < RANGE; i++) {
+            int v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total = Math.max(total, v);
         }
         return total;
     }
 
-    public static int prodInt(int[] a1, int[] a2, int[] a3) {
-        int total = 1;
-        for (int i = 0; i < a1.length; i++) {
-            total *= (a1[i] * a2[i]) + (a1[i] * a3[i]) + (a2[i] * a3[i]);
+    static int testIntAnd(int[] a, int[] b, int[] c, int total) {
+        for (int i = 0; i < RANGE; i++) {
+            int v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total &= v;
         }
         return total;
     }
 
-    public static long prodLong(long[] b1, long[] b2, long[] b3) {
-        long total = 1;
-        for (int i = 0; i < b1.length; i++) {
-            total *= (b1[i] * b2[i]) + (b1[i] * b3[i]) + (b2[i] * b3[i]);
+    static int testIntOr(int[] a, int[] b, int[] c, int total) {
+        for (int i = 0; i < RANGE; i++) {
+            int v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total |= v;
         }
         return total;
     }
 
-    public static float prodFloat(float[] c1, float[] c2, float[] c3) {
-        float total = 1;
-        for (int i = 0; i < c1.length; i++) {
-            total *= (c1[i] * c2[i]) + (c1[i] * c3[i]) + (c2[i] * c3[i]);
+    static int testIntXor(int[] a, int[] b, int[] c, int total) {
+        for (int i = 0; i < RANGE; i++) {
+            int v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total ^= v;
         }
         return total;
     }
 
-    public static double prodDouble(double[] d1, double[] d2, double[] d3) {
-        double total = 1;
-        for (int i = 0; i < d1.length; i++) {
-            total *= (d1[i] * d2[i]) + (d1[i] * d3[i]) + (d2[i] * d3[i]);
+    static long testLongAdd(long[] a, long[] b, long[] c, long total) {
+        for (int i = 0; i < RANGE; i++) {
+            long v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total += v;
         }
         return total;
+    }
+
+    static long testLongMul(long[] a, long[] b, long[] c, long total) {
+        for (int i = 0; i < RANGE; i++) {
+            long v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total *= v;
+        }
+        return total;
+    }
+
+    static long testLongMin(long[] a, long[] b, long[] c, long total) {
+        for (int i = 0; i < RANGE; i++) {
+            long v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total = Math.min(total, v);
+        }
+        return total;
+    }
+
+    static long testLongMax(long[] a, long[] b, long[] c, long total) {
+        for (int i = 0; i < RANGE; i++) {
+            long v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total = Math.max(total, v);
+        }
+        return total;
+    }
+
+    static long testLongAnd(long[] a, long[] b, long[] c, long total) {
+        for (int i = 0; i < RANGE; i++) {
+            long v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total &= v;
+        }
+        return total;
+    }
+
+    static long testLongOr(long[] a, long[] b, long[] c, long total) {
+        for (int i = 0; i < RANGE; i++) {
+            long v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total |= v;
+        }
+        return total;
+    }
+
+    static long testLongXor(long[] a, long[] b, long[] c, long total) {
+        for (int i = 0; i < RANGE; i++) {
+            long v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total ^= v;
+        }
+        return total;
+    }
+
+    static float testFloatAdd(float[] a, float[] b, float[] c, float total) {
+        for (int i = 0; i < RANGE; i++) {
+            float v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total += v;
+        }
+        return total;
+    }
+
+    static float testFloatMul(float[] a, float[] b, float[] c, float total) {
+        for (int i = 0; i < RANGE; i++) {
+            float v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total *= v;
+        }
+        return total;
+    }
+
+    static float testFloatMin(float[] a, float[] b, float[] c, float total) {
+        for (int i = 0; i < RANGE; i++) {
+            float v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total = Math.min(total, v);
+        }
+        return total;
+    }
+
+    static float testFloatMax(float[] a, float[] b, float[] c, float total) {
+        for (int i = 0; i < RANGE; i++) {
+            float v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total = Math.max(total, v);
+        }
+        return total;
+    }
+
+    static double testDoubleAdd(double[] a, double[] b, double[] c, double total) {
+        for (int i = 0; i < RANGE; i++) {
+            double v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total += v;
+        }
+        return total;
+    }
+
+    static double testDoubleMul(double[] a, double[] b, double[] c, double total) {
+        for (int i = 0; i < RANGE; i++) {
+            double v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total *= v;
+        }
+        return total;
+    }
+
+    static double testDoubleMin(double[] a, double[] b, double[] c, double total) {
+        for (int i = 0; i < RANGE; i++) {
+            double v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total = Math.min(total, v);
+        }
+        return total;
+    }
+
+    static double testDoubleMax(double[] a, double[] b, double[] c, double total) {
+        for (int i = 0; i < RANGE; i++) {
+            double v = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
+            total = Math.max(total, v);
+        }
+        return total;
+    }
+
+    // ------------------- Initialization -------------------
+
+    static int init(int[] a, int[] b, int[] c) {
+        for (int j = 0; j < RANGE; j++) {
+            a[j] = rand.nextInt();
+            b[j] = rand.nextInt();
+            c[j] = rand.nextInt();
+        }
+        return rand.nextInt();
+    }
+
+    static long init(long[] a, long[] b, long[] c) {
+        for (int j = 0; j < RANGE; j++) {
+            a[j] = rand.nextLong();
+            b[j] = rand.nextLong();
+            c[j] = rand.nextLong();
+        }
+        return rand.nextLong();
+    }
+
+    static float init(float[] a, float[] b, float[] c) {
+        for (int j = 0; j < RANGE; j++) {
+            a[j] = rand.nextFloat();
+            b[j] = rand.nextFloat();
+            c[j] = rand.nextFloat();
+        }
+        return rand.nextFloat();
+    }
+
+    static double init(double[] a, double[] b, double[] c) {
+        for (int j = 0; j < RANGE; j++) {
+            a[j] = rand.nextDouble();
+            b[j] = rand.nextDouble();
+            c[j] = rand.nextDouble();
+        }
+        return rand.nextDouble();
+    }
+
+    // ------------------- Verification -------------------
+
+    static void verify(String context, double total, double gold) {
+        if (total != gold) {
+            throw new RuntimeException("Wrong result for " + context + ": " + total + " != " + gold);
+        }
+    }
+    static void verify(String context, float total, float gold) {
+        if (total != gold) {
+            throw new RuntimeException("Wrong result for " + context + ": " + total + " != " + gold);
+        }
+    }
+    static void verify(String context, int total, int gold) {
+        if (total != gold) {
+            throw new RuntimeException("Wrong result for " + context + ": " + total + " != " + gold);
+        }
+    }
+    static void verify(String context, long total, long gold) {
+        if (total != gold) {
+            throw new RuntimeException("Wrong result for " + context + ": " + total + " != " + gold);
+        }
     }
 }

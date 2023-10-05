@@ -31,7 +31,7 @@ static char *strip_ext(char *fname);       // Strip off name extension
 static char *base_plus_suffix(const char* base, const char *suffix);// New concatenated string
 static int get_legal_text(FileBuff &fbuf, char **legal_text); // Get pointer to legal text
 
-ArchDesc* globalAD = NULL;      // global reference to Architecture Description object
+ArchDesc* globalAD = nullptr;      // global reference to Architecture Description object
 
 const char* get_basename(const char* filename) {
   const char *basename = filename;
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
             char* flag = s;
             s += strlen(s);
             char* def = strchr(flag, '=');
-            if (def == NULL)  def = (char*)"1";
+            if (def == nullptr)  def = (char*)"1";
             else              *def++ = '\0';
             AD.set_preproc_def(flag, def);
           }
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
           {
             char* flag = s;
             s += strlen(s);
-            AD.set_preproc_def(flag, NULL);
+            AD.set_preproc_def(flag, nullptr);
           }
           break;
         default:                // Unknown option
@@ -366,7 +366,7 @@ static void usage(ArchDesc& AD)
 int ArchDesc::open_file(bool required, ADLFILE & ADF, const char *action)
 {
   if (required &&
-      (ADF._fp = fopen(ADF._name, action)) == NULL) {
+      (ADF._fp = fopen(ADF._name, action)) == nullptr) {
     printf("ERROR: Cannot open file for %s: %s\n", action, ADF._name);
     close_files(1);
     return 0;
@@ -377,7 +377,7 @@ int ArchDesc::open_file(bool required, ADLFILE & ADF, const char *action)
 //------------------------------open_files-------------------------------------
 int ArchDesc::open_files(void)
 {
-  if (_ADL_file._name == NULL)
+  if (_ADL_file._name == nullptr)
   { printf("ERROR: No ADL input file specified\n"); return 0; }
 
   if (!open_file(true       , _ADL_file, "r"))          { return 0; }

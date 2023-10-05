@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ function indexFilesLoaded() {
         && tagSearchIndex;
 }
 
+// jquery mock functions
 var $ = function(f) {
     if (typeof f === "function") {
         f();
@@ -69,6 +70,9 @@ var $ = function(f) {
                 return this;
             },
             addClass: function() {
+                return this;
+            },
+            each: function() {
                 return this;
             },
             removeClass: function() {

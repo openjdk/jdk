@@ -37,11 +37,11 @@ public final class MemoryLayoutUtil {
         return value;
     }
 
-    public static long requireBitSizeValid(long bitSize, boolean allowZero) {
-        if ((bitSize == 0 && !allowZero) || bitSize < 0 || bitSize % 8 != 0) {
-            throw new IllegalArgumentException("Invalid bitSize: " + bitSize);
+    public static long requireByteSizeValid(long byteSize, boolean allowZero) {
+        if ((byteSize == 0 && !allowZero) || byteSize < 0) {
+            throw new IllegalArgumentException("Invalid byte size: " + byteSize);
         }
-        return bitSize;
+        return byteSize;
     }
 
 }

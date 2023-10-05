@@ -31,8 +31,8 @@ import java.util.concurrent.CountDownLatch;
  * Test native threads attaching implicitly to the VM by means of an upcall.
  */
 public class ImplicitAttach {
-    private static final ValueLayout.OfInt C_INT = ValueLayout.JAVA_INT.withBitAlignment(32);
-    private static final AddressLayout C_POINTER = ValueLayout.ADDRESS.withBitAlignment(64);
+    private static final ValueLayout.OfInt C_INT = ValueLayout.JAVA_INT;
+    private static final AddressLayout C_POINTER = ValueLayout.ADDRESS;
 
     private static volatile CountDownLatch latch;
 
