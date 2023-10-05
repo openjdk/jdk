@@ -34,7 +34,7 @@ import jdk.internal.classfile.impl.BufWriterImpl;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Supports writing portions of a classfile to a growable buffer.   Method
+ * Supports writing portions of a classfile to a growable buffer.   Methods
  * are provided to write various standard entities (e.g., {@code u2}, {@code u4})
  * to the end of the buffer, as well as to create constant pool entries.
  *
