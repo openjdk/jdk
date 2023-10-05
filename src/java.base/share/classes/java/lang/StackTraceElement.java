@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,6 @@ public final class StackTraceElement implements java.io.Serializable {
      * @throws NullPointerException if {@code declaringClass} or
      *         {@code methodName} is null
      * @since 1.5
-     * @revised 9
      */
     public StackTraceElement(String declaringClass, String methodName,
                              String fileName, int lineNumber) {
@@ -355,7 +354,6 @@ public final class StackTraceElement implements java.io.Serializable {
      * {@link java.lang.StackWalker.StackFrame}, where an implementation may
      * choose to omit some element in the returned string.
      *
-     * @revised 9
      * @see    Throwable#printStackTrace()
      */
     @Override
@@ -426,8 +424,6 @@ public final class StackTraceElement implements java.io.Serializable {
      * @return true if the specified object is another
      *         {@code StackTraceElement} instance representing the same
      *         execution point as this instance.
-     *
-     * @revised 9
      */
     public boolean equals(Object obj) {
         if (obj==this)

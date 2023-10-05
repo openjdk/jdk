@@ -75,6 +75,7 @@
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/exceptions.hpp"
@@ -4323,6 +4324,7 @@ void ClassFileParser::check_super_interface_access(const InstanceKlass* this_kla
           (same_module) ? this_klass->joint_in_module_of_loader(k) : this_klass->class_in_module_of_loader(),
           (same_module) ? "" : "; ",
           (same_module) ? "" : k->class_in_module_of_loader());
+        return;
       } else {
         // Add additional message content.
         Exceptions::fthrow(
@@ -4330,6 +4332,7 @@ void ClassFileParser::check_super_interface_access(const InstanceKlass* this_kla
           vmSymbols::java_lang_IllegalAccessError(),
           "superinterface check failed: %s",
           msg);
+        return;
       }
     }
   }

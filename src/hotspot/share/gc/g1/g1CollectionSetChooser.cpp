@@ -131,13 +131,10 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       assert(_cur_chunk_idx < _cur_chunk_end, "Must be");
 
       _array->set(_cur_chunk_idx, hr);
-
       _cur_chunk_idx++;
 
       _regions_added++;
     }
-
-    bool should_add(HeapRegion* hr) { return G1CollectionSetChooser::should_add(hr); }
 
   public:
     G1BuildCandidateRegionsClosure(G1BuildCandidateArray* array) :
@@ -147,20 +144,32 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       _regions_added(0) { }
 
     bool do_heap_region(HeapRegion* r) {
-      // We will skip any region that's currently used as an old GC
-      // alloc region (we should not consider those for collection
-      // before we fill them up).
-      if (should_add(r) && !G1CollectedHeap::heap()->is_old_gc_alloc_region(r)) {
-        assert(r->rem_set()->is_complete(), "must be %u", r->hrm_index());
+      // Candidates from marking are always old; also keep regions that are already
+      // collection set candidates (some retained regions) in that list.
+      if (!r->is_old() || r->is_collection_set_candidate()) {
+        // Keep remembered sets and everything for these regions.
+        return false;
+      }
+
+      // Can not add a region without a remembered set to the candidates.
+      assert(!r->rem_set()->is_updating(), "must be");
+      if (!r->rem_set()->is_complete()) {
+        return false;
+      }
+
+      // Skip any region that is currently used as an old GC alloc region. We should
+      // not consider those for collection before we fill them up as the effective
+      // gain from them is small. I.e. we only actually reclaim from the filled part,
+      // as the remainder is still eligible for allocation. These objects are also
+      // likely to have already survived a few collections, so they might be longer
+      // lived anyway.
+      // Otherwise the Old region must satisfy the liveness condition.
+      bool should_add = !G1CollectedHeap::heap()->is_old_gc_alloc_region(r) &&
+                        G1CollectionSetChooser::region_occupancy_low_enough_for_evac(r->live_bytes());
+      if (should_add) {
         add_region(r);
-      } else if (r->is_old() && !r->is_collection_set_candidate()) {
-        // Keep remembered sets for humongous regions and collection set candidates,
-        // otherwise clean them out.
-        r->rem_set()->clear(true /* only_cardset */);
       } else {
-        assert(r->is_collection_set_candidate() || !r->is_old() || !r->rem_set()->is_tracked(),
-               "Missed to clear unused remembered set of region %u (%s) that is %s",
-               r->hrm_index(), r->get_type_str(), r->rem_set()->get_state_str());
+        r->rem_set()->clear(true /* only_cardset */);
       }
       return false;
     }
@@ -250,17 +259,6 @@ public:
 uint G1CollectionSetChooser::calculate_work_chunk_size(uint num_workers, uint num_regions) {
   assert(num_workers > 0, "Active gc workers should be greater than 0");
   return MAX2(num_regions / num_workers, 1U);
-}
-
-bool G1CollectionSetChooser::should_add(HeapRegion* hr) {
-  return !hr->is_young() &&
-         !hr->is_humongous() &&
-         // A region might have been retained (after evacuation failure) and already put
-         // into the candidates list during concurrent marking. These should keep being
-         // considered as retained regions.
-         !hr->is_collection_set_candidate() &&
-         region_occupancy_low_enough_for_evac(hr->live_bytes()) &&
-         hr->rem_set()->is_complete();
 }
 
 void G1CollectionSetChooser::build(WorkerThreads* workers, uint max_num_regions, G1CollectionSetCandidates* candidates) {
