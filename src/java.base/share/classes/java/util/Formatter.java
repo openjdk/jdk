@@ -2911,8 +2911,7 @@ public final class Formatter implements Closeable, Flushable {
                     conversion = c1;
                     off += 2;
                 }
-            }
-            if (conversion == '\0' && isConversion(c)) {
+            } else if (isConversion(c)) {
                 conversion = c;
                 ++off;
             }
@@ -2963,7 +2962,6 @@ public final class Formatter implements Closeable, Flushable {
         }
 
         private int parsePrecision() {
-            // (\.\d+)?
             int i = ++off;
             for (; i < max && isDigit(c = s.charAt(i)); ++i);  // empty body
             if (i != off) {
