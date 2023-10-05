@@ -2909,87 +2909,66 @@ public class Lower extends TreeTranslator {
     }
 
     public void visitTypeTest(JCInstanceOf tree) {
-        if (tree.expr.type.equals(syms.objectType) && tree.pattern.type.isPrimitive()) {
-            // Object v = ...
-            // v instanceof float
-            // =>
-            // v instanceof Float
-            result = make.at(tree.pos()).TypeTest(tree.expr, make.Type(types.boxedClass(tree.pattern.type).type)).setType(syms.booleanType);
-        }
-        else if (!(tree.expr.type.isNullOrReference() && tree.pattern.type.isReference())) {
-            JCExpression exactnessCheck = null;
+        JCExpression exactnessCheck = null;
+        JCExpression instanceOfExpr = translate(tree.expr);
 
-            // translate tree.expr to resolve potential statically qualified names, etc
-            JCExpression instanceOfExpr = translate(tree.expr);
+        if (tree.expr.type.isPrimitive() || tree.pattern.type.isPrimitive()) {
+            // preserving the side-effects of the value
+            VarSymbol dollar_s = new VarSymbol(FINAL | SYNTHETIC,
+                    names.fromString("tmp" + tree.pos + this.target.syntheticNameChar()),
+                    tree.expr.type,
+                    currentMethodSym);
+            JCStatement var = make.at(tree.pos())
+                    .VarDef(dollar_s, instanceOfExpr).setType(dollar_s.type);
 
-            // We regard Wrapper instanceof p as unconditional if the underlying primitive of Wrapper is unconditional to p.
-            // However, we still need to emit a null check.
-            // This branch covers true unconditionality for the underlying type as well.
-            if (types.checkUnconditionallyExact(tree.expr.type, tree.pattern.type) &&
-                !(tree.expr.type.isReference() && types.checkUnconditionallyExactPrimitives(types.unboxedType(tree.expr.type), tree.pattern.type))) {
-                exactnessCheck = make.Literal(BOOLEAN, 1).setType(syms.booleanType);
-            } else if (tree.pattern.type.isPrimitive()) {
-                // Covers cases where the Type of the pattern is primitive e.g., v instanceof int
-                // - case type of v is ReferenceType, null check and unbox
-                // - case type of v is PrimitiveType
-
-                // rewrite instanceof if expr : wrapper reference type
-                //
-                // Integer v = ...
-                // if (v instanceof float)
-                // =>
-                // if (let tmp$123 = v; tmp$123 != null <&& if not unconditionally exact> ExactnessChecks.intToFloatExact(tmp$123.intValue()))
-                VarSymbol dollar_s = new VarSymbol(FINAL | SYNTHETIC,
-                        names.fromString("tmp" + tree.pos + this.target.syntheticNameChar()),
-                        tree.expr.type,
-                        currentMethodSym);
-
-                JCStatement var = make.at(tree.pos()).VarDef(dollar_s, instanceOfExpr).setType(dollar_s.type);
-
+            if (types.checkUnconditionallyExact(tree.expr.type, tree.pattern.type)) {
                 if (tree.expr.type.isReference()) {
                     JCExpression nullCheck = makeBinary(NE,
                             make.Ident(dollar_s),
                             makeNull());
 
-                    if (types.checkUnconditionallyExact(types.unboxedType(tree.expr.type), tree.pattern.type)) {
-                        exactnessCheck = make.Literal(BOOLEAN, 1).setType(syms.booleanType);                                          // emit no exactness check
-                    } else {
-                        // if expression type is Byte, Short, Integer, ...
-                        // an unboxing conversion followed by a widening primitive conversion
-                        if (types.unboxedType(tree.expr.type).isPrimitive()) {
-                            exactnessCheck = getExactnessCheck(tree, boxIfNeeded(make.Ident(dollar_s), types.unboxedType(tree.expr.type))); // emit the exactness call
-                        } else {
-                            // if expression type is a supertype: Number, ..
-                            // a narrowing reference conversion followed by an unboxing conversion
-                            exactnessCheck = make.at(tree.pos()).TypeTest(tree.expr, make.Type(types.boxedClass(tree.pattern.type).type)).setType(syms.booleanType);;
-                        }
-                    }
-
-                    JCBinary nullCheckFollowedByExactnessCheckCall = makeBinary(AND,
-                            nullCheck,
-                            exactnessCheck);
-
-                    exactnessCheck = make.LetExpr(List.of(var), nullCheckFollowedByExactnessCheckCall)
+                    exactnessCheck = make.LetExpr(List.of(var), nullCheck)
                             .setType(syms.booleanType);
                 } else {
-                    // rewrite instanceof if expr : primitive
-                    // int v = ...
-                    // if (v instanceof float)
-                    // =>
-                    // if (let tmp$123 = v; ExactnessChecks.intToFloatExact(tmp$123))
-                    JCIdent argument = make.Ident(dollar_s);
-
-                    JCExpression exactnessCheckCall =
-                            getExactnessCheck(tree, argument);
-
-                    exactnessCheck = make.LetExpr(List.of(var), exactnessCheckCall)
+                    exactnessCheck = make
+                            .LetExpr(List.of(var), make.Literal(BOOLEAN, 1).setType(syms.booleanType))
                             .setType(syms.booleanType);
                 }
             }
+            else if (tree.expr.type.isReference()) {
+                JCExpression nullCheck = makeBinary(NE,
+                        make.Ident(dollar_s),
+                        makeNull());
+                if (types.checkUnconditionallyExactPrimitives(types.unboxedType(tree.expr.type), tree.pattern.type)) {
+                    exactnessCheck = make
+                            .LetExpr(List.of(var), nullCheck)
+                            .setType(syms.booleanType);
+                } else if (types.unboxedType(tree.expr.type).isPrimitive()) {
+                    exactnessCheck = getExactnessCheck(tree,
+                            boxIfNeeded(make.Ident(dollar_s), types.unboxedType(tree.expr.type)));
+                } else {
+                    exactnessCheck = make.at(tree.pos())
+                            .TypeTest(tree.expr, make.Type(types.boxedClass(tree.pattern.type).type))
+                            .setType(syms.booleanType);
+                }
+
+                exactnessCheck = make.LetExpr(List.of(var), makeBinary(AND,
+                        nullCheck,
+                        exactnessCheck))
+                        .setType(syms.booleanType);
+            }
+            else if (tree.expr.type.isPrimitive()) {
+                JCIdent argument = make.Ident(dollar_s);
+
+                JCExpression exactnessCheckCall =
+                        getExactnessCheck(tree, argument);
+
+                exactnessCheck = make.LetExpr(List.of(var), exactnessCheckCall)
+                        .setType(syms.booleanType);
+            }
 
             result = exactnessCheck;
-        }
-        else {
+        } else {
             tree.expr = translate(tree.expr);
             tree.pattern = translate(tree.pattern);
             result = tree;
