@@ -1331,6 +1331,11 @@ void Assembler::addb(Address dst, Register src) {
   emit_operand(src, dst, 0);
 }
 
+void Assembler::addb(Register dst, int imm8) {
+  prefix(dst);
+  emit_arith_b(0x80, 0xC0, dst, imm8);
+}
+
 void Assembler::addw(Register dst, Register src) {
   emit_int8(0x66);
   (void)prefix_and_encode(dst->encoding(), src->encoding());
