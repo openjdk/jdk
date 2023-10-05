@@ -231,6 +231,9 @@ public class ChoiceFormat extends NumberFormat {
      * for the ChoiceFormat pattern can be seen in the {@linkplain ##patterns
      * Patterns} section.
      *
+     * @implSpec {@link ChoiceFormat#ChoiceFormat(String)} invokes this method.
+     * Therefore, any changes made to the applyPattern method in subclasses
+     * will be reflected in the constructor as well.
      * @param newPattern a pattern string
      * @throws    NullPointerException if {@code newPattern}
      *            is {@code null}
