@@ -996,6 +996,7 @@ public class JOptionPane extends JComponent implements Accessible
             }
         }
         dialog.pack();
+        dialog.setAlwaysOnTop(true);
         dialog.setLocationRelativeTo(parentComponent);
 
         final PropertyChangeListener listener = new PropertyChangeListener() {
