@@ -690,6 +690,7 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
 //
 void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
 
+  // TODO(2023-10-05,dlunde): Loop peeling IGV dump
   C->set_major_progress();
   // Peeling a 'main' loop in a pre/main/post situation obfuscates the
   // 'pre' loop from the main and the 'pre' can no longer have its
@@ -2124,6 +2125,7 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_peeled_loop(const Predi
 //------------------------------do_unroll--------------------------------------
 // Unroll the loop body one step - make each trip do 2 iterations.
 void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adjust_min_trip) {
+  // TODO(2023-10-05,dlunde): Loop unrolling IGV dump
   assert(LoopUnrollLimit, "");
   CountedLoopNode *loop_head = loop->_head->as_CountedLoop();
   CountedLoopEndNode *loop_end = loop_head->loopexit();

@@ -2993,7 +2993,7 @@ void Compile::Code_Gen() {
     cfg.remove_unreachable_blocks();
     cfg.verify_dominator_tree();
 
-    print_method(PHASE_BLOCK_ORDERING, 2);
+    print_method(PHASE_BLOCK_ORDERING, 3);
   }
 
   // Apply peephole optimizations
@@ -3002,7 +3002,7 @@ void Compile::Code_Gen() {
     PhasePeephole peep( _regalloc, cfg);
     peep.do_transform();
 
-    print_method(PHASE_PEEPHOLE, 2);
+    print_method(PHASE_PEEPHOLE, 3);
   }
 
   // Do late expand if CPU requires this.
@@ -3010,7 +3010,7 @@ void Compile::Code_Gen() {
     TracePhase tp("postalloc_expand", &timers[_t_postalloc_expand]);
     cfg.postalloc_expand(_regalloc);
 
-    print_method(PHASE_POSTALLOC_EXPAND, 2);
+    print_method(PHASE_POSTALLOC_EXPAND, 3);
   }
 
   // Convert Nodes to instruction bits in a buffer
