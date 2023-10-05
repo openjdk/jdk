@@ -699,6 +699,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     // Initialize JVMCI eagerly when it is explicitly requested.
     // Or when JVMCILibDumpJNIConfig or JVMCIPrintProperties is enabled.
     force_JVMCI_initialization = EagerJVMCI || JVMCIPrintProperties || JVMCILibDumpJNIConfig;
+    if (!force_JVMCI_initialization && UseJVMCICompiler && !UseJVMCINativeLibrary && (!UseInterpreter || !BackgroundCompilation)) {
+      // Force initialization of jarjvmci otherwise requests for blocking
+      // compilations will not actually block until jarjvmci is initialized.
+      force_JVMCI_initialization = true;
+    }
     if (JVMCIPrintProperties || JVMCILibDumpJNIConfig) {
       // Both JVMCILibDumpJNIConfig and JVMCIPrintProperties exit the VM
       // so compilation should be disabled. This prevents dumping or

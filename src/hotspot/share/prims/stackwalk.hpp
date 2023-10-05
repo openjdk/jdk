@@ -143,7 +143,7 @@ public:
 class StackWalk : public AllStatic {
 private:
   static int fill_in_frames(jint mode, BaseFrameStream& stream,
-                            int max_nframes, int start_index,
+                            int buffer_size, int start_index,
                             objArrayHandle frames_array,
                             int& end_index, TRAPS);
 
@@ -160,15 +160,15 @@ public:
   }
 
   static oop walk(Handle stackStream, jint mode, int skip_frames, Handle cont_scope, Handle cont,
-                  int frame_count, int start_index, objArrayHandle frames_array,
+                  int buffer_size, int start_index, objArrayHandle frames_array,
                   TRAPS);
 
   static oop fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
-                             jint mode, int skip_frames, int frame_count,
+                             jint mode, int skip_frames, int buffer_size,
                              int start_index, objArrayHandle frames_array, TRAPS);
 
   static jint fetchNextBatch(Handle stackStream, jint mode, jlong magic,
-                             int frame_count, int start_index,
+                             int last_batch_count, int buffer_size, int start_index,
                              objArrayHandle frames_array, TRAPS);
 
   static void setContinuation(Handle stackStream, jlong magic, objArrayHandle frames_array,

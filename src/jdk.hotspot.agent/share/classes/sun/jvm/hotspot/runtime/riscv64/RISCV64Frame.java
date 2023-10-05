@@ -496,7 +496,8 @@ public class RISCV64Frame extends Frame {
   }
 
   public BasicObjectLock interpreterFrameMonitorEnd() {
-    Address result = addressOfStackSlot(INTERPRETER_FRAME_MONITOR_BLOCK_TOP_OFFSET).getAddressAt(0);
+    long n = addressOfStackSlot(INTERPRETER_FRAME_MONITOR_BLOCK_TOP_OFFSET).getCIntegerAt(0, VM.getVM().getAddressSize(), false);
+    Address result = getFP().addOffsetTo(n * VM.getVM().getAddressSize());
     if (Assert.ASSERTS_ENABLED) {
       // make sure the pointer points inside the frame
       Assert.that(AddressOps.gt(getFP(), result), "result must <  than frame pointer");

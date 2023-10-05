@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,10 @@ JIMAGE_PKGS := \
     jdk/internal/jrtfs \
     #
 
+# Compile jrt-fs.jar with the interim compiler, as it
+# ends up in the image, this will ensure reproducible classes
 $(eval $(call SetupJavaCompilation, BUILD_JRTFS, \
-    COMPILER := bootjdk, \
+    COMPILER := interim, \
     DISABLED_WARNINGS := options, \
     TARGET_RELEASE := $(TARGET_RELEASE_JDK8), \
     SRC := $(TOPDIR)/src/java.base/share/classes, \
