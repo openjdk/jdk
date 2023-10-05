@@ -82,26 +82,12 @@ public class TestStackWalk {
     }
 
     static void suspendWorkers() {
-        try {
-            JVMTIUtils.suspendThread(worker1);
-            JVMTIUtils.suspendThread(worker2);
-        } catch (JVMTIUtils.JvmtiException e) {
-            if (e.getCode() != JVMTIUtils.JVMTI_ERROR_THREAD_NOT_ALIVE
-                && e.getCode() != JVMTIUtils.JVMTI_ERROR_WRONG_PHASE) {
-                throw e;
-            }
-        }
+        JVMTIUtils.suspendThread(worker1);
+        JVMTIUtils.suspendThread(worker2);
     }
 
     static void resumeWorkers() {
-        try {
-            JVMTIUtils.resumeThread(worker1);
-            JVMTIUtils.resumeThread(worker2);
-        } catch (JVMTIUtils.JvmtiException e) {
-            if (e.getCode() != JVMTIUtils.JVMTI_ERROR_THREAD_NOT_ALIVE
-                && e.getCode() != JVMTIUtils.JVMTI_ERROR_WRONG_PHASE) {
-                throw e;
-            }
-        }
+        JVMTIUtils.resumeThread(worker1);
+        JVMTIUtils.resumeThread(worker2);
     }
 }
