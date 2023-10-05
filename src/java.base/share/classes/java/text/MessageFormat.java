@@ -449,10 +449,10 @@ public class MessageFormat extends Format {
      * Patterns and their interpretation are specified in the
      * <a href="#patterns">class description</a>.
      *
-     * @implSpec {@link MessageFormat#MessageFormat(String)} and
-     * {@link MessageFormat#MessageFormat(String, Locale)} invoke this method.
+     * @implSpec {@link #MessageFormat(String)} and
+     * {@link #MessageFormat(String, Locale)} may invoke this method.
      * Therefore, any changes made to the applyPattern method in subclasses
-     * will be reflected in the constructors as well.
+     * may be reflected in the constructors as well.
      * @param pattern the pattern for this message format
      * @throws    IllegalArgumentException if the pattern is invalid
      * @throws    NullPointerException if {@code pattern} is
