@@ -582,12 +582,12 @@ public final class Long extends Number
 
         if (radix < Character.MIN_RADIX) {
             throw new NumberFormatException(String.format(
-                "radix %d less than Character.MIN_RADIX", radix));
+                "radix %s less than Character.MIN_RADIX", radix));
         }
 
         if (radix > Character.MAX_RADIX) {
             throw new NumberFormatException(String.format(
-                "radix %d greater than Character.MAX_RADIX", radix));
+                "radix %s greater than Character.MAX_RADIX", radix));
         }
 
         int len = s.length();
@@ -652,12 +652,12 @@ public final class Long extends Number
 
         if (radix < Character.MIN_RADIX) {
             throw new NumberFormatException(String.format(
-                "radix %d less than Character.MIN_RADIX", radix));
+                "radix %s less than Character.MIN_RADIX", radix));
         }
 
         if (radix > Character.MAX_RADIX) {
             throw new NumberFormatException(String.format(
-                "radix %d greater than Character.MAX_RADIX", radix));
+                "radix %s greater than Character.MAX_RADIX", radix));
         }
 
         /*
@@ -773,12 +773,12 @@ public final class Long extends Number
 
         if (radix < Character.MIN_RADIX) {
             throw new NumberFormatException(String.format(
-                "radix %d less than Character.MIN_RADIX", radix));
+                "radix %s less than Character.MIN_RADIX", radix));
         }
 
         if (radix > Character.MAX_RADIX) {
             throw new NumberFormatException(String.format(
-                "radix %d greater than Character.MAX_RADIX", radix));
+                "radix %s greater than Character.MAX_RADIX", radix));
         }
 
         int len = s.length();
@@ -850,12 +850,12 @@ public final class Long extends Number
 
         if (radix < Character.MIN_RADIX) {
             throw new NumberFormatException(String.format(
-                "radix %d less than Character.MIN_RADIX", radix));
+                "radix %s less than Character.MIN_RADIX", radix));
         }
 
         if (radix > Character.MAX_RADIX) {
             throw new NumberFormatException(String.format(
-                "radix %d greater than Character.MAX_RADIX", radix));
+                "radix %s greater than Character.MAX_RADIX", radix));
         }
 
         /*
