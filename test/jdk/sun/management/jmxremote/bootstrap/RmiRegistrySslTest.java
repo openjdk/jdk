@@ -188,7 +188,7 @@ public class RmiRegistrySslTest {
             command.add(TEST_CLASS_PATH);
             command.add(className);
 
-            ProcessBuilder processBuilder = ProcessTools.createTestJvm(command.toArray(new String[command.size()]));
+            ProcessBuilder processBuilder = ProcessTools.createTestJvm(command);
 
             OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
 

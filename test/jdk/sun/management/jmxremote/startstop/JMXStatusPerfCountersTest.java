@@ -61,7 +61,6 @@ public class JMXStatusPerfCountersTest {
     public static void setupClass() throws Exception {
         testAppPb = ProcessTools.createTestJvm(
             "-XX:+UsePerfData",
-            "-cp", System.getProperty("test.class.path"),
             TEST_APP_NAME
         );
     }

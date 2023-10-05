@@ -234,7 +234,6 @@ public class JMXAgentInterfaceBinding {
         private final int jmxPort;
         private final int rmiPort;
         private final boolean useSSL;
-        private boolean jmxAgentStarted = false;
         private volatile Exception excptn;
 
         private MainThread(InetAddress bindAddress, int jmxPort, int rmiPort, boolean useSSL) {

@@ -96,8 +96,6 @@ public class CustomLauncherTest {
             System.out.println("  shutdown port : " + port.get());
 
             ProcessBuilder client = ProcessTools.createTestJvm(
-                "-cp",
-                Utils.TEST_CLASS_PATH,
                 "--add-exports", "jdk.management.agent/jdk.internal.agent=ALL-UNNAMED",
                 "TestManager",
                 String.valueOf(serverPrc.pid()),
