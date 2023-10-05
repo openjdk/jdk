@@ -37,6 +37,10 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * Models the {@code SourceFile} attribute {@jvms 4.7.10}, which
  * can appear on classes. Delivered as a {@link jdk.internal.classfile.ClassElement}
  * when traversing a {@link ClassModel}.
+ * <p>
+ * The attribute does not permit multiple instances in a given location.
+ * Subsequent occurrence of the attribute takes precedence during the attributed
+ * element build or transformation.
  */
 public sealed interface SourceFileAttribute
         extends Attribute<SourceFileAttribute>, ClassElement
@@ -47,10 +51,18 @@ public sealed interface SourceFileAttribute
      */
     Utf8Entry sourceFile();
 
+    /**
+     * {@return a source file attribute}
+     * @param sourceFile the source file name
+     */
     static SourceFileAttribute of(String sourceFile) {
         return of(TemporaryConstantPool.INSTANCE.utf8Entry(sourceFile));
     }
 
+    /**
+     * {@return a source file attribute}
+     * @param sourceFile the source file name
+     */
     static SourceFileAttribute of(Utf8Entry sourceFile) {
         return new UnboundAttribute.UnboundSourceFileAttribute(sourceFile);
     }

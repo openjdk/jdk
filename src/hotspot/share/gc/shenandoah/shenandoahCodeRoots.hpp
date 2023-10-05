@@ -97,10 +97,13 @@ public:
   // Concurrent nmethod unloading support
   static void unlink(WorkerThreads* workers, bool unloading_occurred);
   static void purge();
-  static void arm_nmethods();
+  static void arm_nmethods_for_mark();
+  static void arm_nmethods_for_evac();
   static void disarm_nmethods();
   static int  disarmed_value()         { return _disarmed_value; }
   static int* disarmed_value_address() { return &_disarmed_value; }
+
+  static bool use_nmethod_barriers_for_mark();
 
 private:
   static ShenandoahNMethodTable* _nmethod_table;

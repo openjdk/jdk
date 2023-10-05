@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -39,7 +39,6 @@ import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLLocatorWrapper;
 import com.sun.org.apache.xerces.internal.util.XMLResourceIdentifierImpl;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
@@ -80,6 +79,7 @@ import javax.xml.catalog.CatalogResolver;
 import javax.xml.transform.Source;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.XMLSecurityManager;
 import org.xml.sax.InputSource;
 
 /**
@@ -128,7 +128,7 @@ import org.xml.sax.InputSource;
  *
  *
  * @see XIncludeNamespaceSupport
- * @LastModified: July 2022
+ * @LastModified: July 2023
  */
 public class XIncludeHandler
     implements XMLComponent, XMLDocumentFilter, XMLDTDFilter {
@@ -1731,6 +1731,11 @@ public class XIncludeHandler
                 fChildConfig.setProperty(SECURITY_MANAGER, fSecurityManager);
                 fChildConfig.setProperty(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
                 fChildConfig.setProperty(BUFFER_SIZE, fBufferSize);
+                fChildConfig.setProperty(CatalogFeatures.Feature.FILES.getPropertyName(), fCatalogFile);
+                fChildConfig.setProperty(CatalogFeatures.Feature.DEFER.getPropertyName(), fDefer);
+                fChildConfig.setProperty(CatalogFeatures.Feature.PREFER.getPropertyName(), fPrefer);
+                fChildConfig.setProperty(CatalogFeatures.Feature.RESOLVE.getPropertyName(), fResolve);
+                fChildConfig.setFeature(XMLConstants.USE_CATALOG, fUseCatalog);
 
                 // features must be copied to child configuration
                 fNeedCopyFeatures = true;
