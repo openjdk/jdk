@@ -157,8 +157,8 @@ void AsyncLogWriter::run() {
       while (!_data_available) {
         _lock.wait(0/* no timeout */);
       }
-      // lock protection. This guarantees I/O jobs don't block logsites.
-
+      // Only doing a swap and statistics under the lock to
+      // guarantee that I/O jobs don't block logsites.
       _buffer_staging->reset();
       swap(_buffer, _buffer_staging);
 
