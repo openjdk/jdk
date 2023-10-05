@@ -689,15 +689,19 @@ public class VMProps implements Callable<Map<String, String>> {
         // check -X flags
         var ignoredXFlags = Set.of(
                 // default, yet still seen to be explicitly set
-                "mixed"
+                "mixed",
+                // -XmxmNNNm added by run-test framework for non-hotspot tests
+                "mx"
         );
         result &= allFlags.stream()
                           .filter(s -> s.startsWith("-X") && !s.startsWith("-XX:"))
                           // map to names:
-                              // remove -X
-                              .map(s -> s.substring(2))
-                              // remove :.* from flags with values
-                              .map(s -> s.contains(":") ? s.substring(0, s.indexOf(':')) : s)
+                          // remove -X
+                          .map(s -> s.substring(2))
+                          // remove :.* from flags with values
+                          .map(s -> s.contains(":") ? s.substring(0, s.indexOf(':')) : s)
+                          // remove size like 4G, 768m which might be set for non-hotspot tests
+                          .map(s -> s.replaceAll("(\\d+)[mMgGkK]", ""))
                           // skip known-to-be-there flags
                           .filter(s -> !ignoredXFlags.contains(s))
                           .findAny()

@@ -500,7 +500,8 @@ class RuntimeStub: public RuntimeBlob {
     int         frame_complete,
     int         frame_size,
     OopMapSet*  oop_maps,
-    bool        caller_must_gc_arguments
+    bool        caller_must_gc_arguments,
+    bool        alloc_fail_is_fatal=true
   );
 
   static void free(RuntimeStub* stub) { RuntimeBlob::free(stub); }
