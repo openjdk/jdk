@@ -113,8 +113,6 @@ public class RejectDragDropActionTest {
             });
         }
 
-        Thread.dumpStack();
-
         if (incorrectActionDetected) {
             throw new RuntimeException("User action reported incorrectly.");
         }
