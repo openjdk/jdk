@@ -29,6 +29,7 @@ import java.awt.List;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.TextArea;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
@@ -42,8 +43,8 @@ import java.awt.event.MouseListener;
 public class MouseEnterExitTest {
 
     private static Frame frame;
-    private volatile static TextArea textArea;
-    private volatile static List list;
+    private static TextArea textArea;
+    private static List list;
     private static Robot robot;
     private volatile static boolean entered = false;
     private volatile static boolean exited = false;
@@ -51,19 +52,10 @@ public class MouseEnterExitTest {
     private volatile static Point compAt;
     private volatile static Dimension compSize;
 
-    private static MouseListener mListener = new MouseListener() {
-        public void mouseClicked(MouseEvent e) {
-        }
-
-        public void mousePressed(MouseEvent e) {
-        }
-
-        public void mouseReleased(MouseEvent e) {
-        }
-
+    private static MouseListener mListener = new MouseAdapter() {
         public void mouseEntered(MouseEvent e) {
-            System.out
-                .println("MouseEntered " + e.getSource().getClass().getName());
+            System.out.println(
+                "MouseEntered component " + e.getSource().getClass().getName());
             if (entered) {
                 passed = false;
             }
@@ -72,8 +64,8 @@ public class MouseEnterExitTest {
         }
 
         public void mouseExited(MouseEvent e) {
-            System.out
-                .println("MouseExited " + e.getSource().getClass().getName());
+            System.out.println(
+                "MouseExited component " + e.getSource().getClass().getName());
             if (exited) {
                 passed = false;
             }
@@ -92,7 +84,7 @@ public class MouseEnterExitTest {
         list.addMouseListener(mListener);
         frame.add(list);
 
-        textArea = new TextArea("TextArea");
+        textArea = new TextArea("TextArea", 10, 20);
         textArea.addMouseListener(mListener);
         frame.add(textArea);
 
@@ -131,7 +123,6 @@ public class MouseEnterExitTest {
     public static void disposeFrame() {
         if (frame != null) {
             frame.dispose();
-            frame = null;
         }
     }
 }
