@@ -58,17 +58,17 @@ public class BigDecimalCompatibilityTest {
     // Both ArrayList composed of Arguments(String longString, int multiplier)
     private static final ArrayList<Arguments> bigIntegers = new ArrayList<Arguments>();
     private static final ArrayList<Arguments> bigDecimals = new ArrayList<Arguments>();
-    
+
     // Long string data to generate combinations of test values
     private static final String[] inputData = {
             "0".repeat(400),
             "1234567890".repeat(40)};
-    
+
     // Variety of exponents to test parse() against
     private static final String[] exponents = {
             "E-100", "E100", "E-900", "E900", ""
     };
-    
+
     // Variety of multipliers that DecimalFormat can apply
     private static final int[] multipliers = {
             -1, 1, -100, 100, -9999, 9999
@@ -156,14 +156,14 @@ public class BigDecimalCompatibilityTest {
         // wide enough to support the long string test data
         df.setMaximumFractionDigits(Integer.MAX_VALUE);
         df.setMultiplier(multiplier);
-        
+
         // Check parse and returned value
         Number parsedValue = assertDoesNotThrow(()-> df.parse(longString),
                 "Should not throw a ParseException");
         BigDecimal expectedValue = getExpected(longString, multiplier);
         assertEquals(expectedValue, parsedValue, "With multiplier: " + multiplier);
     }
-    
+
     // Utility to get a numerically correct value of a long string.
     // Dependent on BigDecimal implementation
     private static BigDecimal getExpected(String longString, int multiplier) {

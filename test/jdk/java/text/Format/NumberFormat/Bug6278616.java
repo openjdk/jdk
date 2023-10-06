@@ -41,7 +41,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Bug6278616 {
-    
+
     private static final NumberFormat nf = NumberFormat.getInstance();
 
     // Test that NumberFormat formats numerically equivalent int
