@@ -75,11 +75,11 @@ import toolbox.JarTask;
  * Does _not_ generate a note and the processor _doesn't_ run.
  * $ javac -cp ImplicitProcTestProc.jar -proc:none                          HelloWorldTest.java
  *
- * (Previously, annotation processing was implicitly enable and the
+ * (Previously, annotation processing was implicitly enabled and the
  * the class path was searched for processors. This test was
  * originally written to probe around a note warning of a potential
  * future policy change to disable such implicit processing, a policy
- * change now implemented and this test updated accordingly.)
+ * change now implemented and this test has been updated accordingly.)
  */
 
 public class TestNoteOnImplicitProcessing extends TestRunner {
