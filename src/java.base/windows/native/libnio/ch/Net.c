@@ -586,7 +586,7 @@ Java_sun_nio_ch_Net_getInterface4(JNIEnv* env, jobject this, jobject fdo)
 
     n = getsockopt(fdval(env, fdo), IPPROTO_IP, IP_MULTICAST_IF, (void*)&in, &arglen);
     if (n == SOCKET_ERROR) {
-        NET_ThrowNew(env, WSAGetLastError(), "setsockopt");
+        NET_ThrowNew(env, WSAGetLastError(), "getsockopt");
         return IOS_THROWN;
     }
     return ntohl(in.s_addr);
@@ -729,7 +729,7 @@ Java_sun_nio_ch_Net_pollConnect(JNIEnv* env, jclass this, jobject fdo, jlong tim
                 NET_ThrowNew(env, lastError, "getsockopt");
             }
         } else if (optError != NO_ERROR) {
-            NET_ThrowNew(env, optError, "getsockopt");
+            NET_ThrowNew(env, optError, "getsockopt issue with option value");
         }
         return JNI_FALSE;
     }
