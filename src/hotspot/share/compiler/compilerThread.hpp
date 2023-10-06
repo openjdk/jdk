@@ -27,8 +27,9 @@
 
 #include "runtime/javaThread.hpp"
 
-class BufferBlob;
 class AbstractCompiler;
+class ArenaStatCounter;
+class BufferBlob;
 class ciEnv;
 class CompileThread;
 class CompileLog;
@@ -38,6 +39,7 @@ class CompilerCounters;
 class IdealGraphPrinter;
 class JVMCIEnv;
 class JVMCIPrimitiveArray;
+class outputStream;
 
 // A thread used for Compilation.
 class CompilerThread : public JavaThread {
@@ -53,6 +55,8 @@ class CompilerThread : public JavaThread {
 
   AbstractCompiler*     _compiler;
   TimeStamp             _idle_time;
+
+  ArenaStatCounter*     _arena_stat;
 
  public:
 
@@ -81,6 +85,7 @@ class CompilerThread : public JavaThread {
 
   CompileQueue* queue()        const             { return _queue; }
   CompilerCounters* counters() const             { return _counters; }
+  ArenaStatCounter* arena_stat() const           { return _arena_stat; }
 
   // Get/set the thread's compilation environment.
   ciEnv*        env()                            { return _env; }

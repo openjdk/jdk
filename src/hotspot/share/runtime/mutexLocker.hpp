@@ -117,6 +117,7 @@ extern Mutex*   ThreadIdTableCreate_lock;        // Used by ThreadIdTable to laz
 extern Mutex*   SharedDecoder_lock;              // serializes access to the decoder during normal (not error reporting) use
 extern Mutex*   DCmdFactory_lock;                // serialize access to DCmdFactory information
 extern Mutex*   NMTQuery_lock;                   // serialize NMT Dcmd queries
+extern Mutex*   NMTCompilationCostHistory_lock;  // guards NMT compilation cost history
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
 extern Mutex*   CDSClassFileStream_lock;         // FileMapInfo::open_stream_for_jvmti

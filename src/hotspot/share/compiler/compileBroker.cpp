@@ -31,9 +31,11 @@
 #include "code/codeHeapState.hpp"
 #include "code/dependencyContext.hpp"
 #include "compiler/compilationLog.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/directivesParser.hpp"
@@ -749,6 +751,10 @@ void CompileBroker::compilation_init(JavaThread* THREAD) {
                                           PerfData::U_None,
                                           (jlong)CompileBroker::no_compile,
                                           CHECK);
+  }
+
+  if (CompilationMemStat) {
+    CompilationMemoryStatistic::initialize();
   }
 
   _initialized = true;
