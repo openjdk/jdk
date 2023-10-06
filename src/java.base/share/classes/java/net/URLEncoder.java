@@ -123,7 +123,7 @@ public class URLEncoder {
          *
          */
         DONT_NEED_ENCODING_FLAGS_0_WITHOUT_SPACE
-                = (1L << '*') // ASCII 45
+                = (1L << '*') // ASCII 42
                 | (1L << '-') // ASCII 45
                 | (1L << '.') // ASCII 46
                 | (1L << '0') // ASCII 48
