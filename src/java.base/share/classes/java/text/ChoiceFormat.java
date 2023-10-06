@@ -412,6 +412,10 @@ public class ChoiceFormat extends NumberFormat {
 
     /**
      * Set the choices to be used in formatting.
+     *
+     * @implSpec {@link #ChoiceFormat(double[], String[])} may invoke this method.
+     * Therefore, any changes made to the {@code setChoices} method in subclasses
+     * may be reflected in the constructor as well.
      * @param limits contains the top value that you want
      * parsed with that format, and should be in ascending sorted order. When
      * formatting X, the choice will be the i, where
