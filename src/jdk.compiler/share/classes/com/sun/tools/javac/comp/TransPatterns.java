@@ -65,7 +65,6 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 import java.util.Collections;
 import java.util.Map;
@@ -73,7 +72,6 @@ import java.util.Map.Entry;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
-import java.util.stream.Stream;
 import java.util.Set;
 
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
@@ -990,10 +988,7 @@ public class TransPatterns extends TreeTranslator {
     }
 
     private Type principalType(JCTree p) {
-        if (p instanceof JCPattern jcp && jcp.type.isPrimitive()) {
-            return jcp.type;
-        }
-        return types.boxedTypeOrType(types.erasure(TreeInfo.primaryPatternType(p)));
+        return types.erasure(TreeInfo.primaryPatternType(p));
     }
 
     private LoadableConstant toLoadableConstant(JCCaseLabel l, Type selector) {

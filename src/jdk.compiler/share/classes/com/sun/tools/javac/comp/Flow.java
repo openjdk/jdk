@@ -698,7 +698,15 @@ public class Flow {
             tree.isExhaustive = tree.hasUnconditionalPattern ||
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases);
             if (exhaustiveSwitch) {
-                tree.isExhaustive |= exhausts(tree.selector, tree.cases);
+                if (tree.selector.type.hasTag(TypeTag.BOOLEAN)) {
+                    if (tree.hasUnconditionalPattern &&
+                        exhausts(tree.selector, tree.cases)) {
+                        log.error(tree, Errors.DefaultLabelNotAllowed);
+                    }
+                    tree.isExhaustive = true;
+                } else {
+                    tree.isExhaustive |= exhausts(tree.selector, tree.cases);
+                }
                 if (!tree.isExhaustive) {
                     log.error(tree, Errors.NotExhaustiveStatement);
                 }
@@ -733,15 +741,16 @@ public class Flow {
                 }
             }
 
-            boolean exhaustive = exhausts(tree.selector, tree.cases);
-
-            if (tree.selector.type.hasTag(TypeTag.BOOLEAN) && exhaustive && tree.hasUnconditionalPattern) {
-                log.error(tree, Errors.DefaultLabelNotAllowed);
+            if (tree.hasUnconditionalPattern ||
+                TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases)) {
+                if (tree.selector.type.hasTag(TypeTag.BOOLEAN) &&
+                    exhausts(tree.selector, tree.cases)) {
+                    log.error(tree, Errors.DefaultLabelNotAllowed);
+                }
+                tree.isExhaustive = true;
+            } else {
+                tree.isExhaustive = exhausts(tree.selector, tree.cases);
             }
-
-            tree.isExhaustive = tree.hasUnconditionalPattern ||
-                    TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) ||
-                    exhaustive;
 
             if (!tree.isExhaustive) {
                 log.error(tree, Errors.NotExhaustive);

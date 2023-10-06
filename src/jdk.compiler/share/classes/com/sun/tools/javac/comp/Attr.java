@@ -172,8 +172,6 @@ public class Attr extends JCTree.Visitor {
                              Feature.PATTERN_SWITCH.allowedInSource(source);
         allowUnconditionalPatternsInstanceOf =
                              Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF.allowedInSource(source);
-        allowPrimitivePatterns = (preview.isEnabled() || !preview.isPreview(Feature.PRIMITIVE_PATTERNS)) &&
-                Feature.PRIMITIVE_PATTERNS.allowedInSource(source);
         sourceName = source.name;
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
 
@@ -201,10 +199,6 @@ public class Attr extends JCTree.Visitor {
     /** Are unconditional patterns in instanceof allowed
      */
     private final boolean allowUnconditionalPatternsInstanceOf;
-
-    /** Are primitive patterns in instanceof allowed
-     */
-    private final boolean allowPrimitivePatterns;
 
     /**
      * Switch: warn about use of variable before declaration?
@@ -1687,18 +1681,17 @@ public class Attr extends JCTree.Visitor {
         try {
             boolean enumSwitch = (seltype.tsym.flags() & Flags.ENUM) != 0;
             boolean stringSwitch = types.isSameType(seltype, syms.stringType);
-            boolean booleanSwitch = types.isAssignable(seltype, syms.booleanType);
             boolean errorEnumSwitch = TreeInfo.isErrorEnumSwitch(selector, cases);
             boolean intSwitch = types.isAssignable(seltype, syms.intType);
-            boolean errorPrimitiveSwitch = seltype.isPrimitive() && !intSwitch && !allowPrimitivePatterns;
             boolean patternSwitch;
             if (!enumSwitch && !stringSwitch && !errorEnumSwitch &&
-                !intSwitch && !errorPrimitiveSwitch) {
+                !intSwitch) {
                 preview.checkSourceLevel(selector.pos(), Feature.PATTERN_SWITCH);
                 patternSwitch = true;
             } else {
-                if (errorPrimitiveSwitch) {
-                    log.error(selector.pos(), Errors.SelectorTypeNotAllowed(seltype));
+                if (seltype.isPrimitive() && !intSwitch) {
+                    preview.checkSourceLevel(selector.pos(), Feature.PRIMITIVE_PATTERNS);
+                    patternSwitch = true;
                 }
                 patternSwitch = cases.stream()
                                      .flatMap(c -> c.labels.stream())
@@ -1784,21 +1777,9 @@ public class Attr extends JCTree.Visitor {
                                         log.error(label.pos(), Errors.DuplicateCaseLabel);
                                     }
                                 }
-                                else if (allowPrimitivePatterns) {
-                                    if (!stringSwitch && !intSwitch && !booleanSwitch &&
-                                        !(types.isSameType(pattype, syms.longType) && types.isAssignable(seltype, syms.longType)) &&
-                                        !(types.isSameType(pattype, syms.floatType) && types.isAssignable(seltype, syms.floatType)) &&
-                                        !(types.isSameType(pattype, syms.doubleType) && types.isAssignable(seltype, syms.doubleType))) {
-                                        log.error(label.pos(), Errors.ConstantLabelNotCompatible(pattype, seltype));
-                                    } else if (booleanSwitch &&
-                                        !(types.isAssignable(pattype, syms.booleanType))) {
-                                        log.error(label.pos(), Errors.ConstantLabelNotCompatible(pattype, seltype));
-                                    } else if (!constants.add(pattype.constValue())) {
-                                        log.error(c.pos(), Errors.DuplicateCaseLabel);
-                                    }
-                                }
                                 else {
-                                    if (!stringSwitch && !intSwitch && !errorPrimitiveSwitch) {
+                                    if (seltype.isPrimitive() && !intSwitch &&
+                                        !types.isAssignable(seltype, pattype)) {
                                         log.error(label.pos(), Errors.ConstantLabelNotCompatible(pattype, seltype));
                                     } else if (!constants.add(pattype.constValue())) {
                                         log.error(c.pos(), Errors.DuplicateCaseLabel);
@@ -1820,14 +1801,12 @@ public class Attr extends JCTree.Visitor {
                         attribExpr(pat, switchEnv, seltype);
                         Type primaryType = TreeInfo.primaryPatternType(pat);
 
-                        if (!primaryType.hasTag(TYPEVAR) && !(primaryType.isPrimitive() && allowPrimitivePatterns)) {
+                        if (primaryType.isPrimitive()) {
+                            preview.checkSourceLevel(pat.pos(), Feature.PRIMITIVE_PATTERNS);
+                        } else if (!primaryType.hasTag(TYPEVAR)) {
                             primaryType = chk.checkClassOrArrayType(pat.pos(), primaryType);
-                        } else if (primaryType.isPrimitive() && allowPrimitivePatterns) {
-                            preview.warnPreview(pat.pos(), Feature.PRIMITIVE_PATTERNS);
                         }
-                        if (!errorPrimitiveSwitch) {
-                            checkCastablePattern(pat.pos(), seltype, primaryType);
-                        }
+                        checkCastablePattern(pat.pos(), seltype, primaryType);
                         Type patternType = types.erasure(primaryType);
                         JCExpression guard = c.guard;
                         if (guardBindings == null && guard != null) {
@@ -4151,11 +4130,11 @@ public class Attr extends JCTree.Visitor {
 
     public void visitTypeTest(JCInstanceOf tree) {
         Type exprtype = attribExpr(tree.expr, env);
-        if (!allowPrimitivePatterns) {
+        if (exprtype.isPrimitive()) {
+            preview.checkSourceLevel(tree.expr.pos(), Feature.PRIMITIVE_PATTERNS);
+        } else {
             exprtype = chk.checkNullOrRefType(
                     tree.expr.pos(), exprtype);
-        } else if (tree.pattern.type != null && exprtype.isPrimitive() && preview.isPreview(Feature.PRIMITIVE_PATTERNS)) {
-            preview.warnPreview(tree.pattern.pos(), Feature.PRIMITIVE_PATTERNS);
         }
         Type clazztype;
         JCTree typeTree;
@@ -4175,14 +4154,14 @@ public class Attr extends JCTree.Visitor {
         } else {
             clazztype = attribType(tree.pattern, env);
             typeTree = tree.pattern;
-            if (!clazztype.isPrimitive()  || !allowPrimitivePatterns) {
-                chk.validate(typeTree, env, false);
+            chk.validate(typeTree, env, false);
+        }
+        if (clazztype.isPrimitive()) {
+            preview.checkSourceLevel(tree.pattern.pos(), Feature.PRIMITIVE_PATTERNS);
+        } else {
+            if (!clazztype.hasTag(TYPEVAR)) {
+                clazztype = chk.checkClassOrArrayType(typeTree.pos(), clazztype);
             }
-        }
-        if (!clazztype.hasTag(TYPEVAR) && !allowPrimitivePatterns) {
-            clazztype = chk.checkClassOrArrayType(typeTree.pos(), clazztype);
-        }
-        if(!clazztype.isPrimitive() || !allowPrimitivePatterns) {
             if (!clazztype.isErroneous() && !types.isReifiable(clazztype)) {
                 boolean valid = false;
                 if (allowReifiableTypesInInstanceof) {
@@ -4196,11 +4175,8 @@ public class Attr extends JCTree.Visitor {
                     clazztype = types.createErrorType(clazztype);
                 }
             }
-        } else if (clazztype.isPrimitive() && preview.isPreview(Feature.PRIMITIVE_PATTERNS)) {
-            preview.warnPreview(tree.pattern.pos(), Feature.PRIMITIVE_PATTERNS);
         }
         chk.checkCastable(tree.expr.pos(), exprtype, clazztype);
-
         result = check(tree, syms.booleanType, KindSelector.VAL, resultInfo);
     }
 
@@ -4218,14 +4194,9 @@ public class Attr extends JCTree.Visitor {
             return false;
         } else if ((exprType.isPrimitive() || pattType.isPrimitive()) &&
                 (!exprType.isPrimitive() || !pattType.isPrimitive() || !types.isSameType(exprType, pattType))) {
-            if (!allowPrimitivePatterns) {
-                chk.basicHandler.report(pos,
-                        diags.fragment(Fragments.NotApplicableTypes(exprType, pattType)));
-                return false;
-            } else {
-                preview.warnPreview(pos, Feature.PRIMITIVE_PATTERNS);
-                return true;
-            }
+            //TODO: double check
+            preview.checkSourceLevel(pos, Feature.PRIMITIVE_PATTERNS);
+            return false;
         } else if (warner.hasLint(LintCategory.UNCHECKED)) {
             log.error(pos,
                     Errors.InstanceofReifiableNotSafe(exprType, pattType));

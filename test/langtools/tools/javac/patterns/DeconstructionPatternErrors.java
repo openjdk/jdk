@@ -28,12 +28,14 @@ public class DeconstructionPatternErrors {
         if (p instanceof P2(var v, var v)); //duplicated variables
         if (p instanceof P6(P2(var v1, var v2), P2(var v1, var v2))); //duplicated variables
         if (p instanceof P7(byte b)); //incorrect pattern type
+//TODO: either remove (probably OK), or re-write to one testcase per compilation:
         if (p instanceof P7(long l)); //incorrect pattern type
         switch (p) {
             case P7(byte b) -> {} //incorrect pattern type - no exception should occur
             case P7(long l) -> {} //incorrect pattern type - no exception should occur
             default -> {}
         }
+//till here
         GenRecord<String> r1 = null;
         if (r1 instanceof GenRecord(String s)) {}
         switch (r1) {
