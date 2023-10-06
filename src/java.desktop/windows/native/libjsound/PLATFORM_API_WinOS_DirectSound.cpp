@@ -188,8 +188,8 @@ INT32 DAUDIO_GetDirectAudioDeviceCount() {
     if(hr != S_OK || hr != S_FALSE || hr != RPC_E_CHANGED_MODE) {
         DS_unlockCache();
         return 0;
-    }    
-    
+    }
+
     if (g_lastCacheRefreshTime == 0
         || (UINT64) timeGetTime() > (UINT64) (g_lastCacheRefreshTime + WAIT_BETWEEN_CACHE_REFRESH_MILLIS)) {
         /* first, initialize any old cache items */
@@ -234,7 +234,7 @@ INT32 DAUDIO_GetDirectAudioDeviceCount() {
     if(hr != RPC_E_CHANGED_MODE) {
         ::CoUninitialize();
     }
-    
+
     DS_unlockCache();
     /*TRACE1("DirectSound: %d installed devices\n", g_mixerCount);*/
     return g_mixerCount;
