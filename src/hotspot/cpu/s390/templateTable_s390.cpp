@@ -79,11 +79,7 @@
     uintptr_t   b_addr = (uintptr_t)__ pc();                                   \
     __ z_larl(br_tab_temp, (int64_t)0);  /* Check current address alignment. */\
     __ z_slgr(br_tab_temp, br_tab);      /* Current Address must be equal    */\
-    if (tos_state != Z_R0_scratch) {                                           \
-      __ z_slgr(br_tab_temp, tos_state); /* to calculated branch target.     */\
-    }                                                                          \
-    __ z_brc(Assembler::bcondLogZero, 4);/* skip trap if ok. */                \
-    __ z_illtrap(0x55);                                                        \
+    __ z_brc(Assembler::bcondLogZero, 3);/* skip trap if ok. */                \
     __ z_illtrap(0x55);                                                        \
     guarantee(b_addr%alignment == 0, "bad alignment at begin of block" name);
 
@@ -2450,7 +2446,9 @@ void TemplateTable::load_resolved_field_entry(Register obj,
   __ load_sized_value(flags, Address(cache, in_bytes(ResolvedFieldEntry::flags_offset())), sizeof(u1), false);
 
   // TOS state
-  __ load_sized_value(tos_state, Address(cache, in_bytes(ResolvedFieldEntry::type_offset())), sizeof(u1), false);
+  if (tos_state != noreg) {
+    __ load_sized_value(tos_state, Address(cache, in_bytes(ResolvedFieldEntry::type_offset())), sizeof(u1), false);
+  }
 
   // Klass overwrite register
   if (is_static) {
@@ -2658,14 +2656,13 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
 
   // Register usage and life range
   //
-  //  cache, index: short-lived. Their life ends after load_resolved_field_entry.
+  //  cache, index          : short-lived. Their life ends after load_resolved_field_entry.
   //  obj (overwrites cache): long-lived. Used in branch table entries.
   //  off (overwrites index): long-lived. Used in branch table entries.
-  //  flags: unused in getfield.
-  //  br_tab: short-lived. Only used to address branch table, and for verification
-  //          in BTB_BEGIN macro.
-  //  tos_state: short-lived. Only used to index the branch table entry.
-  //  bc_reg: short-lived. Used as work register in patch_bytecode.
+  //  flags                 : unused in getfield.
+  //  br_tab                : short-lived. Only used to address branch table, and for verification in BTB_BEGIN macro.
+  //  tos_state             : short-lived. Only used to index the branch table entry.
+  //  bc_reg                : short-lived. Used as work register in patch_bytecode.
   //
   resolve_cache_and_index_for_field(byte_no, cache, index);
   jvmti_post_field_access(cache, index, is_static, false);
@@ -2703,12 +2700,9 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
     const int bit_shift = exact_log2(bsize); // Size of each branch table entry.
     __ z_larl(br_tab, branchTable);
     __ z_sllg(tos_state, tos_state, bit_shift);
-    if (tos_state == Z_R0_scratch) {
-      __ z_agr(br_tab, tos_state); // can't use tos_state with address calculation
-      __ z_bcr(Assembler::bcondAlways, br_tab);
-    } else {
-      __ z_bc(Assembler::bcondAlways, 0, tos_state, br_tab);
-    }
+    assert(tos_state != Z_R0_scratch, "shouldn't be");
+    __ z_agr(br_tab, tos_state);
+    __ z_bcr(Assembler::bcondAlways, br_tab);
   }
 
   __ align_address(bsize);
@@ -3001,7 +2995,6 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   jvmti_post_field_mod(cache, index, is_static);
   load_resolved_field_entry(obj, cache, tos_state, off, flags, is_static);
 
-  // Displacement is 0. No need to care about limited displacement range.
   const Address field(fieldAddr);
   __ lgr_if_needed(fieldAddr, off);
 
@@ -3029,7 +3022,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   assert((btos == 0) && (atos == 8), "change branch table! ByteCodes may have changed");
 
 #ifdef ASSERT
-  const unsigned int bsize = is_static ? BTB_MINSIZE*1 : BTB_MINSIZE*8; // TODO: why code size is increasing ?
+  const unsigned int bsize = is_static ? BTB_MINSIZE*1 : BTB_MINSIZE*8;
 #else
   const unsigned int bsize = is_static ? BTB_MINSIZE*1 : BTB_MINSIZE*8;
 #endif
@@ -3039,12 +3032,9 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     const int bit_shift = exact_log2(bsize); // Size of each branch table entry.
     __ z_larl(br_tab, branchTable);
     __ z_sllg(tos_state, tos_state, bit_shift);
-    if (tos_state == Z_R0_scratch) {
-      __ z_agr(br_tab, tos_state); // can't use tos_state with address calculation
-      __ z_bcr(Assembler::bcondAlways, br_tab);
-    } else {
-      __ z_bc(Assembler::bcondAlways, 0, tos_state, br_tab);
-    }
+    assert(tos_state != Z_R0_scratch, "shouldn't be");
+    __ z_agr(br_tab, tos_state);
+    __ z_bcr(Assembler::bcondAlways, br_tab);
   }
 
   __ align_address(bsize);
@@ -3284,7 +3274,6 @@ void TemplateTable::jvmti_post_fast_field_mod() {
 
   __ load_ptr(0, obj);              // Copy the object pointer from tos.
   __ verify_oop(obj);               // and verify it
-                                    // TODO: do we need to check twice (here and before call_VM?)
 
   // Save tos values before call_VM() clobbers them. Since we have
   // to do it for every data type, we use the saved values as the
@@ -3366,12 +3355,11 @@ void TemplateTable::fast_storefield(TosState state) {
   Register index     = Z_tmp_2;
   Register off       = Z_tmp_2;
   Register flags     = Z_ARG5;
-  Register tos_state = Z_R1_scratch;
 
   // Index comes in bytes, don't shift afterwards!
   __ load_field_entry(cache, index);
   // this call is for nonstatic. obj remains unchanged.
-  load_resolved_field_entry(obj, cache, tos_state, off, flags, false);
+  load_resolved_field_entry(obj, cache, noreg, off, flags, false);
 
   // Get object from stack.
   pop_and_check_object(obj);
