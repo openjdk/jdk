@@ -160,6 +160,8 @@ class Stream<T> extends ExchangeImpl<T> {
      */
     private final WindowController windowController;
     private final WindowUpdateSender windowUpdater;
+
+    // Only accessed in all method calls from incoming(), no need for volatile
     private boolean endStreamSeen;
 
     @Override
@@ -479,17 +481,19 @@ class Stream<T> extends ExchangeImpl<T> {
     void incoming(Http2Frame frame) throws IOException {
         if (debug.on()) debug.log("incoming: %s", frame);
         var cancelled = checkRequestCancelled() || closed;
-        endStreamSeen = endStreamSeen || frame.getFlag(HeaderFrame.END_STREAM);
+//        endStreamSeen = endStreamSeen || frame.getFlag(HeaderFrame.END_STREAM);
         if ((frame instanceof HeaderFrame hf)) {
             if (hf.endHeaders()) {
                 Log.logTrace("handling response (streamid={0})", streamid);
                 handleResponse(hf);
             }
             if (hf.getFlag(HeaderFrame.END_STREAM)) {
+                endStreamSeen = true;
                 if (debug.on()) debug.log("handling END_STREAM: %d", streamid);
                 receiveDataFrame(new DataFrame(streamid, DataFrame.END_STREAM, List.of()));
             }
         } else if (frame instanceof DataFrame df) {
+            if (df.getFlag(DataFrame.END_STREAM)) endStreamSeen = true;
             if (cancelled) {
                 if (debug.on()) {
                     debug.log("request cancelled or stream closed: dropping data frame");
@@ -573,47 +577,47 @@ class Stream<T> extends ExchangeImpl<T> {
 
     }
 
+    // Logic here starts checking roughly in reverse order of the Stream's life-cycle i.e. check if closed, check if
+    // closing or done sending, response received or waiting for expect continue, receiving reset on active stream...
     void incoming_reset(ResetFrame frame) {
         Log.logTrace("Received RST_STREAM on stream {0}", streamid);
         Flow.Subscriber<?> subscriber = responseSubscriber == null ? pendingResponseSubscriber : responseSubscriber;
-        System.err.println(endStreamSeen);
         if (endStreamReceived() && requestBodyCF.isDone()) {
             // END_STREAM flag may have been seen in the queue before processing this ResetFrame
             Log.logTrace("Ignoring RST_STREAM frame received on remotely closed stream {0}", streamid);
-            System.err.println("1");
         } else if (closed) {
             Log.logTrace("Ignoring RST_STREAM frame received on closed stream {0}", streamid);
-            System.err.println("2");
         } else if (subscriber == null && !endStreamSeen) {
             handleReset(frame, null);
         } else if (!requestBodyCF.isDone()) {
-            System.err.println("3");
-            if (frame.getErrorCode() != ResetFrame.NO_ERROR) {
-                if (debug.on()) {
-                    debug.log("completing requestBodyCF exceptionally due to received" +
-                            " RESET(%s) (stream=%s)", frame.getErrorCode(), streamid);
-                }
-                System.err.println("4");
-                requestBodyCF.completeExceptionally(new IOException("RST_STREAM received"));
-            } else {
-                if (debug.on()) {
-                    debug.log("completing requestBodyCF normally due to received" +
-                            " RESET(NO_ERROR) (stream=%s)", streamid);
-                }
-                System.err.println("5");
-                requestBodyCF.complete(null);
-            }
-        } else if ((response == null || !finalResponseCodeReceived)) {
-            System.err.println("7");
-            // In these cases, ResetFrame will not be taken from the inputQ and so should be
-            // handled immediately
+            incompleteRequestBodyReset(frame, subscriber);
+        } else if (response == null || !finalResponseCodeReceived) {
             handleReset(frame, null);
         } else {
-            System.err.println("8");
-            // Put ResetFrame into inputQ. Any frames already in the queue will be processed
-            // before the ResetFrame.
+            // Put ResetFrame into inputQ. Any frames already in the queue will be processed before the ResetFrame.
             receiveResetFrame(frame);
             Log.logTrace("RST_STREAM pushed in queue for stream {0}", streamid);
+        }
+    }
+
+    void incompleteRequestBodyReset(ResetFrame frame, Flow.Subscriber<?> subscriber) {
+        if (frame.getErrorCode() != ResetFrame.NO_ERROR) {
+            if (debug.on()) {
+                debug.log("completing requestBodyCF exceptionally due to received" +
+                        " RESET(%s) (stream=%s)", frame.getErrorCode(), streamid);
+            }
+            requestBodyCF.completeExceptionally(new IOException("RST_STREAM received"));
+        } else {
+            if (debug.on()) {
+                debug.log("completing requestBodyCF normally due to received" +
+                        " RESET(NO_ERROR) (stream=%s)", streamid);
+            }
+            if (!endStreamSeen) {
+                // If no END_STREAM flag seen, any RST_STREAM should be handled here immediately
+                handleReset(frame, subscriber);
+            } else {
+                requestBodyCF.complete(null);
+            }
         }
     }
 
@@ -641,9 +645,11 @@ class Stream<T> extends ExchangeImpl<T> {
                 }
                 completeResponseExceptionally(e);
                 if (!requestBodyCF.isDone()) {
+                    if (debug.on()) debug.log("\nHERE");
                     requestBodyCF.completeExceptionally(errorRef.get()); // we may be sending the body..
                 }
                 if (responseBodyCF != null) {
+                    if (debug.on()) debug.log("\nALSO HERE");
                     responseBodyCF.completeExceptionally(errorRef.get());
                 }
             } finally {
@@ -1383,14 +1389,21 @@ class Stream<T> extends ExchangeImpl<T> {
         }
 
         if (closing) { // true if the stream has not been closed yet
-            if (responseSubscriber != null || pendingResponseSubscriber != null) {
+            var subscriber = this.responseSubscriber;
+            if (subscriber == null) subscriber = this.pendingResponseSubscriber;
+            if (subscriber != null) {
                 if (debug.on())
                     debug.log("stream %s closing due to %s", streamid, (Object)errorRef.get());
                 sched.runOrSchedule();
+                if (subscriber instanceof Http2StreamResponseSubscriber<?> rs) {
+                    // make sure the subscriber is stopped.
+                    if (debug.on()) debug.log("closing response subscriber stream %s", streamid);
+                    rs.complete(errorRef.get());
+                }
             } else {
                 if (debug.on())
                     debug.log("stream %s closing due to %s before subscriber registered",
-                        streamid, (Object)errorRef.get());
+                            streamid, (Object)errorRef.get());
             }
         } else {
             if (debug.on()) {
