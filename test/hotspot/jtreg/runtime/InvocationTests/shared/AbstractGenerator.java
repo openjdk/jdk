@@ -102,7 +102,7 @@ public abstract class AbstractGenerator {
         classesBeforeGC -= classes.size();
         if (classesBeforeGC <= 0) {
             System.gc();
-            classesBeforeGC = 1024;
+            classesBeforeGC = 3000;
         }
 
         String caseDescription = String.format("%4d| %s", testNum, description);
