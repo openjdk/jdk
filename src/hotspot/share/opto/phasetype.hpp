@@ -55,6 +55,10 @@
   flags(SPLIT_IF,                     "After split if") \
   flags(BEFORE_LOOP_PREDICATION,      "Before loop predication") \
   flags(LOOP_PREDICATION,             "After loop predication") \
+  flags(BEFORE_PARTIAL_PEEL,          "Before partial peeling") \
+  flags(PARTIAL_PEEL,                 "After partial peeling") \
+  flags(BEFORE_LOOP_PEEL,             "Before loop peeling") \
+  flags(LOOP_PEEL,                    "After loop peeling") \
   flags(BEFORE_CLOOPS,                "Before CountedLoop") \
   flags(AFTER_CLOOPS,                 "After CountedLoop") \
   flags(PHASEIDEAL_BEFORE_EA,         "PhaseIdealLoop before EA") \
@@ -105,7 +109,9 @@ static const char* phase_names[] = {
 #undef array_of_labels
 };
 
+#ifndef PRODUCT
 static int phase_iters[PHASE_NUM_TYPES] = {0};
+#endif
 
 class CompilerPhaseTypeHelper {
   public:
@@ -115,6 +121,7 @@ class CompilerPhaseTypeHelper {
   static const char* to_description(CompilerPhaseType cpt) {
     return phase_descriptions[cpt];
   }
+#ifndef PRODUCT
   static int next_iter(CompilerPhaseType cpt) {
     return ++phase_iters[cpt];
   };

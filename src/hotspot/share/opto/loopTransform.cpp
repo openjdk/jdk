@@ -690,7 +690,6 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
 //
 void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
 
-  // TODO(2023-10-05,dlunde): Loop peeling IGV dump
   C->set_major_progress();
   // Peeling a 'main' loop in a pre/main/post situation obfuscates the
   // 'pre' loop from the main and the 'pre' can no longer have its
@@ -704,6 +703,9 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
   }
 #endif
   LoopNode* head = loop->_head->as_Loop();
+
+  C->print_method_iter(PHASE_BEFORE_LOOP_PEEL, 4, head);
+
   bool counted_loop = head->is_CountedLoop();
   if (counted_loop) {
     CountedLoopNode *cl = head->as_CountedLoop();
@@ -796,6 +798,8 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
   peeled_dom_test_elim(loop,old_new);
 
   loop->record_for_igvn();
+
+  C->print_method_iter(PHASE_LOOP_PEEL, 4, head);
 }
 
 //------------------------------policy_maximally_unroll------------------------

@@ -5130,8 +5130,12 @@ void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
 }
 
 void Compile::print_method_iter(CompilerPhaseType cpt, int level, Node* n) {
+#ifndef PRODUCT
   int iter = CompilerPhaseTypeHelper::next_iter(cpt);
   print_method(cpt, level, n, iter);
+#else
+  print_method(cpt, level, n);
+#endif
 }
 
 // Only used from CompileWrapper

@@ -66,6 +66,8 @@ public enum CompilePhase {
     SPLIT_IF("After split if"),
     BEFORE_LOOP_PREDICATION("Before loop predication"),
     LOOP_PREDICATION("After loop predication"),
+    BEFORE_PARTIAL_PEEL("Before partial peeling"),
+    PARTIAL_PEEL("After partial peeling"),
     // Match on very first BEFORE_CLOOPS phase (there could be multiple phases for multiple loops in the code).
     BEFORE_CLOOPS("Before CountedLoop", RegexType.IDEAL_INDEPENDENT, ActionOnRepeat.KEEP_FIRST),
     AFTER_CLOOPS("After CountedLoop"),

@@ -3527,8 +3527,6 @@ bool PhaseIdealLoop::is_valid_clone_loop_form( IdealLoopTree *loop, Node_List& p
 //
 bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
 
-  // TODO(2023-10-05,dlunde): Partial peel IGV dump
-
   assert(!loop->_head->is_CountedLoop(), "Non-counted loop only");
   if (!loop->_head->is_Loop()) {
     return false;
@@ -3627,6 +3625,9 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
     }
   }
 #endif
+
+  C->print_method_iter(PHASE_BEFORE_PARTIAL_PEEL, 4, head);
+
   VectorSet peel;
   VectorSet not_peel;
   Node_List peel_list;
@@ -3921,6 +3922,9 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
     }
   }
 #endif
+
+  C->print_method_iter(PHASE_PARTIAL_PEEL, 4, head);
+
   return true;
 }
 
