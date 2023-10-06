@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,7 @@ public final class MonitorVmStartTerminate {
         System.out.println("Waiting for all processes to get started notification");
         listener.started.acquire(PROCESS_COUNT);
 
+        System.out.println("Terminating all processes");
         for (JavaProcess javaProcess : javaProcesses) {
             javaProcess.terminate();
         }
@@ -138,7 +139,7 @@ public final class MonitorVmStartTerminate {
         }
 
         private void releaseStarted(Set<Integer> ids) {
-            System.out.println("realeaseStarted(" + ids + ")");
+            System.out.println("releaseStarted(" + ids + ")");
             for (Integer id : ids) {
                 releaseStarted(id);
             }
@@ -149,11 +150,12 @@ public final class MonitorVmStartTerminate {
                 if (hasMainArgs(id, jp.getMainArgsIdentifier())) {
                     // store id for terminated identification
                     jp.setId(id);
-                    System.out.println("RELEASED (id=" + jp.getId() + ", args=" + jp.getMainArgsIdentifier() + ")");
+                    System.out.println("RELEASED started (id=" + jp.getId() + ", args=" + jp.getMainArgsIdentifier() + ")");
                     started.release();
                     return;
                 }
             }
+            System.out.println("releaseStarted: not a test pid: " + id);
         }
 
         private void releaseTerminated(Set<Integer> ids) {
@@ -166,23 +168,34 @@ public final class MonitorVmStartTerminate {
         private void releaseTerminated(Integer id) {
             for (JavaProcess jp : processes) {
                 if (id.equals(jp.getId())) {
-                    System.out.println("RELEASED (id=" + jp.getId() + ", args=" + jp.getMainArgsIdentifier() + ")");
+                    System.out.println("RELEASED terminated (id=" + jp.getId() + ", args=" + jp.getMainArgsIdentifier() + ")");
                     terminated.release();
                     return;
                 }
             }
         }
 
+        private static final int ARGS_ATTEMPTS = 5;
+
         private boolean hasMainArgs(Integer id, String args) {
-            try {
-                VmIdentifier vmid = new VmIdentifier("//" + id.intValue());
-                MonitoredVm target = host.getMonitoredVm(vmid);
-                String monitoredArgs = MonitoredVmUtil.mainArgs(target);
-                if (monitoredArgs != null && monitoredArgs.contains(args)) {
-                    return true;
+            for (int i=0; i<ARGS_ATTEMPTS; i++) {
+                try {
+                    VmIdentifier vmid = new VmIdentifier("//" + id.intValue());
+                    MonitoredVm target = host.getMonitoredVm(vmid);
+                        String monitoredArgs = MonitoredVmUtil.mainArgs(target);
+                    if (monitoredArgs != null && monitoredArgs.contains(args)) {
+                        System.out.println("hasMainArgs(" + id + "): yes");
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } catch (URISyntaxException | MonitorException e) {
+                    // ok. process probably not running
+                    System.out.println("hasMainArgs(" + id + "): " + e);
                 }
-            } catch (URISyntaxException | MonitorException e) {
-                // ok. process probably not running
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) { }
             }
             return false;
         }
