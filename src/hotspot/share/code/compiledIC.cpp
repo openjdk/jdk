@@ -565,9 +565,7 @@ bool CompiledIC::is_icholder_entry(address entry) {
   if (cb->is_adapter_blob()) {
     return true;
   } else if (cb->is_vtable_blob()) {
-    VtableStub* s = VtableStubs::entry_point_for_vtable_blob(entry);
-    // itable stubs also use CompiledICHolder
-    return s->is_itable_stub();
+    return VtableStubs::is_icholder_entry(entry);
   }
   return false;
 }

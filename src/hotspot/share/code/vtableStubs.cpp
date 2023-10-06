@@ -284,10 +284,11 @@ VtableStub* VtableStubs::entry_point(address pc) {
   return (s == stub) ? s : nullptr;
 }
 
-VtableStub* VtableStubs::entry_point_for_vtable_blob(address pc) {
-  VtableStub* stub = (VtableStub*)(pc - VtableStub::entry_offset());
+bool VtableStubs::is_icholder_entry(address pc) {
   assert(contains(pc), "must contain all vtable blobs");
-  return stub;
+  VtableStub* stub = (VtableStub*)(pc - VtableStub::entry_offset());
+  // itable stubs use CompiledICHolder.
+  return stub->is_itable_stub();
 }
 
 bool VtableStubs::contains(address pc) {
