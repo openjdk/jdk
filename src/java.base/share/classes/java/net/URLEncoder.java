@@ -35,12 +35,8 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
-import java.util.BitSet;
 import java.util.Objects;
 import java.util.HexFormat;
-import java.util.function.IntPredicate;
-
-import jdk.internal.util.ImmutableBitSetPredicate;
 
 /**
  * Utility class for HTML form encoding. This class contains static methods
@@ -85,7 +81,9 @@ import jdk.internal.util.ImmutableBitSetPredicate;
  * @since   1.0
  */
 public class URLEncoder {
-    private static final IntPredicate DONT_NEED_ENCODING;
+    static final long DONT_NEED_ENCODING_FLAGS_0_WITHOUT_SPACE;
+    static final long DONT_NEED_ENCODING_FLAGS_0_WITH_SPACE;
+    static final long DONT_NEED_ENCODING_FLAGS_1;
 
     static {
 
@@ -124,19 +122,38 @@ public class URLEncoder {
          * as is Netscape.
          *
          */
+        DONT_NEED_ENCODING_FLAGS_0_WITHOUT_SPACE
+                = (1L << '*') // ASCII 45
+                | (1L << '-') // ASCII 45
+                | (1L << '.') // ASCII 46
+                | (1L << '0') // ASCII 48
+                | (1L << '1')
+                | (1L << '2')
+                | (1L << '3')
+                | (1L << '4')
+                | (1L << '5')
+                | (1L << '6')
+                | (1L << '7')
+                | (1L << '8')
+                | (1L << '9') // ASCII 57
+                ;
 
-        var bitSet = new BitSet(128);
-        bitSet.set('a', 'z' + 1);
-        bitSet.set('A', 'Z' + 1);
-        bitSet.set('0', '9' + 1);
-        bitSet.set(' '); /* encoding a space to a + is done
-                                    * in the encode() method */
-        bitSet.set('-');
-        bitSet.set('_');
-        bitSet.set('.');
-        bitSet.set('*');
+        DONT_NEED_ENCODING_FLAGS_0_WITH_SPACE
+                = DONT_NEED_ENCODING_FLAGS_0_WITHOUT_SPACE
+                | (1L << ' '); // ASCII 32 encoding a space to a + is done in the encode() method
 
-        DONT_NEED_ENCODING = ImmutableBitSetPredicate.of(bitSet);
+//        long flags1 = 0;
+//        // ASCII 65 - 90
+//        for (int i = 'A'; i <= 'Z'; ++i) {
+//            flags1 |= 1L << (i - 64);
+//        }
+//        flags1 |= 1L << ('_' - 64); // ASCII 95
+//        // ASCII 97 - 122
+//        for (int i = 'a'; i <= 'z'; ++i) {
+//            flags1 |= 1L << (i - 64);
+//        }
+//        DONT_NEED_ENCODING_FLAGS_1 = flags1;
+        DONT_NEED_ENCODING_FLAGS_1 = 0x7FFFFFE87FFFFFEL; // really 1L << ([A-Z_a-z] - 64)
     }
 
     /**
@@ -219,7 +236,7 @@ public class URLEncoder {
         int i;
         for (i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
-            if (!DONT_NEED_ENCODING.test(c) || c == ' ') {
+            if (!dontNeedEncodingWithoutSpace(c)) {
                 break;
             }
         }
@@ -240,7 +257,7 @@ public class URLEncoder {
 
         while (i < s.length()) {
             char c = s.charAt(i);
-            if (DONT_NEED_ENCODING.test(c)) {
+            if (dontNeedEncodingWithSpace(c)) {
                 if (c == ' ') {
                     c = '+';
                 }
@@ -273,7 +290,7 @@ public class URLEncoder {
                         flushToStringBuilder(out, ce, cb, bb, false);
                     }
                     i++;
-                } while (i < s.length() && !DONT_NEED_ENCODING.test((c = s.charAt(i))));
+                } while (i < s.length() && !dontNeedEncodingWithSpace((c = s.charAt(i))));
                 flushToStringBuilder(out, ce, cb, bb, true);
             }
         }
@@ -320,5 +337,23 @@ public class URLEncoder {
         }
         cb.clear();
         bb.clear();
+    }
+
+    private static boolean dontNeedEncodingWithSpace(char c) {
+        int prefix = c >> 6;
+        if (prefix > 1) {
+            return false;
+        }
+        long flags = prefix == 0 ? DONT_NEED_ENCODING_FLAGS_0_WITH_SPACE : DONT_NEED_ENCODING_FLAGS_1;
+        return (flags & (1L << c)) != 0;
+    }
+
+    private static boolean dontNeedEncodingWithoutSpace(char c) {
+        int prefix = c >> 6;
+        if (prefix > 1) {
+            return false;
+        }
+        long flags = prefix == 0 ? DONT_NEED_ENCODING_FLAGS_0_WITHOUT_SPACE : DONT_NEED_ENCODING_FLAGS_1;
+        return (flags & (1L << c)) != 0;
     }
 }
