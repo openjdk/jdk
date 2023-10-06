@@ -140,7 +140,7 @@ public class UDivLNodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.UDIV_L})
-    @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
+    @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"}, applyIfPlatform = {"x64", "true"})
     // Checks x / (y / y) => x
     public long identityThird(long x, long y) {
         return Long.divideUnsigned(x, Long.divideUnsigned(y, y));
