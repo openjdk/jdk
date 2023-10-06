@@ -353,8 +353,8 @@ public final class ListFormat extends Format {
      * @return       the string buffer passed in as {@code toAppendTo},
      *               with formatted text appended
      * @throws    NullPointerException if {@code obj} or {@code toAppendTo} is null
-     * @throws    IllegalArgumentException if the given object cannot
-     *               be formatted
+     * @throws    IllegalArgumentException if {@code obj} is neither a {@code List}
+     *               nor an array of {@code Object}s, or its length is zero.
      */
     @Override
     public StringBuffer format(Object obj, StringBuffer toAppendTo, FieldPosition pos) {
@@ -513,7 +513,7 @@ public final class ListFormat extends Format {
     public String toString() {
         return
             """
-            ListFormat [locale: "%s", start: "%s", middle: "%s",  end: "%s", two: "%s", three: "%s"]
+            ListFormat [locale: "%s", start: "%s", middle: "%s", end: "%s", two: "%s", three: "%s"]
             """.formatted(locale.getDisplayName(), patterns[START], patterns[MIDDLE], patterns[END], patterns[TWO], patterns[THREE]);
     }
 

@@ -627,12 +627,10 @@ public abstract class PKCS11Test {
         osMap.put("Linux-arm-32", new String[]{
                 "/usr/lib/arm-linux-gnueabi/nss/",
                 "/usr/lib/arm-linux-gnueabihf/nss/"});
-        // Exclude linux-aarch64 at the moment until the following bug is fixed:
-        // 8296631: NSS tests failing on OL9 linux-aarch64 hosts
-//        osMap.put("Linux-aarch64-64", new String[] {
-//                "/usr/lib/aarch64-linux-gnu/",
-//                "/usr/lib/aarch64-linux-gnu/nss/",
-//                "/usr/lib64/" });
+        osMap.put("Linux-aarch64-64", new String[] {
+                "/usr/lib/aarch64-linux-gnu/",
+                "/usr/lib/aarch64-linux-gnu/nss/",
+                "/usr/lib64/" });
         return osMap;
     }
 
@@ -910,14 +908,22 @@ public abstract class PKCS11Test {
 
     protected void copyNssCertKeyToClassesDir(Path dbPath) throws IOException {
         Path destinationPath = Path.of(TEST_CLASSES);
-        String keyDbFile = "key3.db";
-        String certDbFile = "cert8.db";
+        String keyDbFile3 = "key3.db";
+        String keyDbFile4 = "key4.db";
+        String certDbFile8 = "cert8.db";
+        String certDbFile9 = "cert9.db";
 
-        Files.copy(dbPath.resolve(certDbFile),
-                destinationPath.resolve(certDbFile),
+        Files.copy(dbPath.resolve(certDbFile8),
+                destinationPath.resolve(certDbFile8),
                 StandardCopyOption.REPLACE_EXISTING);
-        Files.copy(dbPath.resolve(keyDbFile),
-                destinationPath.resolve(keyDbFile),
+        Files.copy(dbPath.resolve(certDbFile9),
+                destinationPath.resolve(certDbFile9),
+                StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(dbPath.resolve(keyDbFile3),
+                destinationPath.resolve(keyDbFile3),
+                StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(dbPath.resolve(keyDbFile4),
+                destinationPath.resolve(keyDbFile4),
                 StandardCopyOption.REPLACE_EXISTING);
     }
 
