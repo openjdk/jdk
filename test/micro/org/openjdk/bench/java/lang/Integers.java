@@ -54,6 +54,7 @@ public class Integers {
 
     private int bound;
     private String[] strings;
+    private String[] stringsUnsigned;
     private int[] intsTiny;
     private int[] intsSmall;
     private int[] intsBig;
@@ -63,13 +64,16 @@ public class Integers {
     public void setup() {
         Random r  = new Random(0);
         bound = 50;
+        stringsUnsigned  = new String[size];
         strings   = new String[size];
         intsTiny  = new int[size];
         intsSmall = new int[size];
         intsBig   = new int[size];
         res       = new int[size];
         for (int i = 0; i < size; i++) {
-            strings[i] = "" + (r.nextInt(10000) - (5000));
+            int nextInt = r.nextInt(10000) - (5000);
+            strings[i] = Integer.toString(nextInt);
+            stringsUnsigned[i] = Integer.toString(Math.abs(nextInt));
             intsTiny[i] = r.nextInt(99);
             intsSmall[i] = 100 * i + i + 103;
             intsBig[i] = ((100 * i + i) << 24) + 4543 + i * 4;
@@ -80,6 +84,27 @@ public class Integers {
     public void parseInt(Blackhole bh) {
         for (String s : strings) {
             bh.consume(Integer.parseInt(s));
+        }
+    }
+
+    @Benchmark
+    public void parseIntCharSequence(Blackhole bh) {
+        for (String s : strings) {
+            bh.consume(Integer.parseInt(s, 0, s.length(), 10));
+        }
+    }
+
+    @Benchmark
+    public void parseUnisgnedInt(Blackhole bh) {
+        for (String s : stringsUnsigned) {
+            bh.consume(Integer.parseUnsignedInt(s));
+        }
+    }
+
+    @Benchmark
+    public void parseUnisgnedIntCharSequence(Blackhole bh) {
+        for (String s : stringsUnsigned) {
+            bh.consume(Integer.parseUnsignedInt(s, 0, s.length(), 10));
         }
     }
 

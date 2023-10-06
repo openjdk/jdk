@@ -82,4 +82,28 @@ public class NumberFormatException extends IllegalArgumentException {
                 + (errorIndex - beginIndex) + " in: \""
                 + s.subSequence(beginIndex, endIndex) + "\"");
     }
+
+    static NumberFormatException forUnsign(CharSequence s) {
+        return new NumberFormatException("Illegal leading minus sign on unsigned string " + s + ".");
+    }
+
+    static NumberFormatException forUnsignLong(CharSequence s) {
+        return new NumberFormatException(String.format(
+                "String value %s exceeds range of unsigned long.", s));
+    }
+
+    static NumberFormatException forUnsignInt(CharSequence s) {
+        return new NumberFormatException(String.format(
+                "String value %s exceeds range of unsigned int.", s));
+    }
+
+    static NumberFormatException forMinRadix(int radix) {
+        return new NumberFormatException(String.format(
+                "radix %s greater than Character.MIN_RADIX", radix));
+    }
+
+    static NumberFormatException forMaxRadix(int radix) {
+        return new NumberFormatException(String.format(
+                "radix %s greater than Character.MAX_RADIX", radix));
+    }
 }

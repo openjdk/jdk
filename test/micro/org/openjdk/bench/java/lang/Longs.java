@@ -52,6 +52,7 @@ public class Longs {
     private long bound;
     private long[] res;
     private String[] strings;
+    private String[] stringsUnsigned;
     private long[] longArraySmall;
     private long[] longArrayBig;
 
@@ -60,11 +61,14 @@ public class Longs {
         var random = ThreadLocalRandom.current();
         bound = 20000L;
         strings = new String[size];
+        stringsUnsigned = new String[size];
         res = new long[size];
         longArraySmall = new long[size];
         longArrayBig = new long[size];
         for (int i = 0; i < size; i++) {
-            strings[i] = "" + (random.nextLong(10000) - 5000);
+            long nextLong = random.nextLong(10000) - 5000;
+            strings[i] = Long.toString(nextLong);
+            stringsUnsigned[i] = Long.toString(Math.abs(nextLong));
             longArraySmall[i] = 100L * i + i + 103L;
             longArrayBig[i] = ((100L * i + i) << 32) + 4543 + i * 4L;
         }
@@ -82,6 +86,34 @@ public class Longs {
     public void decode(Blackhole bh) {
         for (String s : strings) {
             bh.consume(Long.decode(s));
+        }
+    }
+
+    @Benchmark
+    public void parseLong(Blackhole bh) {
+        for (String s : strings) {
+            bh.consume(Long.parseLong(s));
+        }
+    }
+
+    @Benchmark
+    public void parseLongCharSequence(Blackhole bh) {
+        for (String s : strings) {
+            bh.consume(Long.parseLong(s, 0, s.length(), 10));
+        }
+    }
+
+    @Benchmark
+    public void parseUnsignedLong(Blackhole bh) {
+        for (String s : stringsUnsigned) {
+            bh.consume(Long.parseUnsignedLong(s));
+        }
+    }
+
+    @Benchmark
+    public void parseUnsignedLongCharSequence(Blackhole bh) {
+        for (String s : stringsUnsigned) {
+            bh.consume(Long.parseUnsignedLong(s, 0, s.length(), 10));
         }
     }
 
