@@ -37,7 +37,15 @@ class PSCardTable: public CardTable {
   static constexpr size_t num_cards_in_stripe = 128;
   static_assert(num_cards_in_stripe >= 1, "progress");
 
-  volatile int _scavenge_phase1_active_workers;
+  // Pre-scavenge support.
+  // The pre-scavenge phase can overlap with scavenging.
+  static size_t constexpr _pre_scavenge_sync_interval = 1*G;
+  volatile HeapWord* _pre_scavenge_current_goal;
+  volatile int _pre_scavenge_current_goal_active_workers;
+  // A stripe is ready for scavenge if it's start is not higher then this.
+  volatile HeapWord* _pre_scavenge_completed_top;
+  // All stripes are ready for scavenge if all threads have completed pre-scavenge.
+  volatile int _pre_scavenge_active_workers;
 
   bool is_dirty(CardValue* card) {
     return !is_clean(card);
@@ -79,14 +87,27 @@ class PSCardTable: public CardTable {
   void clear_cards(CardValue* const start, CardValue* const end);
 
  public:
-  PSCardTable(MemRegion whole_heap) : CardTable(whole_heap), _scavenge_phase1_active_workers(0) {}
+  PSCardTable(MemRegion whole_heap) : CardTable(whole_heap),
+                                      _pre_scavenge_current_goal(nullptr),
+                                      _pre_scavenge_current_goal_active_workers(0),
+                                      _pre_scavenge_completed_top(nullptr),
+                                      _pre_scavenge_active_workers(0) {}
 
   static CardValue youngergen_card_val() { return youngergen_card; }
   static CardValue verify_card_val()     { return verify_card; }
 
-  void pre_scavenge(uint active_workers);
+  void pre_scavenge(HeapWord* old_gen_bottom, uint active_workers);
 
   // Scavenge support
+
+  // Propagate imprecise card marks from object start to the stripes an object extends to.
+  // Pre-scavenging and scavenging can overlap.
+  void pre_scavenge_parallel(ObjectStartArray* start_array,
+                             HeapWord* old_gen_bottom,
+                             HeapWord* old_gen_top,
+                             uint stripe_index,
+                             uint n_stripes);
+
   void scavenge_contents_parallel(ObjectStartArray* start_array,
                                   HeapWord* old_gen_bottom,
                                   HeapWord* old_gen_top,
