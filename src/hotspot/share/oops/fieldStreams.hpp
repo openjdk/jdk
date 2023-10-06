@@ -273,7 +273,7 @@ class HierarchicalFieldStream : public StackObj  {
   FieldInfo to_FieldInfo() {
     return _current_stream.to_FieldInfo();
   }
-  
+
   fieldDescriptor& field_descriptor() const {
     return _current_stream.field_descriptor();
   }
