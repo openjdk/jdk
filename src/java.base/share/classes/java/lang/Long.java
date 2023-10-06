@@ -799,9 +799,8 @@ public final class Long extends Number
             long multmax = divideUnsigned(-1L, radix);  // -1L is max unsigned long
             long result = digit & 0xFF;
             boolean inRange = true;
-            /* Use MIN_VALUE + x < MIN_VALUE + y as unsigned x < y comparison */
             while (i < len && (digit = digit(s.charAt(i++), radix)) >= 0
-                    && (inRange = MIN_VALUE + result < MIN_VALUE + multmax
+                    && (inRange = compareUnsigned(result, multmax) < 0
                         || result == multmax && digit < (int) (-radix * multmax))) {
                 result = radix * result + digit;
             }
@@ -881,9 +880,8 @@ public final class Long extends Number
             long multmax = divideUnsigned(-1L, radix);  // -1L is max unsigned long
             long result = digit & 0xFF;
             boolean inRange = true;
-            /* Use MIN_VALUE + x < MIN_VALUE + y as unsigned x < y comparison */
             while (i < endIndex && (digit = digit(s.charAt(i++), radix)) >= 0
-                    && (inRange = MIN_VALUE + result < MIN_VALUE + multmax
+                    && (inRange = compareUnsigned(result, multmax) < 0
                         || result == multmax && digit < (int) (-radix * multmax))) {
                 result = radix * result + digit;
             }

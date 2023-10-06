@@ -762,9 +762,8 @@ public final class Integer extends Number
             int multmax = divideUnsigned(-1, radix);  // -1 is max unsigned int
             int result = digit & 0xFF;
             boolean inRange = true;
-            /* Use MIN_VALUE + x < MIN_VALUE + y as unsigned x < y comparison */
             while (i < len && (digit = digit(s.charAt(i++), radix)) >= 0
-                    && (inRange = MIN_VALUE + result < MIN_VALUE + multmax
+                    && (inRange = compareUnsigned(result, multmax) < 0
                         || result == multmax && digit < -radix * multmax)) {
                 result = radix * result + digit;
             }
@@ -844,9 +843,8 @@ public final class Integer extends Number
             int multmax = divideUnsigned(-1, radix);  // -1 is max unsigned int
             int result = digit & 0xFF;
             boolean inRange = true;
-            /* Use MIN_VALUE + x < MIN_VALUE + y as unsigned x < y comparison */
             while (i < endIndex && (digit = digit(s.charAt(i++), radix)) >= 0
-                    && (inRange = MIN_VALUE + result < MIN_VALUE + multmax
+                    && (inRange = compareUnsigned(result, multmax) < 0
                         || result == multmax && digit < -radix * multmax)) {
                 result = radix * result + digit;
             }
