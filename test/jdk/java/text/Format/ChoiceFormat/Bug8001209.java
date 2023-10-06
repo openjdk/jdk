@@ -66,7 +66,7 @@ public class Bug8001209 {
     }
 
     /*
-     * Ensure that mutating he arrays returned by getChoices and getLimits does
+     * Ensure that mutating the arrays returned by getChoices and getLimits does
      * not affect the internal representation of the ChoiceFormat.
      */
     @Test
