@@ -180,9 +180,16 @@ INT32 DAUDIO_GetDirectAudioDeviceCount() {
     INT32 oldCount;
     INT32 cacheIndex;
 
-    if (!DS_lockCache() || FAILED(::CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE))) {
+    if (!DS_lockCache()) {
         return 0;
     }
+    
+    HRESULT hr=::CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+    if(hr != S_OK || hr != S_FALSE || hr != RPC_E_CHANGED_MODE) {
+        DS_unlockCache();
+        return 0;
+    }    
+    
     if (g_lastCacheRefreshTime == 0
         || (UINT64) timeGetTime() > (UINT64) (g_lastCacheRefreshTime + WAIT_BETWEEN_CACHE_REFRESH_MILLIS)) {
         /* first, initialize any old cache items */
@@ -223,7 +230,11 @@ INT32 DAUDIO_GetDirectAudioDeviceCount() {
 
         g_lastCacheRefreshTime = (UINT64) timeGetTime();
     }
-    ::CoUninitialize();
+    
+    if(hr != RPC_E_CHANGED_MODE) {
+        ::CoUninitialize();
+    }
+    
     DS_unlockCache();
     /*TRACE1("DirectSound: %d installed devices\n", g_mixerCount);*/
     return g_mixerCount;
@@ -254,9 +265,15 @@ INT32 DAUDIO_GetDirectAudioDeviceDescription(INT32 mixerIndex, DirectAudioDevice
 
     /* set the deviceID field to the cache index */
     desc->deviceID = findCacheItemByMixerIndex(mixerIndex);
-    if (desc->deviceID < 0 || FAILED(::CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE))) {
+    if (desc->deviceID < 0) {
         DS_unlockCache();
         return FALSE;
+    }
+
+    HRESULT hr=::CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+    if(hr != S_OK || hr != S_FALSE || hr != RPC_E_CHANGED_MODE) {
+        DS_unlockCache();
+        return 0;
     }
 
     desc->maxSimulLines = 0;
@@ -267,7 +284,11 @@ INT32 DAUDIO_GetDirectAudioDeviceDescription(INT32 mixerIndex, DirectAudioDevice
         DirectSoundCaptureEnumerateW((LPDSENUMCALLBACKW) DS_GetDescEnum, desc);
         strncpy(desc->description, "DirectSound Capture", DAUDIO_STRING_LENGTH);
     }
-    ::CoUninitialize();
+
+    if(hr != RPC_E_CHANGED_MODE) {
+        ::CoUninitialize();
+    }
+    
     /*desc->vendor;
     desc->version;*/
 
