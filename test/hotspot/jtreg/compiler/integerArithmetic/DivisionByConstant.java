@@ -35,7 +35,6 @@ import jdk.test.lib.Utils;
  * @summary Test that Ideal transformations of division nodes provide correct
  * result.
  *
- * @requires os.simpleArch=="x64"
  * @library /test/lib /
  * @run driver compiler.integerArithmetic.DivisionByConstant
  */
@@ -207,7 +206,7 @@ public class DivisionByConstant {
     }
 
     @Test
-    @IR(failOn = IRNode.UDIV_I)
+    @IR(failOn = IRNode.UDIV_I, applyIfPlatform = {"x64", "true"})
     static int uDivInt(int x) {
         int dividend = I_UHI < 0
                 ? Math.min(I_UHI, x)
@@ -216,7 +215,7 @@ public class DivisionByConstant {
     }
 
     @Test
-    @IR(failOn = IRNode.DIV_L)
+    @IR(failOn = IRNode.DIV_L, applyIfPlatform = {"64-bit", "true"})
     static long sDivLong(int x) {
         long dividend;
         if (L_LO >= Integer.MIN_VALUE && L_HI <= Integer.MAX_VALUE) {
@@ -230,7 +229,7 @@ public class DivisionByConstant {
     }
 
     @Test
-    @IR(failOn = IRNode.UDIV_L)
+    @IR(failOn = IRNode.UDIV_L, applyIfPlatform = {"x64", "true"})
     static long uDivLong(int x) {
         long dividend;
         if (L_UHI >= 0 && L_UHI <= Integer.MAX_VALUE) {

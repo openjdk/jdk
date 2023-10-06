@@ -31,7 +31,6 @@ import compiler.lib.ir_framework.*;
  * @summary Test that Ideal transformations of UDivINode and UModINode are
  * being performed as expected.
  *
- * @requires os.simpleArch=="x64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.UDivINodeIdealizationTests
  */
@@ -150,7 +149,7 @@ public class UDivINodeIdealizationTests {
     @IR(counts = {IRNode.MUL_I, "1",
                   IRNode.UDIV_I, "1",
                   IRNode.DIV_BY_ZERO_TRAP, "1"
-                 })
+                 }, applyIfPlatform = {"x64", "true"})
     // Hotspot should keep the division because it may cause a division by zero trap
     public int retainDenominator(int x, int y) {
         return Integer.divideUnsigned(x * y, y);
@@ -158,7 +157,7 @@ public class UDivINodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.UDIV_I})
-    @IR(counts = {IRNode.URSHIFT_I, "1"})
+    @IR(counts = {IRNode.URSHIFT_I, "1"}, applyIfPlatform = {"x64", "true"})
     // Checks x / 2^c0 => x >>> c0
     public int divByPow2(int x) {
         return Integer.divideUnsigned(x, 8);
@@ -168,7 +167,7 @@ public class UDivINodeIdealizationTests {
     @IR(failOn = {IRNode.UDIV_I})
     @IR(counts = {IRNode.CMP_U, "1",
                   IRNode.CMOVE_I, "1"
-                 })
+                 }, applyIfPlatform = {"x64", "true"})
     // Checks x / d => x u>= d ? 1 : 0 for large d
     public int largeDivisorCon(int x) {
         return Integer.divideUnsigned(x, -7);
@@ -178,7 +177,7 @@ public class UDivINodeIdealizationTests {
     @IR(failOn = {IRNode.UDIV_I})
     @IR(counts = {IRNode.CMP_U, "1",
                   IRNode.CMOVE_I, "1"
-                 })
+                 }, applyIfPlatform = {"x64", "true"})
     // Checks x / d => x u>= d ? 1 : 0 for large d
     public int largeDivisorVar(int x, int y) {
         return Integer.divideUnsigned(x, Math.min(y, -1));
@@ -190,7 +189,7 @@ public class UDivINodeIdealizationTests {
                   IRNode.URSHIFT_L, "1",
                   IRNode.CONV_I2L, "1",
                   IRNode.CONV_L2I, "1",
-                 })
+                 }, applyIfPlatform = {"x64", "true"})
     // Checks magic int division occurs in general when dividing by a non power of 2.
     // The constant derived from 13 lies inside the limit of a u32
     public int magicDiv13(int x) {
@@ -204,7 +203,7 @@ public class UDivINodeIdealizationTests {
                   IRNode.URSHIFT_L, "1",
                   IRNode.CONV_I2L, "1",
                   IRNode.CONV_L2I, "1",
-                 })
+                 }, applyIfPlatform = {"x64", "true"})
     // Checks magic int division occurs in general when dividing by a non power of 2.
     // The constant derived from 7 lies outside the limit of a u32 but inside the limit
     // of a u33
@@ -216,7 +215,7 @@ public class UDivINodeIdealizationTests {
     @IR(failOn = {IRNode.UDIV_I})
     @IR(counts = {IRNode.MUL_I, "1",
                   IRNode.URSHIFT_I, "1"
-                 })
+                 }, applyIfPlatform = {"x64", "true"})
     // Checks magic int division occurs in general when dividing by a non power of 2.
     // When the dividend is bounded, we can use smaller constant and do not need to use
     // u64 arithmetic
@@ -241,7 +240,7 @@ public class UDivINodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.UMOD_I})
-    @IR(counts = {IRNode.AND_I, "1"})
+    @IR(counts = {IRNode.AND_I, "1"}, applyIfPlatform = {"x64", "true"})
     // Checks x % 2^c0 => x & (2^c0 - 1)
     public int modByPow2(int x) {
         return Integer.remainderUnsigned(x, 8);
@@ -255,7 +254,7 @@ public class UDivINodeIdealizationTests {
                   IRNode.CONV_L2I, "1",
                   IRNode.MUL_I, "1",
                   IRNode.SUB_I, "1"
-                 })
+                 }, applyIfPlatform = {"x64", "true"})
     // Checks magic int division occurs in general when dividing by a non power of 2.
     // The constant derived from 13 lies inside the limit of a u32
     public int magicMod13(int x) {

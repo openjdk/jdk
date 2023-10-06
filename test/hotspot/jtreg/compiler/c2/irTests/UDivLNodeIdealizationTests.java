@@ -31,7 +31,6 @@ import compiler.lib.ir_framework.*;
  * @summary Test that Ideal transformations of UDivLNode and UModLNode are
  * being performed as expected.
  *
- * @requires os.simpleArch=="x64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.UDivLNodeIdealizationTests
  */
@@ -151,7 +150,7 @@ public class UDivLNodeIdealizationTests {
     @IR(counts = {IRNode.MUL_L, "1",
                   IRNode.UDIV_L, "1",
                   IRNode.DIV_BY_ZERO_TRAP, "1"
-                 })
+                 }, applyIfPlatform = {"x64", "true"})
     // Hotspot should keep the division because it may cause a division by zero trap
     public long retainDenominator(long x, long y) {
         return Long.divideUnsigned(x * y, y);
@@ -159,7 +158,7 @@ public class UDivLNodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.UDIV_L})
-    @IR(counts = {IRNode.URSHIFT_L, "1"})
+    @IR(counts = {IRNode.URSHIFT_L, "1"}, applyIfPlatform = {"x64", "true"})
     // Checks x / 2^c0 => x >>> c0
     public long divByPow2(long x) {
         return Long.divideUnsigned(x, 8);
@@ -169,7 +168,7 @@ public class UDivLNodeIdealizationTests {
     @IR(failOn = {IRNode.UDIV_L})
     @IR(counts = {IRNode.CMP_UL, "1",
                   IRNode.CMOVE_L, "1"
-                 })
+                 }, applyIfPlatform = {"x64", "true"})
     // Checks x / d => x u>= d ? 1 : 0 for large d
     public long largeDivisorCon(long x) {
         return Long.divideUnsigned(x, -7);
@@ -179,17 +178,17 @@ public class UDivLNodeIdealizationTests {
     @IR(failOn = {IRNode.UDIV_L})
     @IR(counts = {IRNode.CMP_UL, "1",
                   IRNode.CMOVE_L, "1"
-                 })
+                 }, applyIfPlatform = {"x64", "true"})
     // Checks x / d => x u>= d ? 1 : 0 for large d
     public long largeDivisorVar(long x, long y) {
         return Long.divideUnsigned(x, Math.min((int)y, -1));
     }
 
     @Test
-    @IR(failOn = {IRNode.UDIV_L})
+    @IR(failOn = {IRNode.UDIV_L}, applyIfPlatform = {"x64", "true"})
     @IR(counts = {IRNode.URSHIFT_L, "1",
                   IRNode.UMUL_HI_L, "1"
-                 })
+                 }, applyIfPlatform = {"x64", "true"})
     // Checks magic long division occurs in general when dividing by a non power of 2.
     // The constant derived from 19 lies inside the limit of a u64
     public long magicDiv19(long x) {
@@ -197,12 +196,12 @@ public class UDivLNodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.UDIV_L})
+    @IR(failOn = {IRNode.UDIV_L}, applyIfPlatform = {"x64", "true"})
     @IR(counts = {IRNode.URSHIFT_L, "2",
                   IRNode.UMUL_HI_L, "1",
                   IRNode.ADD_L, "1",
                   IRNode.SUB_L, "1"
-                 })
+                 }, applyIfPlatform = {"x64", "true"})
     // Checks magic long division occurs in general when dividing by a non power of 2.
     // The constant derived from 7 lies outside the limit of a u64 but inside the limit
     // of a u65
@@ -211,10 +210,10 @@ public class UDivLNodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.UDIV_L})
+    @IR(failOn = {IRNode.UDIV_L}, applyIfPlatform = {"x64", "true"})
     @IR(counts = {IRNode.URSHIFT_L, "2",
                   IRNode.UMUL_HI_L, "1"
-                 })
+                 }, applyIfPlatform = {"x64", "true"})
     // Checks magic long division occurs in general when dividing by a non power of 2.
     // The constant derived from 28 lies outside the limit of a u64 but we can transform
     // x / 28 into (x / 4) / 7
@@ -223,10 +222,10 @@ public class UDivLNodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.UDIV_L})
+    @IR(failOn = {IRNode.UDIV_L}, applyIfPlatform = {"x64", "true"})
     @IR(counts = {IRNode.URSHIFT_L, "1",
                   IRNode.MUL_L, "1"
-                 })
+                 }, applyIfPlatform = {"x64", "true"})
     // Checks magic long division occurs in general when dividing by a non power of 2.
     // When the dividend is bounded, we can use smaller constant and do not need to use
     // u128 arithmetic
@@ -251,19 +250,19 @@ public class UDivLNodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.UMOD_L})
-    @IR(counts = {IRNode.AND_L, "1"})
+    @IR(counts = {IRNode.AND_L, "1"}, applyIfPlatform = {"x64", "true"})
     // Checks x % 2^c0 => x & (2^c0 - 1)
     public long modByPow2(long x) {
         return Long.remainderUnsigned(x, 8);
     }
 
     @Test
-    @IR(failOn = {IRNode.UMOD_L})
+    @IR(failOn = {IRNode.UMOD_L}, applyIfPlatform = {"x64", "true"})
     @IR(counts = {IRNode.URSHIFT_L, "1",
                   IRNode.UMUL_HI_L, "1",
                   IRNode.MUL_L, "1",
                   IRNode.SUB_L, "1"
-                 })
+                 }, applyIfPlatform = {"x64", "true"})
     // Checks magic long division occurs in general when dividing by a non power of 2.
     // The constant derived from 19 lies inside the limit of a u64
     public long magicMod19(long x) {

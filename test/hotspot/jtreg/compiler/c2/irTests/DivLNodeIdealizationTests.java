@@ -29,7 +29,6 @@ import compiler.lib.ir_framework.*;
  * @test
  * @bug 8267265
  * @summary Test that Ideal transformations of DivLNode* are being performed as expected.
- * @requires vm.bits == 64
  * @library /test/lib /
  * @run driver compiler.c2.irTests.DivLNodeIdealizationTests
  */
@@ -207,11 +206,11 @@ public class DivLNodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV_L})
+    @IR(failOn = {IRNode.DIV_L}, applyIfPlatform = {"64-bit", "true"})
     @IR(counts = {IRNode.SUB_L, "1",
                   IRNode.RSHIFT_L, "1",
                   IRNode.MUL_HI_L, "1"
-                 })
+                 }, applyIfPlatform = {"64-bit", "true"})
     // Checks magic long division occurs in general when dividing by a non power of 2.
     // The constant derived from 19 lies inside the limit of an i64
     public long magicDiv19(long x) {
@@ -219,12 +218,12 @@ public class DivLNodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV_L})
+    @IR(failOn = {IRNode.DIV_L}, applyIfPlatform = {"64-bit", "true"})
     @IR(counts = {IRNode.SUB_L, "1",
                   IRNode.RSHIFT_L, "2",
                   IRNode.MUL_HI_L, "1",
                   IRNode.ADD_L, "1"
-                 })
+                 }, applyIfPlatform = {"64-bit", "true"})
     // Checks magic long division occurs in general when dividing by a non power of 2.
     // The constant derived from 15 lies outside the limit of an i64 but inside the limit
     // of a u64
@@ -233,11 +232,11 @@ public class DivLNodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV_L})
+    @IR(failOn = {IRNode.DIV_L}, applyIfPlatform = {"64-bit", "true"})
     @IR(counts = {IRNode.SUB_L, "1",
                   IRNode.MUL_L, "1",
                   IRNode.RSHIFT_L, "2"
-                 })
+                 }, applyIfPlatform = {"64-bit", "true"})
     // Checks magic long division occurs in general when dividing by a non power of 2.
     // When the dividend is bounded, we can use smaller constant and do not need to use
     // i128 arithmetic
