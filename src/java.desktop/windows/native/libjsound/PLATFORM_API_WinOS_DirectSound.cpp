@@ -176,7 +176,7 @@ BOOL CALLBACK DS_RefreshCacheEnum(LPGUID lpGuid,
 ///// implemented functions of DirectAudio.h
 
 INT32 DAUDIO_GetDirectAudioDeviceCount() {
-   DS_RefreshCacheStruct rs;
+    DS_RefreshCacheStruct rs;
     INT32 oldCount;
     INT32 cacheIndex;
 
