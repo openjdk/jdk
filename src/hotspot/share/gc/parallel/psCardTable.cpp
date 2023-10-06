@@ -161,10 +161,13 @@ CardTable::CardValue* PSCardTable::find_first_clean_card(T start_cache,
     }
     HeapWord* obj_end_addr = obj_addr + cast_to_oop(obj_addr)->size();
     CardValue* final_card_by_obj = byte_for(obj_end_addr - 1);
-    if (final_card_by_obj <= i_card || final_card_by_obj >= end_card) {
+    if (final_card_by_obj <= i_card) {
       return i_card;
     }
-    // This final obj extends beyond i_card but not beyond end_card.
+    // This final obj extends beyond i_card. Check if it extends beyond end_card.
+    if (final_card_by_obj >= end_card) {
+      return end_card;
+    }
     // Check if this new card is dirty.
     if (*final_card_by_obj == PSCardTable::clean_card_val()) {
       return final_card_by_obj;
