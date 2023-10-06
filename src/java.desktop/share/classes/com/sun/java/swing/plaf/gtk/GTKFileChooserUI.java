@@ -435,6 +435,11 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         }
 
         public void mouseClicked(MouseEvent e) {
+
+            if (!getFileChooser().isEnabled()) {
+                return;
+            }
+
             if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 2) {
                 int index = list.locationToIndex(e.getPoint());
                 if (index >= 0) {

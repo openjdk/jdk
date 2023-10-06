@@ -643,6 +643,9 @@ public class BasicFileChooserUI extends FileChooserUI {
         public void mouseClicked(MouseEvent evt) {
             // Note: we can't depend on evt.getSource() because of backward
             // compatibility
+            if (!getFileChooser().isEnabled()) {
+                return;
+            }
             if (list != null &&
                 SwingUtilities.isLeftMouseButton(evt) &&
                 (evt.getClickCount()%2 == 0)) {
