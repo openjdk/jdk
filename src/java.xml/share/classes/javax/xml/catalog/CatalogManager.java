@@ -103,6 +103,7 @@ public final class CatalogManager {
      * @return an instance of a {@code CatalogResolver}
      * @throws IllegalArgumentException if the value of the {@code resolve} property is
      * not a supported value or {@code null}.
+     * @throws NullPointerException if {@code catalog} is null
      *
      * @since 22
      */

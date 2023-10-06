@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -277,26 +276,24 @@ class Util {
      * @param base the base, that is the system id of the catalog within the
      * Catalog implementation
      * @param uri the specified uri
-     * @return Returns the absolute form of the specified uri
+     * @return the absolute form of the specified uri
      */
+    @SuppressWarnings("deprecation")
     static String getAbsoluteURI(String base, String uri) {
+        String temp = "";
         try {
-            URI baseURI = URI.create(base);
+            URL baseURL = new URL(base);
             URI specURI = URI.create(uri);
-            String temp;
+
             if (specURI.isAbsolute()) {
                 temp = specURI.toURL().toString();
             } else {
-                if (SCHEME_JAR.equalsIgnoreCase(baseURI.getScheme())) {
-                    temp = Paths.get(base, uri).toString();
-                } else {
-                    temp = baseURI.resolve(uri).toString();
-                }
+                temp = (new URL(baseURL, uri)).toString();
             }
-            return temp;
         } catch (MalformedURLException ex) {
-            // no action, shouldn't happen as the base has already been validated
+            // shouldn't happen since inputs are validated, report error in case
+            CatalogMessages.reportError(CatalogMessages.ERR_INVALID_CATALOG);
         }
-        return uri;
+        return temp;
     }
 }
