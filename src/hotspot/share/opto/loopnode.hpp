@@ -1644,6 +1644,8 @@ public:
   void try_sink_out_of_loop(Node* n);
 
   bool safe_for_if_replacement(const Node* dom) const;
+
+  void update_addp_chain_base(Node* x, Node* old_base, Node* new_base);
 };
 
 
