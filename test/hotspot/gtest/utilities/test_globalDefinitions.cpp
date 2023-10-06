@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -215,4 +216,25 @@ TEST(globalDefinitions, array_size) {
     static_assert(6 == ARRAY_SIZE(test_array), "must be");
   }
 
+}
+
+#define check_format(format, value, expected)                  \
+  do {                                                         \
+    ResourceMark rm;                                           \
+    stringStream out;                                          \
+    out.print((format), (value));                              \
+    const char* result = out.as_string();                      \
+    EXPECT_STREQ((result), (expected)) << "Failed with"        \
+        << " format '"   << (format)   << "'"                  \
+        << " value '"    << (value);                           \
+  } while (false)
+
+TEST(globalDefinitions, format_specifiers) {
+  check_format(SSIZE_FORMAT,           (ssize_t)-123,     "-123");
+  check_format(SSIZE_FORMAT,           (ssize_t)2147483647, "2147483647");
+  check_format(SSIZE_FORMAT,           (ssize_t)-2147483647, "-2147483647");
+  check_format(SSIZE_PLUS_FORMAT,      (ssize_t)123,      "+123");
+  check_format(SSIZE_PLUS_FORMAT,      (ssize_t)-123,     "-123");
+  check_format(SSIZE_PLUS_FORMAT,      (ssize_t)2147483647, "+2147483647");
+  check_format(SSIZE_PLUS_FORMAT,      (ssize_t)-2147483647, "-2147483647");
 }

@@ -141,6 +141,7 @@ class oopDesc;
 #define INTPTR_FORMAT_W(width)   "%" #width PRIxPTR
 
 #define SSIZE_FORMAT             "%"   PRIdPTR
+#define SSIZE_PLUS_FORMAT        "%+"  PRIdPTR
 #define SIZE_FORMAT              "%"   PRIuPTR
 #define SIZE_FORMAT_HEX          "0x%" PRIxPTR
 #define SSIZE_FORMAT_W(width)    "%"   #width PRIdPTR

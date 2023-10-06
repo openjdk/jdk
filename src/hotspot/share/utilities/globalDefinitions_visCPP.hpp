@@ -140,4 +140,14 @@ inline int g_isfinite(jdouble f)                 { return _finite(f); }
 #define USE_VECTORED_EXCEPTION_HANDLING
 #endif
 
+#ifndef SSIZE_MAX
+#ifdef _LP64
+#define SSIZE_MIN LLONG_MIN
+#define SSIZE_MAX LLONG_MAX
+#else
+#define SSIZE_MIN INT_MIN
+#define SSIZE_MAX INT_MAX
+#endif
+#endif // SSIZE_MAX missing
+
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_VISCPP_HPP
