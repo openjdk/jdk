@@ -28,7 +28,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.HexFormat;
-import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -41,28 +40,33 @@ import java.util.stream.Collectors;
 public final class HexDumpReader {
 
     // Utility class should not be instantiated
-    private HexDumpReader() {
-    }
+    private HexDumpReader() {}
 
-    // Converts a Hex dump file (String) into an InputStream containing bytes
-    public static InputStream getStreamFromHexDump(String fileName) {
+    /*
+     * Converts a Hex dump file given by the String name into an InputStream
+     * containing bytes. The expected format of the file should be given as lines
+     * that are either:
+     *  - Valid hexadecimal value(s) (two hexadecimal characters) combined with no
+     *    spaces between. E.g. "ace95365" represents four hexadecimal values.
+     *    There should not be an odd amount of hexadecimal characters. E.g. "ace"
+     *  - Contain leading comments given by '#' (which are ignored). E.g. "#foo"
+     *    Non-leading comments are not allowed. E.g. "ace953 #foo"
+     *  - Empty (which are ignored).
+     */
+    public static InputStream getStreamFromHexDump(String fileName) throws IOException {
         return getStreamFromHexDump(new File(System.getProperty("test.src", "."),
                 fileName));
     }
 
-    // Converts a Hex dump file (File) into an InputStream containing bytes
-    public static InputStream getStreamFromHexDump(File hexFile) {
-        List<String> lines;
-        try {
-            lines = Files.readAllLines(hexFile.toPath(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new RuntimeException(String.format("Utility class HexDumpReader" +
-                    " threw %s when trying to read the file %s", e, hexFile.getName()));
-        }
-        // Grab all non-empty lines up until a '#' if one exists
-        String hexString = lines.stream().map(String::trim)
-                .map(s -> (s.contains("#")) ? s.substring(0, s.indexOf("#")).trim() : s)
-                .filter(s -> !s.isEmpty()).collect(Collectors.joining());
+    // Overloaded version of getStreamFromHexDump() that takes the File itself as input.
+    public static InputStream getStreamFromHexDump(File hexFile) throws IOException {
+        // This hexString should only consist of valid hexadecimal digits and be even
+        // otherwise an exception will be thrown when converting to bytes
+        String hexString = Files.readAllLines(hexFile.toPath(), StandardCharsets.UTF_8)
+                .stream()
+                .map(String::trim)
+                .filter(s -> !s.isEmpty() && !s.startsWith("#"))
+                .collect(Collectors.joining());
         // Iterate the hex string and convert it to bytes
         byte[] bArray = HexFormat.of().parseHex(hexString);
         return new ByteArrayInputStream(bArray);
