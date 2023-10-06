@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8310061 8315534 8306819
- * @summary Verify a note is issued for implicit annotation processing
+ * @summary Verify behavior around implicit annotation processing
  *
  * @library /tools/lib /tools/javac/lib
  * @modules
@@ -59,7 +59,7 @@ import toolbox.ToolBox;
 import toolbox.JarTask;
 
 /*
- * Generates note and the processor runs:
+ * Does not generates a note and the processor does not run:
  * $ javac -cp ImplicitProcTestProc.jar                                     HelloWorldTest.java
  *
  * Does _not_ generate a note and the processor does run:
@@ -74,6 +74,12 @@ import toolbox.JarTask;
  *
  * Does _not_ generate a note and the processor _doesn't_ run.
  * $ javac -cp ImplicitProcTestProc.jar -proc:none                          HelloWorldTest.java
+ *
+ * (Previously, annotation processing was implicitly enable and the
+ * the class path was searched for processors. This test was
+ * originally written to probe around a note warning of a potential
+ * future policy change to disable such implicit processing, a policy
+ * change now implemented and this test updated accordingly.)
  */
 
 public class TestNoteOnImplicitProcessing extends TestRunner {
