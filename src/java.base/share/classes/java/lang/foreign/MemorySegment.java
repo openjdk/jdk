@@ -26,6 +26,9 @@
 package java.lang.foreign;
 
 import java.io.UncheckedIOException;
+import java.lang.foreign.ValueLayout.OfInt;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.VarHandle;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -120,51 +123,42 @@ import jdk.internal.vm.annotation.ForceInline;
  * If the value to be read is stored in memory using {@linkplain ByteOrder#BIG_ENDIAN big-endian} encoding, the access operation
  * can be expressed as follows:
  * {@snippet lang=java :
- * MemorySegment segment = ...
  * int value = segment.get(ValueLayout.JAVA_INT.withOrder(BIG_ENDIAN), 0);
  * }
  *
- * More complex access operations can be implemented using var handles. The {@link ValueLayout#varHandle()}
- * method can be used to obtain a var handle that can be used to get/set values represented by the given value layout on a memory segment.
- * A var handle obtained from a layout supports several additional <a href=MemoryLayout.html#access-mode-restrictions>
- * access modes</a>. More importantly, var handles can be <em>combined</em> with method handles to express complex access
- * operations. For instance, a var handle that can be used to access an element of an {@code int} array at a given logical
+ * Access operations on memory segments are implemented using var handles. The {@link ValueLayout#varHandle()}
+ * method can be used to obtain a var handle that can be used to get/set values represented by the given value layout
+ * on a memory segment at the given offset:
+ *
+ * {@snippet lang=java:
+ * VarHandle intAtOffsetHandle = ValueLayout.JAVA_INT.varHandle(); // (MemorySegment, long)
+ * int value = (int) intAtOffsetHandle.get(segment, 10L);          // segment.get(ValueLayout.JAVA_INT, 10L)
+ * }
+ *
+ * The var handle returned by {@link ValueLayout#varHandle()} features a <em>base offset</em> parameter. This parameter
+ * allows clients to express complex access operations, by injecting additional offset computation into the var handle.
+ * For instance, a var handle that can be used to access an element of an {@code int} array at a given logical
  * index can be created as follows:
  *
  * {@snippet lang=java:
- * MemorySegment segment = ...
- * VarHandle intHandle = ValueLayout.JAVA_INT.varHandle(); // (MemorySegment, long)
- * MethodHandle scale = ValueLayout.JAVA_INT.scaleHandle(); // <base offset> + <index> * JAVA_INT.byteSize()
- *
- * intHandle = MethodHandles.filterCoordinates(intHandle, 1, scale);
- * int value = (int) intHandle.get(segment, 0L, 3L); // get int element at offset 0 + 3 * 4 = 12
+ * MethodHandle scale = ValueLayout.JAVA_INT.scaleHandle();              // (long, long)long
+ * VarHandle intAtOffsetAndIndexHandle =
+ *         MethodHandles.collectCoordinates(intAtOffsetHandle, 1, scale); // (MemorySegment, long, long)
+ * int value = (int) intAtOffsetAndIndexHandle.get(segment, 2L, 3L);     // segment.get(ValueLayout.JAVA_INT, 2L + (3L * 4L))
  * }
  *
- * To make the process of creating these var handles easier, the method
- * {@link MemoryLayout#varHandle(MemoryLayout.PathElement...)} can be used, by providing it a so called
- * <a href="MemoryLayout.html#layout-paths"><em>layout path</em></a>. A layout path, consisting of several <em>layout
- * path elements</em>, selects a value layout to be accessed, which can be nested inside another memory layout. For example,
- * we can express the access to an element of an {@code int} array using layout paths like so:
+ * <p>
+ * Clients can also drop the base offset parameter, in order to make the access expression simpler. This can be used to
+ * implement access operation such as {@link #getAtIndex(OfInt, long)}:
  *
- * {@snippet lang=java :
- * MemorySegment segment = ...
- * MemoryLayout segmentLayout = MemoryLayout.structLayout(
- *     ValueLayout.JAVA_INT.withName("size"),
- *     MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT).withName("data") // array of 4 elements
- * );
- * VarHandle intHandle = segmentLayout.varHandle(MemoryLayout.PathElement.groupElement("data"),
- *                                               MemoryLayout.PathElement.sequenceElement());
- * int value = (int) intHandle.get(segment, 0L, 3L); // get int element at offset 0 + offsetof(data) + 3 * 4 = 12
+ * {@snippet lang=java:
+ * VarHandle intAtIndexHandle =
+ *         MethodHandles.insertCoordinates(intAtOffsetAndIndexHandle, 1, 0L); // (MemorySegment, long)
+ * int value = (int) intAtIndexHandle.get(segment, 3L);                       // segment.getAtIndex(ValueLayout.JAVA_INT, 3L);
  * }
- * Where {@code offsetof(data)} is the offset of the {@code data} element layout of the {@code segmentLayout} layout
  *
- * Both the var handle returned by {@link ValueLayout#varHandle()} and
- * {@link MemoryLayout#varHandle(MemoryLayout.PathElement...)}, as well as the method handle returned by
- * {@link MemoryLayout#byteOffsetHandle(MemoryLayout.PathElement...)} and {@link MemoryLayout#sliceHandle(MemoryLayout.PathElement...)}
- * feature a <em>base offset</em> parameter. This parameter represents a base offset for the offset computation. This
- * parameter allows a client to combine these handles further with additional offset computations. This is demonstrated
- * in the first of the two examples above, where {@code intHandle} is combined with a
- * {@linkplain MemoryLayout#scaleHandle() scale handle} obtained from {@code ValueLayout.JAVA_INT}.
+ * Var handles for more complex access expressions (e.g. struct field access, pointer dereference) can be created directly
+ * from memory layouts, using <a href="MemoryLayout.html#layout-paths"><em>layout paths</em></a>.
  *
  * <h2 id="slicing">Slicing memory segments</h2>
  *
