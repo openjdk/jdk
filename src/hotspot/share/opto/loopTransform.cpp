@@ -2125,10 +2125,12 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_peeled_loop(const Predi
 //------------------------------do_unroll--------------------------------------
 // Unroll the loop body one step - make each trip do 2 iterations.
 void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adjust_min_trip) {
-  // TODO(2023-10-05,dlunde): Loop unrolling IGV dump
   assert(LoopUnrollLimit, "");
   CountedLoopNode *loop_head = loop->_head->as_CountedLoop();
   CountedLoopEndNode *loop_end = loop_head->loopexit();
+
+  C->print_method_iter(PHASE_BEFORE_UNROLL_LOOP, 4, loop_head);
+
 #ifndef PRODUCT
   if (PrintOpto && VerifyLoopOptimizations) {
     tty->print("Unrolling ");
@@ -2376,6 +2378,8 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     }
   }
 #endif
+
+  C->print_method_iter(PHASE_UNROLL_LOOP, 4, loop_head);
 }
 
 //------------------------------do_maximally_unroll----------------------------

@@ -2176,7 +2176,7 @@ bool Compile::optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode) {
       PhaseIdealLoop::optimize(igvn, mode);
       _loop_opts_cnt--;
       if (failing())  return false;
-      if (major_progress()) print_method(PHASE_PHASEIDEALLOOP_ITERATIONS, 2);
+      if (major_progress()) print_method_iter(PHASE_PHASEIDEALLOOP_ITERATIONS, 2);
     }
   }
   return true;
@@ -5111,6 +5111,9 @@ void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
   ResourceMark rm;
   stringStream ss;
   ss.print_raw(CompilerPhaseTypeHelper::to_description(cpt));
+  if (iter > 0) {
+    ss.print(" %d", iter);
+  }
   if (n != nullptr) {
     ss.print(": %d %s ", n->_idx, NodeClassNames[n->Opcode()]);
   }
@@ -5124,6 +5127,11 @@ void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
   }
 #endif
   C->_latest_stage_start_counter.stamp();
+}
+
+void Compile::print_method_iter(CompilerPhaseType cpt, int level, Node* n) {
+  int iter = CompilerPhaseTypeHelper::next_iter(cpt);
+  print_method(cpt, level, n, iter);
 }
 
 // Only used from CompileWrapper

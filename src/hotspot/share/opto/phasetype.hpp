@@ -49,6 +49,12 @@
   flags(ITER_GVN_AFTER_VECTOR,        "Iter GVN after vector box elimination") \
   flags(BEFORE_BEAUTIFY_LOOPS,        "Before beautify loops") \
   flags(AFTER_BEAUTIFY_LOOPS,         "After beautify loops") \
+  flags(BEFORE_UNROLL_LOOP,           "Before loop unrolling") \
+  flags(UNROLL_LOOP,                  "After loop unrolling") \
+  flags(BEFORE_SPLIT_IF,              "Before split if") \
+  flags(SPLIT_IF,                     "After split if") \
+  flags(BEFORE_LOOP_PREDICATION,      "Before loop predication") \
+  flags(LOOP_PREDICATION,             "After loop predication") \
   flags(BEFORE_CLOOPS,                "Before CountedLoop") \
   flags(AFTER_CLOOPS,                 "After CountedLoop") \
   flags(PHASEIDEAL_BEFORE_EA,         "PhaseIdealLoop before EA") \
@@ -99,6 +105,8 @@ static const char* phase_names[] = {
 #undef array_of_labels
 };
 
+static int phase_iters[PHASE_NUM_TYPES] = {0};
+
 class CompilerPhaseTypeHelper {
   public:
   static const char* to_name(CompilerPhaseType cpt) {
@@ -107,6 +115,9 @@ class CompilerPhaseTypeHelper {
   static const char* to_description(CompilerPhaseType cpt) {
     return phase_descriptions[cpt];
   }
+  static int next_iter(CompilerPhaseType cpt) {
+    return ++phase_iters[cpt];
+  };
 };
 
 static CompilerPhaseType find_phase(const char* str) {

@@ -700,7 +700,8 @@ private:
   bool should_print_igv(int level);
   bool should_print_phase(CompilerPhaseType cpt);
 
-  void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
+  void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr, int iter = 0);
+  void print_method_iter(CompilerPhaseType cpt, int level, Node* n = nullptr);
 
 #ifndef PRODUCT
   void dump_igv(const char* graph_name, int level = 3) {

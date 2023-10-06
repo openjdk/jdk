@@ -60,6 +60,12 @@ public enum CompilePhase {
     ITER_GVN_AFTER_VECTOR("Iter GVN after vector box elimination"),
     BEFORE_BEAUTIFY_LOOPS("Before beautify loops"),
     AFTER_BEAUTIFY_LOOPS("After beautify loops"),
+    BEFORE_UNROLL_LOOP("Before loop unrolling"),
+    UNROLL_LOOP("After loop unrolling"),
+    BEFORE_SPLIT_IF("Before split if"),
+    SPLIT_IF("After split if"),
+    BEFORE_LOOP_PREDICATION("Before loop predication"),
+    LOOP_PREDICATION("After loop predication"),
     // Match on very first BEFORE_CLOOPS phase (there could be multiple phases for multiple loops in the code).
     BEFORE_CLOOPS("Before CountedLoop", RegexType.IDEAL_INDEPENDENT, ActionOnRepeat.KEEP_FIRST),
     AFTER_CLOOPS("After CountedLoop"),

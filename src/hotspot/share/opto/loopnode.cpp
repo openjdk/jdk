@@ -4602,7 +4602,6 @@ void PhaseIdealLoop::build_and_optimize() {
 
   // Perform loop predication before iteration splitting
   if (UseLoopPredicate && C->has_loops() && !C->major_progress() && (C->parse_predicate_count() > 0)) {
-    // TODO(2023-10-04,dlunde): Loop predication IGV dump
     _ltree_root->_child->loop_predication(this);
   }
 

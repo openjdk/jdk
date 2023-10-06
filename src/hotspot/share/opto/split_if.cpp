@@ -591,7 +591,9 @@ void PhaseIdealLoop::handle_use( Node *use, Node *def, small_cache *cache, Node 
 // Found an If getting its condition-code input from a Phi in the same block.
 // Split thru the Region.
 void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, RegionNode** new_true_region) {
-  // TODO(2023-10-05,dlunde): Split If IGV dump
+
+  C->print_method_iter(PHASE_BEFORE_SPLIT_IF, 4, iff);
+
   if (PrintOpto && VerifyLoopOptimizations) {
     tty->print_cr("Split-if");
   }
@@ -744,4 +746,6 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   }
 
   DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
+
+  C->print_method_iter(PHASE_SPLIT_IF, 4, iff);
 }
