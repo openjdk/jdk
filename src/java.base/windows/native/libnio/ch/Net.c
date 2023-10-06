@@ -83,13 +83,6 @@ jint handleSocketError(JNIEnv *env, int errorValue)
     return IOS_THROWN;
 }
 
-static jint handleSocketErrorWithMessage(JNIEnv *env, int errorValue,
-                                         char* message)
-{
-    NET_ThrowNew(env, errorValue, message);
-    return IOS_THROWN;
-}
-
 static jclass isa_class;        /* java.net.InetSocketAddress */
 static jmethodID isa_ctorID;    /* InetSocketAddress(InetAddress, int) */
 
@@ -399,7 +392,7 @@ Java_sun_nio_ch_Net_getIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
         n = getsockopt(fdval(env, fdo), level, opt, arg, &arglen);
     }
     if (n == SOCKET_ERROR) {
-        handleSocketErrorWithMessage(env, WSAGetLastError(), "getsockopt failed");
+        NET_ThrowNew(env, WSAGetLastError(), "getsockopt");
         return IOS_THROWN;
     }
 
@@ -443,7 +436,7 @@ Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
         n = setsockopt(fdval(env, fdo), level, opt, parg, arglen);
     }
     if (n == SOCKET_ERROR)
-        handleSocketErrorWithMessage(env, WSAGetLastError(), "setsocketopt failed");
+        NET_ThrowNew(env, WSAGetLastError(), "setsocketopt");
 }
 
 JNIEXPORT jint JNICALL
@@ -474,7 +467,7 @@ Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobjec
     if (n == SOCKET_ERROR) {
         if (join && (WSAGetLastError() == WSAENOPROTOOPT))
             return IOS_UNAVAILABLE;
-        handleSocketErrorWithMessage(env, WSAGetLastError(), "setsocketopt failed");
+        NET_ThrowNew(env, WSAGetLastError(), "setsocketopt");
     }
     return 0;
 }
@@ -496,7 +489,7 @@ Java_sun_nio_ch_Net_blockOrUnblock4(JNIEnv *env, jobject this, jboolean block, j
     if (n == SOCKET_ERROR) {
         if (block && (WSAGetLastError() == WSAENOPROTOOPT))
             return IOS_UNAVAILABLE;
-        handleSocketErrorWithMessage(env, WSAGetLastError(), "setsockopt failed");
+        NET_ThrowNew(env, WSAGetLastError(), "setsockopt");
     }
     return 0;
 }
@@ -536,7 +529,7 @@ Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobjec
 {
     struct ipv6_mreq mreq6;
     int n;
-    char* error_message = "setsockopt failed";
+    char* error_message = "setsockopt";
 
     if (source == NULL) {
         int opt = (join) ? IPV6_ADD_MEMBERSHIP : IPV6_DROP_MEMBERSHIP;
@@ -547,11 +540,11 @@ Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobjec
     } else {
         int opt = (join) ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP;
         n = setGroupSourceReqOption(env, fdo, opt, group, index, source);
-        error_message = "setsockopt with group source request failed";
+        error_message = "setsockopt with group source request";
     }
 
     if (n == SOCKET_ERROR) {
-        handleSocketErrorWithMessage(env, WSAGetLastError(), error_message);
+        NET_ThrowNew(env, WSAGetLastError(), error_message);
     }
     return 0;
 }
@@ -563,7 +556,7 @@ Java_sun_nio_ch_Net_blockOrUnblock6(JNIEnv *env, jobject this, jboolean block, j
     int opt = (block) ? MCAST_BLOCK_SOURCE : MCAST_UNBLOCK_SOURCE;
     int n = setGroupSourceReqOption(env, fdo, opt, group, index, source);
     if (n == SOCKET_ERROR) {
-        handleSocketErrorWithMessage(env, WSAGetLastError(), "setsockopt with group source request failed");
+        NET_ThrowNew(env, WSAGetLastError(), "setsockopt with group source request");
     }
     return 0;
 }
@@ -580,7 +573,7 @@ Java_sun_nio_ch_Net_setInterface4(JNIEnv* env, jobject this, jobject fdo, jint i
     n = setsockopt(fdval(env, fdo), IPPROTO_IP, IP_MULTICAST_IF,
                    (void*)&(in.s_addr), arglen);
     if (n == SOCKET_ERROR) {
-        handleSocketErrorWithMessage(env, WSAGetLastError(), "setsockopt failed");
+        NET_ThrowNew(env, WSAGetLastError(), "setsockopt");
     }
 }
 
@@ -593,7 +586,7 @@ Java_sun_nio_ch_Net_getInterface4(JNIEnv* env, jobject this, jobject fdo)
 
     n = getsockopt(fdval(env, fdo), IPPROTO_IP, IP_MULTICAST_IF, (void*)&in, &arglen);
     if (n == SOCKET_ERROR) {
-        handleSocketErrorWithMessage(env, WSAGetLastError(), "setsockopt failed");
+        NET_ThrowNew(env, WSAGetLastError(), "setsockopt");
         return IOS_THROWN;
     }
     return ntohl(in.s_addr);
@@ -609,7 +602,7 @@ Java_sun_nio_ch_Net_setInterface6(JNIEnv* env, jobject this, jobject fdo, jint i
     n = setsockopt(fdval(env, fdo), IPPROTO_IPV6, IPV6_MULTICAST_IF,
                    (void*)&(index), arglen);
     if (n == SOCKET_ERROR) {
-        handleSocketErrorWithMessage(env, WSAGetLastError(), "setsockopt failed");
+        NET_ThrowNew(env, WSAGetLastError(), "setsockopt");
     }
 }
 
@@ -622,7 +615,7 @@ Java_sun_nio_ch_Net_getInterface6(JNIEnv* env, jobject this, jobject fdo)
 
     n = getsockopt(fdval(env, fdo), IPPROTO_IPV6, IPV6_MULTICAST_IF, (void*)&index, &arglen);
     if (n == SOCKET_ERROR) {
-        handleSocketErrorWithMessage(env, WSAGetLastError(), "getsockopt failed");
+        NET_ThrowNew(env, WSAGetLastError(), "getsockopt");
         return -1;
     }
     return (jint)index;
@@ -642,7 +635,7 @@ Java_sun_nio_ch_Net_available(JNIEnv *env, jclass cl, jobject fdo)
 {
     int count = 0;
     if (NET_SocketAvailable(fdval(env, fdo), &count) != 0) {
-        handleSocketErrorWithMessage(env, WSAGetLastError(), "socket availability check failed");
+        NET_ThrowNew(env, WSAGetLastError(), "socket availability check");
         return IOS_THROWN;
     }
     return (jint) count;
@@ -676,7 +669,7 @@ Java_sun_nio_ch_Net_poll(JNIEnv* env, jclass this, jobject fdo, jint events, jlo
 
     /* save last winsock error */
     if (rv == SOCKET_ERROR) {
-        handleSocketErrorWithMessage(env, WSAGetLastError(), "select failed");
+        NET_ThrowNew(env, WSAGetLastError(), "select");
         return IOS_THROWN;
     } else if (rv >= 0) {
         rv = 0;
@@ -716,7 +709,7 @@ Java_sun_nio_ch_Net_pollConnect(JNIEnv* env, jclass this, jobject fdo, jlong tim
     result = select(fd+1, 0, &wr, &ex, (timeout >= 0) ? &t : NULL);
 
     if (result == SOCKET_ERROR) {
-        handleSocketErrorWithMessage(env, WSAGetLastError(), "select failed");
+        NET_ThrowNew(env, WSAGetLastError(), "select");
         return JNI_FALSE;
     } else if (result == 0) {
         return JNI_FALSE;
@@ -736,7 +729,7 @@ Java_sun_nio_ch_Net_pollConnect(JNIEnv* env, jclass this, jobject fdo, jlong tim
                 NET_ThrowNew(env, lastError, "getsockopt");
             }
         } else if (optError != NO_ERROR) {
-            handleSocketErrorWithMessage(env, optError, "getsockopt failed");
+            NET_ThrowNew(env, optError, "getsockopt");
         }
         return JNI_FALSE;
     }
