@@ -428,15 +428,20 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
   // Scavenge
   HeapWord* cur_stripe_addr = old_gen_bottom + stripe_index * stripe_size_in_words;
   ObjStartCache start_cache(start_array);
+  bool pre_scavenge_complete = false;
   for (/* empty */; cur_stripe_addr < old_gen_top; cur_stripe_addr += slice_size_in_words) {
     HeapWord* const stripe_l = cur_stripe_addr;
     HeapWord* const stripe_r = MIN2(cur_stripe_addr + stripe_size_in_words,
                                     old_gen_top);
 
     // Sync with concurrent pre-scavenge.
-    SpinYield spin;
-    while (_pre_scavenge_active_workers != 0 && cur_stripe_addr > _pre_scavenge_completed_top) {
-      spin.wait();
+    if (!pre_scavenge_complete) {
+      SpinYield spin;
+      while (Atomic::load_acquire(&_pre_scavenge_active_workers) != 0 &&
+             cur_stripe_addr > Atomic::load_acquire(&_pre_scavenge_completed_top)) {
+        spin.wait();
+      }
+      pre_scavenge_complete = Atomic::load_acquire(&_pre_scavenge_active_workers) == 0;
     }
 
     process_range(start_cache, pm, stripe_l, stripe_r);
