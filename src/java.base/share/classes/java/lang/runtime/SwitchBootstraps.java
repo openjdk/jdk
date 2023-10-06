@@ -550,6 +550,7 @@ public class SwitchBootstraps {
         public int[] map;
     }
 
+    // TypePairs should be in sync with the corresponding record in Lower
     record TypePairs(Class<?> from, Class<?> to) {
         public static TypePairs of(Class<?> from,  Class<?> to) {
             if (from == byte.class || from == short.class || from == char.class) {

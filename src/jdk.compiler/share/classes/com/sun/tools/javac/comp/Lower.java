@@ -2975,6 +2975,7 @@ public class Lower extends TreeTranslator {
         }
     }
 
+    // TypePairs should be in sync with the corresponding record in SwitchBootstraps
     record TypePairs(TypeSymbol from, TypeSymbol to) {
         public static TypePairs of(Symtab syms, Type from, Type to) {
             if (from == syms.byteType || from == syms.shortType || from == syms.charType) {
