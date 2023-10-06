@@ -2909,10 +2909,10 @@ public class Lower extends TreeTranslator {
     }
 
     public void visitTypeTest(JCInstanceOf tree) {
-        JCExpression exactnessCheck = null;
-        JCExpression instanceOfExpr = translate(tree.expr);
-
         if (tree.expr.type.isPrimitive() || tree.pattern.type.isPrimitive()) {
+            JCExpression exactnessCheck = null;
+            JCExpression instanceOfExpr = translate(tree.expr);
+
             // preserving the side effects of the value
             VarSymbol dollar_s = new VarSymbol(FINAL | SYNTHETIC,
                     names.fromString("tmp" + tree.pos + this.target.syntheticNameChar()),
