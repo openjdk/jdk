@@ -284,6 +284,12 @@ VtableStub* VtableStubs::entry_point(address pc) {
   return (s == stub) ? s : nullptr;
 }
 
+VtableStub* VtableStubs::entry_point_for_vtable_blob(address pc) {
+  VtableStub* stub = (VtableStub*)(pc - VtableStub::entry_offset());
+  assert(contains(pc), "must contain all vtable blobs");
+  return stub;
+}
+
 bool VtableStubs::contains(address pc) {
   // simple solution for now - we may want to use
   // a faster way if this function is called often

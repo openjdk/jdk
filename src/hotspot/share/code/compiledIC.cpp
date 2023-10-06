@@ -559,15 +559,16 @@ void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
 
 bool CompiledIC::is_icholder_entry(address entry) {
   CodeBlob* cb = CodeCache::find_blob(entry);
-  if (cb != nullptr && cb->is_adapter_blob()) {
+  if (cb == nullptr) {
+    return false;
+  }
+  if (cb->is_adapter_blob()) {
     return true;
+  } else if (cb->is_vtable_blob()) {
+    VtableStub* s = VtableStubs::entry_point_for_vtable_blob(entry);
+    // itable stubs also use CompiledICHolder
+    return s->is_itable_stub();
   }
-  // itable stubs also use CompiledICHolder
-  if (cb != nullptr && cb->is_vtable_blob()) {
-    VtableStub* s = VtableStubs::entry_point(entry);
-    return (s != nullptr) && s->is_itable_stub();
-  }
-
   return false;
 }
 
