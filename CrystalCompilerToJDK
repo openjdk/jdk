@@ -1,6 +1,6 @@
 $ echo 'puts "Crystal_Compiler"' > crystalcompiler.java
 $ crystal run crystalcompiler.java
-Hello World!
+
 
 $ crystal init app myJavaJDK
     create  myapp/.gitignore
