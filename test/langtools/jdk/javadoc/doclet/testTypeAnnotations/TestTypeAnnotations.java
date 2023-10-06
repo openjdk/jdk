@@ -136,7 +136,6 @@ public class TestTypeAnnotations extends JavadocTester {
                     ="FldB.html" title="annotation interface in typeannos">@FldB</a> [][]</span>&nbs\
                     p;<span class="element-name">array2SecondOld</span></div>""",
 
-                // When JDK-8068737, we should change the order
                 """
                     <div class="member-signature"><span class="return-type"><a href="FldD.html" titl\
                     e="annotation interface in typeannos">@FldD</a> java.lang.String <a href="FldC.h\
@@ -172,7 +171,6 @@ public class TestTypeAnnotations extends JavadocTester {
                     MRtnA.html" title="annotation interface in typeannos">@MRtnA</a> java.lang.Strin\
                     g</span>&nbsp;<span class="element-name">method</span>()</div>""",
 
-                // When JDK-8068737 is fixed, we should change the order
                 """
                     <div class="member-signature"><span class="return-type"><a href="MRtnA.html" tit\
                     le="annotation interface in typeannos">@MRtnA</a> java.lang.String <a href="MRtn\
@@ -250,7 +248,6 @@ public class TestTypeAnnotations extends JavadocTester {
                     tation interface in typeannos">@ParamB</a> java.lang.String&gt;&nbsp;a)</span></\
                     div>""",
 
-                // When JDK-8068737 is fixed, we should change the order
                 """
                     <div class="member-signature"><span class="return-type">void</span>&nbsp;<span c\
                     lass="element-name">array2Deep</span><wbr><span class="parameters">(<a href="Par\
