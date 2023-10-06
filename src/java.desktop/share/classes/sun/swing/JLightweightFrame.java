@@ -370,6 +370,7 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
             }
         };
         contentPane.setLayout(new BorderLayout());
+
         contentPane.addContainerListener(new ContainerListener() {
             @Override
             public void componentAdded(ContainerEvent e) {
@@ -389,13 +390,14 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
             }
         });
         contentPane.add(component);
+        contentPane.revalidate();
+        contentPane.repaint();
         if ("true".equals(AccessController.
             doPrivileged(new GetPropertyAction("swing.jlf.contentPaneTransparent", "false"))))
         {
             contentPane.setOpaque(false);
         }
         setContentPane(contentPane);
-
     }
 
     @SuppressWarnings("deprecation")
