@@ -42,8 +42,10 @@ private:
     size_t actual;
     MEMFLAGS flags;
   };
-  static void print_histogram(Entry* entries, size_t count, double overhead);
+  static void print_histogram(Entry* entries, size_t count);
+  static void print_records(Entry* entries, size_t count);
   static bool print_by_thread(Entry* entries, size_t count);
+  static void print_summary(Entry* entries, size_t count);
   static void dump(Entry* entries, size_t count);
 
 public:

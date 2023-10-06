@@ -52,10 +52,21 @@ int compare(const void* ptr_a, const void* ptr_b) {
   else return 0;
 }
 
-void NMT_MemoryLogRecorder::print_histogram(Entry* entries, size_t count, double total_overhead) {
+void NMT_MemoryLogRecorder::print_histogram(Entry* entries, size_t count) {
   static size_t histogram_counts[_buckets_max] = { 0 };
   static size_t histogram_actual_sizes[_buckets_max] = { 0 };
   static size_t histogram_requested_sizes[_buckets_max] = { 0 };
+
+  size_t total_requested_malloced = 0;
+  size_t total_actual_malloced = 0;
+  for (size_t c=0; c<count; c++) {
+    Entry* e = &entries[c];
+    if (NMT_MemoryLogRecorder::is_alloc(e)) {
+      total_requested_malloced += e->requested;
+      total_actual_malloced += e->actual;
+    }
+  }
+  size_t total_overhead = (total_actual_malloced - total_requested_malloced);
 
   // find unique alloc requests
   for (size_t c=0; c<count; c++) {
@@ -144,6 +155,18 @@ void NMT_MemoryLogRecorder::print_histogram(Entry* entries, size_t count, double
   //assert(total_overhead == o_total, "total_overhead:%zu == total_requested:%zu", total_overhead, o_total);
 }
 
+void NMT_MemoryLogRecorder::print_records(Entry* entries, size_t count) {
+  for (size_t c=0; c<count; c++) {
+    Entry* e = &entries[c];
+    fprintf(stderr, "{ %18p, %18p", e->ptr, e->old);
+    for (int i=0; i<NMT_TrackingStackDepth; i++) {
+      fprintf(stderr, ", %18p", e->stack[i]);
+    }
+    fprintf(stderr, ", %7u, %7u, %7u, \"%s\"},\n", (unsigned)e->requested, (unsigned)e->actual,
+            (unsigned)e->flags, NMTUtil::flag_to_name(e->flags));
+  }
+}
+
 bool NMT_MemoryLogRecorder::print_by_thread(Entry* entries, size_t count) {
   void* threads[_threads_max] = { nullptr };
   static size_t threads_counters_malloc_count[_threads_max] = { 0 };
@@ -153,15 +176,7 @@ bool NMT_MemoryLogRecorder::print_by_thread(Entry* entries, size_t count) {
 
   for (size_t c=0; c<count; c++) {
     Entry* e = &entries[c];
-    if (PrintRecordedNMTEntries) {
-      fprintf(stderr, "{ %18p, %18p", e->ptr, e->old);
-      for (int i=0; i<NMT_TrackingStackDepth; i++) {
-        fprintf(stderr, ", %18p", e->stack[i]);
-      }
-      fprintf(stderr, ", %7u, %7u, %7u, \"%s\"},\n", (unsigned)e->requested, (unsigned)e->actual,
-              (unsigned)e->flags, NMTUtil::flag_to_name(e->flags));
-    }
-
+    
     // intialize the array with threads' pointers
     for (int i=0; i<_threads_max; i++) {
       if (i == (_threads_max-1)) {
@@ -238,9 +253,7 @@ bool NMT_MemoryLogRecorder::print_by_thread(Entry* entries, size_t count) {
   return threads_limit_reached;
 }
 
-void NMT_MemoryLogRecorder::dump(Entry* entries, size_t count) {
-  bool threads_limit_reached = print_by_thread(entries, count);
-
+void NMT_MemoryLogRecorder::print_summary(Entry* entries, size_t count) {
   size_t total_mallocs = 0;
   size_t total_reallocs = 0;
   size_t total_frees = 0;
@@ -310,9 +323,17 @@ void NMT_MemoryLogRecorder::dump(Entry* entries, size_t count) {
             overhead_NMTHeaders_ratio_actual, '%');
   }
   fprintf(stderr, "\n\n");
+}
 
-  print_histogram(entries, count, total_overhead);
-
+void NMT_MemoryLogRecorder::dump(Entry* entries, size_t count) {
+  if (PrintRecordedNMTEntries) {
+    print_records(entries, count);
+  }
+  
+  bool threads_limit_reached = print_by_thread(entries, count);
+  print_summary(entries, count);
+  print_histogram(entries, count);
+  
   if (threads_limit_reached) {
     fprintf(stderr, "WARNING: reached _threads_max limit: %d\n\n", _threads_max);
   }
@@ -346,7 +367,6 @@ void NMT_MemoryLogRecorder::log(size_t requested, address ptr, address old, MEMF
         _entry = &_entries[_count++];
       }
       pthread_mutex_unlock(&_mutex);
-      //fprintf(stderr, "_count: %d\n", _count);
 
       if (_entry != nullptr) {
 #if defined(LINUX) || defined(__APPLE__)
