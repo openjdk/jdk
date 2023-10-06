@@ -42,8 +42,10 @@ private:
     size_t actual;
     MEMFLAGS flags;
   };
+  static void print_histogram(Entry* entries, size_t count, double overhead);
+  static bool print_by_thread(Entry* entries, size_t count);
   static void dump(Entry* entries, size_t count);
-  
+
 public:
   static bool is_free(Entry* e)    { return (e->requested == 0) && (e->old == nullptr); };
   static bool is_realloc(Entry* e) { return (e->requested > 0)  && (e->old != nullptr); };
