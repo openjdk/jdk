@@ -25,6 +25,7 @@ package compiler.integerArithmetic;
 import compiler.lib.ir_framework.*;
 import java.util.Random;
 
+import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
@@ -41,6 +42,8 @@ import jdk.test.lib.Utils;
 public class DivisionByConstant {
     private static final int TRIALS = 10;
     private static final int INVOCATIONS = 100;
+
+    private static final boolean VERIFY = Boolean.getBoolean("verify");
 
     private static final int I_DIV;
     private static final int I_1;
@@ -95,12 +98,28 @@ public class DivisionByConstant {
                     "-DlDiv=" + lDiv, "-Dl1=" + l1, "-Dl2=" + l2);
             test.start();
         }
+
+        var test = new TestFramework(DivisionByConstant.class);
+        test.setDefaultWarmup(1);
+        test.addFlags("-DiDiv=" + 1, "-Di1=" + 1, "-Di2=" + 1,
+                "-DlDiv=" + 1, "-Dl1=" + 1, "-Dl2=" + 1, "-Dverify=" + true);
+        try {
+            test.start();
+            throw new RuntimeException("Expected exception not thrown");
+        } catch (IRViolationException e) {}
     }
 
     static long logRandom(Random r, int bits) {
         int highestBit = r.nextInt(bits);
         long res = r.nextLong() & (-1L >>> (Long.SIZE - 1 - highestBit));
         return res == 0 ? 1 : res;
+    }
+
+    @Test
+    @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
+    @IR(failOn = IRNode.DIV)
+    static int verify(int x, int y) {
+        return VERIFY ? x / y : 0;
     }
 
     @Run(test = {"sDivInt", "uDivInt", "sDivLong", "uDivLong"})
