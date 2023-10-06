@@ -123,6 +123,16 @@ public class CatalogResolverTest extends CatalogSupportBase {
 
     }
 
+    /**
+     * Verifies that the catalogResolver method throws NullPointerException if
+     * the {@code catalog} parameter is null. Note that the {@code resolve} parameter
+     * is tested with {@code testResolveProperty}.
+     */
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testCatalogProperty() {
+        CatalogManager.catalogResolver((Catalog)null, (String)null);
+    }
+
     private String resolveRef(Catalog c, String crResolve, String systemId) throws Exception {
         CatalogResolver cr = CatalogManager.catalogResolver(c, crResolve);
         InputSource is = cr.resolveEntity("", systemId);
