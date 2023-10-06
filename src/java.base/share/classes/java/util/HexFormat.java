@@ -27,7 +27,6 @@ package java.util;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.util.ByteArrayLittleEndian;
 import jdk.internal.util.HexDigits;
 
 import java.io.IOException;
@@ -431,6 +430,7 @@ public final class HexFormat {
      *         or non-empty prefix or suffix
      */
     private String formatOptDelimiter(byte[] bytes, int fromIndex, int toIndex) {
+        char sep;
         byte[] rep;
         if (!prefix.isEmpty() || !suffix.isEmpty()) {
             return null;
@@ -442,26 +442,24 @@ public final class HexFormat {
             // Allocate the byte array and fill in the hex pairs for each byte
             rep = new byte[checkMaxArraySize(length * 2L)];
             for (int i = 0; i < length; i++) {
-                ByteArrayLittleEndian.setShort(
-                        rep,
-                        i * 2,
-                        HexDigits.digitPair(bytes[fromIndex + i], ucase));
+                short pair = HexDigits.digitPair(bytes[fromIndex + i], ucase);
+                int pos = i * 2;
+                rep[pos] = (byte)pair;
+                rep[pos + 1] = (byte)(pair >>> 8);
             }
-        } else if (delimiter.length() == 1 && delimiter.charAt(0) < 256) {
+        } else if (delimiter.length() == 1 && (sep = delimiter.charAt(0)) < 256) {
             // Allocate the byte array and fill in the characters for the first byte
             // Then insert the delimiter and hexadecimal characters for each of the remaining bytes
-            char sep = delimiter.charAt(0);
             rep = new byte[checkMaxArraySize(length * 3L - 1L)];
-            ByteArrayLittleEndian.setShort(
-                    rep,
-                    0,
-                    HexDigits.digitPair(bytes[fromIndex], ucase));
+            short pair = HexDigits.digitPair(bytes[fromIndex], ucase);
+            rep[0] = (byte)pair;
+            rep[1] = (byte)(pair >>> 8);
             for (int i = 1; i < length; i++) {
-                rep[i * 3 - 1] = (byte) sep;
-                ByteArrayLittleEndian.setShort(
-                        rep,
-                        i * 3,
-                        HexDigits.digitPair(bytes[fromIndex + i], ucase));
+                int pos = i * 3;
+                pair = HexDigits.digitPair(bytes[fromIndex + i], ucase);
+                rep[pos - 1] = (byte) sep;
+                rep[pos] = (byte)pair;
+                rep[pos + 1] = (byte)(pair >>> 8);
             }
         } else {
             // Delimiter formatting not to a single byte
