@@ -33,6 +33,8 @@ import jdk.jpackage.test.Executor.Result;
 public class SigningBase {
 
     public static int DEFAULT_INDEX = 0;
+    public static final String ASCII_INDEX = "0";
+    public static final String UNICODE_INDEX = "0";
     private static String [] DEV_NAMES = {
         "jpackage.openjdk.java.net",
         "jpackage.openjdk.java.net (ö)",
@@ -247,7 +249,7 @@ public class SigningBase {
         Path appImage = appImageCmd.outputBundle();
         SigningBase.verifyCodesign(appImage, isSigned, SigningBase.DEFAULT_INDEX);
         if (isSigned) {
-            SigningBase.verifySpctl(appImage, "exec", 0);
+            SigningBase.verifySpctl(appImage, "exec", SigningBase.DEFAULT_INDEX);
         }
     }
 

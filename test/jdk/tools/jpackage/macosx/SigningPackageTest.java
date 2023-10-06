@@ -59,7 +59,7 @@ import jdk.jpackage.test.Annotations.Parameter;
  * @build SigningPackageTest
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningPackageTest
  */
 public class SigningPackageTest {
@@ -90,14 +90,27 @@ public class SigningPackageTest {
     }
 
     private static int getCertIndex(JPackageCommand cmd) {
-        String devName = cmd.getArgumentValue("--mac-signing-key-user-name");
-        return SigningBase.getDevNameIndex(devName);
+        if (cmd.hasArgument("--mac-signing-key-user-name")) {
+            String devName = cmd.getArgumentValue("--mac-signing-key-user-name");
+            return SigningBase.getDevNameIndex(devName);
+        } else {
+            // Signing-indentity
+            return Integer.valueOf(SigningBase.UNICODE_INDEX);
+        }
     }
 
     @Test
-    @Parameter("0")
-    @Parameter("1")
-    public static void test(int certIndex) throws Exception {
+    // ("signing-key or sign-identity", "certificate index"})
+    // Signing-key and ASCII certificate
+    @Parameter({"true", SigningBase.ASCII_INDEX})
+    // Signing-key and UNICODE certificate
+    @Parameter({"true", SigningBase.UNICODE_INDEX})
+    // Signing-indentity and UNICODE certificate
+    @Parameter({"false", SigningBase.UNICODE_INDEX})
+    public static void test(String... testArgs) throws Exception {
+        boolean signingKey = Boolean.parseBoolean(testArgs[0]);
+        int certIndex = Integer.parseInt(testArgs[1]);
+
         SigningCheck.checkCertificates(certIndex);
 
         new PackageTest()
@@ -105,12 +118,27 @@ public class SigningPackageTest {
                 .forTypes(PackageType.MAC)
                 .addInitializer(cmd -> {
                     cmd.addArguments("--mac-sign",
-                            "--mac-signing-key-user-name", SigningBase.getDevName(certIndex),
                             "--mac-signing-keychain", SigningBase.getKeyChain());
+                    if (signingKey) {
+                        cmd.addArguments("--mac-signing-key-user-name",
+                                         SigningBase.getDevName(certIndex));
+                    } else {
+                        cmd.addArguments("--mac-app-image-sign-identity",
+                                         SigningBase.getAppCert(certIndex));
+                        cmd.addArguments("--mac-installer-sign-identity",
+                                         SigningBase.getInstallerCert(certIndex));
+                    }
                 })
                 .forTypes(PackageType.MAC_PKG)
                 .addBundleVerifier(SigningPackageTest::verifyPKG)
                 .forTypes(PackageType.MAC_DMG)
+                .addInitializer(cmd -> {
+                    if (!signingKey) {
+                        // jpackage throws expected error with
+                        // --mac-installer-sign-identity and DMG type
+                        cmd.removeArgumentWithValue("--mac-installer-sign-identity");
+                    }
+                })
                 .addBundleVerifier(SigningPackageTest::verifyDMG)
                 .addBundleVerifier(SigningPackageTest::verifyAppImageInDMG)
                 .run();
