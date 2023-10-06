@@ -455,6 +455,11 @@ bool ConnectionGraph::can_reduce_phi_check_inputs(PhiNode* ophi) const {
       assert(ptn->ideal_node() != nullptr && ptn->ideal_node()->is_Allocate(), "sanity");
       AllocateNode* alloc = ptn->ideal_node()->as_Allocate();
 
+      // Don't handle arrays.
+      if (alloc->Opcode() != Op_Allocate) {
+        continue;
+      }
+
       if (PhaseMacroExpand::can_eliminate_allocation(_igvn, alloc, nullptr)) {
         found_sr_allocate = true;
       } else {
@@ -557,8 +562,7 @@ bool ConnectionGraph::can_reduce_phi(PhiNode* ophi) const {
   // If there was an error attempting to reduce allocation merges for this
   // method we might have disabled the compilation and be retrying with RAM
   // disabled.
-  // If EliminateAllocations is False, there is no point in reducing merges.
-  if (!_compile->do_reduce_allocation_merges()) {
+  if (!_compile->do_reduce_allocation_merges() || ophi->region()->Opcode() != Op_Region) {
     return false;
   }
 
