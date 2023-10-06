@@ -183,7 +183,7 @@ INT32 DAUDIO_GetDirectAudioDeviceCount() {
     if (!DS_lockCache()) {
         return 0;
     }
-    
+
     HRESULT hr=::CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
     if(hr != S_OK || hr != S_FALSE || hr != RPC_E_CHANGED_MODE) {
         DS_unlockCache();
@@ -230,7 +230,7 @@ INT32 DAUDIO_GetDirectAudioDeviceCount() {
 
         g_lastCacheRefreshTime = (UINT64) timeGetTime();
     }
-    
+
     if(hr != RPC_E_CHANGED_MODE) {
         ::CoUninitialize();
     }
@@ -288,7 +288,7 @@ INT32 DAUDIO_GetDirectAudioDeviceDescription(INT32 mixerIndex, DirectAudioDevice
     if(hr != RPC_E_CHANGED_MODE) {
         ::CoUninitialize();
     }
-    
+
     /*desc->vendor;
     desc->version;*/
 
