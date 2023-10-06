@@ -141,19 +141,20 @@ public class URLEncoder {
         DONT_NEED_ENCODING_FLAGS_0_WITH_SPACE
                 = DONT_NEED_ENCODING_FLAGS_0_WITHOUT_SPACE
                 | (1L << ' '); // ASCII 32 encoding a space to a + is done in the encode() method
-
-//        long flags1 = 0;
-//        // ASCII 65 - 90
-//        for (int i = 'A'; i <= 'Z'; ++i) {
-//            flags1 |= 1L << (i - 64);
-//        }
-//        flags1 |= 1L << ('_' - 64); // ASCII 95
-//        // ASCII 97 - 122
-//        for (int i = 'a'; i <= 'z'; ++i) {
-//            flags1 |= 1L << (i - 64);
-//        }
-//        DONT_NEED_ENCODING_FLAGS_1 = flags1;
-        DONT_NEED_ENCODING_FLAGS_1 = 0x7FFFFFE87FFFFFEL; // really 1L << ([A-Z_a-z] - 64)
+        /*
+         * long flags1 = 0;
+         * // ASCII 65 - 90
+         * for (int i = 'A'; i <= 'Z'; ++i) {
+         *     flags1 |= 1L << (i - 64);
+         * }
+         * flags1 |= 1L << ('_' - 64); // ASCII 95
+         * // ASCII 97 - 122
+         * for (int i = 'a'; i <= 'z'; ++i) {
+         *     flags1 |= 1L << (i - 64);
+         * }
+         * DONT_NEED_ENCODING_FLAGS_1 = flags1;
+         */
+        DONT_NEED_ENCODING_FLAGS_1 = 0x7FFFFFE87FFFFFEL; // really : 1L << ([A-Z_a-z] - 64)
     }
 
     /**
