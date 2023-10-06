@@ -61,7 +61,7 @@ public class Double512VectorTests extends AbstractVectorTest {
 
 
     // for floating point reduction ops that may introduce rounding errors
-    private static final double RELATIVE_ROUNDING_ERROR = (double)0.01;
+    private static final double RELATIVE_ROUNDING_ERROR = (double)0.000001;
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 512);
 
@@ -121,16 +121,7 @@ public class Double512VectorTests extends AbstractVectorTest {
 
     static void assertReductionArraysEquals(double[] r, double rc, double[] a,
                                             FReductionOp f, FReductionAllOp fa) {
-        int i = 0;
-        try {
-            Assert.assertEquals(rc, fa.apply(a));
-            for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(r[i], f.apply(a, i));
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(rc, fa.apply(a), "Final result is incorrect!");
-            Assert.assertEquals(r[i], f.apply(a, i), "at index #" + i);
-        }
+        assertReductionArraysEquals(r, rc, a, f, fa, (double)0.0);
     }
 
     static void assertReductionArraysEquals(double[] r, double rc, double[] a,
@@ -158,16 +149,7 @@ public class Double512VectorTests extends AbstractVectorTest {
 
     static void assertReductionArraysEqualsMasked(double[] r, double rc, double[] a, boolean[] mask,
                                             FReductionMaskedOp f, FReductionAllMaskedOp fa) {
-        int i = 0;
-        try {
-            Assert.assertEquals(rc, fa.apply(a, mask));
-            for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(r[i], f.apply(a, i, mask));
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(rc, fa.apply(a, mask), "Final result is incorrect!");
-            Assert.assertEquals(r[i], f.apply(a, i, mask), "at index #" + i);
-        }
+        assertReductionArraysEqualsMasked(r, rc, a, mask, f, fa, (double)0.0);
     }
 
     static void assertReductionArraysEqualsMasked(double[] r, double rc, double[] a, boolean[] mask,
@@ -1111,9 +1093,13 @@ relativeError));
                 return fill(s * BUFFER_REPS,
                             i -> (((double)(i + 1) == 0) ? 1 : (double)(i + 1)));
             }),
-            withToString("double[i / 10.0 + 0.1]", (int s) -> {
+            withToString("double[0.01 + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (double)(i / (double) 10.0 + 0.1));
+                            i -> (double)0.01 + ((double)i / (i + 1)));
+            }),
+            withToString("double[i -> i % 17 == 0 ? cornerCaseValue(i) : 0.01 + (i / (i + 1))]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> i % 17 == 0 ? cornerCaseValue(i) : (double)0.01 + ((double)i / (i + 1)));
             }),
             withToString("double[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
