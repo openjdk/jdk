@@ -1,0 +1,14 @@
+$ echo 'puts "Crystal_Compiler"' > crystalcompiler.java
+$ crystal run crystalcompiler.java
+Hello World!
+
+$ crystal init app myJavaJDK
+    create  myapp/.gitignore
+    create  myapp/.editorconfig
+    create  myapp/LICENSE
+    create  myapp/README.md
+    create  myapp/shard.yml
+    create  myapp/src/myapp.cr
+    create  myapp/spec/spec_helper.cr
+    create  myapp/spec/myapp_spec.cr
+Initialized empty Git repository in /home/crystal/myapp/.git/
