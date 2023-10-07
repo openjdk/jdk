@@ -182,8 +182,8 @@ public:
   public:
     CollectingDisposer(IntrusiveListTestWithDisposal* test) : _test(test) { }
 
-    void operator()(const Value& value) const {
-      _test->disposed[_test->ndisposed++] = &value;
+    void operator()(const Value* value) const {
+      _test->disposed[_test->ndisposed++] = value;
     }
 
   private:
@@ -1596,7 +1596,7 @@ public:
   }
 
   struct NopDisposer {
-    void operator()(const Value& value) const {}
+    void operator()(const Value* value) const {}
   };
 
   ListWithSize list;

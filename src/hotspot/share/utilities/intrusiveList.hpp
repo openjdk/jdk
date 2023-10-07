@@ -97,9 +97,9 @@ using IntrusiveListEntryAccessor =
  *
  * Some operations that remove elements from a list take a disposer argument.
  * This is a function or function object that will be called with one
- * argument, a const reference to a removed element.  This function should
- * "dispose" of the argument object when called, such as by deleting the
- * object.  The result of the call is ignored.
+ * argument, of type pointer to T, to a removed element.  This function should
+ * "dispose" of the argument object when called, such as by deleting it.  The
+ * result of the call is ignored.
  *
  * Usage of IntrusiveList involves defining an element class which
  * contains a IntrusiveListEntry member, and using a corresponding
@@ -1140,7 +1140,7 @@ private:
     const_reference value = *i++;
     IOps::iter_attach(IOps::predecessor(value), i);
     detach(value);
-    disposer(value);
+    disposer(disposer_arg(value));
     return make_iterator<Result>(i);
   }
 
@@ -1188,7 +1188,7 @@ private:
       do {
         const_reference value = *from++;
         detach(value);
-        disposer(value);
+        disposer(disposer_arg(value));
       } while (from != to);
     }
     return make_iterator<Result>(to);
@@ -1222,7 +1222,7 @@ public:
       const_reference v = *pos;
       if (predicate(v)) {
         pos = erase(pos);
-        disposer(v);
+        disposer(disposer_arg(v));
         ++removed;
       } else {
         ++pos;
@@ -1563,8 +1563,14 @@ private:
   }
 
   struct NopDisposer {
-    void operator()(const_reference) const {}
+    void operator()(pointer) const {}
   };
+
+  // The pointer type is const-qualified per to the elements of the list, so
+  // it's okay to possibly cast away const when disposing.
+  static pointer disposer_arg(const_reference value) {
+    return const_cast<pointer>(&value);
+  }
 
   void detach(const_reference value) {
     assert_is_element(value);
