@@ -1118,6 +1118,19 @@ public:
     return erase_one_and_dispose<reverse_iterator>(i, disposer);
   }
 
+  /**
+   * Removes v from the list.  Returns an iterator for the successor
+   * of v in the list.  Invalidates iterators referring to v.
+   *
+   * precondition: v must be in the list.
+   * complexity: constant.
+   */
+  iterator erase(const_reference v) {
+    // This may seem a little roundabout, but it gets good debug-only error
+    // checking with minimal source code and no additional overhead in release.
+    return erase(iterator_to(v));
+  }
+
 private:
 
   template<typename Result, typename Iterator, typename Disposer>
@@ -1182,6 +1195,41 @@ private:
   }
 
 public:
+
+  /**
+   * Conditionally removes elements from the list.  Successively calls the
+   * predicate with a const_reference to each element of the list.  If the
+   * result of such a call is true then that element is removed from the list.
+   * Applies the disposer, if any, to each removed element.  The list may not
+   * be in a consistent state when the disposer is called.  Returns the number
+   * of removed elements.  Invalidates iterators referring to the removed
+   * elements.
+   *
+   * complexity: O(length())
+   */
+
+  template<typename Predicate>
+  size_type erase_if(Predicate predicate) {
+    return erase_and_dispose_if(predicate, NopDisposer());
+  }
+
+  template<typename Predicate, typename Disposer>
+  size_type erase_and_dispose_if(Predicate predicate, Disposer disposer) {
+    const_iterator pos = cbegin();
+    const_iterator end = cend();
+    size_type removed = 0;
+    while (pos != end) {
+      const_reference v = *pos;
+      if (predicate(v)) {
+        pos = erase(pos);
+        disposer(v);
+        ++removed;
+      } else {
+        ++pos;
+      }
+    }
+    return removed;
+  }
 
   /**
    * Removes all of the elements from the list.  Applies the disposer,

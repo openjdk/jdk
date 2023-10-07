@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/intrusiveList.hpp"
 #include "utilities/macros.hpp"
 #include <type_traits>
@@ -848,6 +849,23 @@ TEST_F(IntrusiveListTestWithDisposal, erase1_dispose) {
   EXPECT_EQ(nit, list1.begin());
 }
 
+TEST_F(IntrusiveListTestWithList1, erase_element) {
+  EXPECT_EQ(nvalues, list1.length());
+
+  int step = 2;
+  unsigned index = step;
+  List1::const_iterator it = step_iterator(list1.begin(), step);
+  List1::const_reference value = *it;
+  EXPECT_EQ(index, value.value());
+  EXPECT_EQ(values[index], value.This());
+
+  List1::iterator nit = list1.erase(value);
+  EXPECT_EQ(nvalues - 1, list1.length());
+  EXPECT_EQ(index + 1, nit->value());
+  nit = step_iterator(nit, -step);
+  EXPECT_EQ(nit, list1.begin());
+}
+
 TEST_F(IntrusiveListTestWithDisposal, erase1_dispose_reversed) {
   EXPECT_EQ(nvalues, list1.length());
 
@@ -982,6 +1000,60 @@ TEST_F(IntrusiveListTestWithDisposal, erase2_dispose_reversed) {
 
   nit = step_iterator(nit, -step1);
   EXPECT_EQ(nit, list1.rbegin());
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// erase_if
+// erase_and_dispose_if
+
+TEST_F(IntrusiveListTestWithList1, erase_if) {
+  EXPECT_EQ(nvalues, list1.length());
+  EXPECT_TRUE(is_even(nvalues));
+
+  auto has_even_value = [&](List1::const_reference v) { return is_even(v.value()); };
+  List1::size_type removed = list1.erase_if(has_even_value);
+
+  EXPECT_EQ(nvalues / 2, removed);
+  EXPECT_EQ(nvalues / 2, list1.length());
+
+  size_t i = 0;
+  for (List1::const_reference v : list1) {
+    EXPECT_EQ(++i, v.value());
+    i += 1;
+  }
+  EXPECT_EQ(i, nvalues);
+}
+
+TEST_F(IntrusiveListTestWithDisposal, erase_and_dispose_if) {
+  EXPECT_EQ(nvalues, list1.length());
+  EXPECT_TRUE((nvalues & 1) == 0);
+
+  auto has_even_value = [&](List1::const_reference v) { return is_even(v.value()); };
+  List1::size_type removed
+    = list1.erase_and_dispose_if(has_even_value, CollectingDisposer(this));
+
+  EXPECT_EQ(nvalues / 2, removed);
+  EXPECT_EQ(nvalues / 2, list1.length());
+
+  {
+    size_t i = 0;
+    for (List1::const_reference v : list1) {
+      EXPECT_EQ(++i, v.value());
+      i += 1;
+    }
+    EXPECT_EQ(i, nvalues);
+  }
+  {
+    EXPECT_EQ(nvalues / 2, ndisposed);
+    size_t i = 0;
+    for ( ; i < ndisposed; ++i) {
+      EXPECT_TRUE(disposed[i] != nullptr);
+      EXPECT_EQ(disposed[i]->value(), 2 * i);
+    }
+    for ( ; i < nvalues; ++i) {
+      EXPECT_TRUE(disposed[i] == nullptr);
+    }
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////
