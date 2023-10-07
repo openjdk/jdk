@@ -78,9 +78,7 @@ public class WindowsDesktopManager extends DefaultDesktopManager
                         if (f.isMaximizable()) {
                             if (!f.isMaximum()) {
                                 f.setMaximum(true);
-                                System.out.println("f.setmaximum true");
                             } else if (f.isMaximum() && f.isIcon()) {
-                                System.out.println("f.setIcon false");
                                 f.setIcon(false);
                             }
                         }
