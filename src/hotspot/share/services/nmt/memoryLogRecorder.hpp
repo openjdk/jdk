@@ -42,10 +42,10 @@ private:
     size_t actual;
     MEMFLAGS flags;
   };
-  static void print_histogram(Entry* entries, size_t count);
+  static bool print_histogram(Entry* entries, size_t count);
   static void print_records(Entry* entries, size_t count);
   static bool print_by_thread(Entry* entries, size_t count);
-  static void print_summary(Entry* entries, size_t count);
+  static size_t print_summary(Entry* entries, size_t count, bool substract_nmt = false);
   static void dump(Entry* entries, size_t count);
 
 public:
