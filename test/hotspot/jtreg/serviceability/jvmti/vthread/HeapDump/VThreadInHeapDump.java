@@ -252,6 +252,7 @@ public class VThreadInHeapDump {
             // Verify objects from thread stacks are dumped.
             test(snapshot, VThreadInHeapDumpTarg.VThreadMountedReferenced.class);
             test(snapshot, VThreadInHeapDumpTarg.PThreadReferenced.class);
+            // Dumping of unmounted vthreads is not implemented yet
             //test(snapshot, VThreadInHeapDumpTarg.VThreadUnmountedReferenced.class);
         }
 
