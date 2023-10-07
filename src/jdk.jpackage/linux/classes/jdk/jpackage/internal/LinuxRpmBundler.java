@@ -311,7 +311,7 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
                 "--define", String.format("%%_topdir %s",
                         TEMP_ROOT.fetchFrom(params).toAbsolutePath()),
                 "--define", String.format("%%_rpmfilename %s", rpmFile.getFileName()),
-		"--define", "_build_id_links none"
+                "--define", "_build_id_links none"
         ).executeExpectSuccess();
 
         Log.verbose(MessageFormat.format(
