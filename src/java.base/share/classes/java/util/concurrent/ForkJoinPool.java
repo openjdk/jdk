@@ -576,13 +576,15 @@ public class ForkJoinPool extends AbstractExecutorService {
      *   scanning. These are maintained in the "source" field of
      *   WorkQueues for use in method helpJoin and elsewhere (see
      *   below). We also maintain them as arguments/results of
-     *   top-level polls (argument "srcs" in method scan, with setup
+     *   top-level polls (argument "window" in method scan, with setup
      *   in method runWorker) as an encoded sliding window of current
-     *   and previous two sources, and stop signalling when all were
-     *   from the same source. And similarly not retry under multiple
-     *   CAS failures by newly activated workers.  These mechanisms
-     *   may result in transiently too few workers, but once workers
-     *   poll from a new source, they rapidly reactivate others.
+     *   and previous two sources (or INVALID_ID if none), and stop
+     *   signalling when all were from the same source. Also, retries
+     *   are suppressed on CAS failures by newly activated workers,
+     *   which serves as a form of admission control.  These
+     *   mechanisms may result in transiently too few workers, but
+     *   once workers poll from a new source, they rapidly reactivate
+     *   others.
      *
      * * Despite these, signal contention and overhead effects still
      *   occur during ramp-up and ramp-down of small computations.
@@ -1006,7 +1008,6 @@ public class ForkJoinPool extends AbstractExecutorService {
     static final int INITIAL_QUEUE_CAPACITY = 1 << 6;
 
     // conversions among short, int, long
-    static final int  SWIDTH          = 16;          // width of short
     static final int  SMASK           = 0xffff;      // (unsigned) short bits
     static final long LMASK           = 0xffffffffL; // lower 32 bits of long
     static final long UMASK           = ~LMASK;      // upper 32 bits
@@ -1033,11 +1034,11 @@ public class ForkJoinPool extends AbstractExecutorService {
     static final int PRESET_SIZE      = 1 << 2;   // size was set by property
 
     // source history window packing used in scan() and runWorker()
-    static final long WMASK           = ((long)SMASK) << 48; // must be negative
-    static final long RESCAN          = 1L << 63;
-    static final long RAN             = 1L << 62;
-    static final long INVALID_HISTORY = ((((long)INVALID_ID) << 32) | // no 3rd
+    static final long RESCAN          = 1L << 63; // must be negative
+    static final long WMASK           = ~(((long)SMASK) << 48); // id bits only
+    static final long NO_HISTORY      = ((((long)INVALID_ID) << 32) | // no 3rd
                                          (((long)INVALID_ID) << 16)); // no 2nd
+
     // others
     static final int DEREGISTERED     = 1 << 31;  // worker terminating
     static final int UNCOMPENSATE     = 1 << 16;  // tryCompensate return
@@ -1329,7 +1330,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             }
             if (!internal)
                 unlockPhase();
-            if ((room == 0 || room == m || a[m & (s - 1)] == null) &&
+            if ((room == 0 || room >= m || a[m & (s - 1)] == null) &&
                 pool != null)
                 pool.signalWork();
         }
@@ -2022,11 +2023,11 @@ public class ForkJoinPool extends AbstractExecutorService {
     final void runWorker(WorkQueue w) {
         if (w != null) {
             int phase = w.phase, r = w.stackPred; // seed from registerWorker
-            for (long window = INVALID_HISTORY | (r >>> 16);;) {
+            for (long window = NO_HISTORY | (r >>> 16);;) {
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5;  // xorshift
                 if ((runState & STOP) != 0)                // terminating
                     break;
-                if (window == (window = scan(w, window, r)) &&
+                if (window == (window = scan(w, window & WMASK, r)) &&
                     window >= 0L) {                        // empty scan
                     long c = ctl;                          // try to inactivate
                     int idlePhase = phase + IDLE;
@@ -2039,7 +2040,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                     else if ((phase = awaitWork(w, qc, idlePhase)) == idlePhase)
                         break;                             // worker exit
                     else                                   // clear history
-                        window = INVALID_HISTORY | (window & SMASK);
+                        window = NO_HISTORY | (window & SMASK);
                 }
             }
         }
@@ -2051,55 +2052,52 @@ public class ForkJoinPool extends AbstractExecutorService {
      * returning next scan window and retry indicator.
      *
      * @param w caller's WorkQueue
-     * @param window up to three queue indices and RAN indicator from last scan
+     * @param window up to three queue indices
      * @param r random seed
-     * @return the next window value to use, nonnegative if empty
+     * @return the next window to use, with RESCAN set for rescan
      */
     private long scan(WorkQueue w, long window, int r) {
         WorkQueue[] qs = queues;
         int n = (qs == null) ? 0 : qs.length, step = (r << 1) | 1;
-        int i = (short)window;                    // origin
-        boolean running = (window & RAN) != 0L;   // true if last scan succeeded
-        long next = window &= ~WMASK;             // default for empty scan
-        outer: for (int l = n; l > 0; --l, i += step) {
+        outer: for (int i = (short)window, l = n; l > 0; --l, i += step) {
             int j, cap; WorkQueue q; ForkJoinTask<?>[] a;
             if ((q = qs[j = i & SMASK & (n - 1)]) != null &&
                 (a = q.array) != null && (cap = a.length) > 0) {
                 for (boolean contended = false;;) {
-                    int b, k;
+                    int b, k; Object o;
                     ForkJoinTask<?> t = a[k = (b = q.base) & (cap - 1)];
                     U.loadFence();                // re-read b and t
                     if (q.base == b) {            // else inconsistent; retry
-                        Object o;                 // to check identities
                         int nb = b + 1, nk = nb & (cap - 1);
                         if (t == null) {
                             if (a[k] == null) {
-                                if (!contended && next >= 0L &&
+                                if (!contended && window >= 0L &&
                                     (a[nk] != null || q.top - b > 0))
-                                    next |= RESCAN; // revisit
+                                    window |= RESCAN; // revisit
                                 break;
                             }
                         }
                         else if (t == (o = U.compareAndExchangeReference(
                                             a, slotOffset(k), t, null))) {
                             q.updateBase(nb);
-                            long nw = ((window << 16) | j) & ~WMASK;
-                            next = nw | (RESCAN | RAN);
-                            if ((window != nw || (short)(nw >> 32) != j) &&
+                            long pw = window, nw = ((pw << 16) | j) & WMASK;
+                            window = nw | RESCAN;
+                            if ((nw != pw || (short)(nw >>> 32) != j) &&
                                 a[nk] != null)
+                            if (nw != pw && a[nk] != null)
                                 signalWork();     // limit propagation
                             if (w != null)        // always true
                                 w.topLevelExec(t, q, j);
                             break outer;
                         }
-                        else                      // limit retries on contention
-                            contended = (o == null && !running &&
-                                         q.array == a && a[nk] != null);
+                        else if ((contended = (o == null)) &&
+                                  (short)(window >>> 16) == INVALID_ID)
+                            break;               // contended and newly active
                     }
                 }
             }
         }
-        return next;
+        return window;
     }
 
     /**
