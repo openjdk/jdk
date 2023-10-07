@@ -24,6 +24,7 @@
 import java.io.File;
 import java.lang.ref.Reference;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -44,11 +45,20 @@ import jdk.test.lib.hprof.model.ThreadObject;
 import jdk.test.lib.hprof.parser.Reader;
 
 /**
- * @test
+ * @test id=default
+ * @requires vm.jvmti
+ * @requires vm.continuations
  * @library /test/lib
- * @run main/othervm
- *      -Djdk.virtualThreadScheduler.parallelism=1
- *      VThreadInHeapDump
+ * @run main VThreadInHeapDump
+ */
+
+/**
+ * @test id=no-vmcontinuations
+ * @requires vm.jvmti
+ * @library /test/lib
+ * @comment pass extra VM arguments as the test arguments
+ * @run main VThreadInHeapDump
+ *           -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
  */
 
 class VThreadInHeapDumpTarg extends LingeredApp {
@@ -159,18 +169,22 @@ class VThreadInHeapDumpTarg extends LingeredApp {
 
 public class VThreadInHeapDump {
 
+    // test arguments are extra VM options for target process
     public static void main(String[] args) throws Exception {
         File dumpFile = new File("Myheapdump.hprof");
-        createDump(dumpFile);
+        createDump(dumpFile, args);
         verifyDump(dumpFile);
     }
 
-    private static void createDump(File dumpFile) throws Exception {
+    private static void createDump(File dumpFile, String[] extraOptions) throws Exception {
         LingeredApp theApp = null;
         try {
             theApp = new VThreadInHeapDumpTarg();
 
-            LingeredApp.startApp(theApp, "-Djdk.virtualThreadScheduler.parallelism=1");
+            List<String> extraVMArgs = new ArrayList<>();
+            extraVMArgs.add("-Djdk.virtualThreadScheduler.parallelism=1");
+            extraVMArgs.addAll(Arrays.asList(extraOptions));
+            LingeredApp.startApp(theApp, extraVMArgs.toArray(new String[0]));
 
             //jcmd <pid> GC.heap_dump <file_path>
             JDKToolLauncher launcher = JDKToolLauncher
