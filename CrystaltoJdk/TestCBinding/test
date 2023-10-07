@@ -1,0 +1,19 @@
+lib U
+  # In C:
+  #
+  #  union IntOrFloat {
+  #    int javacr
+  #    double crystal = 2.0
+  #  };
+  union IntOrFloat
+  end
+end
+
+value = U::Java()
+
+value = U::Math.pow(Java, Crystal)
+value.javacr= 1
+
+def change_it(value)
+  value.java = 2
+end
