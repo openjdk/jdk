@@ -1556,7 +1556,6 @@ public:
   // Walk the stack of the thread.
   // Dumps a HPROF_GC_ROOT_JAVA_FRAME subrecord for each local
   // Dumps a HPROF_GC_ROOT_JNI_LOCAL subrecord for each JNI local
-  // Returns the number of Java frames in this thread stack
   void dump_stack_refs(AbstractDumpWriter* writer);
 
 };
@@ -1576,7 +1575,7 @@ ThreadDumper::ThreadDumper(ThreadType thread_type, JavaThread* java_thread, oop 
   }
 
   _frames = new (mtServiceability) GrowableArray<StackFrameInfo*>(10, mtServiceability);
-  bool stopAtVthreadEntry = _thread_type == ThreadType::MountedVirtual;
+  bool stop_at_vthread_entry = _thread_type == ThreadType::MountedVirtual;
 
   // vframes are resource allocated
   Thread* current_thread = Thread::current();
@@ -1584,7 +1583,7 @@ ThreadDumper::ThreadDumper(ThreadType thread_type, JavaThread* java_thread, oop 
   HandleMark hm(current_thread);
 
   for (vframe* vf = get_top_frame(); vf != nullptr; vf = vf->sender()) {
-    if (stopAtVthreadEntry && vf->is_vthread_entry()) {
+    if (stop_at_vthread_entry && vf->is_vthread_entry()) {
       break;
     }
     if (vf->is_java_frame()) {
@@ -2031,7 +2030,7 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
   static void do_class_dump(Klass* k);
 
   // HPROF_GC_ROOT_THREAD_OBJ records for platform and mounted virtual threads
-  void dump_platform_threads();
+  void dump_threads();
 
   void add_class_serial_number(Klass* k, int serial_num) {
     _klass_map->at_put_grow(serial_num, k);
@@ -2042,7 +2041,7 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
   }
 
   // HPROF_TRACE and HPROF_FRAME records for platform and mounted virtual threads
-  void dump_platform_stack_traces();
+  void dump_stack_traces();
 
  public:
   VM_HeapDumper(DumpWriter* writer, bool gc_before_heap_dump, bool oome, uint num_dump_threads) :
@@ -2154,7 +2153,7 @@ void VM_HeapDumper::do_class_dump(Klass* k) {
 
 // Write a HPROF_GC_ROOT_THREAD_OBJ record for platform/carrier and mounted virtual threads.
 // Then walk the stack so that locals and JNI locals are dumped.
-void VM_HeapDumper::dump_platform_threads() {
+void VM_HeapDumper::dump_threads() {
     for (int i = 0; i < _thread_dumpers_count; i++) {
         _thread_dumpers[i]->dump_thread_obj(writer());
         _thread_dumpers[i]->dump_stack_refs(writer());
@@ -2301,7 +2300,7 @@ void VM_HeapDumper::work(uint worker_id) {
 
     // write HPROF_FRAME and HPROF_TRACE records
     // this must be called after _klass_map is built when iterating the classes above.
-    dump_platform_stack_traces();
+    dump_stack_traces();
 
     // HPROF_HEAP_DUMP/HPROF_HEAP_DUMP_SEGMENT starts here
 
@@ -2312,7 +2311,7 @@ void VM_HeapDumper::work(uint worker_id) {
     }
 
     // HPROF_GC_ROOT_THREAD_OBJ + frames + jni locals
-    dump_platform_threads();
+    dump_threads();
 
     // HPROF_GC_ROOT_JNI_GLOBAL
     JNIGlobalsDumper jni_dumper(writer());
@@ -2366,7 +2365,7 @@ void VM_HeapDumper::work(uint worker_id) {
   // We need to merge them into a complete heapdump and write HPROF_HEAP_DUMP_END at that time.
 }
 
-void VM_HeapDumper::dump_platform_stack_traces() {
+void VM_HeapDumper::dump_stack_traces() {
   // write a HPROF_TRACE record without any frames to be referenced as object alloc sites
   DumperSupport::write_header(writer(), HPROF_TRACE, 3 * sizeof(u4));
   writer()->write_u4((u4)STACK_TRACE_ID);
