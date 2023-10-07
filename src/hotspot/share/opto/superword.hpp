@@ -281,10 +281,8 @@ class SuperWord : public ResourceObj {
   bool     is_trace_loop()         { return (_vector_loop_debug & 8) > 0; }
   bool     is_trace_adjacent()     { return (_vector_loop_debug & 16) > 0; }
   bool     is_trace_cmov()         { return (_vector_loop_debug & 32) > 0; }
-  bool     is_trace_loop_reverse() { return (_vector_loop_debug & 64) > 0; }
 #endif
   bool     do_vector_loop()        { return _do_vector_loop; }
-  bool     do_reserve_copy()       { return _do_reserve_copy; }
 
   const GrowableArray<Node_List*>& packset() const { return _packset; }
   const GrowableArray<Node*>&      block()   const { return _block; }
@@ -298,7 +296,6 @@ class SuperWord : public ResourceObj {
   bool           _race_possible;   // In cases where SDMU is true
   bool           _early_return;    // True if we do not initialize
   bool           _do_vector_loop;  // whether to do vectorization/simd style
-  bool           _do_reserve_copy; // do reserve copy of the graph(loop) before final modification in output
   int            _num_work_vecs;   // Number of non memory vector operations
   int            _num_reductions;  // Number of reduction expressions applied
 #ifndef PRODUCT
@@ -447,7 +444,6 @@ private:
   // Tracing support
   #ifndef PRODUCT
   void find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best_iv_adjustment);
-  void print_loop(bool whole);
   #endif
   // If strict memory alignment is required (vectors_should_be_aligned), then check if
   // mem_ref is aligned with best_align_to_mem_ref.

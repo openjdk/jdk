@@ -227,10 +227,30 @@ ifeq ($(ENABLE_FALLBACK_LINKER), true)
       NAME := fallbackLinker, \
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBFFI_CFLAGS), \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
-                 $(call SET_SHARED_LIBRARY_ORIGIN), \
+                  $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := $(LIBFFI_LIBS), \
       LIBS_windows := $(LIBFFI_LIBS) ws2_32.lib, \
   ))
 
   TARGETS += $(BUILD_LIBFALLBACKLINKER)
 endif
+
+################################################################################
+
+ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2)+$(filter $(TOOLCHAIN_TYPE), gcc), true+true+true+gcc)
+  $(eval $(call SetupJdkLibrary, BUILD_LIB_SIMD_SORT, \
+      NAME := simdsort, \
+      TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
+      OPTIMIZATION := HIGH, \
+      CFLAGS := $(CFLAGS_JDKLIB), \
+      CXXFLAGS := $(CXXFLAGS_JDKLIB), \
+      LDFLAGS := $(LDFLAGS_JDKLIB) \
+          $(call SET_SHARED_LIBRARY_ORIGIN), \
+      LIBS := $(LIBCXX), \
+      LIBS_linux := -lc -lm -ldl, \
+  ))
+
+  TARGETS += $(BUILD_LIB_SIMD_SORT)
+endif
+
+################################################################################
