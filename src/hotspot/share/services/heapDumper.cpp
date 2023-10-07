@@ -1491,7 +1491,7 @@ void JavaStackRefDumper::dump_java_stack_refs(StackValueCollection* values) {
 // - HPROF_GC_ROOT_THREAD_OBJ/HPROF_GC_ROOT_JAVA_FRAME/HPROF_GC_ROOT_JNI_LOCAL subrecords.
 class ThreadDumper : public CHeapObj<mtInternal> {
 public:
-  enum class ThreadType {Platform, MountedVirtual, UnmountedVirtual};
+  enum class ThreadType { Platform, MountedVirtual, UnmountedVirtual };
 
 private:
   ThreadType _thread_type;
