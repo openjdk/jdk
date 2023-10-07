@@ -75,14 +75,13 @@ public class WindowsDesktopManager extends DefaultDesktopManager
                     //frame instead of minimizing the icon via the minimize
                     //icon.
                     if (!currentFrame.isIcon()) {
-                        currentFrame.setMaximum(false);
                         if (f.isMaximizable()) {
                             if (!f.isMaximum()) {
                                 f.setMaximum(true);
+                                System.out.println("f.setmaximum true");
                             } else if (f.isMaximum() && f.isIcon()) {
+                                System.out.println("f.setIcon false");
                                 f.setIcon(false);
-                            } else {
-                                f.setMaximum(false);
                             }
                         }
                     }
