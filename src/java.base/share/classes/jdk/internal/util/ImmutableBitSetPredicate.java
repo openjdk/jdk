@@ -50,19 +50,9 @@ public class ImmutableBitSetPredicate implements IntPredicate {
 
     @Override
     public boolean test(int bitIndex) {
-        if (bitIndex < 0)
-            throw new IndexOutOfBoundsException("bitIndex < 0: " + bitIndex);
-
-        int wordIndex = wordIndex(bitIndex);
+        int wordIndex = bitIndex >> 6;
         return (wordIndex < words.length)
                 && ((words[wordIndex] & (1L << bitIndex)) != 0);
-    }
-
-    /**
-     * Given a bit index, return word index containing it.
-     */
-    private static int wordIndex(int bitIndex) {
-        return bitIndex >> 6;
     }
 
     /**
@@ -79,7 +69,32 @@ public class ImmutableBitSetPredicate implements IntPredicate {
      * @since 22
      */
     public static IntPredicate of(BitSet original) {
+        if (original.size() <= 128) {
+            return new SmallImmutableBitSetPredicate(original);
+        }
         return new ImmutableBitSetPredicate(original);
     }
 
+    public static class SmallImmutableBitSetPredicate implements IntPredicate {
+        private final long first;
+        private final long second;
+        private SmallImmutableBitSetPredicate(BitSet original) {
+            // If this class is made public, we need to do
+            // a defensive array copy as certain BitSet implementations
+            // may return a shared array. The spec says the array should be _new_ though but
+            // the consequences might be unspecified for a malicious BitSet.
+            long[] array = original.toLongArray();
+            first = array[0];
+            second = array.length == 2 ? array[1] : 0L;
+        }
+        @Override
+        public boolean test(int bitIndex) {
+            int wordIndex = bitIndex >> 6;
+            if (bitIndex < 0 || wordIndex > 1) {
+                return false;
+            }
+            long bits = wordIndex == 0 ? first : second;
+            return (bits & (1L << bitIndex)) != 0;
+        }
+    }
 }
