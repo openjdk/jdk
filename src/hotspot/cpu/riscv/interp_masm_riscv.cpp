@@ -176,8 +176,15 @@ void InterpreterMacroAssembler::check_and_handle_earlyret(Register java_thread) 
 
 void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset) {
   assert(bcp_offset >= 0, "bcp is still pointing to start of bytecode");
-  lhu(reg, Address(xbcp, bcp_offset));
-  revb_h(reg, reg);
+  if (AvoidUnalignedAccesses && (bcp_offset % 2)) {
+    lbu(t1, Address(xbcp, bcp_offset));
+    lbu(reg, Address(xbcp, bcp_offset + 1));
+    slli(t1, t1, 8);
+    add(reg, reg, t1);
+  } else {
+    lhu(reg, Address(xbcp, bcp_offset));
+    revb_h_h_u(reg, reg);
+  }
 }
 
 void InterpreterMacroAssembler::get_dispatch() {
@@ -190,13 +197,23 @@ void InterpreterMacroAssembler::get_dispatch() {
 }
 
 void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
+                                                       Register tmp,
                                                        int bcp_offset,
                                                        size_t index_size) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
   if (index_size == sizeof(u2)) {
-    load_unsigned_short(index, Address(xbcp, bcp_offset));
+    if (AvoidUnalignedAccesses) {
+      assert_different_registers(index, tmp);
+      load_unsigned_byte(index, Address(xbcp, bcp_offset));
+      load_unsigned_byte(tmp, Address(xbcp, bcp_offset + 1));
+      slli(tmp, tmp, 8);
+      add(index, index, tmp);
+    } else {
+      load_unsigned_short(index, Address(xbcp, bcp_offset));
+    }
   } else if (index_size == sizeof(u4)) {
-    lwu(index, Address(xbcp, bcp_offset));
+    load_int_misaligned(index, Address(xbcp, bcp_offset), tmp, false);
+
     // Check if the secondary index definition is still ~x, otherwise
     // we have to change the following assembler code to calculate the
     // plain index.
@@ -223,7 +240,8 @@ void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache,
                                                            size_t index_size) {
   assert_different_registers(cache, index);
   assert_different_registers(cache, xcpool);
-  get_cache_index_at_bcp(index, bcp_offset, index_size);
+  // register "cache" is trashed in next shadd, so lets use it as a temporary register
+  get_cache_index_at_bcp(index, cache, bcp_offset, index_size);
   assert(sizeof(ConstantPoolCacheEntry) == 4 * wordSize, "adjust code below");
   // Convert from field index to ConstantPoolCacheEntry
   // riscv already has the cache in xcpool so there is no need to
@@ -260,7 +278,8 @@ void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
                                                                int bcp_offset,
                                                                size_t index_size) {
   assert_different_registers(cache, tmp);
-  get_cache_index_at_bcp(tmp, bcp_offset, index_size);
+  // register "cache" is trashed in next ld, so lets use it as a temporary register
+  get_cache_index_at_bcp(tmp, cache, bcp_offset, index_size);
   assert(sizeof(ConstantPoolCacheEntry) == 4 * wordSize, "adjust code below");
   // Convert from field index to ConstantPoolCacheEntry index
   // and from word offset to byte offset

@@ -84,11 +84,11 @@ static const struct CheckInsn barrierInsn[] = {
 // BarrierSetAssembler::nmethod_entry_barrier. The matching ignores the specific
 // register numbers and immediate values in the encoding.
 void NativeNMethodBarrier::verify() const {
-  intptr_t addr = (intptr_t) instruction_address();
+  address addr = instruction_address();
   for(unsigned int i = 0; i < sizeof(barrierInsn)/sizeof(struct CheckInsn); i++ ) {
-    uint32_t inst = *((uint32_t*) addr);
+    uint32_t inst = Assembler::ld_instr(addr);
     if ((inst & barrierInsn[i].mask) != barrierInsn[i].bits) {
-      tty->print_cr("Addr: " INTPTR_FORMAT " Code: 0x%x", addr, inst);
+      tty->print_cr("Addr: " INTPTR_FORMAT " Code: 0x%x", p2i(addr), inst);
       fatal("not an %s instruction.", barrierInsn[i].name);
     }
     addr += 4;

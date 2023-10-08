@@ -80,7 +80,7 @@ class NativeInstruction {
     assert_cond(instr != NULL);
     return (extract_opcode(instr) == 0b0010011 && // opcode field
             extract_funct3(instr) == 0b001 &&     // funct3 field, select the type of operation
-            Assembler::extract(((unsigned*)instr)[0], 25, 20) == shift);    // shamt field
+            Assembler::extract(Assembler::ld_instr(instr), 25, 20) == shift);    // shamt field
   }
 
   static Register extract_rs1(address instr);
@@ -203,18 +203,18 @@ class NativeInstruction {
  protected:
   address addr_at(int offset) const    { return address(this) + offset; }
 
-  jint int_at(int offset) const        { return *(jint*) addr_at(offset); }
-  juint uint_at(int offset) const      { return *(juint*) addr_at(offset); }
+  jint int_at(int offset) const        { return (jint)Bytes::get_native_u4(addr_at(offset)); }
+  juint uint_at(int offset) const      { return Bytes::get_native_u4(addr_at(offset)); }
 
-  address ptr_at(int offset) const     { return *(address*) addr_at(offset); }
+  address ptr_at(int offset) const     { return (address)Bytes::get_native_u8(addr_at(offset)); }
 
-  oop  oop_at (int offset) const       { return *(oop*) addr_at(offset); }
+  oop  oop_at (int offset) const       { return cast_to_oop(Bytes::get_native_u8(addr_at(offset))); }
 
 
-  void set_int_at(int offset, jint  i)        { *(jint*)addr_at(offset) = i; }
-  void set_uint_at(int offset, jint  i)       { *(juint*)addr_at(offset) = i; }
-  void set_ptr_at (int offset, address  ptr)  { *(address*) addr_at(offset) = ptr; }
-  void set_oop_at (int offset, oop  o)        { *(oop*) addr_at(offset) = o; }
+  void set_int_at(int offset, jint i)        { Bytes::put_native_u4(addr_at(offset), i); }
+  void set_uint_at(int offset, jint i)       { Bytes::put_native_u4(addr_at(offset), i); }
+  void set_ptr_at (int offset, address ptr)  { Bytes::put_native_u8(addr_at(offset), (u8)ptr); }
+  void set_oop_at (int offset, oop o)        { Bytes::put_native_u8(addr_at(offset), cast_from_oop<u8>(o)); }
 
  public:
 
@@ -485,7 +485,7 @@ class NativeIllegalInstruction: public NativeInstruction {
 };
 
 inline bool NativeInstruction::is_nop()         {
-  uint32_t insn = *(uint32_t*)addr_at(0);
+  uint32_t insn = Assembler::ld_instr(addr_at(0));
   return insn == 0x13;
 }
 
@@ -527,7 +527,7 @@ inline bool is_NativeCallTrampolineStub_at(address addr) {
       (NativeInstruction::extract_rd(addr + instr_size)       == x5) &&
       (NativeInstruction::extract_rs1(addr + instr_size)      == x5) &&
       (NativeInstruction::extract_rs1(addr + 2 * instr_size)  == x5) &&
-      (Assembler::extract(((unsigned*)addr)[1], 31, 20) == NativeCallTrampolineStub::data_offset)) {
+      (Assembler::extract(Assembler::ld_instr(addr + 4), 31, 20) == NativeCallTrampolineStub::data_offset)) {
     return true;
   }
   return false;

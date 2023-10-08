@@ -42,27 +42,27 @@
 
 Register NativeInstruction::extract_rs1(address instr) {
   assert_cond(instr != NULL);
-  return as_Register(Assembler::extract(((unsigned*)instr)[0], 19, 15));
+  return as_Register(Assembler::extract(Assembler::ld_instr(instr), 19, 15));
 }
 
 Register NativeInstruction::extract_rs2(address instr) {
   assert_cond(instr != NULL);
-  return as_Register(Assembler::extract(((unsigned*)instr)[0], 24, 20));
+  return as_Register(Assembler::extract(Assembler::ld_instr(instr), 24, 20));
 }
 
 Register NativeInstruction::extract_rd(address instr) {
   assert_cond(instr != NULL);
-  return as_Register(Assembler::extract(((unsigned*)instr)[0], 11, 7));
+  return as_Register(Assembler::extract(Assembler::ld_instr(instr), 11, 7));
 }
 
 uint32_t NativeInstruction::extract_opcode(address instr) {
   assert_cond(instr != NULL);
-  return Assembler::extract(((unsigned*)instr)[0], 6, 0);
+  return Assembler::extract(Assembler::ld_instr(instr), 6, 0);
 }
 
 uint32_t NativeInstruction::extract_funct3(address instr) {
   assert_cond(instr != NULL);
-  return Assembler::extract(((unsigned*)instr)[0], 14, 12);
+  return Assembler::extract(Assembler::ld_instr(instr), 14, 12);
 }
 
 bool NativeInstruction::is_pc_relative_at(address instr) {
@@ -206,7 +206,7 @@ void NativeMovConstReg::verify() {
 intptr_t NativeMovConstReg::data() const {
   address addr = MacroAssembler::target_addr_for_insn(instruction_address());
   if (maybe_cpool_ref(instruction_address())) {
-    return *(intptr_t*)addr;
+    return Bytes::get_native_u8(addr);
   } else {
     return (intptr_t)addr;
   }
@@ -215,7 +215,7 @@ intptr_t NativeMovConstReg::data() const {
 void NativeMovConstReg::set_data(intptr_t x) {
   if (maybe_cpool_ref(instruction_address())) {
     address addr = MacroAssembler::target_addr_for_insn(instruction_address());
-    *(intptr_t*)addr = x;
+    Bytes::put_native_u8(addr, x);
   } else {
     // Store x into the instruction stream.
     MacroAssembler::pd_patch_instruction_size(instruction_address(), (address)x);
@@ -231,11 +231,11 @@ void NativeMovConstReg::set_data(intptr_t x) {
     while (iter.next()) {
       if (iter.type() == relocInfo::oop_type) {
         oop* oop_addr = iter.oop_reloc()->oop_addr();
-        *oop_addr = cast_to_oop(x);
+        Bytes::put_native_u8((address)oop_addr, x);
         break;
       } else if (iter.type() == relocInfo::metadata_type) {
         Metadata** metadata_addr = iter.metadata_reloc()->metadata_addr();
-        *metadata_addr = (Metadata*)x;
+        Bytes::put_native_u8((address)metadata_addr, x);
         break;
       }
     }
@@ -343,7 +343,7 @@ bool NativeInstruction::is_sigill_zombie_not_entrant() {
 
 void NativeIllegalInstruction::insert(address code_pos) {
   assert_cond(code_pos != NULL);
-  *(juint*)code_pos = 0xffffffff; // all bits ones is permanently reserved as an illegal instruction
+  Assembler::sd_instr(code_pos, 0xffffffff); // all bits ones is permanently reserved as an illegal instruction
 }
 
 bool NativeInstruction::is_stop() {
@@ -379,7 +379,7 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
     Assembler::patch(pInsn, 19, 12, (offset >> 12) & 0xff);
     Assembler::patch(pInsn, 11, 7, 0); // zero, no link jump
     Assembler::patch(pInsn, 6, 0, 0b1101111); // j, (jal x0 offset)
-    *(unsigned int*)verified_entry = insn;
+    Assembler::sd_instr(verified_entry, insn);
   } else {
     // We use an illegal instruction for marking a method as
     // not_entrant or zombie.
@@ -437,5 +437,5 @@ void NativeMembar::set_kind(uint32_t order_kind) {
   Assembler::patch(pInsn, 23, 20, successor);
 
   address membar = addr_at(0);
-  *(unsigned int*) membar = insn;
+  Assembler::sd_instr(membar, insn);
 }
