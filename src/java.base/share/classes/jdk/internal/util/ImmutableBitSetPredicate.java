@@ -48,11 +48,22 @@ public class ImmutableBitSetPredicate implements IntPredicate {
         this.words = original.toLongArray();
     }
 
+
     @Override
     public boolean test(int bitIndex) {
-        int wordIndex = bitIndex >> 6;
+        if (bitIndex < 0)
+            throw new IndexOutOfBoundsException("bitIndex < 0: " + bitIndex);
+
+        int wordIndex = wordIndex(bitIndex);
         return (wordIndex < words.length)
                 && ((words[wordIndex] & (1L << bitIndex)) != 0);
+    }
+
+    /**
+     * Given a bit index, return word index containing it.
+     */
+    private static int wordIndex(int bitIndex) {
+        return bitIndex >> 6;
     }
 
     /**
@@ -89,8 +100,11 @@ public class ImmutableBitSetPredicate implements IntPredicate {
         }
         @Override
         public boolean test(int bitIndex) {
+            if (bitIndex < 0)
+                throw new IndexOutOfBoundsException("bitIndex < 0: " + bitIndex);
+
             int wordIndex = bitIndex >> 6;
-            if (bitIndex < 0 || wordIndex > 1) {
+            if (wordIndex > 1) {
                 return false;
             }
             long bits = wordIndex == 0 ? first : second;
