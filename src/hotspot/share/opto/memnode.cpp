@@ -579,8 +579,13 @@ Node* LoadNode::find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, N
         Node* dest = ac->in(ArrayCopyNode::Dest);
 
         if (dest == ld_base) {
-          const TypeX *ld_offs_t = phase->type(ld_offs)->isa_intptr_t();
-          if (ac->modifies(ld_offs_t->_lo, ld_offs_t->_hi, phase, can_see_stored_value)) {
+          const TypeX* ld_offs_t = phase->type(ld_offs)->isa_intptr_t();
+          assert(!ld_offs_t->empty(), "dead reference should be checked already");
+          // Take into account vector or unsafe access size
+          jlong ld_size_in_bytes = (jlong)memory_size();
+          jlong offset_hi = ld_offs_t->_hi + ld_size_in_bytes - 1;
+          offset_hi = MIN2(offset_hi, (jlong)(TypeX::MAX->_hi)); // Take care for overflow in 32-bit VM
+          if (ac->modifies(ld_offs_t->_lo, (intptr_t)offset_hi, phase, can_see_stored_value)) {
             return ac;
           }
           if (!can_see_stored_value) {
