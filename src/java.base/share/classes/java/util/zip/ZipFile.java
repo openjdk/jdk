@@ -37,6 +37,8 @@ import java.nio.charset.Charset;
 import java.nio.file.InvalidPathException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.Files;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1402,14 +1404,44 @@ public class ZipFile implements ZipConstants, Closeable {
 
             public Key(File file, BasicFileAttributes attrs, ZipCoder zc) {
                 this.attrs = attrs;
-                this.file = file;
+                Object fk = attrs.fileKey();
+                if (fk != null) {
+                    // use file value, hashCode will use fileKey()
+                    this.file = file;
+                } else {
+                    this.file = getCanonicalFile(file);
+                }
                 this.utf8 = zc.isUTF8();
+            }
+
+            @SuppressWarnings("removal")
+            private File getCanonicalFile(File file) {
+                if (System.getSecurityManager() != null) {
+                    PrivilegedAction<File> pa = () -> {
+                        try {
+                            return file.getCanonicalFile();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                    }};
+                    return AccessController.doPrivileged(pa);
+                } else {
+                    try {
+                        return file.getCanonicalFile();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
             }
 
             public int hashCode() {
                 long t = utf8 ? 0 : Long.MAX_VALUE;
                 t += attrs.lastModifiedTime().toMillis();
-                return ((int)(t ^ (t >>> 32))) + file.hashCode();
+                Object fk = attrs.fileKey();
+                if (fk != null) {
+                    return ((int)(t ^ (t >>> 32))) + fk.hashCode();
+                } else {
+                    return ((int)(t ^ (t >>> 32))) + file.hashCode();
+                }
             }
 
             public boolean equals(Object obj) {
