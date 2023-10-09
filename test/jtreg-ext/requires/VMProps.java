@@ -102,6 +102,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.simpleArch", this::vmArch);
         map.put("vm.debug", this::vmDebug);
         map.put("vm.jvmci", this::vmJvmci);
+        map.put("vm.jvmci.enabled", this::vmJvmciEnabled);
         map.put("vm.emulatedClient", this::vmEmulatedClient);
         // vm.hasSA is "true" if the VM contains the serviceability agent
         // and jhsdb.
@@ -122,6 +123,10 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.continuations", this::vmContinuations);
         // vm.graal.enabled is true if Graal is used as JIT
         map.put("vm.graal.enabled", this::isGraalEnabled);
+        // jdk.hasLibgraal is true if the libgraal shared library file is present
+        map.put("jdk.hasLibgraal", this::hasLibgraal);
+        // vm.libgraal.enabled is true if libgraal is used as JIT
+        map.put("vm.libgraal.enabled", this::isLibgraalEnabled);
         map.put("vm.compiler1.enabled", this::isCompiler1Enabled);
         map.put("vm.compiler2.enabled", this::isCompiler2Enabled);
         map.put("docker.support", this::dockerSupport);
@@ -265,6 +270,20 @@ public class VMProps implements Callable<Map<String, String>> {
 
         return "true";
     }
+
+
+    /**
+     * @return true if JVMCI is enabled
+     */
+    protected String vmJvmciEnabled() {
+        // builds with jvmci have this flag
+        if ("false".equals(vmJvmci())) {
+            return "false";
+        }
+
+        return "" + Compiler.isJVMCIEnabled();
+    }
+
 
     /**
      * @return true if VM runs in emulated-client mode and false otherwise.
@@ -472,6 +491,24 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
+     * Check if the libgraal shared library file is present.
+     *
+     * @return true if the libgraal shared library file is present.
+     */
+    protected String hasLibgraal() {
+        return "" + WB.hasLibgraal();
+    }
+
+    /**
+     * Check if libgraal is used as JIT compiler.
+     *
+     * @return true if libgraal is used as JIT compiler.
+     */
+    protected String isLibgraalEnabled() {
+        return "" + Compiler.isLibgraalEnabled();
+    }
+
+    /**
      * Check if Compiler1 is present.
      *
      * @return true if Compiler1 is used as JIT compiler, either alone or as part of the tiered system.
@@ -652,15 +689,19 @@ public class VMProps implements Callable<Map<String, String>> {
         // check -X flags
         var ignoredXFlags = Set.of(
                 // default, yet still seen to be explicitly set
-                "mixed"
+                "mixed",
+                // -XmxmNNNm added by run-test framework for non-hotspot tests
+                "mx"
         );
         result &= allFlags.stream()
                           .filter(s -> s.startsWith("-X") && !s.startsWith("-XX:"))
                           // map to names:
-                              // remove -X
-                              .map(s -> s.substring(2))
-                              // remove :.* from flags with values
-                              .map(s -> s.contains(":") ? s.substring(0, s.indexOf(':')) : s)
+                          // remove -X
+                          .map(s -> s.substring(2))
+                          // remove :.* from flags with values
+                          .map(s -> s.contains(":") ? s.substring(0, s.indexOf(':')) : s)
+                          // remove size like 4G, 768m which might be set for non-hotspot tests
+                          .map(s -> s.replaceAll("(\\d+)[mMgGkK]", ""))
                           // skip known-to-be-there flags
                           .filter(s -> !ignoredXFlags.contains(s))
                           .findAny()
@@ -694,6 +735,7 @@ public class VMProps implements Callable<Map<String, String>> {
         }
         List<String> lines = new ArrayList<>();
         map.forEach((k, v) -> lines.add(k + ":" + v));
+        Collections.sort(lines);
         try {
             Files.write(Paths.get(dumpFileName), lines,
                     StandardOpenOption.APPEND, StandardOpenOption.CREATE);

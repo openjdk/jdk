@@ -21,13 +21,18 @@
  * questions.
  */
 
-import static com.sun.tools.classfile.TypeAnnotation.TargetType.*;
+import static jdk.internal.classfile.TypeAnnotation.TargetType.*;
 
 /*
  * @test
  * @bug 8042451 8164519
  * @summary Test population of reference info for class extends clauses
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java ClassExtends.java
  * @run main Driver ClassExtends
  */

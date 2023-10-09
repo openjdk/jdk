@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -27,7 +25,7 @@
  * @test
  * @summary Testing Classfile on small Corpus.
  * @build helpers.* testdata.*
- * @run junit/othervm -Djunit.jupiter.execution.parallel.enabled=true CorpusTest
+ * @run junit/othervm/timeout=480 -Djunit.jupiter.execution.parallel.enabled=true CorpusTest
  */
 import helpers.ClassRecord;
 import helpers.ClassRecord.CompatibilityFilter;
@@ -250,13 +248,13 @@ class CorpusTest {
         var cp1 = cc.parse(orig).constantPool();
         var cp2 = cc.parse(transformed).constantPool();
 
-        for (int i = 1; i < cp1.entryCount(); i += cp1.entryByIndex(i).width()) {
+        for (int i = 1; i < cp1.size(); i += cp1.entryByIndex(i).width()) {
             assertEquals(cpiToString(cp1.entryByIndex(i)), cpiToString(cp2.entryByIndex(i)));
         }
 
-        if (cp1.entryCount() != cp2.entryCount()) {
-            StringBuilder failMsg = new StringBuilder("Extra entries in constant pool (" + (cp2.entryCount() - cp1.entryCount()) + "): ");
-            for (int i = cp1.entryCount(); i < cp2.entryCount(); i += cp2.entryByIndex(i).width())
+        if (cp1.size() != cp2.size()) {
+            StringBuilder failMsg = new StringBuilder("Extra entries in constant pool (" + (cp2.size() - cp1.size()) + "): ");
+            for (int i = cp1.size(); i < cp2.size(); i += cp2.entryByIndex(i).width())
                 failMsg.append("\n").append(cp2.entryByIndex(i));
             fail(failMsg.toString());
         }
@@ -274,7 +272,7 @@ class CorpusTest {
         var cf = Classfile.of().parse(bytes);
         var pool = cf.constantPool();
         Set<String> entryStrings = new HashSet<>();
-        for (int i = 1; i < pool.entryCount(); i += pool.entryByIndex(i).width()) {
+        for (int i = 1; i < pool.size(); i += pool.entryByIndex(i).width()) {
             String s = cpiToString(pool.entryByIndex(i));
             if (entryStrings.contains(s)) {
                 for (int j=1; j<i; j += pool.entryByIndex(j).width()) {

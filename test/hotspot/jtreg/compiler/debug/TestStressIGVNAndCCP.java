@@ -44,7 +44,7 @@ public class TestStressIGVNAndCCP {
                              int stressSeed) throws Exception {
         String className = TestStressIGVNAndCCP.class.getName();
         String[] procArgs = {
-            "-Xcomp", "-XX:-TieredCompilation", "-XX:-Inline",
+            "-Xcomp", "-XX:-TieredCompilation", "-XX:-Inline", "-XX:+CICountNative",
             "-XX:CompileOnly=" + className + "::sum", "-XX:+" + traceOption,
             "-XX:+" + stressOption, "-XX:StressSeed=" + stressSeed,
             className, "10"};

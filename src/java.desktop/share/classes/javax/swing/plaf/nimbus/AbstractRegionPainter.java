@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -655,12 +655,12 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
                     dstInsets = insets;
                 }
                 // paint 9 square scaled
-                Object oldScaleingHints = g.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
+                Object oldScalingHints = g.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
                 g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);
                 ImageScalingHelper.paint(g, 0, 0, w, h, img, insets, dstInsets,
                         ImageScalingHelper.PaintType.PAINT9_STRETCH, ImageScalingHelper.PAINT_ALL);
                 g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                    oldScaleingHints!=null?oldScaleingHints:RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+                    oldScalingHints!=null?oldScalingHints:RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
             } else {
                 // render directly
                 paint0(g, c, w, h, extendedCacheKeys);

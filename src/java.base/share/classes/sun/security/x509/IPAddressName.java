@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,6 +310,7 @@ public class IPAddressName implements GeneralNameInterface {
      *
      * @return true iff the names are identical.
      */
+    @Override
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
@@ -334,10 +335,8 @@ public class IPAddressName implements GeneralNameInterface {
                 }
             }
             // Now compare masks
-            for (int i=maskLen; i < address.length; i++)
-                if (address[i] != other[i])
-                    return false;
-            return true;
+            return Arrays.equals(address, maskLen, address.length, other,
+                    maskLen, address.length);
         } else {
             // Two IPv4 host addresses or two IPv6 host addresses
             // Compare bytes
@@ -346,17 +345,11 @@ public class IPAddressName implements GeneralNameInterface {
     }
 
     /**
-     * Returns the hash code value for this object.
-     *
-     * @return a hash code value for this object.
+     * {@return the hash code value for this object}
      */
+    @Override
     public int hashCode() {
-        int retval = 0;
-
-        for (int i=0; i<address.length; i++)
-            retval += address[i] * i;
-
-        return retval;
+        return Arrays.hashCode(address);
     }
 
     /**

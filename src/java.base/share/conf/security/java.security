@@ -912,7 +912,8 @@ jdk.tls.legacyAlgorithms=NULL, anon, RC4, DES, 3DES_EDE_CBC
 # Note: This property is currently used by OpenJDK's JSSE implementation. It
 # is not guaranteed to be examined and used by other implementations.
 #
-jdk.tls.keyLimits=AES/GCM/NoPadding KeyUpdate 2^37
+jdk.tls.keyLimits=AES/GCM/NoPadding KeyUpdate 2^37, \
+                  ChaCha20-Poly1305 KeyUpdate 2^37
 
 #
 # Cryptographic Jurisdiction Policy defaults

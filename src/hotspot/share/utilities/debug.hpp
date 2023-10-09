@@ -245,7 +245,7 @@ do {                                                                            
 
 
 // types of VM error - originally in vmError.hpp
-enum VMErrorType {
+enum VMErrorType : unsigned int {
   INTERNAL_ERROR   = 0xe0000000,
   OOM_MALLOC_ERROR = 0xe0000001,
   OOM_MMAP_ERROR   = 0xe0000002,

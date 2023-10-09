@@ -190,15 +190,15 @@ var white = Color.white;
 // function that takes as input the old property value and returns the new
 // property value.
 function editSameProperty(selector, propertyName, editFunction) {
-    var f = new EditPropertyFilter("", selector, propertyName, propertyName, editFunction);
+    var f = new EditPropertyFilter("", selector, [propertyName], propertyName, editFunction);
     f.apply(graph);
 }
 
 // Update the value of the given property ('outputPropertyName') in the selected
-// nodes according to a function that takes as input the value of a possibly
-// different property ('inputPropertyName') and returns the new property value.
-function editProperty(selector, inputPropertyName, outputPropertyName, editFunction) {
-    var f = new EditPropertyFilter("", selector, inputPropertyName, outputPropertyName, editFunction);
+// nodes according to a function that takes as input the values of multiple
+// properties ('inputPropertyNames') and returns the new property value.
+function editProperty(selector, inputPropertyNames, outputPropertyName, editFunction) {
+    var f = new EditPropertyFilter("", selector, inputPropertyNames, outputPropertyName, editFunction);
     f.apply(graph);
 }
 

@@ -1,4 +1,4 @@
-.\" Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -39,16 +39,32 @@
 .hy
 .SH NAME
 .PP
-jfr - parse and print Flight Recorder files
+jfr - print and manipulate Flight Recorder files
 .SH SYNOPSIS
 .PP
 To print the contents of a flight recording to standard out:
 .PP
 \f[V]jfr\f[R] \f[V]print\f[R] [\f[I]options\f[R]] \f[I]file\f[R]
 .PP
+To display aggregated event data on standard out:
+.PP
+\f[V]jfr\f[R] \f[V]view\f[R] [\f[I]options\f[R]] \f[I]file\f[R]
+.PP
+To configure a .jfc settings file:
+.PP
+\f[V]jfr\f[R] \f[V]configure\f[R] [\f[I]options\f[R]]
+.PP
 To print metadata information about flight recording events:
 .PP
-\f[V]jfr\f[R] \f[V]metadata\f[R] \f[I]file\f[R]
+\f[V]jfr\f[R] \f[V]metadata\f[R] [\f[I]file\f[R]]
+.PP
+To view the summary statistics for a flight recording file:
+.PP
+\f[V]jfr\f[R] \f[V]summary\f[R] \f[I]file\f[R]
+.PP
+To remove events from a flight recording file:
+.PP
+\f[V]jfr\f[R] \f[V]scrub\f[R] [\f[I]options\f[R]] \f[I]file\f[R]
 .PP
 To assemble chunk files into a flight recording file:
 .PP
@@ -57,10 +73,6 @@ To assemble chunk files into a flight recording file:
 To disassemble a flight recording file into chunk files:
 .PP
 \f[V]jfr\f[R] \f[V]disassmble\f[R] [\f[I]options\f[R]] \f[I]file\f[R]
-.PP
-To view the summary statistics for a flight recording file:
-.PP
-\f[V]jfr\f[R] \f[V]summary\f[R] \f[I]file\f[R]
 .TP
 \f[I]options\f[R]
 Optional: Specifies command-line options separated by spaces.
@@ -79,7 +91,8 @@ The \f[V]jfr\f[R] command provides a tool for interacting with flight
 recorder files (\f[V].jfr\f[R]).
 The main function is to filter, summarize and output flight recording
 files into human readable format.
-There is also support for merging and splitting recording files.
+There is also support for scrubbing, merging and splitting recording
+files.
 .PP
 Flight recording files are created and saved as binary formatted files.
 Having a tool that can extract the contents from a flight recording and
@@ -91,17 +104,24 @@ The \f[V]jfr\f[R] command has several subcommands:
 .IP \[bu] 2
 \f[V]print\f[R]
 .IP \[bu] 2
+\f[V]view\f[R]
+.IP \[bu] 2
+\f[V]configure\f[R]
+.IP \[bu] 2
+\f[V]metadata\f[R]
+.IP \[bu] 2
 \f[V]summary\f[R]
+.IP \[bu] 2
+\f[V]scrub\f[R]
 .IP \[bu] 2
 \f[V]assemble\f[R]
 .IP \[bu] 2
 \f[V]disassemble\f[R]
-.IP \[bu] 2
-\f[V]metadata\f[R]
 .SS \f[V]jfr print\f[R] subcommand
 .PP
 Use \f[V]jfr print\f[R] to print the contents of a flight recording file
 to standard out.
+.PP
 The syntax is:
 .PP
 \f[V]jfr print\f[R] [\f[V]--xml\f[R]|\f[V]--json\f[R]]
@@ -112,23 +132,23 @@ The syntax is:
 where:
 .TP
 \f[V]--xml\f[R]
-Print the recording in XML format
+Print the recording in XML format.
 .TP
 \f[V]--json\f[R]
-Print the recording in JSON format
+Print the recording in JSON format.
 .TP
 \f[V]--categories\f[R] <\f[I]filters\f[R]>
 Select events matching a category name.
 The filter is a comma-separated list of names, simple and/or qualified,
-and/or quoted glob patterns
+and/or quoted glob patterns.
 .TP
 \f[V]--events\f[R] <\f[I]filters\f[R]>
 Select events matching an event name.
 The filter is a comma-separated list of names, simple and/or qualified,
-and/or quoted glob patterns
+and/or quoted glob patterns.
 .TP
 \f[V]--stack-depth\f[R] <\f[I]depth\f[R]>
-Number of frames in stack traces, by default 5
+Number of frames in stack traces, by default 5.
 .TP
 <\f[I]file\f[R]>
 Location of the recording file (\f[V].jfr\f[R])
@@ -164,6 +184,111 @@ that has the value 0.52 is formatted as 52%.
 Stack traces are by default truncated to 5 frames, but the number can be
 increased/decreased using the \f[V]--stack-depth\f[R] command-line
 option.
+.SS \f[V]jfr view\f[R] subcommand
+.PP
+Use \f[V]jfr view\f[R] to aggregate and display event data on standard
+out.
+.PP
+The syntax is:
+.PP
+\f[V]jfr view\f[R] [\f[V]--verbose\f[R]] [\f[V]--width\f[R]
+<\f[I]integer\f[R]>] [\f[V]--truncate\f[R] <\f[I]mode\f[R]>]
+[\f[V]--cell-height\f[R] <\f[I]integer\f[R]>] <\f[I]view\f[R]>
+<\f[I]file\f[R]>
+.PP
+where:
+.TP
+\f[V]--verbose\f[R]
+Displays the query that makes up the view.
+.TP
+\f[V]--width\f[R] <\f[I]integer\f[R]>
+The width of the view in characters.
+Default value depends on the view.
+.TP
+\f[V]--truncate\f[R] <\f[I]mode\f[R]>
+How to truncate content that exceeds space in a table cell.
+Mode can be \[aq]beginning\[aq] or \[aq]end\[aq].
+Default value is \[aq]end\[aq].
+.TP
+\f[V]--cell-height\f[R] <\f[I]integer\f[R]>
+Maximum number of rows in a table cell.
+Default value depends on the view.
+.TP
+<\f[I]view\f[R]>
+Name of the view or event type to display.
+Use \f[V]jfr --help view\f[R] to see a list of available views.
+.TP
+<\f[I]file\f[R]>
+Location of the recording file (.jfr)
+.PP
+The parameter can be an event type name.
+Use the \f[V]jfr view types <file>\f[R] to see a list.
+To display all views, use \f[V]jfr view all-views <file>\f[R].
+To display all events, use \f[V]jfr view all-events <file>\f[R].
+.SS \f[V]jfr configure\f[R] subcommand
+.PP
+Use \f[V]jfr configure\f[R] to configure a .jfc settings file.
+.PP
+The syntax is:
+.PP
+\f[V]jfr configure\f[R] [--interactive] [--verbose] [--input ] [--output
+] [option=value]* [event-setting=value]*
+.TP
+\f[V]--interactive\f[R]
+Interactive mode where the configuration is determined by a set of
+questions.
+.TP
+\f[V]--verbose\f[R]
+Displays the modified settings.
+.TP
+\f[V]--input\f[R] <\f[I]files\f[R]>
+A comma-separated list of .jfc files from which the new configuration is
+based.
+If no file is specified, the default file in the JDK is used
+(default.jfc).
+If \[aq]none\[aq] is specified, the new configuration starts empty.
+.TP
+\f[V]--output\f[R] <\f[I]file\f[R]>
+The filename of the generated output file.
+If not specified, the filename custom.jfc will be used.
+.TP
+\f[I]option=value\f[R]
+The option value to modify.
+To see available options, use \f[V]jfr help configure\f[R]
+.TP
+\f[I]event-setting=value\f[R]
+The event setting value to modify.
+Use the form: <\f[I]event-name>#=<value\f[R]> To add a new event
+setting, prefix the event name with \[aq]+\[aq].
+.PP
+The whitespace delimiter can be omitted for timespan values, i.e.
+20ms.
+For more information about the settings syntax, see Javadoc of the
+jdk.jfr package.
+.SS \f[V]jfr metadata\f[R] subcommand
+.PP
+Use \f[V]jfr metadata\f[R] to display information about events, such as
+event names, categories and field layout within a flight recording file.
+.PP
+The syntax is:
+.PP
+\f[V]jfr metadata\f[R] [--categories ] [--events ] []
+.TP
+\f[V]--categories\f[R] <\f[I]filter\f[R]>
+Select events matching a category name.
+The filter is a comma-separated list of names, simple and/or qualified,
+and/or quoted glob patterns.
+.TP
+\f[V]--events\f[R] <\f[I]filter\f[R]>
+Select events matching an event name.
+The filter is a comma-separated list of names, simple and/or qualified,
+and/or quoted glob patterns.
+.TP
+<\f[I]file\f[R]>
+Location of the recording file (.jfr)
+.PP
+If the parameter is omitted, metadata from the JDK where the
+\[aq]jfr\[aq] tool is located will be used.
 .SS \f[V]jfr summary\f[R] subcommand
 .PP
 Use \f[V]jfr summary\f[R] to print statistics for a recording.
@@ -180,18 +305,47 @@ where:
 .TP
 <\f[I]file\f[R]>
 Location of the flight recording file (\f[V].jfr\f[R])
-.SS \f[V]jfr metadata\f[R] subcommand
+.SS \f[V]jfr scrub\f[R] subcommand
 .PP
-Use \f[V]jfr metadata\f[R] to view information about events, such as
-event names, categories and field layout within a flight recording file.
+Use \f[V]jfr scrub\f[R] to remove sensitive contents from a file or to
+reduce its size.
+.PP
 The syntax is:
 .PP
-\f[V]jfr metadata\f[R] <\f[I]file\f[R]>
-.PP
-where:
+\f[V]jfr scrub\f[R] [--include-events <\f[I]filter\f[R]>]
+[--exclude-events <\f[I]filter\f[R]>] [--include-categories
+<\f[I]filter\f[R]>] [--exclude-categories <\f[I]filter\f[R]>]
+[--include-threads <\f[I]filter\f[R]>] [--exclude-threads
+<\f[I]filter\f[R]>] <\f[I]input-file\f[R]> []
 .TP
-<\f[I]file\f[R]>
-Location of the flight recording file (\f[V].jfr\f[R])
+\f[V]--include-events\f[R] <\f[I]filter\f[R]>
+Select events matching an event name.
+.TP
+\f[V]--exclude-events\f[R] <\f[I]filter\f[R]>
+Exclude events matching an event name.
+.TP
+\f[V]--include-categories\f[R] <\f[I]filter\f[R]>
+Select events matching a category name.
+.TP
+\f[V]--exclude-categories\f[R] <\f[I]filter\f[R]>
+Exclude events matching a category name.
+.TP
+\f[V]--include-threads\f[R] <\f[I]filter\f[R]>
+Select events matching a thread name.
+.TP
+\f[V]--exclude-threads\f[R] <\f[I]filter\f[R]>
+Exclude events matching a thread name.
+.PP
+<\f[I]input-file\f[R]> :The input file to read events from.
+.TP
+<\f[I]output-file\f[R]>
+The output file to write filter events to.
+If no file is specified, it will be written to the same path as the
+input file, but with \[dq]-scrubbed\[dq] appended to the filename.
+.PP
+The filter is a comma-separated list of names, simple and/or qualified,
+and/or quoted glob patterns.
+If multiple filters are used, they are applied in the specified order.
 .SS jfr \f[V]assemble\f[R] subcommand
 .PP
 Use jfr \f[V]assemble\f[R] to assemble chunk files into a recording
@@ -204,10 +358,10 @@ The syntax is:
 where:
 .TP
 <\f[I]repository\f[R]>
-Directory where the repository containing chunk files is located
+Directory where the repository containing chunk files is located.
 .TP
 <\f[I]file\f[R]>
-Location of the flight recording file (\f[V].jfr\f[R])
+Location of the flight recording file (\f[V].jfr\f[R]).
 .PP
 Flight recording information is written in chunks.
 A chunk contains all of the information necessary for parsing.
@@ -220,6 +374,7 @@ files that are not finished (.part) are excluded.
 .PP
 Use \f[V]jfr disassemble\f[R] to decompose a flight recording file into
 its chunk file pieces.
+.PP
 The syntax is:
 .PP
 \f[V]jfr disassemble\f[R] [\f[V]--max-chunks\f[R] <\f[I]chunks\f[R]>]
@@ -266,9 +421,15 @@ where:
 .IP \[bu] 2
 \f[V]print\f[R]
 .IP \[bu] 2
+\f[V]view\f[R]
+.IP \[bu] 2
+\f[V]configure\f[R]
+.IP \[bu] 2
 \f[V]metadata\f[R]
 .IP \[bu] 2
 \f[V]summary\f[R]
+.IP \[bu] 2
+\f[V]scrub\f[R]
 .IP \[bu] 2
 \f[V]assemble\f[R]
 .IP \[bu] 2

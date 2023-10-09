@@ -68,6 +68,7 @@ import java.util.function.BiFunction;
     }
 
     @Override
+    @ForceInline
     VarHandle asDirect() {
         return directTarget;
     }
@@ -75,8 +76,8 @@ import java.util.function.BiFunction;
     @Override
     public VarHandle withInvokeExactBehavior() {
         return hasInvokeExactBehavior()
-            ? this
-            : new IndirectVarHandle(target, value, coordinates, handleFactory, vform, true);
+                ? this
+                : new IndirectVarHandle(target, value, coordinates, handleFactory, vform, true);
     }
 
     @Override
@@ -86,6 +87,7 @@ import java.util.function.BiFunction;
                 : new IndirectVarHandle(target, value, coordinates, handleFactory, vform, false);
     }
 
+    @Override
     @ForceInline
     boolean checkAccessModeThenIsDirect(VarHandle.AccessDescriptor ad) {
         super.checkAccessModeThenIsDirect(ad);
@@ -101,11 +103,6 @@ import java.util.function.BiFunction;
     @Override
     MethodHandle getMethodHandleUncached(int mode) {
         MethodHandle targetHandle = target.getMethodHandle(mode); // might throw UOE of access mode is not supported, which is ok
-        return handleFactory.apply(AccessMode.values()[mode], targetHandle);
-    }
-
-    @Override
-    public MethodHandle toMethodHandle(AccessMode accessMode) {
-        return getMethodHandle(accessMode.ordinal()).bindTo(directTarget);
+        return handleFactory.apply(AccessMode.valueFromOrdinal(mode), targetHandle);
     }
 }
