@@ -632,7 +632,7 @@ class Stream<T> extends ExchangeImpl<T> {
                 }
                 closed = true;
             } finally {
-                stateLock.lock();
+                stateLock.unlock();
             }
             try {
                 int error = frame.getErrorCode();
