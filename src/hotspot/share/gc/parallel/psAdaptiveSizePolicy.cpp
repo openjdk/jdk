@@ -169,22 +169,6 @@ void PSAdaptiveSizePolicy::major_collection_end(size_t amount_live,
   _major_timer.start();
 }
 
-// If the remaining free space in the old generation is less that
-// that expected to be needed by the next collection, do a full
-// collection now.
-bool PSAdaptiveSizePolicy::should_full_GC(size_t old_free_in_bytes) {
-
-  // A similar test is done in the scavenge's should_attempt_scavenge().  If
-  // this is changed, decide if that test should also be changed.
-  bool result = padded_average_promoted_in_bytes() > (float) old_free_in_bytes;
-  log_trace(gc, ergo)("%s after scavenge average_promoted " SIZE_FORMAT " padded_average_promoted " SIZE_FORMAT " free in old gen " SIZE_FORMAT,
-                      result ? "Full" : "No full",
-                      (size_t) average_promoted_in_bytes(),
-                      (size_t) padded_average_promoted_in_bytes(),
-                      old_free_in_bytes);
-  return result;
-}
-
 void PSAdaptiveSizePolicy::clear_generation_free_space_flags() {
 
   AdaptiveSizePolicy::clear_generation_free_space_flags();
