@@ -275,11 +275,7 @@ static int fstatat64_wrapper(int dfd, const char *path,
 
 #if defined(__linux__)
 static int statx_wrapper(int dirfd, const char *restrict pathname, int flags,
-                         unsigned int mask, struct my_statx *restrict statxbuf,
-                         int follow_symlink) {
-    if (follow_symlink == NO_FOLLOW_SYMLINK) {
-      flags |= AT_SYMLINK_NOFOLLOW;
-    }
+                         unsigned int mask, struct my_statx *restrict statxbuf) {
     return (*my_statx_func)(dirfd, pathname, flags, mask, statxbuf);
 }
 #endif
@@ -680,7 +676,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_stat0(JNIEnv* env, jclass this,
 
     if (my_statx_func != NULL) {
         // Prefer statx over stat64 on Linux if it's available
-        RESTARTABLE(statx_wrapper(AT_FDCWD, path, flags, mask, &statx_buf, FOLLOW_SYMLINK), err);
+        RESTARTABLE(statx_wrapper(AT_FDCWD, path, flags, mask, &statx_buf), err);
         if (err == 0) {
             copy_statx_attributes(env, &statx_buf, attrs);
             return 0;
@@ -707,12 +703,12 @@ Java_sun_nio_fs_UnixNativeDispatcher_lstat0(JNIEnv* env, jclass this,
     const char* path = (const char*)jlong_to_ptr(pathAddress);
 #if defined(__linux__)
     struct my_statx statx_buf;
-    int flags = AT_STATX_SYNC_AS_STAT;
+    int flags = AT_STATX_SYNC_AS_STAT | AT_SYMLINK_NOFOLLOW;
     unsigned int mask = STATX_ALL;
 
     if (my_statx_func != NULL) {
         // Prefer statx over stat64 on Linux if it's available
-        RESTARTABLE(statx_wrapper(AT_FDCWD, path, flags, mask, &statx_buf, NO_FOLLOW_SYMLINK), err);
+        RESTARTABLE(statx_wrapper(AT_FDCWD, path, flags, mask, &statx_buf), err);
         if (err == 0) {
             copy_statx_attributes(env, &statx_buf, attrs);
         } else {
@@ -744,7 +740,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstat0(JNIEnv* env, jclass this, jint fd,
     if (my_statx_func != NULL) {
         // statx supports FD use via dirfd iff pathname is an empty string and the
         // AT_EMPTY_PATH flag is specified in flags
-        RESTARTABLE(statx_wrapper((int)fd, "", flags, mask, &statx_buf, FOLLOW_SYMLINK), err);
+        RESTARTABLE(statx_wrapper((int)fd, "", flags, mask, &statx_buf), err);
         if (err == 0) {
             copy_statx_attributes(env, &statx_buf, attrs);
         } else {
@@ -773,14 +769,13 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd
     struct my_statx statx_buf;
     int flags = AT_STATX_SYNC_AS_STAT;
     unsigned int mask = STATX_ALL;
-    int f_symlink = FOLLOW_SYMLINK;
 
     if (my_statx_func != NULL) {
         // Prefer statx over stat64 on Linux if it's available
         if (((int)flag & AT_SYMLINK_NOFOLLOW) > 0) { // flag set in java code
-            f_symlink = NO_FOLLOW_SYMLINK;
+            flags |= AT_SYMLINK_NOFOLLOW;
         }
-        RESTARTABLE(statx_wrapper((int)dfd, path, flags, mask, &statx_buf, f_symlink), err);
+        RESTARTABLE(statx_wrapper((int)dfd, path, flags, mask, &statx_buf), err);
         if (err == 0) {
             copy_statx_attributes(env, &statx_buf, attrs);
         } else {
