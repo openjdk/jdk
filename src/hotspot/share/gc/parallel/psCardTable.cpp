@@ -367,7 +367,7 @@ void PSCardTable::pre_scavenge_parallel(ObjectStartArray* start_array,
         // Set completed top.
         _pre_scavenge_completed_top = _pre_scavenge_current_goal;
         // Set next goal.
-        _pre_scavenge_current_goal_active_workers = n_stripes;
+        _pre_scavenge_current_goal_active_workers = active_workers;
         Atomic::add(&_pre_scavenge_current_goal, _pre_scavenge_sync_interval);
       }
     }
