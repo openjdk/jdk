@@ -1578,7 +1578,6 @@ void JvmtiExport::post_vthread_start(jobject vthread) {
   JavaThread *thread = JavaThread::current();
   assert(!thread->is_hidden_from_external_view(), "carrier threads can't be hidden");
 
-  // Do not post virtual thread start event for hidden java thread.
   if (JvmtiEventController::is_enabled(JVMTI_EVENT_VIRTUAL_THREAD_START)) {
     JvmtiEnvIterator it;
     for (JvmtiEnv* env = it.first(); env != nullptr; env = it.next(env)) {
