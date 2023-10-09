@@ -79,4 +79,10 @@ class LimitsTest {
         assertThrows(IllegalArgumentException.class, () -> lc.getLabel(-1));
         assertThrows(IllegalArgumentException.class, () -> lc.getLabel(10));
     }
+
+    @Test
+    void testSupportedClassVersion() {
+        var cf = ClassFile.of();
+        assertThrows(IllegalArgumentException.class, () -> cf.parse(cf.build(ClassDesc.of("ClassFromFuture"), cb -> cb.withVersion(ClassFile.latestMajorVersion() + 1, 0))));
+    }
 }

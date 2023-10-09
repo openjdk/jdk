@@ -85,6 +85,9 @@ public final class ClassReaderImpl
         if (classfileLength < 4 || readInt(0) != 0xCAFEBABE) {
             throw new IllegalArgumentException("Bad magic number");
         }
+        if (readU2(6) > ClassFile.latestMajorVersion()) {
+            throw new IllegalArgumentException("Unsupported class file version: " + readU2(6));
+        }
         int constantPoolCount = readU2(8);
         int[] cpOffset = new int[constantPoolCount];
         int p = CP_ITEM_START;

@@ -300,6 +300,7 @@ public sealed interface ClassFile
      * Parse a classfile into a {@link ClassModel}.
      * @param bytes the bytes of the classfile
      * @return the class model
+     * @throws IllegalArgumentException if the classfile format is unsupported or invalid
      */
     ClassModel parse(byte[] bytes);
 
@@ -308,6 +309,7 @@ public sealed interface ClassFile
      * @param path the path to the classfile
      * @return the class model
      * @throws java.io.IOException if an I/O error occurs
+     * @throws IllegalArgumentException if the classfile format is unsupported or invalid
      */
     default ClassModel parse(Path path) throws IOException {
         return parse(Files.readAllBytes(path));
