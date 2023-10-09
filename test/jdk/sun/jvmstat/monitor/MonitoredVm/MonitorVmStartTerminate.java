@@ -178,6 +178,8 @@ public final class MonitorVmStartTerminate {
         private static final int ARGS_ATTEMPTS = 5;
 
         private boolean hasMainArgs(Integer id, String args) {
+            // As we have seen test timeouts due to missing a notification,
+            // we should retry this attempt to check arguments for a match.
             for (int i=0; i<ARGS_ATTEMPTS; i++) {
                 try {
                     VmIdentifier vmid = new VmIdentifier("//" + id.intValue());
@@ -190,12 +192,11 @@ public final class MonitorVmStartTerminate {
                         return false;
                     }
                 } catch (URISyntaxException | MonitorException e) {
-                    // ok. process probably not running
+                    // Pocess probably not running or not ours, e.g.
+                    // sun.jvmstat.monitor.MonitorException: Could not attach to PID
                     System.out.println("hasMainArgs(" + id + "): " + e);
                 }
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) { }
+                takeNap();
             }
             return false;
         }
@@ -257,14 +258,6 @@ public final class MonitorVmStartTerminate {
                     System.exit(1);
                 }
                 takeNap();
-            }
-        }
-
-        private static void takeNap() {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                // ignore
             }
         }
 
@@ -334,6 +327,14 @@ public final class MonitorVmStartTerminate {
 
         public String getMainArgsIdentifier() {
             return mainArgsIdentifier;
+        }
+    }
+
+    public static void takeNap() {
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            // ignore
         }
     }
 }
