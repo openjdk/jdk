@@ -149,8 +149,7 @@ Java_sun_nio_ch_IOUtil_configureBlocking(JNIEnv *env, jclass clazz,
     }
     result = ioctlsocket(fd, FIONBIO, &argp);
     if (result == SOCKET_ERROR) {
-        int error = WSAGetLastError();
-        handleSocketError(env, (jint)error);
+        NET_ThrowNew(env, WSAGetLastError(), "ioctlsocket");
     }
 }
 

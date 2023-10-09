@@ -46,7 +46,6 @@ jlong handleval(JNIEnv *env, jobject fdo);
 jint convertReturnVal(JNIEnv *env, jint n, jboolean r);
 jlong convertLongReturnVal(JNIEnv *env, jlong n, jboolean r);
 jboolean purgeOutstandingICMP(JNIEnv *env, jclass clazz, jint fd);
-jint handleSocketError(JNIEnv *env, int errorValue);
 
 #ifdef _WIN64
 

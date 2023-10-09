@@ -77,12 +77,6 @@ static void setConnectionReset(SOCKET s, BOOL enable) {
              NULL, 0, &bytesReturned, NULL, NULL);
 }
 
-jint handleSocketError(JNIEnv *env, int errorValue)
-{
-    NET_ThrowNew(env, errorValue, NULL);
-    return IOS_THROWN;
-}
-
 static jclass isa_class;        /* java.net.InetSocketAddress */
 static jmethodID isa_ctorID;    /* InetSocketAddress(InetAddress, int) */
 
@@ -556,7 +550,11 @@ Java_sun_nio_ch_Net_blockOrUnblock6(JNIEnv *env, jobject this, jboolean block, j
     int opt = (block) ? MCAST_BLOCK_SOURCE : MCAST_UNBLOCK_SOURCE;
     int n = setGroupSourceReqOption(env, fdo, opt, group, index, source);
     if (n == SOCKET_ERROR) {
-        NET_ThrowNew(env, WSAGetLastError(), "setsockopt with group source request");
+        if (block) {
+            NET_ThrowNew(env, WSAGetLastError(), "setsocketopt to block source");
+        } else {
+            NET_ThrowNew(env, WSAGetLastError(), "setsocketopt to unblock source");
+        }
     }
     return 0;
 }
@@ -633,12 +631,12 @@ Java_sun_nio_ch_Net_shutdown(JNIEnv *env, jclass cl, jobject fdo, jint jhow) {
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_available(JNIEnv *env, jclass cl, jobject fdo)
 {
-    int count = 0;
-    if (NET_SocketAvailable(fdval(env, fdo), &count) != 0) {
-        NET_ThrowNew(env, WSAGetLastError(), "socket availability check");
+    u_long arg;
+    if (ioctlsocket((SOCKET) fdval(env, fdo), FIONREAD, &arg) == SOCKET_ERROR) {
+        NET_ThrowNew(env, WSAGetLastError(), "ioctlsocket);
         return IOS_THROWN;
     }
-    return (jint) count;
+    return (jint) arg;
 }
 
 JNIEXPORT jint JNICALL
