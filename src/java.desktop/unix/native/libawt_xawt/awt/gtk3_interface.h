@@ -556,7 +556,7 @@ static GtkWidget* (*fp_gtk_label_new)(const gchar* str);
 static GtkWidget* (*fp_gtk_menu_new)();
 static GtkWidget* (*fp_gtk_menu_bar_new)();
 static GtkWidget* (*fp_gtk_menu_item_new)();
-static GtkWidget* (*fp_gtk_notebook_new)(void);
+static GtkWidget* (*fp_gtk_notebook_new)();
 static GtkWidget* (*fp_gtk_progress_bar_new)();
 static GtkWidget* (*fp_gtk_progress_bar_set_orientation)(
         GtkProgressBar *pbar,
@@ -568,8 +568,8 @@ static GtkWidget* (*fp_gtk_scrolled_window_new)(GtkAdjustment *hadjustment,
 static GtkWidget* (*fp_gtk_separator_menu_item_new)();
 static GtkWidget* (*fp_gtk_separator_tool_item_new)();
 static GtkWidget* (*fp_gtk_text_view_new)();
-static GtkWidget* (*fp_gtk_toggle_button_new)(void);
-static GtkWidget* (*fp_gtk_toolbar_new)(void);
+static GtkWidget* (*fp_gtk_toggle_button_new)();
+static GtkWidget* (*fp_gtk_toolbar_new)();
 static GtkWidget* (*fp_gtk_tree_view_new)();
 static GtkWidget* (*fp_gtk_viewport_new)(GtkAdjustment *hadjustment,
         GtkAdjustment *vadjustment);
