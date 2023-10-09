@@ -2883,8 +2883,12 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
 #endif
 
 // Define MADV_POPULATE_WRITE here so we can build HotSpot on old systems.
+#define MADV_POPULATE_WRITE_value 23
 #ifndef MADV_POPULATE_WRITE
-  #define MADV_POPULATE_WRITE 23
+  #define MADV_POPULATE_WRITE MADV_POPULATE_WRITE_value
+#else
+  // Sanity-check our assumed default value if we build with a new enough libc.
+  static_assert(MADV_POPULATE_WRITE == MADV_POPULATE_WRITE_value);
 #endif
 
 // Note that the value for MAP_FIXED_NOREPLACE differs between architectures, but all architectures
