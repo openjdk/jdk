@@ -570,7 +570,9 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   JFR_ONLY(RESTORE_ID(this);)
   if (log_is_enabled(Trace, cds, unshareable)) {
     ResourceMark rm(THREAD);
-    log_trace(cds, unshareable)("restore: %s", external_name());
+    oop class_loader = loader_data->class_loader();
+    log_trace(cds, unshareable)("restore: %s with class loader: %s", external_name(),
+      class_loader != nullptr ? class_loader->klass()->external_name() : "boot");
   }
 
   // If an exception happened during CDS restore, some of these fields may already be

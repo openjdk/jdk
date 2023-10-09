@@ -132,7 +132,7 @@ public class startlis002 {
                           + " " + argHandler.getLaunchOptions();
 
         String cmd = java +
-            " -Xdebug -Xrunjdwp:transport=dt_shmem,server=n,address=" +
+            " -Xrunjdwp:transport=dt_shmem,server=n,address=" +
             addr + " " + DEBUGEE_CLASS;
 
         Binder binder = new Binder(argHandler, log);

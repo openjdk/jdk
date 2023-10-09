@@ -39,15 +39,15 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.SeeTree;
 
 import jdk.javadoc.doclet.Taglet;
-import jdk.javadoc.internal.doclets.formats.html.ClassWriterImpl;
+import jdk.javadoc.internal.doclets.formats.html.ClassWriter;
 import jdk.javadoc.internal.doclets.formats.html.Contents;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.formats.html.HtmlDocletWriter;
+import jdk.javadoc.internal.doclets.formats.html.SerializedFormWriter;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.builders.SerializedFormBuilder;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
@@ -107,7 +107,7 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
             links.add(seeTagOutput(holder, dt));
         }
         if (utils.isVariableElement(holder) && ((VariableElement)holder).getConstantValue() != null &&
-                htmlWriter instanceof ClassWriterImpl classWriter) {
+                htmlWriter instanceof ClassWriter classWriter) {
             //Automatically add link to constant values page for constant fields.
             DocPath constantsPath =
                     htmlWriter.pathToRoot.resolve(DocPaths.CONSTANT_VALUES);
@@ -120,8 +120,8 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
         }
         if (utils.isClass(holder) && utils.isSerializable((TypeElement)holder)) {
             //Automatically add link to serialized form page for serializable classes.
-            if (SerializedFormBuilder.serialInclude(utils, holder) &&
-                    SerializedFormBuilder.serialInclude(utils, utils.containingPackage(holder))) {
+            if (SerializedFormWriter.serialInclude(utils, holder) &&
+                    SerializedFormWriter.serialInclude(utils, utils.containingPackage(holder))) {
                 DocPath serialPath = htmlWriter.pathToRoot.resolve(DocPaths.SERIALIZED_FORM);
                 DocLink link = serialPath.fragment(utils.getFullyQualifiedName(holder));
                 links.add(htmlWriter.links.createLink(link,

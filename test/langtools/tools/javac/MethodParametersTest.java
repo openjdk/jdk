@@ -25,7 +25,12 @@
  * @test
  * @bug 8004727
  * @summary javac should generate method parameters correctly.
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.comp
  *          jdk.compiler/com.sun.tools.javac.file
@@ -34,7 +39,8 @@
  *          jdk.compiler/com.sun.tools.javac.util
  */
 // key: opt.arg.parameters
-import com.sun.tools.classfile.*;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.Main;
@@ -43,6 +49,7 @@ import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 import java.io.*;
 import javax.lang.model.element.*;
+import java.nio.file.Files;
 import java.util.*;
 
 public class MethodParametersTest {
@@ -147,8 +154,7 @@ public class MethodParametersTest {
         // parameter.
         final Element baz = cf.loadClass(syms.unnamedModule, name);
         for (Element e : baz.getEnclosedElements()) {
-            if (e instanceof ExecutableElement) {
-                final ExecutableElement ee = (ExecutableElement) e;
+            if (e instanceof ExecutableElement ee) {
                 final List<? extends VariableElement> params =
                     ee.getParameters();
                 if (1 != params.size())
@@ -165,156 +171,117 @@ public class MethodParametersTest {
 
     void modifyBaz(boolean flip) throws Exception {
         final File Baz_class = new File(classesdir, Baz_name + ".class");
-        final ClassFile baz = ClassFile.read(Baz_class);
-        final int ind = baz.constant_pool.getUTF8Index("baz");
-        MethodParameters_attribute mpattr = null;
-        int mpind = 0;
-        Code_attribute cattr = null;
-        int cind = 0;
+        final ClassModel baz = Classfile.of().parse(Baz_class.toPath());
 
-        // Find the indexes of the MethodParameters and the Code attributes
-        if (baz.methods.length != 1)
+        // Find MethodParameters and the Code attributes
+        if (baz.methods().size() != 1)
             throw new Exception("Classfile Baz badly formed: wrong number of methods");
-        if (!baz.methods[0].getName(baz.constant_pool).equals("<init>"))
+        if (!baz.methods().get(0).methodName().equalsString("<init>"))
             throw new Exception("Classfile Baz badly formed: method has name " +
-                                baz.methods[0].getName(baz.constant_pool));
-        for (int i = 0; i < baz.methods[0].attributes.attrs.length; i++) {
-            if (baz.methods[0].attributes.attrs[i] instanceof
-                MethodParameters_attribute) {
-                mpattr = (MethodParameters_attribute)
-                    baz.methods[0].attributes.attrs[i];
-                mpind = i;
-            } else if (baz.methods[0].attributes.attrs[i] instanceof
-                       Code_attribute) {
-                cattr = (Code_attribute) baz.methods[0].attributes.attrs[i];
-                cind = i;
-            }
-        }
+                                baz.methods().get(0).methodName().stringValue());
+        MethodParametersAttribute mpattr = baz.methods().get(0).findAttribute(Attributes.METHOD_PARAMETERS).orElse(null);
+        CodeAttribute cattr = baz.methods().get(0).findAttribute(Attributes.CODE).orElse(null);;
         if (null == mpattr)
             throw new Exception("Classfile Baz badly formed: no method parameters info");
         if (null == cattr)
             throw new Exception("Classfile Baz badly formed: no local variable table");
 
-        int flags = mpattr.method_parameter_table[0].flags;
-
         // Alter the MethodParameters attribute, changing the name of
-        // the parameter from i to baz.  This requires Black Magic...
-        //
-        // The (well-designed) classfile library (correctly) does not
-        // allow us to mess around with the attribute data structures,
-        // or arbitrarily generate new ones.
-        //
-        // Instead, we install a new subclass of Attribute that
-        // hijacks the Visitor pattern and outputs the sequence of
-        // bytes that we want.  This only works in this particular
-        // instance, because we know we'll only every see one kind of
-        // visitor.
-        //
-        // If anyone ever changes the makeup of the Baz class, or
-        // tries to install some kind of visitor that gets run prior
-        // to serialization, this will break.
-        baz.methods[0].attributes.attrs[mpind] =
-            new Attribute(mpattr.attribute_name_index,
-                          mpattr.attribute_length) {
-                public <R, D> R accept(Visitor<R, D> visitor, D data) {
-                    if (data instanceof ByteArrayOutputStream) {
-                        ByteArrayOutputStream out =
-                            (ByteArrayOutputStream) data;
-                        out.write(1);
-                        out.write((ind >> 8) & 0xff);
-                        out.write(ind & 0xff);
-                        out.write((flags >> 24) & 0xff);
-                        out.write((flags >> 16) & 0xff);
-                        out.write((flags >> 8) & 0xff);
-                        out.write(flags & 0xff);
-                    } else
-                        throw new RuntimeException("Output stream is of type " + data.getClass() + ", which is not handled by this test.  Update the test and it should work.");
-                    return null;
+        // the parameter from i to baz.
+        byte[] bazBytes = Classfile.of().transform(baz, ClassTransform.transformingMethods((methodBuilder, methodElement) -> {
+            if (methodElement instanceof MethodParametersAttribute a) {
+                List<MethodParameterInfo> newParameterInfos = new ArrayList<>();
+                for (MethodParameterInfo info : a.parameters()) {
+                    newParameterInfos.add(MethodParameterInfo.ofParameter("baz".describeConstable(), info.flagsMask()));
                 }
-            };
+                a = MethodParametersAttribute.of(newParameterInfos);
+                methodBuilder.with(a);
+            } else {
+                methodBuilder.with(methodElement);
+            }
+        }));
 
-        // Flip the code and method attributes.  This is for checking
+        // Flip the code and method attributes().  This is for checking
         // that order doesn't matter.
         if (flip) {
-            baz.methods[0].attributes.attrs[mpind] = cattr;
-            baz.methods[0].attributes.attrs[cind] = mpattr;
+            bazBytes = Classfile.of().transform(baz, ClassTransform.transformingMethods((methodBuilder, methodElement) -> {
+                if (methodElement instanceof MethodParametersAttribute) {
+                    methodBuilder.with(cattr);
+                } else if (methodElement instanceof CodeAttribute){
+                    methodBuilder.with(mpattr);
+                } else {
+                    methodBuilder.with(methodElement);
+                }
+            }));
         }
-
-        new ClassWriter().write(baz, Baz_class);
+        Files.write(Baz_class.toPath(), bazBytes);
     }
 
     // Run a bunch of structural tests on foo to make sure it looks right.
     void checkFoo() throws Exception {
         final File Foo_class = new File(classesdir, Foo_name + ".class");
-        final ClassFile foo = ClassFile.read(Foo_class);
-        for (int i = 0; i < foo.methods.length; i++) {
-            System.err.println("Examine method Foo." + foo.methods[i].getName(foo.constant_pool));
-            if (foo.methods[i].getName(foo.constant_pool).equals("foo2")) {
-                for (int j = 0; j < foo.methods[i].attributes.attrs.length; j++)
-                    if (foo.methods[i].attributes.attrs[j] instanceof
-                        MethodParameters_attribute) {
-                        MethodParameters_attribute mp =
-                            (MethodParameters_attribute)
-                            foo.methods[i].attributes.attrs[j];
+        final ClassModel foo = Classfile.of().parse(Foo_class.toPath());
+        for (int i = 0; i < foo.methods().size(); i++) {
+            System.err.println("Examine method Foo." + foo.methods().get(i).methodName());
+            if (foo.methods().get(i).methodName().equalsString("foo2")) {
+                for (int j = 0; j < foo.methods().get(i).attributes().size(); j++)
+                    if (foo.methods().get(i).attributes().get(j) instanceof  MethodParametersAttribute mp) {
                         System.err.println("Foo.foo2 should have 2 parameters: j and k");
-                        if (2 != mp.method_parameter_table_length)
+                        if (2 != mp.parameters().size())
                             error("expected 2 method parameter entries in foo2, got " +
-                                  mp.method_parameter_table_length);
-                        else if (!foo.constant_pool.getUTF8Value(mp.method_parameter_table[0].name_index).equals("j"))
+                                  mp.parameters().size());
+                        else if (!mp.parameters().get(0).name().orElseThrow().equalsString("j"))
                             error("expected first parameter to foo2 to be \"j\", got \"" +
-                                  foo.constant_pool.getUTF8Value(mp.method_parameter_table[0].name_index) +
+                                  mp.parameters().get(0).name().orElseThrow().stringValue() +
                                   "\" instead");
-                        else if  (!foo.constant_pool.getUTF8Value(mp.method_parameter_table[1].name_index).equals("k"))
+                        else if  (!mp.parameters().get(1).name().orElseThrow().equalsString("k"))
                             error("expected first parameter to foo2 to be \"k\", got \"" +
-                                  foo.constant_pool.getUTF8Value(mp.method_parameter_table[1].name_index) +
+                                 mp.parameters().get(1).name().orElseThrow() +
                                   "\" instead");
                     }
             }
-            else if (foo.methods[i].getName(foo.constant_pool).equals("<init>")) {
-                for (int j = 0; j < foo.methods[i].attributes.attrs.length; j++) {
-                    if (foo.methods[i].attributes.attrs[j] instanceof
-                        MethodParameters_attribute)
+            else if (foo.methods().get(i).methodName().equalsString("<init>")) {
+                for (int j = 0; j < foo.methods().get(i).attributes().size(); j++) {
+                    if (foo.methods().get(i).attributes().get(j) instanceof
+                        MethodParametersAttribute)
                         error("Zero-argument constructor shouldn't have MethodParameters");
                 }
             }
-            else if (foo.methods[i].getName(foo.constant_pool).equals("foo0")) {
-                for (int j = 0; j < foo.methods[i].attributes.attrs.length; j++)
-                    if (foo.methods[i].attributes.attrs[j] instanceof
-                        MethodParameters_attribute)
+            else if (foo.methods().get(i).methodName().equalsString("foo0")) {
+                for (int j = 0; j < foo.methods().get(i).attributes().size(); j++)
+                    if (foo.methods().get(i).attributes().get(j) instanceof
+                        MethodParametersAttribute)
                         error("Zero-argument method shouldn't have MethodParameters");
             }
             else
-                error("Unknown method " + foo.methods[i].getName(foo.constant_pool) + " showed up in class Foo");
+                error("Unknown method " + foo.methods().get(i).methodName() + " showed up in class Foo");
         }
     }
 
     // Run a bunch of structural tests on Bar to make sure it looks right.
     void checkBar() throws Exception {
         final File Bar_class = new File(classesdir, Bar_name + ".class");
-        final ClassFile bar = ClassFile.read(Bar_class);
-        for (int i = 0; i < bar.methods.length; i++) {
-            System.err.println("Examine method Bar." + bar.methods[i].getName(bar.constant_pool));
-            if (bar.methods[i].getName(bar.constant_pool).equals("<init>")) {
-                for (int j = 0; j < bar.methods[i].attributes.attrs.length; j++)
-                    if (bar.methods[i].attributes.attrs[j] instanceof
-                        MethodParameters_attribute) {
-                        MethodParameters_attribute mp =
-                            (MethodParameters_attribute)
-                            bar.methods[i].attributes.attrs[j];
+        final ClassModel bar = Classfile.of().parse(Bar_class.toPath());
+        for (int i = 0; i < bar.methods().size(); i++) {
+            System.err.println("Examine method Bar." + bar.methods().get(i).methodName());
+            if (bar.methods().get(i).methodName().equalsString("<init>")) {
+                for (int j = 0; j < bar.methods().get(i).attributes().size(); j++)
+                    if (bar.methods().get(i).attributes().get(j) instanceof
+                        MethodParametersAttribute mp) {
                         System.err.println("Bar constructor should have 1 parameter: i");
-                        if (1 != mp.method_parameter_table_length)
+                        if (1 != mp.parameters().size())
                             error("expected 1 method parameter entries in constructor, got " +
-                                  mp.method_parameter_table_length);
-                        else if (!bar.constant_pool.getUTF8Value(mp.method_parameter_table[0].name_index).equals("i"))
+                                  mp.parameters().size());
+                        else if (!mp.parameters().get(0).name().orElseThrow().equalsString("i"))
                             error("expected first parameter to foo2 to be \"i\", got \"" +
-                                  bar.constant_pool.getUTF8Value(mp.method_parameter_table[0].name_index) +
+                                  mp.parameters().get(0).name().orElseThrow() +
                                   "\" instead");
                     }
             }
-            else if (bar.methods[i].getName(bar.constant_pool).equals("foo")) {
-                for (int j = 0; j < bar.methods[i].attributes.attrs.length; j++) {
-                    if (bar.methods[i].attributes.attrs[j] instanceof
-                        MethodParameters_attribute)
+            else if (bar.methods().get(i).methodName().equalsString("foo")) {
+                for (int j = 0; j < bar.methods().get(i).attributes().size(); j++) {
+                    if (bar.methods().get(i).attributes().get(j) instanceof
+                        MethodParametersAttribute)
                         error("Zero-argument constructor shouldn't have MethodParameters");
                 }
             }

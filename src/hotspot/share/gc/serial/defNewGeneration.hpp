@@ -143,12 +143,6 @@ class DefNewGeneration: public Generation {
 
   StringDedup::Requests _string_dedup_requests;
 
-  enum SomeProtectedConstants {
-    // Generations are GenGrain-aligned and have size that are multiples of
-    // GenGrain.
-    MinFreeScratchWords = 100
-  };
-
   // Return the size of a survivor space if this generation were of size
   // gen_size.
   size_t compute_survivor_size(size_t gen_size, size_t alignment) const {
@@ -248,13 +242,12 @@ class DefNewGeneration: public Generation {
   template <typename OopClosureType>
   void oop_since_save_marks_iterate(OopClosureType* cl);
 
-  // For non-youngest collection, the DefNewGeneration can contribute
-  // "to-space".
-  virtual void contribute_scratch(ScratchBlock*& list, Generation* requestor,
-                          size_t max_alloc_words);
+  // For Old collection (part of running Full GC), the DefNewGeneration can
+  // contribute the free part of "to-space" as the scratch space.
+  void contribute_scratch(void*& scratch, size_t& num_words);
 
   // Reset for contribution of "to-space".
-  virtual void reset_scratch();
+  void reset_scratch();
 
   // GC support
   virtual void compute_new_size();

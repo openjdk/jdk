@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,15 @@
 
 import java.io.*;
 public class StreamEncoderClose {
+    private static void ck(String s, int actual, int expected)
+        throws IOException {
+        if (actual != expected) {
+            String msg = String.format("%s: actual (%d) != expected (%d)%n",
+                                       s, actual, expected);
+            throw new IOException(msg);
+        }
+    }
+
     public static void main( String arg[] ) throws Exception {
         byte[] expected = {(byte)0x1b,(byte)0x24,(byte)0x42,
                            (byte)0x30,(byte)0x6c,
@@ -46,13 +55,10 @@ public class StreamEncoderClose {
 
         //double check, probably not necessary
         byte[] out = baos.toByteArray();
-        if (out.length != expected.length) {
-            throw new IOException("Failed");
-        }
+        ck("Lengths are unequal", out.length, expected.length);
         for (int i = 0; i < out.length; i++) {
             //System.out.printf("(byte)0x%x,", out[i] & 0xff);
-            if (out[i] != expected[i])
-                throw new IOException("Failed");
+            ck("Values are unequal", out[i], expected[i]);
         }
     }
 

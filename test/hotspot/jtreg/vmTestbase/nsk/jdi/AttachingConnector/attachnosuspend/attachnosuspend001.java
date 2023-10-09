@@ -97,7 +97,7 @@ public class attachnosuspend001 {
         String java = argHandler.getLaunchExecPath()
                         + " " + argHandler.getLaunchOptions();
         String cmd = java
-                + " -Xdebug -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0"
+                + " -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0"
                 + " " + DEBUGEE_CLASS;
 
         Binder binder = new Binder(argHandler, log);

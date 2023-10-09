@@ -28,25 +28,29 @@
  * @library /tools/lib /tools/javac/lib ../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestBase
  * @run main NoInnerClassesTest
  */
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.ClassModel;
 
 import java.io.IOException;
 
 public class NoInnerClassesTest extends TestBase {
 
-    public static void main(String[] args) throws IOException, ConstantPoolException {
+    public static void main(String[] args) throws IOException {
         new NoInnerClassesTest().test();
     }
 
-    public void test() throws IOException, ConstantPoolException {
-        ClassFile classFile = readClassFile("NoInnerClassesTest");
-        assertNull(classFile.getAttribute(Attribute.InnerClasses), "Found inner class attribute");
+    public void test() throws IOException {
+        ClassModel classModel = readClassFile("NoInnerClassesTest");
+        assertNull(classModel.findAttribute(Attributes.INNER_CLASSES).orElse(null), "Found inner class attribute");
     }
 }

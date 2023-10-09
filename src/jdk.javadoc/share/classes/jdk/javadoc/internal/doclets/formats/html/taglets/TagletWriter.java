@@ -54,7 +54,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 import jdk.javadoc.internal.doclets.formats.html.taglets.Taglet.UnsupportedTagletOperationException;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -379,7 +379,7 @@ public class TagletWriter {
                 String holder = getHolderName(element);
                 IndexItem item = IndexItem.of(element, tree, tagText, holder, desc,
                         new DocLink(htmlWriter.path, id.name()));
-                configuration.mainIndex.add(item);
+                configuration.indexBuilder.add(item);
             }
         }
         return result;

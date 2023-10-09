@@ -102,7 +102,7 @@ public class attach002 extends Log {
         String java = argHandler.getLaunchExecPath()
                           + " " + argHandler.getLaunchOptions();
         String cmd = java +
-            " -Xdebug -Xrunjdwp:transport=dt_shmem,server=y,address=" +
+            " -Xrunjdwp:transport=dt_shmem,server=y,address=" +
             name + " " + DEBUGEE_CLASS;
 
         Binder binder = new Binder(argHandler, log);

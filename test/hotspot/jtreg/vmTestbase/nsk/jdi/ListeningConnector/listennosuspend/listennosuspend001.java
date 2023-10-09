@@ -81,7 +81,7 @@ public class listennosuspend001 {
         String java = argHandler.getLaunchExecPath()
                           + " " + argHandler.getLaunchOptions();
         String cmd = java +
-            " -Xdebug -Xrunjdwp:transport=dt_socket,server=n,suspend=n,address=" +
+            " -Xrunjdwp:transport=dt_socket,server=n,suspend=n,address=" +
             connAddr + " " + DEBUGEE_CLASS;
 
         Binder binder = new Binder(argHandler, log);

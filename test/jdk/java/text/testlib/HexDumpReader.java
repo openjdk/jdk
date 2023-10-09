@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,7 +38,11 @@ import java.util.List;
  *
  * $ od -vw -t x1 foo | sed -r -e 's/^[0-9]+ ?//' -e 's/ //g' -e '/^$/d'
  */
-public class HexDumpReader {
+public final class HexDumpReader {
+
+    // Utility class should not be instantiated
+    private HexDumpReader() {}
+
     public static InputStream getStreamFromHexDump(String fileName) {
         return getStreamFromHexDump(new File(System.getProperty("test.src", "."),
                                              fileName));
@@ -48,7 +53,7 @@ public class HexDumpReader {
         int lineNo = 0;
         try (BufferedReader reader
                  = new BufferedReader(new InputStreamReader(new FileInputStream(hexFile),
-                                                            "us-ascii"))) {
+                StandardCharsets.US_ASCII))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 lineNo++;
