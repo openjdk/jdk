@@ -183,4 +183,9 @@ public class TestHotSpotJVMCIRuntime {
             output.shouldNotHaveExitValue(0);
         }
     }
+
+    @Test
+    public void lookupTypeTest() throws Exception {
+        // This is tested by compiler/jvmci/compilerToVM/LookupTypeTest.java
+    }
 }

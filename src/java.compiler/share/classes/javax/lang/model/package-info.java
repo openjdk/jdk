@@ -114,12 +114,8 @@
  * javax.lang.model.element.Element#asType() mapped to} some type.
  * The elements for classes and interfaces get {@linkplain
  * javax.lang.model.element.TypeElement#asType() mapped to} a
- * prototypical type.  (If a class or interface is generic, its
- * prototypical type mirror is parameterized with type arguments
- * matching the type variables of the declaration, all
- * unannotated. Otherwise, for a non-generic class or interface, the
- * prototypical type mirror corresponds to an unannotated use of the
- * type.)  Conversely, in general, many types can map to the same
+ * {@linkplain javax.lang.model.element.TypeElement#asType() prototypical type}.
+ * Conversely, in general, many types can map to the same
  * {@linkplain javax.lang.model.element.TypeElement type element}. For
  * example, the type mirror for the raw type {@code java.util.Set},
  * the prototypical type {@code java.util.Set<E>}, and the type {@code

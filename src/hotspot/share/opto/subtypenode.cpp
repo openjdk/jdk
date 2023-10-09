@@ -226,5 +226,22 @@ Node* SubTypeCheckNode::load_klass(PhaseGVN* phase) const {
   }
   return subklass;
 }
+#endif
 
+uint SubTypeCheckNode::size_of() const {
+  return sizeof(*this);
+}
+
+uint SubTypeCheckNode::hash() const {
+  return NO_HASH;
+}
+
+#ifndef PRODUCT
+void SubTypeCheckNode::dump_spec(outputStream* st) const {
+  if (_method != nullptr) {
+    st->print(" profiled at: ");
+    _method->print_short_name(st);
+    st->print(":%d", _bci);
+  }
+}
 #endif

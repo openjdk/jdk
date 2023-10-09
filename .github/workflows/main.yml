@@ -130,7 +130,6 @@ jobs:
     with:
       platform: linux-x64
       gcc-major-version: '10'
-      apt-gcc-version: '10.5.0-1ubuntu1~22.04'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     # The linux-x64 jdk bundle is used as buildjdk for the cross-compile job
@@ -144,11 +143,10 @@ jobs:
       platform: linux-x86
       gcc-major-version: '10'
       gcc-package-suffix: '-multilib'
-      apt-gcc-version: '10.5.0-1ubuntu1~22.04'
       apt-architecture: 'i386'
       # Some multilib libraries do not have proper inter-dependencies, so we have to
       # install their dependencies manually.
-      apt-extra-packages: 'libfreetype6-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386 libc6-i386 libgcc-s1:i386 libstdc++6:i386'
+      apt-extra-packages: 'libfreetype-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386 libc6-i386 libgcc-s1:i386 libstdc++6:i386'
       extra-conf-options: '--with-target-bits=32'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
@@ -163,7 +161,6 @@ jobs:
       make-target: 'hotspot'
       debug-levels: '[ "debug" ]'
       gcc-major-version: '10'
-      apt-gcc-version: '10.5.0-1ubuntu1~22.04'
       extra-conf-options: '--disable-precompiled-headers'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
@@ -178,7 +175,6 @@ jobs:
       make-target: 'hotspot'
       debug-levels: '[ "debug" ]'
       gcc-major-version: '10'
-      apt-gcc-version: '10.5.0-1ubuntu1~22.04'
       extra-conf-options: '--with-jvm-variants=zero --disable-precompiled-headers'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
@@ -193,7 +189,6 @@ jobs:
       make-target: 'hotspot'
       debug-levels: '[ "debug" ]'
       gcc-major-version: '10'
-      apt-gcc-version: '10.5.0-1ubuntu1~22.04'
       extra-conf-options: '--with-jvm-variants=minimal --disable-precompiled-headers'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
@@ -209,7 +204,6 @@ jobs:
       # Technically this is not the "debug" level, but we can't inject a new matrix state for just this job
       debug-levels: '[ "debug" ]'
       gcc-major-version: '10'
-      apt-gcc-version: '10.5.0-1ubuntu1~22.04'
       extra-conf-options: '--with-debug-level=optimized --disable-precompiled-headers'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
@@ -223,8 +217,6 @@ jobs:
     uses: ./.github/workflows/build-cross-compile.yml
     with:
       gcc-major-version: '10'
-      apt-gcc-version: '10.5.0-1ubuntu1~22.04'
-      apt-gcc-cross-version: '10.5.0-1ubuntu1~22.04cross1'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-cross-compile == 'true'
@@ -290,7 +282,6 @@ jobs:
       # build JDK, and we do not need the additional testing of the graphs.
       extra-conf-options: '--disable-full-docs'
       gcc-major-version: '10'
-      apt-gcc-version: '10.5.0-1ubuntu1~22.04'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.docs == 'true'

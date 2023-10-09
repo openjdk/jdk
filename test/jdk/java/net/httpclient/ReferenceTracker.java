@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,6 +246,11 @@ public class ReferenceTracker {
         }
         long duration = Duration.ofNanos(System.nanoTime() - waitStart).toMillis();
         if (hasOutstanding.test(tracker)) {
+            if (i == 0 && waited == 0) {
+                // we found nothing and didn't wait expecting success, but then found
+                // something. Respin to make sure we wait.
+                return check(tracker, graceDelayMs, hasOutstanding, description, printThreads);
+            }
             StringBuilder warnings = diagnose(tracker, new StringBuilder(), hasOutstanding);
             if (hasOutstanding.test(tracker)) {
                 fail = new AssertionError(warnings.toString());
@@ -302,6 +307,11 @@ public class ReferenceTracker {
         }
         long duration = Duration.ofNanos(System.nanoTime() - waitStart).toMillis();
         if (TRACKERS.stream().anyMatch(hasOutstanding)) {
+            if (i == 0 && waited == 0) {
+                // we found nothing and didn't wait expecting success, but then found
+                // something. Respin to make sure we wait.
+                return check(graceDelayMs, hasOutstanding, description, printThreads);
+            }
             StringBuilder warnings = diagnose(new StringBuilder(), hasOutstanding);
             addSummary(warnings);
             if (TRACKERS.stream().anyMatch(hasOutstanding)) {

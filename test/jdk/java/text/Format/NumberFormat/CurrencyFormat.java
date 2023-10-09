@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4290801 4942982 5102005 8008577 8021121 8210153 8227313
+ * @bug 4290801 4942982 5102005 8008577 8021121 8210153 8227313 8301991
  * @summary Basic tests for currency formatting.
  * @modules jdk.localedata
  * @run main/othervm -Djava.locale.providers=COMPAT CurrencyFormat COMPAT
@@ -32,6 +32,8 @@
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Currency;
 import java.util.Locale;
 import java.util.Properties;
@@ -123,8 +125,9 @@ public class CurrencyFormat {
         }
 
         FileInputStream stream = new FileInputStream(new File(System.getProperty("test.src", "."), "CurrencySymbols.properties"));
+        InputStreamReader streamReader = new InputStreamReader(stream, StandardCharsets.UTF_8);
         Properties props = new Properties();
-        props.load(stream);
+        props.load(streamReader);
         SimpleDateFormat format = null;
 
         Locale[] locales = NumberFormat.getAvailableLocales();
