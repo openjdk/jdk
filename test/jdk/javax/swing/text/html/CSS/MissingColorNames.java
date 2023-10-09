@@ -70,7 +70,7 @@ public class MissingColorNames {
         // Subset of named color tests
         {null, null},
         // - This color doesn't belong to the CSS-COLOR-4 specification
-        {"com.scientificware.color", null},
+        {"org.openjdk.notacolor", null},
         // - The colors listed below belong to the CSS-COLOR-4 specification
         {"aliceblue", "fff0f8ff"},
         {"antiquewhite", "fffaebd7"},
