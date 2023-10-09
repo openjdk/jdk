@@ -31,6 +31,7 @@ import java.security.spec.InvalidKeySpecException;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactorySpi;
 import javax.crypto.spec.PBEKeySpec;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
@@ -46,7 +47,7 @@ import java.util.Set;
 abstract class PBEKeyFactory extends SecretKeyFactorySpi {
 
     private String type;
-    private static final Set<String> validTypes;
+    private static final HashSet<String> validTypes;
 
     /**
      * Simple constructor
@@ -56,7 +57,8 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
     }
 
     static {
-        validTypes = Set.of("PBEWithMD5AndDES".toUpperCase(Locale.ENGLISH),
+        validTypes = new HashSet(
+                Set.of("PBEWithMD5AndDES".toUpperCase(Locale.ENGLISH),
                 "PBEWithSHA1AndDESede".toUpperCase(Locale.ENGLISH),
                 "PBEWithSHA1AndRC2_40".toUpperCase(Locale.ENGLISH),
                 "PBEWithSHA1AndRC2_128".toUpperCase(Locale.ENGLISH),
@@ -77,7 +79,7 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
                 "PBEWithHmacSHA384AndAES_256".toUpperCase(Locale.ENGLISH),
                 "PBEWithHmacSHA512AndAES_256".toUpperCase(Locale.ENGLISH),
                 "PBEWithHmacSHA512/224AndAES_256".toUpperCase(Locale.ENGLISH),
-                "PBEWithHmacSHA512/256AndAES_256".toUpperCase(Locale.ENGLISH));
+                "PBEWithHmacSHA512/256AndAES_256".toUpperCase(Locale.ENGLISH)));
     }
 
     public static final class PBEWithMD5AndDES extends PBEKeyFactory {
