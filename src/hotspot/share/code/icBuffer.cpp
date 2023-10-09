@@ -248,7 +248,8 @@ void* InlineCacheBuffer::cached_value_for(CompiledIC *ic) {
 // Free CompiledICHolder*s that are no longer in use
 void InlineCacheBuffer::release_pending_icholders() {
   assert(SafepointSynchronize::is_at_safepoint(), "should only be called during a safepoint");
-  CompiledICHolder* holder = Atomic::xchg(&_pending_released, (CompiledICHolder*)nullptr, memory_order_relaxed);
+  CompiledICHolder* holder = Atomic::load(&_pending_released);
+  _pending_released = nullptr;
   int count = 0;
   while (holder != nullptr) {
     CompiledICHolder* next = holder->next();
@@ -264,9 +265,12 @@ void InlineCacheBuffer::release_pending_icholders() {
 // not safe to free them until then since they might be visible to
 // another thread.
 void InlineCacheBuffer::queue_for_release(CompiledICHolder* icholder) {
+  assert(icholder->next() == nullptr, "multiple enqueue?");
+
   CompiledICHolder* old = Atomic::load(&_pending_released);
   for (;;) {
     icholder->set_next(old);
+    // The only reader runs at a safepoint serially so there is no need for a more strict atomic.
     CompiledICHolder* cur = Atomic::cmpxchg(&_pending_released, old, icholder, memory_order_relaxed);
     if (cur == old) {
       break;
