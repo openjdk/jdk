@@ -446,20 +446,9 @@ public interface JavaLangAccess {
      */
     Object classData(Class<?> c);
 
-    /**
-     * Appends the string representation of a subarray of the latin1 encoded {@code byte} array argument to StringBuilder
-     */
-    void stringBuilderAppend(StringBuilder sb, byte[] str, int off, int len);
-
     int stringSize(int i);
 
-    int stringSize(long i);
-
     int getCharsLatin1(int i, int index, byte[] buf);
-
-    int getCharsLatin1(long i, int index, byte[] buf);
-
-    void writeDigitPairLatin1(byte[] buf, int charPos, int value);
 
     long findNative(ClassLoader loader, String entry);
 

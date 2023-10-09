@@ -747,41 +747,6 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     /**
-     * Appends the string representation of a subarray of the latin1 encoded
-     * {@code byte} array argument to this sequence.
-     * <p>
-     * Characters of the {@code char} array {@code str}, starting at
-     * index {@code offset}, are appended, in order, to the contents
-     * of this sequence. The length of this sequence increases
-     * by the value of {@code len}.
-     * <p>
-     * The overall effect is exactly as if the arguments were converted
-     * to a string by the method {@link String#valueOf(char[],int,int)},
-     * and the characters of that string were then
-     * {@link #append(String) appended} to this character sequence.
-     *
-     * @param   str      the latin1 encoded characters to be appended.
-     * @param   offset   the index of the first {@code char} to append.
-     * @param   len      the number of {@code char}s to append.
-     * @return  a reference to this object.
-     * @throws IndexOutOfBoundsException
-     *         if {@code offset < 0} or {@code len < 0}
-     *         or {@code offset+len > str.length}
-     */
-    AbstractStringBuilder append(byte[] str, int off, int len) {
-        int count = this.count;
-        int spaceNeeded = count + len;
-        ensureCapacityInternal(spaceNeeded);
-        if (isLatin1()) {
-            System.arraycopy(str, off, value, count, len);
-        } else {
-            StringLatin1.inflate(str, off, value, count, len);
-        }
-        this.count += len;
-        return this;
-    }
-
-    /**
      * Appends the string representation of the {@code boolean}
      * argument to the sequence.
      * <p>

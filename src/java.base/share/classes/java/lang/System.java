@@ -2544,28 +2544,12 @@ public final class System {
                 return sb.prepend(lengthCoder, buf);
             }
 
-            public void stringBuilderAppend(StringBuilder sb, byte[] str, int off, int len) {
-                sb.append(str, off, len);
-            }
-
             public int stringSize(int i) {
-                return Long.stringSize(i);
-            }
-
-            public int stringSize(long i) {
                 return Long.stringSize(i);
             }
 
             public int getCharsLatin1(int i, int index, byte[] buf) {
                 return StringLatin1.getChars(i, index, buf);
-            }
-
-            public int getCharsLatin1(long i, int index, byte[] buf) {
-                return StringLatin1.getChars(i, index, buf);
-            }
-
-            public void writeDigitPairLatin1(byte[] buf, int charPos, int value) {
-                StringLatin1.writeDigitPair(buf, charPos, value);
             }
 
             public String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
