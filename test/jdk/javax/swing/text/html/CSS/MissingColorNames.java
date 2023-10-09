@@ -45,7 +45,7 @@ public class MissingColorNames {
         boolean passed = true;
         StyleSheet styleSheet = new StyleSheet();
 
-        for (String[] rgb : listNAMEetRGBA) {
+        for (String[] rgb : listNameHexRGBA) {
             Object obj = styleSheet.stringToColor(rgb[0]);
             if (rgb[1] == null && obj != null) {
                 passed = false;
@@ -65,7 +65,7 @@ public class MissingColorNames {
         }
     }
 
-    static String [][] listNAMEetRGBA = {
+    static String [][] listNameHexRGBA = {
         // The null argument
         // Subset of named color tests
         {null, null},

@@ -1396,7 +1396,7 @@ public class CSS implements Serializable {
             Map.entry(Integer.valueOf(4), new byte[]{-15, -15, 1, 1, 2, 2, 3, 3}),
             Map.entry(Integer.valueOf(5), new byte[]{4, 4, 1, 1, 2, 2, 3, 3}),
             Map.entry(Integer.valueOf(7), new byte[]{-15, -15, 1, 2, 3, 4, 5, 6}),
-            Map.entry(Integer.valueOf(9), new byte[]{7, 8, 1, 2, 3, 4, 6, 6}),
+            Map.entry(Integer.valueOf(9), new byte[]{7, 8, 1, 2, 3, 4, 5, 6}),
             Map.entry(Integer.valueOf(-3), new byte[]{-15, -15, 0, 0, 1, 1, 2, 2}),
             Map.entry(Integer.valueOf(-4), new byte[]{3, 3, 0, 0, 1, 1, 2, 2}),
             Map.entry(Integer.valueOf(-6), new byte[]{-15, -15, 0, 1, 2, 3, 4, 5}),
