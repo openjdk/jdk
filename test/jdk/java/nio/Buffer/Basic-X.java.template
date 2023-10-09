@@ -39,10 +39,8 @@ import java.nio.*;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Random;
 #end[byte]
 #if[char]
-import java.util.Random;
 import java.util.function.IntFunction;
 #end[char]
 
@@ -501,15 +499,11 @@ public class Basic$Type$
         final int maxPow2 = 12;
         ByteBuffer bb = ByteBuffer.allocateDirect(1 << maxPow2); // cap 4096
 
-        Random rnd = new Random();
-        long seed = rnd.nextLong();
-        rnd = new Random(seed);
-
         for (int i = 0; i < 100; i++) {
             // 1 == 2^0 <= unitSize == 2^k <= bb.capacity()/2
-            int unitSize = 1 << rnd.nextInt(maxPow2);
+            int unitSize = 1 << RND.nextInt(maxPow2);
             // 0 <= index < 2*unitSize
-            int index = rnd.nextInt(unitSize << 1);
+            int index = RND.nextInt(unitSize << 1);
             int value = bb.alignmentOffset(index, unitSize);
             try {
                 if (value < 0 || value >= unitSize) {
@@ -631,9 +625,6 @@ public class Basic$Type$
 
 #if[char]
         // 8306623, 8306959, and 4860681
-        long seed = System.nanoTime();
-        Random rnd = new Random(seed);
-
         String str = "in violet night walking beneath a reign of uncouth stars";
         char[] chars = str.toCharArray();
         int cslen = chars.length;
@@ -702,10 +693,10 @@ public class Basic$Type$
                         cbIOOBE.put(0, csq, bds[0], bds[1]));
 
                 // Verify correct copying behavior
-                int cap = Math.max(1, rnd.nextInt(cslen));
+                int cap = Math.max(1, RND.nextInt(cslen));
                 CharBuffer cbTarget = f.apply(cap);
-                int index = rnd.nextInt(cap);
-                int afterLast = Math.max(1, rnd.nextInt(cslen));
+                int index = RND.nextInt(cap);
+                int afterLast = Math.max(1, RND.nextInt(cslen));
                 int first = Math.max(0, afterLast - (cap - index));
                 cbTarget.put(index, csq, first, afterLast);
                 for (int j = index, i = first; i < afterLast; i++, j++) {

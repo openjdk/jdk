@@ -28,8 +28,12 @@
  *      5029431 5071718 6231529 6221101 6234263 6535542 6591971 6593946 6795561
  *      7190219 7199551 8065556 8149469 8230665 8237514 8306374 8306623 8306959
  * @key randomness
+ * @library ..
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @modules java.base/java.nio:open
  *          java.base/jdk.internal.misc
+ * @run main Basic
  * @author Mark Reinhold
  */
 
@@ -40,8 +44,13 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 
+import java.util.Random;
+
+import jdk.test.lib.RandomFactory;
 
 public class Basic {
+
+    private static final Random RND = RandomFactory.getRandom();
 
     static PrintStream out = System.err;
 
