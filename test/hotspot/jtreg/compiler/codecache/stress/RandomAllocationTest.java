@@ -53,7 +53,7 @@ import jdk.test.lib.Utils;
 
 public class RandomAllocationTest implements Runnable {
     private static final long CODE_CACHE_SIZE
-            = Helper.WHITE_BOX.getUintxVMFlag("ReservedCodeCacheSize");
+            = Helper.WHITE_BOX.getSizeTVMFlag("ReservedCodeCacheSize");
     private static final int MAX_BLOB_SIZE = (int) (CODE_CACHE_SIZE >> 7);
     private static final BlobType[] BLOB_TYPES
             = BlobType.getAvailable().toArray(new BlobType[0]);

@@ -103,6 +103,6 @@ public enum BlobType {
     }
 
     public long getSize() {
-        return WhiteBox.getWhiteBox().getUintxVMFlag(sizeOptionName);
+        return WhiteBox.getWhiteBox().getSizeTVMFlag(sizeOptionName);
     }
 }

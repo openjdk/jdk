@@ -1537,7 +1537,7 @@ const int ObjectAlignmentInBytes = 8;
           range(1, 128)                                                     \
           constraint(OptoLoopAlignmentConstraintFunc, AfterErgo)            \
                                                                             \
-  product_pd(uintx, InitialCodeCacheSize,                                   \
+  product_pd(size_t, InitialCodeCacheSize,                                  \
           "Initial code cache size (in bytes)")                             \
           constraint(VMPageSizeConstraintFunc, AtParse)                     \
                                                                             \
@@ -1548,19 +1548,19 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, SegmentedCodeCache, false,                                  \
           "Use a segmented code cache")                                     \
                                                                             \
-  product_pd(uintx, ReservedCodeCacheSize,                                  \
+  product_pd(size_t, ReservedCodeCacheSize,                                 \
           "Reserved code cache size (in bytes) - maximum code cache size")  \
           constraint(VMPageSizeConstraintFunc, AtParse)                     \
                                                                             \
-  product_pd(uintx, NonProfiledCodeHeapSize,                                \
-          "Size of code heap with non-profiled methods (in bytes)")         \
+  product_pd(size_t, NonProfiledCodeHeapSize,                                 \
+          "Size of code heap with non-profiled methods (in bytes)")          \
           range(0, max_uintx)                                               \
                                                                             \
-  product_pd(uintx, ProfiledCodeHeapSize,                                   \
-          "Size of code heap with profiled methods (in bytes)")             \
+  product_pd(size_t, ProfiledCodeHeapSize,                                   \
+          "Size of code heap with profiled methods (in bytes)")              \
           range(0, max_uintx)                                               \
                                                                             \
-  product_pd(uintx, NonNMethodCodeHeapSize,                                 \
+  product_pd(size_t, NonNMethodCodeHeapSize,                                \
           "Size of code heap with non-nmethods (in bytes)")                 \
           constraint(VMPageSizeConstraintFunc, AtParse)                     \
                                                                             \
