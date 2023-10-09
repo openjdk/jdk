@@ -24,6 +24,7 @@
 /*
  * @test
  * @library ../ /test/lib
+ *
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestCritical
  */
 
