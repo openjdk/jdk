@@ -35,11 +35,11 @@ $(CTW_DIST):
 
 run-ctw: set_jdk ${CTW_DIST}
 	cd ${CTW_DIST}; \
-	JAVA_OPTIONS="-Dsun.hotspot.tools.ctwrunner.ctw_extra_args=${CTW_RUNNER_JAVA_OPTIONS}" ./ctwrunner.sh modules:java.base
+	JAVA_OPTIONS="-Dsun.hotspot.tools.ctwrunner.ctw_extra_args=${CTW_RUNNER_JAVA_OPTIONS}" JAVA_HOME=${JAVA_HOME} ./ctwrunner.sh modules:java.base
 
 run-ctw-no-inline: set_jdk ${CTW_DIST}
 	cd ${CTW_DIST}; \
-	JAVA_OPTIONS="${CTW_JAVA_OPTIONS} -XX:-Inline" ./ctw.sh modules:java.base
+	JAVA_OPTIONS="${CTW_JAVA_OPTIONS} -XX:-Inline" JAVA_HOME=${JAVA_HOME} ./ctw.sh modules:java.base
 
 bootstrap-version: set_jdk
 	java -Xcomp -XX:-TieredCompilation -XX:CICompilerCount=1 -Xbatch -XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis -XX:-PrintCompilation -version

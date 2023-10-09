@@ -1099,7 +1099,18 @@ void Parse::do_exits() {
 
   if (tf()->range()->cnt() > TypeFunc::Parms) {
     const Type* ret_type = tf()->range()->field_at(TypeFunc::Parms);
-    Node*       ret_phi  = _gvn.transform( _exits.argument(0) );
+    Node* const ret_phi_old = _exits.argument(0);
+    Node*       ret_phi  = _gvn.transform(ret_phi_old);
+    if (DoPartialEscapeAnalysis && ret_phi_old != ret_phi) {
+      PEAState& as = _exits.jvms()->alloc_state();
+      EscapedState* es = as.as_escaped(PEA(), ret_phi_old);
+
+      if (es != nullptr && es->merged_value() == ret_phi_old) {
+        es->update(ret_phi);
+        ObjID obj = PEA()->is_alias(ret_phi_old);
+        PEA()->add_alias(obj, ret_phi);
+      }
+    }
     if (!_exits.control()->is_top() && _gvn.type(ret_phi)->empty()) {
       // If the type we set for the ret_phi in build_exits() is too optimistic and
       // the ret_phi is top now, there's an extremely small chance that it may be due to class

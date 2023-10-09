@@ -213,6 +213,7 @@ public:
   // refcount is the no. of aliases which refer to the object.
   // we do garbage collection if refcnt drops to 0.
   void add_alias(ObjID id, Node* var) {
+    assert(!_aliases.contains(var) || (*_aliases.get(var)) == id, "redefine an alias to another object");
     if (_aliases.contains(var)) return;
     _aliases.put(var, id);
   }
