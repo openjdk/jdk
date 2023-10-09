@@ -37,22 +37,19 @@ import java.awt.event.MouseListener;
  * @test
  * @key headful
  * @bug 4454304
- * @summary On Solaris,TextArea triggers MouseEntered when the mouse is inside the component
+ * @summary On Solaris, TextArea triggers MouseEntered when the mouse is inside the component
  * @run main MouseEnterExitTest
  */
 public class MouseEnterExitTest {
 
     private static Frame frame;
-    private static TextArea textArea;
-    private static List list;
-    private static Robot robot;
     private volatile static boolean entered = false;
     private volatile static boolean exited = false;
     private volatile static boolean passed = true;
     private volatile static Point compAt;
     private volatile static Dimension compSize;
 
-    private static MouseListener mListener = new MouseAdapter() {
+    private static final MouseListener mouseListener = new MouseAdapter() {
         public void mouseEntered(MouseEvent e) {
             System.out.println(
                 "MouseEntered component " + e.getSource().getClass().getName());
@@ -77,15 +74,15 @@ public class MouseEnterExitTest {
     private static void initializeGUI() {
         frame = new Frame("MouseEnterExitTest");
         frame.setLayout(new FlowLayout());
-        list = new List(4);
+        List list = new List(4);
         for (int i = 0; i < 10; i++) {
             list.add("item " + i);
         }
-        list.addMouseListener(mListener);
+        list.addMouseListener(mouseListener);
         frame.add(list);
 
-        textArea = new TextArea("TextArea", 10, 20);
-        textArea.addMouseListener(mListener);
+        TextArea textArea = new TextArea("TextArea", 10, 20);
+        textArea.addMouseListener(mouseListener);
         frame.add(textArea);
 
         frame.pack();
@@ -95,11 +92,12 @@ public class MouseEnterExitTest {
 
     public static void main(String[] args) throws Exception {
         try {
-            EventQueue.invokeAndWait(MouseEnterExitTest::initializeGUI);
-            robot = new Robot();
+            Robot robot = new Robot();
             robot.setAutoDelay(100);
             robot.setAutoWaitForIdle(true);
 
+            EventQueue.invokeAndWait(MouseEnterExitTest::initializeGUI);
+            robot.waitForIdle();
             EventQueue.invokeAndWait(() -> {
                 compAt = frame.getLocationOnScreen();
                 compSize = frame.getSize();
