@@ -1282,6 +1282,18 @@ C2V_VMENTRY_0(jint, getLocalVariableTableLength, (JNIEnv* env, jobject, ARGUMENT
   return method->localvariable_table_length();
 C2V_END
 
+static MethodData* get_profiling_method_data(const methodHandle& method, TRAPS) {
+  MethodData* method_data = method->method_data();
+  if (method_data == nullptr) {
+    method->build_profiling_method_data(method, CHECK_NULL);
+    method_data = method->method_data();
+    if (method_data == nullptr) {
+      THROW_MSG_NULL(vmSymbols::java_lang_OutOfMemoryError(), "cannot allocate MethodData")
+    }
+  }
+  return method_data;
+}
+
 C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
   methodHandle method(THREAD, UNPACK_PAIR(Method, method));
   MethodCounters* mcs = method->method_counters();
@@ -1297,9 +1309,7 @@ C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
 
   MethodData* method_data = method->method_data();
   if (method_data == nullptr) {
-    ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
-    method_data = MethodData::allocate(loader_data, method, CHECK);
-    method->set_method_data(method_data);
+    method_data = get_profiling_method_data(method, CHECK);
   } else {
     method_data->initialize();
   }
@@ -2976,12 +2986,7 @@ C2V_END
 
 C2V_VMENTRY_0(jlong, getFailedSpeculationsAddress, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
   methodHandle method(THREAD, UNPACK_PAIR(Method, method));
-  MethodData* method_data = method->method_data();
-  if (method_data == nullptr) {
-    ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
-    method_data = MethodData::allocate(loader_data, method, CHECK_0);
-    method->set_method_data(method_data);
-  }
+  MethodData* method_data = get_profiling_method_data(method, CHECK_0);
   return (jlong) method_data->get_failed_speculations_address();
 C2V_END
 
