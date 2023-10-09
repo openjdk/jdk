@@ -27,9 +27,11 @@
  *     that support it.
  * @library  ../.. /test/lib
  * @build jdk.test.lib.Platform
+ * @enablePreview
  * @run main CreationTime
  */
 
+import java.lang.foreign.Linker;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.nio.file.attribute.*;
@@ -90,7 +92,7 @@ public class CreationTime {
             }
         } else if (Platform.isLinux()) {
             // Creation time read depends on statx system call support
-            supportsCreationTimeRead = CreationTimeHelper.linuxIsCreationTimeSupported();
+            supportsCreationTimeRead = Linker.nativeLinker().defaultLookup().find("statx").isPresent();
             System.out.println("[Linux] Debug: supportsCreationTimeRead == " + supportsCreationTimeRead);
             // Creation time updates are not supported on Linux
             supportsCreationTimeWrite = false;
