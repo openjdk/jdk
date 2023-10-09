@@ -90,10 +90,6 @@ public class ImmutableBitSetPredicate implements IntPredicate {
         private final long first;
         private final long second;
         private SmallImmutableBitSetPredicate(BitSet original) {
-            // If this class is made public, we need to do
-            // a defensive array copy as certain BitSet implementations
-            // may return a shared array. The spec says the array should be _new_ though but
-            // the consequences might be unspecified for a malicious BitSet.
             long[] array = original.toLongArray();
             first = array[0];
             second = array.length == 2 ? array[1] : 0L;
