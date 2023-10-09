@@ -261,7 +261,7 @@ void InlineCacheBuffer::release_pending_icholders() {
 }
 
 // Enqueue this icholder for release during the next safepoint.  It's
-// not safe to free them until them since they might be visible to
+// not safe to free them until then since they might be visible to
 // another thread.
 void InlineCacheBuffer::queue_for_release(CompiledICHolder* icholder) {
   CompiledICHolder* old = Atomic::load(&_pending_released);
