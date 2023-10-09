@@ -21,7 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.selector.type.not.allowed
+// key: compiler.err.preview.feature.disabled.plural
+// key: compiler.misc.feature.primitive.patterns
 
 public class SelectorTypeNotAllowed {
     private void noLong(long sel) {

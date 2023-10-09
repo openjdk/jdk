@@ -21,8 +21,8 @@
  * questions.
  */
 
-// key: compiler.misc.not.applicable.types
-// key: compiler.err.prob.found.req
+// key: compiler.err.preview.feature.disabled.plural
+// key: compiler.misc.feature.primitive.patterns
 
 class NotApplicableTypes {
     void t(int i) {

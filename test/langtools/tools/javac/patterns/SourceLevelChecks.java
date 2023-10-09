@@ -307,6 +307,26 @@ public class SourceLevelChecks extends TestRunner {
                "1 error");
     }
 
+    @Test
+    public void testOtherPrimitives(Path base) throws Exception {
+        for (String type : new String[] {"boolean", "long", "float", "double"}) {
+            doTest(base,
+                   """
+                   package test;
+                   public class Test {
+                       private void test($type v) {
+                           switch (v) {
+                               default -> {}
+                           }
+                       }
+                   }
+                   """.replace("$type", type),
+                   21,
+                   "Test.java:4:16: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.primitive.patterns)",
+                   "1 error");
+        }
+    }
+
     private void doTest(Path base, String testCode, String... expectedErrors) throws IOException {
         doTest(base, testCode, 17, expectedErrors);
     }
