@@ -481,7 +481,6 @@ class Stream<T> extends ExchangeImpl<T> {
     void incoming(Http2Frame frame) throws IOException {
         if (debug.on()) debug.log("incoming: %s", frame);
         var cancelled = checkRequestCancelled() || closed;
-//        endStreamSeen = endStreamSeen || frame.getFlag(HeaderFrame.END_STREAM);
         if ((frame instanceof HeaderFrame hf)) {
             if (hf.endHeaders()) {
                 Log.logTrace("handling response (streamid={0})", streamid);
@@ -645,11 +644,9 @@ class Stream<T> extends ExchangeImpl<T> {
                 }
                 completeResponseExceptionally(e);
                 if (!requestBodyCF.isDone()) {
-                    if (debug.on()) debug.log("\nHERE");
                     requestBodyCF.completeExceptionally(errorRef.get()); // we may be sending the body..
                 }
                 if (responseBodyCF != null) {
-                    if (debug.on()) debug.log("\nALSO HERE");
                     responseBodyCF.completeExceptionally(errorRef.get());
                 }
             } finally {
@@ -1087,7 +1084,6 @@ class Stream<T> extends ExchangeImpl<T> {
                     assert b == item;
                 } while (outgoing.peekFirst() != null);
 
-                // TODO: Maybe throw exception here to fix intermittent error?
                 if (state != 0) {
                     t = errorRef.get();
                     if (t == null) t = new IOException(ResetFrame.stringForCode(streamState));
@@ -1109,7 +1105,6 @@ class Stream<T> extends ExchangeImpl<T> {
             }
         }
 
-        // TODO: We could put the check for END_STREAM received here?
         private void complete() throws IOException {
             long remaining = remainingContentLength;
             long written = contentLength - remaining;
