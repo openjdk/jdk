@@ -185,7 +185,7 @@ INT32 DAUDIO_GetDirectAudioDeviceCount() {
     }
 
     HRESULT hr=::CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
-    if(hr != S_OK || hr != S_FALSE || hr != RPC_E_CHANGED_MODE) {
+    if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) {
         DS_unlockCache();
         return 0;
     }
@@ -231,7 +231,7 @@ INT32 DAUDIO_GetDirectAudioDeviceCount() {
         g_lastCacheRefreshTime = (UINT64) timeGetTime();
     }
 
-    if(hr != RPC_E_CHANGED_MODE) {
+    if (hr != RPC_E_CHANGED_MODE) {
         ::CoUninitialize();
     }
 
@@ -270,8 +270,8 @@ INT32 DAUDIO_GetDirectAudioDeviceDescription(INT32 mixerIndex, DirectAudioDevice
         return FALSE;
     }
 
-    HRESULT hr=::CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
-    if(hr != S_OK || hr != S_FALSE || hr != RPC_E_CHANGED_MODE) {
+    HRESULT hr = ::CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+    if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) {
         DS_unlockCache();
         return 0;
     }
@@ -285,7 +285,7 @@ INT32 DAUDIO_GetDirectAudioDeviceDescription(INT32 mixerIndex, DirectAudioDevice
         strncpy(desc->description, "DirectSound Capture", DAUDIO_STRING_LENGTH);
     }
 
-    if(hr != RPC_E_CHANGED_MODE) {
+    if (hr != RPC_E_CHANGED_MODE) {
         ::CoUninitialize();
     }
 
