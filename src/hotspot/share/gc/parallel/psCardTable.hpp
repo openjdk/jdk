@@ -37,6 +37,70 @@ class PSCardTable: public CardTable {
   static constexpr size_t num_cards_in_stripe = 128;
   static_assert(num_cards_in_stripe >= 1, "progress");
 
+  class StripeShadowTable {
+    CardValue _table[num_cards_in_stripe];
+    const CardValue* _table_base;
+#ifdef ASSERT
+    const CardValue* _table_end;
+#endif
+
+   public:
+    StripeShadowTable(PSCardTable* pst, MemRegion stripe) :
+      _table_base(_table - (uintptr_t(stripe.start()) >> _card_shift))
+#ifdef ASSERT
+      , _table_end((const CardValue*)(uintptr_t(_table) + (align_up(stripe.byte_size(), _card_size) >> _card_shift)))
+#endif
+    {
+      // Old gen top is not card aligned.
+      size_t copy_length = align_up(stripe.byte_size(), _card_size) >> _card_shift;
+      size_t clear_length = align_down(stripe.byte_size(), _card_size) >> _card_shift;
+      memcpy(_table, pst->byte_for(stripe.start()), copy_length);
+      memset(pst->byte_for(stripe.start()), clean_card_val(), clear_length);
+    }
+
+    HeapWord* addr_for(const CardValue* const card) {
+      assert(card >= _table && card <= _table_end, "out of bounds");
+      return (HeapWord*) ((card - _table_base) << _card_shift);
+    }
+
+    const CardValue* card_for(HeapWord* addr) {
+      return &_table_base[uintptr_t(addr) >> _card_shift];
+    }
+
+    bool is_dirty(const CardValue* const card) {
+      return !is_clean(card);
+    }
+
+    bool is_any_dirty(const CardValue* const start, const CardValue* const end) {
+      return find_first_dirty_card(start, end) != end;
+    }
+
+    bool is_clean(const CardValue* const card) {
+      assert(card >= _table && card < _table_end, "out of bounds");
+      return *card == PSCardTable::clean_card_val();
+    }
+
+    const CardValue* find_first_dirty_card(const CardValue* const start,
+                                           const CardValue* const end) {
+      for (const CardValue* i = start; i < end; ++i) {
+        if (!is_clean(i)) {
+          return i;
+        }
+      }
+      return end;
+    }
+
+    const CardValue* find_first_clean_card(const CardValue* const start,
+                                           const CardValue* const end) {
+      for (const CardValue* i = start; i < end; ++i) {
+        if (is_clean(i)) {
+          return i;
+        }
+      }
+      return end;
+    }
+  };
+
   // Pre-scavenge support.
   // The pre-scavenge phase can overlap with scavenging.
   static size_t constexpr _pre_scavenge_sync_interval = 1*G;
@@ -55,8 +119,8 @@ class PSCardTable: public CardTable {
     return *card == clean_card_val();
   }
 
-  template <typename T>
-  void process_range(T& start_cache,
+  template <typename Func>
+  void process_range(Func&& object_start,
                      PSPromotionManager* pm,
                      HeapWord* const start,
                      HeapWord* const end);
@@ -68,14 +132,6 @@ class PSCardTable: public CardTable {
     verify_card       = CT_MR_BS_last_reserved + 5
   };
 
-  CardValue* find_first_dirty_card(CardValue* const start_card,
-                                   CardValue* const end_card);
-
-  template <typename T>
-  CardValue* find_first_clean_card(T start_cache,
-                                   CardValue* const start_card,
-                                   CardValue* const end_card);
-
   void scan_obj(PSPromotionManager* pm,
                 oop obj);
 
@@ -83,8 +139,6 @@ class PSCardTable: public CardTable {
                            oop obj,
                            HeapWord* start,
                            HeapWord* end);
-
-  void clear_cards(CardValue* const start, CardValue* const end);
 
  public:
   PSCardTable(MemRegion whole_heap) : CardTable(whole_heap),
@@ -102,7 +156,8 @@ class PSCardTable: public CardTable {
 
   // Propagate imprecise card marks from object start to the stripes an object extends to.
   // Pre-scavenging and scavenging can overlap.
-  void pre_scavenge_parallel(ObjectStartArray* start_array,
+  template <typename Func>
+  void pre_scavenge_parallel(Func&& object_start,
                              HeapWord* old_gen_bottom,
                              HeapWord* old_gen_top,
                              uint stripe_index,

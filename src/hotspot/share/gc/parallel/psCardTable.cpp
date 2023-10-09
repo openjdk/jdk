@@ -124,60 +124,6 @@ static void prefetch_write(void *p) {
   }
 }
 
-// postcondition: ret is a dirty card or end_card
-CardTable::CardValue* PSCardTable::find_first_dirty_card(CardValue* const start_card,
-                                                         CardValue* const end_card) {
-  for (CardValue* i_card = start_card; i_card < end_card; ++i_card) {
-    if (is_dirty(i_card)) {
-      return i_card;
-    }
-  }
-  return end_card;
-}
-
-// postcondition: ret is a clean card or end_card
-// Note: if a part of an object is on a dirty card, all cards this object
-// resides on are considered dirty.
-template <typename T>
-CardTable::CardValue* PSCardTable::find_first_clean_card(T start_cache,
-                                                         CardValue* const start_card,
-                                                         CardValue* const end_card) {
-  assert(start_card == end_card ||
-         *start_card != PSCardTable::clean_card_val(), "precondition");
-  // Skip the first dirty card.
-  CardValue* i_card = start_card + 1;
-  while (i_card < end_card) {
-    if (*i_card != PSCardTable::clean_card_val()) {
-      i_card++;
-      continue;
-    }
-    assert(i_card - 1 >= start_card, "inv");
-    assert(*(i_card - 1) != PSCardTable::clean_card_val(), "prev card must be dirty");
-    // Find the final obj on the prev dirty card.
-    HeapWord* obj_addr = start_cache.object_start(addr_for(i_card)-1);
-    if (cast_to_oop(obj_addr)->is_objArray()) {
-      // Object arrays are precisely marked.
-      return i_card;
-    }
-    HeapWord* obj_end_addr = obj_addr + cast_to_oop(obj_addr)->size();
-    CardValue* final_card_by_obj = byte_for(obj_end_addr - 1);
-    if (final_card_by_obj <= i_card) {
-      return i_card;
-    }
-    // This final obj extends beyond i_card. Check if it extends beyond end_card.
-    if (final_card_by_obj >= end_card) {
-      return end_card;
-    }
-    // Check if this new card is dirty.
-    if (*final_card_by_obj == PSCardTable::clean_card_val()) {
-      return final_card_by_obj;
-    }
-    // This new card is dirty, continuing the search...
-    i_card = final_card_by_obj + 1;
-  }
-  return end_card;
-}
-
 void PSCardTable::scan_obj(PSPromotionManager* pm,
                            oop obj) {
   prefetch_write(obj);
@@ -192,30 +138,6 @@ void PSCardTable::scan_obj_with_limit(PSPromotionManager* pm,
   pm->push_contents_bounded(obj, start, end);
 }
 
-// ObjectStartArray queries can get expensive if the start is far.  The
-// information can be cached if iterating monotonically from lower to higher
-// addresses. This is vital with parallel processing of large objects.
-class ObjStartCache : public StackObj {
-    HeapWord* _obj_start;
-    HeapWord* _obj_end;
-    ObjectStartArray* _start_array;
-    DEBUG_ONLY(HeapWord* _prev_query);
-  public:
-    ObjStartCache(ObjectStartArray* start_array) : _obj_start(nullptr), _obj_end(nullptr),
-                                                   _start_array(start_array)
-                                                   DEBUG_ONLY(COMMA _prev_query(nullptr)) {}
-    HeapWord* object_start(HeapWord* addr) {
-      assert(_prev_query <= addr, "precondition");
-      DEBUG_ONLY(_prev_query = addr);
-      if (addr >= _obj_end) {
-        _obj_start = _start_array->object_start(addr);
-        _obj_end = _obj_start + cast_to_oop(_obj_start)->size();
-      }
-      assert(_obj_start != nullptr, "postcondition");
-      return _obj_start;
-    }
-};
-
 void PSCardTable::pre_scavenge(HeapWord* old_gen_bottom, uint active_workers) {
   _pre_scavenge_active_workers = active_workers;
   _pre_scavenge_current_goal_active_workers = active_workers;
@@ -223,34 +145,21 @@ void PSCardTable::pre_scavenge(HeapWord* old_gen_bottom, uint active_workers) {
   _pre_scavenge_completed_top = nullptr;
 }
 
-void PSCardTable::clear_cards(CardValue* const start, CardValue* const end) {
-  for (CardValue* i_card = start; i_card < end; ++i_card) {
-    *i_card = clean_card_val();
-  }
-}
-
-// Find cards within [start, end) marked dirty, clear corresponding parts of the
-// card table and scan objects on dirty cards.
-// Scanning of objects is limited to [start, end) of a stripe. This way the
-// scanning of objects crossing stripe boundaries is distributed. For this the
-// dirty marks of imprecisely marked non-array objects are propagated
-// pre-scavenge to the stripes they extend to.
-// Except for the limitation to the [start, end) stripe non-array objects are scanned completely.
-// Object arrays are marked precisely. Therefore the scanning is limited to dirty cards.
-template <typename T>
-void PSCardTable::process_range(T& start_cache,
+// Scavenge objects on dirty cards of the given stripe [start, end). Accesses to
+// the card table and scavenging is strictly limited to the stripe. The work on
+// objects covering multiple stripes is shared among the worker threads owning the
+// stripes.  To support this the card table is preprocessed before
+// scavenge. Imprecise dirty marks of non-objArrays are copied from start stripes
+// to all stripes (if any) they extend to.
+// A copy of card table entries corresponding to the stripe called "shadow" table
+// is used to separate card reading, clearing and redirtying.
+template <typename Func>
+void PSCardTable::process_range(Func&& object_start,
                                 PSPromotionManager* pm,
                                 HeapWord* const start,
                                 HeapWord* const end) {
   assert(start < end, "precondition");
   assert(is_card_aligned(start), "precondition");
-
-  // end might not be card-aligned
-  CardValue* itr_limit_r = byte_for(end - 1) + 1;
-  CardValue* clr_limit_r = byte_for(end);
-
-  CardValue* dirty_l;
-  CardValue* dirty_r;
 
   // Helper struct to keep the following code compact.
   struct Obj {
@@ -270,63 +179,62 @@ void PSCardTable::process_range(T& start_cache,
     }
   };
 
-  for (CardValue* cur_card = byte_for(start); cur_card < itr_limit_r; cur_card = dirty_r + 1) {
-    dirty_l = find_first_dirty_card(cur_card, itr_limit_r);
-    dirty_r = find_first_clean_card(start_cache, dirty_l, itr_limit_r);
+  StripeShadowTable sct(this, MemRegion(start, end));
+
+  // end might not be card-aligned
+  const CardValue* end_card = sct.card_for(end - 1) + 1;
+
+  for (HeapWord* i_addr = start; i_addr < end; /* empty */) {
+    const CardValue* dirty_l = sct.find_first_dirty_card(sct.card_for(i_addr), end_card);
+    const CardValue* dirty_r = sct.find_first_clean_card(dirty_l, end_card);
 
     assert(dirty_l <= dirty_r, "inv");
 
     if (dirty_l == dirty_r) {
-      assert(dirty_r == itr_limit_r, "inv");
+      assert(dirty_r == end_card, "inv");
       break;
     }
 
     // Located a non-empty dirty chunk [dirty_l, dirty_r)
-    HeapWord* addr_l = addr_for(dirty_l);
-    HeapWord* addr_r = MIN2(addr_for(dirty_r), end);
-
-    // Clear the cards before scanning.
-    clear_cards(dirty_l, MIN2(dirty_r, clr_limit_r));
+    HeapWord* addr_l = sct.addr_for(dirty_l);
+    HeapWord* addr_r = MIN2(sct.addr_for(dirty_r), end);
 
     // Scan objects overlapping [addr_l, addr_r) limited to [start, end)
-    Obj obj(start_cache.object_start(addr_l));
+    Obj obj(object_start(addr_l));
 
-    // Scan non-objArray reaching into stripe and into [addr_l, addr_r).
-    if (!obj.is_obj_array && obj.addr < start) {
-      scan_obj_with_limit(pm, obj.obj, start, MIN2(obj.end_addr, end));
-      if (obj.end_addr >= addr_r) {
-        // Last object in [addr_l, addr_r)
-        continue;
-      }
-      // move to next obj inside this dirty chunk
-      obj.next();
-    }
+    while (true) {
+      assert(obj.addr < addr_r, "inv");
 
-    // Scan objects overlapping [addr_l, addr_r).
-    // Non-objArrays are known to start within the stripe. They are scanned completely.
-    // Scanning of objArrays is limited to the dirty chunk [addr_l, addr_r).
-    while (obj.end_addr < addr_r) {
       if (obj.is_obj_array) {
-        // precisely marked
+        // precise-marked
         scan_obj_with_limit(pm, obj.obj, addr_l, addr_r);
       } else {
-        assert(obj.addr >= start, "handled before");
-        // scan whole obj
-        scan_obj(pm, obj.obj);
+        if (obj.addr < addr_l) {
+          if (sct.is_any_dirty(sct.card_for(MAX2(obj.addr, start)), dirty_l)) {
+            // already scanned
+          } else {
+            // treat it as semi-precise-marked, [addr_l, obj-end)
+            scan_obj_with_limit(pm, obj.obj, addr_l, MIN2(obj.end_addr, end));
+          }
+        } else {
+          // obj-start is dirty
+          if (obj.end_addr <= end) {
+            // scan whole obj if it does not extend beyond the stripe end
+            scan_obj(pm, obj.obj);
+          } else {
+            // otherwise scan limit the scan
+            scan_obj_with_limit(pm, obj.obj, addr_l, end);
+          }
+        }
       }
 
-      // move to next obj
-      obj.next();
-    }
+      if (obj.end_addr >= addr_r) {
+        i_addr = obj.is_obj_array ? addr_r : obj.end_addr;
+        break;
+      }
 
-    // Scan object that extends beyond [addr_l, addr_r) and maybe even beyond the stripe.
-    assert(obj.addr < addr_r, "inv");
-    if (obj.is_obj_array) {
-      // precise-marked
-      scan_obj_with_limit(pm, obj.obj, addr_l, addr_r);
-    } else {
-      assert(obj.addr >= start, "handled before");
-      scan_obj_with_limit(pm, obj.obj, obj.addr, MIN2(obj.end_addr, end));
+      // move to next obj inside this dirty chunk
+      obj.next();
     }
 
     // Finished a dirty chunk
@@ -336,22 +244,22 @@ void PSCardTable::process_range(T& start_cache,
 
 // Propagate imprecise card marks from object start to the stripes an object extends to.
 // Pre-scavenging and scavenging can overlap.
-void PSCardTable::pre_scavenge_parallel(ObjectStartArray* start_array,
-                                                 HeapWord* old_gen_bottom,
-                                                 HeapWord* old_gen_top,
-                                                 uint stripe_index,
-                                                 uint n_stripes) {
+template <typename Func>
+void PSCardTable::pre_scavenge_parallel(Func&& object_start,
+                                        HeapWord* old_gen_bottom,
+                                        HeapWord* old_gen_top,
+                                        uint stripe_index,
+                                        uint n_stripes) {
   const uint active_workers = n_stripes;
   const size_t num_cards_in_slice = num_cards_in_stripe * n_stripes;
   CardValue* cur_card = byte_for(old_gen_bottom) + stripe_index * num_cards_in_stripe;
   CardValue* const end_card = byte_for(old_gen_top - 1) + 1;
   HeapWord* signaled_goal = nullptr;
-  ObjStartCache start_cache(start_array);
 
   for ( /* empty */ ; cur_card < end_card; cur_card += num_cards_in_slice) {
     HeapWord* stripe_addr = addr_for(cur_card);
     if (!is_dirty(cur_card)) {
-      HeapWord* first_obj_addr = start_cache.object_start(stripe_addr);
+      HeapWord* first_obj_addr = object_start(stripe_addr);
       if (first_obj_addr < stripe_addr) {
         oop first_obj = cast_to_oop(first_obj_addr);
         if (!first_obj->is_array() && is_dirty(byte_for(first_obj_addr))) {
@@ -422,15 +330,38 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
                                              PSPromotionManager* pm,
                                              uint stripe_index,
                                              uint n_stripes) {
+  struct {
+    HeapWord* start_addr;
+    HeapWord* end_addr;
+    DEBUG_ONLY(HeapWord* _prev_query);
+  } cached_obj {nullptr, old_gen_bottom DEBUG_ONLY(COMMA nullptr)};
+
+  auto object_start = [&] (HeapWord* addr) {
+    assert(cached_obj._prev_query <= addr, "precondition");
+    DEBUG_ONLY(cached_obj._prev_query = addr);
+    if (addr < cached_obj.end_addr) {
+      assert(cached_obj.start_addr != nullptr, "inv");
+      return cached_obj.start_addr;
+    }
+    HeapWord* result = start_array->object_start(addr);
+
+    cached_obj.start_addr = result;
+    cached_obj.end_addr = result + cast_to_oop(result)->size();
+
+    return result;
+  };
+
   const size_t stripe_size_in_words = num_cards_in_stripe * _card_size_in_words;
   const size_t slice_size_in_words = stripe_size_in_words * n_stripes;
 
   // Prepare scavenge
-  pre_scavenge_parallel(start_array, old_gen_bottom, old_gen_top, stripe_index, n_stripes);
+  pre_scavenge_parallel(object_start, old_gen_bottom, old_gen_top, stripe_index, n_stripes);
+
+  // Reset cached object
+  cached_obj = {nullptr, old_gen_bottom DEBUG_ONLY(COMMA nullptr)};
 
   // Scavenge
   HeapWord* cur_stripe_addr = old_gen_bottom + stripe_index * stripe_size_in_words;
-  ObjStartCache start_cache(start_array);
   bool pre_scavenge_complete = false;
   for (/* empty */; cur_stripe_addr < old_gen_top; cur_stripe_addr += slice_size_in_words) {
     HeapWord* const stripe_l = cur_stripe_addr;
@@ -447,7 +378,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
       pre_scavenge_complete = Atomic::load_acquire(&_pre_scavenge_active_workers) == 0;
     }
 
-    process_range(start_cache, pm, stripe_l, stripe_r);
+    process_range(object_start, pm, stripe_l, stripe_r);
   }
 }
 
