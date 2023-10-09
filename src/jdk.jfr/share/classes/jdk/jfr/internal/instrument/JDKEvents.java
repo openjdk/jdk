@@ -45,6 +45,8 @@ import jdk.jfr.events.ExceptionThrownEvent;
 import jdk.jfr.events.FileForceEvent;
 import jdk.jfr.events.FileReadEvent;
 import jdk.jfr.events.FileWriteEvent;
+import jdk.jfr.events.FileReadIOStatisticsEvent;
+import jdk.jfr.events.FileWriteIOStatisticsEvent;
 import jdk.jfr.events.DeserializationEvent;
 import jdk.jfr.events.InitialSecurityPropertyEvent;
 import jdk.jfr.events.ProcessStartEvent;
@@ -91,6 +93,8 @@ public final class JDKEvents {
         FileForceEvent.class,
         FileReadEvent.class,
         FileWriteEvent.class,
+        FileReadIOStatisticsEvent.class,
+        FileWriteIOStatisticsEvent.class,
         SocketReadEvent.class,
         SocketWriteEvent.class,
         ExceptionThrownEvent.class,
@@ -134,6 +138,8 @@ public final class JDKEvents {
     private static final Runnable emitContainerMemoryUsage = JDKEvents::emitContainerMemoryUsage;
     private static final Runnable emitContainerIOUsage = JDKEvents::emitContainerIOUsage;
     private static final Runnable emitInitialSecurityProperties = JDKEvents::emitInitialSecurityProperties;
+    private static final Runnable emitFileReadIOStatistics = JDKEvents::emitFileReadIOStatistics;
+    private static final Runnable emitFileWriteIOStatistics = JDKEvents::emitFileWriteIOStatistics;
     private static Metrics containerMetrics = null;
     private static boolean initializationTriggered;
 
@@ -150,6 +156,8 @@ public final class JDKEvents {
                 PeriodicEvents.addJDKEvent(ExceptionStatisticsEvent.class, emitExceptionStatistics);
                 PeriodicEvents.addJDKEvent(DirectBufferStatisticsEvent.class, emitDirectBufferStatistics);
                 PeriodicEvents.addJDKEvent(InitialSecurityPropertyEvent.class, emitInitialSecurityProperties);
+                PeriodicEvents.addJDKEvent(FileReadIOStatisticsEvent.class, emitFileReadIOStatistics);
+                PeriodicEvents.addJDKEvent(FileWriteIOStatisticsEvent.class, emitFileWriteIOStatistics);
 
                 initializeContainerEvents();
                 initializationTriggered = true;
@@ -266,6 +274,26 @@ public final class JDKEvents {
         }
     }
 
+    private static void emitFileReadIOStatistics() {
+        FileReadIOStatisticsEvent t = new FileReadIOStatisticsEvent();
+        if (FileIOStatistics.getTotalReadBytesForProcess() > 0) {
+            t.begin();
+            t.accRead = FileIOStatistics.getTotalReadBytesForProcess();
+            t.readRate = FileIOStatistics.getAndResetReadRateForPeriod();
+            t.commit();
+        }
+    }
+
+    private static void emitFileWriteIOStatistics() {
+        FileWriteIOStatisticsEvent t = new FileWriteIOStatisticsEvent();
+        if (FileIOStatistics.getTotalWriteBytesForProcess() > 0) {
+            t.begin();
+            t.accWrite = FileIOStatistics.getTotalWriteBytesForProcess();
+            t.writeRate = FileIOStatistics.getAndResetWriteRateForPeriod();
+            t.commit();
+        }
+    }
+
     @SuppressWarnings("deprecation")
     public static byte[] retransformCallback(Class<?> klass, byte[] oldBytes) throws Throwable {
         if (java.lang.Throwable.class == klass) {
@@ -294,6 +322,8 @@ public final class JDKEvents {
         PeriodicEvents.removeEvent(emitExceptionStatistics);
         PeriodicEvents.removeEvent(emitDirectBufferStatistics);
         PeriodicEvents.removeEvent(emitInitialSecurityProperties);
+        PeriodicEvents.removeEvent(emitFileReadIOStatistics);
+        PeriodicEvents.removeEvent(emitFileWriteIOStatistics);
 
         PeriodicEvents.removeEvent(emitContainerConfiguration);
         PeriodicEvents.removeEvent(emitContainerCPUUsage);

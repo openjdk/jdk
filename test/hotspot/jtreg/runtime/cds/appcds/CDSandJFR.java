@@ -41,6 +41,8 @@ public class CDSandJFR {
         "jdk/jfr/Event",
         "jdk/jfr/events/FileReadEvent",
         "jdk/jfr/events/FileWriteEvent",
+        "jdk.jfr/events/FileReadIOStatistics",
+        "jdk.jfr/events/FileWriteIOStatistics",
         "jdk/jfr/events/SocketReadEvent",
         "jdk/jfr/events/SocketWriteEvent",
         "jdk/jfr/events/ExceptionThrownEvent",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,66 +66,78 @@ final class FileChannelImplInstrumentor {
 
     @JIInstrumentationMethod
     public int read(ByteBuffer dst) throws IOException {
-        EventConfiguration eventConfiguration = EventConfigurations.FILE_READ;
-        if (!eventConfiguration.isEnabled()) {
+        EventConfiguration fileReadEventConfiguration = EventConfigurations.FILE_READ;
+        EventConfiguration fileReadIOStatisticsEventConfiguration = EventConfigurations.FILE_READ_IO_STATISTICS;
+        if (!fileReadEventConfiguration.isEnabled() && !fileReadIOStatisticsEventConfiguration.isEnabled()) {
             return read(dst);
         }
         int bytesRead = 0;
         long start = 0;
+        long duration = 0;
         try {
             start = EventConfiguration.timestamp();
             bytesRead = read(dst);
         } finally {
-            long duration = EventConfiguration.timestamp() - start;
-            if (eventConfiguration.shouldCommit(duration)) {
+            duration = EventConfiguration.timestamp() - start;
+            if (fileReadEventConfiguration.shouldCommit(duration)) {
                 if (bytesRead < 0) {
                     FileReadEvent.commit(start, duration, path, 0L, true);
                 } else {
                     FileReadEvent.commit(start, duration, path, bytesRead, false);
                 }
             }
+        }
+        if(fileReadIOStatisticsEventConfiguration.isEnabled()){            
+            FileIOStatistics.addTotalReadBytesForPeriod(((bytesRead < 0) ? 0 : bytesRead), duration);
         }
         return bytesRead;
     }
 
     @JIInstrumentationMethod
     public int read(ByteBuffer dst, long position) throws IOException {
-        EventConfiguration eventConfiguration = EventConfigurations.FILE_READ;
-        if (!eventConfiguration.isEnabled()) {
+        EventConfiguration fileReadEventConfiguration = EventConfigurations.FILE_READ;
+        EventConfiguration fileReadIOStatisticsEventConfiguration = EventConfigurations.FILE_READ_IO_STATISTICS;
+        if (!fileReadEventConfiguration.isEnabled() && !fileReadIOStatisticsEventConfiguration.isEnabled()) {
             return read(dst, position);
         }
         int bytesRead = 0;
         long start = 0;
+        long duration = 0;
         try {
             start = EventConfiguration.timestamp();
             bytesRead = read(dst, position);
         } finally {
-            long duration = EventConfiguration.timestamp() - start;
-            if (eventConfiguration.shouldCommit(duration)) {
+            duration = EventConfiguration.timestamp() - start;
+            if (fileReadEventConfiguration.shouldCommit(duration)) {
                 if (bytesRead < 0) {
                     FileReadEvent.commit(start, duration, path, 0L, true);
                 } else {
                     FileReadEvent.commit(start, duration, path, bytesRead, false);
                 }
             }
+        }
+        if(fileReadIOStatisticsEventConfiguration.isEnabled()){            
+            FileIOStatistics.addTotalReadBytesForPeriod(((bytesRead < 0) ? 0 : bytesRead), duration);
         }
         return bytesRead;
     }
 
     @JIInstrumentationMethod
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
-        EventConfiguration eventConfiguration = EventConfigurations.FILE_READ;
-        if (!eventConfiguration.isEnabled()) {
+        EventConfiguration fileReadEventConfiguration = EventConfigurations.FILE_READ;
+        EventConfiguration fileReadIOStatisticsEventConfiguration = EventConfigurations.FILE_READ_IO_STATISTICS;
+        if (!fileReadEventConfiguration.isEnabled() && !fileReadIOStatisticsEventConfiguration.isEnabled()) {
             return read(dsts, offset, length);
         }
         long bytesRead = 0;
         long start = 0;
+        long duration = 0;
         try {
             start = EventConfiguration.timestamp();
             bytesRead = read(dsts, offset, length);
         } finally {
-            long duration = EventConfiguration.timestamp() - start;
-            if (eventConfiguration.shouldCommit(duration)) {
+            duration = EventConfiguration.timestamp() - start;
+            if (fileReadEventConfiguration.shouldCommit(duration)) {
                 if (bytesRead < 0) {
                     FileReadEvent.commit(start, duration, path, 0L, true);
                 } else {
@@ -133,69 +145,87 @@ final class FileChannelImplInstrumentor {
                 }
             }
         }
+        if(fileReadIOStatisticsEventConfiguration.isEnabled()){            
+            FileIOStatistics.addTotalReadBytesForPeriod(((bytesRead < 0) ? 0 : bytesRead), duration);
+        }
         return bytesRead;
     }
 
     @JIInstrumentationMethod
     public int write(ByteBuffer src) throws IOException {
-        EventConfiguration eventConfiguration = EventConfigurations.FILE_WRITE;
-        if (!eventConfiguration.isEnabled()) {
+        EventConfiguration fileWriteEventConfiguration = EventConfigurations.FILE_WRITE;
+        EventConfiguration fileWriteIOStatisticsEventConfiguration = EventConfigurations.FILE_WRITE_IO_STATISTICS;
+        if (!fileWriteEventConfiguration.isEnabled() && !fileWriteIOStatisticsEventConfiguration.isEnabled()) {
             return write(src);
-        }
+        }  
         int bytesWritten = 0;
         long start = 0;
+        long duration = 0;
         try {
             start = EventConfiguration.timestamp();
             bytesWritten = write(src);
         } finally {
-            long duration = EventConfiguration.timestamp() - start;
-            if (eventConfiguration.shouldCommit(duration)) {
+            duration = EventConfiguration.timestamp() - start;
+            if (fileWriteEventConfiguration.shouldCommit(duration)) {
                 long bytes = bytesWritten > 0 ? bytesWritten : 0;
                 FileWriteEvent.commit(start, duration, path, bytes);
             }
+        }
+        if(fileWriteIOStatisticsEventConfiguration.isEnabled()){            
+            FileIOStatistics.addTotalWriteBytesForPeriod(((bytesWritten > 0) ? bytesWritten : 0), duration);
         }
         return bytesWritten;
     }
 
     @JIInstrumentationMethod
     public int write(ByteBuffer src, long position) throws IOException {
-        EventConfiguration eventConfiguration = EventConfigurations.FILE_WRITE;
-        if (!eventConfiguration.isEnabled()) {
+        EventConfiguration fileWriteEventConfiguration = EventConfigurations.FILE_WRITE;
+        EventConfiguration fileWriteIOStatisticsEventConfiguration = EventConfigurations.FILE_WRITE_IO_STATISTICS;
+        if (!fileWriteEventConfiguration.isEnabled() && !fileWriteIOStatisticsEventConfiguration.isEnabled()) {
             return write(src, position);
         }
 
         int bytesWritten = 0;
         long start = 0;
+        long duration = 0;
         try {
             start = EventConfiguration.timestamp();
             bytesWritten = write(src, position);
         } finally {
-            long duration = EventConfiguration.timestamp() - start;
-            if (eventConfiguration.shouldCommit(duration)) {
+            duration = EventConfiguration.timestamp() - start;
+            if (fileWriteEventConfiguration.shouldCommit(duration)) {
                 long bytes = bytesWritten > 0 ? bytesWritten : 0;
                 FileWriteEvent.commit(start, duration, path, bytes);
             }
+        }
+        if(fileWriteIOStatisticsEventConfiguration.isEnabled()){            
+            FileIOStatistics.addTotalWriteBytesForPeriod(((bytesWritten > 0) ? bytesWritten : 0), duration);
         }
         return bytesWritten;
     }
 
     @JIInstrumentationMethod
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
-        EventConfiguration eventConfiguration = EventConfigurations.FILE_WRITE;
-        if (!eventConfiguration.isEnabled()) {
+        EventConfiguration fileWriteEventConfiguration = EventConfigurations.FILE_WRITE;
+        EventConfiguration fileWriteIOStatisticsEventConfiguration = EventConfigurations.FILE_WRITE_IO_STATISTICS;
+        if (!fileWriteEventConfiguration.isEnabled() && !fileWriteIOStatisticsEventConfiguration.isEnabled()) {
             return write(srcs, offset, length);
         }
         long bytesWritten = 0;
         long start = 0;
+        long duration = 0;
         try {
             start = EventConfiguration.timestamp();
             bytesWritten = write(srcs, offset, length);
         } finally {
-            long duration = EventConfiguration.timestamp() - start;
-            if (eventConfiguration.shouldCommit(duration)) {
+            duration = EventConfiguration.timestamp() - start;
+            if (fileWriteEventConfiguration.shouldCommit(duration)) {
                 long bytes = bytesWritten > 0 ? bytesWritten : 0;
                 FileWriteEvent.commit(start, duration, path, bytes);
             }
+        }
+        if(fileWriteIOStatisticsEventConfiguration.isEnabled()){            
+            FileIOStatistics.addTotalWriteBytesForPeriod(((bytesWritten > 0) ? bytesWritten : 0), duration);
         }
         return bytesWritten;
     }

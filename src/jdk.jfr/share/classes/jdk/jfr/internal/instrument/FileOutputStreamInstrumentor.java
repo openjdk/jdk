@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,64 +44,79 @@ final class FileOutputStreamInstrumentor {
 
     @JIInstrumentationMethod
     public void write(int b) throws IOException {
-        EventConfiguration eventConfiguration = EventConfigurations.FILE_WRITE;
-        if (!eventConfiguration.isEnabled()) {
+        EventConfiguration fileWriteEventConfiguration = EventConfigurations.FILE_WRITE;
+        EventConfiguration fileWriteIOStatisticsEventConfiguration = EventConfigurations.FILE_WRITE_IO_STATISTICS;
+        if (!fileWriteEventConfiguration.isEnabled() && !fileWriteIOStatisticsEventConfiguration.isEnabled()) {
             write(b);
             return;
         }
         long bytesWritten = 0;
         long start = 0;
+        long duration = 0;
         try {
             start = EventConfiguration.timestamp();
             write(b);
             bytesWritten = 1;
         } finally {
-            long duration = EventConfiguration.timestamp() - start;
-            if (eventConfiguration.shouldCommit(duration)) {
+            duration = EventConfiguration.timestamp() - start;
+            if (fileWriteEventConfiguration.shouldCommit(duration)) {
                 FileWriteEvent.commit(start, duration, path, bytesWritten);
             }
+        }
+        if (fileWriteIOStatisticsEventConfiguration.isEnabled()) {
+            FileIOStatistics.addTotalWriteBytesForPeriod(bytesWritten, duration);
         }
     }
 
     @JIInstrumentationMethod
     public void write(byte b[]) throws IOException {
-        EventConfiguration eventConfiguration = EventConfigurations.FILE_WRITE;
-        if (!eventConfiguration.isEnabled()) {
+        EventConfiguration fileWriteEventConfiguration = EventConfigurations.FILE_WRITE;
+        EventConfiguration fileWriteIOStatisticsEventConfiguration = EventConfigurations.FILE_WRITE_IO_STATISTICS;
+        if (!fileWriteEventConfiguration.isEnabled() && !fileWriteIOStatisticsEventConfiguration.isEnabled()) {
             write(b);
             return;
         }
         long bytesWritten = 0;
         long start = 0;
+        long duration = 0;
         try {
             start = EventConfiguration.timestamp();
             write(b);
             bytesWritten = b.length;
         } finally {
-            long duration = EventConfiguration.timestamp() - start;
-            if (eventConfiguration.shouldCommit(duration)) {
+            duration = EventConfiguration.timestamp() - start;
+            if (fileWriteEventConfiguration.shouldCommit(duration)) {
                 FileWriteEvent.commit(start, duration, path, bytesWritten);
             }
+        }
+        if (fileWriteIOStatisticsEventConfiguration.isEnabled()) {
+            FileIOStatistics.addTotalWriteBytesForPeriod(bytesWritten, duration);
         }
     }
 
     @JIInstrumentationMethod
     public void write(byte b[], int off, int len) throws IOException {
-        EventConfiguration eventConfiguration = EventConfigurations.FILE_WRITE;
-        if (!eventConfiguration.isEnabled()) {
+        EventConfiguration fileWriteEventConfiguration = EventConfigurations.FILE_WRITE;
+        EventConfiguration fileWriteIOStatisticsEventConfiguration = EventConfigurations.FILE_WRITE_IO_STATISTICS;
+        if (!fileWriteEventConfiguration.isEnabled() && !fileWriteIOStatisticsEventConfiguration.isEnabled()) {
             write(b, off, len);
             return;
         }
         long bytesWritten = 0;
         long start = 0;
+        long duration = 0;
         try {
             start = EventConfiguration.timestamp();
             write(b, off, len);
             bytesWritten = len;
         } finally {
-            long duration = EventConfiguration.timestamp() - start;
-            if (eventConfiguration.shouldCommit(duration)) {
+            duration = EventConfiguration.timestamp() - start;
+            if (fileWriteEventConfiguration.shouldCommit(duration)) {
                 FileWriteEvent.commit(start, duration, path, bytesWritten);
             }
+        }
+        if (fileWriteIOStatisticsEventConfiguration.isEnabled()) {
+            FileIOStatistics.addTotalWriteBytesForPeriod(bytesWritten, duration);
         }
     }
 }

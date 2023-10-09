@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,26 @@
  */
 
 package jdk.jfr.events;
-import jdk.jfr.internal.JVMSupport;
-import jdk.jfr.internal.event.EventConfiguration;
 
-public final class EventConfigurations {
-    public static final EventConfiguration FILE_READ = JVMSupport.getConfiguration(FileReadEvent.class);
-    public static final EventConfiguration FILE_WRITE = JVMSupport.getConfiguration(FileWriteEvent.class);
-    public static final EventConfiguration FILE_FORCE = JVMSupport.getConfiguration(FileForceEvent.class);
-    public static final EventConfiguration FILE_WRITE_IO_STATISTICS = JVMSupport.getConfiguration(FileWriteIOStatisticsEvent.class);
-    public static final EventConfiguration FILE_READ_IO_STATISTICS = JVMSupport.getConfiguration(FileReadIOStatisticsEvent.class);
-    public static final EventConfiguration ERROR_THROWN = JVMSupport.getConfiguration(ErrorThrownEvent.class);
-    public static final EventConfiguration EXCEPTION_THROWN = JVMSupport.getConfiguration(ExceptionThrownEvent.class);
+import jdk.jfr.Category;
+import jdk.jfr.Description;
+import jdk.jfr.Label;
+import jdk.jfr.Name;
+import jdk.jfr.StackTrace;
+import jdk.jfr.internal.Type;
+import java.util.concurrent.atomic.AtomicLong;
+
+@Name(Type.EVENT_NAME_PREFIX + "FileReadIOStatistics")
+@Label("FileReadIO Statistics")
+@Category({ "Java Application", "Statistics" })
+@Description("Read Rate from the FileInputStream, FileChannelImpl, RandomAccessFile")
+@StackTrace(false)
+public final class FileReadIOStatisticsEvent extends AbstractJDKEvent {  
+
+    @Label("Read Rate (Bytes per Sec)")
+    public long readRate;
+
+    @Label("Total Accumulated Read Bytes")
+    public long accRead; 
+    
 }

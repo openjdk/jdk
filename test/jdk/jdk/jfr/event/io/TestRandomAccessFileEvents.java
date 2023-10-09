@@ -35,6 +35,7 @@ import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.Utils;
 import jdk.test.lib.jfr.Events;
+import jdk.test.lib.jfr.EventNames;
 
 /**
  * @test
@@ -52,6 +53,8 @@ public class TestRandomAccessFileEvents {
 
             recording.enable(IOEvent.EVENT_FILE_WRITE).withThreshold(Duration.ofMillis(0));
             recording.enable(IOEvent.EVENT_FILE_READ).withThreshold(Duration.ofMillis(0));
+            recording.enable(EventNames.FileReadIOStatistics);
+            recording.enable(EventNames.FileWriteIOStatistics);
             recording.start();
 
             RandomAccessFile ras = new RandomAccessFile(tmp, "rw");
@@ -103,6 +106,8 @@ public class TestRandomAccessFileEvents {
             recording.stop();
             List<RecordedEvent> events = Events.fromRecording(recording);
             IOHelper.verifyEqualsInOrder(events, expectedEvents);
+            Events.hasEvent(events, EventNames.FileReadIOStatistics);
+            Events.hasEvent(events, EventNames.FileWriteIOStatistics);
         }
     }
 

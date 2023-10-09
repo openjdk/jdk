@@ -91,6 +91,8 @@ public class TestSettingsAvailability {
         testSetting(EventNames.JVMInformation, "enabled", "period");
         testSetting(EventNames.FileRead, "enabled", "threshold", "stackTrace");
         testSetting(EventNames.FileWrite, "enabled", "threshold","stackTrace");
+        testSetting(EventNames.FileReadIOStatistics, "enabled", "period");
+        testSetting(EventNames.FileWriteIOStatistics, "enabled", "period");
         testSetting(EventNames.ExceptionStatistics, "enabled", "period");
         testSetting(EventNames.SocketRead, "enabled", "threshold", "stackTrace");
         testSetting(EventNames.SocketWrite, "enabled", "threshold", "stackTrace");
