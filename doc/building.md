@@ -167,7 +167,7 @@ time of writing.
 | Operating system  | Vendor/version used                |
 | ----------------- | ---------------------------------- |
 | Linux             | Oracle Enterprise Linux 6.4 / 7.6  |
-| macOS             | Mac OS X 10.13 (High Sierra)       |
+| macOS             | macOS 13 (Ventura)                 |
 | Windows           | Windows Server 2012 R2             |
 
 The double version numbers for Linux are due to the hybrid model
@@ -270,8 +270,8 @@ difficult for a project such as the JDK to keep pace with a continuously updated
 machine running macOS. See the section on [Apple Xcode](#apple-xcode) on some
 strategies to deal with this.
 
-It is recommended that you use at least Mac OS X 10.13 (High Sierra). At the time
-of writing, the JDK has been successfully compiled on macOS 10.12 (Sierra).
+It is recommended that you use at least macOS 13 (Ventura) and Xcode
+14, but earlier versions may also work.
 
 The standard macOS environment contains the basic tooling needed to build, but
 for external libraries a package manager is recommended. The JDK uses
@@ -337,7 +337,7 @@ issues.
 | Operating system   | Toolchain version                          |
 | ------------------ | ------------------------------------------ |
 | Linux              | gcc 11.2.0                                 |
-| macOS              | Apple Xcode 10.1 (using clang 10.0.0)      |
+| macOS              | Apple Xcode 14.3.1 (using clang 14.0.3)    |
 | Windows            | Microsoft Visual Studio 2022 update 17.1.0 |
 
 All compilers are expected to be able to compile to the C99 language standard,

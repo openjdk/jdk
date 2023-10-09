@@ -933,7 +933,8 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   //   the residual iterations are more than 10% of the trip count
   //   and rounds of "unroll,optimize" are not making significant progress
   //   Progress defined as current size less than 20% larger than previous size.
-  if (UseSuperWord && cl->node_count_before_unroll() > 0 &&
+  if (phase->C->do_superword() &&
+      cl->node_count_before_unroll() > 0 &&
       future_unroll_cnt > LoopUnrollMin &&
       is_residual_iters_large(future_unroll_cnt, cl) &&
       1.2 * cl->node_count_before_unroll() < (double)_body.size()) {
@@ -1038,7 +1039,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
     } // switch
   }
 
-  if (UseSuperWord) {
+  if (phase->C->do_superword()) {
     // Only attempt slp analysis when user controls do not prohibit it
     if (!range_checks_present() && (LoopMaxUnroll > _local_loop_unroll_factor)) {
       // Once policy_slp_analysis succeeds, mark the loop with the
