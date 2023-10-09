@@ -4416,7 +4416,8 @@ public final class Formatter implements Closeable, Flushable {
                     break;
                 }
                 case DateTime.CENTURY:                // 'C' (00 - 99)
-                case DateTime.YEAR_2:               {// 'y' (00 - 99)
+                case DateTime.YEAR_2:                 // 'y' (00 - 99)
+                case DateTime.YEAR_4:               { // 'Y' (0000 - 9999)
                     int i = t.get(ChronoField.YEAR_OF_ERA);
                     int size = 2;
                     switch (c) {
@@ -4425,27 +4426,6 @@ public final class Formatter implements Closeable, Flushable {
                         case DateTime.YEAR_4  -> size = 4;
                     }
                     sb.append(localizedMagnitude(fmt, null, i, Flags.ZERO_PAD, size, l));
-                    break;
-                }
-                case DateTime.YEAR_4:               { // 'Y' (0000 - 9999)
-                    int i = t.get(ChronoField.YEAR);
-                    if (i < 0) {
-                        sb.append('-');
-                        i = -i;
-                    } else if (i > 9999) {
-                        sb.append('+');
-                    }
-
-                    if (i < 1000) {
-                        sb.append('0');
-                        if (i < 100) {
-                            sb.append('0');
-                            if (i < 10) {
-                                sb.append('0');
-                            }
-                        }
-                    }
-                    sb.append(i);
                     break;
                 }
                 case DateTime.DAY_OF_MONTH_0:         // 'd' (01 - 31)
@@ -4509,10 +4489,37 @@ public final class Formatter implements Closeable, Flushable {
                     break;
                 }
                 case DateTime.ISO_STANDARD_DATE: { // 'F' (%Y-%m-%d)
-                    char sep = '-';
-                    print(fmt, sb, t, DateTime.YEAR_4, l).append(sep);
-                    print(fmt, sb, t, DateTime.MONTH, l).append(sep);
-                    print(fmt, sb, t, DateTime.DAY_OF_MONTH_0, l);
+                    // ISO_STANDAR_DTE does not need to deal with Locale
+                    int year = t.get(ChronoField.YEAR);
+                    int month = t.get(ChronoField.MONTH_OF_YEAR);
+                    int dayOfMonth = t.get(ChronoField.DAY_OF_MONTH);
+
+                    if (year < 0) {
+                        sb.append('-');
+                        year = -year;
+                    } else if (year > 9999) {
+                        sb.append('+');
+                    }
+                    if (year < 1000) {
+                        sb.append('0');
+                        if (year < 100) {
+                            sb.append('0');
+                            if (year < 10) {
+                                sb.append('0');
+                            }
+                        }
+                    }
+                    sb.append(year)
+                      .append('-');
+                    if (month < 10) {
+                        sb.append('0');
+                    }
+                    sb.append(month)
+                      .append('-');
+                    if (dayOfMonth < 10) {
+                        sb.append('0');
+                    }
+                    sb.append(dayOfMonth);
                     break;
                 }
                 default:

@@ -453,11 +453,23 @@ public class BasicDateTime extends Basic {
         tryCatch("%<%", IllegalFormatFlagsException.class);
 
         // %tF LocalDate
+        test("%tF", "2023-01-13", LocalDate.of(2023, 1, 13));
         test("%tF", "2023-10-03", LocalDate.of(2023, 10, 3));
-        test("%tF", "-2023-10-03", LocalDate.of(-2023, 10, 3));
+        test("%tF", "0001-10-03", LocalDate.of(1, 10, 3));
+        test("%tF", "0012-10-03", LocalDate.of(12, 10, 3));
         test("%tF", "0123-10-03", LocalDate.of(123, 10, 3));
-        test("%tF", "-0123-10-03", LocalDate.of(-123, 10, 3));
         test("%tF", "+12345-10-03", LocalDate.of(12345, 10, 3));
+        test("%tF", "-0001-10-03", LocalDate.of(-1, 10, 3));
+        test("%tF", "-0012-10-03", LocalDate.of(-12, 10, 3));
+        test("%tF", "-0123-10-03", LocalDate.of(-123, 10, 3));
+        test("%tF", "-1234-10-03", LocalDate.of(-1234, 10, 3));
         test("%tF", "-12345-10-03", LocalDate.of(-12345, 10, 3));
+
+        // %tF No longer localize printed numbers
+        Locale locale = Locale.getDefault();
+        Locale.setDefault(
+                Locale.forLanguageTag("th-TH-u-nu-thai"));
+        test("%tF", "2023-01-13", LocalDate.of(2023, 1, 13));
+        Locale.setDefault(locale);
     }
 }
