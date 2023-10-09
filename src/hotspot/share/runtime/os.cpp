@@ -2124,6 +2124,9 @@ void os::pretouch_memory(void* start, void* end, size_t page_size) {
 }
 
 void os::pretouch_memory_common(void *first, void *last, size_t page_size) {
+  assert(is_aligned(first, page_size), "pointer " PTR_FORMAT " is not page-aligned by %zu", p2i(first), page_size);
+  assert(is_aligned(last, page_size), "pointer " PTR_FORMAT " is not page-aligned by %zu", p2i(last), page_size);
+  assert(first <= last, "invalid range: " PTR_FORMAT " -> " PTR_FORMAT, p2i(first), p2i(last));
   for (char *cur = static_cast<char *>(first); /* break */; cur += page_size) {
     Atomic::add(reinterpret_cast<int *>(cur), 0, memory_order_relaxed);
     if (cur >= last) break;
