@@ -633,7 +633,7 @@ Java_sun_nio_ch_Net_available(JNIEnv *env, jclass cl, jobject fdo)
 {
     u_long arg;
     if (ioctlsocket((SOCKET) fdval(env, fdo), FIONREAD, &arg) == SOCKET_ERROR) {
-        NET_ThrowNew(env, WSAGetLastError(), "ioctlsocket);
+        NET_ThrowNew(env, WSAGetLastError(), "ioctlsocket");
         return IOS_THROWN;
     }
     return (jint) arg;
