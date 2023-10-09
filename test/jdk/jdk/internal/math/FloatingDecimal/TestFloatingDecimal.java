@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 import java.util.Random;
 import jdk.internal.math.FloatingDecimal;
+
+import jdk.test.lib.RandomFactory;
 
 /*
 OldFloatingDecimalForTest
@@ -57,9 +59,12 @@ public class jdk.internal.math.FloatingDecimal {
 /**
  * @test
  * @bug 7032154
- * @summary unit tests of FloatingDecimal
+ * @summary unit tests of FloatingDecimal (use -Dseed=X to set PRNG seed)
  * @modules java.base/jdk.internal.math
+ * @library ..
+ * @library /test/lib
  * @library /java/lang/Math
+ * @build jdk.test.lib.RandomFactory
  * @build DoubleConsts FloatConsts
  * @run main TestFloatingDecimal
  * @author Brian Burkhalter
@@ -74,7 +79,7 @@ public class TestFloatingDecimal {
     private static final ResultType RESULT_TYPE = ResultType.RESULT_PRINT;
     private static final int NUM_RANDOM_TESTS = 100000;
 
-    private static final Random RANDOM = new Random();
+    private static final Random RANDOM = RandomFactory.getRandom();
 
     private static void result(String message) {
         switch (RESULT_TYPE) {
