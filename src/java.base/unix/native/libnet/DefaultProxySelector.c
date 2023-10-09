@@ -93,7 +93,7 @@ typedef struct _GSocketConnectable GSocketConnectable;
 typedef struct GError GError;
 typedef GProxyResolver* g_proxy_resolver_get_default_func(void);
 typedef char** g_proxy_resolver_lookup_func(GProxyResolver* resolver, char* uri, void *null, GError **error_p);
-typedef GSocketConnectable* g_network_address_parse_uri_func(char* proxy, int zero, GError **error_p);
+typedef GSocketConnectable* g_network_address_parse_uri_func(char* proxy, unsigned short default_port, GError **error_p);
 typedef const char* g_network_address_get_hostname_func(GSocketConnectable* conn);
 typedef unsigned short g_network_address_get_port_func(GSocketConnectable* conn);
 typedef void g_strfreev_func(char** proxies);
