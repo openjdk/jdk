@@ -1778,7 +1778,7 @@ public class Attr extends JCTree.Visitor {
                                     }
                                 }
                                 else {
-                                    if (seltype.isPrimitive() && !intSwitch &&
+                                    if (!intSwitch && !stringSwitch &&
                                         !types.isAssignable(seltype, pattype)) {
                                         log.error(label.pos(), Errors.ConstantLabelNotCompatible(pattype, seltype));
                                     } else if (!constants.add(pattype.constValue())) {

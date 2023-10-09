@@ -1,18 +1,18 @@
 SwitchErrors.java:66:18: compiler.err.default.label.not.allowed
 SwitchErrors.java:72:18: compiler.err.default.label.not.allowed
 SwitchErrors.java:72:27: compiler.err.default.label.not.allowed
-SwitchErrors.java:138:28: compiler.err.default.label.not.allowed
-SwitchErrors.java:144:18: compiler.err.default.label.not.allowed
-SwitchErrors.java:149:18: compiler.err.default.label.not.allowed
-SwitchErrors.java:154:18: compiler.err.default.label.not.allowed
-SwitchErrors.java:213:29: compiler.err.default.label.not.allowed
-SwitchErrors.java:220:32: compiler.err.default.label.not.allowed
-SwitchErrors.java:227:32: compiler.err.default.label.not.allowed
-SwitchErrors.java:283:20: compiler.err.illegal.start.of.type
-SwitchErrors.java:286:28: compiler.err.illegal.start.of.type
+SwitchErrors.java:132:28: compiler.err.default.label.not.allowed
+SwitchErrors.java:138:18: compiler.err.default.label.not.allowed
+SwitchErrors.java:143:18: compiler.err.default.label.not.allowed
+SwitchErrors.java:148:18: compiler.err.default.label.not.allowed
+SwitchErrors.java:207:29: compiler.err.default.label.not.allowed
+SwitchErrors.java:214:32: compiler.err.default.label.not.allowed
+SwitchErrors.java:221:32: compiler.err.default.label.not.allowed
+SwitchErrors.java:267:20: compiler.err.illegal.start.of.type
+SwitchErrors.java:270:28: compiler.err.illegal.start.of.type
+SwitchErrors.java:290:42: compiler.err.expected2: :, ->
+SwitchErrors.java:299:45: compiler.err.expected2: :, ->
 SwitchErrors.java:306:42: compiler.err.expected2: :, ->
-SwitchErrors.java:315:45: compiler.err.expected2: :, ->
-SwitchErrors.java:322:42: compiler.err.expected2: :, ->
 SwitchErrors.java:11:18: compiler.err.constant.label.not.compatible: java.lang.String, java.lang.Object
 SwitchErrors.java:17:18: compiler.err.constant.label.not.compatible: int, java.lang.Object
 SwitchErrors.java:23:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, java.lang.Integer)
@@ -36,30 +36,27 @@ SwitchErrors.java:108:18: compiler.err.flows.through.to.pattern
 SwitchErrors.java:113:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, java.lang.Integer)
 SwitchErrors.java:119:18: compiler.err.instanceof.reifiable.not.safe: java.util.List, java.util.List<java.lang.Integer>
 SwitchErrors.java:125:18: compiler.err.cant.resolve.location: kindname.class, Undefined, , , (compiler.misc.location: kindname.class, SwitchErrors, null)
-SwitchErrors.java:132:18: compiler.err.type.found.req: int, (compiler.misc.type.req.class.array)
-SwitchErrors.java:143:18: compiler.err.flows.through.from.pattern
-SwitchErrors.java:149:27: compiler.err.flows.through.from.pattern
-SwitchErrors.java:155:18: compiler.err.flows.through.to.pattern
-SwitchErrors.java:167:18: compiler.err.pattern.expected
-SwitchErrors.java:173:78: compiler.err.cant.resolve.location: kindname.variable, n, , , (compiler.misc.location: kindname.class, SwitchErrors, null)
-SwitchErrors.java:179:73: compiler.err.cant.resolve.location: kindname.variable, n, , , (compiler.misc.location: kindname.class, SwitchErrors, null)
-SwitchErrors.java:186:21: compiler.err.invalid.case.label.combination
-SwitchErrors.java:197:13: compiler.err.unconditional.pattern.and.default
-SwitchErrors.java:195:29: compiler.err.flows.through.from.pattern
-SwitchErrors.java:204:24: compiler.err.invalid.case.label.combination
-SwitchErrors.java:220:21: compiler.err.invalid.case.label.combination
-SwitchErrors.java:227:29: compiler.err.flows.through.from.pattern
-SwitchErrors.java:239:18: compiler.err.duplicate.unconditional.pattern
-SwitchErrors.java:244:18: compiler.err.prob.found.req: (compiler.misc.not.applicable.types: int, java.lang.Integer)
-SwitchErrors.java:249:18: compiler.err.type.found.req: int, (compiler.misc.type.req.class.array)
-SwitchErrors.java:255:24: compiler.err.invalid.case.label.combination
-SwitchErrors.java:262:24: compiler.err.invalid.case.label.combination
-SwitchErrors.java:269:18: compiler.err.flows.through.from.pattern
-SwitchErrors.java:276:18: compiler.err.flows.through.from.pattern
-SwitchErrors.java:292:49: compiler.err.cant.resolve.location.args: kindname.method, length, , , (compiler.misc.location: kindname.class, java.lang.Object, null)
-SwitchErrors.java:294:55: compiler.err.cant.resolve.location.args: kindname.method, length, , , (compiler.misc.location: kindname.class, java.lang.Object, null)
-SwitchErrors.java:300:26: compiler.err.pattern.type.cannot.infer
-SwitchErrors.java:315:21: compiler.err.invalid.case.label.combination
+SwitchErrors.java:137:18: compiler.err.flows.through.from.pattern
+SwitchErrors.java:143:27: compiler.err.flows.through.from.pattern
+SwitchErrors.java:149:18: compiler.err.flows.through.to.pattern
+SwitchErrors.java:161:18: compiler.err.pattern.expected
+SwitchErrors.java:167:78: compiler.err.cant.resolve.location: kindname.variable, n, , , (compiler.misc.location: kindname.class, SwitchErrors, null)
+SwitchErrors.java:173:73: compiler.err.cant.resolve.location: kindname.variable, n, , , (compiler.misc.location: kindname.class, SwitchErrors, null)
+SwitchErrors.java:180:21: compiler.err.invalid.case.label.combination
+SwitchErrors.java:191:13: compiler.err.unconditional.pattern.and.default
+SwitchErrors.java:189:29: compiler.err.flows.through.from.pattern
+SwitchErrors.java:198:24: compiler.err.invalid.case.label.combination
+SwitchErrors.java:214:21: compiler.err.invalid.case.label.combination
+SwitchErrors.java:221:29: compiler.err.flows.through.from.pattern
+SwitchErrors.java:233:18: compiler.err.duplicate.unconditional.pattern
+SwitchErrors.java:239:24: compiler.err.invalid.case.label.combination
+SwitchErrors.java:246:24: compiler.err.invalid.case.label.combination
+SwitchErrors.java:253:18: compiler.err.flows.through.from.pattern
+SwitchErrors.java:260:18: compiler.err.flows.through.from.pattern
+SwitchErrors.java:276:49: compiler.err.cant.resolve.location.args: kindname.method, length, , , (compiler.misc.location: kindname.class, java.lang.Object, null)
+SwitchErrors.java:278:55: compiler.err.cant.resolve.location.args: kindname.method, length, , , (compiler.misc.location: kindname.class, java.lang.Object, null)
+SwitchErrors.java:284:26: compiler.err.pattern.type.cannot.infer
+SwitchErrors.java:299:21: compiler.err.invalid.case.label.combination
 SwitchErrors.java:10:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:16:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:22:9: compiler.err.not.exhaustive.statement
@@ -70,6 +67,6 @@ SwitchErrors.java:87:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:92:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:98:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:105:9: compiler.err.not.exhaustive.statement
-SwitchErrors.java:159:9: compiler.err.not.exhaustive.statement
-SwitchErrors.java:232:9: compiler.err.not.exhaustive.statement
-74 errors
+SwitchErrors.java:153:9: compiler.err.not.exhaustive.statement
+SwitchErrors.java:226:9: compiler.err.not.exhaustive.statement
+71 errors
