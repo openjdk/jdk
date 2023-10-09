@@ -8,6 +8,18 @@ PrimitivePatternsSwitchErrors.java:83:18: compiler.err.prob.found.req: (compiler
 PrimitivePatternsSwitchErrors.java:89:18: compiler.err.constant.label.not.compatible: int, float
 PrimitivePatternsSwitchErrors.java:91:18: compiler.err.constant.label.not.compatible: int, float
 PrimitivePatternsSwitchErrors.java:102:13: compiler.err.duplicate.case.label
+PrimitivePatternsSwitchErrors.java:126:18: compiler.err.constant.label.not.compatible: long, float
+PrimitivePatternsSwitchErrors.java:128:18: compiler.err.prob.found.req: (compiler.misc.possible.loss.of.precision: double, float)
+PrimitivePatternsSwitchErrors.java:134:18: compiler.err.prob.found.req: (compiler.misc.possible.loss.of.precision: float, long)
+PrimitivePatternsSwitchErrors.java:135:18: compiler.err.prob.found.req: (compiler.misc.possible.loss.of.precision: double, long)
+PrimitivePatternsSwitchErrors.java:140:18: compiler.err.constant.label.not.compatible: long, double
+PrimitivePatternsSwitchErrors.java:141:18: compiler.err.constant.label.not.compatible: float, double
+PrimitivePatternsSwitchErrors.java:147:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: long, java.lang.Float)
+PrimitivePatternsSwitchErrors.java:149:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: double, java.lang.Float)
+PrimitivePatternsSwitchErrors.java:155:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: float, java.lang.Long)
+PrimitivePatternsSwitchErrors.java:156:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: double, java.lang.Long)
+PrimitivePatternsSwitchErrors.java:161:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: long, java.lang.Double)
+PrimitivePatternsSwitchErrors.java:162:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: float, java.lang.Double)
 PrimitivePatternsSwitchErrors.java:29:16: compiler.err.not.exhaustive
 PrimitivePatternsSwitchErrors.java:36:16: compiler.err.not.exhaustive
 PrimitivePatternsSwitchErrors.java:43:16: compiler.err.not.exhaustive
@@ -15,4 +27,4 @@ PrimitivePatternsSwitchErrors.java:51:16: compiler.err.not.exhaustive
 PrimitivePatternsSwitchErrors.java:110:16: compiler.err.default.label.not.allowed
 - compiler.note.preview.filename: PrimitivePatternsSwitchErrors.java, DEFAULT
 - compiler.note.preview.recompile
-15 errors
+27 errors

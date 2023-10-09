@@ -113,4 +113,55 @@ public class PrimitivePatternsSwitchErrors {
             default -> 3;
         };
     }
+
+    void switchCombinationsNonIntegral() {
+        float f = 0f;
+        long l = 0L;
+        double d = 0d;
+        Float fB = 0F;
+        Long lB = 0L;
+        Double dB = 0D;
+
+        switch (f) {
+            case 1l: return;
+            case 2f: return;
+            case 3d: return;
+            default:
+        }
+
+        switch (l) {
+            case 1l: return;
+            case 2f: return;
+            case 3d: return;
+            default:
+        }
+
+        switch (d) {
+            case 1l: return;
+            case 2f: return;
+            case 3d: return;
+            default:
+        }
+
+        switch (fB) {
+            case 1l: return;
+            case 2f: return;
+            case 3d: return;
+            default:
+        }
+
+        switch (lB) {
+            case 1l: return;
+            case 2f: return;
+            case 3d: return;
+            default:
+        }
+
+        switch (dB) {
+            case 1l: return;
+            case 2f: return;
+            case 3d: return;
+            default:
+        }
+    }
 }

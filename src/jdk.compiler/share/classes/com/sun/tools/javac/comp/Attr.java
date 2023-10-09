@@ -1778,8 +1778,9 @@ public class Attr extends JCTree.Visitor {
                                     }
                                 }
                                 else {
-                                    if (!intSwitch && !stringSwitch &&
-                                        !types.isAssignable(seltype, pattype)) {
+                                    if (!stringSwitch && !intSwitch &&
+                                            !(nonIntegralPrimitiveTypes.contains(pattype.getTag()) &&
+                                              types.isSameType(types.unboxedTypeOrType(seltype), pattype))) {
                                         log.error(label.pos(), Errors.ConstantLabelNotCompatible(pattype, seltype));
                                     } else if (!constants.add(pattype.constValue())) {
                                         log.error(c.pos(), Errors.DuplicateCaseLabel);
@@ -1914,6 +1915,13 @@ public class Attr extends JCTree.Visitor {
         }
         return null;
     }
+    // where
+    static final Set<TypeTag> nonIntegralPrimitiveTypes = Set.of(
+            LONG,
+            FLOAT,
+            DOUBLE,
+            BOOLEAN
+    );
 
     public void visitSynchronized(JCSynchronized tree) {
         chk.checkRefType(tree.pos(), attribExpr(tree.lock, env));
