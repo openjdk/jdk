@@ -48,22 +48,19 @@ public class ImmutableBitSetPredicate implements IntPredicate {
         this.words = original.toLongArray();
     }
 
-
+    /**
+     * @param bitIndex the bit index to test
+     * @return true if the bit is in the range of the BitSet and the bit is set, otherwise false
+     */
     @Override
     public boolean test(int bitIndex) {
-        if (bitIndex < 0)
-            throw new IndexOutOfBoundsException("bitIndex < 0: " + bitIndex);
+        if (bitIndex < 0) {
+            return false;
+        }
 
-        int wordIndex = wordIndex(bitIndex);
+        int wordIndex = bitIndex >> 6;
         return (wordIndex < words.length)
                 && ((words[wordIndex] & (1L << bitIndex)) != 0);
-    }
-
-    /**
-     * Given a bit index, return word index containing it.
-     */
-    private static int wordIndex(int bitIndex) {
-        return bitIndex >> 6;
     }
 
     /**
@@ -90,15 +87,21 @@ public class ImmutableBitSetPredicate implements IntPredicate {
     }
 
     /**
-     * Specialization for small sets of 128 bits or less.
-     * @param first
-     * @param second
+     * Specialization for small sets of 128 bits or less
+     * @param first - bits index 0 through 63, inclusive
+     * @param second - bits index 64 through 127, inclusive
      */
     public record SmallImmutableBitSetPredicate(long first, long second) implements IntPredicate {
+
+        /**
+         * @param bitIndex the bit index to test
+         * @return true if the bit is in the range of the BitSet and the bit is set, otherwise false
+         */
         @Override
         public boolean test(int bitIndex) {
-            if (bitIndex < 0)
-                throw new IndexOutOfBoundsException("bitIndex < 0: " + bitIndex);
+            if (bitIndex < 0) {
+                return false;
+            }
 
             int wordIndex = bitIndex >> 6;
             if (wordIndex > 1) {
