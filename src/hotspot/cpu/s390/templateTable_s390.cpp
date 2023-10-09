@@ -3226,10 +3226,10 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   // only if flags register is non-volatile
   NearLabel notVolatile;
 
-  if (!flags.is_volatile()) {
-    __ testbit(flags, ResolvedFieldEntry::is_volatile_shift);
-    __ z_brz(notVolatile);
-  }
+  assert(flags.is_nonvolatile(), "flags register needs to be non-volatile");
+  __ testbit(flags, ResolvedFieldEntry::is_volatile_shift);
+  __ z_brz(notVolatile);
+
   __ z_fence();
 
   BIND(notVolatile);
