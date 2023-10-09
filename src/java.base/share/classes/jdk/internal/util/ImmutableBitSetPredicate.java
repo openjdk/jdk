@@ -81,19 +81,13 @@ public class ImmutableBitSetPredicate implements IntPredicate {
      */
     public static IntPredicate of(BitSet original) {
         if (original.size() <= 128) {
-            return new SmallImmutableBitSetPredicate(original);
+            long[] array = original.toLongArray();
+            return new SmallImmutableBitSetPredicate(array[0], array.length == 2 ? array[1] : 0L);
         }
         return new ImmutableBitSetPredicate(original);
     }
 
-    public static class SmallImmutableBitSetPredicate implements IntPredicate {
-        private final long first;
-        private final long second;
-        private SmallImmutableBitSetPredicate(BitSet original) {
-            long[] array = original.toLongArray();
-            first = array[0];
-            second = array.length == 2 ? array[1] : 0L;
-        }
+    public record SmallImmutableBitSetPredicate(long first, long second) implements IntPredicate {
         @Override
         public boolean test(int bitIndex) {
             if (bitIndex < 0)
