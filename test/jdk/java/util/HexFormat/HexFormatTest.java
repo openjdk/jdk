@@ -269,7 +269,7 @@ public class HexFormatTest {
     @Test
     static void testFormatHexNPE() {
         assertThrows(NPE, () -> HexFormat.of().formatHex(null));
-        assertThrows(NPE, () -> HexFormat.of().formatHex(null, 0, 1));
+        assertThrows(NPE, () -> HexFormat.of().formatHex((byte[])null, 0, 1));
         assertThrows(NPE, () -> HexFormat.of().formatHex(null, null));
         assertThrows(NPE,  () -> HexFormat.of().formatHex(null, null, 0, 0));
         StringBuilder sb = new StringBuilder();
@@ -423,6 +423,110 @@ public class HexFormatTest {
         System.out.println("    parsed as: " + Arrays.toString(actual));
         int mismatch = Arrays.mismatch(expected, low, high, actual, 0, high - low);
         assertEquals(mismatch, -1, "format/parse cycle failed, mismatch: " + mismatch);
+    }
+
+    @Test(dataProvider="HexFormattersParsers")
+    static void testFormatHexByte(String unused1, String prefix, String suffix,
+                                     boolean unused4, HexFormat hex) {
+        byte[] expectedCases = {0, (byte)0xff};
+        StringBuilder sb = new StringBuilder();
+        for (byte value : expectedCases) {
+            sb.setLength(0);
+            StringBuilder s = hex.formatHex(sb, value);
+            assertEquals(s, sb, "formatHex returned unknown StringBuilder");
+            System.out.println("    formatted: " + s);
+
+            String expected = prefix + hex.toHexDigits(value) + suffix;
+            String actual = sb.toString();
+            assertEquals(actual, expected, "format failed");
+        }
+    }
+    @Test(dataProvider="HexFormattersParsers")
+    static void testFormatHexChar(String unused1, String prefix, String suffix,
+                                     boolean unused4, HexFormat hex) {
+        char[] expectedCases = {Character.MIN_VALUE, 'A', Character.MAX_VALUE};
+        StringBuilder sb = new StringBuilder();
+        for (char value : expectedCases) {
+            sb.setLength(0);
+            StringBuilder s = hex.formatHex(sb, value);
+            assertEquals(s, sb, "formatHex returned unknown StringBuilder");
+            System.out.println("    formatted: " + s);
+
+            String expected = prefix + hex.toHexDigits(value) + suffix;
+            String actual = sb.toString();
+            assertEquals(actual, expected, "format failed");
+        }
+    }
+
+    @Test(dataProvider="HexFormattersParsers")
+    static void testFormatHexShort(String unused1, String prefix, String suffix,
+                                     boolean unused4, HexFormat hex) {
+        short[] expectedCases = {Short.MIN_VALUE, -1, 1, Short.MAX_VALUE};
+        StringBuilder sb = new StringBuilder();
+        for (short value : expectedCases) {
+            sb.setLength(0);
+            StringBuilder s = hex.formatHex(sb, value);
+            assertEquals(s, sb, "formatHex returned unknown StringBuilder");
+            System.out.println("    formatted: " + s);
+
+            String expected = prefix + hex.toHexDigits(value) + suffix;
+            String actual = sb.toString();
+            assertEquals(actual, expected, "format failed");
+        }
+    }
+
+    @Test(dataProvider="HexFormattersParsers")
+    static void testFormatHexInt(String unused1, String prefix, String suffix,
+                                     boolean unused4, HexFormat hex) {
+        int[] expectedCases = {Integer.MIN_VALUE, -1, 1, Integer.MAX_VALUE};
+        StringBuilder sb = new StringBuilder();
+        for (int value : expectedCases) {
+            sb.setLength(0);
+            StringBuilder s = hex.formatHex(sb, value);
+            assertEquals(s, sb, "formatHex returned unknown StringBuilder");
+            System.out.println("    formatted: " + s);
+
+            String expected = prefix + hex.toHexDigits(value) + suffix;
+            String actual = sb.toString();
+            assertEquals(actual, expected, "format failed");
+        }
+    }
+
+    @Test(dataProvider="HexFormattersParsers")
+    static void testFormatHexLong(String unused1, String prefix, String suffix,
+                                     boolean unused4, HexFormat hex) {
+        long[] expectedCases = {Long.MIN_VALUE, -1, 1, Long.MAX_VALUE};
+        StringBuilder sb = new StringBuilder();
+        for (long value : expectedCases) {
+            sb.setLength(0);
+            StringBuilder s = hex.formatHex(sb, value);
+            assertEquals(s, sb, "formatHex returned unknown StringBuilder");
+            System.out.println("    formatted: " + s);
+
+            String expected = prefix + hex.toHexDigits(value) + suffix;
+            String actual = sb.toString();
+            assertEquals(actual, expected, "format failed");
+        }
+    }
+
+    @Test(dataProvider="HexFormattersParsers")
+    static void testFormatHexLongDigits(String unused1, String prefix, String suffix,
+                                     boolean unused4, HexFormat hex) {
+        long[] expectedCases = {Long.MIN_VALUE, -1, 1, Long.MAX_VALUE};
+        int[] digitsCases = {5, 15};
+        StringBuilder sb = new StringBuilder();
+        for (long value : expectedCases) {
+            for (int digits : digitsCases) {
+                sb.setLength(0);
+                StringBuilder s = hex.formatHex(sb, value, digits);
+                assertEquals(s, sb, "formatHex returned unknown StringBuilder");
+                System.out.println("    formatted: " + s);
+
+                String expected = prefix + hex.toHexDigits(value, digits) + suffix;
+                String actual = sb.toString();
+                assertEquals(actual, expected, "format failed");
+            }
+        }
     }
 
     @Test(dataProvider="HexFormattersParsers")

@@ -426,6 +426,179 @@ public final class HexFormat {
     }
 
     /**
+     * Appends two hexadecimal characters for the byte value to the {@link Appendable}.
+     * Each nibble (4 bits) from most significant to least significant of the value
+     * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
+     * Each value is formatted as the prefix, two hexadecimal characters
+     * {@linkplain #isUpperCase selected from} uppercase or lowercase digits, and the suffix.
+     * The delimiter is not used.
+     *
+     * @param <A> The type of {@code Appendable}
+     * @param out an {@code Appendable}, non-null
+     * @param value a byte value
+     * @return the {@code Appendable}
+     * @throws UncheckedIOException if an I/O exception occurs appending to the output
+     */
+    public <A extends Appendable> A formatHex(A out, byte value) {
+        try {
+            out.append(prefix);
+            out.append(toHighHexDigit(value));
+            out.append(toLowHexDigit(value));
+            out.append(suffix);
+            return out;
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe.getMessage(), ioe);
+        }
+    }
+
+    /**
+     * Appends four hexadecimal characters for the char value to the {@link Appendable}.
+     * Each nibble (4 bits) from most significant to least significant of the value
+     * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
+     * Each value is formatted as the prefix, four hexadecimal characters
+     * {@linkplain #isUpperCase selected from} uppercase or lowercase digits, and the suffix.
+     * The delimiter is not used.
+     *
+     * @param <A> The type of {@code Appendable}
+     * @param out an {@code Appendable}, non-null
+     * @param value a char value
+     * @return the {@code Appendable}
+     * @throws UncheckedIOException if an I/O exception occurs appending to the output
+     */
+    public <A extends Appendable> A formatHex(A out, char value) {
+        return formatHex(out, (short)value);
+    }
+
+    /**
+     * Appends four hexadecimal characters for the short value to the {@link Appendable}.
+     * Each nibble (4 bits) from most significant to least significant of the value
+     * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
+     * Each value is formatted as the prefix, four hexadecimal characters
+     * {@linkplain #isUpperCase selected from} uppercase or lowercase digits, and the suffix.
+     * The delimiter is not used.
+     *
+     * @param <A> The type of {@code Appendable}
+     * @param out an {@code Appendable}, non-null
+     * @param value a short value
+     * @return the {@code Appendable}
+     * @throws UncheckedIOException if an I/O exception occurs appending to the output
+     */
+    public <A extends Appendable> A formatHex(A out, short value) {
+        try {
+            out.append(prefix);
+            out.append(toHighHexDigit((value >> 8)));
+            out.append(toLowHexDigit((value >> 8)));
+            out.append(toHighHexDigit(value));
+            out.append(toLowHexDigit(value));
+            out.append(suffix);
+            return out;
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe.getMessage(), ioe);
+        }
+    }
+
+    /**
+     * Appends eight hexadecimal characters for the int value to the {@link Appendable}.
+     * Each nibble (4 bits) from most significant to least significant of the value
+     * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
+     * Each int value is formatted as the prefix, eight hexadecimal characters
+     * {@linkplain #isUpperCase selected from} uppercase or lowercase digits, and the suffix.
+     * The delimiter is not used.
+     *
+     * @param <A> The type of {@code Appendable}
+     * @param out an {@code Appendable}, non-null
+     * @param value a short value
+     * @return the {@code Appendable}
+     * @throws UncheckedIOException if an I/O exception occurs appending to the output
+     */
+    public <A extends Appendable> A formatHex(A out, int value) {
+        try {
+            out.append(prefix);
+            out.append(toHighHexDigit((value >> 24)));
+            out.append(toLowHexDigit((value >> 24)));
+            out.append(toHighHexDigit((value >> 16)));
+            out.append(toLowHexDigit((value >> 16)));
+            out.append(toHighHexDigit((value >> 8)));
+            out.append(toLowHexDigit((value >> 8)));
+            out.append(toHighHexDigit(value));
+            out.append(toLowHexDigit(value));
+            out.append(suffix);
+            return out;
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe.getMessage(), ioe);
+        }
+    }
+
+    /**
+     * Appends sixteen hexadecimal characters for the long value to the {@link Appendable}.
+     * Each nibble (4 bits) from most significant to least significant of the value
+     * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
+     * Each long value is formatted as the prefix, sixteen hexadecimal characters
+     * {@linkplain #isUpperCase selected from} uppercase or lowercase digits, and the suffix.
+     * The delimiter is not used.
+     *
+     * @param <A> The type of {@code Appendable}
+     * @param out an {@code Appendable}, non-null
+     * @param value a long value
+     * @return the {@code Appendable}
+     * @throws UncheckedIOException if an I/O exception occurs appending to the output
+     */
+    public <A extends Appendable> A formatHex(A out, long value) {
+        try {
+            out.append(prefix);
+            out.append(toHighHexDigit((int)(value >> 56)));
+            out.append(toLowHexDigit((int)(value >> 56)));
+            out.append(toHighHexDigit((int)(value >> 48)));
+            out.append(toLowHexDigit((int)(value >> 48)));
+            out.append(toHighHexDigit((int)(value >> 40)));
+            out.append(toLowHexDigit((int)(value >> 40)));
+            out.append(toHighHexDigit((int)(value >> 32)));
+            out.append(toLowHexDigit((int)(value >> 32)));
+            out.append(toHighHexDigit((int)(value >> 24)));
+            out.append(toLowHexDigit((int)(value >> 24)));
+            out.append(toHighHexDigit((int)(value >> 16)));
+            out.append(toLowHexDigit((int)(value >> 16)));
+            out.append(toHighHexDigit((int)(value >> 8)));
+            out.append(toLowHexDigit((int)(value >> 8)));
+            out.append(toHighHexDigit((int)value));
+            out.append(toLowHexDigit((int)value));
+            out.append(suffix);
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe.getMessage(), ioe);
+        }        return out;
+    }
+
+    /**
+     * Appends up to sixteen hexadecimal characters for the long value to the {@link Appendable}.
+     * Each nibble (4 bits) from most significant to least significant of the value
+     * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
+     * Each long value is formatted as the prefix, up to sixteen hexadecimal characters
+     * {@linkplain #isUpperCase selected from} uppercase or lowercase digits, and the suffix.
+     * The delimiter is not used.
+     *
+     * @param <A> The type of {@code Appendable}
+     * @param out an {@code Appendable}, non-null
+     * @param value a {@code long} value
+     * @param digits the number of hexadecimal digits to return, 0 to 16
+     * @return the hexadecimal characters for the {@code long} value
+     * @throws  IllegalArgumentException if {@code digits} is negative or greater than 16
+     */
+    public <A extends Appendable> A formatHex(A out, long value, int digits) {
+        if (digits < 0 || digits > 16)
+            throw new IllegalArgumentException("number of digits: " + digits);
+        try {
+            out.append(prefix);
+            for (int i = digits - 1; i >= 0; i--) {
+                out.append(toLowHexDigit((byte)(value >>> i * 4)));
+            }
+            out.append(suffix);
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe.getMessage(), ioe);
+        }
+        return out;
+    }
+
+    /**
      * Returns a string formatting of the range of bytes optimized
      * for a single allocation.
      * Prefix and suffix must be empty and the delimiter
