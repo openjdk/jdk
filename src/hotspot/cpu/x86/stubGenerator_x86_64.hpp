@@ -359,11 +359,13 @@ class StubGenerator: public StubCodeGenerator {
                                   bool final_reduction, int index, XMMRegister counter_inc_mask);
   // AVX2 AES-GCM related functions
   void initial_blocks_avx2(XMMRegister ctr, Register rounds, Register key, Register len,
-                      Register in, Register out, Register ct, Register subkeyHtbl, Register pos);
+                           Register in, Register out, Register ct, XMMRegister aad_hashx, Register pos);
   void gfmul_avx2(XMMRegister GH, XMMRegister HK);
   void generateHtbl_8_block_avx2(Register htbl, Register rscratch);
-  void ghash8_encrypt8_parallel_avx2(Register key, Register subkeyHtbl, XMMRegister ctr_blockx, XMMRegister aad_hashx,
-                                Register in, Register out, Register ct, Register pos, bool out_order, Register rounds);
+  void ghash8_encrypt8_parallel_avx2(Register key, Register subkeyHtbl, XMMRegister ctr_blockx, Register in,
+                                     Register out, Register ct, Register pos, bool out_order, Register rounds,
+                                     XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,
+                                     XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, XMMRegister xmm8);
   void ghash_last_8_avx2(Register subkeyHtbl);
 
   // Load key and shuffle operation
