@@ -41,6 +41,7 @@ import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
+import java.lang.classfile.CustomAttribute;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Label;
 import java.lang.classfile.Opcode;
@@ -140,7 +141,11 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder with(CodeElement element) {
-        ((AbstractElement) element).writeTo(this);
+        if (element instanceof AbstractElement ae) {
+            ae.writeTo(this);
+        } else {
+            writeAttribute((CustomAttribute)element);
+        }
         return this;
     }
 
