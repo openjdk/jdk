@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,16 @@
 
 void os_initNative(JNIEnv *env, jclass clazz) {}
 
+/*
+ * Returns the children of the requested pid and optionally each parent and
+ * start time. If requested pid is zero return all processes.
+ * Use getprocs64 to accumulate any process following the rule above.
+ * The resulting pids are stored into the array of longs.
+ * The number of pids is returned if they all fit.
+ * If the parentArray is non-null, store the parent pid.
+ * If the array is too short, excess pids are not stored and
+ * the desired length is returned.
+ */
 jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
                     jlongArray jparentArray, jlongArray jstimesArray) {
     pid_t pid = (pid_t) jpid;
