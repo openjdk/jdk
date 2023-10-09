@@ -41,6 +41,8 @@ import jdk.internal.javac.PreviewFeature;
  * {@link java.lang.classfile.ClassFile.LineNumbersOption} option.
  * <p>
  * The attribute permits multiple instances in a given location.
+ * <p>
+ * The attribute was introduced in the Java SE Platform version 5.0.
  *
  * @since 22
  */

@@ -39,6 +39,8 @@ import jdk.internal.javac.PreviewFeature;
  * The attribute does not permit multiple instances in a given location.
  * Subsequent occurrence of the attribute takes precedence during the attributed
  * element build or transformation.
+ * <p>
+ * The attribute was introduced in the Java SE Platform version 5.0.
  *
  * @since 22
  */

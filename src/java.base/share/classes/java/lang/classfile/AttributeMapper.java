@@ -105,16 +105,6 @@ public interface AttributeMapper<A> {
     void writeAttribute(BufWriter buf, A attr);
 
     /**
-     * {@return The earliest classfile version for which this attribute is
-     * applicable}
-     *
-     * @implSpec The default implementation returns {@link ClassFile#JAVA_1_VERSION}
-     */
-    default int validSince() {
-        return ClassFile.JAVA_1_VERSION;
-    }
-
-    /**
      * {@return whether this attribute may appear more than once in a given location}
      *
      * @implSpec The default implementation returns {@code false}
