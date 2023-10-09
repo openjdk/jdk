@@ -114,6 +114,22 @@ public class PrimitivePatternsSwitchErrors {
         };
     }
 
+    int switchOverPrimitiveBooleanExhaustiveWithNonPermittedDefaultStatement(boolean b) {
+        switch (b) {
+            case true: return 1;
+            case false: return 2;
+            default: return 3;
+        }
+    }
+
+    int switchOverPrimitiveBooleanExhaustiveWithNonPermittedUnconditionalStatement(boolean b) {
+        switch (b) {
+            case true: return 1;
+            case false: return 2;
+            case boolean bb: return 3; // error
+        }
+    }
+
     void switchCombinationsNonIntegral() {
         float f = 0f;
         long l = 0L;
@@ -164,4 +180,21 @@ public class PrimitivePatternsSwitchErrors {
             default:
         }
     }
+
+//    // todo: check
+//    int switchOverPrimitiveBooleanExhaustiveWithNonPermittedUnconditional(boolean b) {
+//        return switch (b) {
+//            case true -> 1;
+//            case false -> 2;
+//            case boolean bb -> 3;
+//        };
+//    }
+//
+//    // todo: check
+//    int duplicateUnconditionalWithPrimitives(int i) {
+//        return switch (i) {
+//            case int ii -> 1;
+//            case long l -> 2;
+//        };
+//    }
 }

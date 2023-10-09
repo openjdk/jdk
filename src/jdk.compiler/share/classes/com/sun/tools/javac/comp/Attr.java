@@ -1830,6 +1830,7 @@ public class Attr extends JCTree.Visitor {
                         boolean unconditional =
                                 unguarded &&
                                 !patternType.isErroneous() &&
+                                //patternType.isPrimitive() ? types.checkUnconditionallyExact(seltype, patternType):
                                 types.isSubtype(types.boxedTypeOrType(types.erasure(seltype)),
                                                 patternType);
                         if (unconditional) {
@@ -4202,9 +4203,8 @@ public class Attr extends JCTree.Visitor {
             return false;
         } else if ((exprType.isPrimitive() || pattType.isPrimitive()) &&
                 (!exprType.isPrimitive() || !pattType.isPrimitive() || !types.isSameType(exprType, pattType))) {
-            //TODO: double check
             preview.checkSourceLevel(pos, Feature.PRIMITIVE_PATTERNS);
-            return false;
+            return true;
         } else if (warner.hasLint(LintCategory.UNCHECKED)) {
             log.error(pos,
                     Errors.InstanceofReifiableNotSafe(exprType, pattType));

@@ -413,6 +413,26 @@ public class PrimitivePatterns {
         };
     }
 
+//    TODO
+//    int switchOverPrimitiveBooleanExhaustiveWithNonPermittedUnconditionalStatement(Boolean b) {
+//        switch (b) {
+//            case true: return 1;
+//            case false: return 2;  // pos test
+//        }
+//    }
+//
+//    int switchOverPrimitiveBooleanExhaustiveWithNonPermittedUnconditionalStatement(Boolean b) {
+//        switch (b) {
+//            case boolean b: return 1; // pos test, move and check it evals
+//        }
+//    }
+//
+//    int switchOverPrimitiveBooleanExhaustiveWithNonPermittedUnconditionalStatement(boolean b) {
+//        switch (b) {
+//            case Boolean b: return 1; // pos test, move and check it evals
+//        }
+//    }
+
     record R_Integer(Integer x) {}
     record R_int(int x) {}
     record R_double(double x) {}
