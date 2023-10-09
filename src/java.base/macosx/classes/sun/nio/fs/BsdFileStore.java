@@ -112,6 +112,9 @@ class BsdFileStore
     public boolean supportsFileAttributeView(String name) {
         if (name.equals("user"))
             return supportsFileAttributeView(UserDefinedFileAttributeView.class);
+        // UNIX attributes not supported on FAT
+        if (name.equals("unix") && entry().fstype().equals("msdos"))
+            return false;
         return super.supportsFileAttributeView(name);
     }
 }
