@@ -158,6 +158,8 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
     cl->set_pre_loop_end(pre_end);
   }
 
+  _phase->C->print_method_iter(PHASE_BEFORE_SUPERWORD, 4, cl);
+
   init(); // initialize data structures
 
   bool success = true;
@@ -165,6 +167,9 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
     assert(_packset.length() == 0, "packset must be empty");
     success = SLP_extract();
   }
+
+  _phase->C->print_method_iter(PHASE_SUPERWORD, 4, cl);
+
   return success;
 }
 

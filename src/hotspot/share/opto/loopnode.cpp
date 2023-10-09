@@ -4662,8 +4662,6 @@ void PhaseIdealLoop::build_and_optimize() {
      C->set_major_progress();
   }
 
-  // TODO(2023-10-04,dlunde): Before Superword?
-
   // Convert scalar to superword operations at the end of all loop opts.
   if (C->do_superword() && C->has_loops() && !C->major_progress()) {
     // SuperWord transform

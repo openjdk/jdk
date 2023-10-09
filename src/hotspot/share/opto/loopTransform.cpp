@@ -1634,6 +1634,8 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   CountedLoopEndNode *main_end = main_head->loopexit();
   assert(main_end->outcnt() == 2, "1 true, 1 false path only");
 
+  C->print_method_iter(PHASE_BEFORE_PRE_POST_LOOPS, 4, main_head);
+
   Node *pre_header= main_head->in(LoopNode::EntryControl);
   Node *init      = main_head->init_trip();
   Node *incr      = main_end ->incr();
@@ -1830,6 +1832,8 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   // finds some, but we _know_ they are all useless.
   peeled_dom_test_elim(loop,old_new);
   loop->record_for_igvn();
+
+  C->print_method_iter(PHASE_PRE_POST_LOOPS, 4, main_head);
 }
 
 //------------------------------insert_vector_post_loop------------------------
@@ -2865,6 +2869,8 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   assert(RangeCheckElimination, "");
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
 
+  C->print_method_iter(PHASE_BEFORE_RANGE_CHECK_ELIMINATION, 4, cl);
+
   // protect against stride not being a constant
   if (!cl->stride_is_con()) {
     return;
@@ -3161,6 +3167,8 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // The OpaqueNode is unshared by design
   assert(opqzm->outcnt() == 1, "cannot hack shared node");
   _igvn.replace_input_of(opqzm, 1, main_limit);
+
+  C->print_method_iter(PHASE_RANGE_CHECK_ELIMINATION, 4, cl);
 
   return;
 }

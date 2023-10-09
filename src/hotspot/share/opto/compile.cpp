@@ -699,6 +699,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 
 #ifndef PRODUCT
   set_parsed_irreducible_loop(false);
+  CompilerPhaseTypeHelper::reset_iters();
 #endif
 
   if (directive->ReplayInlineOption) {
@@ -963,6 +964,7 @@ Compile::Compile( ciEnv* ci_env,
 #ifndef PRODUCT
   set_print_assembly(PrintFrameConverterAssembly);
   set_parsed_irreducible_loop(false);
+  CompilerPhaseTypeHelper::reset_iters();
 #else
   set_print_assembly(false); // Must initialize.
 #endif
