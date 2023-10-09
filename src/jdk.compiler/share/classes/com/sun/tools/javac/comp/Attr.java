@@ -1681,6 +1681,7 @@ public class Attr extends JCTree.Visitor {
         try {
             boolean enumSwitch = (seltype.tsym.flags() & Flags.ENUM) != 0;
             boolean stringSwitch = types.isSameType(seltype, syms.stringType);
+            boolean booleanSwitch = types.isSameType(types.unboxedTypeOrType(seltype), syms.booleanType);
             boolean errorEnumSwitch = TreeInfo.isErrorEnumSwitch(selector, cases);
             boolean intSwitch = types.isAssignable(seltype, syms.intType);
             boolean patternSwitch;
@@ -1793,6 +1794,8 @@ public class Attr extends JCTree.Visitor {
                             log.error(label.pos(), Errors.DuplicateDefaultLabel);
                         } else if (hasUnconditionalPattern) {
                             log.error(label.pos(), Errors.UnconditionalPatternAndDefault);
+                        }  else if (booleanSwitch && constants.containsAll(Set.of(0, 1))) {
+                            log.error(label.pos(), Errors.UnconditionalPatternAndDefault); // TODO improve error
                         }
                         hasDefault = true;
                         matchBindings = MatchBindingsComputer.EMPTY;
@@ -1830,14 +1833,14 @@ public class Attr extends JCTree.Visitor {
                         boolean unconditional =
                                 unguarded &&
                                 !patternType.isErroneous() &&
-                                //patternType.isPrimitive() ? types.checkUnconditionallyExact(seltype, patternType):
-                                types.isSubtype(types.boxedTypeOrType(types.erasure(seltype)),
-                                                patternType);
+                                types.checkUnconditionallyExact(seltype, patternType);
                         if (unconditional) {
                             if (hasUnconditionalPattern) {
                                 log.error(pat.pos(), Errors.DuplicateUnconditionalPattern);
                             } else if (hasDefault) {
                                 log.error(pat.pos(), Errors.UnconditionalPatternAndDefault);
+                            } else if (booleanSwitch && constants.containsAll(Set.of(0, 1))) {
+                                log.error(pat.pos(), Errors.UnconditionalPatternAndDefault); // TODO improve error
                             }
                             hasUnconditionalPattern = true;
                             unconditionalCaseLabel = label;

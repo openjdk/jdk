@@ -217,6 +217,33 @@ public class PrimitivePatterns {
         };
     }
 
+    // todo run tests
+    int exhaustive7(Boolean b) {
+        switch (b) {
+            case true: return 1;
+            case false: return 2;  // with reminder, null, OK
+        }
+    }
+
+    int exhaustive7s(Boolean b) {
+        return switch (b) {
+            case true -> 1;
+            case false -> 2;      // with reminder, null, OK
+        };
+    }
+
+    int exhaustive8(Boolean b) {
+        switch (b) {
+            case boolean bb: return 1;
+        }
+    }
+
+    int exhaustive9(boolean b) {
+        switch (b) {
+            case Boolean bb: return 1;
+        }
+    }
+
     public static int exhaustiveWithRecords1() {
         R_int r = new R_int(42);
         return switch (r) {
@@ -412,26 +439,6 @@ public class PrimitivePatterns {
             default -> -1;
         };
     }
-
-//    TODO
-//    int switchOverPrimitiveBooleanExhaustiveWithNonPermittedUnconditionalStatement(Boolean b) {
-//        switch (b) {
-//            case true: return 1;
-//            case false: return 2;  // pos test
-//        }
-//    }
-//
-//    int switchOverPrimitiveBooleanExhaustiveWithNonPermittedUnconditionalStatement(Boolean b) {
-//        switch (b) {
-//            case boolean b: return 1; // pos test, move and check it evals
-//        }
-//    }
-//
-//    int switchOverPrimitiveBooleanExhaustiveWithNonPermittedUnconditionalStatement(boolean b) {
-//        switch (b) {
-//            case Boolean b: return 1; // pos test, move and check it evals
-//        }
-//    }
 
     record R_Integer(Integer x) {}
     record R_int(int x) {}

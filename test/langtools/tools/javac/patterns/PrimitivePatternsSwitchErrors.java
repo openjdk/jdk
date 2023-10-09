@@ -181,20 +181,31 @@ public class PrimitivePatternsSwitchErrors {
         }
     }
 
-//    // todo: check
-//    int switchOverPrimitiveBooleanExhaustiveWithNonPermittedUnconditional(boolean b) {
-//        return switch (b) {
-//            case true -> 1;
-//            case false -> 2;
-//            case boolean bb -> 3;
-//        };
-//    }
-//
-//    // todo: check
-//    int duplicateUnconditionalWithPrimitives(int i) {
-//        return switch (i) {
-//            case int ii -> 1;
-//            case long l -> 2;
-//        };
-//    }
+    // todo: check
+    int switchOverPrimitiveBooleanExhaustiveWithNonPermittedUnconditional(boolean b) {
+        return switch (b) {
+            case true -> 1;
+            case false -> 2;
+            case boolean bb -> 3; // error
+        };
+    }
+
+    int duplicateUnconditionalWithPrimitives(int i) {
+        return switch (i) {
+            case int ii -> 1;
+            case long l -> 2; // error
+        };
+    }
+
+    int booleanSingleCase(boolean b) {
+        return switch (b) {
+            case true -> 1;
+        };
+    }
+
+    int booleanSingleCase(boolean b) {
+        switch (b) {
+            case true: return 1;
+        }
+    }
 }

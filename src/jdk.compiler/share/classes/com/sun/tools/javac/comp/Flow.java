@@ -698,15 +698,7 @@ public class Flow {
             tree.isExhaustive = tree.hasUnconditionalPattern ||
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases);
             if (exhaustiveSwitch) {
-                if (tree.selector.type.hasTag(TypeTag.BOOLEAN)) {
-                    if (tree.hasUnconditionalPattern &&
-                        exhausts(tree.selector, tree.cases)) {
-                        log.error(tree, Errors.DefaultLabelNotAllowed);
-                    }
-                    tree.isExhaustive = true;
-                } else {
-                    tree.isExhaustive |= exhausts(tree.selector, tree.cases);
-                }
+                tree.isExhaustive |= exhausts(tree.selector, tree.cases);
                 if (!tree.isExhaustive) {
                     log.error(tree, Errors.NotExhaustiveStatement);
                 }
@@ -743,10 +735,6 @@ public class Flow {
 
             if (tree.hasUnconditionalPattern ||
                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases)) {
-                if (tree.selector.type.hasTag(TypeTag.BOOLEAN) &&
-                    exhausts(tree.selector, tree.cases)) {
-                    log.error(tree, Errors.DefaultLabelNotAllowed);
-                }
                 tree.isExhaustive = true;
             } else {
                 tree.isExhaustive = exhausts(tree.selector, tree.cases);
@@ -773,7 +761,7 @@ public class Flow {
                             patternSet.add(makePatternDescription(component, patternLabel.pat));
                         }
                     } else if (l instanceof JCConstantCaseLabel constantLabel) {
-                        if (selector.type.hasTag(TypeTag.BOOLEAN)) {
+                        if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN)) {
                             Object value = ((JCLiteral) constantLabel.expr).value;
                             booleanLiterals.add(value);
                         } else {
@@ -792,7 +780,7 @@ public class Flow {
                 }
             }
 
-            if (selector.type.hasTag(TypeTag.BOOLEAN) && booleanLiterals.size() == 2) {
+            if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN) && booleanLiterals.size() == 2) {
                 return true;
             }
 
