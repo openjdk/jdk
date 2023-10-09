@@ -2946,7 +2946,7 @@ void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
   }
 }
 
-static void warn_fail_pretouch_memory(void *first, void *last, size_t page_size,
+static void warn_fail_pretouch_memory(void* first, void* last, size_t page_size,
                                       int err) {
   warning("INFO: os::pd_pretouch_memory(" PTR_FORMAT ", " PTR_FORMAT ", "
           SIZE_FORMAT ") failed; error='%s' (errno=%d)",
@@ -2954,8 +2954,8 @@ static void warn_fail_pretouch_memory(void *first, void *last, size_t page_size,
           os::strerror(err), err);
 }
 
-void os::pd_pretouch_memory(void *first, void *last, size_t page_size) {
-  size_t len = static_cast<char *>(last) - static_cast<char *>(first) + page_size;
+void os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
+  size_t len = static_cast<char*>(last) - static_cast<char*>(first) + page_size;
   // Use madvise to pretouch on Linux first, and fallback to the common method
   // if unsupported. THP can form right after madvise rather than being
   // assembled later.
