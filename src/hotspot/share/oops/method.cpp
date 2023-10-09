@@ -102,7 +102,7 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags, Symbol* name) {
   set_constMethod(xconst);
   set_access_flags(access_flags);
   set_intrinsic_id(vmIntrinsics::_none);
-  set_method_data(nullptr);
+  clear_method_data();
   clear_method_counters();
   set_vtable_index(Method::garbage_vtable_index);
 
@@ -127,7 +127,7 @@ void Method::deallocate_contents(ClassLoaderData* loader_data) {
   MetadataFactory::free_metadata(loader_data, constMethod());
   set_constMethod(nullptr);
   MetadataFactory::free_metadata(loader_data, method_data());
-  set_method_data(nullptr);
+  clear_method_data();
   MetadataFactory::free_metadata(loader_data, method_counters());
   clear_method_counters();
   // The nmethod will be gone when we get here.
@@ -1179,7 +1179,7 @@ void Method::unlink_method() {
   }
   NOT_PRODUCT(set_compiled_invocation_count(0);)
 
-  set_method_data(nullptr);
+  clear_method_data();
   clear_method_counters();
   remove_unshareable_flags();
 }
