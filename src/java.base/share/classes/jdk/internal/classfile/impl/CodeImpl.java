@@ -460,7 +460,7 @@ public final class CodeImpl
                     case ASTORE -> new AbstractInstruction.BoundStoreInstruction(Opcode.ASTORE_W, this, pos);
                     case IINC -> new AbstractInstruction.BoundIncrementInstruction(Opcode.IINC_W, this, pos);
                     case RET ->  new AbstractInstruction.BoundRetInstruction(Opcode.RET_W, this, pos);
-                    default -> throw new UnsupportedOperationException("unknown wide instruction: " + bclow);
+                    default -> throw new IllegalArgumentException("unknown wide instruction: " + bclow);
                 };
             }
 
@@ -475,7 +475,7 @@ public final class CodeImpl
             default -> {
                 Instruction instr = SINGLETON_INSTRUCTIONS[bc];
                 if (instr == null)
-                    throw new UnsupportedOperationException("unknown instruction: " + bc);
+                    throw new IllegalArgumentException("unknown instruction: " + bc);
                 yield instr;
             }
         };
