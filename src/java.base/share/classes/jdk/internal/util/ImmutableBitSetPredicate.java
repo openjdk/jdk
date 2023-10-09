@@ -82,11 +82,18 @@ public class ImmutableBitSetPredicate implements IntPredicate {
     public static IntPredicate of(BitSet original) {
         if (original.size() <= 128) {
             long[] array = original.toLongArray();
-            return new SmallImmutableBitSetPredicate(array[0], array.length == 2 ? array[1] : 0L);
+            return new SmallImmutableBitSetPredicate(
+                    array.length > 0 ? array[0] : 0L,
+                    array.length > 1 ? array[1] : 0L);
         }
         return new ImmutableBitSetPredicate(original);
     }
 
+    /**
+     * Specialization for small sets of 128 bits or less.
+     * @param first
+     * @param second
+     */
     public record SmallImmutableBitSetPredicate(long first, long second) implements IntPredicate {
         @Override
         public boolean test(int bitIndex) {
