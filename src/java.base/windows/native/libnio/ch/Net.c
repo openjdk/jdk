@@ -550,11 +550,7 @@ Java_sun_nio_ch_Net_blockOrUnblock6(JNIEnv *env, jobject this, jboolean block, j
     int opt = (block) ? MCAST_BLOCK_SOURCE : MCAST_UNBLOCK_SOURCE;
     int n = setGroupSourceReqOption(env, fdo, opt, group, index, source);
     if (n == SOCKET_ERROR) {
-        if (block) {
-            NET_ThrowNew(env, WSAGetLastError(), "setsocketopt to block source");
-        } else {
-            NET_ThrowNew(env, WSAGetLastError(), "setsocketopt to unblock source");
-        }
+        NET_ThrowNew(env, WSAGetLastError(), "setsocketopt to block or unblock source");
     }
     return 0;
 }
