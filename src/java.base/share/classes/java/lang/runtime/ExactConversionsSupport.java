@@ -25,16 +25,22 @@
 package java.lang.runtime;
 
 /**
- * Exactness methods to test whether a conversion between types would be
- * exact when not enough static information is present. These methods may
- * be used, for example, by Java compiler implementations to implement checks
+ * A casting conversion is considered to be exact if, after applying the conversion
+ * to the value, no exception was raised or loss of information has occured;
+ * otherwise it is considered inexact.
+ * The methods in this class provide the run-time support for primitive conversions exactness checks.
+ * These methods may be used, for example, by Java compiler implementations to implement checks
  * for instanceof and pattern matching runtime implementations.
+ * See JLS section 5.5.1 for more information on exact casting conversions.
+ *
+ * @jls 5.5.1 Exact Casting Conversions
+ * @jls 15.20.2 The instanceof Operator
  *
  * @since 22
  */
-public final class ExactnessMethods {
+public final class ExactConversionsSupport {
 
-    private ExactnessMethods() { }
+    private ExactConversionsSupport() { }
 
      /** Exactness method from int to byte
      *
@@ -64,6 +70,9 @@ public final class ExactnessMethods {
      *
      * @param n value
      * @return  true if the passed value can be converted exactly to the target type
+     *
+     * @implSpec relies on the notion of representation equivalence defined in the
+     * specification of the {@linkplain Double} class.
      *
      * */
     public static boolean intToFloatExact(int n) { return n == (int)(float)n && n != Integer.MAX_VALUE; }
@@ -105,6 +114,9 @@ public final class ExactnessMethods {
      * @param n value
      * @return  true if the passed value can be converted exactly to the target type
      *
+     * @implSpec relies on the notion of representation equivalence defined in the
+     * specification of the {@linkplain Double} class.
+     *
      * */
     public static boolean longToFloatExact(long n) {
         return n == (long)(float)n && n != Long.MAX_VALUE;
@@ -115,6 +127,8 @@ public final class ExactnessMethods {
      * @param n value
      * @return  true if the passed value can be converted exactly to the target type
      *
+     * @implSpec relies on the notion of representation equivalence defined in the
+     * specification of the {@linkplain Double} class.
      * */
     public static boolean longToDoubleExact(long n) {
         return n == (long)(double)n && n != Long.MAX_VALUE;
@@ -124,6 +138,9 @@ public final class ExactnessMethods {
      *
      * @param n value
      * @return  true if the passed value can be converted exactly to the target type
+     *
+     * @implSpec relies on the notion of representation equivalence defined in the
+     * specification of the {@linkplain Double} class.
      *
      * */
     public static boolean floatToByteExact(float n)  {
@@ -135,6 +152,9 @@ public final class ExactnessMethods {
      * @param n value
      * @return  true if the passed value can be converted exactly to the target type
      *
+     * @implSpec relies on the notion of representation equivalence defined in the
+     * specification of the {@linkplain Double} class.
+     *
      * */
     public static boolean floatToShortExact(float n) {
         return n == (float)(short)n && !isNegativeZero(n);
@@ -144,6 +164,9 @@ public final class ExactnessMethods {
      *
      * @param n value
      * @return  true if the passed value can be converted exactly to the target type
+     *
+     * @implSpec relies on the notion of representation equivalence defined in the
+     * specification of the {@linkplain Double} class.
      *
      * */
     public static boolean floatToCharExact(float n)  {
@@ -155,6 +178,8 @@ public final class ExactnessMethods {
      * @param n value
      * @return  true if the passed value can be converted exactly to the target type
      *
+     * @implSpec relies on the notion of representation equivalence defined in the
+     * specification of the {@linkplain Double} class.
      * */
     public static boolean floatToIntExact(float n) {
         return n == (float)(int)n && n != 0x1p31f && !isNegativeZero(n);
@@ -165,6 +190,8 @@ public final class ExactnessMethods {
      * @param n value
      * @return  true if the passed value can be converted exactly to the target type
      *
+     * @implSpec relies on the notion of representation equivalence defined in the
+     * specification of the {@linkplain Double} class.
      * */
     public static boolean floatToLongExact(float n) {
         return n == (float)(long)n && n != 0x1p63f && !isNegativeZero(n);
@@ -174,6 +201,9 @@ public final class ExactnessMethods {
      *
      * @param n value
      * @return  true if the passed value can be converted exactly to the target type
+     *
+     * @implSpec relies on the notion of representation equivalence defined in the
+     * specification of the {@linkplain Double} class.
      *
      * */
     public static boolean doubleToByteExact(double n) {
@@ -185,6 +215,9 @@ public final class ExactnessMethods {
      * @param n value
      * @return  true if the passed value can be converted exactly to the target type
      *
+     * @implSpec relies on the notion of representation equivalence defined in the
+     * specification of the {@linkplain Double} class.
+     *
      * */
     public static boolean doubleToShortExact(double n){
         return n == (double)(short)n && !isNegativeZero(n);
@@ -194,6 +227,9 @@ public final class ExactnessMethods {
      *
      * @param n value
      * @return  true if the passed value can be converted exactly to the target type
+     *
+     * @implSpec relies on the notion of representation equivalence defined in the
+     * specification of the {@linkplain Double} class.
      *
      * */
     public static boolean doubleToCharExact(double n) {
@@ -205,6 +241,9 @@ public final class ExactnessMethods {
      * @param n value
      * @return  true if the passed value can be converted exactly to the target type
      *
+     * @implSpec relies on the notion of representation equivalence defined in the
+     * specification of the {@linkplain Double} class.
+     *
      * */
     public static boolean doubleToIntExact(double n)  {
         return n == (double)(int)n && !isNegativeZero(n);
@@ -215,6 +254,9 @@ public final class ExactnessMethods {
      * @param n value
      * @return  true if the passed value can be converted exactly to the target type
      *
+     * @implSpec relies on the notion of representation equivalence defined in the
+     * specification of the {@linkplain Double} class.
+     *
      * */
     public static boolean doubleToLongExact(double n) {
         return n == (double)(long)n && n != 0x1p63 && !isNegativeZero(n);
@@ -224,6 +266,9 @@ public final class ExactnessMethods {
      *
      * @param n value
      * @return  true if the passed value can be converted exactly to the target type
+     *
+     * @implSpec relies on the notion of representation equivalence defined in the
+     * specification of the {@linkplain Double} class.
      *
      * */
     public static boolean doubleToFloatExact(double n) {

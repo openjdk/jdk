@@ -31,7 +31,6 @@ import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -235,7 +234,7 @@ public class SwitchBootstraps {
                                 TypePairs typePair = TypePairs.of(selectorType, currentLabelClass);
                                 String methodName = typePairToName.get(typePair);
                                 MethodType methodType = MethodType.methodType(boolean.class, typePair.from);
-                                exactnessCheck = lookup.findStatic(ExactnessMethods.class, methodName, methodType).asType(MethodType.methodType(boolean.class, selectorType));
+                                exactnessCheck = lookup.findStatic(ExactConversionsSupport.class, methodName, methodType).asType(MethodType.methodType(boolean.class, selectorType));
                             }
                             catch (ReflectiveOperationException e) {
                                 throw new ExceptionInInitializerError(e);

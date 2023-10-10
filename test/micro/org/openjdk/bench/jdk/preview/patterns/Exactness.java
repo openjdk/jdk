@@ -22,7 +22,6 @@
  */
 package org.openjdk.bench.jdk.preview.patterns;
 
-import static java.lang.runtime.ExactnessMethods.*;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;

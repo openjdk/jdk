@@ -3027,14 +3027,14 @@ public class Lower extends TreeTranslator {
         // Resolve the exactness method
         Symbol ecsym = rs.resolveQualifiedMethod(null,
                 attrEnv,
-                syms.exactnessMethodsType,
+                syms.exactConversionsSupportType,
                 exactnessFunction,
                 List.of(pair.from.type),
                 List.nil());
 
         // Generate the method call ExactnessChecks.<exactness method>(<argument>);
         JCFieldAccess select = make.Select(
-                make.QualIdent(syms.exactnessMethodsType.tsym),
+                make.QualIdent(syms.exactConversionsSupportType.tsym),
                 exactnessFunction);
         select.sym = ecsym;
         select.setType(syms.booleanType);
