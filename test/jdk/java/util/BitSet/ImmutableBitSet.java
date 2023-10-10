@@ -49,7 +49,7 @@ public class ImmutableBitSet {
 
     @Test
     void negativeIndex() {
-        IntStream.of(0, 127, 128, 143, 4711).forEach(k -> {
+        IntStream.of(0, 127, 128, 129, 143, 4711).forEach(k -> {
                     BitSet bs = new BitSet(k);
                     IntPredicate ibs = ImmutableBitSetPredicate.of(bs);
                     assertFalse(ibs.test(-1));
@@ -59,7 +59,7 @@ public class ImmutableBitSet {
 
     @Test
     void basic() {
-        IntStream.of(0, 16, 127, 128, 143, 4711).forEach(k -> basic(k));
+        IntStream.of(0, 16, 127, 128, 129, 143, 4711).forEach(k -> basic(k));
     }
 
     void basic(int length) {
@@ -70,10 +70,10 @@ public class ImmutableBitSet {
 
     @Test
     void clearedAtTheTail() {
-        IntStream.of(0, 16, 127, 128, 143, 4711).forEach(k -> {
+        IntStream.of(0, 16, 127, 128, 129, 143, 4711).forEach(k -> {
             for (int i = Long.BYTES - 1; i < Long.BYTES + 2; i++) {
                 BitSet bs = createReference(k + i);
-                for (int j = bs.length() - 1; j > Long.BYTES - 1; j++) {
+                for (int j = bs.length() - 1; j > Long.BYTES - 1; j--) {
                     bs.clear(j);
                 }
                 IntPredicate ibs = ImmutableBitSetPredicate.of(bs);
