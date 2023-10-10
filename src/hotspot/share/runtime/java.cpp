@@ -284,10 +284,7 @@ void print_statistics() {
     print_method_invocation_histogram();
   }
 
-  if (NOT_PRODUCT(true) PRODUCT_ONLY(PrintMethodData)) {
-    // TODO: why is this unconditional in non-product builds?
-    print_method_profiling_data();
-  }
+  print_method_profiling_data();
 
   if (TimeOopMap) {
     GenerateOopMap::print_time();
