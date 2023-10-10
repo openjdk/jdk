@@ -91,7 +91,7 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
     TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
     SMALL_JAVA := false, \
     CLASSPATH := $(MICROBENCHMARK_CLASSPATH), \
-    DISABLED_WARNINGS := this-escape processing rawtypes cast serial preview, \
+    DISABLED_WARNINGS := restricted this-escape processing rawtypes cast serial preview, \
     SRC := $(MICROBENCHMARK_SRC), \
     BIN := $(MICROBENCHMARK_CLASSES), \
     JAVAC_FLAGS := --add-exports java.base/sun.security.util=ALL-UNNAMED \
