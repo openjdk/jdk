@@ -3626,7 +3626,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
   }
 #endif
 
-  C->print_method_iter(PHASE_BEFORE_PARTIAL_PEEL, 4, head);
+  NOT_PRODUCT(C->print_method_iter(PHASE_BEFORE_PARTIAL_PEEL, 4, head);)
 
   VectorSet peel;
   VectorSet not_peel;
@@ -3923,7 +3923,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
   }
 #endif
 
-  C->print_method_iter(PHASE_PARTIAL_PEEL, 4, head);
+  NOT_PRODUCT(C->print_method_iter(PHASE_PARTIAL_PEEL, 4, head);)
 
   return true;
 }

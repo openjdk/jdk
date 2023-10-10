@@ -1387,7 +1387,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
   ConNode* zero = _igvn.intcon(0);
   set_ctrl(zero, C->root());
 
-  C->print_method_iter(PHASE_BEFORE_LOOP_PREDICATION, 4, head);
+  NOT_PRODUCT(C->print_method_iter(PHASE_BEFORE_LOOP_PREDICATION, 4, head);)
 
   ResourceArea* area = Thread::current()->resource_area();
   Invariance invar(area, loop);
@@ -1500,7 +1500,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
 
   head->verify_strip_mined(1);
 
-  C->print_method_iter(PHASE_LOOP_PREDICATION, 4, head);
+  NOT_PRODUCT(C->print_method_iter(PHASE_LOOP_PREDICATION, 4, head);)
 
   return hoisted;
 }
