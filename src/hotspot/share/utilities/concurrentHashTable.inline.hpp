@@ -932,8 +932,8 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   if (new_node != nullptr) {
     // CAS failed and a duplicate was inserted, we must free this node.
     Node::destroy_node(_context, new_node);
-  } else if (i > 0 && clean) {
-    // We only do cleaning on slow inserts.
+  } else if (i == 0 && clean) {
+    // We only do cleaning on fast inserts.
     Bucket* bucket = get_bucket_locked(thread, lookup_f.get_hash());
     delete_in_bucket(thread, bucket, lookup_f);
     bucket->unlock();
