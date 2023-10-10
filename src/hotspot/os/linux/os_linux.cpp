@@ -2959,14 +2959,14 @@ void os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
     if (::madvise(first, len, MADV_POPULATE_WRITE) == -1) {
       int err = errno;
       if (err == EINVAL) { // Not supported
-	// When using THP we need to always pre-touch using small pages as the
-	// OS will initially always use small pages.
-	pretouch_memory_common(first, last, os::vm_page_size());
+        // When using THP we need to always pre-touch using small pages as the
+        // OS will initially always use small pages.
+        pretouch_memory_common(first, last, os::vm_page_size());
       } else {
-	log_warning(gc, os)("::madvise(" PTR_FORMAT ", " SIZE_FORMAT
-			    ", %d) failed; error='%s' (errno=%d)",
-			    p2i(first), len, MADV_POPULATE_WRITE,
-			    os::strerror(err), err);
+        log_warning(gc, os)("::madvise(" PTR_FORMAT ", " SIZE_FORMAT
+                            ", %d) failed; error='%s' (errno=%d)",
+                            p2i(first), len, MADV_POPULATE_WRITE,
+                            os::strerror(err), err);
       }
     }
   } else {
