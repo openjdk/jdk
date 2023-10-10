@@ -2440,7 +2440,7 @@ public class Lower extends TreeTranslator {
         // If all values can be loaded with condy, use condy for the values array
         if (constantValues.size() == values.size()) {
             // Create a constant bootstrap method that returns the values array unmodified.
-            // There isn't an obvious way to use a share generic boostrap because we want a T[], not an Enum[]
+            // There isn't an obvious way to use a share generic bootstrap because we want a T[], not an Enum[]
             // synthetic private static T[] $values(MethodHandle bootstrapMethod, String name, Class<?> type, T... values) { return values; }
             List<Type> args = List.of(syms.methodHandleLookupType,
                     syms.stringType,
