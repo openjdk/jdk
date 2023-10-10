@@ -50,7 +50,6 @@ void CompressedKlassPointers::set_base_and_shift(address thebase, int theshift) 
 
   _combo = (uint64_t)_base | (uint64_t)_shift | (1 << bitpos_useccp);
 
-  // validate combo.
   assert(base() == _base, "combo encoding");
   assert(shift() == _shift, "combo encoding");
   assert(use_compressed_class_pointers() == UseCompressedClassPointers, "combo encoding");
