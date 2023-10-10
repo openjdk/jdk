@@ -71,7 +71,7 @@ compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x6
 
 compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
 
-compiler/floatingpoint/TestDenormalFloat.java 8295159 generic-i586
+compiler/floatingpoint/TestDenormalFloat.java 8317810 generic-i586
 
 #############################################################################
 
