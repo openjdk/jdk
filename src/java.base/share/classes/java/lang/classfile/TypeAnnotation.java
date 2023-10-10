@@ -236,6 +236,7 @@ public sealed interface TypeAnnotation
     /**
      * Specifies which type in a declaration or expression is being annotated.
      *
+     * @sealedGraph
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)

@@ -43,6 +43,7 @@ import jdk.internal.javac.PreviewFeature;
  * (e.g., {@link #elements()}, {@link #forEachElement(Consumer)}, etc.)
  * @param <E> the element type
  *
+ * @sealedGraph
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)

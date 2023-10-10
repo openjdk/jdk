@@ -31,6 +31,7 @@ import jdk.internal.javac.PreviewFeature;
  * A constant pool entry that may be used as an annotation constant,
  * which includes the four kinds of primitive constants, and UTF8 constants.
  *
+ * @sealedGraph
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)

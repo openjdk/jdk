@@ -37,6 +37,7 @@ import jdk.internal.javac.PreviewFeature;
  * the code attribute, such as line number metadata, local variable metadata,
  * exception metadata, label target metadata, etc.
  *
+ * @sealedGraph
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)

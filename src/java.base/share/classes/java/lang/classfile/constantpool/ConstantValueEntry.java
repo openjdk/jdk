@@ -32,6 +32,7 @@ import jdk.internal.javac.PreviewFeature;
  * {@code ConstantValue} attribute; this includes the four primitive constant
  * types and {@linkplain String} constants.
  *
+ * @sealedGraph
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)

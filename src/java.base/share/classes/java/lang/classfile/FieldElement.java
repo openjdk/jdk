@@ -39,6 +39,7 @@ import jdk.internal.javac.PreviewFeature;
  * A marker interface for elements that can appear when traversing
  * a {@link FieldModel} or be presented to a {@link FieldBuilder}.
  *
+ * @sealedGraph
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)

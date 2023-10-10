@@ -106,6 +106,7 @@ public sealed interface Signature {
      * Models the signature of a reference type, which may be a class, interface,
      * type variable, or array type.
      *
+     * @sealedGraph
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
@@ -374,6 +375,7 @@ public sealed interface Signature {
     /**
      * Models a signature for a throwable type.
      *
+     * @sealedGraph
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)

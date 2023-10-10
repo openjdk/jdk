@@ -36,6 +36,7 @@ import jdk.internal.javac.PreviewFeature;
  * A {@link ClassFileElement} describing an entity that has attributes, such
  * as a class, field, method, code attribute, or record component.
  *
+ * @sealedGraph
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)

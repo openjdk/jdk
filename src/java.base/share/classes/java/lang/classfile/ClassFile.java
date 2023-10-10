@@ -81,6 +81,7 @@ public sealed interface ClassFile
     /**
      * An option that affects the parsing and writing of classfiles.
      *
+     * @sealedGraph
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)

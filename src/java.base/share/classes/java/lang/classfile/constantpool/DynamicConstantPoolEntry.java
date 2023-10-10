@@ -32,6 +32,7 @@ import jdk.internal.javac.PreviewFeature;
  * or {@link InvokeDynamicEntry}.
  * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
  *
+ * @sealedGraph
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)

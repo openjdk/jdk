@@ -31,6 +31,7 @@ import jdk.internal.javac.PreviewFeature;
  * Models a member reference constant in the constant pool of a classfile,
  * which includes references to fields, methods, and interface methods.
  *
+ * @sealedGraph
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)

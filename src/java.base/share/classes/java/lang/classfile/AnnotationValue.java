@@ -45,6 +45,7 @@ import jdk.internal.javac.PreviewFeature;
  * @see Annotation
  * @see AnnotationElement
  *
+ * @sealedGraph
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
@@ -80,6 +81,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a constant-valued element
      *
+     * @sealedGraph
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)

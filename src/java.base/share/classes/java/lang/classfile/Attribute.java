@@ -75,6 +75,7 @@ import jdk.internal.javac.PreviewFeature;
  * AttributedElement#findAttribute(AttributeMapper)}.
  * @param <A> the attribute type
  *
+ * @sealedGraph
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
