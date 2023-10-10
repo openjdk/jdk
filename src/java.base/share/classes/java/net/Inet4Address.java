@@ -177,15 +177,22 @@ class Inet4Address extends InetAddress {
     }
 
     /**
-     * Parses string with an IPv4 address literal.
-     * If string doesn't contain a valid literal - null is returned.
+     * Parses string as an IPv4 address literal.
+     * If string contains a non-parsable literal and {@code throwIAE} is set to {@code false}
+     * - {@code null} is returned.
+     * If string contains a non-parsable literal and {@code throwIAE} is set to {@code true}
+     * - {@code IllegalArgumentException} is thrown.
+     * If string contains an {@linkplain IPAddressUtil#validateNumericFormatV4(String, boolean)
+     * ambiguous literal} - {@code IllegalArgumentException} is thrown irrelevant to
+     * {@code throwIAE} value.
      * @param addressLiteral IPv4 address literal to parse
-     * @param throwIAE throw {@code IllegalArgumentException} if literal
-     *                 cannot be parsed as an IPv4 address literal.
+     * @param throwIAE throw {@code IllegalArgumentException} if the
+     *                 literal cannot be parsed as an IPv4 address literal.
      * @return {@code Inet4Address} object constructed from the address literal;
-     *         or {@@code null} if the literal cannot be parsed as an IPv4 address
+     *         or {@code null} if the literal cannot be parsed as an IPv4 address
      * @throws IllegalArgumentException if ambiguous IPv4 literal is specified,
-     * or non-parsable IPv4 literal is specified with {@code throwIAE} set to "true".
+     * or non-parsable IPv4 literal is specified with {@code throwIAE} set to
+     * {@code true}.
      */
     static Inet4Address parseAddressString(String addressLiteral, boolean throwIAE) {
         byte [] addrBytes= IPAddressUtil.validateNumericFormatV4(addressLiteral, throwIAE);

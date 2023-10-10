@@ -549,7 +549,7 @@ class Inet6Address extends InetAddress {
      * - unexpected zone-id in IPv4-mapped address literal.
      *
      * @param addressLiteral literal IP address
-     * @param removeSqBrackets if {@code "true"} remove outer square brackets
+     * @param removeSqBrackets if {@code true} remove outer square brackets
      * @return {@link Inet6Address} or {@link Inet4Address} object constructed from
      * literal IP address string.
      * @throws UnknownHostException if literal IP address string cannot be parsed
