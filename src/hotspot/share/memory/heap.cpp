@@ -303,7 +303,7 @@ void* CodeHeap::allocate(size_t instance_size) {
     mark_segmap_as_used(_next_segment, _next_segment + number_of_segments, false);
     block = block_at(_next_segment);
     block->initialize(number_of_segments);
-    _next_segment += number_of_segments;
+    Atomic::release_store(&_next_segment, _next_segment + number_of_segments);
     guarantee((char*) block >= _memory.low_boundary() && (char*) block < _memory.high(),
               "The newly allocated block " PTR_FORMAT " is not within the heap "
               "starting with "  PTR_FORMAT " and ending with " PTR_FORMAT,
@@ -553,7 +553,7 @@ int CodeHeap::allocated_segments() const {
 
 size_t CodeHeap::allocated_capacity() const {
   // size of used heap - size on freelist
-  return segments_to_size(_next_segment - _freelist_segments);
+  return segments_to_size(Atomic::load_acquire(&_next_segment) - _freelist_segments);
 }
 
 // Returns size of the unallocated heap block
