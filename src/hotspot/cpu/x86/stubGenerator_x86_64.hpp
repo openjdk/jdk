@@ -361,7 +361,7 @@ class StubGenerator: public StubCodeGenerator {
   void initial_blocks_avx2(XMMRegister ctr, Register rounds, Register key, Register len,
                            Register in, Register out, Register ct, XMMRegister aad_hashx, Register pos);
   void gfmul_avx2(XMMRegister GH, XMMRegister HK);
-  void generateHtbl_8_block_avx2(Register htbl, Register rscratch);
+  void generateHtbl_8_block_avx2(Register htbl);
   void ghash8_encrypt8_parallel_avx2(Register key, Register subkeyHtbl, XMMRegister ctr_blockx, Register in,
                                      Register out, Register ct, Register pos, bool out_order, Register rounds,
                                      XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,

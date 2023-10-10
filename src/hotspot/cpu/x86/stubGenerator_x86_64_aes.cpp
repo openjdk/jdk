@@ -3293,7 +3293,7 @@ void StubGenerator::aesgcm_encrypt(Register in, Register len, Register ct, Regis
 //GH and HK - 128 bits each
 //Output:
 //GH = GH * Hashkey mod poly
-//Temp registers: xmm1, xmm2, xmm3
+//Temp registers: xmm1, xmm2, xmm3, r15
 void StubGenerator::gfmul_avx2(XMMRegister GH, XMMRegister HK) {
   const XMMRegister T1 = xmm1;
   const XMMRegister T2 = xmm2;
@@ -3333,16 +3333,16 @@ void StubGenerator::gfmul_avx2(XMMRegister GH, XMMRegister HK) {
 //htbl - table containing the initial subkeyH
 //Output:
 //htbl - containing 8 H constants
-//Temp registers: xmm0, xmm1, xmm2, xmm6, xmm11, xmm12
-void StubGenerator::generateHtbl_8_block_avx2(Register htbl, Register rscratch) {
+//Temp registers: xmm0, xmm1, xmm2, xmm3, xmm6, xmm11, xmm12, r15, rbx
+void StubGenerator::generateHtbl_8_block_avx2(Register htbl) {
   const XMMRegister HK = xmm6;
 
   __ movdqu(HK, Address(htbl, 0));
-  __ movdqu(xmm1, ExternalAddress(ghash_long_swap_mask_addr()), rscratch);
+  __ movdqu(xmm1, ExternalAddress(ghash_long_swap_mask_addr()), rbx /*rscratch*/);
   __ vpshufb(HK, HK, xmm1, Assembler::AVX_128bit);
 
-  __ movdqu(xmm11, ExternalAddress(ghash_polynomial_addr()), rscratch);
-  __ movdqu(xmm12, ExternalAddress(ghash_polynomial_two_one_addr()), rscratch);
+  __ movdqu(xmm11, ExternalAddress(ghash_polynomial_addr()), rbx /*rscratch*/);
+  __ movdqu(xmm12, ExternalAddress(ghash_polynomial_two_one_addr()), rbx /*rscratch*/);
   // Compute H ^ 2 from the input subkeyH
   __ vpsrlq(xmm1, xmm6, 63, Assembler::AVX_128bit);
   __ vpsllq(xmm6, xmm6, 1, Assembler::AVX_128bit);
@@ -3396,8 +3396,10 @@ __ vpxor(xmm14, xmm14, xmm11, Assembler::AVX_128bit);\
 //rounds - number of aes rounds calculated based on key length
 //xmm1-xmm8 - holds encrypted counter values
 //Outputs:
-//xmm1-xmm8 - encrypted counter values
-//Temp registers: xmm0, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15
+//xmm1-xmm8 - updated encrypted counter values
+//ctr_blockx - updated counter value
+//out - updated output buffer
+//Temp registers: xmm0, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15, rbx
 void StubGenerator::ghash8_encrypt8_parallel_avx2(Register key, Register subkeyHtbl, XMMRegister ctr_blockx, Register in,
                                                   Register out, Register ct, Register pos, bool in_order, Register rounds,
                                                   XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,
@@ -3545,8 +3547,9 @@ void StubGenerator::ghash8_encrypt8_parallel_avx2(Register key, Register subkeyH
   __ vpxor(t1, t1, t4, Assembler::AVX_128bit); //the result is in t1
 
   //perform a 16Byte swap
+  __ movdqu(t7, ExternalAddress(counter_shuffle_mask_addr()), rbx /*rscratch*/);
   for (int rnum = 1; rnum <= 8; rnum++) {
-    __ vpshufb(as_XMMRegister(rnum), as_XMMRegister(rnum), ExternalAddress(counter_shuffle_mask_addr()), Assembler::AVX_128bit, rbx /*rscratch*/);
+    __ vpshufb(as_XMMRegister(rnum), as_XMMRegister(rnum), t7, Assembler::AVX_128bit);
   }
   __ vpxor(xmm1, xmm1, t1, Assembler::AVX_128bit);
 }
@@ -3556,7 +3559,7 @@ void StubGenerator::ghash8_encrypt8_parallel_avx2(Register key, Register subkeyH
 //subkeyHtbl - table containing H constants
 //Output:
 //xmm14 - calculated aad hash
-//Temp registers: xmm0, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15
+//Temp registers: xmm0, xmm10, xmm11, xmm12, xmm13, xmm15, rbx
 void StubGenerator::ghash_last_8_avx2(Register subkeyHtbl) {
   const XMMRegister t1 = xmm0;
   const XMMRegister t2 = xmm10;
@@ -3633,6 +3636,10 @@ void StubGenerator::ghash_last_8_avx2(Register subkeyHtbl) {
 //pos - holds the length processed in this method
 //Outputs:
 //xmm1-xmm8 - holds updated encrypted counter values
+//ctr - updated counter value
+//pos - updated position
+//len - updated length
+//out - updated output buffer
 //Temp registers: xmm0, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15
 void StubGenerator::initial_blocks_avx2(XMMRegister ctr, Register rounds, Register key, Register len, Register in,
                                         Register out, Register ct, XMMRegister aad_hashx, Register pos) {
@@ -3714,8 +3721,9 @@ void StubGenerator::initial_blocks_avx2(XMMRegister ctr, Register rounds, Regist
   __ subl(len, 128);
   __ addl(pos, 128);
 
+  __ movdqu(t4, ExternalAddress(counter_shuffle_mask_addr()), rbx /*rscratch*/);
   for (int rnum = 1; rnum <= 8; rnum++) {
-    __ vpshufb(as_XMMRegister(rnum), as_XMMRegister(rnum), ExternalAddress(counter_shuffle_mask_addr()), Assembler::AVX_128bit, rbx /*rscratch*/);
+    __ vpshufb(as_XMMRegister(rnum), as_XMMRegister(rnum), t4, Assembler::AVX_128bit);
   }
   // Combine GHASHed value with the corresponding ciphertext
   __ vpxor(xmm1, xmm1, t3, Assembler::AVX_128bit);
@@ -3728,14 +3736,16 @@ void StubGenerator::initial_blocks_avx2(XMMRegister ctr, Register rounds, Regist
 //ct - cipher text buffer
 //out - output buffer
 //key - key for aes operations
-//state - aad hash for ghash computation
+//state - address of aad hash for ghash computation
 //subkeyHtbl- table consisting of H constants
-//counter - counter for aes operations
+//counter - address of counter for aes operations
 //Output:
-//xmm9 - counter value
-//xmm14 - newly calculated aad hash
+//(counter) - updated in memory counter value
+//(state) - updated in memory aad hash
 //rax - length processed
-//Temp registers: r10, r15, xmm8, xmm9
+//(out) - output buffer updated
+//len - updated length
+//Temp registers: xmm0-xmm15, r10, r15, rbx
 void StubGenerator::aesgcm_avx2(Register in, Register len, Register ct, Register out, Register key,
                                 Register state, Register subkeyHtbl, Register counter) {
   const Register pos = rax;
@@ -3751,7 +3761,7 @@ void StubGenerator::aesgcm_avx2(Register in, Register len, Register ct, Register
   __ xorl(pos, pos);
 
   //Generate 8 constants for htbl
-  generateHtbl_8_block_avx2(subkeyHtbl, rbx /*rscratch*/);
+  generateHtbl_8_block_avx2(subkeyHtbl);
 
   //Compute #rounds for AES based on the length of the key array
   __ movl(rounds, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
