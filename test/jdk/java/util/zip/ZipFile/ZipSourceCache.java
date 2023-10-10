@@ -70,7 +70,7 @@ public class ZipSourceCache {
             int numSources = internalMap.size();
             // opening of same zip file shouldn't cause new Source to be constructed
             absoluteZipFile = new ZipFile(absoluteFile);
-            assertEquals(numSources, internalMap.size());
+            assertEquals(internalMap.size(), numSources);
         }
         if (absoluteZipFile != null) {
             absoluteZipFile.close();

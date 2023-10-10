@@ -38,7 +38,8 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.Files;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1402,7 +1403,8 @@ public class ZipFile implements ZipConstants, Closeable {
             File file;
             final boolean utf8;
 
-            public Key(File file, BasicFileAttributes attrs, ZipCoder zc) {
+            public Key(File file, BasicFileAttributes attrs, ZipCoder zc)
+                    throws IOException {
                 this.attrs = attrs;
                 Object fk = attrs.fileKey();
                 if (fk != null) {
@@ -1415,33 +1417,24 @@ public class ZipFile implements ZipConstants, Closeable {
             }
 
             @SuppressWarnings("removal")
-            private File getCanonicalFile(File file) {
-                if (System.getSecurityManager() != null) {
-                    PrivilegedAction<File> pa = () -> {
-                        try {
-                            return file.getCanonicalFile();
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                    }};
-                    return AccessController.doPrivileged(pa);
-                } else {
-                    try {
-                        return file.getCanonicalFile();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+            private static File getCanonicalFile(File file) throws IOException {
+                try {
+                    return System.getSecurityManager() != null ?
+                        AccessController.doPrivileged((PrivilegedExceptionAction<File>) file::getCanonicalFile) :
+                        file.getCanonicalFile();
+                } catch (PrivilegedActionException e) {
+                    throw new IOException(e);
                 }
             }
 
             public int hashCode() {
                 long t = utf8 ? 0 : Long.MAX_VALUE;
-                t += attrs.lastModifiedTime().toMillis();
                 Object fk = attrs.fileKey();
-                if (fk != null) {
-                    return ((int)(t ^ (t >>> 32))) + fk.hashCode();
-                } else {
-                    return ((int)(t ^ (t >>> 32))) + file.hashCode();
+                if (fk == null) {
+                    t += attrs.lastModifiedTime().toMillis();
                 }
+                return Long.hashCode(t) +
+                        (fk != null ? fk.hashCode() : file.hashCode());
             }
 
             public boolean equals(Object obj) {
@@ -1449,15 +1442,14 @@ public class ZipFile implements ZipConstants, Closeable {
                     if (key.utf8 != utf8) {
                         return false;
                     }
-                    if (!attrs.lastModifiedTime().equals(key.attrs.lastModifiedTime())) {
-                        return false;
-                    }
                     Object fk = attrs.fileKey();
                     if (fk != null) {
                         return fk.equals(key.attrs.fileKey());
-                    } else {
-                        return file.equals(key.file);
                     }
+                    if (!attrs.lastModifiedTime().equals(key.attrs.lastModifiedTime())) {
+                        return false;
+                    }
+                    return file.equals(key.file);
                 }
                 return false;
             }
