@@ -2625,7 +2625,7 @@ public class Lower extends TreeTranslator {
                 names.invoke, bsm_staticArgs, List.nil());
         MethodHandleSymbol toCall = ((MethodSymbol) varDef.constructor).asHandle();
         params.prepend(toCall);
-        DynamicVarSymbol dynSym = new DynamicVarSymbol(bsm.name, bsm.owner, bsm.asHandle(),
+        DynamicVarSymbol dynSym = new DynamicVarSymbol(var.name, bsm.owner, bsm.asHandle(),
                 var.type, params.toArray(new LoadableConstant[0]));
         JCFieldAccess qualifier = make.Select(make.QualIdent(bsm.owner), dynSym.name);
         qualifier.sym = dynSym;
