@@ -80,9 +80,9 @@ jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
         }
     }
 
-    struct procentry64 ProcessBuffer[100];
+    const int Chunk = 100;
+    struct procentry64 ProcessBuffer[Chunk];
     pid_t IndexPointer = 0;
-    int Chunk = 100;
     int i, num = 0;
 
     do { // Block to break out of on Exception
