@@ -180,7 +180,7 @@ public final class MonitorVmStartTerminate {
         private boolean hasMainArgs(Integer id, String args) {
             // As we have seen test timeouts due to missing a notification,
             // we should retry this attempt to check arguments for a match.
-            for (int i=0; i<ARGS_ATTEMPTS; i++) {
+            for (int i = 0; i < ARGS_ATTEMPTS; i++) {
                 try {
                     VmIdentifier vmid = new VmIdentifier("//" + id.intValue());
                     MonitoredVm target = host.getMonitoredVm(vmid);
