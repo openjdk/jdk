@@ -63,7 +63,7 @@ class CompressedKlassPointers : public AllStatic {
   // to use 8 bits for shift and flag each, resulting in 8-bit moves used by the
   // compiler.
   // - Bit  [0-7]   shift
-  // - Bit  8       UseCompressedOops
+  // - Bit  8       UseCompressedClassPointers
   // - Bits [16-64] the base.
   static uint64_t _combo;
   static constexpr int base_alignment = 16;
