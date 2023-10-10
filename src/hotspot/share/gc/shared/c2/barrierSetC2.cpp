@@ -675,8 +675,15 @@ void BarrierSetC2::clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* si
   Node* payload_size = size;
   Node* offset = kit->MakeConX(base_off);
   payload_size = kit->gvn().transform(new SubXNode(payload_size, offset));
+  if (is_array) {
+    // Ensure the array payload size is rounded up to the next BytesPerLong
+    // multiple when converting to double-words. This is necessary because array
+    // size does not include object alignment padding, so it might not be a
+    // multiple of BytesPerLong for sub-long element types.
+    payload_size = kit->gvn().transform(new AddXNode(payload_size, kit->MakeConX(BytesPerLong - 1)));
+  }
   payload_size = kit->gvn().transform(new URShiftXNode(payload_size, kit->intcon(LogBytesPerLong)));
-  ArrayCopyNode* ac = ArrayCopyNode::make(kit, false, src_base, offset,  dst_base, offset, payload_size, true, false);
+  ArrayCopyNode* ac = ArrayCopyNode::make(kit, false, src_base, offset, dst_base, offset, payload_size, true, false);
   if (is_array) {
     ac->set_clone_array();
   } else {

@@ -29,12 +29,13 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import jdk.jfr.internal.LogLevel;
+import jdk.jfr.internal.LogTag;
+import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.OldObjectSample;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.query.Configuration;
-import jdk.jfr.internal.query.QueryPrinter;
 import jdk.jfr.internal.query.ViewPrinter;
-import jdk.jfr.internal.util.Columnizer;
 import jdk.jfr.internal.util.UserDataException;
 import jdk.jfr.internal.util.UserSyntaxException;
 /**
@@ -63,6 +64,10 @@ public class DCmdView extends AbstractDCmd {
             OldObjectSample.emit(0);
             Utils.waitFlush(10_000);
             configuration.endTime = Instant.now();
+        }
+
+        if (Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG)) {
+            Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "JFR.view time range: " + configuration.startTime + " - " + configuration.endTime);
         }
         try (QueryRecording recording = new QueryRecording(configuration, parser)) {
             ViewPrinter printer = new ViewPrinter(configuration, recording.getStream());

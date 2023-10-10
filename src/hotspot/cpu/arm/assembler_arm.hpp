@@ -245,7 +245,7 @@ class Address {
 
   bool uses(Register reg) const { return _base == reg || _index == reg; }
 
-  const relocInfo::relocType rtype() { return _rspec.type(); }
+  relocInfo::relocType rtype()       { return _rspec.type(); }
   const RelocationHolder&    rspec() { return _rspec; }
 
   // Convert the raw encoding form into the form expected by the

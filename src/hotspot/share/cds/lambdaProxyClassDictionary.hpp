@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARED_CDS_LAMBDAPROXYCLASSINFO_HPP
-#define SHARED_CDS_LAMBDAPROXYCLASSINFO_HPP
+#ifndef SHARE_CDS_LAMBDAPROXYCLASSINFO_HPP
+#define SHARE_CDS_LAMBDAPROXYCLASSINFO_HPP
 #include "cds/metaspaceShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "utilities/growableArray.hpp"
@@ -177,4 +177,4 @@ class LambdaProxyClassDictionary : public OffsetCompactHashtable<
   const RunTimeLambdaProxyClassInfo*,
   RunTimeLambdaProxyClassInfo::EQUALS> {};
 
-#endif // SHARED_CDS_LAMBDAPROXYCLASSINFO_HPP
+#endif // SHARE_CDS_LAMBDAPROXYCLASSINFO_HPP

@@ -327,8 +327,6 @@
  * transformed classes to read the unnamed module of both class loaders.
  *
  * @since 1.5
- * @revised 1.6
- * @revised 9
  */
 
 package java.lang.instrument;

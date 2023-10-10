@@ -100,10 +100,6 @@ size_t G1PageBasedVirtualSpace::uncommitted_size()  const {
   return reserved_size() - committed_size();
 }
 
-size_t G1PageBasedVirtualSpace::addr_to_page_index(char* addr) const {
-  return (addr - _low_boundary) / _page_size;
-}
-
 bool G1PageBasedVirtualSpace::is_area_committed(size_t start_page, size_t size_in_pages) const {
   size_t end_page = start_page + size_in_pages;
   return _committed.find_first_clear_bit(start_page, end_page) >= end_page;

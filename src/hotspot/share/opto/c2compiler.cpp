@@ -52,8 +52,11 @@ const char* C2Compiler::retry_no_locks_coarsening() {
 const char* C2Compiler::retry_no_iterative_escape_analysis() {
   return "retry without iterative escape analysis";
 }
-const char* C2Compiler::retry_class_loading_during_parsing() {
-  return "retry class loading during parsing";
+const char* C2Compiler::retry_no_reduce_allocation_merges() {
+  return "retry without reducing allocation merges";
+}
+const char* C2Compiler::retry_no_superword() {
+  return "retry without SuperWord";
 }
 
 void compiler_stubs_init(bool in_compiler_thread);
@@ -109,20 +112,25 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   bool subsume_loads = SubsumeLoads;
   bool do_escape_analysis = DoEscapeAnalysis;
   bool do_iterative_escape_analysis = DoEscapeAnalysis;
+  bool do_reduce_allocation_merges = ReduceAllocationMerges && EliminateAllocations;
   bool eliminate_boxing = EliminateAutoBox;
   bool do_locks_coarsening = EliminateLocks;
+  bool do_superword = UseSuperWord;
 
   while (!env->failing()) {
     // Attempt to compile while subsuming loads into machine instructions.
-    Options options(subsume_loads, do_escape_analysis, do_iterative_escape_analysis, eliminate_boxing, do_locks_coarsening, install_code);
+    Options options(subsume_loads,
+                    do_escape_analysis,
+                    do_iterative_escape_analysis,
+                    do_reduce_allocation_merges,
+                    eliminate_boxing,
+                    do_locks_coarsening,
+                    do_superword,
+                    install_code);
     Compile C(env, target, entry_bci, options, directive);
 
     // Check result and retry if appropriate.
     if (C.failure_reason() != nullptr) {
-      if (C.failure_reason_is(retry_class_loading_during_parsing())) {
-        env->report_failure(C.failure_reason());
-        continue;  // retry
-      }
       if (C.failure_reason_is(retry_no_subsuming_loads())) {
         assert(subsume_loads, "must make progress");
         subsume_loads = false;
@@ -141,9 +149,21 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
         env->report_failure(C.failure_reason());
         continue;  // retry
       }
+      if (C.failure_reason_is(retry_no_reduce_allocation_merges())) {
+        assert(do_reduce_allocation_merges, "must make progress");
+        do_reduce_allocation_merges = false;
+        env->report_failure(C.failure_reason());
+        continue;  // retry
+      }
       if (C.failure_reason_is(retry_no_locks_coarsening())) {
         assert(do_locks_coarsening, "must make progress");
         do_locks_coarsening = false;
+        env->report_failure(C.failure_reason());
+        continue;  // retry
+      }
+      if (C.failure_reason_is(retry_no_superword())) {
+        assert(do_superword, "must make progress");
+        do_superword = false;
         env->report_failure(C.failure_reason());
         continue;  // retry
       }
@@ -187,6 +207,10 @@ void C2Compiler::print_timers() {
 
 bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
   vmIntrinsics::ID id = method->intrinsic_id();
+  return C2Compiler::is_intrinsic_supported(id);
+}
+
+bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
   if (id < vmIntrinsics::FIRST_ID || id > vmIntrinsics::LAST_COMPILER_INLINE) {
@@ -221,6 +245,21 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
     break;
   case vmIntrinsics::_copyMemory:
     if (StubRoutines::unsafe_arraycopy() == nullptr) return false;
+    break;
+  case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
+    if (StubRoutines::electronicCodeBook_encryptAESCrypt() == nullptr) return false;
+    break;
+  case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
+    if (StubRoutines::electronicCodeBook_decryptAESCrypt() == nullptr) return false;
+    break;
+  case vmIntrinsics::_galoisCounterMode_AESCrypt:
+    if (StubRoutines::galoisCounterMode_AESCrypt() == nullptr) return false;
+    break;
+  case vmIntrinsics::_bigIntegerRightShiftWorker:
+    if (StubRoutines::bigIntegerRightShift() == nullptr) return false;
+    break;
+  case vmIntrinsics::_bigIntegerLeftShiftWorker:
+    if (StubRoutines::bigIntegerLeftShift() == nullptr) return false;
     break;
   case vmIntrinsics::_encodeAsciiArray:
     if (!Matcher::match_rule_supported(Op_EncodeISOArray) || !Matcher::supports_encode_ascii_array) return false;
@@ -480,10 +519,10 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
     if (!Matcher::match_rule_supported(Op_OnSpinWait)) return false;
     break;
   case vmIntrinsics::_fmaD:
-    if (!UseFMA || !Matcher::match_rule_supported(Op_FmaD)) return false;
+    if (!Matcher::match_rule_supported(Op_FmaD)) return false;
     break;
   case vmIntrinsics::_fmaF:
-    if (!UseFMA || !Matcher::match_rule_supported(Op_FmaF)) return false;
+    if (!Matcher::match_rule_supported(Op_FmaF)) return false;
     break;
   case vmIntrinsics::_isDigit:
     if (!Matcher::match_rule_supported(Op_Digit)) return false;
@@ -575,6 +614,8 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_min_strict:
   case vmIntrinsics::_max_strict:
   case vmIntrinsics::_arraycopy:
+  case vmIntrinsics::_arraySort:
+  case vmIntrinsics::_arrayPartition:
   case vmIntrinsics::_indexOfL:
   case vmIntrinsics::_indexOfU:
   case vmIntrinsics::_indexOfUL:
@@ -679,6 +720,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
   case vmIntrinsics::_getEventWriter:
+  case vmIntrinsics::_jvm_commit:
 #endif
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
@@ -712,10 +754,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_aescrypt_decryptBlock:
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
-  case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
-  case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
   case vmIntrinsics::_counterMode_AESCrypt:
-  case vmIntrinsics::_galoisCounterMode_AESCrypt:
   case vmIntrinsics::_md5_implCompress:
   case vmIntrinsics::_sha_implCompress:
   case vmIntrinsics::_sha2_implCompress:
@@ -727,8 +766,6 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_mulAdd:
   case vmIntrinsics::_montgomeryMultiply:
   case vmIntrinsics::_montgomerySquare:
-  case vmIntrinsics::_bigIntegerRightShiftWorker:
-  case vmIntrinsics::_bigIntegerLeftShiftWorker:
   case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_ghash_processBlocks:
   case vmIntrinsics::_chacha20Block:
@@ -748,12 +785,13 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_Preconditions_checkLongIndex:
   case vmIntrinsics::_getObjectSize:
     break;
-
   case vmIntrinsics::_VectorCompressExpand:
   case vmIntrinsics::_VectorUnaryOp:
   case vmIntrinsics::_VectorBinaryOp:
   case vmIntrinsics::_VectorTernaryOp:
   case vmIntrinsics::_VectorFromBitsCoerced:
+  case vmIntrinsics::_VectorShuffleIota:
+  case vmIntrinsics::_VectorShuffleToVector:
   case vmIntrinsics::_VectorLoadOp:
   case vmIntrinsics::_VectorLoadMaskedOp:
   case vmIntrinsics::_VectorStoreOp:

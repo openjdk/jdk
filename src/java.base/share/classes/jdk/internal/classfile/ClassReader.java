@@ -52,7 +52,7 @@ public sealed interface ClassReader extends ConstantPool
 
     /**
      * {@return the table of custom attribute mappers}  This is derived from
-     * the processing option {@link Classfile.Option#attributeMapper(Function)}.
+     * the processing option {@link Classfile.AttributeMapperOption}.
      */
     Function<Utf8Entry, AttributeMapper<?>> customAttributes();
 
@@ -101,6 +101,16 @@ public sealed interface ClassReader extends ConstantPool
      *         constant pool size, or zero
      */
     PoolEntry readEntry(int offset);
+
+    /**
+     * {@return the constant pool entry of a given type whose index is given
+     * at the specified offset within the classfile}
+     * @param offset the offset of the index within the classfile
+     * @param cls the entry type
+     * @throws ConstantPoolException if the index is out of range of the
+     *         constant pool size, or zero, or the entry is not of the given type
+     */
+    <T extends PoolEntry> T readEntry(int offset, Class<T> cls);
 
     /**
      * {@return the constant pool entry whose index is given at the specified

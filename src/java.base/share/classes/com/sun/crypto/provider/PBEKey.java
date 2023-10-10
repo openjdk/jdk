@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.crypto.provider;
 
 import java.lang.ref.Reference;
+import java.lang.ref.Cleaner.Cleanable;
 import java.security.MessageDigest;
 import java.security.KeyRep;
 import java.security.spec.InvalidKeySpecException;
@@ -51,13 +52,14 @@ final class PBEKey implements SecretKey {
 
     private String type;
 
+    private transient Cleanable cleanable;
+
     /**
      * Creates a PBE key from a given PBE key specification.
      *
      * @param keytype the given PBE key specification
      */
-    PBEKey(PBEKeySpec keySpec, String keytype, boolean useCleaner)
-            throws InvalidKeySpecException {
+    PBEKey(PBEKeySpec keySpec, String keytype) throws InvalidKeySpecException {
         char[] passwd = keySpec.getPassword();
         if (passwd == null) {
             // Should allow an empty password.
@@ -78,19 +80,18 @@ final class PBEKey implements SecretKey {
         type = keytype;
 
         // Use the cleaner to zero the key when no longer referenced
-        if (useCleaner) {
-            final byte[] k = this.key;
-            CleanerFactory.cleaner().register(this,
-                () -> Arrays.fill(k, (byte) 0x00));
-        }
+        final byte[] k = this.key;
+        cleanable = CleanerFactory.cleaner().register(this,
+                () -> java.util.Arrays.fill(k, (byte)0x00));
     }
 
     public byte[] getEncoded() {
-        // The key is zeroized by finalize()
-        // The reachability fence ensures finalize() isn't called early
-        byte[] result = key.clone();
-        Reference.reachabilityFence(this);
-        return result;
+        try {
+            return key.clone();
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
+        }
     }
 
     public String getAlgorithm() {
@@ -105,30 +106,42 @@ final class PBEKey implements SecretKey {
      * Calculates a hash code value for the object.
      * Objects that are equal will also have the same hashcode.
      */
+    @Override
     public int hashCode() {
-        int retval = 0;
-        for (int i = 1; i < this.key.length; i++) {
-            retval += this.key[i] * i;
+        try {
+            return Arrays.hashCode(this.key)
+                    ^ getAlgorithm().toLowerCase(Locale.ENGLISH).hashCode();
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
         }
-        return(retval ^= getAlgorithm().toLowerCase(Locale.ENGLISH).hashCode());
     }
 
+    @Override
     public boolean equals(Object obj) {
-        if (obj == this)
-            return true;
+        try {
+            if (obj == this)
+                return true;
 
-        if (!(obj instanceof SecretKey))
-            return false;
+            if (!(obj instanceof SecretKey that))
+                return false;
 
-        SecretKey that = (SecretKey)obj;
+            // destroyed keys are considered different
+            if (isDestroyed() || that.isDestroyed()) {
+                return false;
+            }
 
-        if (!(that.getAlgorithm().equalsIgnoreCase(type)))
-            return false;
+            if (!(that.getAlgorithm().equalsIgnoreCase(type)))
+                return false;
 
-        byte[] thatEncoded = that.getEncoded();
-        boolean ret = MessageDigest.isEqual(this.key, thatEncoded);
-        Arrays.fill(thatEncoded, (byte)0x00);
-        return ret;
+            byte[] thatEncoded = that.getEncoded();
+            boolean ret = MessageDigest.isEqual(this.key, thatEncoded);
+            Arrays.fill(thatEncoded, (byte)0x00);
+            return ret;
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
+        }
     }
 
     /**
@@ -137,10 +150,15 @@ final class PBEKey implements SecretKey {
      */
     @Override
     public void destroy() {
-        if (key != null) {
-            Arrays.fill(key, (byte) 0x00);
-            key = null;
+        if (cleanable != null) {
+            cleanable.clean();
+            cleanable = null;
         }
+    }
+
+    @Override
+    public boolean isDestroyed() {
+        return (cleanable == null);
     }
 
     /**
@@ -152,7 +170,13 @@ final class PBEKey implements SecretKey {
          throws java.io.IOException, ClassNotFoundException
     {
         s.defaultReadObject();
-        key = key.clone();
+        byte[] temp = key;
+        key = temp.clone();
+        Arrays.fill(temp, (byte)0x00);
+        // Use cleaner to zero the key when no longer referenced
+        final byte[] k = this.key;
+        cleanable = CleanerFactory.cleaner().register(this,
+                () -> java.util.Arrays.fill(k, (byte)0x00));
     }
 
 
@@ -166,9 +190,14 @@ final class PBEKey implements SecretKey {
      */
     @java.io.Serial
     private Object writeReplace() throws java.io.ObjectStreamException {
-        return new KeyRep(KeyRep.Type.SECRET,
-                getAlgorithm(),
-                getFormat(),
-                key);
+        try {
+            return new KeyRep(KeyRep.Type.SECRET,
+                    getAlgorithm(),
+                    getFormat(),
+                    key);
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
+        }
     }
 }

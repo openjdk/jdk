@@ -41,7 +41,6 @@ extern "C" {
   void _Copy_conjoint_jshorts_atomic(const jshort* from, jshort* to, size_t count);
   void _Copy_conjoint_jints_atomic  (const jint*   from, jint*   to, size_t count);
   void _Copy_conjoint_jlongs_atomic (const jlong*  from, jlong*  to, size_t count);
-  void _Copy_conjoint_oops_atomic   (const oop*    from, oop*    to, size_t count);
 
   void _Copy_arrayof_conjoint_bytes  (const HeapWord* from, HeapWord* to, size_t count);
   void _Copy_arrayof_conjoint_jshorts(const HeapWord* from, HeapWord* to, size_t count);

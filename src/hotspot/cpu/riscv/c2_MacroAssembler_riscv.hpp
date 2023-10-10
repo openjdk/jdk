@@ -39,6 +39,11 @@
                        VectorRegister vrs,
                        bool is_latin, Label& DONE);
  public:
+  // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
+  // See full description in macroAssembler_riscv.cpp.
+  void fast_lock(Register object, Register box, Register tmp1, Register tmp2);
+  void fast_unlock(Register object, Register box, Register tmp1, Register tmp2);
+
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
                       Register tmp1, Register tmp2, Register tmp3,
@@ -149,6 +154,9 @@
                  FloatRegister src1, FloatRegister src2,
                  bool is_double, bool is_min);
 
+  void round_double_mode(FloatRegister dst, FloatRegister src, int round_mode,
+                         Register tmp1, Register tmp2, Register tmp3);
+
   // intrinsic methods implemented by rvv instructions
   void string_equals_v(Register r1, Register r2,
                        Register result, Register cnt1,
@@ -187,11 +195,11 @@
 
  void minmax_fp_v(VectorRegister dst,
                   VectorRegister src1, VectorRegister src2,
-                  bool is_double, bool is_min, int vector_length);
+                  BasicType bt, bool is_min, int vector_length);
 
  void minmax_fp_masked_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
                          VectorRegister vmask, VectorRegister tmp1, VectorRegister tmp2,
-                         bool is_double, bool is_min, int vector_length);
+                         BasicType bt, bool is_min, int vector_length);
 
  void reduce_minmax_fp_v(FloatRegister dst,
                          FloatRegister src1, VectorRegister src2,
@@ -242,8 +250,6 @@
                         VectorRegister src, BasicType src_bt);
 
   void vfcvt_rtz_x_f_v_safe(VectorRegister dst, VectorRegister src);
-  void vfwcvt_rtz_x_f_v_safe(VectorRegister dst, VectorRegister src);
-  void vfncvt_rtz_x_f_w_safe(VectorRegister dst, VectorRegister src);
 
   void extract_v(Register dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);
   void extract_fp_v(FloatRegister dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);

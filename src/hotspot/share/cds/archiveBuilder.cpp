@@ -28,9 +28,12 @@
 #include "cds/archiveUtils.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoaderDataShared.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
@@ -40,11 +43,13 @@
 #include "memory/allStatic.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -257,7 +262,8 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
     // TODO: in the future, if we want to produce deterministic contents in the
     // dynamic archive, we might need to sort the symbols alphabetically (also see
     // DynamicArchiveBuilder::sort_methods()).
-    sort_symbols_and_fix_hash();
+    log_info(cds)("Sorting symbols ... ");
+    _symbols->sort(compare_symbols_by_address);
     sort_klasses();
 
     // TODO -- we need a proper estimate for the archived modules, etc,
@@ -272,16 +278,6 @@ int ArchiveBuilder::compare_symbols_by_address(Symbol** a, Symbol** b) {
   } else {
     assert(a[0] > b[0], "Duplicated symbol %s unexpected", (*a)->as_C_string());
     return 1;
-  }
-}
-
-void ArchiveBuilder::sort_symbols_and_fix_hash() {
-  log_info(cds)("Sorting symbols and fixing identity hash ... ");
-  os::init_random(0x12345678);
-  _symbols->sort(compare_symbols_by_address);
-  for (int i = 0; i < _symbols->length(); i++) {
-    assert(_symbols->at(i)->is_permanent(), "archived symbols must be permanent");
-    _symbols->at(i)->update_identity_hash();
   }
 }
 
@@ -413,6 +409,10 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read
   if (src_obj == nullptr) {
     return false;
   }
+  if (RegeneratedClasses::has_been_regenerated(src_obj)) {
+    // No need to copy it. We will later relocate it to point to the regenerated klass/method.
+    return false;
+  }
   remember_embedded_pointer_in_enclosing_obj(ref);
 
   FollowMode follow_mode = get_follow_mode(ref);
@@ -424,6 +424,14 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read
       log_info(cds, hashtables)("Expanded _src_obj_table table to %d", _src_obj_table.table_size());
     }
   }
+
+#ifdef ASSERT
+  if (ref->msotype() == MetaspaceObj::MethodType) {
+    Method* m = (Method*)ref->obj();
+    assert(!RegeneratedClasses::has_been_regenerated((address)m->method_holder()),
+           "Should not archive methods in a class that has been regenerated");
+  }
+#endif
 
   assert(p->read_only() == src_info.read_only(), "must be");
 
@@ -437,6 +445,17 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read
   } else {
     return false;
   }
+}
+
+void ArchiveBuilder::record_regenerated_object(address orig_src_obj, address regen_src_obj) {
+  // Record the fact that orig_src_obj has been replaced by regen_src_obj. All calls to get_buffered_addr(orig_src_obj)
+  // should return the same value as get_buffered_addr(regen_src_obj).
+  SourceObjInfo* p = _src_obj_table.get(regen_src_obj);
+  assert(p != nullptr, "regenerated object should always be dumped");
+  SourceObjInfo orig_src_info(orig_src_obj, p);
+  bool created;
+  _src_obj_table.put_if_absent(orig_src_obj, orig_src_info, &created);
+  assert(created, "We shouldn't have archived the original copy of a regenerated object");
 }
 
 // Remember that we have a pointer inside ref->enclosing_obj() that points to ref->obj()
@@ -493,12 +512,12 @@ bool ArchiveBuilder::is_excluded(Klass* klass) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
     return SystemDictionaryShared::is_excluded_class(ik);
   } else if (klass->is_objArray_klass()) {
-    if (DynamicDumpSharedSpaces) {
-      // Don't support archiving of array klasses for now (WHY???)
-      return true;
-    }
     Klass* bottom = ObjArrayKlass::cast(klass)->bottom_klass();
-    if (bottom->is_instance_klass()) {
+    if (MetaspaceShared::is_shared_static(bottom)) {
+      // The bottom class is in the static archive so it's clearly not excluded.
+      assert(DynamicDumpSharedSpaces, "sanity");
+      return false;
+    } else if (bottom->is_instance_klass()) {
       return SystemDictionaryShared::is_excluded_class(InstanceKlass::cast(bottom));
     }
   }
@@ -583,6 +602,8 @@ void ArchiveBuilder::dump_ro_metadata() {
     alloc_stats()->record_modules(ro_region()->top() - start, /*read_only*/true);
   }
 #endif
+
+  RegeneratedClasses::record_regenerated_objects();
 }
 
 void ArchiveBuilder::make_shallow_copies(DumpRegion *dump_region,
@@ -616,6 +637,14 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   newtop = dump_region->top();
 
   memcpy(dest, src, bytes);
+
+  // Update the hash of buffered sorted symbols for static dump so that the symbols have deterministic contents
+  if (DumpSharedSpaces && (src_info->msotype() == MetaspaceObj::SymbolType)) {
+    Symbol* buffered_symbol = (Symbol*)dest;
+    assert(((Symbol*)src)->is_permanent(), "archived symbols must be permanent");
+    buffered_symbol->update_identity_hash();
+  }
+
   {
     bool created;
     _buffered_to_src_table.put_if_absent((address)dest, src, &created);
@@ -637,7 +666,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   _alloc_stats.record(src_info->msotype(), int(newtop - oldtop), src_info->read_only());
 }
 
-// This is used by code that hand-assemble data structures, such as the LambdaProxyClassKey, that are
+// This is used by code that hand-assembles data structures, such as the LambdaProxyClassKey, that are
 // not handled by MetaspaceClosure.
 void ArchiveBuilder::write_pointer_in_buffer(address* ptr_location, address src_addr) {
   assert(is_in_buffer_space(ptr_location), "must be");
@@ -652,7 +681,8 @@ void ArchiveBuilder::write_pointer_in_buffer(address* ptr_location, address src_
 
 address ArchiveBuilder::get_buffered_addr(address src_addr) const {
   SourceObjInfo* p = _src_obj_table.get(src_addr);
-  assert(p != nullptr, "must be");
+  assert(p != nullptr, "src_addr " INTPTR_FORMAT " is used but has not been archived",
+         p2i(src_addr));
 
   return p->buffered_addr();
 }
@@ -762,6 +792,14 @@ void ArchiveBuilder::make_klasses_shareable() {
   log_info(cds)("    obj array classes  = %5d", num_obj_array_klasses);
   log_info(cds)("    type array classes = %5d", num_type_array_klasses);
   log_info(cds)("               symbols = %5d", _symbols->length());
+
+  DynamicArchive::make_array_klasses_shareable();
+}
+
+void ArchiveBuilder::serialize_dynamic_archivable_items(SerializeClosure* soc) {
+  SymbolTable::serialize_shared_table_header(soc, false);
+  SystemDictionaryShared::serialize_dictionary_headers(soc, false);
+  DynamicArchive::serialize_array_klasses(soc);
 }
 
 uintx ArchiveBuilder::buffer_to_offset(address p) const {
@@ -782,12 +820,16 @@ uintx ArchiveBuilder::any_to_offset(address p) const {
   return buffer_to_offset(p);
 }
 
+#if INCLUDE_CDS_JAVA_HEAP
 narrowKlass ArchiveBuilder::get_requested_narrow_klass(Klass* k) {
   assert(DumpSharedSpaces, "sanity");
   k = get_buffered_klass(k);
   Klass* requested_k = to_requested(k);
-  return CompressedKlassPointers::encode_not_null(requested_k, _requested_static_archive_bottom);
+  address narrow_klass_base = _requested_static_archive_bottom; // runtime encoding base == runtime mapping start
+  const int narrow_klass_shift = ArchiveHeapWriter::precomputed_narrow_klass_shift;
+  return CompressedKlassPointers::encode_not_null(requested_k, narrow_klass_base, narrow_klass_shift);
 }
+#endif // INCLUDE_CDS_JAVA_HEAP
 
 // RelocateBufferToRequested --- Relocate all the pointers in rw/ro,
 // so that the archive can be mapped to the "requested" location without runtime relocation.
@@ -933,7 +975,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
       SourceObjInfo* src_info = src_objs->at(i);
       address src = src_info->source_addr();
       address dest = src_info->buffered_addr();
-      log_data(last_obj_base, dest, last_obj_base + buffer_to_runtime_delta());
+      log_as_hex(last_obj_base, dest, last_obj_base + buffer_to_runtime_delta());
       address runtime_dest = dest + buffer_to_runtime_delta();
       int bytes = src_info->size_in_bytes();
 
@@ -975,12 +1017,12 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
       last_obj_end  = dest + bytes;
     }
 
-    log_data(last_obj_base, last_obj_end, last_obj_base + buffer_to_runtime_delta());
+    log_as_hex(last_obj_base, last_obj_end, last_obj_base + buffer_to_runtime_delta());
     if (last_obj_end < region_end) {
       log_debug(cds, map)(PTR_FORMAT ": @@ Misc data " SIZE_FORMAT " bytes",
                           p2i(last_obj_end + buffer_to_runtime_delta()),
                           size_t(region_end - last_obj_end));
-      log_data(last_obj_end, region_end, last_obj_end + buffer_to_runtime_delta());
+      log_as_hex(last_obj_end, region_end, last_obj_end + buffer_to_runtime_delta());
     }
   }
 
@@ -1003,47 +1045,170 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
 #if INCLUDE_CDS_JAVA_HEAP
   static void log_heap_region(ArchiveHeapInfo* heap_info) {
-    MemRegion r = heap_info->memregion();
+    MemRegion r = heap_info->buffer_region();
     address start = address(r.start());
     address end = address(r.end());
-    log_region("heap", start, end, to_requested(start));
+    log_region("heap", start, end, ArchiveHeapWriter::buffered_addr_to_requested_addr(start));
+
+    LogStreamHandle(Info, cds, map) st;
 
     while (start < end) {
       size_t byte_size;
-      oop original_oop = ArchiveHeapWriter::buffered_addr_to_source_obj(start);
-      if (original_oop != nullptr) {
-        ResourceMark rm;
-        log_info(cds, map)(PTR_FORMAT ": @@ Object %s",
-                           p2i(to_requested(start)), original_oop->klass()->external_name());
-        byte_size = original_oop->size() * BytesPerWord;
+      oop source_oop = ArchiveHeapWriter::buffered_addr_to_source_obj(start);
+      address requested_start = ArchiveHeapWriter::buffered_addr_to_requested_addr(start);
+      st.print(PTR_FORMAT ": @@ Object ", p2i(requested_start));
+
+      if (source_oop != nullptr) {
+        // This is a regular oop that got archived.
+        print_oop_with_requested_addr_cr(&st, source_oop, false);
+        byte_size = source_oop->size() * BytesPerWord;
       } else if (start == ArchiveHeapWriter::buffered_heap_roots_addr()) {
-        // HeapShared::roots() is copied specially so it doesn't exist in
-        // HeapShared::OriginalObjectTable. See HeapShared::copy_roots().
-        log_info(cds, map)(PTR_FORMAT ": @@ Object HeapShared::roots (ObjArray)",
-                           p2i(to_requested(start)));
+        // HeapShared::roots() is copied specially, so it doesn't exist in
+        // ArchiveHeapWriter::BufferOffsetToSourceObjectTable.
+        // See ArchiveHeapWriter::copy_roots_to_buffer().
+        st.print_cr("HeapShared::roots[%d]", HeapShared::pending_roots()->length());
         byte_size = ArchiveHeapWriter::heap_roots_word_size() * BytesPerWord;
+      } else if ((byte_size = ArchiveHeapWriter::get_filler_size_at(start)) > 0) {
+        // We have a filler oop, which also does not exist in BufferOffsetToSourceObjectTable.
+        st.print_cr("filler " SIZE_FORMAT " bytes", byte_size);
       } else {
-        // We have reached the end of the region, but have some unused space
-        // at the end.
-        log_info(cds, map)(PTR_FORMAT ": @@ Unused heap space " SIZE_FORMAT " bytes",
-                           p2i(to_requested(start)), size_t(end - start));
-        log_data(start, end, to_requested(start), /*is_heap=*/true);
-        break;
+        ShouldNotReachHere();
       }
+
       address oop_end = start + byte_size;
-      log_data(start, oop_end, to_requested(start), /*is_heap=*/true);
+      log_as_hex(start, oop_end, requested_start, /*is_heap=*/true);
+
+      if (source_oop != nullptr) {
+        log_oop_details(heap_info, source_oop);
+      } else if (start == ArchiveHeapWriter::buffered_heap_roots_addr()) {
+        log_heap_roots();
+      }
       start = oop_end;
     }
   }
 
-  static address to_requested(address p) {
-    return ArchiveHeapWriter::buffered_addr_to_requested_addr(p);
+  // ArchivedFieldPrinter is used to print the fields of archived objects. We can't
+  // use _source_obj->print_on(), because we want to print the oop fields
+  // in _source_obj with their requested addresses using print_oop_with_requested_addr_cr().
+  class ArchivedFieldPrinter : public FieldClosure {
+    ArchiveHeapInfo* _heap_info;
+    outputStream* _st;
+    oop _source_obj;
+  public:
+    ArchivedFieldPrinter(ArchiveHeapInfo* heap_info, outputStream* st, oop src_obj) :
+      _heap_info(heap_info), _st(st), _source_obj(src_obj) {}
+
+    void do_field(fieldDescriptor* fd) {
+      _st->print(" - ");
+      BasicType ft = fd->field_type();
+      switch (ft) {
+      case T_ARRAY:
+      case T_OBJECT:
+        fd->print_on(_st); // print just the name and offset
+        print_oop_with_requested_addr_cr(_st, _source_obj->obj_field(fd->offset()));
+        break;
+      default:
+        if (ArchiveHeapWriter::is_marked_as_native_pointer(_heap_info, _source_obj, fd->offset())) {
+          print_as_native_pointer(fd);
+        } else {
+          fd->print_on_for(_st, _source_obj); // name, offset, value
+          _st->cr();
+        }
+      }
+    }
+
+    void print_as_native_pointer(fieldDescriptor* fd) {
+      LP64_ONLY(assert(fd->field_type() == T_LONG, "must be"));
+      NOT_LP64 (assert(fd->field_type() == T_INT,  "must be"));
+
+      // We have a field that looks like an integer, but it's actually a pointer to a MetaspaceObj.
+      address source_native_ptr = (address)
+          LP64_ONLY(_source_obj->long_field(fd->offset()))
+          NOT_LP64( _source_obj->int_field (fd->offset()));
+      ArchiveBuilder* builder = ArchiveBuilder::current();
+
+      // The value of the native pointer at runtime.
+      address requested_native_ptr = builder->to_requested(builder->get_buffered_addr(source_native_ptr));
+
+      // The address of _source_obj at runtime
+      oop requested_obj = ArchiveHeapWriter::source_obj_to_requested_obj(_source_obj);
+      // The address of this field in the requested space
+      address requested_field_addr = cast_from_oop<address>(requested_obj) + fd->offset();
+
+      fd->print_on(_st);
+      _st->print_cr(PTR_FORMAT " (marked metadata pointer @" PTR_FORMAT " )",
+                    p2i(requested_native_ptr), p2i(requested_field_addr));
+    }
+  };
+
+  // Print the fields of instanceOops, or the elements of arrayOops
+  static void log_oop_details(ArchiveHeapInfo* heap_info, oop source_oop) {
+    LogStreamHandle(Trace, cds, map, oops) st;
+    if (st.is_enabled()) {
+      Klass* source_klass = source_oop->klass();
+      ArchiveBuilder* builder = ArchiveBuilder::current();
+      Klass* requested_klass = builder->to_requested(builder->get_buffered_addr(source_klass));
+
+      st.print(" - klass: ");
+      source_klass->print_value_on(&st);
+      st.print(" " PTR_FORMAT, p2i(requested_klass));
+      st.cr();
+
+      if (source_oop->is_typeArray()) {
+        TypeArrayKlass::cast(source_klass)->oop_print_elements_on(typeArrayOop(source_oop), &st);
+      } else if (source_oop->is_objArray()) {
+        objArrayOop source_obj_array = objArrayOop(source_oop);
+        for (int i = 0; i < source_obj_array->length(); i++) {
+          st.print(" -%4d: ", i);
+          print_oop_with_requested_addr_cr(&st, source_obj_array->obj_at(i));
+        }
+      } else {
+        st.print_cr(" - fields (" SIZE_FORMAT " words):", source_oop->size());
+        ArchivedFieldPrinter print_field(heap_info, &st, source_oop);
+        InstanceKlass::cast(source_klass)->print_nonstatic_fields(&print_field);
+      }
+    }
   }
-#endif
+
+  static void log_heap_roots() {
+    LogStreamHandle(Trace, cds, map, oops) st;
+    if (st.is_enabled()) {
+      for (int i = 0; i < HeapShared::pending_roots()->length(); i++) {
+        st.print("roots[%4d]: ", i);
+        print_oop_with_requested_addr_cr(&st, HeapShared::pending_roots()->at(i));
+      }
+    }
+  }
+
+  // The output looks like this. The first number is the requested address. The second number is
+  // the narrowOop version of the requested address.
+  //     0x00000007ffc7e840 (0xfff8fd08) java.lang.Class
+  //     0x00000007ffc000f8 (0xfff8001f) [B length: 11
+  static void print_oop_with_requested_addr_cr(outputStream* st, oop source_oop, bool print_addr = true) {
+    if (source_oop == nullptr) {
+      st->print_cr("null");
+    } else {
+      ResourceMark rm;
+      oop requested_obj = ArchiveHeapWriter::source_obj_to_requested_obj(source_oop);
+      if (print_addr) {
+        st->print(PTR_FORMAT " ", p2i(requested_obj));
+      }
+      if (UseCompressedOops) {
+        st->print("(0x%08x) ", CompressedOops::narrow_oop_value(requested_obj));
+      }
+      if (source_oop->is_array()) {
+        int array_len = arrayOop(source_oop)->length();
+        st->print_cr("%s length: %d", source_oop->klass()->external_name(), array_len);
+      } else {
+        st->print_cr("%s", source_oop->klass()->external_name());
+      }
+    }
+  }
+#endif // INCLUDE_CDS_JAVA_HEAP
 
   // Log all the data [base...top). Pretend that the base address
   // will be mapped to requested_base at run-time.
-  static void log_data(address base, address top, address requested_base, bool is_heap = false) {
+  static void log_as_hex(address base, address top, address requested_base, bool is_heap = false) {
     assert(top >= base, "must be");
 
     LogStreamHandle(Trace, cds, map) lsh;
@@ -1075,7 +1240,7 @@ public:
     address header_end = header + mapinfo->header()->header_size();
     log_region("header", header, header_end, 0);
     log_header(mapinfo);
-    log_data(header, header_end, 0);
+    log_as_hex(header, header_end, 0);
 
     DumpRegion* rw_region = &builder->_rw_region;
     DumpRegion* ro_region = &builder->_ro_region;
@@ -1085,7 +1250,7 @@ public:
 
     address bitmap_end = address(bitmap + bitmap_size_in_bytes);
     log_region("bitmap", address(bitmap), bitmap_end, 0);
-    log_data((address)bitmap, bitmap_end, 0);
+    log_as_hex((address)bitmap, bitmap_end, 0);
 
 #if INCLUDE_CDS_JAVA_HEAP
     if (heap_info->is_used()) {
@@ -1173,8 +1338,8 @@ void ArchiveBuilder::print_bitmap_region_stats(size_t size, size_t total_size) {
 }
 
 void ArchiveBuilder::print_heap_region_stats(ArchiveHeapInfo *info, size_t total_size) {
-  char* start = info->start();
-  size_t size = info->byte_size();
+  char* start = info->buffer_start();
+  size_t size = info->buffer_byte_size();
   char* top = start + size;
   log_debug(cds)("hp space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100.0%% used] at " INTPTR_FORMAT,
                      size, size/double(total_size)*100.0, size, p2i(start));

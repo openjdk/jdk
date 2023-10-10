@@ -26,6 +26,7 @@
 #define CPU_X86_ASSEMBLER_X86_HPP
 
 #include "asm/register.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Contains all the definitions needed for x86 assembly code generation.
@@ -238,7 +239,7 @@ class Address {
       _index(index.register_or_noreg()),
       _xmmindex(xnoreg),
       _scale(scale),
-      _disp (disp + (index.constant_or_zero() * scale_size(scale))),
+      _disp (disp + checked_cast<int>(index.constant_or_zero() * scale_size(scale))),
       _isxmmindex(false){
     if (!index.is_register())  scale = Address::no_scale;
     assert(!_index->is_valid() == (scale == Address::no_scale),
@@ -276,7 +277,7 @@ class Address {
   }
   Address plus_disp(RegisterOrConstant disp, ScaleFactor scale = times_1) const {
     Address a = (*this);
-    a._disp += disp.constant_or_zero() * scale_size(scale);
+    a._disp += checked_cast<int>(disp.constant_or_zero() * scale_size(scale));
     if (disp.is_register()) {
       assert(!a.index()->is_valid(), "competing indexes");
       a._index = disp.as_register();
@@ -984,8 +985,10 @@ private:
   void adcq(Register dst, Register src);
 
   void addb(Address dst, int imm8);
+  void addb(Address dst, Register src);
   void addw(Register dst, Register src);
   void addw(Address dst, int imm16);
+  void addw(Address dst, Register src);
 
   void addl(Address dst, int32_t imm32);
   void addl(Address dst, Register src);
@@ -1242,12 +1245,18 @@ private:
   void divss(XMMRegister dst, XMMRegister src);
 
 
-#ifndef _LP64
+  void fnstsw_ax();
+  void fprem();
+  void fld_d(Address adr);
+  void fstp_d(Address adr);
+  void fstp_d(int index);
+
  private:
 
   void emit_farith(int b1, int b2, int i);
 
  public:
+#ifndef _LP64
   void emms();
 
   void fabs();
@@ -1306,7 +1315,6 @@ private:
 
   void fld1();
 
-  void fld_d(Address adr);
   void fld_s(Address adr);
   void fld_s(int index);
 
@@ -1335,10 +1343,6 @@ private:
   void fnsave(Address dst);
 
   void fnstcw(Address src);
-
-  void fnstsw_ax();
-
-  void fprem();
   void fprem1();
 
   void frstor(Address src);
@@ -1350,8 +1354,6 @@ private:
   void fst_d(Address adr);
   void fst_s(Address adr);
 
-  void fstp_d(Address adr);
-  void fstp_d(int index);
   void fstp_s(Address adr);
 
   void fsub(int i);
@@ -1804,6 +1806,8 @@ private:
   void evpcmpuw(KRegister kdst, XMMRegister nds, XMMRegister src, ComparisonPredicate vcc, int vector_len);
   void evpcmpuw(KRegister kdst, XMMRegister nds, Address src, ComparisonPredicate vcc, int vector_len);
 
+  void evpcmpuq(KRegister kdst, XMMRegister nds, XMMRegister src, ComparisonPredicate vcc, int vector_len);
+
   void pcmpeqw(XMMRegister dst, XMMRegister src);
   void vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqw(KRegister kdst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -2179,7 +2183,7 @@ private:
   void subss(XMMRegister dst, XMMRegister src);
 
   void testb(Address dst, int imm8);
-  void testb(Register dst, int imm8);
+  void testb(Register dst, int imm8, bool use_ral = true);
 
   void testl(Address dst, int32_t imm32);
   void testl(Register dst, int32_t imm32);

@@ -1,28 +1,28 @@
 /*
- *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *  This code is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 only, as
- *  published by the Free Software Foundation.  Oracle designates this
- *  particular file as subject to the "Classpath" exception as provided
- *  by Oracle in the LICENSE file that accompanied this code.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
- *  This code is distributed in the hope that it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- *  version 2 for more details (a copy is included in the LICENSE file that
- *  accompanied this code).
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
  *
- *  You should have received a copy of the GNU General Public License version
- *  2 along with this work; if not, write to the Free Software Foundation,
- *  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- *   Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- *  or visit www.oracle.com if you need additional information or have any
- *  questions.
- *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
+
 package java.lang.foreign;
 
 import java.lang.invoke.MethodHandle;
@@ -380,6 +380,10 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * Additionally, the provided dynamic values must conform to bounds which are derived from the layout path, that is,
      * {@code 0 <= x_i < b_i}, where {@code 1 <= i <= n}, or {@link IndexOutOfBoundsException} is thrown.
      * <p>
+     * The base address must be <a href="MemorySegment.html#segment-alignment">aligned</a> according to the {@linkplain
+     * #byteAlignment() alignment constraint} of the root layout (this layout). Note that this can be more strict
+     * (but not less) than the alignment constraint of the selected value layout.
+     * <p>
      * Multiple paths can be chained, with <a href=#deref-path-elements>dereference path elements</a>.
      * A dereference path element constructs a fresh native memory segment whose base address is the address value
      * read obtained by accessing a memory segment at the offset determined by the layout path elements immediately preceding
@@ -436,6 +440,10 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * long size = select(elements).byteSize();
      * MemorySegment slice = segment.asSlice(offset, size);
      * }
+     * <p>
+     * The segment to be sliced must be <a href="MemorySegment.html#segment-alignment">aligned</a> according to the
+     * {@linkplain #byteAlignment() alignment constraint} of the root layout (this layout). Note that this can be more
+     * strict (but not less) than the alignment constraint of the selected value layout.
      *
      * @apiNote The returned method handle can be used to obtain a memory segment slice, similarly to {@link MemorySegment#asSlice(long, long)},
      * but more flexibly, as some indices can be specified when invoking the method handle.

@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -49,9 +47,10 @@ import java.util.Objects;
 public class ClassBuildingTest {
     @Test
     public void test() throws Throwable {
+        var cc = Classfile.of();
         ClassModel cm;
         try (var in = ClassBuildingTest.class.getResourceAsStream("/Outer$1Local.class")) {
-            cm = Classfile.parse(Objects.requireNonNull(in).readAllBytes());
+            cm = cc.parse(Objects.requireNonNull(in).readAllBytes());
         }
 
         ClassTransform transform = ClassRemapper.of(Map.of(ClassDesc.of("Outer"), ClassDesc.of("Router")));
@@ -60,7 +59,7 @@ public class ClassBuildingTest {
         transform = transform.andThen(ClassTransform.transformingMethods(MethodTransform.dropping(me
                 -> me instanceof SignatureAttribute)));
 
-        MethodHandles.lookup().defineClass(cm.transform(transform));
+        MethodHandles.lookup().defineClass(cc.transform(cm, transform));
     }
 }
 

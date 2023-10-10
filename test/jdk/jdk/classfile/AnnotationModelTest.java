@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -55,7 +53,7 @@ class AnnotationModelTest {
 
     @Test
     void readAnnos() {
-        var model = Classfile.parse(fileBytes);
+        var model = Classfile.of().parse(fileBytes);
         var annotations = model.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).get().annotations();
 
         assertEquals(annotations.size(), 3);
