@@ -172,7 +172,7 @@ class CompiledIC: public ResourceObj {
   bool          _is_optimized;  // an optimized virtual call (i.e., no compiled IC)
   CompiledMethod* _method;
 
-  CompiledIC(CompiledMethod* cm, NativeCall* call);
+  CompiledIC(CompiledMethod* cm, NativeCall* ic_call);
   CompiledIC(RelocIterator* iter);
 
   void initialize_from_iter(RelocIterator* iter);
