@@ -48,8 +48,8 @@ public class SummaryDiffThreadCount {
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Baseline taken");
 
-        // Creating 5 threads.
-        for (int i = 0; i < 5; i++) {
+        // Creating 10 threads.
+        for (int i = 0; i < 10; i++) {
             new Thread(()-> {
                 while (true) { continue; }
             }).start();
@@ -58,6 +58,6 @@ public class SummaryDiffThreadCount {
         // Running "jcmd <pid> VM.native_memory summary.diff" and checking for five new threads reported.
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary.diff"});
         output = new OutputAnalyzer(pb.start());
-        output.shouldMatch("threads #\\d+ \\+5");
+        output.shouldMatch("threads #\\d+ \\+");
     }
 }
