@@ -21,16 +21,11 @@
  * questions.
  */
 
-import java.io.IOException;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import tools.javac.combo.*;
+import tools.javac.combo.CompilationTestCase;
 
-import static java.util.stream.Collectors.toList;
-
-@ExtendWith(CompilationDiagnosticPrinter.class)
 class ExpSwitchNestingTest extends CompilationTestCase {
     private static final String RUNNABLE = "Runnable r = () -> { # };";
     private static final String INT_FN = "java.util.function.IntSupplier r = () -> { # };";

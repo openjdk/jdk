@@ -33,10 +33,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import javax.tools.Diagnostic;
@@ -48,18 +46,13 @@ import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
 import com.sun.source.util.JavacTask;
-import com.sun.tools.javac.util.Pair;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.TestWatcher;
-import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Base class for template-driven TestNG javac tests that support on-the-fly
+ * Base class for template-driven JUnit javac tests that support on-the-fly
  * source file generation, compilation, classloading, execution, and separate
  * compilation.
  *
@@ -71,15 +64,15 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * @author Brian Goetz
  */
-public abstract class JavacTemplateTestBase implements TestWatcher, AfterTestExecutionCallback {
-    protected static final Set<String> suiteErrors = Collections.synchronizedSet(new HashSet<>());
-    protected static final AtomicInteger counter = new AtomicInteger();
-    protected static final File root = new File("gen");
-    protected static final File nullDir = new File("empty");
+@ExtendWith(ComboWatcher.class)
+public abstract class JavacTemplateTestBase {
+    private static final AtomicInteger counter = new AtomicInteger();
+    private static final File root = new File("gen");
+    private static final File nullDir = new File("empty");
 
     protected final Map<String, Template> templates = new HashMap<>();
     protected final Diagnostics diags = new Diagnostics();
-    protected final List<Pair<String, String>> sourceFiles = new ArrayList<>();
+    protected final List<SourceFile> sourceFiles = new ArrayList<>();
     protected final List<String> compileOptions = new ArrayList<>();
     protected final List<File> classpaths = new ArrayList<>();
 
@@ -95,7 +88,7 @@ public abstract class JavacTemplateTestBase implements TestWatcher, AfterTestExe
 
     /** Add a source file */
     protected void addSourceFile(String name, String template) {
-        sourceFiles.add(new Pair<>(name, template));
+        sourceFiles.add(new SourceFile(name, template));
     }
 
     /** Add a File to the class path to be used when loading classes; File values
@@ -137,24 +130,6 @@ public abstract class JavacTemplateTestBase implements TestWatcher, AfterTestExe
         resetSourceFiles();
         resetTemplates();
         resetClassPaths();
-    }
-
-    // After each test method, if the test failed, capture source files and diagnostics and put them in the log
-    @Override
-    public void testFailed(ExtensionContext context, Throwable cause) {
-    }
-
-    // After the suite is done, dump any errors to output
-    @Override
-    public void afterTestExecution(ExtensionContext context) {
-    }
-
-    /**
-     * Get a description of this test case; since test cases may be combinatorially
-     * generated, this should include all information needed to describe the test case
-     */
-    protected String getTestCaseDescription() {
-        return this.toString();
     }
 
     /** Assert that all previous calls to compile() succeeded */
@@ -244,9 +219,7 @@ public abstract class JavacTemplateTestBase implements TestWatcher, AfterTestExe
     /** Compile all registered source files, optionally generating class files
      * and returning a File describing the directory to which they were written */
     protected File compile(boolean generate) throws IOException {
-        List<JavaFileObject> files = new ArrayList<>();
-        for (Pair<String, String> e : sourceFiles)
-            files.add(new FileAdapter(e.fst, e.snd));
+        var files = sourceFiles.stream().map(FileAdapter::new).toList();
         return compile(classpaths, files, generate);
     }
 
@@ -254,13 +227,11 @@ public abstract class JavacTemplateTestBase implements TestWatcher, AfterTestExe
      * for finding required classfiles, optionally generating class files
      * and returning a File describing the directory to which they were written */
     protected File compile(List<File> classpaths, boolean generate) throws IOException {
-        List<JavaFileObject> files = new ArrayList<>();
-        for (Pair<String, String> e : sourceFiles)
-            files.add(new FileAdapter(e.fst, e.snd));
+        var files = sourceFiles.stream().map(FileAdapter::new).toList();
         return compile(classpaths, files, generate);
     }
 
-    private File compile(List<File> classpaths, List<JavaFileObject> files, boolean generate) throws IOException {
+    private File compile(List<File> classpaths, List<? extends JavaFileObject> files, boolean generate) throws IOException {
         JavaCompiler systemJavaCompiler = ToolProvider.getSystemJavaCompiler();
         try (StandardJavaFileManager fm = systemJavaCompiler.getStandardFileManager(null, null, null)) {
             if (classpaths.size() > 0)
@@ -313,9 +284,9 @@ public abstract class JavacTemplateTestBase implements TestWatcher, AfterTestExe
     private class FileAdapter extends SimpleJavaFileObject {
         private final String templateString;
 
-        FileAdapter(String filename, String templateString) {
-            super(URI.create("myfo:/" + filename), Kind.SOURCE);
-            this.templateString = templateString;
+        FileAdapter(SourceFile file) {
+            super(URI.create("myfo:/" + file.name()), Kind.SOURCE);
+            this.templateString = file.template();
         }
 
         public CharSequence getCharContent(boolean ignoreEncodingErrors) {

@@ -37,16 +37,10 @@
  * @run junit/othervm -DuseAP=true SealedCompilationTests
  */
 
-import java.lang.constant.ClassDesc;
-
-import java.io.File;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -54,15 +48,13 @@ import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.SourceVersion;
 
 import com.sun.tools.javac.util.Assert;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import tools.javac.combo.*;
+import tools.javac.combo.CompilationTestCase;
 
 import toolbox.ToolBox;
 import toolbox.JavacTask;
@@ -71,7 +63,6 @@ import toolbox.Task.OutputKind;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
-@ExtendWith(CompilationDiagnosticPrinter.class)
 class SealedCompilationTests extends CompilationTestCase {
 
     ToolBox tb = new ToolBox();

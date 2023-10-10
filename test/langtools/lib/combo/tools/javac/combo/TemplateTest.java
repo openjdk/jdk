@@ -23,26 +23,26 @@
 
 package tools.javac.combo;
 
-import org.junit.jupiter.api.BeforeAll;
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * TemplateTest
  */
 class TemplateTest {
-    static Map<String, Template> vars = new HashMap<>();
+    final Map<String, Template> vars = new HashMap<>();
 
-    @BeforeAll
-    static void before() { vars.clear(); }
+    @BeforeEach
+    void before() { vars.clear(); }
 
     private void assertTemplate(String expected, String template) {
         String result = Template.expandTemplate(template, vars);
-        assertEquals(result, expected, "for " + template);
+        assertEquals(expected, result, "for " + template);
     }
 
     private String dotIf(String s) {
