@@ -37,7 +37,7 @@ uint64_t CompressedKlassPointers::_combo = 0;
 #ifdef _LP64
 
 void CompressedKlassPointers::set_base_and_shift(address thebase, int theshift) {
-  assert(UseCompressedClassPointers, "Why are we here?");
+  assert(UseCompressedClassPointers, "only for compressed klass code");
   assert(theshift == 0 || theshift == LogKlassAlignmentInBytes, "invalid shift for klass ptrs");
   _base = thebase;
   _shift = theshift;
