@@ -125,7 +125,7 @@ public interface SegmentAllocator {
         Objects.requireNonNull(str);
         int termCharSize = StringSupport.CharsetKind.of(charset).terminatorCharSize();
         byte[] bytes = str.getBytes(charset);
-        MemorySegment segment = allocateNoInit(bytes.length + termCharSize);
+        MemorySegment segment = allocateNoInit((long) bytes.length + termCharSize);
         MemorySegment.copy(bytes, 0, segment, ValueLayout.JAVA_BYTE, 0, bytes.length);
         for (int i = 0 ; i < termCharSize ; i++) {
             segment.set(ValueLayout.JAVA_BYTE, bytes.length + i, (byte)0);
