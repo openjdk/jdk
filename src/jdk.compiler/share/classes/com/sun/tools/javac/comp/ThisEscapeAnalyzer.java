@@ -167,7 +167,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     /** Used to terminate recursion in {@link #invokeInvokable invokeInvokable()}.
      */
-    private final Set<Pair<JCTree, RefSet<Ref>>> invocations = new HashSet<>();
+    private final Set<Pair<JCMethodDecl, RefSet<Ref>>> invocations = new HashSet<>();
 
     /** Snapshot of {@link #callStack} where a possible 'this' escape occurs.
      *  If non-null, a 'this' escape warning has been found in the current
@@ -590,7 +590,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
                 return;
 
             // Stop infinite recursion here
-            Pair<JCTree, RefSet<Ref>> invocation = Pair.of(site, refs.clone());
+            Pair<JCMethodDecl, RefSet<Ref>> invocation = Pair.of(methodInfo.declaration, refs.clone());
             if (!invocations.add(invocation))
                 return;
 

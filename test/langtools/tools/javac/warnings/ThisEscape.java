@@ -601,4 +601,34 @@ public class ThisEscape {
         public static final class Sub2 extends ThisEscapeSealed {
         }
     }
+
+    // Verify no infinite recursion loop occurs (JDK-8317818)
+    public static class ThisEscapeRecursionExplosion {
+        private Object obj;
+        public ThisEscapeRecursionExplosion() {
+            getObject();
+        }
+        private Object getObject() {
+            if (this.obj == null) {
+                this.obj = new Object();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+            }
+            return this.obj;
+        }
+    }
 }
