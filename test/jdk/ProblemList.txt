@@ -454,6 +454,7 @@ java/awt/Robot/Delay/InterruptOfDelay.java 8265986 macosx-all
 java/awt/MenuBar/TestNoScreenMenuBar.java 8265987 macosx-all
 
 java/awt/Graphics2D/DrawString/DrawRotatedStringUsingRotatedFont.java 8266283 generic-all
+java/awt/Graphics2D/DrawString/RotTransText.java 8316878 linux-all
 java/awt/KeyboardFocusmanager/TypeAhead/ButtonActionKeyTest/ButtonActionKeyTest.java 8257529 windows-x64
 
 java/awt/Window/GetScreenLocation/GetScreenLocationTest.java 8225787 linux-x64
@@ -733,10 +734,10 @@ java/util/concurrent/ExecutorService/CloseTest.java             8288899 macosx-a
 
 sun/tools/jstatd/TestJstatdRmiPort.java                         8251259,8293577 generic-all
 
-sun/tools/jstat/jstatLineCounts1.sh                             8268211 linux-aarch64
-sun/tools/jstat/jstatLineCounts2.sh                             8268211 linux-aarch64
-sun/tools/jstat/jstatLineCounts3.sh                             8268211 linux-aarch64
-sun/tools/jstat/jstatLineCounts4.sh                             8268211 linux-aarch64
+sun/tools/jstat/jstatLineCounts1.sh                             8248691,8268211 linux-ppc64le,aix-ppc64,linux-aarch64
+sun/tools/jstat/jstatLineCounts2.sh                             8248691,8268211 linux-ppc64le,aix-ppc64,linux-aarch64
+sun/tools/jstat/jstatLineCounts3.sh                             8248691,8268211 linux-ppc64le,aix-ppc64,linux-aarch64
+sun/tools/jstat/jstatLineCounts4.sh                             8248691,8268211 linux-ppc64le,aix-ppc64,linux-aarch64
 
 ############################################################################
 
