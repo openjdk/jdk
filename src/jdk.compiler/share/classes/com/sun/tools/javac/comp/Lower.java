@@ -134,7 +134,8 @@ public class Lower extends TreeTranslator {
         Preview preview = Preview.instance(context);
         useMatchException = Feature.PATTERN_SWITCH.allowedInSource(source) &&
                             (preview.isEnabled() || !preview.isPreview(Feature.PATTERN_SWITCH));
-        useDynamicConstants = target.hasDynamicConstants();
+        useDynamicConstants = target.hasDynamicConstants()
+             && options.getBoolean("useDynamicConstants", true);
     }
 
     /** The currently enclosing class.
@@ -2606,10 +2607,6 @@ public class Lower extends TreeTranslator {
         }
         if (varDef.def != null) {
             // TODO - handle initializers that declare anonymous classes
-            return;
-        }
-        if (var.type.tsym.enclClass().packge().modle == syms.java_base) {
-            // avoid using MethodHandle in enums referenced from MethodHandle's clinit
             return;
         }
         ListBuffer<LoadableConstant> params = new ListBuffer<>();

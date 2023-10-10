@@ -27,7 +27,7 @@ DISABLED_WARNINGS_java += this-escape restricted
 
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'
-JAVAC_FLAGS += -XDstringConcat=inline
+JAVAC_FLAGS += -XDstringConcat=inline -XDuseDynamicConstants=false
 COPY += .icu .dat .spp .nrm content-types.properties \
     hijrah-config-Hijrah-umalqura_islamic-umalqura.properties
 CLEAN += intrinsic.properties
