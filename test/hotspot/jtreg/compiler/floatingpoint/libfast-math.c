@@ -44,7 +44,7 @@ static void __attribute__((constructor)) set_flush_to_zero(void) {
   __builtin_ia32_ldmxcsr (mxcsr);
 
 #elif defined(__aarch64__)
-#define _FPU_FPCR_FZ 0x1000000
+#define _FPU_FPCR_FZ (unsigned long)0x1000000
 #define _FPU_SETCW(fpcr) \
   {  __asm__ __volatile__ ("msr fpcr, %0" : : "r" (fpcr)); }
   /* Flush to zero, round to nearest, IEEE exceptions disabled.  */
