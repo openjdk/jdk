@@ -207,7 +207,7 @@ void CompiledIC::initialize_from_iter(RelocIterator* iter) {
   }
 }
 
-CompiledIC::CompiledIC(CompiledMethod* cm, NativeCall* call) noexcept
+CompiledIC::CompiledIC(CompiledMethod* cm, NativeCall* call)
   : _method(cm)
 {
   _call = _method->call_wrapper_at((address) call);
@@ -226,7 +226,7 @@ CompiledIC::CompiledIC(CompiledMethod* cm, NativeCall* call) noexcept
   initialize_from_iter(&iter);
 }
 
-CompiledIC::CompiledIC(RelocIterator* iter) noexcept
+CompiledIC::CompiledIC(RelocIterator* iter)
   : _method(iter->code())
 {
   _call = _method->call_wrapper_at(iter->addr());
