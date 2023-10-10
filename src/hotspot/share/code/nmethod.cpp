@@ -1699,7 +1699,7 @@ public:
 };
 
 bool nmethod::is_unloading() {
-  uint8_t state = RawAccess<MO_RELAXED>::load(&_is_unloading_state);
+  uint8_t state = Atomic::load(&_is_unloading_state);
   bool state_is_unloading = IsUnloadingState::is_unloading(state);
   if (state_is_unloading) {
     return true;
@@ -1735,7 +1735,7 @@ bool nmethod::is_unloading() {
 
 void nmethod::clear_unloading_state() {
   uint8_t state = IsUnloadingState::create(false, CodeCache::unloading_cycle());
-  RawAccess<MO_RELAXED>::store(&_is_unloading_state, state);
+  Atomic::store(&_is_unloading_state, state);
 }
 
 

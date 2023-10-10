@@ -153,6 +153,8 @@ class StubRoutines: AllStatic {
   static BufferBlob* _compiler_stubs_code;                 // code buffer for C2 intrinsics
   static BufferBlob* _final_stubs_code;                    // code buffer for all other routines
 
+  static address _array_sort;
+  static address _array_partition;
   // Leaf routines which implement arraycopy and their addresses
   // arraycopy operands aligned on element type boundary
   static address _jbyte_arraycopy;
@@ -375,6 +377,8 @@ class StubRoutines: AllStatic {
   static UnsafeArrayCopyStub UnsafeArrayCopy_stub()         { return CAST_TO_FN_PTR(UnsafeArrayCopyStub,  _unsafe_arraycopy); }
 
   static address generic_arraycopy()   { return _generic_arraycopy; }
+  static address select_arraysort_function() { return _array_sort; }
+  static address select_array_partition_function() { return _array_partition; }
 
   static address jbyte_fill()          { return _jbyte_fill; }
   static address jshort_fill()         { return _jshort_fill; }
