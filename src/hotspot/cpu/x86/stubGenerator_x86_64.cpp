@@ -4209,6 +4209,7 @@ void StubGenerator::generate_compiler_stubs() {
 
   if (UseIntPolyIntrinsics) {
     StubRoutines::_intpoly_montgomeryMult_P256 = generate_intpoly_montgomeryMult_P256();
+    StubRoutines::_intpoly_assign = generate_intpoly_assign();
   }
 
   if (UseMD5Intrinsics) {

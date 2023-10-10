@@ -493,6 +493,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     if (!UsePoly1305Intrinsics) return true;
     break;
   case vmIntrinsics::_intpoly_montgomeryMult_P256:
+  case vmIntrinsics::_intpoly_assign:
   // case vmIntrinsics::_intpoly_montgomeryMult_P384:
     if (!UseIntPolyIntrinsics) return true;
     break;

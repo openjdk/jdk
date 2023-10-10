@@ -130,6 +130,7 @@ address StubRoutines::_base64_encodeBlock                  = nullptr;
 address StubRoutines::_base64_decodeBlock                  = nullptr;
 address StubRoutines::_poly1305_processBlocks              = nullptr;
 address StubRoutines::_intpoly_montgomeryMult_P256         = nullptr;
+address StubRoutines::_intpoly_assign                      = nullptr;
 
 address StubRoutines::_md5_implCompress      = nullptr;
 address StubRoutines::_md5_implCompressMB    = nullptr;

@@ -100,4 +100,30 @@ public class PolynomialP256Bench {
         }
         return test;
     }
+
+    @Benchmark
+    public long[] benchAssign() {
+        long[] a = new long[]{123,223,323,423,523};
+        long[] b = new long[]{512345,612345,712345,812345,912345};
+        for (int i = 0; i< 10000; i++) {
+            MontgomeryIntegerPolynomialP256.ONE.assignTest(0,a,b);
+            MontgomeryIntegerPolynomialP256.ONE.assignTest(1,a,b);
+            MontgomeryIntegerPolynomialP256.ONE.assignTest(0,b,a);
+            MontgomeryIntegerPolynomialP256.ONE.assignTest(1,b,a);
+        }
+        return a;
+    }
+
+    @Benchmark
+    public long[] benchReduce() {
+        long[] a = new long[]{123,223,323,423,523};
+        long[] b = new long[]{512345,612345,712345,812345,912345};
+        long[] c = new long[]{0x0000ffffffffffffL,0x0000ffffffffffffL,0x0000ffffffffffffL,0x0000ffffffffffffL, 0x00ffffffffffffffL};
+        for (int i = 0; i< 10000; i++) {
+            MontgomeryIntegerPolynomialP256.ONE.reduceTest(a);
+            MontgomeryIntegerPolynomialP256.ONE.reduceTest(b);
+            MontgomeryIntegerPolynomialP256.ONE.reduceTest(c);
+        }
+        return a;
+    }
 }

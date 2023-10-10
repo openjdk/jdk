@@ -124,7 +124,7 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial imp
     }
 
     private void debugRow(String prefix, long c0, long c1, long c2, long c3, long c4) {
-        if (true) {
+        if (false) {
             return;
         }
         final java.util.HexFormat hex = java.util.HexFormat.of();

@@ -259,3 +259,120 @@ address StubGenerator::generate_intpoly_montgomeryMult_P256() {
   __ ret(0);
   return start;
 }
+
+// A = B if select
+// Must be:
+//  - constant time (i.e. no branches)
+//  - no-side channel (i.e. all memory must always be accessed, and in same order)
+void assign_avx(XMMRegister A, Address aAddr, XMMRegister B, Address bAddr, KRegister select, int vector_len, MacroAssembler* _masm) {
+  __ evmovdquq(A, aAddr, vector_len);
+  __ evmovdquq(B, bAddr, vector_len);
+  __ evmovdquq(A, select, B, true, vector_len);
+  __ evmovdquq(aAddr, A, vector_len);
+}
+
+void assign_scalar(Address aAddr, Address bAddr, Register select, Register tmp, MacroAssembler* _masm) {
+  // Original java:
+  // long dummyLimbs = maskValue & (a[i] ^ b[i]);
+  // a[i] = dummyLimbs ^ a[i];
+
+  __ movq(tmp, aAddr);
+  __ xorq(tmp, bAddr);
+  __ andq(tmp, select);
+  __ xorq(aAddr, tmp);
+}
+
+address StubGenerator::generate_intpoly_assign() {
+  // KNOWN Lengths:
+  //   MontgomeryIntPolynP256:  5 = 4 + 1
+  //   IntegerPolynomial1305:   5 = 4 + 1
+  //   IntegerPolynomial25519: 10 = 8 + 2
+  //   IntegerPolynomialP256:  10 = 8 + 2
+  //   Curve25519OrderField:   10 = 8 + 2
+  //   Curve25519OrderField:   10 = 8 + 2
+  //   P256OrderField:         10 = 8 + 2
+  //   IntegerPolynomialP384:  14 = 8 + 4 + 2
+  //   P384OrderField:         14 = 8 + 4 + 2
+  //   IntegerPolynomial448:   16 = 8 + 8
+  //   Curve448OrderField:     16 = 8 + 8
+  //   Curve448OrderField:     16 = 8 + 8
+  //   IntegerPolynomialP521:  19 = 8 + 8 + 2 + 1
+  //   P521OrderField:         19 = 8 + 8 + 2 + 1
+  // Special Cases 5, 10, 14, 16, 19
+
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, "StubRoutines", "intpoly_assign");
+  address start = __ pc();
+  __ enter();
+
+  // Inputs
+  const Register set     = c_rarg0;
+  const Register aLimbs  = c_rarg1;
+  const Register bLimbs  = c_rarg2;
+  const Register length  = c_rarg3;
+  XMMRegister A = xmm0;
+  XMMRegister B = xmm1;
+
+  Register tmp = r9;
+  KRegister select = k1;
+  Label L_Length5, L_Length10, L_Length14, L_Length16, L_Length19, L_DefaultLoop, L_Done;
+
+  __ negq(set);
+  __ kmovql(select, set);
+
+  // NOTE!! Allowed to branch on number of limbs; 
+  // Number of limbs is a constant in each IntegerPolynomial (i.e. this side-channel branch leaks 
+  //   number of limbs which is not a secret) 
+  __ cmpl(length, 5);
+  __ jcc(Assembler::equal, L_Length5);
+  __ cmpl(length, 10);
+  __ jcc(Assembler::equal, L_Length10);
+  __ cmpl(length, 14);
+  __ jcc(Assembler::equal, L_Length14);
+  __ cmpl(length, 16);
+  __ jcc(Assembler::equal, L_Length16);
+  __ cmpl(length, 19);
+  __ jcc(Assembler::equal, L_Length19);
+
+  // Default copy loop
+  __ bind(L_DefaultLoop);
+  __ cmpl(length, 0);
+  __ jcc(Assembler::less, L_Done);
+  assign_scalar(Address(aLimbs, 0), Address(bLimbs, 0), set, tmp, _masm);
+  __ subl(length, 16);
+  __ lea(aLimbs, Address(aLimbs,8));
+  __ lea(bLimbs, Address(bLimbs,8));
+  __ jmp(L_DefaultLoop);
+
+  __ bind(L_Length5); // 1 + 4
+  assign_scalar(Address(aLimbs, 0), Address(bLimbs, 0), set, tmp, _masm);
+  assign_avx(A, Address(aLimbs, 8), B, Address(bLimbs, 8), select, Assembler::AVX_256bit, _masm);
+  __ jmp(L_Done);
+
+  __ bind(L_Length10); // 2 + 8
+  assign_avx(A, Address(aLimbs, 0),  B, Address(bLimbs, 0),  select, Assembler::AVX_128bit, _masm);
+  assign_avx(A, Address(aLimbs, 16), B, Address(bLimbs, 16), select, Assembler::AVX_512bit, _masm);
+  __ jmp(L_Done);
+
+  __ bind(L_Length14); // 2 + 4 + 8
+  assign_avx(A, Address(aLimbs, 0),  B, Address(bLimbs, 0),  select, Assembler::AVX_128bit, _masm);
+  assign_avx(A, Address(aLimbs, 16), B, Address(bLimbs, 16), select, Assembler::AVX_256bit, _masm);
+  assign_avx(A, Address(aLimbs, 48), B, Address(bLimbs, 48), select, Assembler::AVX_512bit, _masm);
+  __ jmp(L_Done);
+
+  __ bind(L_Length16); // 8 + 8
+  assign_avx(A, Address(aLimbs, 0),  B, Address(bLimbs, 0),  select, Assembler::AVX_512bit, _masm);
+  assign_avx(A, Address(aLimbs, 64), B, Address(bLimbs, 64), select, Assembler::AVX_512bit, _masm);
+  __ jmp(L_Done);
+
+  __ bind(L_Length19); // 1 + 2 + 8 + 8
+  assign_scalar(Address(aLimbs, 0), Address(bLimbs, 0), set, tmp, _masm);
+  assign_avx(A, Address(aLimbs, 8),  B, Address(bLimbs, 8),  select, Assembler::AVX_128bit, _masm);
+  assign_avx(A, Address(aLimbs, 24), B, Address(bLimbs, 24), select, Assembler::AVX_512bit, _masm);
+  assign_avx(A, Address(aLimbs, 88), B, Address(bLimbs, 88), select, Assembler::AVX_512bit, _masm);
+  
+  __ bind(L_Done);
+  __ leave();
+  __ ret(0);
+  return start;
+}
