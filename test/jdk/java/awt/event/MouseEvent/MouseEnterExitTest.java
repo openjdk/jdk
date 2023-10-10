@@ -43,13 +43,16 @@ import java.awt.event.MouseListener;
 public class MouseEnterExitTest {
 
     private static Frame frame;
+
     private volatile static boolean entered = false;
     private volatile static boolean exited = false;
     private volatile static boolean passed = true;
+
     private volatile static Point compAt;
     private volatile static Dimension compSize;
 
     private static final MouseListener mouseListener = new MouseAdapter() {
+        @Override
         public void mouseEntered(MouseEvent e) {
             System.out.println(
                 "MouseEntered component " + e.getSource().getClass().getName());
@@ -60,6 +63,7 @@ public class MouseEnterExitTest {
             exited = false;
         }
 
+        @Override
         public void mouseExited(MouseEvent e) {
             System.out.println(
                 "MouseExited component " + e.getSource().getClass().getName());
@@ -98,6 +102,7 @@ public class MouseEnterExitTest {
 
             EventQueue.invokeAndWait(MouseEnterExitTest::initializeGUI);
             robot.waitForIdle();
+
             EventQueue.invokeAndWait(() -> {
                 compAt = frame.getLocationOnScreen();
                 compSize = frame.getSize();
@@ -107,6 +112,7 @@ public class MouseEnterExitTest {
             for (int i = compAt.x - 5; (i < xr) && passed; i++) {
                 robot.mouseMove(i, compAt.y);
             }
+
             if (!passed || entered || !exited) {
                 throw new RuntimeException(
                     "MouseEnterExitTest FAILED. MouseEntered/MouseExited "
@@ -118,7 +124,7 @@ public class MouseEnterExitTest {
         }
     }
 
-    public static void disposeFrame() {
+    private static void disposeFrame() {
         if (frame != null) {
             frame.dispose();
         }
