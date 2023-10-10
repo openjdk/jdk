@@ -221,18 +221,6 @@ inline const char* ShenandoahHeapRegion::affiliation_name() const {
   return shenandoah_affiliation_name(affiliation());
 }
 
-inline void ShenandoahHeapRegion::clear_young_lab_flags() {
-  _has_young_lab = false;
-}
-
-inline void ShenandoahHeapRegion::set_young_lab_flag() {
-  _has_young_lab = true;
-}
-
-inline bool ShenandoahHeapRegion::has_young_lab_flag() {
-  return _has_young_lab;
-}
-
 inline bool ShenandoahHeapRegion::is_young() const {
   return affiliation() == YOUNG_GENERATION;
 }

@@ -54,9 +54,6 @@ private:
   size_t                _young_bytes_to_promote;
   size_t                _old_bytes_to_evacuate;
 
-  size_t                _young_region_count;
-  size_t                _old_region_count;
-
   // How many bytes of old garbage are present in a mixed collection set?
   size_t                _old_garbage;
 
@@ -68,7 +65,6 @@ private:
   // When a region having memory available to be allocated is added to the collection set, the region's available memory
   // should be subtracted from what's available.
   size_t                _young_available_bytes_collected;
-  size_t                _old_available_bytes_collected;
 
   shenandoah_padding(0);
   volatile size_t       _current_index;
@@ -100,12 +96,6 @@ public:
 
   void print_on(outputStream* out) const;
 
-  // This represents total amount of work to be performed by evacuation, including evacuations to young, to old,
-  // and promotions from young to old.  This equals get_young_bytes_reserved_for_evacuation() plus
-  // get_old_bytes_reserved_for_evacuation().
-  // TODO: Seems unused.
-  inline size_t get_bytes_reserved_for_evacuation();
-
   // It is not known how many of these bytes will be promoted.
   inline size_t get_young_bytes_reserved_for_evacuation();
   inline size_t get_old_bytes_reserved_for_evacuation();
@@ -113,11 +103,6 @@ public:
   inline size_t get_young_bytes_to_be_promoted();
 
   size_t get_young_available_bytes_collected() { return _young_available_bytes_collected; }
-
-  size_t get_old_available_bytes_collected() { return _old_available_bytes_collected; }
-
-  inline size_t get_old_region_count();
-  inline size_t get_young_region_count();
 
   inline size_t get_old_garbage();
 

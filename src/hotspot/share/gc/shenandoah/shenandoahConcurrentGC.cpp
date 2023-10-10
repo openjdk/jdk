@@ -257,14 +257,8 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
       }
       heap->set_old_region_surplus(0);
       heap->set_old_region_deficit(0);
-
-      size_t old_usage_before_evac = heap->capture_old_usage(0);
-      size_t old_usage_now = old_gen->used();
-      size_t promoted_bytes = old_usage_now - old_usage_before_evac;
-      heap->set_previous_promotion(promoted_bytes);
       heap->set_young_evac_reserve(0);
       heap->set_old_evac_reserve(0);
-      heap->reset_old_evac_expended();
       heap->set_promoted_reserve(0);
     }
 

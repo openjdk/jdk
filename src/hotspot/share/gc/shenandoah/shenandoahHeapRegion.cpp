@@ -77,7 +77,6 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _tlab_allocs(0),
   _gclab_allocs(0),
   _plab_allocs(0),
-  _has_young_lab(false),
   _live_data(0),
   _critical_pins(0),
   _update_watermark(start),

@@ -603,9 +603,9 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available, size_t nu
       // the region would be promoted in place) may be eligible for evacuation promotion by the time promotion takes
       // place during a subsequent GC pass because more garbage is found within the region between now and then.  This
       // should not happen if we are properly adapting the tenure age.  The theory behind adaptive tenuring threshold
-      // is to choose the youngest age that demonstrates no "significant" futher loss of population since the previous
+      // is to choose the youngest age that demonstrates no "significant" further loss of population since the previous
       // age.  If not this, we expect the tenure age to demonstrate linear population decay for at least two population
-      // samples, whereas we expect to observe exponetial population decay for ages younger than the tenure age.
+      // samples, whereas we expect to observe exponential population decay for ages younger than the tenure age.
       //
       // In the case that certain regions which were anticipated to be promoted in place need to be promoted by
       // evacuation, it may be the case that there is not sufficient reserve within old-gen to hold evacuation of

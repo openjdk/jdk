@@ -138,12 +138,6 @@ ShenandoahDirectCardMarkRememberedSet::mark_card_as_clean(HeapWord *p) {
 }
 
 inline void
-ShenandoahDirectCardMarkRememberedSet::mark_read_card_as_clean(size_t index) {
-  CardValue* bp = &(_card_table->read_byte_map())[index];
-  bp[0] = CardTable::clean_card_val();
-}
-
-inline void
 ShenandoahDirectCardMarkRememberedSet::mark_range_as_clean(HeapWord *p, size_t num_heap_words) {
   CardValue* bp = &(_card_table->write_byte_map_base())[uintptr_t(p) >> _card_shift];
   CardValue* end_bp = &(_card_table->write_byte_map_base())[uintptr_t(p + num_heap_words) >> _card_shift];
@@ -355,7 +349,7 @@ ShenandoahScanRemembered<RememberedSet>::total_cards() { return _rs->total_cards
 
 template<typename RememberedSet>
 inline size_t
-ShenandoahScanRemembered<RememberedSet>::card_index_for_addr(HeapWord *p) { return _rs->card_index_for_addr(p); };
+ShenandoahScanRemembered<RememberedSet>::card_index_for_addr(HeapWord *p) { return _rs->card_index_for_addr(p); }
 
 template<typename RememberedSet>
 inline HeapWord *
@@ -1013,15 +1007,6 @@ inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *as
   assignment->_chunk_offset = offset_within_region;
   assignment->_chunk_size = group_chunk_size;
   return true;
-}
-
-template<class T>
-inline void ShenandoahVerifyNoYoungRefsClosure::work(T* p) {
-  T o = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(o)) {
-    oop obj = CompressedOops::decode_not_null(o);
-    assert(!_heap->is_in_young(obj), "Found a young ref");
-  }
 }
 
 #endif   // SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBEREDINLINE_HPP

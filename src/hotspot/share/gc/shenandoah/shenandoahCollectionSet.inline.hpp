@@ -66,18 +66,6 @@ size_t ShenandoahCollectionSet::get_young_bytes_to_be_promoted() {
   return _young_bytes_to_promote;
 }
 
-size_t ShenandoahCollectionSet::get_bytes_reserved_for_evacuation() {
-  return _young_bytes_to_evacuate + _old_bytes_to_evacuate;
-}
-
-size_t ShenandoahCollectionSet::get_old_region_count() {
-  return _old_region_count;
-}
-
-size_t ShenandoahCollectionSet::get_young_region_count() {
-  return _young_region_count;
-}
-
 size_t ShenandoahCollectionSet::get_old_garbage() {
   return _old_garbage;
 }

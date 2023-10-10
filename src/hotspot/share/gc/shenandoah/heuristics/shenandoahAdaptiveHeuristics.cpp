@@ -245,7 +245,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   //    1. At certain phase changes, we may discard large amounts of data and replace it with large numbers of newly
   //       allocated objects.  This "spike" looks more like a phase change.  We were in steady state at M bytes/sec
   //       allocation rate and now we're in a "reinitialization phase" that looks like N bytes/sec.  We need the "spike"
-  //       accomodation to give us enough runway to recalibrate our "average allocation rate".
+  //       accommodation to give us enough runway to recalibrate our "average allocation rate".
   //
   //   2. The typical workload changes.  "Suddenly", our typical workload of N TPS increases to N+delta TPS.  This means
   //       our average allocation rate needs to be adjusted.  Once again, we need the "spike" accomodation to give us

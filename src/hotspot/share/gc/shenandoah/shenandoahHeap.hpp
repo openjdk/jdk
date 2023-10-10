@@ -223,14 +223,12 @@ public:
 // ---------- Heap counters and metrics
 //
 private:
-           size_t _initial_size;
-           size_t _minimum_size;
-           size_t _promotion_potential;
-           size_t _pad_for_promote_in_place;    // bytes of filler
-           size_t _promotable_humongous_regions;
-           size_t _promotable_humongous_usage;
-           size_t _regular_regions_promoted_in_place;
-           size_t _regular_usage_promoted_in_place;
+  size_t _initial_size;
+  size_t _minimum_size;
+  size_t _promotion_potential;
+  size_t _pad_for_promote_in_place;    // bytes of filler
+  size_t _promotable_humongous_regions;
+  size_t _regular_regions_promoted_in_place;
 
   volatile size_t _soft_max_size;
   shenandoah_padding(0);
@@ -365,23 +363,11 @@ private:
   // effort.  If this happens, the requesting thread blocks until some other thread manages to evacuate the offending object.
   // Only after "all" threads fail to evacuate an object do we consider the evacuation effort to have failed.
 
-  // How many full-gc cycles have been completed?
-  volatile size_t _completed_fullgc_cycles;
-
   size_t _promoted_reserve;            // Bytes reserved within old-gen to hold the results of promotion
   volatile size_t _promoted_expended;  // Bytes of old-gen memory expended on promotions
 
-  // Allocation of old GCLABs (aka PLABs) assures that _old_evac_expended + request-size < _old_evac_reserved.  If the allocation
-  //  is authorized, increment _old_evac_expended by request size.  This allocation ignores old_gen->available().
-
   size_t _old_evac_reserve;            // Bytes reserved within old-gen to hold evacuated objects from old-gen collection set
-  volatile size_t _old_evac_expended;  // Bytes of old-gen memory expended on old-gen evacuations
-
   size_t _young_evac_reserve;          // Bytes reserved within young-gen to hold evacuated objects from young-gen collection set
-
-  size_t _captured_old_usage;          // What was old usage (bytes) when last captured?
-
-  size_t _previous_promotion;          // Bytes promoted during previous evacuation
 
   bool _upgraded_to_full;
 
@@ -444,10 +430,6 @@ public:
   inline void start_conc_gc() { _upgraded_to_full = false; }
   inline void record_upgrade_to_full() { _upgraded_to_full = true; }
 
-  inline size_t capture_old_usage(size_t usage);
-  inline void set_previous_promotion(size_t promoted_bytes);
-  inline size_t get_previous_promotion() const;
-
   inline void clear_promotion_potential() { _promotion_potential = 0; };
   inline void set_promotion_potential(size_t val) { _promotion_potential = val; };
   inline size_t get_promotion_potential() { return _promotion_potential; };
@@ -456,14 +438,10 @@ public:
   inline size_t get_pad_for_promote_in_place() { return _pad_for_promote_in_place; }
 
   inline void reserve_promotable_humongous_regions(size_t region_count) { _promotable_humongous_regions = region_count; }
-  inline void reserve_promotable_humongous_usage(size_t bytes) { _promotable_humongous_usage = bytes; }
   inline void reserve_promotable_regular_regions(size_t region_count) { _regular_regions_promoted_in_place = region_count; }
-  inline void reserve_promotable_regular_usage(size_t used_bytes) { _regular_usage_promoted_in_place = used_bytes; }
 
   inline size_t get_promotable_humongous_regions() { return _promotable_humongous_regions; }
-  inline size_t get_promotable_humongous_usage() { return _promotable_humongous_usage; }
   inline size_t get_regular_regions_promoted_in_place() { return _regular_regions_promoted_in_place; }
-  inline size_t get_regular_usage_promoted_in_place() { return _regular_usage_promoted_in_place; }
 
   // Returns previous value
   inline size_t set_promoted_reserve(size_t new_val);
@@ -479,10 +457,6 @@ public:
   inline size_t set_old_evac_reserve(size_t new_val);
   inline size_t get_old_evac_reserve() const;
   inline void augment_old_evac_reserve(size_t increment);
-
-  inline void reset_old_evac_expended();
-  inline size_t expend_old_evac(size_t increment);
-  inline size_t get_old_evac_expended();
 
   // Returns previous value
   inline size_t set_young_evac_reserve(size_t new_val);
@@ -668,7 +642,6 @@ public:
   inline void set_affiliation(ShenandoahHeapRegion* r, ShenandoahAffiliation new_affiliation);
 
   inline ShenandoahAffiliation region_affiliation(size_t index);
-  inline void set_affiliation(size_t index, ShenandoahAffiliation new_affiliation);
 
   bool requires_barriers(stackChunkOop obj) const override;
 
@@ -756,8 +729,6 @@ public:
   void labs_make_parsable();
   void tlabs_retire(bool resize);
   void gclabs_retire(bool resize);
-
-  void set_young_lab_region_flags();
 
   inline void set_old_region_surplus(size_t surplus) { _old_regions_surplus = surplus; };
   inline void set_old_region_deficit(size_t deficit) { _old_regions_deficit = deficit; };
@@ -855,13 +826,10 @@ private:
 public:
   inline RememberedScanner* card_scan() { return _card_scan; }
   void clear_cards_for(ShenandoahHeapRegion* region);
-  void dirty_cards(HeapWord* start, HeapWord* end);
-  void clear_cards(HeapWord* start, HeapWord* end);
   void mark_card_as_dirty(void* location);
   void retire_plab(PLAB* plab);
   void retire_plab(PLAB* plab, Thread* thread);
   void cancel_old_gc();
-  bool is_old_gc_active();
 
   void adjust_generation_sizes_for_next_cycle(size_t old_xfer_limit, size_t young_cset_regions, size_t old_cset_regions);
 

@@ -94,17 +94,14 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
   size_t garbage = r->garbage();
   size_t free    = r->free();
   if (r->is_young()) {
-    _young_region_count++;
     _young_bytes_to_evacuate += live;
     _young_available_bytes_collected += free;
     if (ShenandoahHeap::heap()->mode()->is_generational() && r->age() >= ShenandoahHeap::heap()->age_census()->tenuring_threshold()) {
       _young_bytes_to_promote += live;
     }
   } else if (r->is_old()) {
-    _old_region_count++;
     _old_bytes_to_evacuate += live;
     _old_garbage += garbage;
-    _old_available_bytes_collected += free;
   }
 
   _region_count++;
@@ -135,15 +132,11 @@ void ShenandoahCollectionSet::clear() {
   _region_count = 0;
   _current_index = 0;
 
-  _young_region_count = 0;
   _young_bytes_to_evacuate = 0;
   _young_bytes_to_promote = 0;
-
-  _old_region_count = 0;
   _old_bytes_to_evacuate = 0;
 
   _young_available_bytes_collected = 0;
-  _old_available_bytes_collected = 0;
 
   _has_old_regions = false;
 }

@@ -662,13 +662,6 @@ inline ShenandoahAffiliation ShenandoahHeap::region_affiliation(size_t index) {
   return (ShenandoahAffiliation) _affiliations[index];
 }
 
-inline void ShenandoahHeap::set_affiliation(size_t index, ShenandoahAffiliation new_affiliation) {
-#ifdef ASSERT
-  assert_lock_for_affiliation(region_affiliation(index), new_affiliation);
-#endif
-  _affiliations[index] = (uint8_t) new_affiliation;
-}
-
 inline bool ShenandoahHeap::requires_marking(const void* entry) const {
   oop obj = cast_to_oop(entry);
   return !_marking_context->is_marked_strong(obj);
@@ -763,22 +756,6 @@ inline size_t ShenandoahHeap::get_promoted_reserve() const {
   return _promoted_reserve;
 }
 
-// returns previous value
-size_t ShenandoahHeap::capture_old_usage(size_t old_usage) {
-  size_t previous_value = _captured_old_usage;
-  _captured_old_usage = old_usage;
-  return previous_value;
-}
-
-void ShenandoahHeap::set_previous_promotion(size_t promoted_bytes) {
-  shenandoah_assert_heaplocked();
-  _previous_promotion = promoted_bytes;
-}
-
-size_t ShenandoahHeap::get_previous_promotion() const {
-  return _previous_promotion;
-}
-
 inline size_t ShenandoahHeap::set_old_evac_reserve(size_t new_val) {
   size_t orig = _old_evac_reserve;
   _old_evac_reserve = new_val;
@@ -795,18 +772,6 @@ inline void ShenandoahHeap::augment_old_evac_reserve(size_t increment) {
 
 inline void ShenandoahHeap::augment_promo_reserve(size_t increment) {
   _promoted_reserve += increment;
-}
-
-inline void ShenandoahHeap::reset_old_evac_expended() {
-  Atomic::store(&_old_evac_expended, (size_t) 0);
-}
-
-inline size_t ShenandoahHeap::expend_old_evac(size_t increment) {
-  return Atomic::add(&_old_evac_expended, increment);
-}
-
-inline size_t ShenandoahHeap::get_old_evac_expended() {
-  return Atomic::load(&_old_evac_expended);
 }
 
 inline void ShenandoahHeap::reset_promoted_expended() {
@@ -988,18 +953,6 @@ inline void ShenandoahHeap::clear_cards_for(ShenandoahHeapRegion* region) {
   if (mode()->is_generational()) {
     _card_scan->mark_range_as_empty(region->bottom(), pointer_delta(region->end(), region->bottom()));
   }
-}
-
-inline void ShenandoahHeap::dirty_cards(HeapWord* start, HeapWord* end) {
-  assert(mode()->is_generational(), "Should only be used for generational mode");
-  size_t words = pointer_delta(end, start);
-  _card_scan->mark_range_as_dirty(start, words);
-}
-
-inline void ShenandoahHeap::clear_cards(HeapWord* start, HeapWord* end) {
-  assert(mode()->is_generational(), "Should only be used for generational mode");
-  size_t words = pointer_delta(end, start);
-  _card_scan->mark_range_as_clean(start, words);
 }
 
 inline void ShenandoahHeap::mark_card_as_dirty(void* location) {

@@ -182,25 +182,21 @@ void ShenandoahMmuTracker::initialize() {
   // initialize static data
   _active_processors = os::initial_active_processor_count();
 
-  double _most_recent_periodic_time_stamp = os::elapsedTime();
+  _most_recent_periodic_time_stamp = os::elapsedTime();
   fetch_cpu_times(_most_recent_periodic_gc_time, _most_recent_periodic_mutator_time);
   _mmu_periodic_task->enroll();
 }
 
-ShenandoahGenerationSizer::ShenandoahGenerationSizer(ShenandoahMmuTracker* mmu_tracker)
+ShenandoahGenerationSizer::ShenandoahGenerationSizer()
   : _sizer_kind(SizerDefaults),
-    _use_adaptive_sizing(true),
     _min_desired_young_regions(0),
-    _max_desired_young_regions(0),
-    _resize_increment(double(YoungGenerationSizeIncrement) / 100.0),
-    _mmu_tracker(mmu_tracker) {
+    _max_desired_young_regions(0) {
 
   if (FLAG_IS_CMDLINE(NewRatio)) {
     if (FLAG_IS_CMDLINE(NewSize) || FLAG_IS_CMDLINE(MaxNewSize)) {
       log_warning(gc, ergo)("-XX:NewSize and -XX:MaxNewSize override -XX:NewRatio");
     } else {
       _sizer_kind = SizerNewRatio;
-      _use_adaptive_sizing = false;
       return;
     }
   }
@@ -219,7 +215,6 @@ ShenandoahGenerationSizer::ShenandoahGenerationSizer(ShenandoahMmuTracker* mmu_t
     if (FLAG_IS_CMDLINE(MaxNewSize)) {
       _max_desired_young_regions = MAX2(uint(MaxNewSize / ShenandoahHeapRegion::region_size_bytes()), 1U);
       _sizer_kind = SizerMaxAndNewSize;
-      _use_adaptive_sizing = _min_desired_young_regions != _max_desired_young_regions;
     } else {
       _sizer_kind = SizerNewSizeOnly;
     }

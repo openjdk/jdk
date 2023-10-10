@@ -216,10 +216,6 @@ public:
   void record_unpin();
   size_t pin_count() const;
 
-  void clear_young_lab_flags();
-  void set_young_lab_flag();
-  bool has_young_lab_flag();
-
 private:
   static size_t RegionCount;
   static size_t RegionSizeBytes;
@@ -254,8 +250,6 @@ private:
   size_t _tlab_allocs;
   size_t _gclab_allocs;
   size_t _plab_allocs;
-
-  bool _has_young_lab;
 
   volatile size_t _live_data;
   volatile size_t _critical_pins;

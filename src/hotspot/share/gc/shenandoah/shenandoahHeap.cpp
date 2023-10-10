@@ -597,10 +597,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _update_refs_iterator(this),
   _promoted_reserve(0),
   _old_evac_reserve(0),
-  _old_evac_expended(0),
   _young_evac_reserve(0),
-  _captured_old_usage(0),
-  _previous_promotion(0),
   _upgraded_to_full(false),
   _age_census(nullptr),
   _has_evacuation_reserve_quantities(false),
@@ -617,7 +614,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _phase_timings(nullptr),
   _evac_tracker(nullptr),
   _mmu_tracker(),
-  _generation_sizer(&_mmu_tracker),
+  _generation_sizer(),
   _monitoring_support(nullptr),
   _memory_pool(nullptr),
   _young_gen_memory_pool(nullptr),
@@ -973,7 +970,7 @@ void ShenandoahHeap::report_promotion_failure(Thread* thread, size_t size) {
     if ((gc_id == last_report_epoch) && (epoch_report_count >= MaxReportsPerEpoch)) {
       log_info(gc, ergo)("Squelching additional promotion failure reports for current epoch");
     } else if (gc_id != last_report_epoch) {
-      last_report_epoch = gc_id;;
+      last_report_epoch = gc_id;
       epoch_report_count = 1;
     }
   }
@@ -1178,10 +1175,6 @@ void ShenandoahHeap::cancel_old_gc() {
   young_generation()->set_old_gen_task_queues(nullptr);
   // Transition to IDLE now.
   _old_generation->transition_to(ShenandoahOldGeneration::IDLE);
-}
-
-bool ShenandoahHeap::is_old_gc_active() {
-  return _old_generation->state() != ShenandoahOldGeneration::IDLE;
 }
 
 // xfer_limit is the maximum we're able to transfer from young to old
@@ -1924,37 +1917,6 @@ void ShenandoahHeap::gclabs_retire(bool resize) {
 
   if (safepoint_workers() != nullptr) {
     safepoint_workers()->threads_do(&cl);
-  }
-}
-
-class ShenandoahTagGCLABClosure : public ThreadClosure {
-public:
-  void do_thread(Thread* thread) {
-    PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
-    assert(gclab != nullptr, "GCLAB should be initialized for %s", thread->name());
-    if (gclab->words_remaining() > 0) {
-      ShenandoahHeapRegion* r = ShenandoahHeap::heap()->heap_region_containing(gclab->allocate(0));
-      r->set_young_lab_flag();
-    }
-  }
-};
-
-void ShenandoahHeap::set_young_lab_region_flags() {
-  if (!UseTLAB) {
-    return;
-  }
-  for (size_t i = 0; i < _num_regions; i++) {
-    _regions[i]->clear_young_lab_flags();
-  }
-  ShenandoahTagGCLABClosure cl;
-  workers()->threads_do(&cl);
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    cl.do_thread(t);
-    ThreadLocalAllocBuffer& tlab = t->tlab();
-    if (tlab.end() != nullptr) {
-      ShenandoahHeapRegion* r = heap_region_containing(tlab.start());
-      r->set_young_lab_flag();
-    }
   }
 }
 

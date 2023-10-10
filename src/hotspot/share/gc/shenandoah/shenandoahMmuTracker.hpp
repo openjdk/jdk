@@ -115,15 +115,8 @@ private:
   };
   SizerKind _sizer_kind;
 
-  // False when using a fixed young generation size due to command-line options,
-  // true otherwise.
-  bool _use_adaptive_sizing;
-
   size_t _min_desired_young_regions;
   size_t _max_desired_young_regions;
-
-  double _resize_increment;
-  ShenandoahMmuTracker* _mmu_tracker;
 
   static size_t calculate_min_young_regions(size_t heap_region_count);
   static size_t calculate_max_young_regions(size_t heap_region_count);
@@ -133,7 +126,7 @@ private:
   void recalculate_min_max_young_length(size_t heap_region_count);
 
 public:
-  explicit ShenandoahGenerationSizer(ShenandoahMmuTracker* mmu_tracker);
+  ShenandoahGenerationSizer();
 
   // Calculate the maximum length of the young gen given the number of regions
   // depending on the sizing algorithm.
@@ -149,10 +142,6 @@ public:
   size_t max_young_size() const;
   size_t max_young_regions() const {
     return _max_desired_young_regions;
-  }
-
-  bool use_adaptive_sizing() const {
-    return _use_adaptive_sizing;
   }
 
   bool transfer_to_young(size_t regions) const;

@@ -895,7 +895,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     }
 
     end++;
-  };
+  }
 
   size_t remainder = words_size & ShenandoahHeapRegion::region_size_words_mask();
   ShenandoahMarkingContext* const ctx = _heap->complete_marking_context();
@@ -969,15 +969,6 @@ size_t ShenandoahFreeSet::alloc_capacity(ShenandoahHeapRegion *r) const {
 
 bool ShenandoahFreeSet::has_alloc_capacity(ShenandoahHeapRegion *r) const {
   return alloc_capacity(r) > 0;
-}
-
-bool ShenandoahFreeSet::has_alloc_capacity(size_t idx) const {
-  ShenandoahHeapRegion* r = _heap->get_region(idx);
-  return alloc_capacity(r) > 0;
-}
-
-bool ShenandoahFreeSet::has_no_alloc_capacity(ShenandoahHeapRegion *r) const {
-  return alloc_capacity(r) == 0;
 }
 
 void ShenandoahFreeSet::try_recycle_trashed(ShenandoahHeapRegion *r) {
@@ -1198,7 +1189,7 @@ void ShenandoahFreeSet::rebuild(size_t young_cset_regions, size_t old_cset_regio
     old_capacity += xfer_bytes;
     old_available += xfer_bytes;
     old_unaffiliated_regions += old_region_deficit;
-    young_capacity -= xfer_bytes;;
+    young_capacity -= xfer_bytes;
     young_available -= xfer_bytes;
     young_unaffiliated_regions -= old_region_deficit;
   }

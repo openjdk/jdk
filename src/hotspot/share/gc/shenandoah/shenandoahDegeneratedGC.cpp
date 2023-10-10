@@ -332,7 +332,6 @@ void ShenandoahDegenGC::op_degenerated() {
     // Otherwise, these actions have no effect.
     heap->set_young_evac_reserve(0);
     heap->set_old_evac_reserve(0);
-    heap->reset_old_evac_expended();
     heap->set_promoted_reserve(0);
   }
 

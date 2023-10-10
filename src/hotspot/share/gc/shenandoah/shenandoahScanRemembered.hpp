@@ -217,7 +217,6 @@ public:
 
   // count is the number of cards represented by the card table.
   ShenandoahDirectCardMarkRememberedSet(ShenandoahCardTable *card_table, size_t total_card_count);
-  ~ShenandoahDirectCardMarkRememberedSet();
 
   // Card index is zero-based relative to _byte_map.
   size_t last_valid_index() const;
@@ -230,7 +229,6 @@ public:
   inline void mark_card_as_dirty(size_t card_index);
   inline void mark_range_as_dirty(size_t card_index, size_t num_cards);
   inline void mark_card_as_clean(size_t card_index);
-  inline void mark_read_card_as_clean(size_t card_index);
   inline void mark_range_as_clean(size_t card_index, size_t num_cards);
   inline bool is_card_dirty(HeapWord *p) const;
   inline void mark_card_as_dirty(HeapWord *p);
@@ -821,7 +819,6 @@ public:
   void mark_card_as_dirty(size_t card_index);
   void mark_range_as_dirty(size_t card_index, size_t num_cards);
   void mark_card_as_clean(size_t card_index);
-  void mark_read_card_as_clean(size_t card_index) { _rs->mark_read_card_clean(card_index); }
   void mark_range_as_clean(size_t card_index, size_t num_cards);
   bool is_card_dirty(HeapWord *p);
   void mark_card_as_dirty(HeapWord *p);
@@ -1067,16 +1064,5 @@ class ShenandoahScanRememberedTask : public WorkerTask {
   void do_work(uint worker_id);
 };
 
-// Verify that the oop doesn't point into the young generation
-class ShenandoahVerifyNoYoungRefsClosure: public BasicOopIterateClosure {
-  ShenandoahHeap* _heap;
-  template<class T> void work(T* p);
-
- public:
-  ShenandoahVerifyNoYoungRefsClosure();
-
-  virtual void do_oop(narrowOop* p) { work(p); }
-  virtual void do_oop(oop* p)       { work(p); }
-};
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBERED_HPP

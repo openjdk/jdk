@@ -135,10 +135,6 @@ private:
   void increase_capacity(size_t increment);
   void decrease_capacity(size_t decrement);
 
-  void set_soft_max_capacity(size_t soft_max_capacity) {
-    _soft_max_capacity = soft_max_capacity;
-  }
-
   void log_status(const char* msg) const;
 
   // Used directly by FullGC

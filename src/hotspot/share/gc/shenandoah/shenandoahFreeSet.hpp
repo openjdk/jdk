@@ -172,23 +172,13 @@ private:
   void flip_to_gc(ShenandoahHeapRegion* r);
   void flip_to_old_gc(ShenandoahHeapRegion* r);
 
-  void adjust_bounds_for_additional_old_collector_free_region(size_t idx);
-
-  void recompute_bounds();
-  void adjust_bounds();
-  bool touches_bounds(size_t num) const;
-
-  // Used of free set represents the amount of is_mutator_free set that has been consumed since most recent rebuild.
-  void increase_used(size_t amount);
   void clear_internal();
 
   void try_recycle_trashed(ShenandoahHeapRegion *r);
 
   bool can_allocate_from(ShenandoahHeapRegion *r) const;
   bool can_allocate_from(size_t idx) const;
-  bool has_alloc_capacity(size_t idx) const;
   bool has_alloc_capacity(ShenandoahHeapRegion *r) const;
-  bool has_no_alloc_capacity(ShenandoahHeapRegion *r) const;
 
 public:
   ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions);
