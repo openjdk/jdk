@@ -376,16 +376,22 @@ public class X509Key implements PublicKey, DerEncoder {
      * @throws InvalidKeyException jfkdlsa
      */
     public static PublicKey parseKey(byte[] encoded) throws IOException {
+        //  XXX I doesn't look like I need to know the details of decoding here
+        //      I can let X509EKS figure out the algorithm and let the provider do it
+        /*
         X509Key key = new X509Key();
         try {
             key.decode(encoded);
         } catch (InvalidKeyException e) {
             throw new IOException("corrupt public key", e);
         }
+
+         */
         PublicKey pubKey;
         try {
-            pubKey = KeyFactory.getInstance(key.algid.getName())
-                        .generatePublic(new X509EncodedKeySpec(encoded));
+            X509EncodedKeySpec spec = new X509EncodedKeySpec(encoded);
+            pubKey = KeyFactory.getInstance(spec.getAlgorithm())
+                .generatePublic(spec);
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             // Ignore and return raw key
             throw new IOException("error with encoding");

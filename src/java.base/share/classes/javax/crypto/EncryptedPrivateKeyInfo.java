@@ -251,7 +251,8 @@ public class EncryptedPrivateKeyInfo implements SecurityObject {
         this.encoded = null;
     }
 
-    private EncryptedPrivateKeyInfo(byte[] encoded, byte[] eData, AlgorithmId id, AlgorithmParameters p) {
+    private EncryptedPrivateKeyInfo(byte[] encoded, byte[] eData,
+        AlgorithmId id, AlgorithmParameters p) {
         this.encoded = encoded;
         encryptedData = eData;
         algid = id;
@@ -356,8 +357,9 @@ public class EncryptedPrivateKeyInfo implements SecurityObject {
      * @return the byte [ ]
      * @throws IOException the io exception
      */
-    public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key, char[] password,
-        String pbeAlgo, AlgorithmParameterSpec aps, Provider p) throws IOException {
+    public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
+        char[] password, String pbeAlgo, AlgorithmParameterSpec aps,
+        Provider p) throws IOException {
 
         AlgorithmId algid;
         byte[] encryptedData;
@@ -390,17 +392,29 @@ public class EncryptedPrivateKeyInfo implements SecurityObject {
     }
 
     /**
-     * Creates and encrypts an `EncryptedPrivateKeyInfo` from a given PrivateKey and password.
-     * The encryption uses the algorithm set by `jdk.epk8.defaultAlgorithm` Security Property by the default provider and default the AlgorithmParameterSpec of that provider.
+     * Creates and encrypts an `EncryptedPrivateKeyInfo` from a given PrivateKey
+     * and password.
+     * The encryption uses the algorithm set by `jdk.epk8.defaultAlgorithm`
+     * Security Property by the default provider and default the
+     * AlgorithmParameterSpec of that provider.
      *
      * @param key The PrivateKey object to encrypt.
      * @param password the password used in the PBE encryption.
      * @return an EncryptedPrivateKeyInfo.
      * @throws IOException if an encryption error occurs.
      */
-    public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key, char[] password)
-        throws IOException {
-        return encryptKey(key, password, DEFAULT_ALGO, null, null);
+    public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
+        char[] password) throws IOException {
+        try {
+            return encryptKey(key, password, Pem.DEFAULT_ALGO, null, null);
+        } catch (IOException e) {
+            if (e.getCause() instanceof NoSuchAlgorithmException) {
+                throw new IOException("Security property " +
+                    "\"jdk.epkcs8.defaultAlgorithm\" may not specify a " +
+                    "valid algorithm.", e.getCause());
+            }
+            throw e;
+        }
     }
 
     /**
@@ -424,7 +438,8 @@ public class EncryptedPrivateKeyInfo implements SecurityObject {
      * @throws IOException if an error occurs during parsing of the encrypted
      * data or creation of the key object.
      */
-    public PrivateKey getKey(char[] password, Provider provider) throws IOException {
+    public PrivateKey getKey(char[] password, Provider provider)
+        throws IOException {
         try {
             PBEKeySpec pks = new PBEKeySpec(password);
             SecretKeyFactory skf;

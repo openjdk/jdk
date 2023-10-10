@@ -27,9 +27,11 @@ package sun.security.util;
 
 import sun.security.x509.AlgorithmId;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.security.Security;
 import java.util.Base64;
+import java.util.Objects;
 
 /**
  * A utility class for PEM format encoding.
@@ -72,6 +74,27 @@ public class Pem {
     public static final String PKCS1HEADER = "-----BEGIN RSA PRIVATE KEY-----";
     public static final String PKCS1FOOTER = "-----END RSA PRIVATE KEY-----";
 
+    private static final String STARTHEADER = "-----BEGIN ";
+    private static final String ENDFOOTER = "-----END ";
+
+
+    public enum KeyType {
+        UNKNOWN, PRIVATE, PUBLIC, ENCRYPTED_PRIVATE, CERTIFICATE, CRL
+    }
+
+    public static final String DEFAULT_ALGO;
+
+    static {
+        DEFAULT_ALGO = Security.getProperty("jdk.epkcs8.defaultAlgorithm");
+    }
+
+    private String header, footer, data;
+
+    private Pem(String header, String data, String footer) {
+        this.header = header;
+        this.data = data;
+        this.footer = footer;
+    }
     /**
      * Decodes a PEM-encoded block.
      *
@@ -82,7 +105,7 @@ public class Pem {
      */
     public static byte[] decode(String input) throws IOException {
         byte[] src = input.replaceAll("\\s+", "")
-                .getBytes(StandardCharsets.ISO_8859_1);
+            .getBytes(StandardCharsets.ISO_8859_1);
         try {
             return Base64.getDecoder().decode(src);
         } catch (IllegalArgumentException e) {
@@ -104,4 +127,126 @@ public class Pem {
         }
     }
 
+    public static Pem readPEM(InputStream is) throws IOException {
+        return readPEM(new InputStreamReader(is));
+    }
+
+    public static Pem readPEM(Reader reader) throws IOException {
+        Objects.requireNonNull(reader);
+
+        BufferedReader br = new BufferedReader(reader);
+        int hyphen = 0;
+
+        // Find starting hyphens
+        do {
+            switch (br.read()) {
+                case '-' -> hyphen++;
+                case -1 ->  throw new IOException("No PEM data found in input");
+                default -> hyphen = 0;
+            }
+        } while (hyphen != 5);
+
+        StringBuilder sb = new StringBuilder(64);
+        sb.append("-----");
+        hyphen = 0;
+        int c;
+
+        // Get header definition until first hyphen
+        do {
+            switch(c = br.read()) {
+                case '-' -> hyphen++;
+                case -1 -> throw new IOException("Input ended prematurely");
+                case '\n', '\r' -> throw new IOException("Incomplete header");
+                default -> sb.append(c);
+            }
+        } while (hyphen == 0);
+
+        // Verify ending 5 hyphens of the header.
+        do {
+            switch (br.read()) {
+                case '-' -> hyphen++;
+                default -> throw new IOException("Incomplete header");
+            }
+        } while (hyphen < 5);
+
+        sb.append("-----");
+        String header = sb.toString();
+        if (header.length() < 16 || !header.startsWith("-----BEGIN ") ||
+            !header.endsWith("-----")) {
+            throw new IOException("Illegal header: " + header);
+        }
+
+        hyphen = 0;
+        sb = new StringBuilder(1024);
+
+        // Read data until we find the hyphens for END
+        do {
+            switch (c = br.read()) {
+                case -1 -> throw new IOException("Incomplete header");
+                case '-' -> hyphen++;
+                default -> sb.append(c);
+            }
+        } while (hyphen == 0);
+
+        String data = sb.toString();
+
+        // Verify beginning 5 hyphens of the footer.
+        do {
+            switch (br.read()) {
+                case '-' -> hyphen++;
+                case -1 -> throw new IOException("Input ended prematurely");
+                default -> throw new IOException("Incomplete footer");
+            }
+        } while (hyphen < 5);
+
+        hyphen = 0;
+        sb = new StringBuilder(64);
+        sb.append("-----");
+
+        // Complete header by looking for the end of the hyphens
+        do {
+            switch(c = br.read()) {
+                case '-' -> hyphen++;
+                case -1 -> throw new IOException("Input ended prematurely");
+                default -> sb.append(c);
+            }
+        } while (hyphen == 0);
+
+        // Verify ending 5 hyphens of the header.
+        do {
+            switch (br.read()) {
+                case '-' -> hyphen++;
+                case -1 -> throw new IOException("Input ended prematurely");
+                default -> throw new IOException("Incomplete header");
+            }
+        } while (hyphen < 5);
+
+
+        String footer = sb.toString();
+        if (footer.length() < 14 || !footer.startsWith("-----END ") ||
+            !footer.endsWith("-----")) {
+            throw new IOException("Illegal footer: " + footer);
+        }
+
+        String headerType = header.substring(11, header.length() - 5);
+        String footerType = footer.substring(9, footer.length() - 5);
+        if (!headerType.equals(footerType)) {
+            throw new IOException("Header and footer do not match: " +
+                header + " " + footer);
+        }
+
+        return new Pem(header, data, footer);
+    }
+
+    public String getData() {
+        return data;
+    }
+
+    public String getHeader() {
+        return header;
+    }
+
+    public String getFooter() {
+        return footer;
+    }
 }
