@@ -1605,14 +1605,14 @@ void JvmtiExport::post_vthread_end(jobject vthread) {
   EVT_TRIG_TRACE(JVMTI_EVENT_VIRTUAL_THREAD_END, ("[%p] Trg Virtual Thread End event triggered", vthread));
 
   JavaThread *thread = JavaThread::current();
+  assert(!thread->is_hidden_from_external_view(), "carrier threads can't be hidden");
+
   JvmtiThreadState *state = get_jvmti_thread_state(thread);
   if (state == nullptr) {
     return;
   }
 
-  // Do not post virtual thread end event for hidden java thread.
-  if (state->is_enabled(JVMTI_EVENT_VIRTUAL_THREAD_END) &&
-      !thread->is_hidden_from_external_view()) {
+  if (state->is_enabled(JVMTI_EVENT_VIRTUAL_THREAD_END)) {
     JvmtiEnvThreadStateIterator it(state);
 
     for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
