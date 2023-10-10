@@ -93,10 +93,10 @@ public class CreationTime {
         } else if (Platform.isLinux()) {
             // Creation time read depends on statx system call support
             supportsCreationTimeRead = Linker.nativeLinker().defaultLookup().find("statx").isPresent();
-            System.out.println("[Linux] supportsCreationTimeRead == " + supportsCreationTimeRead);
             // Creation time updates are not supported on Linux
             supportsCreationTimeWrite = false;
         }
+        System.out.println("supportsCreationTimeRead == " + supportsCreationTimeRead);
 
         /**
          * If the creation-time attribute is supported then change the file's
