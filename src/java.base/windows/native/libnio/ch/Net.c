@@ -523,7 +523,6 @@ Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobjec
 {
     struct ipv6_mreq mreq6;
     int n;
-    char* error_message = "setsockopt";
 
     if (source == NULL) {
         int opt = (join) ? IPV6_ADD_MEMBERSHIP : IPV6_DROP_MEMBERSHIP;
@@ -534,11 +533,11 @@ Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobjec
     } else {
         int opt = (join) ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP;
         n = setGroupSourceReqOption(env, fdo, opt, group, index, source);
-        error_message = "setsockopt with group source request";
+
     }
 
     if (n == SOCKET_ERROR) {
-        NET_ThrowNew(env, WSAGetLastError(), error_message);
+        NET_ThrowNew(env, WSAGetLastError(), "setsockopt");
     }
     return 0;
 }
@@ -723,7 +722,7 @@ Java_sun_nio_ch_Net_pollConnect(JNIEnv* env, jclass this, jobject fdo, jlong tim
                 NET_ThrowNew(env, lastError, "getsockopt");
             }
         } else if (optError != NO_ERROR) {
-            NET_ThrowNew(env, optError, "getsockopt issue with option value");
+            NET_ThrowNew(env, optError, "getsockopt");
         }
         return JNI_FALSE;
     }
