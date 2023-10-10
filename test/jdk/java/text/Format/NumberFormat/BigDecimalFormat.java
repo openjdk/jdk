@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
  * @test
  * @bug 4018937 8008577
  * @summary Confirm that methods which are newly added to support BigDecimal and BigInteger work as expected.
- * @library /java/text/testlib
- * @run main/othervm -Djava.locale.providers=COMPAT,SPI BigDecimalFormat
+ * @run junit/othervm -Djava.locale.providers=COMPAT,SPI BigDecimalFormat
  */
 
 import java.math.BigDecimal;
@@ -34,11 +33,11 @@ import java.math.BigInteger;
 import java.text.*;
 import java.util.*;
 
-public class BigDecimalFormat extends IntlTest {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        new BigDecimalFormat().run(args);
-    }
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class BigDecimalFormat {
 
     static final String nonsep_int =
         "123456789012345678901234567890123456789012345678901234567890" +
@@ -998,7 +997,7 @@ public class BigDecimalFormat extends IntlTest {
         ;
 
         if (!expected.equals(mf.format(testArgs))) {
-            errln("Wrong format.\n      got:\n" + mf.format(testArgs) +
+            fail("Wrong format.\n      got:\n" + mf.format(testArgs) +
                   "     expected:\n" + expected);
         }
     }
@@ -1014,7 +1013,7 @@ public class BigDecimalFormat extends IntlTest {
     private void checkFormat(String orig, StringBuffer got, String expected,
                              int multiplier) {
         if (!expected.equals(new String(got))) {
-            errln("Formatting... failed." +
+            fail("Formatting... failed." +
                   "\n   original:   " + orig +
                   "\n   multiplier: " + multiplier +
                   "\n   formatted:  " + got +
@@ -1027,14 +1026,14 @@ public class BigDecimalFormat extends IntlTest {
         int position;
 
         if ((position = fp.getBeginIndex()) != begin) {
-            errln("Formatting... wrong Begin index returned for " +
+            fail("Formatting... wrong Begin index returned for " +
                   fp.getFieldAttribute() + "." +
                   "\n   original: " + orig +
                   "\n   got:      " + position +
                   "\n   expected: " + begin + "\n");
         }
         if ((position = fp.getEndIndex()) != end) {
-            errln("Formatting... wrong End index returned for " +
+            fail("Formatting... wrong End index returned for " +
                   fp.getFieldAttribute() + "." +
                   "\n   original: " + orig +
                   "\n   got:      " + position +

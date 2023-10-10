@@ -722,8 +722,8 @@ class MacroAssembler: public Assembler {
 
   void compiler_fast_lock_object(Register oop, Register box, Register temp1, Register temp2);
   void compiler_fast_unlock_object(Register oop, Register box, Register temp1, Register temp2);
-  void fast_lock(Register obj, Register hdr, Register tmp, Label& slow);
-  void fast_unlock(Register obj, Register hdr, Register tmp, Label& slow);
+  void lightweight_lock(Register obj, Register hdr, Register tmp, Label& slow);
+  void lightweight_unlock(Register obj, Register hdr, Register tmp, Label& slow);
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
 
