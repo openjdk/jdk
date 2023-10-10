@@ -49,20 +49,17 @@ public class ImmutableBitSet {
 
     @Test
     void negativeIndex() {
-        BitSet bs = new BitSet();
-        IntPredicate ibs = ImmutableBitSetPredicate.of(bs);
-        assertFalse(ibs.test(-1));
-        assertFalse(ibs.test(Integer.MIN_VALUE));
-
-        bs = new BitSet(1024);
-        ibs = ImmutableBitSetPredicate.of(bs);
-        assertFalse(ibs.test(-1));
-        assertFalse(ibs.test(Integer.MIN_VALUE));
+        IntStream.of(0, 127, 128, 143, 4711).forEach(k -> {
+                    BitSet bs = new BitSet(k);
+                    IntPredicate ibs = ImmutableBitSetPredicate.of(bs);
+                    assertFalse(ibs.test(-1));
+                    assertFalse(ibs.test(Integer.MIN_VALUE));
+                });
     }
 
     @Test
     void basic() {
-        IntStream.of(0, 16, 143, 4711).forEach(k -> basic(k));
+        IntStream.of(0, 16, 127, 128, 143, 4711).forEach(k -> basic(k));
     }
 
     void basic(int length) {
@@ -73,7 +70,7 @@ public class ImmutableBitSet {
 
     @Test
     void clearedAtTheTail() {
-        IntStream.of(0, 143, 4711).forEach(k -> {
+        IntStream.of(0, 16, 127, 128, 143, 4711).forEach(k -> {
             for (int i = Long.BYTES - 1; i < Long.BYTES + 2; i++) {
                 BitSet bs = createReference(k + i);
                 for (int j = bs.length() - 1; j > Long.BYTES - 1; j++) {
@@ -92,7 +89,7 @@ public class ImmutableBitSet {
     }
 
     private static BitSet createReference(int length) {
-        BitSet result = new BitSet();
+        BitSet result = new BitSet(length);
         Random random = new Random(length);
         for (int i = 0; i < length; i++) {
             result.set(i, random.nextBoolean());
