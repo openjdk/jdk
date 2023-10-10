@@ -98,6 +98,12 @@ esac
 
 # first make cert/key DBs writable
 
+${CP} ${TESTSRC}${FS}..${FS}nss${FS}db${FS}cert9.db ${TESTCLASSES}
+${CHMOD} +w ${TESTCLASSES}${FS}cert9.db
+
+${CP} ${TESTSRC}${FS}..${FS}nss${FS}db${FS}key4.db ${TESTCLASSES}
+${CHMOD} +w ${TESTCLASSES}${FS}key4.db
+
 ${CP} ${TESTSRC}${FS}..${FS}nss${FS}db${FS}cert8.db ${TESTCLASSES}
 ${CHMOD} +w ${TESTCLASSES}${FS}cert8.db
 

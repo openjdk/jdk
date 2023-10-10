@@ -106,10 +106,8 @@
 //     [ return_from_Java     ] <--- rsp
 //     [ argument word n      ]
 //      ...
-// -60 [ argument word 1      ]
-// -59 [ saved xmm31          ] <--- rsp after_call
-//     [ saved xmm16-xmm30    ] (EVEX enabled, else the space is blank)
-// -27 [ saved xmm15          ]
+// -28 [ argument word 1      ]
+// -27 [ saved xmm15          ] <--- rsp after_call
 //     [ saved xmm7-xmm14     ]
 //  -9 [ saved xmm6           ] (each xmm register takes 2 slots)
 //  -7 [ saved r15            ]
@@ -137,7 +135,7 @@
 #ifdef _WIN64
 enum call_stub_layout {
   xmm_save_first     = 6,  // save from xmm6
-  xmm_save_last      = 31, // to xmm31
+  xmm_save_last      = 15, // to xmm15
   xmm_save_base      = -9,
   rsp_after_call_off = xmm_save_base - 2 * (xmm_save_last - xmm_save_first), // -27
   r15_off            = -7,
@@ -237,17 +235,8 @@ address StubGenerator::generate_call_stub(address& return_address) {
 
 #ifdef _WIN64
   int last_reg = 15;
-  if (UseAVX > 2) {
-    last_reg = 31;
-  }
-  if (VM_Version::supports_evex()) {
-    for (int i = xmm_save_first; i <= last_reg; i++) {
-      __ vextractf32x4(xmm_save(i), as_XMMRegister(i), 0);
-    }
-  } else {
-    for (int i = xmm_save_first; i <= last_reg; i++) {
-      __ movdqu(xmm_save(i), as_XMMRegister(i));
-    }
+  for (int i = xmm_save_first; i <= last_reg; i++) {
+    __ movdqu(xmm_save(i), as_XMMRegister(i));
   }
 
   const Address rdi_save(rbp, rdi_off * wordSize);
@@ -370,14 +359,8 @@ address StubGenerator::generate_call_stub(address& return_address) {
   // restore regs belonging to calling function
 #ifdef _WIN64
   // emit the restores for xmm regs
-  if (VM_Version::supports_evex()) {
-    for (int i = xmm_save_first; i <= last_reg; i++) {
-      __ vinsertf32x4(as_XMMRegister(i), as_XMMRegister(i), xmm_save(i), 0);
-    }
-  } else {
-    for (int i = xmm_save_first; i <= last_reg; i++) {
-      __ movdqu(as_XMMRegister(i), xmm_save(i));
-    }
+  for (int i = xmm_save_first; i <= last_reg; i++) {
+    __ movdqu(as_XMMRegister(i), xmm_save(i));
   }
 #endif
   __ movptr(r15, r15_save);
@@ -4187,6 +4170,26 @@ void StubGenerator::generate_compiler_stubs() {
   if (UseMontgomerySquareIntrinsic) {
     StubRoutines::_montgomerySquare
       = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
+  }
+
+  // Load x86_64_sort library on supported hardware to enable avx512 sort and partition intrinsics
+  if (UseAVX > 2 && VM_Version::supports_avx512dq()) {
+    void *libsimdsort = nullptr;
+    char ebuf_[1024];
+    char dll_name_simd_sort[JVM_MAXPATHLEN];
+    if (os::dll_locate_lib(dll_name_simd_sort, sizeof(dll_name_simd_sort), Arguments::get_dll_dir(), "simdsort")) {
+      libsimdsort = os::dll_load(dll_name_simd_sort, ebuf_, sizeof ebuf_);
+    }
+    // Get addresses for avx512 sort and partition routines
+    if (libsimdsort != nullptr) {
+      log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "simdsort" JNI_LIB_SUFFIX, p2i(libsimdsort));
+
+      snprintf(ebuf_, sizeof(ebuf_), "avx512_sort");
+      StubRoutines::_array_sort = (address)os::dll_lookup(libsimdsort, ebuf_);
+
+      snprintf(ebuf_, sizeof(ebuf_), "avx512_partition");
+      StubRoutines::_array_partition = (address)os::dll_lookup(libsimdsort, ebuf_);
+    }
   }
 
   // Get svml stub routine addresses

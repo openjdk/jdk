@@ -663,13 +663,6 @@ void MetaspaceShared::preload_and_dump() {
       MetaspaceShared::unrecoverable_writing_error("VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
     }
   }
-
-#if INCLUDE_CDS_JAVA_HEAP
-  // Restore the java loaders that were cleared at dump time
-  if (use_full_module_graph()) {
-    HeapShared::restore_loader_data();
-  }
-#endif
 }
 
 #if INCLUDE_CDS_JAVA_HEAP && defined(_LP64)
