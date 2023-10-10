@@ -54,7 +54,7 @@ void CompressedKlassPointers::set_base_and_shift(address thebase, int theshift) 
 
   assert(base() == _base, "combo encoding");
   assert(shift() == _shift, "combo encoding");
-  assert(use_compressed_class_pointers() == UseCompressedClassPointers, "combo encoding");
+  assert(use_compressed_class_pointers() == true, "combo encoding");
 }
 
 // Given a klass range [addr, addr+len) and a given encoding scheme, assert that this scheme covers the range, then
