@@ -135,10 +135,9 @@ public class Main {
     // This is the entry that get launched by the security tool jarsigner.
     public static void main(String args[]) throws Exception {
         Main js = new Main();
-        try {
-            js.run(args);
-        } catch (ExitException ee) {
-            System.exit(ee.errorCode);
+        int exitCode = js.run(args);
+        if (exitCode != 0) {
+            System.exit(exitCode);
         }
     }
 
@@ -247,7 +246,7 @@ public class Main {
     PKIXBuilderParameters pkixParameters;
     Set<X509Certificate> trustedCerts = new HashSet<>();
 
-    public void run(String args[]) {
+    public int run(String args[]) {
         try {
             parseArgs(args);
 
@@ -313,17 +312,13 @@ public class Main {
                 signJar(jarfile, alias);
             }
         } catch (ExitException ee) {
-            if (ee.errorCode == 0) {
-                return;
-            } else {
-                throw ee;
-            }
+            return ee.errorCode;
         } catch (Exception e) {
             System.out.println(rb.getString("jarsigner.error.") + e);
             if (debug) {
                 e.printStackTrace();
             }
-            exit(1);
+            return 1;
         } finally {
             // zero-out private key password
             if (keypass != null) {
@@ -356,10 +351,10 @@ public class Main {
             if (tsaChainNotValidated) {
                 exitCode |= 64;
             }
-            if (exitCode != 0) {
-                exit(exitCode);
-            }
+            return exitCode;
         }
+
+        return 0;
     }
 
     /*

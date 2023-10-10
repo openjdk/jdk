@@ -30,39 +30,32 @@
  * @modules java.security.jgss/sun.security.krb5.internal.tools
  */
 
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 import jdk.test.lib.SecurityTools;
 
 public class ExitOrNot {
+
+    private static final int BAD = Platform.isWindows() ? -1 : 255;
+
     public static void main(String[] args) throws Exception {
 
         // launching the tool still exits
         SecurityTools.kinit("u@R p1 p2")
-                .shouldHaveExitValue(-1);
+                .shouldHaveExitValue(BAD);
 
         SecurityTools.klist("-x")
-                .shouldHaveExitValue(-1);
+                .shouldHaveExitValue(BAD);
 
         SecurityTools.ktab("-x")
-                .shouldHaveExitValue(-1);
+                .shouldHaveExitValue(BAD);
 
-        // calling the run() methods no longer
-        try {
-            new sun.security.krb5.internal.tools.Kinit()
-                    .run("u@R p1 p2".split(" "));
-        } catch (Exception e) {
-            // whatever
-        }
-        try {
-            new sun.security.krb5.internal.tools.Klist()
-                    .run("-x".split(" "));
-        } catch (Exception e) {
-            // whatever
-        }
-        try {
-            new sun.security.krb5.internal.tools.Ktab()
-                    .run("-x".split(" "));
-        } catch (Exception e) {
-            // whatever
-        }
+        // calling the run() methods returns the exit code
+        Asserts.assertEQ(new sun.security.krb5.internal.tools.Kinit()
+                .run("u@R p1 p2".split(" ")), -1);
+        Asserts.assertEQ(new sun.security.krb5.internal.tools.Klist()
+                .run("-x".split(" ")), -1);
+        Asserts.assertEQ(new sun.security.krb5.internal.tools.Ktab()
+                .run("-x".split(" ")), -1);
     }
 }

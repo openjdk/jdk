@@ -30,6 +30,7 @@
  *          jdk.jartool/sun.security.tools.jarsigner
  */
 
+import jdk.test.lib.Asserts;
 import jdk.test.lib.SecurityTools;
 
 public class ExitOrNot {
@@ -42,18 +43,10 @@ public class ExitOrNot {
                 .shouldHaveExitValue(1);
 
         // calling the run() methods no longer
-        try {
-            new sun.security.tools.jarsigner.Main()
-                    .run("1 2 3".split(" "));
-        } catch (Exception e) {
-            // whatever
-        }
+        Asserts.assertEQ(new sun.security.tools.jarsigner.Main()
+                    .run("1 2 3".split(" ")), 1);
 
-        try {
-            new sun.security.tools.keytool.Main()
-                    .run("-x".split(" "), System.out);
-        } catch (Exception e) {
-            // whatever
-        }
+        Asserts.assertEQ(new sun.security.tools.keytool.Main()
+                    .run("-x".split(" "), System.out), 1);
     }
 }

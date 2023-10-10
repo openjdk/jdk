@@ -93,10 +93,9 @@ public class Kinit {
 
     public static void main(String[] args) {
         Kinit kinit = new Kinit();
-        try {
-            kinit.run(args);
-        } catch (Exception e) {
-            System.exit(-1);
+        int exitCode = kinit.run(args);
+        if (exitCode != 0) {
+            System.exit(exitCode);
         }
     }
 
@@ -104,12 +103,9 @@ public class Kinit {
      * Run the Kinit command.
      * @param args array of ticket request options.
      * Available options are: -f, -p, -c, principal, password.
-     * @exception IOException if an I/O error occurs.
-     * @exception RealmException if the Realm could not be instantiated.
-     * @exception KrbException if error occurs during Kerberos operation.
+     * @return the exit code
      */
-    public void run(String[] args)
-            throws IOException, RealmException, KrbException {
+    public int run(String[] args) {
         try {
             if (args == null || args.length == 0) {
                 options = new KinitOptions();
@@ -131,7 +127,7 @@ public class Kinit {
                             + options.action);
             }
         } catch (Exception e) {
-            String msg = null;
+            String msg;
             if (e instanceof KrbException) {
                 msg = ((KrbException)e).krbErrorMessage() + " " +
                         ((KrbException)e).returnCodeMessage();
@@ -144,8 +140,9 @@ public class Kinit {
                 System.out.println("Exception: " + e);
             }
             e.printStackTrace();
-            throw e;
+            return -1;
         }
+        return 0;
     }
 
     private void renew()

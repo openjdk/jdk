@@ -407,10 +407,9 @@ public final class Main {
 
     public static void main(String[] args) throws Exception {
         Main kt = new Main();
-        try {
-            kt.run(args, System.out);
-        } catch (ExitException ee) {
-            System.exit(ee.errorCode);
+        int exitCode = kt.run(args, System.out);
+        if (exitCode != 0) {
+            System.exit(exitCode);
         }
     }
 
@@ -423,21 +422,21 @@ public final class Main {
         }
     }
 
-    public void run(String[] args, PrintStream out) throws Exception {
+    public int run(String[] args, PrintStream out) throws Exception {
         try {
             parseArgs(args);
             if (command != null) {
                 doCommands(out);
             }
         } catch (ExitException ee) {
-            throw ee;
+            return ee.errorCode;
         } catch (Exception e) {
             System.out.println(rb.getString("keytool.error.") + e);
             if (verbose) {
                 e.printStackTrace(System.out);
             }
             if (!debug) {
-                throw new ExitException(1);
+                return 1;
             } else {
                 throw e;
             }
@@ -454,6 +453,7 @@ public final class Main {
                 ksStream.close();
             }
         }
+        return 0;
     }
 
     /**

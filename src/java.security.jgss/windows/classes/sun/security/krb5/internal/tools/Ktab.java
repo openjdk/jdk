@@ -73,10 +73,9 @@ public class Ktab {
      */
     public static void main(String[] args) {
         Ktab ktab = new Ktab();
-        try {
-            ktab.run(args);
-        } catch (ExitException ee) {
-            System.exit(ee.errorCode);
+        int exitCode = ktab.run(args);
+        if (exitCode != 0) {
+            System.exit(exitCode);
         }
     }
 
@@ -89,7 +88,16 @@ public class Ktab {
         }
     }
 
-    public void run(String[] args) throws ExitException {
+    public int run(String[] args) {
+        try {
+            run0(args);
+            return 0;
+        } catch (ExitException ee) {
+            return ee.errorCode;
+        }
+    }
+
+    private void run0(String[] args) throws ExitException {
         if ((args.length == 1) &&
             ((args[0].equalsIgnoreCase("-?")) ||
              (args[0].equalsIgnoreCase("-h")) ||

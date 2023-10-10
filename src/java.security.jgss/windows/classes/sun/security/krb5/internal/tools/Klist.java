@@ -78,23 +78,13 @@ public class Klist {
      */
     public static void main(String[] args) {
         Klist klist = new Klist();
-        try {
-            klist.run(args);
-        } catch (ExitException ee) {
-            System.exit(ee.errorCode);
+        int exitCode = klist.run(args);
+        if (exitCode != 0) {
+            System.exit(exitCode);
         }
     }
 
-    private static class ExitException extends RuntimeException {
-        @java.io.Serial
-        static final long serialVersionUID = 0L;
-        private final int errorCode;
-        public ExitException(int errorCode) {
-            this.errorCode = errorCode;
-        }
-    }
-
-    public void run(String[] args) throws ExitException {
+    public int run(String[] args) {
         if ((args == null) || (args.length == 0)) {
             action = 'c'; // default will list default credentials cache.
         } else {
@@ -104,7 +94,7 @@ public class Klist {
                         args[i].equals("-h") ||
                         args[i].equals("--help")) {
                     printHelp();
-                    return;
+                    return 0;
                 }
                 if ((args[i].length() >= 2) && (args[i].startsWith("-"))) {
                     arg = Character.valueOf(args[i].charAt(1));
@@ -134,18 +124,18 @@ public class Klist {
                             options[2] = 't';
                             break;
                         default:
+                            System.out.println("Invalid argument: " + args[i]);
                             printHelp();
-                            throw new ExitException(-1);
+                            return -1;
                     }
-
                 } else {
                     if (!args[i].startsWith("-") && (i == args.length - 1)) {
                         // the argument is the last one.
                         name = args[i];
-                        arg = null;
                     } else {
+                        System.out.println("Invalid argument: " + args[i]);
                         printHelp(); // incorrect input format.
-                        throw new ExitException(-1);
+                        return -1;
                     }
                 }
             }
@@ -159,44 +149,42 @@ public class Klist {
                 target = CredentialsCache.getInstance(name);
 
             if (target != null)  {
-                displayCache();
+                return displayCache();
             } else {
                 displayMessage("Credentials cache");
-                throw new ExitException(-1);
+                return -1;
             }
-            break;
         case 'k':
             KeyTab ktab = KeyTab.getInstance(name);
             if (ktab.isMissing()) {
                 System.out.println("KeyTab " + name + " not found.");
-                throw new ExitException(-1);
+                return -1;
             } else if (!ktab.isValid()) {
                 System.out.println("KeyTab " + name
                         + " format not supported.");
-                throw new ExitException(-1);
+                return -1;
             }
             target = ktab;
             name = ktab.tabName();
-            displayTab();
-            break;
+            return displayTab();
         default:
             if (name != null) {
                 printHelp();
-                throw new ExitException(-1);
+                return -1;
             } else {
                 target = CredentialsCache.getInstance();
                 name = CredentialsCache.cacheName();
                 if (target != null) {
-                    displayCache();
+                    return displayCache();
                 } else {
                     displayMessage("Credentials cache");
-                    throw new ExitException(-1);
+                    return -1;
                 }
             }
         }
     }
 
-    void displayTab() {
+    int displayTab() {
         KeyTab table = (KeyTab)target;
         KeyTabEntry[] entries = table.getEntries();
         if (entries.length == 0) {
@@ -231,16 +219,17 @@ public class Klist {
                 }
             }
         }
+        return 0;
     }
 
-    void displayCache() {
+    int displayCache() {
         CredentialsCache cache = (CredentialsCache)target;
         sun.security.krb5.internal.ccache.Credentials[] creds =
             cache.getCredsList();
         if (creds == null) {
             System.out.println ("No credentials available in the cache " +
                                 name);
-            throw new ExitException(-1);
+            return -1;
         }
         System.out.println("\nCredentials cache: " +  name);
         String defaultPrincipal = cache.getPrimaryPrincipal().toString();
@@ -337,7 +326,7 @@ public class Klist {
                     if (DEBUG) {
                         e.printStackTrace();
                     }
-                    throw new ExitException(-1);
+                    return -1;
                 }
             }
         } else {
@@ -352,6 +341,8 @@ public class Klist {
                 System.out.println("     " + e);
             }
         }
+
+        return 0;
     }
 
     void displayMessage(String target) {
