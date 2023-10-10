@@ -533,7 +533,6 @@ Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobjec
     } else {
         int opt = (join) ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP;
         n = setGroupSourceReqOption(env, fdo, opt, group, index, source);
-
     }
 
     if (n == SOCKET_ERROR) {
