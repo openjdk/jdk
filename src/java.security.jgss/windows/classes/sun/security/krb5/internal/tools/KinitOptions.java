@@ -46,7 +46,7 @@ import java.io.FileInputStream;
  */
 class KinitOptions {
 
-    // 0. Help, 1. acquire, 2. renew, 3. validate, 4. Help
+    // 0. Help, 1. acquire, 2. renew, 3. validate
     public int action = 1;
 
     // forwardable and proxiable flags have two states:
