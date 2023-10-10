@@ -343,6 +343,7 @@ class Compile : public Phase {
   bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
 #ifndef PRODUCT
   uint                  _igv_idx;               // Counter for IGV node identifiers
+  uint                  _igv_phase_iter[PHASE_NUM_TYPES]; // Counters for IGV phase iterations
   bool                  _trace_opto_output;
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
 #endif

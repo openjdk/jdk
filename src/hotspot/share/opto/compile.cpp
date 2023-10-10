@@ -626,6 +626,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _has_reserved_stack_access(target->has_reserved_stack_access()),
 #ifndef PRODUCT
                   _igv_idx(0),
+                  _igv_phase_iter(),
                   _trace_opto_output(directive->TraceOptoOutputOption),
 #endif
                   _has_method_handle_invokes(false),
@@ -699,7 +700,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 
 #ifndef PRODUCT
   set_parsed_irreducible_loop(false);
-  CompilerPhaseTypeHelper::reset_iters();
 #endif
 
   if (directive->ReplayInlineOption) {
@@ -964,7 +964,6 @@ Compile::Compile( ciEnv* ci_env,
 #ifndef PRODUCT
   set_print_assembly(PrintFrameConverterAssembly);
   set_parsed_irreducible_loop(false);
-  CompilerPhaseTypeHelper::reset_iters();
 #else
   set_print_assembly(false); // Must initialize.
 #endif
@@ -5133,7 +5132,7 @@ void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
 
 void Compile::print_method_iter(CompilerPhaseType cpt, int level, Node* n) {
 #ifndef PRODUCT
-  int iter = CompilerPhaseTypeHelper::next_iter(cpt);
+  int iter = ++_igv_phase_iter[cpt];
   print_method(cpt, level, n, iter);
 #else
   print_method(cpt, level, n);

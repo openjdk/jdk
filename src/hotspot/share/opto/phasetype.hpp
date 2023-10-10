@@ -117,10 +117,6 @@ static const char* phase_names[] = {
 #undef array_of_labels
 };
 
-#ifndef PRODUCT
-static int phase_iters[PHASE_NUM_TYPES] = {0};
-#endif
-
 class CompilerPhaseTypeHelper {
   public:
   static const char* to_name(CompilerPhaseType cpt) {
@@ -132,16 +128,6 @@ class CompilerPhaseTypeHelper {
   static uint64_t to_bitmask(CompilerPhaseType cpt) {
     return (UINT64_C(1) << cpt);
   }
-#ifndef PRODUCT
-  static void reset_iters() {
-    for(int i = 0; i < PHASE_NUM_TYPES; ++i) {
-      phase_iters[i] = 0;
-    }
-  };
-  static int next_iter(CompilerPhaseType cpt) {
-    return ++phase_iters[cpt];
-  };
-#endif
 };
 
 static CompilerPhaseType find_phase(const char* str) {
