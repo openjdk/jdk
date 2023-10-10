@@ -38,7 +38,6 @@ import jdk.test.lib.apps.LingeredApp;
  * @test
  * @summary Unit test for jinfo utility
  *
- * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -61,9 +60,8 @@ public class JInfoTest {
         LingeredApp app1 = new JInfoTestLingeredApp();
         LingeredApp app2 = new JInfoTestLingeredApp();
         try {
-            String[] params = new String[0];;
-            LingeredApp.startAppExactJvmOpts(app1, params);
-            LingeredApp.startAppExactJvmOpts(app2, params);
+            LingeredApp.startApp(app1);
+            LingeredApp.startApp(app2);
             OutputAnalyzer output = jinfo("-flag", "MinHeapFreeRatio=1", "JInfoTestLingeredApp");
             output.shouldHaveExitValue(0);
             output = jinfo("-flag", "MinHeapFreeRatio", "JInfoTestLingeredApp");
@@ -90,9 +88,8 @@ public class JInfoTest {
         LingeredApp app1 = new JInfoTestLingeredApp();
         LingeredApp app2 = new JInfoTestLingeredApp();
         try {
-            String[] params = new String[0];
-            LingeredApp.startAppExactJvmOpts(app1, params);
-            LingeredApp.startAppExactJvmOpts(app2, params);
+            LingeredApp.startApp(app1);
+            LingeredApp.startApp(app2);
             OutputAnalyzer output = jinfo("JInfoTestLingeredApp");
             output.shouldHaveExitValue(0);
             // "Runtime Environment" written once per proc
