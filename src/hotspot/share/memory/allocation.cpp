@@ -111,7 +111,7 @@ void* ArenaObj::operator new(size_t size, Arena *arena) throw() {
 // AnyObj
 //
 
-void* AnyObj::operator new(size_t size, Arena *arena) {
+void* AnyObj::operator new(size_t size, Arena *arena) throw() {
   address res = (address)arena->Amalloc(size);
   DEBUG_ONLY(set_allocation_type(res, ARENA);)
   return res;
