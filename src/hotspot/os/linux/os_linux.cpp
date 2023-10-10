@@ -2950,29 +2950,27 @@ void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
   }
 }
 
-static void warn_fail_pretouch_memory(void* first, void* last, size_t page_size,
-                                      int err) {
-  warning("INFO: os::pd_pretouch_memory(" PTR_FORMAT ", " PTR_FORMAT ", "
-          SIZE_FORMAT ") failed; error='%s' (errno=%d)",
-          p2i(first), p2i(last), page_size,
-          os::strerror(err), err);
-}
-
 void os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
   const size_t len = pointer_delta(last, first, sizeof(char)) + page_size;
-  // Use madvise to pretouch on Linux first, and fallback to the common method
-  // if unsupported. THP can form right after madvise rather than being
-  // assembled later.
-  if (::madvise(first, len, MADV_POPULATE_WRITE) == -1) {
-    int err = errno;
-    if (err == EINVAL) { // Not supported
-      // When using THP we need to always pre-touch using small pages as the OS
-      // will initially always use small pages.
-      page_size = UseTransparentHugePages ? (size_t)os::vm_page_size() : page_size;
-      pretouch_memory_common(first, last, page_size);
-    } else {
-      warn_fail_pretouch_memory(first, last, page_size, err);
+  // Use madvise to pretouch on Linux when THP is used, and fallback to the
+  // common method if unsupported. THP can form right after madvise rather than
+  // being assembled later.
+  if (HugePages::thp_mode() == THPMode::always || UseTransparentHugePages) {
+    if (::madvise(first, len, MADV_POPULATE_WRITE) == -1) {
+      int err = errno;
+      if (err == EINVAL) { // Not supported
+	// When using THP we need to always pre-touch using small pages as the
+	// OS will initially always use small pages.
+	pretouch_memory_common(first, last, os::vm_page_size());
+      } else {
+	log_warning(gc, os)("::madvise(" PTR_FORMAT ", " SIZE_FORMAT
+			    ", %d) failed; error='%s' (errno=%d)",
+			    p2i(first), len, MADV_POPULATE_WRITE,
+			    os::strerror(err), err);
+      }
     }
+  } else {
+    pretouch_memory_common(first, last, page_size);
   }
 }
 
