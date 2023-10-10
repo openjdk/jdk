@@ -919,18 +919,12 @@ endif
 
 ################################################################################
 
-# MACOSX_METAL_VERSION_MIN specifies the lowest version of Macosx
+# MACOSX_METAL_VERSION_MIN specifies the lowest version of macOS
 # that should be used to compile Metal shaders. We support Metal
-# pipeline only on Macosx >=10.14. For Macosx versions <10.14 even if
+# pipeline only on macOS >=10.14. For macOS versions <10.14 even if
 # we enable Metal pipeline using -Dsun.java2d.metal=true, at
-# runtime we force it to use OpenGL pipeline. And MACOSX_VERSION_MIN
-# for aarch64 has always been >10.14 so we use continue to use
-# MACOSX_VERSION_MIN for aarch64.
-ifeq ($(OPENJDK_TARGET_CPU_ARCH), xaarch64)
-    MACOSX_METAL_VERSION_MIN=$(MACOSX_VERSION_MIN)
-else
-    MACOSX_METAL_VERSION_MIN=10.14.0
-endif
+# runtime we force it to use OpenGL pipeline.
+MACOSX_METAL_VERSION_MIN=$(MACOSX_VERSION_MIN)
 
 ifeq ($(call isTargetOs, macosx), true)
   SHADERS_SRC := $(TOPDIR)/src/java.desktop/macosx/native/libawt_lwawt/java2d/metal/shaders.metal
