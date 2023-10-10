@@ -22,15 +22,6 @@
  */
 
 /*
- * @test
- * @bug 4185732
- * @library /java/text/testlib
- * @build Bug4185732Test HexDumpReader
- * @run junit Bug4185732Test
- * @summary test that ChoiceFormat invariants are preserved across serialization.
- */
-
-/*
  * This file is available under and governed by the GNU General Public
  * License version 2 only, as published by the Free Software Foundation.
  * However, the following notice accompanied the original version of this
@@ -64,36 +55,50 @@
  * DISTRIBUTING THIS SOFTWARE OR ITS DERIVATIVES.
  */
 
-import java.util.*;
-import java.io.*;
+/*
+ * @test
+ * @bug 4185732
+ * @library /java/text/testlib
+ * @build HexDumpReader
+ * @summary Test that ChoiceFormat invariants are preserved across serialization.
+ *          This test depends on Bug4185732.ser.txt and will fail otherwise.
+ * @run junit Bug4185732Test
+ */
+
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.text.ChoiceFormat;
 
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
-/**
- *  A Locale can never contain language codes of he, yi or id.
- */
 public class Bug4185732Test {
+
+    /*
+     * The ChoiceFormat class requires that its choiceFormats and choiceLimits
+     * arrays have the same length. This test ensures that the invariant is enforced
+     * during the readObject() call.
+     */
     @Test
-    public void testIt() throws Exception {
+    public void choiceFormatSerializationInvariantsTest() {
         try {
+            // A serialized ChoiceFormat with unequal formats and limits
             final ObjectInputStream in
                 = new ObjectInputStream(HexDumpReader.getStreamFromHexDump("Bug4185732.ser.txt"));
             final ChoiceFormat loc = (ChoiceFormat)in.readObject();
             if (loc.getFormats().length != loc.getLimits().length) {
                 fail("ChoiceFormat did not properly check stream");
             } else {
-                //for some reason, the data file was VALID.  This test
-                //requires a corrupt data file the format and limit
-                //arrays are of different length.
+                // for some reason, the data file was VALID.  This test
+                // requires a corrupt data file the format and limit
+                // arrays are of different length.
                 fail("Test data file was not properly created");
             }
-        } catch (InvalidObjectException e) {
-            //this is what we want to have happen
-        } catch (Exception e) {
-            fail(e.toString());
+        } catch (InvalidObjectException expectedException) {
+            // Expecting an IOE
+        } catch (Exception wrongException) {
+            fail("Expected an InvalidObjectException, instead got: " + wrongException);
         }
     }
 }

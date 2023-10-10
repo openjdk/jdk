@@ -53,7 +53,7 @@
 class DirtyCardToOopClosure: public MemRegionClosure {
 protected:
   OopIterateClosure* _cl;
-  Space* _sp;
+  TenuredSpace* _sp;
   HeapWord* _min_done;          // Need a downwards traversal to compensate
                                 // imprecise write barrier; this is the
                                 // lowest location already done (or,
@@ -88,7 +88,7 @@ protected:
                                HeapWord* bottom, HeapWord* top,
                                OopIterateClosure* cl);
 public:
-  DirtyCardToOopClosure(Space* sp, OopIterateClosure* cl) :
+  DirtyCardToOopClosure(TenuredSpace* sp, OopIterateClosure* cl) :
     _cl(cl), _sp(sp), _min_done(nullptr) {
     NOT_PRODUCT(_last_bottom = nullptr);
   }
@@ -98,7 +98,7 @@ public:
 
 HeapWord* DirtyCardToOopClosure::get_actual_top(HeapWord* top,
                                                 HeapWord* top_obj) {
-  if (top_obj != nullptr && top_obj < (_sp->toContiguousSpace())->top()) {
+  if (top_obj != nullptr && top_obj < _sp->top()) {
     if (cast_to_oop(top_obj)->is_objArray() || cast_to_oop(top_obj)->is_typeArray()) {
       // An arrayOop is starting on the dirty card - since we do exact
       // store checks for objArrays we are done.
@@ -111,7 +111,7 @@ HeapWord* DirtyCardToOopClosure::get_actual_top(HeapWord* top,
       top = top_obj + cast_to_oop(top_obj)->size();
     }
   } else {
-    top = (_sp->toContiguousSpace())->top();
+    top = _sp->top();
   }
   return top;
 }
