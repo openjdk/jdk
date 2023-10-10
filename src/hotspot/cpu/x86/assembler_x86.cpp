@@ -1332,7 +1332,7 @@ void Assembler::addb(Address dst, Register src) {
 }
 
 void Assembler::addb(Register dst, int imm8) {
-  prefix_and_encode(dst->encoding(), true);
+  (void) prefix_and_encode(dst->encoding(), true);
   emit_arith_b(0x80, 0xC0, dst, imm8);
 }
 
