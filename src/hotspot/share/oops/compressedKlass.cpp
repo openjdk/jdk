@@ -42,8 +42,8 @@ void CompressedKlassPointers::set_base_and_shift(address thebase, int theshift) 
   _base = thebase;
   _shift = theshift;
 
-  // we keep a composite word, `_combo`, containing base+shift+UseCCP, to load
-  // all three information with a single 64-bit load.
+  // Encode all three base+shift+UseCCP into a single 64-bit word.
+  // This would allow optimizing the fast-path with a single load.
   const uint64_t base_i = (uint64_t)_base;
   assert((base_i & ~mask_base) == 0, "Base not aligned?");
   assert(_shift <= 63, "Sanity");
