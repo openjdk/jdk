@@ -47,7 +47,7 @@ public class TestJOptionPaneAlwaysOnTopBug {
 
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
-        try {	
+        try {
             SwingUtilities.invokeAndWait(() -> {
                 alwaysOnTopFrame = new JFrame("Test JOptionPane");
                 alwaysOnTopFrame.setSize(600, 400);
@@ -66,7 +66,7 @@ public class TestJOptionPaneAlwaysOnTopBug {
                         robot.delay(3000);
                         robot.keyPress(KeyEvent.VK_ENTER);
                         robot.keyRelease(KeyEvent.VK_ENTER);
-                        System.out.println("always-on-top: " +  
+                        System.out.println("always-on-top: " +
                             KeyboardFocusManager.getCurrentKeyboardFocusManager().
                                            getFocusedWindow().isAlwaysOnTop());
                         if (KeyboardFocusManager.getCurrentKeyboardFocusManager().
@@ -74,7 +74,7 @@ public class TestJOptionPaneAlwaysOnTopBug {
                             if (!dialog.isAlwaysOnTop()) {
                                 throw new RuntimeException("Dialog not on top");
                             }
-                        }			
+                        }
                     }
                 }.start();
                 JOptionPane option = new JOptionPane();
@@ -82,7 +82,7 @@ public class TestJOptionPaneAlwaysOnTopBug {
             });
         } finally {
             SwingUtilities.invokeAndWait(() -> {
-                if (alwaysOnTopFrame != null) {		    
+                if (alwaysOnTopFrame != null) {
                     alwaysOnTopFrame.dispose();
                 }
                 if (normalFrame != null) {
