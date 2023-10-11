@@ -417,6 +417,10 @@ class Stream<T> extends ExchangeImpl<T> {
     // pushes entire response body into response subscriber
     // blocking when required by local or remote flow control
     CompletableFuture<T> receiveData(BodySubscriber<T> bodySubscriber, Executor executor) {
+        // ensure that the body subscriber will be subscribed and onError() is
+        // invoked
+        pendingResponseSubscriber = bodySubscriber;
+
         // We want to allow the subscriber's getBody() method to block so it
         // can work with InputStreams. So, we offload execution.
         responseBodyCF = ResponseSubscribers.getBodyAsync(executor, bodySubscriber,
@@ -427,9 +431,6 @@ class Stream<T> extends ExchangeImpl<T> {
             responseBodyCF.completeExceptionally(t);
         }
 
-        // ensure that the body subscriber will be subscribed and onError() is
-        // invoked
-        pendingResponseSubscriber = bodySubscriber;
         sched.runOrSchedule(); // in case data waiting already to be processed, or error
 
         return responseBodyCF;
@@ -1375,10 +1376,17 @@ class Stream<T> extends ExchangeImpl<T> {
         }
 
         if (closing) { // true if the stream has not been closed yet
-            if (responseSubscriber != null || pendingResponseSubscriber != null) {
+            var subscriber = this.responseSubscriber;
+            if (subscriber == null) subscriber = this.pendingResponseSubscriber;
+            if (subscriber != null) {
                 if (debug.on())
                     debug.log("stream %s closing due to %s", streamid, (Object)errorRef.get());
                 sched.runOrSchedule();
+                if (subscriber instanceof Http2StreamResponseSubscriber<?> rs) {
+                    // make sure the subscriber is stopped.
+                    if (debug.on()) debug.log("closing response subscriber stream %s", streamid);
+                    rs.complete(errorRef.get());
+                }
             } else {
                 if (debug.on())
                     debug.log("stream %s closing due to %s before subscriber registered",
