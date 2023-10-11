@@ -46,7 +46,6 @@ import static java.lang.invoke.MethodHandleInfo.REF_putStatic;
  * {@link MethodHandle}.  A {@linkplain DirectMethodHandleDesc} corresponds to
  * a {@code Constant_MethodHandle_info} entry in the constant pool of a classfile.
  *
- * @sealedGraph
  * @since 12
  */
 public sealed interface DirectMethodHandleDesc
