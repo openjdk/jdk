@@ -173,7 +173,7 @@ public:
 
 class IntrusiveListTestWithDisposal : public IntrusiveListTestWithList1 {
 public:
-  IntrusiveListTestWithDisposal() : ndisposed(0) { }
+  IntrusiveListTestWithDisposal() : ndisposed(0), disposed() { }
 
   size_t ndisposed;
   const Value* disposed[nvalues];
