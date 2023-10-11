@@ -1166,15 +1166,15 @@ public class BidiBase {
     static final int DirPropFlagMultiRuns = DirPropFlag((byte)31);
 
     /* to avoid some conditional statements, use tiny constant arrays */
-    static final int DirPropFlagLR[] = { DirPropFlag(L), DirPropFlag(R) };
-    static final int DirPropFlagE[] = { DirPropFlag(LRE), DirPropFlag(RLE) };
-    static final int DirPropFlagO[] = { DirPropFlag(LRO), DirPropFlag(RLO) };
+    static final int[] DirPropFlagLR = { DirPropFlag(L), DirPropFlag(R) };
+    static final int[] DirPropFlagE = { DirPropFlag(LRE), DirPropFlag(RLE) };
+    static final int[] DirPropFlagO = { DirPropFlag(LRO), DirPropFlag(RLO) };
 
-    static final int DirPropFlagLR(byte level) { return DirPropFlagLR[level & 1]; }
-    static final int DirPropFlagE(byte level)  { return DirPropFlagE[level & 1]; }
-    static final int DirPropFlagO(byte level)  { return DirPropFlagO[level & 1]; }
-    static final byte DirFromStrong(byte strong) { return strong == L ? L : R; }
-    static final byte NoOverride(byte level) { return (byte)(level & ~LEVEL_OVERRIDE); }
+    static int DirPropFlagLR(byte level) { return DirPropFlagLR[level & 1]; }
+    static int DirPropFlagE(byte level)  { return DirPropFlagE[level & 1]; }
+    static int DirPropFlagO(byte level)  { return DirPropFlagO[level & 1]; }
+    static byte DirFromStrong(byte strong) { return strong == L ? L : R; }
+    static byte NoOverride(byte level) { return (byte)(level & ~LEVEL_OVERRIDE); }
 
     /*  are there any characters that are LTR or RTL? */
     static final int MASK_LTR =
@@ -2434,7 +2434,7 @@ public class BidiBase {
         return (short)(cell >> 5);
     }
 
-    private static final short groupProp[] =          /* dirProp regrouped */
+    private static final short[] groupProp =          /* dirProp regrouped */
     {
         /*  L   R   EN  ES  ET  AN  CS  B   S   WS  ON  LRE LRO AL  RLE RLO PDF NSM BN  FSI LRI RLI PDI ENL ENR */
             0,  1,  2,  7,  8,  3,  9,  6,  5,  4,  4,  10, 10, 12, 10, 10, 10, 11, 10, 4,  4,  4,  4,  13, 14
@@ -2481,7 +2481,7 @@ public class BidiBase {
     /*     assembling chars for the opening L sequence.                  */
     /*                                                                   */
     /*                                                                   */
-    private static final short impTabProps[][] =
+    private static final short[][] impTabProps =
     {
 /*                        L,     R,    EN,    AN,    ON,     S,     B,    ES,    ET,    CS,    BN,   NSM,    AL,   ENL,   ENR,   Res */
 /* 0 Init        */ {     1,     2,     4,     5,     7,    15,    17,     7,     9,     7,     0,     7,     3,    18,    21,   _ON },
@@ -2580,7 +2580,7 @@ public class BidiBase {
     /*     to paragraph level in adjustWSLevels().                       */
     /*                                                                   */
 
-    private static final byte impTabL_DEFAULT[][] = /* Even paragraph level */
+    private static final byte[][] impTabL_DEFAULT = /* Even paragraph level */
         /*  In this table, conditional sequences receive the lower possible level
             until proven otherwise.
         */
@@ -2594,7 +2594,7 @@ public class BidiBase {
         /* 5 : AN+ON      */ {     0,  0x21,     0,  0x32,     5,     5,     0,  0 }
     };
 
-    private static final byte impTabR_DEFAULT[][] = /* Odd  paragraph level */
+    private static final byte[][] impTabR_DEFAULT = /* Odd  paragraph level */
         /*  In this table, conditional sequences receive the lower possible level
             until proven otherwise.
         */
@@ -2613,7 +2613,7 @@ public class BidiBase {
     private static final ImpTabPair impTab_DEFAULT = new ImpTabPair(
             impTabL_DEFAULT, impTabR_DEFAULT, impAct0, impAct0);
 
-    private static final byte impTabL_NUMBERS_SPECIAL[][] = { /* Even paragraph level */
+    private static final byte[][] impTabL_NUMBERS_SPECIAL = { /* Even paragraph level */
         /* In this table, conditional sequences receive the lower possible
            level until proven otherwise.
         */
@@ -2627,7 +2627,7 @@ public class BidiBase {
     private static final ImpTabPair impTab_NUMBERS_SPECIAL = new ImpTabPair(
             impTabL_NUMBERS_SPECIAL, impTabR_DEFAULT, impAct0, impAct0);
 
-    private static final byte impTabL_GROUP_NUMBERS_WITH_R[][] = {
+    private static final byte[][] impTabL_GROUP_NUMBERS_WITH_R = {
         /* In this table, EN/AN+ON sequences receive levels as if associated with R
            until proven that there is L or sor/eor on both sides. AN is handled like EN.
         */
@@ -2639,7 +2639,7 @@ public class BidiBase {
         /* 4 R+ON         */ {  0x20,     3,     5,     5,     4,  0x20,  0x20,  1 },
         /* 5 R+EN/AN      */ {     0,     3,     5,     5,  0x14,     0,     0,  2 }
     };
-    private static final byte impTabR_GROUP_NUMBERS_WITH_R[][] = {
+    private static final byte[][] impTabR_GROUP_NUMBERS_WITH_R = {
         /*  In this table, EN/AN+ON sequences receive levels as if associated with R
             until proven that there is L on both sides. AN is handled like EN.
         */
@@ -2654,7 +2654,7 @@ public class BidiBase {
             ImpTabPair(impTabL_GROUP_NUMBERS_WITH_R,
                        impTabR_GROUP_NUMBERS_WITH_R, impAct0, impAct0);
 
-    private static final byte impTabL_INVERSE_NUMBERS_AS_L[][] = {
+    private static final byte[][] impTabL_INVERSE_NUMBERS_AS_L = {
         /* This table is identical to the Default LTR table except that EN and AN
            are handled like L.
         */
@@ -2666,7 +2666,7 @@ public class BidiBase {
         /* 4 : R+ON       */ {  0x20,     1,  0x20,  0x20,     4,     4,  0x20,  1 },
         /* 5 : AN+ON      */ {  0x20,     1,  0x20,  0x20,     5,     5,  0x20,  1 }
     };
-    private static final byte impTabR_INVERSE_NUMBERS_AS_L[][] = {
+    private static final byte[][] impTabR_INVERSE_NUMBERS_AS_L = {
         /* This table is identical to the Default RTL table except that EN and AN
            are handled like L.
         */
@@ -2682,7 +2682,7 @@ public class BidiBase {
             (impTabL_INVERSE_NUMBERS_AS_L, impTabR_INVERSE_NUMBERS_AS_L,
              impAct0, impAct0);
 
-    private static final byte impTabR_INVERSE_LIKE_DIRECT[][] = {  /* Odd  paragraph level */
+    private static final byte[][] impTabR_INVERSE_LIKE_DIRECT = {  /* Odd  paragraph level */
         /*  In this table, conditional sequences receive the lower possible level
             until proven otherwise.
         */
@@ -2699,7 +2699,7 @@ public class BidiBase {
     private static final ImpTabPair impTab_INVERSE_LIKE_DIRECT = new ImpTabPair(
             impTabL_DEFAULT, impTabR_INVERSE_LIKE_DIRECT, impAct0, impAct1);
 
-    private static final byte impTabL_INVERSE_LIKE_DIRECT_WITH_MARKS[][] = {
+    private static final byte[][] impTabL_INVERSE_LIKE_DIRECT_WITH_MARKS = {
         /* The case handled in this table is (visually):  R EN L
          */
         /*                         L,     R,    EN,    AN,    ON,     S,     B, Res */
@@ -2711,7 +2711,7 @@ public class BidiBase {
         /* 5 : R+EN       */ {  0x30,  0x43,     5,  0x56,  0x14,  0x30,  0x30,  4 },
         /* 6 : R+AN       */ {  0x30,  0x43,  0x55,     6,  0x14,  0x30,  0x30,  4 }
     };
-    private static final byte impTabR_INVERSE_LIKE_DIRECT_WITH_MARKS[][] = {
+    private static final byte[][] impTabR_INVERSE_LIKE_DIRECT_WITH_MARKS = {
         /* The cases handled in this table are (visually):  R EN L
                                                             R L AN L
         */
@@ -2733,7 +2733,7 @@ public class BidiBase {
     private static final ImpTabPair impTab_INVERSE_FOR_NUMBERS_SPECIAL = new ImpTabPair(
             impTabL_NUMBERS_SPECIAL, impTabR_INVERSE_LIKE_DIRECT, impAct0, impAct1);
 
-    private static final byte impTabL_INVERSE_FOR_NUMBERS_SPECIAL_WITH_MARKS[][] = {
+    private static final byte[][] impTabL_INVERSE_FOR_NUMBERS_SPECIAL_WITH_MARKS = {
         /*  The case handled in this table is (visually):  R EN L
         */
         /*                         L,     R,    EN,    AN,    ON,     S,     B, Res */

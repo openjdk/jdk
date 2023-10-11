@@ -173,5 +173,5 @@ public class CharTrie extends Trie
     /**
      * Array of char data
      */
-    private char m_data_[];
+    private char[] m_data_;
 }
