@@ -28,7 +28,7 @@ import jdk.test.lib.RandomFactory;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
 OldFloatingDecimalForTest
@@ -112,7 +112,7 @@ public class TestFloatingDecimal {
             }
         }
 
-        assertTrue(failures == 0);
+        assertEquals(0, failures);
     }
 
     @Test
@@ -137,7 +137,7 @@ public class TestFloatingDecimal {
             }
         }
 
-        assertTrue(failures == 0);
+        assertEquals(0, failures);
     }
 
     @Test
@@ -160,7 +160,7 @@ public class TestFloatingDecimal {
             }
         }
 
-        assertTrue(failures == 0);
+        assertEquals(0, failures);
     }
 
     @Test
@@ -183,7 +183,7 @@ public class TestFloatingDecimal {
             }
         }
 
-        assertTrue(failures == 0);
+        assertEquals(0, failures);
     }
 
     @Test
@@ -201,7 +201,7 @@ public class TestFloatingDecimal {
             failures += check("testToJavaFormatStringDoubleFixed", ofd.toJavaFormatString(), FloatingDecimal.toJavaFormatString(d[i]));
         }
 
-        assertTrue(failures == 0);
+        assertEquals(0, failures);
     }
 
     @Test
@@ -220,7 +220,7 @@ public class TestFloatingDecimal {
             }
         }
 
-        assertTrue(failures == 0);
+        assertEquals(0, failures);
     }
 
     @Test
@@ -238,7 +238,7 @@ public class TestFloatingDecimal {
             failures += check("testToJavaFormatStringFloatFixed", ofd.toJavaFormatString(), FloatingDecimal.toJavaFormatString(f[i]));
         }
 
-        assertTrue(failures == 0);
+        assertEquals(0, failures);
     }
 
     @Test
@@ -257,6 +257,6 @@ public class TestFloatingDecimal {
             }
         }
 
-        assertTrue(failures == 0);
+        assertEquals(0, failures);
     }
 }
