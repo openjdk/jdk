@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,9 @@ public class Snapshot implements AutoCloseable {
 
     // soft cache of finalizeable objects - lazily initialized
     private SoftReference<Vector<?>> finalizablesCache;
+
+    // threads
+    private ArrayList<ThreadObject> threads = new ArrayList<>();
 
     // represents null reference
     private JavaThing nullThing;
@@ -173,6 +176,10 @@ public class Snapshot implements AutoCloseable {
     public void addClass(long id, JavaClass c) {
         addHeapObject(id, c);
         putInClassesMap(c);
+    }
+
+    public void addThreadObject(ThreadObject thread) {
+        threads.add(thread);
     }
 
     JavaClass addFakeInstanceClass(long classID, int instSize) {
@@ -431,6 +438,10 @@ public class Snapshot implements AutoCloseable {
 
     public Root getRootAt(int i) {
         return roots.elementAt(i);
+    }
+
+    public List<ThreadObject> getThreads() {
+        return Collections.unmodifiableList(threads);
     }
 
     public ReferenceChain[]
