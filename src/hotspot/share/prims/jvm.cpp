@@ -102,6 +102,7 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
+#include "utilities/zipLibrary.hpp"
 #if INCLUDE_CDS
 #include "classfile/systemDictionaryShared.hpp"
 #endif
@@ -3412,8 +3413,7 @@ JVM_END
 // Library support ///////////////////////////////////////////////////////////////////////////
 
 JVM_LEAF(void*, JVM_LoadZipLibrary())
-  ClassLoader::load_zip_library_if_needed();
-  return ClassLoader::zip_library_handle();
+  return ZipLibrary::handle();
 JVM_END
 
 JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name, jboolean throwException))
