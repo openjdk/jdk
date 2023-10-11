@@ -3752,7 +3752,7 @@ void StubGenerator::aesgcm_avx2(Register in, Register len, Register ct, Register
   const Register rounds = r10;
   const XMMRegister ctr_blockx = xmm9;
   const XMMRegister aad_hashx = xmm8;
-  Label encrypt_done, encrypt_by_8_parallel, encrypt_by_8_new, encrypt_by_8, hash_last_8, generate_htbl_8_blks;
+  Label encrypt_done, encrypt_by_8_new, encrypt_by_8;
 
   //This routine should be called only for message sizes of 128 bytes or more.
   //Macro flow:
@@ -3778,7 +3778,6 @@ void StubGenerator::aesgcm_avx2(Register in, Register len, Register ct, Register
   __ cmpl(len, 128);
   __ jcc(Assembler::less, encrypt_done);
 
-  __ bind(encrypt_by_8_parallel);
   //in_order vs. out_order is an optimization to increment the counter without shuffling
   //it back into little endian. r15d keeps track of when we need to increment in order so
   //that the carry is handled correctly.
