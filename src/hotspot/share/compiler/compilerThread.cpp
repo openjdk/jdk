@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
-#include "compiler/compiler_globals.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/compilerThread.hpp"
@@ -41,7 +40,7 @@ CompilerThread::CompilerThread(CompileQueue* queue,
   _counters = counters;
   _buffer_blob = nullptr;
   _compiler = nullptr;
-  _arena_stat = CompilationMemStat ? new ArenaStatCounter : nullptr;
+  _arena_stat = CompilationMemoryStatistic::enabled() ? new ArenaStatCounter : nullptr;
 
   // Compiler uses resource area for compilation, let's bias it to mtCompiler
   resource_area()->bias_to(mtCompiler);

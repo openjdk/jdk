@@ -1147,10 +1147,6 @@ CompilationMemoryStatisticDCmd::CompilationMemoryStatisticDCmd(outputStream* out
 }
 
 void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
-  if (!CompilationMemStat) {
-    output()->print_cr("Compilation memory statistic unavailable");
-    return;
-  }
   const bool human_readable = _human_readable.value();
   const size_t minsize = _minsize.has_value() ? _minsize.value()._size : 0;
   CompilationMemoryStatistic::print_all_by_size(output(), human_readable, minsize);

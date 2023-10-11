@@ -35,7 +35,6 @@
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
-#include "compiler/compiler_globals.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/directivesParser.hpp"
@@ -652,6 +651,10 @@ void CompileBroker::compilation_init(JavaThread* THREAD) {
    }
 #endif // INCLUDE_JVMCI
 
+  if (CompilerOracle::should_collect_memstat()) {
+    CompilationMemoryStatistic::initialize();
+  }
+
   // Start the compiler thread(s)
   init_compiler_threads();
   // totalTime performance counter is always created as it is required
@@ -751,10 +754,6 @@ void CompileBroker::compilation_init(JavaThread* THREAD) {
                                           PerfData::U_None,
                                           (jlong)CompileBroker::no_compile,
                                           CHECK);
-  }
-
-  if (CompilationMemStat) {
-    CompilationMemoryStatistic::initialize();
   }
 
   _initialized = true;

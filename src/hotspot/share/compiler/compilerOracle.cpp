@@ -455,6 +455,15 @@ bool CompilerOracle::should_print_methods() {
   return has_command(CompileCommand::Print);
 }
 
+// Tells whether there are any methods to collect memory statistics for
+bool CompilerOracle::should_collect_memstat() {
+  return has_command(CompileCommand::PrintMemStat) || has_command(CompileCommand::MemStat);
+}
+
+bool CompilerOracle::should_print_memstat() {
+  return has_command(CompileCommand::PrintMemStat);
+}
+
 bool CompilerOracle::should_log(const methodHandle& method) {
   if (!LogCompilation) return false;
   if (!has_command(CompileCommand::Log)) {

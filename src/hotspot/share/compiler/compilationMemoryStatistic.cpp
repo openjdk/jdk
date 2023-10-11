@@ -27,8 +27,8 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "compiler/abstractCompiler.hpp"
-#include "compiler/compiler_globals.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "compiler/compilerThread.hpp"
@@ -81,6 +81,9 @@ void ArenaStatCounter::update_c2_node_count() {
 bool ArenaStatCounter::account(ssize_t delta, int tag) {
   bool rc = false;
 #ifdef ASSERT
+  // Note: if this fires, we free more arena memory under the scope of the
+  // CompilationMemoryHistoryMark than we allocate. This cannot be since we
+  // assume arena allocations in CompilerThread to be stack bound and symmetric.
   assert(delta >= 0 || ((ssize_t)_current + delta) >= 0,
          "Negative overflow (d=%zd %zu %zu %zu)", delta, _current, _start, _peak);
 #endif
@@ -141,7 +144,7 @@ public:
     stringStream ss(buf, len);
     ResourceMark rm;
     ss.print_raw(_k->as_C_string());
-    ss.put('.');
+    ss.print_raw("::");
     ss.print_raw(_m->as_C_string());
     ss.put('(');
     ss.print_raw(_s->as_C_string());
@@ -276,13 +279,10 @@ class MemStatTable :
 {
 public:
 
-  void add(Method* m, CompilerType comptype,
+  void add(const FullMethodName& fmn, CompilerType comptype,
            size_t total, size_t na_at_peak, size_t ra_at_peak,
            unsigned live_nodes_at_peak) {
     assert_lock_strong(NMTCompilationCostHistory_lock);
-
-    FullMethodName fmn(m->klass_name(), m->name(), m->signature());
-    fmn.make_permanent();
 
     MemStatEntry** pe = get(fmn);
     MemStatEntry* e = nullptr;
@@ -330,51 +330,60 @@ public:
   }
 };
 
+bool CompilationMemoryStatistic::_enabled = false;
+
 static MemStatTable* _the_table = nullptr;
 
 void CompilationMemoryStatistic::initialize() {
-  assert(_the_table == nullptr, "Only once");
+  assert(_enabled == false && _the_table == nullptr, "Only once");
   _the_table = new (mtCompiler) MemStatTable;
+  _enabled = true;
   log_info(compilation, alloc)("Compilation memory statistic enabled");
 }
 
 void CompilationMemoryStatistic::on_start_compilation() {
-  if (CompilationMemStat) {
-    Thread::current()->as_Compiler_thread()->arena_stat()->start();
-  }
+  assert(enabled(), "Not enabled?");
+  Thread::current()->as_Compiler_thread()->arena_stat()->start();
 }
 
 void CompilationMemoryStatistic::on_end_compilation() {
-  if (CompilationMemStat) {
-    ResourceMark rm;
-    CompilerThread* const th = Thread::current()->as_Compiler_thread();
-    const ArenaStatCounter* const arena_stat = th->arena_stat();
-    Method* const m = th->task()->method();
-    const CompilerType ct = th->task()->compiler()->type();
-    LogTarget(Info, compilation, alloc) lt;
-    if (lt.is_enabled()) {
-      LogStream ls(lt);
-      ls.print("%s Arena usage %s: ", compilertype2name(ct), m->external_name());
-     arena_stat->print_on(&ls);
-      ls.cr();
-    }
-    {
-      MutexLocker ml(NMTCompilationCostHistory_lock, Mutex::_no_safepoint_check_flag);
-      assert(_the_table != nullptr, "not initialized");
-      _the_table->add(m, ct,
-                      arena_stat->peak_since_start(), // total
-                      arena_stat->na_at_peak(),
-                      arena_stat->ra_at_peak(),
-                      arena_stat->live_nodes_at_peak());
-    }
+  assert(enabled(), "Not enabled?");
+  ResourceMark rm;
+  CompilerThread* const th = Thread::current()->as_Compiler_thread();
+  const ArenaStatCounter* const arena_stat = th->arena_stat();
+  const CompilerType ct = th->task()->compiler()->type();
+
+  const Method* const m = th->task()->method();
+  FullMethodName fmn(m->klass_name(), m->name(), m->signature());
+  fmn.make_permanent();
+
+  const DirectiveSet* directive = th->task()->directive();
+  assert(directive->MemStatOption || directive->PrintMemStatOption, "Only call if memstat is active for this method");
+  const bool print = directive->PrintMemStatOption;
+
+  if (print) {
+    char buf[1024];
+    fmn.as_C_string(buf, sizeof(buf));
+    tty->print("%s Arena usage %s: ", compilertype2name(ct), buf);
+    arena_stat->print_on(tty);
+    tty->cr();
+  }
+  {
+    MutexLocker ml(NMTCompilationCostHistory_lock, Mutex::_no_safepoint_check_flag);
+    assert(_the_table != nullptr, "not initialized");
+
+    _the_table->add(fmn, ct,
+                    arena_stat->peak_since_start(), // total
+                    arena_stat->na_at_peak(),
+                    arena_stat->ra_at_peak(),
+                    arena_stat->live_nodes_at_peak());
   }
 }
 
 void CompilationMemoryStatistic::on_arena_change(ssize_t diff, const Arena* arena) {
-  if (CompilationMemStat) {
-    CompilerThread* const th = Thread::current()->as_Compiler_thread();
-    th->arena_stat()->account(diff, (int)arena->get_tag());
-  }
+  assert(enabled(), "Not enabled?");
+  CompilerThread* const th = Thread::current()->as_Compiler_thread();
+  th->arena_stat()->account(diff, (int)arena->get_tag());
 }
 
 static inline ssize_t diff_entries_by_size(const MemStatEntry* e1, const MemStatEntry* e2) {
@@ -382,15 +391,23 @@ static inline ssize_t diff_entries_by_size(const MemStatEntry* e1, const MemStat
 }
 
 void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_readable, size_t min_size) {
-  st->print("Compilation memory statistics");
-  if (min_size > 0) {
-    st->print(" (cutoff: %zu bytes)", min_size);
+  st->print_cr("Compilation memory statistics");
+
+  if (!enabled()) {
+    st->print_cr("(unavailable)");
+    return;
   }
-  st->cr();
+
   st->cr();
 
   MemStatEntry::print_legend(st);
   st->cr();
+
+  if (min_size > 0) {
+    st->print_cr(" (cutoff: %zu bytes)", min_size);
+  }
+  st->cr();
+
   MemStatEntry::print_header(st);
 
   MemStatEntry** filtered = nullptr;
@@ -419,4 +436,16 @@ void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_
   } // locked
 
   FREE_C_HEAP_ARRAY(Entry, filtered);
+}
+
+CompilationMemoryStatisticMark::CompilationMemoryStatisticMark(const DirectiveSet* directive)
+  : _active(directive->should_collect_memstat()) {
+  if (_active) {
+    CompilationMemoryStatistic::on_start_compilation();
+  }
+}
+CompilationMemoryStatisticMark::~CompilationMemoryStatisticMark() {
+  if (_active) {
+    CompilationMemoryStatistic::on_end_compilation();
+  }
 }

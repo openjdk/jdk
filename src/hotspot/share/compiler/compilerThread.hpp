@@ -39,7 +39,6 @@ class CompilerCounters;
 class IdealGraphPrinter;
 class JVMCIEnv;
 class JVMCIPrimitiveArray;
-class outputStream;
 
 // A thread used for Compilation.
 class CompilerThread : public JavaThread {

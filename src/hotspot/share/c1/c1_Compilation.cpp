@@ -34,7 +34,9 @@
 #include "c1/c1_ValueStack.hpp"
 #include "code/debugInfoRec.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compileTask.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -443,7 +445,8 @@ void Compilation::install_code(int frame_size) {
 
 
 void Compilation::compile_method() {
-  CompilationMemoryStatisticMark cmsm;
+
+  CompilationMemoryStatisticMark cmsm(env()->task()->directive());
 
   {
     PhaseTraceTime timeit(_t_setup);

@@ -61,6 +61,7 @@ class methodHandle;
   option(PrintCompilation, "PrintCompilation", Bool) \
   option(PrintInlining, "PrintInlining", Bool) \
   option(PrintIntrinsics, "PrintIntrinsics", Bool) \
+  option(PrintMemStat, "PrintMemStat", Bool)   \
   option(PrintNMethods, "PrintNMethods", Bool)   \
   option(PrintOptoAssembly, "PrintOptoAssembly", Bool) \
   option(PrintDebugInfo,    "PrintDebugInfo",    Bool) \
@@ -74,6 +75,7 @@ class methodHandle;
   option(CompileThresholdScaling, "CompileThresholdScaling", Double) \
   option(ControlIntrinsic,  "ControlIntrinsic",  Ccstrlist) \
   option(DisableIntrinsic,  "DisableIntrinsic",  Ccstrlist) \
+  option(MemStat, "MemStat", Bool)   \
   option(NoRTMLockEliding,  "NoRTMLockEliding",  Bool) \
   option(UseRTMLockEliding, "UseRTMLockEliding", Bool) \
   option(BlockLayoutByFrequency, "BlockLayoutByFrequency", Bool) \
@@ -150,6 +152,10 @@ class CompilerOracle : AllStatic {
 
   // Tells whether there are any methods to print for print_method_statistics()
   static bool should_print_methods();
+
+  // Tells whether there are any methods to (collect|collect+print) memory statistics for
+  static bool should_collect_memstat();
+  static bool should_print_memstat();
 
   // Tags the method as blackhole candidate, if possible.
   static void tag_blackhole_if_possible(const methodHandle& method);

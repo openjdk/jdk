@@ -378,12 +378,6 @@
   develop(intx, HugeMethodLimit,  8000,                                     \
           "Don't compile methods larger than this if "                      \
           "+DontCompileHugeMethods")                                        \
-                                                                            \
-  product(bool, CompilationMemStat, false, DIAGNOSTIC,                      \
-          "Collect memory statistics per compilation")                      \
-                                                                            \
-  product(bool, PrintCompilationMemStatAtExit, false, DIAGNOSTIC,           \
-          "Print compilation memory statistics at VM exit")                 \
 
 
 // end of COMPILER_FLAGS

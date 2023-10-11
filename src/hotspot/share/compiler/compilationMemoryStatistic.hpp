@@ -33,6 +33,7 @@
 
 class outputStream;
 class Symbol;
+class DirectiveSet;
 
 // Counters for allocations from one arena
 class ArenaStatCounter : public CHeapObj<mtCompiler> {
@@ -80,8 +81,11 @@ public:
 };
 
 class CompilationMemoryStatistic : public AllStatic {
+  static bool _enabled;
 public:
   static void initialize();
+  // true if MemStat or PrintMemStat has been enabled for any method
+  static bool enabled() { return _enabled; }
   static void on_start_compilation();
   static void on_end_compilation();
   static void on_arena_change(ssize_t diff, const Arena* arena);
@@ -90,10 +94,10 @@ public:
 
 // RAII object to wrap one compilation
 class CompilationMemoryStatisticMark {
+  const bool _active;
 public:
-  CompilationMemoryStatisticMark()  { CompilationMemoryStatistic::on_start_compilation(); }
-  ~CompilationMemoryStatisticMark() { CompilationMemoryStatistic::on_end_compilation(); }
+  CompilationMemoryStatisticMark(const DirectiveSet* directive);
+  ~CompilationMemoryStatisticMark();
 };
-
 
 #endif // SHARE_COMPILER_COMPILATIONMEMORYSTATISTIC_HPP

@@ -25,7 +25,6 @@
 
 #include "precompiled.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
-#include "compiler/compiler_globals.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"
@@ -253,9 +252,9 @@ void Arena::set_size_in_bytes(size_t size) {
     ssize_t delta = size - size_in_bytes();
     _size_in_bytes = size;
     MemTracker::record_arena_size_change(delta, _flags);
-    if (CompilationMemStat && _flags == mtCompiler) {
+    if (CompilationMemoryStatistic::enabled() && _flags == mtCompiler) {
       Thread* const t = Thread::current();
-      if (t->is_Compiler_thread()) {
+      if (t != nullptr && t->is_Compiler_thread()) {
         CompilationMemoryStatistic::on_arena_change(delta, this);
       }
     }

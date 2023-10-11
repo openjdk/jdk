@@ -36,7 +36,7 @@ import java.util.Iterator;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+CompilationMemStat CompilerMemoryStatisticTest
+ * @run main/othervm -XX:CompileCommand=MemStat,*.* CompilerMemoryStatisticTest
  */
 
 public class CompilerMemoryStatisticTest {
@@ -50,6 +50,6 @@ public class CompilerMemoryStatisticTest {
         // total     NA        RA        #nodes  time    type  #rc thread              method
         // 621832    0         589104    0       0,025   c1    1   0x00007f5ccc1951a0  java/util/zip/ZipFile$Source.checkAndAddEntry((II)I)
         out.shouldMatch("total.*method");
-        out.shouldMatch("\\d+ +\\d+ +\\d+ +\\d+.*java.*");
+        out.shouldMatch("\\d+ +\\d+ +\\d+ +\\d+.*java.*\\(.*\\)");
     }
 }
