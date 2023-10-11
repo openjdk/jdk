@@ -188,14 +188,8 @@ class CloseTest {
         assertTrue(executor.isShutdown());
         assertTrue(executor.isTerminated());
         assertTrue(executor.awaitTermination(10,  TimeUnit.MILLISECONDS));
-        try {
-            Object s = future.resultNow();
-            assertEquals("foo", s);
-        } catch (Exception e) {
-            System.err.println("future => " + future.state());
-            e.printStackTrace();
-            fail();
-        }
+        Object s = future.resultNow();
+        assertEquals("foo", s);
     }
 
     /**

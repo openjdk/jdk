@@ -373,7 +373,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * a simple spinlock (as one role of field "phase") because
      * submitters encountering a busy queue move to a different
      * position to use or create other queues.  They (spin) block when
-     * registering new queues, or indirectly elsewhere (by revisiting
+     * registering new queues, or indirectly elsewhere, by revisiting
      * later.
      *
      * Management
@@ -2394,7 +2394,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      }
 
     /**
-     * Runs tasks until all workerss are inactive and no tasks are
+     * Runs tasks until all workers are inactive and no tasks are
      * found. Rather than blocking when tasks cannot be found, rescans
      * until all others cannot find tasks either.
      *
