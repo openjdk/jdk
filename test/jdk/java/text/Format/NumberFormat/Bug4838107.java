@@ -243,27 +243,30 @@ public class Bug4838107 {
             parsed1 = df.parse(formatted);
             formatted = df.format(parsed1);
             parsed2 = df.parse(formatted);
-            assertEquals(parsed2, parsed1, "DecimalFormat round trip parse(" +
-                    num.getClass().getName() +
-                    ") error: \n\toriginal number:  " + str +
-                    "\n\tparsed number:    " + parsed1 +
-                    "  (" + parsed1.getClass().getName() + ")" +
-                    "\n\tformatted number: " + formatted +
-                    "\n\tre-parsed number: " + parsed2 +
-                    "  (" + parsed2.getClass().getName() + ")" +
-                    "\n\tminus sign: " + df.getDecimalFormatSymbols().getMinusSign());
+            assertEquals(parsed2, parsed1, """
+                            DecimalFormat round trip parse(%s) error:
+                                original number: %s
+                                parsed number: %s
+                                (%s)
+                                formatted number: %s
+                                re-parsed number: %s
+                                (%s)
+                                minus sign: %s
+                            """.formatted(num.getClass().getName(), str, parsed1, parsed1.getClass().getName(),
+                                    formatted, parsed2, parsed2.getClass().getName(), df.getDecimalFormatSymbols().getMinusSign()));
         }
         catch (Exception e) {
-            fail("DecimalFormat parse(" +
-                    num.getClass().getName() +
-                    ") threw an Exception:  " + e.getMessage() +
-                    "\n\toriginal number:  " + str +
-                    "\n\tparsed number   : " + parsed1 +
-                    "  (" + parsed1.getClass().getName() + ")" +
-                    "\n\tformatted number: " + formatted +
-                    "\n\tre-parsed number: " + parsed2 +
-                    "  (" + parsed2.getClass().getName() + ")" +
-                    "\n\tminus sign: " + df.getDecimalFormatSymbols().getMinusSign());
+            fail("""
+                    DecimalFormat parse(%s) threw an Exception: %s
+                        original number: %s
+                        parsed number: %s
+                        (%s)
+                        formatted number: %s
+                        re-parsed number: %s
+                        (%s)
+                        minus sign: %s
+                    """.formatted(num.getClass().getName(), e.getMessage(), str, parsed1, parsed1.getClass().getName(),
+                            formatted, parsed2, parsed2.getClass().getName(), df.getDecimalFormatSymbols().getMinusSign()));
         }
     }
 

@@ -44,7 +44,7 @@ public class Bug8132125 {
         Locale deCH = Locale.of("de", "CH");
         NumberFormat nf = NumberFormat.getInstance(deCH);
 
-        // i.e. "\u2019" as decimal separator, "\u2019" as grouping separator
+        // "\u2019" as decimal separator, "\u002E" as grouping separator
         String expected = "54\u2019839\u2019483.142";
         String actual = nf.format(54839483.1415);
         assertEquals(expected, actual, "incorrect number elements for de_CH");

@@ -67,8 +67,9 @@ public class Bug4944439 {
     @ParameterizedTest
     @MethodSource("longs")
     public void parseLongTest(String s) {
+        // This was originally intended to ensure a ParseException is not thrown
         Number parsedNumber = assertDoesNotThrow(() -> df.parse(s),
-                "DecimalFormat.parse(\"%s\") should not throw ParseException");
+                "DecimalFormat.parse(\"%s\") should not throw an Exception");
         assertInstanceOf(Long.class, parsedNumber,
                 "DecimalFormat.parse(\"%s\") did not return Long");
         // Grab integer portion of value
@@ -99,8 +100,9 @@ public class Bug4944439 {
     @ParameterizedTest
     @MethodSource("doubles")
     public void parseDoubleTest(String s) {
+        // This was originally intended to ensure a ParseException is not thrown
         Number parsedNumber = assertDoesNotThrow(() -> df.parse(s),
-                "DecimalFormat.parse(\"%s\") should not throw ParseException");
+                "DecimalFormat.parse(\"%s\") should not throw an Exception");
         assertInstanceOf(Double.class, parsedNumber,
                 "DecimalFormat.parse(\"%s\") did not return Double");
         Double expectedVal = Double.valueOf(s);

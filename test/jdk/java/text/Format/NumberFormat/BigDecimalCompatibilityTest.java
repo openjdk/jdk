@@ -157,9 +157,10 @@ public class BigDecimalCompatibilityTest {
         df.setMaximumFractionDigits(Integer.MAX_VALUE);
         df.setMultiplier(multiplier);
 
-        // Check parse and returned value
+        // Check parse and returned value. This was originally intended to ensure
+        // a ParseException is not thrown
         Number parsedValue = assertDoesNotThrow(()-> df.parse(longString),
-                "Should not throw a ParseException");
+                "Should not throw an Exception");
         BigDecimal expectedValue = getExpected(longString, multiplier);
         assertEquals(expectedValue, parsedValue, "With multiplier: " + multiplier);
     }

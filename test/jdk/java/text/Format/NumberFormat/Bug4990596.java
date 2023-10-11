@@ -42,7 +42,7 @@ public class Bug4990596 {
     @Test
     public void formatSubclassedNumberTest() {
         assertDoesNotThrow(() -> new DecimalFormat().format(new MutableInteger(0)),
-                "DecimalFormat.parse() should support subclasses of Number");
+                "DecimalFormat.format() should support subclasses of Number");
     }
 
     // A custom subclass of Number. Prior to this fix, if an instance of this
