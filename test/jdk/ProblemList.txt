@@ -623,12 +623,12 @@ com/sun/security/sasl/gsskerb/NoSecurityLayer.java              8039280 generic-
 sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
 
-sun/security/tools/keytool/NssTest.java                         8295343 linux-all
-sun/security/pkcs11/Signature/TestRSAKeyLength.java             8295343 linux-all
-sun/security/pkcs11/rsa/TestSignatures.java                     8295343 linux-all
-sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8295343 linux-all
-sun/security/pkcs11/rsa/TestKeyFactory.java                     8295343 linux-all
-sun/security/pkcs11/KeyStore/Basic.java                         8295343 linux-all
+sun/security/tools/keytool/NssTest.java                         8295343 generic-all
+sun/security/pkcs11/Signature/TestRSAKeyLength.java             8295343 generic-all
+sun/security/pkcs11/rsa/TestSignatures.java                     8295343 generic-all
+sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8295343 generic-all
+sun/security/pkcs11/rsa/TestKeyFactory.java                     8295343 generic-all
+sun/security/pkcs11/KeyStore/Basic.java                         8295343 generic-all
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183 linux-ppc64le
 
 ############################################################################
