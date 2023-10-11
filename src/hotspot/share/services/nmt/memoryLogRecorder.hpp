@@ -42,6 +42,7 @@ private:
     size_t actual;
     MEMFLAGS flags;
   };
+  static void calculate_good_sizes(Entry* entries, size_t count);
   static bool print_histogram(Entry* entries, size_t count);
   static void print_records(Entry* entries, size_t count);
   static bool print_by_thread(Entry* entries, size_t count);
