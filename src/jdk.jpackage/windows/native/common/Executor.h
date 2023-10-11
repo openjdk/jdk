@@ -33,7 +33,7 @@
 class Executor {
 public:
     explicit Executor(const std::wstring& appPath=std::wstring()) {
-        app(appPath).visible(false);
+        app(appPath).visible(false).suspended(false).withJobObject(NULL).inherit(false);
     }
 
     /**
@@ -66,6 +66,30 @@ public:
     }
 
     /**
+     * Controls if the process should inherit handles.
+     */
+    Executor& inherit(bool v) {
+        theInherit = v;
+        return *this;
+    }
+
+    /**
+     * Controls if the process should be started suspended.
+     */
+    Executor& suspended(bool v) {
+        theSuspended = v;
+        return *this;
+    }
+
+    /**
+     * Use the given job object with started process.
+     */
+    Executor& withJobObject(HANDLE v) {
+        jobHandle = v;
+        return *this;
+    }
+
+    /**
      * Starts application process and blocks waiting when the started
      * process terminates.
      * Returns process exit code.
@@ -74,9 +98,12 @@ public:
     int execAndWaitForExit() const;
 
 private:
-    UniqueHandle startProcess() const;
+    UniqueHandle startProcess(UniqueHandle* threadHandle=0) const;
 
     bool theVisible;
+    bool theInherit;
+    bool theSuspended;
+    HANDLE jobHandle;
     tstring_array argsArray;
     std::wstring appPath;
 };

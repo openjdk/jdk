@@ -34,6 +34,7 @@
 #include "Dll.h"
 #include "WinApp.h"
 #include "Toolbox.h"
+#include "Executor.h"
 #include "FileUtils.h"
 #include "UniqueHandle.h"
 #include "ErrorHandling.h"
@@ -157,29 +158,29 @@ void launchApp() {
 
         jvm = std::unique_ptr<Jvm>();
 
-        STARTUPINFOW si;
-        ZeroMemory(&si, sizeof(si));
-        si.cb = sizeof(si);
-
-        PROCESS_INFORMATION pi;
-        ZeroMemory(&pi, sizeof(pi));
-
-        if (!CreateProcessW(launcherPath.c_str(), GetCommandLineW(),
-                NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
-            JP_THROW(SysError(tstrings::any() << "CreateProcessW() failed",
-                                                            CreateProcessW));
+        UniqueHandle jobHandle(CreateJobObject(NULL, NULL));
+        if (jobHandle.get() == NULL) {
+            JP_THROW(SysError(tstrings::any() << "CreateJobObject() failed",
+                                                            CreateJobObject));
+        }
+        JOBOBJECT_EXTENDED_LIMIT_INFORMATION jobInfo = { };
+        jobInfo.BasicLimitInformation.LimitFlags =
+                                          JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+        if (!SetInformationJobObject(jobHandle.get(),
+                JobObjectExtendedLimitInformation, &jobInfo, sizeof(jobInfo))) {
+            JP_THROW(SysError(tstrings::any() <<
+                                            "SetInformationJobObject() failed",
+                                                    SetInformationJobObject));
         }
 
-        WaitForSingleObject(pi.hProcess, INFINITE);
+        Executor exec(launcherPath);
+        exec.visible(true).withJobObject(jobHandle.get()).suspended(true).inherit(true);
+        const auto args = SysInfo::getCommandArgs();
+        std::for_each(args.begin(), args.end(), [&exec] (const tstring& arg) {
+            exec.arg(arg);
+        });
 
-        UniqueHandle childProcessHandle(pi.hProcess);
-        UniqueHandle childThreadHandle(pi.hThread);
-
-        DWORD exitCode;
-        if (!GetExitCodeProcess(pi.hProcess, &exitCode)) {
-            JP_THROW(SysError(tstrings::any() << "GetExitCodeProcess() failed",
-                                                        GetExitCodeProcess));
-        }
+        DWORD exitCode = static_cast<DWORD>(exec.execAndWaitForExit());
 
         exit(exitCode);
         return;
