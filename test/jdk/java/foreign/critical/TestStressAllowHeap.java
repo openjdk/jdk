@@ -22,12 +22,12 @@
  */
 
 /*
- * @test id
+ * @test
  * @library ../ /test/lib
  * @run main/othervm
  *   -Xms1g -Xmx1g
  *   -XX:+CheckUnhandledOops
- *   -Xlog:gc -Xlog:gc+jni=debug:file=gc_jni_log.txt
+ *   -Xlog:gc -Xlog:gc+jni=debug
  *   --enable-native-access=ALL-UNNAMED
  *   TestStressAllowHeap
  */
@@ -67,14 +67,9 @@ public class TestStressAllowHeap {
             System.exit(-1);
         }
 
-        Path logFilePath = Path.of("gc_jni_log.txt");
-        List<String> logLines = Files.readAllLines(logFilePath);
-        System.out.println("gc_jni_log lines #####");
-        logLines.forEach(System.out::println);
-        System.out.println("######################");
-        assertTrue(logLines.stream().anyMatch(line ->
-                line.matches("^.*Blocked from entering critical section while waiting on GC.*$")),
-                "Did not find 'Blocked ...' message in gc_jni_log lines");
+        // hitting the problematic code path doesn't seem to be guaranteed
+        // and we can not guarantee it by, e.g. stalling in a critical method
+        // since that can lock up the VM (and our test code)
     }
 
     private static class CriticalWorker extends NativeTestHelper implements Runnable {
