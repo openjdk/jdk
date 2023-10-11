@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -457,10 +457,12 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * the same length and all bytes at corresponding positions are equal.
      *
      * @implNote
-     * All bytes in {@code digesta} are examined to determine equality.
-     * The calculation time depends only on the length of {@code digesta}.
-     * It does not depend on the length of {@code digestb} or the contents
-     * of {@code digesta} and {@code digestb}.
+     * All bytes in {@code digesta} are examined to determine equality, unless
+     * {@code digestb} is {@code null} or has a length of zero bytes. If
+     * {@code digestb} is not {@code null} and does not have a length of zero
+     * bytes, then the calculation time depends only on the length of
+     * {@code digesta}. It does not depend on the length of {@code digestb} or
+     * the contents of {@code digesta} and {@code digestb}.
      *
      * @param digesta one of the digests to compare.
      *

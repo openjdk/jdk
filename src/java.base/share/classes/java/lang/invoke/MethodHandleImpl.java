@@ -1647,6 +1647,12 @@ abstract class MethodHandleImpl {
             public Class<?>[] exceptionTypes(MethodHandle handle) {
                 return VarHandles.exceptionTypes(handle);
             }
+
+            @Override
+            public MethodHandle serializableConstructor(Class<?> decl, Constructor<?> ctorToCall) throws IllegalAccessException {
+                return IMPL_LOOKUP.serializableConstructor(decl, ctorToCall);
+            }
+
         });
     }
 
