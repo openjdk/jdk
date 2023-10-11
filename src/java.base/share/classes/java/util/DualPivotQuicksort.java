@@ -569,6 +569,7 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
+    @ForceInline
     private static void mixedInsertionSort(int[] a, int low, int high) {
         int size = high - low;
         int end = high - 3 * ((size >> 5) << 3);
@@ -684,6 +685,7 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
+    @ForceInline
     private static void insertionSort(int[] a, int low, int high) {
         for (int i, k = low; ++k < high; ) {
             int ai = a[i = k];
@@ -1371,6 +1373,7 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
+    @ForceInline
     private static void mixedInsertionSort(long[] a, int low, int high) {
         int size = high - low;
         int end = high - 3 * ((size >> 5) << 3);
@@ -1486,6 +1489,7 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
+    @ForceInline
     private static void insertionSort(long[] a, int low, int high) {
         for (int i, k = low; ++k < high; ) {
             long ai = a[i = k];
@@ -2959,6 +2963,7 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
+    @ForceInline
     private static void mixedInsertionSort(float[] a, int low, int high) {
         int size = high - low;
         int end = high - 3 * ((size >> 5) << 3);
@@ -3074,6 +3079,7 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
+    @ForceInline
     private static void insertionSort(float[] a, int low, int high) {
         for (int i, k = low; ++k < high; ) {
             float ai = a[i = k];
@@ -3812,6 +3818,7 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
+    @ForceInline
     private static void mixedInsertionSort(double[] a, int low, int high) {
         int size = high - low;
         int end = high - 3 * ((size >> 5) << 3);
@@ -3927,6 +3934,7 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
+    @ForceInline
     private static void insertionSort(double[] a, int low, int high) {
         for (int i, k = low; ++k < high; ) {
             double ai = a[i = k];
