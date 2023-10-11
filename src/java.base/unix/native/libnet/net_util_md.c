@@ -28,7 +28,6 @@
 #include <netinet/tcp.h> // defines TCP_NODELAY
 #include <stdlib.h>
 #include <string.h>
-#include <sys/ioctl.h>
 #include <sys/time.h>
 
 #if defined(__linux__)
@@ -50,18 +49,6 @@
 #if defined(__linux__) && !defined(IPV6_FLOWINFO_SEND)
 #define IPV6_FLOWINFO_SEND      33
 #endif
-
-#define RESTARTABLE(_cmd, _result) do { \
-    do { \
-        _result = _cmd; \
-    } while((_result == -1) && (errno == EINTR)); \
-} while(0)
-
-int NET_SocketAvailable(int s, int *pbytes) {
-    int result;
-    RESTARTABLE(ioctl(s, FIONREAD, pbytes), result);
-    return result;
-}
 
 void
 NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
