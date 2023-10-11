@@ -5333,9 +5333,9 @@ instruct loadNKlassCompactHeaders(rRegN dst, indOffset8 mem, rFlagsReg cr)
   ins_cost(125); // XXX
   format %{ "movl    $dst, $mem\t# compressed klass ptr" %}
   ins_encode %{
-    assert($mem$$disp == oopDesc::klass_offset_in_bytes(), "expect correct offset 4, but got: %d", $mem$$disp);
-    assert($mem$$index == 4, "expect no index register: %d", $mem$$index);
-    __ load_nklass_compact_c2($dst$$Register, $mem$$base$$Register);
+    Register index = $mem$$index != 4 ? $mem$$index$$Register : noreg;
+    Address::ScaleFactor sf = $mem$$scale != 0 ? Address::times($mem$$scale) : Address::no_scale;
+    __ load_nklass_compact_c2($dst$$Register, $mem$$base$$Register, index, sf, $mem$$disp);
   %}
   ins_pipe(pipe_slow); // XXX
 %}

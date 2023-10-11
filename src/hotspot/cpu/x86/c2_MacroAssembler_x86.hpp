@@ -492,6 +492,6 @@ public:
   void vector_rearrange_int_float(BasicType bt, XMMRegister dst, XMMRegister shuffle,
                                   XMMRegister src, int vlen_enc);
 
-  void load_nklass_compact_c2(Register dst, Register obj);
+  void load_nklass_compact_c2(Register dst, Register obj, Register index, Address::ScaleFactor scale, int disp);
 
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP
