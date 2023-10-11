@@ -674,7 +674,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   , _in_dump_cnt(0)
 #endif
 {
-
   C = this;
   CompileWrapper cw(this);
 

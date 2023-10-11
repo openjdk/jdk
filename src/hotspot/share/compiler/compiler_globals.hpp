@@ -378,7 +378,7 @@
   develop(intx, HugeMethodLimit,  8000,                                     \
           "Don't compile methods larger than this if "                      \
           "+DontCompileHugeMethods")                                        \
-
+                                                                            \
 
 // end of COMPILER_FLAGS
 
