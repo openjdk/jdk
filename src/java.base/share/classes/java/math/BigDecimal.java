@@ -4163,7 +4163,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (scale == 2  &&
             intCompact >= 0 && intCompact < Integer.MAX_VALUE) {
             // currency fast path
-            int lowInt = (int)intCompact % 100;
             int highInt = (int)intCompact / 100;
             int highIntSize = JLA.stringSize(highInt);
             byte[] buf = new byte[highIntSize + 3];
@@ -4172,7 +4171,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             DecimalDigits.writeDigitPairLatin1(
                     buf,
                     highIntSize + 1,
-                    (int) intCompact - highInt * 100);
+                    (int) intCompact % 100);
             try {
                 return JLA.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
             } catch (CharacterCodingException e) {
