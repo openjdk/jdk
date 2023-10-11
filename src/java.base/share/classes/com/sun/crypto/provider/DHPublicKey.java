@@ -54,7 +54,7 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
     private final BigInteger y;
 
     // the key bytes, without the algorithm information
-    private final byte[] key;
+    private byte[] key;
 
     // the encoded key
     private byte[] encodedKey;
@@ -166,7 +166,10 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
              * Parse the key
              */
             this.key = derKeyVal.data.getBitString();
-            this.y = parseKeyBits();
+
+            DerInputStream in = new DerInputStream(this.key);
+            this.y = in.getBigInteger();
+
             if (derKeyVal.data.available() != 0) {
                 throw new InvalidKeyException("Excess key data");
             }
@@ -265,16 +268,6 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
         if (this.l != 0)
             sb.append(LINE_SEP + "l:" + LINE_SEP + "    " + this.l);
         return sb.toString();
-    }
-
-    private BigInteger parseKeyBits() throws InvalidKeyException {
-        try {
-            DerInputStream in = new DerInputStream(this.key);
-            return in.getBigInteger();
-        } catch (IOException e) {
-            throw new InvalidKeyException(
-                "Error parsing key encoding: " + e.toString());
-        }
     }
 
     /**

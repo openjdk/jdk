@@ -99,7 +99,7 @@ public final class JceKeyStore extends KeyStoreSpi {
      * Private keys and certificates are stored in a hashtable.
      * Hash entries are keyed by alias names.
      */
-    private final Hashtable<String, Object> entries = new Hashtable<String, Object>();
+    private final Hashtable<String, Object> entries = new Hashtable<>();
 
     /**
      * Returns the key associated with the given alias, using the given

@@ -58,7 +58,7 @@ final class DHPrivateKey implements PrivateKey,
     private final BigInteger x;
 
     // the key bytes, without the algorithm information
-    private final byte[] key;
+    private byte[] key;
 
     // the encoded key
     private byte[] encodedKey;
@@ -174,7 +174,9 @@ final class DHPrivateKey implements PrivateKey,
             // privateKey
             //
             this.key = val.data.getOctetString();
-            this.x = parseKeyBits();
+
+            DerInputStream in = new DerInputStream(this.key);
+            this.x = in.getBigInteger();
 
             this.encodedKey = encodedKey.clone();
         } catch (IOException | NumberFormatException e) {
@@ -272,16 +274,6 @@ final class DHPrivateKey implements PrivateKey,
             return new DHParameterSpec(this.p, this.g, this.l);
         } else {
             return new DHParameterSpec(this.p, this.g);
-        }
-    }
-
-    private BigInteger parseKeyBits() throws InvalidKeyException {
-        try {
-            DerInputStream in = new DerInputStream(this.key);
-            return in.getBigInteger();
-        } catch (IOException e) {
-            throw new InvalidKeyException(
-                "Error parsing key encoding: " + e.getMessage(), e);
         }
     }
 

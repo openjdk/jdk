@@ -98,7 +98,7 @@ abstract class GaloisCounterMode extends CipherSpi {
 
     private boolean initialized = false;
 
-    SymmetricCipher blockCipher;
+    final SymmetricCipher blockCipher;
     // Engine instance for encryption or decryption
     private GCMEngine engine;
     private boolean encryption = true;
