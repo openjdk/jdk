@@ -1290,7 +1290,7 @@ JNIEnv* JVMCIRuntime::init_shared_library_javavm(int* create_JavaVM_err, const c
     options[3].extraInfo = (void*) _fatal;
     options[4].optionString = (char*) "_fatal_log";
     options[4].extraInfo = (void*) _fatal_log;
-    options[5].optionString = (char*) "_strerror";
+    options[5].optionString = (char*) "_createvm_errorstr";
     options[5].extraInfo = (void*) err_msg;
 
     vm_args.version = JNI_VERSION_1_2;
