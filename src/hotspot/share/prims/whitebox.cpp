@@ -47,7 +47,6 @@
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/genArguments.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
@@ -111,6 +110,9 @@
 #if INCLUDE_PARALLELGC
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #endif // INCLUDE_PARALLELGC
+#if INCLUDE_SERIALGC
+#include "gc/serial/serialHeap.hpp"
+#endif // INCLUDE_SERIALGC
 #if INCLUDE_ZGC
 #include "gc/z/zAddress.inline.hpp"
 #endif // INCLUDE_ZGC
@@ -422,8 +424,13 @@ WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
     return Universe::heap()->is_in(p);
   }
 #endif
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  return !gch->is_in_young(p);
+#if INCLUDE_SERIALGC
+  if (UseSerialGC) {
+    return !SerialHeap::heap()->is_in_young(p);
+  }
+#endif
+  ShouldNotReachHere();
+  return false;
 WB_END
 
 WB_ENTRY(jlong, WB_GetObjectSize(JNIEnv* env, jobject o, jobject obj))

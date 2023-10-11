@@ -1184,6 +1184,8 @@ public class CLDRConverter {
         Files.createDirectories(Paths.get(DESTINATION_DIR, "windows", "conf"));
         Files.write(Paths.get(DESTINATION_DIR, "windows", "conf", "tzmappings"),
             handlerWinZones.keySet().stream()
+                .filter(k -> k.endsWith(":001") ||
+                             !handlerWinZones.get(k).equals(handlerWinZones.get(k.replaceFirst(":\\w{2,3}$", ":001"))))
                 .map(k -> k + ":" + handlerWinZones.get(k) + ":")
                 .sorted(new Comparator<String>() {
                     public int compare(String t1, String t2) {
