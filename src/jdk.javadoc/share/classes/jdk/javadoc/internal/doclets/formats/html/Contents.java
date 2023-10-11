@@ -157,6 +157,10 @@ public class Contents {
     public final Content previewLabel;
     public final Content previewMark;
     public final Content previewPhrase;
+    public final Content restrictedLabel;
+    public final Content restrictedMark;
+    public final Content restrictedMethods;
+    public final Content restrictedPhrase;
     public final Content properties;
     public final Content propertyLabel;
     public final Content propertyDetailsLabel;
@@ -303,6 +307,10 @@ public class Contents {
         previewLabel = getContent("doclet.Preview_Label");
         previewMark = getContent("doclet.Preview_Mark");
         previewPhrase = getContent("doclet.Preview");
+        restrictedLabel = getContent("doclet.Restricted_Label");
+        restrictedMark = getContent("doclet.Restricted_Mark");
+        restrictedMethods = getContent("doclet.Restricted_Methods");
+        restrictedPhrase = getContent("doclet.Restricted");
         properties = getContent("doclet.Properties");
         propertyLabel = getContent("doclet.Property");
         propertyDetailsLabel = getContent("doclet.Property_Detail");
