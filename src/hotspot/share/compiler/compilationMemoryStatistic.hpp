@@ -84,7 +84,7 @@ class CompilationMemoryStatistic : public AllStatic {
   static bool _enabled;
 public:
   static void initialize();
-  // true if MemStat or PrintMemStat has been enabled for any method
+  // true if CollectMemStat or PrintMemStat has been enabled for any method
   static bool enabled() { return _enabled; }
   static void on_start_compilation();
   static void on_end_compilation();

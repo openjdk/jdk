@@ -358,7 +358,7 @@ void CompilationMemoryStatistic::on_end_compilation() {
   fmn.make_permanent();
 
   const DirectiveSet* directive = th->task()->directive();
-  assert(directive->MemStatOption || directive->PrintMemStatOption, "Only call if memstat is active for this method");
+  assert(directive->CollectMemStatOption || directive->PrintMemStatOption, "Only call if memstat is active for this method");
   const bool print = directive->PrintMemStatOption;
 
   if (print) {

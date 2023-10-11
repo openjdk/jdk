@@ -203,7 +203,7 @@ bool DirectiveSet::is_c2(CompilerDirectives* directive) const {
 }
 
 bool DirectiveSet::should_collect_memstat() const {
-  return MemStatOption || PrintMemStatOption;
+  return CollectMemStatOption || PrintMemStatOption;
 }
 
 // In the list of Control/disabled intrinsics, the ID of the control intrinsics can separated:

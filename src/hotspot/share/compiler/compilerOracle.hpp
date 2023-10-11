@@ -57,6 +57,7 @@ class methodHandle;
   option(Break, "break", Bool) \
   option(BreakAtExecute, "BreakAtExecute", Bool) \
   option(BreakAtCompile, "BreakAtCompile", Bool) \
+  option(CollectMemStat, "CollectMemStat", Bool)   \
   option(PrintAssembly, "PrintAssembly", Bool) \
   option(PrintCompilation, "PrintCompilation", Bool) \
   option(PrintInlining, "PrintInlining", Bool) \
@@ -75,7 +76,6 @@ class methodHandle;
   option(CompileThresholdScaling, "CompileThresholdScaling", Double) \
   option(ControlIntrinsic,  "ControlIntrinsic",  Ccstrlist) \
   option(DisableIntrinsic,  "DisableIntrinsic",  Ccstrlist) \
-  option(MemStat, "MemStat", Bool)   \
   option(NoRTMLockEliding,  "NoRTMLockEliding",  Bool) \
   option(UseRTMLockEliding, "UseRTMLockEliding", Bool) \
   option(BlockLayoutByFrequency, "BlockLayoutByFrequency", Bool) \

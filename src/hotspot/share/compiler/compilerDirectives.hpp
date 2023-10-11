@@ -40,8 +40,8 @@
     cflags(Exclude,                 bool, false, Unknown) \
     cflags(BreakAtExecute,          bool, false, BreakAtExecute) \
     cflags(BreakAtCompile,          bool, false, BreakAtCompile) \
+    cflags(CollectMemStat,          bool, false, CollectMemStat) \
     cflags(Log,                     bool, LogCompilation, Unknown) \
-    cflags(MemStat,                 bool, false, MemStat) \
     cflags(PrintAssembly,           bool, PrintAssembly, PrintAssembly) \
     cflags(PrintCompilation,        bool, PrintCompilation, PrintCompilation) \
     cflags(PrintInlining,           bool, PrintInlining, PrintInlining) \
