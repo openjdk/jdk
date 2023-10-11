@@ -557,6 +557,8 @@ java/net/MulticastSocket/Test.java                              7145658,8308807 
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
 
+java/net/Socket/asyncClose/Race.java                            8317801 aix-ppc64
+
 ############################################################################
 
 # jdk_nio
