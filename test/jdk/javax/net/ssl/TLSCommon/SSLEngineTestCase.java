@@ -134,7 +134,7 @@ abstract public class SSLEngineTestCase {
      * e.g. "TLSv1", "TLSv1.1", "TLSv1.2", "DTLSv1.0", "DTLSv1.2".
      */
     public static final String TESTED_SECURITY_PROTOCOL
-            = System.getProperty("test.security.protocol", "TLS");
+            = System.getProperty("test.security.protocol");
     /**
      * Test mode: "norm", "norm_sni" or "krb".
      * Modes "norm" and "norm_sni" are used to run
