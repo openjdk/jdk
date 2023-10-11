@@ -124,12 +124,6 @@ static void prefetch_write(void *p) {
   }
 }
 
-void PSCardTable::scan_obj(PSPromotionManager* pm,
-                           oop obj) {
-  prefetch_write(obj);
-  pm->push_contents(obj);
-}
-
 void PSCardTable::scan_obj_with_limit(PSPromotionManager* pm,
                                       oop obj,
                                       HeapWord* start,
@@ -206,22 +200,10 @@ void PSCardTable::process_range(Func&& object_start,
         // precise-marked
         scan_obj_with_limit(pm, obj.obj, addr_l, addr_r);
       } else {
-        if (obj.addr < addr_l) {
-          if (sct.is_any_dirty(sct.card_for(MAX2(obj.addr, start)), dirty_l)) {
-            // already scanned
-          } else {
-            // treat it as semi-precise-marked, [addr_l, obj-end)
-            scan_obj_with_limit(pm, obj.obj, addr_l, MIN2(obj.end_addr, end));
-          }
+        if (obj.addr < i_addr && obj.addr > start) {
+          // already-scanned
         } else {
-          // obj-start is dirty
-          if (obj.end_addr <= end) {
-            // scan whole obj if it does not extend beyond the stripe end
-            scan_obj(pm, obj.obj);
-          } else {
-            // otherwise scan limit the scan
-            scan_obj_with_limit(pm, obj.obj, addr_l, end);
-          }
+          scan_obj_with_limit(pm, obj.obj, addr_l, end);
         }
       }
 

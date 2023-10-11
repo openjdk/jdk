@@ -71,10 +71,6 @@ class PSCardTable: public CardTable {
       return !is_clean(card);
     }
 
-    bool is_any_dirty(const CardValue* const start, const CardValue* const end) {
-      return find_first_dirty_card(start, end) != end;
-    }
-
     bool is_clean(const CardValue* const card) {
       assert(card >= _table && card < _table_end, "out of bounds");
       return *card == PSCardTable::clean_card_val();
@@ -125,9 +121,6 @@ class PSCardTable: public CardTable {
     youngergen_card   = CT_MR_BS_last_reserved + 1,
     verify_card       = CT_MR_BS_last_reserved + 5
   };
-
-  void scan_obj(PSPromotionManager* pm,
-                oop obj);
 
   void scan_obj_with_limit(PSPromotionManager* pm,
                            oop obj,
