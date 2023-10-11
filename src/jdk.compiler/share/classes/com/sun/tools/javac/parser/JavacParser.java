@@ -40,7 +40,6 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.parser.Tokens.*;
-import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
@@ -2819,7 +2818,7 @@ public class JavacParser implements Parser {
             return List.of(parseSimpleStatement());
         case MONKEYS_AT:
         case FINAL: {
-            dc = token.comment(CommentStyle.JAVADOC);
+            dc = token.docComment();
             JCModifiers mods = modifiersOpt();
             if (isDeclaration()) {
                 return List.of(classOrRecordOrInterfaceOrEnumDeclaration(mods, dc));
@@ -2829,19 +2828,19 @@ public class JavacParser implements Parser {
             }
         }
         case ABSTRACT: case STRICTFP: {
-            dc = token.comment(CommentStyle.JAVADOC);
+            dc = token.docComment();
             JCModifiers mods = modifiersOpt();
             return List.of(classOrRecordOrInterfaceOrEnumDeclaration(mods, dc));
         }
         case INTERFACE:
         case CLASS:
-            dc = token.comment(CommentStyle.JAVADOC);
+            dc = token.docComment();
             return List.of(classOrRecordOrInterfaceOrEnumDeclaration(modifiersOpt(), dc));
         case ENUM:
             if (!allowRecords) {
                 log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.LocalEnum);
             }
-            dc = token.comment(CommentStyle.JAVADOC);
+            dc = token.docComment();
             return List.of(classOrRecordOrInterfaceOrEnumDeclaration(modifiersOpt(), dc));
         case IDENTIFIER:
             if (token.name() == names.yield && allowYieldStatement) {
@@ -2898,17 +2897,17 @@ public class JavacParser implements Parser {
                     nextToken();
                     nextToken();
                     nextToken();
-                    return List.of(classOrRecordOrInterfaceOrEnumDeclaration(modifiersOpt(), token.comment(CommentStyle.JAVADOC)));
+                    return List.of(classOrRecordOrInterfaceOrEnumDeclaration(modifiersOpt(), token.docComment()));
                 } else if (isSealedClassStart(true)) {
                     checkSourceLevel(Feature.SEALED_CLASSES);
                     log.error(token.pos, Errors.SealedOrNonSealedLocalClassesNotAllowed);
                     nextToken();
-                    return List.of(classOrRecordOrInterfaceOrEnumDeclaration(modifiersOpt(), token.comment(CommentStyle.JAVADOC)));
+                    return List.of(classOrRecordOrInterfaceOrEnumDeclaration(modifiersOpt(), token.docComment()));
                 }
             }
         }
         if (isRecordStart() && allowRecords) {
-            dc = token.comment(CommentStyle.JAVADOC);
+            dc = token.docComment();
             return List.of(recordDeclaration(F.at(pos).Modifiers(0), dc));
         } else {
             Token prevToken = token;
@@ -3911,7 +3910,7 @@ public class JavacParser implements Parser {
             JCExpression pid = qualident(false);
             accept(SEMI);
             JCPackageDecl pd = toP(F.at(packagePos).PackageDecl(annotations, pid));
-            attach(pd, firstToken.comment(CommentStyle.JAVADOC));
+            attach(pd, firstToken.docComment());
             consumedToplevelDoc = true;
             defs.append(pd);
         }
@@ -3946,9 +3945,9 @@ public class JavacParser implements Parser {
                 seenImport = true;
                 defs.append(importDeclaration());
             } else {
-                Comment docComment = token.comment(CommentStyle.JAVADOC);
+                Comment docComment = token.docComment();
                 if (firstTypeDecl && !seenImport && !seenPackage) {
-                    docComment = firstToken.comment(CommentStyle.JAVADOC);
+                    docComment = firstToken.docComment();
                     consumedToplevelDoc = true;
                 }
                 if (mods != null || token.kind != SEMI)
@@ -4015,7 +4014,7 @@ public class JavacParser implements Parser {
         List<JCTree> topLevelDefs = isUnnamedClass ?  constructUnnamedClass(defs.toList()) : defs.toList();
         JCTree.JCCompilationUnit toplevel = F.at(firstToken.pos).TopLevel(topLevelDefs);
         if (!consumedToplevelDoc)
-            attach(toplevel, firstToken.comment(CommentStyle.JAVADOC));
+            attach(toplevel, firstToken.docComment());
         if (defs.isEmpty())
             storeEnd(toplevel, S.prevToken().endPos);
         if (keepDocComments)
@@ -4500,7 +4499,7 @@ public class JavacParser implements Parser {
     /** EnumeratorDeclaration = AnnotationsOpt [TypeArguments] IDENTIFIER [ Arguments ] [ "{" ClassBody "}" ]
      */
     JCTree enumeratorDeclaration(Name enumName) {
-        Comment dc = token.comment(CommentStyle.JAVADOC);
+        Comment dc = token.docComment();
         int flags = Flags.PUBLIC|Flags.STATIC|Flags.FINAL|Flags.ENUM;
         if (token.deprecatedFlag()) {
             flags |= Flags.DEPRECATED;
@@ -4605,7 +4604,7 @@ public class JavacParser implements Parser {
             nextToken();
             return List.nil();
         } else {
-            Comment dc = token.comment(CommentStyle.JAVADOC);
+            Comment dc = token.docComment();
             int pos = token.pos;
             mods = modifiersOpt(mods);
             if (isDeclaration()) {
@@ -4738,7 +4737,7 @@ public class JavacParser implements Parser {
     private List<JCTree> topLevelMethodOrFieldDeclaration(JCModifiers mods) throws AssertionError {
         int topPos = token.pos;
         int pos = token.pos;
-        Comment dc = token.comment(CommentStyle.JAVADOC);
+        Comment dc = token.docComment();
         List<JCTypeParameter> typarams = typeParametersOpt();
 
         // if there are type parameters but no modifiers, save the start

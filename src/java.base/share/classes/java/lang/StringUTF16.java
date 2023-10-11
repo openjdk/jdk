@@ -33,7 +33,7 @@ import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.util.ByteArrayLittleEndian;
+import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -1543,21 +1543,14 @@ final class StringUTF16 {
             q = i / 100;
             r = (q * 100) - i;
             i = q;
-
-            int packed = (int) StringLatin1.PACKED_DIGITS[r];
-            int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
-
             charPos -= 2;
-            ByteArrayLittleEndian.setInt(buf, charPos << 1, inflated);
+            putPair(buf, charPos, r);
         }
 
         // We know there are at most two digits left at this point.
         if (i < -9) {
-            int packed = (int) StringLatin1.PACKED_DIGITS[-i];
-            int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
-
             charPos -= 2;
-            ByteArrayLittleEndian.setInt(buf, charPos << 1, inflated);
+            putPair(buf, charPos, -i);
         } else {
             putChar(buf, --charPos, '0' - i);
         }
@@ -1590,12 +1583,8 @@ final class StringUTF16 {
         // Get 2 digits/iteration using longs until quotient fits into an int
         while (i <= Integer.MIN_VALUE) {
             q = i / 100;
-
-            int packed = (int) StringLatin1.PACKED_DIGITS[(int)((q * 100) - i)];
-            int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
-
             charPos -= 2;
-            ByteArrayLittleEndian.setInt(buf, charPos << 1, inflated);
+            putPair(buf, charPos, (int)((q * 100) - i));
             i = q;
         }
 
@@ -1604,23 +1593,15 @@ final class StringUTF16 {
         int i2 = (int)i;
         while (i2 <= -100) {
             q2 = i2 / 100;
-
-            int packed = (int) StringLatin1.PACKED_DIGITS[(q2 * 100) - i2];
-            int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
-
             charPos -= 2;
-            ByteArrayLittleEndian.setInt(buf, charPos << 1, inflated);
+            putPair(buf, charPos, (q2 * 100) - i2);
             i2 = q2;
         }
 
         // We know there are at most two digits left at this point.
         if (i2 < -9) {
             charPos -= 2;
-
-            int packed = (int) StringLatin1.PACKED_DIGITS[-i2];
-            int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
-
-            ByteArrayLittleEndian.setInt(buf, charPos << 1, inflated);
+            putPair(buf, charPos, -i2);
         } else {
             putChar(buf, --charPos, '0' - i2);
         }
@@ -1629,6 +1610,12 @@ final class StringUTF16 {
             putChar(buf, --charPos, '-');
         }
         return charPos;
+    }
+
+    private static void putPair(byte[] buf, int charPos, int v) {
+        int packed = (int) DecimalDigits.digitPair(v);
+        putChar(buf, charPos, packed & 0xFF);
+        putChar(buf, charPos + 1, packed >> 8);
     }
     // End of trusted methods.
 

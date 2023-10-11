@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public class  XMSelection {
      *
      * If owner changes, the ownerChanged of the XMSelectionListener
      * will be called with the screen
-     * number and the new owning window when onwership is established, or
+     * number and the new owning window when ownership is established, or
      * None if the owner is gone.
      *
      * Events in extra_mask are selected for on owning windows (existing

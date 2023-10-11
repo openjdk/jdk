@@ -1588,6 +1588,13 @@ const char* JavaThread::name() const  {
   return Thread::name();
 }
 
+// Like name() but doesn't include the protection check. This must only be
+// called when it is known to be safe, even though the protection check can't tell
+// that e.g. when this thread is the init_thread() - see instanceKlass.cpp.
+const char* JavaThread::name_raw() const  {
+  return get_thread_name_string();
+}
+
 // Returns a non-null representation of this thread's name, or a suitable
 // descriptive string if there is no set name.
 const char* JavaThread::get_thread_name_string(char* buf, int buflen) const {
