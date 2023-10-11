@@ -1954,7 +1954,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         public void mouseClicked(MouseEvent evt) {
             JComponent source = (JComponent)evt.getSource();
 
-            if(!source.isEnabled()) {
+            if (!source.isEnabled()) {
                 return;
             }
 

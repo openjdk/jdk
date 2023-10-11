@@ -371,7 +371,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
 
         viewMenuButton.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent e) {
-                if(!getFileChooser().isEnabled()) {
+                if (!getFileChooser().isEnabled()) {
                     return;
                 }
 
@@ -384,7 +384,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
         });
         viewMenuButton.addKeyListener(new KeyAdapter() {
             public void keyPressed(KeyEvent e) {
-                if(!getFileChooser().isEnabled()) {
+                if (!getFileChooser().isEnabled()) {
                     return;
                 }
 
