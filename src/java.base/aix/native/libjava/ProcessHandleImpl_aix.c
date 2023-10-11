@@ -80,9 +80,9 @@ jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
         }
     }
 
-    const int Chunk = 100;
-    struct procentry64 ProcessBuffer[Chunk];
-    pid_t IndexPointer = 0;
+    const int chunk = 100;
+    struct procentry64 ProcessBuffer[chunk];
+    pid_t idxptr = 0;
     int i, num = 0;
 
     do { // Block to break out of on Exception
@@ -103,39 +103,41 @@ jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
             }
         }
 
-        while ((num = getprocs64(ProcessBuffer, sizeof(struct procentry64), NULL, sizeof(struct fdsinfo64), &IndexPointer, Chunk)) != -1) {
-          for (i = 0; i < num; i++) {
-            pid_t ppid = 0;
-            jlong startTime = 0L;
+        while ((num = getprocs64(ProcessBuffer, sizeof(struct procentry64), NULL,
+                                 sizeof(struct fdsinfo64), &idxptr, chunk)) != -1) {
+            for (i = 0; i < num; i++) {
+                pid_t ppid = 0;
+                jlong startTime = 0L;
 
-            /* skip files that aren't numbers */
-            pid_t childpid = (pid_t) ProcessBuffer[i].pi_pid;
-            if ((int) childpid <= 0) {
-                continue;
-            }
-
-            // Get the parent pid, and start time
-            ppid = (pid_t) ProcessBuffer[i].pi_ppid;
-            startTime = ((jlong) ProcessBuffer[i].pi_start) *1000;
-            if (ppid >= 0 && (pid == 0 || ppid == pid)) {
-                if (count < arraySize) {
-                    // Only store if it fits
-                    pids[count] = (jlong) childpid;
-
-                    if (ppids != NULL) {
-                        // Store the parentPid
-                        ppids[count] = (jlong) ppid;
-                    }
-                    if (stimes != NULL) {
-                        // Store the process start time
-                        stimes[count] = startTime;
-                    }
+                /* skip files that aren't numbers */
+                pid_t childpid = (pid_t) ProcessBuffer[i].pi_pid;
+                if ((int) childpid <= 0) {
+                    continue;
                 }
-                count++; // Count to tabulate size needed
+
+                // Get the parent pid, and start time
+                ppid = (pid_t) ProcessBuffer[i].pi_ppid;
+                startTime = ((jlong) ProcessBuffer[i].pi_start) *1000;
+                if (ppid >= 0 && (pid == 0 || ppid == pid)) {
+                    if (count < arraySize) {
+                        // Only store if it fits
+                        pids[count] = (jlong) childpid;
+
+                        if (ppids != NULL) {
+                            // Store the parentPid
+                            ppids[count] = (jlong) ppid;
+                        }
+                        if (stimes != NULL) {
+                            // Store the process start time
+                            stimes[count] = startTime;
+                        }
+                    }
+                    count++; // Count to tabulate size needed
+                }
             }
-          }
-          if (num < Chunk)
-            break;
+            if (num < chunk) {
+                break;
+            }
         }
     } while (0);
 
@@ -150,9 +152,9 @@ jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
     }
 
     if (num == -1) {
-      JNU_ThrowByNameWithLastError(env,
-          "java/lang/RuntimeException", "Unable to retrieve Process info");
-      return -1;
+        JNU_ThrowByNameWithLastError(env,
+            "java/lang/RuntimeException", "Unable to retrieve Process info");
+        return -1;
     }
 
     // If more pids than array had size for; count will be greater than array size
