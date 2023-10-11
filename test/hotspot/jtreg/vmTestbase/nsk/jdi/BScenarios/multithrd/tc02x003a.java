@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ public class tc02x003a {
 
     public final static int checkClassBrkpLine1 = 96;
     public final static int checkClassBrkpLine2 = 98;
-    Thready [] thrds = new Thready [threadCount];
+    Thread[] thrds = new Thread[threadCount];
 
     public static void main (String argv[]) {
         ArgumentHandler argHandler = new ArgumentHandler(argv);
@@ -74,12 +74,12 @@ public class tc02x003a {
 
     tc02x003a() {
         for (int i = 0; i < thrds.length; i++ ) {
-            thrds[i] = new Thready("Thread-" + (i+1));
+            thrds[i] = JDIThreadFactory.newThread(new Thready("Thread-" + (i+1)));
             thrds[i].start();
         }
     }
 
-    static class Thready extends Thread {
+    static class Thready extends NamedTask {
         Thready(String name) {
             super(name);
         }
