@@ -812,9 +812,6 @@ public abstract class PKCS11Test {
 
     private static String fetchNssLib(String osId) {
         switch (osId) {
-            case "Windows-x86-32":
-                return fetchNssLib(WINDOWS_X86.class);
-
             case "Windows-amd64-64":
                 return fetchNssLib(WINDOWS_X64.class);
 
