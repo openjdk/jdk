@@ -97,6 +97,9 @@ public class Unnamed {
         try (final Lock _ = null) { }
         try (@Foo Lock _ = null) { }
 
+        try (Lock _ = null) { }
+        catch (Exception | Error _) { }
+
         String[] strs = new String[] { "str1", "str2" };
         for (var _ : strs) {
             for (var _ : strs) {
