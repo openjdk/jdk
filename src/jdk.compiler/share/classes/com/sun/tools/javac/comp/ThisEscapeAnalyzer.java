@@ -492,7 +492,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
         // Scan initializer, if any
         scan(expr);
         if (isParamOrVar(sym))
-            refs.replaceExprs(depth, indirection -> new VarRef(sym, indirection));
+            refs.replaceExprs(depth, direct -> new VarRef(sym, direct));
         else
             refs.discardExprs(depth);           // we don't track fields yet
     }
