@@ -4342,7 +4342,7 @@ class StubGenerator: public StubCodeGenerator {
       v8, v9, v10, v11, v12, v13, v14, v15
     };
     const VectorRegister tmp_vr = v16;
-    const VectorRegister counter = v17;
+    const VectorRegister counter_vr = v17;
 
     {
       // Put 16 here, as com.sun.crypto.providerChaCha20Cipher.KS_MAX_LEN is 1024
@@ -4358,8 +4358,8 @@ class StubGenerator: public StubCodeGenerator {
       __ addi(tmp_addr, tmp_addr, step);
     }
     // Adjust counter for every individual block.
-    __ vid_v(counter);
-    __ vadd_vv(work_vrs[12], work_vrs[12], counter);
+    __ vid_v(counter_vr);
+    __ vadd_vv(work_vrs[12], work_vrs[12], counter_vr);
 
     // Perform 10 iterations of the 8 quarter round set
     {
@@ -4367,15 +4367,15 @@ class StubGenerator: public StubCodeGenerator {
       __ mv(loop, 10);
       __ BIND(L_Rounds);
 
-      chacha20_quarter_round(work_vrs[0], work_vrs[4], work_vrs[8], work_vrs[12], tmp_vr);
-      chacha20_quarter_round(work_vrs[1], work_vrs[5], work_vrs[9], work_vrs[13], tmp_vr);
+      chacha20_quarter_round(work_vrs[0], work_vrs[4], work_vrs[8],  work_vrs[12], tmp_vr);
+      chacha20_quarter_round(work_vrs[1], work_vrs[5], work_vrs[9],  work_vrs[13], tmp_vr);
       chacha20_quarter_round(work_vrs[2], work_vrs[6], work_vrs[10], work_vrs[14], tmp_vr);
       chacha20_quarter_round(work_vrs[3], work_vrs[7], work_vrs[11], work_vrs[15], tmp_vr);
 
       chacha20_quarter_round(work_vrs[0], work_vrs[5], work_vrs[10], work_vrs[15], tmp_vr);
       chacha20_quarter_round(work_vrs[1], work_vrs[6], work_vrs[11], work_vrs[12], tmp_vr);
-      chacha20_quarter_round(work_vrs[2], work_vrs[7], work_vrs[8], work_vrs[13], tmp_vr);
-      chacha20_quarter_round(work_vrs[3], work_vrs[4], work_vrs[9], work_vrs[14], tmp_vr);
+      chacha20_quarter_round(work_vrs[2], work_vrs[7], work_vrs[8],  work_vrs[13], tmp_vr);
+      chacha20_quarter_round(work_vrs[3], work_vrs[4], work_vrs[9],  work_vrs[14], tmp_vr);
 
       __ sub(loop, loop, 1);
       __ bnez(loop, L_Rounds);
@@ -4391,7 +4391,7 @@ class StubGenerator: public StubCodeGenerator {
       __ vadd_vv(work_vrs[i], work_vrs[i], tmp_vr);
     }
     // Add the counter overlay onto work_vrs[12] at the end.
-    __ vadd_vv(work_vrs[12], work_vrs[12], counter);
+    __ vadd_vv(work_vrs[12], work_vrs[12], counter_vr);
 
     // Store result to key stream.
     {
