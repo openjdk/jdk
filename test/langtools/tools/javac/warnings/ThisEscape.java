@@ -603,16 +603,16 @@ public class ThisEscape {
     }
 
     // Verify no assertion error occurs (JDK-8317336)
-    public static class ThisAssertionError {
-        public ThisAssertionError() {
+    public static class ThisEscapeAssertionError {
+        public ThisEscapeAssertionError() {
             System.out.println((Supplier<Object>)() -> this);
         }
     }
 
     // Verify no assertion error occurs (JDK-8317336)
-    public static class ThisAssertionError2 {
-        public ThisAssertionError2() {
-            ThisAssertionError2[] array = new ThisAssertionError2[] { this };
+    public static class ThisEscapeAssertionError2 {
+        public ThisEscapeAssertionError2() {
+            ThisEscapeAssertionError2[] array = new ThisEscapeAssertionError2[] { this };
             for (Object obj : array)
                 ;
         }
