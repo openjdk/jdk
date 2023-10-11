@@ -88,23 +88,19 @@ public class NumberFormatException extends IllegalArgumentException {
     }
 
     static NumberFormatException forUnsignLong(CharSequence s) {
-        return new NumberFormatException(String.format(
-                "String value %s exceeds range of unsigned long.", s));
+        return new NumberFormatException("String value " + s + " exceeds range of unsigned long.");
     }
 
     static NumberFormatException forUnsignInt(CharSequence s) {
-        return new NumberFormatException(String.format(
-                "String value %s exceeds range of unsigned int.", s));
+        return new NumberFormatException("String value " + s + " exceeds range of unsigned int.");
     }
 
     static NumberFormatException forMinRadix(int radix) {
-        return new NumberFormatException(String.format(
-                "radix %s greater than Character.MIN_RADIX", radix));
+        return new NumberFormatException("radix " + radix + " greater than Character.MIN_RADIX");
     }
 
     static NumberFormatException forMaxRadix(int radix) {
-        return new NumberFormatException(String.format(
-                "radix %s greater than Character.MAX_RADIX", radix));
+        return new NumberFormatException("radix " + radix + " greater than Character.MAX_RADIX");
     }
 
     static NumberFormatException forNull() {
