@@ -34,6 +34,7 @@ import java.text.MessageFormat;
 import java.time.*;
 import java.util.*;
 import java.util.ResourceBundle.Control;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -122,6 +123,9 @@ public class CLDRConverter {
     // rules maps
     static Map<String, String> pluralRules;
     static Map<String, String> dayPeriodRules;
+
+    // TZDB Short Names Map
+    private static Map<String, String> tzdbShortNamesMap;
 
     static enum DraftType {
         UNCONFIRMED,
@@ -283,6 +287,9 @@ public class CLDRConverter {
         // rules maps
         pluralRules = generateRules(handlerPlurals);
         dayPeriodRules = generateRules(handlerDayPeriodRule);
+
+        // TZDB short names map
+        tzdbShortNamesMap = generateTZDBShortNamesMap();
 
         List<Bundle> bundles = readBundleList();
         convertBundles(bundles);
@@ -757,21 +764,25 @@ public class CLDRConverter {
                                    .orElse(tzid);
             Object data = map.get(TIMEZONE_ID_PREFIX + tzKey);
 
-            if (data instanceof String[]) {
+            if (data instanceof String[] tznames) {
                 // Hack for UTC. UTC is an alias to Etc/UTC in CLDR
                 if (tzid.equals("Etc/UTC") && !map.containsKey(TIMEZONE_ID_PREFIX + "UTC")) {
-                    names.put(METAZONE_ID_PREFIX + META_ETCUTC_ZONE_NAME, data);
+                    names.put(METAZONE_ID_PREFIX + META_ETCUTC_ZONE_NAME, tznames);
                     names.put(tzid, META_ETCUTC_ZONE_NAME);
                     names.put("UTC", META_ETCUTC_ZONE_NAME);
                 } else {
-                    names.put(tzid, data);
+                    // TZDB short names
+                    fillTZDBShortNames(tzid, tznames);
+                    names.put(tzid, tznames);
                 }
             } else {
                 String meta = handlerMetaZones.get(tzKey);
                 if (meta != null) {
                     String metaKey = METAZONE_ID_PREFIX + meta;
                     data = map.get(metaKey);
-                    if (data instanceof String[]) {
+                    if (data instanceof String[] tznames) {
+                        // TZDB short names
+                        fillTZDBShortNames(tzid, tznames);
                         // Keep the metazone prefix here.
                         names.put(metaKey, data);
                         names.put(tzid, meta);
@@ -1244,6 +1255,87 @@ public class CLDRConverter {
             .forEach(k -> covMap.put(Locale.forLanguageTag(k), ""));
 
         return covMap;
+    }
+
+    private static Map<String, String> generateTZDBShortNamesMap() throws IOException {
+        final Map<String, String> shortNameMap = HashMap.newHashMap(1024);
+        Files.walk(Path.of(tzDataDir), 1, FileVisitOption.FOLLOW_LINKS)
+                .map(Path::toFile)
+                .filter(File::isFile)
+                .forEach(f -> {
+                    try {
+                        String zone = null;
+                        String format = null;
+                        for (var line : Files.readAllLines(f.toPath())) {
+                            if (line.contains("#STDOFF")) continue;
+                            line = line.replaceAll("[ \t]*#.*", "");
+                            if (line.startsWith("Zone")) {
+                                var s = line.split("[ \t]+", -1);
+                                zone = s[1];
+                                format = s[4];
+                            } else {
+                                if (zone != null) {
+                                    if (line.isBlank()) {
+                                        shortNameMap.put(zone, format);
+                                        zone = null;
+                                        format = null;
+                                    } else {
+                                        format = line.split("[ \t]+", -1)[3];
+                                    }
+                                }
+                            }
+
+                        }
+                    } catch (IOException ioe) {
+                        throw new UncheckedIOException(ioe);
+                    }
+                });
+        return shortNameMap;
+    }
+    //
+    private static void fillTZDBShortNames(String tzid, String[] names) {
+        var format = tzdbShortNamesMap.get(tzid);
+        if (format != null) {
+            IntStream.of(1, 3, 5).forEach(i -> {
+                if (names[i] == null) {
+                    names[i] = getTZDBShortName(format, i);
+                }
+            });
+        }
+    }
+
+    // fmt could be either
+    // X%sT, +XX/+YY, or +XX
+    private static final String getTZDBShortName(String f, int i) {
+        if (f.contains("%s")) {
+            return switch (i) {
+                case 1 -> f.formatted("S");
+                case 3 -> f.formatted("D");
+                case 5 -> f.formatted("");
+                default -> throw new InternalError();
+            };
+        } else if (f.contains("/")) {
+            return switch (i) {
+                case 1, 5 -> convertGMTName(f.substring(0, f.indexOf("/")));
+                case 3 -> convertGMTName(f.substring(f.indexOf("/") + 1));
+                default -> throw new InternalError();
+            };
+        } else {
+            return convertGMTName(f);
+        }
+    }
+
+    private final static Pattern OFFSET_PATTERN = Pattern.compile(("([-+]\\d{2})(\\d{2})*"));
+    private static String convertGMTName(String f) {
+        var m = OFFSET_PATTERN.matcher(f);
+
+        if (m.matches()) {
+            var hour = m.group(1);
+            var min = m.group(2);
+            return "GMT" + hour + (min != null ? ":" + min : ":00");
+        } else {
+            return f;
+        }
     }
 
     // for debug
