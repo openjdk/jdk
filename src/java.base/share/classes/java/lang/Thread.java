@@ -869,6 +869,7 @@ public class Thread implements Runnable {
      *
      * @see Thread#ofPlatform()
      * @see Thread#ofVirtual()
+     * @sealedGraph
      * @since 21
      */
     public sealed interface Builder
