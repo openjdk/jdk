@@ -129,7 +129,7 @@ final class KeyProtector {
         SecretKey sKey = null;
         PBEWithMD5AndTripleDESCipher cipher;
         try {
-            sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES", false);
+            sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES");
             // encrypt private key
             cipher = new PBEWithMD5AndTripleDESCipher();
             cipher.engineInit(Cipher.ENCRYPT_MODE, sKey, pbeSpec, null);
@@ -193,7 +193,7 @@ final class KeyProtector {
 
                 // create PBE key from password
                 PBEKeySpec pbeKeySpec = new PBEKeySpec(this.password);
-                sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES", false);
+                sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES");
                 pbeKeySpec.clearPassword();
 
                 // decrypt private key
@@ -339,7 +339,7 @@ final class KeyProtector {
         SecretKey sKey = null;
         Cipher cipher;
         try {
-            sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES", false);
+            sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES");
             pbeKeySpec.clearPassword();
 
             // seal key
@@ -366,8 +366,7 @@ final class KeyProtector {
         try {
             // create PBE key from password
             PBEKeySpec pbeKeySpec = new PBEKeySpec(this.password);
-            sKey = new PBEKey(pbeKeySpec,
-                    "PBEWithMD5AndTripleDES", false);
+            sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES");
             pbeKeySpec.clearPassword();
 
             SealedObjectForKeyProtector soForKeyProtector = null;
