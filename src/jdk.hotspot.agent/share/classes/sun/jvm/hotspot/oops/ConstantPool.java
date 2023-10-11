@@ -220,11 +220,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
   }
 
   public long getLongAt(long index) {
-    int oneHalf = getAddress().getJIntAt(indexOffset(index + 1));
-    int otherHalf   = getAddress().getJIntAt(indexOffset(index));
-    // buildLongFromIntsPD accepts higher address value, lower address value
-    // in that order.
-    return VM.getVM().buildLongFromIntsPD(oneHalf, otherHalf);
+    return getAddress().getJLongAt(indexOffset(index));
   }
 
   public double getDoubleAt(long index) {
@@ -267,8 +263,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
       case Bytecodes._getstatic:
       case Bytecodes._putfield:
       case Bytecodes._putstatic:
-        // TODO: handle resolved field entries with new structure
-        // i = ....
+        return getCache().getFieldEntryAt(index).getConstantPoolIndex();
       case Bytecodes._invokeinterface:
       case Bytecodes._invokehandle:
       case Bytecodes._invokespecial:

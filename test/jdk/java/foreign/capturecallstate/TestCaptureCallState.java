@@ -63,12 +63,16 @@ public class TestCaptureCallState extends NativeTestHelper {
         }
     }
 
-    private record SaveValuesCase(String nativeTarget, FunctionDescriptor nativeDesc, String threadLocalName, Consumer<Object> resultCheck) {}
+    private record SaveValuesCase(String nativeTarget, FunctionDescriptor nativeDesc, boolean trivial, String threadLocalName, Consumer<Object> resultCheck) {}
 
     @Test(dataProvider = "cases")
     public void testSavedThreadLocal(SaveValuesCase testCase) throws Throwable {
-        Linker.Option stl = Linker.Option.captureCallState(testCase.threadLocalName());
-        MethodHandle handle = downcallHandle(testCase.nativeTarget(), testCase.nativeDesc(), stl);
+        List<Linker.Option> options = new ArrayList<>();
+        options.add(Linker.Option.captureCallState(testCase.threadLocalName()));
+        if (testCase.trivial()) {
+            options.add(Linker.Option.isTrivial());
+        }
+        MethodHandle handle = downcallHandle(testCase.nativeTarget(), testCase.nativeDesc(), options.toArray(Linker.Option[]::new));
 
         StructLayout capturedStateLayout = Linker.Option.captureStateLayout();
         VarHandle errnoHandle = capturedStateLayout.varHandle(groupElement(testCase.threadLocalName()));
@@ -101,36 +105,44 @@ public class TestCaptureCallState extends NativeTestHelper {
         }
     }
 
+    interface CaseAdder {
+      void addCase(String nativeTarget, FunctionDescriptor nativeDesc, String threadLocalName, Consumer<Object> resultCheck);
+    }
+
     @DataProvider
     public static Object[][] cases() {
         List<SaveValuesCase> cases = new ArrayList<>();
+        CaseAdder adder = (nativeTarget, nativeDesc, threadLocalName, resultCheck) -> {
+          cases.add(new SaveValuesCase(nativeTarget, nativeDesc, false, threadLocalName, resultCheck));
+          cases.add(new SaveValuesCase(nativeTarget, nativeDesc, true, threadLocalName, resultCheck));
+        };
 
-        cases.add(new SaveValuesCase("set_errno_V", FunctionDescriptor.ofVoid(JAVA_INT), "errno", o -> {}));
-        cases.add(new SaveValuesCase("set_errno_I", FunctionDescriptor.of(JAVA_INT, JAVA_INT), "errno", o -> assertEquals((int) o, 42)));
-        cases.add(new SaveValuesCase("set_errno_D", FunctionDescriptor.of(JAVA_DOUBLE, JAVA_INT), "errno", o -> assertEquals((double) o, 42.0)));
+        adder.addCase("set_errno_V", FunctionDescriptor.ofVoid(JAVA_INT), "errno", o -> {});
+        adder.addCase("set_errno_I", FunctionDescriptor.of(JAVA_INT, JAVA_INT), "errno", o -> assertEquals((int) o, 42));
+        adder.addCase("set_errno_D", FunctionDescriptor.of(JAVA_DOUBLE, JAVA_INT), "errno", o -> assertEquals((double) o, 42.0));
 
-        cases.add(structCase("SL",  Map.of(JAVA_LONG.withName("x"), 42L)));
-        cases.add(structCase("SLL", Map.of(JAVA_LONG.withName("x"), 42L,
-                                           JAVA_LONG.withName("y"), 42L)));
-        cases.add(structCase("SLLL", Map.of(JAVA_LONG.withName("x"), 42L,
-                                            JAVA_LONG.withName("y"), 42L,
-                                            JAVA_LONG.withName("z"), 42L)));
-        cases.add(structCase("SD",  Map.of(JAVA_DOUBLE.withName("x"), 42D)));
-        cases.add(structCase("SDD", Map.of(JAVA_DOUBLE.withName("x"), 42D,
-                                           JAVA_DOUBLE.withName("y"), 42D)));
-        cases.add(structCase("SDDD", Map.of(JAVA_DOUBLE.withName("x"), 42D,
-                                            JAVA_DOUBLE.withName("y"), 42D,
-                                            JAVA_DOUBLE.withName("z"), 42D)));
+        structCase(adder, "SL",  Map.of(JAVA_LONG.withName("x"), 42L));
+        structCase(adder, "SLL", Map.of(JAVA_LONG.withName("x"), 42L,
+                                         JAVA_LONG.withName("y"), 42L));
+        structCase(adder, "SLLL", Map.of(JAVA_LONG.withName("x"), 42L,
+                                         JAVA_LONG.withName("y"), 42L,
+                                         JAVA_LONG.withName("z"), 42L));
+        structCase(adder, "SD",  Map.of(JAVA_DOUBLE.withName("x"), 42D));
+        structCase(adder, "SDD", Map.of(JAVA_DOUBLE.withName("x"), 42D,
+                                         JAVA_DOUBLE.withName("y"), 42D));
+        structCase(adder, "SDDD", Map.of(JAVA_DOUBLE.withName("x"), 42D,
+                                         JAVA_DOUBLE.withName("y"), 42D,
+                                         JAVA_DOUBLE.withName("z"), 42D));
 
         if (IS_WINDOWS) {
-            cases.add(new SaveValuesCase("SetLastError", FunctionDescriptor.ofVoid(JAVA_INT), "GetLastError", o -> {}));
-            cases.add(new SaveValuesCase("WSASetLastError", FunctionDescriptor.ofVoid(JAVA_INT), "WSAGetLastError", o -> {}));
+            adder.addCase("SetLastError", FunctionDescriptor.ofVoid(JAVA_INT), "GetLastError", o -> {});
+            adder.addCase("WSASetLastError", FunctionDescriptor.ofVoid(JAVA_INT), "WSAGetLastError", o -> {});
         }
 
         return cases.stream().map(tc -> new Object[] {tc}).toArray(Object[][]::new);
     }
 
-    static SaveValuesCase structCase(String name, Map<MemoryLayout, Object> fields) {
+    static void structCase(CaseAdder adder, String name, Map<MemoryLayout, Object> fields) {
         StructLayout layout = MemoryLayout.structLayout(fields.keySet().toArray(MemoryLayout[]::new));
 
         Consumer<Object> check = o -> {};
@@ -141,7 +153,7 @@ public class TestCaptureCallState extends NativeTestHelper {
             check = check.andThen(o -> assertEquals(fieldHandle.get(o), value));
         }
 
-        return new SaveValuesCase("set_errno_" + name, FunctionDescriptor.of(layout, JAVA_INT), "errno", check);
+        adder.addCase("set_errno_" + name, FunctionDescriptor.of(layout, JAVA_INT), "errno", check);
     }
 
     @DataProvider

@@ -55,8 +55,9 @@ public class TestVectorizeTypeConversion {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, ">0",
-                  IRNode.VECTOR_CAST_I2X, ">0",
+    // Mixing types of different sizes has the effect that some vectors are shorter than the type allows.
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_CAST_I2D, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
                   IRNode.STORE_VECTOR, ">0"},
         // The vectorization of some conversions may fail when `+AlignVector`.
         // We can remove the condition after JDK-8303827.
@@ -68,9 +69,11 @@ public class TestVectorizeTypeConversion {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, ">0",
-                  IRNode.VECTOR_CAST_I2X, ">0",
-                  IRNode.VECTOR_CAST_L2X, ">0",
+    // Mixing types of different sizes has the effect that some vectors are shorter than the type allows.
+    @IR(counts = {IRNode.LOAD_VECTOR_L,   IRNode.VECTOR_SIZE + "min(max_int, max_long)", ">0",
+                  IRNode.LOAD_VECTOR_I,   IRNode.VECTOR_SIZE + "min(max_int, max_long)", ">0",
+                  IRNode.VECTOR_CAST_I2L, IRNode.VECTOR_SIZE + "min(max_int, max_long)", ">0",
+                  IRNode.VECTOR_CAST_L2I, IRNode.VECTOR_SIZE + "min(max_int, max_long)", ">0",
                   IRNode.STORE_VECTOR, ">0"})
     private static void testConvI2L(int[] d1, int d2[], long[] a1, long[] a2) {
         for(int i = 0; i < d1.length; i++) {
@@ -80,9 +83,11 @@ public class TestVectorizeTypeConversion {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, ">0",
-                  IRNode.VECTOR_CAST_D2X, ">0",
-                  IRNode.VECTOR_CAST_F2X, ">0",
+    // Mixing types of different sizes has the effect that some vectors are shorter than the type allows.
+    @IR(counts = {IRNode.LOAD_VECTOR_F,   IRNode.VECTOR_SIZE + "min(max_float, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,   IRNode.VECTOR_SIZE + "min(max_float, max_double)", ">0",
+                  IRNode.VECTOR_CAST_D2F, IRNode.VECTOR_SIZE + "min(max_float, max_double)", ">0",
+                  IRNode.VECTOR_CAST_F2D, IRNode.VECTOR_SIZE + "min(max_float, max_double)", ">0",
                   IRNode.STORE_VECTOR, ">0"})
     private static void testConvF2D(double[] d1, double[] d2, float[] a1, float[] a2) {
         for(int i = 0; i < d1.length; i++) {

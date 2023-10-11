@@ -151,7 +151,10 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
   setup(pc);
 }
 
-inline frame::frame(intptr_t* sp) : frame(sp, sp, *(intptr_t**)(sp - frame::sender_sp_offset), *(address*)(sp - 1)) {}
+inline frame::frame(intptr_t* sp)
+  : frame(sp, sp,
+          *(intptr_t**)(sp - frame::sender_sp_offset),
+          pauth_strip_verifiable(*(address*)(sp - 1))) {}
 
 inline frame::frame(intptr_t* sp, intptr_t* fp) {
   intptr_t a = intptr_t(sp);
@@ -262,7 +265,9 @@ inline intptr_t* frame::interpreter_frame_locals() const {
 }
 
 inline intptr_t* frame::interpreter_frame_last_sp() const {
-  return (intptr_t*)at(interpreter_frame_last_sp_offset);
+  intptr_t n = *addr_at(interpreter_frame_last_sp_offset);
+  assert(n <= 0, "n: " INTPTR_FORMAT, n);
+  return n != 0 ? &fp()[n] : nullptr;
 }
 
 inline intptr_t* frame::interpreter_frame_bcp_addr() const {
@@ -415,9 +420,10 @@ inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
                                                                     : sender_sp();
   assert(!_sp_is_trusted || l_sender_sp == real_fp(), "");
 
-  // the return_address is always the word on the stack
-  // For ROP protection, C1/C2 will have signed the sender_pc, but there is no requirement to authenticate it here.
-  address sender_pc = pauth_strip_verifiable((address) *(l_sender_sp-1), (address) *(l_sender_sp-2));
+  // The return_address is always the word on the stack.
+  // For ROP protection, C1/C2 will have signed the sender_pc,
+  // but there is no requirement to authenticate it here.
+  address sender_pc = pauth_strip_verifiable((address) *(l_sender_sp - 1));
 
   intptr_t** saved_fp_addr = (intptr_t**) (l_sender_sp - frame::sender_sp_offset);
 

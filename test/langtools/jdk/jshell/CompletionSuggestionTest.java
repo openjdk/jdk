@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466 8197439 8221759 8234896 8240658 8278039 8286206 8296789
+ * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466 8197439 8221759 8234896 8240658 8278039 8286206 8296789 8314662
  * @summary Test Completion and Documentation
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -48,13 +48,16 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import jdk.jshell.MethodSnippet;
 
 import jdk.jshell.Snippet;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import static jdk.jshell.Snippet.Status.NONEXISTENT;
 import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Snippet.Status.OVERWRITTEN;
+import static jdk.jshell.Snippet.Status.RECOVERABLE_DEFINED;
 
 @Test
 public class CompletionSuggestionTest extends KullaTesting {
@@ -796,5 +799,15 @@ public class CompletionSuggestionTest extends KullaTesting {
     public void testParentMembers() {
         assertEval("var sb=new StringBuilder();");
         assertCompletionIncludesExcludes("sb.|", true, Set.of("capacity()", "setLength("), Set.of("maybeLatin1"));
+    }
+
+    //JDK-8314662
+    public void testDuplicateImport() {
+        MethodSnippet m1 = methodKey(assertEval("void test(String s) { foo(); }", ste(MAIN_SNIPPET, NONEXISTENT, RECOVERABLE_DEFINED, true, null)));
+        MethodSnippet m2 = methodKey(assertEval("void test(Integer i) { foo(); }", ste(MAIN_SNIPPET, NONEXISTENT, RECOVERABLE_DEFINED, true, null)));
+        assertEval("void foo() { }", ste(MAIN_SNIPPET, NONEXISTENT, VALID, true, null),
+                                     ste(m1, RECOVERABLE_DEFINED, VALID, true, MAIN_SNIPPET),
+                                     ste(m2, RECOVERABLE_DEFINED, VALID, true, MAIN_SNIPPET));
+        assertSignature("test(|", "void test(String s)", "void test(Integer i)");
     }
 }

@@ -109,6 +109,16 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   PreservedMarks* _preserved_marks;
   EvacuationFailedInfo _evacuation_failed_info;
   G1EvacFailureRegions* _evac_failure_regions;
+  // Number of additional cards into evacuation failed regions enqueued into
+  // the local DCQS. This is an approximation, as cards that would be added later
+  // outside of evacuation failure will not be subtracted again.
+  size_t _evac_failure_enqueued_cards;
+
+  // Enqueue the card if not already in the set; this is a best-effort attempt on
+  // detecting duplicates.
+  template <class T> bool enqueue_if_new(T* p);
+  // Enqueue the card of p into the (evacuation failed) region.
+  template <class T> void enqueue_card_into_evac_fail_region(T* p, oop obj);
 
   bool inject_evacuation_failure(uint region_idx) EVAC_FAILURE_INJECTOR_RETURN_( return false; );
 
@@ -151,6 +161,8 @@ public:
 
   size_t lab_waste_words() const;
   size_t lab_undo_waste_words() const;
+
+  size_t evac_failure_enqueued_cards() const;
 
   // Pass locally gathered statistics to global state. Returns the total number of
   // HeapWords copied.

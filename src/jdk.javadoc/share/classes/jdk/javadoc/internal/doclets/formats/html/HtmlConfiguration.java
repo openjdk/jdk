@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -61,7 +62,6 @@ import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
-import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -112,7 +112,7 @@ public class HtmlConfiguration extends BaseConfiguration {
      * 2. items for elements are added in bulk before generating the index files
      * 3. additional items are added as needed
      */
-    public HtmlIndexBuilder mainIndex;
+    public HtmlIndexBuilder indexBuilder;
 
     /**
      * The collection of deprecated items, if any, to be displayed on the deprecated-list page,
@@ -184,6 +184,11 @@ public class HtmlConfiguration extends BaseConfiguration {
     private ZonedDateTime buildDate;
 
     /**
+     * The set of packages for which we have copied the doc files.
+     */
+    private final Set<PackageElement> containingPackagesSeen;
+
+    /**
      * Constructs the full configuration needed by the doclet, including
      * the format-specific part, defined in this class, and the format-independent
      * part, defined in the supertype.
@@ -220,6 +225,7 @@ public class HtmlConfiguration extends BaseConfiguration {
 
         messages = new Messages(this, msgResources);
         options = new HtmlOptions(this);
+        containingPackagesSeen = new HashSet<>();
 
         Runtime.Version v;
         try {
@@ -233,6 +239,7 @@ public class HtmlConfiguration extends BaseConfiguration {
         conditionalPages = EnumSet.noneOf(ConditionalPage.class);
     }
 
+    @Override
     protected void initConfiguration(DocletEnvironment docEnv,
                                      Function<String, String> resourceKeyMapper) {
         super.initConfiguration(docEnv, resourceKeyMapper);
@@ -271,6 +278,15 @@ public class HtmlConfiguration extends BaseConfiguration {
         return options;
     }
 
+    /**
+     * {@return the packages for which we have copied the doc files}
+     *
+     * @see ClassWriter#copyDocFiles()
+     */
+    public Set<PackageElement> getContainingPackagesSeen() {
+        return containingPackagesSeen;
+    }
+
     @Override
     public boolean finishOptionSettings() {
         if (!options.validateOptions()) {
@@ -291,7 +307,7 @@ public class HtmlConfiguration extends BaseConfiguration {
             }
         }
         if (options.createIndex()) {
-            mainIndex = new HtmlIndexBuilder(this);
+            indexBuilder = new HtmlIndexBuilder(this);
         }
         docPaths = new DocPaths(utils);
         setCreateOverview();
@@ -365,9 +381,9 @@ public class HtmlConfiguration extends BaseConfiguration {
         }
     }
 
-    @Override
     public WriterFactory getWriterFactory() {
-        return new WriterFactoryImpl(this);
+        // TODO: this is called many times: why not create and use a single instance?
+        return new WriterFactory(this);
     }
 
     @Override

@@ -97,7 +97,7 @@ public class attach001 {
         String java = argHandler.getLaunchExecPath()
                         + " " + argHandler.getLaunchOptions();
         String cmd = java
-                + " -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=0"
+                + " -Xrunjdwp:transport=dt_socket,server=y,address=0"
                 + " " + DEBUGEE_CLASS;
 
         Binder binder = new Binder(argHandler, log);
