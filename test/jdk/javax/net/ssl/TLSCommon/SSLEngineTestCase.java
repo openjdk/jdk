@@ -739,7 +739,7 @@ abstract public class SSLEngineTestCase {
                         runTests(Ciphers.SUPPORTED_NON_KRB_NON_SHA_CIPHERS);
                         break;
                     case "DTLS":
-                    case "DTLSv1.1":
+                    case "DTLSv1.2":
                     case "TLS":
                     case "TLSv1.2":
                         runTests(Ciphers.SUPPORTED_NON_KRB_CIPHERS);
