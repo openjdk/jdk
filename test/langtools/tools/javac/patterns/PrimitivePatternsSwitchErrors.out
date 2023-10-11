@@ -1,4 +1,3 @@
-PrimitivePatternsSwitchErrors.java:206:9: compiler.err.already.defined: kindname.method, booleanSingleCase(boolean), kindname.class, PrimitivePatternsSwitchErrors
 PrimitivePatternsSwitchErrors.java:14:18: compiler.err.pattern.dominated
 PrimitivePatternsSwitchErrors.java:23:18: compiler.err.pattern.dominated
 PrimitivePatternsSwitchErrors.java:30:24: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.Long)
@@ -24,14 +23,15 @@ PrimitivePatternsSwitchErrors.java:171:18: compiler.err.prob.found.req: (compile
 PrimitivePatternsSwitchErrors.java:172:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: double, java.lang.Long)
 PrimitivePatternsSwitchErrors.java:177:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: long, java.lang.Double)
 PrimitivePatternsSwitchErrors.java:178:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: float, java.lang.Double)
-PrimitivePatternsSwitchErrors.java:189:18: compiler.err.unconditional.pattern.and.default
-PrimitivePatternsSwitchErrors.java:196:18: compiler.err.duplicate.unconditional.pattern
+PrimitivePatternsSwitchErrors.java:188:18: compiler.err.unconditional.pattern.and.default
+PrimitivePatternsSwitchErrors.java:195:18: compiler.err.duplicate.unconditional.pattern
+PrimitivePatternsSwitchErrors.java:215:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: compiler.misc.type.null, int)
 PrimitivePatternsSwitchErrors.java:29:16: compiler.err.not.exhaustive
 PrimitivePatternsSwitchErrors.java:36:16: compiler.err.not.exhaustive
 PrimitivePatternsSwitchErrors.java:43:16: compiler.err.not.exhaustive
 PrimitivePatternsSwitchErrors.java:51:16: compiler.err.not.exhaustive
-PrimitivePatternsSwitchErrors.java:201:16: compiler.err.not.exhaustive
-PrimitivePatternsSwitchErrors.java:207:9: compiler.err.not.exhaustive.statement
+PrimitivePatternsSwitchErrors.java:200:16: compiler.err.not.exhaustive
+PrimitivePatternsSwitchErrors.java:206:9: compiler.err.not.exhaustive.statement
 - compiler.note.preview.filename: PrimitivePatternsSwitchErrors.java, DEFAULT
 - compiler.note.preview.recompile
 34 errors

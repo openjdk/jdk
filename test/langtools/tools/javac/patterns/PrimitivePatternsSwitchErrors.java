@@ -181,7 +181,6 @@ public class PrimitivePatternsSwitchErrors {
         }
     }
 
-    // todo: check
     int switchOverPrimitiveBooleanExhaustiveWithNonPermittedUnconditional(boolean b) {
         return switch (b) {
             case true -> 1;
@@ -197,15 +196,24 @@ public class PrimitivePatternsSwitchErrors {
         };
     }
 
-    int booleanSingleCase(boolean b) {
+    int booleanSingleCase1(boolean b) {
         return switch (b) {
             case true -> 1;
         };
     }
 
-    int booleanSingleCase(boolean b) {
+    int booleanSingleCase2(boolean b) {
         switch (b) {
             case true: return 1;
+        }
+    }
+
+    void nullAndPrimitive() {
+        int i = 42;
+        switch (i) {
+            case short s -> System.out.println("its a short");
+            case null    -> System.out.println("oops");
+            default      -> System.out.println("any other integral value");
         }
     }
 }
