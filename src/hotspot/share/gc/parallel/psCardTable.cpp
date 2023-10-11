@@ -140,9 +140,6 @@ void PSCardTable::scan_obj_with_limit(PSPromotionManager* pm,
 
 void PSCardTable::pre_scavenge(HeapWord* old_gen_bottom, uint active_workers) {
   _pre_scavenge_active_workers = active_workers;
-  _pre_scavenge_current_goal_active_workers = active_workers;
-  _pre_scavenge_current_goal = old_gen_bottom + _pre_scavenge_sync_interval;
-  _pre_scavenge_completed_top = nullptr;
 }
 
 // Scavenge objects on dirty cards of the given stripe [start, end). Accesses to
@@ -243,13 +240,12 @@ void PSCardTable::process_range(Func&& object_start,
 }
 
 // Propagate imprecise card marks from object start to the stripes an object extends to.
-// Pre-scavenging and scavenging can overlap.
 template <typename Func>
-void PSCardTable::pre_scavenge_parallel(Func&& object_start,
-                                        HeapWord* old_gen_bottom,
-                                        HeapWord* old_gen_top,
-                                        uint stripe_index,
-                                        uint n_stripes) {
+void PSCardTable::preprocess_card_table_parallel(Func&& object_start,
+                                                 HeapWord* old_gen_bottom,
+                                                 HeapWord* old_gen_top,
+                                                 uint stripe_index,
+                                                 uint n_stripes) {
   const uint active_workers = n_stripes;
   const size_t num_cards_in_slice = num_cards_in_stripe * n_stripes;
   CardValue* cur_card = byte_for(old_gen_bottom) + stripe_index * num_cards_in_stripe;
@@ -269,21 +265,14 @@ void PSCardTable::pre_scavenge_parallel(Func&& object_start,
         }
       }
     }
-    // Synchronization with already scavenging threads.
-    if (signaled_goal < _pre_scavenge_current_goal && _pre_scavenge_current_goal <= stripe_addr) {
-      signaled_goal = (HeapWord*) _pre_scavenge_current_goal;
-      Atomic::dec(&_pre_scavenge_current_goal_active_workers);
-      if (_pre_scavenge_current_goal_active_workers == 0) {
-        // We're the last one to reach the current goal.
-        // Set completed top.
-        _pre_scavenge_completed_top = _pre_scavenge_current_goal;
-        // Set next goal.
-        _pre_scavenge_current_goal_active_workers = active_workers;
-        Atomic::add(&_pre_scavenge_current_goal, _pre_scavenge_sync_interval);
-      }
-    }
   }
+
+  // Sync with other workers
   Atomic::dec(&_pre_scavenge_active_workers);
+  SpinYield spin_yield;
+  while (Atomic::load_acquire(&_pre_scavenge_active_workers) > 0) {
+    spin_yield.wait();
+  }
 }
 
 // We get passed the space_top value to prevent us from traversing into
@@ -355,28 +344,17 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
   const size_t slice_size_in_words = stripe_size_in_words * n_stripes;
 
   // Prepare scavenge
-  pre_scavenge_parallel(object_start, old_gen_bottom, old_gen_top, stripe_index, n_stripes);
+  preprocess_card_table_parallel(object_start, old_gen_bottom, old_gen_top, stripe_index, n_stripes);
 
   // Reset cached object
   cached_obj = {nullptr, old_gen_bottom DEBUG_ONLY(COMMA nullptr)};
 
   // Scavenge
-  bool pre_scavenge_complete = false;
-  HeapWord* cur_addr = old_gen_bottom + stripe_index * stripe_size_in_words;
-  for (/* empty */; cur_addr < old_gen_top; cur_addr += slice_size_in_words) {
-    HeapWord* const stripe_l = cur_addr;
-    HeapWord* const stripe_r = MIN2(cur_addr + stripe_size_in_words,
+  HeapWord* cur_stripe_addr = old_gen_bottom + stripe_index * stripe_size_in_words;
+  for (/* empty */; cur_stripe_addr < old_gen_top; cur_stripe_addr += slice_size_in_words) {
+    HeapWord* const stripe_l = cur_stripe_addr;
+    HeapWord* const stripe_r = MIN2(cur_stripe_addr + stripe_size_in_words,
                                     old_gen_top);
-
-    // Sync with concurrent pre-scavenge.
-    if (!pre_scavenge_complete) {
-      SpinYield spin;
-      while (Atomic::load_acquire(&_pre_scavenge_active_workers) != 0 &&
-          cur_addr > Atomic::load_acquire(&_pre_scavenge_completed_top)) {
-        spin.wait();
-      }
-      pre_scavenge_complete = Atomic::load_acquire(&_pre_scavenge_active_workers) == 0;
-    }
 
     process_range(object_start, pm, stripe_l, stripe_r);
   }

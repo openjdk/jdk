@@ -103,12 +103,6 @@ class PSCardTable: public CardTable {
 
   // Pre-scavenge support.
   // The pre-scavenge phase can overlap with scavenging.
-  static size_t constexpr _pre_scavenge_sync_interval = 1*G;
-  volatile HeapWord* _pre_scavenge_current_goal;
-  volatile int _pre_scavenge_current_goal_active_workers;
-  // A stripe is ready for scavenge if it's start is not higher then this.
-  volatile HeapWord* _pre_scavenge_completed_top;
-  // All stripes are ready for scavenge if all threads have completed pre-scavenge.
   volatile int _pre_scavenge_active_workers;
 
   bool is_dirty(CardValue* card) {
@@ -142,9 +136,6 @@ class PSCardTable: public CardTable {
 
  public:
   PSCardTable(MemRegion whole_heap) : CardTable(whole_heap),
-                                      _pre_scavenge_current_goal(nullptr),
-                                      _pre_scavenge_current_goal_active_workers(0),
-                                      _pre_scavenge_completed_top(nullptr),
                                       _pre_scavenge_active_workers(0) {}
 
   static CardValue youngergen_card_val() { return youngergen_card; }
@@ -155,13 +146,12 @@ class PSCardTable: public CardTable {
   // Scavenge support
 
   // Propagate imprecise card marks from object start to the stripes an object extends to.
-  // Pre-scavenging and scavenging can overlap.
   template <typename Func>
-  void pre_scavenge_parallel(Func&& object_start,
-                             HeapWord* old_gen_bottom,
-                             HeapWord* old_gen_top,
-                             uint stripe_index,
-                             uint n_stripes);
+  void preprocess_card_table_parallel(Func&& object_start,
+                                      HeapWord* old_gen_bottom,
+                                      HeapWord* old_gen_top,
+                                      uint stripe_index,
+                                      uint n_stripes);
 
   void scavenge_contents_parallel(ObjectStartArray* start_array,
                                   HeapWord* old_gen_bottom,
