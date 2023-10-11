@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,8 +119,13 @@ abstract class OuterClass4 extends OuterClass3 implements OuterInterface2 {
     }
 }
 
+// class with multiple fields to verify correctness of the field order
 class OuterClass5 extends OuterClass4 {
     int fld_i1 = 1;
+    String fld_s1 = "str";
+    int fld_i2 = 2;
+    String fld_s2 = "str2";
+
     public int meth_i1() {
         return 1;
     }

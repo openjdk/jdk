@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,10 @@ static fld_info f8[] = {
 };
 
 static fld_info f9[] = {
-    { "fld_i1", "I" }
+    { "fld_i1", "I" },
+    { "fld_s1", "Ljava/lang/String;" },
+    { "fld_i2", "I" },
+    { "fld_s2", "Ljava/lang/String;" }
 };
 
 static class_info classes[] = {
@@ -94,7 +97,7 @@ static class_info classes[] = {
     { "OuterInterface1", 1, f6 },
     { "OuterInterface2", 1, f7 },
     { "OuterClass4", 1, f8 },
-    { "OuterClass5", 1, f9 }
+    { "OuterClass5", 4, f9 }
 };
 
 #ifdef STATIC_BUILD
