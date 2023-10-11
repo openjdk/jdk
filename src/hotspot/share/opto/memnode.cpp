@@ -260,7 +260,7 @@ static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const T
                tp->isa_aryptr() &&        tp->offset() == Type::OffsetBot &&
         adr_check->isa_aryptr() && adr_check->offset() != Type::OffsetBot &&
         ( adr_check->offset() == arrayOopDesc::length_offset_in_bytes() ||
-          adr_check->offset() == TypeOopPtr::klass_offset_in_bytes() ||
+          adr_check->offset() == oopDesc::klass_offset_in_bytes() ||
           adr_check->offset() == oopDesc::mark_offset_in_bytes() ) ) {
       // don't assert if it is dead code.
       consistent = true;
@@ -904,7 +904,7 @@ Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypeP
 
   // sanity check the alias category against the created node type
   assert(!(adr_type->isa_oopptr() &&
-           adr_type->offset() == TypeOopPtr::klass_offset_in_bytes()),
+           adr_type->offset() == oopDesc::klass_offset_in_bytes()),
          "use LoadKlassNode instead");
   assert(!(adr_type->isa_aryptr() &&
            adr_type->offset() == arrayOopDesc::length_offset_in_bytes()),
@@ -2401,7 +2401,7 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
     }
     if (!tinst->is_loaded())
       return _type;             // Bail out if not loaded
-    if (offset == TypeOopPtr::klass_offset_in_bytes()) {
+    if (offset == oopDesc::klass_offset_in_bytes()) {
       return tinst->as_klass_type(true);
     }
   }
@@ -2409,7 +2409,7 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
   // Check for loading klass from an array
   const TypeAryPtr *tary = tp->isa_aryptr();
   if (tary != nullptr &&
-      tary->offset() == TypeOopPtr::klass_offset_in_bytes()) {
+      tary->offset() == oopDesc::klass_offset_in_bytes()) {
     return tary->as_klass_type(true);
   }
 
@@ -2469,7 +2469,7 @@ Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
 
   // We can fetch the klass directly through an AllocateNode.
   // This works even if the klass is not constant (clone or newArray).
-  if (offset == TypeOopPtr::klass_offset_in_bytes()) {
+  if (offset == oopDesc::klass_offset_in_bytes()) {
     Node* allocated_klass = AllocateNode::Ideal_klass(base, phase);
     if (allocated_klass != nullptr) {
       return allocated_klass;

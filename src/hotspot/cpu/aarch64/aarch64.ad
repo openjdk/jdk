@@ -7150,7 +7150,7 @@ instruct loadNKlassCompactHeaders(iRegNNoSp dst, memory4 mem, rFlagsReg cr)
   ins_cost(4 * INSN_COST);
   format %{ "ldrw  $dst, $mem\t# compressed class ptr" %}
   ins_encode %{
-    assert($mem$$disp == TypeOopPtr::klass_offset_in_bytes(), "expect correct offset");
+    assert($mem$$disp == oopDesc::klass_offset_in_bytes(), "expect correct offset");
     assert($mem$$index$$Register == noreg, "expect no index");
     __ load_nklass_compact($dst$$Register, $mem$$base$$Register);
   %}

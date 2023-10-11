@@ -154,7 +154,7 @@ void Parse::array_store_check() {
   }
 
   // Extract the array klass type
-  int klass_offset = TypeOopPtr::klass_offset_in_bytes();
+  int klass_offset = oopDesc::klass_offset_in_bytes();
   Node* p = basic_plus_adr( ary, ary, klass_offset );
   // p's type is array-of-OOPS plus klass_offset
   Node* array_klass = _gvn.transform(LoadKlassNode::make(_gvn, nullptr, immutable_memory(), p, TypeInstPtr::KLASS));

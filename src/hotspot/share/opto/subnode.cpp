@@ -1143,7 +1143,7 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
   Node* ldk2 = AddPNode::Ideal_base_and_offset(adr1, phase, con2);
   if (ldk2 == nullptr)
     return nullptr;
-  if (con2 == TypeOopPtr::klass_offset_in_bytes()) {
+  if (con2 == oopDesc::klass_offset_in_bytes()) {
     // We are inspecting an object's concrete class.
     // Short-circuit the check if the query is abstract.
     if (superklass->is_interface() ||

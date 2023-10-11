@@ -549,7 +549,7 @@ void Type::Initialize_shared(Compile* current) {
   TypeInstPtr::MARK    = TypeInstPtr::make(TypePtr::BotPTR,  current->env()->Object_klass(),
                                            false, 0, oopDesc::mark_offset_in_bytes());
   TypeInstPtr::KLASS   = TypeInstPtr::make(TypePtr::BotPTR,  current->env()->Object_klass(),
-                                           false, 0, TypeOopPtr::klass_offset_in_bytes());
+                                           false, 0, oopDesc::klass_offset_in_bytes());
   TypeOopPtr::BOTTOM  = TypeOopPtr::make(TypePtr::BotPTR, OffsetBot, TypeOopPtr::InstanceBot);
 
   TypeMetadataPtr::BOTTOM = TypeMetadataPtr::make(TypePtr::BotPTR, nullptr, OffsetBot);
@@ -3507,7 +3507,7 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const InterfaceSet& interfa
   }
 #ifdef _LP64
   if (_offset > 0 || _offset == Type::OffsetTop || _offset == Type::OffsetBot) {
-    if (_offset == TypeOopPtr::klass_offset_in_bytes()) {
+    if (_offset == oopDesc::klass_offset_in_bytes()) {
       _is_ptr_to_narrowklass = UseCompressedClassPointers;
     } else if (klass() == nullptr) {
       // Array with unknown body type
@@ -3566,40 +3566,6 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const InterfaceSet& interfa
     }
   }
 #endif
-}
-
-int TypeOopPtr::klass_offset_in_bytes() {
-  if (UseCompactObjectHeaders) {
-    // With compact headers, we don't directly load the Klass* (or actually narrow Klass*)
-    // from the offset that we return here. This offset only serves to distinguish
-    // loads of the Klass* from other memory operations by effectively creating
-    // a memory slice just for the Klass*.
-    // What the implementation of LoadNKlass actually does is:
-    // - Load the mark-word (from offset 0)
-    // - Check if the monitor bit is set
-    //   - if it is, load the displaced mark-word from the monitor
-    // - Extract the compressed Klass* from the mark-word bits
-    //
-    // One could argue that therefore, loading of the Klass* should really be at
-    // the same slice as offset 0 (other mark-word accesses), but because all of the
-    // above is happening in the backend, the Klass* is effectively immutable
-    // as far as C2 ideal graph is concerned.
-    // It might be an interesting future improvement to not expand LoadNKlass in
-    // the backend, but instead expand it as a macro node. If we did this, we'd
-    // really have to wire it to the memory slice of offset 0 (the mark-word). This may
-    // be faster because instructions could be scheduled better, or it may be
-    // slower because the memory slice at offset 0 is quite busy (because of locking,
-    // hash-code, allocations, etc).
-    //
-    // The exact value of offset 4 has been chosen because it points into the middle
-    // of the mark-word and that is an offset that is guaranteed to not be used
-    // otherwise. (And also because the original implementation put the compressed
-    // Klass* at offset 4, but this may no longer be the case, and is not actually
-    // relevant. See above discussion.)
-    return 4;
-  } else {
-    return oopDesc::klass_offset_in_bytes();
-  }
 }
 
 //------------------------------make-------------------------------------------

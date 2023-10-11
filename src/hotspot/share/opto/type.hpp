@@ -1147,7 +1147,6 @@ protected:
   virtual ciKlass* klass() const { return _klass;     }
 
 public:
-  static int klass_offset_in_bytes();
 
   bool is_java_subtype_of(const TypeOopPtr* other) const {
     return is_java_subtype_of_helper(other, klass_is_exact(), other->klass_is_exact());
@@ -1400,7 +1399,7 @@ class TypeAryPtr : public TypeOopPtr {
 
     if (UseCompressedOops && (elem()->make_oopptr() != nullptr && !top_or_bottom) &&
         _offset != 0 && _offset != arrayOopDesc::length_offset_in_bytes() &&
-        _offset != TypeOopPtr::klass_offset_in_bytes()) {
+        _offset != arrayOopDesc::klass_offset_in_bytes()) {
       _is_ptr_to_narrowoop = true;
     }
 
