@@ -171,7 +171,6 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
           if (!x_loop_tree->is_member(n_loop_tree)) {
             wins = 0;
             failed_win = true;
-            //assert(false, "is shouldBeInnerOrSame NOT a member of shouldBeOuter");
             break;
           }
         }
