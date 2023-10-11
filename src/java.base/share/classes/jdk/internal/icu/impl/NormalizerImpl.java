@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,7 +362,7 @@ public final class NormalizerImpl {
     public NormalizerImpl() {}
 
     private static final class IsAcceptable implements ICUBinary.Authenticate {
-        public boolean isDataVersionAcceptable(byte version[]) {
+        public boolean isDataVersionAcceptable(byte[] version) {
             return version[0]==4;
         }
     }
@@ -1748,7 +1748,7 @@ public final class NormalizerImpl {
      * Get the canonical decomposition
      * sherman  for ComposedCharIter
      */
-    public static int getDecompose(int chars[], String decomps[]) {
+    public static int getDecompose(int[] chars, String[] decomps) {
         Normalizer2 impl = Normalizer2.getNFDInstance();
 
         int length=0;

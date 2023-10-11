@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,5 +117,5 @@ public interface Replaceable {
      * @param dstStart the start offset in the destination array.
      * @stable ICU 2.0
      */
-    void getChars(int srcStart, int srcLimit, char dst[], int dstStart);
+    void getChars(int srcStart, int srcLimit, char[] dst, int dstStart);
 }

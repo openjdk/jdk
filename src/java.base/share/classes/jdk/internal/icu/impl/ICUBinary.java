@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public final class ICUBinary {
 
     private static final class IsAcceptable implements Authenticate {
         @Override
-        public boolean isDataVersionAcceptable(byte version[]) {
+        public boolean isDataVersionAcceptable(byte[] version) {
             return version[0] == 1;
         }
     }
@@ -66,7 +66,7 @@ public final class ICUBinary {
          * @param version version of the current data
          * @return true if dataformat is an acceptable version, false otherwise
          */
-        public boolean isDataVersionAcceptable(byte version[]);
+        public boolean isDataVersionAcceptable(byte[] version);
     }
 
     // public methods --------------------------------------------------------
@@ -143,7 +143,7 @@ public final class ICUBinary {
 
     private static final byte BIG_ENDIAN_ = 1;
     public static final byte[] readHeader(InputStream inputStream,
-                                        byte dataFormatIDExpected[],
+                                        byte[] dataFormatIDExpected,
                                         Authenticate authenticate)
                                                           throws IOException
     {
@@ -172,13 +172,13 @@ public final class ICUBinary {
         input.readByte(); // reading reserved byte
         readcount ++;
 
-        byte dataFormatID[] = new byte[4];
+        byte[] dataFormatID = new byte[4];
         input.readFully(dataFormatID);
         readcount += 4;
-        byte dataVersion[] = new byte[4];
+        byte[] dataVersion = new byte[4];
         input.readFully(dataVersion);
         readcount += 4;
-        byte unicodeVersion[] = new byte[4];
+        byte[] unicodeVersion = new byte[4];
         input.readFully(unicodeVersion);
         readcount += 4;
         if (headersize < readcount) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,7 +170,7 @@ public final class Utility {
                 int ahead = offset+1;
                 c = s.charAt(offset); // [sic] get 16-bit code unit
                 if (c == '\\' && ahead < length) {
-                    int o[] = new int[] { ahead };
+                    int[] o = new int[] { ahead };
                     c = unescapeAt(s, o);
                     ahead = o[0];
                 }
@@ -226,7 +226,7 @@ public final class Utility {
         return result;
     }
 
-    static final char DIGITS[] = {
+    static final char[] DIGITS = {
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
         'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
         'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',

@@ -152,7 +152,7 @@ public final class UCharacterProperty
      * Map some of the Grapheme Cluster Break values to Hangul Syllable Types.
      * Hangul_Syllable_Type is fully redundant with a subset of Grapheme_Cluster_Break.
      */
-    private static final int /* UHangulSyllableType */ gcbToHst[]={
+    private static final int[] /* UHangulSyllableType */ gcbToHst ={
         HangulSyllableType.NOT_APPLICABLE,   /* U_GCB_OTHER */
         HangulSyllableType.NOT_APPLICABLE,   /* U_GCB_CONTROL */
         HangulSyllableType.NOT_APPLICABLE,   /* U_GCB_CR */
@@ -295,7 +295,7 @@ public final class UCharacterProperty
      * Extra property vectors, 1st column for age and second for binary
      * properties.
      */
-    int m_additionalVectors_[];
+    int[] m_additionalVectors_;
     /**
      * Number of additional columns
      */
@@ -585,7 +585,7 @@ public final class UCharacterProperty
 
     private static final class IsAcceptable implements ICUBinary.Authenticate {
         // @Override when we switch to Java 6
-        public boolean isDataVersionAcceptable(byte version[]) {
+        public boolean isDataVersionAcceptable(byte[] version) {
             return version[0] == 7;
         }
     }

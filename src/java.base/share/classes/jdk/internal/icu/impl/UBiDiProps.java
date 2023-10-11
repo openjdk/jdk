@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public final class UBiDiProps {
 
     // implement ICUBinary.Authenticate
     private static final class IsAcceptable implements ICUBinary.Authenticate {
-        public boolean isDataVersionAcceptable(byte version[]) {
+        public boolean isDataVersionAcceptable(byte[] version) {
             return version[0]==2;
         }
     }
@@ -191,10 +191,10 @@ public final class UBiDiProps {
     }
 
     // data members -------------------------------------------------------- ***
-    private int indexes[];
-    private int mirrors[];
-    private byte jgArray[];
-    private byte jgArray2[];
+    private int[] indexes;
+    private int[] mirrors;
+    private byte[] jgArray;
+    private byte[] jgArray2;
 
     private Trie2_16 trie;
 

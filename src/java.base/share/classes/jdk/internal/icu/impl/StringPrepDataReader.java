@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ public final class StringPrepDataReader implements ICUBinary.Authenticate {
         return DATA_FORMAT_VERSION;
     }
 
-    public boolean isDataVersionAcceptable(byte version[]){
+    public boolean isDataVersionAcceptable(byte[] version){
         return version[0] == DATA_FORMAT_VERSION[0]
                && version[2] == DATA_FORMAT_VERSION[2]
                && version[3] == DATA_FORMAT_VERSION[3];
@@ -120,9 +120,9 @@ public final class StringPrepDataReader implements ICUBinary.Authenticate {
      * see store.c of gennorm for more information and values
      */
     ///* dataFormat="SPRP" 0x53, 0x50, 0x52, 0x50  */
-    private static final byte DATA_FORMAT_ID[] = {(byte)0x53, (byte)0x50,
+    private static final byte[] DATA_FORMAT_ID = {(byte)0x53, (byte)0x50,
                                                     (byte)0x52, (byte)0x50};
-    private static final byte DATA_FORMAT_VERSION[] = {(byte)0x3, (byte)0x2,
+    private static final byte[] DATA_FORMAT_VERSION = {(byte)0x3, (byte)0x2,
                                                         (byte)0x5, (byte)0x2};
 
 }

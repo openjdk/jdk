@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,10 +369,10 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
     //  Data members of UTrie2.
     //
     UTrie2Header  header;
-    char          index[];           // Index array.  Includes data for 16 bit Tries.
+    char[]        index;             // Index array.  Includes data for 16 bit Tries.
     int           data16;            // Offset to data portion of the index array, if 16 bit data.
                                      //    zero if 32 bit data.
-    int           data32[];          // NULL if 16b data is used via index
+    int[]         data32;            // NULL if 16b data is used via index
 
     int           indexLength;
     int           dataLength;
