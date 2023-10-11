@@ -2545,7 +2545,7 @@ public final class System {
             }
 
             public int stringSize(int i) {
-                return Long.stringSize(i);
+                return Integer.stringSize(i);
             }
 
             public int getCharsLatin1(int i, int index, byte[] buf) {
