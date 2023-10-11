@@ -124,8 +124,8 @@ public class TestBadDNForPeerCA12 {
 
     public TestBadDNForPeerCA12() throws Exception {
 
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        KeyStore ts = KeyStore.getInstance("PKCS12");
 
         char[] passphrase = passwd.toCharArray();
 
