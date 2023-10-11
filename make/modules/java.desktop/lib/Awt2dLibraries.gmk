@@ -919,7 +919,9 @@ endif
 
 ################################################################################
 
-# Metal uses the same minimum macOS version as the rest of the JDK.
+# MACOSX_METAL_VERSION_MIN specifies the lowest version of macOS that
+# should be used to compile Metal shaders. Metal uses the same minimum
+# version as the rest of the JDK.
 MACOSX_METAL_VERSION_MIN=$(MACOSX_VERSION_MIN)
 
 ifeq ($(call isTargetOs, macosx), true)
