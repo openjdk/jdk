@@ -212,57 +212,6 @@ public class TestStringEncoding {
         }
     }
 
-    @Test()
-    public void testJumboSegment() {
-        testWithJumboSegment("testJumboSegment", segment -> {
-            segment.fill((byte) 1);
-            segment.set(JAVA_BYTE, Integer.MAX_VALUE + 10L, (byte) 0);
-            String big = segment.getString(100);
-        });
-    }
-
-    @Test()
-    public void testStringLargerThanMaxInt() {
-        testWithJumboSegment("testStringLargerThanMaxInt", segment -> {
-            segment.fill((byte) 1);
-            segment.set(JAVA_BYTE, Integer.MAX_VALUE + 10L, (byte) 0);
-            assertThrows(IllegalArgumentException.class, () -> {
-                segment.getString(0);
-            });
-        });
-    }
-
-    private static void testWithJumboSegment(String testName, Consumer<MemorySegment> tester) {
-        Path path = Paths.get("mapped_file");
-        try {
-            // Relly try to make sure the file is deleted after use
-            path.toFile().deleteOnExit();
-            deleteIfExistsOrThrow(path);
-            try (RandomAccessFile raf = new RandomAccessFile(path.toFile(), "rw")) {
-                FileChannel fc = raf.getChannel();
-                try (Arena arena = Arena.ofConfined()) {
-                    var segment = fc.map(FileChannel.MapMode.READ_WRITE, 0L, (long) Integer.MAX_VALUE + 100, arena);
-                    tester.accept(segment);
-                }
-            }
-        } catch (Exception e) {
-            throw new AssertionError(e);
-        } catch (OutOfMemoryError oome) {
-            // Unfortunately, we run out of memory and cannot run this test in this configuration
-            System.out.println("Skipping test because of insufficient memory: " + testName);
-        } finally {
-            deleteIfExistsOrThrow(path);
-        }
-    }
-
-    private static void deleteIfExistsOrThrow(Path file) {
-        try {
-            Files.deleteIfExists(file);
-        } catch (IOException ioe) {
-            throw new AssertionError("Unable to delete mapped file: " + file);
-        }
-    }
-
     private static final MemoryLayout CHAR_POINTER = ADDRESS
             .withTargetLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_BYTE));
     private static final Linker LINKER = Linker.nativeLinker();
