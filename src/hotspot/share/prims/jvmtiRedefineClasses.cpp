@@ -311,6 +311,8 @@ void VM_RedefineClasses::doit_epilogue() {
   // Free os::malloc allocated memory.
   os::free(_scratch_classes);
 
+  OopMapCache::cleanup_old_entries();
+
   // Reset the_class to null for error printing.
   _the_class = nullptr;
 
