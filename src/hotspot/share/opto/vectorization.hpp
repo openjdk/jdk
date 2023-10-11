@@ -98,6 +98,9 @@ class VPointer : public ArenaObj {
   int   memory_size()      { return _mem->memory_size(); }
   Node_Stack* node_stack() { return _nstack; }
 
+  // Biggest detectable factor of the invariant.
+  int   invar_factor();
+
   // Comparable?
   bool invar_equals(VPointer& q) {
     assert(_debug_invar == NodeSentinel || q._debug_invar == NodeSentinel ||

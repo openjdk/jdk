@@ -69,9 +69,7 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"},
-        applyIf = {"AlignVector", "false"})
-    // AlignVector does not allow variable init (start)
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int SimpleIvUsed() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -83,9 +81,7 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"},
-        applyIf = {"AlignVector", "false"})
-    // AlignVector does not allow variable init (start)
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int indexedByIvUsed() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -97,9 +93,7 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"},
-        applyIf = {"AlignVector", "false"})
-    // AlignVector does not allow variable init (start)
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int ivUsedMultiple() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -111,9 +105,7 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"},
-        applyIf = {"AlignVector", "false"})
-    // AlignVector does not allow variable init (start)
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int ivUsedComplexExpr() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -125,9 +117,7 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"},
-        applyIf = {"AlignVector", "false"})
-    // AlignVector does not allow variable init (start)
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] ivUsedAnotherLoop() {
         int i = 0;
         int[] res = new int[SIZE];

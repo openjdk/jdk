@@ -106,10 +106,9 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0",
-                  IRNode.MUL_VI, ">0"},
-        applyIf = {"AlignVector", "false"})
-    // AlignVector does not allow invariants
+        counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+        counts = {IRNode.MUL_VI, ">0"})
     public int[] indexPlusInvariant() {
         int[] res = new int[SIZE];
         System.arraycopy(ints, 0, res, 0, SIZE);
@@ -121,10 +120,9 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0",
-                  IRNode.MUL_VI, ">0"},
-        applyIf = {"AlignVector", "false"})
-    // AlignVector does not allow invariants
+        counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+        counts = {IRNode.MUL_VI, ">0"})
     public int[] indexMinusInvariant() {
         int[] res = new int[SIZE];
         System.arraycopy(ints, 0, res, 0, SIZE);
@@ -136,10 +134,9 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0",
-                  IRNode.MUL_VI, ">0"},
-        applyIf = {"AlignVector", "false"})
-    // AlignVector does not allow invariants
+        counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+        counts = {IRNode.MUL_VI, ">0"})
     public int[] indexWithInvariantAndConstant() {
         int[] res = new int[SIZE];
         System.arraycopy(ints, 0, res, 0, SIZE);
@@ -151,10 +148,9 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0",
-                  IRNode.SUB_VI, ">0"},
-        applyIf = {"AlignVector", "false"})
-    // AlignVector does not allow invariants
+        counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.SUB_VI, ">0"})
     public int[] indexWithTwoInvariants() {
         int[] res = new int[SIZE];
         System.arraycopy(ints, 0, res, 0, SIZE);

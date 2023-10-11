@@ -119,6 +119,22 @@ VPointer::VPointer(VPointer* p) :
 #endif
 {}
 
+// Biggest detectable factor of the invariant.
+int VPointer::invar_factor() {
+  Node* n = invar();
+  if (n == nullptr) {
+    return 0;
+  }
+  int opc = n->Opcode();
+  if (opc == Op_LShiftI && n->in(2)->is_Con()) {
+    return 1 << n->in(2)->get_int();
+  } else if (opc == Op_LShiftL && n->in(2)->is_Con()) {
+    return 1 << n->in(2)->get_int();
+  }
+  // All our best-effort has failed.
+  return 1;
+}
+
 bool VPointer::is_loop_member(Node* n) const {
   Node* n_c = phase()->get_ctrl(n);
   return lpt()->is_member(phase()->get_loop(n_c));
