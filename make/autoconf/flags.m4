@@ -128,7 +128,7 @@ AC_DEFUN([FLAGS_SETUP_MACOSX_VERSION],
     # The expected format for <version> is either nn.n.n or nn.nn.nn. See
     # /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/AvailabilityVersions.h
 
-    # MACOSX_VERSION_MIN specifies the lowest version of Macosx that the built
+    # MACOSX_VERSION_MIN specifies the lowest version of macOS that the built
     # binaries should be compatible with, even if compiled on a newer version
     # of the OS. It currently has a hard coded value. Setting this also limits
     # exposure to API changes in header files. Bumping this is likely to
