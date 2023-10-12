@@ -37,7 +37,7 @@
 
 static NSInteger architecture = -1;
 /*
- * Convert the mode string to the more convinient bits per pixel value
+ * Convert the mode string to the more convenient bits per pixel value
  */
 static int getBPPFromModeString(CFStringRef mode)
 {
