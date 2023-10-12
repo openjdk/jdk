@@ -86,6 +86,8 @@
 #include "runtime/statSampler.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadIdTable.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
@@ -95,7 +97,6 @@
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
-#include "services/threadIdTable.hpp"
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -166,6 +167,8 @@ static void create_initial_thread(Handle thread_group, JavaThread* thread,
                           thread_group,
                           string,
                           CHECK);
+
+  thread->set_lock_id(java_lang_Thread::thread_id(thread_oop()));
 
   // Set thread status to running since main thread has
   // been started and running.
@@ -531,6 +534,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   main_thread->register_thread_stack_with_NMT();
   main_thread->set_active_handles(JNIHandleBlock::allocate_block());
   MACOS_AARCH64_ONLY(main_thread->init_wx());
+
+  // Set the lock_id to the next thread_id temporarily while initialization runs.
+  main_thread->set_lock_id(ThreadIdentifier::next());
 
   if (!main_thread->set_as_starting_thread()) {
     vm_shutdown_during_initialization(
@@ -1204,22 +1210,28 @@ JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
   if (owner == nullptr) return nullptr;
 
   for (JavaThread* p : *t_list) {
-    // first, see if owner is the address of a Java thread
-    if (owner == (address)p) return p;
+    // first, see if owner is the same thread id as a Java thread
+    if ((jlong)owner == java_lang_Thread::thread_id(p->threadObj())) return p;
   }
 
   // Cannot assert on lack of success here since this function may be
   // used by code that is trying to report useful problem information
   // like deadlock detection.
-  if (LockingMode == LM_MONITOR) return nullptr;
+  return nullptr;
+}
 
-  // If we didn't find a matching Java thread and we didn't force use of
-  // heavyweight monitors, then the owner is the stack address of the
+JavaThread *Threads::owning_thread_from_stack_owner(ThreadsList * t_list,
+                                                    address stack_locker) {
+  assert(LockingMode == LM_LEGACY, "Only with legacy locking");
+  // null stack_locker might be a transition to set owner from BasicLock
+  if (stack_locker == nullptr) return nullptr;
+
+  // The owner is the stack address of the
   // Lock Word in the owning Java thread's stack.
   //
   JavaThread* the_owner = nullptr;
   for (JavaThread* q : *t_list) {
-    if (q->is_lock_owned(owner)) {
+    if (q->is_lock_owned(stack_locker)) {
       the_owner = q;
       break;
     }
@@ -1243,21 +1255,6 @@ JavaThread* Threads::owning_thread_from_object(ThreadsList * t_list, oop obj) {
     }
   }
   return nullptr;
-}
-
-JavaThread* Threads::owning_thread_from_monitor(ThreadsList* t_list, ObjectMonitor* monitor) {
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    if (monitor->is_owner_anonymous()) {
-      return owning_thread_from_object(t_list, monitor->object());
-    } else {
-      Thread* owner = reinterpret_cast<Thread*>(monitor->owner());
-      assert(owner == nullptr || owner->is_Java_thread(), "only JavaThreads own monitors");
-      return reinterpret_cast<JavaThread*>(owner);
-    }
-  } else {
-    address owner = (address)monitor->owner();
-    return owning_thread_from_monitor_owner(t_list, owner);
-  }
 }
 
 class PrintOnClosure : public ThreadClosure {

@@ -80,7 +80,7 @@ int C2HandleAnonOMOwnerStub::max_size() const {
   // Max size of stub has been determined by testing with 0 without using RISC-V compressed
   // instruction-set extension, in which case C2CodeStubList::emit() will throw an assertion
   // and report the actual size that is needed.
-  return 20 DEBUG_ONLY(+8);
+  return 24 DEBUG_ONLY(+8);
 }
 
 void C2HandleAnonOMOwnerStub::emit(C2_MacroAssembler& masm) {
@@ -89,8 +89,9 @@ void C2HandleAnonOMOwnerStub::emit(C2_MacroAssembler& masm) {
   Register t = tmp();
   assert(t != noreg, "need tmp register");
 
-  // Fix owner to be the current thread.
-  __ sd(xthread, Address(mon, ObjectMonitor::owner_offset()));
+  // Fix owner to be the current thread id
+  __ mv(t, Address(xthread, JavaThread::lock_id_offset()));
+  __ sd(t, Address(mon, ObjectMonitor::owner_offset()));
 
   // Pop owner object from lock-stack.
   __ lwu(t, Address(xthread, JavaThread::lock_stack_top_offset()));

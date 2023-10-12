@@ -78,14 +78,15 @@ int C2HandleAnonOMOwnerStub::max_size() const {
   // Max size of stub has been determined by testing with 0, in which case
   // C2CodeStubList::emit() will throw an assertion and report the actual size that
   // is needed.
-  return DEBUG_ONLY(36) NOT_DEBUG(21);
+  return DEBUG_ONLY(40) NOT_DEBUG(25);
 }
 
 void C2HandleAnonOMOwnerStub::emit(C2_MacroAssembler& masm) {
   __ bind(entry());
   Register mon = monitor();
   Register t = tmp();
-  __ movptr(Address(mon, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), r15_thread);
+  __ movptr(t, Address(r15_thread, JavaThread::lock_id_offset()));
+  __ movptr(Address(mon, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), t);
   __ subl(Address(r15_thread, JavaThread::lock_stack_top_offset()), oopSize);
 #ifdef ASSERT
   __ movl(t, Address(r15_thread, JavaThread::lock_stack_top_offset()));

@@ -72,6 +72,8 @@ class vframeArray;
 class vframe;
 class javaVFrame;
 
+class BasicLock;
+
 class JavaThread;
 typedef void (*ThreadFunction)(JavaThread*, TRAPS);
 
@@ -157,6 +159,7 @@ class JavaThread: public Thread {
   // One-element thread local free list
   JNIHandleBlock* _free_handle_block;
 
+  int64_t _lock_id;
  public:
   volatile intptr_t _Stalled;
 
@@ -514,7 +517,13 @@ private:
   // Thread oop. threadObj() can be null for initial JavaThread
   // (or for threads attached via JNI)
   oop threadObj() const;
+  OopHandle threadObj_handle() const { return _threadObj; }
   void set_threadOopHandles(oop p);
+
+  // ID for locking object monitors. Usually the same as thread_id.
+  void set_lock_id(int64_t tid) { assert(tid != 0, "must be set"); _lock_id = tid; }
+  int64_t lock_id() const { return _lock_id; }
+
   oop vthread() const;
   void set_vthread(oop p);
   oop scopedValueCache() const;
@@ -807,6 +816,7 @@ private:
   static ByteSize cont_entry_offset()         { return byte_offset_of(JavaThread, _cont_entry); }
   static ByteSize cont_fastpath_offset()      { return byte_offset_of(JavaThread, _cont_fastpath); }
   static ByteSize held_monitor_count_offset() { return byte_offset_of(JavaThread, _held_monitor_count); }
+  static ByteSize lock_id_offset()            { return byte_offset_of(JavaThread, _lock_id); }
 
 #if INCLUDE_JVMTI
   static ByteSize is_in_VTMS_transition_offset()     { return byte_offset_of(JavaThread, _is_in_VTMS_transition); }

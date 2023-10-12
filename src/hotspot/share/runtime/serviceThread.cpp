@@ -45,12 +45,12 @@
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "prims/resolvedMethodTable.hpp"
+#include "runtime/threadIdTable.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticFramework.hpp"
 #include "services/finalizerService.hpp"
 #include "services/gcNotifier.hpp"
 #include "services/lowMemoryDetector.hpp"
-#include "services/threadIdTable.hpp"
 
 DEBUG_ONLY(JavaThread* ServiceThread::_instance = nullptr;)
 JvmtiDeferredEvent* ServiceThread::_jvmti_event = nullptr;

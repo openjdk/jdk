@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -13789,13 +13789,13 @@ instruct cmpFastLock(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eRegP
   ins_pipe(pipe_slow);
 %}
 
-instruct cmpFastUnlock(eFlagsReg cr, eRegP object, eAXRegP box, eRegP tmp ) %{
+instruct cmpFastUnlock(eFlagsReg cr, eRegP object, eAXRegP box, eRegP tmp, eRegP scr) %{
   match(Set cr (FastUnlock object box));
-  effect(TEMP tmp, USE_KILL box);
+  effect(TEMP tmp, TEMP scr, USE_KILL box);
   ins_cost(300);
   format %{ "FASTUNLOCK $object,$box\t! kills $box,$tmp" %}
   ins_encode %{
-    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register, ra_->C->use_rtm());
+    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register, $scr$$Register, ra_->C->use_rtm());
   %}
   ins_pipe(pipe_slow);
 %}

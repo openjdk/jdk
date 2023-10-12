@@ -56,6 +56,7 @@
 #include "runtime/osThread.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
+#include "runtime/threadIdTable.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -1435,6 +1436,17 @@ JvmtiEnvBase::check_non_suspended_or_opaque_frame(JavaThread* jt, oop thr_obj, b
     }
   }
   return JVMTI_ERROR_NONE;
+}
+
+VM_GetObjectMonitorUsage::VM_GetObjectMonitorUsage(JvmtiEnv *env, JavaThread* calling_thread, jobject object, jvmtiMonitorUsage* info_ptr) :
+    _env(env),
+    _object(object),
+    _calling_thread(calling_thread),
+    _info_ptr(info_ptr) {
+
+  // Initialize thread id table, if not already.
+  ThreadsListHandle tlh;
+  ThreadIdTable::lazy_initialize(tlh.list());
 }
 
 jvmtiError

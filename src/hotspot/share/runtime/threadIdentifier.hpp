@@ -34,6 +34,8 @@
  * JFR uses next() for a non-reusable id for non-java threads.
  */
 class ThreadIdentifier : AllStatic {
+  friend class ObjectMonitor;
+  static int64_t unsafe_next_id();
  public:
   static int64_t next();
   static int64_t unsafe_offset();

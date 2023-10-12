@@ -3217,8 +3217,9 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   //
   // Try to CAS m->owner from null to current thread.
   z_lghi(zero, 0);
-  // If m->owner is null, then csg succeeds and sets m->owner=THREAD and CR=EQ.
-  z_csg(zero, Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor_tagged);
+  // If m->owner is null, then csg succeeds and sets m->owner=THREAD_ID and CR=EQ.
+  z_l(Z_R1_scratch, Address(Z_thread, JavaThread::lock_id_offset()));
+  z_csg(zero, Z_R1_scratch, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor_tagged);
   if (LockingMode != LM_LIGHTWEIGHT) {
     // Store a non-null value into the box.
     z_stg(box, BasicLock::displaced_header_offset_in_bytes(), box);

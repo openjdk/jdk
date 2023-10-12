@@ -47,6 +47,7 @@
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/threads.hpp"
+#include "runtime/threadIdTable.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/threadService.hpp"
@@ -186,6 +187,12 @@ void VM_PrintMetadata::doit() {
   metaspace::MetaspaceReporter::print_report(_out, _scale, _flags);
 }
 
+void VM_FindDeadlocks::initialize() {
+  // Initialize thread id table
+  ThreadsListHandle tlh;
+  ThreadIdTable::lazy_initialize(tlh.list());
+}
+
 VM_FindDeadlocks::~VM_FindDeadlocks() {
   if (_deadlocks != nullptr) {
     DeadlockCycle* cycle = _deadlocks;
@@ -233,6 +240,10 @@ VM_ThreadDump::VM_ThreadDump(ThreadDumpResult* result,
   _max_depth = max_depth;
   _with_locked_monitors = with_locked_monitors;
   _with_locked_synchronizers = with_locked_synchronizers;
+
+  // Initialize thread id table
+  ThreadsListHandle tlh;
+  ThreadIdTable::lazy_initialize(tlh.list());
 }
 
 VM_ThreadDump::VM_ThreadDump(ThreadDumpResult* result,
@@ -247,6 +258,10 @@ VM_ThreadDump::VM_ThreadDump(ThreadDumpResult* result,
   _max_depth = max_depth;
   _with_locked_monitors = with_locked_monitors;
   _with_locked_synchronizers = with_locked_synchronizers;
+
+  // Initialize thread id table
+  ThreadsListHandle tlh;
+  ThreadIdTable::lazy_initialize(tlh.list());
 }
 
 bool VM_ThreadDump::doit_prologue() {

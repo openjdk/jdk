@@ -180,9 +180,12 @@ class VM_FindDeadlocks: public VM_Operation {
   ThreadsListSetter _setter;  // Helper to set hazard ptr in the originating thread
                               // which protects the JavaThreads in _deadlocks.
 
+  void initialize();
  public:
-  VM_FindDeadlocks(bool concurrent_locks) :  _concurrent_locks(concurrent_locks), _deadlocks(nullptr), _out(nullptr), _setter() {};
-  VM_FindDeadlocks(outputStream* st) : _concurrent_locks(true), _deadlocks(nullptr), _out(st) {};
+  VM_FindDeadlocks(bool concurrent_locks) :  _concurrent_locks(concurrent_locks), _deadlocks(nullptr), _out(nullptr), _setter() {
+    initialize();
+  }
+  VM_FindDeadlocks(outputStream* st) : _concurrent_locks(true), _deadlocks(nullptr), _out(st) { initialize(); }
   ~VM_FindDeadlocks();
 
   DeadlockCycle* result()      { return _deadlocks; };

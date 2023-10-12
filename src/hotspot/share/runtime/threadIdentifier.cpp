@@ -26,7 +26,11 @@
 #include "runtime/atomic.hpp"
 #include "runtime/threadIdentifier.hpp"
 
-static volatile int64_t next_thread_id = 2; // starting at 2, excluding the primordial thread id
+static volatile int64_t next_thread_id = 5; // starting at 5, excluding the primordial thread id, deflated and anonymous
+
+int64_t ThreadIdentifier::unsafe_next_id() {
+  return Atomic::load(&next_thread_id);
+}
 
 int64_t ThreadIdentifier::unsafe_offset() {
   return reinterpret_cast<int64_t>(&next_thread_id);

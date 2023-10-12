@@ -41,7 +41,7 @@ public:
                  RTMLockingCounters* stack_rtm_counters,
                  Metadata* method_data,
                  bool use_rtm, bool profile_rtm);
-  void fast_unlock(Register obj, Register box, Register tmp, bool use_rtm);
+  void fast_unlock(Register obj, Register box, Register tmp, Register scr, bool use_rtm);
 
 #if INCLUDE_RTM_OPT
   void rtm_counters_update(Register abort_status, Register rtm_counters);

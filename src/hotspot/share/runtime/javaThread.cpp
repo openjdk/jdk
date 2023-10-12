@@ -83,6 +83,7 @@
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threadIdentifier.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/threadStatisticalInfo.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
@@ -156,6 +157,7 @@ OopStorage* JavaThread::thread_oop_storage() {
 }
 
 void JavaThread::set_threadOopHandles(oop p) {
+  assert(lock_id() != 0, "Should be set to something");
   assert(_thread_oop_storage != nullptr, "not yet initialized");
   _threadObj   = OopHandle(_thread_oop_storage, p);
   _vthread     = OopHandle(_thread_oop_storage, p);
@@ -224,6 +226,9 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
   // We cannot use JavaCalls::construct_new_instance because the java.lang.Thread
   // constructor calls Thread.current(), which must be set here.
   java_lang_Thread::set_thread(thread_oop(), this);
+  // Need to set the lock_id to the next thread id temporarily while this
+  // thread initialization runs.
+  set_lock_id(ThreadIdentifier::next());
   set_threadOopHandles(thread_oop());
 
   JavaValue result(T_VOID);
@@ -250,6 +255,9 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
                             Handle(),
                             CHECK);
   }
+
+  // Now update the lock_id to the thread_id.
+  set_lock_id(java_lang_Thread::thread_id(thread_oop()));
   os::set_priority(this, NormPriority);
 
   if (daemon) {
@@ -419,6 +427,7 @@ JavaThread::JavaThread() :
   _current_waiting_monitor(nullptr),
   _active_handles(nullptr),
   _free_handle_block(nullptr),
+  _lock_id(0),
   _Stalled(0),
 
   _monitor_chunks(nullptr),
@@ -1674,6 +1683,7 @@ void JavaThread::prepare(jobject jni_thread, ThreadPriority prio) {
                     JNIHandles::resolve_non_null(jni_thread));
   assert(InstanceKlass::cast(thread_oop->klass())->is_linked(),
          "must be initialized");
+  set_lock_id(java_lang_Thread::thread_id(thread_oop()));
   set_threadOopHandles(thread_oop());
 
   if (prio == NoPriority) {
@@ -2147,6 +2157,7 @@ void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
   java_lang_Thread::set_daemon(thread_oop());
 
   // Now bind the thread_oop to the target JavaThread.
+  target->set_lock_id(java_lang_Thread::thread_id(thread_oop()));
   target->set_threadOopHandles(thread_oop());
 
   Threads::add(target); // target is now visible for safepoint/handshake

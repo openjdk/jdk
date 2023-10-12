@@ -126,7 +126,9 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
   //
   // Try to CAS m->owner from NULL to current thread.
   add(tmp, disp_hdr, (in_bytes(ObjectMonitor::owner_offset()) - markWord::monitor_value));
-  cmpxchg(/*memory address*/tmp, /*expected value*/zr, /*new value*/xthread, Assembler::int64, Assembler::aq,
+  Register tid = t0;
+  mv(tid, Address(xthread, JavaThread::lock_id_offset()));
+  cmpxchg(/*memory address*/tmp, /*expected value*/zr, /*new value*/tid, Assembler::int64, Assembler::aq,
           Assembler::rl, /*result*/flag); // cas succeeds if flag == zr(expected)
 
   if (LockingMode != LM_LIGHTWEIGHT) {
@@ -140,7 +142,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
 
   beqz(flag, cont); // CAS success means locking succeeded
 
-  bne(flag, xthread, cont); // Check for recursive locking
+  bne(flag, tid, cont); // Check for recursive locking
 
   // Recursive lock case
   mv(flag, zr);
@@ -221,10 +223,10 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
     // If the owner is anonymous, we need to fix it -- in an outline stub.
     Register tmp2 = disp_hdr;
     ld(tmp2, Address(tmp, ObjectMonitor::owner_offset()));
-    test_bit(t0, tmp2, exact_log2(ObjectMonitor::ANONYMOUS_OWNER));
+    mv(t0, (int64_t)ObjectMonitor::ANONYMOUS_OWNER);
     C2HandleAnonOMOwnerStub* stub = new (Compile::current()->comp_arena()) C2HandleAnonOMOwnerStub(tmp, tmp2);
     Compile::current()->output()->add_stub(stub);
-    bnez(t0, stub->entry(), /* is_far */ true);
+    beq(t0, tmp2, stub->entry(), /* is_far */ true);
     bind(stub->continuation());
   }
 

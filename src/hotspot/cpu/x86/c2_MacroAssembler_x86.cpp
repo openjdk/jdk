@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "oops/methodData.hpp"
@@ -456,6 +457,7 @@ void C2_MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, R
   Register threadReg = scrReg;
 #endif
   lock();
+  movptr(threadReg, Address(threadReg, JavaThread::lock_id_offset()));
   cmpxchgptr(threadReg, Address(boxReg, owner_offset)); // Updates tmpReg
 
   if (RTMRetryCount > 0) {
@@ -657,20 +659,22 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 
   // Appears unlocked - try to swing _owner from null to non-null.
   // Ideally, I'd manifest "Self" with get_thread and then attempt
-  // to CAS the register containing Self into m->Owner.
-  // But we don't have enough registers, so instead we can either try to CAS
-  // rsp or the address of the box (in scr) into &m->owner.  If the CAS succeeds
-  // we later store "Self" into m->Owner.  Transiently storing a stack address
-  // (rsp or the address of the box) into  m->owner is harmless.
+  // to CAS the register containing thread id into m->Owner.
+  // But we don't have enough registers, so instead we can try to CAS ANONYMOUS_OWNER
+  // into &m->owner.  If the CAS succeeds we later store thread id into m->Owner.  Transiently
+  // storing ANONYMOUS_OWNER into  m->owner is harmless. (is it?)
   // Invariant: tmpReg == 0.  tmpReg is EAX which is the implicit cmpxchg comparand.
   lock();
+  mov(scrReg, (int32_t) ObjectMonitor::ANONYMOUS_OWNER);
   cmpxchgptr(scrReg, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
   movptr(Address(scrReg, 0), 3);          // box->_displaced_header = 3
   // If we weren't able to swing _owner from null to the BasicLock
   // then take the slow path.
   jccb  (Assembler::notZero, NO_COUNT);
-  // update _owner from BasicLock to thread
+  // update _owner from BasicLock to thread id
+
   get_thread (scrReg);                    // beware: clobbers ICCs
+  movptr(scrReg, Address(scrReg, JavaThread::lock_id_offset()));
   movptr(Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), scrReg);
   xorptr(boxReg, boxReg);                 // set icc.ZFlag = 1 to indicate success
 
@@ -684,16 +688,21 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 #else // _LP64
   // It's inflated and we use scrReg for ObjectMonitor* in this section.
   movq(scrReg, tmpReg);
-  xorq(tmpReg, tmpReg);
-  lock();
-  cmpxchgptr(thread, Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+
   // Unconditionally set box->_displaced_header = markWord::unused_mark().
   // Without cast to int32_t this style of movptr will destroy r10 which is typically obj.
   movptr(Address(boxReg, 0), checked_cast<int32_t>(markWord::unused_mark().value()));
+
+  movptr(boxReg, Address(r15_thread, JavaThread::lock_id_offset()));
+
+  xorq(tmpReg, tmpReg);
+  lock();
+  cmpxchgptr(boxReg, Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+
   // Propagate ICC.ZF from CAS above into DONE_LABEL.
   jccb(Assembler::equal, COUNT);          // CAS above succeeded; propagate ZF = 1 (success)
 
-  cmpptr(thread, rax);                // Check if we are already the owner (recursive lock)
+  cmpptr(boxReg, rax);                    // Check if we are already the owner (recursive lock)
   jccb(Assembler::notEqual, NO_COUNT);    // If not recursive, ZF = 0 at this point (fail)
   incq(Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
   xorq(rax, rax); // Set ZF = 1 (success) for recursive lock, denoting locking success
@@ -753,7 +762,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 // A perfectly viable alternative is to elide the owner check except when
 // Xcheck:jni is enabled.
 
-void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpReg, bool use_rtm) {
+void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpReg, Register scrReg, bool use_rtm) {
   assert(boxReg == rax, "");
   assert_different_registers(objReg, boxReg, tmpReg);
 
@@ -786,12 +795,12 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   // It's inflated.
   if (LockingMode == LM_LIGHTWEIGHT) {
     // If the owner is ANONYMOUS, we need to fix it -  in an outline stub.
-    testb(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t) ObjectMonitor::ANONYMOUS_OWNER);
+    cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t) ObjectMonitor::ANONYMOUS_OWNER);
 #ifdef _LP64
     if (!Compile::current()->output()->in_scratch_emit_size()) {
       C2HandleAnonOMOwnerStub* stub = new (Compile::current()->comp_arena()) C2HandleAnonOMOwnerStub(tmpReg, boxReg);
       Compile::current()->output()->add_stub(stub);
-      jcc(Assembler::notEqual, stub->entry());
+      jcc(Assembler::equal, stub->entry());
       bind(stub->continuation());
     } else
 #endif
@@ -875,7 +884,6 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), NULL_WORD);
   jccb  (Assembler::zero, LGoSlowPath);
 
-  xorptr(boxReg, boxReg);
   // Without cast to int32_t this style of movptr will destroy r10 which is typically obj.
   movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
 
@@ -905,8 +913,14 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
 
   // box is really RAX -- the following CMPXCHG depends on that binding
   // cmpxchg R,[M] is equivalent to rax = CAS(M,rax,R)
+
+  movptr(scrReg, Address(r15_thread, JavaThread::lock_id_offset()));
+
+  // boxReg is eax
+  xorptr(boxReg, boxReg);
+
   lock();
-  cmpxchgptr(r15_thread, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+  cmpxchgptr(scrReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
   // There's no successor so we tried to regrab the lock.
   // If that didn't work, then another thread grabbed the
   // lock so we're done (and exit was a success).

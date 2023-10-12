@@ -27,23 +27,33 @@
 
 #include "runtime/objectMonitor.hpp"
 
+#include "classfile/javaClasses.hpp"
 #include "logging/log.hpp"
 #include "oops/access.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/lockStack.inline.hpp"
+#include "runtime/threadIdentifier.hpp"
 #include "runtime/synchronizer.hpp"
+
+inline void* ObjectMonitor::owner_for(JavaThread* thread) const {
+  int64_t tid = thread->lock_id();
+  assert(tid != 0, "must be set on thread creation");
+  assert(tid < ThreadIdentifier::unsafe_next_id(), "must be reasonable");
+  return (void*)tid;
+}
 
 inline bool ObjectMonitor::is_entered(JavaThread* current) const {
   if (LockingMode == LM_LIGHTWEIGHT) {
     if (is_owner_anonymous()) {
       return current->lock_stack().contains(object());
     } else {
-      return current == owner_raw();
+      return owner_for(current) == owner_raw();
     }
   } else {
-    void* owner = owner_raw();
-    if (current == owner || current->is_lock_owned((address)owner)) {
-      return true;
+    if (is_owner_anonymous()) {
+      return current->is_lock_owned((address)stack_locker());
+    } else {
+      return is_owner(current);
     }
   }
   return false;
@@ -80,6 +90,18 @@ inline void* ObjectMonitor::owner_raw() const {
   return Atomic::load(&_owner);
 }
 
+inline BasicLock* ObjectMonitor::stack_locker() const {
+  return Atomic::load(&_stack_locker);
+}
+
+inline void ObjectMonitor::set_stack_locker(BasicLock* locker) {
+  Atomic::store(&_stack_locker, locker);
+}
+
+inline bool ObjectMonitor::is_stack_locker(JavaThread* current) {
+  return is_owner_anonymous() && current->is_lock_owned((address)stack_locker());
+}
+
 // Returns true if owner field == DEFLATER_MARKER and false otherwise.
 // This accessor is called when we really need to know if the owner
 // field == DEFLATER_MARKER and any non-null value won't do the trick.
@@ -103,7 +125,8 @@ inline void ObjectMonitor::add_to_contentions(int value) {
 }
 
 // Clear _owner field; current value must match old_value.
-inline void ObjectMonitor::release_clear_owner(void* old_value) {
+inline void ObjectMonitor::release_clear_owner(JavaThread* old_owner) {
+  void* old_value = owner_for(old_owner);
 #ifdef ASSERT
   void* prev = Atomic::load(&_owner);
   assert(prev == old_value, "unexpected prev owner=" INTPTR_FORMAT
@@ -117,9 +140,10 @@ inline void ObjectMonitor::release_clear_owner(void* old_value) {
 
 // Simply set _owner field to new_value; current value must match old_value.
 // (Simple means no memory sync needed.)
-inline void ObjectMonitor::set_owner_from(void* old_value, void* new_value) {
+inline void ObjectMonitor::set_owner_from_raw(void* old_value, void* new_value) {
 #ifdef ASSERT
   void* prev = Atomic::load(&_owner);
+  assert((int64_t)prev < ThreadIdentifier::unsafe_next_id(), "must be reasonable");
   assert(prev == old_value, "unexpected prev owner=" INTPTR_FORMAT
          ", expected=" INTPTR_FORMAT, p2i(prev), p2i(old_value));
 #endif
@@ -130,16 +154,20 @@ inline void ObjectMonitor::set_owner_from(void* old_value, void* new_value) {
                                      p2i(old_value), p2i(new_value));
 }
 
+inline void ObjectMonitor::set_owner_from(void* old_value, JavaThread* current) {
+  set_owner_from_raw(old_value, owner_for(current));
+}
+
 // Simply set _owner field to self; current value must match basic_lock_p.
-inline void ObjectMonitor::set_owner_from_BasicLock(void* basic_lock_p, JavaThread* current) {
-#ifdef ASSERT
-  void* prev = Atomic::load(&_owner);
-  assert(prev == basic_lock_p, "unexpected prev owner=" INTPTR_FORMAT
-         ", expected=" INTPTR_FORMAT, p2i(prev), p2i(basic_lock_p));
-#endif
+inline void ObjectMonitor::set_owner_from_BasicLock(JavaThread* current) {
+  BasicLock* basic_lock_p = stack_locker();
+
+  set_stack_locker(nullptr); // first
+  assert(is_owner_anonymous(), "should be anon for now");
+
   // Non-null owner field to non-null owner field is safe without
   // cmpxchg() as long as all readers can tolerate either flavor.
-  Atomic::store(&_owner, current);
+  Atomic::store(&_owner, owner_for(current));
   log_trace(monitorinflation, owner)("set_owner_from_BasicLock(): mid="
                                      INTPTR_FORMAT ", basic_lock_p="
                                      INTPTR_FORMAT ", new_value=" INTPTR_FORMAT,
@@ -149,7 +177,8 @@ inline void ObjectMonitor::set_owner_from_BasicLock(void* basic_lock_p, JavaThre
 // Try to set _owner field to new_value if the current value matches
 // old_value. Otherwise, does not change the _owner field. Returns
 // the prior value of the _owner field.
-inline void* ObjectMonitor::try_set_owner_from(void* old_value, void* new_value) {
+inline void* ObjectMonitor::try_set_owner_from_raw(void* old_value, void* new_value) {
+  assert((int64_t)new_value < ThreadIdentifier::unsafe_next_id(), "must be reasonable");
   void* prev = Atomic::cmpxchg(&_owner, old_value, new_value);
   if (prev == old_value) {
     log_trace(monitorinflation, owner)("try_set_owner_from(): mid="
@@ -158,6 +187,10 @@ inline void* ObjectMonitor::try_set_owner_from(void* old_value, void* new_value)
                                        p2i(prev), p2i(new_value));
   }
   return prev;
+}
+
+inline void* ObjectMonitor::try_set_owner_from(void* old_value, JavaThread* current) {
+  return try_set_owner_from_raw(old_value, owner_for(current));
 }
 
 // The _next_om field can be concurrently read and modified so we

@@ -55,7 +55,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   Label object_has_monitor;
   Label count, no_count;
 
-  assert_different_registers(oop, box, tmp, disp_hdr);
+  assert_different_registers(oop, box, tmp, disp_hdr, rscratch1);
 
   // Load markWord from object into displaced_header.
   ldr(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
@@ -112,11 +112,12 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   bind(object_has_monitor);
 
   // The object's monitor m is unlocked iff m->owner == NULL,
-  // otherwise m->owner may contain a thread or a stack address.
+  // otherwise m->owner may contain a thread id or a stack address.
   //
   // Try to CAS m->owner from NULL to current thread.
+  ldr(rscratch2, Address(rthread, JavaThread::lock_id_offset()));
   add(tmp, disp_hdr, (in_bytes(ObjectMonitor::owner_offset())-markWord::monitor_value));
-  cmpxchg(tmp, zr, rthread, Assembler::xword, /*acquire*/ true,
+  cmpxchg(tmp, zr, rscratch2, Assembler::xword, /*acquire*/ true,
           /*release*/ true, /*weak*/ false, tmp3Reg); // Sets flags for result
 
   if (LockingMode != LM_LIGHTWEIGHT) {
@@ -129,7 +130,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   }
   br(Assembler::EQ, cont); // CAS success means locking succeeded
 
-  cmp(tmp3Reg, rthread);
+  cmp(tmp3Reg, rscratch2);
   br(Assembler::NE, cont); // Check for recursive locking
 
   // Recursive lock case
@@ -202,10 +203,11 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Registe
     ldr(tmp2, Address(tmp, ObjectMonitor::owner_offset()));
     // We cannot use tbnz here, the target might be too far away and cannot
     // be encoded.
-    tst(tmp2, (uint64_t)ObjectMonitor::ANONYMOUS_OWNER);
+    mov(rscratch1, (uint64_t)ObjectMonitor::ANONYMOUS_OWNER);
+    cmp(rscratch1, tmp2);
     C2HandleAnonOMOwnerStub* stub = new (Compile::current()->comp_arena()) C2HandleAnonOMOwnerStub(tmp, tmp2);
     Compile::current()->output()->add_stub(stub);
-    br(Assembler::NE, stub->entry());
+    br(Assembler::EQ, stub->entry());
     bind(stub->continuation());
   }
 

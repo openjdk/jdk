@@ -342,7 +342,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
   if (mark.has_monitor()) {
     ObjectMonitor* const mon = mark.monitor();
     assert(mon->object() == oop(obj), "invariant");
-    if (mon->owner() != current) return false;  // slow-path for IMS exception
+    if (!mon->is_owner(current)) return false;  // slow-path for IMS exception
 
     if (mon->first_waiter() != nullptr) {
       // We have one or more waiters. Since this is an inflated monitor
@@ -394,14 +394,13 @@ bool ObjectSynchronizer::quick_enter(oop obj, JavaThread* current,
     if (m->object_peek() == nullptr) {
       return false;
     }
-    JavaThread* const owner = static_cast<JavaThread*>(m->owner_raw());
 
     // Lock contention and Transactional Lock Elision (TLE) diagnostics
     // and observability
     // Case: light contention possibly amenable to TLE
     // Case: TLE inimical operations such as nested/recursive synchronization
 
-    if (owner == current) {
+    if (m->is_owner(current)) {
       m->_recursions++;
       current->inc_held_monitor_count();
       return true;
@@ -420,7 +419,7 @@ bool ObjectSynchronizer::quick_enter(oop obj, JavaThread* current,
       lock->set_displaced_header(markWord::unused_mark());
     }
 
-    if (owner == nullptr && m->try_set_owner_from(nullptr, current) == nullptr) {
+    if (!m->has_owner() && m->try_set_owner_from(nullptr, current) == nullptr) {
       assert(m->_recursions == 0, "invariant");
       current->inc_held_monitor_count();
       return true;
@@ -1078,8 +1077,8 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
     // used by this comparison so the ObjectMonitor* is usable here.
     ObjectMonitor* monitor = mark.monitor();
     assert(monitor != nullptr, "monitor should be non-null");
-    // owning_thread_from_monitor() may also return null here:
-    return Threads::owning_thread_from_monitor(t_list, monitor);
+    // owning_thread() may also return null here:
+    return monitor->owning_thread(t_list);
   }
 
   // Unlocked case, header in place
@@ -1116,7 +1115,6 @@ void ObjectSynchronizer::owned_monitors_iterate_filtered(MonitorClosure* closure
     if (monitor->has_owner() && filter(monitor->owner_raw())) {
       assert(!monitor->is_being_async_deflated(), "Owned monitors should not be deflating");
       assert(monitor->object_peek() != nullptr, "Owned monitors should not have a dead object");
-
       closure->do_monitor(monitor);
     }
   });
@@ -1325,8 +1323,9 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
       markWord dmw = inf->header();
       assert(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT, dmw.value());
       if (LockingMode == LM_LIGHTWEIGHT && inf->is_owner_anonymous() && is_lock_owned(current, object)) {
-        inf->set_owner_from_anonymous(current);
-        JavaThread::cast(current)->lock_stack().remove(object);
+        JavaThread* jt = JavaThread::cast(current);
+        inf->set_owner_from_anonymous(jt);
+        jt->lock_stack().remove(object);
       }
       return inf;
     }
@@ -1362,7 +1361,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
       bool own = is_lock_owned(current, object);
       if (own) {
         // Owned by us.
-        monitor->set_owner_from(nullptr, current);
+        monitor->set_owner_from(nullptr, JavaThread::cast(current));
       } else {
         // Owned by somebody else.
         monitor->set_owner_anonymous();
@@ -1464,7 +1463,10 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
       // Note that a thread can inflate an object
       // that it has stack-locked -- as might happen in wait() -- directly
       // with CAS.  That is, we can avoid the xchg-nullptr .... ST idiom.
-      m->set_owner_from(nullptr, mark.locker());
+      // Use ANONYMOUS_OWNER to indicate that the owner is the BasicLock on the stack, and set the
+      // stack locker field in the monitor.
+      m->set_stack_locker(mark.locker());
+      m->set_owner_anonymous();  // second
       // TODO-FIXME: assert BasicLock->dhw != 0.
 
       // Must preserve store ordering. The monitor state must

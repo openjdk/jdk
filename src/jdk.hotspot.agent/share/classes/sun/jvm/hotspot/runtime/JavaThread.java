@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ public class JavaThread extends Thread {
   private static CIntegerField stackSizeField;
   private static CIntegerField terminatedField;
   private static AddressField activeHandlesField;
+  private static CIntegerField lockIdField;
   private static long oopPtrSize;
 
   private static JavaThreadPDAccess access;
@@ -101,6 +102,7 @@ public class JavaThread extends Thread {
     stackSizeField    = type.getCIntegerField("_stack_size");
     terminatedField   = type.getCIntegerField("_terminated");
     activeHandlesField = type.getAddressField("_active_handles");
+    lockIdField        = type.getCIntegerField("_lock_id");
 
     lockStackTopOffset = type.getField("_lock_stack").getOffset() + typeLockStack.getField("_top").getOffset();
     lockStackBaseOffset = type.getField("_lock_stack").getOffset() + typeLockStack.getField("_base[0]").getOffset();
@@ -246,6 +248,7 @@ public class JavaThread extends Thread {
        }
        f = f.sender(regMap);
        imprecise = false;
+    // refer to Threads::owning_thread_from_monitor_owner
     }
     VFrame vf = VFrame.newVFrame(f, regMap, this, true, imprecise);
     if (vf == null) {
@@ -374,6 +377,10 @@ public class JavaThread extends Thread {
         return "<null>";
     }
     return OopUtilities.threadOopGetName(threadObj);
+  }
+
+  public Address getLockId() {
+    return lockIdField.getAddress(addr);
   }
 
   //

@@ -565,12 +565,7 @@ private:
   jvmtiError _result;
 
 public:
-  VM_GetObjectMonitorUsage(JvmtiEnv *env, JavaThread* calling_thread, jobject object, jvmtiMonitorUsage* info_ptr) {
-    _env = env;
-    _object = object;
-    _calling_thread = calling_thread;
-    _info_ptr = info_ptr;
-  }
+  VM_GetObjectMonitorUsage(JvmtiEnv *env, JavaThread* calling_thread, jobject object, jvmtiMonitorUsage* info_ptr);
   VMOp_Type type() const { return VMOp_GetObjectMonitorUsage; }
   jvmtiError result() { return _result; }
   void doit() {

@@ -28,9 +28,9 @@
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
+#include "runtime/threadIdTable.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/timerTrace.hpp"
-#include "services/threadIdTable.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 
@@ -52,13 +52,14 @@ volatile bool ThreadIdTable::_has_work = false;
 class ThreadIdTableEntry : public CHeapObj<mtInternal> {
 private:
   jlong _tid;
-  JavaThread* _java_thread;
+  OopHandle _java_thread;
 public:
   ThreadIdTableEntry(jlong tid, JavaThread* java_thread) :
-    _tid(tid), _java_thread(java_thread) {}
+    _tid(tid), _java_thread(java_thread->threadObj_handle()) {}
 
   jlong tid() const { return _tid; }
-  JavaThread* thread() const { return _java_thread; }
+  // This is null for virtual threads when they're added to the table.
+  JavaThread* thread() const { return java_lang_Thread::thread(_java_thread.resolve()); }
 };
 
 class ThreadIdTableConfig : public AllStatic {

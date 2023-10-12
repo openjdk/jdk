@@ -12468,13 +12468,13 @@ instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRe
   ins_pipe(pipe_slow);
 %}
 
-instruct cmpFastUnlock(rFlagsReg cr, rRegP object, rax_RegP box, rRegP tmp) %{
+instruct cmpFastUnlock(rFlagsReg cr, rRegP object, rax_RegP box, rRegP tmp, rRegP scr) %{
   match(Set cr (FastUnlock object box));
-  effect(TEMP tmp, USE_KILL box);
+  effect(TEMP tmp, TEMP scr, USE_KILL box);
   ins_cost(300);
   format %{ "fastunlock $object,$box\t! kills $box,$tmp" %}
   ins_encode %{
-    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register, ra_->C->use_rtm());
+    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register, $scr$$Register, ra_->C->use_rtm());
   %}
   ins_pipe(pipe_slow);
 %}

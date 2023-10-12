@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -135,12 +135,10 @@ public:
   static GrowableArray<JavaThread*>* get_pending_threads(ThreadsList * t_list,
                                                          int count, address monitor);
 
-  // Get owning Java thread from the monitor's owner field.
-  static JavaThread *owning_thread_from_monitor_owner(ThreadsList * t_list,
-                                                      address owner);
-
+  // Get owning Java thread from the monitor's owner field, object in lock_stack or stack_locker
+  static JavaThread *owning_thread_from_monitor_owner(ThreadsList * t_list, address owner);
   static JavaThread* owning_thread_from_object(ThreadsList* t_list, oop obj);
-  static JavaThread* owning_thread_from_monitor(ThreadsList* t_list, ObjectMonitor* owner);
+  static JavaThread* owning_thread_from_stack_owner(ThreadsList* t_list, address stack_locker);
 
   // Number of threads on the active threads list
   static int number_of_threads()                 { return _number_of_threads; }
