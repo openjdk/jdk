@@ -5325,7 +5325,7 @@ instruct loadNKlass(rRegN dst, memory mem)
   ins_pipe(ialu_reg_mem); // XXX
 %}
 
-instruct loadNKlassCompactHeaders(rRegN dst, indOffset8 mem, rFlagsReg cr)
+instruct loadNKlassCompactHeaders(rRegN dst, memory mem, rFlagsReg cr)
 %{
   predicate(UseCompactObjectHeaders);
   match(Set dst (LoadNKlass mem));
@@ -5334,7 +5334,7 @@ instruct loadNKlassCompactHeaders(rRegN dst, indOffset8 mem, rFlagsReg cr)
   format %{ "movl    $dst, $mem\t# compressed klass ptr" %}
   ins_encode %{
     Register index = $mem$$index != 4 ? $mem$$index$$Register : noreg;
-    Address::ScaleFactor sf = $mem$$scale != 0 ? Address::times($mem$$scale) : Address::no_scale;
+    Address::ScaleFactor sf = (index != noreg) ? static_cast<Address::ScaleFactor>($mem$$scale) : Address::no_scale;
     __ load_nklass_compact_c2($dst$$Register, $mem$$base$$Register, index, sf, $mem$$disp);
   %}
   ins_pipe(pipe_slow); // XXX
