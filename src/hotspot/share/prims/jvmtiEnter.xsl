@@ -437,8 +437,6 @@ struct jvmtiInterface_1_ jvmti</xsl:text>
   <xsl:if test="count(@impl)=0 or not(contains(@impl,'innative'))">
     <xsl:text>JavaThread* current_thread = JavaThread::cast(this_thread);</xsl:text>
     <xsl:value-of select="$space"/>
-    <xsl:text>MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));</xsl:text>
-    <xsl:value-of select="$space"/>
     <xsl:text>ThreadInVMfromNative __tiv(current_thread);</xsl:text>
     <xsl:value-of select="$space"/>
     <xsl:text>VM_ENTRY_BASE(jvmtiError, </xsl:text>

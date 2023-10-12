@@ -171,6 +171,7 @@ class ThreadInVMfromNative : public ThreadStateTransition {
   ResetNoHandleMark __rnhm;
  public:
   ThreadInVMfromNative(JavaThread* thread) : ThreadStateTransition(thread) {
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));
     transition_from_native(thread, _thread_in_vm);
   }
   ~ThreadInVMfromNative() {

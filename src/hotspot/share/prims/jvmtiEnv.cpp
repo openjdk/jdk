@@ -192,12 +192,6 @@ JvmtiEnv::GetThreadLocalStorage(jthread thread, void** data_ptr) {
     *data_ptr = (state == nullptr) ? nullptr :
       state->env_thread_state(this)->get_agent_thread_local_storage_data();
   } else {
-    // jvmti_GetThreadLocalStorage is "in native" and doesn't transition
-    // the thread to _thread_in_vm. However, when the TLS for a thread
-    // other than the current thread is required we need to transition
-    // from native so as to resolve the jthread.
-
-    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));
     ThreadInVMfromNative __tiv(current_thread);
     VM_ENTRY_BASE(jvmtiError, JvmtiEnv::GetThreadLocalStorage , current_thread)
     debug_only(VMNativeEntryWrapper __vew;)
