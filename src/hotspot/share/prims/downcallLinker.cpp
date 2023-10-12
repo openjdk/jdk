@@ -55,3 +55,18 @@ JVM_LEAF(void, DowncallLinker::capture_state(int32_t* value_ptr, int captured_st
     *value_ptr = errno;
   }
 JVM_END
+
+void DowncallLinker::StubGenerator::add_offsets_to_oops(GrowableArray<VMStorage>& java_regs, VMStorage tmp1, VMStorage tmp2) const {
+  int reg_idx = 0;
+  for (int sig_idx = 0; sig_idx < _num_args; sig_idx++) {
+    if (_signature[sig_idx] == T_OBJECT) {
+      assert(_signature[sig_idx + 1] == T_LONG, "expected offset after oop");
+      VMStorage reg_oop = java_regs.at(reg_idx++);
+      VMStorage reg_offset = java_regs.at(reg_idx++);
+      sig_idx++; // skip offset
+      pd_add_offset_to_oop(reg_oop, reg_offset, tmp1, tmp2);
+    } else if (_signature[sig_idx] != T_VOID) {
+      reg_idx++;
+    }
+  }
+}

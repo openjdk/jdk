@@ -36,66 +36,6 @@
 
 #define __ _masm->
 
-class DowncallStubGenerator : public StubCodeGenerator {
-  BasicType* _signature;
-  int _num_args;
-  BasicType _ret_bt;
-  const ABIDescriptor& _abi;
-
-  const GrowableArray<VMStorage>& _input_registers;
-  const GrowableArray<VMStorage>& _output_registers;
-
-  bool _needs_return_buffer;
-  int _captured_state_mask;
-  bool _needs_transition;
-
-  int _frame_complete;
-  int _frame_size_slots;
-  OopMapSet* _oop_maps;
-public:
-  DowncallStubGenerator(CodeBuffer* buffer,
-                         BasicType* signature,
-                         int num_args,
-                         BasicType ret_bt,
-                         const ABIDescriptor& abi,
-                         const GrowableArray<VMStorage>& input_registers,
-                         const GrowableArray<VMStorage>& output_registers,
-                         bool needs_return_buffer,
-                         int captured_state_mask,
-                         bool needs_transition)
-   : StubCodeGenerator(buffer, PrintMethodHandleStubs),
-     _signature(signature),
-     _num_args(num_args),
-     _ret_bt(ret_bt),
-     _abi(abi),
-     _input_registers(input_registers),
-     _output_registers(output_registers),
-     _needs_return_buffer(needs_return_buffer),
-     _captured_state_mask(captured_state_mask),
-     _needs_transition(needs_transition),
-     _frame_complete(0),
-     _frame_size_slots(0),
-     _oop_maps(nullptr) {
-  }
-
-  void generate();
-
-  int frame_complete() const {
-    return _frame_complete;
-  }
-
-  int framesize() const {
-    return (_frame_size_slots >> (LogBytesPerWord - LogBytesPerInt));
-  }
-
-  OopMapSet* oop_maps() const {
-    return _oop_maps;
-  }
-
-  void add_offset_to_oop(VMStorage reg_oop, VMStorage reg_offset, Register tmp1, Register tmp2) const;
-  void add_offsets_to_oops(GrowableArray<VMStorage>& java_regs, Register tmp1, Register tmp2) const;
-};
-
 static const int native_invoker_code_base_size = 256;
 static const int native_invoker_size_per_arg = 8;
 
@@ -111,10 +51,10 @@ RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
   int code_size = native_invoker_code_base_size + (num_args * native_invoker_size_per_arg);
   int locs_size = 1; // must be non-zero
   CodeBuffer code("nep_invoker_blob", code_size, locs_size);
-  DowncallStubGenerator g(&code, signature, num_args, ret_bt, abi,
-                          input_registers, output_registers,
-                          needs_return_buffer, captured_state_mask,
-                          needs_transition);
+  StubGenerator g(&code, signature, num_args, ret_bt, abi,
+                  input_registers, output_registers,
+                  needs_return_buffer, captured_state_mask,
+                  needs_transition);
   g.generate();
   code.log_section_sizes("nep_invoker_blob");
 
@@ -139,7 +79,9 @@ RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
 
 static constexpr int RFP_BIAS = 16; // skip old rbp and return address
 
-void DowncallStubGenerator::add_offset_to_oop(VMStorage reg_oop, VMStorage reg_offset, Register tmp1, Register tmp2) const {
+void DowncallLinker::StubGenerator::pd_add_offset_to_oop(VMStorage reg_oop, VMStorage reg_offset, VMStorage tmp1, VMStorage tmp2) const {
+  Register r_tmp1 = as_Register(tmp1);
+  Register r_tmp2 = as_Register(tmp2);
   if (reg_oop.is_reg()) {
     assert(reg_oop.type() == StorageType::INTEGER, "expected");
     Register reg_oop_reg = as_Register(reg_oop);
@@ -150,8 +92,8 @@ void DowncallStubGenerator::add_offset_to_oop(VMStorage reg_oop, VMStorage reg_o
       assert(reg_offset.is_stack(), "expected");
       assert(reg_offset.stack_size() == 8, "expected long");
       Address offset_addr(rfp, RFP_BIAS + reg_offset.offset());
-      __ ldr (tmp1, offset_addr);
-      __ add(reg_oop_reg, reg_oop_reg, tmp1);
+      __ ldr (r_tmp1, offset_addr);
+      __ add(reg_oop_reg, reg_oop_reg, r_tmp1);
     }
   } else {
     assert(reg_oop.is_stack(), "expected");
@@ -160,29 +102,14 @@ void DowncallStubGenerator::add_offset_to_oop(VMStorage reg_oop, VMStorage reg_o
     assert(reg_offset.stack_size() == 8, "expected long");
     Address offset_addr(rfp, RFP_BIAS + reg_offset.offset());
     Address oop_addr(rfp, RFP_BIAS + reg_oop.offset());
-    __ ldr(tmp1, offset_addr);
-    __ ldr(tmp2, oop_addr);
-    __ add(tmp1, tmp1, tmp2);
-    __ str(tmp1, oop_addr);
+    __ ldr(r_tmp1, offset_addr);
+    __ ldr(r_tmp2, oop_addr);
+    __ add(r_tmp1, r_tmp1, r_tmp2);
+    __ str(r_tmp1, oop_addr);
   }
 }
 
-void DowncallStubGenerator::add_offsets_to_oops(GrowableArray<VMStorage>& java_regs, Register tmp1, Register tmp2) const {
-  int reg_idx = 0;
-  for (int sig_idx = 0; sig_idx < _num_args; sig_idx++) {
-    if (_signature[sig_idx] == T_OBJECT) {
-      assert(_signature[sig_idx + 1] == T_LONG, "expected offset after oop");
-      VMStorage reg_oop = java_regs.at(reg_idx++);
-      VMStorage reg_offset = java_regs.at(reg_idx++);
-      sig_idx++; // skip offset
-      add_offset_to_oop(reg_oop, reg_offset, tmp1, tmp2);
-    } else if (_signature[sig_idx] != T_VOID) {
-      reg_idx++;
-    }
-  }
-}
-
-void DowncallStubGenerator::generate() {
+void DowncallLinker::StubGenerator::generate() {
   enum layout {
     rfp_off,
     rfp_off2,
@@ -287,7 +214,7 @@ void DowncallStubGenerator::generate() {
   }
 
   if (has_objects) {
-    add_offsets_to_oops(java_regs, tmp1, tmp2);
+    add_offsets_to_oops(java_regs, as_VMStorage(tmp1), as_VMStorage(tmp2));
   }
 
   __ block_comment("{ argument shuffle");
