@@ -100,7 +100,7 @@ public class RejectDragDropActionTest {
             for (Point p = new Point(startPoint);
                  !p.equals(endPoint) && !incorrectActionDetected;
                  p.translate(sign(endPoint.x - p.x),
-                         sign(endPoint.y - p.y))) {
+                             sign(endPoint.y - p.y))) {
                 robot.mouseMove(p.x, p.y);
             }
 
