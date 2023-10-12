@@ -339,7 +339,7 @@ BasicObjectLock* frame::interpreter_frame_monitor_begin() const {
 }
 
 BasicObjectLock* frame::interpreter_frame_monitor_end() const {
-  BasicObjectLock* result = (BasicObjectLock*) at(interpreter_frame_monitor_block_top_offset);
+  BasicObjectLock* result = (BasicObjectLock*) at_relative(interpreter_frame_monitor_block_top_offset);
   // make sure the pointer points inside the frame
   assert(sp() <= (intptr_t*) result, "monitor end should be above the stack pointer");
   assert((intptr_t*) result < fp(),  "monitor end should be strictly below the frame pointer: result: " INTPTR_FORMAT " fp: " INTPTR_FORMAT, p2i(result), p2i(fp()));
@@ -347,12 +347,17 @@ BasicObjectLock* frame::interpreter_frame_monitor_end() const {
 }
 
 void frame::interpreter_frame_set_monitor_end(BasicObjectLock* value) {
-  *((BasicObjectLock**)addr_at(interpreter_frame_monitor_block_top_offset)) = value;
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized monitor_block_top
+  ptr_at_put(interpreter_frame_monitor_block_top_offset, (intptr_t*)value - fp());
+  assert(at_absolute(interpreter_frame_monitor_block_top_offset) <= interpreter_frame_monitor_block_top_offset, "");
 }
 
 // Used by template based interpreter deoptimization
 void frame::interpreter_frame_set_last_sp(intptr_t* sp) {
-    *((intptr_t**)addr_at(interpreter_frame_last_sp_offset)) = sp;
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized last_sp
+  ptr_at_put(interpreter_frame_last_sp_offset, sp != nullptr ? (sp - fp()) : 0);
 }
 
 frame frame::sender_for_entry_frame(RegisterMap* map) const {
@@ -496,7 +501,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   // do some validation of frame elements
   // first the method
 
-  Method* m = *interpreter_frame_method_addr();
+  Method* m = safe_interpreter_frame_method();
 
   // validate the method we'd find in this potential sender
   if (!Method::is_valid_method(m)) return false;

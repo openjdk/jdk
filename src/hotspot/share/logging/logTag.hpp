@@ -90,6 +90,7 @@ class outputStream;
   LOG_TAG(handshake) \
   LOG_TAG(hashtables) \
   LOG_TAG(heap) \
+  LOG_TAG(heapdump) \
   NOT_PRODUCT(LOG_TAG(heapsampling)) \
   LOG_TAG(humongous) \
   LOG_TAG(ihop) \

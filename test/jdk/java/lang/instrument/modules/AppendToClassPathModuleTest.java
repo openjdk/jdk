@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8169909
+ * @requires vm.flagless
  * @library src /test/lib
  * @build test/*
  * @run shell AppendToClassPathModuleTest.sh

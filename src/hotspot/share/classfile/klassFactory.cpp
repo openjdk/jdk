@@ -76,7 +76,7 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
         ClassLoaderData::class_loader_data(class_loader());
       s2 path_index = ik->shared_classpath_index();
       ClassFileStream* stream = new ClassFileStream(ptr,
-                                                    end_ptr - ptr,
+                                                    pointer_delta_as_int(end_ptr, ptr),
                                                     cfs->source(),
                                                     ClassFileStream::verify);
       ClassLoadInfo cl_info(protection_domain);
@@ -155,7 +155,7 @@ static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
       // JVMTI agent has modified class file data.
       // Set new class file stream using JVMTI agent modified class file data.
       stream = new ClassFileStream(ptr,
-                                   end_ptr - ptr,
+                                   pointer_delta_as_int(end_ptr, ptr),
                                    stream->source(),
                                    stream->need_verify());
     }

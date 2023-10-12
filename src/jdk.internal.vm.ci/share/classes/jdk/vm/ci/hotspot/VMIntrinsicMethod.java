@@ -54,12 +54,32 @@ public final class VMIntrinsicMethod {
      */
     public final int id;
 
+    /**
+     * This value reflects the `ControlIntrinsic`, `DisableIntrinsic` and `UseXXXIntrinsic` VM flags
+     * as well as other factors such as the current CPU.
+     */
+    public final boolean isAvailable;
+
+    /**
+     * True if this intrinsic is supported by C1.
+     */
+    public final boolean c1Supported;
+
+    /**
+     * True if this intrinsic is supported by C2.
+     */
+    public final boolean c2Supported;
+
     @VMEntryPoint
-    VMIntrinsicMethod(String declaringClass, String name, String descriptor, int id) {
+    VMIntrinsicMethod(String declaringClass, String name, String descriptor, int id,
+                             boolean isAvailable, boolean c1Supported, boolean c2Supported) {
         this.declaringClass = declaringClass;
         this.name = name;
         this.descriptor = descriptor;
         this.id = id;
+        this.isAvailable = isAvailable;
+        this.c1Supported = c1Supported;
+        this.c2Supported = c2Supported;
     }
 
     @Override
@@ -69,7 +89,10 @@ public final class VMIntrinsicMethod {
             if (that.id == this.id) {
                 assert that.name.equals(this.name) &&
                                 that.declaringClass.equals(this.declaringClass) &&
-                                that.descriptor.equals(this.descriptor);
+                                that.descriptor.equals(this.descriptor) &&
+                                that.isAvailable == this.isAvailable &&
+                                that.c1Supported == this.c1Supported &&
+                                that.c2Supported == this.c2Supported;
                 return true;
             }
         }
@@ -83,6 +106,7 @@ public final class VMIntrinsicMethod {
 
     @Override
     public String toString() {
-        return String.format("IntrinsicMethod[declaringClass=%s, name=%s, descriptor=%s, id=%d]", declaringClass, name, descriptor, id);
+        return String.format("IntrinsicMethod[declaringClass=%s, name=%s, descriptor=%s, id=%d, isAvailable=%b, c1Supported=%b, c2Supported=%b]",
+                        declaringClass, name, descriptor, id, isAvailable, c1Supported, c2Supported);
     }
 }
