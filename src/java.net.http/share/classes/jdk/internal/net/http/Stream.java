@@ -183,7 +183,7 @@ class Stream<T> extends ExchangeImpl<T> {
                 if (debug.on()) debug.log("subscribing user subscriber");
                 subscriber.onSubscribe(userSubscription);
             }
-            while (!inputQ.isEmpty()) {
+            while (!inputQ.isEmpty() && errorRef.get() == null) {
                 Http2Frame frame = inputQ.peek();
                 if (frame instanceof ResetFrame rf) {
                     inputQ.remove();
@@ -1376,17 +1376,10 @@ class Stream<T> extends ExchangeImpl<T> {
         }
 
         if (closing) { // true if the stream has not been closed yet
-            var subscriber = this.responseSubscriber;
-            if (subscriber == null) subscriber = this.pendingResponseSubscriber;
-            if (subscriber != null) {
+            if (responseSubscriber != null || pendingResponseSubscriber != null) {
                 if (debug.on())
                     debug.log("stream %s closing due to %s", streamid, (Object)errorRef.get());
                 sched.runOrSchedule();
-                if (subscriber instanceof Http2StreamResponseSubscriber<?> rs) {
-                    // make sure the subscriber is stopped.
-                    if (debug.on()) debug.log("closing response subscriber stream %s", streamid);
-                    rs.complete(errorRef.get());
-                }
             } else {
                 if (debug.on())
                     debug.log("stream %s closing due to %s before subscriber registered",
