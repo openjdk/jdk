@@ -25,7 +25,6 @@ package compiler.integerArithmetic;
 import compiler.lib.ir_framework.*;
 import java.util.Random;
 
-import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
@@ -34,14 +33,13 @@ import jdk.test.lib.Utils;
  * @bug 8282365
  * @summary Test that Ideal transformations of division nodes provide correct
  * result.
- *
+ * @requires vm.compMode != "Xcomp"
  * @library /test/lib /
  * @run driver compiler.integerArithmetic.DivisionByConstant
  */
 public class DivisionByConstant {
     private static final int TRIALS = 10;
     private static final int INVOCATIONS = 100;
-
 
     private static final int I_DIV;
     private static final int I_1;
