@@ -41,7 +41,7 @@ class ArenaStatCounter : public CHeapObj<mtCompiler> {
   size_t _current;
   // bytes when compilation started
   size_t _start;
-  // bytes at least peak, total
+  // bytes at last peak, total
   size_t _peak;
   // Current bytes used for node arenas, total
   size_t _na;

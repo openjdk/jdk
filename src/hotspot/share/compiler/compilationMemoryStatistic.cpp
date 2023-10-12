@@ -431,7 +431,7 @@ void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_
         st->print_cr("No entries.");
       }
     } else {
-      st->print_cr("No initialized.");
+      st->print_cr("Not initialized.");
     }
   } // locked
 
