@@ -1264,11 +1264,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>EGT</generic>
 				</short>
 			</metazone>
-			<metazone type="Gulf">
-				<short>
-					<standard draft="contributed">N/A</standard>
-				</short>
-			</metazone>
 			<metazone type="Guyana">
 				<short>
 					<standard>GYT</standard>

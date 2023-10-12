@@ -253,11 +253,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>WEST</daylight>
 				</short>
 			</metazone>
-			<metazone type="Gulf">
-				<short>
-					<standard>GTS</standard>
-				</short>
-			</metazone>
 		</timeZoneNames>
 	</dates>
 	<personNames>

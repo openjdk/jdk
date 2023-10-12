@@ -6481,8 +6481,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="speed-kilometer-per-hour">
 				<gender>common</gender>
 				<displayName>kilometer i timen</displayName>
-				<unitPattern count="one">kilometer i timen</unitPattern>
-				<unitPattern count="one" case="genitive">kilometer i timens</unitPattern>
+				<unitPattern count="one">{0} kilometer i timen</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilometer i timens</unitPattern>
 				<unitPattern count="other">{0} kilometer i timen</unitPattern>
 				<unitPattern count="other" case="genitive">{0} kilometer i timens</unitPattern>
 			</unit>
