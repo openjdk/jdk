@@ -332,10 +332,10 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
   cached_obj = {nullptr, old_gen_bottom DEBUG_ONLY(COMMA nullptr)};
 
   // Scavenge
-  HeapWord* cur_stripe_addr = old_gen_bottom + stripe_index * stripe_size_in_words;
-  for (/* empty */; cur_stripe_addr < old_gen_top; cur_stripe_addr += slice_size_in_words) {
-    HeapWord* const stripe_l = cur_stripe_addr;
-    HeapWord* const stripe_r = MIN2(cur_stripe_addr + stripe_size_in_words,
+  HeapWord* cur_addr = old_gen_bottom + stripe_index * stripe_size_in_words;
+  for (/* empty */; cur_addr < old_gen_top; cur_addr += slice_size_in_words) {
+    HeapWord* const stripe_l = cur_addr;
+    HeapWord* const stripe_r = MIN2(cur_addr + stripe_size_in_words,
                                     old_gen_top);
 
     process_range(object_start, pm, stripe_l, stripe_r);
