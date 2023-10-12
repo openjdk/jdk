@@ -119,7 +119,7 @@ import java.util.Objects;
  * form because it is unambiguous when used in combination with other
  * textual data.
  *
- * <h3> Special IPv6 address </h3>
+ * <h3><a id="special-ipv6-address">Special IPv6 address</a></h3>
  *
  * <blockquote>
  * <dl>
@@ -174,6 +174,18 @@ import java.util.Objects;
  * Inet6Address instances returned from the NetworkInterface class. This can be
  * used to find out the current scope ids configured on the system.
  *
+ * <p> Methods of {@code InetAddress} and {@code Inet6Address} that accept a
+ * textual representation of an IPv6 address allow for that representation
+ * to be enclosed in square brackets. For example,
+ * {@snippet :
+ *  // The full IPv6 form
+ *  InetAddress.getByName("1080:0:0:0:8:800:200C:417A");   // ==> /1080:0:0:0:8:800:200c:417a
+ *  InetAddress.getByName("[1080:0:0:0:8:800:200C:417A]"); // ==> /1080:0:0:0:8:800:200c:417a
+ *
+ *  // IPv6 scoped address with scope-id as string
+ *  Inet6Address.ofLiteral("fe80::1%en0");   // ==> /fe80:0:0:0:0:0:0:1%en0
+ *  Inet6Address.ofLiteral("[fe80::1%en0]"); // ==> /fe80:0:0:0:0:0:0:1%en0
+ * }
  * @spec https://www.rfc-editor.org/info/rfc2373
  *      RFC 2373: IP Version 6 Addressing Architecture
  * @spec https://www.rfc-editor.org/info/rfc4007
@@ -484,41 +496,23 @@ class Inet6Address extends InetAddress {
     }
 
     /**
-     * Creates an {@code InetAddress} based on the provided textual representation of
-     * an IPv6 address.
-     * <p>The following IPv6 address {@linkplain Inet6Address##format
-     * textual representations} are supported by this method:
-     * {@snippet :
-     *  // The full IPv6 form
-     *  Inet6Address.ofLiteral("1080:0:0:0:8:800:200C:417A") ==> /1080:0:0:0:8:800:200c:417a
-     *
-     *  // The compressed IPv6 form with multiple groups of 16-bits of
-     *  // zero replaced with "::"
-     *  Inet6Address.ofLiteral("1080::8:800:200C:417A") ==> /1080:0:0:0:8:800:200c:417a
-     *
-     *  // IPv4-mapped IPv6 form
-     *  Inet6Address.ofLiteral("::FFFF:129.144.52.38") ==> /129.144.52.38
-     *
-     *  // IPv4-compatible IPv6 form
-     *  Inet6Address.ofLiteral("::129.144.52.38") ==> /0:0:0:0:0:0:8190:3426
-     *
-     *  // IPv6 scoped address form with scope-id as numeric identifier
-     *  Inet6Address.ofLiteral("fe80::1%1") ==> /fe80:0:0:0:0:0:0:1%1
-     *
-     *  // IPv6 scoped address with scope-id as string
-     *  Inet6Address.ofLiteral("fe80::1%en0") ==> /fe80:0:0:0:0:0:0:1%en0
-     * }
-     * All IPv6 address literal forms listed above are also supported when enclosed in
+     * Creates an {@code InetAddress} based on the provided {@linkplain
+     * Inet6Address##format textual representations} of an IPv6 address.
+     * <p> If the provided address literal cannot represent {@linkplain Inet6Address##format
+     * a valid IPv6 address} an {@code IllegalArgumentException} is thrown.
+     * An {@code IllegalArgumentException} is also thrown if an IPv6 scoped address literal
+     * contains a scope-id that doesn't map to any network interface on the system, or
+     * if a scope-id is present in an IPv4-mapped IPv6 address literal.
+     * <p> This method doesn't block, i.e. no reverse lookup is performed.
+     * <p> Note that IPv6 address literal forms are also supported when enclosed in
      * square brackets.
-     * <p>If the provided address literal cannot represent a valid IP address an
-     * {@code IllegalArgumentException} is thrown. For instance, if an IPv6 scoped
-     *  address literal contains a scope-id that doesn't map to any network interface
-     *  on the system, or if a scope-id is present in an IPv4-mapped IPv6 address literal.
-     * <p>This method doesn't block, i.e. no reverse lookup is performed.
+     * Note also that if the supplied literal represents an {@linkplain
+     * Inet6Address##special-ipv6-address IPv4-mapped IPv6 address} an
+     * instance of {@code Inet4Address} is returned.
      *
      * @param ipv6AddressLiteral the textual representation of an IPv6 address.
-     * @return an {@link Inet6Address} object with no hostname set, and constructed
-     *         from the IPv6 address literal.
+     * @return an {@link InetAddress} object with no hostname set, and constructed
+     *         from the provided IPv6 address literal.
      * @throws IllegalArgumentException if the {@code ipv6AddressLiteral} cannot be
      *         parsed as an IPv6 address literal.
      * @throws NullPointerException if the {@code ipv6AddressLiteral} is {@code null}.

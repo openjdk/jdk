@@ -1716,7 +1716,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      *
      * @param ipAddressLiteral the textual representation of an IP address.
      * @return an {@link InetAddress} object with no hostname set, and constructed
-     *         from the IP address literal.
+     *         from the provided IP address literal.
      * @throws IllegalArgumentException if the {@code ipAddressLiteral} cannot be parsed
      *         as an IPv4 or IPv6 address literal.
      * @throws NullPointerException if the {@code ipAddressLiteral} is {@code null}.

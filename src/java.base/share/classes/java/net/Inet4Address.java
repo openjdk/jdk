@@ -58,7 +58,7 @@ import java.util.Objects;
  * <p> When a three part address is specified, the last part is
  * interpreted as a 16-bit quantity and placed in the right most two
  * bytes of the network address. This makes the three part address
- * format convenient for specifying Class B net- work addresses as
+ * format convenient for specifying Class B network addresses as
  * 128.net.host.
  *
  * <p> When a two part address is supplied, the last part is
@@ -69,6 +69,29 @@ import java.util.Objects;
  *
  * <p> When only one part is given, the value is stored directly in
  * the network address without any byte rearrangement.
+ *
+ * <p> These forms support parts specified in decimal format only.
+ * For example, the following forms are supported by methods capable
+ * of parsing textual representations of IPv4 addresses:
+ * {@snippet :
+ *  // Dotted-decimal 'd.d.d.d' form with four part address literal
+ *  InetAddress.getByName("007.008.009.010"); // ==> /7.8.9.10
+ *  InetAddress.getByName("127.0.1.1");       // ==> /127.0.1.1
+ *
+ *  // Dotted-decimal 'd.d.d' form with three part address literal,
+ *  // the last part is placed in the right most two bytes
+ *  // of the constructed address
+ *  InetAddress.getByName("127.0.257"); // ==> /127.0.1.1
+ *
+ *  // Dotted-decimal 'd.d' form with two part address literal,
+ *  // the last part is placed in the right most three bytes
+ *  // of the constructed address
+ *  Inet4Address.ofLiteral("127.257"); // ==> /127.0.1.1
+ *
+ *  // 'd' form with one decimal value that is stored directly in
+ *  // the constructed address bytes without any rearrangement
+ *  Inet4Address.ofLiteral("02130706689"); // ==> /127.0.1.1
+ * }
  *
  * <p> For methods that return a textual representation as output
  * value, the first form, i.e. a dotted-quad string, is used.
@@ -138,35 +161,15 @@ class Inet4Address extends InetAddress {
     }
 
     /**
-     * Creates an {@code Inet4Address} based on the provided textual representation of
-     * an IPv4 address.
-     * <p>The following IPv4 address {@linkplain Inet4Address##format
-     * textual representations} are supported by this method:
-     * {@snippet :
-     *  // Dotted-decimal 'd.d.d.d' form with four part address literal
-     *  Inet4Address.ofLiteral("7.08.9.010") ==> /7.8.9.10
-     *
-     *  // Dotted-decimal 'd.d.d' form with three part address literal,
-     *  // the last part is placed in the right most two bytes
-     *  // of the constructed address
-     *  Inet4Address.ofLiteral("127.0.257") ==> /127.0.1.1
-     *
-     *  // Dotted-decimal 'd.d' form with two part address literal,
-     *  // the last part is placed in the right most three bytes
-     *  // of the constructed address
-     *  Inet4Address.ofLiteral("127.257") ==> /127.0.1.1
-     *
-     *  // 'd' form with one decimal value that is stored directly in
-     *  // the constructed address bytes without any rearrangement
-     *  Inet4Address.ofLiteral("02130706689") ==> /127.0.1.1
-     * }
-     * <p>If the provided address literal cannot represent a valid IPv4 address an
-     * {@code IllegalArgumentException} is thrown.
-     * <p>This method doesn't block, i.e. no reverse lookup is performed.
+     * Creates an {@code Inet4Address} based on the provided {@linkplain
+     * Inet4Address##format textual representations} of an IPv4 address.
+     * <p> If the provided IPv4 address literal cannot represent a {@linkplain
+     * Inet4Address##format valid IPv4 address} an {@code IllegalArgumentException} is thrown.
+     * <p> This method doesn't block, i.e. no reverse lookup is performed.
      *
      * @param ipv4AddressLiteral the textual representation of an IPv4 address.
      * @return an {@link Inet4Address} object with no hostname set, and constructed
-     *         from the IPv4 address literal.
+     *         from the provided IPv4 address literal.
      * @throws IllegalArgumentException if the {@code ipv4AddressLiteral} cannot be
      *         parsed as an IPv4 address literal.
      * @throws NullPointerException if the {@code ipv4AddressLiteral} is {@code null}.
