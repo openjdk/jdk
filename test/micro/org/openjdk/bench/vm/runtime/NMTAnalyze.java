@@ -40,15 +40,15 @@ class NMTAnalyze {
     public String units;
   }
   public static class BenchmarkFields {
-    static int NMT_METHOD = 0;
-    static int N = 1;
-    static int THREADS = 2;
-    static int MODE = 3;
-    static int CNT = 4;
-    static int SCORE = 5;
+    static int NMT_METHOD    = 0;
+    static int N             = 1;
+    static int THREADS       = 2;
+    static int MODE          = 3;
+    static int CNT           = 4;
+    static int SCORE         = 5;
     static int QUESTION_MARK = 6;
-    static int ERROR = 7;
-    static int UNITS = 8;
+    static int ERROR         = 7;
+    static int UNITS         = 8;
   }
   public static BufferedReader reader;
   public static String fileName;
@@ -96,23 +96,35 @@ class NMTAnalyze {
     }
   }
   private static void analyzeRecords() {
-    String NMT_OFF = "NMTOff";
-    String NMT_DETAIL = "NMTDetail";
+    String NMT_OFF     = "NMTOff";
+    String NMT_DETAIL  = "NMTDetail";
     String NMT_SUMMARY = "NMTSummary";
     int[] threads = {0, 4};
     String [] methods = {"mixAallocateFreeMemory", "mixAllocateReallocateMemory", "onlyAllocateMemory"};
-    System.out.printf("\n%40s %6s %6s %6s %6s\n","Method", "Threads", "  Off ", "Summary", "Detail");
+
+    System.out.printf("\n%40s %6s %9s %6s %15s %6s %24s %6s\n","Method", "Threads", " ", "Off ", " ", "Summary", " ", "Detail");
     for(String m: methods) {
       for (int t: threads) {
-        List <BenchmarkRecord> mtd_thrd = records.stream()
-                                            .filter(r -> r.jmh_method.contains(m) && r.threads == t)
-                                            .collect(Collectors.toList());
-        Double nmt_off = mtd_thrd.stream().filter(r->r.jmh_method.contains(NMT_OFF)).collect(Collectors.toList()).get(0).score;
-        Double nmt_summary = mtd_thrd.stream().filter(r->r.jmh_method.contains(NMT_SUMMARY)).collect(Collectors.toList()).get(0).score;
-        Double nmt_detail = mtd_thrd.stream().filter(r->r.jmh_method.contains(NMT_DETAIL)).collect(Collectors.toList()).get(0).score;
-        System.out.printf("%40s %5d    %6.2f %6.2f  %6.2f\n", m, t, nmt_off, nmt_summary, nmt_detail);
-        System.out.printf("%56s %6.2f%% %6.2f%%\n", " ", (nmt_summary - nmt_off)/nmt_off * 100.0,
-                          (nmt_detail - nmt_off) / nmt_off * 100.0);
+        List<BenchmarkRecord> mtd_thrd = records.stream()
+                                        .filter(r -> r.jmh_method.contains(m) && r.threads == t)
+                                        .collect(Collectors.toList());
+        BenchmarkRecord off_rec     = mtd_thrd.stream().filter(r->r.jmh_method.contains(NMT_OFF))    .collect(Collectors.toList()).get(0);
+        BenchmarkRecord summary_rec = mtd_thrd.stream().filter(r->r.jmh_method.contains(NMT_SUMMARY)).collect(Collectors.toList()).get(0);
+        BenchmarkRecord detail_rec  = mtd_thrd.stream().filter(r->r.jmh_method.contains(NMT_DETAIL)) .collect(Collectors.toList()).get(0);
+
+        Double nmt_off         = off_rec    .score;
+        Double nmt_summary     = summary_rec.score;
+        Double nmt_detail      = detail_rec .score;
+
+        Double nmt_off_err     = off_rec    .error;
+        Double nmt_summary_err = summary_rec.error;
+        Double nmt_detail_err  = detail_rec .error;
+
+        System.out.printf("%40s %5d    %7.3f (± %6.3f)    %7.3f (± %6.3f) %7.3f%%   %7.3f (± %6.3f) %7.3f%%\n",
+                          m, t,
+                          nmt_off, nmt_off_err,
+                          nmt_summary, nmt_summary_err, (nmt_summary - nmt_off) / nmt_off * 100.0,
+                          nmt_detail, nmt_detail_err, (nmt_detail - nmt_off) / nmt_off * 100.0);
       }
     }
 
