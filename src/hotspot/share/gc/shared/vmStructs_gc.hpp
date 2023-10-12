@@ -29,7 +29,6 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/generation.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/space.hpp"
@@ -44,6 +43,7 @@
 #endif
 #if INCLUDE_SERIALGC
 #include "gc/serial/defNewGeneration.hpp"
+#include "gc/serial/generation.hpp"
 #include "gc/serial/vmStructs_serial.hpp"
 #endif
 #if INCLUDE_SHENANDOAHGC
