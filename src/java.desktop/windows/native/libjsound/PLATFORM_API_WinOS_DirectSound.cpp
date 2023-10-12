@@ -184,7 +184,7 @@ INT32 DAUDIO_GetDirectAudioDeviceCount() {
         return 0;
     }
 
-    HRESULT hr=::CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+    HRESULT hr = ::CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
     if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) {
         DS_unlockCache();
         return 0;
