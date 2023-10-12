@@ -678,7 +678,11 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitForeachLoop(JCEnhancedForLoop tree) {
-        visitLooped(tree, super::visitForeachLoop);
+        visitLooped(tree, foreach -> {
+            scan(foreach.expr);
+            refs.discardExprs(depth);       // we don't handle iterator() yet
+            scan(foreach.body);
+        });
     }
 
     @Override
@@ -729,7 +733,10 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitLambda(JCLambda lambda) {
-        visitDeferred(() -> visitScoped(false, () -> super.visitLambda(lambda)));
+        visitDeferred(() -> visitScoped(false, () -> {
+            scan(lambda.body);
+            refs.discardExprs(depth);       // needed in case body is a JCExpression
+        }));
     }
 
     @Override

@@ -392,19 +392,8 @@ NET_GetSockOpt(int s, int level, int optname, void *optval,
     return rv;
 }
 
-JNIEXPORT int JNICALL
-NET_SocketAvailable(int s, int *pbytes) {
-    u_long arg;
-    if (ioctlsocket((SOCKET)s, FIONREAD, &arg) == SOCKET_ERROR) {
-        return -1;
-    } else {
-        *pbytes = (int) arg;
-        return 0;
-    }
-}
-
 /*
- * Sets SO_ECLUSIVEADDRUSE if SO_REUSEADDR is not already set.
+ * Sets SO_EXCLUSIVEADDRUSE if SO_REUSEADDR is not already set.
  */
 void setExclusiveBind(int fd) {
     int parg = 0;

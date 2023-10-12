@@ -1138,8 +1138,8 @@ static inline julong uabs(jlong n) { return uabs((julong)n); }
 static inline unsigned int uabs(int n) { return uabs((unsigned int)n); }
 
 // "to" should be greater than "from."
-inline intx byte_size(void* from, void* to) {
-  return (address)to - (address)from;
+inline size_t byte_size(void* from, void* to) {
+  return pointer_delta(to, from, sizeof(char));
 }
 
 // Pack and extract shorts to/from ints:
