@@ -359,9 +359,9 @@ public:
         tty->print(" scale = %d, ", scale_dependency());
         if (invar_dependency() == nullptr) {
           tty->print_cr("no invar");
-	} else {
+        } else {
           tty->print_cr("invar[%d]", invar_dependency()->_idx);
-	}
+        }
       }
     } else {
       tty->print_cr("no solution: %s", reason());
