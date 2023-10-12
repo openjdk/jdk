@@ -24,6 +24,7 @@
 /*
  * @test
  * @library ../ /test/lib
+ * @requires vm.debug
  * @run main/othervm
  *   -Xms1g -Xmx1g
  *   -XX:+CheckUnhandledOops
