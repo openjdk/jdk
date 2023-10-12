@@ -256,28 +256,22 @@
  * unresolved labels) affects internal tools and may cause exceptions later in
  * the classfile building process.
  * <p>
- * Syntax validation is applied during symbolic descriptors construction.
- * For example {@link java.lang.constant.ClassDesc#of} validates the class binary
- * name or {@link java.lang.constant.ClassDesc#ofDescriptor} validates the class
- * descriptor syntax.
- * <p>
- * Using symbolic descriptors assures the right serial form selection by
- * the ClassFile API library. For example a class name is stored in its internal
- * form as constant pool class entry or in a class descriptor form when represents
- * an array or as constant pool Utf8 entry in a class descriptor form when referenced
- * from an annotation. The library always converts symbols to the right serial
- * forms based on the actual context. Following example accepts syntactically
- * validated class binary name and performs conversion to internal class name.
+ * Using nominal descriptors assures the right serial form is applied by the
+ * ClassFile API library based on the actual context. Also these nominal
+ * descriptors are validated during their construction, so it is not possible to
+ * create them with invalid content by mistake. Following example pass class
+ * name to the {@link java.lang.constant.ClassDesc#of} method for validation
+ * and the library performs automatic conversion to the right internal form of
+ * the class name when serialized in the constant pool as a class entry.
  * {@snippet lang=java :
  * var validClassEntry = constantPoolBuilder.classEntry(ClassDesc.of("mypackage.MyClass"));
  * }
  * <p>
  * On the other hand it is possible to use builders methods and factories accepting
- * constant pool entries to avoid any form of syntax validation or conversion.
- * Constant pool entries can be constructed from raw values, with no additional
- * syntactic checks, conversions or validations. In the following example is
- * wrongly used binary class name and it is serialized without any validation or
- * conversion.
+ * constant pool entries directly. Constant pool entries can be constructed also
+ * directly from raw values, with no additional conversions or validations.
+ * Following example uses intentionally wrong class name form and it is applied
+ * without any validation or conversion. 
  * {@snippet lang=java :
  * var invalidClassEntry = constantPoolBuilder.classEntry(
  *                             constantPoolBuilder.utf8Entry("mypackage.MyClass"));
@@ -398,13 +392,9 @@
  * resulting in many unreferenced constant pool entries.
  *
  * <h3>Transformation handling of unknown classfile elements</h3>
- * Future JDK releases may introduce new classfile elements, not known at the
- * development time of a custom transformation code.
- * To achieve deterministic stability of transformations running on future JDK
- * releases it is desired to set appropriate response to classfile elements
- * unknown at the development time.
- * <p>
- * Classfile transforms interested in consuming all classfile elements should be
+ * Custom classfile transformations might be unaware of classfile elements
+ * introduced by future JDK releases. To achieve deterministic stability,
+ * classfile transforms interested in consuming all classfile elements should be
  * implemented strictly to throw exceptions if a new and unknown classfile
  * element appears. As for example in the following strict compatibility-checking
  * code transformation snippet:
