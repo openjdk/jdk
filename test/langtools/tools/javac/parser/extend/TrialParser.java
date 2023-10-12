@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ class TrialParser extends JavacParser {
             JCExpression pid = qualident(false);
             accept(SEMI);
             JCPackageDecl pd = F.at(packagePos).PackageDecl(annotations, pid);
-            attach(pd, firstToken.comment(CommentStyle.JAVADOC));
+            attach(pd, firstToken.docComment());
             storeEnd(pd, token.pos);
             defs.append(pd);
         }
@@ -114,9 +114,9 @@ class TrialParser extends JavacParser {
                 defs.append(importDeclaration());
                 break;
             } else {
-                Comment docComment = token.comment(CommentStyle.JAVADOC);
+                Comment docComment = token.docComment();
                 if (firstTypeDecl && !seenImport && !seenPackage) {
-                    docComment = firstToken.comment(CommentStyle.JAVADOC);
+                    docComment = firstToken.docComment();
                 }
                 List<? extends JCTree> udefs = aUnit(mods, docComment);
                 for (JCTree def : udefs) {

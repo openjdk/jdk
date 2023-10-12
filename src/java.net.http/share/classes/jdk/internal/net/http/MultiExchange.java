@@ -91,7 +91,7 @@ class MultiExchange<T> implements Cancelable {
     Exchange<T> previous;
     volatile Throwable retryCause;
     volatile boolean expiredOnce;
-    volatile HttpResponse<T> response = null;
+    volatile HttpResponse<T> response;
 
     // Maximum number of times a request will be retried/redirected
     // for any reason
@@ -278,13 +278,18 @@ class MultiExchange<T> implements Cancelable {
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         boolean cancelled = this.cancelled;
+        boolean firstCancel = false;
         if (!cancelled && mayInterruptIfRunning) {
             if (interrupted.get() == null) {
-                interrupted.compareAndSet(null,
+                firstCancel = interrupted.compareAndSet(null,
                         new CancellationException("Request cancelled"));
-                debug.log("multi exchange recording: " + interrupted.get());
-            } else {
-                debug.log("multi exchange recorded: " + interrupted.get());
+            }
+            if (debug.on()) {
+                if (firstCancel) {
+                    debug.log("multi exchange recording: " + interrupted.get());
+                } else {
+                    debug.log("multi exchange recorded: " + interrupted.get());
+                }
             }
             this.cancelled = true;
             var exchange = getExchange();
@@ -377,17 +382,30 @@ class MultiExchange<T> implements Cancelable {
                     }).exceptionallyCompose(this::whenCancelled);
     }
 
+    // returns a CancellationExcpetion that wraps the given cause
+    // if cancel(boolean) was called, the given cause otherwise
+    private Throwable wrapIfCancelled(Throwable cause) {
+        CancellationException interrupt = interrupted.get();
+        if (interrupt == null) return cause;
+
+        var cancel = new CancellationException(interrupt.getMessage());
+        // preserve the stack trace of the original exception to
+        // show where the call to cancel(boolean) came from
+        cancel.setStackTrace(interrupt.getStackTrace());
+        cancel.initCause(Utils.getCancelCause(cause));
+        return cancel;
+    }
+
+    // if the request failed because the multi exchange was cancelled,
+    // make sure the reported exception is wrapped in CancellationException
     private CompletableFuture<HttpResponse<T>> whenCancelled(Throwable t) {
-        CancellationException x = interrupted.get();
-        if (x != null) {
-            // make sure to fail with CancellationException if cancel(true)
-            // was called.
-            t = x.initCause(Utils.getCancelCause(t));
+        var x = wrapIfCancelled(t);
+        if (x instanceof CancellationException) {
             if (debug.on()) {
-                debug.log("MultiExchange interrupted with: " + t.getCause());
+                debug.log("MultiExchange interrupted with: " + x.getCause());
             }
         }
-        return MinimalFuture.failedFuture(t);
+        return MinimalFuture.failedFuture(x);
     }
 
     static class NullSubscription implements Flow.Subscription {
