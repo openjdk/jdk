@@ -4158,7 +4158,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             intCompact >= 0 && intCompact < Integer.MAX_VALUE) {
             // currency fast path
             int highInt = (int)intCompact / 100;
-            short pair = DecimalDigits.digitPair((int)intCompact - highInt * 100);
+            short pair = DecimalDigits.digitPair((int)intCompact % 100);
             return "" + highInt + '.' + (char)(pair & 0xff) + (char)(pair >> 8);
         }
 
