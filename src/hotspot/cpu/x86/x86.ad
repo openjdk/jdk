@@ -8971,8 +8971,8 @@ instruct vmasked_store_evex(memory mem, vec src, kReg mask) %{
 %}
 
 #ifdef _LP64
-instruct verify_alignment(rRegP r, rRegL mask, rRegP tmp) %{
-  match(Set r (VerifyAlignment r mask));
+instruct verify_vector_alignment(rRegP r, rRegL mask, rRegP tmp) %{
+  match(Set r (VerifyVectorAlignment r mask));
   effect(TEMP tmp);
   format %{ "verify_alignment $r $mask \t! verify alignment" %}
   ins_encode %{

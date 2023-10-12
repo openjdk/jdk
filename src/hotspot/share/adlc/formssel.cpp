@@ -794,7 +794,7 @@ bool InstructForm::captures_bottom_type(FormDict &globals) const {
        !strcmp(_matrule->_rChild->_opType,"StrInflatedCopy") ||
        !strcmp(_matrule->_rChild->_opType,"VectorCmpMasked")||
        !strcmp(_matrule->_rChild->_opType,"VectorMaskGen")||
-       !strcmp(_matrule->_rChild->_opType,"VerifyAlignment")||
+       !strcmp(_matrule->_rChild->_opType,"VerifyVectorAlignment")||
        !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeP") ||
        !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeN"))) return true;
   else if ( is_ideal_load() == Form::idealP )                return true;

@@ -336,8 +336,8 @@ const class TypePtr *MachNode::adr_type() const {
     return adr_type;      // get_base_and_disp has the answer
   }
 
-  if (base != nullptr && base->is_Mach() && base->as_Mach()->ideal_Opcode() == Op_VerifyAlignment) {
-    // For VerifyAlignment we just pass the type through
+  if (base != nullptr && base->is_Mach() && base->as_Mach()->ideal_Opcode() == Op_VerifyVectorAlignment) {
+    // For VerifyVectorAlignment we just pass the type through
     return base->bottom_type()->is_ptr();
   }
 

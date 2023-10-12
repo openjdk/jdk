@@ -1045,10 +1045,10 @@ class StoreVectorScatterMaskedNode : public StoreVectorNode {
 // }
 //
 // This node is used just before a vector load/store with -XX:+VerifyAlignVector
-class VerifyAlignmentNode : public Node {
+class VerifyVectorAlignmentNode : public Node {
   virtual uint hash() const { return NO_HASH; };
 public:
-  VerifyAlignmentNode(Node* adr, Node* mask) : Node(nullptr, adr, mask) {}
+  VerifyVectorAlignmentNode(Node* adr, Node* mask) : Node(nullptr, adr, mask) {}
 public:
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return in(1)->bottom_type(); }
