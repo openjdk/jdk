@@ -40,17 +40,10 @@ class PSCardTable: public CardTable {
   class StripeShadowTable {
     CardValue _table[num_cards_in_stripe];
     const CardValue* _table_base;
-#ifdef ASSERT
-    const CardValue* _table_end;
-#endif
 
    public:
     StripeShadowTable(PSCardTable* pst, MemRegion stripe) :
-      _table_base(_table - (uintptr_t(stripe.start()) >> _card_shift))
-#ifdef ASSERT
-      , _table_end((const CardValue*)(uintptr_t(_table) + (align_up(stripe.byte_size(), _card_size) >> _card_shift)))
-#endif
-    {
+      _table_base(_table - (uintptr_t(stripe.start()) >> _card_shift)) {
       // Old gen top is not card aligned.
       size_t copy_length = align_up(stripe.byte_size(), _card_size) >> _card_shift;
       size_t clear_length = align_down(stripe.byte_size(), _card_size) >> _card_shift;
@@ -59,7 +52,7 @@ class PSCardTable: public CardTable {
     }
 
     HeapWord* addr_for(const CardValue* const card) {
-      assert(card >= _table && card <= _table_end, "out of bounds");
+      assert(card >= _table && card <=  &_table[num_cards_in_stripe], "out of bounds");
       return (HeapWord*) ((card - _table_base) << _card_shift);
     }
 
@@ -72,14 +65,14 @@ class PSCardTable: public CardTable {
     }
 
     bool is_clean(const CardValue* const card) {
-      assert(card >= _table && card < _table_end, "out of bounds");
+      assert(card >= _table && card <  &_table[num_cards_in_stripe], "out of bounds");
       return *card == PSCardTable::clean_card_val();
     }
 
     const CardValue* find_first_dirty_card(const CardValue* const start,
                                            const CardValue* const end) {
       for (const CardValue* i = start; i < end; ++i) {
-        if (!is_clean(i)) {
+        if (is_dirty(i)) {
           return i;
         }
       }

@@ -152,24 +152,6 @@ void PSCardTable::process_range(Func&& object_start,
   assert(start < end, "precondition");
   assert(is_card_aligned(start), "precondition");
 
-  // Helper struct to keep the following code compact.
-  struct Obj {
-    HeapWord* addr;
-    oop obj;
-    bool is_obj_array;
-    HeapWord* end_addr;
-    Obj(HeapWord* o_addr) : addr(o_addr),
-                            obj(cast_to_oop(o_addr)),
-                            is_obj_array(obj->is_objArray()),
-                            end_addr(addr + obj->size()) {}
-    void next() {
-      addr = end_addr;
-      obj = cast_to_oop(addr);
-      is_obj_array = obj->is_objArray();
-      end_addr = addr + obj->size();
-    }
-  };
-
   StripeShadowTable sct(this, MemRegion(start, end));
 
   // end might not be card-aligned
@@ -191,29 +173,33 @@ void PSCardTable::process_range(Func&& object_start,
     HeapWord* addr_r = MIN2(sct.addr_for(dirty_r), end);
 
     // Scan objects overlapping [addr_l, addr_r) limited to [start, end)
-    Obj obj(object_start(addr_l));
+    HeapWord* obj_addr = object_start(addr_l);
 
     while (true) {
-      assert(obj.addr < addr_r, "inv");
+      assert(obj_addr < addr_r, "inv");
 
-      if (obj.is_obj_array) {
+      oop obj = cast_to_oop(obj_addr);
+      const bool is_obj_array = obj->is_objArray();
+      HeapWord* const obj_end_addr = obj_addr + obj->size();
+
+      if (is_obj_array) {
         // precise-marked
-        scan_obj_with_limit(pm, obj.obj, addr_l, addr_r);
+        scan_obj_with_limit(pm, obj, addr_l, addr_r);
       } else {
-        if (obj.addr < i_addr && i_addr > start) {
+        if (obj_addr < i_addr && i_addr > start) {
           // already-scanned
         } else {
-          scan_obj_with_limit(pm, obj.obj, addr_l, end);
+          scan_obj_with_limit(pm, obj, addr_l, end);
         }
       }
 
-      if (obj.end_addr >= addr_r) {
-        i_addr = obj.is_obj_array ? addr_r : obj.end_addr;
+      if (obj_end_addr >= addr_r) {
+        i_addr = is_obj_array ? addr_r : obj_end_addr;
         break;
       }
 
       // move to next obj inside this dirty chunk
-      obj.next();
+      obj_addr = obj_end_addr;
     }
 
     // Finished a dirty chunk
@@ -304,12 +290,9 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
   struct {
     HeapWord* start_addr;
     HeapWord* end_addr;
-    DEBUG_ONLY(HeapWord* _prev_query);
-  } cached_obj {nullptr, old_gen_bottom DEBUG_ONLY(COMMA nullptr)};
+  } cached_obj {nullptr, old_gen_bottom};
 
   auto object_start = [&] (HeapWord* addr) {
-    assert(cached_obj._prev_query <= addr, "precondition");
-    DEBUG_ONLY(cached_obj._prev_query = addr);
     if (addr < cached_obj.end_addr) {
       assert(cached_obj.start_addr != nullptr, "inv");
       return cached_obj.start_addr;
@@ -329,7 +312,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
   preprocess_card_table_parallel(object_start, old_gen_bottom, old_gen_top, stripe_index, n_stripes);
 
   // Reset cached object
-  cached_obj = {nullptr, old_gen_bottom DEBUG_ONLY(COMMA nullptr)};
+  cached_obj = {nullptr, old_gen_bottom};
 
   // Scavenge
   HeapWord* cur_addr = old_gen_bottom + stripe_index * stripe_size_in_words;
