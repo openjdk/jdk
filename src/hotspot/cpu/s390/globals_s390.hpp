@@ -78,8 +78,7 @@ define_pd_global(bool, CompactStrings, true);
 // 8146801 (Short Array Allocation): No performance work done here yet.
 define_pd_global(intx, InitArrayShortSize, 1*BytesPerLong);
 
-// Not implemented yet
-define_pd_global(uint, SecondarySuperMissBackoff, 0);
+define_pd_global(uint, SecondarySuperMissBackoff, 1000);
 
 #define ARCH_FLAGS(develop,                                                   \
                    product,                                                   \
