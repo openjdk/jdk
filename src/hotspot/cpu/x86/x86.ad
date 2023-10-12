@@ -8971,20 +8971,15 @@ instruct vmasked_store_evex(memory mem, vec src, kReg mask) %{
 %}
 
 #ifdef _LP64
-instruct verify_vector_alignment(rRegP r, rRegL mask, rRegP tmp) %{
+instruct verify_vector_alignment(rRegP r, immL32 mask) %{
   match(Set r (VerifyVectorAlignment r mask));
-  effect(TEMP tmp);
-  format %{ "verify_alignment $r $mask \t! verify alignment" %}
+  format %{ "verify_vector_alignment $r $mask \t! verify alignment" %}
   ins_encode %{
-    Register Rr = $r$$Register;
-    Register Rmask = $mask$$Register;
-    Register Rtmp = $tmp$$Register;
     Label Lskip;
-    __ movq(Rtmp, Rr);    // copy r to tmp
-    __ andq(Rtmp, Rmask); // mask off tmp
-    __ cmpq(Rtmp, 0x0);   // check if zero
+    // check if masked bits of r are zero
+    __ testq($r$$Register, $mask$$constant);
     __ jccb(Assembler::equal, Lskip);
-    __ stop("verify_alignment found a misaligned vector memory access");
+    __ stop("verify_vector_alignment found a misaligned vector memory access");
     __ bind(Lskip);
   %}
   ins_pipe( pipe_slow );
