@@ -3669,7 +3669,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 #ifdef ASSERT
 #ifdef AMD64
     // Add VerifyAlignment node between adr and load / store.
-    if (AlignVector && VerifyAlignVector) {
+    if (VerifyAlignVector) {
       bool must_verify_alignment = n->is_LoadVector() ? n->as_LoadVector()->must_verify_alignment() :
                                                         n->as_StoreVector()->must_verify_alignment();
       if (must_verify_alignment) {

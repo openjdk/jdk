@@ -33,6 +33,7 @@
 #include "opto/output.hpp"
 #include "opto/runtime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/globals_extension.hpp"
 #include "utilities/macros.hpp"
 
 
@@ -62,6 +63,13 @@ const char* C2Compiler::retry_no_superword() {
 void compiler_stubs_init(bool in_compiler_thread);
 
 bool C2Compiler::init_c2_runtime() {
+
+#ifdef ASSERT
+  if (!AlignVector && VerifyAlignVector) {
+    warning("VerifyAlignVector disabled because AlignVector not enabled.");
+    FLAG_SET_CMDLINE(VerifyAlignVector, false);
+  }
+#endif
 
   // Check assumptions used while running ADLC
   Compile::adlc_verification();

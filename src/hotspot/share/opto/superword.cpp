@@ -3016,7 +3016,7 @@ bool SuperWord::output() {
 
 #ifdef ASSERT
       // Mark Load/Store Vector for alignment verification
-      if (AlignVector && VerifyAlignVector && cl->is_main_loop()) {
+      if (VerifyAlignVector) {
         if (vn->Opcode() == Op_LoadVector) {
           vn->as_LoadVector()->set_must_verify_alignment();
         } else if (vn->Opcode() == Op_StoreVector) {
