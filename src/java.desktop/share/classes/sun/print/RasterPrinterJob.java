@@ -90,6 +90,7 @@ import javax.print.attribute.standard.PrinterIsAcceptingJobs;
 import javax.print.attribute.standard.RequestingUserName;
 import javax.print.attribute.standard.SheetCollate;
 import javax.print.attribute.standard.Sides;
+import javax.print.attribute.standard.OutputBin;
 
 /**
  * A class which rasterizes a printer job.
@@ -279,6 +280,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
     private PageRanges pageRangesAttr;
     protected PrinterResolution printerResAttr;
     protected Sides sidesAttr;
+    protected OutputBin outputBinAttr;
     protected String destinationAttr;
     protected boolean noJobSheet = false;
     protected int mDestType = RasterPrinterJob.FILE;
@@ -1228,6 +1230,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
         /*  reset all values to defaults */
         setCollated(false);
         sidesAttr = null;
+        outputBinAttr = null;
         printerResAttr = null;
         pageRangesAttr = null;
         copiesAttr = 0;
@@ -1272,6 +1275,11 @@ public abstract class RasterPrinterJob extends PrinterJob {
         sidesAttr = (Sides)attributes.get(Sides.class);
         if (!isSupportedValue(sidesAttr,  attributes)) {
             sidesAttr = Sides.ONE_SIDED;
+        }
+
+        outputBinAttr = (OutputBin)attributes.get(OutputBin.class);
+        if (!isSupportedValue(outputBinAttr,  attributes)) {
+            outputBinAttr = null;
         }
 
         printerResAttr = (PrinterResolution)attributes.get(PrinterResolution.class);

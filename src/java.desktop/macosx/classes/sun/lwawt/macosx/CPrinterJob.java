@@ -46,6 +46,7 @@ import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.PageRanges;
 import javax.print.attribute.standard.Sides;
+import javax.print.attribute.standard.OutputBin;
 import javax.print.attribute.Attribute;
 
 import sun.java2d.*;
@@ -69,6 +70,8 @@ public final class CPrinterJob extends RasterPrinterJob {
     private static Font defaultFont;
 
     private String tray = null;
+
+    private String outputBin = null;
 
     // This is the NSPrintInfo for this PrinterJob. Protect multi thread
     //  access to it. It is used by the pageDialog, jobDialog, and printLoop.
@@ -191,6 +194,8 @@ public final class CPrinterJob extends RasterPrinterJob {
             tray = customTray.getChoiceName();
         }
 
+        outputBin = getOutputBinValue(attributes.get(OutputBin.class));
+
         PageRanges pageRangesAttr =  (PageRanges)attributes.get(PageRanges.class);
         if (isSupportedValue(pageRangesAttr, attributes)) {
             SunPageSelection rangeSelect = (SunPageSelection)attributes.get(SunPageSelection.class);
@@ -207,6 +212,28 @@ public final class CPrinterJob extends RasterPrinterJob {
                 setPageRange(-1, -1);
             }
         }
+    }
+
+    private String getOutputBinValue(Attribute attr) {
+        if (attr instanceof CustomOutputBin customOutputBin) {
+            return customOutputBin.getChoiceName();
+        } else if (attr instanceof OutputBin outputBin) {
+            String name = outputBin.toString().replace('-', ' ');
+            PrintService ps = getPrintService();
+            if (ps == null) {
+                return name;
+            }
+            OutputBin[] supportedBins = (OutputBin[]) ps.getSupportedAttributeValues(OutputBin.class, null, null);
+            for (OutputBin bin : supportedBins) {
+                System.out.printf("  compare with supported bin: %s%n", bin);
+                CustomOutputBin customBin = (CustomOutputBin) bin;
+                if (customBin.getCustomName().equalsIgnoreCase(name)) {
+                    return customBin.getChoiceName();
+                }
+            }
+            return name;
+        }
+        return null;
     }
 
     private void setPageRangeAttribute(int from, int to, boolean isRangeSet) {
@@ -656,6 +683,10 @@ public final class CPrinterJob extends RasterPrinterJob {
 
     private String getPrinterTray() {
         return tray;
+    }
+
+    private String getOutputBin() {
+        return outputBin;
     }
 
     private void setPrinterServiceFromNative(String printerName) {

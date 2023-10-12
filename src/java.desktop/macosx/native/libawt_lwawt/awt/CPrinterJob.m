@@ -468,6 +468,7 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
     DECLARE_METHOD(jm_getPageFormat, sjc_CPrinterJob, "getPageFormatFromAttributes", "()Ljava/awt/print/PageFormat;");
     DECLARE_METHOD(jm_getDestinationFile, sjc_CPrinterJob, "getDestinationFile", "()Ljava/lang/String;");
     DECLARE_METHOD(jm_getSides, sjc_CPrinterJob, "getSides", "()I");
+    DECLARE_METHOD(jm_getOutputBin, sjc_CPrinterJob, "getOutputBin", "()Ljava/lang/String;");
 
 
     NSMutableDictionary* printingDictionary = [dst dictionary];
@@ -536,6 +537,15 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
         PMPrintSettings printSettings = dst.PMPrintSettings;
         if (PMSetDuplex(printSettings, duplexMode) == noErr) {
             [dst updateFromPMPrintSettings];
+        }
+    }
+
+    jobject outputBin = (*env)->CallObjectMethod(env, srcPrinterJob, jm_getOutputBin);
+    CHECK_EXCEPTION();
+    if (outputBin != NULL) {
+        NSString *nsOutputBinStr = JavaStringToNSString(env, outputBin);
+        if (nsOutputBinStr != nil) {
+            [[dst printSettings] setObject:nsOutputBinStr forKey:@"OutputBin"];
         }
     }
 }
