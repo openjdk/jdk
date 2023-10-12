@@ -200,7 +200,7 @@ void PSCardTable::process_range(Func&& object_start,
         // precise-marked
         scan_obj_with_limit(pm, obj.obj, addr_l, addr_r);
       } else {
-        if (obj.addr < i_addr && obj.addr > start) {
+        if (obj.addr < i_addr && i_addr > start) {
           // already-scanned
         } else {
           scan_obj_with_limit(pm, obj.obj, addr_l, end);
