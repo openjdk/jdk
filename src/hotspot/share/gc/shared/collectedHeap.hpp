@@ -208,7 +208,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
     Shenandoah
   };
 
-
  protected:
   // Get a pointer to the derived heap object.  Used to implement
   // derived class heap() functions rather than being called directly.
