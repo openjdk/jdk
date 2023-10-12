@@ -177,22 +177,26 @@ class Inet4Address extends InetAddress {
     }
 
     /**
-     * Parses string as an IPv4 address literal.
-     * If string contains a non-parsable literal and {@code throwIAE} is set to {@code false}
-     * - {@code null} is returned.
-     * If string contains a non-parsable literal and {@code throwIAE} is set to {@code true}
-     * - {@code IllegalArgumentException} is thrown.
+     * Parses the given string as an IPv4 address literal.
+     * If the given {@code addressLiteral} string cannot be parsed as an IPv4 address literal
+     * and {@code throwIAE} is {@code false}, {@code null} is returned.
+     * If the given {@code addressLiteral} string cannot be parsed as an IPv4 address literal
+     * and {@code throwIAE} is {@code true}, an {@code IllegalArgumentException} is thrown.
      * If string contains an {@linkplain IPAddressUtil#validateNumericFormatV4(String, boolean)
      * ambiguous literal} - {@code IllegalArgumentException} is thrown irrelevant to
      * {@code throwIAE} value.
      * @param addressLiteral IPv4 address literal to parse
-     * @param throwIAE throw {@code IllegalArgumentException} if the
-     *                 literal cannot be parsed as an IPv4 address literal.
+     * @param throwIAE whether to throw {@code IllegalArgumentException} if the
+     *                 given {@code addressLiteral} string cannot be parsed as
+     *                 an IPv4 address literal.
      * @return {@code Inet4Address} object constructed from the address literal;
      *         or {@code null} if the literal cannot be parsed as an IPv4 address
-     * @throws IllegalArgumentException if ambiguous IPv4 literal is specified,
-     * or non-parsable IPv4 literal is specified with {@code throwIAE} set to
-     * {@code true}.
+     * @throws IllegalArgumentException if the given {@code addressLiteral} string
+     * cannot be parsed as an IPv4 address literal and {@code throwIAE} is {@code true}.
+     * An {@code IllegalArgumentException} is also thrown regardless of the value of
+     * {@code throwIAE} if the given {@code addressLiteral} string is ambiguous, that is,
+     * it cannot be parsed as a valid IPv4 address literal using decimal notation but could be
+     * interpreted as an IPv4 address in some other representation (octal, hexadecimal, or mixed).
      */
     static Inet4Address parseAddressString(String addressLiteral, boolean throwIAE) {
         byte [] addrBytes= IPAddressUtil.validateNumericFormatV4(addressLiteral, throwIAE);
