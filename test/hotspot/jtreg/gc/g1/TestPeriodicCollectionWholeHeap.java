@@ -31,6 +31,13 @@ package gc.g1;
  */
 
 /**
+ * @test id=young-only-whole
+ * @requires vm.gc.G1 & vm.flagless
+ * @library /test/lib /
+ * @run driver gc.g1.TestPeriodicCollectionWholeHeap young-only-whole
+ */
+
+/**
  * @test id=concurrent
  * @requires vm.gc.G1 & vm.flagless
  * @library /test/lib /
@@ -38,10 +45,24 @@ package gc.g1;
  */
 
 /**
+ * @test id=concurrent-whole
+ * @requires vm.gc.G1 & vm.flagless
+ * @library /test/lib /
+ * @run driver gc.g1.TestPeriodicCollectionWholeHeap concurrent-whole
+ */
+
+/**
  * @test id=full
  * @requires vm.gc.G1 & vm.flagless
  * @library /test/lib /
  * @run driver gc.g1.TestPeriodicCollectionWholeHeap full
+ */
+
+/**
+ * @test id=full-whole
+ * @requires vm.gc.G1 & vm.flagless
+ * @library /test/lib /
+ * @run driver gc.g1.TestPeriodicCollectionWholeHeap full-whole
  */
 
 import java.util.ArrayList;
@@ -73,10 +94,29 @@ public class TestPeriodicCollectionWholeHeap {
 
         switch(mode) {
 
-            // Young GC should not prevent periodic GC to start.
+            // Young GC should prevent periodic GC to start.
             case "young-only": {
                 List<String> opts = new ArrayList<>();
                 opts.add("-XX:G1PeriodicGCInterval=3000");
+                opts.add("-XX:-G1PeriodicGCCheckWholeHeap");
+                opts.addAll(commonOpts);
+
+                ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(opts);
+                OutputAnalyzer output = new OutputAnalyzer(pb.start());
+
+                output.shouldContain(MSG_YOUNG);
+                output.shouldNotContain(MSG_CONCURRENT);
+                output.shouldNotContain(MSG_FULL);
+                output.shouldNotContain(MSG_PERIODIC);
+
+                break;
+            }
+
+            // Young GC should not prevent periodic GC to start.
+            case "young-only-whole": {
+                List<String> opts = new ArrayList<>();
+                opts.add("-XX:G1PeriodicGCInterval=3000");
+                opts.add("-XX:+G1PeriodicGCCheckWholeHeap");
                 opts.addAll(commonOpts);
 
                 ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(opts);
@@ -95,6 +135,27 @@ public class TestPeriodicCollectionWholeHeap {
                 List<String> opts = new ArrayList<>();
                 opts.add("-XX:G1PeriodicGCInterval=3000");
                 opts.add("-XX:+ExplicitGCInvokesConcurrent");
+                opts.add("-XX:-G1PeriodicGCCheckWholeHeap");
+                opts.addAll(commonOpts);
+                opts.add("1000");
+
+                ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(opts);
+                OutputAnalyzer output = new OutputAnalyzer(pb.start());
+
+                output.shouldContain(MSG_YOUNG);
+                output.shouldContain(MSG_CONCURRENT);
+                output.shouldNotContain(MSG_FULL);
+                output.shouldNotContain(MSG_PERIODIC);
+
+                break;
+            }
+
+            // Periodic GC should not start when concurrent GCs are running frequently.
+            case "concurrent-whole": {
+                List<String> opts = new ArrayList<>();
+                opts.add("-XX:G1PeriodicGCInterval=3000");
+                opts.add("-XX:+ExplicitGCInvokesConcurrent");
+                opts.add("-XX:+G1PeriodicGCCheckWholeHeap");
                 opts.addAll(commonOpts);
                 opts.add("1000");
 
@@ -114,6 +175,27 @@ public class TestPeriodicCollectionWholeHeap {
                 List<String> opts = new ArrayList<>();
                 opts.add("-XX:G1PeriodicGCInterval=3000");
                 opts.add("-XX:-ExplicitGCInvokesConcurrent");
+                opts.add("-XX:-G1PeriodicGCCheckWholeHeap");
+                opts.addAll(commonOpts);
+                opts.add("1000");
+
+                ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(opts);
+                OutputAnalyzer output = new OutputAnalyzer(pb.start());
+
+                output.shouldContain(MSG_YOUNG);
+                output.shouldNotContain(MSG_CONCURRENT);
+                output.shouldContain(MSG_FULL);
+                output.shouldNotContain(MSG_PERIODIC);
+
+                break;
+            }
+
+            // Periodic GC should not start when Full GCs are running frequently.
+            case "full-whole": {
+                List<String> opts = new ArrayList<>();
+                opts.add("-XX:G1PeriodicGCInterval=3000");
+                opts.add("-XX:-ExplicitGCInvokesConcurrent");
+                opts.add("-XX:+G1PeriodicGCCheckWholeHeap");
                 opts.addAll(commonOpts);
                 opts.add("1000");
 
