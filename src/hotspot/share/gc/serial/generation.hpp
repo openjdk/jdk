@@ -377,4 +377,4 @@ public:
 
 };
 
-#endif // SHARE_GC_SHARED_GENERATION_HPP
+#endif // SHARE_GC_SERIAL_GENERATION_HPP

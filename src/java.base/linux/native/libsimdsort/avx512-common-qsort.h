@@ -57,8 +57,17 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
-#include <immintrin.h>
 #include <limits>
+
+/*
+Workaround for the bug in GCC12 (that was fixed in GCC 12.3.1).
+More details are available at: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105593
+*/
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#pragma GCC diagnostic ignored "-Wuninitialized"
+#include <immintrin.h>
+#pragma GCC diagnostic pop
 
 #define X86_SIMD_SORT_INFINITY std::numeric_limits<double>::infinity()
 #define X86_SIMD_SORT_INFINITYF std::numeric_limits<float>::infinity()
