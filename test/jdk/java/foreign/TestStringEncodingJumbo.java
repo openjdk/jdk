@@ -40,6 +40,7 @@ import static org.testng.Assert.*;
  * @test
  * @modules java.base/jdk.internal.foreign
  * @requires sun.arch.data.model == "64"
+ * @requires vm.flavor != "zero"
  *
  * @run testng/othervm -Xmx6G TestStringEncodingJumbo
  */
