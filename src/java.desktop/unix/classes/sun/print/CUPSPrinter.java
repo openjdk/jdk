@@ -225,26 +225,13 @@ public class CUPSPrinter  {
             w = (float)(pageSizes[i*6+4]/PRINTER_DPI);
             y = (float)(pageSizes[i*6+5]/PRINTER_DPI);
 
-            msn = new CustomMediaSizeName(media[i*2], media[i*2+1],
-                                          width, length);
+            msn = CustomMediaSizeName.create(media[i*2], media[i*2+1],
+                                             width, length);
 
             // add to list of standard MediaSizeNames
             if ((cupsMediaSNames[i] = msn.getStandardMedia()) == null) {
                 // add custom if no matching standard media
                 cupsMediaSNames[i] = msn;
-
-                // add this new custom msn to MediaSize array
-                if ((width > 0.0) && (length > 0.0)) {
-                    try {
-                    new MediaSize(width, length,
-                                  Size2DSyntax.INCH, msn);
-                    } catch (IllegalArgumentException e) {
-                        /* PDF printer in Linux for Ledger paper causes
-                        "IllegalArgumentException: X dimension > Y dimension".
-                        We rotate based on IPP spec. */
-                        new MediaSize(length, width, Size2DSyntax.INCH, msn);
-                    }
-                }
             }
 
             // add to list of custom MediaSizeName
@@ -269,8 +256,8 @@ public class CUPSPrinter  {
 
         MediaTray mt;
         for (int i=0; i<nTrays; i++) {
-            mt = new CustomMediaTray(media[(nPageSizes+i)*2],
-                                     media[(nPageSizes+i)*2+1]);
+            mt = CustomMediaTray.create(media[(nPageSizes+i)*2],
+                                        media[(nPageSizes+i)*2+1]);
             cupsMediaTrays[i] = mt;
         }
 
