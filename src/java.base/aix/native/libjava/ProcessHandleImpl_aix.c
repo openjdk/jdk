@@ -39,13 +39,21 @@
 void os_initNative(JNIEnv *env, jclass clazz) {}
 
 /*
- * Returns the children of the requested pid and optionally each parent and
- * start time. If requested pid is zero return all processes.
- * Use getprocs64 to accumulate any process following the rule above.
- * The resulting pids are stored into the array of longs.
+ * Return pids of active processes, and optionally parent pids and
+ * start times for each process.
+ * For a specific non-zero pid, only the direct children are returned.
+ * If the pid is zero, all active processes are returned.
+ * Use getprocs64 to accumulate any process following the rules above.
+ * The resulting pids are stored into an array of longs named jarray.
  * The number of pids is returned if they all fit.
- * If the parentArray is non-null, store the parent pid.
- * If the array is too short, excess pids are not stored and
+ * If the parentArray is non-null, store also the parent pid.
+ * In this case the parentArray must have the same length as the result pid array.
+ * Of course in the case of a given non-zero pid all entries in the parentArray
+ * will contain this pid, so this array does only make sense in the case of a given
+ * zero pid.
+ * If the jstimesArray is non-null, store also the start time of the pid.
+ * In this case the jstimesArray must have the same length as the result pid array.
+ * If the array(s) (is|are) too short, excess pids are not stored and
  * the desired length is returned.
  */
 jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
@@ -106,19 +114,11 @@ jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
         while ((num = getprocs64(ProcessBuffer, sizeof(struct procentry64), NULL,
                                  sizeof(struct fdsinfo64), &idxptr, chunk)) != -1) {
             for (i = 0; i < num; i++) {
-                pid_t ppid = 0;
-                jlong startTime = 0L;
-
-                /* skip files that aren't numbers */
                 pid_t childpid = (pid_t) ProcessBuffer[i].pi_pid;
-                if ((int) childpid <= 0) {
-                    continue;
-                }
+                pid_t ppid = (pid_t) ProcessBuffer[i].pi_ppid;
 
                 // Get the parent pid, and start time
-                ppid = (pid_t) ProcessBuffer[i].pi_ppid;
-                startTime = ((jlong) ProcessBuffer[i].pi_start) *1000;
-                if (ppid >= 0 && (pid == 0 || ppid == pid)) {
+                if (pid == 0 || ppid == pid) {
                     if (count < arraySize) {
                         // Only store if it fits
                         pids[count] = (jlong) childpid;
@@ -129,7 +129,7 @@ jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
                         }
                         if (stimes != NULL) {
                             // Store the process start time
-                            stimes[count] = startTime;
+                            stimes[count] = ((jlong) ProcessBuffer[i].pi_start) * 1000;;
                         }
                     }
                     count++; // Count to tabulate size needed
