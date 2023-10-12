@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,9 +160,6 @@ int NET_IsZeroAddr(jbyte* caddr);
  * These work just like the system calls, except that they may do some
  * platform-specific pre/post processing of the arguments and/or results.
  */
-
-JNIEXPORT int JNICALL
-NET_SocketAvailable(int fd, int *pbytes);
 
 JNIEXPORT int JNICALL
 NET_GetSockOpt(int fd, int level, int opt, void *result, int *len);

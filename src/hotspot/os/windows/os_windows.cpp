@@ -2496,8 +2496,8 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #if defined(_M_ARM64)
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Sp;
-  assert(pc[0] == 0x83, "not an sdiv opcode"); //Fixme did i get the right opcode?
-  assert(ctx->X4 == min_jint, "unexpected idiv exception");
+  guarantee(pc[0] == 0x83, "not an sdiv opcode(0x83), the actual value = 0x%x", pc[0]); //Fixme did i get the right opcode?
+  guarantee(ctx->X4 == min_jint, "unexpected idiv exception, the actual value = %d while the expected is %d", ctx->X4, min_jint);
   // set correct result values and continue after idiv instruction
   ctx->Pc = (uint64_t)pc + 4;        // idiv reg, reg, reg  is 4 bytes
   ctx->X4 = (uint64_t)min_jint;      // result
@@ -2506,8 +2506,10 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #elif defined(_M_AMD64)
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Rip;
-  assert(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && pc[1] == 0xF7 || pc[0] == 0xF7, "not an idiv opcode");
-  assert(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && (pc[2] & ~0x7) == 0xF8 || (pc[1] & ~0x7) == 0xF8, "cannot handle non-register operands");
+  guarantee(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && pc[1] == 0xF7 || pc[0] == 0xF7,
+            "not an idiv opcode, pc[0] = 0x%x and pc[1] = 0x%x", pc[0], pc[1]);
+  guarantee(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && (pc[2] & ~0x7) == 0xF8 || (pc[1] & ~0x7) == 0xF8,
+            "cannot handle non-register operands, pc[0] = 0x%x, pc[1] = 0x%x and pc[2] = 0x%x", pc[0], pc[1], pc[2]);
   if (pc[0] == 0xF7) {
     // set correct result values and continue after idiv instruction
     ctx->Rip = (DWORD64)pc + 2;        // idiv reg, reg  is 2 bytes
@@ -2522,9 +2524,9 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #else
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Eip;
-  assert(pc[0] == 0xF7, "not an idiv opcode");
-  assert((pc[1] & ~0x7) == 0xF8, "cannot handle non-register operands");
-  assert(ctx->Eax == min_jint, "unexpected idiv exception");
+  guarantee(pc[0] == 0xF7, "not an idiv opcode(0xF7), the actual value = 0x%x", pc[1]);
+  guarantee((pc[1] & ~0x7) == 0xF8, "cannot handle non-register operands, the actual value = 0x%x", pc[1]);
+  guarantee(ctx->Eax == min_jint, "unexpected idiv exception, the actual value = %d while the expected is %d", ctx->Eax, min_jint);
   // set correct result values and continue after idiv instruction
   ctx->Eip = (DWORD)pc + 2;        // idiv reg, reg  is 2 bytes
   ctx->Eax = (DWORD)min_jint;      // result
