@@ -75,7 +75,6 @@ static BOOL isValidDisplayMode(CGDisplayModeRef mode) {
 
 static CFMutableArrayRef getAllValidDisplayModes(jint displayID){
     // CGDisplayCopyAllDisplayModes can return NULL if displayID is invalid
-
     CFArrayRef allModes = CGDisplayCopyAllDisplayModes(displayID, NULL);
     CFMutableArrayRef validModes = nil;
     if (allModes) {
