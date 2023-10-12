@@ -446,10 +446,6 @@ public interface JavaLangAccess {
      */
     Object classData(Class<?> c);
 
-    int stringSize(int i);
-
-    int getCharsLatin1(int i, int index, byte[] buf);
-
     long findNative(ClassLoader loader, String entry);
 
     /**

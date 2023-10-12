@@ -2544,14 +2544,6 @@ public final class System {
                 return sb.prepend(lengthCoder, buf);
             }
 
-            public int stringSize(int i) {
-                return Integer.stringSize(i);
-            }
-
-            public int getCharsLatin1(int i, int index, byte[] buf) {
-                return StringLatin1.getChars(i, index, buf);
-            }
-
             public String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
                 return String.join(prefix, suffix, delimiter, elements, size);
             }

@@ -30,8 +30,6 @@
 package java.math;
 
 import static java.math.BigInteger.LONG_MASK;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.StandardCharsets;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -40,8 +38,6 @@ import java.io.StreamCorruptedException;
 import java.util.Arrays;
 import java.util.Objects;
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.DecimalDigits;
 
 /**
@@ -313,8 +309,6 @@ import jdk.internal.util.DecimalDigits;
  * @since 1.1
  */
 public class BigDecimal extends Number implements Comparable<BigDecimal> {
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-
     /*
      * Let l = log_2(10).
      * Then, L < l < L + ulp(L) / 2, that is, L = roundTiesToEven(l).
@@ -4164,19 +4158,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             intCompact >= 0 && intCompact < Integer.MAX_VALUE) {
             // currency fast path
             int highInt = (int)intCompact / 100;
-            int highIntSize = JLA.stringSize(highInt);
-            byte[] buf = new byte[highIntSize + 3];
-            JLA.getCharsLatin1(highInt, highIntSize, buf);
-            buf[highIntSize] = '.';
-            DecimalDigits.writeDigitPairLatin1(
-                    buf,
-                    highIntSize + 1,
-                    (int) intCompact % 100);
-            try {
-                return JLA.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
-            } catch (CharacterCodingException e) {
-                throw new AssertionError(e);
-            }
+            short pair = DecimalDigits.digitPair((int)intCompact - highInt * 100);
+            return "" + highInt + '.' + (char)(pair & 0xff) + (char)(pair >> 8);
         }
 
         // Get the significand as an absolute value

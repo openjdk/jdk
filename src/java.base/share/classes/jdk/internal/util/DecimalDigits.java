@@ -159,10 +159,4 @@ public final class DecimalDigits implements Digits {
     public static short digitPair(int i) {
         return DIGITS[i];
     }
-
-    public static void writeDigitPairLatin1(byte[] buf, int charPos, int value) {
-        short pair = DIGITS[value];
-        buf[charPos] = (byte)(pair);
-        buf[charPos + 1] = (byte)(pair >> 8);
-    }
 }
