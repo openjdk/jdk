@@ -49,7 +49,7 @@ class GetPeerHostServer extends Thread
         try {
             SSLContext ctx = SSLContext.getInstance("TLS");
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            KeyStore ks = KeyStore.getInstance("JKS");
+            KeyStore ks = KeyStore.getInstance("PKCS12");
             char[] passphrase = "passphrase".toCharArray();
             String testRoot = System.getProperty("test.src", ".");
             ks.load(new FileInputStream(testRoot
