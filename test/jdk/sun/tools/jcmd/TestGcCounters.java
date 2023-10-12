@@ -10,11 +10,10 @@ import jdk.test.lib.process.OutputAnalyzer;
  *
  * @library /test/lib
  *
- * @run main/othervm TestGcCounters
+ * @run main/othervm -XX:+UsePerfData -XX:+UseStringDeduplication TestGcCounters
  */
 public class TestGcCounters {
 
-    private static final String[] VM_ARGS = new String[] { "-XX:+UsePerfData" };
     private static final String SUN_THREADS = "sun.threads";
     private static final String SUN_THREADS_GCCPU = "sun.threads.gc_cpu_time";
 
@@ -27,8 +26,7 @@ public class TestGcCounters {
      * jcmd -J-XX:+UsePerfData pid PerfCounter.print
      */
      private static void testGcCpuCountersExist() throws Exception {
-        OutputAnalyzer output = JcmdBase.jcmd(VM_ARGS,
-                new String[] {"PerfCounter.print"});
+        OutputAnalyzer output = JcmdBase.jcmd(new String[] {"PerfCounter.print"});
 
         output.shouldHaveExitValue(0);
         output.shouldContain(SUN_THREADS + ".total_gc_cpu_time");
@@ -36,6 +34,7 @@ public class TestGcCounters {
         output.shouldContain(SUN_THREADS_GCCPU + ".g1_conc_refine");
         output.shouldContain(SUN_THREADS_GCCPU + ".parallel_gc_workers");
         output.shouldContain(SUN_THREADS_GCCPU + ".vm");
+        output.shouldContain(SUN_THREADS_GCCPU + ".conc_dedup");
     }
 }
 
