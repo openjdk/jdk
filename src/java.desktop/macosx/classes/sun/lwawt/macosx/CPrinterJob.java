@@ -225,7 +225,6 @@ public final class CPrinterJob extends RasterPrinterJob {
             }
             OutputBin[] supportedBins = (OutputBin[]) ps.getSupportedAttributeValues(OutputBin.class, null, null);
             for (OutputBin bin : supportedBins) {
-                System.out.printf("  compare with supported bin: %s%n", bin);
                 CustomOutputBin customBin = (CustomOutputBin) bin;
                 if (customBin.getCustomName().equalsIgnoreCase(name)) {
                     return customBin.getChoiceName();
