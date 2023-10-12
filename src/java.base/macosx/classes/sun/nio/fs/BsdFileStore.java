@@ -101,7 +101,7 @@ class BsdFileStore
             UnixPath dir = new UnixPath(file().getFileSystem(), entry().dir());
             return isExtendedAttributesEnabled(dir);
         }
-        // POSIX attributes not supported on FAT
+        // POSIX attributes not supported on FAT32
         if (type == PosixFileAttributeView.class &&
             entry().fstype().equals("msdos"))
             return false;
@@ -112,7 +112,7 @@ class BsdFileStore
     public boolean supportsFileAttributeView(String name) {
         if (name.equals("user"))
             return supportsFileAttributeView(UserDefinedFileAttributeView.class);
-        // UNIX attributes not supported on FAT
+        // UNIX attributes not supported on FAT32
         if (name.equals("unix") && entry().fstype().equals("msdos"))
             return false;
         return super.supportsFileAttributeView(name);
