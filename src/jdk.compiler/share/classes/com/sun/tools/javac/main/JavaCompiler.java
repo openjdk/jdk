@@ -1144,21 +1144,18 @@ public class JavaCompiler {
         if (processors != null && processors.iterator().hasNext())
             explicitAnnotationProcessingRequested = true;
 
-        // Process annotations if processing is not disabled and there
-        // is at least one Processor available.
         if (options.isSet(PROC, "none")) {
             processAnnotations = false;
         } else if (procEnvImpl == null) {
             procEnvImpl = JavacProcessingEnvironment.instance(context);
             procEnvImpl.setProcessors(processors);
-            processAnnotations = procEnvImpl.atLeastOneProcessor();
+
+            // Process annotations if processing is requested and there
+            // is at least one Processor available.
+            processAnnotations = procEnvImpl.atLeastOneProcessor() &&
+                explicitAnnotationProcessingRequested();
 
             if (processAnnotations) {
-                if (!explicitAnnotationProcessingRequested() &&
-                    !optionsCheckingInitiallyDisabled) {
-                    log.note(Notes.ImplicitAnnotationProcessing);
-                }
-
                 options.put("parameters", "parameters");
                 reader.saveParameterNames = true;
                 keepComments = true;
@@ -1167,9 +1164,9 @@ public class JavaCompiler {
                     taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
                 deferredDiagnosticHandler = new Log.DeferredDiagnosticHandler(log);
                 procEnvImpl.getFiler().setInitialState(initialFiles, initialClassNames);
-            } else { // free resources
-                procEnvImpl.close();
             }
+        } else { // free resources
+            procEnvImpl.close();
         }
     }
 

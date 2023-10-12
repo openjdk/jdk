@@ -111,7 +111,6 @@
 # include <syscall.h>
 # include <sys/sysinfo.h>
 # include <sys/ipc.h>
-# include <sys/shm.h>
 # include <link.h>
 # include <stdint.h>
 # include <inttypes.h>
@@ -3607,14 +3606,17 @@ bool os::unguard_memory(char* addr, size_t size) {
   return linux_mprotect(addr, size, PROT_READ|PROT_WRITE);
 }
 
-int os::Linux::hugetlbfs_page_size_flag(size_t page_size) {
+static int hugetlbfs_page_size_flag(size_t page_size) {
   if (page_size != HugePages::default_static_hugepage_size()) {
     return (exact_log2(page_size) << MAP_HUGE_SHIFT);
   }
   return 0;
 }
 
-bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
+static bool hugetlbfs_sanity_check(size_t page_size) {
+  const os::PageSizes page_sizes = HugePages::static_info().pagesizes();
+  assert(page_sizes.contains(page_size), "Invalid page sizes passed");
+
   // Include the page size flag to ensure we sanity check the correct page size.
   int flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size);
   void *p = mmap(nullptr, page_size, PROT_READ|PROT_WRITE, flags, -1, 0);
@@ -3628,9 +3630,9 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
                          "checking if smaller large page sizes are usable",
                          byte_size_in_exact_unit(page_size),
                          exact_unit_for_byte_size(page_size));
-      for (size_t page_size_ = _page_sizes.next_smaller(page_size);
-          page_size_ != os::vm_page_size();
-          page_size_ = _page_sizes.next_smaller(page_size_)) {
+      for (size_t page_size_ = page_sizes.next_smaller(page_size);
+          page_size_ > os::vm_page_size();
+          page_size_ = page_sizes.next_smaller(page_size_)) {
         flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size_);
         p = mmap(nullptr, page_size_, PROT_READ|PROT_WRITE, flags, -1, 0);
         if (p != MAP_FAILED) {
@@ -3644,35 +3646,7 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
       }
   }
 
-  if (warn) {
-    warning("HugeTLBFS is not configured or not supported by the operating system.");
-  }
-
   return false;
-}
-
-bool os::Linux::shm_hugetlbfs_sanity_check(bool warn, size_t page_size) {
-  // Try to create a large shared memory segment.
-  int shmid = shmget(IPC_PRIVATE, page_size, SHM_HUGETLB|IPC_CREAT|SHM_R|SHM_W);
-  if (shmid == -1) {
-    // Possible reasons for shmget failure:
-    // 1. shmmax is too small for the request.
-    //    > check shmmax value: cat /proc/sys/kernel/shmmax
-    //    > increase shmmax value: echo "new_value" > /proc/sys/kernel/shmmax
-    // 2. not enough large page memory.
-    //    > check available large pages: cat /proc/meminfo
-    //    > increase amount of large pages:
-    //          sysctl -w vm.nr_hugepages=new_value
-    //    > For more information regarding large pages please refer to:
-    //      https://www.kernel.org/doc/Documentation/vm/hugetlbpage.txt
-    if (warn) {
-      warning("Large pages using UseSHM are not configured on this system.");
-    }
-    return false;
-  }
-  // Managed to create a segment, now delete it.
-  shmctl(shmid, IPC_RMID, nullptr);
-  return true;
 }
 
 // From the coredump_filter documentation:
@@ -3722,56 +3696,13 @@ void warn_no_large_pages_configured() {
   }
 }
 
-bool os::Linux::setup_large_page_type(size_t page_size) {
-  if (FLAG_IS_DEFAULT(UseHugeTLBFS) &&
-      FLAG_IS_DEFAULT(UseSHM) &&
-      FLAG_IS_DEFAULT(UseTransparentHugePages)) {
-
-    // The type of large pages has not been specified by the user.
-
-    // Try UseHugeTLBFS and then UseSHM.
-    UseHugeTLBFS = UseSHM = true;
-
-    // Don't try UseTransparentHugePages since there are known
-    // performance issues with it turned on. This might change in the future.
-    UseTransparentHugePages = false;
-  }
-
-  if (UseTransparentHugePages) {
-    UseHugeTLBFS = false;
-    UseSHM = false;
-    return true;
-  }
-
-  if (UseHugeTLBFS) {
-    bool warn_on_failure = !FLAG_IS_DEFAULT(UseHugeTLBFS);
-    if (hugetlbfs_sanity_check(warn_on_failure, page_size)) {
-      UseSHM = false;
-      return true;
-    }
-    UseHugeTLBFS = false;
-  }
-
-  if (UseSHM) {
-    bool warn_on_failure = !FLAG_IS_DEFAULT(UseSHM);
-    if (shm_hugetlbfs_sanity_check(warn_on_failure, page_size)) {
-      return true;
-    }
-    UseSHM = false;
-  }
-
-  warn_no_large_pages_configured();
-  return false;
-}
-
 struct LargePageInitializationLoggerMark {
   ~LargePageInitializationLoggerMark() {
     LogTarget(Info, pagesize) lt;
     if (lt.is_enabled()) {
       LogStream ls(lt);
       if (UseLargePages) {
-        ls.print_cr("UseLargePages=1, UseTransparentHugePages=%d, UseHugeTLBFS=%d, UseSHM=%d",
-                    UseTransparentHugePages, UseHugeTLBFS, UseSHM);
+        ls.print_cr("UseLargePages=1, UseTransparentHugePages=%d", UseTransparentHugePages);
         ls.print("Large page support enabled. Usable page sizes: ");
         os::page_sizes().print_on(&ls);
         ls.print_cr(". Default large page size: " EXACTFMT ".", EXACTFMTARGS(os::large_page_size()));
@@ -3805,19 +3736,14 @@ void os::large_page_init() {
 
   // 1) Handle the case where we do not want to use huge pages
   if (!UseLargePages &&
-      !UseTransparentHugePages &&
-      !UseHugeTLBFS &&
-      !UseSHM) {
+      !UseTransparentHugePages) {
     // Not using large pages.
     return;
   }
 
   if (!FLAG_IS_DEFAULT(UseLargePages) && !UseLargePages) {
     // The user explicitly turned off large pages.
-    // Ignore the rest of the large pages flags.
     UseTransparentHugePages = false;
-    UseHugeTLBFS = false;
-    UseSHM = false;
     return;
   }
 
@@ -3826,12 +3752,12 @@ void os::large_page_init() {
     if (!FLAG_IS_DEFAULT(UseTransparentHugePages)) {
       log_warning(pagesize)("UseTransparentHugePages disabled, transparent huge pages are not supported by the operating system.");
     }
-    UseLargePages = UseTransparentHugePages = UseHugeTLBFS = UseSHM = false;
+    UseLargePages = UseTransparentHugePages = false;
     return;
   }
   if (!UseTransparentHugePages && !HugePages::supports_static_hugepages()) {
     warn_no_large_pages_configured();
-    UseLargePages = UseTransparentHugePages = UseHugeTLBFS = UseSHM = false;
+    UseLargePages = UseTransparentHugePages = false;
     return;
   }
 
@@ -3855,6 +3781,8 @@ void os::large_page_init() {
 
     // 3) Consistency check and post-processing
 
+    size_t large_page_size = 0;
+
     // Check LargePageSizeInBytes matches an available page size and if so set _large_page_size
     // using LargePageSizeInBytes as the maximum allowed large page size. If LargePageSizeInBytes
     // doesn't match an available page size set _large_page_size to default_large_page_size
@@ -3862,29 +3790,39 @@ void os::large_page_init() {
    if (FLAG_IS_DEFAULT(LargePageSizeInBytes) ||
         LargePageSizeInBytes == 0 ||
         LargePageSizeInBytes == default_large_page_size) {
-      _large_page_size = default_large_page_size;
+      large_page_size = default_large_page_size;
       log_info(pagesize)("Using the default large page size: " SIZE_FORMAT "%s",
-                         byte_size_in_exact_unit(_large_page_size),
-                         exact_unit_for_byte_size(_large_page_size));
+                         byte_size_in_exact_unit(large_page_size),
+                         exact_unit_for_byte_size(large_page_size));
     } else {
       if (all_large_pages.contains(LargePageSizeInBytes)) {
-        _large_page_size = LargePageSizeInBytes;
+        large_page_size = LargePageSizeInBytes;
         log_info(pagesize)("Overriding default large page size (" SIZE_FORMAT "%s) "
                            "using LargePageSizeInBytes: " SIZE_FORMAT "%s",
                            byte_size_in_exact_unit(default_large_page_size),
                            exact_unit_for_byte_size(default_large_page_size),
-                           byte_size_in_exact_unit(_large_page_size),
-                           exact_unit_for_byte_size(_large_page_size));
+                           byte_size_in_exact_unit(large_page_size),
+                           exact_unit_for_byte_size(large_page_size));
       } else {
-        _large_page_size = default_large_page_size;
+        large_page_size = default_large_page_size;
         log_info(pagesize)("LargePageSizeInBytes is not a valid large page size (" SIZE_FORMAT "%s) "
                            "using the default large page size: " SIZE_FORMAT "%s",
                            byte_size_in_exact_unit(LargePageSizeInBytes),
                            exact_unit_for_byte_size(LargePageSizeInBytes),
-                           byte_size_in_exact_unit(_large_page_size),
-                           exact_unit_for_byte_size(_large_page_size));
+                           byte_size_in_exact_unit(large_page_size),
+                           exact_unit_for_byte_size(large_page_size));
       }
     }
+
+    // Do an additional sanity check to see if we can use the desired large page size
+    if (!hugetlbfs_sanity_check(large_page_size)) {
+      warn_no_large_pages_configured();
+      UseLargePages = false;
+      UseTransparentHugePages = false;
+      return;
+    }
+
+    _large_page_size = large_page_size;
 
     // Populate _page_sizes with large page sizes less than or equal to
     // _large_page_size.
@@ -3894,154 +3832,7 @@ void os::large_page_init() {
     }
   }
 
-  // Now determine the type of large pages to use:
-  UseLargePages = os::Linux::setup_large_page_type(_large_page_size);
-
   set_coredump_filter(LARGEPAGES_BIT);
-}
-
-#ifndef SHM_HUGETLB
-  #define SHM_HUGETLB 04000
-#endif
-
-#define shm_warning_format(format, ...)              \
-  do {                                               \
-    if (UseLargePages &&                             \
-        (!FLAG_IS_DEFAULT(UseLargePages) ||          \
-         !FLAG_IS_DEFAULT(UseSHM) ||                 \
-         !FLAG_IS_DEFAULT(LargePageSizeInBytes))) {  \
-      warning(format, __VA_ARGS__);                  \
-    }                                                \
-  } while (0)
-
-#define shm_warning(str) shm_warning_format("%s", str)
-
-#define shm_warning_with_errno(str)                \
-  do {                                             \
-    int err = errno;                               \
-    shm_warning_format(str " (error = %d)", err);  \
-  } while (0)
-
-static char* shmat_with_alignment(int shmid, size_t bytes, size_t alignment) {
-  assert(is_aligned(bytes, alignment), "Must be divisible by the alignment");
-
-  if (!is_aligned(alignment, SHMLBA)) {
-    assert(false, "Code below assumes that alignment is at least SHMLBA aligned");
-    return nullptr;
-  }
-
-  // To ensure that we get 'alignment' aligned memory from shmat,
-  // we pre-reserve aligned virtual memory and then attach to that.
-
-  char* pre_reserved_addr = anon_mmap_aligned(nullptr /* req_addr */, bytes, alignment);
-  if (pre_reserved_addr == nullptr) {
-    // Couldn't pre-reserve aligned memory.
-    shm_warning("Failed to pre-reserve aligned memory for shmat.");
-    return nullptr;
-  }
-
-  // SHM_REMAP is needed to allow shmat to map over an existing mapping.
-  char* addr = (char*)shmat(shmid, pre_reserved_addr, SHM_REMAP);
-
-  if ((intptr_t)addr == -1) {
-    int err = errno;
-    shm_warning_with_errno("Failed to attach shared memory.");
-
-    assert(err != EACCES, "Unexpected error");
-    assert(err != EIDRM,  "Unexpected error");
-    assert(err != EINVAL, "Unexpected error");
-
-    // Since we don't know if the kernel unmapped the pre-reserved memory area
-    // we can't unmap it, since that would potentially unmap memory that was
-    // mapped from other threads.
-    return nullptr;
-  }
-
-  return addr;
-}
-
-static char* shmat_at_address(int shmid, char* req_addr) {
-  if (!is_aligned(req_addr, SHMLBA)) {
-    assert(false, "Requested address needs to be SHMLBA aligned");
-    return nullptr;
-  }
-
-  char* addr = (char*)shmat(shmid, req_addr, 0);
-
-  if ((intptr_t)addr == -1) {
-    shm_warning_with_errno("Failed to attach shared memory.");
-    return nullptr;
-  }
-
-  return addr;
-}
-
-static char* shmat_large_pages(int shmid, size_t bytes, size_t alignment, char* req_addr) {
-  // If a req_addr has been provided, we assume that the caller has already aligned the address.
-  if (req_addr != nullptr) {
-    assert(is_aligned(req_addr, os::large_page_size()), "Must be divisible by the large page size");
-    assert(is_aligned(req_addr, alignment), "Must be divisible by given alignment");
-    return shmat_at_address(shmid, req_addr);
-  }
-
-  // Since shmid has been setup with SHM_HUGETLB, shmat will automatically
-  // return large page size aligned memory addresses when req_addr == nullptr.
-  // However, if the alignment is larger than the large page size, we have
-  // to manually ensure that the memory returned is 'alignment' aligned.
-  if (alignment > os::large_page_size()) {
-    assert(is_aligned(alignment, os::large_page_size()), "Must be divisible by the large page size");
-    return shmat_with_alignment(shmid, bytes, alignment);
-  } else {
-    return shmat_at_address(shmid, nullptr);
-  }
-}
-
-char* os::Linux::reserve_memory_special_shm(size_t bytes, size_t alignment,
-                                            char* req_addr, bool exec) {
-  // "exec" is passed in but not used.  Creating the shared image for
-  // the code cache doesn't have an SHM_X executable permission to check.
-  assert(UseLargePages && UseSHM, "only for SHM large pages");
-  assert(is_aligned(req_addr, os::large_page_size()), "Unaligned address");
-  assert(is_aligned(req_addr, alignment), "Unaligned address");
-
-  if (!is_aligned(bytes, os::large_page_size())) {
-    return nullptr; // Fallback to small pages.
-  }
-
-  // Create a large shared memory region to attach to based on size.
-  // Currently, size is the total size of the heap.
-  int shmid = shmget(IPC_PRIVATE, bytes, SHM_HUGETLB|IPC_CREAT|SHM_R|SHM_W);
-  if (shmid == -1) {
-    // Possible reasons for shmget failure:
-    // 1. shmmax is too small for the request.
-    //    > check shmmax value: cat /proc/sys/kernel/shmmax
-    //    > increase shmmax value: echo "new_value" > /proc/sys/kernel/shmmax
-    // 2. not enough large page memory.
-    //    > check available large pages: cat /proc/meminfo
-    //    > increase amount of large pages:
-    //          sysctl -w vm.nr_hugepages=new_value
-    //    > For more information regarding large pages please refer to:
-    //      https://www.kernel.org/doc/Documentation/vm/hugetlbpage.txt
-    //      Note 1: different Linux may use different name for this property,
-    //            e.g. on Redhat AS-3 it is "hugetlb_pool".
-    //      Note 2: it's possible there's enough physical memory available but
-    //            they are so fragmented after a long run that they can't
-    //            coalesce into large pages. Try to reserve large pages when
-    //            the system is still "fresh".
-    shm_warning_with_errno("Failed to reserve shared memory.");
-    return nullptr;
-  }
-
-  // Attach to the region.
-  char* addr = shmat_large_pages(shmid, bytes, alignment, req_addr);
-
-  // Remove shmid. If shmat() is successful, the actual shared memory segment
-  // will be deleted when it's detached by shmdt() or when the process
-  // terminates. If shmat() is not successful this will remove the shared
-  // segment immediately.
-  shmctl(shmid, IPC_RMID, nullptr);
-
-  return addr;
 }
 
 static void log_on_commit_special_failure(char* req_addr, size_t bytes,
@@ -4054,11 +3845,11 @@ static void log_on_commit_special_failure(char* req_addr, size_t bytes,
                      byte_size_in_exact_unit(page_size), exact_unit_for_byte_size(page_size), error);
 }
 
-bool os::Linux::commit_memory_special(size_t bytes,
+static bool commit_memory_special(size_t bytes,
                                       size_t page_size,
                                       char* req_addr,
                                       bool exec) {
-  assert(UseLargePages && UseHugeTLBFS, "Should only get here when HugeTLBFS large pages are used");
+  assert(UseLargePages && !UseTransparentHugePages, "Should only get here for static hugepage mode (+UseLargePages)");
   assert(is_aligned(bytes, page_size), "Unaligned size");
   assert(is_aligned(req_addr, page_size), "Unaligned address");
   assert(req_addr != nullptr, "Must have a requested address for special mappings");
@@ -4087,16 +3878,17 @@ bool os::Linux::commit_memory_special(size_t bytes,
   return true;
 }
 
-char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
-                                                   size_t alignment,
-                                                   size_t page_size,
-                                                   char* req_addr,
-                                                   bool exec) {
-  assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
+static char* reserve_memory_special_huge_tlbfs(size_t bytes,
+                                               size_t alignment,
+                                               size_t page_size,
+                                               char* req_addr,
+                                               bool exec) {
+  const os::PageSizes page_sizes = HugePages::static_info().pagesizes();
+  assert(UseLargePages, "only for Huge TLBFS large pages");
   assert(is_aligned(req_addr, alignment), "Must be");
   assert(is_aligned(req_addr, page_size), "Must be");
   assert(is_aligned(alignment, os::vm_allocation_granularity()), "Must be");
-  assert(_page_sizes.contains(page_size), "Must be a valid page size");
+  assert(page_sizes.contains(page_size), "Must be a valid page size");
   assert(page_size > os::vm_page_size(), "Must be a large page size");
   assert(bytes >= page_size, "Shouldn't allocate large pages for small sizes");
 
@@ -4149,14 +3941,7 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_
                                     char* req_addr, bool exec) {
   assert(UseLargePages, "only for large pages");
 
-  char* addr;
-  if (UseSHM) {
-    // No support for using specific page sizes with SHM.
-    addr = os::Linux::reserve_memory_special_shm(bytes, alignment, req_addr, exec);
-  } else {
-    assert(UseHugeTLBFS, "must be");
-    addr = os::Linux::reserve_memory_special_huge_tlbfs(bytes, alignment, page_size, req_addr, exec);
-  }
+  char* const addr = reserve_memory_special_huge_tlbfs(bytes, alignment, page_size, req_addr, exec);
 
   if (addr != nullptr) {
     if (UseNUMAInterleaving) {
@@ -4167,45 +3952,29 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_
   return addr;
 }
 
-bool os::Linux::release_memory_special_shm(char* base, size_t bytes) {
-  // detaching the SHM segment will also delete it, see reserve_memory_special_shm()
-  return shmdt(base) == 0;
-}
-
-bool os::Linux::release_memory_special_huge_tlbfs(char* base, size_t bytes) {
-  return pd_release_memory(base, bytes);
-}
-
 bool os::pd_release_memory_special(char* base, size_t bytes) {
   assert(UseLargePages, "only for large pages");
-  bool res;
-
-  if (UseSHM) {
-    res = os::Linux::release_memory_special_shm(base, bytes);
-  } else {
-    assert(UseHugeTLBFS, "must be");
-    res = os::Linux::release_memory_special_huge_tlbfs(base, bytes);
-  }
-  return res;
+  // Plain munmap is sufficient
+  return pd_release_memory(base, bytes);
 }
 
 size_t os::large_page_size() {
   return _large_page_size;
 }
 
-// With SysV SHM the entire memory region must be allocated as shared
-// memory.
-// HugeTLBFS allows application to commit large page memory on demand.
-// However, when committing memory with HugeTLBFS fails, the region
+// static hugepages (hugetlbfs) allow application to commit large page memory
+// on demand.
+// However, when committing memory with hugepages fails, the region
 // that was supposed to be committed will lose the old reservation
 // and allow other threads to steal that memory region. Because of this
-// behavior we can't commit HugeTLBFS memory.
+// behavior we can't commit hugetlbfs memory. Instead, we commit that
+// memory at reservation.
 bool os::can_commit_large_page_memory() {
   return UseTransparentHugePages;
 }
 
 bool os::can_execute_large_page_memory() {
-  return UseTransparentHugePages || UseHugeTLBFS;
+  return UseTransparentHugePages;
 }
 
 char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
@@ -4561,12 +4330,11 @@ void os::Linux::numa_init() {
   }
 
   if (UseParallelGC && UseNUMA && UseLargePages && !can_commit_large_page_memory()) {
-    // With SHM and HugeTLBFS large pages we cannot uncommit a page, so there's no way
+    // With static large pages we cannot uncommit a page, so there's no way
     // we can make the adaptive lgrp chunk resizing work. If the user specified both
-    // UseNUMA and UseLargePages (or UseSHM/UseHugeTLBFS) on the command line - warn
-    // and disable adaptive resizing.
+    // UseNUMA and UseLargePages on the command line - warn and disable adaptive resizing.
     if (UseAdaptiveSizePolicy || UseAdaptiveNUMAChunkSizing) {
-      warning("UseNUMA is not fully compatible with SHM/HugeTLBFS large pages, "
+      warning("UseNUMA is not fully compatible with +UseLargePages, "
               "disabling adaptive resizing (-XX:-UseAdaptiveSizePolicy -XX:-UseAdaptiveNUMAChunkSizing)");
       UseAdaptiveSizePolicy = false;
       UseAdaptiveNUMAChunkSizing = false;
