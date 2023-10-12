@@ -898,7 +898,6 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     }
 
     // Iterator implementations.
-    // Here, we avoid polymorphism to ensure full VM optimization capabilities.
 
     final class KeyIterator implements Iterator<K> {
         private final Iterator<Entry<K,V>> i = entrySet().iterator();
