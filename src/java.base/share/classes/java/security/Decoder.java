@@ -23,22 +23,55 @@
  * questions.
  */
 
-package sun.security.util;
+package java.security;
 
 import java.io.IOException;
+import java.io.Reader;
 
 /**
- * The interface Encoder.
+ * The interface Decoder.
  *
  * @param <T> the type parameter
  */
-public interface Encoder<T> {
+public interface Decoder<T> {
     /**
-     * Encode string.
+     * Decode t.
      *
+     * @param <S>    the type parameter
+     * @param string the string
      * @param tClass the t class
-     * @return the string
+     * @return the t
      * @throws IOException the io exception
      */
-    String encode(T tClass) throws IOException;
+    <S extends T> S decode(String string, Class <S> tClass) throws IOException;
+
+    /**
+     * Decode t.
+     *
+     * @param <S>    the type parameter
+     * @param reader the reader
+     * @param tClass the t class
+     * @return the t
+     * @throws IOException the io exception
+     */
+    <S extends T> S decode(Reader reader, Class <S> tClass) throws IOException;
+
+    /**
+     * Decode t.
+     *
+     * @param string the string
+     * @return the t
+     * @throws IOException the io exception
+     */
+    T decode(String string) throws IOException;
+
+    /**
+     * Decode t.
+     *
+     * @param reader the reader
+     * @return the t
+     * @throws IOException the io exception
+     */
+    T decode(Reader reader) throws IOException;
 }
+

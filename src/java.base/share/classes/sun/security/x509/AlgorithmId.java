@@ -387,7 +387,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
      */
     public static AlgorithmId parse(DerValue val) throws IOException {
         //XXX Need to check if -96 is still necessary, may have been for openssl format
-        if (val.tag != DerValue.tag_Sequence && val.tag != -96) {
+        //if (val.tag != DerValue.tag_Sequence && val.tag != -96) {
+        if (val.tag != DerValue.tag_Sequence) {
             throw new IOException("algid parse error, not a sequence");
         }
 

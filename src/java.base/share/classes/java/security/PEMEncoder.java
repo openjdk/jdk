@@ -28,7 +28,6 @@ package java.security;
 import sun.security.pkcs.PKCS8Key;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
-import sun.security.util.Encoder;
 import sun.security.util.Pem;
 import sun.security.x509.AlgorithmId;
 
@@ -47,7 +46,7 @@ import java.util.Objects;
 /**
  * The type Pem.
  */
-final class PEMEncoder implements Encoder<SecurityObject> {
+final public class PEMEncoder implements Encoder<SecurityObject> {
 
     // XXX This is in java.security file
     /**

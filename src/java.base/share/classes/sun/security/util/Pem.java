@@ -157,7 +157,7 @@ public class Pem {
                 case '-' -> hyphen++;
                 case -1 -> throw new IOException("Input ended prematurely");
                 case '\n', '\r' -> throw new IOException("Incomplete header");
-                default -> sb.append(c);
+                default -> sb.append((char)c);
             }
         } while (hyphen == 0);
 
@@ -184,7 +184,7 @@ public class Pem {
             switch (c = br.read()) {
                 case -1 -> throw new IOException("Incomplete header");
                 case '-' -> hyphen++;
-                default -> sb.append(c);
+                default -> sb.append((char)c);
             }
         } while (hyphen == 0);
 
@@ -208,7 +208,7 @@ public class Pem {
             switch(c = br.read()) {
                 case '-' -> hyphen++;
                 case -1 -> throw new IOException("Input ended prematurely");
-                default -> sb.append(c);
+                default -> sb.append((char)c);
             }
         } while (hyphen == 0);
 
@@ -221,7 +221,7 @@ public class Pem {
             }
         } while (hyphen < 5);
 
-
+        sb.append("-----");
         String footer = sb.toString();
         if (footer.length() < 14 || !footer.startsWith("-----END ") ||
             !footer.endsWith("-----")) {

@@ -26,7 +26,6 @@
 package java.security;
 
 import sun.security.pkcs.PKCS8Key;
-import sun.security.util.Decoder;
 import sun.security.util.Pem;
 
 import javax.crypto.EncryptedPrivateKeyInfo;
@@ -45,11 +44,14 @@ import java.util.Objects;
  * PEMDecoder is an immutable PEM decoding class for supported
  * {@code SecurityObject} objects.
  */
-final class PEMDecoder implements Decoder<SecurityObject> {
+final public class PEMDecoder implements Decoder<SecurityObject> {
     final Provider factory;
     final char[] password;
 
-    private PEMDecoder() {
+    /**
+     * Instantiates a new Pem decoder.
+     */
+    public PEMDecoder() {
         factory = null;
         password = null;
     }
@@ -58,16 +60,6 @@ final class PEMDecoder implements Decoder<SecurityObject> {
         super();
         factory = withFactory;
         password = withPassword;
-    }
-
-    /**
-     * Returns a PEMDecoder instance to decode PEM with supported
-     * {@code SecurityObjects}.
-     *
-     * @return a PEMDecoder
-     */
-    public static PEMDecoder PEMDecoder() {
-        return new PEMDecoder();
     }
 
     private SecurityObject decode(String data, String header,
@@ -120,7 +112,7 @@ final class PEMDecoder implements Decoder<SecurityObject> {
                     KeyFactory kf = (KeyFactory)
                         getFactory(keyType, p8key.getAlgorithm());
                     priKey = kf.generatePrivate(
-                        new PKCS8EncodedKeySpec(p8key.getPrivKeyMaterial(),
+                        new PKCS8EncodedKeySpec(p8key.getEncoded(),//getPrivKeyMaterial(),
                             p8key.getAlgorithm()));
                     // If there is a public key, it's an OAS.
                     if (p8key.getPubKeyEncoded() != null) {
@@ -248,43 +240,52 @@ final class PEMDecoder implements Decoder<SecurityObject> {
         return decode(pem.getData(), pem.getHeader(), pem.getFooter());
     }
 
-    /**
-     * Decodes and returns an object from the given PEM string. The user must have prior
-     * knowledge of the PEM data class type and specify the returned object's
-     * class.
-     *
-     * @param string the String containing PEM data.
-     * @param tClass the class instance of the returned object.  The class must implement {@code SecurityObject}.
-     * @return
-     * @throws IOException on an error in decoding or if the PEM is unsupported.
-     */
-    @Override
-    public SecurityObject decode(String string,
-        Class<SecurityObject> tClass) throws IOException {
-        Objects.requireNonNull(string);
-        Objects.requireNonNull(tClass);
-        return tClass.cast(decode(new StringReader(string)));
-    }
 
     /**
      * Decodes and returns an object from the given Reader. The user must have prior
      * knowledge of the PEM data class type and specify the returned object's
      * class.
      *
+     * @param <S>    the type parameter
      * @param reader a Reader that provides a stream of PEM data.
      * @param tClass the class instance of the returned object.  The class must implement {@code SecurityObject}.
-     * @return
+     * @return foo s
      * @throws IOException on an error in decoding or if the PEM is unsupported.
      */
     @Override
-    public SecurityObject decode(Reader reader,
-    Class<SecurityObject> tClass) throws IOException {
+    public <S extends SecurityObject> S decode(Reader reader,
+        Class<S> tClass) throws IOException {
         Objects.requireNonNull(reader);
         Objects.requireNonNull(tClass);
-        return tClass.cast(decode(reader));
+        try {
+            return tClass.cast(decode(reader));
+        } catch (ClassCastException e) {
+            throw new IOException(e);
+        }
     }
 
-
+    /**
+     * Decodes and returns an object from the given PEM string. The user must have prior
+     * knowledge of the PEM data class type and specify the returned object's
+     * class.
+     *
+     * @param <S>    the type parameter
+     * @param string the String containing PEM data.
+     * @param tClass the class instance of the returned object.  The class must implement {@code SecurityObject}.
+     * @return fpp s
+     * @throws IOException on an error in decoding or if the PEM is unsupported.
+     */
+    @Override
+    public <S extends SecurityObject> S decode(String string,
+        Class<S> tClass) throws IOException {
+        Objects.requireNonNull(string);
+        Objects.requireNonNull(tClass);
+        try {
+            return tClass.cast(decode(new StringReader(string)));
+        } catch (ClassCastException e) {
+            throw new IOException(e);
+        }
+    }
 /*
         /**
          * Decode object.
