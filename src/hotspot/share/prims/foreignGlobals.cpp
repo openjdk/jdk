@@ -131,7 +131,7 @@ void ArgumentShuffle::print_on(outputStream* os) const {
 
 int ForeignGlobals::compute_out_arg_bytes(const GrowableArray<VMStorage>& out_regs) {
   uint32_t max_stack_offset = 0;
-  for (const VMStorage& reg : out_regs) {
+  for (VMStorage reg : out_regs) {
     if (reg.is_stack())
       max_stack_offset = MAX2(max_stack_offset, reg.offset() + reg.stack_size());
   }
@@ -154,7 +154,7 @@ int ForeignGlobals::java_calling_convention(const BasicType* signature, int num_
 
 GrowableArray<VMStorage> ForeignGlobals::replace_place_holders(const GrowableArray<VMStorage>& regs, const StubLocations& locs) {
   GrowableArray<VMStorage> result(regs.length());
-  for (const VMStorage& reg : regs) {
+  for (VMStorage reg : regs) {
     result.push(reg.type() == StorageType::PLACEHOLDER ? locs.get(reg) : reg);
   }
   return result;
