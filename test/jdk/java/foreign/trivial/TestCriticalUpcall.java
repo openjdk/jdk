@@ -23,11 +23,9 @@
 
 /*
  * @test
- * @enablePreview
  * @library ../ /test/lib
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @requires jdk.foreign.linker != "FALLBACK"
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestTrivialUpcall
+ * @run testng/othervm --enable-native-access=ALL-UNNAMED TestCriticalUpcall
  */
 
 import org.testng.annotations.Test;
@@ -40,7 +38,7 @@ import java.lang.invoke.MethodHandle;
 
 import static org.testng.Assert.fail;
 
-public class TestTrivialUpcall extends UpcallTestHelper {
+public class TestCriticalUpcall extends UpcallTestHelper {
 
     @Test
     public void testUpcallFailure() throws IOException, InterruptedException {
@@ -50,9 +48,9 @@ public class TestTrivialUpcall extends UpcallTestHelper {
 
     public static class Runner extends NativeTestHelper {
         public static void main(String[] args) throws Throwable {
-            System.loadLibrary("Trivial");
+            System.loadLibrary("Critical");
 
-            MethodHandle mh = downcallHandle("do_upcall", FunctionDescriptor.ofVoid(C_POINTER), Linker.Option.isTrivial());
+            MethodHandle mh = downcallHandle("do_upcall", FunctionDescriptor.ofVoid(C_POINTER), Linker.Option.critical());
             MemorySegment stub = upcallStub(Runner.class, "target", FunctionDescriptor.ofVoid());
             mh.invokeExact(stub);
         }
