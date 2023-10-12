@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, 2022 SAP SE. All rights reserved.
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import jdk.test.lib.process.ProcessTools;
  * @summary SafeFetch32 and SafeFetchN do not work in error handling
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
+ * @requires vm.flagless
  * @requires vm.debug
  * @requires vm.flavor != "zero"
  * @author Thomas Stuefe (SAP)

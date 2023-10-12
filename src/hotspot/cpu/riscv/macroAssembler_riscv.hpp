@@ -1289,6 +1289,13 @@ public:
   }
 
   // vector pseudo instructions
+  // rotate vector register left with shift bits, 32-bit version
+  inline void vrole32_vi(VectorRegister vd, uint32_t shift, VectorRegister tmp_vr) {
+    vsrl_vi(tmp_vr, vd, 32 - shift);
+    vsll_vi(vd, vd, shift);
+    vor_vv(vd, vd, tmp_vr);
+  }
+
   inline void vl1r_v(VectorRegister vd, Register rs) {
     vl1re8_v(vd, rs);
   }
@@ -1453,12 +1460,12 @@ private:
   int bitset_to_regs(unsigned int bitset, unsigned char* regs);
   Address add_memory_helper(const Address dst, Register tmp);
 
-  void load_reserved(Register addr, enum operand_size size, Assembler::Aqrl acquire);
-  void store_conditional(Register addr, Register new_val, enum operand_size size, Assembler::Aqrl release);
+  void load_reserved(Register dst, Register addr, enum operand_size size, Assembler::Aqrl acquire);
+  void store_conditional(Register dst, Register new_val, Register addr, enum operand_size size, Assembler::Aqrl release);
 
 public:
-  void fast_lock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow);
-  void fast_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow);
+  void lightweight_lock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow);
+  void lightweight_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow);
 };
 
 #ifdef ASSERT

@@ -512,7 +512,7 @@ class os: AllStatic {
   static void   numa_make_local(char *addr, size_t bytes, int lgrp_hint);
   static void   numa_make_global(char *addr, size_t bytes);
   static size_t numa_get_groups_num();
-  static size_t numa_get_leaf_groups(int *ids, size_t size);
+  static size_t numa_get_leaf_groups(uint *ids, size_t size);
   static bool   numa_topology_changed();
   static int    numa_get_group_id();
   static int    numa_get_group_id_for_address(const void* address);

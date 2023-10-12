@@ -700,8 +700,10 @@ void InterpreterMacroAssembler::remove_activation(
     bind(restart);
     // We use c_rarg1 so that if we go slow path it will be the correct
     // register for unlock_object to pass to VM directly
-    ld(c_rarg1, monitor_block_top); // points to current entry, starting
-                                     // with top-most entry
+    ld(c_rarg1, monitor_block_top); // derelativize pointer
+    shadd(c_rarg1, c_rarg1, fp, c_rarg1, LogBytesPerWord);
+    // c_rarg1 points to current entry, starting with top-most entry
+
     la(x9, monitor_block_bot);  // points to word before bottom of
                                   // monitor block
 
@@ -836,7 +838,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
     if (LockingMode == LM_LIGHTWEIGHT) {
       ld(tmp, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      fast_lock(obj_reg, tmp, t0, t1, slow_case);
+      lightweight_lock(obj_reg, tmp, t0, t1, slow_case);
       j(count);
     } else if (LockingMode == LM_LEGACY) {
       // Load (object->mark() | 1) into swap_reg
@@ -949,7 +951,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
       ld(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       test_bit(t0, header_reg, exact_log2(markWord::monitor_value));
       bnez(t0, slow_case);
-      fast_unlock(obj_reg, header_reg, swap_reg, t0, slow_case);
+      lightweight_unlock(obj_reg, header_reg, swap_reg, t0, slow_case);
       j(count);
 
       bind(slow_case);
@@ -2008,6 +2010,7 @@ void InterpreterMacroAssembler::verify_frame_setup() {
   Label L;
   const Address monitor_block_top(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
   ld(t0, monitor_block_top);
+  shadd(t0, t0, fp, t0, LogBytesPerWord);
   beq(esp, t0, L);
   stop("broken stack frame setup in interpreter");
   bind(L);

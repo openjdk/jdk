@@ -4009,8 +4009,6 @@ bool Compile::final_graph_reshaping() {
 
       // Recheck with a better notion of 'required_outcnt'
       if (n->outcnt() != required_outcnt) {
-        DEBUG_ONLY( n->dump_bfs(1, 0, "-"); );
-        assert(false, "malformed control flow");
         record_method_not_compilable("malformed control flow");
         return true;            // Not all targets reachable!
       }
@@ -5127,7 +5125,7 @@ bool Compile::should_print_phase(CompilerPhaseType cpt) {
   return false;
 }
 
-bool Compile::should_print_igv(int level) {
+bool Compile::should_print_igv(const int level) {
 #ifndef PRODUCT
   if (PrintIdealGraphLevel < 0) { // disabled by the user
     return false;

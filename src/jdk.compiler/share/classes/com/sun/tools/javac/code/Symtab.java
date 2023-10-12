@@ -220,6 +220,7 @@ public class Symtab {
     public final Type functionalInterfaceType;
     public final Type previewFeatureType;
     public final Type previewFeatureInternalType;
+    public final Type restrictedType;
     public final Type typeDescriptorType;
     public final Type recordType;
     public final Type switchBootstrapsType;
@@ -610,6 +611,7 @@ public class Symtab {
         functionalInterfaceType = enterClass("java.lang.FunctionalInterface");
         previewFeatureType = enterClass("jdk.internal.javac.PreviewFeature");
         previewFeatureInternalType = enterSyntheticAnnotation("jdk.internal.PreviewFeature+Annotation");
+        restrictedType = enterClass("jdk.internal.javac.Restricted");
         typeDescriptorType = enterClass("java.lang.invoke.TypeDescriptor");
         recordType = enterClass("java.lang.Record");
         switchBootstrapsType = enterClass("java.lang.runtime.SwitchBootstraps");
