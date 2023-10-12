@@ -56,8 +56,8 @@ static inline double percent_diff(double initial_value, double final_value) {
   return 100.0 * (final_value - initial_value) / initial_value;
 }
 
-// on macOS it currently (macOS 13) returns the same value for same sizes
-// on Linux it can return different values for the same sizes
+// on macOS malloc currently (macOS 13) returns the same value for same sizes
+// on Linux malloc can return different values for the same sizes
 static inline size_t _malloc_good_size_impl(size_t size) {
   void *ptr = malloc(size);
   assert(ptr != nullptr, "must be");
@@ -117,13 +117,14 @@ void NMT_MemoryLogRecorder::calculate_good_sizes(Entry* entries, size_t count) {
     }
   }
 
-#if 1
+#if 0
   fprintf(stderr, "\n");
   size_t b = 0;
   for (size_t i=0; i<_buckets_max; i++) {
     if (good_sizes_requested[i] > 0) {
-      fprintf(stderr, "%3ld %8ld %8ld %12ld [%12ld]\n",
-      b++, good_sizes_requested[i], good_sizes_counts[i], good_sizes_totals[i], good_sizes_totals[i]/good_sizes_counts[i]);
+      fprintf(stderr, "%3ld %8ld %8ld %12ld [%12ld][%.3f]\n",
+      b++, good_sizes_requested[i], good_sizes_counts[i], good_sizes_totals[i],
+      good_sizes_totals[i]/good_sizes_counts[i], (double)good_sizes_totals[i]/(double)good_sizes_counts[i]);
     }
   }
   fprintf(stderr, "\n");
@@ -218,7 +219,7 @@ bool NMT_MemoryLogRecorder::print_histogram(Entry* entries, size_t count) {
   }
   fprintf(stderr, "\nnative malloc used %zu buckets\n\n", malloc_buckets_count);
   
-  //assert((total_mallocs+total_reallocs) == c_total, "(total_mallocs+total_reallocs):%zu == ctotal:%zu", (total_mallocs+total_reallocs), c_total);
+  //assert((count_mallocs+count_reallocs) == c_total, "(count_mallocs+count_reallocs):%zu == ctotal:%zu", (count_mallocs+count_reallocs), c_total);
   //assert(r_total == total_requested, "r_total:%zu == total_requested:%zu", r_total, total_requested);
   //assert(a_total == total_actual, "a_total:%zu == total_actual:%zu", a_total, total_actual);
   //assert(a_total-r_total == o_total, "a_total-r_total:%zu == o_total:%zu", a_total-r_total, o_total);
@@ -329,63 +330,58 @@ bool NMT_MemoryLogRecorder::print_by_thread(Entry* entries, size_t count) {
 
 size_t NMT_MemoryLogRecorder::print_summary(Entry* entries, size_t count, bool substract_nmt) {
   size_t overhead_per_malloc = MemTracker::overhead_per_malloc();
-  size_t total_mallocs = 0;
-  size_t total_reallocs = 0;
-  size_t total_frees = 0;
   size_t total_requested_malloced = 0;
   size_t total_actual_malloced = 0;
   size_t total_actual_freed = 0;
+  size_t total_NMTHeaders = 0;
+  size_t total_NMTObjects = 0;
+  size_t count_mallocs = 0;
+  size_t count_reallocs = 0;
+  size_t count_frees = 0;
   size_t count_NMTObjects = 0;
-  size_t overhead_NMTObjects = 0;
-  size_t overhead_NMTHeaders = 0;
   for (size_t c=0; c<count; c++) {
     Entry* e = &entries[c];
-    bool count_it = ((e->flags != mtNMT)) || ((e->flags == mtNMT) && !substract_nmt);
-    if (count_it) {
-      if (NMT_MemoryLogRecorder::is_alloc(e)) {
-        if (substract_nmt) {
-          total_requested_malloced += e->requested -  overhead_per_malloc;
-        } else {
-          total_requested_malloced += e->requested;
+    if (NMT_MemoryLogRecorder::is_alloc(e)) {
+      if (substract_nmt) {
+        if (e->flags != mtNMT) {
+          // substract NMT header
+          size_t requested = e->requested - overhead_per_malloc;
+          total_requested_malloced += requested;
+          total_actual_malloced += _malloc_good_size_stats(requested);
+          if (NMT_MemoryLogRecorder::is_malloc(e)) {
+            count_mallocs++;
+          } else if (NMT_MemoryLogRecorder::is_realloc(e)) {
+            count_reallocs++;
+          }
         }
-        if (substract_nmt) {
-#if defined(LINUX)
-          total_actual_malloced += _malloc_good_size_stats(e->requested - overhead_per_malloc);
-#elif defined(WINDOWS)
-          total_actual_malloced += _malloc_good_size_stats(e->requested - overhead_per_malloc);
-#elif defined(__APPLE__)
-          total_actual_malloced += malloc_good_size(e->requested - overhead_per_malloc);
-#endif
-        } else {
-          total_actual_malloced += e->actual;
-        }
-        if (NMT_MemoryLogRecorder::is_malloc(e)) {
-          total_mallocs++;
-        } else if (NMT_MemoryLogRecorder::is_realloc(e)) {
-          total_reallocs++;
-        }
+      } else { // count NMT
+        total_requested_malloced += e->requested;
+        total_actual_malloced += e->actual;
+        total_NMTHeaders += overhead_per_malloc;
         if (e->flags == mtNMT) {
           count_NMTObjects++;
-          overhead_NMTObjects += e->actual;
+          total_NMTObjects += e->actual;
         }
-        if (!substract_nmt) {
-          overhead_NMTHeaders += overhead_per_malloc;
+        if (NMT_MemoryLogRecorder::is_malloc(e)) {
+          count_mallocs++;
+        } else if (NMT_MemoryLogRecorder::is_realloc(e)) {
+          count_reallocs++;
         }
-      } else {
-        total_frees++;
-        total_actual_freed += e->actual;
       }
+    } else {
+      count_frees++;
+      total_actual_freed += e->actual;
     }
   }
   size_t total_overhead = (total_actual_malloced - total_requested_malloced);
 
   fprintf(stderr, "-----------------------------------------------------------------------------------------\n");
   fprintf(stderr, "                           TOTALS:%9ld:%9ld:%9ld:%12ld:%12ld\n",
-          total_mallocs, total_reallocs, total_frees, total_actual_malloced, total_actual_freed);
+          count_mallocs, count_reallocs, count_frees, total_actual_malloced, total_actual_freed);
 
   fprintf(stderr, "\n\n");
   fprintf(stderr, "Total (#mallocs + #reallocs + #frees) counts: %ld\n",
-          (total_mallocs + total_reallocs + total_frees));
+          (count_mallocs + count_reallocs + count_frees));
   fprintf(stderr, "Total current allocated (total_actual_malloced - total_actual_freed) bytes: %ld\n",
           (total_actual_malloced - total_actual_freed));
 
@@ -400,24 +396,24 @@ size_t NMT_MemoryLogRecorder::print_summary(Entry* entries, size_t count, bool s
           total_overhead, total_overhead/1024/1024,
           overhead_ratio_requested, '%',
           overhead_ratio_actual, '%',
-          (total_mallocs + total_reallocs));
+          (count_mallocs + count_reallocs));
 
   if (count_NMTObjects > 0) {
-    double overhead_NMTHeaders_ratio_requested = (100.0 * ((double)overhead_NMTHeaders / (double)total_requested_malloced));
-    double overhead_NMTHeaders_ratio_actual    = (100.0 * ((double)overhead_NMTHeaders / (double)total_actual_malloced));
-    double overhead_NMTObjects_ratio_requested = (100.0 * ((double)overhead_NMTObjects / (double)total_requested_malloced));
-    double overhead_NMTObjects_ratio_actual    = (100.0 * ((double)overhead_NMTObjects / (double)total_actual_malloced));
+    double total_NMTHeaders_ratio_requested = (100.0 * ((double)total_NMTHeaders / (double)total_requested_malloced));
+    double total_NMTHeaders_ratio_actual    = (100.0 * ((double)total_NMTHeaders / (double)total_actual_malloced));
+    double total_NMTObjects_ratio_requested = (100.0 * ((double)total_NMTObjects / (double)total_requested_malloced));
+    double total_NMTObjects_ratio_actual    = (100.0 * ((double)total_NMTObjects / (double)total_actual_malloced));
 
     fprintf(stderr, "       Total lifetime overhead due to NMT objects: %12ld bytes, %4ld Mb : %.3f%c, %.3f%c [#%zu]\n",
-            overhead_NMTObjects, overhead_NMTObjects/1024/1024,
-            overhead_NMTObjects_ratio_requested, '%',
-            overhead_NMTObjects_ratio_actual, '%',
+            total_NMTObjects, total_NMTObjects/1024/1024,
+            total_NMTObjects_ratio_requested, '%',
+            total_NMTObjects_ratio_actual, '%',
             count_NMTObjects);
     fprintf(stderr, "       Total lifetime overhead due to NMT headers: %12ld bytes, %4ld Mb : %.3f%c, %.3f%c [#%zu]\n",
-            overhead_NMTHeaders, overhead_NMTHeaders/1024/1024,
-            overhead_NMTHeaders_ratio_requested, '%',
-            overhead_NMTHeaders_ratio_actual, '%',
-            total_mallocs+total_reallocs);
+            total_NMTHeaders, total_NMTHeaders/1024/1024,
+            total_NMTHeaders_ratio_requested, '%',
+            total_NMTHeaders_ratio_actual, '%',
+            count_mallocs+count_reallocs);
   }
   fprintf(stderr, "\n\n");
   
@@ -430,7 +426,7 @@ void NMT_MemoryLogRecorder::dump(Entry* entries, size_t count) {
   }
 
   calculate_good_sizes(entries, count);
-  size_t buckets_limit_reached = print_histogram(entries, count);
+  //bool buckets_limit_reached = print_histogram(entries, count);
   bool threads_limit_reached = print_by_thread(entries, count);
 
   size_t total_actual_malloced = print_summary(entries, count);
@@ -447,14 +443,14 @@ void NMT_MemoryLogRecorder::dump(Entry* entries, size_t count) {
     fprintf(stderr, "-----------------------------------------------------------------------------------------\n");
   }
 
-  if (buckets_limit_reached) {
-    fprintf(stderr, "WARNING: reached _buckets_max limit: %d\n\n", _buckets_max);
-  }
-  
+//  if (buckets_limit_reached) {
+//    fprintf(stderr, "WARNING: reached _buckets_max limit: %d\n\n", _buckets_max);
+//  }
+
   if (threads_limit_reached) {
     fprintf(stderr, "WARNING: reached _threads_max limit: %d\n\n", _threads_max);
   }
-  
+
   if ((long)count == RecordNMTEntries) {
     fprintf(stderr, "WARNING: reached RecordNMTEntries limit: %zu\n\n", count);
   }
@@ -522,11 +518,11 @@ void NMT_MemoryLogRecorder::log(size_t requested, address ptr, address old, MEMF
 //             //        _entry->actual, _entry->requested, good_size);
 // #elif defined(WINDOWS)
 //             // ???
-// #elif defined(__APPLE__)
-//             size_t good_size = malloc_good_size(_entry->requested);
-//             assert(_entry->actual == good_size, "%zu != malloc_good_size(%zu):%zu",
-//                    _entry->actual, _entry->requested, good_size);
-// #endif
+ #if defined(__APPLE__)
+            size_t good_size = malloc_good_size(_entry->requested);
+            assert(_entry->actual == good_size, "%zu != malloc_good_size(%zu):%zu",
+                   _entry->actual, _entry->requested, good_size);
+ #endif
           }
         }
       }
