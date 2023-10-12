@@ -3667,9 +3667,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_LoadVector:
   case Op_StoreVector:
 #ifdef ASSERT
-#ifdef AMD64
     // Add VerifyAlignment node between adr and load / store.
-    if (VerifyAlignVector) {
+    if (VerifyAlignVector && Matcher::has_match_rule(Op_VerifyAlignment)) {
       bool must_verify_alignment = n->is_LoadVector() ? n->as_LoadVector()->must_verify_alignment() :
                                                         n->as_StoreVector()->must_verify_alignment();
       if (must_verify_alignment) {
@@ -3689,7 +3688,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         n->set_req(MemNode::Address, va);
       }
     }
-#endif
 #endif
     break;
 
