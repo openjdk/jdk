@@ -1373,15 +1373,7 @@ class SocketChannelImpl
         return n;
     }
 
-    /**
-     * Reads bytes from the socket into the given byte array.
-     *
-     * @apiNote This method is for use by the socket adaptor.
-     *
-     * @throws IllegalBlockingModeException if the channel is non-blocking
-     * @throws SocketTimeoutException if the read timeout elapses
-     */
-    int blockingRead(byte[] b, int off, int len, long nanos) throws IOException {
+    private int implBlockingRead(byte[] b, int off, int len, long nanos) throws IOException {
         Objects.checkFromIndexSize(off, len, b.length);
         if (len == 0) {
             // nothing to do
@@ -1442,6 +1434,24 @@ class SocketChannelImpl
     }
 
     /**
+     * Reads bytes from the socket into the given byte array.
+     *
+     * @apiNote This method is for use by the socket adaptor.
+     *
+     * @throws IllegalBlockingModeException if the channel is non-blocking
+     * @throws SocketTimeoutException if the read timeout elapses
+     */
+    int blockingRead(byte[] b, int off, int len, long nanos) throws IOException {
+        if (!SocketReadEvent.enabled()) {
+            return implBlockingRead(b, off, len, nanos);
+        }
+        long start = SocketReadEvent.timestamp();
+        int nbytes = implBlockingRead(b, off, len, nanos);
+        SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
+        return nbytes;
+    }
+
+    /**
      * Attempts to write a sequence of bytes to the socket from the given
      * byte array.
      */
@@ -1461,7 +1471,7 @@ class SocketChannelImpl
      *
      * @apiNote This method is for use by the socket adaptor.
      */
-    void blockingWriteFully(byte[] b, int off, int len) throws IOException {
+    private void implBlockingWriteFully(byte[] b, int off, int len) throws IOException {
         Objects.checkFromIndexSize(off, len, b.length);
         if (len == 0) {
             // nothing to do
@@ -1499,6 +1509,20 @@ class SocketChannelImpl
         } finally {
             writeLock.unlock();
         }
+    }
+
+    /**
+     * Writes a sequence of bytes to the socket from the given byte array.
+     *
+     * @apiNote This method is for use by the socket adaptor.
+     */
+    void blockingWriteFully(byte[] b, int off, int len) throws IOException {
+        if (! SocketWriteEvent.enabled()) {
+            implBlockingWriteFully(b, off, len);
+        }
+        long start = SocketWriteEvent.timestamp();
+        implBlockingWriteFully(b, off, len);
+        SocketWriteEvent.offer(start, len, remoteAddress());
     }
 
     /**
