@@ -880,6 +880,9 @@ class LoadVectorNode : public LoadNode {
   virtual uint size_of() const { return sizeof(*this); }
 
 #ifdef ASSERT
+  // When AlignVector is enabled, SuperWord only creates aligned vector loads and stores.
+  // VerifyAlignVector verifies this. We need to mark the nodes created in SuperWord,
+  // because nodes created elsewhere (i.e. VectorAPI) may still be misaligned.
   bool must_verify_alignment() const { return _must_verify_alignment; }
   void set_must_verify_alignment() { _must_verify_alignment = true; }
 #endif
@@ -933,6 +936,9 @@ class StoreVectorNode : public StoreNode {
   virtual uint size_of() const { return sizeof(*this); }
 
 #ifdef ASSERT
+  // When AlignVector is enabled, SuperWord only creates aligned vector loads and stores.
+  // VerifyAlignVector verifies this. We need to mark the nodes created in SuperWord,
+  // because nodes created elsewhere (i.e. VectorAPI) may still be misaligned.
   bool must_verify_alignment() const { return _must_verify_alignment; }
   void set_must_verify_alignment() { _must_verify_alignment = true; }
 #endif
