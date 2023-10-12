@@ -91,7 +91,7 @@ gc/stress/TestStressG1Humongous.java 8286554 windows-x64
 
 # :hotspot_runtime
 
-
+runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
 runtime/handshake/HandshakeSuspendExitTest.java 8294313 generic-all
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#explicit-large-page-size 8267460 linux-aarch64
@@ -140,6 +140,7 @@ serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStr
 
 #############################################################################
 
+gtest/GTestWrapper.java 8306561 aix-ppc64
 gtest/NMTGtests.java#nmt-detail 8306561 aix-ppc64
 gtest/NMTGtests.java#nmt-summary 8306561 aix-ppc64
 
