@@ -66,7 +66,7 @@ void BasicLock::move_to(oop obj, BasicLock* dest) {
   // is small (given the support for inflated fast-path locking in the fast_lock, etc)
   // we'll leave that optimization for another time.
 
-  if (displaced_header().is_neutral()) {
+  if (LockingMode == LM_LEGACY && displaced_header().is_neutral()) {
     // The object is locked and the resulting ObjectMonitor* will also be
     // locked so it can't be async deflated until ownership is dropped.
     ObjectSynchronizer::inflate_helper(obj);

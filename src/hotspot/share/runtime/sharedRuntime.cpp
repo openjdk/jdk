@@ -3258,7 +3258,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
     if (kptr2->obj() != nullptr) {         // Avoid 'holes' in the monitor array
       BasicLock *lock = kptr2->lock();
       // Inflate so the object's header no longer refers to the BasicLock.
-      if (lock->displaced_header().is_unlocked()) {
+      if (LockingMode == LM_LEGACY && lock->displaced_header().is_unlocked()) {
         // The object is locked and the resulting ObjectMonitor* will also be
         // locked so it can't be async deflated until ownership is dropped.
         // See the big comment in basicLock.cpp: BasicLock::move_to().
