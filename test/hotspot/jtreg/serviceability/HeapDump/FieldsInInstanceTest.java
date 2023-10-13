@@ -48,7 +48,7 @@ import jdk.test.lib.hprof.parser.Reader;
  * @run driver FieldsInInstanceTest
  */
 class FieldsInInstanceTarg extends LingeredApp {
-    
+
     public static void main(String[] args) {
         B b = new B();
         LingeredApp.main(args);
