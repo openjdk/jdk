@@ -65,7 +65,7 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
      */
     @ForceInline
     public NativeMemorySegmentImpl() {
-        super(0L, false, new GlobalSession(null));
+        super(0L, false, MemorySessionImpl.GLOBAL_SESSION);
         this.min = 0L;
     }
 
@@ -87,8 +87,7 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
 
     @Override
     ByteBuffer makeByteBuffer() {
-        return NIO_ACCESS.newDirectByteBuffer(min, (int) this.length, null,
-                scope == MemorySessionImpl.GLOBAL ? null : this);
+        return NIO_ACCESS.newDirectByteBuffer(min, (int) this.length, null, this);
     }
 
     @Override
@@ -176,6 +175,6 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
 
     @ForceInline
     public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize) {
-        return new NativeMemorySegmentImpl(min, byteSize, false, new GlobalSession(null));
+        return new NativeMemorySegmentImpl(min, byteSize, false, MemorySessionImpl.GLOBAL_SESSION);
     }
 }

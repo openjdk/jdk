@@ -33,6 +33,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
 import java.util.Objects;
+
+import jdk.internal.foreign.GlobalSession.HeapSession;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -59,10 +61,10 @@ public abstract sealed class MemorySessionImpl
     static final VarHandle STATE;
     static final int MAX_FORKS = Integer.MAX_VALUE;
 
-    public static final MemorySessionImpl GLOBAL = new GlobalSession(null);
-
     static final ScopedMemoryAccess.ScopedAccessError ALREADY_CLOSED = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::alreadyClosed);
     static final ScopedMemoryAccess.ScopedAccessError WRONG_THREAD = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::wrongThread);
+    // This is the session of all zero-length memory segments
+    public static final MemorySessionImpl GLOBAL_SESSION = new GlobalSession();
 
     final ResourceList resourceList;
     final Thread owner;
@@ -141,6 +143,10 @@ public abstract sealed class MemorySessionImpl
 
     public static MemorySessionImpl createImplicit(Cleaner cleaner) {
         return new ImplicitSession(cleaner);
+    }
+
+    public static MemorySessionImpl createHeap(Object ref) {
+        return new HeapSession(ref);
     }
 
     public abstract void release0();
@@ -229,10 +235,6 @@ public abstract sealed class MemorySessionImpl
     }
 
     abstract void justClose();
-
-    public static MemorySessionImpl heapSession(Object ref) {
-        return new GlobalSession(ref);
-    }
 
     /**
      * A list of all cleanup actions associated with a memory session. Cleanup actions are modelled as instances

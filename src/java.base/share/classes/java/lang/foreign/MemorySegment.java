@@ -383,7 +383,7 @@ import jdk.internal.vm.annotation.ForceInline;
  *     of memory whose size is not known, any access operations involving these segments cannot be validated.
  *     In effect, a zero-length memory segment <em>wraps</em> an address, and it cannot be used without explicit intent
  *     (see below);</li>
- *     <li>The segment is associated with a fresh scope that is always alive. Thus, while zero-length
+ *     <li>The segment is associated with the global scope. Thus, while zero-length
  *     memory segments cannot be accessed directly, they can be passed, opaquely, to other pointer-accepting foreign functions.</li>
  * </ul>
  * <p>
@@ -635,7 +635,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * MemorySegment cleanupSegment = MemorySegment.ofAddress(this.address())
      *                                             .reinterpret(byteSize());
      * }
-     * That is, the cleanup action receives a segment that is associated with a fresh scope that is always alive,
+     * That is, the cleanup action receives a segment that is associated with the global scope,
      * and is accessible from any thread. The size of the segment accepted by the cleanup action is {@link #byteSize()}.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
@@ -674,7 +674,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * MemorySegment cleanupSegment = MemorySegment.ofAddress(this.address())
      *                                             .reinterpret(newSize);
      * }
-     * That is, the cleanup action receives a segment that is associated with a fresh scope that is always alive,
+     * That is, the cleanup action receives a segment that is associated with the global scope,
      * and is accessible from any thread. The size of the segment accepted by the cleanup action is {@code newSize}.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
@@ -1183,11 +1183,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * If the provided buffer has been obtained by calling {@link #asByteBuffer()} on a memory segment whose
      * {@linkplain Scope scope} is {@code S}, the returned segment will be associated with the
-     * same scope {@code S}. Otherwise, the scope of the returned segment is a fresh scope that is always alive.
-     * <p>
-     * The scope associated with the returned segment keeps the provided buffer reachable. As such, if
-     * the provided buffer is a direct buffer, its backing memory region will not be deallocated as long as the
-     * returned segment (or any of its slices) are kept reachable.
+     * same scope {@code S}. Otherwise, the scope of the returned segment is an automatic scope that keeps the provided
+     * buffer reachable. As such, if the provided buffer is a direct buffer, its backing memory region will not be
+     * deallocated as long as the returned segment (or any of its slices) are kept reachable.
      *
      * @param buffer the buffer instance to be turned into a new memory segment.
      * @return a memory segment, derived from the given buffer instance.
@@ -1202,7 +1200,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Creates a heap segment backed by the on-heap region of memory that holds the given byte array.
-     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given array reachable.
+     * The scope of the returned segment is an automatic scope that keeps the given array reachable.
      * The returned segment is always accessible, from any thread. Its {@link #address()} is set to zero.
      *
      * @param byteArray the primitive array backing the heap memory segment.
@@ -1214,7 +1212,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Creates a heap segment backed by the on-heap region of memory that holds the given char array.
-     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given array reachable.
+     * The scope of the returned segment is an automatic scope that keeps the given array reachable.
      * The returned segment is always accessible, from any thread. Its {@link #address()} is set to zero.
      *
      * @param charArray the primitive array backing the heap segment.
@@ -1226,7 +1224,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Creates a heap segment backed by the on-heap region of memory that holds the given short array.
-     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given array reachable.
+     * The scope of the returned segment is an automatic scope that keeps the given array reachable.
      * The returned segment is always accessible, from any thread. Its {@link #address()} is set to zero.
      *
      * @param shortArray the primitive array backing the heap segment.
@@ -1238,7 +1236,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Creates a heap segment backed by the on-heap region of memory that holds the given int array.
-     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given array reachable.
+     * The scope of the returned segment is an automatic scope that keeps the given array reachable.
      * The returned segment is always accessible, from any thread. Its {@link #address()} is set to zero.
      *
      * @param intArray the primitive array backing the heap segment.
@@ -1250,7 +1248,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Creates a heap segment backed by the on-heap region of memory that holds the given float array.
-     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given array reachable.
+     * The scope of the returned segment is an automatic scope that keeps the given array reachable.
      * The returned segment is always accessible, from any thread. Its {@link #address()} is set to zero.
      *
      * @param floatArray the primitive array backing the heap segment.
@@ -1262,7 +1260,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Creates a heap segment backed by the on-heap region of memory that holds the given long array.
-     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given array reachable.
+     * The scope of the returned segment is an automatic scope that keeps the given array reachable.
      * The returned segment is always accessible, from any thread. Its {@link #address()} is set to zero.
      *
      * @param longArray the primitive array backing the heap segment.
@@ -1274,7 +1272,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Creates a heap segment backed by the on-heap region of memory that holds the given double array.
-     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given array reachable.
+     * The scope of the returned segment is an automatic scope that keeps the given array reachable.
      * The returned segment is always accessible, from any thread. Its {@link #address()} is set to zero.
      *
      * @param doubleArray the primitive array backing the heap segment.
@@ -1285,13 +1283,13 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     }
 
     /**
-     * A zero-length native segment modelling the {@code NULL} address.
+     * A zero-length native segment modelling the {@code NULL} address. Equivalent to {@code MemorySegment.ofAddress(0L)}.
      */
     MemorySegment NULL = new NativeMemorySegmentImpl();
 
     /**
      * Creates a zero-length native segment from the given {@linkplain #address() address value}.
-     * The returned segment is associated with a scope that is always alive, and is accessible from any thread.
+     * The returned segment is associated with the global scope, and is accessible from any thread.
      * <p>
      * On 32-bit platforms, the given address value will be normalized such that the
      * highest-order ("leftmost") 32 bits of the {@link MemorySegment#address() address}
@@ -1718,7 +1716,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Reads an address from this segment at the given offset, with the given layout. The read address is wrapped in
-     * a native segment, associated with a fresh scope that is always alive. Under normal conditions,
+     * a native segment, associated with the global scope. Under normal conditions,
      * the size of the returned segment is {@code 0}. However, if the provided address layout has a
      * {@linkplain AddressLayout#targetLayout() target layout} {@code T}, then the size of the returned segment
      * is set to {@code T.byteSize()}.
@@ -2157,7 +2155,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Reads an address from this segment at the given at the given index, scaled by the given layout size. The read address is wrapped in
-     * a native segment, associated with a fresh scope that is always alive. Under normal conditions,
+     * a native segment, associated with the global scope. Under normal conditions,
      * the size of the returned segment is {@code 0}. However, if the provided address layout has a
      * {@linkplain AddressLayout#targetLayout() target layout} {@code T}, then the size of the returned segment
      * is set to {@code T.byteSize()}.
@@ -2365,11 +2363,38 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * A scope models the <em>lifetime</em> of all the memory segments associated with it. That is, a memory segment
-     * cannot be accessed if its associated scope is not {@linkplain #isAlive() alive}. A new scope is typically
-     * obtained indirectly, by creating a new {@linkplain Arena arena}.
+     * cannot be accessed if its associated scope is not {@linkplain #isAlive() alive}. Scope instances can be compared
+     * for equality. That is, two scopes are considered {@linkplain #equals(Object)} if they denote the same lifetime.
      * <p>
-     * Scope instances can be compared for equality. That is, two scopes
-     * are considered {@linkplain #equals(Object)} if they denote the same lifetime.
+     * The lifetime of a memory segment can be either <em>unbounded</em> or <em>bounded</em>. An unbounded lifetime
+     * is modelled with the <em>global scope</em>. The global scope is always {@link #isAlive() alive}. As such, a segment
+     * associated with the global scope features trivial temporal bounds, and is always accessible.
+     * Segments associated with the global scope are:
+     * <ul>
+     *     <li>Segments obtained from the {@linkplain Arena#global() global arena};</li>
+     *     <li>Segments obtained from a raw address, using the {@link MemorySegment#ofAddress(long)} factory; and</li>
+     *     <li><a href="#wrapping-addresses">Zero-length memory segments.</a></li>
+     * </ul>
+     * <p>
+     * Conversely, a bounded lifetime is modelled with a segment scope that can be invalidated, either {@link Arena#close() explicitly},
+     * or automatically, by the garbage collector. A segment scope that is invalidated automatically is an <em>automatic scope</em>.
+     * An automatic scope is always {@link #isAlive() alive} as long as it is <a href="../../../java/lang/ref/package.html#reachability">reachable</a>.
+     * Segments associated with an automatic scope are:
+     * <ul>
+     *     <li>Segments obtained from an {@linkplain Arena#ofAuto() automatic arena};</li>
+     *     <li>Segments obtained from a Java array, e.g. using the {@link MemorySegment#ofArray(int[])} factory;</li>
+     *     <li>Segments obtained from a buffer, using the {@link MemorySegment#ofBuffer(Buffer)} factory; and</li>
+     *     <li>Segments obtained from {@linkplain SymbolLookup#loaderLookup() loader lookup}.</li>
+     * </ul>
+     * If two memory segments are obtained from the same {@linkplain #ofBuffer(Buffer) buffer}
+     * or {@linkplain #ofArray(int[]) array}, the automatic scopes associated with said segments are considered
+     * {@linkplain #equals(Object) equal}, as the two segments have the same lifetime:
+     * {@snippet lang=java :
+     * byte[] arr = new byte[10];
+     * MemorySegment segment1 = MemorySegment.ofArray(arr);
+     * MemorySegment segment2 = MemorySegment.ofArray(arr);
+     * assert segment1.scope().equals(segment2.scope());
+     * }
      */
     sealed interface Scope permits MemorySessionImpl {
         /**

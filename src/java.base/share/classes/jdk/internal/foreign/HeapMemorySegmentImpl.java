@@ -114,7 +114,7 @@ public abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegment
             Objects.requireNonNull(arr);
             long byteSize = (long)arr.length * Unsafe.ARRAY_BYTE_INDEX_SCALE;
             return new OfByte(Unsafe.ARRAY_BYTE_BASE_OFFSET, arr, byteSize, false,
-                    MemorySessionImpl.heapSession(arr));
+                    MemorySessionImpl.createHeap(arr));
         }
 
         @Override
@@ -148,7 +148,7 @@ public abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegment
             Objects.requireNonNull(arr);
             long byteSize = (long)arr.length * Unsafe.ARRAY_CHAR_INDEX_SCALE;
             return new OfChar(Unsafe.ARRAY_CHAR_BASE_OFFSET, arr, byteSize, false,
-                    MemorySessionImpl.heapSession(arr));
+                    MemorySessionImpl.createHeap(arr));
         }
 
         @Override
@@ -182,7 +182,7 @@ public abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegment
             Objects.requireNonNull(arr);
             long byteSize = (long)arr.length * Unsafe.ARRAY_SHORT_INDEX_SCALE;
             return new OfShort(Unsafe.ARRAY_SHORT_BASE_OFFSET, arr, byteSize, false,
-                    MemorySessionImpl.heapSession(arr));
+                    MemorySessionImpl.createHeap(arr));
         }
 
         @Override
@@ -216,7 +216,7 @@ public abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegment
             Objects.requireNonNull(arr);
             long byteSize = (long)arr.length * Unsafe.ARRAY_INT_INDEX_SCALE;
             return new OfInt(Unsafe.ARRAY_INT_BASE_OFFSET, arr, byteSize, false,
-                    MemorySessionImpl.heapSession(arr));
+                    MemorySessionImpl.createHeap(arr));
         }
 
         @Override
@@ -250,7 +250,7 @@ public abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegment
             Objects.requireNonNull(arr);
             long byteSize = (long)arr.length * Unsafe.ARRAY_LONG_INDEX_SCALE;
             return new OfLong(Unsafe.ARRAY_LONG_BASE_OFFSET, arr, byteSize, false,
-                    MemorySessionImpl.heapSession(arr));
+                    MemorySessionImpl.createHeap(arr));
         }
 
         @Override
@@ -284,7 +284,7 @@ public abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegment
             Objects.requireNonNull(arr);
             long byteSize = (long)arr.length * Unsafe.ARRAY_FLOAT_INDEX_SCALE;
             return new OfFloat(Unsafe.ARRAY_FLOAT_BASE_OFFSET, arr, byteSize, false,
-                    MemorySessionImpl.heapSession(arr));
+                    MemorySessionImpl.createHeap(arr));
         }
 
         @Override
@@ -318,7 +318,7 @@ public abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegment
             Objects.requireNonNull(arr);
             long byteSize = (long)arr.length * Unsafe.ARRAY_DOUBLE_INDEX_SCALE;
             return new OfDouble(Unsafe.ARRAY_DOUBLE_BASE_OFFSET, arr, byteSize, false,
-                    MemorySessionImpl.heapSession(arr));
+                    MemorySessionImpl.createHeap(arr));
         }
 
         @Override
