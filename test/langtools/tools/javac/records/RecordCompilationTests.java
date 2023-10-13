@@ -1316,8 +1316,8 @@ class RecordCompilationTests extends CompilationTestCase {
     //  record component
     @Test
     void testCheckInitializationOrderInCompactConstructor() throws Exception {
-        int putField1 = -1;
-        int putField2 = -1;
+        FieldInstruction putField1 = null;
+        FieldInstruction putField2 = null;
         File dir = assertOK(true, "record R(int i, String s) { R {} }");
         for (final File fileEntry : Objects.requireNonNull(dir.listFiles())) {
             if (fileEntry.getName().equals("R.class")) {
