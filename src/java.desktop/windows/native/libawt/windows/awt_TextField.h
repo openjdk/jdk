@@ -28,7 +28,6 @@
 
 #include "awt_TextComponent.h"
 
-#include "java_awt_TextField.h"
 #include "sun_awt_windows_WTextFieldPeer.h"
 
 #include <ole2.h>
