@@ -223,14 +223,6 @@ Java_java_awt_Container_initIDs
 
 }
 
-
-JNIEXPORT void JNICALL
-Java_java_awt_Button_initIDs
-  (JNIEnv *env, jclass cls)
-{
-
-}
-
 JNIEXPORT void JNICALL
 Java_java_awt_Scrollbar_initIDs
   (JNIEnv *env, jclass cls)
