@@ -120,6 +120,7 @@ AC_DEFUN([UTIL_FIXUP_PATH],
 
 ##############################################################################
 # Fixup path to be a Windows full long path
+# Note: Only supported with cygwin/msys2 (cygpath tool)
 AC_DEFUN([UTIL_FIXUP_WIN_LONG_PATH],
 [
   # Only process if variable expands to non-empty

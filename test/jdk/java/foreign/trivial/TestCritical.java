@@ -23,10 +23,8 @@
 
 /*
  * @test
- * @enablePreview
  * @library ../ /test/lib
- * @requires jdk.foreign.linker != "UNSUPPORTED"
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestTrivial
+ * @run testng/othervm --enable-native-access=ALL-UNNAMED TestCritical
  */
 
 import org.testng.annotations.Test;
@@ -43,21 +41,21 @@ import java.lang.invoke.VarHandle;
 
 import static org.testng.Assert.assertEquals;
 
-public class TestTrivial extends NativeTestHelper {
+public class TestCritical extends NativeTestHelper {
 
     static {
-        System.loadLibrary("Trivial");
+        System.loadLibrary("Critical");
     }
 
     @Test
     public void testEmpty() throws Throwable {
-        MethodHandle handle = downcallHandle("empty", FunctionDescriptor.ofVoid(), Linker.Option.isTrivial());
+        MethodHandle handle = downcallHandle("empty", FunctionDescriptor.ofVoid(), Linker.Option.critical());
         handle.invokeExact();
     }
 
     @Test
     public void testIdentity() throws Throwable {
-        MethodHandle handle = downcallHandle("identity", FunctionDescriptor.of(C_INT, C_INT), Linker.Option.isTrivial());
+        MethodHandle handle = downcallHandle("identity", FunctionDescriptor.of(C_INT, C_INT), Linker.Option.critical());
         int result = (int) handle.invokeExact(42);
         assertEquals(result, 42);
     }
@@ -68,31 +66,16 @@ public class TestTrivial extends NativeTestHelper {
                 C_LONG_LONG.withName("x"),
                 C_LONG_LONG.withName("y"));
 
-        MethodHandle handle = downcallHandle("with_return_buffer", FunctionDescriptor.of(bigLayout), Linker.Option.isTrivial());
+        MethodHandle handle = downcallHandle("with_return_buffer", FunctionDescriptor.of(bigLayout), Linker.Option.critical());
         VarHandle vhX = bigLayout.varHandle(MemoryLayout.PathElement.groupElement("x"));
         VarHandle vhY = bigLayout.varHandle(MemoryLayout.PathElement.groupElement("y"));
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment result = (MemorySegment) handle.invokeExact((SegmentAllocator) arena);
-            long x = (long) vhX.get(result);
+            long x = (long) vhX.get(result, 0L);
             assertEquals(x, 10);
-            long y = (long) vhY.get(result);
+            long y = (long) vhY.get(result, 0L);
             assertEquals(y, 11);
         }
     }
-
-    @Test
-    public void testCaptureErrno() throws Throwable {
-        Linker.Option ccs = Linker.Option.captureCallState("errno");
-        MethodHandle handle = downcallHandle("capture_errno", FunctionDescriptor.ofVoid(C_INT), Linker.Option.isTrivial(), ccs);
-        StructLayout capturedStateLayout = Linker.Option.captureStateLayout();
-        VarHandle errnoHandle = capturedStateLayout.varHandle(MemoryLayout.PathElement.groupElement("errno"));
-        try (Arena arena = Arena.ofConfined()) {
-            MemorySegment captureSeg = arena.allocate(capturedStateLayout);
-            handle.invokeExact(captureSeg, 42);
-            int capturedErrno = (int) errnoHandle.get(captureSeg);
-            assertEquals(capturedErrno, 42);
-        }
-    }
-
 
 }

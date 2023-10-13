@@ -36,7 +36,7 @@ void call(void* ctxt) {
 
 extern "C" {
     JNIEXPORT void JNICALL
-    Java_org_openjdk_foreigntest_PanamaMainUnnamedModule_nativeLinker0(JNIEnv *env, jclass cls) {
+    Java_org_openjdk_foreigntest_unnamed_PanamaMainUnnamedModule_nativeLinker0(JNIEnv *env, jclass cls) {
         JavaVM* jvm;
         env->GetJavaVM(&jvm);
         run_in_new_thread_and_join(call, jvm);
