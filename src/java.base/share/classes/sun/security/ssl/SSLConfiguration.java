@@ -139,32 +139,46 @@ final class SSLConfiguration implements Cloneable {
     }
 
     static {
-        int certLen = GetIntegerAction.privilegedGetProperty(
-                "jdk.tls.maxCertificateChainLength", 10);
-        if (certLen < 0) {
-            certLen = 10;
+        // jdk.tls.maxCertificateChainLength property has no default
+        Integer certLen = GetIntegerAction.privilegedGetProperty(
+                "jdk.tls.maxCertificateChainLength");
+        if (certLen == null || (int)certLen < 0) {
+            certLen = 0;
         }
         maxCertificateChainLength = certLen;
 
-        /*
-         * If the jdk.tls.maxClientCertificateChainLength or jdk.tls.maxServerCertificateChainLength
-         * system property is not set, it will default to the value of the
-         * jdk.tls.maxCertificateChainLength system property. If either of them is
-         * set, it will supersede the value of the jdk.tls.maxCertificateChainLength
-         * system property.
-         */
+        // Default for jdk.tls.maxClientCertificateChainLength is 8
         int clientLen = GetIntegerAction.privilegedGetProperty(
-                "jdk.tls.maxClientCertificateChainLength", maxCertificateChainLength);
+                "jdk.tls.maxClientCertificateChainLength", 8);
         if (clientLen < 0) {
-            clientLen = maxCertificateChainLength;
+            clientLen = 8;
         }
-        maxClientCertificateChainLength = clientLen;
 
+        // Default for jdk.tls.maxServerCertificateChainLength is 10
         int serverLen = GetIntegerAction.privilegedGetProperty(
-                "jdk.tls.maxServerCertificateChainLength", maxCertificateChainLength);
+                "jdk.tls.maxServerCertificateChainLength", 10);
         if (serverLen < 0) {
-            serverLen = maxCertificateChainLength;
+            serverLen = 10;
         }
+
+        /*
+         * When jdk.tls.maxCertificateChainLength is set, it will override
+         * the defaults for jdk.tls.maxClientCertificateChainLength and
+         * jdk.tls.maxServerCertificateChainLength if they are not explicitly
+         * overridden. That means if either of those properties have been set,
+         * the jdk.tls.maxCertificateChainLength property will not override
+         * the values.
+         */
+        if (maxCertificateChainLength > 0) {
+            if (clientLen == 8) {
+                clientLen = maxCertificateChainLength;
+            }
+            if (serverLen == 10) {
+                serverLen = maxCertificateChainLength;
+            }
+        }
+
+        maxClientCertificateChainLength = clientLen;
         maxServerCertificateChainLength = serverLen;
     }
 
