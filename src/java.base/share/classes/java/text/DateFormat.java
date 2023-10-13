@@ -948,7 +948,7 @@ public abstract class DateFormat extends Format {
          * The return value of {@code -1} guarantees that this field does not
          * represent any corresponding constant in {@code Calendar}.
          *
-         * @implSpec This implementation always returns {@code -1} if it does
+         * @implSpec The default implementation always returns {@code -1} if it does
          * not represent any corresponding constant in {@code Calendar}.
          *
          * @return Calendar constant for this field
