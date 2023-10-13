@@ -331,6 +331,8 @@
   static_field(StubRoutines,                _checkcast_arraycopy_uninit,                      address)                               \
   static_field(StubRoutines,                _unsafe_arraycopy,                                address)                               \
   static_field(StubRoutines,                _generic_arraycopy,                               address)                               \
+  static_field(StubRoutines,                _array_sort,                                      address)                               \
+  static_field(StubRoutines,                _array_partition,                                 address)                               \
                                                                                                                                      \
   static_field(StubRoutines,                _aescrypt_encryptBlock,                           address)                               \
   static_field(StubRoutines,                _aescrypt_decryptBlock,                           address)                               \

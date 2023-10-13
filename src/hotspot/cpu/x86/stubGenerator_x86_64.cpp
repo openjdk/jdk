@@ -4172,6 +4172,26 @@ void StubGenerator::generate_compiler_stubs() {
       = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
   }
 
+  // Load x86_64_sort library on supported hardware to enable avx512 sort and partition intrinsics
+  if (VM_Version::is_intel() && VM_Version::supports_avx512dq()) {
+    void *libsimdsort = nullptr;
+    char ebuf_[1024];
+    char dll_name_simd_sort[JVM_MAXPATHLEN];
+    if (os::dll_locate_lib(dll_name_simd_sort, sizeof(dll_name_simd_sort), Arguments::get_dll_dir(), "simdsort")) {
+      libsimdsort = os::dll_load(dll_name_simd_sort, ebuf_, sizeof ebuf_);
+    }
+    // Get addresses for avx512 sort and partition routines
+    if (libsimdsort != nullptr) {
+      log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "simdsort" JNI_LIB_SUFFIX, p2i(libsimdsort));
+
+      snprintf(ebuf_, sizeof(ebuf_), "avx512_sort");
+      StubRoutines::_array_sort = (address)os::dll_lookup(libsimdsort, ebuf_);
+
+      snprintf(ebuf_, sizeof(ebuf_), "avx512_partition");
+      StubRoutines::_array_partition = (address)os::dll_lookup(libsimdsort, ebuf_);
+    }
+  }
+
   // Get svml stub routine addresses
   void *libjsvml = nullptr;
   char ebuf[1024];

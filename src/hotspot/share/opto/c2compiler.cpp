@@ -118,6 +118,7 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   bool do_superword = UseSuperWord;
 
   while (!env->failing()) {
+    ResourceMark rm;
     // Attempt to compile while subsuming loads into machine instructions.
     Options options(subsume_loads,
                     do_escape_analysis,
@@ -614,6 +615,8 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_min_strict:
   case vmIntrinsics::_max_strict:
   case vmIntrinsics::_arraycopy:
+  case vmIntrinsics::_arraySort:
+  case vmIntrinsics::_arrayPartition:
   case vmIntrinsics::_indexOfL:
   case vmIntrinsics::_indexOfU:
   case vmIntrinsics::_indexOfUL:

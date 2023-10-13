@@ -211,12 +211,6 @@ class Space: public CHeapObj<mtGC> {
   virtual void print_short() const;
   virtual void print_short_on(outputStream* st) const;
 
-
-  // IF "this" is a ContiguousSpace, return it, else return null.
-  virtual ContiguousSpace* toContiguousSpace() {
-    return nullptr;
-  }
-
   // Debugging
   virtual void verify() const = 0;
 };
@@ -414,11 +408,6 @@ private:
   HeapWord** end_addr() { return &_end; }
 
   void print_on(outputStream* st) const override;
-
-  // Checked dynamic downcasts.
-  ContiguousSpace* toContiguousSpace() override {
-    return this;
-  }
 
   // Debugging
   void verify() const override;
