@@ -84,8 +84,7 @@ public class GregorianCalAndDurSerDataUtil {
 
             Files.deleteIfExists(Path.of(testsrc,srcFilePrefix+"GregorianCalendarAndDurationSerData.java"));
 
-            classStr = String.format(classStr, srcFilePrefix, generatePseudoCodeForGregCalSerBytesAsBase64(base64),
-                    generatePseudoCodeForDurationSerBytesAsBase64(base64dur), generatePseudoCodeForGregCalSerBytes(baos),
+            classStr = String.format(classStr, srcFilePrefix, generatePseudoCodeForGregCalSerBytes(baos),
                     generatePseudoCodeForDurationSerBytes(baos2));
             Files.writeString(Path.of(testsrc,srcFilePrefix+"GregorianCalendarAndDurationSerData.java"), classStr);
         }
@@ -139,55 +138,5 @@ public class GregorianCalAndDurSerDataUtil {
         }
         fmt.format("%n    };%n");
         return sb.toString();
-    }
-
-    /**
-     * Generates the Java Pseudo code for Gregorian Calendar serialized byte array as Base64 string.
-     * @param base64 Serialized GregorianCalendar bytes encoded as Base64 string.
-     * @return pseudo code String for Base64 encode serialized Gregorian calendar bytes.
-     */
-    public static String generatePseudoCodeForGregCalSerBytesAsBase64(String base64) {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("    /**").append('\n');
-        sb.append("     * Base64 encoded string for XMLGregorianCalendar object.").append('\n');
-        sb.append("     * Java version: ").append(JDK).append('\n');
-        sb.append("     **/").append('\n');
-        sb.append("    private final String gregorianCalendarBase64 = ").append("\n          ");
-        final int last = base64.length() - 1;
-        for (int i=0; i<base64.length();i++) {
-            if (i%64 == 0) sb.append("\"");
-            sb.append(base64.charAt(i));
-            if (i%64 == 63 || i == last) {
-                sb.append("\"");
-                if (i == last) sb.append(";\n");
-                else sb.append("\n        + ");
-            }
-        }
-        return sb.toString();
-    }
-
-    /**
-     * Generates the Java Pseudo code for Duration serialized byte array as Base64 string.
-     * @param base64 Serialized Duration bytes encoded as Base64 string.
-     * @return pseudocode String for Base64 encode serialized Duration bytes.
-     */
-    public static String generatePseudoCodeForDurationSerBytesAsBase64(String base64) {
-        final StringBuilder sbdur = new StringBuilder();
-        sbdur.append("    /**").append('\n');
-        sbdur.append("     * Base64 encoded string for Duration object.").append('\n');
-        sbdur.append("     * Java version: ").append(JDK).append('\n');
-        sbdur.append("     **/").append('\n');
-        sbdur.append("    private final String durationBase64 = ").append("\n          ");
-        final int lastdur = base64.length() - 1;
-        for (int i=0; i<base64.length();i++) {
-            if (i%64 == 0) sbdur.append("\"");
-            sbdur.append(base64.charAt(i));
-            if (i%64 == 63 || i == lastdur) {
-                sbdur.append("\"");
-                if (i == lastdur) sbdur.append(";\n");
-                else sbdur.append("\n        + ");
-            }
-        }
-        return sbdur.toString();
     }
 }

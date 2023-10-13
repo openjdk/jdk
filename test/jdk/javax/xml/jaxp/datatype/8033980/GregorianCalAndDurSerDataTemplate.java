@@ -28,26 +28,14 @@ public class GregorianCalAndDurSerDataTemplate {
     public static final String GREGO_CAL_DUR_SER_CLASS = "public class %sGregorianCalendarAndDurationSerData extends GregorianCalendarAndDurationSerData {\n" +
             "    %s\n" +
             "    %s\n" +
-            "    %s\n" +
-            "    %s\n" +
             "    @Override\n" +
             "    public byte[] getGregorianCalendarByteArray() {\n" +
             "        return gregorianCalendarBytes;\n" +
             "    }\n" +
             "\n" +
             "    @Override\n" +
-            "    public String getGregorianCalendarBase64() {\n" +
-            "        return gregorianCalendarBase64;\n" +
-            "    }\n" +
-            "\n" +
-            "    @Override\n" +
             "    public byte[] getDurationBytes() {\n" +
             "        return durationBytes;\n" +
-            "    }\n" +
-            "\n" +
-            "    @Override\n" +
-            "    public String getDurationBase64() {\n" +
-            "        return durationBase64;\n" +
             "    }\n" +
             "}";
 }

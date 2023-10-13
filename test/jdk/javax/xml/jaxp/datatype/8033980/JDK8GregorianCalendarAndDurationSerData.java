@@ -25,23 +25,6 @@
  * JDK 8 serialization bytes for XMLGregorianCalendar and Duration data type generated using JDK 1.8.0 version.
  */
 public class JDK8GregorianCalendarAndDurationSerData extends GregorianCalendarAndDurationSerData {
-    private final String gregorianCalendarBase64 =
-            "rO0ABXNyAEljb20uc3VuLm9yZy5hcGFjaGUueGVyY2VzLmludGVybmFsLmpheHAu"
-                    + "ZGF0YXR5cGUuWE1MR3JlZ29yaWFuQ2FsZW5kYXJJbXBsAAAAAAAAAAECAAlJAANk"
-                    + "YXlJAARob3VySQAGbWludXRlSQAFbW9udGhJAAZzZWNvbmRJAAh0aW1lem9uZUkA"
-                    + "BHllYXJMAANlb250ABZMamF2YS9tYXRoL0JpZ0ludGVnZXI7TAAQZnJhY3Rpb25h"
-                    + "bFNlY29uZHQAFkxqYXZhL21hdGgvQmlnRGVjaW1hbDt4cAAAAAEAAAAAAAAAAAAA"
-                    + "AAEAAAAA///+1AAAAAFwc3IAFGphdmEubWF0aC5CaWdEZWNpbWFsVMcVV/mBKE8D"
-                    + "AAJJAAVzY2FsZUwABmludFZhbHEAfgABeHIAEGphdmEubGFuZy5OdW1iZXKGrJUd"
-                    + "C5TgiwIAAHhwAAAAB3NyABRqYXZhLm1hdGguQmlnSW50ZWdlcoz8nx+pO/sdAwAG"
-                    + "SQAIYml0Q291bnRJAAliaXRMZW5ndGhJABNmaXJzdE5vbnplcm9CeXRlTnVtSQAM"
-                    + "bG93ZXN0U2V0Qml0SQAGc2lnbnVtWwAJbWFnbml0dWRldAACW0J4cQB+AAX/////"
-                    + "//////////7////+AAAAAHVyAAJbQqzzF/gGCFTgAgAAeHAAAAAAeHg=";
-    private final String durationBase64 =
-            "rO0ABXNyAExjb20uc3VuLm9yZy5hcGFjaGUueGVyY2VzLmludGVybmFsLmpheHAu"
-                    + "ZGF0YXR5cGUuRHVyYXRpb25JbXBsJER1cmF0aW9uU3RyZWFtAAAAAAAAAAECAAFM"
-                    + "AAdsZXhpY2FsdAASTGphdmEvbGFuZy9TdHJpbmc7eHB0AA5QMVkxTTFEVDFIMU0x"
-                    + "Uw==";
     private final byte[] gregorianCalendarBytes = {
             (byte) 0xac, (byte) 0xed, (byte) 0x0, (byte) 0x5, (byte) 0x73, (byte) 0x72, (byte) 0x0, (byte) 0x49,
             (byte) 0x63, (byte) 0x6f, (byte) 0x6d, (byte) 0x2e, (byte) 0x73, (byte) 0x75, (byte) 0x6e, (byte) 0x2e,
@@ -138,17 +121,7 @@ public class JDK8GregorianCalendarAndDurationSerData extends GregorianCalendarAn
     }
 
     @Override
-    public String getGregorianCalendarBase64() {
-        return gregorianCalendarBase64;
-    }
-
-    @Override
     public byte[] getDurationBytes() {
         return durationBytes;
-    }
-
-    @Override
-    public String getDurationBase64() {
-        return durationBase64;
     }
 }

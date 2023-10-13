@@ -25,8 +25,6 @@
  * JDK 7 serialization bytes for XMLGregorianCalendar and Duration data type generated using JDK 1.7.0 version.
  */
 public class JDK7GregorianCalendarAndDurationSerData extends GregorianCalendarAndDurationSerData {
-    private final String gregorianCalendarBase64 = "";
-    private final String durationBase64 = "";
     private final byte[] gregorianCalendarBytes = {
             (byte) 0xac, (byte) 0xed, (byte) 0x0, (byte) 0x5, (byte) 0x73, (byte) 0x72, (byte) 0x0, (byte) 0x49,
             (byte) 0x63, (byte) 0x6f, (byte) 0x6d, (byte) 0x2e, (byte) 0x73, (byte) 0x75, (byte) 0x6e, (byte) 0x2e,
@@ -116,25 +114,13 @@ public class JDK7GregorianCalendarAndDurationSerData extends GregorianCalendarAn
             (byte) 0x31, (byte) 0x44, (byte) 0x54, (byte) 0x31, (byte) 0x48, (byte) 0x31, (byte) 0x4d, (byte) 0x31,
             (byte) 0x53,
     };
-
-
     @Override
     public byte[] getGregorianCalendarByteArray() {
         return gregorianCalendarBytes;
     }
 
     @Override
-    public String getGregorianCalendarBase64() {
-        return gregorianCalendarBase64;
-    }
-
-    @Override
     public byte[] getDurationBytes() {
         return durationBytes;
-    }
-
-    @Override
-    public String getDurationBase64() {
-        return durationBase64;
     }
 }

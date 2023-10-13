@@ -28,12 +28,6 @@ public abstract class GregorianCalendarAndDurationSerData {
     //Returns byte array of serialized GregorianCalendar.
     public abstract byte[] getGregorianCalendarByteArray();
 
-    //Returns Base64 encoded string of serialized GregorianCalendar.
-    public abstract String getGregorianCalendarBase64();
-
     //Returns byte array of serialized Duration.
     public abstract byte[] getDurationBytes();
-
-    //Returns Base64 encoded string of serialized Duration.
-    public abstract String getDurationBase64();
 }
