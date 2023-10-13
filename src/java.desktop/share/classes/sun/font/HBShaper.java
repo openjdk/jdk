@@ -107,10 +107,11 @@ public class HBShaper {
     ).withName("hb_glyph_info_t");
 
     private static VarHandle getVarHandle(SequenceLayout layout, String name) {
-        return layout.varHandle(
+        VarHandle h = layout.varHandle(
             PathElement.sequenceElement(),
-            PathElement.groupElement(name))
-                 .withInvokeExactBehavior();
+            PathElement.groupElement(name));
+        /* insert 0 offset so don't need to pass arg every time */
+        return MethodHandles.insertCoordinates(h, 1, 0L).withInvokeExactBehavior();
     }
 
     private static final VarHandle x_offsetHandle;
