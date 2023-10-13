@@ -170,16 +170,22 @@ public class HBShaper {
         FunctionDescriptor mallocDescriptor =
             FunctionDescriptor.of(ADDRESS, JAVA_LONG);
         Optional<MemorySegment> malloc_symbol = SYM_LOOKUP.find("malloc");
-        malloc_handle = LINKER.downcallHandle(malloc_symbol.get(), mallocDescriptor);
+        @SuppressWarnings("restricted")
+        MethodHandle tmp1 = LINKER.downcallHandle(malloc_symbol.get(), mallocDescriptor);
+        malloc_handle = tmp1;
 
         FunctionDescriptor createFaceDescriptor =
             FunctionDescriptor.of(ADDRESS, ADDRESS);
         Optional<MemorySegment> create_face_symbol = SYM_LOOKUP.find("HBCreateFace");
-        create_face_handle = LINKER.downcallHandle(create_face_symbol.get(), createFaceDescriptor);
+        @SuppressWarnings("restricted")
+        MethodHandle tmp2 = LINKER.downcallHandle(create_face_symbol.get(), createFaceDescriptor);
+        create_face_handle = tmp2;
 
         FunctionDescriptor disposeFaceDescriptor = FunctionDescriptor.ofVoid(ADDRESS);
         Optional<MemorySegment> dispose_face_symbol = SYM_LOOKUP.find("HBDisposeFace");
-        dispose_face_handle = LINKER.downcallHandle(dispose_face_symbol.get(), disposeFaceDescriptor);
+        @SuppressWarnings("restricted")
+        MethodHandle tmp3 = LINKER.downcallHandle(dispose_face_symbol.get(), disposeFaceDescriptor);
+        dispose_face_handle = tmp3;
 
         FunctionDescriptor shapeDesc = FunctionDescriptor.ofVoid(
             //JAVA_INT,    // return type
@@ -200,43 +206,50 @@ public class HBShaper {
             ADDRESS);    // store_results_fn
 
         Optional<MemorySegment> shape_sym = SYM_LOOKUP.find("jdk_hb_shape");
-        jdk_hb_shape_handle = LINKER.downcallHandle(shape_sym.get(), shapeDesc);
+        @SuppressWarnings("restricted")
+        MethodHandle tmp4 = LINKER.downcallHandle(shape_sym.get(), shapeDesc);
+        jdk_hb_shape_handle = tmp4;
 
         Arena garena = Arena.global(); // creating stubs that exist until VM exit.
         FunctionDescriptor get_var_glyph_fd = getFunctionDescriptor(JAVA_INT,  // return type
               ADDRESS, ADDRESS, JAVA_INT, JAVA_INT, ADDRESS, ADDRESS); // arg types
         MethodHandle get_var_glyph_mh =
             getMethodHandle("get_variation_glyph", get_var_glyph_fd);
-        get_var_glyph_stub =
-            LINKER.upcallStub(get_var_glyph_mh, get_var_glyph_fd, garena);
+        @SuppressWarnings("restricted")
+        MemorySegment tmp5 = LINKER.upcallStub(get_var_glyph_mh, get_var_glyph_fd, garena);
+        get_var_glyph_stub = tmp5;
 
         FunctionDescriptor get_nominal_glyph_fd = getFunctionDescriptor(JAVA_INT, // return type
                    ADDRESS, ADDRESS, JAVA_INT, ADDRESS, ADDRESS); // arg types
         MethodHandle get_nominal_glyph_mh =
             getMethodHandle("get_nominal_glyph", get_nominal_glyph_fd);
-        get_nominal_glyph_stub =
-            LINKER.upcallStub(get_nominal_glyph_mh, get_nominal_glyph_fd, garena);
+        @SuppressWarnings("restricted")
+        MemorySegment tmp6 = LINKER.upcallStub(get_nominal_glyph_mh, get_nominal_glyph_fd, garena);
+        get_nominal_glyph_stub = tmp6;
 
         FunctionDescriptor get_h_adv_fd = getFunctionDescriptor(JAVA_INT,  // return type
                    ADDRESS, ADDRESS, JAVA_INT, ADDRESS); // arg types
         MethodHandle get_h_adv_mh =
             getMethodHandle("get_glyph_h_advance", get_h_adv_fd);
-        get_h_advance_stub =
-            LINKER.upcallStub(get_h_adv_mh, get_h_adv_fd, garena);
+        @SuppressWarnings("restricted")
+        MemorySegment tmp7 = LINKER.upcallStub(get_h_adv_mh, get_h_adv_fd, garena);
+        get_h_advance_stub = tmp7;
 
         FunctionDescriptor get_v_adv_fd = getFunctionDescriptor(JAVA_INT,  // return type
                    ADDRESS, ADDRESS, JAVA_INT, ADDRESS); // arg types
         MethodHandle get_v_adv_mh =
             getMethodHandle("get_glyph_v_advance", get_v_adv_fd);
-        get_v_advance_stub =
-            LINKER.upcallStub(get_v_adv_mh, get_v_adv_fd, garena);
+        @SuppressWarnings("restricted")
+        MemorySegment tmp8 = LINKER.upcallStub(get_v_adv_mh, get_v_adv_fd, garena);
+        get_v_advance_stub = tmp8;
 
         FunctionDescriptor get_contour_pt_fd = getFunctionDescriptor(JAVA_INT,  // return type
             ADDRESS, ADDRESS, JAVA_INT, JAVA_INT, ADDRESS, ADDRESS, ADDRESS); // arg types
         MethodHandle get_contour_pt_mh =
             getMethodHandle("get_glyph_contour_point", get_contour_pt_fd);
-        get_contour_pt_stub =
-            LINKER.upcallStub(get_contour_pt_mh, get_contour_pt_fd, garena);
+        @SuppressWarnings("restricted")
+        MemorySegment tmp9 = LINKER.upcallStub(get_contour_pt_mh, get_contour_pt_fd, garena);
+        get_contour_pt_stub = tmp9;
 
        /* Having now created the font upcall stubs, we can call down to create
         * the native harfbuzz object holding these.
@@ -249,6 +262,7 @@ public class HBShaper {
             ADDRESS,     // v_advance_fn upcall stub
             ADDRESS);     // contour_pt_fn upcall stub
         Optional<MemorySegment> create_font_funcs_symbol = SYM_LOOKUP.find("HBCreateFontFuncs");
+        @SuppressWarnings("restricted")
         MethodHandle create_font_funcs_handle =
             LINKER.downcallHandle(create_font_funcs_symbol.get(), createFontFuncsDescriptor);
 
@@ -279,15 +293,18 @@ public class HBShaper {
                    ADDRESS);               // glyphPos
        MethodHandle store_layout_mh =
           getMethodHandle("store_layout_results", store_layout_fd);
-       store_layout_results_stub =
-           LINKER.upcallStub(store_layout_mh, store_layout_fd, garena);
+       @SuppressWarnings("restricted")
+       MemorySegment tmp10 = LINKER.upcallStub(store_layout_mh, store_layout_fd, garena);
+       store_layout_results_stub = tmp10;
 
-        SequenceLayout glyphPosLayout = MemoryLayout.sequenceLayout(Long.MAX_VALUE, PositionLayout);
+        long maxpos = Long.MAX_VALUE / PositionLayout.byteSize();
+        SequenceLayout glyphPosLayout = MemoryLayout.sequenceLayout(maxpos, PositionLayout);
         x_offsetHandle = getVarHandle(glyphPosLayout, "x_offset");
         y_offsetHandle = getVarHandle(glyphPosLayout, "y_offset");
         x_advanceHandle = getVarHandle(glyphPosLayout, "x_advance");
         y_advanceHandle = getVarHandle(glyphPosLayout, "y_advance");
-        SequenceLayout glyphInfosLayout = MemoryLayout.sequenceLayout(Long.MAX_VALUE, GlyphInfoLayout);
+        long maxinfo = Long.MAX_VALUE / GlyphInfoLayout.byteSize();
+        SequenceLayout glyphInfosLayout = MemoryLayout.sequenceLayout(maxinfo, GlyphInfoLayout);
         codePointHandle = getVarHandle(glyphInfosLayout, "codepoint");
         clusterHandle = getVarHandle(glyphInfosLayout, "cluster");
     }
@@ -298,6 +315,7 @@ public class HBShaper {
      * The unbound stub could be cached but the savings would
      * be very low in the only case it is used.
      */
+    @SuppressWarnings("restricted")
     private static MemorySegment getBoundUpcallStub
          (Arena arena, Class<?> clazz, Object bindArg, String mName,
           MemoryLayout retType, MemoryLayout... argTypes) {
@@ -327,6 +345,7 @@ public class HBShaper {
 
         Font2D font2D = scopedVars.get().font();
         int glyphID = font2D.charToGlyph(unicode);
+        @SuppressWarnings("restricted")
         MemorySegment glyphIDPtr = glyph.reinterpret(4);
         glyphIDPtr.setAtIndex(JAVA_INT, 0, glyphID);
         return (glyphID != 0) ? 1 : 0;
@@ -342,6 +361,7 @@ public class HBShaper {
     ) {
         Font2D font2D = scopedVars.get().font();
         int glyphID = font2D.charToVariationGlyph(unicode, variation_selector);
+        @SuppressWarnings("restricted")
         MemorySegment glyphIDPtr = glyph.reinterpret(4);
         glyphIDPtr.setAtIndex(JAVA_INT, 0, glyphID);
         return (glyphID != 0) ? 1 : 0;
@@ -358,7 +378,6 @@ public class HBShaper {
         int glyph,
         MemorySegment user_data  /* Not used */
     ) {
-
         FontStrike strike = scopedVars.get().fontStrike();
         Point2D.Float pt = strike.getGlyphMetrics(glyph);
         return (pt != null) ? HBFloatToFixed(pt.x) : 0;
@@ -478,6 +497,7 @@ public class HBShaper {
          * so it will be freed by the caller using native free - when it is
          * done with it.
          */
+        @SuppressWarnings("restricted")
         MemorySegment data_ptr = data_ptr_out.reinterpret(ADDRESS.byteSize());
         if (tag == 0) {
             data_ptr.setAtIndex(ADDRESS, 0, NULL);
@@ -498,6 +518,7 @@ public class HBShaper {
             data_ptr.setAtIndex(ADDRESS, 0, NULL);
             return 0;
         }
+        @SuppressWarnings("restricted")
         MemorySegment mem = zero_len.reinterpret(len);
         MemorySegment.copy(data, 0, mem, JAVA_BYTE, 0, len);
         data_ptr.setAtIndex(ADDRESS, 0, mem);
@@ -604,9 +625,11 @@ public class HBShaper {
 
         int glyphPosLen = glyphCount * 2 + 2;
         long posSize = glyphPosLen * PositionLayout.byteSize();
+        @SuppressWarnings("restricted")
         MemorySegment glyphPosArr = glyphPos.reinterpret(posSize);
 
         long glyphInfoSize = glyphCount * GlyphInfoLayout.byteSize();
+        @SuppressWarnings("restricted")
         MemorySegment glyphInfoArr = glyphInfo.reinterpret(glyphInfoSize);
 
          for (int i=0; i<glyphCount; i++) {
