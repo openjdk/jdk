@@ -102,6 +102,7 @@ public class Lower extends TreeTranslator {
     private final PkgInfo pkginfoOpt;
     private final boolean optimizeOuterThis;
     private final boolean useMatchException;
+    private final boolean bigenum;
 
     @SuppressWarnings("this-escape")
     protected Lower(Context context) {
@@ -133,6 +134,7 @@ public class Lower extends TreeTranslator {
         Preview preview = Preview.instance(context);
         useMatchException = Feature.PATTERN_SWITCH.allowedInSource(source) &&
                             (preview.isEnabled() || !preview.isPreview(Feature.PATTERN_SWITCH));
+        bigenum = options.getBoolean("bigenum", false);
     }
 
     /** The currently enclosing class.
@@ -2413,6 +2415,7 @@ public class Lower extends TreeTranslator {
         int nextOrdinal = 0;
         ListBuffer<JCExpression> values = new ListBuffer<>();
         ListBuffer<JCTree> enumDefs = new ListBuffer<>();
+        ListBuffer<JCExpression> enumInits = new ListBuffer<>();
         ListBuffer<JCTree> otherDefs = new ListBuffer<>();
         for (List<JCTree> defs = tree.defs;
              defs.nonEmpty();
@@ -2420,10 +2423,94 @@ public class Lower extends TreeTranslator {
             if (defs.head.hasTag(VARDEF) && (((JCVariableDecl) defs.head).mods.flags & ENUM) != 0) {
                 JCVariableDecl var = (JCVariableDecl)defs.head;
                 visitEnumConstantDef(var, nextOrdinal++);
+                if (bigenum) {
+                    enumInits.add(var.init);
+                    var.init = null;
+                }
                 values.append(make.QualIdent(var.sym));
                 enumDefs.append(var);
             } else {
                 otherDefs.append(defs.head);
+            }
+        }
+
+        if (!enumInits.isEmpty()) {
+            int shardSize = 1000;
+            int shards = enumInits.size() / shardSize + 1;
+            int ordinal = 0;
+            ListBuffer<MethodSymbol> creators = new ListBuffer<>();
+            JCExpression[] inits = enumInits.toArray(new JCExpression[0]);
+            // TODO - skip two-level dispatch if there is only one shard
+            for (int shard = 0; shard < shards; shard++) {
+                // E enumMemberCreator$1(int ordinal) {
+                //   switch (ordinal) {
+                //     case 1:
+                //       return new E1($name$, ordinal, ...);
+                //     ...
+                //     default:
+                //       throw ...
+                //   }
+                // }
+                Name creatorName = names.fromString("enumMemberCreator$" + shard);
+                ListBuffer<JCCase> cases = new ListBuffer<>();
+                for (int i = 0; i < shardSize; i++) {
+                    int currentOrdinal = ordinal++;
+                    if (currentOrdinal == inits.length) {
+                        break;
+                    }
+                    JCExpression enumInit = inits[currentOrdinal];
+                    JCReturn stat = make.Return(enumInit);
+                    cases.add(make.Case(JCCase.STATEMENT,
+                            List.of(make.ConstantCaseLabel(make.Literal(currentOrdinal))),
+                            null, List.of(stat), stat));
+                }
+                JCThrow thr = make.Throw(makeNewClass(syms.matchExceptionType, List.of(makeNull(), makeNull())));
+                cases.add(make.Case(JCCase.STATEMENT, List.of(make.DefaultCaseLabel()), null, List.of(thr), thr));
+
+                MethodSymbol creatorMethod = new MethodSymbol(PRIVATE | STATIC | SYNTHETIC, creatorName,
+                        new MethodType(List.of(syms.intType), tree.type, List.nil(), tree.type.tsym), tree.type.tsym);
+                VarSymbol ordinalParam = new VarSymbol(SYNTHETIC | PARAMETER, names.fromString("ordinal"),
+                        syms.intType, creatorMethod);
+                creatorMethod.params = List.of(ordinalParam);
+                JCSwitch body = make.Switch(make.Ident(ordinalParam), cases.toList());
+                body.type = tree.type;
+                enumDefs.append(make.MethodDef(creatorMethod, make.Block(0, List.of(body))));
+                tree.sym.members().enter(creatorMethod);
+                creators.add(creatorMethod);
+            }
+            // E enumMemberCreator$(int ordinal) {
+            //   switch (ordinal / shardSize) {
+            //     case 0:
+            //       return enumMemberCreator$0(ordinal);
+            //     ...
+            //     default:
+            //       throw ...
+            //   }
+            // }
+            {
+                Name creatorName = names.fromString("enumMemberCreator$");
+                MethodSymbol creatorMethod = new MethodSymbol(PRIVATE | STATIC | SYNTHETIC, creatorName,
+                        new MethodType(List.of(syms.intType), tree.type, List.nil(), tree.type.tsym), tree.type.tsym);
+                VarSymbol ordinalParam = new VarSymbol(SYNTHETIC | PARAMETER, names.fromString("ordinal"),
+                        syms.intType, creatorMethod);
+                creatorMethod.params = List.of(ordinalParam);
+                MethodSymbol[] creatorsArray = creators.toArray(new MethodSymbol[0]);
+                ListBuffer<JCCase> cases = new ListBuffer<>();
+                for (int i = 0; i < shards; i++) {
+                    JCMethodInvocation create = make.Apply(List.nil(), make.QualIdent(creatorsArray[i]),
+                            List.of(make.Ident(ordinalParam))).setType(tree.type);
+                    JCReturn stat = make.Return(create);
+                    cases.add(make.Case(JCCase.STATEMENT, List.of(make.ConstantCaseLabel(make.Literal(i))),
+                            null, List.of(stat), stat));
+                }
+                JCThrow thr = make.Throw(makeNewClass(syms.matchExceptionType, List.of(makeNull(), makeNull())));
+                cases.add(make.Case(JCCase.STATEMENT, List.of(make.DefaultCaseLabel()), null, List.of(thr), thr));
+                JCExpression selector = makeBinary(DIV, make.Ident(ordinalParam), make.Literal(shardSize));
+                JCSwitch body = make.Switch(selector, cases.toList());
+                body.type = tree.type;
+                enumDefs.append(make.MethodDef(creatorMethod, make.Block(0, List.of(body))));
+                tree.sym.members().enter(creatorMethod);
+                creators.add(creatorMethod);
             }
         }
 
@@ -2437,7 +2524,8 @@ public class Lower extends TreeTranslator {
                                             tree.type.tsym);
         JCNewArray newArray = make.NewArray(make.Type(types.erasure(tree.type)),
                                           List.nil(),
-                                          values.toList());
+                                          // TODO - condy for values array
+                                          bigenum ? List.nil() : values.toList());
         newArray.type = arrayType;
 
         MethodSymbol valuesMethod = new MethodSymbol(PRIVATE|STATIC|SYNTHETIC,

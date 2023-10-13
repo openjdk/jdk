@@ -78,6 +78,7 @@ public class Gen extends JCTree.Visitor {
     private final Lower lower;
     private final Annotate annotate;
     private final StringConcat concat;
+    private final boolean bigenum;
 
     /** Format of stackmap tables to be generated. */
     private final Code.StackMapFormat stackMap;
@@ -127,6 +128,7 @@ public class Gen extends JCTree.Visitor {
         debugCode = options.isSet("debug.code");
         disableVirtualizedPrivateInvoke = options.isSet("disableVirtualizedPrivateInvoke");
         poolWriter = new PoolWriter(types, names);
+        bigenum = options.getBoolean("bigenum", false);
 
         // ignore cldc because we cannot have both stackmap formats
         this.stackMap = StackMapFormat.JSR202;
@@ -422,7 +424,7 @@ public class Gen extends JCTree.Visitor {
      *  @param defs         The list of class member declarations.
      *  @param c            The enclosing class.
      */
-    List<JCTree> normalizeDefs(List<JCTree> defs, ClassSymbol c) {
+    List<JCTree> normalizeDefs(DiagnosticPosition pos, List<JCTree> defs, ClassSymbol c) {
         ListBuffer<JCStatement> initCode = new ListBuffer<>();
         ListBuffer<Attribute.TypeCompound> initTAs = new ListBuffer<>();
         ListBuffer<JCStatement> clinitCode = new ListBuffer<>();
@@ -478,6 +480,22 @@ public class Gen extends JCTree.Visitor {
                 Assert.error();
             }
         }
+
+        if (bigenum && c.isEnum()) {
+            // EnumInitializer.initializeEnumClass(MethodHandles.lookup());
+            MethodSymbol lookupSymbol = rs.resolveInternalMethod(pos, attrEnv, syms.methodHandlesType,
+                    names.fromString("lookup"), List.nil(), List.nil());
+            JCMethodInvocation lookup = make.Apply(List.nil(), make.QualIdent(lookupSymbol),
+                    List.nil()).setType(lookupSymbol.getReturnType());
+            MethodSymbol msym = rs.resolveInternalMethod(pos, attrEnv,
+                    syms.enterClass(syms.java_base, names.fromString("java.lang.runtime.EnumInitializer")).type,
+                    names.fromString("initializeEnumClass"), List.of(syms.methodHandleLookupType), List.nil());
+            clinitCode.add(make.Exec(make.Apply(List.nil(), make.QualIdent(msym), List.of(lookup))
+                            .setType(msym.getReturnType()))
+                    .setType(Type.noType));
+        }
+
+
         // Insert any instance initializers into all constructors.
         if (initCode.length() != 0) {
             List<JCStatement> inits = initCode.toList();
@@ -2472,7 +2490,7 @@ public class Gen extends JCTree.Visitor {
             this.endPosTable = toplevel.endPositions;
             /* method normalizeDefs() can add references to external classes into the constant pool
              */
-            cdef.defs = normalizeDefs(cdef.defs, c);
+            cdef.defs = normalizeDefs(cdef.pos(), cdef.defs, c);
             generateReferencesToPrunedTree(c);
             Env<GenContext> localEnv = new Env<>(cdef, new GenContext());
             localEnv.toplevel = env.toplevel;
