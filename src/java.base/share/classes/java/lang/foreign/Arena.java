@@ -44,7 +44,7 @@ import java.lang.foreign.MemorySegment.Scope;
  * <p>
  * The simplest arena is the {@linkplain Arena#global() global arena}. The global arena
  * features an <em>unbounded lifetime</em>. The scope of the global arena is the global scope.
- * As such, native segments allocated with the global arena are associated are always accessible and their backing regions
+ * As such, native segments allocated with the global arena are always accessible and their backing regions
  * of memory are never deallocated.
  * Moreover, memory segments allocated with the global arena can be {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} from any thread.
  * {@snippet lang = java:

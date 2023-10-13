@@ -460,8 +460,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * </ul>
      * <p>
      * If the selected layout is an {@linkplain AddressLayout address layout}, calling {@link VarHandle#get(Object...)}
-     * on the returned var handle will return a new memory segment. The segment is associated with a scope that is
-     * always alive. Moreover, the size of the segment depends on whether the address layout has a
+     * on the returned var handle will return a new memory segment. The segment is associated with the global scope.
+     * Moreover, the size of the segment depends on whether the address layout has a
      * {@linkplain AddressLayout#targetLayout() target layout}. More specifically:
      * <ul>
      *     <li>If the address layout has a target layout {@code T}, then the size of the returned segment
@@ -481,7 +481,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * {@snippet lang = "java":
      * VarHandle baseHandle = this.varHandle(P);
      * MemoryLayout target = ((AddressLayout)this.select(P)).targetLayout().get();
-     * VarHandle targetHandle = target.varHandle(P');
+     * VarHandle targetHandle = target.varHandle(P);
      * targetHandle = MethodHandles.insertCoordinates(targetHandle, 1, 0L); // always access nested targets at offset 0
      * targetHandle = MethodHandles.collectCoordinates(targetHandle, 0,
      *         baseHandle.toMethodHandle(VarHandle.AccessMode.GET));

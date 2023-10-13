@@ -2364,7 +2364,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * A scope models the <em>lifetime</em> of all the memory segments associated with it. That is, a memory segment
      * cannot be accessed if its associated scope is not {@linkplain #isAlive() alive}. Scope instances can be compared
-     * for equality. That is, two scopes are considered {@linkplain #equals(Object)} if they denote the same lifetime.
+     * for equality. That is, two scopes are considered {@linkplain #equals(Object) equal} if they denote the same lifetime.
      * <p>
      * The lifetime of a memory segment can be either <em>unbounded</em> or <em>bounded</em>. An unbounded lifetime
      * is modelled with the <em>global scope</em>. The global scope is always {@link #isAlive() alive}. As such, a segment
