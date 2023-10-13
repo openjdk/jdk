@@ -897,4 +897,6 @@ void ParallelScavengeHeap::update_parallel_worker_threads_cpu_time() {
   // is safe for VMThread to read their CPU times. If upstream changes this
   // behavior, we should rethink if it is still safe.
   gc_threads_do(&tttc);
+
+  CollectedHeap::publish_total_cpu_time();
 }

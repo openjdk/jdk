@@ -70,8 +70,8 @@ void StringDedup::Processor::initialize() {
   if (UsePerfData && os::is_thread_cpu_time_supported()) {
     EXCEPTION_MARK;
     _concurrent_dedup_thread_cpu_time =
-        PerfDataManager::create_counter(SUN_THREADS_GCCPU, "conc_dedup",
-                                         PerfData::U_Ticks, CHECK);
+        PerfDataManager::create_counter(SUN_THREADS_CPUTIME, "conc_dedup",
+                                        PerfData::U_Ticks, CHECK);
   }
 }
 

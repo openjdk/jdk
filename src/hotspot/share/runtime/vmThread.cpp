@@ -131,15 +131,17 @@ void VMThread::create() {
 
   _terminate_lock = new Monitor(Mutex::nosafepoint, "VMThreadTerminate_lock");
 
-  if (UsePerfData && os::is_thread_cpu_time_supported()) {
+  if (UsePerfData) {
     // jvmstat performance counters
     JavaThread* THREAD = JavaThread::current(); // For exception macros.
     _perf_accumulated_vm_operation_time =
                  PerfDataManager::create_counter(SUN_THREADS, "vmOperationTime",
                                                  PerfData::U_Ticks, CHECK);
-    _perf_vm_thread_cpu_time =
-                 PerfDataManager::create_counter(SUN_THREADS_GCCPU, "vm",
-                                                 PerfData::U_Ticks, CHECK);
+    if (os::is_thread_cpu_time_supported()) {
+      _perf_vm_thread_cpu_time =
+                   PerfDataManager::create_counter(SUN_THREADS_CPUTIME, "vm",
+                                                   PerfData::U_Ticks, CHECK);
+    }
   }
 }
 

@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8315149
- * @summary Unit test to ensure CPU GC hsperf counters are published.
+ * @summary Unit test to ensure CPU hsperf counters are published.
  * @requires vm.gc.G1
  *
  * @library /test/lib
@@ -39,7 +39,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestGcCounters {
 
     private static final String SUN_THREADS = "sun.threads";
-    private static final String SUN_THREADS_GCCPU = "sun.threads.gc_cpu_time";
+    private static final String SUN_THREADS_CPUTIME = "sun.threads.cpu_time";
 
     public static void main(String[] args) throws Exception {
         testGcCpuCountersExist();
@@ -54,11 +54,11 @@ public class TestGcCounters {
 
         output.shouldHaveExitValue(0);
         output.shouldContain(SUN_THREADS + ".total_gc_cpu_time");
-        output.shouldContain(SUN_THREADS_GCCPU + ".g1_conc_mark");
-        output.shouldContain(SUN_THREADS_GCCPU + ".g1_conc_refine");
-        output.shouldContain(SUN_THREADS_GCCPU + ".parallel_gc_workers");
-        output.shouldContain(SUN_THREADS_GCCPU + ".vm");
-        output.shouldContain(SUN_THREADS_GCCPU + ".conc_dedup");
+        output.shouldContain(SUN_THREADS_CPUTIME + ".gc_conc_mark");
+        output.shouldContain(SUN_THREADS_CPUTIME + ".gc_conc_refine");
+        output.shouldContain(SUN_THREADS_CPUTIME + ".gc_parallel_workers");
+        output.shouldContain(SUN_THREADS_CPUTIME + ".vm");
+        output.shouldContain(SUN_THREADS_CPUTIME + ".conc_dedup");
     }
 }
 

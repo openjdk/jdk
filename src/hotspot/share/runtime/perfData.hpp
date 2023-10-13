@@ -62,7 +62,7 @@ enum CounterNS {
   JAVA_THREADS,         // Threads System name spaces
   COM_THREADS,
   SUN_THREADS,
-  SUN_THREADS_GCCPU,    // Subsystem for Sun Threads GC CPU
+  SUN_THREADS_CPUTIME,  // Subsystem for Sun Threads CPU times
   JAVA_PROPERTY,        // Java Property name spaces
   COM_PROPERTY,
   SUN_PROPERTY,

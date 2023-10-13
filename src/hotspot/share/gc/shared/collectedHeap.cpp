@@ -295,7 +295,7 @@ CollectedHeap::CollectedHeap() :
   NOT_PRODUCT(_promotion_failure_alot_count = 0;)
   NOT_PRODUCT(_promotion_failure_alot_gc_number = 0;)
 
-  if (UsePerfData && os::is_thread_cpu_time_supported()) {
+  if (UsePerfData) {
     EXCEPTION_MARK;
 
     // create the gc cause jvmstat counters
@@ -306,14 +306,16 @@ CollectedHeap::CollectedHeap() :
                 PerfDataManager::create_string_variable(SUN_GC, "lastCause",
                              80, GCCause::to_string(_gc_lastcause), CHECK);
 
-    _total_cpu_time =
-                PerfDataManager::create_counter(SUN_THREADS, "total_gc_cpu_time",
-                                                PerfData::U_Ticks, CHECK);
-    _total_cpu_time_diff = 0;
+    if (os::is_thread_cpu_time_supported()) {
+      _total_cpu_time =
+                  PerfDataManager::create_counter(SUN_THREADS, "total_gc_cpu_time",
+                                                  PerfData::U_Ticks, CHECK);
+      _total_cpu_time_diff = 0;
 
-    _perf_parallel_worker_threads_cpu_time =
-                PerfDataManager::create_counter(SUN_THREADS_GCCPU, "parallel_gc_workers",
-                                                PerfData::U_Ticks, CHECK);
+      _perf_parallel_worker_threads_cpu_time =
+                  PerfDataManager::create_counter(SUN_THREADS_CPUTIME, "gc_parallel_workers",
+                                                  PerfData::U_Ticks, CHECK);
+    }
   }
 
   // Create the ring log
