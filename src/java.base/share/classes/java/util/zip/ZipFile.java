@@ -1407,32 +1407,28 @@ public class ZipFile implements ZipConstants, Closeable {
                     throws IOException {
                 this.attrs = attrs;
                 Object fk = attrs.fileKey();
-                if (fk != null) {
-                    // use file value, hashCode will use fileKey()
-                    this.file = file;
-                } else {
-                    this.file = getCanonicalFile(file);
-                }
+                this.file = (fk != null) ? file : getCanonicalFile(file);
                 this.utf8 = zc.isUTF8();
             }
 
             @SuppressWarnings("removal")
             private static File getCanonicalFile(File file) throws IOException {
-                try {
-                    return System.getSecurityManager() != null ?
-                        AccessController.doPrivileged((PrivilegedExceptionAction<File>) file::getCanonicalFile) :
-                        file.getCanonicalFile();
-                } catch (PrivilegedActionException e) {
-                    throw new IOException(e);
+                if (System.getSecurityManager() == null) {
+                    return file.getCanonicalFile();
+                } else {
+                    try {
+                        return AccessController.doPrivileged(
+                                (PrivilegedExceptionAction<File>) file::getCanonicalFile);
+                    } catch (PrivilegedActionException pae) {
+                        throw new IOException(pae.getException());
+                    }
                 }
             }
 
             public int hashCode() {
                 long t = utf8 ? 0 : Long.MAX_VALUE;
+                t += attrs.lastModifiedTime().toMillis();
                 Object fk = attrs.fileKey();
-                if (fk == null) {
-                    t += attrs.lastModifiedTime().toMillis();
-                }
                 return Long.hashCode(t) +
                         (fk != null ? fk.hashCode() : file.hashCode());
             }
@@ -1442,14 +1438,15 @@ public class ZipFile implements ZipConstants, Closeable {
                     if (key.utf8 != utf8) {
                         return false;
                     }
-                    Object fk = attrs.fileKey();
-                    if (fk != null) {
-                        return fk.equals(key.attrs.fileKey());
-                    }
                     if (!attrs.lastModifiedTime().equals(key.attrs.lastModifiedTime())) {
                         return false;
                     }
-                    return file.equals(key.file);
+                    Object fk = attrs.fileKey();
+                    if (fk != null) {
+                        return fk.equals(key.attrs.fileKey());
+                    } else {
+                        return file.equals(key.file);
+                    }
                 }
                 return false;
             }
