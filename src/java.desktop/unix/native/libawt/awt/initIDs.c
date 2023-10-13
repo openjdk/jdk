@@ -27,7 +27,6 @@
 #include "java_awt_MenuBar.h"
 #include "java_awt_FontMetrics.h"
 #include "java_awt_event_MouseEvent.h"
-#include "java_awt_Rectangle.h"
 #include "java_awt_ScrollPaneAdjustable.h"
 #include "java_awt_Toolkit.h"
 #include "java_awt_CheckboxMenuItem.h"
@@ -83,12 +82,6 @@ Java_java_awt_Choice_initIDs
 
 JNIEXPORT void JNICALL
 Java_java_awt_Dimension_initIDs
-  (JNIEnv *env, jclass clazz)
-{
-}
-
-JNIEXPORT void JNICALL
-Java_java_awt_Rectangle_initIDs
   (JNIEnv *env, jclass clazz)
 {
 }
