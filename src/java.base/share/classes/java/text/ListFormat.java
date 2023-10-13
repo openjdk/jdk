@@ -416,6 +416,8 @@ public final class ListFormat extends Format {
      * @return A list of string parsed from the {@code source}.
      *            In case of error, returns null.
      * @throws NullPointerException if {@code source} or {@code parsePos} is null.
+     * @throws IndexOutOfBoundsException if the starting index given by
+     *            {@code parsePos} is outside {@code source}.
      */
     @Override
     public Object parseObject(String source, ParsePosition parsePos) {
