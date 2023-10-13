@@ -112,8 +112,8 @@ public enum TypeClass {
         return true;
     }
 
-    private static TypeClass classifyStructType(MemoryLayout layout, boolean useABIv2) {
-        if (isHomogeneousFloatAggregate(layout, useABIv2)) {
+    private static TypeClass classifyStructType(MemoryLayout layout, boolean useABIv2, boolean isAIX) {
+        if (!isAIX && isHomogeneousFloatAggregate(layout, useABIv2)) {
             return TypeClass.STRUCT_HFA;
         }
         return TypeClass.STRUCT_REGISTER;
@@ -124,11 +124,11 @@ public enum TypeClass {
         return isHomogeneousFloatAggregate(layout, true) || isReturnRegisterAggregate(layout);
     }
 
-    public static TypeClass classifyLayout(MemoryLayout type, boolean useABIv2) {
+    public static TypeClass classifyLayout(MemoryLayout type, boolean useABIv2, boolean isAIX) {
         if (type instanceof ValueLayout) {
             return classifyValueType((ValueLayout) type);
         } else if (type instanceof GroupLayout) {
-            return classifyStructType(type, useABIv2);
+            return classifyStructType(type, useABIv2, isAIX);
         } else {
             throw new IllegalArgumentException("Unhandled type " + type);
         }
