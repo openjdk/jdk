@@ -148,7 +148,7 @@ public final class Utils {
         if (!isAligned(addr, align)) {
             throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
         }
-        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, size);
+        return SegmentFactories.makeNativeSegmentUnchecked(addr, size);
     }
 
     @ForceInline
@@ -156,7 +156,7 @@ public final class Utils {
         if (!isAligned(addr, align)) {
             throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
         }
-        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, size, scope);
+        return SegmentFactories.makeNativeSegmentUnchecked(addr, size, scope);
     }
 
     @ForceInline
