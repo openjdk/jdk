@@ -29,6 +29,7 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.ValueLayout;
 
 public sealed abstract class NativeType<X> {
+    private static final boolean IS_AIX = System.getProperty("os.name").startsWith("AIX");
 
     public abstract MemoryLayout layout();
 
@@ -63,7 +64,7 @@ public sealed abstract class NativeType<X> {
     public static final OfDouble<Double> C_DOUBLE = new OfDouble<>() {
         @Override
         public ValueLayout.OfDouble layout() {
-            return ValueLayout.JAVA_DOUBLE;
+            return ValueLayout.JAVA_DOUBLE.withByteAlignment(IS_AIX ? 4 : 8);
         }
     };
 

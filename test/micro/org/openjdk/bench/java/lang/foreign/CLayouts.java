@@ -33,6 +33,7 @@ import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 
 public class CLayouts {
+    private static final boolean IS_AIX = System.getProperty("os.name").startsWith("AIX");
 
     // the constants below are useful aliases for C types. The type/carrier association is only valid for 64-bit platforms.
 
@@ -64,7 +65,8 @@ public class CLayouts {
     /**
      * The layout for the {@code double} C type
      */
-    public static final ValueLayout.OfDouble C_DOUBLE = ValueLayout.JAVA_DOUBLE;
+    public static final ValueLayout.OfDouble C_DOUBLE = ValueLayout.JAVA_DOUBLE.withByteAlignment(IS_AIX ? 4 : 8);
+
     /**
      * The {@code T*} native type.
      */
