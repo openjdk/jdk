@@ -3269,6 +3269,11 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
         // object's header no longer refers to it.
         buf[i] = (intptr_t)lock->displaced_header().value();
       }
+#ifdef ASSERT
+      else {
+        buf[i] = 0xdead05a0; // eye-catcher
+      }
+#endif
       i++;
       buf[i++] = cast_from_oop<intptr_t>(kptr2->obj());
     }

@@ -83,4 +83,9 @@ void BasicLock::move_to(oop obj, BasicLock* dest) {
     }
     dest->set_displaced_header(displaced_header());
   }
+#ifdef ASSERT
+  else {
+    dest->set_displaced_header(markWord(0xde0bd000)); // eye-catcher
+  }
+#endif
 }
