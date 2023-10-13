@@ -775,6 +775,7 @@ bool ShenandoahControlThread::check_cancellation_or_degen(ShenandoahGC::Shenando
 
   if (is_alloc_failure_gc()) {
     _degen_point = point;
+    _preemption_requested.unset();
     return true;
   }
 
@@ -899,6 +900,10 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
 bool ShenandoahControlThread::request_concurrent_gc(ShenandoahGenerationType generation) {
   if (_preemption_requested.is_set() || _gc_requested.is_set() || ShenandoahHeap::heap()->cancelled_gc()) {
     // Ignore subsequent requests from the heuristics
+    log_debug(gc, thread)("Reject request for concurrent gc: preemption_requested: %s, gc_requested: %s, gc_cancelled: %s",
+                          BOOL_TO_STR(_preemption_requested.is_set()),
+                          BOOL_TO_STR(_gc_requested.is_set()),
+                          BOOL_TO_STR(ShenandoahHeap::heap()->cancelled_gc()));
     return false;
   }
 
@@ -930,6 +935,9 @@ bool ShenandoahControlThread::request_concurrent_gc(ShenandoahGenerationType gen
     return true;
   }
 
+  log_debug(gc, thread)("Reject request for concurrent gc: mode: %s, allow_old_preemption: %s",
+                        gc_mode_name(gc_mode()),
+                        BOOL_TO_STR(_allow_old_preemption.is_set()));
   return false;
 }
 
