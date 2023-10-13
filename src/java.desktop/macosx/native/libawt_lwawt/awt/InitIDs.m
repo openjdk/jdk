@@ -77,11 +77,6 @@ JNIEXPORT void JNICALL Java_java_awt_Event_initIDs
 {
 }
 
-JNIEXPORT void JNICALL Java_java_awt_FileDialog_initIDs
-(JNIEnv *env, jclass cls)
-{
-}
-
 JNIEXPORT void JNICALL Java_java_awt_Font_initIDs
 (JNIEnv *env, jclass cls)
 {
