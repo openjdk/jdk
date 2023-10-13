@@ -118,6 +118,7 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   bool do_superword = UseSuperWord;
 
   while (!env->failing()) {
+    ResourceMark rm;
     // Attempt to compile while subsuming loads into machine instructions.
     Options options(subsume_loads,
                     do_escape_analysis,

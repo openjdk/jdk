@@ -253,6 +253,16 @@ void VM_Version::initialize() {
     warning("Block zeroing is not available");
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
+  if (UseRVV) {
+    if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+      FLAG_SET_DEFAULT(UseChaCha20Intrinsics, true);
+    }
+  } else if (UseChaCha20Intrinsics) {
+    if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+      warning("Chacha20 intrinsic requires RVV instructions (not available on this CPU)");
+    }
+    FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  }
 
 #ifdef COMPILER2
   c2_initialize();

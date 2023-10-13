@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,33 @@
  * questions.
  */
 
-/*
- * @test
- * @enablePreview
- *
- * @run testng/othervm -Djdk.internal.foreign.CABI=UNSUPPORTED --enable-native-access=ALL-UNNAMED TestUnsupportedLinker
- */
+#include <errno.h>
 
-import java.lang.foreign.Linker;
+#ifdef _WIN64
+#define EXPORT __declspec(dllexport)
+#else
+#define EXPORT
+#endif
 
-import org.testng.annotations.Test;
+EXPORT void empty() {}
 
-public class TestUnsupportedLinker {
+EXPORT int identity(int value) {
+    return value;
+}
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testLinker() {
-        Linker.nativeLinker();
-    }
+// 128 bit struct returned in buffer on SysV
+struct Big {
+    long long x;
+    long long y;
+};
+
+EXPORT struct Big with_return_buffer() {
+    struct Big b;
+    b.x = 10;
+    b.y = 11;
+    return b;
+}
+
+EXPORT void do_upcall(void(*f)(void)) {
+    f();
 }

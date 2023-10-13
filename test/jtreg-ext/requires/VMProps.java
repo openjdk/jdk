@@ -602,9 +602,10 @@ public class VMProps implements Callable<Map<String, String>> {
 
     private boolean checkDockerSupport() throws IOException, InterruptedException {
         log("checkDockerSupport(): entering");
-        ProcessBuilder pb = new ProcessBuilder(Container.ENGINE_COMMAND, "ps");
-        Map<String, String> logFileNames = redirectOutputToLogFile("checkDockerSupport(): <container> ps",
-                                                      pb, "container-ps");
+        ProcessBuilder pb = new ProcessBuilder("which", Container.ENGINE_COMMAND);
+        Map<String, String> logFileNames =
+            redirectOutputToLogFile("checkDockerSupport(): which <container-engine>",
+                                                      pb, "which-container");
         Process p = pb.start();
         p.waitFor(10, TimeUnit.SECONDS);
         int exitValue = p.exitValue();
