@@ -346,7 +346,7 @@ public class HelpWriter extends HtmlDocletWriter {
         if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.RESTRICTED)) {
             section = newHelpSection(contents.restrictedMethods, PageMode.RESTRICTED, subTOC);
             Content restrictedBody = getContent("doclet.help.restricted.body",
-                    links.createLink(DocPaths.RESOURCE_FILES, resources.getText("doclet.Restricted_Methods")));
+                    links.createLink(DocPaths.RESTRICTED_LIST, resources.getText("doclet.Restricted_Methods")));
             section.add(HtmlTree.P(restrictedBody));
             pageKindsSection.add(section);
         }
