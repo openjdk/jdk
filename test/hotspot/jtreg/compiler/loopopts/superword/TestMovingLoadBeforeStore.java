@@ -25,27 +25,35 @@
 /**
  * @test
  * @requires vm.compiler2.enabled
- * @bug 8316679
+ * @requires vm.cpu.features ~= ".*avx2.*"
+ * @bug 8316679 8316594
  * @summary In SuperWord::output, LoadVector can be moved before StoreVector, but only if it is proven to be safe.
  * @key randomness
+ * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run main/othervm -XX:CompileCommand=compileonly,compiler.loopopts.superword.TestMovingLoadBeforeStore::test*
  *                   -Xbatch -XX:LoopUnrollLimit=100
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressLCM
+ *                   --add-modules java.base --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
  *                   compiler.loopopts.superword.TestMovingLoadBeforeStore
  */
 
 package compiler.loopopts.superword;
 import java.util.Random;
 import jdk.test.lib.Utils;
+import jdk.internal.misc.Unsafe;
 
 public class TestMovingLoadBeforeStore {
     static int RANGE = 1024*64;
 
+    static int NINE = 9;
+
     private static final Random random = Utils.getRandomInstance();
+    static Unsafe UNSAFE = Unsafe.getUnsafe();
 
     public static void main(String[] strArr) {
         byte a[] = new byte[RANGE];
+        byte b[] = new byte[RANGE];
         for (int i = 0; i < 100; i++) {
             for (int j = 0; j < a.length; j++) {
                 a[j] = (byte)random.nextInt();
@@ -55,6 +63,30 @@ public class TestMovingLoadBeforeStore {
             ref1(a_ref, a_ref, i % 2);
             test1(a_res, a_res, i % 2);
             verify("a in test1", a_ref, a_res, a);
+        }
+        for (int i = 0; i < 100; i++) {
+            for (int j = 0; j < a.length; j++) {
+                a[j] = (byte)random.nextInt();
+                b[j] = (byte)random.nextInt();
+            }
+            byte[] a_ref = a.clone();
+            byte[] b_ref = b.clone();
+            byte[] a_res = a.clone();
+            byte[] b_res = b.clone();
+            ref2(a_ref, b_ref);
+            test2(a_res, b_res);
+            verify("a in test2", a_ref, a_res, a);
+            verify("b in test2", b_ref, b_res, b);
+        }
+        for (int i = 0; i < 100; i++) {
+            for (int j = 0; j < a.length; j++) {
+                a[j] = (byte)random.nextInt();
+            }
+            byte[] a_ref = a.clone();
+            byte[] a_res = a.clone();
+            ref3(a_ref);
+            test3(a_res);
+            verify("a in test3", a_ref, a_res, a);
         }
     }
 
@@ -94,6 +126,62 @@ public class TestMovingLoadBeforeStore {
             b[inv + i + 1]++;
             b[inv + i + 2]++;
             b[inv + i + 3]++;
+        }
+    }
+
+    static void test2(byte[] a, byte[] b) {
+        for (int i = 46; i < 6000; i++) {
+            a[47 + i + 0]++;
+            a[47 + i + 1]++;
+            a[47 + i + 2]++;
+            a[47 + i + 3]++;
+            b[NINE + i + 0]++;
+            b[NINE + i + 1]++;
+            b[NINE + i + 2]++;
+            b[NINE + i + 3]++;
+        }
+    }
+
+    static void ref2(byte[] a, byte[] b) {
+        for (int i = 46; i < 6000; i++) {
+            a[47 + i + 0]++;
+            a[47 + i + 1]++;
+            a[47 + i + 2]++;
+            a[47 + i + 3]++;
+            b[NINE + i + 0]++;
+            b[NINE + i + 1]++;
+            b[NINE + i + 2]++;
+            b[NINE + i + 3]++;
+        }
+    }
+
+    static void test3(byte[] a) {
+        for (int i = 51; i < 6000; i++) {
+            int adr = UNSAFE.ARRAY_BYTE_BASE_OFFSET + 42 + i;
+            UNSAFE.putIntUnaligned(a, adr + 0*4, UNSAFE.getIntUnaligned(a, adr + 0*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 1*4, UNSAFE.getIntUnaligned(a, adr + 1*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 2*4, UNSAFE.getIntUnaligned(a, adr + 2*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 3*4, UNSAFE.getIntUnaligned(a, adr + 3*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 4*4, UNSAFE.getIntUnaligned(a, adr + 4*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 5*4, UNSAFE.getIntUnaligned(a, adr + 5*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 6*4, UNSAFE.getIntUnaligned(a, adr + 6*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 7*4, UNSAFE.getIntUnaligned(a, adr + 7*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 8*4, UNSAFE.getIntUnaligned(a, adr + 8*4) + 1);
+        }
+    }
+
+    static void ref3(byte[] a) {
+        for (int i = 51; i < 6000; i++) {
+            int adr = UNSAFE.ARRAY_BYTE_BASE_OFFSET + 42 + i;
+            UNSAFE.putIntUnaligned(a, adr + 0*4, UNSAFE.getIntUnaligned(a, adr + 0*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 1*4, UNSAFE.getIntUnaligned(a, adr + 1*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 2*4, UNSAFE.getIntUnaligned(a, adr + 2*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 3*4, UNSAFE.getIntUnaligned(a, adr + 3*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 4*4, UNSAFE.getIntUnaligned(a, adr + 4*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 5*4, UNSAFE.getIntUnaligned(a, adr + 5*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 6*4, UNSAFE.getIntUnaligned(a, adr + 6*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 7*4, UNSAFE.getIntUnaligned(a, adr + 7*4) + 1);
+            UNSAFE.putIntUnaligned(a, adr + 8*4, UNSAFE.getIntUnaligned(a, adr + 8*4) + 1);
         }
     }
 }

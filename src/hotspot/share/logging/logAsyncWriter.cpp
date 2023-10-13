@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,13 +49,14 @@ const LogDecorations& AsyncLogWriter::None = LogDecorations(LogLevel::Warning, L
                                       LogDecorators::None);
 
 bool AsyncLogWriter::Buffer::push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg) {
-  const size_t sz = Message::calc_size(strlen(msg));
+  const size_t len = strlen(msg);
+  const size_t sz = Message::calc_size(len);
   const bool is_token = output == nullptr;
   // Always leave headroom for the flush token. Pushing a token must succeed.
   const size_t headroom = (!is_token) ? Message::calc_size(0) : 0;
 
   if (_pos + sz <= (_capacity - headroom)) {
-    new(_buf + _pos) Message(output, decorations, msg);
+    new(_buf + _pos) Message(output, decorations, msg, len);
     _pos += sz;
     return true;
   }

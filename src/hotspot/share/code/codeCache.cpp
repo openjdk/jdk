@@ -1251,6 +1251,54 @@ void CodeCache::cleanup_inline_caches_whitebox() {
 // Keeps track of time spent for checking dependencies
 NOT_PRODUCT(static elapsedTimer dependentCheckTime;)
 
+#ifndef PRODUCT
+// Check if any of live methods dependencies have been invalidated.
+// (this is expensive!)
+static void check_live_nmethods_dependencies(DepChange& changes) {
+  // Checked dependencies are allocated into this ResourceMark
+  ResourceMark rm;
+
+  // Turn off dependency tracing while actually testing dependencies.
+  FlagSetting fs(Dependencies::_verify_in_progress, true);
+
+  typedef ResourceHashtable<DependencySignature, int, 11027,
+                            AnyObj::RESOURCE_AREA, mtInternal,
+                            &DependencySignature::hash,
+                            &DependencySignature::equals> DepTable;
+
+  DepTable* table = new DepTable();
+
+  // Iterate over live nmethods and check dependencies of all nmethods that are not
+  // marked for deoptimization. A particular dependency is only checked once.
+  NMethodIterator iter(NMethodIterator::only_not_unloading);
+  while(iter.next()) {
+    nmethod* nm = iter.method();
+    // Only notify for live nmethods
+    if (!nm->is_marked_for_deoptimization()) {
+      for (Dependencies::DepStream deps(nm); deps.next(); ) {
+        // Construct abstraction of a dependency.
+        DependencySignature* current_sig = new DependencySignature(deps);
+
+        // Determine if dependency is already checked. table->put(...) returns
+        // 'true' if the dependency is added (i.e., was not in the hashtable).
+        if (table->put(*current_sig, 1)) {
+          if (deps.check_dependency() != nullptr) {
+            // Dependency checking failed. Print out information about the failed
+            // dependency and finally fail with an assert. We can fail here, since
+            // dependency checking is never done in a product build.
+            tty->print_cr("Failed dependency:");
+            changes.print();
+            nm->print();
+            nm->print_dependencies_on(tty);
+            assert(false, "Should have been marked for deoptimization");
+          }
+        }
+      }
+    }
+  }
+}
+#endif
+
 void CodeCache::mark_for_deoptimization(DeoptimizationScope* deopt_scope, KlassDepChange& changes) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
@@ -1272,7 +1320,7 @@ void CodeCache::mark_for_deoptimization(DeoptimizationScope* deopt_scope, KlassD
     // Object pointers are used as unique identifiers for dependency arguments. This
     // is only possible if no safepoint, i.e., GC occurs during the verification code.
     dependentCheckTime.start();
-    nmethod::check_all_dependencies(changes);
+    check_live_nmethods_dependencies(changes);
     dependentCheckTime.stop();
   }
 #endif

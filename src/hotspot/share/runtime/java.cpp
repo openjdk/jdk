@@ -225,6 +225,13 @@ void print_bytecode_count() {
   }
 }
 
+#else
+
+void print_method_invocation_histogram() {}
+void print_bytecode_count() {}
+
+#endif // PRODUCT
+
 
 // General statistics printing (profiling ...)
 void print_statistics() {
@@ -336,56 +343,6 @@ void print_statistics() {
 
   ThreadsSMRSupport::log_statistics();
 }
-
-#else // PRODUCT MODE STATISTICS
-
-void print_statistics() {
-
-  if (PrintMethodData) {
-    print_method_profiling_data();
-  }
-
-  if (CITime) {
-    CompileBroker::print_times();
-  }
-
-#ifdef COMPILER2_OR_JVMCI
-  if ((LogVMOutput || LogCompilation) && UseCompiler) {
-    // Only print the statistics to the log file
-    FlagSetting fs(DisplayVMOutput, false);
-    Deoptimization::print_statistics();
-  }
-#endif /* COMPILER2 || INCLUDE_JVMCI */
-
-  if (PrintCodeCache) {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    CodeCache::print();
-  }
-
-  // CodeHeap State Analytics.
-  if (PrintCodeHeapAnalytics) {
-    CompileBroker::print_heapinfo(nullptr, "all", 4096); // details
-  }
-
-#ifdef COMPILER2
-  if (PrintPreciseRTMLockingStatistics) {
-    OptoRuntime::print_named_counters();
-  }
-#endif
-
-  // Native memory tracking data
-  if (PrintNMTStatistics) {
-    MemTracker::final_report(tty);
-  }
-
-  if (PrintMetaspaceStatisticsAtExit) {
-    MetaspaceUtils::print_basic_report(tty, 0);
-  }
-
-  ThreadsSMRSupport::log_statistics();
-}
-
-#endif
 
 // Note: before_exit() can be executed only once, if more than one threads
 //       are trying to shutdown the VM at the same time, only one thread

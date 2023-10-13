@@ -43,9 +43,6 @@ public class TestLargePagesFlags {
 
   public static void main(String [] args) throws Exception {
     testUseTransparentHugePages();
-    testUseHugeTLBFS();
-    testUseSHM();
-    testCombinations();
   }
 
   public static void testUseTransparentHugePages() throws Exception {
@@ -60,27 +57,21 @@ public class TestLargePagesFlags {
            UseTransparentHugePages(true))
       .expect(
            UseLargePages(false),
-           UseTransparentHugePages(false),
-           UseHugeTLBFS(false),
-           UseSHM(false));
+           UseTransparentHugePages(false));
 
     // Explicitly turn on UseTransparentHugePages.
     new FlagTester()
       .use(UseTransparentHugePages(true))
       .expect(
            UseLargePages(true),
-           UseTransparentHugePages(true),
-           UseHugeTLBFS(false),
-           UseSHM(false));
+           UseTransparentHugePages(true));
 
     new FlagTester()
       .use(UseLargePages(true),
            UseTransparentHugePages(true))
       .expect(
            UseLargePages(true),
-           UseTransparentHugePages(true),
-           UseHugeTLBFS(false),
-           UseSHM(false));
+           UseTransparentHugePages(true));
 
     // Setting a specific large pages flag will turn
     // off heuristics to choose large pages type.
@@ -89,9 +80,7 @@ public class TestLargePagesFlags {
            UseTransparentHugePages(false))
       .expect(
            UseLargePages(false),
-           UseTransparentHugePages(false),
-           UseHugeTLBFS(false),
-           UseSHM(false));
+           UseTransparentHugePages(false));
 
     // Don't turn on UseTransparentHugePages
     // unless the user explicitly asks for them.
@@ -99,192 +88,6 @@ public class TestLargePagesFlags {
       .use(UseLargePages(true))
       .expect(
            UseTransparentHugePages(false));
-  }
-
-  public static void testUseHugeTLBFS() throws Exception {
-    if (!canUse(UseHugeTLBFS(true))) {
-      System.out.println("Skipping testUseHugeTLBFS");
-      return;
-    }
-
-    // -XX:-UseLargePages overrides all other flags.
-    new FlagTester()
-      .use(UseLargePages(false),
-           UseHugeTLBFS(true))
-      .expect(
-           UseLargePages(false),
-           UseTransparentHugePages(false),
-           UseHugeTLBFS(false),
-           UseSHM(false));
-
-    // Explicitly turn on UseHugeTLBFS.
-    new FlagTester()
-      .use(UseHugeTLBFS(true))
-      .expect(
-           UseLargePages(true),
-           UseTransparentHugePages(false),
-           UseHugeTLBFS(true),
-           UseSHM(false));
-
-    new FlagTester()
-      .use(UseLargePages(true),
-           UseHugeTLBFS(true))
-      .expect(
-           UseLargePages(true),
-           UseTransparentHugePages(false),
-           UseHugeTLBFS(true),
-           UseSHM(false));
-
-    // Setting a specific large pages flag will turn
-    // off heuristics to choose large pages type.
-    new FlagTester()
-      .use(UseLargePages(true),
-           UseHugeTLBFS(false))
-      .expect(
-           UseLargePages(false),
-           UseTransparentHugePages(false),
-           UseHugeTLBFS(false),
-           UseSHM(false));
-
-    // Using UseLargePages will default to UseHugeTLBFS large pages.
-    new FlagTester()
-      .use(UseLargePages(true))
-      .expect(
-           UseLargePages(true),
-           UseTransparentHugePages(false),
-           UseHugeTLBFS(true),
-           UseSHM(false));
-  }
-
-  public static void testUseSHM() throws Exception {
-    if (!canUse(UseSHM(true))) {
-      System.out.println("Skipping testUseSHM");
-      return;
-    }
-
-    // -XX:-UseLargePages overrides all other flags.
-    new FlagTester()
-      .use(UseLargePages(false),
-           UseSHM(true))
-      .expect(
-           UseLargePages(false),
-           UseTransparentHugePages(false),
-           UseHugeTLBFS(false),
-           UseSHM(false));
-
-    // Explicitly turn on UseSHM.
-    new FlagTester()
-      .use(UseSHM(true))
-      .expect(
-           UseLargePages(true),
-           UseTransparentHugePages(false),
-           UseHugeTLBFS(false),
-           UseSHM(true)) ;
-
-    new FlagTester()
-      .use(UseLargePages(true),
-           UseSHM(true))
-      .expect(
-           UseLargePages(true),
-           UseTransparentHugePages(false),
-           UseHugeTLBFS(false),
-           UseSHM(true)) ;
-
-    // Setting a specific large pages flag will turn
-    // off heuristics to choose large pages type.
-    new FlagTester()
-      .use(UseLargePages(true),
-           UseSHM(false))
-      .expect(
-           UseLargePages(false),
-           UseTransparentHugePages(false),
-           UseHugeTLBFS(false),
-           UseSHM(false));
-
-    // Setting UseLargePages can allow the system to choose
-    // UseHugeTLBFS instead of UseSHM, but never UseTransparentHugePages.
-    new FlagTester()
-      .use(UseLargePages(true))
-      .expect(
-           UseLargePages(true),
-           UseTransparentHugePages(false));
-  }
-
-  public static void testCombinations() throws Exception {
-    if (!canUse(UseSHM(true)) || !canUse(UseHugeTLBFS(true))) {
-      System.out.println("Skipping testUseHugeTLBFSAndUseSHMCombination");
-      return;
-    }
-
-    // UseHugeTLBFS takes precedence over SHM.
-
-    new FlagTester()
-      .use(UseLargePages(true),
-           UseHugeTLBFS(true),
-           UseSHM(true))
-      .expect(
-           UseLargePages(true),
-           UseTransparentHugePages(false),
-           UseHugeTLBFS(true),
-           UseSHM(false));
-
-    new FlagTester()
-      .use(UseLargePages(true),
-           UseHugeTLBFS(false),
-           UseSHM(true))
-      .expect(
-           UseLargePages(true),
-           UseTransparentHugePages(false),
-           UseHugeTLBFS(false),
-           UseSHM(true));
-
-    new FlagTester()
-      .use(UseLargePages(true),
-           UseHugeTLBFS(true),
-           UseSHM(false))
-      .expect(
-           UseLargePages(true),
-           UseTransparentHugePages(false),
-           UseHugeTLBFS(true),
-           UseSHM(false));
-
-    new FlagTester()
-      .use(UseLargePages(true),
-           UseHugeTLBFS(false),
-           UseSHM(false))
-      .expect(
-           UseLargePages(false),
-           UseTransparentHugePages(false),
-           UseHugeTLBFS(false),
-           UseSHM(false));
-
-
-    if (!canUse(UseTransparentHugePages(true))) {
-      return;
-    }
-
-    // UseTransparentHugePages takes precedence.
-
-    new FlagTester()
-      .use(UseLargePages(true),
-           UseTransparentHugePages(true),
-           UseHugeTLBFS(true),
-           UseSHM(true))
-      .expect(
-           UseLargePages(true),
-           UseTransparentHugePages(true),
-           UseHugeTLBFS(false),
-           UseSHM(false));
-
-    new FlagTester()
-      .use(UseTransparentHugePages(true),
-           UseHugeTLBFS(true),
-           UseSHM(true))
-      .expect(
-           UseLargePages(true),
-           UseTransparentHugePages(true),
-           UseHugeTLBFS(false),
-           UseSHM(false));
   }
 
   private static class FlagTester {
@@ -304,6 +107,7 @@ public class TestLargePagesFlags {
       System.out.println("Expecting: " + Arrays.toString(expectedFlags));
 
       OutputAnalyzer output = executeNewJVM(useFlags);
+      output.reportDiagnosticSummary();
 
       for (Flag flag : expectedFlags) {
         System.out.println("Looking for: " + flag.flagString());
@@ -329,7 +133,7 @@ public class TestLargePagesFlags {
     for (Flag flag : flags) {
       args.add(flag.flagString());
     }
-    args.add("-XX:+PrintFlagsFinal");
+    args.add("-Xlog:pagesize");
     args.add("-version");
 
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
@@ -355,14 +159,6 @@ public class TestLargePagesFlags {
 
   private static Flag UseTransparentHugePages(boolean value) {
     return new BooleanFlag("UseTransparentHugePages", value);
-  }
-
-  private static Flag UseHugeTLBFS(boolean value) {
-    return new BooleanFlag("UseHugeTLBFS", value);
-  }
-
-  private static Flag UseSHM(boolean value) {
-    return new BooleanFlag("UseSHM", value);
   }
 
   private static class BooleanFlag implements Flag {

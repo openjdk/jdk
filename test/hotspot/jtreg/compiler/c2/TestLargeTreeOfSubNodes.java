@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,37 +21,30 @@
  * questions.
  */
 
-#include <errno.h>
+/*
+ * @test
+ * @bug 8316396
+ * @summary Endless loop in C2 compilation triggered by AddNode::IdealIL
+ * @run main/othervm  -XX:CompileCommand=compileonly,*TestLargeTreeOfSubNodes*::test -XX:-TieredCompilation -Xcomp TestLargeTreeOfSubNodes
+ */
 
-#ifdef _WIN64
-#define EXPORT __declspec(dllexport)
-#else
-#define EXPORT
-#endif
+public class TestLargeTreeOfSubNodes {
+    public static long res = 0;
 
-EXPORT void empty() {}
+    public static void test() {
+        int a = -1, b = 0;
+        for (int i = 0; i < 100; ++i) {
+            for (int j = 0; j < 10; ++j) {
+                for (int k = 0; k < 1; ++k) {
+                }
+                b -= a;
+                a += b;
+            }
+        }
+        res = a;
+    }
 
-EXPORT int identity(int value) {
-    return value;
-}
-
-// 128 bit struct returned in buffer on SysV
-struct Big {
-    long long x;
-    long long y;
-};
-
-EXPORT struct Big with_return_buffer() {
-    struct Big b;
-    b.x = 10;
-    b.y = 11;
-    return b;
-}
-
-EXPORT void capture_errno(int value) {
-    errno = value;
-}
-
-EXPORT void do_upcall(void(*f)(void)) {
-    f();
+    public static void main(String[] args) {
+        test();
+    }
 }

@@ -53,8 +53,9 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
         return dup(byteAlignment(), Optional.of(name));
     }
 
+    @SuppressWarnings("unchecked")
     public final L withoutName() {
-        return dup(byteAlignment(), Optional.empty());
+        return name.isPresent() ? dup(byteAlignment(), Optional.empty()) : (L) this;
     }
 
     public final Optional<String> name() {
