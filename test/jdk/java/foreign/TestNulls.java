@@ -23,8 +23,6 @@
 
 /*
  * @test
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @modules java.base/jdk.internal.ref
  * @run testng/othervm
  *     --enable-native-access=ALL-UNNAMED
@@ -144,7 +142,7 @@ public class TestNulls {
         addDefaultMapping(Class.class, String.class);
         addDefaultMapping(Runnable.class, () -> {});
         addDefaultMapping(Object.class, new Object());
-        addDefaultMapping(VarHandle.class, MethodHandles.memorySegmentViewVarHandle(JAVA_INT));
+        addDefaultMapping(VarHandle.class, JAVA_INT.varHandle());
         addDefaultMapping(MethodHandle.class, MethodHandles.identity(int.class));
         addDefaultMapping(List.class, List.of());
         addDefaultMapping(Charset.class, Charset.defaultCharset());

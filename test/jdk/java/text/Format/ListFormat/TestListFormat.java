@@ -316,10 +316,11 @@ public class TestListFormat {
         // English ("en") has Oxford-comma "end" pattern. Thus missing "standard"/"middle"
         // should be inherited from "en", but "end" should stay non-Oxford for "en-001"
         // Note that this test depends on a particular version of CLDR data.
+        var world = Locale.forLanguageTag("en-001");
         assertEquals("""
-            ListFormat [locale: "English (world)", start: "{0}, {1}", middle: "{0}, {1}", end: "{0} and {1}", two: "{0} and {1}", three: "{0}, {1} and {2}"]
-            """,
-            ListFormat.getInstance(Locale.forLanguageTag("en-001"), ListFormat.Type.STANDARD, ListFormat.Style.FULL).toString());
+            ListFormat [locale: "%s", start: "{0}, {1}", middle: "{0}, {1}", end: "{0} and {1}", two: "{0} and {1}", three: "{0}, {1} and {2}"]
+            """.formatted(world.getDisplayName()),
+            ListFormat.getInstance(world, ListFormat.Type.STANDARD, ListFormat.Style.FULL).toString());
     }
 
     private static void compareResult(ListFormat f, List<String> input, String expected, boolean roundTrip) throws ParseException {
