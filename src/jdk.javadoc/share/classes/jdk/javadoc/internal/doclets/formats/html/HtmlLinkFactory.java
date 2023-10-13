@@ -315,7 +315,7 @@ public class HtmlLinkFactory {
                     spacer = Entity.NO_BREAK_SPACE;
                 }
                 if (flags.contains(ElementFlag.RESTRICTED)) {
-                   link.add(spacer);
+                    link.add(spacer);
                     link.add(HtmlTree.SUP(m_writer.getCrossClassLink(
                             typeElement,
                             m_writer.htmlIds.forRestrictedSection(restrictedTarget).name(),
