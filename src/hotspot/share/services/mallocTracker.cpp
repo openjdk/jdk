@@ -70,23 +70,6 @@ size_t MallocMemorySnapshot::total_arena() const {
   return amount;
 }
 
-size_t MallocMemorySnapshot::thread_count() const {
-  if (ThreadStackTracker::track_as_vm()) {
-    return _thread_count;
-  } else {
-    assert(_thread_count == 0, "_thread_count can not be used if ThreadStackTracker::track_as_vm() == false");
-    return by_type(mtThreadStack)->malloc_count();
-  }
-}
-
-void MallocMemorySnapshot::snapshot_thread_count() {
-  if (ThreadStackTracker::track_as_vm()) {
-    _thread_count = ThreadStackTracker::thread_count();
-  } else {
-    // Thread count will be reported as malloc count for mtThreadStack.
-  }
-}
-
 // Make adjustment by subtracting chunks used by arenas
 // from total chunks to get total free chunk size
 void MallocMemorySnapshot::make_adjustment() {

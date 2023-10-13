@@ -52,7 +52,7 @@ void ThreadStackTracker::new_thread_stack(void* base, size_t size, const NativeC
   if (track_as_vm()) {
     ThreadCritical tc;
     VirtualMemoryTracker::add_reserved_region((address)base, size, stack, mtThreadStack);
-    _thread_count ++;
+    _thread_count++;
   } else {
     // Use a slot in mallocMemorySummary for thread stack bookkeeping
     MallocMemorySummary::record_malloc(size, mtThreadStack);
@@ -61,6 +61,7 @@ void ThreadStackTracker::new_thread_stack(void* base, size_t size, const NativeC
       assert(_simple_thread_stacks != nullptr, "Must be initialized");
       SimpleThreadStackSite site((address)base, size, stack);
       _simple_thread_stacks->add(site);
+      _thread_count++;
     }
   }
 }
@@ -81,6 +82,7 @@ void ThreadStackTracker::delete_thread_stack(void* base, size_t size) {
       SimpleThreadStackSite site((address)base, size, NativeCallStack::empty_stack()); // Fake object just to serve as compare target for delete
       bool removed = _simple_thread_stacks->remove(site);
       assert(removed, "Must exist");
+      _thread_count--;
     }
   }
 }
