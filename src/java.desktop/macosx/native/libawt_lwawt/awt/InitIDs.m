@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,11 +48,6 @@ JNIEXPORT void JNICALL Java_java_awt_CheckboxMenuItem_initIDs
 }
 
 JNIEXPORT void JNICALL Java_java_awt_Choice_initIDs
-(JNIEnv *env, jclass cls)
-{
-}
-
-JNIEXPORT void JNICALL Java_java_awt_Color_initIDs
 (JNIEnv *env, jclass cls)
 {
 }
