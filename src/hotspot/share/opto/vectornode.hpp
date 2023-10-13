@@ -1047,7 +1047,7 @@ class StoreVectorScatterMaskedNode : public StoreVectorNode {
 // if (adr & mask == 0) {
 //   return adr
 // } else {
-//   stop("verify_alignment found a misaligned vector memory access")
+//   stop("verify_vector_alignment found a misaligned vector memory access")
 // }
 //
 // This node is used just before a vector load/store with -XX:+VerifyAlignVector
@@ -1057,6 +1057,7 @@ public:
   VerifyVectorAlignmentNode(Node* adr, Node* mask) : Node(nullptr, adr, mask) {}
 public:
   virtual int Opcode() const;
+  virtual uint size_of() const { return sizeof(*this); }
   virtual const Type *bottom_type() const { return in(1)->bottom_type(); }
 };
 
