@@ -107,10 +107,11 @@ public class CrashEmptyEnumConstructorTest extends TestRunner {
 
         if (log.size() != expected.size()) {
             throw new AssertionError("Unexpected output: " + log);
-        }
-        for (int i = 0; i < expected.size(); i++) {
-            if (!log.get(i).contains(expected.get(i))) {
-                throw new AssertionError("Unexpected output: " + log);
+        } else {
+            for (int i = 0; i < expected.size(); i++) {
+                if (!log.get(i).contains(expected.get(i))) {
+                    throw new AssertionError("Unexpected output: " + log);
+                }
             }
         }
     }
