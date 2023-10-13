@@ -52,7 +52,7 @@ public class WheelModifier {
     CountDownLatch exitSema = new CountDownLatch(1);
     CountDownLatch releaseSema = new CountDownLatch(1);
     volatile CountDownLatch wheelSema;
-    
+
     private volatile Point sLoc;
     private volatile Dimension bSize;
 
