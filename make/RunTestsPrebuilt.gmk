@@ -122,6 +122,7 @@ $(eval $(call SetupVariable,JT_HOME))
 $(eval $(call SetupVariable,JDK_IMAGE_DIR,$(OUTPUTDIR)/images/jdk))
 $(eval $(call SetupVariable,TEST_IMAGE_DIR,$(OUTPUTDIR)/images/test))
 $(eval $(call SetupVariable,SYMBOLS_IMAGE_DIR,$(OUTPUTDIR)/images/symbols,NO_CHECK))
+$(eval $(call SetupVariable,JTREG_JAVA,$(BOOT_JDK)/bin/java))
 
 # Provide default values for tools that we need
 $(eval $(call SetupVariable,MAKE,make,NO_CHECK))
@@ -248,6 +249,7 @@ $(call CreateNewSpec, $(NEW_SPEC), \
     TOPDIR := $(TOPDIR), \
     OUTPUTDIR := $(OUTPUTDIR), \
     BOOT_JDK := $(BOOT_JDK), \
+    JTREG_JAVA := $(FIXPATH) $(JTREG_JAVA), \
     JT_HOME := $(JT_HOME), \
     JDK_IMAGE_DIR := $(JDK_IMAGE_DIR), \
     JCOV_IMAGE_DIR := $(JCOV_IMAGE_DIR), \
