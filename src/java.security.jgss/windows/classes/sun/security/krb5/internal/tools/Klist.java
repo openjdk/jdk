@@ -151,8 +151,7 @@ public class Klist {
             if (target != null)  {
                 return displayCache();
             } else {
-                displayMessage("Credentials cache");
-                return -1;
+                return displayError("Credentials cache");
             }
         case 'k':
             KeyTab ktab = KeyTab.getInstance(name);
@@ -177,8 +176,7 @@ public class Klist {
                 if (target != null) {
                     return displayCache();
                 } else {
-                    displayMessage("Credentials cache");
-                    return -1;
+                    return displayError("Credentials cache");
                 }
             }
         }
@@ -345,12 +343,13 @@ public class Klist {
         return 0;
     }
 
-    void displayMessage(String target) {
+    int displayError(String target) {
         if (name == null) {
             System.out.println("Default " + target + " not found.");
         } else {
             System.out.println(target + " " + name + " not found.");
         }
+        return -1;
     }
     /**
      * Reformats the date from the form -
