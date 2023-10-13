@@ -734,6 +734,17 @@ static void wakeUp() {
 /* ========================== End poll section ================================= */
 
 /*
+ * Class:     java_awt_KeyboardFocusManager
+ * Method:    initIDs
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL
+Java_java_awt_KeyboardFocusManager_initIDs
+    (JNIEnv *env, jclass cls)
+{
+}
+
+/*
  * Class:     sun_awt_X11_XToolkit
  * Method:    getEnv
  * Signature: (Ljava/lang/String;)Ljava/lang/String;
