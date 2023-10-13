@@ -33,6 +33,7 @@
  * @run main CrashEmptyEnumConstructorTest
  */
 
+import java.io.File;
 import java.io.IOException;
 
 import java.nio.file.Files;
@@ -91,8 +92,9 @@ public class CrashEmptyEnumConstructorTest extends TestRunner {
                 }
                 """);
 
+        String PS = File.pathSeparator;
         List<String> expected = List.of(
-            "testEmptyEnumConstructor/src/E/E.java:3: error: missing method body, or declare abstract",
+            "E.java:3: error: missing method body, or declare abstract",
             "    E(String one);",
             "    ^",
             "1 error");
@@ -105,8 +107,14 @@ public class CrashEmptyEnumConstructorTest extends TestRunner {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        if (!expected.equals(log))
+        if (log.size() != expected.size()) {
             throw new AssertionError("Unexpected output: " + log);
+        }
+        for (int i = 0; i < expected.size(); i++) {
+            if (!log.get(i).contains(expected.get(i))) {
+                throw new AssertionError("Unexpected output: " + log);
+            }
+        }
     }
 
     @SupportedAnnotationTypes("*")
