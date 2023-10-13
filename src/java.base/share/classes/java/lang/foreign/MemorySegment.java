@@ -1284,7 +1284,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     }
 
     /**
-     * A zero-length native segment modelling the {@code NULL} address.
+     * A zero-length native segment modelling the {@code NULL} address. Equivalent to {@code MemorySegment.ofAddress(0L)}.
      */
     MemorySegment NULL = MemorySegment.ofAddress(0L);
 

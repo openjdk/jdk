@@ -51,17 +51,6 @@ sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl permits M
                 : min;
     }
 
-    /**
-     * This constructor should only be used when initializing {@link MemorySegment#NULL}. Note: because of the memory
-     * segment class hierarchy, it is possible to end up in a situation where this constructor is called
-     * when the static fields in this class are not yet initialized.
-     */
-    @ForceInline
-    public NativeMemorySegmentImpl() {
-        super(0L, false, new GlobalSession(null));
-        this.min = 0L;
-    }
-
     @Override
     public long address() {
         return min;
