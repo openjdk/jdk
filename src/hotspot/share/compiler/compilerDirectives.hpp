@@ -40,12 +40,11 @@
     cflags(Exclude,                 bool, false, Unknown) \
     cflags(BreakAtExecute,          bool, false, BreakAtExecute) \
     cflags(BreakAtCompile,          bool, false, BreakAtCompile) \
-    cflags(CollectMemStat,          bool, false, CollectMemStat) \
     cflags(Log,                     bool, LogCompilation, Unknown) \
+    cflags(MemStat,                 uintx, 0, MemStat) \
     cflags(PrintAssembly,           bool, PrintAssembly, PrintAssembly) \
     cflags(PrintCompilation,        bool, PrintCompilation, PrintCompilation) \
     cflags(PrintInlining,           bool, PrintInlining, PrintInlining) \
-    cflags(PrintMemStat,            bool, false, PrintMemStat) \
     cflags(PrintNMethods,           bool, PrintNMethods, PrintNMethods) \
     cflags(BackgroundCompilation,   bool, BackgroundCompilation, BackgroundCompilation) \
     cflags(ReplayInline,            bool, false, ReplayInline) \
@@ -134,6 +133,7 @@ public:
   bool is_c1(CompilerDirectives* directive) const;
   bool is_c2(CompilerDirectives* directive) const;
   bool should_collect_memstat() const;
+  bool should_print_memstat() const;
 
   typedef enum {
 #define enum_of_flags(name, type, dvalue, cc_flag) name##Index,

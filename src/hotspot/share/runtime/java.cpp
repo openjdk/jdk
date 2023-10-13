@@ -342,7 +342,7 @@ void print_statistics() {
     MetaspaceUtils::print_basic_report(tty, 0);
   }
 
-  if (CompilerOracle::should_print_memstat()) {
+  if (CompilerOracle::should_print_final_memstat_report()) {
     CompilationMemoryStatistic::print_all_by_size(tty, false, 0);
   }
 

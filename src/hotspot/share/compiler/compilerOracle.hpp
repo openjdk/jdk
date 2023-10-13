@@ -57,12 +57,11 @@ class methodHandle;
   option(Break, "break", Bool) \
   option(BreakAtExecute, "BreakAtExecute", Bool) \
   option(BreakAtCompile, "BreakAtCompile", Bool) \
-  option(CollectMemStat, "CollectMemStat", Bool)   \
+  option(MemStat, "MemStat", Uintx) \
   option(PrintAssembly, "PrintAssembly", Bool) \
   option(PrintCompilation, "PrintCompilation", Bool) \
   option(PrintInlining, "PrintInlining", Bool) \
   option(PrintIntrinsics, "PrintIntrinsics", Bool) \
-  option(PrintMemStat, "PrintMemStat", Bool)   \
   option(PrintNMethods, "PrintNMethods", Bool)   \
   option(PrintOptoAssembly, "PrintOptoAssembly", Bool) \
   option(PrintDebugInfo,    "PrintDebugInfo",    Bool) \
@@ -115,6 +114,10 @@ enum class OptionType {
     Unknown
 };
 
+enum class MemStatAction {
+  collect = 1, print = 2
+};
+
 class CompilerOracle : AllStatic {
  private:
   static bool _quiet;
@@ -155,7 +158,7 @@ class CompilerOracle : AllStatic {
 
   // Tells whether there are any methods to (collect|collect+print) memory statistics for
   static bool should_collect_memstat();
-  static bool should_print_memstat();
+  static bool should_print_final_memstat_report();
 
   // Tags the method as blackhole candidate, if possible.
   static void tag_blackhole_if_possible(const methodHandle& method);

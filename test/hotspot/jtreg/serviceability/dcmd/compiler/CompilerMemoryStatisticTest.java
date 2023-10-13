@@ -36,7 +36,19 @@ import java.util.Iterator;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm -XX:CompileCommand=CollectMemStat,*.* CompilerMemoryStatisticTest
+ * @run main/othervm -XX:CompileCommand=memstat,*.* CompilerMemoryStatisticTest
+ */
+
+/*
+ * @test CompilerMemoryStatisticTest
+ * @summary Test Compiler.memory
+ * @requires vm.compiler1.enabled
+ * @requires vm.compiler2.enabled
+ *
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @run main/othervm -XX:CompileCommand=memstat,*.*,collect CompilerMemoryStatisticTest
  */
 
 public class CompilerMemoryStatisticTest {

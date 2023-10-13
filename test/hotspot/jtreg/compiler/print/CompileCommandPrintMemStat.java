@@ -51,7 +51,7 @@ public class CompileCommandPrintMemStat {
         options.add("-Xcomp");
         options.add("-XX:-Inline");
         options.add("-XX:CompileCommand=compileonly," + getTestClass() + "::*");
-        options.add("-XX:CompileCommand=PrintMemStat," + getTestMethod(include));
+        options.add("-XX:CompileCommand=MemStat," + getTestMethod(include) + ",print");
         options.add(getTestClass());
 
         OutputAnalyzer oa = ProcessTools.executeTestJvm(options);
