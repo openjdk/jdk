@@ -278,6 +278,11 @@ public class OfLiteralTest {
 
     private static String generateNonExistingIfName() {
         try {
+            // At least two network interfaces are required to generate
+            // a non-existing interface name
+            if (NetworkInterface.networkInterfaces().count() < 2) {
+                return "";
+            }
             return NetworkInterface
                     .networkInterfaces()
                     .map(NetworkInterface::getName)
