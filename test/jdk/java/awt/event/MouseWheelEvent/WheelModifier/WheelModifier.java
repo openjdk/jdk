@@ -53,8 +53,8 @@ public class WheelModifier {
     CountDownLatch releaseSema = new CountDownLatch(1);
     volatile CountDownLatch wheelSema;
     
-    private Point sLoc;
-    private Dimension bSize;
+    private volatile Point sLoc;
+    private volatile Dimension bSize;
 
     void createGui() {
         f = new JFrame("frame");
