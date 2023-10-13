@@ -33,7 +33,6 @@
  * @run main CrashEmptyEnumConstructorTest
  */
 
-import java.io.File;
 import java.io.IOException;
 
 import java.nio.file.Files;
@@ -92,7 +91,6 @@ public class CrashEmptyEnumConstructorTest extends TestRunner {
                 }
                 """);
 
-        String PS = File.pathSeparator;
         List<String> expected = List.of(
             "E.java:3: error: missing method body, or declare abstract",
             "    E(String one);",
