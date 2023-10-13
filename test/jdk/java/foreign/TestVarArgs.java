@@ -24,8 +24,6 @@
 
 /*
  * @test
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @run testng/othervm --enable-native-access=ALL-UNNAMED -Dgenerator.sample.factor=17 TestVarArgs
  */
@@ -40,6 +38,7 @@ import java.lang.foreign.MemorySegment;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -51,7 +50,6 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
 
 public class TestVarArgs extends CallGeneratorHelper {
 
-    static final VarHandle VH_IntArray = C_INT.arrayElementVarHandle();
     static final MethodHandle MH_CHECK;
 
     static final Linker LINKER = Linker.nativeLinker();
@@ -82,7 +80,7 @@ public class TestVarArgs extends CallGeneratorHelper {
             CallInfo.argIDs(callInfo, argIDs);
 
             for (int i = 0; i < args.size(); i++) {
-                VH_IntArray.set(argIDs, (long) i, args.get(i).id.ordinal());
+                argIDs.setAtIndex(ValueLayout.JAVA_INT, i, args.get(i).id.ordinal());
             }
 
             List<MemoryLayout> argLayouts = new ArrayList<>();
@@ -197,10 +195,10 @@ public class TestVarArgs extends CallGeneratorHelper {
         static final VarHandle VH_argIDs = LAYOUT.varHandle(groupElement("argIDs"));
 
         static void writeback(MemorySegment seg, MemorySegment addr) {
-            VH_writeback.set(seg, addr);
+            VH_writeback.set(seg, 0L, addr);
         }
         static void argIDs(MemorySegment seg, MemorySegment addr) {
-            VH_argIDs.set(seg, addr);
+            VH_argIDs.set(seg, 0L, addr);
         }
     }
 
@@ -219,7 +217,9 @@ public class TestVarArgs extends CallGeneratorHelper {
         }
 
         private static Arg primitiveArg(NativeType id, MemoryLayout layout, TestValue value) {
-            return new Arg(id, layout, value, layout.varHandle().toMethodHandle(VarHandle.AccessMode.GET));
+            MethodHandle getterHandle = layout.varHandle().toMethodHandle(VarHandle.AccessMode.GET);
+            getterHandle = MethodHandles.insertArguments(getterHandle, 1, 0L); // align signature with getter for structs
+            return new Arg(id, layout, value, getterHandle);
         }
 
         private static Arg structArg(NativeType id, MemoryLayout layout, TestValue value) {

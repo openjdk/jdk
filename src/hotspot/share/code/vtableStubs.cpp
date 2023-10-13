@@ -284,6 +284,13 @@ VtableStub* VtableStubs::entry_point(address pc) {
   return (s == stub) ? s : nullptr;
 }
 
+bool VtableStubs::is_icholder_entry(address pc) {
+  assert(contains(pc), "must contain all vtable blobs");
+  VtableStub* stub = (VtableStub*)(pc - VtableStub::entry_offset());
+  // itable stubs use CompiledICHolder.
+  return stub->is_itable_stub();
+}
+
 bool VtableStubs::contains(address pc) {
   // simple solution for now - we may want to use
   // a faster way if this function is called often
