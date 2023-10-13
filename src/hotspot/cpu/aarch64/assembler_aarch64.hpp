@@ -28,6 +28,7 @@
 
 #include "asm/register.hpp"
 #include "metaprogramming/enableIf.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -573,7 +574,7 @@ class Address {
         if (size == 0) // It's a byte
           i->f(ext().shift() >= 0, 12);
         else {
-          assert(ext().shift() <= 0 || ext().shift() == (int)size, "bad shift");
+          guarantee(ext().shift() <= 0 || ext().shift() == (int)size, "bad shift");
           i->f(ext().shift() > 0, 12);
         }
         i->f(0b10, 11, 10);
@@ -654,7 +655,8 @@ class Address {
     if (offset % vl == 0) {
       // Convert address offset into sve imm offset (MUL VL).
       int64_t sve_offset = offset / vl;
-      if (((-(1 << (shift - 1))) <= sve_offset) && (sve_offset < (1 << (shift - 1)))) {
+      int32_t range = 1 << (shift - 1);
+      if ((-range <= sve_offset) && (sve_offset < range)) {
         // sve_offset can be encoded
         return true;
       }

@@ -24,7 +24,10 @@
 /*
  * @test
  * @summary Tests handling of an exception thrown by HotSpotJVMCIRuntime.compileMethod.
+ *          Requires a debug VM as it uses test.jvmci.compileMethodExceptionIsFatal
+ *          which is only read in a debug VM.
  * @requires vm.jvmci
+ * @requires vm.debug
  * @library /test/lib /
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.code

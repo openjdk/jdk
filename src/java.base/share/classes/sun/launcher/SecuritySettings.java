@@ -53,24 +53,25 @@ public final class SecuritySettings {
     private static final String PROV_INFO_STRING = "Provider information: ";
     private static PrintStream ostream = null;
 
-    static void printSecuritySettings(String arg, PrintStream stream) {
+    static void printSecuritySettings(LauncherHelper.Option o, PrintStream stream, boolean verbose) {
         ostream = stream;
-        switch (arg) {
-            case "properties" -> printSecurityProperties();
-            case "providers"  -> printSecurityProviderConfig(true);
-            case "tls"        -> printSecurityTLSConfig(true);
-            case "all"        -> printAllSecurityConfig();
-            default           -> ostream.println(
-                    "\nUnrecognized security subcommand. Valid values are " +
-                    "\"all\", \"properties\", \"providers\", \"tls\". See \"java -X\"\n");
+        if (!verbose) {
+            printSecuritySummarySettings();
+            return;
+        }
+        switch (o) {
+            case SECURITY_PROPERTIES -> printSecurityProperties();
+            case SECURITY_PROVIDERS -> printSecurityProviderConfig(true);
+            case SECURITY_TLS -> printSecurityTLSConfig(true);
+            case SECURITY, SECURITY_ALL -> printAllSecurityConfig();
         }
     }
 
     // A non-verbose description of some core security configuration settings
-    static void printSecuritySummarySettings(PrintStream stream) {
-        ostream = stream;
-        ostream.println("Security settings summary: " + "\n" +
-                INDENT + "See \"java -X\" for verbose security settings options");
+    static void printSecuritySummarySettings() {
+        ostream.println("Security settings summary:");
+        ostream.println(INDENT + "Use \"-XshowSettings:security\" " +
+                "option for verbose security settings options");
         printSecurityProviderConfig(false);
         printSecurityTLSConfig(false);
     }

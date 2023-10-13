@@ -25,13 +25,20 @@
 
 package sun.security.x509;
 
-import sun.security.util.*;
-
 import java.io.*;
-import java.security.*;
+import java.util.Arrays;
+import java.security.Key;
+import java.security.PublicKey;
+import java.security.KeyFactory;
+import java.security.Security;
+import java.security.Provider;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Arrays;
+
+import sun.security.util.HexDumpEncoder;
+import sun.security.util.*;
 
 /**
  * Holds an X.509 key, for example a public key found in an X.509
@@ -421,6 +428,7 @@ public class X509Key implements PublicKey, DerEncoder {
         }
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -442,13 +450,9 @@ public class X509Key implements PublicKey, DerEncoder {
      * Calculates a hash code value for the object. Objects
      * which are equal will also have the same hashcode.
      */
+    @Override
     public int hashCode() {
-        byte[] b1 = getEncodedInternal();
-        int r = b1.length;
-        for (int i = 0; i < b1.length; i++) {
-            r += (b1[i] & 0xff) * 37;
-        }
-        return r;
+        return Arrays.hashCode(getEncodedInternal());
     }
 
     /*

@@ -453,7 +453,7 @@ void interpretedVFrame::set_locals(StackValueCollection* values) const {
     if (sv->type() == T_OBJECT) {
       *(oop *) addr = (sv->get_obj())();
     } else {                   // integer
-      *addr = sv->get_int();
+      *addr = sv->get_intptr();
     }
   }
 }

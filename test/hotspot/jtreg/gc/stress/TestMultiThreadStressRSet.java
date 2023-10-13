@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ public class TestMultiThreadStressRSet {
         }
         long time = Long.parseLong(args[0]);
         int threads = Integer.parseInt(args[1]);
-        new TestMultiThreadStressRSet().test(time * 1000, threads);
+        new TestMultiThreadStressRSet().test(time * 1_000_000_000L, threads);
     }
 
     /**
@@ -147,23 +147,23 @@ public class TestMultiThreadStressRSet {
      * <li> stops the Shifter thread
      * </ul>
      *
-     * @param timeInMillis how long to stress
+     * @param timeInNanos how long to stress
      * @param maxThreads the maximum number of Worker thread working together.
      */
-    public void test(long timeInMillis, int maxThreads) {
-        if (timeInMillis <= 0 || maxThreads <= 0) {
+    public void test(long timeInNanos, int maxThreads) {
+        if (timeInNanos <= 0 || maxThreads <= 0) {
             throw new IllegalArgumentException("TEST BUG: be positive!");
         }
-        System.out.println("%% Time to work: " + timeInMillis / 1000 + "s");
+        System.out.println("%% Time to work: " + timeInNanos / 1_000_000_000L + "s");
         System.out.println("%% Number of threads: " + maxThreads);
-        long finish = System.currentTimeMillis() + timeInMillis;
+        long finishNanos = System.nanoTime() + timeInNanos;
         Shifter shift = new Shifter(this, 1000, (int) (windowSize * 0.9));
         shift.start();
         for (int i = 0; i < maxThreads; i++) {
             new Worker(this, 100).start();
         }
         try {
-            while (System.currentTimeMillis() < finish && errorMessage == null) {
+            while (System.nanoTime() - finishNanos < 0 && errorMessage == null) {
                 Thread.sleep(100);
             }
         } catch (Throwable t) {

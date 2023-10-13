@@ -247,10 +247,10 @@ inline double compute_ewma_alpha_coefficient(size_t lookback_count) {
 static void log(const JfrSamplerWindow* expired, double* sample_size_ewma) {
   assert(sample_size_ewma != nullptr, "invariant");
   if (log_is_enabled(Debug, jfr, system, throttle)) {
-    *sample_size_ewma = exponentially_weighted_moving_average(expired->sample_size(), compute_ewma_alpha_coefficient(expired->params().window_lookback_count), *sample_size_ewma);
+    *sample_size_ewma = exponentially_weighted_moving_average(static_cast<double>(expired->sample_size()), compute_ewma_alpha_coefficient(expired->params().window_lookback_count), *sample_size_ewma);
     log_debug(jfr, system, throttle)("jdk.ObjectAllocationSample: avg.sample size: %0.4f, window set point: %zu, sample size: %zu, population size: %zu, ratio: %.4f, window duration: %zu ms\n",
       *sample_size_ewma, expired->params().sample_points_per_window, expired->sample_size(), expired->population_size(),
-      expired->population_size() == 0 ? 0 : (double)expired->sample_size() / (double)expired->population_size(),
+      expired->population_size() == 0 ? 0 : static_cast<double>(expired->sample_size()) / static_cast<double>(expired->population_size()),
       expired->params().window_duration_ms);
   }
 }

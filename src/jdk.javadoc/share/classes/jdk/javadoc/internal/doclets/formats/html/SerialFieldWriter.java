@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.List;
-import java.util.SortedSet;
 
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -53,15 +52,11 @@ public class SerialFieldWriter extends FieldWriter {
         super(writer, typeElement);
     }
 
-    public SortedSet<VariableElement> members(TypeElement te) {
-        return utils.serializableFields(te);
-    }
-
     protected Content getSerializableFieldsHeader() {
         return HtmlTree.UL(HtmlStyle.blockList);
     }
 
-    protected Content getFieldsContentHeader(boolean isLastContent) {
+    protected Content getFieldsContentHeader() {
         return new HtmlTree(TagName.LI).setStyle(HtmlStyle.blockList);
     }
 

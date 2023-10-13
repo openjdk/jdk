@@ -135,7 +135,7 @@ public class TestSearch extends JavadocTester {
                 "index-all.html",
                 "allpackages-index.html",
                 "allclasses-index.html",
-                "search-page.js",
+                "script-files/search-page.js",
                 "search.html");
     }
 
@@ -179,7 +179,7 @@ public class TestSearch extends JavadocTester {
                 "tag-search-index.js",
                 "type-search-index.js",
                 "index-all.html",
-                "search-page.js",
+                "script-files/search-page.js",
                 "search.html");
     }
 
@@ -418,13 +418,13 @@ public class TestSearch extends JavadocTester {
         // Test for search related markup
         checkOutput(fileName, expectedOutput,
                 """
-                    <link rel="stylesheet" type="text/css" href="script-dir/jquery-ui.min.css" title="Style">
+                    <link rel="stylesheet" type="text/css" href="resource-files/jquery-ui.min.css" title="Style">
                     """,
                 """
-                    <script type="text/javascript" src="script-dir/jquery-3.6.1.min.js"></script>
+                    <script type="text/javascript" src="script-files/jquery-3.6.1.min.js"></script>
                     """,
                 """
-                    <script type="text/javascript" src="script-dir/jquery-ui.min.js"></script>""",
+                    <script type="text/javascript" src="script-files/jquery-ui.min.js"></script>""",
                 """
                     var pathtoroot = "./";
                     loadScripts(document, 'script');""",
@@ -690,29 +690,29 @@ public class TestSearch extends JavadocTester {
 
     void checkJqueryAndImageFiles(boolean expectedOutput) {
         checkFiles(expectedOutput,
-                "search.js",
-                "script-dir/jquery-3.6.1.min.js",
-                "script-dir/jquery-ui.min.js",
-                "script-dir/jquery-ui.min.css",
-                "resources/x.png",
-                "resources/glass.png");
+                "script-files/search.js",
+                "script-files/jquery-3.6.1.min.js",
+                "script-files/jquery-ui.min.js",
+                "resource-files/jquery-ui.min.css",
+                "resource-files/x.png",
+                "resource-files/glass.png");
     }
 
     void checkSearchJS() {
         // ensure all resource keys were resolved
-        checkOutput("search.js", false,
+        checkOutput("script-files/search.js", false,
                 "##REPLACE:");
 
-        checkOutput("search.js", true,
+        checkOutput("script-files/search.js", true,
                 "function searchIndex(indexArray, category) {",
                 "function getURLPrefix(item, category) {",
                 "url += item.l;");
 
-        checkOutput("search-page.js", true,
+        checkOutput("script-files/search-page.js", true,
                 "function renderResults(result) {",
                 "function selectTab(category) {");
 
-        checkCssClasses("search.js", "stylesheet.css");
+        checkCssClasses("script-files/search.js", "resource-files/stylesheet.css");
     }
 
     void checkCssClasses(String jsFile, String cssFile) {

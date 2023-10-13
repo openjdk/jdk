@@ -391,11 +391,19 @@ public class MessageFormat extends Format {
      * Patterns and their interpretation are specified in the
      * <a href="#patterns">class description</a>.
      *
+     * @implSpec The default implementation throws a
+     * {@code NullPointerException} if {@code locale} is {@code null}
+     * either during the creation of the {@code MessageFormat} object or later
+     * when {@code format()} is called by a {@code MessageFormat}
+     * instance with a null locale and the implementation utilizes a
+     * locale-dependent subformat.
+     *
      * @param pattern the pattern for this message format
      * @param locale the locale for this message format
      * @throws    IllegalArgumentException if the pattern is invalid
      * @throws    NullPointerException if {@code pattern} is
-     *            {@code null}
+     *            {@code null} or {@code locale} is {@code null} and the
+     *            implementation uses a locale-dependent subformat.
      * @since 1.4
      */
     public MessageFormat(String pattern, Locale locale) {
@@ -844,7 +852,10 @@ public class MessageFormat extends Format {
      * @throws    IllegalArgumentException if an argument in the
      *            {@code arguments} array is not of the type
      *            expected by the format element(s) that use it.
-     * @throws    NullPointerException if {@code result} is {@code null}
+     * @throws    NullPointerException if {@code result} is {@code null} or
+     *            if the {@code MessageFormat} instance that calls this method
+     *            has locale set to null, and the implementation
+     *            uses a locale-dependent subformat.
      */
     public final StringBuffer format(Object[] arguments, StringBuffer result,
                                      FieldPosition pos)
@@ -890,7 +901,10 @@ public class MessageFormat extends Format {
      * @throws    IllegalArgumentException if an argument in the
      *            {@code arguments} array is not of the type
      *            expected by the format element(s) that use it.
-     * @throws    NullPointerException if {@code result} is {@code null}
+     * @throws    NullPointerException if {@code result} is {@code null} or
+     *            if the {@code MessageFormat} instance that calls this method
+     *            has locale set to null, and the implementation
+     *            uses a locale-dependent subformat.
      */
     public final StringBuffer format(Object arguments, StringBuffer result,
                                      FieldPosition pos)
@@ -934,20 +948,16 @@ public class MessageFormat extends Format {
      * @since 1.4
      */
     public AttributedCharacterIterator formatToCharacterIterator(Object arguments) {
+        Objects.requireNonNull(arguments, "arguments must not be null");
         StringBuffer result = new StringBuffer();
         ArrayList<AttributedCharacterIterator> iterators = new ArrayList<>();
 
-        if (arguments == null) {
-            throw new NullPointerException(
-                   "formatToCharacterIterator must be passed non-null object");
-        }
         subformat((Object[]) arguments, result, null, iterators);
         if (iterators.size() == 0) {
             return createAttributedCharacterIterator("");
         }
         return createAttributedCharacterIterator(
-                     iterators.toArray(
-                     new AttributedCharacterIterator[iterators.size()]));
+                iterators.toArray(new AttributedCharacterIterator[0]));
     }
 
     /**
@@ -1131,7 +1141,17 @@ public class MessageFormat extends Format {
     }
 
     /**
-     * Equality comparison between two message format objects
+     * Compares the specified object with this {@code MessageFormat} for equality.
+     * Returns true if the object is also a {@code MessageFormat} and the
+     * two formats would format any value the same.
+     *
+     * @implSpec This method performs an equality check with a notion of class
+     * identity based on {@code getClass()}, rather than {@code instanceof}.
+     * Therefore, in the equals methods in subclasses, no instance of this class
+     * should compare as equal to an instance of a subclass.
+     * @param  obj object to be compared for equality
+     * @return {@code true} if the specified object is equal to this {@code MessageFormat}
+     * @see Object#equals(Object)
      */
     @Override
     public boolean equals(Object obj) {
@@ -1149,7 +1169,11 @@ public class MessageFormat extends Format {
     }
 
     /**
-     * Generates a hash code for the message format object.
+     * {@return the hash code value for this {@code MessageFormat}}
+     *
+     * @implSpec This method calculates the hash code value using the value returned by
+     * {@link #toPattern()}.
+     * @see Object#hashCode()
      */
     @Override
     public int hashCode() {

@@ -38,7 +38,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
-import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 
@@ -48,49 +47,33 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
 
     /**
-     * We generate separate summaries for required and optional annotation interface members,
-     * so we need dedicated writer instances for each kind. For the details section, a single
-     * shared list is generated so a special {@code ANY} value is provided for this case.
-     */
-    enum Kind {
-        OPTIONAL,
-        REQUIRED,
-        ANY
-    }
-
-    private final Kind kind;
-
-    /**
      * The index of the current member that is being documented at this point
      * in time.
      */
     protected Element currentMember;
 
     /**
-     * Constructs a new AnnotationTypeMemberWriterImpl for any kind of member.
-     *
-     * @param writer The writer for the class that the member belongs to.
-     */
-    public AnnotationTypeMemberWriter(SubWriterHolderWriter writer) {
-        super(writer);
-        this.kind = Kind.ANY;
-    }
-
-    /**
      * Constructs a new AnnotationTypeMemberWriterImpl for a specific kind of member.
      *
+     * We generate separate summaries for required and optional annotation interface members,
+     * so we need dedicated writer instances for each kind. For the details section, a single
+     * shared list is generated
+     *
      * @param writer         the writer that will write the output.
-     * @param annotationType the AnnotationType that holds this member.
      * @param kind           the kind of annotation interface members to handle.
      */
-    public AnnotationTypeMemberWriter(SubWriterHolderWriter writer,
-                                      TypeElement annotationType,
-                                      Kind kind) {
-        super(writer, annotationType);
-        this.kind = kind;
+    public AnnotationTypeMemberWriter(ClassWriter writer, VisibleMemberTable.Kind kind) {
+        super(writer, kind);
+        assert switch (kind) {
+            case ANNOTATION_TYPE_MEMBER_REQUIRED,
+                    ANNOTATION_TYPE_MEMBER_OPTIONAL,
+                    ANNOTATION_TYPE_MEMBER -> true;
+            default -> false;
+        };
     }
 
-    public void build(Content target) throws DocletException {
+    @Override
+    public void buildDetails(Content target) {
         buildAnnotationTypeMember(target);
     }
 
@@ -130,31 +113,19 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
         buildDefaultValueInfo(annotationContent);
     }
 
-    /**
-     * Build the signature.
-     *
-     * @param target the content to which the documentation will be added
-     */
+    @Override
     protected void buildSignature(Content target) {
         target.add(getSignature(currentMember));
     }
 
-    /**
-     * Build the deprecation information.
-     *
-     * @param annotationContent the content to which the documentation will be added
-     */
-    protected void buildDeprecationInfo(Content annotationContent) {
-        addDeprecated(currentMember, annotationContent);
+    @Override
+    protected void buildDeprecationInfo(Content target) {
+        addDeprecated(currentMember, target);
     }
 
-    /**
-     * Build the preview information.
-     *
-     * @param annotationContent the content to which the documentation will be added
-     */
-    protected void buildPreviewInfo(Content annotationContent) {
-        addPreview(currentMember, annotationContent);
+    @Override
+    protected void buildPreviewInfo(Content target) {
+        addPreview(currentMember, target);
     }
 
     /**
@@ -188,33 +159,28 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
     }
 
     @Override
-    public Content getMemberSummaryHeader(TypeElement typeElement,
-            Content content) {
+    public Content getMemberSummaryHeader(Content content) {
         switch (kind) {
-            case OPTIONAL -> content.add(selectComment(
-                    MarkerComments.START_OF_ANNOTATION_TYPE_OPTIONAL_MEMBER_SUMMARY,
-                    MarkerComments.START_OF_ANNOTATION_INTERFACE_OPTIONAL_MEMBER_SUMMARY));
-            case REQUIRED -> content.add(selectComment(
+            case ANNOTATION_TYPE_MEMBER_REQUIRED -> content.add(selectComment(
                     MarkerComments.START_OF_ANNOTATION_TYPE_REQUIRED_MEMBER_SUMMARY,
                     MarkerComments.START_OF_ANNOTATION_INTERFACE_REQUIRED_MEMBER_SUMMARY));
-            case ANY -> throw new UnsupportedOperationException("unsupported member kind");
+            case ANNOTATION_TYPE_MEMBER_OPTIONAL -> content.add(selectComment(
+                    MarkerComments.START_OF_ANNOTATION_TYPE_OPTIONAL_MEMBER_SUMMARY,
+                    MarkerComments.START_OF_ANNOTATION_INTERFACE_OPTIONAL_MEMBER_SUMMARY));
+            default -> throw new IllegalStateException(kind.toString());
         }
         Content c = new ContentBuilder();
         writer.addSummaryHeader(this, c);
         return c;
     }
 
-    protected Content getMemberHeader() {
-        return writer.getMemberHeader();
-    }
-
     @Override
-    public void addSummary(Content summariesList, Content content) {
+    public void buildSummary(Content summariesList, Content content) {
         writer.addSummary(HtmlStyle.memberSummary,
                 switch (kind) {
-                    case REQUIRED -> HtmlIds.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY;
-                    case OPTIONAL -> HtmlIds.ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY;
-                    case ANY -> throw new UnsupportedOperationException("unsupported member kind");
+                    case ANNOTATION_TYPE_MEMBER_REQUIRED -> HtmlIds.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY;
+                    case ANNOTATION_TYPE_MEMBER_OPTIONAL -> HtmlIds.ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY;
+                    default -> throw new IllegalStateException(kind.toString());
                 },
                 summariesList, content);
     }
@@ -274,9 +240,9 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
     public void addSummaryLabel(Content content) {
         var label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 switch (kind) {
-                    case REQUIRED -> contents.annotateTypeRequiredMemberSummaryLabel;
-                    case OPTIONAL -> contents.annotateTypeOptionalMemberSummaryLabel;
-                    case ANY -> throw new UnsupportedOperationException("unsupported member kind");
+                    case ANNOTATION_TYPE_MEMBER_REQUIRED -> contents.annotateTypeRequiredMemberSummaryLabel;
+                    case ANNOTATION_TYPE_MEMBER_OPTIONAL -> contents.annotateTypeOptionalMemberSummaryLabel;
+                    default -> throw new IllegalStateException(kind.toString());
                 });
         content.add(label);
     }
@@ -288,9 +254,9 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
     protected Content getCaption() {
         return contents.getContent(
                 switch (kind) {
-                    case REQUIRED -> "doclet.Annotation_Type_Required_Members";
-                    case OPTIONAL -> "doclet.Annotation_Type_Optional_Members";
-                    case ANY -> throw new UnsupportedOperationException("unsupported member kind");
+                    case ANNOTATION_TYPE_MEMBER_REQUIRED -> "doclet.Annotation_Type_Required_Members";
+                    case ANNOTATION_TYPE_MEMBER_OPTIONAL -> "doclet.Annotation_Type_Optional_Members";
+                    default -> throw new IllegalStateException(kind.toString());
                 });
     }
 
@@ -298,9 +264,9 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
     public TableHeader getSummaryTableHeader(Element member) {
         return new TableHeader(contents.modifierAndTypeLabel,
                 switch (kind) {
-                    case REQUIRED -> contents.annotationTypeRequiredMemberLabel;
-                    case OPTIONAL -> contents.annotationTypeOptionalMemberLabel;
-                    case ANY -> throw new UnsupportedOperationException("unsupported member kind");
+                    case ANNOTATION_TYPE_MEMBER_REQUIRED -> contents.annotationTypeRequiredMemberLabel;
+                    case ANNOTATION_TYPE_MEMBER_OPTIONAL -> contents.annotationTypeOptionalMemberLabel;
+                    default -> throw new IllegalStateException(kind.toString());
                 },
                 contents.descriptionLabel);
     }
@@ -355,7 +321,7 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
                 : member.asType();
     }
 
-    public void addDefaultValueInfo(Element member, Content annotationContent) {
+    protected void addDefaultValueInfo(Element member, Content annotationContent) {
         if (utils.isAnnotationInterface(member.getEnclosingElement())) {
             ExecutableElement ee = (ExecutableElement) member;
             AnnotationValue value = ee.getDefaultValue();
