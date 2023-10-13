@@ -2839,6 +2839,10 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
     mov(result, expected);
     lse_cas(result, new_val, addr, size, acquire, release, /*not_pair*/ true);
     compare_eq(result, expected, size);
+#ifdef ASSERT
+    // Poison rscratch1 which is written on !UseLSE branch
+    mov(rscratch1, 0x1f1f1f1f1f1f1f1f);
+#endif
   } else {
     Label retry_load, done;
     prfm(Address(addr), PSTL1STRM);
@@ -6067,51 +6071,43 @@ void MacroAssembler::leave() {
 // For more details on PAC see pauth_aarch64.hpp.
 
 // Sign the LR. Use during construction of a stack frame, before storing the LR to memory.
-// Uses the FP as the modifier.
+// Uses value zero as the modifier.
 //
 void MacroAssembler::protect_return_address() {
   if (VM_Version::use_rop_protection()) {
     check_return_address();
-    // The standard convention for C code is to use paciasp, which uses SP as the modifier. This
-    // works because in C code, FP and SP match on function entry. In the JDK, SP and FP may not
-    // match, so instead explicitly use the FP.
-    pacia(lr, rfp);
+    paciaz();
   }
 }
 
 // Sign the return value in the given register. Use before updating the LR in the existing stack
 // frame for the current function.
-// Uses the FP from the start of the function as the modifier - which is stored at the address of
-// the current FP.
+// Uses value zero as the modifier.
 //
-void MacroAssembler::protect_return_address(Register return_reg, Register temp_reg) {
+void MacroAssembler::protect_return_address(Register return_reg) {
   if (VM_Version::use_rop_protection()) {
-    assert(PreserveFramePointer, "PreserveFramePointer must be set for ROP protection");
     check_return_address(return_reg);
-    ldr(temp_reg, Address(rfp));
-    pacia(return_reg, temp_reg);
+    paciza(return_reg);
   }
 }
 
 // Authenticate the LR. Use before function return, after restoring FP and loading LR from memory.
+// Uses value zero as the modifier.
 //
-void MacroAssembler::authenticate_return_address(Register return_reg) {
+void MacroAssembler::authenticate_return_address() {
   if (VM_Version::use_rop_protection()) {
-    autia(return_reg, rfp);
-    check_return_address(return_reg);
+    autiaz();
+    check_return_address();
   }
 }
 
 // Authenticate the return value in the given register. Use before updating the LR in the existing
 // stack frame for the current function.
-// Uses the FP from the start of the function as the modifier - which is stored at the address of
-// the current FP.
+// Uses value zero as the modifier.
 //
-void MacroAssembler::authenticate_return_address(Register return_reg, Register temp_reg) {
+void MacroAssembler::authenticate_return_address(Register return_reg) {
   if (VM_Version::use_rop_protection()) {
-    assert(PreserveFramePointer, "PreserveFramePointer must be set for ROP protection");
-    ldr(temp_reg, Address(rfp));
-    autia(return_reg, temp_reg);
+    autiza(return_reg);
     check_return_address(return_reg);
   }
 }
@@ -6314,16 +6310,16 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
   }
 }
 
-// Implements fast-locking.
+// Implements lightweight-locking.
 // Branches to slow upon failure to lock the object, with ZF cleared.
 // Falls through upon success with ZF set.
 //
 //  - obj: the object to be locked
 //  - hdr: the header, already loaded from obj, will be destroyed
 //  - t1, t2: temporary registers, will be destroyed
-void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
+void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, t1, t2);
+  assert_different_registers(obj, hdr, t1, t2, rscratch1);
 
   // Check if we would have space on lock-stack for the object.
   ldrw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
@@ -6335,6 +6331,7 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register
   // Clear lock-bits, into t2
   eor(t2, hdr, markWord::unlocked_value);
   // Try to swing header from unlocked to locked
+  // Clobbers rscratch1 when UseLSE is false
   cmpxchg(/*addr*/ obj, /*expected*/ hdr, /*new*/ t2, Assembler::xword,
           /*acquire*/ true, /*release*/ true, /*weak*/ false, t1);
   br(Assembler::NE, slow);
@@ -6346,16 +6343,16 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register
   strw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
 }
 
-// Implements fast-unlocking.
+// Implements lightweight-unlocking.
 // Branches to slow upon failure, with ZF cleared.
 // Falls through upon success, with ZF set.
 //
 // - obj: the object to be unlocked
 // - hdr: the (pre-loaded) header of the object
 // - t1, t2: temporary registers
-void MacroAssembler::fast_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
+void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, t1, t2);
+  assert_different_registers(obj, hdr, t1, t2, rscratch1);
 
 #ifdef ASSERT
   {
@@ -6395,6 +6392,7 @@ void MacroAssembler::fast_unlock(Register obj, Register hdr, Register t1, Regist
   orr(t1, hdr, markWord::unlocked_value);
 
   // Try to swing header from locked to unlocked
+  // Clobbers rscratch1 when UseLSE is false
   cmpxchg(obj, hdr, t1, Assembler::xword,
           /*acquire*/ true, /*release*/ true, /*weak*/ false, t2);
   br(Assembler::NE, slow);

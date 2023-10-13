@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -50,7 +48,7 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "--enable-preview" })
+@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED" })
 public class StrLenTest extends CLayouts {
 
     Arena arena = Arena.ofConfined();
@@ -94,27 +92,27 @@ public class StrLenTest extends CLayouts {
     @Benchmark
     public int panama_strlen() throws Throwable {
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment segment = arena.allocateUtf8String(str);
+            MemorySegment segment = arena.allocateFrom(str);
             return (int)STRLEN.invokeExact(segment);
         }
     }
 
     @Benchmark
     public int panama_strlen_ring() throws Throwable {
-        return (int)STRLEN.invokeExact(arenaAllocator.allocateUtf8String(str));
+        return (int)STRLEN.invokeExact(arenaAllocator.allocateFrom(str));
     }
 
     @Benchmark
     public int panama_strlen_pool() throws Throwable {
         Arena arena = pool.acquire();
-        int l = (int) STRLEN.invokeExact(arena.allocateUtf8String(str));
+        int l = (int) STRLEN.invokeExact(arena.allocateFrom(str));
         arena.close();
         return l;
     }
 
     @Benchmark
     public int panama_strlen_prefix() throws Throwable {
-        return (int)STRLEN.invokeExact(segmentAllocator.allocateUtf8String(str));
+        return (int)STRLEN.invokeExact(segmentAllocator.allocateFrom(str));
     }
 
     @Benchmark
@@ -164,7 +162,7 @@ public class StrLenTest extends CLayouts {
                 reset();
             }
             MemorySegment res = current.allocate(byteSize, byteAlignment);
-            long lastOffset = segment.segmentOffset(res) + res.byteSize();
+            long lastOffset = res.address() - segment.address() + res.byteSize();
             rem = segment.byteSize() - lastOffset;
             return res;
         }

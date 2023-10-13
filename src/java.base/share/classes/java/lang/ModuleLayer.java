@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.javac.Restricted;
 import jdk.internal.loader.ClassLoaderValue;
 import jdk.internal.loader.Loader;
 import jdk.internal.loader.LoaderPool;
@@ -306,9 +307,7 @@ public final class ModuleLayer {
          *
          * <p> This method is <a href="foreign/package-summary.html#restricted"><em>restricted</em></a>.
          * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-         * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain
-         * from depending on restricted methods, and use safe and supported functionalities,
-         * where possible.
+         * the JVM or, worse, silently result in memory corruption.
          *
          * @param  target
          *         The module to update
@@ -321,10 +320,10 @@ public final class ModuleLayer {
          * @throws IllegalCallerException
          *         If the caller is in a module that does not have native access enabled
          *
-         * @since 20
+         * @since 22
          */
-        @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
         @CallerSensitive
+        @Restricted
         public Controller enableNativeAccess(Module target) {
             ensureInLayer(target);
             Reflection.ensureNativeAccess(Reflection.getCallerClass(), Module.class,

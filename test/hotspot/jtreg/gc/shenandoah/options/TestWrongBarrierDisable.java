@@ -42,7 +42,6 @@ public class TestWrongBarrierDisable {
                 "ShenandoahSATBBarrier",
                 "ShenandoahCASBarrier",
                 "ShenandoahCloneBarrier",
-                "ShenandoahNMethodBarrier",
                 "ShenandoahStackWatermarkBarrier",
         };
         String[] iu = {
@@ -50,7 +49,6 @@ public class TestWrongBarrierDisable {
                 "ShenandoahIUBarrier",
                 "ShenandoahCASBarrier",
                 "ShenandoahCloneBarrier",
-                "ShenandoahNMethodBarrier",
                 "ShenandoahStackWatermarkBarrier",
         };
 
