@@ -62,6 +62,12 @@ public class RestrictedListWriter extends SummaryListWriter<RestrictedAPIListBui
     }
 
     @Override
+    protected boolean showContentsList() {
+        // This list contains only methods, no need to show list of element kinds.
+        return false;
+    }
+
+    @Override
     protected Content getHeadContent() {
         return configuration.contents.restrictedMethods;
     }

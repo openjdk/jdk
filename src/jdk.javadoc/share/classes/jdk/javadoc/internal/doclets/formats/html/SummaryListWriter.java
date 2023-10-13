@@ -139,11 +139,7 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
                 HtmlStyle.title, getHeadContent());
         content.add(HtmlTree.DIV(HtmlStyle.header, heading));
         addContentSelectors(content);
-        // Omit element kind list if only one kind of element contains items.
-        var numberOfKinds = (Long) Arrays.stream(SummaryElementKind.values())
-                .filter(builder::hasDocumentation)
-                .count();
-        if (numberOfKinds > 1) {
+        if (showContentsList()) {
             content.add(HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING, contents.contentsHeading));
             content.add(getContentsList());
         }
@@ -189,6 +185,13 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
         var li = HtmlTree.LI(links.createLink(id,
                 contents.getContent(headingKey))).setId(HtmlId.of("contents-" + id.name()));
         content.add(li);
+    }
+
+    /**
+     * {@return {@code true} if the contents list should be generated, {@code false} if not}
+     */
+    protected boolean showContentsList() {
+        return true;
     }
 
     /**
