@@ -27,7 +27,6 @@
  *     that support it.
  * @library  ../.. /test/lib
  * @build jdk.test.lib.Platform
- * @enablePreview
  * @run main CreationTime
  */
 
