@@ -132,6 +132,11 @@ JNIEXPORT void JNICALL Java_java_awt_MenuItem_initIDs
 {
 }
 
+JNIEXPORT void JNICALL Java_java_awt_Rectangle_initIDs
+(JNIEnv *env, jclass cls)
+{
+}
+
 JNIEXPORT void JNICALL Java_java_awt_ScrollPane_initIDs
 (JNIEnv *env, jclass cls)
 {
