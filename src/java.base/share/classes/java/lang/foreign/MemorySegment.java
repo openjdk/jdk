@@ -41,9 +41,8 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.HeapMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.foreign.NativeMemorySegmentImpl;
+import jdk.internal.foreign.SegmentFactories;
 import jdk.internal.foreign.StringSupport;
 import jdk.internal.foreign.Utils;
 import jdk.internal.javac.Restricted;
@@ -1209,7 +1208,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by a byte array.
      */
     static MemorySegment ofArray(byte[] byteArray) {
-        return HeapMemorySegmentImpl.OfByte.fromArray(byteArray);
+        return SegmentFactories.fromArray(byteArray);
     }
 
     /**
@@ -1221,7 +1220,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by a char array.
      */
     static MemorySegment ofArray(char[] charArray) {
-        return HeapMemorySegmentImpl.OfChar.fromArray(charArray);
+        return SegmentFactories.fromArray(charArray);
     }
 
     /**
@@ -1233,7 +1232,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by a short array.
      */
     static MemorySegment ofArray(short[] shortArray) {
-        return HeapMemorySegmentImpl.OfShort.fromArray(shortArray);
+        return SegmentFactories.fromArray(shortArray);
     }
 
     /**
@@ -1245,7 +1244,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by an int array.
      */
     static MemorySegment ofArray(int[] intArray) {
-        return HeapMemorySegmentImpl.OfInt.fromArray(intArray);
+        return SegmentFactories.fromArray(intArray);
     }
 
     /**
@@ -1257,7 +1256,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by a float array.
      */
     static MemorySegment ofArray(float[] floatArray) {
-        return HeapMemorySegmentImpl.OfFloat.fromArray(floatArray);
+        return SegmentFactories.fromArray(floatArray);
     }
 
     /**
@@ -1269,7 +1268,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by a long array.
      */
     static MemorySegment ofArray(long[] longArray) {
-        return HeapMemorySegmentImpl.OfLong.fromArray(longArray);
+        return SegmentFactories.fromArray(longArray);
     }
 
     /**
@@ -1281,13 +1280,13 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by a double array.
      */
     static MemorySegment ofArray(double[] doubleArray) {
-        return HeapMemorySegmentImpl.OfDouble.fromArray(doubleArray);
+        return SegmentFactories.fromArray(doubleArray);
     }
 
     /**
      * A zero-length native segment modelling the {@code NULL} address.
      */
-    MemorySegment NULL = new NativeMemorySegmentImpl();
+    MemorySegment NULL = MemorySegment.ofAddress(0L);
 
     /**
      * Creates a zero-length native segment from the given {@linkplain #address() address value}.
@@ -1301,7 +1300,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a zero-length native segment with the given address.
      */
     static MemorySegment ofAddress(long address) {
-        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(address, 0);
+        return SegmentFactories.makeNativeSegmentUnchecked(address, 0);
     }
 
     /**
