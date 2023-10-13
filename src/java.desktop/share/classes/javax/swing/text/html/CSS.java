@@ -746,9 +746,9 @@ public class CSS implements Serializable {
     }
 
     /**
-     * Sets the base font size. <code>sz</code> is a CSS value, and is
+     * Sets the base font size. {@code sz} is a CSS value, and is
      * not necessarily the point size. Use getPointSize to determine the
-     * point size corresponding to <code>sz</code>.
+     * point size corresponding to {@code sz}.
      */
     void setBaseFontSize(int sz) {
         if (sz < 1)
@@ -786,8 +786,8 @@ public class CSS implements Serializable {
     }
 
     /**
-     * Parses the CSS property <code>key</code> with value
-     * <code>value</code> placing the result in <code>att</code>.
+     * Parses the CSS property {@code key} with value
+     * {@code value} placing the result in {@code attr}.
      */
     void addInternalCSSValue(MutableAttributeSet attr,
                              CSS.Attribute key, String value) {
@@ -834,9 +834,9 @@ public class CSS implements Serializable {
     }
 
     /**
-     * Gets the internal CSS representation of <code>value</code> which is
-     * a CSS value of the CSS attribute named <code>key</code>. The receiver
-     * should not modify <code>value</code>, and the first <code>count</code>
+     * Gets the internal CSS representation of {@code value} which is
+     * a CSS value of the CSS attribute named {@code key}. The receiver
+     * should not modify {@code value}, and the first {@code count}
      * strings are valid.
      */
     Object getInternalCSSValue(CSS.Attribute key, String value) {
@@ -867,7 +867,7 @@ public class CSS implements Serializable {
 
     /**
      * Converts the passed in CSS value to a StyleConstants value.
-     * <code>key</code> identifies the CSS attribute being mapped.
+     * {@code key} identifies the CSS attribute being mapped.
      */
     Object cssValueToStyleConstantsValue(StyleConstants key, Object value) {
         if (value instanceof CssValue) {
@@ -879,7 +879,7 @@ public class CSS implements Serializable {
     /**
      * Returns the font for the values in the passed in AttributeSet.
      * It is assumed the keys will be CSS.Attribute keys.
-     * <code>sc</code> is the StyleContext that will be messaged to get
+     * {@code sc} is the StyleContext that will be messaged to get
      * the font once the size, name and style have been determined.
      */
     Font getFont(StyleContext sc, AttributeSet a, int defaultSize, StyleSheet ss) {
@@ -941,7 +941,7 @@ public class CSS implements Serializable {
      * Takes a set of attributes and turn it into a color
      * specification.  This might be used to specify things
      * like brighter, more hue, etc.
-     * This will return null if there is no value for <code>key</code>.
+     * This will return null if there is no value for {@code key}.
      *
      * @param key CSS.Attribute identifying where color is stored.
      * @param a the set of attributes
@@ -979,8 +979,8 @@ public class CSS implements Serializable {
     }
 
     /**
-     * Returns the length of the attribute in <code>a</code> with
-     * key <code>key</code>.
+     * Returns the length of the attribute in {@code a} with
+     * key {@code key}.
      */
     float getLength(AttributeSet a, CSS.Attribute key, StyleSheet ss) {
         ss = getStyleSheet(ss);
@@ -1246,14 +1246,14 @@ public class CSS implements Serializable {
     }
 
     /**
-     * Translates a string to a <code>CSS.Attribute</code> object.
-     * This will return <code>null</code> if there is no attribute
+     * Translates a string to a {@code CSS.Attribute} object.
+     * This will return {@code null} if there is no attribute
      * by the given name.
      *
      * @param name the name of the CSS attribute to fetch the
      *  typesafe enumeration for
-     * @return the <code>CSS.Attribute</code> object,
-     *  or <code>null</code> if the string
+     * @return the {@code CSS.Attribute} object,
+     *  or {@code null} if the string
      *  doesn't represent a valid attribute key
      */
     public static final Attribute getAttribute(String name) {
@@ -1261,14 +1261,14 @@ public class CSS implements Serializable {
     }
 
     /**
-     * Translates a string to a <code>CSS.Value</code> object.
-     * This will return <code>null</code> if there is no value
+     * Translates a string to a {@code CSS.Value} object.
+     * This will return {@code null} if there is no value
      * by the given name.
      *
      * @param name the name of the CSS value to fetch the
      *  typesafe enumeration for
-     * @return the <code>CSS.Value</code> object,
-     *  or <code>null</code> if the string
+     * @return the {@code CSS.Value} object,
+     *  or {@code null} if the string
      *  doesn't represent a valid CSS value name; this does
      *  not mean that it doesn't represent a valid CSS value
      */
@@ -1283,7 +1283,7 @@ public class CSS implements Serializable {
 
     /**
      * Returns a URL for the given CSS url string. If relative,
-     * <code>base</code> is used as the parent. If a valid URL can not
+     * {@code base} is used as the parent. If a valid URL can not
      * be found, this will not throw a MalformedURLException, instead
      * null will be returned.
      */
@@ -1590,7 +1590,7 @@ public class CSS implements Serializable {
     }
 
     /**
-     * Parses a String in the format <code>rgb(r, g, b)</code> where
+     * Parses a String in the format {@code rgb(r, g, b)} where
      * each of the Color components is either an integer, or a floating number
      * with a % after indicating a percentage value of 255. Values are
      * constrained to fit with 0-255. The resulting Color is returned.
@@ -1621,8 +1621,8 @@ public class CSS implements Serializable {
     }
 
     /**
-     * Returns the next integer value from <code>string</code> starting
-     * at <code>index[0]</code>. The value can either can an integer, or
+     * Returns the next integer value from {@code string} starting
+     * at {@code index[0]}. The value can either can an integer, or
      * a percentage (floating number ending with %), in which case it is
      * multiplied by 255.
      */
@@ -1685,7 +1685,7 @@ public class CSS implements Serializable {
 
 
     /**
-     * @return an array of all the strings in <code>value</code>
+     * @return an array of all the strings in {@code value}
      *         that are separated by whitespace.
      */
     static String[] parseStrings(String value) {
@@ -1969,15 +1969,15 @@ public class CSS implements Serializable {
         }
 
         /**
-         * Converts a <code>StyleConstants</code> attribute value to
+         * Converts a {@code StyleConstants} attribute value to
          * a CSS attribute value.  If there is no conversion,
-         * returns <code>null</code>.  By default, there is no conversion.
+         * returns {@code null}.  By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @param value the value of a <code>StyleConstants</code>
+         * @param key the {@code StyleConstants} attribute
+         * @param value the value of a {@code StyleConstants}
          *   attribute to be converted
          * @return the CSS value that represents the
-         *   <code>StyleConstants</code> value
+         *   {@code StyleConstants} value
          */
         Object fromStyleConstants(StyleConstants key, Object value) {
             return null;
@@ -1985,14 +1985,14 @@ public class CSS implements Serializable {
 
         /**
          * Converts a CSS attribute value to a
-         * <code>StyleConstants</code>
+         * {@code StyleConstants}
          * value.  If there is no conversion, returns
-         * <code>null</code>.
+         * {@code null}.
          * By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @param v the view containing <code>AttributeSet</code>
-         * @return the <code>StyleConstants</code> attribute value that
+         * @param key the {@code StyleConstants} attribute
+         * @param v the view containing {@code AttributeSet}
+         * @return the {@code StyleConstants} attribute value that
          *   represents the CSS attribute value
          */
         Object toStyleConstants(StyleConstants key, View v) {
@@ -2037,15 +2037,15 @@ public class CSS implements Serializable {
         }
 
         /**
-         * Converts a <code>StyleConstants</code> attribute value to
+         * Converts a {@code StyleConstants} attribute value to
          * a CSS attribute value.  If there is no conversion
-         * returns <code>null</code>.
+         * returns {@code null}.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @param value the value of a <code>StyleConstants</code>
+         * @param key the {@code StyleConstants} attribute
+         * @param value the value of a {@code StyleConstants}
          *   attribute to be converted
          * @return the CSS value that represents the
-         *   <code>StyleConstants</code> value
+         *   {@code StyleConstants} value
          */
         Object fromStyleConstants(StyleConstants key, Object value) {
             if (key == StyleConstants.Italic) {
@@ -2099,12 +2099,12 @@ public class CSS implements Serializable {
 
         /**
          * Converts a CSS attribute value to a
-         * <code>StyleConstants</code> value.
-         * If there is no conversion, returns <code>null</code>.
+         * {@code StyleConstants} value.
+         * If there is no conversion, returns {@code null}.
          * By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @return the <code>StyleConstants</code> attribute value that
+         * @param key the {@code StyleConstants} attribute
+         * @return the {@code StyleConstants} attribute value that
          *   represents the CSS attribute value
          */
         Object toStyleConstants(StyleConstants key, View v) {
@@ -2317,15 +2317,15 @@ public class CSS implements Serializable {
         }
 
         /**
-         * Converts a <code>StyleConstants</code> attribute value to
+         * Converts a {@code StyleConstants} attribute value to
          * a CSS attribute value.  If there is no conversion
-         * returns <code>null</code>.  By default, there is no conversion.
+         * returns {@code null}.  By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @param value the value of a <code>StyleConstants</code>
+         * @param key the {@code StyleConstants} attribute
+         * @param value the value of a {@code StyleConstants}
          *   attribute to be converted
          * @return the CSS value that represents the
-         *   <code>StyleConstants</code> value
+         *   {@code StyleConstants} value
          */
         Object fromStyleConstants(StyleConstants key, Object value) {
             if (value instanceof Number) {
@@ -2340,12 +2340,12 @@ public class CSS implements Serializable {
         }
 
         /**
-         * Converts a CSS attribute value to a <code>StyleConstants</code>
-         * value.  If there is no conversion, returns <code>null</code>.
+         * Converts a CSS attribute value to a {@code StyleConstants}
+         * value.  If there is no conversion, returns {@code null}.
          * By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @return the <code>StyleConstants</code> attribute value that
+         * @param key the {@code StyleConstants} attribute
+         * @return the {@code StyleConstants} attribute value that
          *   represents the CSS attribute value
          */
         Object toStyleConstants(StyleConstants key, View v) {
@@ -2443,27 +2443,27 @@ public class CSS implements Serializable {
         }
 
         /**
-         * Converts a <code>StyleConstants</code> attribute value to
+         * Converts a {@code StyleConstants} attribute value to
          * a CSS attribute value.  If there is no conversion
-         * returns <code>null</code>.  By default, there is no conversion.
+         * returns {@code null}.  By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @param value the value of a <code>StyleConstants</code>
+         * @param key the {@code StyleConstants} attribute
+         * @param value the value of a {@code StyleConstants}
          *   attribute to be converted
          * @return the CSS value that represents the
-         *   <code>StyleConstants</code> value
+         *   {@code StyleConstants} value
          */
         Object fromStyleConstants(StyleConstants key, Object value) {
             return parseCssValue(value.toString());
         }
 
         /**
-         * Converts a CSS attribute value to a <code>StyleConstants</code>
-         * value.  If there is no conversion, returns <code>null</code>.
+         * Converts a CSS attribute value to a {@code StyleConstants}
+         * value.  If there is no conversion, returns {@code null}.
          * By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @return the <code>StyleConstants</code> attribute value that
+         * @param key the {@code StyleConstants} attribute
+         * @return the {@code StyleConstants} attribute value that
          *   represents the CSS attribute value
          */
         Object toStyleConstants(StyleConstants key, View v) {
@@ -2510,15 +2510,15 @@ public class CSS implements Serializable {
         }
 
         /**
-         * Converts a <code>StyleConstants</code> attribute value to
+         * Converts a {@code StyleConstants} attribute value to
          * a CSS attribute value.  If there is no conversion
-         * returns <code>null</code>.  By default, there is no conversion.
+         * returns {@code null}.  By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @param value the value of a <code>StyleConstants</code>
+         * @param key the {@code StyleConstants} attribute
+         * @param value the value of a {@code StyleConstants}
          *   attribute to be converted
          * @return the CSS value that represents the
-         *   <code>StyleConstants</code> value
+         *   {@code StyleConstants} value
          */
         Object fromStyleConstants(StyleConstants key, Object value) {
             if (value.equals(Boolean.TRUE)) {
@@ -2528,12 +2528,12 @@ public class CSS implements Serializable {
         }
 
         /**
-         * Converts a CSS attribute value to a <code>StyleConstants</code>
-         * value.  If there is no conversion, returns <code>null</code>.
+         * Converts a CSS attribute value to a {@code StyleConstants}
+         * value.  If there is no conversion, returns {@code null}.
          * By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @return the <code>StyleConstants</code> attribute value that
+         * @param key the {@code StyleConstants} attribute
+         * @return the {@code StyleConstants} attribute value that
          *   represents the CSS attribute value
          */
         Object toStyleConstants(StyleConstants key, View v) {
@@ -2585,15 +2585,15 @@ public class CSS implements Serializable {
         }
 
         /**
-         * Converts a <code>StyleConstants</code> attribute value to
+         * Converts a {@code StyleConstants} attribute value to
          * a CSS attribute value.  If there is no conversion
-         * returns <code>null</code>.  By default, there is no conversion.
+         * returns {@code null}.  By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @param value the value of a <code>StyleConstants</code>
+         * @param key the {@code StyleConstants} attribute
+         * @param value the value of a {@code StyleConstants}
          *   attribute to be converted
          * @return the CSS value that represents the
-         *   <code>StyleConstants</code> value
+         *   {@code StyleConstants} value
          */
         Object fromStyleConstants(StyleConstants key, Object value) {
             ColorValue colorValue = new ColorValue();
@@ -2603,12 +2603,12 @@ public class CSS implements Serializable {
         }
 
         /**
-         * Converts a CSS attribute value to a <code>StyleConstants</code>
-         * value.  If there is no conversion, returns <code>null</code>.
+         * Converts a CSS attribute value to a {@code StyleConstants}
+         * value.  If there is no conversion, returns {@code null}.
          * By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @return the <code>StyleConstants</code> attribute value that
+         * @param key the {@code StyleConstants} attribute
+         * @return the {@code StyleConstants} attribute value that
          *   represents the CSS attribute value
          */
         Object toStyleConstants(StyleConstants key, View v) {
@@ -2722,7 +2722,7 @@ public class CSS implements Serializable {
 
         /**
          * Returns the length (span) to use. If the value represents
-         * a percentage, it is scaled based on <code>currentValue</code>.
+         * a percentage, it is scaled based on {@code currentValue}.
          */
         float getValue(float currentValue) {
             return getValue(currentValue, false);
@@ -2786,15 +2786,15 @@ public class CSS implements Serializable {
             return parseCssValue(value);
         }
         /**
-         * Converts a <code>StyleConstants</code> attribute value to
+         * Converts a {@code StyleConstants} attribute value to
          * a CSS attribute value.  If there is no conversion,
-         * returns <code>null</code>.  By default, there is no conversion.
+         * returns {@code null}.  By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @param value the value of a <code>StyleConstants</code>
+         * @param key the {@code StyleConstants} attribute
+         * @param value the value of a {@code StyleConstants}
          *   attribute to be converted
          * @return the CSS value that represents the
-         *   <code>StyleConstants</code> value
+         *   {@code StyleConstants} value
          */
         Object fromStyleConstants(StyleConstants key, Object value) {
             LengthValue v = new LengthValue();
@@ -2804,12 +2804,12 @@ public class CSS implements Serializable {
         }
 
         /**
-         * Converts a CSS attribute value to a <code>StyleConstants</code>
-         * value.  If there is no conversion, returns <code>null</code>.
+         * Converts a CSS attribute value to a {@code StyleConstants}
+         * value.  If there is no conversion, returns {@code null}.
          * By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @return the <code>StyleConstants</code> attribute value that
+         * @param key the {@code StyleConstants} attribute
+         * @return the {@code StyleConstants} attribute value that
          *   represents the CSS attribute value
          */
         Object toStyleConstants(StyleConstants key, View v) {
@@ -3262,8 +3262,8 @@ public class CSS implements Serializable {
      */
     static class ShorthandFontParser {
         /**
-         * Parses the shorthand font string <code>value</code>, placing the
-         * result in <code>attr</code>.
+         * Parses the shorthand font string {@code value}, placing the
+         * result in {@code attr}.
          */
         static void parseShorthandFont(CSS css, String value,
                                        MutableAttributeSet attr) {
@@ -3404,8 +3404,8 @@ public class CSS implements Serializable {
      */
     static class ShorthandBackgroundParser {
         /**
-         * Parses the shorthand font string <code>value</code>, placing the
-         * result in <code>attr</code>.
+         * Parses the shorthand font string {@code value}, placing the
+         * result in {@code attr}.
          */
         static void parseShorthandBackground(CSS css, String value,
                                              MutableAttributeSet attr) {
@@ -3510,8 +3510,8 @@ public class CSS implements Serializable {
     static class ShorthandMarginParser {
         /**
          * Parses the shorthand margin/padding/border string
-         * <code>value</code>, placing the result in <code>attr</code>.
-         * <code>names</code> give the 4 intrinsic property names.
+         * {@code value}, placing the result in {@code attr}.
+         * {@code names} give the 4 intrinsic property names.
          */
         static void parseShorthandMargin(CSS css, String value,
                                          MutableAttributeSet attr,
