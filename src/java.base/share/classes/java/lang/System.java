@@ -2454,8 +2454,8 @@ public final class System {
             public void addEnableNativeAccessToAllUnnamed() {
                 Module.implAddEnableNativeAccessToAllUnnamed();
             }
-            public void ensureNativeAccess(Module m, Class<?> owner, String methodName) {
-                m.ensureNativeAccess(owner, methodName);
+            public void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass) {
+                m.ensureNativeAccess(owner, methodName, currentClass);
             }
             public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
                 return layer.getServicesCatalog();

@@ -148,9 +148,9 @@ module java.base {
     // module declaration be annotated with jdk.internal.javac.ParticipatesInPreview
     exports jdk.internal.javac to
         java.compiler,
+        java.desktop,
         jdk.compiler,
-        jdk.incubator.vector, // participates in preview features
-        java.desktop,         // participates in preview features
+        jdk.incubator.vector,
         jdk.jshell;
     exports jdk.internal.access to
         java.desktop,
