@@ -54,25 +54,30 @@ public class TestRestricted extends JavadocTester {
         var src = base.resolve("src");
         tb.writeJavaFiles(src, """
                    package pkg;
-                   
-                   import jdk.internal.javac.Restricted;
+                                      
+                  import jdk.internal.javac.PreviewFeature;
+                  import jdk.internal.javac.PreviewFeature.Feature;                           
+                  import jdk.internal.javac.Restricted;
                                             
                    /**
                     * Interface containing restricted methods.
+                    * @see #restrictedMethod()
+                    * @see #restrictedPreviewMethod()
                     */
                    public interface I {
                        
                        /**
-                        * First restricted method.
+                        * Restricted method.
                         */
                        @Restricted
-                       public void firstRestrictedMethod();
+                       public void restrictedMethod();
                        
                        /**
-                        * Second restricted method.
+                        * Restricted preview method.
                         */
+                       @PreviewFeature(feature=Feature.TEST)
                        @Restricted
-                       public int secondRestrictedMethod();
+                       public int restrictedPreviewMethod();
                    }
                    """);
 
@@ -86,41 +91,62 @@ public class TestRestricted extends JavadocTester {
         // Test restricted method note in class documentation
         checkOutput("pkg/I.html", true,
                 """
-                <div class="block"><span class="restricted-label">Restricted.</span></div>
-                <div class="block">First restricted method.</div>""",
+                <ul class="tag-list-long">
+                <li><a href="#restrictedMethod()"><code>restrictedMethod()</code></a><sup><a href="\
+                #restricted-restrictedMethod()">RESTRICTED</a></sup></li>
+                <li><a href="#restrictedPreviewMethod()"><code>restrictedPreviewMethod()</code></a>\
+                <sup><a href="#preview-restrictedPreviewMethod()">PREVIEW</a></sup>&nbsp;<sup><a hr\
+                ef="#restricted-restrictedPreviewMethod()">RESTRICTED</a></sup></li>""",
                         """
                 <div class="block"><span class="restricted-label">Restricted.</span></div>
-                <div class="block">Second restricted method.</div>""",
-                """
-                <h3>firstRestrictedMethod</h3>
+                <div class="block">Restricted method.</div>""",
+                        """
+                <div class="block"><span class="preview-label">Preview.</span></div>
+                <div class="block"><span class="restricted-label">Restricted.</span></div>
+                <div class="block">Restricted preview method.</div>""",
+                        """
+                <h3>restrictedMethod</h3>
                 <div class="member-signature"><span class="modifiers">sealed</span>&nbsp;<span clas\
-                s="return-type">void</span>&nbsp;<span class="element-name">firstRestrictedMethod</\
-                span>()</div>
-                <div class="restricted-block" id="restricted-firstRestrictedMethod()"><span class="\
-                restricted-label"><code>firstRestrictedMethod</code> is a restricted API of the Jav\
-                a platform.</span>
-                <div class="restricted-comment">Programs can only use <code>firstRestrictedMethod</\
-                code> when access to restricted method is enabled.</div>
+                s="return-type">void</span>&nbsp;<span class="element-name">restrictedMethod</span>\
+                ()</div>
+                <div class="restricted-block" id="restricted-restrictedMethod()"><span class="restr\
+                icted-label"><code>restrictedMethod</code> is a restricted API of the Java platform\
+                .</span>
+                <div class="restricted-comment">Programs can only use <code>restrictedMethod</code>\
+                 when access to restricted method is enabled.</div>
                 <div class="restricted-comment">Restricted methods are unsafe, and, if used incorre\
                 ctly, they might crash the JVM or result in memory corruption.</div>
                 </div>""",
-                """
-                <h3>secondRestrictedMethod</h3>
+                        """
+                <h3>restrictedPreviewMethod</h3>
                 <div class="member-signature"><span class="modifiers">sealed</span>&nbsp;<span clas\
-                s="return-type">int</span>&nbsp;<span class="element-name">secondRestrictedMethod</\
-                span>()</div>
-                <div class="restricted-block" id="restricted-secondRestrictedMethod()"><span class=\
-                "restricted-label"><code>secondRestrictedMethod</code> is a restricted API of the J\
-                ava platform.</span>
-                <div class="restricted-comment">Programs can only use <code>secondRestrictedMethod<\
-                /code> when access to restricted method is enabled.</div>
+                s="return-type">int</span>&nbsp;<span class="element-name">restrictedPreviewMethod<\
+                /span>()</div>
+                <div class="preview-block" id="preview-restrictedPreviewMethod()"><span class="prev\
+                iew-label"><code>restrictedPreviewMethod</code> is a preview API of the Java platfo\
+                rm.</span>
+                <div class="preview-comment">Programs can only use <code>restrictedPreviewMethod</c\
+                ode> when preview features are enabled.</div>
+                <div class="preview-comment">Preview features may be removed in a future release, o\
+                r upgraded to permanent features of the Java platform.</div>
+                </div>
+                <div class="restricted-block" id="restricted-restrictedPreviewMethod()"><span class\
+                ="restricted-label"><code>restrictedPreviewMethod</code> is a restricted API of the\
+                 Java platform.</span>
+                <div class="restricted-comment">Programs can only use <code>restrictedPreviewMethod\
+                </code> when access to restricted method is enabled.</div>
                 <div class="restricted-comment">Restricted methods are unsafe, and, if used incorre\
                 ctly, they might crash the JVM or result in memory corruption.</div>
                 </div>""");
 
+        // Test link on index page
+        checkOutput("index-all.html", true,
+                        """
+                <a href="restricted-list.html">Restricted&nbsp;Methods</a>""");
+
         // Test restricted methods list
         checkOutput("restricted-list.html", true,
-                        """
+                """
                 <h1 title="Restricted Methods" class="title">Restricted Methods</h1>
                 </div>
                 <ul class="block-list">
@@ -130,17 +156,18 @@ public class TestRestricted extends JavadocTester {
                 <div class="summary-table two-column-summary">
                 <div class="table-header col-first">Method</div>
                 <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color"><a href="pkg/I.html#firstRestrict\
-                edMethod()">pkg.I.firstRestrictedMethod()</a><sup><a href="pkg/I.html#restricted-fi\
-                rstRestrictedMethod()">RESTRICTED</a></sup></div>
+                <div class="col-summary-item-name even-row-color"><a href="pkg/I.html#restrictedMet\
+                hod()">pkg.I.restrictedMethod()</a><sup><a href="pkg/I.html#restricted-restrictedMe\
+                thod()">RESTRICTED</a></sup></div>
                 <div class="col-last even-row-color">
-                <div class="block">First restricted method.</div>
+                <div class="block">Restricted method.</div>
                 </div>
-                <div class="col-summary-item-name odd-row-color"><a href="pkg/I.html#secondRestrict\
-                edMethod()">pkg.I.secondRestrictedMethod()</a><sup><a href="pkg/I.html#restricted-s\
-                econdRestrictedMethod()">RESTRICTED</a></sup></div>
+                <div class="col-summary-item-name odd-row-color"><a href="pkg/I.html#restrictedPrev\
+                iewMethod()">pkg.I.restrictedPreviewMethod()</a><sup><a href="pkg/I.html#preview-re\
+                strictedPreviewMethod()">PREVIEW</a></sup>&nbsp;<sup><a href="pkg/I.html#restricted\
+                -restrictedPreviewMethod()">RESTRICTED</a></sup></div>
                 <div class="col-last odd-row-color">
-                <div class="block">Second restricted method.</div>
+                <div class="block">Restricted preview method.</div>
                 </div>""");
     }
 }

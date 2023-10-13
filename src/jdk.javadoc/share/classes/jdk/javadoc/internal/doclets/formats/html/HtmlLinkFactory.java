@@ -283,15 +283,15 @@ public class HtmlLinkFactory {
                                 label,
                                 linkInfo.getStyle(),
                                 title));
-                        Consumer<Content> spacer = NO_SPACE;
+                        Content spacer = Text.EMPTY;
                         if (flags.contains(ElementFlag.PREVIEW)) {
                             link.add(HtmlTree.SUP(m_writer.links.createLink(
                                     filename.fragment(m_writer.htmlIds.forPreviewSection(previewTarget).name()),
                                     m_writer.contents.previewMark)));
-                            spacer = ADD_SPACE;
+                            spacer = Entity.NO_BREAK_SPACE;
                         }
                         if (flags.contains(ElementFlag.RESTRICTED)) {
-                            spacer.accept(link);
+                            link.add(spacer);
                             link.add(HtmlTree.SUP(m_writer.links.createLink(
                                     filename.fragment(m_writer.htmlIds.forRestrictedSection(restrictedTarget).name()),
                                     m_writer.contents.restrictedMark)));
@@ -305,17 +305,17 @@ public class HtmlLinkFactory {
                 label, linkInfo.getStyle(), true);
             if (crossLink != null) {
                 link.add(crossLink);
-                Consumer<Content> spacer = NO_SPACE;
+                Content spacer = Text.EMPTY;
                 if (flags.contains(ElementFlag.PREVIEW)) {
                     link.add(HtmlTree.SUP(m_writer.getCrossClassLink(
                         typeElement,
                         m_writer.htmlIds.forPreviewSection(previewTarget).name(),
                         m_writer.contents.previewMark,
                         null, false)));
-                    spacer = ADD_SPACE;
+                    spacer = Entity.NO_BREAK_SPACE;
                 }
                 if (flags.contains(ElementFlag.RESTRICTED)) {
-                    spacer.accept(link);
+                   link.add(spacer);
                     link.add(HtmlTree.SUP(m_writer.getCrossClassLink(
                             typeElement,
                             m_writer.htmlIds.forRestrictedSection(restrictedTarget).name(),
@@ -327,21 +327,17 @@ public class HtmlLinkFactory {
         }
         // Can't link so just write label.
         link.add(label);
-        Consumer<Content> spacer = NO_SPACE;
+        Content spacer = Text.EMPTY;
         if (flags.contains(ElementFlag.PREVIEW)) {
             link.add(HtmlTree.SUP(m_writer.contents.previewMark));
-            spacer = ADD_SPACE;
+            spacer = Entity.NO_BREAK_SPACE;
         }
         if (flags.contains(ElementFlag.RESTRICTED)) {
-            spacer.accept(link);
+            link.add(spacer);
             link.add(HtmlTree.SUP(m_writer.contents.restrictedMark));
         }
         return link;
     }
-
-    // where
-        private static final Consumer<Content> NO_SPACE = (c) -> { };
-        private static final Consumer<Content> ADD_SPACE = (c) -> c.add(Entity.NO_BREAK_SPACE);
 
     /**
      * Returns links to the type parameters.
