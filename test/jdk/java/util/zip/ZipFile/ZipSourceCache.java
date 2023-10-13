@@ -74,15 +74,15 @@ public class ZipSourceCache {
             absoluteZipFile = new ZipFile(absoluteFile);
             assertEquals(numSources, internalMap.size());
 
-            // create new zip file with same name, should expect a new Source Object
-            // ignore this part of test if file can't be created (can't overwrite)
+            // update the zip file, should expect a new Source Object
+            // ignore this part of test if file can't be updated (can't overwrite)
             if (createZipFile("differentContent")) {
                 ZipFile z = new ZipFile(ZIPFILE_NAME);
                 // new Source created, should map fine
                 readZipFileContents(z);
                 // the old Source in use for old file, should no longer map correctly
                 IOException ioe = assertThrows(IOException.class, () -> readZipFileContents(absoluteZipFile));
-                assertEquals(ioe.getMessage(), "ZipFile invalid LOC header (bad signature)");
+                assertEquals("ZipFile invalid LOC header (bad signature)", ioe.getMessage());
                 assertEquals(++numSources, internalMap.size());
                 z.close();
                 assertEquals(--numSources, internalMap.size());
@@ -111,7 +111,7 @@ public class ZipSourceCache {
         CRC32 crc32 = new CRC32();
         long t = System.currentTimeMillis();
         // let's have at least 2 entries created to ensure
-        // that a bad zip structure is detected if file is overwritten
+        // that a bad zip structure is detected if file is updated
         int numEntries = new Random().nextInt(10) + 2;
         File zipFile = new File(ZIPFILE_NAME);
         try (FileOutputStream fos = new FileOutputStream(zipFile);
@@ -130,8 +130,8 @@ public class ZipSourceCache {
                 zos.write(toWrite);
             }
         } catch (IOException e) {
-            // some systems mightn't allow file to be overwritten
-            System.err.println("error creating file. " + e);
+            // some systems mightn't allow file to be updated while open
+            System.err.println("error updating file. " + e);
             return false;
         }
         return true;
