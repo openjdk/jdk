@@ -196,8 +196,8 @@ public class VerifyJimage {
     }
 
     // All JVMCI packages other than jdk.vm.ci.services are dynamically
-    // exported to jdk.internal.vm.compiler
-    private static Set<String> EXCLUDED_MODULES = Set.of("jdk.internal.vm.compiler");
+    // exported to jdk.compiler.graal
+    private static Set<String> EXCLUDED_MODULES = Set.of("jdk.compiler.graal");
 
     private boolean accept(String entry) {
         int index = entry.indexOf('/', 1);
