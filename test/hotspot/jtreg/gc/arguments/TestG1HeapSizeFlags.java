@@ -26,9 +26,9 @@ package gc.arguments;
 /*
  * @test TestG1HeapSizeFlags
  * @bug 8006088
- * @requires vm.gc.G1 & vm.opt.x.Xmx == null & vm.opt.x.Xms == null & vm.opt.MinHeapSize == null & vm.opt.MaxHeapSize == null & vm.opt.InitialHeapSize == null
  * @summary Tests argument processing for initial and maximum heap size for the G1 collector
  * @key flag-sensitive
+ * @requires vm.gc.G1 & vm.opt.x.Xmx == null & vm.opt.x.Xms == null & vm.opt.MinHeapSize == null & vm.opt.MaxHeapSize == null & vm.opt.InitialHeapSize == null
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc

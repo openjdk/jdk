@@ -725,7 +725,7 @@ public class VMProps implements Callable<Map<String, String>> {
     private Map<String, String> xOptFlags() {
         return allFlags()
             .filter(s -> s.startsWith("-X") && !s.startsWith("-XX:") && !s.equals("-X"))
-            .map(s -> s.replaceFirst("-*", ""))
+            .map(s -> s.replaceFirst("-", ""))
             .map(flag -> flag.splitWithDelimiters("[:0123456789]", 2))
             .collect(Collectors.toMap(a -> "vm.opt.x." + a[0],
                                       a -> (a.length == 1)
