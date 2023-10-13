@@ -23,17 +23,10 @@
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.stream.Collectors;
-
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ExtendWith;
-import tools.javac.combo.*;
+import tools.javac.combo.JavacTemplateTestBase;
 
-import static java.util.stream.Collectors.toList;
-
-@ExtendWith(CompilationDiagnosticPrinter.class)
 class ScopeTest extends JavacTemplateTestBase {
 
     private static String st_block(String... statements) {

@@ -31,17 +31,11 @@ import java.util.stream.IntStream;
 
 import javax.tools.Diagnostic;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtensionContext;
-
-import static java.util.stream.Collectors.toList;
-
 /**
  * Base class for negative and positive compilation tests.
  */
 public class CompilationTestCase extends JavacTemplateTestBase {
-    private String[] compileOptions = new String[] { };
+    private String[] compileOptions = new String[]{};
     private String defaultFileName = "Source.java";
     private String programShell = "#";
 
@@ -71,7 +65,7 @@ public class CompilationTestCase extends JavacTemplateTestBase {
             throw new AssertionError("unexpected negative value " + i);
         }
         if (i >= compileOptions.length) {
-            compileOptions = new String[] {};
+            compileOptions = new String[]{};
         } else {
             compileOptions = Arrays.copyOf(compileOptions, compileOptions.length - i);
         }
@@ -95,8 +89,7 @@ public class CompilationTestCase extends JavacTemplateTestBase {
         File dir = null;
         try {
             dir = compile(generate);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
         postTest.run();

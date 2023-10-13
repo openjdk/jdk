@@ -33,11 +33,8 @@
  */
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import tools.javac.combo.CompilationTestCase;
-import tools.javac.combo.CompilationDiagnosticPrinter;
 
-@ExtendWith(CompilationDiagnosticPrinter.class)
 class LocalStaticDeclarations2 extends CompilationTestCase {
     @Test
     void testLocalStatic() {

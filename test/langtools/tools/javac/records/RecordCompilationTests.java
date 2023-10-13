@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@
  *      jdk.compiler/com.sun.tools.javac.util
  *      jdk.jdeps/com.sun.tools.classfile
  * @build JavacTestingAbstractProcessor
- * @run testng/othervm -DuseAP=false RecordCompilationTests
- * @run testng/othervm -DuseAP=true RecordCompilationTests
+ * @run junit/othervm -DuseAP=false RecordCompilationTests
+ * @run junit/othervm -DuseAP=true RecordCompilationTests
  */
 
 import java.io.File;
@@ -97,11 +97,10 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.util.JCDiagnostic;
 
-import org.testng.annotations.Test;
 import tools.javac.combo.CompilationTestCase;
+import org.junit.jupiter.api.Test;
 
 import static java.lang.annotation.ElementType.*;
-import static org.testng.Assert.assertEquals;
 
 /** Records are the first feature which sports automatic injection of (declarative and type) annotations : from a
  *  given record component to one or more record members, if applicable.
@@ -115,8 +114,7 @@ import static org.testng.Assert.assertEquals;
  *  method: testAnnos()
  */
 
-@Test
-public class RecordCompilationTests extends CompilationTestCase {
+class RecordCompilationTests extends CompilationTestCase {
     private static String[] OPTIONS_WITH_AP = {"-processor", SimplestAP.class.getName()};
 
     private static final List<String> BAD_COMPONENT_NAMES = List.of(
@@ -144,7 +142,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         System.out.println(useAP ? "running all tests using an annotation processor" : "running all tests without annotation processor");
     }
 
-    public void testMalformedDeclarations() {
+    @Test
+    void testMalformedDeclarations() {
         assertFail("compiler.err.premature.eof", "record R()");
         assertFail("compiler.err.expected", "record R();");
         assertFail("compiler.err.illegal.start.of.type", "record R(,) { }");
@@ -166,7 +165,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertFail("compiler.err.instance.initializer.not.allowed.in.records", "record R(int i) { {} }");
     }
 
-    public void testGoodDeclarations() {
+    @Test
+    void testGoodDeclarations() {
         assertOK("public record R() { }");
         assertOK("record R() { }");
         assertOK("record R() implements java.io.Serializable, Runnable { public void run() { } }");
@@ -196,7 +196,8 @@ public class RecordCompilationTests extends CompilationTestCase {
                 """);
     }
 
-    public void testGoodMemberDeclarations() {
+    @Test
+    void testGoodMemberDeclarations() {
         String template = "public record R(int x) {\n"
                 + "    public R(int x) { this.x = x; }\n"
                 + "    public int x() { return x; }\n"
@@ -207,12 +208,14 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertOK(template);
     }
 
-    public void testBadComponentNames() {
+    @Test
+    void testBadComponentNames() {
         for (String s : BAD_COMPONENT_NAMES)
             assertFail("compiler.err.illegal.record.component.name", "record R(int #) { } ", s);
     }
 
-    public void testRestrictedIdentifiers() {
+    @Test
+    void testRestrictedIdentifiers() {
         for (String s : List.of("interface record { void m(); }",
                 "@interface record { }",
                 "class record { }",
@@ -231,7 +234,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
-    public void testValidMembers() {
+    @Test
+    void testValidMembers() {
         for (String s : List.of("record X(int j) { }",
                 "interface I { }",
                 "static { }",
@@ -242,12 +246,14 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
-    public void testCyclic() {
+    @Test
+    void testCyclic() {
         // Cyclic records are OK, but cyclic inline records would not be
         assertOK("record R(R r) { }");
     }
 
-    public void testBadExtends() {
+    @Test
+    void testBadExtends() {
         assertFail("compiler.err.expected", "record R(int x) extends Object { }");
         assertFail("compiler.err.expected", "record R(int x) {}\n"
                 + "record R2(int x) extends R { }");
@@ -255,7 +261,8 @@ public class RecordCompilationTests extends CompilationTestCase {
                 + "class C extends R { }");
     }
 
-    public void testNoExtendRecord() {
+    @Test
+    void testNoExtendRecord() {
         assertFail("compiler.err.invalid.supertype.record",
                    """
                    class R extends Record {
@@ -267,7 +274,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         );
     }
 
-    public void testFieldDeclarations() {
+    @Test
+    void testFieldDeclarations() {
         // static fields are OK
         assertOK("public record R(int x) {\n" +
                 "    static int I = 1;\n" +
@@ -295,7 +303,8 @@ public class RecordCompilationTests extends CompilationTestCase {
                         "}");
     }
 
-    public void testAccessorRedeclaration() {
+    @Test
+    void testAccessorRedeclaration() {
         assertOK("public record R(int x) {\n" +
                 "    public int x() { return x; };" +
                 "}");
@@ -351,7 +360,8 @@ public class RecordCompilationTests extends CompilationTestCase {
                         "}");
     }
 
-    public void testConstructorRedeclaration() {
+    @Test
+    void testConstructorRedeclaration() {
         for (String goodCtor : List.of(
                 "public R(int x) { this(x, 0); }",
                 "public R(int x, int y) { this.x = x; this.y = y; }",
@@ -442,7 +452,8 @@ public class RecordCompilationTests extends CompilationTestCase {
                 "public R(int a) { super(); this.a = a; }");
     }
 
-    public void testAnnotationCriteria() {
+    @Test
+    void testAnnotationCriteria() {
         String imports = "import java.lang.annotation.*;\n";
         String template = "@Target({ # }) @interface A {}\n";
         EnumMap<ElementType, String> annotations = new EnumMap<>(ElementType.class);
@@ -451,7 +462,7 @@ public class RecordCompilationTests extends CompilationTestCase {
         EnumSet<ElementType> goodSet = EnumSet.of(RECORD_COMPONENT, FIELD, METHOD, PARAMETER, TYPE_USE);
         EnumSet<ElementType> badSet = EnumSet.of(CONSTRUCTOR, PACKAGE, TYPE, LOCAL_VARIABLE, ANNOTATION_TYPE, TYPE_PARAMETER, MODULE);
 
-        assertEquals(goodSet.size() + badSet.size(), values().length);
+        Assert.check(goodSet.size() + badSet.size() == values().length);
         String A_GOOD = template.replace("#",
                                          goodSet.stream().map(ElementType::name).map(s -> "ElementType." + s).collect(Collectors.joining(",")));
         String A_BAD = template.replace("#",
@@ -475,7 +486,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         // TODO: OK to redeclare with or without same annos
     }
 
-    public void testNestedRecords() {
+    @Test
+    void testNestedRecords() {
         String template = "class R { \n" +
                           "    # record RR(int a) { }\n" +
                           "}";
@@ -493,7 +505,8 @@ public class RecordCompilationTests extends CompilationTestCase {
             assertOK("record R(int x) { # }", s);
     }
 
-    public void testDuplicatedMember() {
+    @Test
+    void testDuplicatedMember() {
         String template
                 = "    record R(int i) {\n" +
                   "        public int i() { return i; }\n" +
@@ -502,7 +515,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertFail("compiler.err.already.defined", template);
     }
 
-    public void testStaticLocals() {
+    @Test
+    void testStaticLocals() {
         // static locals can't capture local variables, instance fields or type variables
         for (String s : List.of(
                 "record RR(int x) { public int x() { return y; }};",
@@ -592,7 +606,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertOK("class R { void m() { final record RR(int x) { }; } }");
     }
 
-    public void testStaticDefinitionsInInnerClasses() {
+    @Test
+    void testStaticDefinitionsInInnerClasses() {
         // static defs in inner classes can't capture instance fields or type variables
         for (String s : List.of(
                 """
@@ -1058,7 +1073,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
-    public void testReturnInCanonical_Compact() {
+    @Test
+    void testReturnInCanonical_Compact() {
         assertFail("compiler.err.invalid.canonical.constructor.in.record", "record R(int x) { # }",
                 "public R { return; }");
         assertFail("compiler.err.invalid.canonical.constructor.in.record", "record R(int x) { # }",
@@ -1067,7 +1083,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertOK("record R(int x) { public R { Runnable r = () -> { return; };} }");
     }
 
-    public void testArgumentsAreNotFinalInCompact() {
+    @Test
+    void testArgumentsAreNotFinalInCompact() {
         assertOK(
                 """
                 record R(int x) {
@@ -1078,14 +1095,16 @@ public class RecordCompilationTests extends CompilationTestCase {
                 """);
     }
 
-    public void testNoNativeMethods() {
+    @Test
+    void testNoNativeMethods() {
         assertFail("compiler.err.mod.not.allowed.here", "record R(int x) { # }",
                 "public native R {}");
         assertFail("compiler.err.mod.not.allowed.here", "record R(int x) { # }",
                 "public native void m();");
     }
 
-    public void testRecordsInsideInner() {
+    @Test
+    void testRecordsInsideInner() {
         assertOK(
                 """
                 class Outer {
@@ -1126,7 +1145,8 @@ public class RecordCompilationTests extends CompilationTestCase {
                 """);
     }
 
-    public void testAnnoInsideLocalOrAnonymous() {
+    @Test
+    void testAnnoInsideLocalOrAnonymous() {
         assertFail("compiler.err.annotation.decl.not.allowed.here",
                 """
                 class Outer {
@@ -1230,7 +1250,8 @@ public class RecordCompilationTests extends CompilationTestCase {
                 """);
     }
 
-    public void testReceiverParameter() {
+    @Test
+    void testReceiverParameter() {
         assertFail("compiler.err.receiver.parameter.not.applicable.constructor.toplevel.class",
                 """
                 record R(int i) {
@@ -1258,7 +1279,8 @@ public class RecordCompilationTests extends CompilationTestCase {
                 """);
     }
 
-    public void testOnlyOneFieldRef() throws Exception {
+    @Test
+    void testOnlyOneFieldRef() throws Exception {
         for (String source : List.of(
                 "record R(int recordComponent) {}",
                 """
@@ -1309,7 +1331,8 @@ public class RecordCompilationTests extends CompilationTestCase {
 
     //  check that fields are initialized in a canonical constructor in the same declaration order as the corresponding
     //  record component
-    public void testCheckInitializationOrderInCompactConstructor() throws Exception {
+    @Test
+    void testCheckInitializationOrderInCompactConstructor() throws Exception {
         int putField1 = -1;
         int putField2 = -1;
         File dir = assertOK(true, "record R(int i, String s) { R {} }");
@@ -1347,7 +1370,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
-    public void testAcceptRecordId() {
+    @Test
+    void testAcceptRecordId() {
         String[] previousOptions = getCompileOptions();
         try {
             String[] testOptions = {};
@@ -1364,7 +1388,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
-    public void testMultipleAnnosInRecord() throws Exception {
+    @Test
+    void testMultipleAnnosInRecord() throws Exception {
         String[] previousOptions = getCompileOptions();
 
         try {
@@ -1405,7 +1430,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
-    public void testAnnos() throws Exception {
+    @Test
+    void testAnnos() throws Exception {
         String[] previousOptions = getCompileOptions();
         try {
             String srcTemplate =
@@ -1568,7 +1594,8 @@ public class RecordCompilationTests extends CompilationTestCase {
 
     // JDK-8292159: TYPE_USE annotations on generic type arguments
     //              of record components discarded
-    public void testOnlyTypeAnnotationsOnComponentField() throws Exception {
+    @Test
+    void testOnlyTypeAnnotationsOnComponentField() throws Exception {
         String code =
                 """
                 import java.lang.annotation.*;
@@ -1783,7 +1810,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
-    public void testMethodsInheritedFromRecordArePublicAndFinal() throws Exception {
+    @Test
+    void testMethodsInheritedFromRecordArePublicAndFinal() throws Exception {
         int numberOfFieldRefs = 0;
         File dir = assertOK(true, "record R() {}");
         for (final File fileEntry : dir.listFiles()) {
@@ -1802,7 +1830,8 @@ public class RecordCompilationTests extends CompilationTestCase {
     private static final List<String> ACCESSIBILITY = List.of(
             "public", "protected", "", "private");
 
-    public void testCanonicalAccessibility() throws Exception {
+    @Test
+    void testCanonicalAccessibility() throws Exception {
         // accessibility of canonical can't be stronger than that of the record type
         for (String a1 : ACCESSIBILITY) {
             for (String a2 : ACCESSIBILITY) {
@@ -1853,7 +1882,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
-    public void testSameArity() {
+    @Test
+    void testSameArity() {
         for (String source : List.of(
                 """
                 record R(int... args) {
@@ -1927,7 +1957,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
-    public void testSafeVararsAnno() {
+    @Test
+    void testSafeVararsAnno() {
         assertFail("compiler.err.annotation.type.not.applicable",
                 """
                 @SafeVarargs
@@ -1989,7 +2020,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         );
     }
 
-    public void testOverrideAtAccessor() {
+    @Test
+    void testOverrideAtAccessor() {
         assertOK(
                 """
                 record R(int i) {
@@ -2027,7 +2059,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         );
     }
 
-    public void testNoAssigmentInsideCompactRecord() {
+    @Test
+    void testNoAssigmentInsideCompactRecord() {
         assertFail("compiler.err.cant.assign.val.to.var",
                 """
                 record R(int i) {
@@ -2048,7 +2081,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         );
     }
 
-    public void testNoNPEStaticAnnotatedFields() {
+    @Test
+    void testNoNPEStaticAnnotatedFields() {
         assertOK(
                 """
                 import java.lang.annotation.Native;
@@ -2081,7 +2115,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         );
     }
 
-    public void testDoNotAllowCStyleArraySyntaxForRecComponents() {
+    @Test
+    void testDoNotAllowCStyleArraySyntaxForRecComponents() {
         assertFail("compiler.err.record.component.and.old.array.syntax",
                 """
                 record R(int i[]) {}
@@ -2099,7 +2134,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         );
     }
 
-    public void testNoWarningForSerializableRecords() {
+    @Test
+    void testNoWarningForSerializableRecords() {
         if (!useAP) {
             // dont execute this test when the default annotation processor is on as it will fail due to
             // spurious warnings
@@ -2114,7 +2150,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
-    public void testAnnotationsOnVarargsRecComp() {
+    @Test
+    void testAnnotationsOnVarargsRecComp() {
         assertOK(
                 """
                 import java.lang.annotation.*;
@@ -2149,7 +2186,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         );
     }
 
-    public void testSaveVarargsAnno() {
+    @Test
+    void testSaveVarargsAnno() {
         // the compiler would generate an erronous accessor
         assertFail("compiler.err.varargs.invalid.trustme.anno",
                 """
