@@ -919,11 +919,6 @@ endif
 
 ################################################################################
 
-# MACOSX_METAL_VERSION_MIN specifies the lowest version of macOS that
-# should be used to compile Metal shaders. Metal uses the same minimum
-# version as the rest of the JDK.
-MACOSX_METAL_VERSION_MIN=$(MACOSX_VERSION_MIN)
-
 ifeq ($(call isTargetOs, macosx), true)
   SHADERS_SRC := $(TOPDIR)/src/java.desktop/macosx/native/libawt_lwawt/java2d/metal/shaders.metal
   SHADERS_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/native/java.desktop/libosxui
@@ -936,7 +931,7 @@ ifeq ($(call isTargetOs, macosx), true)
       OUTPUT_FILE := $(SHADERS_AIR), \
       SUPPORT_DIR := $(SHADERS_SUPPORT_DIR), \
       COMMAND := $(METAL) -c -std=osx-metal2.0 \
-          -mmacosx-version-min=$(MACOSX_METAL_VERSION_MIN) \
+          -mmacosx-version-min=$(MACOSX_VERSION_MIN) \
           -o $(SHADERS_AIR) $(SHADERS_SRC), \
   ))
 
