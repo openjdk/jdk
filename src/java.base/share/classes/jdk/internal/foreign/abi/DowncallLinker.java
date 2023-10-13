@@ -184,8 +184,7 @@ public class DowncallLinker {
                     }
                 }
                 BindingInterpreter.unbox(arg, callingSequence.argumentBindings(i),
-                    (storage, o) -> leafArgs[invData.argIndexMap.get(storage)] = o,
-                    unboxArena);
+                    (storage, value) -> leafArgs[invData.argIndexMap.get(storage)] = value, unboxArena);
             }
 
             // call leaf
