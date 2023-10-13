@@ -25,23 +25,13 @@
 package java.lang.invoke;
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.ref.Reference;
-
-import java.util.Objects;
-
-import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 
 #warn
 
 final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
-
-    static final boolean BE = UNSAFE.isBigEndian();
-
-    static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
     static final int NON_PLAIN_ACCESS_MIN_ALIGN_MASK = $BoxType$.BYTES - 1;
 
@@ -97,29 +87,11 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
 #end[floatingPoint]
 
     @ForceInline
-    static AbstractMemorySegmentImpl checkAddress(Object obb, long offset, long length, boolean ro) {
-        AbstractMemorySegmentImpl oo = (AbstractMemorySegmentImpl)Objects.requireNonNull(obb);
-        oo.checkAccess(offset, length, ro);
-        return oo;
-    }
-
-    @ForceInline
     static long offsetNonPlain(AbstractMemorySegmentImpl bb, long offset, long alignmentMask) {
         if ((alignmentMask & NON_PLAIN_ACCESS_MIN_ALIGN_MASK) != NON_PLAIN_ACCESS_MIN_ALIGN_MASK) {
             throw VarHandleSegmentViewBase.newUnsupportedAccessModeForAlignment(alignmentMask + 1);
         }
         return offsetPlain(bb, offset, alignmentMask);
-    }
-
-    @ForceInline
-    static long offsetPlain(AbstractMemorySegmentImpl bb, long offset, long alignmentMask) {
-        long base = bb.unsafeGetOffset();
-        long address = base + offset;
-        long maxAlignMask = bb.maxAlignMask();
-        if (((address | maxAlignMask) & alignmentMask) != 0) {
-            throw VarHandleSegmentViewBase.newIllegalArgumentExceptionForMisalignedAccess(address);
-        }
-        return address;
     }
 
     @ForceInline

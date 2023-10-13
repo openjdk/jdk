@@ -27,7 +27,6 @@ package java.lang.invoke;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 
-import java.lang.invoke.VarHandle.VarHandleDesc;
 import java.util.Objects;
 import java.util.Optional;
 
