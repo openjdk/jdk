@@ -24,7 +24,6 @@ package jdk.vm.ci.hotspot.riscv64;
 
 import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
-import jdk.internal.util.OperatingSystem;
 
 /**
  * Used to access native configuration details.
