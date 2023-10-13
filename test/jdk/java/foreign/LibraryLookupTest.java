@@ -35,8 +35,6 @@ import static org.testng.Assert.*;
 
 /*
  * @test
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED LibraryLookupTest
  */
 public class LibraryLookupTest {

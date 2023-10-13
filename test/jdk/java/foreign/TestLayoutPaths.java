@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @enablePreview
  * @run testng TestLayoutPaths
  */
 
@@ -42,6 +41,7 @@ import java.util.function.IntFunction;
 import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
 import static java.lang.foreign.MemoryLayout.PathElement.sequenceElement;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import static org.testng.Assert.*;
 
@@ -151,13 +151,13 @@ public class TestLayoutPaths {
 
             VarHandle vhX = struct.varHandle(groupElement("x"));
             IllegalArgumentException iae = expectThrows(IllegalArgumentException.class, () -> {
-                vhX.set(seg, (short) 42);
+                vhX.set(seg, 0L, (short) 42);
             });
             assertEquals(iae.getMessage(), expectedMessage);
 
             MethodHandle sliceX = struct.sliceHandle(groupElement("x"));
             iae = expectThrows(IllegalArgumentException.class, () -> {
-                MemorySegment slice = (MemorySegment) sliceX.invokeExact(seg);
+                MemorySegment slice = (MemorySegment) sliceX.invokeExact(seg, 0L);
             });
             assertEquals(iae.getMessage(), expectedMessage);
         }
@@ -271,7 +271,7 @@ public class TestLayoutPaths {
                                  long expectedByteOffset) throws Throwable {
         MethodHandle byteOffsetHandle = layout.byteOffsetHandle(pathElements);
         byteOffsetHandle = byteOffsetHandle.asSpreader(long[].class, indexes.length);
-        long actualByteOffset = (long) byteOffsetHandle.invokeExact(indexes);
+        long actualByteOffset = (long) byteOffsetHandle.invokeExact(0L, indexes);
         assertEquals(actualByteOffset, expectedByteOffset);
     }
 
@@ -360,7 +360,7 @@ public class TestLayoutPaths {
 
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(layout);
-            MemorySegment slice = (MemorySegment) sliceHandle.invokeExact(segment, indexes);
+            MemorySegment slice = (MemorySegment) sliceHandle.invokeExact(segment, 0L, indexes);
             assertEquals(slice.address() - segment.address(), expectedByteOffset);
             assertEquals(slice.byteSize(), selected.byteSize());
         }

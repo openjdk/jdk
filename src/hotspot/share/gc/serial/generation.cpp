@@ -24,13 +24,13 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/cardTableRS.hpp"
+#include "gc/serial/generation.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/generation.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
@@ -93,18 +93,6 @@ void Generation::print_summary_info_on(outputStream* st) {
 }
 
 // Utility iterator classes
-
-class GenerationIsInReservedClosure : public SpaceClosure {
- public:
-  const void* _p;
-  Space* sp;
-  virtual void do_space(Space* s) {
-    if (sp == nullptr) {
-      if (s->is_in_reserved(_p)) sp = s;
-    }
-  }
-  GenerationIsInReservedClosure(const void* p) : _p(p), sp(nullptr) {}
-};
 
 class GenerationIsInClosure : public SpaceClosure {
  public:
