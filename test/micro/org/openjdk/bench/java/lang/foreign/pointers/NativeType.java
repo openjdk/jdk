@@ -25,12 +25,11 @@ package org.openjdk.bench.java.lang.foreign.pointers;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.GroupLayout;
+import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.ValueLayout;
 
 public sealed abstract class NativeType<X> {
-    private static final boolean IS_AIX = System.getProperty("os.name").startsWith("AIX");
-
     public abstract MemoryLayout layout();
 
     public non-sealed static abstract class OfInt<X> extends NativeType<X> {
@@ -39,6 +38,8 @@ public sealed abstract class NativeType<X> {
     public non-sealed static abstract class OfDouble<X> extends NativeType<X> {
         public abstract ValueLayout.OfDouble layout();
     }
+
+    private static Linker LINKER = Linker.nativeLinker();
 
     private static final AddressLayout UNSAFE_ADDRESS = ValueLayout.ADDRESS
             .withTargetLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, ValueLayout.JAVA_BYTE));
@@ -57,14 +58,14 @@ public sealed abstract class NativeType<X> {
     public static final OfInt<Integer> C_INT = new OfInt<>() {
         @Override
         public ValueLayout.OfInt layout() {
-            return ValueLayout.JAVA_INT;
+            return (ValueLayout.OfInt) LINKER.canonicalLayouts().get("int");
         }
     };
 
     public static final OfDouble<Double> C_DOUBLE = new OfDouble<>() {
         @Override
         public ValueLayout.OfDouble layout() {
-            return ValueLayout.JAVA_DOUBLE.withByteAlignment(IS_AIX ? 4 : 8);
+            return (ValueLayout.OfDouble) LINKER.canonicalLayouts().get("double");
         }
     };
 
