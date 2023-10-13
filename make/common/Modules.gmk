@@ -64,6 +64,8 @@ ifeq ($(INCLUDE_JVMCI), false)
   MODULES_FILTER += jdk.internal.vm.ci
   MODULES_FILTER += jdk.internal.vm.compiler
   MODULES_FILTER += jdk.internal.vm.compiler.management
+  MODULES_FILTER += jdk.compiler.graal
+  MODULES_FILTER += jdk.compiler.graal.management
 endif
 
 # jpackage is only on windows, macosx, and linux

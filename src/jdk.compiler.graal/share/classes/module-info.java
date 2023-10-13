@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,19 @@
  * questions.
  */
 
-module jdk.internal.vm.ci {
-    exports jdk.vm.ci.services to
-        jdk.internal.vm.compiler,
-        jdk.internal.vm.compiler.management,
-        jdk.compiler.graal,
-        jdk.compiler.graal.management;
-    exports jdk.vm.ci.runtime to
-        jdk.internal.vm.compiler,
-        jdk.internal.vm.compiler.management,
-        jdk.compiler.graal,
-        jdk.compiler.graal.management;
-    exports jdk.vm.ci.meta to jdk.internal.vm.compiler, jdk.compiler.graal;
-    exports jdk.vm.ci.code to jdk.internal.vm.compiler, jdk.compiler.graal;
-    exports jdk.vm.ci.hotspot to jdk.internal.vm.compiler, jdk.compiler.graal;
+/**
+  * JVMCI compiler implementation for the JVM.
+  *
+  * This is an empty and upgradeable module that is a placeholder for an
+  * external implementation of a JVMCI compiler. It must be upgradeable so
+  * that it can be replaced when jlinking a new JDK image without failing
+  * the hash check for the qualified exports in jdk.internal.vm.ci's
+  * module descriptor.
+  *
+  * @moduleGraph
+  * @since 22
+  */
 
-    uses jdk.vm.ci.services.JVMCIServiceLocator;
-    uses jdk.vm.ci.hotspot.HotSpotJVMCIBackendFactory;
-
-    provides jdk.vm.ci.hotspot.HotSpotJVMCIBackendFactory with
-        jdk.vm.ci.hotspot.aarch64.AArch64HotSpotJVMCIBackendFactory,
-        jdk.vm.ci.hotspot.amd64.AMD64HotSpotJVMCIBackendFactory,
-        jdk.vm.ci.hotspot.riscv64.RISCV64HotSpotJVMCIBackendFactory;
+module jdk.compiler.graal {
+    requires jdk.internal.vm.ci;
 }
