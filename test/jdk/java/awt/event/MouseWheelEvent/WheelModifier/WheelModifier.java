@@ -26,7 +26,6 @@
    @key headful
    @bug 8041470
    @summary JButtons stay pressed after they have lost focus if you use the mouse wheel
-   @author Anton Nashatyrev
  */
 
 import java.awt.AWTEvent;
@@ -53,6 +52,7 @@ public class WheelModifier {
     CountDownLatch exitSema = new CountDownLatch(1);
     CountDownLatch releaseSema = new CountDownLatch(1);
     volatile CountDownLatch wheelSema;
+    
     private Point sLoc;
     private Dimension bSize;
 
