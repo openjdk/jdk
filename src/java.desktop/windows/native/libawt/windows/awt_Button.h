@@ -28,7 +28,6 @@
 
 #include "awt_Component.h"
 
-#include "java_awt_Button.h"
 #include "sun_awt_windows_WButtonPeer.h"
 
 
