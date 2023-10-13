@@ -31,6 +31,58 @@
 // Code in this file and the vectorization.cpp contains shared logics and
 // utilities for C2's loop auto-vectorization.
 
+class Vectorizer : public ResourceObj {
+ private:
+  PhaseIdealLoop*      _phase;
+  Arena*               _arena;
+  PhaseIterGVN*        _igvn;
+  IdealLoopTree*       _lpt;               // Current Idealloop tree
+  CountedLoopNode*     _cl;                // Current CountedLoopNode
+  PhiNode*             _iv;                // Loop induction variable PhiNode
+  GrowableArray<int>   _bb_idx;            // Map from node index to RPO index within block
+#ifndef PRODUCT
+  static uintx         _vector_loop_debug; // provide more printing in debug mode
+#endif
+
+ protected:
+  GrowableArray<Node*> _body_nodes;        // Nodes in current loop body with reverse postorder
+
+  Vectorizer(PhaseIdealLoop* phase);
+
+  void set_lpt(IdealLoopTree* lpt) { _lpt = lpt; }
+  void set_cl_and_iv(CountedLoopNode* cl) {
+    _cl = cl;
+    _iv = cl->as_CountedLoop()->phi()->as_Phi();
+  }
+  void initialize_loop_info(IdealLoopTree* lpt);
+
+  PhaseIdealLoop* phase() const   { return _phase; }
+  Arena* arena() const            { return _arena; }
+  PhaseIterGVN* igvn() const      { return _igvn; }
+  IdealLoopTree* lpt() const      { return _lpt; }
+  CountedLoopNode* cl() const     { return _cl; }
+  PhiNode* iv() const             { return _iv; }
+  void set_bb_idx(Node* n, int i) { _bb_idx.at_put_grow(n->_idx, i); }
+  int iv_stride() const           { return _cl->stride_con(); }
+  const Node* ctrl(const Node* n) const { return _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n; }
+  int collect_nodes_in_reverse_postorder();
+  void print_body_nodes();
+
+ public:
+  bool in_loopbody(const Node* n) const { return n != nullptr && n->outcnt() > 0 && ctrl(n) == _cl; }
+  int bb_idx(const Node* n) const { assert(in_loopbody(n), "must be"); return _bb_idx.at(n->_idx); }
+  const GrowableArray<Node*> block() const { return _body_nodes; }
+#ifndef PRODUCT
+  static uintx vector_loop_debug() { return _vector_loop_debug; }
+  static bool is_debug()           { return _vector_loop_debug > 0; }
+  static bool is_trace_alignment() { return (_vector_loop_debug & 2) > 0; }
+  static bool is_trace_mem_slice() { return (_vector_loop_debug & 4) > 0; }
+  static bool is_trace_loop()      { return (_vector_loop_debug & 8) > 0; }
+  static bool is_trace_adjacent()  { return (_vector_loop_debug & 16) > 0; }
+  static bool is_trace_cmov()      { return (_vector_loop_debug & 32) > 0; }
+#endif
+};
+
 // A vectorization pointer (VPointer) has information about an address for
 // dependence checking and vector alignment. It's usually bound to a memory
 // operation in a counted loop for vectorizable analysis.

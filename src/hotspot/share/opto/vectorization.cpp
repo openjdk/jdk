@@ -31,6 +31,152 @@
 #include "opto/rootnode.hpp"
 #include "opto/vectorization.hpp"
 
+uintx Vectorizer::_vector_loop_debug = 0;
+
+Vectorizer::Vectorizer(PhaseIdealLoop* phase) :
+  _phase(phase),
+  _arena(phase->C->comp_arena()),
+  _igvn(&phase->_igvn),
+  _lpt(nullptr),
+  _cl(nullptr),
+  _iv(nullptr),
+  _bb_idx(arena(), (int)(1.10 * phase->C->unique()), 0, 0),
+  _body_nodes(arena(), 8, 0, nullptr)
+{
+#ifndef PRODUCT
+  if (_phase->C->method() != nullptr) {
+    _vector_loop_debug = phase->C->directive()->VectorizeDebugOption;
+  }
+#endif
+};
+
+void Vectorizer::initialize_loop_info(IdealLoopTree* lpt) {
+  set_lpt(lpt);
+  CountedLoopNode* cl = lpt->_head->as_CountedLoop();
+  set_cl_and_iv(cl);
+}
+
+// Collect loop nodes into a block with reverse postorder for convenience of
+// future traversal. Do early bail out if unsupported node is found.
+int Vectorizer::collect_nodes_in_reverse_postorder() {
+  _bb_idx.clear();
+  _body_nodes.clear();
+
+  ResourceMark rm;
+  Node* entry = cl();
+
+  // Find non-control nodes with no inputs from within block,
+  // create a temporary map from node _idx to bb_idx for use
+  // by the visited and post_visited sets,
+  // and count number of nodes in block.
+  int node_cnt = 0;
+  GrowableArray<Node*> data_entry(8, 0, nullptr);
+  for (uint i = 0; i < lpt()->_body.size(); i++) {
+    Node* n = lpt()->_body.at(i);
+    set_bb_idx(n, i); // Create a temporary map
+    if (in_loopbody(n)) {
+      if (n->is_LoadStore() || n->is_MergeMem() ||
+         (n->is_Proj() && !n->as_Proj()->is_CFG())) {
+        // Bailout if the loop has LoadStore, MergeMem or data Proj
+        // nodes. Superword optimization does not work with them.
+        return false;
+      }
+      node_cnt++;
+      if (!n->is_CFG()) {
+        bool found = false;
+        for (uint j = 0; j < n->req(); j++) {
+          Node* def = n->in(j);
+          if (def && in_loopbody(def)) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          assert(n != entry, "can't be entry");
+          data_entry.push(n);
+        }
+      }
+    }
+  }
+
+  VectorSet visited;
+  VectorSet post_visited;
+  GrowableArray<Node*> stk(node_cnt, 0, nullptr);
+
+  // Push all non-control nodes with no inputs from within block, then control entry
+  for (int j = 0; j < data_entry.length(); j++) {
+    Node* n = data_entry.at(j);
+    visited.set(bb_idx(n));
+    stk.push(n);
+  }
+  visited.set(bb_idx(entry));
+  stk.push(entry);
+
+  // Do a depth first walk over out edges
+  int rpo_idx = node_cnt - 1;
+  int size;
+  while ((size = stk.length()) > 0) {
+    Node* n = stk.top(); // Leave node on stack
+    if (!visited.test_set(bb_idx(n))) {
+      // forward arc in graph
+    } else if (!post_visited.test(bb_idx(n))) {
+      // cross or back arc
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node* use = n->fast_out(i);
+        if (in_loopbody(use) && !visited.test(bb_idx(use)) &&
+            // Don't go around backedge
+            (!use->is_Phi() || n == entry)) {
+          stk.push(use);
+        }
+      }
+      if (stk.length() == size) {
+        // There were no additional uses, post visit node now
+        stk.pop(); // Remove node from stack
+        assert(rpo_idx >= 0, "The rpo_idx of the node can't be negative");
+        _body_nodes.at_put_grow(rpo_idx, n);
+        rpo_idx--;
+        post_visited.set(bb_idx(n));
+        assert(rpo_idx >= 0 || stk.is_empty(),
+               "The rpo_idx of any node in stk can't be negative");
+      }
+    } else {
+      stk.pop(); // Remove post-visited node from stack
+    }
+  } // while
+
+  // Create real map of block indices for nodes
+  for (int j = 0; j < _body_nodes.length(); j++) {
+    Node* n = _body_nodes.at(j);
+    set_bb_idx(n, j);
+  } // for
+
+#ifndef PRODUCT
+  if (TraceSuperWord) {
+    tty->print_cr("\ndata entry nodes: %s", data_entry.length() > 0 ? "" : "NONE");
+    for (int m = 0; m < data_entry.length(); m++) {
+      tty->print("%3d ", m);
+      data_entry.at(m)->dump();
+    }
+  }
+#endif
+
+  assert(rpo_idx == -1 && node_cnt == _body_nodes.length(), "all block members found");
+  return data_entry.length();
+}
+
+void Vectorizer::print_body_nodes() {
+#ifndef PRODUCT
+  tty->print_cr("\nBlock");
+  for (int i = 0; i < _body_nodes.length(); i++) {
+    Node* n = _body_nodes.at(i);
+    tty->print("%d ", i);
+    if (n) {
+      n->dump();
+    }
+  }
+#endif
+}
+
 #ifndef PRODUCT
 int VPointer::Tracer::_depth = 0;
 #endif
@@ -45,7 +191,7 @@ VPointer::VPointer(MemNode* mem, PhaseIdealLoop* phase, IdealLoopTree* lpt,
 #endif
   _nstack(nstack), _analyze_only(analyze_only), _stack_idx(0)
 #ifndef PRODUCT
-  , _tracer((phase->C->directive()->VectorizeDebugOption & 2) > 0)
+  , _tracer(Vectorizer::is_trace_alignment())
 #endif
 {
   NOT_PRODUCT(_tracer.ctor_1(mem);)

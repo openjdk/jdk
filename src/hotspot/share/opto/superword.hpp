@@ -227,22 +227,14 @@ class OrderedPair {
 
 // -----------------------------SuperWord---------------------------------
 // Transforms scalar operations into packed (superword) operations.
-class SuperWord : public ResourceObj {
+class SuperWord : public Vectorizer {
  friend class VPointer;
  friend class CMoveKit;
  private:
-  PhaseIdealLoop* _phase;
-  Arena*          _arena;
-  PhaseIterGVN   &_igvn;
-
   enum consts { top_align = -1, bottom_align = -666 };
 
   GrowableArray<Node_List*> _packset;    // Packs for the current block
 
-  GrowableArray<int> _bb_idx;            // Map from Node _idx to index within block
-
-  GrowableArray<Node*> _block;           // Nodes in current block
-  GrowableArray<Node*> _data_entry;      // Nodes with all inputs from outside
   GrowableArray<Node*> _mem_slice_head;  // Memory slice head nodes
   GrowableArray<Node*> _mem_slice_tail;  // Memory slice tail nodes
   GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
@@ -254,11 +246,8 @@ class SuperWord : public ResourceObj {
   DepGraph _dg; // Dependence graph
 
   // Scratch pads
-  VectorSet    _visited;       // Visited set
-  VectorSet    _post_visited;  // Post-visited set
   Node_Stack   _n_idx_list;    // List of (node,index) pairs
   GrowableArray<Node*> _nlist; // List of nodes
-  GrowableArray<Node*> _stk;   // Stack of nodes
 
  public:
   SuperWord(PhaseIdealLoop* phase);
@@ -268,52 +257,19 @@ class SuperWord : public ResourceObj {
   void unrolling_analysis(int &local_loop_unroll_factor);
 
   // Accessors for VPointer
-  PhaseIdealLoop* phase() const    { return _phase; }
-  IdealLoopTree* lpt() const       { return _lpt; }
-  PhiNode* iv() const              { return _iv; }
 
   bool early_return() const        { return _early_return; }
-
-#ifndef PRODUCT
-  bool     is_debug()              { return _vector_loop_debug > 0; }
-  bool     is_trace_alignment()    { return (_vector_loop_debug & 2) > 0; }
-  bool     is_trace_mem_slice()    { return (_vector_loop_debug & 4) > 0; }
-  bool     is_trace_loop()         { return (_vector_loop_debug & 8) > 0; }
-  bool     is_trace_adjacent()     { return (_vector_loop_debug & 16) > 0; }
-  bool     is_trace_cmov()         { return (_vector_loop_debug & 32) > 0; }
-#endif
   bool     do_vector_loop()        { return _do_vector_loop; }
 
   const GrowableArray<Node_List*>& packset() const { return _packset; }
-  const GrowableArray<Node*>&      block()   const { return _block; }
   const DepGraph&                  dg()      const { return _dg; }
  private:
-  IdealLoopTree* _lpt;             // Current loop tree node
-  CountedLoopNode* _lp;            // Current CountedLoopNode
   VectorSet      _loop_reductions; // Reduction nodes in the current loop
-  Node*          _bb;              // Current basic block
-  PhiNode*       _iv;              // Induction var
   bool           _race_possible;   // In cases where SDMU is true
   bool           _early_return;    // True if we do not initialize
   bool           _do_vector_loop;  // whether to do vectorization/simd style
   int            _num_work_vecs;   // Number of non memory vector operations
   int            _num_reductions;  // Number of reduction expressions applied
-#ifndef PRODUCT
-  uintx          _vector_loop_debug; // provide more printing in debug mode
-#endif
-
-  // Accessors
-  Arena* arena()                   { return _arena; }
-
-  Node* bb()                       { return _bb; }
-  void set_bb(Node* bb)            { _bb = bb; }
-  void set_lpt(IdealLoopTree* lpt) { _lpt = lpt; }
-  CountedLoopNode* lp() const      { return _lp; }
-  void set_lp(CountedLoopNode* lp) {
-    _lp = lp;
-    _iv = lp->as_CountedLoop()->phi()->as_Phi();
-  }
-  int iv_stride() const            { return lp()->stride_con(); }
 
   int vector_width(Node* n) {
     BasicType bt = velt_basic_type(n);
@@ -327,24 +283,7 @@ class SuperWord : public ResourceObj {
   MemNode* align_to_ref()            { return _align_to_ref; }
   void  set_align_to_ref(MemNode* m) { _align_to_ref = m; }
 
-  const Node* ctrl(const Node* n) const { return _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n; }
-
-  // block accessors
- public:
-  bool in_bb(const Node* n) const  { return n != nullptr && n->outcnt() > 0 && ctrl(n) == _bb; }
-  int  bb_idx(const Node* n) const { assert(in_bb(n), "must be"); return _bb_idx.at(n->_idx); }
  private:
-  void set_bb_idx(Node* n, int i)  { _bb_idx.at_put_grow(n->_idx, i); }
-
-  // visited set accessors
-  void visited_clear()           { _visited.clear(); }
-  void visited_set(Node* n)      { return _visited.set(bb_idx(n)); }
-  int visited_test(Node* n)      { return _visited.test(bb_idx(n)); }
-  int visited_test_set(Node* n)  { return _visited.test_set(bb_idx(n)); }
-  void post_visited_clear()      { _post_visited.clear(); }
-  void post_visited_set(Node* n) { return _post_visited.set(bb_idx(n)); }
-  int post_visited_test(Node* n) { return _post_visited.test(bb_idx(n)); }
-
   // Ensure node_info contains element "i"
   void grow_node_info(int i) { if (i >= _node_info.length()) _node_info.at_put_grow(i, SWNodeInfo::initial); }
 
@@ -368,7 +307,7 @@ class SuperWord : public ResourceObj {
 
   // my_pack
  public:
-  Node_List* my_pack(Node* n)                 { return !in_bb(n) ? nullptr : _node_info.adr_at(bb_idx(n))->_my_pack; }
+  Node_List* my_pack(Node* n)                 { return !in_loopbody(n) ? nullptr : _node_info.adr_at(bb_idx(n))->_my_pack; }
  private:
   void set_my_pack(Node* n, Node_List* p)     { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_my_pack = p; }
   // is pack good for converting into one vector node replacing bunches of Cmp, Bool, CMov nodes.
@@ -478,7 +417,7 @@ private:
   // Is there a data path between s1 and s2 and both are reductions?
   bool reduction(Node* s1, Node* s2);
   // Helper for independent
-  bool independent_path(Node* shallow, Node* deep, uint dp=0);
+  bool independent_path(VectorSet& visited, Node* shallow, Node* deep, uint dp=0);
   void set_alignment(Node* s1, Node* s2, int align);
   int data_size(Node* s);
   // Extend packset by following use->def and def->use links from pack members.
@@ -554,7 +493,6 @@ private:
   // print methods
   void print_packset();
   void print_pack(Node_List* p);
-  void print_bb();
   void print_stmt(Node* s);
 
   void packset_sort(int n);

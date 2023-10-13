@@ -816,7 +816,7 @@ public:
 // into a loop tree. Drives the loop-based transformations on the ideal graph.
 class PhaseIdealLoop : public PhaseTransform {
   friend class IdealLoopTree;
-  friend class SuperWord;
+  friend class Vectorizer;
   friend class ShenandoahBarrierC2Support;
   friend class AutoNodeBudget;
 
