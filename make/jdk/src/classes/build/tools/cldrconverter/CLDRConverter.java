@@ -30,7 +30,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.*;
-import java.text.MessageFormat;
 import java.time.*;
 import java.util.*;
 import java.util.ResourceBundle.Control;
@@ -92,6 +91,8 @@ public class CLDRConverter {
     static final String META_EMPTY_ZONE_NAME = "EMPTY_ZONE";
     static final String[] EMPTY_ZONE = {"", "", "", "", "", ""};
     static final String META_ETCUTC_ZONE_NAME = "ETC_UTC";
+    private static final String SEP = "\u00A0"; // NBSP
+    private static final Pattern OFFSET_PATTERN = Pattern.compile(("([-+]\\d{2})(\\d{2})*"));
 
     private static SupplementDataParseHandler handlerSuppl;
     private static LikelySubtagsParseHandler handlerLikelySubtags;
@@ -125,7 +126,8 @@ public class CLDRConverter {
     static Map<String, String> dayPeriodRules;
 
     // TZDB Short Names Map
-    private static Map<String, String> tzdbShortNamesMap;
+    private static final Map<String, String> tzdbShortNamesMap = HashMap.newHashMap(512);
+    private static final Map<String, String> tzdbSubstLetters = HashMap.newHashMap(512);
 
     static enum DraftType {
         UNCONFIRMED,
@@ -289,7 +291,7 @@ public class CLDRConverter {
         dayPeriodRules = generateRules(handlerDayPeriodRule);
 
         // TZDB short names map
-        tzdbShortNamesMap = generateTZDBShortNamesMap();
+        generateTZDBShortNamesMap();
 
         List<Bundle> bundles = readBundleList();
         convertBundles(bundles);
@@ -1257,48 +1259,60 @@ public class CLDRConverter {
         return covMap;
     }
 
-    private static Map<String, String> generateTZDBShortNamesMap() throws IOException {
-        final Map<String, String> shortNameMap = HashMap.newHashMap(1024);
+    private static void generateTZDBShortNamesMap() throws IOException {
         Files.walk(Path.of(tzDataDir), 1, FileVisitOption.FOLLOW_LINKS)
-                .map(Path::toFile)
-                .filter(File::isFile)
-                .forEach(f -> {
-                    try {
-                        String zone = null;
-                        String format = null;
-                        for (var line : Files.readAllLines(f.toPath())) {
-                            if (line.contains("#STDOFF")) continue;
-                            line = line.replaceAll("[ \t]*#.*", "");
-                            if (line.startsWith("Zone")) {
-                                var s = line.split("[ \t]+", -1);
-                                zone = s[1];
-                                format = s[4];
-                            } else {
-                                if (zone != null) {
-                                    if (line.isBlank()) {
-                                        shortNameMap.put(zone, format);
-                                        zone = null;
-                                        format = null;
-                                    } else {
-                                        format = line.split("[ \t]+", -1)[3];
-                                    }
+            .map(Path::toFile)
+            .filter(File::isFile)
+            .forEach(f -> {
+                try {
+                    String zone = null;
+                    String rule = null;
+                    String format = null;
+                    for (var line : Files.readAllLines(f.toPath())) {
+                        if (line.contains("#STDOFF")) continue;
+                        line = line.replaceAll("[ \t]*#.*", "");
+
+                        // Zone
+                        if (line.startsWith("Zone")) {
+                            var zl = line.split("[ \t]+", -1);
+                            zone = zl[1];
+                            rule = zl[3];
+                            format = zl[4];
+                        } else {
+                            if (zone != null) {
+                                if (line.isBlank()) {
+                                    tzdbShortNamesMap.put(zone, format + SEP + rule);
+                                    zone = null;
+                                    rule = null;
+                                    format = null;
+                                } else {
+                                    var s = line.split("[ \t]+", -1);
+                                    rule = s[2];
+                                    format = s[3];
                                 }
                             }
-
                         }
-                    } catch (IOException ioe) {
-                        throw new UncheckedIOException(ioe);
+
+                        // Rule
+                        if (line.startsWith("Rule")) {
+                            var rl = line.split("[ \t]+", -1);
+                            tzdbSubstLetters.put(rl[1] + SEP + (rl[8].equals("0") ? "std" : "dst"), rl[9].replace("-", ""));
+                        }
                     }
-                });
-        return shortNameMap;
+                } catch (IOException ioe) {
+                    throw new UncheckedIOException(ioe);
+                }
+            });
     }
     //
     private static void fillTZDBShortNames(String tzid, String[] names) {
-        var format = tzdbShortNamesMap.get(tzid);
-        if (format != null) {
+        var val = tzdbShortNamesMap.get(tzid);
+        if (val != null) {
+            var format = val.split(SEP)[0];
+            var rule = val.split(SEP)[1];
             IntStream.of(1, 3, 5).forEach(i -> {
                 if (names[i] == null) {
-                    names[i] = getTZDBShortName(format, i);
+                    names[i] = getTZDBShortName(format, rule, i);
                 }
             });
         }
@@ -1306,11 +1320,11 @@ public class CLDRConverter {
 
     // fmt could be either
     // X%sT, +XX/+YY, or +XX
-    private static final String getTZDBShortName(String f, int i) {
+    private static String getTZDBShortName(String f, String r, int i) {
         if (f.contains("%s")) {
             return switch (i) {
-                case 1 -> f.formatted("S");
-                case 3 -> f.formatted("D");
+                case 1 -> f.formatted(tzdbSubstLetters.get(r + SEP + "std"));
+                case 3 -> f.formatted(tzdbSubstLetters.get(r + SEP + "dst"));
                 case 5 -> f.formatted("");
                 default -> throw new InternalError();
             };
@@ -1325,7 +1339,6 @@ public class CLDRConverter {
         }
     }
 
-    private final static Pattern OFFSET_PATTERN = Pattern.compile(("([-+]\\d{2})(\\d{2})*"));
     private static String convertGMTName(String f) {
         var m = OFFSET_PATTERN.matcher(f);
 
