@@ -78,6 +78,16 @@ extern Display* awt_init_Display(JNIEnv *env, jobject this);
 extern void freeNativeStringArray(char **array, jsize length);
 extern char** stringArrayToNative(JNIEnv *env, jobjectArray array, jsize * ret_length);
 
+/* This function gets called from the static initializer for FileDialog.java
+   to initialize the fieldIDs for fields that may be accessed from C */
+
+JNIEXPORT void JNICALL
+Java_java_awt_FileDialog_initIDs
+  (JNIEnv *env, jclass cls)
+{
+
+}
+
 JNIEXPORT void JNICALL
 Java_sun_awt_X11_XToolkit_initIDs
   (JNIEnv *env, jclass clazz)
