@@ -282,12 +282,12 @@ public class HBShaper {
        store_layout_results_stub =
            LINKER.upcallStub(store_layout_mh, store_layout_fd, garena);
 
-        SequenceLayout glyphPosLayout = MemoryLayout.sequenceLayout(PositionLayout);
+        SequenceLayout glyphPosLayout = MemoryLayout.sequenceLayout(Long.MAX_VALUE, PositionLayout);
         x_offsetHandle = getVarHandle(glyphPosLayout, "x_offset");
         y_offsetHandle = getVarHandle(glyphPosLayout, "y_offset");
         x_advanceHandle = getVarHandle(glyphPosLayout, "x_advance");
         y_advanceHandle = getVarHandle(glyphPosLayout, "y_advance");
-        SequenceLayout glyphInfosLayout = MemoryLayout.sequenceLayout(GlyphInfoLayout);
+        SequenceLayout glyphInfosLayout = MemoryLayout.sequenceLayout(Long.MAX_VALUE, GlyphInfoLayout);
         codePointHandle = getVarHandle(glyphInfosLayout, "codepoint");
         clusterHandle = getVarHandle(glyphInfosLayout, "cluster");
     }
@@ -453,9 +453,9 @@ public class HBShaper {
                 float startX = (float)startPt.getX();
                 float startY = (float)startPt.getY();
 
-                MemorySegment matrix = arena.allocateArray(JAVA_FLOAT, mat.length);
+                MemorySegment matrix = arena.allocate(JAVA_FLOAT, mat.length);
                 MemorySegment.copy(mat, 0, matrix, JAVA_FLOAT, 0, mat.length);
-                MemorySegment chars = arena.allocateArray(JAVA_CHAR, text.length);
+                MemorySegment chars = arena.allocate(JAVA_CHAR, text.length);
                 MemorySegment.copy(text, 0, chars, JAVA_CHAR, 0, text.length);
 
                 /*int ret =*/ jdk_hb_shape_handle.invokeExact(
