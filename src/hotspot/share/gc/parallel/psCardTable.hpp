@@ -91,7 +91,6 @@ class PSCardTable: public CardTable {
   };
 
   // Pre-scavenge support.
-  // The pre-scavenge phase can overlap with scavenging.
   volatile int _pre_scavenge_active_workers;
 
   bool is_dirty(CardValue* card) {
