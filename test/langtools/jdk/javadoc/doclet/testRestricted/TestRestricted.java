@@ -55,9 +55,9 @@ public class TestRestricted extends JavadocTester {
         tb.writeJavaFiles(src, """
                    package pkg;
                                       
-                  import jdk.internal.javac.PreviewFeature;
-                  import jdk.internal.javac.PreviewFeature.Feature;                           
-                  import jdk.internal.javac.Restricted;
+                   import jdk.internal.javac.PreviewFeature;
+                   import jdk.internal.javac.PreviewFeature.Feature;                       
+                   import jdk.internal.javac.Restricted;
                                             
                    /**
                     * Interface containing restricted methods.
@@ -65,7 +65,7 @@ public class TestRestricted extends JavadocTester {
                     * @see #restrictedPreviewMethod()
                     */
                    public interface I {
-                       
+                   
                        /**
                         * Restricted method.
                         */
