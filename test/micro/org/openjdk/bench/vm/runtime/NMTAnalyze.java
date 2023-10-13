@@ -33,69 +33,66 @@ import java.util.stream.Stream;
 
 class NMTAnalyze {
   public static class BenchmarkRecord {
-    public String jmh_method;
-    public int N, threads, cnt;
+    public String jmh_method, mode, units;
+    public int    N, threads, cnt;
     public double score, error;
-    public String mode;
-    public String units;
   }
-  public static class BenchmarkFields {
-    static int NMT_METHOD    = 0;
-    static int N             = 1;
-    static int THREADS       = 2;
-    static int MODE          = 3;
-    static int CNT           = 4;
-    static int SCORE         = 5;
-    static int QUESTION_MARK = 6;
-    static int ERROR         = 7;
-    static int UNITS         = 8;
+
+  public static enum BenchmarkFields {
+    NMT_METHOD    ,
+    N             ,
+    THREADS       ,
+    MODE          ,
+    CNT           ,
+    SCORE         ,
+    QUESTION_MARK ,
+    ERROR         ,
+    UNITS
   }
-  public static BufferedReader reader;
+
   public static String fileName;
   public static List<BenchmarkRecord> records = new ArrayList<>();
-  private static void skipUntilReport() {
-    try {
-      String line = reader.readLine();
-      while (line != null) {
-        String ReportStartKeyword = "Benchmark";
-        if (!line.startsWith(ReportStartKeyword) || line.contains("#")) {
-          line = reader.readLine();
-          continue;
-        } else {
-          break;
-        }
-      }
-    } catch (IOException ioe) {
-      System.out.println(ioe.getMessage());
-    }
-  }
-  private static void readRecords() {
-    try {
-      do {
-        String line = reader.readLine();
-        if (line == null) break;
-        if (!line.startsWith("NMTBenchmark"))
-          continue;
-        String[] _fields= line.split(" ");
-        BenchmarkRecord rec = new BenchmarkRecord();
-        List<String> __fields = Arrays.asList(_fields);
-        String[] fields = __fields.stream().filter(f -> f.length() > 0).collect(Collectors.toList()).toArray(new String[0]);
 
-        rec.jmh_method  =                    fields[BenchmarkFields.NMT_METHOD];
-        rec.N           =   Integer.parseInt(fields[BenchmarkFields.N         ]);
-        rec.threads     =   Integer.parseInt(fields[BenchmarkFields.THREADS   ]);
-        rec.cnt         =   Integer.parseInt(fields[BenchmarkFields.CNT       ]);
-        rec.mode        =                    fields[BenchmarkFields.MODE      ];
-        rec.units       =                    fields[BenchmarkFields.UNITS     ];
-        rec.score       = Double.parseDouble(fields[BenchmarkFields.SCORE     ]);
-        rec.error       = Double.parseDouble(fields[BenchmarkFields.ERROR     ]);
-        records.add(rec);
-      } while (true);
-    } catch (IOException ioe) {
-      System.out.println(ioe.getMessage());
+  private static void skipUntilReport(BufferedReader reader) throws IOException {
+    String line = reader.readLine();
+    while (line != null) {
+      String ReportStartKeyword = "Benchmark";
+      if (!line.startsWith(ReportStartKeyword) || line.contains("#")) {
+        line = reader.readLine();
+        continue;
+      } else {
+        break;
+      }
     }
   }
-  private static void analyzeRecords() {
+
+  private static void readRecords(BufferedReader reader) throws IOException {
+    String line;
+    while ((line = reader.readLine()) != null) {
+
+      if (!line.startsWith("NMTBenchmark"))
+        continue;
+      BenchmarkRecord rec = new BenchmarkRecord();
+      String[] fields = Arrays.asList(line.split(" "))
+                      .stream()
+                      .filter(f -> f.length() > 0)
+                      .collect(Collectors.toList())
+                      .toArray(new String[0]);
+
+      rec.jmh_method  =                    fields[BenchmarkFields.NMT_METHOD.ordinal()];
+      rec.N           =   Integer.parseInt(fields[BenchmarkFields.N         .ordinal()]);
+      rec.threads     =   Integer.parseInt(fields[BenchmarkFields.THREADS   .ordinal()]);
+      rec.cnt         =   Integer.parseInt(fields[BenchmarkFields.CNT       .ordinal()]);
+      rec.mode        =                    fields[BenchmarkFields.MODE      .ordinal()];
+      rec.units       =                    fields[BenchmarkFields.UNITS     .ordinal()];
+      rec.score       = Double.parseDouble(fields[BenchmarkFields.SCORE     .ordinal()]);
+      rec.error       = Double.parseDouble(fields[BenchmarkFields.ERROR     .ordinal()]);
+
+      records.add(rec);
+    };
+  }
+
+  private static void analyzeRecords(BufferedReader reader) {
     String NMT_OFF     = "NMTOff";
     String NMT_DETAIL  = "NMTDetail";
     String NMT_SUMMARY = "NMTSummary";
@@ -129,6 +126,7 @@ class NMTAnalyze {
     }
 
   }
+
   public static void main(String[] args) {
     if (args.length < 1) {
       System.out.println("Usage: java NMTAnalyze.java <benchmark-results-filename>");
@@ -136,12 +134,13 @@ class NMTAnalyze {
     }
     fileName = args[0];
     System.out.println(args[0]);
-		try {
+		try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
       System.out.println("file name " + fileName);
-			reader = new BufferedReader(new FileReader(fileName));
-      skipUntilReport();
-      readRecords();
-      analyzeRecords();
+
+      skipUntilReport(reader);
+      readRecords(reader);
+      analyzeRecords(reader);
+
 			reader.close();
 		} catch (IOException ioe) {
       ioe.printStackTrace();
