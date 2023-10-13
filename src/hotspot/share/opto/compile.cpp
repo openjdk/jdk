@@ -626,7 +626,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _has_reserved_stack_access(target->has_reserved_stack_access()),
 #ifndef PRODUCT
                   _igv_idx(0),
-                  _igv_phase_iter(),
                   _trace_opto_output(directive->TraceOptoOutputOption),
 #endif
                   _has_method_handle_invokes(false),
@@ -1041,6 +1040,10 @@ void Compile::Init(bool aliasing) {
   set_clear_upper_avx(false);  //false as default for clear upper bits of ymm registers
   Copy::zero_to_bytes(_trap_hist, sizeof(_trap_hist));
   set_decompile_count(0);
+
+#ifndef PRODUCT
+  Copy::zero_to_bytes(_igv_phase_iter, sizeof(_igv_phase_iter));
+#endif
 
   set_do_freq_based_layout(_directive->BlockLayoutByFrequencyOption);
   _loop_opts_cnt = LoopOptsCount;
