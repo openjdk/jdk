@@ -28,6 +28,7 @@ package gc.arguments;
  * @bug 8006088
  * @summary Tests argument processing for initial and maximum heap size for the
  * parallel collectors.
+ * @key flag-sensitive
  * @requires vm.gc.Parallel & vm.opt.x.Xmx == null & vm.opt.x.Xms == null & vm.opt.MinHeapSize == null & vm.opt.MaxHeapSize == null & vm.opt.InitialHeapSize == null
  * @library /test/lib
  * @library /
