@@ -34,6 +34,7 @@ import org.testng.annotations.*;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntFunction;
@@ -136,7 +137,7 @@ public class TestLayoutPaths {
     }
 
     @Test
-    public void testBadAlignmentOfRoot() throws Throwable {
+    public void testBadAlignmentOfRoot() {
         MemoryLayout struct = MemoryLayout.structLayout(
             JAVA_INT,
             JAVA_SHORT.withName("x"));
@@ -147,20 +148,56 @@ public class TestLayoutPaths {
             assertEquals(seg.address() % JAVA_SHORT.byteAlignment(), 0); // should be aligned
             assertNotEquals(seg.address() % struct.byteAlignment(), 0); // should not be aligned
 
-            String expectedMessage = "Target offset incompatible with alignment constraints: " + struct.byteAlignment();
+            String expectedMessage = "Target offset 0 is incompatible with alignment constraint " + struct.byteAlignment() + " (of [i4s2(x)]) for segment MemorySegment";
 
             VarHandle vhX = struct.varHandle(groupElement("x"));
             IllegalArgumentException iae = expectThrows(IllegalArgumentException.class, () -> {
                 vhX.set(seg, 0L, (short) 42);
             });
-            assertEquals(iae.getMessage(), expectedMessage);
+            assertTrue(iae.getMessage().startsWith(expectedMessage));
 
             MethodHandle sliceX = struct.sliceHandle(groupElement("x"));
             iae = expectThrows(IllegalArgumentException.class, () -> {
                 MemorySegment slice = (MemorySegment) sliceX.invokeExact(seg, 0L);
             });
-            assertEquals(iae.getMessage(), expectedMessage);
+            assertTrue(iae.getMessage().startsWith(expectedMessage));
         }
+    }
+
+    @Test
+    public void testWrongTypeRoot() {
+        MemoryLayout struct = MemoryLayout.structLayout(
+                JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN),
+                JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN)
+        );
+
+        var expectedMessage = "Bad layout path: attempting to select a sequence element from a non-sequence layout: [i4i4]";
+
+        IllegalArgumentException iae = expectThrows(IllegalArgumentException.class, () ->
+                struct.select(PathElement.sequenceElement()));
+        assertEquals(iae.getMessage(), expectedMessage);
+    }
+
+    @Test
+    public void testWrongTypeEnclosing() {
+        MemoryLayout struct = MemoryLayout.structLayout(
+                MemoryLayout.sequenceLayout(2, MemoryLayout.structLayout(
+                                JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN).withName("3a"),
+                                JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN).withName("3b")
+                        ).withName("2")
+                ).withName("1")
+        ).withName("0");
+
+        var expectedMessage = "Bad layout path: attempting to select a sequence element from a non-sequence layout: " +
+                "[i4(3a)i4(3b)](2), selected from: " +
+                "[2:[i4(3a)i4(3b)](2)](1), selected from: " +
+                "[[2:[i4(3a)i4(3b)](2)](1)](0)";
+
+        IllegalArgumentException iae = expectThrows(IllegalArgumentException.class, () ->
+                struct.select(PathElement.groupElement("1"),
+                        PathElement.sequenceElement(),
+                        PathElement.sequenceElement()));
+        assertEquals(iae.getMessage(), expectedMessage);
     }
 
     @Test
