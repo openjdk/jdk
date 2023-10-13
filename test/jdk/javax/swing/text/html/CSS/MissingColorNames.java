@@ -39,6 +39,7 @@ public class MissingColorNames {
     // The CSS 'color' property accepts <hex-color>. The syntax is a a hash character, "#",
     // followed by 3, 4, 6, or 8 hexadecimal digits.
     // - Syntax with 4 and 8 hexadecimal digits are not supported.
+    //
     // Test fails if stringToColor doesn't return the expected value.
     public static void main(String[] args) {
         StringBuilder result = new StringBuilder("Failed.");
@@ -46,18 +47,23 @@ public class MissingColorNames {
         StyleSheet styleSheet = new StyleSheet();
 
         for (String[] rgb : listNameHexRGBA) {
-            Object obj = styleSheet.stringToColor(rgb[0]);
-            if (rgb[1] == null && obj != null) {
+            try {
+                Object obj = styleSheet.stringToColor(rgb[0]);
+                if (rgb[1] == null && obj != null) {
+                    passed = false;
+                    result.append("\n          ["+ rgb[0] + " should return null] ");
+                }
+                if (rgb[1] != null && obj == null) {
+                    passed = false;
+                    result.append("\n          ["+ rgb[0] + " is not supported] ");
+                }
+                if (rgb[1] != null && obj instanceof Color col && col.getRGB() != HexFormat.fromHexDigits(rgb[1])) {
+                    passed = false;
+                    result.append("\n       -> [ "+ rgb[0] + " wrong RGB code ] expected " + rgb[1] + ", returned " + Integer.toHexString(col.getRGB()));
+                }
+            } catch (IllegalArgumentException iae) {
                 passed = false;
-                result.append("\n          ["+ rgb[0] + " should return null] ");
-            }
-            if (rgb[1] != null && obj == null) {
-                passed = false;
-                result.append("\n          ["+ rgb[0] + " is not supported] ");
-            }
-            if (rgb[1] != null && obj instanceof Color col && col.getRGB() != HexFormat.fromHexDigits(rgb[1])) {
-                passed = false;
-                result.append("\n       -> [ "+ rgb[0] + " wrong RGB code ] ");
+                result.append("\n       +> [ " + rgb[0] + " illegal argument ] " + rgb[1] + " " + iae.getMessage());
             }
         }
         if (!passed) {
@@ -247,7 +253,6 @@ public class MissingColorNames {
         {"ffffffff", "ffffffff"},
         {"#ffffff", "ffffffff"},
         {"ffffff", "ffffffff"},
-        /* Uncomment after merging JDK-8294090 : Aligns the CSS <rgb()> and <rgba()> function behaviours #15262.
         // RGB subset
         {"rgb(12 24 200)", "ff0c18c8"},
         {"rgb(12 24 200%)", "ff0c18ff"},
@@ -316,8 +321,5 @@ public class MissingColorNames {
         {"rgba(1200e-2 2400e-2 200000e-3)", "ff0c18c8"},
         {"rgba(1200E-2 2400E-2 200000E-3)", "ff0c18c8"},
         {"rgba(120560.64646464632469823160676064670646798706406464098706464097970906464067e-4 2400E-2 200000e-3)", "ff0c18c8"}
-        */
-        // Remove the next line after merging JDK-8294090 : Aligns the CSS <rgb()> and <rgba()> function behaviours #15262.
-        {"rgb(12 24 200)", "ff0c18c8"}
     };
 }
