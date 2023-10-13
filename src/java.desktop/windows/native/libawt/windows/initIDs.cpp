@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,42 +23,25 @@
  * questions.
  */
 
-#ifndef AWT_TEXTFIELD_H
-#define AWT_TEXTFIELD_H
 
-#include "awt_TextComponent.h"
-
-#include "java_awt_TextField.h"
-#include "sun_awt_windows_WTextFieldPeer.h"
-
-#include <ole2.h>
-#include <richedit.h>
-#include <richole.h>
+#include <jni.h>
+#include <jni_util.h>
 
 /************************************************************************
- * AwtTextField class
+ * TextField initIDs
  */
 
-class AwtTextField : public AwtTextComponent {
-public:
-    AwtTextField();
+extern "C" {
 
-    static AwtTextField* Create(jobject self, jobject parent);
+/*
+ * Class:     java_awt_TextField
+ * Method:    initIDs
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL
+Java_java_awt_TextField_initIDs(JNIEnv *env, jclass cls)
+{
+  /* This stub is needed, because the Solaris code needs this method. */
+}
 
-    /*
-     *  Windows message handler functions
-     */
-    MsgRouting HandleEvent(MSG *msg, BOOL synthetic);
-
-    virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-    // invoked on Toolkit thread
-    static void _SetEchoChar(void *param);
-
-protected:
-
-private:
-    void EditSetSel(CHARRANGE &cr);
-
-};
-
-#endif /* AWT_TEXTFIELD_H */
+} /* extern "C" */

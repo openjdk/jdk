@@ -279,6 +279,12 @@ JNIEXPORT void JNICALL Java_java_awt_ScrollPane_initIDs
 {
 }
 
+JNIEXPORT void JNICALL
+Java_java_awt_TextField_initIDs
+  (JNIEnv *env, jclass cls)
+{
+}
+
 JNIEXPORT void JNICALL Java_java_awt_Dialog_initIDs (JNIEnv *env, jclass cls)
 {
 }

@@ -142,6 +142,11 @@ JNIEXPORT void JNICALL Java_java_awt_TextArea_initIDs
 {
 }
 
+JNIEXPORT void JNICALL Java_java_awt_TextField_initIDs
+(JNIEnv *env, jclass cls)
+{
+}
+
 JNIEXPORT void JNICALL Java_java_awt_Toolkit_initIDs
 (JNIEnv *env, jclass cls)
 {
