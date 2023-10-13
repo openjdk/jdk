@@ -3837,6 +3837,7 @@ public final class Unsafe {
     private native int arrayIndexScale0(Class<?> arrayClass);
     private native int getLoadAverage0(double[] loadavg, int nelems);
 
+    public native void reportJavaOutOfMemory0(String message);
 
     /**
      * Invokes the given direct byte buffer's cleaner, if any.
