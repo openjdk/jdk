@@ -426,9 +426,14 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "x86",
             build_cpu: "x64",
-            dependencies: ["devkit", "gtest"],
-            configure_args: concat(common.configure_args_32bit,
-                "--with-jvm-variants=minimal,server", "--with-zlib=system"),
+            dependencies: ["devkit", "gtest", "libffi"],
+            configure_args: concat(common.configure_args_32bit, [
+                "--with-jvm-variants=minimal,server",
+                "--with-zlib=system",
+                "--with-libffi=" + input.get("libffi", "home_path"),
+                "--enable-libffi-bundling",
+                "--enable-fallback-linker"
+            ])
         },
 
         "macosx-x64": {

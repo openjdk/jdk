@@ -33,7 +33,6 @@ import java.util.Optional;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.ForceInline;
-import sun.security.action.GetBooleanAction;
 
 /**
  * Implementation for native memory segments. A native memory segment is essentially a wrapper around
@@ -46,7 +45,6 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
     // The maximum alignment supported by malloc - typically 16 bytes on
     // 64-bit platforms and 8 bytes on 32-bit platforms.
     private static final long MAX_MALLOC_ALIGN = Unsafe.ADDRESS_SIZE == 4 ? 8 : 16;
-    private static final boolean SKIP_ZERO_MEMORY = GetBooleanAction.privilegedGetProperty("jdk.internal.foreign.skipZeroMemory");
 
     final long min;
 
@@ -115,7 +113,8 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
 
     // factories
 
-    public static MemorySegment makeNativeSegment(long byteSize, long byteAlignment, MemorySessionImpl sessionImpl) {
+    public static MemorySegment makeNativeSegmentNoZeroing(long byteSize, long byteAlignment, MemorySessionImpl sessionImpl,
+                                                  boolean shouldReserve) {
         sessionImpl.checkValidState();
         if (VM.isDirectMemoryPageAligned()) {
             byteAlignment = Math.max(byteAlignment, NIO_ACCESS.pageSize());
@@ -124,12 +123,11 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
                 byteSize + (byteAlignment - 1) :
                 byteSize);
 
-        NIO_ACCESS.reserveMemory(alignedSize, byteSize);
-
-        long buf = UNSAFE.allocateMemory(alignedSize);
-        if (!SKIP_ZERO_MEMORY) {
-            UNSAFE.setMemory(buf, alignedSize, (byte)0);
+        if (shouldReserve) {
+            NIO_ACCESS.reserveMemory(alignedSize, byteSize);
         }
+
+        long buf = allocateMemoryWrapper(alignedSize);
         long alignedBuf = Utils.alignUp(buf, byteAlignment);
         AbstractMemorySegmentImpl segment = new NativeMemorySegmentImpl(buf, alignedSize,
                 false, sessionImpl);
@@ -137,7 +135,9 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
             @Override
             public void cleanup() {
                 UNSAFE.freeMemory(buf);
-                NIO_ACCESS.unreserveMemory(alignedSize, byteSize);
+                if (shouldReserve) {
+                    NIO_ACCESS.unreserveMemory(alignedSize, byteSize);
+                }
             }
         });
         if (alignedSize != byteSize) {
@@ -145,6 +145,14 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
             segment = segment.asSlice(delta, byteSize);
         }
         return segment;
+    }
+
+    private static long allocateMemoryWrapper(long size) {
+        try {
+            return UNSAFE.allocateMemory(size);
+        } catch (IllegalArgumentException ex) {
+            throw new OutOfMemoryError();
+        }
     }
 
     // Unsafe native segment factories. These are used by the implementation code, to skip the sanity checks

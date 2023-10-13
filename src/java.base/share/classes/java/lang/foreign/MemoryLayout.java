@@ -27,6 +27,7 @@ package java.lang.foreign;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.util.EnumSet;
 import java.util.Objects;
@@ -43,12 +44,12 @@ import jdk.internal.foreign.layout.PaddingLayoutImpl;
 import jdk.internal.foreign.layout.SequenceLayoutImpl;
 import jdk.internal.foreign.layout.StructLayoutImpl;
 import jdk.internal.foreign.layout.UnionLayoutImpl;
-import jdk.internal.javac.PreviewFeature;
+import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * A memory layout describes the contents of a memory segment.
  * <p>
- * There are two leaves in the layout hierarchy, {@linkplain ValueLayout value layouts}, which are used to represent values of given size and kind (see
+ * There are two leaves in the layout hierarchy, {@linkplain ValueLayout value layouts}, which are used to represent values of given size and kind
  * and {@linkplain PaddingLayout padding layouts} which are used, as the name suggests, to represent a portion of a memory
  * segment whose contents should be ignored, and which are primarily present for alignment reasons.
  * Some common value layout constants, such as {@link ValueLayout#JAVA_INT} and {@link ValueLayout#JAVA_FLOAT_UNALIGNED}
@@ -231,13 +232,49 @@ import jdk.internal.javac.PreviewFeature;
  * Any attempt to provide a layout path {@code P} that is not well-formed for an initial layout {@code C_0} will result
  * in an {@link IllegalArgumentException}.
  *
+ * <h2 id="access-mode-restrictions">Access mode restrictions</h2>
+ *
+ * A var handle returned by {@link #varHandle(PathElement...)} or {@link ValueLayout#varHandle()} features certain
+ * access characteristics, which are derived from the selected layout {@code L}:
+ * <ul>
+ * <li>A carrier type {@code T}, derived from {@code L.carrier()}</li>
+ * <li>An alignment constraint {@code A}, derived from {@code L.byteAlignment()}</li>
+ * <li>An access size {@code S}, derived from {@code L.byteSize()}</li>
+ * </ul>
+ * Depending on the above characteristics, the returned var handle might feature certain <i>access mode restrictions</i>.
+ * We say that a var handle is <em>aligned</em> if its alignment constraint {@code A} is compatible with the access size
+ * {@code S}, that is if {@code A >= S}. An aligned var handle is guaranteed to support the following access modes:
+ * <ul>
+ * <li>read write access modes for all {@code T}. On 32-bit platforms, access modes
+ *     {@code get} and {@code set} for {@code long}, {@code double} and {@code MemorySegment}
+ *     are supported but might lead to word tearing, as described in Section {@jls 17.7}.
+ *     of <cite>The Java Language Specification</cite>.
+ * <li>atomic update access modes for {@code int}, {@code long},
+ *     {@code float}, {@code double} and {@link MemorySegment}.
+ *     (Future major platform releases of the JDK may support additional
+ *     types for certain currently unsupported access modes.)
+ * <li>numeric atomic update access modes for {@code int}, {@code long} and {@link MemorySegment}.
+ *     (Future major platform releases of the JDK may support additional
+ *     numeric types for certain currently unsupported access modes.)
+ * <li>bitwise atomic update access modes for {@code int}, {@code long} and {@link MemorySegment}.
+ *     (Future major platform releases of the JDK may support additional
+ *     numeric types for certain currently unsupported access modes.)
+ * </ul>
+ * If {@code T} is {@code float}, {@code double} or {@link MemorySegment} then atomic update access modes compare
+ * values using their bitwise representation (see {@link Float#floatToRawIntBits}, {@link Double#doubleToRawLongBits}
+ * and {@link MemorySegment#address()}, respectively).
+ * <p>
+ * Alternatively, a var handle is <em>unaligned</em> if its alignment constraint {@code A} is incompatible with the
+ * access size {@code S}, that is, if {@code A < S}. An unaligned var handle only supports the {@code get} and {@code set}
+ * access modes. All other access modes will result in {@link UnsupportedOperationException} being thrown. Moreover,
+ * while supported, access modes {@code get} and {@code set} might lead to word tearing.
+ *
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  *
  * @sealedGraph
- * @since 19
+ * @since 22
  */
-@PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, PaddingLayout, ValueLayout {
 
     /**
@@ -293,6 +330,44 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
     MemoryLayout withByteAlignment(long byteAlignment);
 
     /**
+     * {@return {@code offset + (byteSize() * index)}}
+     *
+     * @param offset the base offset
+     * @param index the index to be scaled by the byte size of this layout
+     * @throws IllegalArgumentException if {@code offset} or {@code index} is negative
+     * @throws ArithmeticException if either the addition or multiplication overflows
+     */
+    @ForceInline
+    default long scale(long offset, long index) {
+        if (offset < 0) {
+            throw new IllegalArgumentException("Negative offset: " + offset);
+        }
+        if (index < 0) {
+            throw new IllegalArgumentException("Negative index: " + index);
+        }
+
+        return Math.addExact(offset, Math.multiplyExact(byteSize(), index));
+    }
+
+    /**
+     *{@return a method handle that can be used to invoke {@link #scale(long, long)} on this layout}
+     */
+    default MethodHandle scaleHandle() {
+        class Holder {
+            static final MethodHandle MH_SCALE;
+            static {
+                try {
+                    MH_SCALE = MethodHandles.lookup().findVirtual(MemoryLayout.class, "scale",
+                            MethodType.methodType(long.class, long.class, long.class));
+                } catch (ReflectiveOperationException e) {
+                    throw new ExceptionInInitializerError(e);
+                }
+            }
+        }
+        return Holder.MH_SCALE.bindTo(this);
+    }
+
+    /**
      * Computes the offset, in bytes, of the layout selected by the given layout path, where the initial layout in the
      * path is this layout.
      *
@@ -314,7 +389,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * The returned method handle has the following characteristics:
      * <ul>
      *     <li>its return type is {@code long};</li>
-     *     <li>it has as zero or more parameters of type {@code long}, one for each <a href=#open-path-elements>open path element</a>
+     *     <li>it has one leading {@code long} parameter representing the base offset;</li>
+     *     <li>it has as zero or more trailing parameters of type {@code long}, one for each <a href=#open-path-elements>open path element</a>
      *     in the provided layout path. The order of these parameters corresponds to the order in which the open path
      *     elements occur in the provided layout path.
      * </ul>
@@ -322,13 +398,14 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * The final offset returned by the method handle is computed as follows:
      *
      * <blockquote><pre>{@code
-     * offset = c_1 + c_2 + ... + c_m + (x_1 * s_1) + (x_2 * s_2) + ... + (x_n * s_n)
+     * offset = b + c_1 + c_2 + ... + c_m + (x_1 * s_1) + (x_2 * s_2) + ... + (x_n * s_n)
      * }</pre></blockquote>
      *
-     * where {@code x_1}, {@code x_2}, ... {@code x_n} are <em>dynamic</em> values provided as {@code long}
-     * arguments, whereas {@code c_1}, {@code c_2}, ... {@code c_m} are <em>static</em> offset constants
-     * and {@code s_0}, {@code s_1}, ... {@code s_n} are <em>static</em> stride constants which are derived from
-     * the layout path.
+     * where {@code b} represents the base offset provided as a <em>dynamic</em> {@code long} argument, {@code x_1}, {@code x_2},
+     * ... {@code x_n} represent indices into sequences provided as <em>dynamic</em> {@code long} arguments, whereas
+     * {@code s_1}, {@code s_2}, ... {@code s_n} are <em>static</em> stride constants derived from the size of the element
+     * layout of a sequence, and {@code c_1}, {@code c_2}, ... {@code c_m} are other <em>static</em> offset constants
+     * (such as field offsets) which are derived from the layout path.
      *
      * @apiNote The returned method handle can be used to compute a layout offset, similarly to {@link #byteOffset(PathElement...)},
      * but more flexibly, as some indices can be specified when invoking the method handle.
@@ -351,71 +428,93 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * <ul>
      *     <li>its type is derived from the {@linkplain ValueLayout#carrier() carrier} of the
      *     selected value layout;</li>
-     *     <li>it has as zero or more access coordinates of type {@code long}, one for each
-     *     <a href=#open-path-elements>open path element</a> in the provided layout path. The order of these access
-     *     coordinates corresponds to the order in which the open path elements occur in the provided
-     *     layout path.
+     *     <li>it has a leading parameter of type {@code MemorySegment} representing the accessed segment</li>
+     *     <li>a following {@code long} parameter, corresponding to the base offset, denoted as {@code B};</li>
+     *     <li>it has zero or more trailing access coordinates of type {@code long}, one for each
+     *     <a href=#open-path-elements>open path element</a> in the provided layout path, denoted as
+     *     {@code I1, I2, ... In}, respectively. The order of these access coordinates corresponds to the order
+     *     in which the open path elements occur in the provided layout path.
      * </ul>
      * <p>
-     * The final address accessed by the returned var handle can be computed as follows:
+     * If the provided layout path {@code P} contains no dereference elements, then the offset {@code O} of the access
+     * operation is computed as follows:
      *
-     * <blockquote><pre>{@code
-     * address = base(segment) + offset
-     * }</pre></blockquote>
-     *
-     * Where {@code base(segment)} denotes a function that returns the physical base address of the accessed
-     * memory segment. For native segments, this function just returns the native segment's
-     * {@linkplain MemorySegment#address() address}. For heap segments, this function is more complex, as the address
-     * of heap segments is virtualized. The {@code offset} value can be expressed in the following form:
-     *
-     * <blockquote><pre>{@code
-     * offset = c_1 + c_2 + ... + c_m + (x_1 * s_1) + (x_2 * s_2) + ... + (x_n * s_n)
-     * }</pre></blockquote>
-     *
-     * where {@code x_1}, {@code x_2}, ... {@code x_n} are <em>dynamic</em> values provided as {@code long}
-     * arguments, whereas {@code c_1}, {@code c_2}, ... {@code c_m} are <em>static</em> offset constants
-     * and {@code s_1}, {@code s_2}, ... {@code s_n} are <em>static</em> stride constants which are derived from
-     * the layout path.
+     * {@snippet lang = "java":
+     * O = this.offsetHandle(P).invokeExact(B, I1, I2, ... In);
+     * }
      * <p>
-     * Additionally, the provided dynamic values must conform to bounds which are derived from the layout path, that is,
-     * {@code 0 <= x_i < b_i}, where {@code 1 <= i <= n}, or {@link IndexOutOfBoundsException} is thrown.
+     * Accessing a memory segment using the var handle returned by this method is subject to the following checks:
+     * <ul>
+     *     <li>The physical address of the accessed memory segment must be <a href="MemorySegment.html#segment-alignment">aligned</a>
+     * according to the {@linkplain #byteAlignment() alignment constraint} of the root layout (this layout), or
+     * an {@link IllegalArgumentException} will be issued. Note that the alignment constraint of the root layout
+     * can be more strict (but not less) than the alignment constraint of the selected value layout.</li>
+     *     <li>The offset of the access operation (computed as above) must fall inside the spatial bounds of the
+     * accessed memory segment, or an {@link IndexOutOfBoundsException} is thrown. This is the case when {@code O + A <= S},
+     * where {@code O} is the accessed offset (computed as above), {@code A} is the size of the selected layout and {@code S}
+     * is the size of the accessed memory segment.</li>
+     *     <li>The accessed memory segment must be {@link MemorySegment#isAccessibleBy(Thread) accessible} from the
+     * thread performing the access operation, or a {@link WrongThreadException} is thrown.</li>
+     *     <li>The {@linkplain MemorySegment#scope() scope} associated with the accessed segment must be
+     * {@linkplain MemorySegment.Scope#isAlive() alive}, or an {@link IllegalStateException} is thrown.</li>
+     * </ul>
      * <p>
-     * The base address must be <a href="MemorySegment.html#segment-alignment">aligned</a> according to the {@linkplain
-     * #byteAlignment() alignment constraint} of the root layout (this layout). Note that this can be more strict
-     * (but not less) than the alignment constraint of the selected value layout.
+     * If the selected layout is an {@linkplain AddressLayout address layout}, calling {@link VarHandle#get(Object...)}
+     * on the returned var handle will return a new memory segment. The segment is associated with a fresh scope that is
+     * always alive. Moreover, the size of the segment depends on whether the address layout has a
+     * {@linkplain AddressLayout#targetLayout() target layout}. More specifically:
+     * <ul>
+     *     <li>If the address layout has a target layout {@code T}, then the size of the returned segment
+     *     is {@code T.byteSize()};</li>
+     *     <li>Otherwise, the address layout has no target layout, and the size of the returned segment
+     *     is <a href="MemorySegment.html#wrapping-addresses">zero</a>.</li>
+     * </ul>
+     * Moreover, if the selected layout is an {@linkplain AddressLayout address layout}, calling {@link VarHandle#set(Object...)}
+     * can throw {@link IllegalArgumentException} if the memory segment representing the address to be written is not a
+     * {@linkplain MemorySegment#isNative() native} memory segment.
      * <p>
-     * Multiple paths can be chained, with <a href=#deref-path-elements>dereference path elements</a>.
-     * A dereference path element constructs a fresh native memory segment whose base address is the address value
-     * read obtained by accessing a memory segment at the offset determined by the layout path elements immediately preceding
-     * the dereference path element. In other words, if a layout path contains one or more dereference path elements,
-     * the final address accessed by the returned var handle can be computed as follows:
+     * If the provided layout path has size {@code m} and contains a dereference path element in position {@code k}
+     * (where {@code k <= m}) then two layout paths {@code P} and {@code P'} are derived, where P contains all the path
+     * elements from 0 to {@code k - 1} and {@code P'} contains all the path elements from {@code k + 1} to
+     * {@code m} (if any). Then, the returned var handle is computed as follows:
      *
-     * <blockquote><pre>{@code
-     * address_1 = base(segment) + offset_1
-     * address_2 = base(segment_1) + offset_2
-     * ...
-     * address_k = base(segment_k-1) + offset_k
-     * }</pre></blockquote>
+     * {@snippet lang = "java":
+     * VarHandle baseHandle = this.varHandle(P);
+     * MemoryLayout target = ((AddressLayout)this.select(P)).targetLayout().get();
+     * VarHandle targetHandle = target.varHandle(P');
+     * targetHandle = MethodHandles.insertCoordinates(targetHandle, 1, 0L); // always access nested targets at offset 0
+     * targetHandle = MethodHandles.collectCoordinates(targetHandle, 0,
+     *         baseHandle.toMethodHandle(VarHandle.AccessMode.GET));
+     * }
      *
-     * where {@code k} is the number of dereference path elements in a layout path, {@code segment} is the input segment,
-     * {@code segment_1}, ...  {@code segment_k-1} are the segments obtained by dereferencing the address associated with
-     * a given dereference path element (e.g. {@code segment_1} is a native segment whose base address is {@code address_1}),
-     * and {@code offset_1}, {@code offset_2}, ... {@code offset_k} are the offsets computed by evaluating
-     * the path elements after a given dereference operation (these offsets are obtained using the computation described
-     * above). In these more complex access operations, all memory accesses immediately preceding a dereference operation
-     * (e.g. those at addresses {@code address_1}, {@code address_2}, ...,  {@code address_k-1} are performed using the
-     * {@link VarHandle.AccessMode#GET} access mode.
+     * (The above can be trivially generalized to cases where the provided layout path contains more than one dereference
+     * path elements).
+     * <p>
+     * As an example, consider the memory layout expressed by a {@link GroupLayout} instance constructed as follows:
+     * {@snippet lang = "java":
+     *     GroupLayout grp = java.lang.foreign.MemoryLayout.structLayout(
+     *             MemoryLayout.paddingLayout(4),
+     *             ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withName("value")
+     *     );
+     * }
+     * To access the member layout named {@code value}, we can construct a var handle as follows:
+     * {@snippet lang = "java":
+     *     VarHandle handle = grp.varHandle(PathElement.groupElement("value")); //(MemorySegment, long) -> int
+     * }
      *
-     * @apiNote The resulting var handle features certain <em>access mode restrictions</em>, which are common to all
-     * {@linkplain MethodHandles#memorySegmentViewVarHandle(ValueLayout) memory segment view handles}.
+     * @apiNote The resulting var handle features certain <a href="#access-mode-restrictions"><em>access mode restrictions</em></a>,
+     * which are common to all var handles derived from memory layouts.
      *
      * @param elements the layout path elements.
      * @return a var handle that accesses a memory segment at the offset selected by the given layout path.
      * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
      * @throws IllegalArgumentException if the layout selected by the provided path is not a {@linkplain ValueLayout value layout}.
-     * @see MethodHandles#memorySegmentViewVarHandle(ValueLayout)
      */
     default VarHandle varHandle(PathElement... elements) {
+        Objects.requireNonNull(elements);
+        if (this instanceof ValueLayout vl && elements.length == 0) {
+            return vl.varHandle(); // fast path
+        }
         return computePathOp(LayoutPath.rootPath(this), LayoutPath::dereferenceHandle,
                 Set.of(), elements);
     }
@@ -427,23 +526,27 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * The returned method handle has the following characteristics:
      * <ul>
      *     <li>its return type is {@code MemorySegment};</li>
-     *     <li>it has a leading parameter of type {@code MemorySegment}, corresponding to the memory segment
-     *     to be sliced;</li>
-     *     <li>it has as zero or more parameters of type {@code long}, one for each <a href=#open-path-elements>open path element</a>
+     *     <li>it has a leading parameter of type {@code MemorySegment} corresponding to the memory segment to be sliced</li>
+     *     <li>a following {@code long} parameter, corresponding to the base offset</li>
+     *     <li>it has as zero or more trailing parameters of type {@code long}, one for each <a href=#open-path-elements>open path element</a>
      *     in the provided layout path. The order of these parameters corresponds to the order in which the open path
      *     elements occur in the provided layout path.
      * </ul>
      * <p>
-     * The offset of the returned segment is computed as follows:
-     * {@snippet lang=java :
-     * long offset = byteOffset(elements);
-     * long size = select(elements).byteSize();
-     * MemorySegment slice = segment.asSlice(offset, size);
-     * }
+     * The offset {@code O} of the returned segment is computed as if by a call to a
+     * {@linkplain #byteOffsetHandle(PathElement...) byte offset handle} constructed using the given path elements.
      * <p>
-     * The segment to be sliced must be <a href="MemorySegment.html#segment-alignment">aligned</a> according to the
-     * {@linkplain #byteAlignment() alignment constraint} of the root layout (this layout). Note that this can be more
-     * strict (but not less) than the alignment constraint of the selected value layout.
+     * Computing a slice of a memory segment using the method handle returned by this method is subject to the following checks:
+     * <ul>
+     *     <li>The physical address of the accessed memory segment must be <a href="MemorySegment.html#segment-alignment">aligned</a>
+     * according to the {@linkplain #byteAlignment() alignment constraint} of the root layout (this layout), or
+     * an {@link IllegalArgumentException} will be issued. Note that the alignment constraint of the root layout
+     * can be more strict (but not less) than the alignment constraint of the selected layout.</li>
+     *     <li>The start offset of the slicing operation (computed as above) must fall fall inside the spatial bounds of the
+     * accessed memory segment, or an {@link IndexOutOfBoundsException} is thrown. This is the case when {@code O + A <= S},
+     * where {@code O} is the start offset of the slicing operation (computed as above), {@code A} is the size of the
+     * selected layout and {@code S} is the size of the accessed memory segment.</li>
+     * </ul>
      *
      * @apiNote The returned method handle can be used to obtain a memory segment slice, similarly to {@link MemorySegment#asSlice(long, long)},
      * but more flexibly, as some indices can be specified when invoking the method handle.
@@ -501,9 +604,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @implSpec
      * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
      *
-     * @since 19
+     * @since 22
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     sealed interface PathElement permits LayoutPath.PathElementImpl {
 
         /**
@@ -667,24 +769,6 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
         Utils.checkElementAlignment(elementLayout, "Element layout size is not multiple of alignment");
         return Utils.wrapOverflow(() ->
                 SequenceLayoutImpl.of(elementCount, elementLayout));
-    }
-
-    /**
-     * Creates a sequence layout with the given element layout and the maximum element
-     * count such that it does not overflow a {@code long}.
-     *
-     * This is equivalent to the following code:
-     * {@snippet lang = java:
-     * sequenceLayout(Long.MAX_VALUE / elementLayout.byteSize(), elementLayout);
-     * }
-     *
-     * @param elementLayout the sequence element layout.
-     * @return a new sequence layout with the given element layout and maximum element count.
-     * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}.
-     */
-    static SequenceLayout sequenceLayout(MemoryLayout elementLayout) {
-        Objects.requireNonNull(elementLayout);
-        return sequenceLayout(Long.MAX_VALUE / elementLayout.byteSize(), elementLayout);
     }
 
     /**

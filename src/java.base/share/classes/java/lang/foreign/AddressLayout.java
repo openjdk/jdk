@@ -26,7 +26,6 @@
 package java.lang.foreign;
 
 import jdk.internal.foreign.layout.ValueLayouts;
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.javac.Restricted;
 import jdk.internal.reflect.CallerSensitive;
 
@@ -51,11 +50,13 @@ import java.util.Optional;
  *     <li>When creating an upcall stub, using {@link Linker#upcallStub(MethodHandle, FunctionDescriptor, Arena, Option...)}.
  * </ul>
  *
+ * @implSpec
+ * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
+ *
  * @see #ADDRESS
  * @see #ADDRESS_UNALIGNED
- * @since 19
+ * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
 public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.OfAddressImpl {
 
     /**
@@ -95,13 +96,12 @@ public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.O
      * {@snippet lang = java:
      * AddressLayout addressLayout   = ...
      * AddressLayout unboundedLayout = addressLayout.withTargetLayout(
-     *         MemoryLayout.sequenceLayout(ValueLayout.JAVA_BYTE));
+     *         MemoryLayout.sequenceLayout(Long.MAX_VALUE, ValueLayout.JAVA_BYTE));
      *}
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
+     * the JVM or, worse, silently result in memory corruption.
      *
      * @param layout the target layout.
      * @return an address layout with same characteristics as this layout, but with the provided target layout.

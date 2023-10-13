@@ -273,7 +273,7 @@ public interface JavaLangAccess {
      * Ensure that the given module has native access. If not, warn or
      * throw exception depending on the configuration.
      */
-    void ensureNativeAccess(Module m, Class<?> owner, String methodName);
+    void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass);
 
     /**
      * Returns the ServicesCatalog for the given Layer.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,33 @@
  * questions.
  */
 
-package org.openjdk.foreigntest;
+#include <errno.h>
 
-import java.lang.foreign.*;
+#ifdef _WIN64
+#define EXPORT __declspec(dllexport)
+#else
+#define EXPORT
+#endif
 
-public class PanamaMain {
-   public static void main(String[] args) {
-       System.out.println("Trying to obtain a downcall handle");
-       Linker.nativeLinker().downcallHandle(FunctionDescriptor.ofVoid());
-       System.out.println("Got downcall handle");
-   }
+EXPORT void empty() {}
+
+EXPORT int identity(int value) {
+    return value;
+}
+
+// 128 bit struct returned in buffer on SysV
+struct Big {
+    long long x;
+    long long y;
+};
+
+EXPORT struct Big with_return_buffer() {
+    struct Big b;
+    b.x = 10;
+    b.y = 11;
+    return b;
+}
+
+EXPORT void do_upcall(void(*f)(void)) {
+    f();
 }
