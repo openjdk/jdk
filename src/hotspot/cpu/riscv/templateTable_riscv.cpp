@@ -34,7 +34,7 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateTable.hpp"
 #include "memory/universe.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -2114,6 +2114,19 @@ void TemplateTable::_return(TosState state) {
     __ membar(MacroAssembler::StoreStore);
   }
 
+  if (_desc->bytecode() != Bytecodes::_return_register_finalizer) {
+    Label no_safepoint;
+    __ ld(t0, Address(xthread, JavaThread::polling_word_offset()));
+    __ test_bit(t0, t0, exact_log2(SafepointMechanism::poll_bit()));
+    __ beqz(t0, no_safepoint);
+    __ push(state);
+    __ push_cont_fastpath(xthread);
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint));
+    __ pop_cont_fastpath(xthread);
+    __ pop(state);
+    __ bind(no_safepoint);
+  }
+
   // Narrow result if state is itos but result type is smaller.
   // Need to narrow in the return bytecode rather than in generate_return_entry
   // since compiled code callers expect the result to already be narrowed.
@@ -3786,7 +3799,7 @@ void TemplateTable::monitorenter() {
          fp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
    const Address monitor_block_bot(
          fp, frame::interpreter_frame_initial_sp_offset * wordSize);
-   const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+   const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
    Label allocated;
 
@@ -3796,8 +3809,10 @@ void TemplateTable::monitorenter() {
    // find a free slot in the monitor block (result in c_rarg1)
    {
      Label entry, loop, exit, notUsed;
-     __ ld(c_rarg3, monitor_block_top); // points to current entry,
-                                        // starting with top-most entry
+     __ ld(c_rarg3, monitor_block_top); // derelativize pointer
+     __ shadd(c_rarg3, c_rarg3, fp, c_rarg3, LogBytesPerWord);
+     // Now c_rarg3 points to current entry, starting with top-most entry
+
      __ la(c_rarg2, monitor_block_bot); // points to word before bottom
 
      __ j(entry);
@@ -3831,13 +3846,20 @@ void TemplateTable::monitorenter() {
 
      __ check_extended_sp();
      __ sub(sp, sp, entry_size);           // make room for the monitor
-     __ sd(sp, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
+     __ sub(t0, sp, fp);
+     __ srai(t0, t0, Interpreter::logStackElementSize);
+     __ sd(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
 
-     __ ld(c_rarg1, monitor_block_bot);    // c_rarg1: old expression stack bottom
+     __ ld(c_rarg1, monitor_block_bot);    // derelativize pointer
+     __ shadd(c_rarg1, c_rarg1, fp, c_rarg1, LogBytesPerWord);
+     // Now c_rarg1 points to the old expression stack bottom
+
      __ sub(esp, esp, entry_size);         // move expression stack top
      __ sub(c_rarg1, c_rarg1, entry_size); // move expression stack bottom
      __ mv(c_rarg3, esp);                  // set start value for copy loop
-     __ sd(c_rarg1, monitor_block_bot);    // set new monitor block bottom
+     __ sub(t0, c_rarg1, fp);              // relativize pointer
+     __ srai(t0, t0, Interpreter::logStackElementSize);
+     __ sd(t0, monitor_block_bot);         // set new monitor block bottom
 
      __ j(entry);
      // 2. move expression stack contents
@@ -3884,15 +3906,17 @@ void TemplateTable::monitorexit() {
         fp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
   const Address monitor_block_bot(
         fp, frame::interpreter_frame_initial_sp_offset * wordSize);
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
   Label found;
 
   // find matching slot
   {
     Label entry, loop;
-    __ ld(c_rarg1, monitor_block_top); // points to current entry,
-                                        // starting with top-most entry
+    __ ld(c_rarg1, monitor_block_top); // derelativize pointer
+    __ shadd(c_rarg1, c_rarg1, fp, c_rarg1, LogBytesPerWord);
+    // Now c_rarg1 points to current entry, starting with top-most entry
+
     __ la(c_rarg2, monitor_block_bot); // points to word before bottom
                                         // of monitor block
     __ j(entry);

@@ -28,7 +28,7 @@
 
 void MethodFlags::print_on(outputStream* st) const {
 #define M_PRINT(name, ignore)          \
-  if (name()) st->print(" " #name " ");
+  if (name()) st->print(#name " ");
   M_STATUS_DO(M_PRINT)
 #undef M_PRINT
 }

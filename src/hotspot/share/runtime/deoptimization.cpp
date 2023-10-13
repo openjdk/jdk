@@ -89,6 +89,7 @@
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "runtime/vmOperations.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
@@ -116,8 +117,7 @@ DeoptimizationScope::~DeoptimizationScope() {
 }
 
 void DeoptimizationScope::mark(CompiledMethod* cm, bool inc_recompile_counts) {
-  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
-                 Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
 
   // If it's already marked but we still need it to be deopted.
   if (cm->is_marked_for_deoptimization()) {
@@ -138,8 +138,8 @@ void DeoptimizationScope::mark(CompiledMethod* cm, bool inc_recompile_counts) {
 }
 
 void DeoptimizationScope::dependent(CompiledMethod* cm) {
-  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
-                 Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+
   // A method marked by someone else may have a _required_gen lower than what we marked with.
   // Therefore only store it if it's higher than _required_gen.
   if (_required_gen < cm->_deoptimization_generation) {
@@ -169,8 +169,8 @@ void DeoptimizationScope::deoptimize_marked() {
   bool wait = false;
   while (true) {
     {
-      MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
-                 Mutex::_no_safepoint_check_flag);
+      ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+
       // First we check if we or someone else already deopted the gen we want.
       if (DeoptimizationScope::_committed_deopt_gen >= _required_gen) {
         DEBUG_ONLY(_deopted = true;)
@@ -197,8 +197,8 @@ void DeoptimizationScope::deoptimize_marked() {
       Deoptimization::deoptimize_all_marked(); // May safepoint and an additional deopt may have occurred.
       DEBUG_ONLY(_deopted = true;)
       {
-        MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
-                       Mutex::_no_safepoint_check_flag);
+        ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+
         // Make sure that committed doesn't go backwards.
         // Should only happen if we did a deopt during a safepoint above.
         if (DeoptimizationScope::_committed_deopt_gen < comitting) {
@@ -248,11 +248,11 @@ Deoptimization::UnrollBlock::~UnrollBlock() {
 
 int Deoptimization::UnrollBlock::size_of_frames() const {
   // Account first for the adjustment of the initial frame
-  int result = _caller_adjustment;
+  intptr_t result = _caller_adjustment;
   for (int index = 0; index < number_of_frames(); index++) {
     result += frame_sizes()[index];
   }
-  return result;
+  return checked_cast<int>(result);
 }
 
 void Deoptimization::UnrollBlock::print() {
@@ -1081,7 +1081,7 @@ protected:
       objArrayOop cache = CacheType::cache(ik);
       assert(cache->length() > 0, "Empty cache");
       _low = BoxType::value(cache->obj_at(0));
-      _high = _low + cache->length() - 1;
+      _high = checked_cast<PrimitiveType>(_low + cache->length() - 1);
       _cache = JNIHandles::make_global(Handle(thread, cache));
     }
   }
@@ -1100,7 +1100,7 @@ public:
   }
   oop lookup(PrimitiveType value) {
     if (_low <= value && value <= _high) {
-      int offset = value - _low;
+      int offset = checked_cast<int>(value - _low);
       return objArrayOop(JNIHandles::resolve_non_null(_cache))->obj_at(offset);
     }
     return nullptr;
@@ -1654,7 +1654,7 @@ vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, Re
   // stuff a C2I adapter we can properly fill in the callee-save
   // register locations.
   frame caller = fr.sender(reg_map);
-  int frame_size = caller.sp() - fr.sp();
+  int frame_size = pointer_delta_as_int(caller.sp(), fr.sp());
 
   frame sender = caller;
 

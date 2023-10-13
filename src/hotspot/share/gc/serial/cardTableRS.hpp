@@ -80,23 +80,4 @@ public:
   bool is_in_young(const void* p) const override;
 };
 
-class ClearNoncleanCardWrapper: public MemRegionClosure {
-  DirtyCardToOopClosure* _dirty_card_closure;
-  CardTableRS* _ct;
-
-public:
-
-  typedef CardTable::CardValue CardValue;
-private:
-  // Clears the given card, return true if the corresponding card should be
-  // processed.
-  inline bool clear_card(CardValue* entry);
-  // check alignment of pointer
-  bool is_word_aligned(CardValue* entry);
-
-public:
-  ClearNoncleanCardWrapper(DirtyCardToOopClosure* dirty_card_closure, CardTableRS* ct);
-  void do_MemRegion(MemRegion mr) override;
-};
-
 #endif // SHARE_GC_SERIAL_CARDTABLERS_HPP

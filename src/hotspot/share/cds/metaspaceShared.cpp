@@ -663,13 +663,6 @@ void MetaspaceShared::preload_and_dump() {
       MetaspaceShared::unrecoverable_writing_error("VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
     }
   }
-
-#if INCLUDE_CDS_JAVA_HEAP
-  // Restore the java loaders that were cleared at dump time
-  if (use_full_module_graph()) {
-    HeapShared::restore_loader_data();
-  }
-#endif
 }
 
 #if INCLUDE_CDS_JAVA_HEAP && defined(_LP64)
@@ -1328,8 +1321,12 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       total_space_rs = ReservedSpace(total_range_size, archive_space_alignment,
                                      os::vm_page_size(), (char*) base_address);
     } else {
-      // Reserve at any address, but leave it up to the platform to choose a good one.
-      total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size);
+      // We did not manage to reserve at the preferred address, or were instructed to relocate. In that
+      // case we reserve whereever possible, but the start address needs to be encodable as narrow Klass
+      // encoding base since the archived heap objects contain nKlass IDs precalculated toward the start
+      // of the shared Metaspace. That prevents us from using zero-based encoding and therefore we won't
+      // try allocating in low-address regions.
+      total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size, false /* try_in_low_address_ranges */);
     }
 
     if (!total_space_rs.is_reserved()) {
