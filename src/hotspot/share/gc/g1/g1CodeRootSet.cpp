@@ -189,7 +189,8 @@ public:
     // A table with the new size should be at most filled by this factor. Otherwise
     // we would grow again quickly.
     const float WantedLoadFactor = 0.5;
-    size_t min_expected_size = checked_cast<size_t>(ceil(current_size / WantedLoadFactor));
+    assert((current_size / WantedLoadFactor) <= SIZE_MAX, "table overflow");
+    size_t min_expected_size = current_size / WantedLoadFactor;
 
     size_t result = Log2DefaultNumBuckets;
     if (min_expected_size != 0) {
