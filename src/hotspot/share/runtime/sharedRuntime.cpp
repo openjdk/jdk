@@ -3271,7 +3271,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
       }
 #ifdef ASSERT
       else {
-        buf[i] = 0xdead05a0; // eye-catcher
+        buf[i] = badDispHeaderOSR;
       }
 #endif
       i++;
