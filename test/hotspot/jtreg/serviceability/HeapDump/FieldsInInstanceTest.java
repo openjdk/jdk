@@ -32,7 +32,6 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.ProcessTools;
-
 import jdk.test.lib.hprof.model.JavaClass;
 import jdk.test.lib.hprof.model.JavaHeapObject;
 import jdk.test.lib.hprof.model.JavaObject;
@@ -51,8 +50,16 @@ class FieldsInInstanceTarg extends LingeredApp {
 
     public static void main(String[] args) {
         B b = new B();
+        NoFields2 nf = new NoFields2();
+        NoParentFields npf = new NoParentFields();
+        OnlyParentFields opf = new OnlyParentFields();
+        DirectParentNoFields dpnf = new DirectParentNoFields();
         LingeredApp.main(args);
         Reference.reachabilityFence(b);
+        Reference.reachabilityFence(nf);
+        Reference.reachabilityFence(npf);
+        Reference.reachabilityFence(opf);
+        Reference.reachabilityFence(dpnf);
     }
 
     interface I {
@@ -67,6 +74,32 @@ class FieldsInInstanceTarg extends LingeredApp {
         static String f = null;
         int a = 7;
         double s = 0.5d;
+    }
+
+    // no fields:
+    interface I1 {
+    }
+    static class NoFields1 {
+    }
+    static class NoFields2 extends NoFields1 implements I1 {
+    }
+
+    // no parent fields
+    static class NoParentFields extends NoFields1 implements I1 {
+        int i1 = 1;
+        int i2 = 2;
+    }
+
+    // only parent fields
+    static class Parent1 {
+        int i3 = 3;
+    }
+    static class OnlyParentFields extends Parent1 {
+    }
+
+    // in between parent with no fields
+    static class DirectParentNoFields extends OnlyParentFields {
+        int i = 17;
     }
 }
 
@@ -120,30 +153,34 @@ public class FieldsInInstanceTest {
             snapshot.resolve(true);
             log("Snapshot resolved.");
 
-            Iterable<JavaHeapObject> objects = snapshot.getThings()::asIterator;
-            for (JavaHeapObject heapObj : objects) {
-                if (heapObj instanceof JavaObject javaObj) {
-                    if (javaObj.getClazz().getName().endsWith("$B")) {
-                        List<JavaThing> fields = Arrays.asList(javaObj.getFields());
-                        // B has 2 instance fields, A has 2 instance fields
-                        Asserts.assertEquals(fields.size(), 4);
-                        // JavaObject reverses the order of fields, so fields of B are at the end.
-                        // Order is only specified for supertypes, so we check if values are *anywhere* in their range
-                        // by using the toString output.
-                        String asString = fields.subList(2, 4).toString();
-                        Asserts.assertTrue(asString.contains("0.5"), "value for field B.s not found");
-                        Asserts.assertTrue(asString.contains("7"), "value for field B.a not found");
-                        asString = fields.subList(0, 2).toString();
-                        Asserts.assertTrue(asString.contains("3"), "value for field A.a not found");
-                        Asserts.assertTrue(asString.contains("Field"), "value for field A.s not found");
-                        System.out.println(fields);
-                        return; // we found our object
-                    }
-                }
-            }
-            // we didn't find our object
-            Asserts.fail("Object of type B not found.");
+            List<JavaThing> bFields = getFields(snapshot, FieldsInInstanceTarg.B.class);
+            // B has 2 instance fields, A has 2 instance fields
+            Asserts.assertEquals(bFields.size(), 4);
+            // JavaObject reverses the order of fields, so fields of B are at the end.
+            // Order is only specified for supertypes, so we check if values are *anywhere* in their range
+            // by using the toString output.
+            String asString = bFields.subList(2, 4).toString();
+            Asserts.assertTrue(asString.contains("0.5"), "value for field B.s not found");
+            Asserts.assertTrue(asString.contains("7"), "value for field B.a not found");
+            asString = bFields.subList(0, 2).toString();
+            Asserts.assertTrue(asString.contains("3"), "value for field A.a not found");
+            Asserts.assertTrue(asString.contains("Field"), "value for field A.s not found");
+
+            Asserts.assertEquals(getFields(snapshot, FieldsInInstanceTarg.NoFields2.class).size(), 0);
+
+            Asserts.assertEquals(getFields(snapshot, FieldsInInstanceTarg.NoParentFields.class).size(), 2);
+
+            Asserts.assertEquals(getFields(snapshot, FieldsInInstanceTarg.OnlyParentFields.class).size(), 1);
+
+            Asserts.assertEquals(getFields(snapshot, FieldsInInstanceTarg.DirectParentNoFields.class).size(), 2);
         }
+    }
+
+    private static List<JavaThing> getFields(Snapshot snapshot, Class<?> clazz) {
+        JavaObject javaObject = (JavaObject) snapshot.findClass(clazz.getName()).getInstances(false).nextElement();
+        List<JavaThing> fields = Arrays.asList(javaObject.getFields());
+        log("Fields for " + clazz + " (including superclasses): " + fields);
+        return fields;
     }
 
     private static void log(Object s) {
