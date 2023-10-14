@@ -191,7 +191,7 @@ class HierarchicalFieldStream : public StackObj  {
 
   void prepare() {
     _next_klass = next_klass_with_fields();
-    // special case: the base klass has no fields. If any supertype has any fields, use that directly.
+    // special case: the initial klass has no fields. If any supertype has any fields, use that directly.
     // if no such supertype exists, done() will return false already.
     next_stream_if_done();
   }
