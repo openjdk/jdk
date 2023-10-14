@@ -58,6 +58,9 @@ public class SummaryDiffThreadCount {
         // Running "jcmd <pid> VM.native_memory summary.diff" and checking for five new threads reported.
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary.diff"});
         output = new OutputAnalyzer(pb.start());
+
+        // Trailing '+' is needed to check that NMT now reports that now we have more threads than it
+        // was during the baseline.
         output.shouldMatch("threads #\\d+ \\+");
     }
 }
