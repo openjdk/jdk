@@ -26,6 +26,7 @@
 package jdk.internal.foreign;
 
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.GroupLayout;
@@ -40,9 +41,13 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.joining;
 
 /**
  * This class provide support for constructing layout paths; that is, starting from a root path (see {@link #rootPath(MemoryLayout)},
@@ -89,7 +94,6 @@ public class LayoutPath {
     private final long offset;
     private final LayoutPath enclosing;
     private final long[] strides;
-
     private final long[] bounds;
     private final MethodHandle[] derefAdapters;
 
@@ -105,15 +109,13 @@ public class LayoutPath {
     // Layout path selector methods
 
     public LayoutPath sequenceElement() {
-        check(SequenceLayout.class, "attempting to select a sequence element from a non-sequence layout");
-        SequenceLayout seq = (SequenceLayout)layout;
+        SequenceLayout seq = requireSequenceLayout();
         MemoryLayout elem = seq.elementLayout();
         return LayoutPath.nestedPath(elem, offset, addStride(elem.byteSize()), addBound(seq.elementCount()), derefAdapters, this);
     }
 
     public LayoutPath sequenceElement(long start, long step) {
-        check(SequenceLayout.class, "attempting to select a sequence element from a non-sequence layout");
-        SequenceLayout seq = (SequenceLayout)layout;
+        SequenceLayout seq = requireSequenceLayout();
         checkSequenceBounds(seq, start);
         MemoryLayout elem = seq.elementLayout();
         long elemSize = elem.byteSize();
@@ -122,21 +124,19 @@ public class LayoutPath {
                 start + 1;
         long maxIndex = Math.ceilDiv(nelems, Math.abs(step));
         return LayoutPath.nestedPath(elem, offset + (start * elemSize),
-                                     addStride(elemSize * step), addBound(maxIndex), derefAdapters, this);
+                addStride(elemSize * step), addBound(maxIndex), derefAdapters, this);
     }
 
     public LayoutPath sequenceElement(long index) {
-        check(SequenceLayout.class, "attempting to select a sequence element from a non-sequence layout");
-        SequenceLayout seq = (SequenceLayout)layout;
+        SequenceLayout seq = requireSequenceLayout();
         checkSequenceBounds(seq, index);
         long elemSize = seq.elementLayout().byteSize();
         long elemOffset = elemSize * index;
-        return LayoutPath.nestedPath(seq.elementLayout(), offset + elemOffset, strides, bounds, derefAdapters,this);
+        return LayoutPath.nestedPath(seq.elementLayout(), offset + elemOffset, strides, bounds, derefAdapters, this);
     }
 
     public LayoutPath groupElement(String name) {
-        check(GroupLayout.class, "attempting to select a group element from a non-group layout");
-        GroupLayout g = (GroupLayout)layout;
+        GroupLayout g = requireGroupLayout();
         long offset = 0;
         MemoryLayout elem = null;
         for (int i = 0; i < g.memberLayouts().size(); i++) {
@@ -150,20 +150,21 @@ public class LayoutPath {
             }
         }
         if (elem == null) {
-            throw badLayoutPath("cannot resolve '" + name + "' in layout " + layout);
+            throw badLayoutPath(
+                    String.format("cannot resolve '%s' in layout %s", name, breadcrumbs()));
         }
         return LayoutPath.nestedPath(elem, this.offset + offset, strides, bounds, derefAdapters, this);
     }
 
     public LayoutPath groupElement(long index) {
-        check(GroupLayout.class, "attempting to select a group element from a non-group layout");
-        GroupLayout g = (GroupLayout)layout;
+        GroupLayout g = requireGroupLayout();
         long elemSize = g.memberLayouts().size();
         long offset = 0;
         MemoryLayout elem = null;
         for (int i = 0; i <= index; i++) {
             if (i == elemSize) {
-                throw badLayoutPath("cannot resolve element " + index + " in layout " + layout);
+                throw badLayoutPath(
+                        String.format("cannot resolve element %d in layout: %s", index, breadcrumbs()));
             }
             elem = g.memberLayouts().get(i);
             if (g instanceof StructLayout && i < index) {
@@ -176,7 +177,8 @@ public class LayoutPath {
     public LayoutPath derefElement() {
         if (!(layout instanceof AddressLayout addressLayout) ||
                 addressLayout.targetLayout().isEmpty()) {
-            throw badLayoutPath("Cannot dereference layout: " + layout);
+            throw badLayoutPath(
+                    String.format("Cannot dereference layout: %s", breadcrumbs()));
         }
         MemoryLayout derefLayout = addressLayout.targetLayout().get();
         MethodHandle handle = dereferenceHandle(false).toMethodHandle(VarHandle.AccessMode.GET);
@@ -201,7 +203,8 @@ public class LayoutPath {
 
     public VarHandle dereferenceHandle(boolean adapt) {
         if (!(layout instanceof ValueLayout valueLayout)) {
-            throw new IllegalArgumentException("Path does not select a value layout");
+            throw new IllegalArgumentException(
+                    String.format("Path does not select a value layout: %s", breadcrumbs()));
         }
 
         // If we have an enclosing layout, drop the alignment check for the accessed element,
@@ -288,7 +291,9 @@ public class LayoutPath {
 
     private static void checkAlign(MemorySegment segment, long offset, MemoryLayout constraint) {
         if (!((AbstractMemorySegmentImpl) segment).isAlignedForElement(offset, constraint)) {
-            throw new IllegalArgumentException("Target offset incompatible with alignment constraints: " + constraint.byteAlignment());
+            throw new IllegalArgumentException(String.format(
+                    "Target offset %d is incompatible with alignment constraint %d (of %s) for segment %s"
+                    , offset, constraint.byteAlignment(), constraint, segment));
         }
     }
 
@@ -314,15 +319,27 @@ public class LayoutPath {
 
     // Helper methods
 
-    private void check(Class<?> layoutClass, String msg) {
+    private SequenceLayout requireSequenceLayout() {
+        return requireLayoutType(SequenceLayout.class, "sequence");
+    }
+
+    private GroupLayout requireGroupLayout() {
+        return requireLayoutType(GroupLayout.class, "group");
+    }
+
+    private <T extends MemoryLayout> T requireLayoutType(Class<T> layoutClass, String name) {
         if (!layoutClass.isAssignableFrom(layout.getClass())) {
-            throw badLayoutPath(msg);
+            throw badLayoutPath(
+                    String.format("attempting to select a %s element from a non-%s layout: %s",
+                            name, name, breadcrumbs()));
         }
+        return layoutClass.cast(layout);
     }
 
     private void checkSequenceBounds(SequenceLayout seq, long index) {
         if (index >= seq.elementCount()) {
-            throw badLayoutPath(String.format("Sequence index out of bound; found: %d, size: %d", index, seq.elementCount()));
+            throw badLayoutPath(String.format("sequence index out of bounds; index: %d, elementCount is %d for layout %s",
+                    index, seq.elementCount(), breadcrumbs()));
         }
     }
 
@@ -340,6 +357,13 @@ public class LayoutPath {
         long[] newBounds = Arrays.copyOf(bounds, bounds.length + 1);
         newBounds[bounds.length] = maxIndex;
         return newBounds;
+    }
+
+    private String breadcrumbs() {
+        return Stream.iterate(this, Objects::nonNull, lp -> lp.enclosing)
+                .map(LayoutPath::layout)
+                .map(Object::toString)
+                .collect(joining(", selected from: "));
     }
 
     /**
