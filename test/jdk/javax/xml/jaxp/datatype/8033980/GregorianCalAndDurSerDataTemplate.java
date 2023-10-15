@@ -69,17 +69,4 @@ public class GregorianCalAndDurSerDataTemplate {
                   return durationBytes;
                }
             };""";
-//    public static final String GREGO_CAL_DUR_SER_CLASS = "public class %sGregorianCalendarAndDurationSerData extends GregorianCalendarAndDurationSerData {\n" +
-//            "    %s\n" +
-//            "    %s\n" +
-//            "    @Override\n" +
-//            "    public byte[] getGregorianCalendarByteArray() {\n" +
-//            "        return gregorianCalendarBytes;\n" +
-//            "    }\n" +
-//            "\n" +
-//            "    @Override\n" +
-//            "    public byte[] getDurationBytes() {\n" +
-//            "        return durationBytes;\n" +
-//            "    }\n" +
-//            "}";
 }
