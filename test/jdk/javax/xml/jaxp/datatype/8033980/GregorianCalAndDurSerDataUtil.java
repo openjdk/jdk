@@ -32,8 +32,8 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Base64;
-import java.util.Formatter;
+import java.time.LocalDate;
+import java.util.HexFormat;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -70,6 +70,7 @@ public class GregorianCalAndDurSerDataUtil {
         DatatypeFactory dtf = DatatypeFactory.newInstance();
         XMLGregorianCalendar xmlGregorianCalendar = dtf.newXMLGregorianCalendar(EXPECTED_CAL);
         Duration duration = dtf.newDuration(EXPECTED_DURATION);
+        String copyRightStr = GregorianCalAndDurSerDataTemplate.ORACLE_COPY_RIGHT;
         String classStr = GregorianCalAndDurSerDataTemplate.GREGO_CAL_DUR_SER_CLASS;
         try(ByteArrayOutputStream baos = new ByteArrayOutputStream(); ObjectOutputStream oos = new ObjectOutputStream(baos);
             ByteArrayOutputStream baos2 = new ByteArrayOutputStream(); ObjectOutputStream oos2 = new ObjectOutputStream(baos2)) {
@@ -77,16 +78,13 @@ public class GregorianCalAndDurSerDataUtil {
             oos.writeObject(xmlGregorianCalendar);
             //Serialize the given xml Duration
             oos2.writeObject(duration);
-            // Now get a Base64 string representation of the xmlGregorianCalendar serialized bytes.
-            final String base64 = Base64.getEncoder().encodeToString(baos.toByteArray());
-            // Now get a Base64 string representation of Duration the serialized bytes.
-            final String base64dur = Base64.getEncoder().encodeToString(baos2.toByteArray());
-
             Files.deleteIfExists(Path.of(testsrc,srcFilePrefix+"GregorianCalendarAndDurationSerData.java"));
 
+            copyRightStr = String.format(copyRightStr, LocalDate.now().getYear(), JDK);
             classStr = String.format(classStr, srcFilePrefix, generatePseudoCodeForGregCalSerBytes(baos),
                     generatePseudoCodeForDurationSerBytes(baos2));
-            Files.writeString(Path.of(testsrc,srcFilePrefix+"GregorianCalendarAndDurationSerData.java"), classStr);
+            String srcStr = copyRightStr + "\n" + classStr;
+            Files.writeString(Path.of(testsrc,srcFilePrefix+"GregorianCalendarAndDurationSerData.java"), srcStr);
         }
     }
 
@@ -105,18 +103,9 @@ public class GregorianCalAndDurSerDataUtil {
      */
     public static String generatePseudoCodeForGregCalSerBytes(ByteArrayOutputStream baos) {
         byte [] bytes = baos.toByteArray();
-        StringBuilder sb2 = new StringBuilder(bytes.length * 5);
-        Formatter fmt = new Formatter(sb2);
-        fmt.format("    private final byte[] %s = {", "gregorianCalendarBytes");
-        final int linelen = 8;
-        for (int i = 0; i <bytes.length; i++) {
-            if (i % linelen == 0) {
-                fmt.format("%n        ");
-            }
-            fmt.format(" (byte) 0x%x,", bytes[i] & 0xff);
-        }
-        fmt.format("%n    };%n");
-        return sb2.toString();
+        StringBuilder sb = new StringBuilder(bytes.length * 5);
+        sb.append("private final byte[] gregorianCalendarBytes = {");
+        return generatePseudoCode(sb, bytes);
     }
 
     /**
@@ -127,16 +116,18 @@ public class GregorianCalAndDurSerDataUtil {
     public static String generatePseudoCodeForDurationSerBytes(ByteArrayOutputStream baos) {
         byte [] bytesdur = baos.toByteArray();
         StringBuilder sb = new StringBuilder(bytesdur.length * 5);
-        Formatter fmt = new Formatter(sb);
-        fmt.format("    private final byte[] %s = {", "durationBytes");
-        final int linelen2 = 8;
-        for (int i = 0; i <bytesdur.length; i++) {
-            if (i % linelen2 == 0) {
-                fmt.format("%n        ");
-            }
-            fmt.format(" (byte) 0x%x,", bytesdur[i] & 0xff);
+        sb.append("private final byte[] durationBytes = {");
+        return generatePseudoCode(sb, bytesdur);
+    }
+
+    private static String generatePseudoCode(StringBuilder sb, byte [] bytes) {
+        final int linelen = 8;
+        HexFormat hex = HexFormat.of().withPrefix(" (byte) 0x").withSuffix(",");
+        for (int i = 0; i < bytes.length; i += linelen) {
+            sb.append("\n");
+            sb.append(hex.formatHex(bytes, i, Math.min(i + linelen, bytes.length)));
         }
-        fmt.format("%n    };%n");
+        sb.append("};");
         return sb.toString();
     }
 }

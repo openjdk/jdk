@@ -121,10 +121,10 @@ public class SerializationTest {
 
     public Stream<Arguments> durationData() {
         return Stream.of(Arguments.of(JDK[0], gregorianCalendarAndDurationSerData[0], EXPECTED_DURATION),
-                Arguments.of(JDK[0], gregorianCalendarAndDurationSerData[1], EXPECTED_DURATION),
-                Arguments.of(JDK[1], gregorianCalendarAndDurationSerData[2], EXPECTED_DURATION),
-                Arguments.of(JDK[2], gregorianCalendarAndDurationSerData[3], EXPECTED_DURATION),
-                Arguments.of(JDK[3], gregorianCalendarAndDurationSerData[4], EXPECTED_DURATION));
+                Arguments.of(JDK[1], gregorianCalendarAndDurationSerData[1], EXPECTED_DURATION),
+                Arguments.of(JDK[2], gregorianCalendarAndDurationSerData[2], EXPECTED_DURATION),
+                Arguments.of(JDK[3], gregorianCalendarAndDurationSerData[3], EXPECTED_DURATION),
+                Arguments.of(JDK[4], gregorianCalendarAndDurationSerData[4], EXPECTED_DURATION));
     }
 
     /**
