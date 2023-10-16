@@ -4489,7 +4489,7 @@ public final class Formatter implements Closeable, Flushable {
                     break;
                 }
                 case DateTime.ISO_STANDARD_DATE: { // 'F' (%Y-%m-%d)
-                    // ISO_STANDAR_DTE does not need to deal with Locale
+                    // ISO_STANDARD_DATE does not need to deal with Locale
                     int year = t.get(ChronoField.YEAR);
                     int month = t.get(ChronoField.MONTH_OF_YEAR);
                     int dayOfMonth = t.get(ChronoField.DAY_OF_MONTH);
