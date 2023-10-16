@@ -180,6 +180,11 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         }
     }
 
+    // some ABIs have special handling for struct members
+    protected void checkStructMember(MemoryLayout member, long offset) {
+        checkLayoutRecursive(member);
+    }
+
     private void checkLayoutRecursive(MemoryLayout layout) {
         if (layout instanceof ValueLayout vl) {
             checkSupported(vl);
@@ -191,7 +196,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                 // check element offset before recursing so that an error points at the
                 // outermost layout first
                 checkMemberOffset(sl, member, lastUnpaddedOffset, offset);
-                checkLayoutRecursive(member);
+                checkStructMember(member, offset);
 
                 offset += member.byteSize();
                 if (!(member instanceof PaddingLayout)) {

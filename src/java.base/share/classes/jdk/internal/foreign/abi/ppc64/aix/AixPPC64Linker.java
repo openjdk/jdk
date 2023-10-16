@@ -36,19 +36,12 @@ import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.nio.ByteOrder;
-import java.util.HashMap;
 import java.util.Map;
 
 public final class AixPPC64Linker extends AbstractLinker {
 
-    static final Map<String, MemoryLayout> CANONICAL_LAYOUTS;
-
-    static {
-        HashMap<String, MemoryLayout> layouts = new HashMap<>();
-        layouts.putAll(SharedUtils.canonicalLayouts(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT));
-        layouts.put("double", ValueLayout.JAVA_DOUBLE.withByteAlignment(4));
-        CANONICAL_LAYOUTS = Map.copyOf(layouts);
-    }
+    static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
+            SharedUtils.canonicalLayouts(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT);
 
     public static AixPPC64Linker getInstance() {
         final class Holder {
@@ -60,6 +53,21 @@ public final class AixPPC64Linker extends AbstractLinker {
 
     private AixPPC64Linker() {
         // Ensure there is only one instance
+    }
+
+    @Override
+    protected void checkStructMember(MemoryLayout member, long offset) {
+        // special case double members that are not the first member
+        // see: https://www.ibm.com/docs/en/xl-c-and-cpp-aix/16.1?topic=data-using-alignment-modes
+        // Note: It is possible to enforce 8-byte alignment by #pragma align (natural)
+        // Therefore, we use normal checks if we are already 8-byte aligned.
+        if ((offset % 8 != 0) && (member instanceof ValueLayout vl && vl.carrier() == double.class)) {
+            if (vl.byteAlignment() != 4) {
+                throw new IllegalArgumentException("double struct member " + vl + " at offset " + offset + " should be 4-byte aligned");
+            }
+        } else {
+            super.checkStructMember(member, offset);
+        }
     }
 
     @Override
