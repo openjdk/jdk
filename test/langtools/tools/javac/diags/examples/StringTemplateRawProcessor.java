@@ -25,7 +25,6 @@
  // key: compiler.note.preview.recompile
  // key: compiler.misc.unexpected.ret.val
  // key: compiler.err.prob.found.req
- // key: compiler.err.processor.type.cannot.be.a.raw.type
  // options: --enable-preview -source ${jdk.version}
 
 import java.lang.*;

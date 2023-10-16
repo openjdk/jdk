@@ -93,7 +93,7 @@ import jdk.internal.javac.PreviewFeature;
  *         );
  * }
  *
- * @since 21
+ * @since 22
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 public final class TemplateRuntime {

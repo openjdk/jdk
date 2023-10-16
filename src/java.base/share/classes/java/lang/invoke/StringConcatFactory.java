@@ -116,7 +116,7 @@ public final class StringConcatFactory {
      * we do not use all those slots, to let the strategies with MethodHandle
      * combinators to use some arguments.
      *
-     * @since 21
+     * @since 22
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     public static final int MAX_INDY_CONCAT_ARG_SLOTS;
@@ -1057,7 +1057,7 @@ public final class StringConcatFactory {
      * @throws NullPointerException If any of the incoming arguments is null.
      * @throws IllegalArgumentException If the number of value slots exceed {@link #MAX_INDY_CONCAT_ARG_SLOTS}.
      *
-     * @since 21
+     * @since 22
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     public static MethodHandle makeConcatWithTemplate(
@@ -1188,7 +1188,7 @@ public final class StringConcatFactory {
      * @throws NullPointerException If any of the incoming arguments is null.
      * @throws IllegalArgumentException If the number of value slots exceed {@link #MAX_INDY_CONCAT_ARG_SLOTS}.
      *
-     * @since 21
+     * @since 22
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     public static List<MethodHandle> makeConcatWithTemplateCluster(
@@ -1265,7 +1265,7 @@ public final class StringConcatFactory {
      * @throws NullPointerException If any of the incoming arguments is null
      * @throws IllegalArgumentException If the number of value slots exceed {@link #MAX_INDY_CONCAT_ARG_SLOTS}.
      *
-     * @since 21
+     * @since 22
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     public static MethodHandle makeConcatWithTemplateGetters(

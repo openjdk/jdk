@@ -1679,25 +1679,20 @@ public class Flow {
         @Override
         public void visitStringTemplate(JCStringTemplate tree) {
             JCExpression processor = tree.processor;
+            Type processMethodType = getProcessMethodType(tree, processor.type);
 
-            if (processor != null) {
-                scan(processor);
-                Type interfaceType = types.asSuper(processor.type, syms.processorType.tsym);
-
-                if (interfaceType != null) {
-                    List<Type> typeArguments = interfaceType.getTypeArguments();
-
-                    if (typeArguments.size() == 2) {
-                        Type throwType = typeArguments.tail.head;
-
-                        if (throwType != null) {
-                            markThrown(tree, throwType);
-                        }
-                    }
-                }
+            for (Type thrown : processMethodType.getThrownTypes()) {
+                markThrown(tree, thrown);
             }
 
             scan(tree.expressions);
+        }
+
+        private Type getProcessMethodType(JCStringTemplate tree, Type processorType) {
+            MethodSymbol processSymbol = rs.resolveInternalMethod(tree.pos(),
+                    attrEnv, types.skipTypeVars(processorType, false),
+                    names.process, List.of(syms.stringTemplateType), List.nil());
+            return types.memberType(processorType, processSymbol);
         }
 
         void checkCaughtType(DiagnosticPosition pos, Type exc, List<Type> thrownInTry, List<Type> caughtInTry) {

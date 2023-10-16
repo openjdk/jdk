@@ -265,8 +265,7 @@ public final class TransLiterals extends TreeTranslator {
         }
 
         boolean isLinkageProcessor() {
-            return processor != null &&
-                   !useValuesList &&
+            return !useValuesList &&
                    types.isSubtype(processor.type, syms.linkageType) &&
                    processor.type.isFinal() &&
                    TreeInfo.symbol(processor) instanceof VarSymbol varSymbol &&
@@ -278,7 +277,7 @@ public final class TransLiterals extends TreeTranslator {
             JCExpression result;
             make.at(tree.pos);
 
-            if (processor == null || isNamedProcessor(names.RAW)) {
+            if (isNamedProcessor(names.RAW)) {
                 result = newStringTemplate();
             } else if (isNamedProcessor(names.STR)) {
                 result = concatExpression(fragments, expressions);

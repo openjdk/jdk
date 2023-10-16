@@ -419,18 +419,21 @@ public interface JavaLangAccess {
 
    /**
     * Get the coder for the supplied character.
+    * @since 22
     */
    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
    long stringConcatCoder(char value);
 
    /**
     * Update lengthCoder for StringBuilder.
+    * @since 22
     */
    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
    long stringBuilderConcatMix(long lengthCoder, StringBuilder sb);
 
     /**
      * Prepend StringBuilder content.
+     * @since 22
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
    long stringBuilderConcatPrepend(long lengthCoder, byte[] buf, StringBuilder sb);
