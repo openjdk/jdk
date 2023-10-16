@@ -276,10 +276,10 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
 
     // Supplement to 8139891: _intrinsic_id exceeded 1-byte size limit.
     if (Method::intrinsic_id_size_in_bytes() == 1) {
-      __ z_cli(Address(Z_method, Method::intrinsic_id_offset_in_bytes()), (int)iid);
+      __ z_cli(Address(Z_method, Method::intrinsic_id_offset()), (int)iid);
     } else {
       assert(Method::intrinsic_id_size_in_bytes() == 2, "size error: check Method::_intrinsic_id");
-      __ z_lh(Z_R0_scratch, Address(Z_method, Method::intrinsic_id_offset_in_bytes()));
+      __ z_lh(Z_R0_scratch, Address(Z_method, Method::intrinsic_id_offset()));
       __ z_chi(Z_R0_scratch, (int)iid);
     }
     __ z_bre(L);
@@ -349,7 +349,16 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
 
 void MethodHandles::jump_to_native_invoker(MacroAssembler* _masm, Register nep_reg, Register temp_target) {
   BLOCK_COMMENT("jump_to_native_invoker {");
-  __ should_not_reach_here();
+  assert(nep_reg != noreg, "required register");
+
+  // Load the invoker, as NEP -> .invoker
+  __ verify_oop(nep_reg);
+
+  __ z_lg(temp_target, Address(nep_reg,
+        NONZERO(jdk_internal_foreign_abi_NativeEntryPoint::downcall_stub_address_offset_in_bytes())));
+
+  __ z_br(temp_target);
+
   BLOCK_COMMENT("} jump_to_native_invoker");
 }
 
@@ -387,6 +396,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   } else if (iid == vmIntrinsics::_linkToNative) {
     assert(for_compiler_entry, "only compiler entry is supported");
     jump_to_native_invoker(_masm, member_reg, temp1);
+    return;
   }
 
   // The method is a member invoker used by direct method handles.

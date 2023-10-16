@@ -380,13 +380,17 @@ static void write_repository_files(const RepositoryIterator& iterator, char* con
         const ssize_t read_result = os::read_at(current_fd, copy_block, (int)block_size, bytes_read);
         if (-1 == read_result) {
           log_info(jfr)( // For user, should not be "jfr, system"
-              "Unable to recover JFR data");
+              "Unable to recover JFR data, read failed.");
           break;
         }
         bytes_read += (int64_t)read_result;
         assert(bytes_read - bytes_written <= (int64_t)block_size, "invariant");
-        bytes_written += (int64_t)os::write(emergency_fd, copy_block, bytes_read - bytes_written);
-        assert(bytes_read == bytes_written, "invariant");
+        if (!os::write(emergency_fd, copy_block, bytes_read - bytes_written)) {
+          log_info(jfr)( // For user, should not be "jfr, system"
+              "Unable to recover JFR data, write failed.");
+          break;
+        }
+        bytes_written = bytes_read;
       }
       ::close(current_fd);
     }

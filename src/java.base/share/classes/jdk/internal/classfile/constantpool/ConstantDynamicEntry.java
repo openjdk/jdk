@@ -25,7 +25,7 @@
 package jdk.internal.classfile.constantpool;
 
 import jdk.internal.classfile.TypeKind;
-import java.lang.constant.ClassDesc;
+import jdk.internal.classfile.impl.Util;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DynamicConstantDesc;
 
@@ -34,6 +34,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 /**
  * Models a {@code CONSTANT_Dynamic_info} constant in the constant pool of a
  * classfile.
+ * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
  */
 public sealed interface ConstantDynamicEntry
         extends DynamicConstantPoolEntry, LoadableConstantEntry
@@ -50,7 +51,7 @@ public sealed interface ConstantDynamicEntry
     default DynamicConstantDesc<?> asSymbol() {
         return DynamicConstantDesc.ofNamed(bootstrap().bootstrapMethod().asSymbol(),
                                            name().stringValue(),
-                                           ClassDesc.ofDescriptor(type().stringValue()),
+                                           Util.fieldTypeSymbol(nameAndType()),
                                            bootstrap().arguments().stream()
                                                       .map(LoadableConstantEntry::constantValue)
                                                       .toArray(ConstantDesc[]::new));

@@ -67,7 +67,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
-    static final ValueLayout.Of$Type$ ELEMENT_LAYOUT = ValueLayout.JAVA_$TYPE$.withBitAlignment(8);
+    static final ValueLayout.Of$Type$ ELEMENT_LAYOUT = ValueLayout.JAVA_$TYPE$.withByteAlignment(1);
 
 #if[MaxBit]
     static VectorShape getMaxBit() {

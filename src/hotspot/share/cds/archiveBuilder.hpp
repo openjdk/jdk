@@ -123,20 +123,17 @@ public:
 
 private:
   class SourceObjInfo {
-    MetaspaceClosure::Ref* _ref; // The object that's copied into the buffer
     uintx _ptrmap_start;     // The bit-offset of the start of this object (inclusive)
     uintx _ptrmap_end;       // The bit-offset of the end   of this object (exclusive)
     bool _read_only;
     FollowMode _follow_mode;
     int _size_in_bytes;
     MetaspaceObj::Type _msotype;
-    address _source_addr;    // The value of the source object (_ref->obj()) when this
-                             // SourceObjInfo was created. Note that _ref->obj() may change
-                             // later if _ref is relocated.
-    address _buffered_addr;  // The copy of _ref->obj() insider the buffer.
+    address _source_addr;    // The source object to be copied.
+    address _buffered_addr;  // The copy of this object insider the buffer.
   public:
     SourceObjInfo(MetaspaceClosure::Ref* ref, bool read_only, FollowMode follow_mode) :
-      _ref(ref), _ptrmap_start(0), _ptrmap_end(0), _read_only(read_only), _follow_mode(follow_mode),
+      _ptrmap_start(0), _ptrmap_end(0), _read_only(read_only), _follow_mode(follow_mode),
       _size_in_bytes(ref->size() * BytesPerWord), _msotype(ref->msotype()),
       _source_addr(ref->obj()) {
       if (follow_mode == point_to_it) {
@@ -146,8 +143,16 @@ private:
       }
     }
 
+    // This constructor is only used for regenerated objects (created by LambdaFormInvokers, etc).
+    //   src = address of a Method or InstanceKlass that has been regenerated.
+    //   renegerated_obj_info = info for the regenerated version of src.
+    SourceObjInfo(address src, SourceObjInfo* renegerated_obj_info) :
+      _ptrmap_start(0), _ptrmap_end(0), _read_only(false),
+      _follow_mode(renegerated_obj_info->_follow_mode),
+      _size_in_bytes(0), _msotype(renegerated_obj_info->_msotype),
+      _source_addr(src),  _buffered_addr(renegerated_obj_info->_buffered_addr) {}
+
     bool should_copy() const { return _follow_mode == make_a_copy; }
-    MetaspaceClosure::Ref* ref() const { return  _ref; }
     void set_buffered_addr(address addr)  {
       assert(should_copy(), "must be");
       assert(_buffered_addr == nullptr, "cannot be copied twice");
@@ -161,11 +166,13 @@ private:
     bool read_only()      const    { return _read_only;    }
     int size_in_bytes()   const    { return _size_in_bytes; }
     address source_addr() const    { return _source_addr; }
-    address buffered_addr() const  { return _buffered_addr; }
+    address buffered_addr() const  {
+      if (_follow_mode != set_to_null) {
+        assert(_buffered_addr != nullptr, "must be initialized");
+      }
+      return _buffered_addr;
+    }
     MetaspaceObj::Type msotype() const { return _msotype; }
-
-    // convenience accessor
-    address obj() const { return ref()->obj(); }
   };
 
   class SourceObjList {
@@ -179,20 +186,12 @@ private:
 
     GrowableArray<SourceObjInfo*>* objs() const { return _objs; }
 
-    void append(MetaspaceClosure::Ref* enclosing_ref, SourceObjInfo* src_info);
+    void append(SourceObjInfo* src_info);
     void remember_embedded_pointer(SourceObjInfo* pointing_obj, MetaspaceClosure::Ref* ref);
     void relocate(int i, ArchiveBuilder* builder);
 
     // convenience accessor
     SourceObjInfo* at(int i) const { return objs()->at(i); }
-  };
-
-  class SrcObjTableCleaner {
-  public:
-    bool do_entry(address key, const SourceObjInfo& value) {
-      delete value.ref();
-      return true;
-    }
   };
 
   class CDSMapLogger;
@@ -242,7 +241,6 @@ private:
   FollowMode get_follow_mode(MetaspaceClosure::Ref *ref);
 
   void iterate_sorted_roots(MetaspaceClosure* it);
-  void sort_symbols_and_fix_hash();
   void sort_klasses();
   static int compare_symbols_by_address(Symbol** a, Symbol** b);
   static int compare_klass_by_name(Klass** a, Klass** b);
@@ -340,8 +338,9 @@ public:
   void gather_klasses_and_symbols();
   void gather_source_objs();
   bool gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool read_only);
-  bool gather_one_source_obj(MetaspaceClosure::Ref* enclosing_ref, MetaspaceClosure::Ref* ref, bool read_only);
-  void remember_embedded_pointer_in_gathered_obj(MetaspaceClosure::Ref* enclosing_ref, MetaspaceClosure::Ref* ref);
+  bool gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read_only);
+  void remember_embedded_pointer_in_enclosing_obj(MetaspaceClosure::Ref* ref);
+  static void serialize_dynamic_archivable_items(SerializeClosure* soc);
 
   DumpRegion* rw_region() { return &_rw_region; }
   DumpRegion* ro_region() { return &_ro_region; }
@@ -378,6 +377,7 @@ public:
   void dump_rw_metadata();
   void dump_ro_metadata();
   void relocate_metaspaceobj_embedded_pointers();
+  void record_regenerated_object(address orig_src_obj, address regen_src_obj);
   void make_klasses_shareable();
   void relocate_to_requested();
   void write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_info);

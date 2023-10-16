@@ -56,7 +56,7 @@ public class IntMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
-    static final ValueLayout.OfInt ELEMENT_LAYOUT = ValueLayout.JAVA_INT.withBitAlignment(8);
+    static final ValueLayout.OfInt ELEMENT_LAYOUT = ValueLayout.JAVA_INT.withByteAlignment(1);
 
     static VectorShape getMaxBit() {
         return VectorShape.S_Max_BIT;

@@ -2,6 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8202056
  * @compile/ref=CtorAccess.out -XDrawDiagnostics -Xlint:serial CtorAccess.java
+ * @compile/ref=empty.out      -XDrawDiagnostics               CtorAccess.java
  */
 
 import java.io.*;

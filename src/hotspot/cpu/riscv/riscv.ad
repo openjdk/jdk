@@ -705,11 +705,6 @@ reg_class method_reg(
     R31, R31_H
 );
 
-// Class for heapbase register
-reg_class heapbase_reg(
-    R27, R27_H
-);
-
 // Class for java thread register
 reg_class java_thread_reg(
     R23, R23_H
@@ -909,6 +904,36 @@ reg_class v5_reg(
     V5, V5_H, V5_J, V5_K
 );
 
+// class for vector register v6
+reg_class v6_reg(
+    V6, V6_H, V6_J, V6_K
+);
+
+// class for vector register v7
+reg_class v7_reg(
+    V7, V7_H, V7_J, V7_K
+);
+
+// class for vector register v8
+reg_class v8_reg(
+    V8, V8_H, V8_J, V8_K
+);
+
+// class for vector register v9
+reg_class v9_reg(
+    V9, V9_H, V9_J, V9_K
+);
+
+// class for vector register v10
+reg_class v10_reg(
+    V10, V10_H, V10_J, V10_K
+);
+
+// class for vector register v11
+reg_class v11_reg(
+    V11, V11_H, V11_J, V11_K
+);
+
 // class for condition codes
 reg_class reg_flags(RFLAGS);
 
@@ -1077,15 +1102,15 @@ void reg_mask_init() {
   // x27 is not allocatable when compressed oops is on
   if (UseCompressedOops) {
     _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(x27->as_VMReg()));
-    _NO_SPECIAL_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
-    _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
+    _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(x27->as_VMReg()));
+    _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(x27->as_VMReg()));
   }
 
   // x8 is not allocatable when PreserveFramePointer is on
   if (PreserveFramePointer) {
     _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
-    _NO_SPECIAL_REG_mask.SUBTRACT(_FP_REG_mask);
-    _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_FP_REG_mask);
+    _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
+    _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
   }
 }
 
@@ -1847,7 +1872,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
 
 //=============================================================================
 
-const bool Matcher::match_rule_supported(int opcode) {
+bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode)) {
     return false;
   }
@@ -1882,88 +1907,14 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_CountTrailingZerosI:
     case Op_CountTrailingZerosL:
       return UseZbb;
+    case Op_FmaF:
+    case Op_FmaD:
+    case Op_FmaVF:
+    case Op_FmaVD:
+      return UseFMA;
   }
 
   return true; // Per default match rules are supported.
-}
-
-const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
-  return match_rule_supported_vector(opcode, vlen, bt);
-}
-
-// Identify extra cases that we might want to provide match rules for vector nodes and
-// other intrinsics guarded with vector length (vlen) and element type (bt).
-const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
-  if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
-    return false;
-  }
-
-  return op_vec_supported(opcode);
-}
-
-const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
-  if (!UseRVV) {
-    return false;
-  }
-  switch (opcode) {
-    case Op_AddVB:
-    case Op_AddVS:
-    case Op_AddVI:
-    case Op_AddVL:
-    case Op_AddVF:
-    case Op_AddVD:
-    case Op_SubVB:
-    case Op_SubVS:
-    case Op_SubVI:
-    case Op_SubVL:
-    case Op_SubVF:
-    case Op_SubVD:
-    case Op_MulVB:
-    case Op_MulVS:
-    case Op_MulVI:
-    case Op_MulVL:
-    case Op_MulVF:
-    case Op_MulVD:
-    case Op_DivVF:
-    case Op_DivVD:
-    case Op_VectorLoadMask:
-    case Op_VectorMaskCmp:
-    case Op_AndVMask:
-    case Op_XorVMask:
-    case Op_OrVMask:
-    case Op_RShiftVB:
-    case Op_RShiftVS:
-    case Op_RShiftVI:
-    case Op_RShiftVL:
-    case Op_LShiftVB:
-    case Op_LShiftVS:
-    case Op_LShiftVI:
-    case Op_LShiftVL:
-    case Op_URShiftVB:
-    case Op_URShiftVS:
-    case Op_URShiftVI:
-    case Op_URShiftVL:
-    case Op_VectorBlend:
-    case Op_VectorReinterpret:
-      break;
-    case Op_LoadVector:
-      opcode = Op_LoadVectorMasked;
-      break;
-    case Op_StoreVector:
-      opcode = Op_StoreVectorMasked;
-      break;
-    default:
-      return false;
-  }
-  return match_rule_supported_vector(opcode, vlen, bt);
-}
-
-const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
-  return false;
-}
-
-const bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
-  return false;
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {
@@ -1975,7 +1926,7 @@ const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) 
 }
 
 // Vector calling convention not yet implemented.
-const bool Matcher::supports_vector_calling_convention(void) {
+bool Matcher::supports_vector_calling_convention(void) {
   return false;
 }
 
@@ -2008,7 +1959,7 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
 }
 
 // Vector width in bytes.
-const int Matcher::vector_width_in_bytes(BasicType bt) {
+int Matcher::vector_width_in_bytes(BasicType bt) {
   if (UseRVV) {
     // The MaxVectorSize should have been set by detecting RVV max vector register size when check UseRVV.
     // MaxVectorSize == VM_Version::_initial_vector_length
@@ -2023,11 +1974,11 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
 }
 
 // Limits on vector size (number of elements) loaded into vector.
-const int Matcher::max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size(const BasicType bt) {
   return vector_width_in_bytes(bt) / type2aelembytes(bt);
 }
 
-const int Matcher::min_vector_size(const BasicType bt) {
+int Matcher::min_vector_size(const BasicType bt) {
   int max_size = max_vector_size(bt);
   // Limit the min vector size to 8 bytes.
   int size = 8 / type2aelembytes(bt);
@@ -2042,12 +1993,12 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return MIN2(size, max_size);
 }
 
-const int Matcher::superword_max_vector_size(const BasicType bt) {
+int Matcher::superword_max_vector_size(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
 // Vector ideal reg.
-const uint Matcher::vector_ideal_reg(int len) {
+uint Matcher::vector_ideal_reg(int len) {
   assert(MaxVectorSize >= len, "");
   if (UseRVV) {
     return Op_VecA;
@@ -2057,7 +2008,7 @@ const uint Matcher::vector_ideal_reg(int len) {
   return 0;
 }
 
-const int Matcher::scalable_vector_reg_size(const BasicType bt) {
+int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
@@ -2230,7 +2181,7 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
 encode %{
   // BEGIN Non-volatile memory access
 
-  enc_class riscv_enc_li_imm(iRegIorL dst, immIorL src) %{
+  enc_class riscv_enc_mov_imm(iRegIorL dst, immIorL src) %{
     C2_MacroAssembler _masm(&cbuf);
     int64_t con = (int64_t)$src$$constant;
     Register dst_reg = as_Register($dst$$reg);
@@ -2483,223 +2434,6 @@ encode %{
       __ post_call_nop();
       __ addi(sp, sp, 2 * wordSize);
     }
-  %}
-
-  // Use cr register to indicate the fast_lock result: zero for success; non-zero for failure.
-  enc_class riscv_enc_fast_lock(iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2) %{
-    C2_MacroAssembler _masm(&cbuf);
-    Register flag = t1;
-    Register oop = as_Register($object$$reg);
-    Register box = as_Register($box$$reg);
-    Register disp_hdr = as_Register($tmp1$$reg);
-    Register tmp = as_Register($tmp2$$reg);
-    Label cont;
-    Label object_has_monitor;
-    Label count, no_count;
-
-    assert_different_registers(oop, box, tmp, disp_hdr, t0);
-
-    // Load markWord from object into displaced_header.
-    __ ld(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
-
-    if (DiagnoseSyncOnValueBasedClasses != 0) {
-      __ load_klass(flag, oop);
-      __ lwu(flag, Address(flag, Klass::access_flags_offset()));
-      __ test_bit(flag, flag, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS), tmp /* tmp */);
-      __ bnez(flag, cont, true /* is_far */);
-    }
-
-    // Check for existing monitor
-    __ test_bit(t0, disp_hdr, exact_log2(markWord::monitor_value));
-    __ bnez(t0, object_has_monitor);
-
-    if (LockingMode == LM_MONITOR) {
-      __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow-path
-      __ j(cont);
-    } else if (LockingMode == LM_LEGACY) {
-      // Set tmp to be (markWord of object | UNLOCK_VALUE).
-      __ ori(tmp, disp_hdr, markWord::unlocked_value);
-
-      // Initialize the box. (Must happen before we update the object mark!)
-      __ sd(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
-      // Compare object markWord with an unlocked value (tmp) and if
-      // equal exchange the stack address of our box with object markWord.
-      // On failure disp_hdr contains the possibly locked markWord.
-      __ cmpxchg(/*memory address*/oop, /*expected value*/tmp, /*new value*/box, Assembler::int64, Assembler::aq,
-                 Assembler::rl, /*result*/disp_hdr);
-      __ mv(flag, zr);
-      __ beq(disp_hdr, tmp, cont); // prepare zero flag and goto cont if we won the cas
-
-      assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-
-      // If the compare-and-exchange succeeded, then we found an unlocked
-      // object, will have now locked it will continue at label cont
-      // We did not see an unlocked object so try the fast recursive case.
-
-      // Check if the owner is self by comparing the value in the
-      // markWord of object (disp_hdr) with the stack pointer.
-      __ sub(disp_hdr, disp_hdr, sp);
-      __ mv(tmp, (intptr_t) (~(os::vm_page_size()-1) | (uintptr_t)markWord::lock_mask_in_place));
-      // If (mark & lock_mask) == 0 and mark - sp < page_size, we are stack-locking and goto cont,
-      // hence we can store 0 as the displaced header in the box, which indicates that it is a
-      // recursive lock.
-      __ andr(tmp/*==0?*/, disp_hdr, tmp);
-      __ sd(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-      __ mv(flag, tmp); // we can use the value of tmp as the result here
-      __ j(cont);
-    } else {
-      assert(LockingMode == LM_LIGHTWEIGHT, "");
-      Label slow;
-      __ fast_lock(oop, disp_hdr, tmp, t0, slow);
-
-      // Indicate success on completion.
-      __ mv(flag, zr);
-      __ j(count);
-      __ bind(slow);
-      __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow-path
-      __ j(no_count);
-    }
-
-    // Handle existing monitor.
-    __ bind(object_has_monitor);
-    // The object's monitor m is unlocked iff m->owner == NULL,
-    // otherwise m->owner may contain a thread or a stack address.
-    //
-    // Try to CAS m->owner from NULL to current thread.
-    __ add(tmp, disp_hdr, (ObjectMonitor::owner_offset_in_bytes() - markWord::monitor_value));
-    __ cmpxchg(/*memory address*/tmp, /*expected value*/zr, /*new value*/xthread, Assembler::int64, Assembler::aq,
-             Assembler::rl, /*result*/flag); // cas succeeds if flag == zr(expected)
-
-    if (LockingMode != LM_LIGHTWEIGHT) {
-      // Store a non-null value into the box to avoid looking like a re-entrant
-      // lock. The fast-path monitor unlock code checks for
-      // markWord::monitor_value so use markWord::unused_mark which has the
-      // relevant bit set, and also matches ObjectSynchronizer::slow_enter.
-      __ mv(tmp, (address)markWord::unused_mark().value());
-      __ sd(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-    }
-
-    __ beqz(flag, cont); // CAS success means locking succeeded
-
-    __ bne(flag, xthread, cont); // Check for recursive locking
-
-    // Recursive lock case
-    __ mv(flag, zr);
-    __ increment(Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value), 1, t0, tmp);
-
-    __ bind(cont);
-    // zero flag indicates success
-    // non-zero flag indicates failure
-    __ bnez(flag, no_count);
-
-    __ bind(count);
-    __ increment(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp);
-
-    __ bind(no_count);
-  %}
-
-  // Use cr register to indicate the fast_unlock result: zero for success; non-zero for failure.
-  enc_class riscv_enc_fast_unlock(iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2) %{
-    C2_MacroAssembler _masm(&cbuf);
-    Register flag = t1;
-    Register oop = as_Register($object$$reg);
-    Register box = as_Register($box$$reg);
-    Register disp_hdr = as_Register($tmp1$$reg);
-    Register tmp = as_Register($tmp2$$reg);
-    Label cont;
-    Label object_has_monitor;
-    Label count, no_count;
-
-    assert_different_registers(oop, box, tmp, disp_hdr, flag);
-
-    if (LockingMode == LM_LEGACY) {
-      // Find the lock address and load the displaced header from the stack.
-      __ ld(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
-      // If the displaced header is 0, we have a recursive unlock.
-      __ mv(flag, disp_hdr);
-      __ beqz(disp_hdr, cont);
-    }
-
-    // Handle existing monitor.
-    __ ld(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
-    __ test_bit(t0, tmp, exact_log2(markWord::monitor_value));
-    __ bnez(t0, object_has_monitor);
-
-    if (LockingMode == LM_MONITOR) {
-      __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow path
-      __ j(cont);
-    } else if (LockingMode == LM_LEGACY) {
-      // Check if it is still a light weight lock, this is true if we
-      // see the stack address of the basicLock in the markWord of the
-      // object.
-
-      __ cmpxchg(/*memory address*/oop, /*expected value*/box, /*new value*/disp_hdr, Assembler::int64, Assembler::relaxed,
-                 Assembler::rl, /*result*/tmp);
-      __ xorr(flag, box, tmp); // box == tmp if cas succeeds
-      __ j(cont);
-    } else {
-      assert(LockingMode == LM_LIGHTWEIGHT, "");
-      Label slow;
-      __ fast_unlock(oop, tmp, box, disp_hdr, slow);
-
-      // Indicate success on completion.
-      __ mv(flag, zr);
-      __ j(count);
-      __ bind(slow);
-      __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow path
-      __ j(no_count);
-    }
-
-    assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-
-    // Handle existing monitor.
-    __ bind(object_has_monitor);
-    STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
-    __ add(tmp, tmp, -(int)markWord::monitor_value); // monitor
-
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      // If the owner is anonymous, we need to fix it -- in an outline stub.
-      Register tmp2 = disp_hdr;
-      __ ld(tmp2, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
-      __ test_bit(t0, tmp2, exact_log2(ObjectMonitor::ANONYMOUS_OWNER));
-      C2HandleAnonOMOwnerStub* stub = new (Compile::current()->comp_arena()) C2HandleAnonOMOwnerStub(tmp, tmp2);
-      Compile::current()->output()->add_stub(stub);
-      __ bnez(t0, stub->entry(), /* is_far */ true);
-      __ bind(stub->continuation());
-    }
-
-    __ ld(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
-
-    Label notRecursive;
-    __ beqz(disp_hdr, notRecursive); // Will be 0 if not recursive.
-
-    // Recursive lock
-    __ addi(disp_hdr, disp_hdr, -1);
-    __ sd(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
-    __ mv(flag, zr);
-    __ j(cont);
-
-    __ bind(notRecursive);
-    __ ld(flag, Address(tmp, ObjectMonitor::EntryList_offset_in_bytes()));
-    __ ld(disp_hdr, Address(tmp, ObjectMonitor::cxq_offset_in_bytes()));
-    __ orr(flag, flag, disp_hdr); // Will be 0 if both are 0.
-    __ bnez(flag, cont);
-    // need a release store here
-    __ la(tmp, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
-    __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-    __ sd(zr, Address(tmp)); // set unowned
-
-    __ bind(cont);
-    // zero flag indicates success
-    // non-zero flag indicates failure
-    __ bnez(flag, no_count);
-
-    __ bind(count);
-    __ decrement(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp);
-
-    __ bind(no_count);
   %}
 
   // arithmetic encodings
@@ -3586,16 +3320,6 @@ operand iRegNNoSp()
   interface(REG_INTER);
 %}
 
-// heap base register -- used for encoding immN0
-operand iRegIHeapbase()
-%{
-  constraint(ALLOC_IN_RC(heapbase_reg));
-  match(RegI);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 // Long 64 bit Register R10 only
 operand iRegL_R10()
 %{
@@ -3685,6 +3409,66 @@ operand vReg_V4()
 operand vReg_V5()
 %{
   constraint(ALLOC_IN_RC(v5_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V6()
+%{
+  constraint(ALLOC_IN_RC(v6_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V7()
+%{
+  constraint(ALLOC_IN_RC(v7_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V8()
+%{
+  constraint(ALLOC_IN_RC(v8_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V9()
+%{
+  constraint(ALLOC_IN_RC(v9_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V10()
+%{
+  constraint(ALLOC_IN_RC(v10_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V11()
+%{
+  constraint(ALLOC_IN_RC(v11_reg));
   match(VecA);
   match(vReg);
   op_cost(0);
@@ -4969,9 +4753,9 @@ instruct loadConI(iRegINoSp dst, immI src)
   match(Set dst src);
 
   ins_cost(ALU_COST);
-  format %{ "li $dst, $src\t# int, #@loadConI" %}
+  format %{ "mv $dst, $src\t# int, #@loadConI" %}
 
-  ins_encode(riscv_enc_li_imm(dst, src));
+  ins_encode(riscv_enc_mov_imm(dst, src));
 
   ins_pipe(ialu_imm);
 %}
@@ -4982,9 +4766,9 @@ instruct loadConL(iRegLNoSp dst, immL src)
   match(Set dst src);
 
   ins_cost(ALU_COST);
-  format %{ "li $dst, $src\t# long, #@loadConL" %}
+  format %{ "mv $dst, $src\t# long, #@loadConL" %}
 
-  ins_encode(riscv_enc_li_imm(dst, src));
+  ins_encode(riscv_enc_mov_imm(dst, src));
 
   ins_pipe(ialu_imm);
 %}
@@ -6863,6 +6647,21 @@ instruct mulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2)
   ins_pipe(lmul_reg_reg);
 %}
 
+instruct umulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2)
+%{
+  match(Set dst (UMulHiL src1 src2));
+  ins_cost(IMUL_COST);
+  format %{ "mulhu  $dst, $src1, $src2\t# umulhi, #@umulHiL_rReg" %}
+
+  ins_encode %{
+    __ mulhu(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             as_Register($src2$$reg));
+  %}
+
+  ins_pipe(lmul_reg_reg);
+%}
+
 // Integer Divide
 
 instruct divI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
@@ -7275,13 +7074,13 @@ instruct mulD_reg_reg(fRegD dst, fRegD src1, fRegD src2) %{
 
 // src1 * src2 + src3
 instruct maddF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
-  predicate(UseFMA);
   match(Set dst (FmaF src3 (Binary src1 src2)));
 
   ins_cost(FMUL_SINGLE_COST);
   format %{ "fmadd.s  $dst, $src1, $src2, $src3\t#@maddF_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmadd_s(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg),
@@ -7293,13 +7092,13 @@ instruct maddF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
 
 // src1 * src2 + src3
 instruct maddD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
-  predicate(UseFMA);
   match(Set dst (FmaD src3 (Binary src1 src2)));
 
   ins_cost(FMUL_DOUBLE_COST);
   format %{ "fmadd.d  $dst, $src1, $src2, $src3\t#@maddD_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmadd_d(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg),
@@ -7311,13 +7110,13 @@ instruct maddD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
 
 // src1 * src2 - src3
 instruct msubF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
-  predicate(UseFMA);
   match(Set dst (FmaF (NegF src3) (Binary src1 src2)));
 
   ins_cost(FMUL_SINGLE_COST);
   format %{ "fmsub.s  $dst, $src1, $src2, $src3\t#@msubF_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmsub_s(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg),
@@ -7329,13 +7128,13 @@ instruct msubF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
 
 // src1 * src2 - src3
 instruct msubD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
-  predicate(UseFMA);
   match(Set dst (FmaD (NegD src3) (Binary src1 src2)));
 
   ins_cost(FMUL_DOUBLE_COST);
   format %{ "fmsub.d  $dst, $src1, $src2, $src3\t#@msubD_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmsub_d(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg),
@@ -7345,16 +7144,16 @@ instruct msubD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 + src3
+// src1 * (-src2) + src3
+// "(-src1) * src2 + src3" has been idealized to "src2 * (-src1) + src3"
 instruct nmsubF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaF src3 (Binary (NegF src1) src2)));
   match(Set dst (FmaF src3 (Binary src1 (NegF src2))));
 
   ins_cost(FMUL_SINGLE_COST);
   format %{ "fnmsub.s  $dst, $src1, $src2, $src3\t#@nmsubF_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmsub_s(as_FloatRegister($dst$$reg),
                 as_FloatRegister($src1$$reg),
                 as_FloatRegister($src2$$reg),
@@ -7364,16 +7163,16 @@ instruct nmsubF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 + src3
+// src1 * (-src2) + src3
+// "(-src1) * src2 + src3" has been idealized to "src2 * (-src1) + src3"
 instruct nmsubD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaD src3 (Binary (NegD src1) src2)));
   match(Set dst (FmaD src3 (Binary src1 (NegD src2))));
 
   ins_cost(FMUL_DOUBLE_COST);
   format %{ "fnmsub.d  $dst, $src1, $src2, $src3\t#@nmsubD_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmsub_d(as_FloatRegister($dst$$reg),
                 as_FloatRegister($src1$$reg),
                 as_FloatRegister($src2$$reg),
@@ -7383,16 +7182,16 @@ instruct nmsubD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 - src3
+// src1 * (-src2) - src3
+// "(-src1) * src2 - src3" has been idealized to "src2 * (-src1) - src3"
 instruct nmaddF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaF (NegF src3) (Binary (NegF src1) src2)));
   match(Set dst (FmaF (NegF src3) (Binary src1 (NegF src2))));
 
   ins_cost(FMUL_SINGLE_COST);
   format %{ "fnmadd.s  $dst, $src1, $src2, $src3\t#@nmaddF_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmadd_s(as_FloatRegister($dst$$reg),
                 as_FloatRegister($src1$$reg),
                 as_FloatRegister($src2$$reg),
@@ -7402,16 +7201,16 @@ instruct nmaddF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 - src3
+// src1 * (-src2) - src3
+// "(-src1) * src2 - src3" has been idealized to "src2 * (-src1) - src3"
 instruct nmaddD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaD (NegD src3) (Binary (NegD src1) src2)));
   match(Set dst (FmaD (NegD src3) (Binary src1 (NegD src2))));
 
   ins_cost(FMUL_DOUBLE_COST);
   format %{ "fnmadd.d  $dst, $src1, $src2, $src3\t#@nmaddD_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmadd_d(as_FloatRegister($dst$$reg),
                 as_FloatRegister($src1$$reg),
                 as_FloatRegister($src2$$reg),
@@ -7668,7 +7467,7 @@ instruct absD_reg(fRegD dst, fRegD src) %{
 %}
 
 instruct sqrtF_reg(fRegF dst, fRegF src) %{
-  match(Set dst (ConvD2F (SqrtD (ConvF2D src))));
+  match(Set dst (SqrtF src));
 
   ins_cost(FSQRT_COST);
   format %{ "fsqrt.s  $dst, $src\t#@sqrtF_reg" %}
@@ -7691,6 +7490,20 @@ instruct sqrtD_reg(fRegD dst, fRegD src) %{
   %}
 
   ins_pipe(fp_sqrt_d);
+%}
+
+// Round Instruction
+instruct roundD_reg(fRegD dst, fRegD src, immI rmode, iRegLNoSp tmp1, iRegLNoSp tmp2, iRegLNoSp tmp3) %{
+  match(Set dst (RoundDoubleMode src rmode));
+  ins_cost(2 * XFER_COST + BRANCH_COST);
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3);
+
+  format %{ "RoundDoubleMode $src, $rmode" %}
+  ins_encode %{
+    __ round_double_mode(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src$$reg), $rmode$$constant, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 // Arithmetic Instructions End
@@ -8223,7 +8036,7 @@ instruct convI2L_reg_reg(iRegLNoSp dst, iRegIorL2I src)
   ins_cost(ALU_COST);
   format %{ "addw  $dst, $src, zr\t#@convI2L_reg_reg" %}
   ins_encode %{
-    __ addw(as_Register($dst$$reg), as_Register($src$$reg), zr);
+    __ sign_extend(as_Register($dst$$reg), as_Register($src$$reg), 32);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -8235,7 +8048,7 @@ instruct convL2I_reg(iRegINoSp dst, iRegL src) %{
   format %{ "addw  $dst, $src, zr\t#@convL2I_reg" %}
 
   ins_encode %{
-    __ addw(as_Register($dst$$reg), as_Register($src$$reg), zr);
+    __ sign_extend(as_Register($dst$$reg), as_Register($src$$reg), 32);
   %}
 
   ins_pipe(ialu_reg);
@@ -10004,7 +9817,7 @@ instruct string_compareU(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R
                          iRegI_R10 result, iRegP_R28 tmp1, iRegL_R29 tmp2, iRegL_R30 tmp3, rFlagsReg cr)
 %{
   predicate(!UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::UU);
-  match(Set result (StrComp(Binary str1 cnt1)(Binary str2 cnt2)));
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, KILL tmp3, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
   format %{ "String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareU" %}
@@ -10022,7 +9835,7 @@ instruct string_compareL(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R
                          iRegI_R10 result, iRegP_R28 tmp1, iRegL_R29 tmp2, iRegL_R30 tmp3, rFlagsReg cr)
 %{
   predicate(!UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::LL);
-  match(Set result (StrComp(Binary str1 cnt1)(Binary str2 cnt2)));
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, KILL tmp3, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
   format %{ "String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareL" %}
@@ -10039,7 +9852,7 @@ instruct string_compareUL(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_
                           iRegI_R10 result, iRegP_R28 tmp1, iRegL_R29 tmp2, iRegL_R30 tmp3, rFlagsReg cr)
 %{
   predicate(!UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::UL);
-  match(Set result (StrComp(Binary str1 cnt1)(Binary str2 cnt2)));
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, KILL tmp3, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
   format %{"String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareUL" %}
@@ -10057,7 +9870,7 @@ instruct string_compareLU(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_
                           rFlagsReg cr)
 %{
   predicate(!UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::LU);
-  match(Set result (StrComp(Binary str1 cnt1)(Binary str2 cnt2)));
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, KILL tmp3, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
   format %{ "String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareLU" %}
@@ -10386,7 +10199,9 @@ instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iReg
   ins_cost(LOAD_COST * 2 + STORE_COST * 3 + ALU_COST * 6 + BRANCH_COST * 3);
   format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2, #@cmpFastLock" %}
 
-  ins_encode(riscv_enc_fast_lock(object, box, tmp1, tmp2));
+  ins_encode %{
+    __ fast_lock($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
+  %}
 
   ins_pipe(pipe_serial);
 %}
@@ -10400,7 +10215,9 @@ instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iR
   ins_cost(LOAD_COST * 2 + STORE_COST + ALU_COST * 2 + BRANCH_COST * 4);
   format %{ "fastunlock $object,$box\t! kills $tmp1, $tmp2, #@cmpFastUnlock" %}
 
-  ins_encode(riscv_enc_fast_unlock(object, box, tmp1, tmp2));
+  ins_encode %{
+    __ fast_unlock($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
+  %}
 
   ins_pipe(pipe_serial);
 %}

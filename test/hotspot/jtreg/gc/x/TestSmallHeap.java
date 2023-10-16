@@ -25,7 +25,7 @@ package gc.x;
 
 /*
  * @test TestSmallHeap
- * @requires vm.gc.Z & !vm.opt.final.ZGenerational
+ * @requires vm.gc.ZSinglegen
  * @summary Test ZGC with small heaps
  * @library / /test/lib
  * @run driver gc.x.TestSmallHeap 8M 16M 32M 64M 128M 256M 512M 1024M

@@ -231,7 +231,13 @@ inline intptr_t* frame::interpreter_frame_esp() const {
 inline void frame::interpreter_frame_set_monitor_end(BasicObjectLock* end)    { get_ijava_state()->monitors = (intptr_t) end;}
 inline void frame::interpreter_frame_set_cpcache(ConstantPoolCache* cp)       { *interpreter_frame_cache_addr() = cp; }
 inline void frame::interpreter_frame_set_esp(intptr_t* esp)                   { get_ijava_state()->esp = (intptr_t) esp; }
-inline void frame::interpreter_frame_set_top_frame_sp(intptr_t* top_frame_sp) { get_ijava_state()->top_frame_sp = (intptr_t) top_frame_sp; }
+
+inline void frame::interpreter_frame_set_top_frame_sp(intptr_t* top_frame_sp) {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized top_frame_sp
+  get_ijava_state()->top_frame_sp = (intptr_t) (top_frame_sp - fp());
+}
+
 inline void frame::interpreter_frame_set_sender_sp(intptr_t* sender_sp)       { get_ijava_state()->sender_sp = (intptr_t) sender_sp; }
 
 inline intptr_t* frame::interpreter_frame_expression_stack() const {
@@ -245,13 +251,7 @@ inline intptr_t* frame::interpreter_frame_tos_address() const {
 }
 
 inline int frame::interpreter_frame_monitor_size() {
-  // Number of stack slots for a monitor.
-  return align_up(BasicObjectLock::size(),  // number of stack slots
-                  WordsPerLong);            // number of stack slots for a Java long
-}
-
-inline int frame::interpreter_frame_monitor_size_in_bytes() {
-  return frame::interpreter_frame_monitor_size() * wordSize;
+  return BasicObjectLock::size();
 }
 
 // entry frames
@@ -281,8 +281,9 @@ inline frame frame::sender_raw(RegisterMap* map) const {
     return map->stack_chunk()->sender(*this, map);
   }
 
-  if (is_entry_frame())           return sender_for_entry_frame(map);
-  if (is_interpreted_frame())     return sender_for_interpreter_frame(map);
+  if (is_entry_frame())       return sender_for_entry_frame(map);
+  if (is_upcall_stub_frame()) return sender_for_upcall_stub_frame(map);
+  if (is_interpreted_frame()) return sender_for_interpreter_frame(map);
 
   assert(_cb == CodeCache::find_blob(pc()), "Must be the same");
   if (_cb != nullptr) return sender_for_compiled_frame(map);

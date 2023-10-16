@@ -181,8 +181,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
   virtual void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
   // Verification functions
-  virtual void check_for_non_bad_heap_word_value(HeapWord* addr, size_t size)
-    PRODUCT_RETURN;
   debug_only(static void check_for_valid_allocation_state();)
 
  public:
@@ -330,7 +328,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // super::ensure_parsability so that the non-generational
   // part of the work gets done. See implementation of
   // CollectedHeap::ensure_parsability and, for instance,
-  // that of GenCollectedHeap::ensure_parsability().
+  // that of ParallelScavengeHeap::ensure_parsability().
   // The argument "retire_tlabs" controls whether existing TLABs
   // are merely filled or also retired, thus preventing further
   // allocation from them and necessitating allocation of new TLABs.

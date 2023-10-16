@@ -35,9 +35,11 @@
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.hpp"
+#include "oops/methodCounters.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -869,7 +871,7 @@ void TemplateInterpreterGenerator::lock_method(Register Rflags, Register Rscratc
   // Got the oop to lock => execute!
   __ add_monitor_to_stack(true, Rscratch1, R0);
 
-  __ std(Robj_to_lock, BasicObjectLock::obj_offset_in_bytes(), R26_monitor);
+  __ std(Robj_to_lock, in_bytes(BasicObjectLock::obj_offset()), R26_monitor);
   __ lock_object(R26_monitor, Robj_to_lock);
 }
 
@@ -1001,7 +1003,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
 
   __ add(R18_locals, R15_esp, Rsize_of_parameters);
   __ ld(Rconst_pool, in_bytes(ConstMethod::constants_offset()), Rconst_method);
-  __ ld(R27_constPoolCache, ConstantPool::cache_offset_in_bytes(), Rconst_pool);
+  __ ld(R27_constPoolCache, ConstantPool::cache_offset(), Rconst_pool);
 
   // Set method data pointer.
   if (ProfileInterpreter) {
@@ -1026,7 +1028,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   __ std(R12_scratch2, _abi0(lr), R1_SP);
 
   // Get mirror and store it in the frame as GC root for this Method*.
-  __ ld(Rmirror, ConstantPool::pool_holder_offset_in_bytes(), Rconst_pool);
+  __ ld(Rmirror, ConstantPool::pool_holder_offset(), Rconst_pool);
   __ ld(Rmirror, in_bytes(Klass::java_mirror_offset()), Rmirror);
   __ resolve_oop_handle(Rmirror, R11_scratch1, R12_scratch2, MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS);
 
@@ -1060,8 +1062,10 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   __ std(R0, _ijava_state_neg(oop_tmp), R1_SP); // only used for native_call
 
   // Store sender's SP and this frame's top SP.
-  __ subf(R12_scratch2, Rtop_frame_size, R1_SP);
   __ std(R21_sender_SP, _ijava_state_neg(sender_sp), R1_SP);
+  __ neg(R12_scratch2, Rtop_frame_size);
+  __ sradi(R12_scratch2, R12_scratch2, Interpreter::logStackElementSize);
+  // Store relativized top_frame_sp
   __ std(R12_scratch2, _ijava_state_neg(top_frame_sp), R1_SP);
 
   // Push top frame.
@@ -1541,7 +1545,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ ld(active_handles, thread_(active_handles));
   // TODO PPC port assert(4 == JNIHandleBlock::top_size_in_bytes(), "unexpected field size");
   __ li(R0, 0);
-  __ stw(R0, JNIHandleBlock::top_offset_in_bytes(), active_handles);
+  __ stw(R0, in_bytes(JNIHandleBlock::top_offset()), active_handles);
 
   Label exception_return_sync_check_already_unlocked;
   __ ld(R0/*pending_exception*/, thread_(pending_exception));

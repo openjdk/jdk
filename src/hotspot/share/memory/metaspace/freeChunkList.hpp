@@ -31,6 +31,7 @@
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/metachunkList.hpp"
+#include "memory/metaspace/metaspaceCommon.hpp"
 
 class outputStream;
 
@@ -102,7 +103,7 @@ public:
 
   // Remove given chunk from anywhere in the list.
   Metachunk* remove(Metachunk* c) {
-    assert(contains(c), "Must be contained here");
+    ASSERT_SOMETIMES(contains(c), "Must be contained here");
     Metachunk* pred = c->prev();
     Metachunk* succ = c->next();
     if (pred) {
@@ -124,7 +125,7 @@ public:
   }
 
   void add(Metachunk* c) {
-    assert(contains(c) == false, "Chunk already in freelist");
+    ASSERT_SOMETIMES(contains(c) == false, "Chunk already in freelist");
     assert(_first == nullptr || _first->level() == c->level(),
            "List should only contains chunks of the same level.");
     // Uncommitted chunks go to the back, fully or partially committed to the front.

@@ -49,10 +49,14 @@
 /**
  * IP_MULTICAST_ALL supported since 2.6.31 but may not be available at
  * build time.
+ * IPV6_MULTICAST_ALL supported since 4.20
  */
 #ifdef __linux__
   #ifndef IP_MULTICAST_ALL
     #define IP_MULTICAST_ALL    49
+  #endif
+  #ifndef IPV6_MULTICAST_ALL
+    #define IPV6_MULTICAST_ALL    29
   #endif
 #endif
 
@@ -297,14 +301,25 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
         }
     }
 
-    /* By default, Linux uses the route default */
     if (domain == AF_INET6 && type == SOCK_DGRAM) {
+        /* By default, Linux uses the route default */
         int arg = 1;
         if (setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &arg,
                        sizeof(arg)) < 0) {
             JNU_ThrowByNameWithLastError(env,
                                          JNU_JAVANETPKG "SocketException",
                                          "Unable to set IPV6_MULTICAST_HOPS");
+            close(fd);
+            return -1;
+        }
+
+        /* Disable IPV6_MULTICAST_ALL if option supported */
+        arg = 0;
+        if ((setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_ALL, (char*)&arg, sizeof(arg)) < 0) &&
+            (errno != ENOPROTOOPT)) {
+            JNU_ThrowByNameWithLastError(env,
+                                     JNU_JAVANETPKG "SocketException",
+                                     "Unable to set IPV6_MULTICAST_ALL");
             close(fd);
             return -1;
         }

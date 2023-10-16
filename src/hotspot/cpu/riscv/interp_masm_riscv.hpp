@@ -85,6 +85,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void restore_sp_after_call() {
     Label L;
     ld(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
+    shadd(t0, t0, fp, t0, LogBytesPerWord);
 #ifdef ASSERT
     bnez(t0, L);
     stop("SP is null");
@@ -97,6 +98,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 #ifdef ASSERT
     Label L;
     ld(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
+    shadd(t0, t0, fp, t0, LogBytesPerWord);
     beq(sp, t0, L);
     stop(msg);
     bind(L);
@@ -125,12 +127,12 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void get_constant_pool_cache(Register reg) {
     get_constant_pool(reg);
-    ld(reg, Address(reg, ConstantPool::cache_offset_in_bytes()));
+    ld(reg, Address(reg, ConstantPool::cache_offset()));
   }
 
   void get_cpool_and_tags(Register cpool, Register tags) {
     get_constant_pool(cpool);
-    ld(tags, Address(cpool, ConstantPool::tags_offset_in_bytes()));
+    ld(tags, Address(cpool, ConstantPool::tags_offset()));
   }
 
   void get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset);
@@ -172,7 +174,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void load_ptr(int n, Register val);
   void store_ptr(int n, Register val);
 
-  // Load float value from 'address'. The value is loaded onto the FPU register v0.
+  // Load float value from 'address'. The value is loaded onto the fp register f10.
   void load_float(Address src);
   void load_double(Address src);
 
@@ -246,14 +248,12 @@ class InterpreterMacroAssembler: public MacroAssembler {
                         Label& not_equal_continue);
 
   void record_klass_in_profile(Register receiver, Register mdp,
-                               Register reg2, bool is_virtual_call);
+                               Register reg2);
   void record_klass_in_profile_helper(Register receiver, Register mdp,
-                                      Register reg2,
-                                      Label& done, bool is_virtual_call);
+                                      Register reg2, Label& done);
   void record_item_in_profile_helper(Register item, Register mdp,
                                      Register reg2, int start_row, Label& done, int total_rows,
-                                     OffsetFunction item_offset_fn, OffsetFunction item_count_offset_fn,
-                                     int non_profiled_offset);
+                                     OffsetFunction item_offset_fn, OffsetFunction item_count_offset_fn);
 
   void update_mdp_by_offset(Register mdp_in, int offset_of_offset);
   void update_mdp_by_offset(Register mdp_in, Register reg, int offset_of_disp);
@@ -300,6 +300,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   }
 
   void load_resolved_indy_entry(Register cache, Register index);
+  void load_field_entry(Register cache, Register index, int bcp_offset = 1);
 
 #ifdef ASSERT
   void verify_access_flags(Register access_flags, uint32_t flag,

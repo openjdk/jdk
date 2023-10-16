@@ -131,7 +131,7 @@ CHeapBitMap::CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags, bool clear)
 }
 
 CHeapBitMap::~CHeapBitMap() {
-  free(map(), size());
+  free(map(), size_in_words());
 }
 
 bm_word_t* CHeapBitMap::allocate(idx_t size_in_words) const {

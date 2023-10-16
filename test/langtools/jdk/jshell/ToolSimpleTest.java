@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  *      8167128 8154513 8170015 8170368 8172102 8172103 8165405 8173073 8173848
  *      8174041 8173916 8174028 8174262 8174797 8177079 8180508 8177466 8172154
  *      8192979 8191842 8198573 8198801 8210596 8210959 8215099 8199623 8236715
- *      8239536 8247456 8246774 8238173 8292625
+ *      8239536 8247456 8246774 8238173 8292625 8306560
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -749,9 +749,11 @@ public class ToolSimpleTest extends ReplToolTesting {
     @Test
     public void testCompoundStart() {
         test(new String[]{"-R", "-Duser.language=en", "-R", "-Duser.country=US",
-                          "--startup", "DEFAULT", "--startup", "PRINTING"},
+                          "--startup", "DEFAULT", "--startup", "PRINTING", "--startup", "TOOLING"},
                 (a) -> assertCommand(a, "printf(\"%4.2f\", Math.PI)",
-                        "", "", null, "3.14", "")
+                        "", "", null, "3.14", ""),
+                (a) -> assertCommand(a, "jar(\"--version\")",
+                        "", "", null, "jar " + System.getProperty("java.version") + "\n", "")
         );
     }
 

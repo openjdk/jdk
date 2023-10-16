@@ -39,7 +39,10 @@ public enum CABI {
     LINUX_AARCH_64,
     MAC_OS_AARCH_64,
     WIN_AARCH_64,
+    LINUX_PPC_64,
+    LINUX_PPC_64_LE,
     LINUX_RISCV_64,
+    LINUX_S390,
     FALLBACK,
     UNSUPPORTED;
 
@@ -54,10 +57,10 @@ public enum CABI {
         if (ForeignLinkerSupport.isSupported()) {
             // figure out the ABI based on the platform
             String arch = StaticProperty.osArch();
-            long addressSize = ADDRESS.bitSize();
+            long addressSize = ADDRESS.byteSize();
             // might be running in a 32-bit VM on a 64-bit platform.
             // addressSize will be correctly 32
-            if ((arch.equals("amd64") || arch.equals("x86_64")) && addressSize == 64) {
+            if ((arch.equals("amd64") || arch.equals("x86_64")) && addressSize == 8) {
                 if (OperatingSystem.isWindows()) {
                     return WIN_64;
                 } else {
@@ -72,11 +75,23 @@ public enum CABI {
                     // The Linux ABI follows the standard AAPCS ABI
                     return LINUX_AARCH_64;
                 }
+            } else if (arch.equals("ppc64")) {
+                if (OperatingSystem.isLinux()) {
+                    return LINUX_PPC_64;
+                }
+            } else if (arch.equals("ppc64le")) {
+                if (OperatingSystem.isLinux()) {
+                    return LINUX_PPC_64_LE;
+                }
             } else if (arch.equals("riscv64")) {
                 if (OperatingSystem.isLinux()) {
                     return LINUX_RISCV_64;
                 }
-            }
+            } else if (arch.equals("s390x")) {
+                if (OperatingSystem.isLinux()) {
+                    return LINUX_S390;
+                }
+        }
         } else if (FallbackLinker.isSupported()) {
             return FALLBACK; // fallback linker
         }

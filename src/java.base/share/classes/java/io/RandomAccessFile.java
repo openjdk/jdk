@@ -92,7 +92,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     /**
      * Creates a random access file stream to read from, and optionally
-     * to write to, a file with the specified name. A new
+     * to write to, a file with the specified pathname. A new
      * {@link FileDescriptor} object is created to represent the
      * connection to the file.
      *
@@ -103,25 +103,25 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *
      * <p>
      * If there is a security manager, its {@code checkRead} method
-     * is called with the {@code name} argument
+     * is called with the {@code pathname} argument
      * as its argument to see if read access to the file is allowed.
      * If the mode allows writing, the security manager's
      * {@code checkWrite} method
-     * is also called with the {@code name} argument
+     * is also called with the {@code pathname} argument
      * as its argument to see if write access to the file is allowed.
      *
-     * @param      name   the system-dependent filename
-     * @param      mode   the access <a href="#mode">mode</a>
+     * @param      pathname   the system-dependent pathname string
+     * @param      mode       the access <a href="#mode">mode</a>
      * @throws     IllegalArgumentException  if the mode argument is not equal
      *             to one of {@code "r"}, {@code "rw"}, {@code "rws"}, or
      *             {@code "rwd"}
      * @throws     FileNotFoundException
-     *             if the mode is {@code "r"} but the given string does not
+     *             if the mode is {@code "r"} but the given pathname string does not
      *             denote an existing regular file, or if the mode begins with
-     *             {@code "rw"} but the given string does not denote an
+     *             {@code "rw"} but the given pathname string does not denote an
      *             existing, writable regular file and a new regular file of
-     *             that name cannot be created, or if some other error occurs
-     *             while opening or creating the file
+     *             that pathname cannot be created, or if some other error
+     *             occurs while opening or creating the file
      * @throws     SecurityException   if a security manager exists and its
      *             {@code checkRead} method denies read access to the file
      *             or the mode is {@code "rw"} and the security manager's
@@ -129,12 +129,11 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkRead(java.lang.String)
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
-     * @revised 1.4
      */
-    public RandomAccessFile(String name, String mode)
+    public RandomAccessFile(String pathname, String mode)
         throws FileNotFoundException
     {
-        this(name != null ? new File(name) : null, mode);
+        this(pathname != null ? new File(pathname) : null, mode);
     }
 
     /**
@@ -192,8 +191,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * called with the pathname of the {@code file} argument as its
      * argument to see if read access to the file is allowed.  If the mode
      * allows writing, the security manager's {@code checkWrite} method is
-     * also called with the path argument to see if write access to the file is
-     * allowed.
+     * also called with the pathname of the {@code file} argument to see if
+     * write access to the file is allowed.
      *
      * @param      file   the file object
      * @param      mode   the access mode, as described
@@ -206,8 +205,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *             not denote an existing regular file, or if the mode begins
      *             with {@code "rw"} but the given file object does not denote
      *             an existing, writable regular file and a new regular file of
-     *             that name cannot be created, or if some other error occurs
-     *             while opening or creating the file
+     *             that pathname cannot be created, or if some other error
+     *             occurs while opening or creating the file
      * @throws      SecurityException  if a security manager exists and its
      *             {@code checkRead} method denies read access to the file
      *             or the mode is {@code "rw"} and the security manager's
@@ -215,7 +214,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.SecurityManager#checkRead(java.lang.String)
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
      * @see        java.nio.channels.FileChannel#force(boolean)
-     * @revised 1.4
      */
     public RandomAccessFile(File file, String mode)
         throws FileNotFoundException
@@ -703,8 +701,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * this method should be prepared to handle possible reentrant invocation.
      *
      * @throws     IOException  if an I/O error occurs.
-     *
-     * @revised 1.4
      */
     public void close() throws IOException {
         if (closed) {
@@ -758,9 +754,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * If the byte read is {@code b}, where
      * {@code 0 <= b <= 255},
      * then the result is:
-     * <blockquote><pre>
+     * {@snippet lang=java :
      *     (byte)(b)
-     * </pre></blockquote>
+     * }
      * <p>
      * This method blocks until the byte is read, the end of the stream
      * is detected, or an exception is thrown.
@@ -801,9 +797,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code b1} and {@code b2}, where each of the two values is
      * between {@code 0} and {@code 255}, inclusive, then the
      * result is equal to:
-     * <blockquote><pre>
-     *     (short)((b1 &lt;&lt; 8) | b2)
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     (short)((b1 << 8) | b2)
+     * }
      * <p>
      * This method blocks until the two bytes are read, the end of the
      * stream is detected, or an exception is thrown.
@@ -825,9 +821,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code b1} and {@code b2}, where
      * {@code 0 <= b1, b2 <= 255},
      * then the result is equal to:
-     * <blockquote><pre>
-     *     (b1 &lt;&lt; 8) | b2
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     (b1 << 8) | b2
+     * }
      * <p>
      * This method blocks until the two bytes are read, the end of the
      * stream is detected, or an exception is thrown.
@@ -851,9 +847,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code b1} and {@code b2}, where
      * {@code 0 <= b1, b2 <= 255},
      * then the result is equal to:
-     * <blockquote><pre>
-     *     (char)((b1 &lt;&lt; 8) | b2)
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     (char)((b1 << 8) | b2)
+     * }
      * <p>
      * This method blocks until the two bytes are read, the end of the
      * stream is detected, or an exception is thrown.
@@ -875,9 +871,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code b2}, {@code b3}, and {@code b4}, where
      * {@code 0 <= b1, b2, b3, b4 <= 255},
      * then the result is equal to:
-     * <blockquote><pre>
-     *     (b1 &lt;&lt; 24) | (b2 &lt;&lt; 16) + (b3 &lt;&lt; 8) + b4
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     (b1 << 24) | (b2 << 16) + (b3 << 8) + b4
+     * }
      * <p>
      * This method blocks until the four bytes are read, the end of the
      * stream is detected, or an exception is thrown.
@@ -900,17 +896,17 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code b1}, {@code b2}, {@code b3},
      * {@code b4}, {@code b5}, {@code b6},
      * {@code b7}, and {@code b8,} where:
-     * <blockquote><pre>
-     *     0 &lt;= b1, b2, b3, b4, b5, b6, b7, b8 &lt;=255,
-     * </pre></blockquote>
+     * {@snippet :
+     *     0 <= b1, b2, b3, b4, b5, b6, b7, b8 <= 255
+     * }
      * <p>
      * then the result is equal to:
-     * <blockquote><pre>
-     *     ((long)b1 &lt;&lt; 56) + ((long)b2 &lt;&lt; 48)
-     *     + ((long)b3 &lt;&lt; 40) + ((long)b4 &lt;&lt; 32)
-     *     + ((long)b5 &lt;&lt; 24) + ((long)b6 &lt;&lt; 16)
-     *     + ((long)b7 &lt;&lt; 8) + b8
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     ((long)b1 << 56) + ((long)b2 << 48)
+     *         + ((long)b3 << 40) + ((long)b4 << 32)
+     *         + ((long)b5 << 24) + ((long)b6 << 16)
+     *         + ((long)b7 << 8) + b8
+     * }
      * <p>
      * This method blocks until the eight bytes are read, the end of the
      * stream is detected, or an exception is thrown.

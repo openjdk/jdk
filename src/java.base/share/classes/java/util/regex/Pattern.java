@@ -2712,14 +2712,15 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             if (read() != '<')
                 throw error("\\k is not followed by '<' for named capturing group");
             String name = groupname(read());
-            if (!namedGroupsMap().containsKey(name))
+            Integer number = namedGroupsMap().get(name);
+            if (number == null)
                 throw error("named capturing group <" + name + "> does not exist");
             if (create) {
                 hasGroupRef = true;
                 if (has(CASE_INSENSITIVE))
-                    root = new CIBackRef(namedGroupsMap().get(name), has(UNICODE_CASE));
+                    root = new CIBackRef(number, has(UNICODE_CASE));
                 else
-                    root = new BackRef(namedGroupsMap().get(name));
+                    root = new BackRef(number);
             }
             return -1;
         case 'l':
@@ -5186,6 +5187,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             groupIndex = groupCount + groupCount;
         }
         boolean match(Matcher matcher, int i, CharSequence seq) {
+            // reference to not existing group must never match
+            // group does not exist if matcher didn't allocate space for it
+            if (groupIndex >= matcher.groups.length) {
+                return false;
+            }
+
             int j = matcher.groups[groupIndex];
             int k = matcher.groups[groupIndex+1];
 
@@ -5222,6 +5229,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             this.doUnicodeCase = doUnicodeCase;
         }
         boolean match(Matcher matcher, int i, CharSequence seq) {
+            // reference to not existing group must never match
+            // group does not exist if matcher didn't allocate space for it
+            if (groupIndex >= matcher.groups.length) {
+                return false;
+            }
+
             int j = matcher.groups[groupIndex];
             int k = matcher.groups[groupIndex+1];
 

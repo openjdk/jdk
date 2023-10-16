@@ -177,11 +177,6 @@ public interface JavaLangAccess {
     Package definePackage(ClassLoader cl, String name, Module module);
 
     /**
-     * Invokes Long.fastUUID
-     */
-    String fastUUID(long lsb, long msb);
-
-    /**
      * Record the non-exported packages of the modules in the given layer
      */
     void addNonExportedPackages(ModuleLayer layer);
@@ -530,15 +525,6 @@ public interface JavaLangAccess {
      * Return the current thread's scoped value bindings.
      */
     Object scopedValueBindings();
-
-    /**
-     * Set the current thread's scoped value bindings.
-     */
-    void setScopedValueBindings(Object bindings);
-
-    Object findScopedValueBindings();
-
-    void ensureMaterializedForStackWalk(Object value);
 
     /**
      * Returns the innermost mounted continuation

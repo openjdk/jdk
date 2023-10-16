@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "compiler/disassembler.hpp"
+#include "oops/compressedKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -188,7 +189,7 @@ void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &, methodHandle& method, j
   if (Continuations::enabled()) {
     // Check for proper post_call_nop
     NativePostCallNop* nop = nativePostCallNop_at(call->next_instruction_address());
-    if (nop == NULL) {
+    if (nop == nullptr) {
       JVMCI_ERROR("missing post call nop at offset %d", pc_offset);
     } else {
       _instructions->relocate(call->next_instruction_address(), relocInfo::post_call_nop_type);

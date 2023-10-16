@@ -575,7 +575,7 @@ JvmtiEnv::SetEventNotificationMode(jvmtiEventMode mode, jvmtiEvent event_type, j
   if (event_type == JVMTI_EVENT_CLASS_FILE_LOAD_HOOK && enabled) {
     record_class_file_load_hook_enabled();
   }
-  JvmtiVTMSTransitionDisabler disabler(event_thread);
+  JvmtiVTMSTransitionDisabler disabler;
 
   if (event_thread == nullptr) {
     // Can be called at Agent_OnLoad() time with event_thread == nullptr
@@ -1009,7 +1009,7 @@ JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvm
 
 jvmtiError
 JvmtiEnv::SuspendAllVirtualThreads(jint except_count, const jthread* except_list) {
-  if (!JvmtiExport::can_support_virtual_threads()) {
+  if (get_capabilities()->can_support_virtual_threads == 0) {
     return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
   }
   JavaThread* current = JavaThread::current();
@@ -1127,7 +1127,7 @@ JvmtiEnv::ResumeThreadList(jint request_count, const jthread* request_list, jvmt
 
 jvmtiError
 JvmtiEnv::ResumeAllVirtualThreads(jint except_count, const jthread* except_list) {
-  if (!JvmtiExport::can_support_virtual_threads()) {
+  if (get_capabilities()->can_support_virtual_threads == 0) {
     return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
   }
   jvmtiError err = JvmtiEnvBase::check_thread_list(except_count, except_list);
@@ -1780,9 +1780,9 @@ JvmtiEnv::GetAllStackTraces(jint max_frame_count, jvmtiStackInfo** stack_info_pt
 jvmtiError
 JvmtiEnv::GetThreadListStackTraces(jint thread_count, const jthread* thread_list, jint max_frame_count, jvmtiStackInfo** stack_info_ptr) {
   jvmtiError err = JVMTI_ERROR_NONE;
+  JvmtiVTMSTransitionDisabler disabler;
 
   if (thread_count == 1) {
-    JvmtiVTMSTransitionDisabler disabler;
 
     // Use direct handshake if we need to get only one stack trace.
     JavaThread *current_thread = JavaThread::current();
@@ -1883,10 +1883,12 @@ JvmtiEnv::PopFrame(jthread thread) {
   oop thread_obj = nullptr;
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
 
-  if (thread_obj != nullptr && thread_obj->is_a(vmClasses::BaseVirtualThread_klass())) {
-    // No support for virtual threads (yet).
-    return JVMTI_ERROR_OPAQUE_FRAME;
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
   }
+  bool self = java_thread == current_thread;
+
+  err = check_non_suspended_or_opaque_frame(java_thread, thread_obj, self);
   if (err != JVMTI_ERROR_NONE) {
     return err;
   }
@@ -1906,8 +1908,8 @@ JvmtiEnv::PopFrame(jthread thread) {
 
   MutexLocker mu(JvmtiThreadState_lock);
   UpdateForPopTopFrameClosure op(state);
-  if (java_thread == current_thread) {
-    op.doit(java_thread, true /* self */);
+  if (self) {
+    op.doit(java_thread, self);
   } else {
     Handshake::execute(&op, java_thread);
   }

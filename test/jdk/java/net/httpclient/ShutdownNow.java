@@ -134,6 +134,8 @@ public class ShutdownNow implements HttpServerAdapters {
         if (message.equals("closed")) return true;
         // exception from selmgr.abort
         if (message.equals("shutdownNow")) return true;
+        // exception from cancelling an HTTP/2 stream
+        if (message.matches("Stream [0-9]+ cancelled")) return true;
         return false;
     }
 

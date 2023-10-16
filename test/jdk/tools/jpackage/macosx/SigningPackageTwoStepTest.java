@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ import jdk.jpackage.test.Annotations.Parameter;
  * @build SigningPackageTwoStepTest
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningPackageTwoStepTest
  */
 public class SigningPackageTwoStepTest {
@@ -73,14 +73,14 @@ public class SigningPackageTwoStepTest {
         }
 
         Path outputBundle = cmd.outputBundle();
-        SigningBase.verifyPkgutil(outputBundle);
-        SigningBase.verifySpctl(outputBundle, "install");
+        SigningBase.verifyPkgutil(outputBundle, SigningBase.DEFAULT_INDEX);
+        SigningBase.verifySpctl(outputBundle, "install", SigningBase.DEFAULT_INDEX);
     }
 
     private static void verifyDMG(JPackageCommand cmd) {
         // DMG always unsigned, so we will check it
         Path outputBundle = cmd.outputBundle();
-        SigningBase.verifyCodesign(outputBundle, false);
+        SigningBase.verifyDMG(outputBundle);
     }
 
     private static void verifyAppImageInDMG(JPackageCommand cmd) {
@@ -91,10 +91,10 @@ public class SigningPackageTwoStepTest {
                 boolean isSigned = cmd.hasArgument("--mac-sign");
                 Path launcherPath = ApplicationLayout.platformAppImage()
                     .resolveAt(dmgImage).launchersDirectory().resolve(cmd.name());
-                SigningBase.verifyCodesign(launcherPath, isSigned);
-                SigningBase.verifyCodesign(dmgImage, isSigned);
+                SigningBase.verifyCodesign(launcherPath, isSigned, SigningBase.DEFAULT_INDEX);
+                SigningBase.verifyCodesign(dmgImage, isSigned, SigningBase.DEFAULT_INDEX);
                 if (isSigned) {
-                    SigningBase.verifySpctl(dmgImage, "exec");
+                    SigningBase.verifySpctl(dmgImage, "exec", SigningBase.DEFAULT_INDEX);
                 }
             }
         });
@@ -104,7 +104,7 @@ public class SigningPackageTwoStepTest {
     @Parameter("true")
     @Parameter("false")
     public static void test(boolean signAppImage) throws Exception {
-        SigningCheck.checkCertificates();
+        SigningCheck.checkCertificates(0);
 
         Path appimageOutput = TKit.createTempDirectory("appimage");
 
@@ -113,9 +113,9 @@ public class SigningPackageTwoStepTest {
         if (signAppImage) {
             appImageCmd.addArguments("--mac-sign")
                     .addArguments("--mac-signing-key-user-name",
-                            SigningBase.DEV_NAME)
+                            SigningBase.getDevName(0))
                     .addArguments("--mac-signing-keychain",
-                            SigningBase.KEYCHAIN);
+                            SigningBase.getKeyChain());
         }
 
         new PackageTest()
@@ -127,9 +127,9 @@ public class SigningPackageTwoStepTest {
                     if (signAppImage) {
                         cmd.addArguments("--mac-sign",
                                 "--mac-signing-key-user-name",
-                                SigningBase.DEV_NAME,
+                                SigningBase.getDevName(0),
                                 "--mac-signing-keychain",
-                                SigningBase.KEYCHAIN);
+                                SigningBase.getKeyChain());
                     }
                 })
                 .forTypes(PackageType.MAC_PKG)

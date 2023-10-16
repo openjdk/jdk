@@ -49,7 +49,6 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static java.lang.foreign.ValueLayout.ADDRESS;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.invoke.MethodHandles.foldArguments;
 
 public final class FallbackLinker extends AbstractLinker {
@@ -81,7 +80,7 @@ public final class FallbackLinker extends AbstractLinker {
 
     @Override
     protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, LinkerOptions options) {
-        MemorySegment cif = makeCif(inferredMethodType, function, FFIABI.DEFAULT, Arena.ofAuto());
+        MemorySegment cif = makeCif(inferredMethodType, function, options, Arena.ofAuto());
 
         int capturedStateMask = options.capturedCallState()
                 .mapToInt(CapturableState::mask)
@@ -107,7 +106,7 @@ public final class FallbackLinker extends AbstractLinker {
 
     @Override
     protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
-        MemorySegment cif = makeCif(targetType, function, FFIABI.DEFAULT, Arena.ofAuto());
+        MemorySegment cif = makeCif(targetType, function, options, Arena.ofAuto());
 
         UpcallData invData = new UpcallData(function.returnLayout().orElse(null), function.argumentLayouts(), cif);
         MethodHandle doUpcallMH = MethodHandles.insertArguments(MH_DO_UPCALL, 3, invData);
@@ -123,7 +122,9 @@ public final class FallbackLinker extends AbstractLinker {
         return ByteOrder.nativeOrder();
     }
 
-    private static MemorySegment makeCif(MethodType methodType, FunctionDescriptor function, FFIABI abi, Arena scope) {
+    private static MemorySegment makeCif(MethodType methodType, FunctionDescriptor function, LinkerOptions options, Arena scope) {
+        FFIABI abi = FFIABI.DEFAULT;
+
         MemorySegment argTypes = scope.allocate(function.argumentLayouts().size() * ADDRESS.byteSize());
         List<MemoryLayout> argLayouts = function.argumentLayouts();
         for (int i = 0; i < argLayouts.size(); i++) {
@@ -134,7 +135,14 @@ public final class FallbackLinker extends AbstractLinker {
         MemorySegment returnType = methodType.returnType() != void.class
                 ? FFIType.toFFIType(function.returnLayout().orElseThrow(), abi, scope)
                 : LibFallback.voidType();
-        return LibFallback.prepCif(returnType, argLayouts.size(), argTypes, abi, scope);
+
+        if (options.isVariadicFunction()) {
+            int numFixedArgs = options.firstVariadicArgIndex();
+            int numTotalArgs = argLayouts.size();
+            return LibFallback.prepCifVar(returnType, numFixedArgs, numTotalArgs, argTypes, abi, scope);
+        } else {
+            return LibFallback.prepCif(returnType, argLayouts.size(), argTypes, abi, scope);
+        }
     }
 
     private record DowncallData(MemorySegment cif, MemoryLayout returnLayout, List<MemoryLayout> argLayouts,
@@ -152,7 +160,7 @@ public final class FallbackLinker extends AbstractLinker {
 
             MemorySegment capturedState = null;
             if (invData.capturedStateMask() != 0) {
-                capturedState = (MemorySegment) args[argStart++];
+                capturedState = SharedUtils.checkCaptureSegment((MemorySegment) args[argStart++]);
                 MemorySessionImpl capturedStateImpl = ((AbstractMemorySegmentImpl) capturedState).sessionImpl();
                 capturedStateImpl.acquire0();
                 acquiredSessions.add(capturedStateImpl);
@@ -244,7 +252,7 @@ public final class FallbackLinker extends AbstractLinker {
             acquireCallback.accept(addrArg);
             argSeg.set(al, 0, addrArg);
         } else if (layout instanceof GroupLayout) {
-            argSeg.copyFrom((MemorySegment) arg); // by-value struct
+            MemorySegment.copy((MemorySegment) arg, 0, argSeg, 0, argSeg.byteSize()); // by-value struct
         } else {
             assert layout == null;
         }

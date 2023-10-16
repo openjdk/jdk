@@ -51,6 +51,7 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -91,7 +92,7 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef PRODUCT
 #define inc_counter_np(counter) ((void)0)
 #else
-  void inc_counter_np_(int& counter) {
+  void inc_counter_np_(uint& counter) {
     __ lea(rscratch2, ExternalAddress((address)&counter));
     __ ldrw(rscratch1, Address(rscratch2));
     __ addw(rscratch1, rscratch1, 1);
@@ -2952,6 +2953,23 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Big-endian 128-bit + 64-bit -> 128-bit addition.
+  // Inputs: 128-bits. in is preserved.
+  // The least-significant 64-bit word is in the upper dword of each vector.
+  // inc (the 64-bit increment) is preserved. Its lower dword must be zero.
+  // Output: result
+  void be_add_128_64(FloatRegister result, FloatRegister in,
+                     FloatRegister inc, FloatRegister tmp) {
+    assert_different_registers(result, tmp, inc);
+
+    __ addv(result, __ T2D, in, inc);      // Add inc to the least-significant dword of
+                                           // input
+    __ cm(__ HI, tmp, __ T2D, inc, result);// Check for result overflowing
+    __ ext(tmp, __ T16B, tmp, tmp, 0x08);  // Swap LSD of comparison result to MSD and
+                                           // MSD == 0 (must be!) to LSD
+    __ subv(result, __ T2D, result, tmp);  // Subtract -1 from MSD if there was an overflow
+  }
+
   // CTR AES crypt.
   // Arguments:
   //
@@ -3061,13 +3079,16 @@ class StubGenerator: public StubCodeGenerator {
       // Setup the counter
       __ movi(v4, __ T4S, 0);
       __ movi(v5, __ T4S, 1);
-      __ ins(v4, __ S, v5, 3, 3); // v4 contains { 0, 0, 0, 1 }
+      __ ins(v4, __ S, v5, 2, 2); // v4 contains { 0, 1 }
 
-      __ ld1(v0, __ T16B, counter); // Load the counter into v0
-      __ rev32(v16, __ T16B, v0);
-      __ addv(v16, __ T4S, v16, v4);
-      __ rev32(v16, __ T16B, v16);
-      __ st1(v16, __ T16B, counter); // Save the incremented counter back
+      // 128-bit big-endian increment
+      __ ld1(v0, __ T16B, counter);
+      __ rev64(v16, __ T16B, v0);
+      be_add_128_64(v16, v16, v4, /*tmp*/v5);
+      __ rev64(v16, __ T16B, v16);
+      __ st1(v16, __ T16B, counter);
+      // Previous counter value is in v0
+      // v4 contains { 0, 1 }
 
       {
         // We have fewer than bulk_width blocks of data left. Encrypt
@@ -3099,9 +3120,9 @@ class StubGenerator: public StubCodeGenerator {
 
         // Increment the counter, store it back
         __ orr(v0, __ T16B, v16, v16);
-        __ rev32(v16, __ T16B, v16);
-        __ addv(v16, __ T4S, v16, v4);
-        __ rev32(v16, __ T16B, v16);
+        __ rev64(v16, __ T16B, v16);
+        be_add_128_64(v16, v16, v4, /*tmp*/v5);
+        __ rev64(v16, __ T16B, v16);
         __ st1(v16, __ T16B, counter); // Save the incremented counter back
 
         __ b(inner_loop);
@@ -3149,7 +3170,7 @@ class StubGenerator: public StubCodeGenerator {
     // Keys should already be loaded into the correct registers
 
     __ ld1(v0, __ T16B, counter); // v0 contains the first counter
-    __ rev32(v16, __ T16B, v0); // v16 contains byte-reversed counter
+    __ rev64(v16, __ T16B, v0); // v16 contains byte-reversed counter
 
     // AES/CTR loop
     {
@@ -3159,12 +3180,12 @@ class StubGenerator: public StubCodeGenerator {
       // Setup the counters
       __ movi(v8, __ T4S, 0);
       __ movi(v9, __ T4S, 1);
-      __ ins(v8, __ S, v9, 3, 3); // v8 contains { 0, 0, 0, 1 }
+      __ ins(v8, __ S, v9, 2, 2); // v8 contains { 0, 1 }
 
       for (int i = 0; i < bulk_width; i++) {
         FloatRegister v0_ofs = as_FloatRegister(v0->encoding() + i);
-        __ rev32(v0_ofs, __ T16B, v16);
-        __ addv(v16, __ T4S, v16, v8);
+        __ rev64(v0_ofs, __ T16B, v16);
+        be_add_128_64(v16, v16, v8, /*tmp*/v9);
       }
 
       __ ld1(v8, v9, v10, v11, __ T16B, __ post(in, 4 * 16));
@@ -3194,7 +3215,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // Save the counter back where it goes
-    __ rev32(v16, __ T16B, v16);
+    __ rev64(v16, __ T16B, v16);
     __ st1(v16, __ T16B, counter);
 
     __ pop(saved_regs, sp);
@@ -3340,9 +3361,36 @@ class StubGenerator: public StubCodeGenerator {
      return start;
   }
 
+  class Cached64Bytes {
+  private:
+    MacroAssembler *_masm;
+    Register _regs[8];
+
+  public:
+    Cached64Bytes(MacroAssembler *masm, RegSet rs): _masm(masm) {
+      assert(rs.size() == 8, "%u registers are used to cache 16 4-byte data", rs.size());
+      auto it = rs.begin();
+      for (auto &r: _regs) {
+        r = *it;
+        ++it;
+      }
+    }
+
+    void gen_loads(Register base) {
+      for (int i = 0; i < 8; i += 2) {
+        __ ldp(_regs[i], _regs[i + 1], Address(base, 8 * i));
+      }
+    }
+
+    // Generate code extracting i-th unsigned word (4 bytes) from cached 64 bytes.
+    void extract_u32(Register dest, int i) {
+      __ ubfx(dest, _regs[i / 2], 32 * (i % 2), 32);
+    }
+  };
+
   // Utility routines for md5.
   // Clobbers r10 and r11.
-  void md5_FF(Register buf, Register r1, Register r2, Register r3, Register r4,
+  void md5_FF(Cached64Bytes& reg_cache, Register r1, Register r2, Register r3, Register r4,
               int k, int s, int t) {
     Register rscratch3 = r10;
     Register rscratch4 = r11;
@@ -3351,7 +3399,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(rscratch2, t);
     __ andw(rscratch3, rscratch3, r2);
     __ addw(rscratch4, r1, rscratch2);
-    __ ldrw(rscratch1, Address(buf, k*4));
+    reg_cache.extract_u32(rscratch1, k);
     __ eorw(rscratch3, rscratch3, r4);
     __ addw(rscratch4, rscratch4, rscratch1);
     __ addw(rscratch3, rscratch3, rscratch4);
@@ -3359,14 +3407,14 @@ class StubGenerator: public StubCodeGenerator {
     __ addw(r1, rscratch2, r2);
   }
 
-  void md5_GG(Register buf, Register r1, Register r2, Register r3, Register r4,
+  void md5_GG(Cached64Bytes& reg_cache, Register r1, Register r2, Register r3, Register r4,
               int k, int s, int t) {
     Register rscratch3 = r10;
     Register rscratch4 = r11;
 
     __ andw(rscratch3, r2, r4);
     __ bicw(rscratch4, r3, r4);
-    __ ldrw(rscratch1, Address(buf, k*4));
+    reg_cache.extract_u32(rscratch1, k);
     __ movw(rscratch2, t);
     __ orrw(rscratch3, rscratch3, rscratch4);
     __ addw(rscratch4, r1, rscratch2);
@@ -3376,7 +3424,7 @@ class StubGenerator: public StubCodeGenerator {
     __ addw(r1, rscratch2, r2);
   }
 
-  void md5_HH(Register buf, Register r1, Register r2, Register r3, Register r4,
+  void md5_HH(Cached64Bytes& reg_cache, Register r1, Register r2, Register r3, Register r4,
               int k, int s, int t) {
     Register rscratch3 = r10;
     Register rscratch4 = r11;
@@ -3384,7 +3432,7 @@ class StubGenerator: public StubCodeGenerator {
     __ eorw(rscratch3, r3, r4);
     __ movw(rscratch2, t);
     __ addw(rscratch4, r1, rscratch2);
-    __ ldrw(rscratch1, Address(buf, k*4));
+    reg_cache.extract_u32(rscratch1, k);
     __ eorw(rscratch3, rscratch3, r2);
     __ addw(rscratch4, rscratch4, rscratch1);
     __ addw(rscratch3, rscratch3, rscratch4);
@@ -3392,7 +3440,7 @@ class StubGenerator: public StubCodeGenerator {
     __ addw(r1, rscratch2, r2);
   }
 
-  void md5_II(Register buf, Register r1, Register r2, Register r3, Register r4,
+  void md5_II(Cached64Bytes& reg_cache, Register r1, Register r2, Register r3, Register r4,
               int k, int s, int t) {
     Register rscratch3 = r10;
     Register rscratch4 = r11;
@@ -3400,7 +3448,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(rscratch3, t);
     __ ornw(rscratch2, r2, r4);
     __ addw(rscratch4, r1, rscratch3);
-    __ ldrw(rscratch1, Address(buf, k*4));
+    reg_cache.extract_u32(rscratch1, k);
     __ eorw(rscratch3, rscratch2, r3);
     __ addw(rscratch4, rscratch4, rscratch1);
     __ addw(rscratch3, rscratch3, rscratch4);
@@ -3432,103 +3480,104 @@ class StubGenerator: public StubCodeGenerator {
     Register rscratch3 = r10;
     Register rscratch4 = r11;
 
+    Register state_regs[2] = { r12, r13 };
+    RegSet saved_regs = RegSet::range(r16, r22) - r18_tls;
+    Cached64Bytes reg_cache(_masm, RegSet::of(r14, r15) + saved_regs);  // using 8 registers
+
+    __ push(saved_regs, sp);
+
+    __ ldp(state_regs[0], state_regs[1], Address(state));
+    __ ubfx(a, state_regs[0],  0, 32);
+    __ ubfx(b, state_regs[0], 32, 32);
+    __ ubfx(c, state_regs[1],  0, 32);
+    __ ubfx(d, state_regs[1], 32, 32);
+
     Label md5_loop;
     __ BIND(md5_loop);
 
-    // Save hash values for addition after rounds
-    __ ldrw(a, Address(state,  0));
-    __ ldrw(b, Address(state,  4));
-    __ ldrw(c, Address(state,  8));
-    __ ldrw(d, Address(state, 12));
+    reg_cache.gen_loads(buf);
 
     // Round 1
-    md5_FF(buf, a, b, c, d,  0,  7, 0xd76aa478);
-    md5_FF(buf, d, a, b, c,  1, 12, 0xe8c7b756);
-    md5_FF(buf, c, d, a, b,  2, 17, 0x242070db);
-    md5_FF(buf, b, c, d, a,  3, 22, 0xc1bdceee);
-    md5_FF(buf, a, b, c, d,  4,  7, 0xf57c0faf);
-    md5_FF(buf, d, a, b, c,  5, 12, 0x4787c62a);
-    md5_FF(buf, c, d, a, b,  6, 17, 0xa8304613);
-    md5_FF(buf, b, c, d, a,  7, 22, 0xfd469501);
-    md5_FF(buf, a, b, c, d,  8,  7, 0x698098d8);
-    md5_FF(buf, d, a, b, c,  9, 12, 0x8b44f7af);
-    md5_FF(buf, c, d, a, b, 10, 17, 0xffff5bb1);
-    md5_FF(buf, b, c, d, a, 11, 22, 0x895cd7be);
-    md5_FF(buf, a, b, c, d, 12,  7, 0x6b901122);
-    md5_FF(buf, d, a, b, c, 13, 12, 0xfd987193);
-    md5_FF(buf, c, d, a, b, 14, 17, 0xa679438e);
-    md5_FF(buf, b, c, d, a, 15, 22, 0x49b40821);
+    md5_FF(reg_cache, a, b, c, d,  0,  7, 0xd76aa478);
+    md5_FF(reg_cache, d, a, b, c,  1, 12, 0xe8c7b756);
+    md5_FF(reg_cache, c, d, a, b,  2, 17, 0x242070db);
+    md5_FF(reg_cache, b, c, d, a,  3, 22, 0xc1bdceee);
+    md5_FF(reg_cache, a, b, c, d,  4,  7, 0xf57c0faf);
+    md5_FF(reg_cache, d, a, b, c,  5, 12, 0x4787c62a);
+    md5_FF(reg_cache, c, d, a, b,  6, 17, 0xa8304613);
+    md5_FF(reg_cache, b, c, d, a,  7, 22, 0xfd469501);
+    md5_FF(reg_cache, a, b, c, d,  8,  7, 0x698098d8);
+    md5_FF(reg_cache, d, a, b, c,  9, 12, 0x8b44f7af);
+    md5_FF(reg_cache, c, d, a, b, 10, 17, 0xffff5bb1);
+    md5_FF(reg_cache, b, c, d, a, 11, 22, 0x895cd7be);
+    md5_FF(reg_cache, a, b, c, d, 12,  7, 0x6b901122);
+    md5_FF(reg_cache, d, a, b, c, 13, 12, 0xfd987193);
+    md5_FF(reg_cache, c, d, a, b, 14, 17, 0xa679438e);
+    md5_FF(reg_cache, b, c, d, a, 15, 22, 0x49b40821);
 
     // Round 2
-    md5_GG(buf, a, b, c, d,  1,  5, 0xf61e2562);
-    md5_GG(buf, d, a, b, c,  6,  9, 0xc040b340);
-    md5_GG(buf, c, d, a, b, 11, 14, 0x265e5a51);
-    md5_GG(buf, b, c, d, a,  0, 20, 0xe9b6c7aa);
-    md5_GG(buf, a, b, c, d,  5,  5, 0xd62f105d);
-    md5_GG(buf, d, a, b, c, 10,  9, 0x02441453);
-    md5_GG(buf, c, d, a, b, 15, 14, 0xd8a1e681);
-    md5_GG(buf, b, c, d, a,  4, 20, 0xe7d3fbc8);
-    md5_GG(buf, a, b, c, d,  9,  5, 0x21e1cde6);
-    md5_GG(buf, d, a, b, c, 14,  9, 0xc33707d6);
-    md5_GG(buf, c, d, a, b,  3, 14, 0xf4d50d87);
-    md5_GG(buf, b, c, d, a,  8, 20, 0x455a14ed);
-    md5_GG(buf, a, b, c, d, 13,  5, 0xa9e3e905);
-    md5_GG(buf, d, a, b, c,  2,  9, 0xfcefa3f8);
-    md5_GG(buf, c, d, a, b,  7, 14, 0x676f02d9);
-    md5_GG(buf, b, c, d, a, 12, 20, 0x8d2a4c8a);
+    md5_GG(reg_cache, a, b, c, d,  1,  5, 0xf61e2562);
+    md5_GG(reg_cache, d, a, b, c,  6,  9, 0xc040b340);
+    md5_GG(reg_cache, c, d, a, b, 11, 14, 0x265e5a51);
+    md5_GG(reg_cache, b, c, d, a,  0, 20, 0xe9b6c7aa);
+    md5_GG(reg_cache, a, b, c, d,  5,  5, 0xd62f105d);
+    md5_GG(reg_cache, d, a, b, c, 10,  9, 0x02441453);
+    md5_GG(reg_cache, c, d, a, b, 15, 14, 0xd8a1e681);
+    md5_GG(reg_cache, b, c, d, a,  4, 20, 0xe7d3fbc8);
+    md5_GG(reg_cache, a, b, c, d,  9,  5, 0x21e1cde6);
+    md5_GG(reg_cache, d, a, b, c, 14,  9, 0xc33707d6);
+    md5_GG(reg_cache, c, d, a, b,  3, 14, 0xf4d50d87);
+    md5_GG(reg_cache, b, c, d, a,  8, 20, 0x455a14ed);
+    md5_GG(reg_cache, a, b, c, d, 13,  5, 0xa9e3e905);
+    md5_GG(reg_cache, d, a, b, c,  2,  9, 0xfcefa3f8);
+    md5_GG(reg_cache, c, d, a, b,  7, 14, 0x676f02d9);
+    md5_GG(reg_cache, b, c, d, a, 12, 20, 0x8d2a4c8a);
 
     // Round 3
-    md5_HH(buf, a, b, c, d,  5,  4, 0xfffa3942);
-    md5_HH(buf, d, a, b, c,  8, 11, 0x8771f681);
-    md5_HH(buf, c, d, a, b, 11, 16, 0x6d9d6122);
-    md5_HH(buf, b, c, d, a, 14, 23, 0xfde5380c);
-    md5_HH(buf, a, b, c, d,  1,  4, 0xa4beea44);
-    md5_HH(buf, d, a, b, c,  4, 11, 0x4bdecfa9);
-    md5_HH(buf, c, d, a, b,  7, 16, 0xf6bb4b60);
-    md5_HH(buf, b, c, d, a, 10, 23, 0xbebfbc70);
-    md5_HH(buf, a, b, c, d, 13,  4, 0x289b7ec6);
-    md5_HH(buf, d, a, b, c,  0, 11, 0xeaa127fa);
-    md5_HH(buf, c, d, a, b,  3, 16, 0xd4ef3085);
-    md5_HH(buf, b, c, d, a,  6, 23, 0x04881d05);
-    md5_HH(buf, a, b, c, d,  9,  4, 0xd9d4d039);
-    md5_HH(buf, d, a, b, c, 12, 11, 0xe6db99e5);
-    md5_HH(buf, c, d, a, b, 15, 16, 0x1fa27cf8);
-    md5_HH(buf, b, c, d, a,  2, 23, 0xc4ac5665);
+    md5_HH(reg_cache, a, b, c, d,  5,  4, 0xfffa3942);
+    md5_HH(reg_cache, d, a, b, c,  8, 11, 0x8771f681);
+    md5_HH(reg_cache, c, d, a, b, 11, 16, 0x6d9d6122);
+    md5_HH(reg_cache, b, c, d, a, 14, 23, 0xfde5380c);
+    md5_HH(reg_cache, a, b, c, d,  1,  4, 0xa4beea44);
+    md5_HH(reg_cache, d, a, b, c,  4, 11, 0x4bdecfa9);
+    md5_HH(reg_cache, c, d, a, b,  7, 16, 0xf6bb4b60);
+    md5_HH(reg_cache, b, c, d, a, 10, 23, 0xbebfbc70);
+    md5_HH(reg_cache, a, b, c, d, 13,  4, 0x289b7ec6);
+    md5_HH(reg_cache, d, a, b, c,  0, 11, 0xeaa127fa);
+    md5_HH(reg_cache, c, d, a, b,  3, 16, 0xd4ef3085);
+    md5_HH(reg_cache, b, c, d, a,  6, 23, 0x04881d05);
+    md5_HH(reg_cache, a, b, c, d,  9,  4, 0xd9d4d039);
+    md5_HH(reg_cache, d, a, b, c, 12, 11, 0xe6db99e5);
+    md5_HH(reg_cache, c, d, a, b, 15, 16, 0x1fa27cf8);
+    md5_HH(reg_cache, b, c, d, a,  2, 23, 0xc4ac5665);
 
     // Round 4
-    md5_II(buf, a, b, c, d,  0,  6, 0xf4292244);
-    md5_II(buf, d, a, b, c,  7, 10, 0x432aff97);
-    md5_II(buf, c, d, a, b, 14, 15, 0xab9423a7);
-    md5_II(buf, b, c, d, a,  5, 21, 0xfc93a039);
-    md5_II(buf, a, b, c, d, 12,  6, 0x655b59c3);
-    md5_II(buf, d, a, b, c,  3, 10, 0x8f0ccc92);
-    md5_II(buf, c, d, a, b, 10, 15, 0xffeff47d);
-    md5_II(buf, b, c, d, a,  1, 21, 0x85845dd1);
-    md5_II(buf, a, b, c, d,  8,  6, 0x6fa87e4f);
-    md5_II(buf, d, a, b, c, 15, 10, 0xfe2ce6e0);
-    md5_II(buf, c, d, a, b,  6, 15, 0xa3014314);
-    md5_II(buf, b, c, d, a, 13, 21, 0x4e0811a1);
-    md5_II(buf, a, b, c, d,  4,  6, 0xf7537e82);
-    md5_II(buf, d, a, b, c, 11, 10, 0xbd3af235);
-    md5_II(buf, c, d, a, b,  2, 15, 0x2ad7d2bb);
-    md5_II(buf, b, c, d, a,  9, 21, 0xeb86d391);
+    md5_II(reg_cache, a, b, c, d,  0,  6, 0xf4292244);
+    md5_II(reg_cache, d, a, b, c,  7, 10, 0x432aff97);
+    md5_II(reg_cache, c, d, a, b, 14, 15, 0xab9423a7);
+    md5_II(reg_cache, b, c, d, a,  5, 21, 0xfc93a039);
+    md5_II(reg_cache, a, b, c, d, 12,  6, 0x655b59c3);
+    md5_II(reg_cache, d, a, b, c,  3, 10, 0x8f0ccc92);
+    md5_II(reg_cache, c, d, a, b, 10, 15, 0xffeff47d);
+    md5_II(reg_cache, b, c, d, a,  1, 21, 0x85845dd1);
+    md5_II(reg_cache, a, b, c, d,  8,  6, 0x6fa87e4f);
+    md5_II(reg_cache, d, a, b, c, 15, 10, 0xfe2ce6e0);
+    md5_II(reg_cache, c, d, a, b,  6, 15, 0xa3014314);
+    md5_II(reg_cache, b, c, d, a, 13, 21, 0x4e0811a1);
+    md5_II(reg_cache, a, b, c, d,  4,  6, 0xf7537e82);
+    md5_II(reg_cache, d, a, b, c, 11, 10, 0xbd3af235);
+    md5_II(reg_cache, c, d, a, b,  2, 15, 0x2ad7d2bb);
+    md5_II(reg_cache, b, c, d, a,  9, 21, 0xeb86d391);
 
-    // write hash values back in the correct order
-    __ ldrw(rscratch1, Address(state,  0));
-    __ addw(rscratch1, rscratch1, a);
-    __ strw(rscratch1, Address(state,  0));
+    __ addw(a, state_regs[0], a);
+    __ ubfx(rscratch2, state_regs[0], 32, 32);
+    __ addw(b, rscratch2, b);
+    __ addw(c, state_regs[1], c);
+    __ ubfx(rscratch4, state_regs[1], 32, 32);
+    __ addw(d, rscratch4, d);
 
-    __ ldrw(rscratch2, Address(state,  4));
-    __ addw(rscratch2, rscratch2, b);
-    __ strw(rscratch2, Address(state,  4));
-
-    __ ldrw(rscratch3, Address(state,  8));
-    __ addw(rscratch3, rscratch3, c);
-    __ strw(rscratch3, Address(state,  8));
-
-    __ ldrw(rscratch4, Address(state, 12));
-    __ addw(rscratch4, rscratch4, d);
-    __ strw(rscratch4, Address(state, 12));
+    __ orr(state_regs[0], a, b, Assembler::LSL, 32);
+    __ orr(state_regs[1], c, d, Assembler::LSL, 32);
 
     if (multi_block) {
       __ add(buf, buf, 64);
@@ -3537,6 +3586,11 @@ class StubGenerator: public StubCodeGenerator {
       __ br(Assembler::LE, md5_loop);
       __ mov(c_rarg0, ofs); // return ofs
     }
+
+    // write hash values back in the correct order
+    __ stp(state_regs[0], state_regs[1], Address(state));
+
+    __ pop(saved_regs, sp);
 
     __ ret(lr);
 
@@ -7377,7 +7431,6 @@ typedef uint32_t u32;
   // The handle is dereferenced through a load barrier.
   static void jfr_epilogue(MacroAssembler* _masm) {
     __ reset_last_Java_frame(true);
-    __ resolve_global_jobject(r0, rscratch1, rscratch2);
   }
 
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
@@ -7406,6 +7459,7 @@ typedef uint32_t u32;
     jfr_prologue(the_pc, _masm, rthread);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
     jfr_epilogue(_masm);
+    __ resolve_global_jobject(r0, rscratch1, rscratch2);
     __ leave();
     __ ret(lr);
 
@@ -7414,6 +7468,44 @@ typedef uint32_t u32;
 
     RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
       RuntimeStub::new_runtime_stub("jfr_write_checkpoint", &code, frame_complete,
+                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                    oop_maps, false);
+    return stub;
+  }
+
+  // For c2: call to return a leased buffer.
+  static RuntimeStub* generate_jfr_return_lease() {
+    enum layout {
+      rbp_off,
+      rbpH_off,
+      return_off,
+      return_off2,
+      framesize // inclusive of return address
+    };
+
+    int insts_size = 1024;
+    int locs_size = 64;
+    CodeBuffer code("jfr_return_lease", insts_size, locs_size);
+    OopMapSet* oop_maps = new OopMapSet();
+    MacroAssembler* masm = new MacroAssembler(&code);
+    MacroAssembler* _masm = masm;
+
+    address start = __ pc();
+    __ enter();
+    int frame_complete = __ pc() - start;
+    address the_pc = __ pc();
+    jfr_prologue(the_pc, _masm, rthread);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), 1);
+    jfr_epilogue(_masm);
+
+    __ leave();
+    __ ret(lr);
+
+    OopMap* map = new OopMap(framesize, 1); // rfp
+    oop_maps->add_gc_map(the_pc - start, map);
+
+    RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
+      RuntimeStub::new_runtime_stub("jfr_return_lease", &code, frame_complete,
                                     (framesize >> (LogBytesPerWord - LogBytesPerInt)),
                                     oop_maps, false);
     return stub;
@@ -8416,9 +8508,17 @@ typedef uint32_t u32;
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
 
-    JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
-    JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
+    JFR_ONLY(generate_jfr_stubs();)
   }
+
+#if INCLUDE_JFR
+  void generate_jfr_stubs() {
+    StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
+    StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
+    StubRoutines::_jfr_return_lease_stub = generate_jfr_return_lease();
+    StubRoutines::_jfr_return_lease = StubRoutines::_jfr_return_lease_stub->entry_point();
+  }
+#endif // INCLUDE_JFR
 
   void generate_final_stubs() {
     // support for verify_oop (must happen after universe_init)
@@ -8452,6 +8552,10 @@ typedef uint32_t u32;
     }
 
     StubRoutines::aarch64::_spin_wait = generate_spin_wait();
+
+    if (UsePoly1305Intrinsics) {
+      StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
+    }
 
 #if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
 

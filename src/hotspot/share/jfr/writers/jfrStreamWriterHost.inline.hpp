@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,14 +76,14 @@ inline void StreamWriterHost<Adapter, AP>::write_bytes(const u1* buf, intptr_t l
   assert(len >= 0, "invariant");
   while (len > 0) {
     const unsigned int nBytes = len > INT_MAX ? INT_MAX : (unsigned int)len;
-    const ssize_t num_written = os::write(_fd, buf, nBytes);
-    if (errno == ENOSPC) {
+    const bool successful_write = os::write(_fd, buf, nBytes);
+    if (!successful_write && errno == ENOSPC) {
       JfrJavaSupport::abort("Failed to write to jfr stream because no space left on device", false);
     }
-    guarantee(num_written > 0, "Nothing got written, or os::write() failed");
-    _stream_pos += num_written;
-    len -= num_written;
-    buf += num_written;
+    guarantee(successful_write, "Not all the bytes got written, or os::write() failed");
+    _stream_pos += nBytes;
+    len -= nBytes;
+    buf += nBytes;
   }
 }
 

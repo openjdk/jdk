@@ -37,6 +37,7 @@
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/checkedCast.hpp"
 
 int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Register tmp, Label& slow_case) {
   const int aligned_mask = BytesPerWord -1;
@@ -48,7 +49,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   verify_oop(obj);
 
   // save object being locked into the BasicObjectLock
-  movptr(Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()), obj);
+  movptr(Address(disp_hdr, BasicObjectLock::obj_offset()), obj);
 
   null_check_offset = offset();
 
@@ -69,7 +70,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     const Register thread = disp_hdr;
     get_thread(thread);
 #endif
-    fast_lock_impl(obj, hdr, thread, tmp, slow_case);
+    lightweight_lock(obj, hdr, thread, tmp, slow_case);
   } else  if (LockingMode == LM_LEGACY) {
     Label done;
     // and mark it as unlocked
@@ -129,13 +130,13 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   }
 
   // load object
-  movptr(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
+  movptr(obj, Address(disp_hdr, BasicObjectLock::obj_offset()));
   verify_oop(obj);
 
   if (LockingMode == LM_LIGHTWEIGHT) {
     movptr(disp_hdr, Address(obj, hdr_offset));
     andptr(disp_hdr, ~(int32_t)markWord::lock_mask_in_place);
-    fast_unlock_impl(obj, disp_hdr, hdr, slow_case);
+    lightweight_unlock(obj, disp_hdr, hdr, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     // test if object header is pointing to the displaced header, and if so, restore
     // the displaced header in the object - if the object header is not pointing to

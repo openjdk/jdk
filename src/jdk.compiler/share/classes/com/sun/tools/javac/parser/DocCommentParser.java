@@ -284,6 +284,7 @@ public class DocCommentParser {
      * Non-standard tags are represented by {@link UnknownBlockTagTree}.
      */
     protected DCTree blockTag() {
+        newline = false;
         int p = bp;
         try {
             nextChar();
@@ -520,6 +521,7 @@ public class DocCommentParser {
      * It is an error if the beginning of the next tag is detected.
      */
     protected DCText quotedString() {
+        newline = false;
         int pos = bp;
         nextChar();
 
@@ -1299,13 +1301,21 @@ public class DocCommentParser {
                 }
             },
 
-            // {@inheritDoc}
+            // {@inheritDoc class-name}
             new TagParser(TagParser.Kind.INLINE, DCTree.Kind.INHERIT_DOC) {
                 @Override
                 public DCTree parse(int pos) throws ParseException {
+                    DCReference ref = reference(ReferenceParser.Mode.MEMBER_DISALLOWED);
+                    skipWhitespace();
                     if (ch == '}') {
                         nextChar();
-                        return m.at(pos).newInheritDocTree();
+                        // for backward compatibility, use the original legacy
+                        // method if no ref is given
+                        if (ref == null) {
+                            return m.at(pos).newInheritDocTree();
+                        } else {
+                            return m.at(pos).newInheritDocTree(ref);
+                        }
                     }
                     final int errorPos = bp;
                     inlineText(WhitespaceRetentionPolicy.REMOVE_ALL); // skip unexpected content

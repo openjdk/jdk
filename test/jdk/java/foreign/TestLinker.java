@@ -27,6 +27,8 @@
  * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @run testng TestLinker
+ * @run testng/othervm/policy=security.policy
+ *          -Djava.security.manager=default TestLinker
  */
 
 import jdk.internal.foreign.CABI;
@@ -89,10 +91,10 @@ public class TestLinker extends NativeTestHelper {
                     FunctionDescriptor.ofVoid(structLayout(C_INT).withName("x")) },
             { FunctionDescriptor.ofVoid(structLayout(C_INT)),
                     FunctionDescriptor.ofVoid(structLayout(C_INT.withName("x"))) },
-            { FunctionDescriptor.ofVoid(structLayout(C_INT, paddingLayout(32), C_LONG_LONG)),
-                    FunctionDescriptor.ofVoid(structLayout(C_INT, paddingLayout(32), C_LONG_LONG.withName("x"))) },
-            { FunctionDescriptor.ofVoid(structLayout(C_INT, paddingLayout(32), C_LONG_LONG)),
-                    FunctionDescriptor.ofVoid(structLayout(C_INT, paddingLayout(32).withName("x"), C_LONG_LONG)) },
+            { FunctionDescriptor.ofVoid(structLayout(C_INT, paddingLayout(4), C_LONG_LONG)),
+                    FunctionDescriptor.ofVoid(structLayout(C_INT, paddingLayout(4), C_LONG_LONG.withName("x"))) },
+            { FunctionDescriptor.ofVoid(structLayout(C_INT, paddingLayout(4), C_LONG_LONG)),
+                    FunctionDescriptor.ofVoid(structLayout(C_INT, paddingLayout(4).withName("x"), C_LONG_LONG)) },
             { FunctionDescriptor.ofVoid(structLayout(sequenceLayout(1, C_INT))),
                     FunctionDescriptor.ofVoid(structLayout(sequenceLayout(1, C_INT).withName("x"))) },
             { FunctionDescriptor.ofVoid(structLayout(sequenceLayout(1, C_INT))),

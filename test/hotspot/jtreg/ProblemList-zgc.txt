@@ -41,6 +41,8 @@ serviceability/sa/ClhsdbPstack.java#core                      8248912   generic-
 
 serviceability/sa/TestSysProps.java                           8302055   generic-all
 
+serviceability/sa/TestHeapDumpForInvokeDynamic.java           8315646   generic-all
+
 vmTestbase/gc/gctests/MemoryEaterMT/MemoryEaterMT.java        8289582   windows-x64
 
 vmTestbase/nsk/monitoring/MemoryPoolMBean/isCollectionUsageThresholdExceeded/isexceeded002/TestDescription.java 8298302 generic-all

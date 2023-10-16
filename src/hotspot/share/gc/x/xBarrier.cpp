@@ -239,7 +239,7 @@ oop XBarrier::load_barrier_on_phantom_oop_field_preloaded(volatile narrowOop* p,
 
 oop XBarrier::weak_load_barrier_on_oop_field_preloaded(volatile narrowOop* p, oop o) {
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 oop XBarrier::weak_load_barrier_on_weak_oop_field_preloaded(volatile narrowOop* p, oop o) {

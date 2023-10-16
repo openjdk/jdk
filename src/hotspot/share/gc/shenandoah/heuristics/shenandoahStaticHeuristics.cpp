@@ -32,7 +32,8 @@
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 
-ShenandoahStaticHeuristics::ShenandoahStaticHeuristics() : ShenandoahHeuristics() {
+ShenandoahStaticHeuristics::ShenandoahStaticHeuristics(ShenandoahSpaceInfo* space_info) :
+  ShenandoahHeuristics(space_info) {
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
 }
@@ -40,11 +41,9 @@ ShenandoahStaticHeuristics::ShenandoahStaticHeuristics() : ShenandoahHeuristics(
 ShenandoahStaticHeuristics::~ShenandoahStaticHeuristics() {}
 
 bool ShenandoahStaticHeuristics::should_start_gc() {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
-  size_t max_capacity = heap->max_capacity();
-  size_t capacity = heap->soft_max_capacity();
-  size_t available = heap->free_set()->available();
+  size_t max_capacity = _space_info->max_capacity();
+  size_t capacity = _space_info->soft_max_capacity();
+  size_t available = _space_info->available();
 
   // Make sure the code below treats available without the soft tail.
   size_t soft_tail = max_capacity - capacity;

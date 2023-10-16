@@ -463,7 +463,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc, /*instrsize=*/4);
+  print_instructions(st, pc);
   st->cr();
 
   // Try to decode the instructions.
@@ -516,7 +516,7 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
-bool os::Aix::platform_print_native_stack(outputStream* st, const void* context, char *buf, int buf_size) {
+bool os::Aix::platform_print_native_stack(outputStream* st, const void* context, char *buf, int buf_size, address& lastpc) {
   AixNativeCallstack::print_callstack_for_context(st, (const ucontext_t*)context, true, buf, (size_t) buf_size);
   return true;
 }

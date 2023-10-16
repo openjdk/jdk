@@ -35,9 +35,11 @@
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
+#include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/continuation.hpp"
@@ -50,6 +52,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vframeArray.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
@@ -205,7 +208,8 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 #endif // _LP64
 
   // Restore stack bottom in case i2c adjusted stack
-  __ movptr(rsp, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ movptr(rcx, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(rsp, Address(rbp, rcx, Address::times_ptr));
   // and null it as marker that esp is now tos until next java call
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
 
@@ -477,7 +481,7 @@ void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue)
 void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 
   // monitor entry size: see picture of stack in frame_x86.hpp
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
   // total overhead size: entry_size + (saved rbp through expr stack
   // bottom).  be sure to change this if you add/subtract anything
@@ -566,7 +570,7 @@ void TemplateInterpreterGenerator::lock_method() {
   const Address monitor_block_top(
         rbp,
         frame::interpreter_frame_monitor_block_top_offset * wordSize);
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
 #ifdef ASSERT
   {
@@ -606,7 +610,7 @@ void TemplateInterpreterGenerator::lock_method() {
   __ subptr(rsp, entry_size); // add space for a monitor entry
   __ movptr(monitor_block_top, rsp);  // set new monitor block top
   // store object
-  __ movptr(Address(rsp, BasicObjectLock::obj_offset_in_bytes()), rax);
+  __ movptr(Address(rsp, BasicObjectLock::obj_offset()), rax);
   const Register lockreg = NOT_LP64(rdx) LP64_ONLY(c_rarg1);
   __ movptr(lockreg, rsp); // object address
   __ lock_object(lockreg);
@@ -647,7 +651,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   __ movptr(rdx, Address(rbx, Method::const_offset()));
   __ movptr(rdx, Address(rdx, ConstMethod::constants_offset()));
-  __ movptr(rdx, Address(rdx, ConstantPool::cache_offset_in_bytes()));
+  __ movptr(rdx, Address(rdx, ConstantPool::cache_offset()));
   __ push(rdx); // set constant pool cache
 
   __ movptr(rax, rlocals);
@@ -1154,7 +1158,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // reset handle block
   __ movptr(t, Address(thread, JavaThread::active_handles_offset()));
-  __ movl(Address(t, JNIHandleBlock::top_offset_in_bytes()), NULL_WORD);
+  __ movl(Address(t, JNIHandleBlock::top_offset()), NULL_WORD);
 
   // If result is an oop unbox and store it in frame where gc will see it
   // and result handler will pick it up
@@ -1248,7 +1252,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
       // monitor expect in c_rarg1 for slow unlock path
       __ lea(regmon, monitor); // address of first monitor
 
-      __ movptr(t, Address(regmon, BasicObjectLock::obj_offset_in_bytes()));
+      __ movptr(t, Address(regmon, BasicObjectLock::obj_offset()));
       __ testptr(t, t);
       __ jcc(Assembler::notZero, unlock);
 
@@ -1615,6 +1619,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 #ifndef _LP64
   __ mov(rax, rsp);
   __ movptr(rbx, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(rbx, Address(rbp, rbx, Address::times_ptr));
   __ get_thread(thread);
   // PC must point into interpreter here
   __ set_last_Java_frame(thread, noreg, rbp, __ pc(), noreg);
@@ -1623,6 +1628,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 #else
   __ mov(c_rarg1, rsp);
   __ movptr(c_rarg2, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(c_rarg2, Address(rbp, c_rarg2, Address::times_ptr));
   // PC must point into interpreter here
   __ set_last_Java_frame(noreg, rbp, __ pc(), rscratch1);
   __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::popframe_move_outgoing_args), r15_thread, c_rarg1, c_rarg2);
@@ -1630,7 +1636,8 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ reset_last_Java_frame(thread, true);
 
   // Restore the last_sp and null it out
-  __ movptr(rsp, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ movptr(rcx, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(rsp, Address(rbp, rcx, Address::times_ptr));
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
 
   __ restore_bcp();

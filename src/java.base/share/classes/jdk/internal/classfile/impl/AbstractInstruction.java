@@ -383,7 +383,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public FieldRefEntry field() {
             if (fieldEntry == null)
-                fieldEntry = (FieldRefEntry) code.classReader.readEntry(pos + 1);
+                fieldEntry = code.classReader.readEntry(pos + 1, FieldRefEntry.class);
             return fieldEntry;
         }
 
@@ -413,7 +413,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public MemberRefEntry method() {
             if (methodEntry == null)
-                methodEntry = (MemberRefEntry) code.classReader.readEntry(pos + 1);
+                methodEntry = code.classReader.readEntry(pos + 1, MemberRefEntry.class);
             return methodEntry;
         }
 
@@ -424,7 +424,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public int count() {
-            return Util.parameterSlots(type().stringValue());
+            return Util.parameterSlots(Util.methodTypeSymbol(method().nameAndType()));
         }
 
         @Override
@@ -453,7 +453,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public MemberRefEntry method() {
             if (methodEntry == null)
-                methodEntry = (InterfaceMethodRefEntry) code.classReader.readEntry(pos + 1);
+                methodEntry = code.classReader.readEntry(pos + 1, InterfaceMethodRefEntry.class);
             return methodEntry;
         }
 
@@ -493,7 +493,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public InvokeDynamicEntry invokedynamic() {
             if (indyEntry == null)
-                indyEntry = (InvokeDynamicEntry) code.classReader.readEntry(pos + 1);
+                indyEntry = code.classReader.readEntry(pos + 1, InvokeDynamicEntry.class);
             return indyEntry;
         }
 
@@ -1059,7 +1059,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public int count() {
             return op == Opcode.INVOKEINTERFACE
-                   ? Util.parameterSlots(methodEntry.nameAndType().type().stringValue()) + 1
+                   ? Util.parameterSlots(Util.methodTypeSymbol(methodEntry.nameAndType())) + 1
                    : 0;
         }
 

@@ -31,12 +31,14 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormatSymbols;
-import java.util.Digits.*;
 import java.util.Formatter.FormatSpecifier;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.FormatConcatItem;
+import jdk.internal.util.DecimalDigits;
+import jdk.internal.util.HexDigits;
+import jdk.internal.util.OctalDigits;
 
 import static java.lang.invoke.MethodType.methodType;
 
@@ -423,7 +425,7 @@ class FormatItem {
         }
     }
 
-    protected static abstract sealed class FormatItemModifier implements FormatConcatItem
+    static abstract sealed class FormatItemModifier implements FormatConcatItem
         permits FormatItemFillLeft,
                 FormatItemFillRight
     {

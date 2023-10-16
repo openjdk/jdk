@@ -221,7 +221,7 @@ class nmethod : public CompiledMethod {
 #endif
   int _nmethod_end_offset;
 
-  int code_offset() const { return (address) code_begin() - header_begin(); }
+  int code_offset() const { return int(code_begin() - header_begin()); }
 
   // location in frame (offset for sp) that deopt can store the original
   // pc during a deopt.
@@ -307,7 +307,7 @@ class nmethod : public CompiledMethod {
 
   const char* reloc_string_for(u_char* begin, u_char* end);
 
-  bool try_transition(int new_state);
+  bool try_transition(signed char new_state);
 
   // Returns true if this thread changed the state of the nmethod or
   // false if another thread performed the transition.
@@ -321,7 +321,7 @@ class nmethod : public CompiledMethod {
   void init_defaults();
 
   // Offsets
-  int content_offset() const                  { return content_begin() - header_begin(); }
+  int content_offset() const                  { return int(content_begin() - header_begin()); }
   int data_offset() const                     { return _data_offset; }
 
   address header_end() const                  { return (address)    header_begin() + header_size(); }
@@ -407,12 +407,12 @@ class nmethod : public CompiledMethod {
 #endif
 
   // Sizes
-  int oops_size         () const                  { return (address)  oops_end         () - (address)  oops_begin         (); }
-  int metadata_size     () const                  { return (address)  metadata_end     () - (address)  metadata_begin     (); }
-  int dependencies_size () const                  { return            dependencies_end () -            dependencies_begin (); }
+  int oops_size         () const                  { return int((address)  oops_end         () - (address)  oops_begin         ()); }
+  int metadata_size     () const                  { return int((address)  metadata_end     () - (address)  metadata_begin     ()); }
+  int dependencies_size () const                  { return int(           dependencies_end () -            dependencies_begin ()); }
 #if INCLUDE_JVMCI
-  int speculations_size () const                  { return            speculations_end () -            speculations_begin (); }
-  int jvmci_data_size   () const                  { return            jvmci_data_end   () -            jvmci_data_begin   (); }
+  int speculations_size () const                  { return int(           speculations_end () -            speculations_begin ()); }
+  int jvmci_data_size   () const                  { return int(           jvmci_data_end   () -            jvmci_data_begin   ()); }
 #endif
 
   int     oops_count() const { assert(oops_size() % oopSize == 0, "");  return (oops_size() / oopSize) + 1; }
@@ -699,9 +699,9 @@ public:
   }
 
   // support for code generation
-  static int verified_entry_point_offset()        { return offset_of(nmethod, _verified_entry_point); }
-  static int osr_entry_point_offset()             { return offset_of(nmethod, _osr_entry_point); }
-  static int state_offset()                       { return offset_of(nmethod, _state); }
+  static ByteSize verified_entry_point_offset() { return byte_offset_of(nmethod, _verified_entry_point); }
+  static ByteSize osr_entry_point_offset()      { return byte_offset_of(nmethod, _osr_entry_point); }
+  static ByteSize state_offset()                { return byte_offset_of(nmethod, _state); }
 
   virtual void metadata_do(MetadataClosure* f);
 

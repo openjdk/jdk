@@ -304,6 +304,10 @@ public:
   void arrays_hashcode_elvload(XMMRegister dst, AddressLiteral src, BasicType eltype);
   void arrays_hashcode_elvcast(XMMRegister dst, BasicType eltype);
 
+#ifdef _LP64
+  void convertF2I(BasicType dst_bt, BasicType src_bt, Register dst, XMMRegister src);
+#endif
+
   void evmasked_op(int ideal_opc, BasicType eType, KRegister mask,
                    XMMRegister dst, XMMRegister src1, XMMRegister src2,
                    bool merge, int vlen_enc, bool is_varshift = false);

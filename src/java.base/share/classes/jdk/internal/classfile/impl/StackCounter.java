@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -44,7 +46,7 @@ public final class StackCounter {
                 dcb,
                 buf.thisClass().asSymbol(),
                 dcb.methodInfo.methodName().stringValue(),
-                MethodTypeDesc.ofDescriptor(dcb.methodInfo.methodType().stringValue()),
+                dcb.methodInfo.methodTypeSymbol(),
                 (dcb.methodInfo.methodFlags() & ACC_STATIC) != 0,
                 dcb.bytecodesBufWriter.asByteBuffer().slice(0, dcb.bytecodesBufWriter.size()),
                 dcb.constantPool,
@@ -106,7 +108,7 @@ public final class StackCounter {
         for (var h : handlers) map.put(labelContext.labelToBci(h.handler), 1);
         maxLocals = isStatic ? 0 : 1;
         for (var cd : methodDesc.parameterList()) {
-            maxLocals += TypeKind.from(cd).slotSize();
+            maxLocals += Util.slotSize(cd);
         }
         bcs = new RawBytecodeHelper(bytecode);
         visited = new BitSet(bcs.endBci);

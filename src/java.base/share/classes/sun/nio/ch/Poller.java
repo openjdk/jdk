@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,9 +97,9 @@ public abstract class Poller {
      */
     private void poll(int fdVal, long nanos, BooleanSupplier supplier) throws IOException {
         if (USE_DIRECT_REGISTER) {
-            poll1(fdVal, nanos, supplier);
+            pollDirect(fdVal, nanos, supplier);
         } else {
-            poll2(fdVal, nanos, supplier);
+            pollIndirect(fdVal, nanos, supplier);
         }
     }
 
@@ -107,7 +107,7 @@ public abstract class Poller {
      * Parks the current thread until a file descriptor is ready. This implementation
      * registers the file descriptor, then parks until the file descriptor is polled.
      */
-    private void poll1(int fdVal, long nanos, BooleanSupplier supplier) throws IOException {
+    private void pollDirect(int fdVal, long nanos, BooleanSupplier supplier) throws IOException {
         register(fdVal);
         try {
             boolean isOpen = supplier.getAsBoolean();
@@ -128,7 +128,7 @@ public abstract class Poller {
      * queues the file descriptor to the update thread, then parks until the file
      * descriptor is polled.
      */
-    private void poll2(int fdVal, long nanos, BooleanSupplier supplier) {
+    private void pollIndirect(int fdVal, long nanos, BooleanSupplier supplier) {
         Request request = registerAsync(fdVal);
         try {
             boolean isOpen = supplier.getAsBoolean();

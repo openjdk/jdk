@@ -498,6 +498,14 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   // other registers used in this stub
   const Register handler_addr = x11;
 
+  if (AbortVMOnException) {
+    __ enter();
+    save_live_registers(sasm);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, check_abort_on_vm_exception), x10);
+    restore_live_registers(sasm);
+    __ leave();
+  }
+
   // verify that only x10, is valid at this time
   __ invalidate_registers(false, true, true, true, true, true);
 

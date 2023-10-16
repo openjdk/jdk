@@ -141,7 +141,7 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_win_Kernel3
     pointerValue  = env->GetFieldID(cls, "value", "J");
     CHECK_NULL(pointerValue);
 
-    cls = env->FindClass("jdk/internal/org/jline/terminal/impl/jna/win/LastErrorException");
+    cls = env->FindClass("jdk/internal/org/jline/terminal/impl/jna/LastErrorException");
     CHECK_NULL(cls);
     lastErrorExceptionClass = (jclass) env->NewGlobalRef(cls);
     lastErrorExceptionConstructor = env->GetMethodID(cls, "<init>", "(J)V");

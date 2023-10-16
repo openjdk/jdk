@@ -87,14 +87,6 @@ test_unsupported_jvmti_functions(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread) 
 
   LOG("Testing JVMTI functions which should not accept a virtual thread argument\n");
 
-  LOG("Testing PopFrame\n");
-  err = jvmti->PopFrame(vthread);
-  check_jvmti_error_opaque_frame(jni, "PopFrame", err);
-
-  LOG("Testing ForceEarlyReturnVoid\n");
-  err = jvmti->ForceEarlyReturnVoid(vthread);
-  check_jvmti_error_opaque_frame(jni, "ForceEarlyReturnVoid", err);
-
   LOG("Testing GetThreadCpuTime\n");
   err = jvmti->GetThreadCpuTime(vthread, &nanos);
   check_jvmti_error_unsupported_operation(jni, "GetThreadCpuTime", err);

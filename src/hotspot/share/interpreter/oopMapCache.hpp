@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 #ifndef SHARE_INTERPRETER_OOPMAPCACHE_HPP
 #define SHARE_INTERPRETER_OOPMAPCACHE_HPP
 
-#include "oops/generateOopMap.hpp"
+#include "runtime/handles.hpp"
 #include "runtime/mutex.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // A Cache for storing (method, bci) -> oopMap.
 // The memory management system uses the cache when locating object
@@ -60,6 +61,7 @@ class OffsetClosure  {
   virtual void offset_do(int offset) = 0;
 };
 
+class Method;
 class OopMapCacheEntry;
 
 class InterpreterOopMap: ResourceObj {
@@ -100,8 +102,8 @@ class InterpreterOopMap: ResourceObj {
   // access methods
   Method*        method() const                  { return _method; }
   void           set_method(Method* v)           { _method = v; }
-  int            bci() const                     { return _bci; }
-  void           set_bci(int v)                  { _bci = v; }
+  unsigned short bci() const                     { return _bci; }
+  void           set_bci(unsigned short v)       { _bci = v; }
   int            mask_size() const               { return _mask_size; }
   void           set_mask_size(int v)            { _mask_size = v; }
   // Test bit mask size and return either the in-line bit mask or allocated

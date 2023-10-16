@@ -116,7 +116,7 @@ const char* CompiledMethod::state() const {
 
 //-----------------------------------------------------------------------------
 void CompiledMethod::set_deoptimized_done() {
-  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   if (_deoptimization_status != deoptimize_done) { // can't go backwards
     Atomic::store(&_deoptimization_status, deoptimize_done);
   }
@@ -679,7 +679,7 @@ bool CompiledMethod::cleanup_inline_caches_impl(bool unloading_occurred, bool cl
 address CompiledMethod::continuation_for_implicit_exception(address pc, bool for_div0_check) {
   // Exception happened outside inline-cache check code => we are inside
   // an active nmethod => use cpc to determine a return address
-  int exception_offset = pc - code_begin();
+  int exception_offset = int(pc - code_begin());
   int cont_offset = ImplicitExceptionTable(this).continuation_offset( exception_offset );
 #ifdef ASSERT
   if (cont_offset == 0) {

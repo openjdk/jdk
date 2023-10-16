@@ -25,20 +25,20 @@
 package gc.stress.gcold;
 
 /*
- * @test TestGCOldWithZ
+ * @test TestGCOldWithZGenerational
  * @key randomness
  * @library / /test/lib
- * @requires vm.gc.Z & vm.opt.final.ZGenerational
+ * @requires vm.gc.ZGenerational
  * @summary Stress the Z
  * @run main/othervm -Xmx384M -XX:+UseZGC -XX:+ZGenerational gc.stress.gcold.TestGCOldWithZ 50 1 20 10 10000
  * @run main/othervm -Xmx256m -XX:+UseZGC -XX:+ZGenerational gc.stress.gcold.TestGCOldWithZ 50 5 20 1 5000
  */
 
 /*
- * @test TestGCOldWithZSingleGenMode
+ * @test TestGCOldWithZSinglegen
  * @key randomness
  * @library / /test/lib
- * @requires vm.gc.Z & !vm.opt.final.ZGenerational
+ * @requires vm.gc.ZSinglegen
  * @summary Stress the Z
  * @run main/othervm -Xmx384M -XX:+UseZGC -XX:-ZGenerational gc.stress.gcold.TestGCOldWithZ 50 1 20 10 10000
  * @run main/othervm -Xmx256m -XX:+UseZGC -XX:-ZGenerational gc.stress.gcold.TestGCOldWithZ 50 5 20 1 5000

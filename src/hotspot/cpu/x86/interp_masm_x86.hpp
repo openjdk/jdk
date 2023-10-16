@@ -26,7 +26,6 @@
 #define CPU_X86_INTERP_MASM_X86_HPP
 
 #include "asm/macroAssembler.hpp"
-#include "interpreter/invocationCounter.hpp"
 #include "oops/method.hpp"
 #include "runtime/frame.hpp"
 
@@ -95,12 +94,12 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void get_constant_pool_cache(Register reg) {
     get_constant_pool(reg);
-    movptr(reg, Address(reg, ConstantPool::cache_offset_in_bytes()));
+    movptr(reg, Address(reg, ConstantPool::cache_offset()));
   }
 
   void get_cpool_and_tags(Register cpool, Register tags) {
     get_constant_pool(cpool);
-    movptr(tags, Address(cpool, ConstantPool::tags_offset_in_bytes()));
+    movptr(tags, Address(cpool, ConstantPool::tags_offset()));
   }
 
   void get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset);
@@ -257,10 +256,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void record_klass_in_profile_helper(Register receiver, Register mdp,
                                       Register reg2, int start_row,
                                       Label& done, bool is_virtual_call);
-  void record_item_in_profile_helper(Register item, Register mdp,
-                                     Register reg2, int start_row, Label& done, int total_rows,
-                                     OffsetFunction item_offset_fn, OffsetFunction item_count_offset_fn,
-                                     int non_profiled_offset);
+  void record_item_in_profile_helper(Register item, Register mdp, Register reg2, int start_row,
+                                     Label& done, int total_rows,
+                                     OffsetFunction item_offset_fn,
+                                     OffsetFunction item_count_offset_fn);
 
   void update_mdp_by_offset(Register mdp_in, int offset_of_offset);
   void update_mdp_by_offset(Register mdp_in, Register reg, int offset_of_disp);
@@ -277,7 +276,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_ret(Register return_bci, Register mdp);
   void profile_null_seen(Register mdp);
   void profile_typecheck(Register mdp, Register klass, Register scratch);
-  void profile_typecheck_failed(Register mdp);
+
   void profile_switch_default(Register mdp);
   void profile_switch_case(Register index_in_scratch, Register mdp,
                            Register scratch2);
@@ -307,7 +306,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_parameters_type(Register mdp, Register tmp1, Register tmp2);
 
   void load_resolved_indy_entry(Register cache, Register index);
-
+  void load_field_entry(Register cache, Register index, int bcp_offset = 1);
 };
 
 #endif // CPU_X86_INTERP_MASM_X86_HPP

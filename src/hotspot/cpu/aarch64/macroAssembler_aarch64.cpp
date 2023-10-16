@@ -48,6 +48,7 @@
 #include "memory/universe.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "oops/accessDecorators.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "runtime/continuation.hpp"
@@ -1023,7 +1024,7 @@ void MacroAssembler::call_VM(Register oop_result,
                              Register arg_1,
                              Register arg_2,
                              bool check_exceptions) {
-  assert(arg_1 != c_rarg2, "smashed arg");
+  assert_different_registers(arg_1, c_rarg2);
   pass_arg2(this, arg_2);
   pass_arg1(this, arg_1);
   call_VM_helper(oop_result, entry_point, 2, check_exceptions);
@@ -1035,11 +1036,10 @@ void MacroAssembler::call_VM(Register oop_result,
                              Register arg_2,
                              Register arg_3,
                              bool check_exceptions) {
-  assert(arg_1 != c_rarg3, "smashed arg");
-  assert(arg_2 != c_rarg3, "smashed arg");
+  assert_different_registers(arg_1, c_rarg2, c_rarg3);
+  assert_different_registers(arg_2, c_rarg3);
   pass_arg3(this, arg_3);
 
-  assert(arg_1 != c_rarg2, "smashed arg");
   pass_arg2(this, arg_2);
 
   pass_arg1(this, arg_1);
@@ -1070,7 +1070,7 @@ void MacroAssembler::call_VM(Register oop_result,
                              Register arg_2,
                              bool check_exceptions) {
 
-  assert(arg_1 != c_rarg2, "smashed arg");
+  assert_different_registers(arg_1, c_rarg2);
   pass_arg2(this, arg_2);
   pass_arg1(this, arg_1);
   call_VM(oop_result, last_java_sp, entry_point, 2, check_exceptions);
@@ -1083,10 +1083,9 @@ void MacroAssembler::call_VM(Register oop_result,
                              Register arg_2,
                              Register arg_3,
                              bool check_exceptions) {
-  assert(arg_1 != c_rarg3, "smashed arg");
-  assert(arg_2 != c_rarg3, "smashed arg");
+  assert_different_registers(arg_1, c_rarg2, c_rarg3);
+  assert_different_registers(arg_2, c_rarg3);
   pass_arg3(this, arg_3);
-  assert(arg_1 != c_rarg2, "smashed arg");
   pass_arg2(this, arg_2);
   pass_arg1(this, arg_1);
   call_VM(oop_result, last_java_sp, entry_point, 3, check_exceptions);
@@ -1147,7 +1146,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable)
   int vtable_base = in_bytes(Klass::vtable_start_offset());
-  int itentry_off = itableMethodEntry::method_offset_in_bytes();
+  int itentry_off = in_bytes(itableMethodEntry::method_offset());
   int scan_step   = itableOffsetEntry::size() * wordSize;
   int vte_size    = vtableEntry::size_in_bytes();
   assert(vte_size == wordSize, "else adjust times_vte_scale");
@@ -1175,7 +1174,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   // }
   Label search, found_method;
 
-  ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset_in_bytes()));
+  ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset()));
   cmp(intf_klass, method_result);
   br(Assembler::EQ, found_method);
   bind(search);
@@ -1183,9 +1182,9 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   // the receiver class doesn't implement the interface, and wasn't the
   // same as when the caller was compiled.
   cbz(method_result, L_no_such_interface);
-  if (itableOffsetEntry::interface_offset_in_bytes() != 0) {
+  if (itableOffsetEntry::interface_offset() != 0) {
     add(scan_temp, scan_temp, scan_step);
-    ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset_in_bytes()));
+    ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset()));
   } else {
     ldr(method_result, Address(pre(scan_temp, scan_step)));
   }
@@ -1196,19 +1195,122 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   // Got a hit.
   if (return_method) {
-    ldrw(scan_temp, Address(scan_temp, itableOffsetEntry::offset_offset_in_bytes()));
+    ldrw(scan_temp, Address(scan_temp, itableOffsetEntry::offset_offset()));
     ldr(method_result, Address(recv_klass, scan_temp, Address::uxtw(0)));
   }
+}
+
+// Look up the method for a megamorphic invokeinterface call in a single pass over itable:
+// - check recv_klass (actual object class) is a subtype of resolved_klass from CompiledICHolder
+// - find a holder_klass (class that implements the method) vtable offset and get the method from vtable by index
+// The target method is determined by <holder_klass, itable_index>.
+// The receiver klass is in recv_klass.
+// On success, the result will be in method_result, and execution falls through.
+// On failure, execution transfers to the given label.
+void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
+                                                  Register holder_klass,
+                                                  Register resolved_klass,
+                                                  Register method_result,
+                                                  Register temp_itbl_klass,
+                                                  Register scan_temp,
+                                                  int itable_index,
+                                                  Label& L_no_such_interface) {
+  // 'method_result' is only used as output register at the very end of this method.
+  // Until then we can reuse it as 'holder_offset'.
+  Register holder_offset = method_result;
+  assert_different_registers(resolved_klass, recv_klass, holder_klass, temp_itbl_klass, scan_temp, holder_offset);
+
+  int vtable_start_offset = in_bytes(Klass::vtable_start_offset());
+  int itable_offset_entry_size = itableOffsetEntry::size() * wordSize;
+  int ioffset = in_bytes(itableOffsetEntry::interface_offset());
+  int ooffset = in_bytes(itableOffsetEntry::offset_offset());
+
+  Label L_loop_search_resolved_entry, L_resolved_found, L_holder_found;
+
+  ldrw(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));
+  add(recv_klass, recv_klass, vtable_start_offset + ioffset);
+  // itableOffsetEntry[] itable = recv_klass + Klass::vtable_start_offset() + sizeof(vtableEntry) * recv_klass->_vtable_len;
+  // temp_itbl_klass = itable[0]._interface;
+  int vtblEntrySize = vtableEntry::size_in_bytes();
+  assert(vtblEntrySize == wordSize, "ldr lsl shift amount must be 3");
+  ldr(temp_itbl_klass, Address(recv_klass, scan_temp, Address::lsl(exact_log2(vtblEntrySize))));
+  mov(holder_offset, zr);
+  // scan_temp = &(itable[0]._interface)
+  lea(scan_temp, Address(recv_klass, scan_temp, Address::lsl(exact_log2(vtblEntrySize))));
+
+  // Initial checks:
+  //   - if (holder_klass != resolved_klass), go to "scan for resolved"
+  //   - if (itable[0] == holder_klass), shortcut to "holder found"
+  //   - if (itable[0] == 0), no such interface
+  cmp(resolved_klass, holder_klass);
+  br(Assembler::NE, L_loop_search_resolved_entry);
+  cmp(holder_klass, temp_itbl_klass);
+  br(Assembler::EQ, L_holder_found);
+  cbz(temp_itbl_klass, L_no_such_interface);
+
+  // Loop: Look for holder_klass record in itable
+  //   do {
+  //     temp_itbl_klass = *(scan_temp += itable_offset_entry_size);
+  //     if (temp_itbl_klass == holder_klass) {
+  //       goto L_holder_found; // Found!
+  //     }
+  //   } while (temp_itbl_klass != 0);
+  //   goto L_no_such_interface // Not found.
+  Label L_search_holder;
+  bind(L_search_holder);
+    ldr(temp_itbl_klass, Address(pre(scan_temp, itable_offset_entry_size)));
+    cmp(holder_klass, temp_itbl_klass);
+    br(Assembler::EQ, L_holder_found);
+    cbnz(temp_itbl_klass, L_search_holder);
+
+  b(L_no_such_interface);
+
+  // Loop: Look for resolved_class record in itable
+  //   while (true) {
+  //     temp_itbl_klass = *(scan_temp += itable_offset_entry_size);
+  //     if (temp_itbl_klass == 0) {
+  //       goto L_no_such_interface;
+  //     }
+  //     if (temp_itbl_klass == resolved_klass) {
+  //        goto L_resolved_found;  // Found!
+  //     }
+  //     if (temp_itbl_klass == holder_klass) {
+  //        holder_offset = scan_temp;
+  //     }
+  //   }
+  //
+  Label L_loop_search_resolved;
+  bind(L_loop_search_resolved);
+    ldr(temp_itbl_klass, Address(pre(scan_temp, itable_offset_entry_size)));
+  bind(L_loop_search_resolved_entry);
+    cbz(temp_itbl_klass, L_no_such_interface);
+    cmp(resolved_klass, temp_itbl_klass);
+    br(Assembler::EQ, L_resolved_found);
+    cmp(holder_klass, temp_itbl_klass);
+    br(Assembler::NE, L_loop_search_resolved);
+    mov(holder_offset, scan_temp);
+    b(L_loop_search_resolved);
+
+  // See if we already have a holder klass. If not, go and scan for it.
+  bind(L_resolved_found);
+  cbz(holder_offset, L_search_holder);
+  mov(scan_temp, holder_offset);
+
+  // Finally, scan_temp contains holder_klass vtable offset
+  bind(L_holder_found);
+  ldrw(method_result, Address(scan_temp, ooffset - ioffset));
+  add(recv_klass, recv_klass, itable_index * wordSize + in_bytes(itableMethodEntry::method_offset())
+    - vtable_start_offset - ioffset); // substract offsets to restore the original value of recv_klass
+  ldr(method_result, Address(recv_klass, method_result, Address::uxtw(0)));
 }
 
 // virtual method calling
 void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            RegisterOrConstant vtable_index,
                                            Register method_result) {
-  const int base = in_bytes(Klass::vtable_start_offset());
   assert(vtableEntry::size() * wordSize == 8,
          "adjust the scaling in the code below");
-  int vtable_offset_in_bytes = base + vtableEntry::method_offset_in_bytes();
+  int64_t vtable_offset_in_bytes = in_bytes(Klass::vtable_start_offset() + vtableEntry::method_offset());
 
   if (vtable_index.is_register()) {
     lea(method_result, Address(recv_klass,
@@ -1591,6 +1693,7 @@ void MacroAssembler::call_VM_leaf(address entry_point, Register arg_0) {
 }
 
 void MacroAssembler::call_VM_leaf(address entry_point, Register arg_0, Register arg_1) {
+  assert_different_registers(arg_1, c_rarg0);
   pass_arg0(this, arg_0);
   pass_arg1(this, arg_1);
   call_VM_leaf_base(entry_point, 2);
@@ -1598,6 +1701,8 @@ void MacroAssembler::call_VM_leaf(address entry_point, Register arg_0, Register 
 
 void MacroAssembler::call_VM_leaf(address entry_point, Register arg_0,
                                   Register arg_1, Register arg_2) {
+  assert_different_registers(arg_1, c_rarg0);
+  assert_different_registers(arg_2, c_rarg0, c_rarg1);
   pass_arg0(this, arg_0);
   pass_arg1(this, arg_1);
   pass_arg2(this, arg_2);
@@ -1611,31 +1716,27 @@ void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0) {
 
 void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Register arg_1) {
 
-  assert(arg_0 != c_rarg1, "smashed arg");
+  assert_different_registers(arg_0, c_rarg1);
   pass_arg1(this, arg_1);
   pass_arg0(this, arg_0);
   MacroAssembler::call_VM_leaf_base(entry_point, 2);
 }
 
 void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Register arg_1, Register arg_2) {
-  assert(arg_0 != c_rarg2, "smashed arg");
-  assert(arg_1 != c_rarg2, "smashed arg");
+  assert_different_registers(arg_0, c_rarg1, c_rarg2);
+  assert_different_registers(arg_1, c_rarg2);
   pass_arg2(this, arg_2);
-  assert(arg_0 != c_rarg1, "smashed arg");
   pass_arg1(this, arg_1);
   pass_arg0(this, arg_0);
   MacroAssembler::call_VM_leaf_base(entry_point, 3);
 }
 
 void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Register arg_1, Register arg_2, Register arg_3) {
-  assert(arg_0 != c_rarg3, "smashed arg");
-  assert(arg_1 != c_rarg3, "smashed arg");
-  assert(arg_2 != c_rarg3, "smashed arg");
+  assert_different_registers(arg_0, c_rarg1, c_rarg2, c_rarg3);
+  assert_different_registers(arg_1, c_rarg2, c_rarg3);
+  assert_different_registers(arg_2, c_rarg3);
   pass_arg3(this, arg_3);
-  assert(arg_0 != c_rarg2, "smashed arg");
-  assert(arg_1 != c_rarg2, "smashed arg");
   pass_arg2(this, arg_2);
-  assert(arg_0 != c_rarg1, "smashed arg");
   pass_arg1(this, arg_1);
   pass_arg0(this, arg_0);
   MacroAssembler::call_VM_leaf_base(entry_point, 4);
@@ -4315,7 +4416,7 @@ void MacroAssembler::load_method_holder_cld(Register rresult, Register rmethod) 
 void MacroAssembler::load_method_holder(Register holder, Register method) {
   ldr(holder, Address(method, Method::const_offset()));                      // ConstMethod*
   ldr(holder, Address(holder, ConstMethod::constants_offset()));             // ConstantPool*
-  ldr(holder, Address(holder, ConstantPool::pool_holder_offset_in_bytes())); // InstanceKlass*
+  ldr(holder, Address(holder, ConstantPool::pool_holder_offset()));          // InstanceKlass*
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {
@@ -4352,7 +4453,7 @@ void MacroAssembler::load_mirror(Register dst, Register method, Register tmp1, R
   const int mirror_offset = in_bytes(Klass::java_mirror_offset());
   ldr(dst, Address(rmethod, Method::const_offset()));
   ldr(dst, Address(dst, ConstMethod::constants_offset()));
-  ldr(dst, Address(dst, ConstantPool::pool_holder_offset_in_bytes()));
+  ldr(dst, Address(dst, ConstantPool::pool_holder_offset()));
   ldr(dst, Address(dst, mirror_offset));
   resolve_oop_handle(dst, tmp1, tmp2);
 }
@@ -6217,14 +6318,14 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
   }
 }
 
-// Implements fast-locking.
+// Implements lightweight-locking.
 // Branches to slow upon failure to lock the object, with ZF cleared.
 // Falls through upon success with ZF set.
 //
 //  - obj: the object to be locked
 //  - hdr: the header, already loaded from obj, will be destroyed
 //  - t1, t2: temporary registers, will be destroyed
-void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
+void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, hdr, t1, t2);
 
@@ -6249,14 +6350,14 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register
   strw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
 }
 
-// Implements fast-unlocking.
+// Implements lightweight-unlocking.
 // Branches to slow upon failure, with ZF cleared.
 // Falls through upon success, with ZF set.
 //
 // - obj: the object to be unlocked
 // - hdr: the (pre-loaded) header of the object
 // - t1, t2: temporary registers
-void MacroAssembler::fast_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
+void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, hdr, t1, t2);
 

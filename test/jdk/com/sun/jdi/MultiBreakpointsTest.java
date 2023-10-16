@@ -60,8 +60,16 @@ import java.text.*;
 class MultiBreakpointsTarg {
 
     MultiBreakpointsTarg(int numThreads, int numHits) {
+        Thread threads[] = new Thread[numThreads];
         for (int ii = 0; ii < numThreads; ii++) {
-            console(ii, numHits);
+            threads[ii] = console(ii, numHits);
+        }
+        for (int ii = 0; ii < numThreads; ii++) {
+            try {
+                threads[ii].join();
+            } catch (InterruptedException ie) {
+                throw new RuntimeException(ie);
+            }
         }
     }
 
@@ -127,7 +135,7 @@ class MultiBreakpointsTarg {
     void bkpt28() {}
     void bkpt29() {}
 
-    void console(final int num, final int nhits) {
+    Thread console(final int num, final int nhits) {
         final InputStreamReader isr = new InputStreamReader(System.in);
         final BufferedReader    br  = new BufferedReader(isr);
 
@@ -135,8 +143,7 @@ class MultiBreakpointsTarg {
         //
         //final String threadName = "DebuggeeThread: " + num;
         final String threadName = "" + num;
-        Thread thrd = new Thread( threadName ) {
-                public void run() {
+        Thread thrd = TestScaffold.newThread(() -> {
                     synchronized( isr ) {
                         boolean done = false;
                         try {
@@ -188,9 +195,11 @@ class MultiBreakpointsTarg {
                         }
                     }
                 }
-            };
+            );
+        thrd.setName(threadName);
         thrd.setPriority(Thread.MAX_PRIORITY-1);
         thrd.start();
+        return thrd;
     }
 }
 

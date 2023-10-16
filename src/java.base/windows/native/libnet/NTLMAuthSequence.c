@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,18 +79,18 @@ JNIEXPORT jlong JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequence_get
     SECURITY_STATUS      ss = SEC_E_INTERNAL_ERROR;
 
     if (user != 0) {
-        pUser = JNU_GetStringPlatformChars(env, user, &isCopy);
+        pUser = JNU_GetStringPlatformCharsStrict(env, user, &isCopy);
         if (pUser == NULL)
             return 0;  // pending Exception
     }
     if (domain != 0) {
-        pDomain = JNU_GetStringPlatformChars(env, domain, &isCopy);
+        pDomain = JNU_GetStringPlatformCharsStrict(env, domain, &isCopy);
         if (pDomain == NULL) {
             goto cleanup;
         }
     }
     if (password != 0) {
-        pPassword = JNU_GetStringPlatformChars(env, password, &isCopy);
+        pPassword = JNU_GetStringPlatformCharsStrict(env, password, &isCopy);
         if (pPassword == NULL) {
             goto cleanup;
         }

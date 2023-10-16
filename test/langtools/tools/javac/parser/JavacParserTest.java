@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671 8310326 8312093 8312204 8315452
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -60,6 +60,8 @@ import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.javac.tree.JCTree;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.io.UncheckedIOException;
+import java.io.Writer;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -70,6 +72,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeKind;
@@ -88,7 +91,8 @@ import com.sun.source.tree.ModuleTree;
 import com.sun.source.util.TreePathScanner;
 import com.sun.tools.javac.api.JavacTaskPool;
 import com.sun.tools.javac.api.JavacTaskPool.Worker;
-import java.util.Objects;
+import com.sun.tools.javac.tree.JCTree.JCErroneous;
+import com.sun.tools.javac.tree.Pretty;
 
 public class JavacParserTest extends TestCase {
     static final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
@@ -2342,6 +2346,172 @@ public class JavacParserTest extends TestCase {
         }
     }
 
+    @Test
+    void testGuardRecovery() throws IOException {
+        String code = """
+                      package t;
+                      class Test {
+                          private int t(Integer i, boolean b) {
+                              switch (i) {
+                                  case 0 when b -> {}
+                                  case null when b -> {}
+                                  default when b -> {}
+                              }
+                              return switch (i) {
+                                  case 0 when b -> 0;
+                                  case null when b -> 0;
+                                  default when b -> 0;
+                              };
+                          }
+                      }""";
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, null,
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        new TreeScanner<Void, Void>() {
+            @Override
+            public Void visitCase(CaseTree node, Void p) {
+                assertNotNull(node.getGuard());
+                assertEquals("guard kind", Kind.ERRONEOUS, node.getGuard().getKind());
+                assertEquals("guard content",
+                             List.of("b"),
+                             ((ErroneousTree) node.getGuard()).getErrorTrees()
+                                                              .stream()
+                                                              .map(t -> t.toString()).toList());
+                return super.visitCase(node, p);
+            }
+        }.scan(cut, null);
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" +  d.getCode());
+        }
+
+        assertEquals("testUsupportedTextBlock: " + codes,
+                List.of("5:20:compiler.err.guard.not.allowed",
+                        "6:23:compiler.err.guard.not.allowed",
+                        "7:21:compiler.err.guard.not.allowed",
+                        "10:20:compiler.err.guard.not.allowed",
+                        "11:23:compiler.err.guard.not.allowed",
+                        "12:21:compiler.err.guard.not.allowed"),
+                codes);
+    }
+
+    @Test //JDK-8310326
+    void testUnnamedClassPositions() throws IOException {
+        String code = """
+                      void main() {
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, List.of("--enable-preview", "--source", System.getProperty("java.specification.version")),
+                null, Arrays.asList(new MyFileObject(code)));
+        Trees trees = Trees.instance(ct);
+        SourcePositions sp = trees.getSourcePositions();
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        new TreeScanner<Void, Void>() {
+            @Override
+            public Void visitClass(ClassTree node, Void p) {
+                assertEquals("Wrong start position", 0, sp.getStartPosition(cut, node));
+                assertEquals("Wrong end position", -1, sp.getEndPosition(cut, node));
+                assertEquals("Wrong modifiers start position", -1, sp.getStartPosition(cut, node.getModifiers()));
+                assertEquals("Wrong modifiers end position", -1, sp.getEndPosition(cut, node.getModifiers()));
+                return super.visitClass(node, p);
+            }
+        }.scan(cut, null);
+    }
+
+    @Test //JDK-8312093
+    void testJavadoc() throws IOException {
+        String code = """
+                      public class Test {
+                          /***/
+                          void main() {
+                          }
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, null,
+                null, Arrays.asList(new MyFileObject(code)));
+        Trees trees = Trees.instance(ct);
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitMethod(MethodTree node, Void p) {
+                if (!node.getName().contentEquals("main")) {
+                    return null;
+                }
+                String comment = trees.getDocComment(getCurrentPath());
+                assertEquals("Expecting empty comment", "", comment);
+                return null;
+            }
+        }.scan(cut, null);
+    }
+
+    @Test //JDK-8312204
+    void testDanglingElse() throws IOException {
+        String code = """
+                      void main() {
+                          else ;
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        String result = cut.toString().replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     \n\
+                     /*synthetic*/ final class Test {
+                         \n\
+                         void main() {
+                             (ERROR);
+                         }
+                     }""");
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testDanglingElse: " + codes,
+                     List.of("2:5:compiler.err.else.without.if"),
+                     codes);
+    }
+
+    @Test //JDK-8315452
+    void testPartialTopLevelModifiers() throws IOException {
+        String code = """
+                      package test;
+                      public
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package test;
+                     (ERROR: public )""");
+    }
+
     void run(String[] args) throws Exception {
         int passed = 0, failed = 0;
         final Pattern p = (args != null && args.length > 0)
@@ -2371,6 +2541,38 @@ public class JavacParserTest extends TestCase {
                     passed + ", failed = " + failed + " ??????????");
         }
     }
+
+    private String toStringWithErrors(Tree tree) {
+        StringWriter s = new StringWriter();
+        try {
+            new PrettyWithErrors(s, false).printExpr((JCTree) tree);
+        } catch (IOException e) {
+            // should never happen, because StringWriter is defined
+            // never to throw any IOExceptions
+            throw new AssertionError(e);
+        }
+        return s.toString();
+    }
+
+    private static final class PrettyWithErrors extends Pretty {
+
+        public PrettyWithErrors(Writer out, boolean sourceOutput) {
+            super(out, sourceOutput);
+        }
+
+        @Override
+        public void visitErroneous(JCErroneous tree) {
+            try {
+                print("(ERROR: ");
+                print(tree.errs);
+                print(")");
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+    }
+
 }
 
 abstract class TestCase {

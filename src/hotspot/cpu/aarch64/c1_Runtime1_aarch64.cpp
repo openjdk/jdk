@@ -478,6 +478,15 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   const Register exception_pc = r3;
   const Register handler_addr = r1;
 
+  if (AbortVMOnException) {
+    __ mov(rscratch1, exception_oop);
+    __ enter();
+    save_live_registers(sasm);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, check_abort_on_vm_exception), rscratch1);
+    restore_live_registers(sasm);
+    __ leave();
+  }
+
   // verify that only r0, is valid at this time
   __ invalidate_registers(false, true, true, true, true, true);
 

@@ -244,19 +244,21 @@ JVM_GetExtendedNPEMessage(JNIEnv *env, jthrowable throwable);
  * java.lang.StackWalker
  */
 enum {
-  JVM_STACKWALK_FILL_CLASS_REFS_ONLY       = 0x2,
-  JVM_STACKWALK_GET_CALLER_CLASS           = 0x04,
+  JVM_STACKWALK_CLASS_INFO_ONLY            = 0x2,
   JVM_STACKWALK_SHOW_HIDDEN_FRAMES         = 0x20,
   JVM_STACKWALK_FILL_LIVE_STACK_FRAMES     = 0x100
 };
 
+JNIEXPORT void JNICALL
+JVM_ExpandStackFrameInfo(JNIEnv *env, jobject obj);
+
 JNIEXPORT jobject JNICALL
-JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jlong mode,
+JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jint mode,
                   jint skip_frames, jobject contScope, jobject cont,
                   jint frame_count, jint start_index, jobjectArray frames);
 
 JNIEXPORT jint JNICALL
-JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jlong mode, jlong anchor,
+JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jint mode, jlong anchor,
                   jint frame_count, jint start_index,
                   jobjectArray frames);
 
@@ -276,7 +278,7 @@ JNIEXPORT void JNICALL
 JVM_Yield(JNIEnv *env, jclass threadClass);
 
 JNIEXPORT void JNICALL
-JVM_Sleep(JNIEnv *env, jclass threadClass, jlong nanos);
+JVM_SleepNanos(JNIEnv *env, jclass threadClass, jlong nanos);
 
 JNIEXPORT jobject JNICALL
 JVM_CurrentCarrierThread(JNIEnv *env, jclass threadClass);
@@ -1163,6 +1165,12 @@ JVM_VirtualThreadHideFrames(JNIEnv* env, jobject vthread, jboolean hide);
  */
 JNIEXPORT jint JNICALL
 JVM_GetClassFileVersion(JNIEnv *env, jclass current);
+
+/*
+ * Return JNI_TRUE if warnings are printed when agents are dynamically loaded.
+ */
+JNIEXPORT jboolean JNICALL
+JVM_PrintWarningAtDynamicAgentLoad(void);
 
 /*
  * This structure is used by the launcher to get the default thread

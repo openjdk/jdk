@@ -77,7 +77,7 @@ Node* SubNode::Identity(PhaseGVN* phase) {
 
 //------------------------------Value------------------------------------------
 // A subtract node differences it's two inputs.
-const Type* SubNode::Value_common(PhaseTransform *phase) const {
+const Type* SubNode::Value_common(PhaseValues* phase) const {
   const Node* in1 = in(1);
   const Node* in2 = in(2);
   // Either input is TOP ==> the result is TOP
@@ -360,7 +360,7 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Convert "x-c0" into "x+ -c0".
   if( i &&                      // Might be bottom or top...
       i->is_con() )
-    return new AddLNode(in1, phase->longcon(-i->get_con()));
+    return new AddLNode(in1, phase->longcon(java_negate(i->get_con())));
 
   // Convert "(x+c0) - y" into (x-y) + c0"
   // Do not collapse (x+c0)-y if "+" is a loop increment or
@@ -988,8 +988,8 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
     if (p0 && p1) {
       Node* in1 = in(1)->uncast();
       Node* in2 = in(2)->uncast();
-      AllocateNode* alloc1 = AllocateNode::Ideal_allocation(in1, nullptr);
-      AllocateNode* alloc2 = AllocateNode::Ideal_allocation(in2, nullptr);
+      AllocateNode* alloc1 = AllocateNode::Ideal_allocation(in1);
+      AllocateNode* alloc2 = AllocateNode::Ideal_allocation(in2);
       if (MemNode::detect_ptr_independence(in1, alloc1, in2, alloc2, nullptr)) {
         return TypeInt::CC_GT;  // different pointers
       }
@@ -1556,12 +1556,14 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // and    "cmp (add X min_jint) c" into "cmpu X (c + min_jint)"
   if (cop == Op_CmpI &&
       cmp1_op == Op_AddI &&
+      !is_cloop_increment(cmp1) &&
       phase->type(cmp1->in(2)) == TypeInt::MIN) {
     if (cmp2_op == Op_ConI) {
       Node* ncmp2 = phase->intcon(java_add(cmp2->get_int(), min_jint));
       Node* ncmp = phase->transform(new CmpUNode(cmp1->in(1), ncmp2));
       return new BoolNode(ncmp, _test._test);
     } else if (cmp2_op == Op_AddI &&
+               !is_cloop_increment(cmp2) &&
                phase->type(cmp2->in(2)) == TypeInt::MIN) {
       Node* ncmp = phase->transform(new CmpUNode(cmp1->in(1), cmp2->in(1)));
       return new BoolNode(ncmp, _test._test);
@@ -1572,12 +1574,14 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // and    "cmp (add X min_jlong) c" into "cmpu X (c + min_jlong)"
   if (cop == Op_CmpL &&
       cmp1_op == Op_AddL &&
+      !is_cloop_increment(cmp1) &&
       phase->type(cmp1->in(2)) == TypeLong::MIN) {
     if (cmp2_op == Op_ConL) {
       Node* ncmp2 = phase->longcon(java_add(cmp2->get_long(), min_jlong));
       Node* ncmp = phase->transform(new CmpULNode(cmp1->in(1), ncmp2));
       return new BoolNode(ncmp, _test._test);
     } else if (cmp2_op == Op_AddL &&
+               !is_cloop_increment(cmp2) &&
                phase->type(cmp2->in(2)) == TypeLong::MIN) {
       Node* ncmp = phase->transform(new CmpULNode(cmp1->in(1), cmp2->in(1)));
       return new BoolNode(ncmp, _test._test);

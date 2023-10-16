@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -615,6 +615,46 @@ class SocketChannelImpl
             return IOStatus.normalize(n);
         } finally {
             writeLock.unlock();
+        }
+    }
+
+    /**
+     * Marks the beginning of a transfer to this channel.
+     * @throws ClosedChannelException if channel is closed or the output is shutdown
+     * @throws NotYetConnectedException if open and not connected
+     */
+    void beforeTransferTo() throws ClosedChannelException {
+        boolean completed = false;
+        writeLock.lock();
+        try {
+            synchronized (stateLock) {
+                ensureOpenAndConnected();
+                if (isOutputClosed)
+                    throw new ClosedChannelException();
+                writerThread = NativeThread.current();
+                completed = true;
+            }
+        } finally {
+            if (!completed) {
+                writeLock.unlock();
+            }
+        }
+    }
+
+    /**
+     * Marks the end of a transfer to this channel.
+     * @throws AsynchronousCloseException if not completed and the channel is closed
+     */
+    void afterTransferTo(boolean completed) throws AsynchronousCloseException {
+        synchronized (stateLock) {
+            writerThread = 0;
+            if (state == ST_CLOSING) {
+                tryFinishClose();
+            }
+        }
+        writeLock.unlock();
+        if (!completed && !isOpen()) {
+            throw new AsynchronousCloseException();
         }
     }
 

@@ -39,6 +39,11 @@
                        VectorRegister vrs,
                        bool is_latin, Label& DONE);
  public:
+  // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
+  // See full description in macroAssembler_riscv.cpp.
+  void fast_lock(Register object, Register box, Register tmp1, Register tmp2);
+  void fast_unlock(Register object, Register box, Register tmp1, Register tmp2);
+
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
                       Register tmp1, Register tmp2, Register tmp3,
@@ -134,7 +139,7 @@
 
   void unspill(VectorRegister v, int offset) {
     add(t0, sp, offset);
-    vl1re8_v(v, t0);
+    vl1r_v(v, t0);
   }
 
   void spill_copy_vector_stack_to_stack(int src_offset, int dst_offset, int vector_length_in_bytes) {
@@ -148,6 +153,9 @@
   void minmax_fp(FloatRegister dst,
                  FloatRegister src1, FloatRegister src2,
                  bool is_double, bool is_min);
+
+  void round_double_mode(FloatRegister dst, FloatRegister src, int round_mode,
+                         Register tmp1, Register tmp2, Register tmp3);
 
   // intrinsic methods implemented by rvv instructions
   void string_equals_v(Register r1, Register r2,
@@ -175,7 +183,7 @@
 
  void encode_iso_array_v(Register src, Register dst,
                          Register len, Register result,
-                         Register tmp);
+                         Register tmp, bool ascii);
 
  void count_positives_v(Register ary, Register len,
                         Register result, Register tmp);
@@ -187,25 +195,30 @@
 
  void minmax_fp_v(VectorRegister dst,
                   VectorRegister src1, VectorRegister src2,
-                  bool is_double, bool is_min, int vector_length);
+                  BasicType bt, bool is_min, int vector_length);
+
+ void minmax_fp_masked_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
+                         VectorRegister vmask, VectorRegister tmp1, VectorRegister tmp2,
+                         BasicType bt, bool is_min, int vector_length);
 
  void reduce_minmax_fp_v(FloatRegister dst,
                          FloatRegister src1, VectorRegister src2,
                          VectorRegister tmp1, VectorRegister tmp2,
-                         bool is_double, bool is_min, int vector_length);
+                         bool is_double, bool is_min, int vector_length,
+                         VectorMask vm = Assembler::unmasked);
 
- void reduce_integral_v(Register dst, VectorRegister tmp,
-                        Register src1, VectorRegister src2,
-                        BasicType bt, int opc, int vector_length);
+ void reduce_integral_v(Register dst, Register src1,
+                        VectorRegister src2, VectorRegister tmp,
+                        int opc, BasicType bt, int vector_length,
+                        VectorMask vm = Assembler::unmasked);
 
  void vsetvli_helper(BasicType bt, int vector_length, LMUL vlmul = Assembler::m1, Register tmp = t0);
 
- void compare_integral_v(VectorRegister dst, BasicType bt, int vector_length,
-                         VectorRegister src1, VectorRegister src2, int cond, VectorMask vm = Assembler::unmasked);
+ void compare_integral_v(VectorRegister dst, VectorRegister src1, VectorRegister src2, int cond,
+                         BasicType bt, int vector_length, VectorMask vm = Assembler::unmasked);
 
- void compare_floating_point_v(VectorRegister dst, BasicType bt, int vector_length,
-                               VectorRegister src1, VectorRegister src2, VectorRegister tmp1, VectorRegister tmp2,
-                               VectorRegister vmask, int cond, VectorMask vm = Assembler::unmasked);
+ void compare_fp_v(VectorRegister dst, VectorRegister src1, VectorRegister src2, int cond,
+                   BasicType bt, int vector_length, VectorMask vm = Assembler::unmasked);
 
  // In Matcher::scalable_predicate_reg_slots,
  // we assume each predicate register is one-eighth of the size of
@@ -239,5 +252,8 @@
   void vfcvt_rtz_x_f_v_safe(VectorRegister dst, VectorRegister src);
   void vfwcvt_rtz_x_f_v_safe(VectorRegister dst, VectorRegister src);
   void vfncvt_rtz_x_f_w_safe(VectorRegister dst, VectorRegister src);
+
+  void extract_v(Register dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);
+  void extract_fp_v(FloatRegister dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);
 
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP
