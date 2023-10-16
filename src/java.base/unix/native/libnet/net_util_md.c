@@ -28,7 +28,6 @@
 #include <netinet/tcp.h> // defines TCP_NODELAY
 #include <stdlib.h>
 #include <string.h>
-#include <sys/ioctl.h>
 #include <sys/time.h>
 
 #if defined(__linux__)
@@ -50,18 +49,6 @@
 #if defined(__linux__) && !defined(IPV6_FLOWINFO_SEND)
 #define IPV6_FLOWINFO_SEND      33
 #endif
-
-#define RESTARTABLE(_cmd, _result) do { \
-    do { \
-        _result = _cmd; \
-    } while((_result == -1) && (errno == EINTR)); \
-} while(0)
-
-int NET_SocketAvailable(int s, int *pbytes) {
-    int result;
-    RESTARTABLE(ioctl(s, FIONREAD, pbytes), result);
-    return result;
-}
 
 void
 NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
@@ -325,72 +312,6 @@ int NET_IsZeroAddr(jbyte* caddr) {
         }
     }
     return 1;
-}
-
-/*
- * Map the Java level socket option to the platform specific
- * level and option name.
- */
-int
-NET_MapSocketOption(jint cmd, int *level, int *optname) {
-    static struct {
-        jint cmd;
-        int level;
-        int optname;
-    } const opts[] = {
-        { java_net_SocketOptions_TCP_NODELAY,           IPPROTO_TCP,    TCP_NODELAY },
-        { java_net_SocketOptions_SO_OOBINLINE,          SOL_SOCKET,     SO_OOBINLINE },
-        { java_net_SocketOptions_SO_LINGER,             SOL_SOCKET,     SO_LINGER },
-        { java_net_SocketOptions_SO_SNDBUF,             SOL_SOCKET,     SO_SNDBUF },
-        { java_net_SocketOptions_SO_RCVBUF,             SOL_SOCKET,     SO_RCVBUF },
-        { java_net_SocketOptions_SO_KEEPALIVE,          SOL_SOCKET,     SO_KEEPALIVE },
-        { java_net_SocketOptions_SO_REUSEADDR,          SOL_SOCKET,     SO_REUSEADDR },
-        { java_net_SocketOptions_SO_REUSEPORT,          SOL_SOCKET,     SO_REUSEPORT },
-        { java_net_SocketOptions_SO_BROADCAST,          SOL_SOCKET,     SO_BROADCAST },
-        { java_net_SocketOptions_IP_TOS,                IPPROTO_IP,     IP_TOS },
-        { java_net_SocketOptions_IP_MULTICAST_IF,       IPPROTO_IP,     IP_MULTICAST_IF },
-        { java_net_SocketOptions_IP_MULTICAST_IF2,      IPPROTO_IP,     IP_MULTICAST_IF },
-        { java_net_SocketOptions_IP_MULTICAST_LOOP,     IPPROTO_IP,     IP_MULTICAST_LOOP },
-    };
-
-    int i;
-
-    if (ipv6_available()) {
-        switch (cmd) {
-            // Different multicast options if IPv6 is enabled
-            case java_net_SocketOptions_IP_MULTICAST_IF:
-            case java_net_SocketOptions_IP_MULTICAST_IF2:
-                *level = IPPROTO_IPV6;
-                *optname = IPV6_MULTICAST_IF;
-                return 0;
-
-            case java_net_SocketOptions_IP_MULTICAST_LOOP:
-                *level = IPPROTO_IPV6;
-                *optname = IPV6_MULTICAST_LOOP;
-                return 0;
-#if defined(MACOSX)
-            // Map IP_TOS request to IPV6_TCLASS
-            case java_net_SocketOptions_IP_TOS:
-                *level = IPPROTO_IPV6;
-                *optname = IPV6_TCLASS;
-                return 0;
-#endif
-        }
-    }
-
-    /*
-     * Map the Java level option to the native level
-     */
-    for (i=0; i<(int)(sizeof(opts) / sizeof(opts[0])); i++) {
-        if (cmd == opts[i].cmd) {
-            *level = opts[i].level;
-            *optname = opts[i].optname;
-            return 0;
-        }
-    }
-
-    /* not found */
-    return -1;
 }
 
 /*

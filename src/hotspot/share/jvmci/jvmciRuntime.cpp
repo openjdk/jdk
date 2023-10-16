@@ -975,7 +975,7 @@ int JVMCIRuntime::release_cleared_oop_handles() {
       object_handles()->release(_oop_handles.adr_at(num_alive), to_release);
 
       // Truncate oop handles to only those with a non-null referent
-      JVMCI_event_1("compacted oop handles in JVMCI runtime %d from %d to %d", _id, _oop_handles.length(), num_alive);
+      JVMCI_event_2("compacted oop handles in JVMCI runtime %d from %d to %d", _id, _oop_handles.length(), num_alive);
       _oop_handles.trunc_to(num_alive);
       // Example: HHH
 

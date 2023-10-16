@@ -33,6 +33,7 @@ import javax.crypto.SecretKeyFactorySpi;
 import javax.crypto.spec.PBEKeySpec;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * This class implements a key factory for PBE keys according to PKCS#5,
@@ -46,7 +47,7 @@ import java.util.Locale;
 abstract class PBEKeyFactory extends SecretKeyFactorySpi {
 
     private String type;
-    private static HashSet<String> validTypes;
+    private static final HashSet<String> validTypes;
 
     /**
      * Simple constructor
@@ -56,29 +57,29 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
     }
 
     static {
-        validTypes = HashSet.newHashSet(17);
-        validTypes.add("PBEWithMD5AndDES".toUpperCase(Locale.ENGLISH));
-        validTypes.add("PBEWithSHA1AndDESede".toUpperCase(Locale.ENGLISH));
-        validTypes.add("PBEWithSHA1AndRC2_40".toUpperCase(Locale.ENGLISH));
-        validTypes.add("PBEWithSHA1AndRC2_128".toUpperCase(Locale.ENGLISH));
-        validTypes.add("PBEWithSHA1AndRC4_40".toUpperCase(Locale.ENGLISH));
-        validTypes.add("PBEWithSHA1AndRC4_128".toUpperCase(Locale.ENGLISH));
-        // Proprietary algorithm.
-        validTypes.add("PBEWithMD5AndTripleDES".toUpperCase(Locale.ENGLISH));
-        validTypes.add("PBEWithHmacSHA1AndAES_128".toUpperCase(Locale.ENGLISH));
-        validTypes.add("PBEWithHmacSHA224AndAES_128".toUpperCase(Locale.ENGLISH));
-        validTypes.add("PBEWithHmacSHA256AndAES_128".toUpperCase(Locale.ENGLISH));
-        validTypes.add("PBEWithHmacSHA384AndAES_128".toUpperCase(Locale.ENGLISH));
-        validTypes.add("PBEWithHmacSHA512AndAES_128".toUpperCase(Locale.ENGLISH));
-        validTypes.add("PBEWithHmacSHA512/224AndAES_128".toUpperCase(Locale.ENGLISH));
-        validTypes.add("PBEWithHmacSHA512/256AndAES_128".toUpperCase(Locale.ENGLISH));
-        validTypes.add("PBEWithHmacSHA1AndAES_256".toUpperCase(Locale.ENGLISH));
-        validTypes.add("PBEWithHmacSHA224AndAES_256".toUpperCase(Locale.ENGLISH));
-        validTypes.add("PBEWithHmacSHA256AndAES_256".toUpperCase(Locale.ENGLISH));
-        validTypes.add("PBEWithHmacSHA384AndAES_256".toUpperCase(Locale.ENGLISH));
-        validTypes.add("PBEWithHmacSHA512AndAES_256".toUpperCase(Locale.ENGLISH));
-        validTypes.add("PBEWithHmacSHA512/224AndAES_256".toUpperCase(Locale.ENGLISH));
-        validTypes.add("PBEWithHmacSHA512/256AndAES_256".toUpperCase(Locale.ENGLISH));
+        validTypes = new HashSet<String>(
+                Set.of("PBEWithMD5AndDES".toUpperCase(Locale.ENGLISH),
+                "PBEWithSHA1AndDESede".toUpperCase(Locale.ENGLISH),
+                "PBEWithSHA1AndRC2_40".toUpperCase(Locale.ENGLISH),
+                "PBEWithSHA1AndRC2_128".toUpperCase(Locale.ENGLISH),
+                "PBEWithSHA1AndRC4_40".toUpperCase(Locale.ENGLISH),
+                "PBEWithSHA1AndRC4_128".toUpperCase(Locale.ENGLISH),
+                // Proprietary algorithm.
+                "PBEWithMD5AndTripleDES".toUpperCase(Locale.ENGLISH),
+                "PBEWithHmacSHA1AndAES_128".toUpperCase(Locale.ENGLISH),
+                "PBEWithHmacSHA224AndAES_128".toUpperCase(Locale.ENGLISH),
+                "PBEWithHmacSHA256AndAES_128".toUpperCase(Locale.ENGLISH),
+                "PBEWithHmacSHA384AndAES_128".toUpperCase(Locale.ENGLISH),
+                "PBEWithHmacSHA512AndAES_128".toUpperCase(Locale.ENGLISH),
+                "PBEWithHmacSHA512/224AndAES_128".toUpperCase(Locale.ENGLISH),
+                "PBEWithHmacSHA512/256AndAES_128".toUpperCase(Locale.ENGLISH),
+                "PBEWithHmacSHA1AndAES_256".toUpperCase(Locale.ENGLISH),
+                "PBEWithHmacSHA224AndAES_256".toUpperCase(Locale.ENGLISH),
+                "PBEWithHmacSHA256AndAES_256".toUpperCase(Locale.ENGLISH),
+                "PBEWithHmacSHA384AndAES_256".toUpperCase(Locale.ENGLISH),
+                "PBEWithHmacSHA512AndAES_256".toUpperCase(Locale.ENGLISH),
+                "PBEWithHmacSHA512/224AndAES_256".toUpperCase(Locale.ENGLISH),
+                "PBEWithHmacSHA512/256AndAES_256".toUpperCase(Locale.ENGLISH)));
     }
 
     public static final class PBEWithMD5AndDES extends PBEKeyFactory {
