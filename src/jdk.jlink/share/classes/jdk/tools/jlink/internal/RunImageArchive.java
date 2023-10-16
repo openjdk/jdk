@@ -136,7 +136,7 @@ public class RunImageArchive implements Archive {
             }).collect(Collectors.toList()));
             // if we use single-hop and we find a stamp file we fail the link
             if (files.stream().anyMatch(f -> { return RUNIMAGE_SINGLE_HOP_STAMP.equals(f.resPath);})) {
-                String msg = "Run image links only allow single-hop.";
+                String msg = "Recursive links based on the current run-image are not allowed.";
                 IllegalArgumentException ise = new IllegalArgumentException(msg);
                 throw new RunImageLinkException(ise);
             };
