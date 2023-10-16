@@ -220,4 +220,4 @@ void ShenandoahAssertNotForwardedClosure::do_oop(narrowOop* p) { do_oop_work(p);
 void ShenandoahAssertNotForwardedClosure::do_oop(oop* p)       { do_oop_work(p); }
 #endif
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_INLINE_HPP

@@ -139,6 +139,7 @@ Mutex*   ThreadIdTableCreate_lock     = nullptr;
 Mutex*   SharedDecoder_lock           = nullptr;
 Mutex*   DCmdFactory_lock             = nullptr;
 Mutex*   NMTQuery_lock                = nullptr;
+Mutex*   NMTCompilationCostHistory_lock = nullptr;
 
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
@@ -231,7 +232,7 @@ void mutex_init() {
   MUTEX_DEFN(StringDedupIntern_lock          , PaddedMutex  , nosafepoint);
   MUTEX_DEFN(RawMonitor_lock                 , PaddedMutex  , nosafepoint-1);
 
-  MUTEX_DEFN(Metaspace_lock                  , PaddedMutex  , nosafepoint-4);
+  MUTEX_DEFN(Metaspace_lock                  , PaddedMutex  , nosafepoint-3);
   MUTEX_DEFN(MetaspaceCritical_lock          , PaddedMonitor, nosafepoint-1);
 
   MUTEX_DEFN(Patching_lock                   , PaddedMutex  , nosafepoint);      // used for safepointing and code patching.
@@ -302,13 +303,14 @@ void mutex_init() {
   MUTEX_DEFN(UnsafeJlong_lock                , PaddedMutex  , nosafepoint);
 #endif
 
-  MUTEX_DEFN(ContinuationRelativize_lock     , PaddedMonitor, nosafepoint-4);
+  MUTEX_DEFN(ContinuationRelativize_lock     , PaddedMonitor, nosafepoint-3);
   MUTEX_DEFN(CodeHeapStateAnalytics_lock     , PaddedMutex  , safepoint);
-  MUTEX_DEFN(ThreadsSMRDelete_lock           , PaddedMonitor, nosafepoint-4); // Holds ConcurrentHashTableResize_lock
+  MUTEX_DEFN(ThreadsSMRDelete_lock           , PaddedMonitor, service-2); // Holds ConcurrentHashTableResize_lock
   MUTEX_DEFN(ThreadIdTableCreate_lock        , PaddedMutex  , safepoint);
   MUTEX_DEFN(SharedDecoder_lock              , PaddedMutex  , tty-1);
   MUTEX_DEFN(DCmdFactory_lock                , PaddedMutex  , nosafepoint);
   MUTEX_DEFN(NMTQuery_lock                   , PaddedMutex  , safepoint);
+  MUTEX_DEFN(NMTCompilationCostHistory_lock  , PaddedMutex  , nosafepoint);
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
   MUTEX_DEFN(CDSClassFileStream_lock         , PaddedMutex  , safepoint);
