@@ -180,7 +180,14 @@ public class Types {
      * suitable for a method lookup.
      */
     public Type skipTypeVars(Type site, boolean capture) {
-        while (site.hasTag(TYPEVAR)) {
+        return skipTypeVars(site, capture, false);
+    }
+
+    /* same as above but with an additional parameter to specify if only captured type variables should be
+     * skipped
+     */
+    public Type skipTypeVars(Type site, boolean capture, boolean capturedOnly) {
+        while (!capturedOnly ? site.hasTag(TYPEVAR) : site.hasTag(TYPEVAR) && ((TypeVar)site).isCaptured()) {
             site = site.getUpperBound();
         }
         return capture ? capture(site) : site;

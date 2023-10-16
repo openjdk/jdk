@@ -3552,7 +3552,7 @@ public class Resolve {
 
         MethodReferenceLookupHelper(JCMemberReference referenceTree, Name name, Type site,
                 List<Type> argtypes, List<Type> typeargtypes, MethodResolutionPhase maxPhase) {
-            super(referenceTree, name, types.skipTypeVars(site, true), argtypes, typeargtypes, maxPhase);
+            super(referenceTree, name, types.skipTypeVars(site, true, true), argtypes, typeargtypes, maxPhase);
             this.originalSite = site;
         }
 
