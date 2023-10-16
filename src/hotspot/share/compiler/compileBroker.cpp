@@ -1700,8 +1700,11 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   bool free_task;
 #if INCLUDE_JVMCI
   AbstractCompiler* comp = compiler(task->comp_level());
-  if (comp->is_jvmci() && !task->should_wait_for_compilation()) {
+  if (!UseJVMCINativeLibrary && comp->is_jvmci() && !task->should_wait_for_compilation()) {
     // It may return before compilation is completed.
+    // Note that libjvmci should not pre-emptively unblock
+    // a thread waiting for a compilation as it does not call
+    // Java code and so is not deadlock prone like jarjvmci.
     free_task = wait_for_jvmci_completion((JVMCICompiler*) comp, task, thread);
   } else
 #endif
