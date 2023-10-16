@@ -464,7 +464,7 @@ public sealed interface Binding {
         @Override
         public void interpret(Deque<Object> stack, StoreFunc storeFunc,
                               LoadFunc loadFunc, SegmentAllocator allocator) {
-            storeFunc.store(storage(), type(), stack.pop());
+            storeFunc.store(storage(), stack.pop());
         }
     }
 
