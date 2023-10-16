@@ -447,7 +447,7 @@ cbEarlyException(jvmtiEnv *jvmti_env, JNIEnv *env,
     EventInfo info;
     info.ei = EI_EXCEPTION;
     info.thread = thread;
-    info.clazz = JNI_FUNC_PTR(env,GetObjectClass)(env, exception);
+    info.clazz = getMethodClass(jvmti_env, method);
     info.method = method;
     info.location = location;
     info.object = exception;
@@ -475,11 +475,12 @@ cbEarlyException(jvmtiEnv *jvmti_env, JNIEnv *env,
 
     } else if (initOnException != NULL) {
 
-        /* Get class of exception thrown */
-        if ( info.clazz != NULL ) {
+        jclass exception_clazz = JNI_FUNC_PTR(env, GetObjectClass)(env, exception);
+        /* check class of exception thrown */
+        if ( exception_clazz != NULL ) {
             char *signature = NULL;
             /* initing on throw, check */
-            error = classSignature(info.clazz, &signature, NULL);
+            error = classSignature(exception_clazz, &signature, NULL);
             LOG_MISC(("Checking specific exception: looking for %s, got %s",
                         initOnException, signature));
             if ( (error==JVMTI_ERROR_NONE) &&

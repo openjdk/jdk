@@ -86,9 +86,15 @@ public class JdwpOnThrowTest {
                             if (ex.catchLocation() == null) {
                                 throw new RuntimeException("Exception catch location is null");
                             }
+                            if (!ex.location().equals(ex.thread().frame(0).location())) {
+                                throw new RuntimeException(
+                                    String.format("Throw location %s and location if first frame %s are not equal",
+                                                  ex.location(), ex.thread().frame(0).location()));
+                            }
                             if (!ex.exception().type().name().equals("Ex")) {
                                 throw new RuntimeException("Exception has wrong type: " + ex.exception().type().name());
                             }
+                            log("Received exception event: " + event);
                             vm.dispose();
                             return;
                         }
