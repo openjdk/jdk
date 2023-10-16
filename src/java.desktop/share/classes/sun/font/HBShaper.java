@@ -473,10 +473,10 @@ public class HBShaper {
                 float startX = (float)startPt.getX();
                 float startY = (float)startPt.getY();
 
-                MemorySegment matrix = arena.allocate(JAVA_FLOAT, mat.length);
-                MemorySegment.copy(mat, 0, matrix, JAVA_FLOAT, 0, mat.length);
-                MemorySegment chars = arena.allocate(JAVA_CHAR, text.length);
-                MemorySegment.copy(text, 0, chars, JAVA_CHAR, 0, text.length);
+                MemorySegment matrix = arena.allocateFrom(
+                    JAVA_FLOAT, MemorySegment.ofArray(mat), JAVA_FLOAT, 0, mat.length);
+                MemorySegment chars = arena.allocateFrom(
+                    JAVA_CHAR, MemorySegment.ofArray(text), JAVA_CHAR, 0, text.length);
 
                 /*int ret =*/ jdk_hb_shape_handle.invokeExact(
                      ptSize, matrix, hbface, chars, text.length,
