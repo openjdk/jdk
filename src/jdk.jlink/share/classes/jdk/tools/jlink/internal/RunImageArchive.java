@@ -47,21 +47,21 @@ import java.util.stream.Stream;
 
 import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
 
-public class JmodLessArchive implements Archive {
+public class RunImageArchive implements Archive {
 
     private static final String JAVA_BASE_MODULE = "java.base";
     // File marker in lib/modules file for java.base indicating it got created
     // with a run-image-type link.
-    private static final String JMODLESS_SINGLE_HOP_STAMP = ".runimage.stamp";
+    private static final String RUNIMAGE_SINGLE_HOP_STAMP = ".runimage.stamp";
     private static final String OTHER_RESOURCES_FILE = "jmod_resources";
     private final String module;
     private final Path path;
     private final ModuleReference ref;
-    private final List<JmodLessFile> files = new ArrayList<>();
+    private final List<RunImageFile> files = new ArrayList<>();
     private final boolean failOnMod;
     private final boolean singleHop;
 
-    JmodLessArchive(String module, Path path, boolean failOnMod, boolean singleHop) {
+    RunImageArchive(String module, Path path, boolean failOnMod, boolean singleHop) {
         this.module = module;
         this.path = path;
         this.ref = ModuleFinder.ofSystem()
@@ -118,8 +118,8 @@ public class JmodLessArchive implements Archive {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof JmodLessArchive) {
-            JmodLessArchive other = (JmodLessArchive)obj;
+        if (obj instanceof RunImageArchive) {
+            RunImageArchive other = (RunImageArchive)obj;
             return Objects.equals(module, other.module) &&
                    Objects.equals(path, other.path);
         }
@@ -133,11 +133,11 @@ public class JmodLessArchive implements Archive {
             // Add classes/resources from image module
             files.addAll(ref.open().list()
                                    .map(s -> {
-                return new JmodLessFile(JmodLessArchive.this, s,
+                return new RunImageFile(RunImageArchive.this, s,
                         Type.CLASS_OR_RESOURCE, null /* sha */, false /* symlink */, failOnMod);
             }).collect(Collectors.toList()));
             // if we use single-hop and we find a stamp file we fail the link
-            if (files.stream().anyMatch(f -> { return JMODLESS_SINGLE_HOP_STAMP.equals(f.resPath);})) {
+            if (files.stream().anyMatch(f -> { return RUNIMAGE_SINGLE_HOP_STAMP.equals(f.resPath);})) {
                 String msg = "Run image links only allow single-hop.";
                 IllegalArgumentException ise = new IllegalArgumentException(msg);
                 throw new RunImageLinkException(ise);
@@ -145,26 +145,26 @@ public class JmodLessArchive implements Archive {
             // add/persist a special, empty file for java.base so as to support
             // the single-hop-only runimage-jlink
             if (singleHop && JAVA_BASE_MODULE.equals(module)) {
-                files.add(createJmodLessSingleHopStamp());
+                files.add(createRunImageSingleHopStamp());
             }
         }
     }
 
-    private JmodLessFile createJmodLessSingleHopStamp() {
-        return new JmodLessStampFile(this, JMODLESS_SINGLE_HOP_STAMP, Type.CLASS_OR_RESOURCE, null, false, failOnMod);
+    private RunImageFile createRunImageSingleHopStamp() {
+        return new RunImageStampFile(this, RUNIMAGE_SINGLE_HOP_STAMP, Type.CLASS_OR_RESOURCE, null, false, failOnMod);
     }
 
     private void addNonClassResources() throws IOException {
-        Optional<InputStream> jmodsResources = ref.open().open(OTHER_RESOURCES_FILE);
+        Optional<InputStream> runImageResources = ref.open().open(OTHER_RESOURCES_FILE);
         // Not all modules will have other resources like bin, lib, legal etc.
         // files. In that case the file won't exist in the modules image.
-        if (jmodsResources.isPresent()) {
-            try (InputStream inStream = jmodsResources.get()) {
+        if (runImageResources.isPresent()) {
+            try (InputStream inStream = runImageResources.get()) {
                 String input = new String(inStream.readAllBytes(), StandardCharsets.UTF_8);
                 files.addAll(Arrays.asList(input.split("\n")).stream()
                         .map(s -> {
                             TypePathMapping m = mappingResource(s);
-                            return new JmodLessFile(JmodLessArchive.this, m.resPath, m.resType, m.sha, m.symlink, failOnMod);
+                            return new RunImageFile(RunImageArchive.this, m.resPath, m.resType, m.sha, m.symlink, failOnMod);
                         })
                         .filter(m -> m != null)
                         .collect(Collectors.toList()));
@@ -213,7 +213,7 @@ public class JmodLessArchive implements Archive {
         }
     }
 
-    static class JmodLessFile {
+    static class RunImageFile {
         private static final String JAVA_HOME = System.getProperty("java.home");
         private static final Path BASE = Paths.get(JAVA_HOME);
         final String resPath;
@@ -223,7 +223,7 @@ public class JmodLessArchive implements Archive {
         final boolean symlink;
         final boolean failOnMod;
 
-        JmodLessFile(Archive archive, String resPath, Type resType, String sha, boolean symlink, boolean failOnMod) {
+        RunImageFile(Archive archive, String resPath, Type resType, String sha, boolean symlink, boolean failOnMod) {
             this.resPath = resPath;
             this.resType = toEntryType(resType);
             this.archive = archive;
@@ -338,8 +338,8 @@ public class JmodLessArchive implements Archive {
     }
 
     // Stamp file marker for single-hop implementation
-    static class JmodLessStampFile extends JmodLessFile {
-        JmodLessStampFile(Archive archive, String resPath, Type resType, String sha, boolean symlink, boolean failOnMod) {
+    static class RunImageStampFile extends RunImageFile {
+        RunImageStampFile(Archive archive, String resPath, Type resType, String sha, boolean symlink, boolean failOnMod) {
             super(archive, resPath, resType, sha, symlink, failOnMod);
         }
 

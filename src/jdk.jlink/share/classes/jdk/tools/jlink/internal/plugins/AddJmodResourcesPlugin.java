@@ -61,7 +61,7 @@ public final class AddJmodResourcesPlugin extends AbstractPlugin {
     // This ought to be a package-less resource so as to not conflict with
     // packages listed in the module descriptors. Making it package-less ensures
     // it works for any module, regardless of packages present. This resource
-    // is being used in JmodLessArchive class
+    // is being used in RunImageArchive class
     private static final String RESPATH = "/%s/jmod_resources";
 
     // Type file format:
@@ -164,7 +164,7 @@ public final class AddJmodResourcesPlugin extends AbstractPlugin {
                 return format.formatHex(db);
             }
         } catch (RunImageLinkException e) {
-            // JmodLessArchive::JmodLessFile.content() may throw this when
+            // RunImageArchive::RunImageFile.content() may throw this when
             // getting the content(). Populate the actual reason.
             throw e.getReason();
         } catch (Exception e) {

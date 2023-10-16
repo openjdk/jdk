@@ -939,7 +939,7 @@ public class JlinkTask {
                 }
             } else if (ModuleFinder.ofSystem().find(module).isPresent()){
                 // the path is a JRTPath, when using a jmod-less image
-                return new JmodLessArchive(module, path, failOnMod, singleHop);
+                return new RunImageArchive(module, path, failOnMod, singleHop);
             } else {
                 throw new IllegalArgumentException(
                     taskHelper.getMessage("err.not.modular.format", module, path));
