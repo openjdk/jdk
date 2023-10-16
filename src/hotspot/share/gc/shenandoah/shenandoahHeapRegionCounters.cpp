@@ -70,7 +70,7 @@ ShenandoahHeapRegionCounters::ShenandoahHeapRegionCounters() :
 }
 
 ShenandoahHeapRegionCounters::~ShenandoahHeapRegionCounters() {
-  if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space);
+  if (_name_space != nullptr) FREE_C_HEAP_ARRAY(char, _name_space);
 }
 
 void ShenandoahHeapRegionCounters::update() {

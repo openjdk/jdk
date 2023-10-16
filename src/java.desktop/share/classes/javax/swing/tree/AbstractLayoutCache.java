@@ -467,7 +467,7 @@ public abstract class AbstractLayoutCache implements RowMapper {
     }
 
     //
-    // Local methods that subclassers may wish to use that are primarly
+    // Local methods that subclassers may wish to use that are primarily
     // convenience methods.
     //
 

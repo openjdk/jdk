@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,7 +212,7 @@ public final class ConstantDescs {
             = ofConstantBootstrap(CD_ConstantBootstraps, "fieldVarHandle",
             CD_VarHandle, CD_Class, CD_Class);
 
-    /** {@link MethodHandleDesc} representing {@link ConstantBootstraps#staticFieldVarHandle(Lookup, String, Class, Class, Class) ConstantBootstraps.staticVarHandle} */
+    /** {@link MethodHandleDesc} representing {@link ConstantBootstraps#staticFieldVarHandle(Lookup, String, Class, Class, Class) ConstantBootstraps.staticFieldVarHandle} */
     public static final DirectMethodHandleDesc BSM_VARHANDLE_STATIC_FIELD
             = ofConstantBootstrap(CD_ConstantBootstraps, "staticFieldVarHandle",
             CD_VarHandle, CD_Class, CD_Class);
@@ -228,7 +228,7 @@ public final class ConstantDescs {
             CD_Object, CD_MethodHandle, CD_Object.arrayType());
 
     /**
-     * {@link MethodHandleDesc} representing {@link ConstantBootstraps#explicitCast(Lookup, String, Class, Object)} ConstantBootstraps.explicitCast}
+     * {@link MethodHandleDesc} representing {@link ConstantBootstraps#explicitCast(Lookup, String, Class, Object) ConstantBootstraps.explicitCast}
      * @since 15
      */
     public static final DirectMethodHandleDesc BSM_EXPLICIT_CAST
@@ -262,6 +262,22 @@ public final class ConstantDescs {
     /** {@link ClassDesc} representing the primitive type {@code void} */
     public static final ClassDesc CD_void = ClassDesc.ofDescriptor("V");
 
+    /**
+     * {@link MethodHandleDesc} representing {@link MethodHandles#classData(Lookup, String, Class) MethodHandles.classData}
+     * @since 21
+     */
+    public static final DirectMethodHandleDesc BSM_CLASS_DATA
+            = ofConstantBootstrap(CD_MethodHandles, "classData",
+            CD_Object);
+
+    /**
+     * {@link MethodHandleDesc} representing {@link MethodHandles#classDataAt(Lookup, String, Class, int) MethodHandles.classDataAt}
+     * @since 21
+     */
+    public static final DirectMethodHandleDesc BSM_CLASS_DATA_AT
+            = ofConstantBootstrap(CD_MethodHandles, "classDataAt",
+            CD_Object, CD_int);
+
     /** Nominal descriptor representing the constant {@code null} */
     public static final ConstantDesc NULL
             = DynamicConstantDesc.ofNamed(ConstantDescs.BSM_NULL_CONSTANT,
@@ -282,6 +298,33 @@ public final class ConstantDescs {
     public static final DynamicConstantDesc<Boolean> FALSE
             = DynamicConstantDesc.ofNamed(BSM_GET_STATIC_FINAL,
                                           "FALSE", CD_Boolean, CD_Boolean);
+
+    /**
+     * The special name of instance initialization methods, {@value}. An instance
+     * initialization method has this special name and is {@code void}.
+     *
+     * @jvms 2.9.1 Instance Initialization Methods
+     * @since 21
+     */
+    public static final String INIT_NAME = "<init>";
+
+    /**
+     * The special name of class initialization methods, {@value}. A class
+     * initialization method has this special name, {@link java.lang.reflect.AccessFlag#STATIC
+     * ACC_STATIC} flag set, is {@link #MTD_void void} and takes no arguments.
+     *
+     * @jvms 2.9.2 Class Initialization Methods
+     * @since 21
+     */
+    public static final String CLASS_INIT_NAME = "<clinit>";
+
+    /**
+     * Nominal descriptor representing the method descriptor {@code ()V},
+     * taking no argument and returning {@code void}.
+     *
+     * @since 21
+     */
+    public static final MethodTypeDesc MTD_void = MethodTypeDesc.of(CD_void);
 
     static final DirectMethodHandleDesc MHD_METHODHANDLE_ASTYPE
             = MethodHandleDesc.ofMethod(Kind.VIRTUAL, CD_MethodHandle, "asType",

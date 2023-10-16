@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,11 +44,11 @@ const char* NMTUtil::scale_name(size_t scale) {
     case G: return "GB";
   }
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 size_t NMTUtil::scale_from_name(const char* scale) {
-  assert(scale != NULL, "Null pointer check");
+  assert(scale != nullptr, "Null pointer check");
   if (strcasecmp(scale, "1") == 0 || strcasecmp(scale, "b") == 0) {
     return 1;
   } else if (strcasecmp(scale, "kb") == 0 || strcasecmp(scale, "k") == 0) {
@@ -75,7 +75,7 @@ const char* NMTUtil::tracking_level_to_string(NMT_TrackingLevel lvl) {
 
 // Returns the parsed level; NMT_unknown if string is invalid
 NMT_TrackingLevel NMTUtil::parse_tracking_level(const char* s) {
-  if (s != NULL) {
+  if (s != nullptr) {
     if (strcmp(s, "summary") == 0) {
       return NMT_summary;
     } else if (strcmp(s, "detail") == 0) {

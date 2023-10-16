@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class LambdaContainsOldInf {
             OutputAnalyzer output = CDSTestUtils.createArchiveAndCheck(opts);
             TestCommon.checkExecReturn(output, 0, true,
                                        "Skipping OldProvider: Old class has been linked");
-            output.shouldMatch("Skipping.LambdaContainsOldInfApp[$][$]Lambda[$].*0x.*:.*Old.class.has.been.linked");
+            output.shouldMatch("Skipping.LambdaContainsOldInfApp[$][$]Lambda.*0x.*:.*Old.class.has.been.linked");
 
             // run with archive
             CDSOptions runOpts = (new CDSOptions())
@@ -77,7 +77,7 @@ public class LambdaContainsOldInf {
             TestCommon.checkExecReturn(output, 0, true,
                 "[class,load] LambdaContainsOldInfApp source: shared objects file");
             output.shouldMatch(".class.load. OldProvider.source:.*lambdacontainsoldinf.jar")
-                  .shouldMatch(".class.load. LambdaContainsOldInfApp[$][$]Lambda[$].*/0x.*source:.*LambdaContainsOldInf");
+                  .shouldMatch(".class.load. LambdaContainsOldInfApp[$][$]Lambda.*/0x.*source:.*LambdaContainsOldInf");
        }
     }
 }

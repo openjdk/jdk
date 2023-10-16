@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ public class Preview {
      * Returns true if {@code s} is deemed to participate in the preview of {@code previewSymbol}, and
      * therefore no warnings or errors will be produced.
      *
-     * @parem syms the symbol table
+     * @param syms the symbol table
      * @param s the symbol depending on the preview symbol
      * @param previewSymbol the preview symbol marked with @Preview
      * @return true if {@code s} is participating in the preview of {@code previewSymbol}
@@ -209,11 +209,9 @@ public class Preview {
      */
     public boolean isPreview(Feature feature) {
         return switch (feature) {
-            case CASE_NULL -> true;
-            case PATTERN_SWITCH -> true;
-            case UNCONDITIONAL_PATTERN_IN_INSTANCEOF -> true;
-            case RECORD_PATTERNS -> true;
-
+            case STRING_TEMPLATES -> true;
+            case UNNAMED_CLASSES -> true;
+            case UNNAMED_VARIABLES -> true;
             //Note: this is a backdoor which allows to optionally treat all features as 'preview' (for testing).
             //When real preview features will be added, this method can be implemented to return 'true'
             //for those selected features, and 'false' for all the others.

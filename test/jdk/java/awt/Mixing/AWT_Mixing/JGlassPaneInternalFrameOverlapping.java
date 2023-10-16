@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@ import test.java.awt.regtesthelpers.Util;
 
 /**
  * AWT/Swing overlapping test with JInternalFrame being put in GlassPane.
- * See <a href="https://bugs.openjdk.java.net/browse/JDK-6637655">JDK-6637655</a> and
- * <a href="https://bugs.openjdk.java.net/browse/JDK-6985776">JDK-6985776</a>.
+ * See <a href="https://bugs.openjdk.org/browse/JDK-6637655">JDK-6637655</a> and
+ * <a href="https://bugs.openjdk.org/browse/JDK-6985776">JDK-6985776</a>.
  * <p>See base class for details.
  */
 /*

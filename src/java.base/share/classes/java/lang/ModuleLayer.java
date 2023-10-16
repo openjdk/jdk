@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,14 +44,17 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.internal.javac.PreviewFeature;
+import jdk.internal.javac.Restricted;
 import jdk.internal.loader.ClassLoaderValue;
 import jdk.internal.loader.Loader;
 import jdk.internal.loader.LoaderPool;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.misc.CDS;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.Stable;
 import sun.security.util.SecurityConstants;
-
 
 /**
  * A layer of modules in the Java virtual machine.
@@ -295,6 +298,37 @@ public final class ModuleLayer {
         public Controller addOpens(Module source, String pn, Module target) {
             ensureInLayer(source);
             source.implAddOpens(pn, target);
+            return this;
+        }
+
+        /**
+         * Enables native access for a module in the layer if the caller's module
+         * has native access.
+         *
+         * <p> This method is <a href="foreign/package-summary.html#restricted"><em>restricted</em></a>.
+         * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+         * the JVM or, worse, silently result in memory corruption.
+         *
+         * @param  target
+         *         The module to update
+         *
+         * @return This controller
+         *
+         * @throws IllegalArgumentException
+         *         If {@code target} is not in the module layer
+         *
+         * @throws IllegalCallerException
+         *         If the caller is in a module that does not have native access enabled
+         *
+         * @since 22
+         */
+        @CallerSensitive
+        @Restricted
+        public Controller enableNativeAccess(Module target) {
+            ensureInLayer(target);
+            Reflection.ensureNativeAccess(Reflection.getCallerClass(), Module.class,
+                "enableNativeAccess");
+            target.implAddEnableNativeAccess();
             return this;
         }
     }

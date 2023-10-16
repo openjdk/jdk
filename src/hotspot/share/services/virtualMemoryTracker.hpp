@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,12 +43,20 @@ class VirtualMemory {
   size_t     _reserved;
   size_t     _committed;
 
+#ifdef ASSERT
+  volatile size_t _peak_size;
+  void update_peak(size_t size);
+#endif // ASSERT
+
  public:
-  VirtualMemory() : _reserved(0), _committed(0) { }
+  VirtualMemory() : _reserved(0), _committed(0) {
+    DEBUG_ONLY(_peak_size  = 0;)
+  }
 
   inline void reserve_memory(size_t sz) { _reserved += sz; }
   inline void commit_memory (size_t sz) {
     _committed += sz;
+    DEBUG_ONLY(update_peak(sz);)
     assert(_committed <= _reserved, "Sanity check");
   }
 
@@ -64,6 +72,9 @@ class VirtualMemory {
 
   inline size_t reserved()  const { return _reserved;  }
   inline size_t committed() const { return _committed; }
+  inline size_t peak_size() const {
+    return DEBUG_ONLY(Atomic::load(&_peak_size)) NOT_DEBUG(0);
+  }
 };
 
 // Virtual memory allocation site, keeps track where the virtual memory is reserved.
@@ -93,6 +104,11 @@ class VirtualMemorySnapshot : public ResourceObj {
 
  public:
   inline VirtualMemory* by_type(MEMFLAGS flag) {
+    int index = NMTUtil::flag_to_index(flag);
+    return &_virtual_memory[index];
+  }
+
+  inline const VirtualMemory* by_type(MEMFLAGS flag) const {
     int index = NMTUtil::flag_to_index(flag);
     return &_virtual_memory[index];
   }
@@ -177,7 +193,7 @@ class VirtualMemoryRegion {
  public:
   VirtualMemoryRegion(address addr, size_t size) :
     _base_address(addr), _size(size) {
-     assert(addr != NULL, "Invalid address");
+     assert(addr != nullptr, "Invalid address");
      assert(size > 0, "Invalid size");
    }
 
@@ -250,7 +266,7 @@ class VirtualMemoryRegion {
 
  protected:
   void set_base(address base) {
-    assert(base != NULL, "Sanity check");
+    assert(base != nullptr, "Sanity check");
     _base_address = base;
   }
 
@@ -328,10 +344,11 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
 
     _stack =         *other.call_stack();
     _flag  =         other.flag();
+    _committed_regions.clear();
 
     CommittedRegionIterator itr = other.iterate_committed_regions();
     const CommittedMemoryRegion* rgn = itr.next();
-    while (rgn != NULL) {
+    while (rgn != nullptr) {
       _committed_regions.add(*rgn);
       rgn = itr.next();
     }
@@ -348,9 +365,9 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
     address addr, size_t sz);
 
   bool add_committed_region(const CommittedMemoryRegion& rgn) {
-    assert(rgn.base() != NULL, "Invalid base address");
+    assert(rgn.base() != nullptr, "Invalid base address");
     assert(size() > 0, "Invalid size");
-    return _committed_regions.add(rgn) != NULL;
+    return _committed_regions.add(rgn) != nullptr;
   }
 };
 

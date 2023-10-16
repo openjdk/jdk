@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,9 +71,6 @@ public abstract class SSLContextImpl extends SSLContextSpi {
     private volatile StatusResponseManager statusResponseManager;
 
     private final ReentrantLock contextLock = new ReentrantLock();
-    final HashMap<Integer,
-            SessionTicketExtension.StatelessKey> keyHashMap = new HashMap<>();
-
 
     SSLContextImpl() {
         ephemeralKeyManager = new EphemeralKeyManager();
@@ -1287,7 +1284,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
     }
 
     /*
-     * The SSLContext implementation for customized TLS protocols
+     * The SSLContext implementation for customized DTLS protocols
      *
      * @see SSLContext
      */
@@ -1345,13 +1342,11 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                         ProtocolVersion.DTLS12,
                         ProtocolVersion.DTLS10
                 };
-                if (!client)
-                    return Arrays.asList(candidates);
             } else {
                 // Use the customized TLS protocols.
                 candidates =
                         new ProtocolVersion[customized.size()];
-                candidates = customized.toArray(candidates);
+                candidates = refactored.toArray(candidates);
             }
 
             return getAvailableProtocols(candidates);

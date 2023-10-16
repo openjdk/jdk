@@ -106,8 +106,7 @@ public final class RecordingInfo {
         durationInSeconds = (long) cd.get("duration");
         settings = new LinkedHashMap<>();
         Object map = cd.get("settings");
-        if (map instanceof TabularData) {
-            TabularData td = (TabularData) map;
+        if (map instanceof TabularData td) {
             List<String> keyNames = td.getTabularType().getIndexNames();
             int size = keyNames.size();
             for (Object keys : td.keySet()) {
@@ -115,8 +114,8 @@ public final class RecordingInfo {
                 for (int i = 0; i < size; i++) {
                     String key = keyNames.get(i);
                     Object value = keyValues[i];
-                    if (value instanceof String) {
-                        settings.put(key, (String) value);
+                    if (value instanceof String s) {
+                        settings.put(key, s);
                     }
                 }
             }

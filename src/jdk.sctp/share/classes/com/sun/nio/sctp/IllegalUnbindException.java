@@ -24,6 +24,8 @@
  */
 package com.sun.nio.sctp;
 
+import java.io.Serial;
+
 /**
  * Unchecked exception thrown when an attempt is made to remove an
  * address that is not bound to the channel, or remove an address from a
@@ -32,6 +34,7 @@ package com.sun.nio.sctp;
  * @since 1.7
  */
 public class IllegalUnbindException extends IllegalStateException {
+    @Serial
     private static final long serialVersionUID = -310540883995532224L;
 
     /**

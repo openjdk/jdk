@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,13 +44,13 @@ import jdk.jfr.SettingDefinition;
 import jdk.jfr.StackTrace;
 import jdk.jfr.Threshold;
 import jdk.jfr.events.ActiveSettingEvent;
-import jdk.jfr.internal.EventInstrumentation.SettingInfo;
 import jdk.jfr.internal.settings.CutoffSetting;
 import jdk.jfr.internal.settings.EnabledSetting;
 import jdk.jfr.internal.settings.PeriodSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
 import jdk.jfr.internal.settings.ThrottleSetting;
+import jdk.jfr.internal.util.Utils;
 
 // This class can't have a hard reference from PlatformEventType, since it
 // holds SettingControl instances that need to be released
@@ -66,7 +66,7 @@ public final class EventControl {
     private static final Type TYPE_CUTOFF = TypeLibrary.createType(CutoffSetting.class);
     private static final Type TYPE_THROTTLE = TypeLibrary.createType(ThrottleSetting.class);
 
-    private final ArrayList<SettingInfo> settingInfos = new ArrayList<>();
+    private final ArrayList<SettingControl> settingControls = new ArrayList<>();
     private final ArrayList<NamedControl> namedControls = new ArrayList<>(5);
     private final PlatformEventType type;
     private final String idName;
@@ -163,7 +163,6 @@ public final class EventControl {
         try {
             Module settingModule = settingsClass.getModule();
             Modules.addReads(settingModule, EventControl.class.getModule());
-            int index = settingInfos.size();
             SettingControl settingControl = instantiateSettingControl(settingsClass);
             Control c = new Control(settingControl, null);
             c.setDefault();
@@ -180,7 +179,7 @@ public final class EventControl {
                 aes.trimToSize();
                 addControl(settingName, c);
                 eventType.add(PrivateAccess.getInstance().newSettingDescriptor(settingType, settingName, defaultValue, aes));
-                settingInfos.add(new SettingInfo(FIELD_SETTING_PREFIX + index, index, null, null, settingControl));
+                settingControls.add(settingControl);
             }
         } catch (InstantiationException e) {
             // Programming error by user, fail fast
@@ -284,7 +283,7 @@ public final class EventControl {
             return;
         }
         for (NamedControl nc : namedControls) {
-            if (Utils.isSettingVisible(nc.control, type.hasEventHook()) && type.isVisible()) {
+            if (nc.control.isVisible(type.hasEventHook()) && type.isVisible()) {
                 String value = nc.control.getLastValue();
                 if (value == null) {
                     value = nc.control.getDefaultValue();
@@ -308,7 +307,14 @@ public final class EventControl {
         return idName;
     }
 
-    public List<SettingInfo> getSettingInfos() {
-        return settingInfos;
+    /**
+     * A malicious user must never be able to run a callback in the wrong
+     * context. Methods on SettingControl must therefore never be invoked directly
+     * by JFR, instead use jdk.jfr.internal.Control.
+     *
+     * The returned list is only to be used inside EventConfiguration
+     */
+    public List<SettingControl> getSettingControls() {
+        return settingControls;
     }
 }

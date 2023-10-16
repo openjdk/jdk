@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,11 @@
 #include "oops/cpCache.hpp"
 
 #include "oops/oopHandle.inline.hpp"
+#include "oops/resolvedFieldEntry.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "runtime/atomic.hpp"
 
-inline int ConstantPoolCacheEntry::indices_ord() const { return Atomic::load_acquire(&_indices); }
+inline intx ConstantPoolCacheEntry::indices_ord() const { return Atomic::load_acquire(&_indices); }
 
 inline Bytecodes::Code ConstantPoolCacheEntry::bytecode_1() const {
   return Bytecodes::cast((indices_ord() >> bytecode_1_shift) & bytecode_1_mask);
@@ -57,16 +59,16 @@ inline Method* ConstantPoolCacheEntry::f2_as_interface_method() const {
 inline Metadata* ConstantPoolCacheEntry::f1_ord() const { return (Metadata *)Atomic::load_acquire(&_f1); }
 
 inline Method* ConstantPoolCacheEntry::f1_as_method() const {
-  Metadata* f1 = f1_ord(); assert(f1 == NULL || f1->is_method(), "");
+  Metadata* f1 = f1_ord(); assert(f1 == nullptr || f1->is_method(), "");
   return (Method*)f1;
 }
 
 inline Klass* ConstantPoolCacheEntry::f1_as_klass() const {
-  Metadata* f1 = f1_ord(); assert(f1 == NULL || f1->is_klass(), "");
+  Metadata* f1 = f1_ord(); assert(f1 == nullptr || f1->is_klass(), "");
   return (Klass*)f1;
 }
 
-inline bool ConstantPoolCacheEntry::is_f1_null() const { Metadata* f1 = f1_ord(); return f1 == NULL; }
+inline bool ConstantPoolCacheEntry::is_f1_null() const { Metadata* f1 = f1_ord(); return f1 == nullptr; }
 
 inline bool ConstantPoolCacheEntry::has_appendix() const {
   return (!is_f1_null()) && (_flags & (1 << has_appendix_shift)) != 0;
@@ -86,19 +88,41 @@ inline bool ConstantPoolCacheEntry::indy_resolution_failed() const {
 // Constructor
 inline ConstantPoolCache::ConstantPoolCache(int length,
                                             const intStack& inverse_index_map,
-                                            const intStack& invokedynamic_inverse_index_map,
-                                            const intStack& invokedynamic_references_map) :
+                                            const intStack& invokedynamic_references_map,
+                                            Array<ResolvedIndyEntry>* invokedynamic_info,
+                                            Array<ResolvedFieldEntry>* field_entries) :
                                                   _length(length),
-                                                  _constant_pool(NULL),
-                                                  _gc_epoch(0) {
+                                                  _constant_pool(nullptr),
+                                                  _gc_epoch(0),
+                                                  _resolved_indy_entries(invokedynamic_info),
+                                                  _resolved_field_entries(field_entries) {
   CDS_JAVA_HEAP_ONLY(_archived_references_index = -1;)
-  initialize(inverse_index_map, invokedynamic_inverse_index_map,
+  initialize(inverse_index_map,
              invokedynamic_references_map);
   for (int i = 0; i < length; i++) {
     assert(entry_at(i)->is_f1_null(), "Failed to clear?");
   }
 }
 
-inline oop ConstantPoolCache::resolved_references() { return _resolved_references.resolve(); }
+inline objArrayOop ConstantPoolCache::resolved_references() {
+  oop obj = _resolved_references.resolve();
+  assert(obj == nullptr || obj->is_objArray(), "should be objArray");
+  return (objArrayOop)obj;
+}
 
+inline ResolvedFieldEntry* ConstantPoolCache::resolved_field_entry_at(int field_index) const {
+  return _resolved_field_entries->adr_at(field_index);
+}
+
+inline int ConstantPoolCache::resolved_field_entries_length() const {
+  return _resolved_field_entries->length();
+}
+
+inline ResolvedIndyEntry* ConstantPoolCache::resolved_indy_entry_at(int index) const {
+  return _resolved_indy_entries->adr_at(index);
+}
+
+inline int ConstantPoolCache::resolved_indy_entries_length() const {
+  return _resolved_indy_entries->length();
+}
 #endif // SHARE_OOPS_CPCACHE_INLINE_HPP

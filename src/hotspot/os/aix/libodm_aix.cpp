@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,13 +29,16 @@
 #include <dlfcn.h>
 #include <string.h>
 #include "runtime/arguments.hpp"
+#include "runtime/os.hpp"
 
 
 dynamicOdm::dynamicOdm() {
-  const char *libodmname = "/usr/lib/libodm.a(shr_64.o)";
-  _libhandle = dlopen(libodmname, RTLD_MEMBER | RTLD_NOW);
+  const char* libodmname = "/usr/lib/libodm.a(shr_64.o)";
+  char ebuf[512];
+  void* _libhandle = os::dll_load(libodmname, ebuf, sizeof(ebuf));
+
   if (!_libhandle) {
-    trcVerbose("Couldn't open %s", libodmname);
+    trcVerbose("Cannot load %s (error %s)", libodmname, ebuf);
     return;
   }
   _odm_initialize  = (fun_odm_initialize )dlsym(_libhandle, "odm_initialize" );
@@ -46,7 +49,7 @@ dynamicOdm::dynamicOdm() {
   if (!_odm_initialize || !_odm_set_path || !_odm_mount_class || !_odm_get_obj || !_odm_terminate) {
     trcVerbose("Couldn't find all required odm symbols from %s", libodmname);
     dlclose(_libhandle);
-    _libhandle = NULL;
+    _libhandle = nullptr;
     return;
   }
 }
@@ -56,7 +59,7 @@ dynamicOdm::~dynamicOdm() {
 }
 
 
-void odmWrapper::clean_data() { if (_data) { free(_data); _data = NULL; } }
+void odmWrapper::clean_data() { if (_data) { free(_data); _data = nullptr; } }
 
 
 int odmWrapper::class_offset(const char *field, bool is_aix_5)

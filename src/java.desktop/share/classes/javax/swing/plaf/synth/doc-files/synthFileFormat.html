@@ -70,6 +70,8 @@ div.example {
     <p>
       This example loads the look and feel from an input stream, using
       the specified class as the resource base to resolve paths.
+    </p>
+    <p>
       It is also possible to load a look and feel from an arbitrary URL
       as in the following example.
     </p>
@@ -94,6 +96,11 @@ div.example {
       <li>Remote JAR file, e.g.
         <code>jar:http://host/synth-laf.jar!/laf.xml</code></li>
     </ul>
+    <p>Note: Synth's file format allows for the definition of code to be executed.
+       Loading any code from a remote location should be used only
+       with extreme caution from a trusted source over a secure connection.
+       It is strongly discouraged for an application or a LookAndFeel to do so.
+    </p>
     <p>
       While the DTD for synth is specified, the parser is not validating.
       Parsing will fail only if a necessary attribute is not
@@ -529,7 +536,7 @@ div.example {
     <p><em>Attribute definitions</em></p>
     <dl>
       <dt><a id="graphicsUtils.idref"><samp>idref</samp></a></dt>
-      <dd>Identifer of a previously defined SynthGraphicsUtils object
+      <dd>Identifier of a previously defined SynthGraphicsUtils object
 	that is to be used as the SynthGraphicsUtils for the current
 	<a href="#e.style">style</a>.</dd>
     </dl>
@@ -873,9 +880,9 @@ div.example {
 	a direction or orientation. If this is not specified the image is
 	used for all directions.</dd>
       <dt><a id="imagePainter.path"><samp>path</samp></a></dt>
-      <dd>Path to the image. Path to the image.  If SynthLookAndFeel.load is
-    passed a Class this will use the Class method getResource (with with the
-    Class suplied to the load method). If load is passed a URL this will use the
+      <dd>Path to the image.  If SynthLookAndFeel.load is
+    passed a Class this will use the Class method getResource (with the
+    Class supplied to the load method). If load is passed a URL this will use the
     URL constructor URL(context, path) to resolve the path.</dd>
       <dt><a id="imagePainter.sourceInsets"><samp>sourceInsets</samp></a></dt>
       <dd>Insets on the source image. This is top, left, bottom, right with
@@ -1000,12 +1007,12 @@ div.example {
 
     <h2><a id="ee.beansPersistance">The beansPersistance entity</a></h2>
     <p>
-      Beans persistance can be used to embed any Object. This is
+      Beans persistence can be used to embed any Object. This is
       typically used for embedding your own Painters, but can be used
-      for other arbritrary objects as well. Refer to <a
+      for other arbitrary objects as well. Refer to <a
         href="http://www.oracle.com/technetwork/java/persistence3-139471.html">
       http://www.oracle.com/technetwork/java/persistence3-139471.html</a>
-      for details on beans persistance.
+      for details on beans persistence.
 
 
     <h2>Backing Style</h2>

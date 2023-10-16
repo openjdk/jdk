@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public abstract class CKeyPairGenerator extends KeyPairGeneratorSpi {
                 RSAKeyFactory.checkKeyLengths(keySize, null,
                         KEY_SIZE_MIN, KEY_SIZE_MAX);
             } catch (InvalidKeyException e) {
-                throw new InvalidParameterException(e.getMessage());
+                throw new InvalidParameterException(e);
             }
 
             this.keySize = keySize;

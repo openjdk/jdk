@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import javax.crypto.spec.PBEParameterSpec;
 
 /*
  * @test
- * @bug 8048599 8248268
+ * @bug 8048599 8248268 8288050
  * @summary  Tests for key wrap and unwrap operations
  */
 
@@ -74,9 +74,14 @@ public class TestCipherKeyWrapperTest {
             "pbeWithSHA1AndRC4_128/ECB/NoPadding", "PBEWithHmacSHA1AndAES_128",
             "PBEWithHmacSHA224AndAES_128", "PBEWithHmacSHA256AndAES_128",
             "PBEWithHmacSHA384AndAES_128", "PBEWithHmacSHA512AndAES_128",
+            "PBEWithHmacSHA512/224AndAES_128",
+            "PBEWithHmacSHA512/256AndAES_128",
             "PBEWithHmacSHA1AndAES_256", "PBEWithHmacSHA224AndAES_256",
             "PBEWithHmacSHA256AndAES_256", "PBEWithHmacSHA384AndAES_256",
-            "PBEWithHmacSHA512AndAES_256" };
+            "PBEWithHmacSHA512AndAES_256",
+            "PBEWithHmacSHA512/224AndAES_256",
+            "PBEWithHmacSHA512/256AndAES_256",
+    };
     private static final String[] MODEL_AR = { "ECb", "pCbC", "cbC", "cFB",
             "cFB24", "cFB40", "OfB48", "OFB64" };
     private static final String[] PADDING_AR = { NOPADDING, "PKCS5Padding" };
@@ -235,18 +240,20 @@ public class TestCipherKeyWrapperTest {
             IllegalBlockSizeException, InvalidAlgorithmParameterException,
             NoSuchAlgorithmException {
         for (String alg : PBE_ALGORITHM_AR) {
-            String baseAlgo = alg.split("/")[0].toUpperCase();
+            String keyAlgo = (alg.endsWith("Padding") ?
+                    alg.split("/")[0].toUpperCase() : alg);
+
             // only run the tests on longer key lengths if unlimited version
             // of JCE jurisdiction policy files are installed
 
             if (Cipher.getMaxAllowedKeyLength(alg) < Integer.MAX_VALUE
-                    && (baseAlgo.endsWith("TRIPLEDES") || alg
+                    && (keyAlgo.endsWith("TRIPLEDES") || alg
                             .endsWith("AES_256"))) {
                 out.println("keyStrength > 128 within " + alg
                         + " will not run under global policy");
                 continue;
             }
-            SecretKeyFactory skf = SecretKeyFactory.getInstance(baseAlgo, p);
+            SecretKeyFactory skf = SecretKeyFactory.getInstance(keyAlgo, p);
             SecretKey key = skf.generateSecret(new PBEKeySpec("Secret Lover"
                     .toCharArray()));
             wrapTest(alg, alg, key, key, Cipher.SECRET_KEY, true);
@@ -280,7 +287,8 @@ public class TestCipherKeyWrapperTest {
             throws NoSuchAlgorithmException, NoSuchPaddingException,
             InvalidKeyException, IllegalBlockSizeException,
             InvalidAlgorithmParameterException {
-        String algo = transformation.split("/")[0];
+        String algo = (transformation.endsWith("Padding") ?
+                transformation.split("/")[0] : transformation);
         boolean isAESBlowfish = algo.indexOf("AES") != -1
                 || algo.indexOf("Blowfish") != -1;
         AlgorithmParameters aps = null;

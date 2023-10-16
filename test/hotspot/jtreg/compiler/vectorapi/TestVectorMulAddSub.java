@@ -110,7 +110,7 @@ public class TestVectorMulAddSub {
     }
 
     @Test
-    @IR(counts = {"vmla", "> 0"})
+    @IR(counts = {IRNode.VMLA, "> 0"})
     public static void testByteMulAdd() {
         for (int i = 0; i < LENGTH; i += B_SPECIES.length()) {
             ByteVector av = ByteVector.fromArray(B_SPECIES, ba, i);
@@ -129,7 +129,7 @@ public class TestVectorMulAddSub {
     }
 
     @Test
-    @IR(counts = {"vmla", "> 0"})
+    @IR(counts = {IRNode.VMLA, "> 0"})
     public static void testShortMulAdd() {
         for (int i = 0; i < LENGTH; i += S_SPECIES.length()) {
             ShortVector av = ShortVector.fromArray(S_SPECIES, sa, i);
@@ -148,7 +148,7 @@ public class TestVectorMulAddSub {
     }
 
     @Test
-    @IR(counts = {"vmla", "> 0"})
+    @IR(counts = {IRNode.VMLA, "> 0"})
     public static void testIntMulAdd() {
         for (int i = 0; i < LENGTH; i += I_SPECIES.length()) {
             IntVector av = IntVector.fromArray(I_SPECIES, ia, i);
@@ -167,7 +167,7 @@ public class TestVectorMulAddSub {
     }
 
     @Test
-    @IR(applyIf = {"UseSVE", " > 0"}, counts = {"vmla", "> 0"})
+    @IR(applyIf = {"UseSVE", " > 0"}, counts = {IRNode.VMLA, "> 0"})
     public static void testLongMulAdd() {
         for (int i = 0; i < LENGTH; i += L_SPECIES.length()) {
             LongVector av = LongVector.fromArray(L_SPECIES, la, i);
@@ -186,7 +186,7 @@ public class TestVectorMulAddSub {
     }
 
     @Test
-    @IR(counts = {"vmls", "> 0"})
+    @IR(counts = {IRNode.VMLS, "> 0"})
     public static void testByteMulSub() {
         for (int i = 0; i < LENGTH; i += B_SPECIES.length()) {
             ByteVector av = ByteVector.fromArray(B_SPECIES, ba, i);
@@ -205,7 +205,7 @@ public class TestVectorMulAddSub {
     }
 
     @Test
-    @IR(counts = {"vmls", "> 0"})
+    @IR(counts = {IRNode.VMLS, "> 0"})
     public static void testShortMulSub() {
         for (int i = 0; i < LENGTH; i += S_SPECIES.length()) {
             ShortVector av = ShortVector.fromArray(S_SPECIES, sa, i);
@@ -224,7 +224,7 @@ public class TestVectorMulAddSub {
     }
 
     @Test
-    @IR(counts = {"vmls", "> 0"})
+    @IR(counts = {IRNode.VMLS, "> 0"})
     public static void testIntMulSub() {
         for (int i = 0; i < LENGTH; i += I_SPECIES.length()) {
             IntVector av = IntVector.fromArray(I_SPECIES, ia, i);
@@ -243,7 +243,7 @@ public class TestVectorMulAddSub {
     }
 
     @Test
-    @IR(applyIf = {"UseSVE", " > 0"}, counts = {"vmls", "> 0"})
+    @IR(applyIf = {"UseSVE", " > 0"}, counts = {IRNode.VMLS, "> 0"})
     public static void testLongMulSub() {
         for (int i = 0; i < LENGTH; i += L_SPECIES.length()) {
             LongVector av = LongVector.fromArray(L_SPECIES, la, i);

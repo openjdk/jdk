@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -581,7 +581,7 @@ public abstract class JComponent extends Container implements Serializable,
      * <p>
      * This is a bound property.
      *
-     * @param popup - the popup that will be assigned to this component
+     * @param popup the popup that will be assigned to this component
      *                may be null
      * @see #getComponentPopupMenu
      * @since 1.5
@@ -1118,7 +1118,7 @@ public abstract class JComponent extends Container implements Serializable,
                 }
             }
             else {
-                // Will ocassionaly happen in 1.2, especially when printing.
+                // Will occasionally happen in 1.2, especially when printing.
                 if (clipRect == null) {
                     co.setClip(clipX, clipY, clipW, clipH);
                 }
@@ -3482,7 +3482,7 @@ public abstract class JComponent extends Container implements Serializable,
         public boolean isEnabled() {
             if (actionListener == null) {
                 // This keeps the old semantics where
-                // registerKeyboardAction(null) would essentialy remove
+                // registerKeyboardAction(null) would essentially remove
                 // the binding. We don't remove the binding from the
                 // InputMap as that would still allow parent InputMaps
                 // bindings to be accessed.
@@ -3503,7 +3503,7 @@ public abstract class JComponent extends Container implements Serializable,
         // We don't allow any values to be added.
         public void putValue(String key, Object value) {}
 
-        // Does nothing, our enabledness is determiend from our asociated
+        // Does nothing, our enabledness is determined from our associated
         // action.
         public void setEnabled(boolean b) { }
 
@@ -4282,7 +4282,7 @@ public abstract class JComponent extends Container implements Serializable,
      */
     public static boolean isLightweightComponent(Component c) {
         // TODO we cannot call c.isLightweight() because it is incorrectly
-        // overriden in DelegateContainer on osx.
+        // overridden in DelegateContainer on osx.
         return AWTAccessor.getComponentAccessor().isLightweight(c);
     }
 
@@ -5050,11 +5050,11 @@ public abstract class JComponent extends Container implements Serializable,
             return;
         }
 
-        JComponent paintingOigin = SwingUtilities.getPaintingOrigin(this);
-        if (paintingOigin != null) {
+        JComponent paintingOrigin = SwingUtilities.getPaintingOrigin(this);
+        if (paintingOrigin != null) {
             Rectangle rectangle = SwingUtilities.convertRectangle(
-                    c, new Rectangle(x, y, w, h), paintingOigin);
-            paintingOigin.paintImmediately(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
+                    c, new Rectangle(x, y, w, h), paintingOrigin);
+            paintingOrigin.paintImmediately(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
             return;
         }
 
@@ -5208,7 +5208,7 @@ public abstract class JComponent extends Container implements Serializable,
                 }
                 pCount++;
 
-                // look to see if the parent (and therefor this component)
+                // look to see if the parent (and therefore this component)
                 // is double buffered
                 if(repaintManager.isDoubleBufferingEnabled() && jc != null &&
                                   jc.isDoubleBuffered()) {
@@ -5407,7 +5407,7 @@ public abstract class JComponent extends Container implements Serializable,
         return ((flags & mask) == mask);
     }
     // These functions must be static so that they can be called from
-    // subclasses inside the package, but whose inheritance hierarhcy includes
+    // subclasses inside the package, but whose inheritance hierarchy includes
     // classes outside of the package below JComponent (e.g., JTextArea).
     static void setWriteObjCounter(JComponent comp, byte count) {
         comp.flags = (comp.flags & ~(0xFF << WRITE_OBJ_COUNTER_FIRST)) |
@@ -5510,7 +5510,7 @@ public abstract class JComponent extends Container implements Serializable,
         /**
          * This is the method that's called after the entire graph
          * of objects has been read in.  It initializes
-         * the UI property of all of the copmonents with
+         * the UI property of all of the components with
          * <code>SwingUtilities.updateComponentTreeUI</code>.
          */
         public void validateObject() throws InvalidObjectException {

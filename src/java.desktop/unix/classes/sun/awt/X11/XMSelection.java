@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,10 +42,10 @@ public class  XMSelection {
      *
      * If owner changes, the ownerChanged of the XMSelectionListener
      * will be called with the screen
-     * number and the new owning window when onwership is established, or
+     * number and the new owning window when ownership is established, or
      * None if the owner is gone.
      *
-     * Events in extra_mask are selected for on owning windows (exsiting
+     * Events in extra_mask are selected for on owning windows (existing
      * ones and on new owners when established) and otherEvent of the
      * XMWSelectionListener will be called with the screen number and an event.
      *
@@ -206,7 +206,7 @@ public class  XMSelection {
         XClientMessageEvent xce = xev.get_xclient();
         if (xce.get_message_type() == XA_MANAGER.getAtom()) {
             if (log.isLoggable(PlatformLogger.Level.FINE)) {
-                log.fine("client messags = " + xce);
+                log.fine("client messages = " + xce);
             }
             long timestamp = xce.get_data(0) & 0xFFFFFFFFL;
             long atom = xce.get_data(1);

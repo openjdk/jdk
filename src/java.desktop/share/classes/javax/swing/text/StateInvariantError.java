@@ -25,7 +25,7 @@
 package javax.swing.text;
 
 /**
- * This exception is to report the failure of state invarient
+ * This exception is to report the failure of state invariant
  * assertion that was made.  This indicates an internal error
  * has occurred.
  *

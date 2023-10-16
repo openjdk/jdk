@@ -37,8 +37,8 @@ import java.awt.Dimension;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.io.Serializable;
-import javax.swing.SwingUtilities;
+import java.util.HashSet;
+import java.util.Set;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import org.openide.ErrorManager;
@@ -48,6 +48,7 @@ import org.openide.awt.ToolbarPool;
 import org.openide.explorer.ExplorerManager;
 import org.openide.explorer.ExplorerUtils;
 import org.openide.explorer.view.BeanTreeView;
+import org.openide.nodes.Node;
 import org.openide.util.Exceptions;
 import org.openide.util.NbBundle;
 import org.openide.windows.TopComponent;
@@ -64,11 +65,10 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     private ExplorerManager manager;
     private final GraphDocument document;
     private FolderNode root;
-    private Server server;
-    private Server binaryServer;
     private SaveAllAction saveAllAction;
     private RemoveAllAction removeAllAction;
-
+    private GraphNode[] selectedGraphs = new GraphNode[0];
+    private final Set<FolderNode> selectedFolders = new HashSet<>();
 
     private OutlineTopComponent() {
         initComponents();
@@ -135,8 +135,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             }
         };
 
-        server = new Server(getDocument(), callback, false);
-        binaryServer = new Server(getDocument(), callback, true);
+        new Server(callback);
     }
 
     public void clear() {
@@ -224,32 +223,51 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
     @Override
     public void changed(InputGraphProvider lastProvider) {
-        // Wait for LookupHistory to be updated with the last active graph
-        // before selecting it.
-        SwingUtilities.invokeLater(() -> {
-            GraphNode[] selection = new GraphNode[0];
-            if (lastProvider != null) {
-                // Try to fetch and select the latest active graph.
-                InputGraph graph = lastProvider.getGraph();
-                if (graph != null) {
-                    if (graph.isDiffGraph()) {
-                        EditorTopComponent editor = EditorTopComponent.getActive();
-                        if (editor != null) {
-                            InputGraph firstGraph = editor.getModel().getFirstGraph();
-                            InputGraph secondGraph = editor.getModel().getSecondGraph();
-                            selection = new GraphNode[]{FolderNode.getGraphNode(firstGraph), FolderNode.getGraphNode(secondGraph)};
+        for (GraphNode graphNode : selectedGraphs) {
+            graphNode.setSelected(false);
+        }
+        for (FolderNode folderNode : selectedFolders) {
+            folderNode.setSelected(false);
+        }
+        selectedGraphs = new GraphNode[0];
+        selectedFolders.clear();
+        if (lastProvider != null) {
+            // Try to fetch and select the latest active graph.
+            InputGraph graph = lastProvider.getGraph();
+            if (graph != null) {
+                if (graph.isDiffGraph()) {
+                    EditorTopComponent editor = EditorTopComponent.getActive();
+                    if (editor != null) {
+                        InputGraph firstGraph = editor.getModel().getFirstGraph();
+                        GraphNode firstNode = FolderNode.getGraphNode(firstGraph);
+                        InputGraph secondGraph = editor.getModel().getSecondGraph();
+                        GraphNode secondNode = FolderNode.getGraphNode(secondGraph);
+                        if (firstNode != null && secondNode != null) {
+                            selectedGraphs = new GraphNode[]{firstNode, secondNode};
                         }
-                    } else {
-                        selection = new GraphNode[]{FolderNode.getGraphNode(graph)};
+                    }
+                } else {
+                    GraphNode graphNode = FolderNode.getGraphNode(graph);
+                    if (graphNode != null) {
+                        selectedGraphs = new GraphNode[]{graphNode};
                     }
                 }
             }
-            try {
-                manager.setSelectedNodes(selection);
-            } catch (Exception e) {
-                Exceptions.printStackTrace(e);
+        }
+        try {
+            for (GraphNode graphNode : selectedGraphs) {
+                Node parentNode = graphNode.getParentNode();
+                if (parentNode instanceof FolderNode) {
+                    FolderNode folderNode = (FolderNode) graphNode.getParentNode();
+                    folderNode.setSelected(true);
+                    selectedFolders.add(folderNode);
+                }
+                graphNode.setSelected(true);
             }
-        });
+            manager.setSelectedNodes(selectedGraphs);
+        } catch (Exception e) {
+            Exceptions.printStackTrace(e);
+        }
     }
 
     @Override
@@ -262,15 +280,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     @Override
     public void writeExternal(ObjectOutput objectOutput) throws IOException {
         super.writeExternal(objectOutput);
-    }
-
-    static final class ResolvableHelper implements Serializable {
-
-        private static final long serialVersionUID = 1L;
-
-        public Object readResolve() {
-            return OutlineTopComponent.getDefault();
-        }
     }
 
     /** This method is called from within the constructor to

@@ -32,11 +32,9 @@
 #include "oops/method.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/vframe.inline.hpp"
-
 #ifdef COMPILER1
 #include "c1/c1_GraphBuilder.hpp"
 #endif
-
 #ifdef COMPILER2
 #include "opto/parse.hpp"
 #endif

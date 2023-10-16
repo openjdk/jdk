@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -119,7 +120,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
 
     /** Bug#4425878-Property javax.swing.adjustPopupLocationToFit introduced */
     @SuppressWarnings("removal")
-    static boolean popupPostionFixDisabled =
+    static boolean popupPositionFixDisabled =
             java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction(
                     "javax.swing.adjustPopupLocationToFit","")).equals("false");
@@ -332,16 +333,16 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
     }
 
     /**
-     * Returns an point which has been adjusted to take into account of the
+     * Returns an point which has been adjusted to take into account the
      * desktop bounds, taskbar and multi-monitor configuration.
      * <p>
-     * This adustment may be cancelled by invoking the application with
+     * This adjustment may be cancelled by invoking the application with
      * -Djavax.swing.adjustPopupLocationToFit=false
      */
     Point adjustPopupLocationToFitScreen(int xPosition, int yPosition) {
         Point popupLocation = new Point(xPosition, yPosition);
 
-        if(popupPostionFixDisabled == true || GraphicsEnvironment.isHeadless()) {
+        if (popupPositionFixDisabled || GraphicsEnvironment.isHeadless()) {
             return popupLocation;
         }
 
@@ -542,7 +543,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      *
      * @param label a string specifying the label for the popup menu
      *
-     * @see #setLabel
+     * @see #getLabel
      */
     @BeanProperty(description
             = "The label for the popup menu.")
@@ -758,6 +759,16 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
         }
     }
 
+    private Window getMenuInvoker() {
+        if (invoker instanceof Window menuInvoker) {
+            return menuInvoker;
+        } else {
+            return invoker == null
+                    ? null
+                    : SwingUtilities.getWindowAncestor(invoker);
+        }
+    }
+
     /**
      * Sets the visibility of the popup menu.
      *
@@ -799,14 +810,24 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
             }
         }
 
-        if(b) {
+        if (b) {
             firePopupMenuWillBecomeVisible();
+
+            if (Toolkit.getDefaultToolkit() instanceof SunToolkit sunToolkit) {
+                sunToolkit.dismissPopupOnFocusLostIfNeeded(getMenuInvoker());
+            }
+
             showPopup();
             firePropertyChange("visible", Boolean.FALSE, Boolean.TRUE);
 
 
-        } else if(popup != null) {
+        } else if (popup != null) {
             firePopupMenuWillBecomeInvisible();
+
+            if (Toolkit.getDefaultToolkit() instanceof SunToolkit sunToolkit) {
+                sunToolkit.dismissPopupOnFocusLostIfNeededCleanUp(getMenuInvoker());
+            }
+
             popup.hide();
             popup = null;
             firePropertyChange("visible", Boolean.TRUE, Boolean.FALSE);
@@ -913,7 +934,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
 
     /**
      * Sets the invoker of this popup menu -- the component in which
-     * the popup menu menu is to be displayed.
+     * the popup menu is to be displayed.
      *
      * @param invoker the <code>Component</code> in which the popup
      *          menu is displayed

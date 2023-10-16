@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import nsk.share.jdi.*;
  * <code>com.sun.jdi.ObjectReference.setValue()</code>
  * properly throws <i>IllegalArgumentException</i> when a
  * debugger part of the test attempts to set value of
- * debuggee's static field which is declared as final.<br>
+ * debuggee's final field.
  */
 public class setvalue004 {
     static final String DEBUGGEE_CLASS =
@@ -62,8 +62,8 @@ public class setvalue004 {
     static final String COMMAND_READY = "ready";
     static final String COMMAND_QUIT = "quit";
 
-    static final int FLDS_NUM = 9;
     static final String DEBUGGEE_FLDS[] = {
+        // static final fields
         "sByteFld",
         "sShortFld",
         "sIntFld",
@@ -72,7 +72,17 @@ public class setvalue004 {
         "sDoubleFld",
         "sCharFld",
         "sBooleanFld",
-        "sStrFld"
+        "sStrFld",
+        // instance final fields
+        "iByteFld",
+        "iShortFld",
+        "iIntFld",
+        "iLongFld",
+        "iFloatFld",
+        "iDoubleFld",
+        "iCharFld",
+        "iBooleanFld",
+        "iStrFld"
     };
 
     private Log log;
@@ -141,16 +151,16 @@ public class setvalue004 {
             rType = objRef.referenceType();
 
             // provoke the IllegalArgumentException
-            for (int i=0; i<FLDS_NUM; i++) {
+            for (int i = 0; i < DEBUGGEE_FLDS.length; i++) {
                 Field fld = rType.fieldByName(DEBUGGEE_FLDS[i]);
                 try {
-                    log.display("\nTrying to set value for the static final field \""
+                    log.display("\nTrying to set value for the final field \""
                         + fld.name() + "\"\n\tfrom the object reference \""
                         + objRef + "\" ...");
                     objRef.setValue(fld,
                         objRef.getValue(rType.fieldByName(fld.name())));
                     log.complain("TEST FAILED: expected IllegalArgumentException was not thrown"
-                        + "\n\twhen attempted to set value for the static final field \""
+                        + "\n\twhen attempted to set value for the final field \""
                         + fld.name() + "\" of " + fld.type() + " type \""
                         + "\"\n\tgotten from the debuggee's object reference \""
                         + objRef + "\"");
@@ -161,7 +171,7 @@ public class setvalue004 {
                     e.printStackTrace();
                     log.complain("TEST FAILED: ObjectReference.setValue(): caught unexpected "
                         + e + "\n\tinstead of expected IllegalArgumentException"
-                        + "\n\twhen attempted to set value for the static final field \""
+                        + "\n\twhen attempted to set value for the final field \""
                         + fld.name() + "\" of " + fld.type() + " type \""
                         + "\"\n\tgotten from the debuggee's object reference \""
                         + objRef + "\"");

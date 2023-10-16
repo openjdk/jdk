@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,13 +23,8 @@
 
 package org.openjdk.bench.java.lang.foreign;
 
-import java.lang.foreign.Addressable;
-import java.lang.foreign.Linker;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryAddress;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
-import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.*;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -44,6 +37,7 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.lang.foreign.MemorySegment.Scope;
 import java.lang.invoke.MethodHandle;
 import java.util.concurrent.TimeUnit;
 
@@ -54,13 +48,14 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "--enable-preview" })
+@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED" })
 public class StrLenTest extends CLayouts {
 
-    MemorySession session = MemorySession.openConfined();
+    Arena arena = Arena.ofConfined();
 
     SegmentAllocator segmentAllocator;
-    SegmentAllocator arenaAllocator = SegmentAllocator.newNativeArena(session);
+    SegmentAllocator arenaAllocator = new RingAllocator(arena);
+    SlicingPool pool = new SlicingPool();
 
     @Param({"5", "20", "100"})
     public int size;
@@ -74,19 +69,19 @@ public class StrLenTest extends CLayouts {
 
     static {
         Linker abi = Linker.nativeLinker();
-        STRLEN = abi.downcallHandle(abi.defaultLookup().lookup("strlen").get(),
+        STRLEN = abi.downcallHandle(abi.defaultLookup().find("strlen").get(),
                 FunctionDescriptor.of(C_INT, C_POINTER));
     }
 
     @Setup
     public void setup() {
         str = makeString(size);
-        segmentAllocator = SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(size + 1, MemorySession.openConfined()));
+        segmentAllocator = SegmentAllocator.prefixAllocator(arena.allocate(size + 1, 1));
     }
 
     @TearDown
     public void tearDown() {
-        session.close();
+        arena.close();
     }
 
     @Benchmark
@@ -96,36 +91,43 @@ public class StrLenTest extends CLayouts {
 
     @Benchmark
     public int panama_strlen() throws Throwable {
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment segment = MemorySegment.allocateNative(str.length() + 1, session);
-            segment.setUtf8String(0, str);
-            return (int)STRLEN.invokeExact((Addressable)segment);
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = arena.allocateFrom(str);
+            return (int)STRLEN.invokeExact(segment);
         }
     }
 
     @Benchmark
-    public int panama_strlen_arena() throws Throwable {
-        return (int)STRLEN.invokeExact((Addressable)arenaAllocator.allocateUtf8String(str));
+    public int panama_strlen_ring() throws Throwable {
+        return (int)STRLEN.invokeExact(arenaAllocator.allocateFrom(str));
+    }
+
+    @Benchmark
+    public int panama_strlen_pool() throws Throwable {
+        Arena arena = pool.acquire();
+        int l = (int) STRLEN.invokeExact(arena.allocateFrom(str));
+        arena.close();
+        return l;
     }
 
     @Benchmark
     public int panama_strlen_prefix() throws Throwable {
-        return (int)STRLEN.invokeExact((Addressable)segmentAllocator.allocateUtf8String(str));
+        return (int)STRLEN.invokeExact(segmentAllocator.allocateFrom(str));
     }
 
     @Benchmark
     public int panama_strlen_unsafe() throws Throwable {
-        MemoryAddress address = makeStringUnsafe(str);
-        int res = (int) STRLEN.invokeExact((Addressable)address);
+        MemorySegment address = makeStringUnsafe(str);
+        int res = (int) STRLEN.invokeExact(address);
         freeMemory(address);
         return res;
     }
 
-    static MemoryAddress makeStringUnsafe(String s) {
+    static MemorySegment makeStringUnsafe(String s) {
         byte[] bytes = s.getBytes();
         int len = bytes.length;
-        MemoryAddress address = allocateMemory(len + 1);
-        MemorySegment str = MemorySegment.ofAddress(address, len + 1, MemorySession.global());
+        MemorySegment address = allocateMemory(len + 1);
+        MemorySegment str = address.asSlice(0, len + 1);
         str.copyFrom(MemorySegment.ofArray(bytes));
         str.set(JAVA_BYTE, len, (byte)0);
         return address;
@@ -142,5 +144,66 @@ public class StrLenTest extends CLayouts {
                  mollit anim id est laborum.
                 """;
         return lorem.substring(0, size);
+    }
+
+    static class RingAllocator implements SegmentAllocator {
+        final MemorySegment segment;
+        SegmentAllocator current;
+        long rem;
+
+        public RingAllocator(Arena session) {
+            this.segment = session.allocate(1024, 1);
+            reset();
+        }
+
+        @Override
+        public MemorySegment allocate(long byteSize, long byteAlignment) {
+            if (rem < byteSize) {
+                reset();
+            }
+            MemorySegment res = current.allocate(byteSize, byteAlignment);
+            long lastOffset = res.address() - segment.address() + res.byteSize();
+            rem = segment.byteSize() - lastOffset;
+            return res;
+        }
+
+        void reset() {
+            current = SegmentAllocator.slicingAllocator(segment);
+            rem = segment.byteSize();
+        }
+    }
+
+    static class SlicingPool {
+        final MemorySegment pool = Arena.ofAuto().allocate(1024);
+        boolean isAcquired = false;
+
+        public Arena acquire() {
+            if (isAcquired) {
+                throw new IllegalStateException("An allocator is already in use");
+            }
+            isAcquired = true;
+            return new SlicingPoolAllocator();
+        }
+
+        class SlicingPoolAllocator implements Arena {
+
+            final Arena arena = Arena.ofConfined();
+            final SegmentAllocator slicing = SegmentAllocator.slicingAllocator(pool);
+
+            public MemorySegment allocate(long byteSize, long byteAlignment) {
+                return slicing.allocate(byteSize, byteAlignment)
+                        .reinterpret(arena, null);
+            }
+
+            @Override
+            public Scope scope() {
+                return arena.scope();
+            }
+
+            public void close() {
+                isAcquired = false;
+                arena.close();
+            }
+        }
     }
 }

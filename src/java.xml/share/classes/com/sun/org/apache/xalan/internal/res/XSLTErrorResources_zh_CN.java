@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,6 +31,7 @@ import java.util.ListResourceBundle;
  * Array. You also need to update MAX_CODE for error strings
  * and MAX_WARNING for warnings ( Needed for only information
  * purpose )
+ * @LastModified: May 2022
  */
 public class XSLTErrorResources_zh_CN extends ListResourceBundle
 {
@@ -1333,7 +1334,6 @@ public class XSLTErrorResources_zh_CN extends ListResourceBundle
   // for the Xalan Process command line.  "Process" is the name of a Java class,
   // and should not be translated.
   { "xslProc_option", "Xalan-J \u547D\u4EE4\u884C Process \u7C7B\u9009\u9879:"},
-  { "xslProc_option", "Xalan-J \u547D\u4EE4\u884C Process \u7C7B\u9009\u9879:"},
   { "xslProc_invalid_xsltc_option", "XSLTC \u6A21\u5F0F\u4E0B\u4E0D\u652F\u6301\u9009\u9879{0}\u3002"},
   { "xslProc_invalid_xalan_option", "\u9009\u9879{0}\u53EA\u80FD\u4E0E -XSLTC \u4E00\u8D77\u4F7F\u7528\u3002"},
   { "xslProc_no_input", "\u9519\u8BEF: \u672A\u6307\u5B9A\u6837\u5F0F\u8868\u6216\u8F93\u5165 xml\u3002\u8FD0\u884C\u6B64\u547D\u4EE4\u65F6, \u7528\u6CD5\u6307\u4EE4\u4E0D\u5E26\u4EFB\u4F55\u9009\u9879\u3002"},
@@ -1360,7 +1360,7 @@ public class XSLTErrorResources_zh_CN extends ListResourceBundle
   {  "optionQ", "   [-Q (\u65E0\u63D0\u793A\u6A21\u5F0F)]"},
   {  "optionLF", "   [-LF (\u4EC5\u5728\u8F93\u51FA\u65F6\u4F7F\u7528\u6362\u884C\u7B26 {\u9ED8\u8BA4\u503C\u4E3A CR/LF})]"},
   {  "optionCR", "   [-CR (\u4EC5\u5728\u8F93\u51FA\u65F6\u4F7F\u7528\u56DE\u8F66 {\u9ED8\u8BA4\u503C\u4E3A CR/LF})]"},
-  { "optionESCAPE", "   [-ESCAPE (\u8981\u8F6C\u79FB\u7684\u5B57\u7B26 {\u9ED8\u8BA4\u503C\u4E3A <>&\"'\\r\\n}]"},
+  { "optionESCAPE", "   [-ESCAPE (\u8981\u9003\u9038 \u7684\u5B57\u7B26 {\u9ED8\u8BA4\u503C\u4E3A <>&\"'\\r\\n}]"},
   { "optionINDENT", "   [-INDENT (\u63A7\u5236\u8981\u7F29\u8FDB\u7684\u7A7A\u683C\u6570 {\u9ED8\u8BA4\u503C\u4E3A 0})]"},
   { "optionTT", "   [-TT (\u5728\u8C03\u7528\u6A21\u677F\u65F6\u8DDF\u8E2A\u6A21\u677F\u3002)]"},
   { "optionTG", "   [-TG (\u8DDF\u8E2A\u6BCF\u4E2A\u751F\u6210\u4E8B\u4EF6\u3002)]"},

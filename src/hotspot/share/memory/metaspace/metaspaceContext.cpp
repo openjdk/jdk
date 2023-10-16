@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,8 +34,8 @@
 
 namespace metaspace {
 
-MetaspaceContext* MetaspaceContext::_class_space_context = NULL;
-MetaspaceContext* MetaspaceContext::_nonclass_space_context = NULL;
+MetaspaceContext* MetaspaceContext::_class_space_context = nullptr;
+MetaspaceContext* MetaspaceContext::_nonclass_space_context = nullptr;
 
 // Destroys the context: deletes chunkmanager and virtualspacelist.
 //  If this is a non-expandable context over an existing space, that space remains

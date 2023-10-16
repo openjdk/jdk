@@ -79,8 +79,7 @@ public final class WFontConfiguration extends FontConfiguration {
         reorderMap.put("GBK", "chinese-ms936");
         reorderMap.put("GB18030", "chinese-gb18030");
         reorderMap.put("x-windows-950", "chinese-ms950");
-        reorderMap.put("x-MS950-HKSCS", split("chinese-ms950,chinese-hkscs"));
-//      reorderMap.put("windows-1252", "alphabetic");
+        reorderMap.put("x-MS950-HKSCS", new String[] {"chinese-ms950", "chinese-hkscs"});
     }
 
     @Override

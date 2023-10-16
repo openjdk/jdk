@@ -720,6 +720,7 @@ class SpinedBuffer<E>
     /**
      * An ordered collection of {@code int} values.
      */
+    @SuppressWarnings("overloads")
     static class OfInt extends SpinedBuffer.OfPrimitive<Integer, int[], IntConsumer>
             implements IntConsumer {
         OfInt() { }
@@ -785,6 +786,7 @@ class SpinedBuffer<E>
         }
 
         public Spliterator.OfInt spliterator() {
+            @SuppressWarnings("overloads")
             class Splitr extends BaseSpliterator<Spliterator.OfInt>
                     implements Spliterator.OfInt {
                 Splitr(int firstSpineIndex, int lastSpineIndex,
@@ -833,6 +835,7 @@ class SpinedBuffer<E>
     /**
      * An ordered collection of {@code long} values.
      */
+    @SuppressWarnings("overloads")
     static class OfLong extends SpinedBuffer.OfPrimitive<Long, long[], LongConsumer>
             implements LongConsumer {
         OfLong() { }
@@ -899,6 +902,7 @@ class SpinedBuffer<E>
 
 
         public Spliterator.OfLong spliterator() {
+            @SuppressWarnings("overloads")
             class Splitr extends BaseSpliterator<Spliterator.OfLong>
                     implements Spliterator.OfLong {
                 Splitr(int firstSpineIndex, int lastSpineIndex,
@@ -947,6 +951,7 @@ class SpinedBuffer<E>
     /**
      * An ordered collection of {@code double} values.
      */
+    @SuppressWarnings("overloads")
     static class OfDouble
             extends SpinedBuffer.OfPrimitive<Double, double[], DoubleConsumer>
             implements DoubleConsumer {
@@ -1013,6 +1018,7 @@ class SpinedBuffer<E>
         }
 
         public Spliterator.OfDouble spliterator() {
+            @SuppressWarnings("overloads")
             class Splitr extends BaseSpliterator<Spliterator.OfDouble>
                     implements Spliterator.OfDouble {
                 Splitr(int firstSpineIndex, int lastSpineIndex,

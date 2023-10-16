@@ -312,7 +312,7 @@ public abstract class FontMetrics implements java.io.Serializable {
      * So it should be used at most only for estimating the total space
      * sufficient to display some number of as yet unknown characters from
      * the font. And that might be either an overestimate, or an
-     * underestimate depending on the specific text and rendering conext.
+     * underestimate depending on the specific text and rendering context.
      * @return    an estimate of the maximum advance width of any character
      *            in the {@code Font}, or {@code -1} if the
      *            maximum advance width is not known.

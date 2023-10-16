@@ -411,6 +411,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         protected EnumSet<DiagnosticPart> visibleParts;
         protected boolean caretEnabled;
 
+        @SuppressWarnings("this-escape")
         public SimpleConfiguration(Set<DiagnosticPart> parts) {
             multilineLimits = new HashMap<>();
             setVisible(parts);
@@ -419,7 +420,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
             setCaretEnabled(true);
         }
 
-        @SuppressWarnings("fallthrough")
+        @SuppressWarnings({ "fallthrough", "this-escape" })
         public SimpleConfiguration(Options options, Set<DiagnosticPart> parts) {
             this(parts);
             String showSource = null;

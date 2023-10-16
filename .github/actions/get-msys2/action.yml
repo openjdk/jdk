@@ -30,15 +30,16 @@ runs:
   using: composite
   steps:
     - name: 'Install MSYS2'
-      uses: msys2/setup-msys2@v2
+      # use a specific release of msys2/setup-msys2 to prevent jtreg build failures on newer release
+      uses: msys2/setup-msys2@7efe20baefed56359985e327d329042cde2434ff
       with:
         install: 'autoconf tar unzip zip make'
         path-type: minimal
-        location: msys2
+        location: ${{ runner.tool_cache }}/msys2
 
       # We can't run bash until this is completed, so stick with pwsh
     - name: 'Set MSYS2 path'
       run: |
         # Prepend msys2/msys64/usr/bin to the PATH
-        echo "$env:GITHUB_WORKSPACE/msys2/msys64/usr/bin" >> $env:GITHUB_PATH
+        echo "$env:RUNNER_TOOL_CACHE/msys2/msys64/usr/bin" >> $env:GITHUB_PATH
       shell: pwsh

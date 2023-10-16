@@ -90,7 +90,7 @@ public class SynthViewportUI extends ViewportUI
         SynthContext context = getContext(c, ENABLED);
 
         // Note: JViewport is special cased as it does not allow for
-        // a border to be set. JViewport.setBorder is overriden to throw
+        // a border to be set. JViewport.setBorder is overridden to throw
         // an IllegalArgumentException. Refer to SynthScrollPaneUI for
         // details of this.
         SynthStyle newStyle = SynthLookAndFeel.getStyle(context.getComponent(),

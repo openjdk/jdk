@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 package org.openjdk.bench.java.lang.foreign;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.CompilerControl;
@@ -37,6 +37,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
@@ -47,10 +48,7 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 1, jvmArgsAppend = {
-        "-Dforeign.restricted=permit",
-        "--enable-native-access", "ALL-UNNAMED",
-        "--enable-preview"})
+@Fork(1)
 public class TestLoadBytes {
     @Param("1024")
     private int size;
@@ -67,7 +65,8 @@ public class TestLoadBytes {
         }
 
         srcBufferNative = ByteBuffer.allocateDirect(size);
-        srcSegmentImplicit = MemorySegment.allocateNative(size, MemorySession.openImplicit());
+        Arena scope = Arena.ofAuto();
+        srcSegmentImplicit = scope.allocate(size, 1);
     }
 
     @Benchmark

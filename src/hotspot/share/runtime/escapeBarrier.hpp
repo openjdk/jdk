@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -79,7 +79,7 @@ public:
 
   // Revert ea based optimizations for all java threads
   EscapeBarrier(bool barrier_active, JavaThread* calling_thread)
-    : _calling_thread(calling_thread), _deoptee_thread(NULL),
+    : _calling_thread(calling_thread), _deoptee_thread(nullptr),
       _barrier_active(barrier_active && (JVMCI_ONLY(UseJVMCICompiler) NOT_JVMCI(false)
                       COMPILER2_PRESENT(|| DoEscapeAnalysis)))
   {
@@ -120,8 +120,6 @@ public:
   // Returns true iff objects were reallocated and relocked because of access through JVMTI.
   static bool objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id);
 
-  static bool deoptimizing_objects_for_all_threads() { return _deoptimizing_objects_for_all_threads; }
-
   ~EscapeBarrier() {
     if (!barrier_active()) return;
     if (all_threads()) {
@@ -132,7 +130,7 @@ public:
   }
 
   // Should revert optimizations for all threads.
-  bool all_threads()    const { return _deoptee_thread == NULL; }
+  bool all_threads()    const { return _deoptee_thread == nullptr; }
 
   // Current thread deoptimizes its own objects.
   bool self_deopt()     const { return _calling_thread == _deoptee_thread; }

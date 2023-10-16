@@ -118,6 +118,12 @@ public final class LineReaderBuilder {
                 throw new IOError(e);
             }
         }
+
+        String appName = this.appName;
+        if (null == appName) {
+            appName = terminal.getName();
+        }
+
         LineReaderImpl reader = new LineReaderImpl(terminal, appName, variables);
         if (history != null) {
             reader.setHistory(history);

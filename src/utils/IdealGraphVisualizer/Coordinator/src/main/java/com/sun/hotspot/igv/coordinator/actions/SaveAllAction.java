@@ -25,15 +25,11 @@
 package com.sun.hotspot.igv.coordinator.actions;
 
 import com.sun.hotspot.igv.coordinator.OutlineTopComponent;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
 import javax.swing.Action;
-import javax.swing.KeyStroke;
 import org.openide.util.HelpCtx;
 import org.openide.util.NbBundle;
-import org.openide.util.NbBundle.Messages;
-import org.openide.util.actions.CallableSystemAction;
 import org.openide.util.Utilities;
+import org.openide.util.actions.CallableSystemAction;
 
 /**
  *

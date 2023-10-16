@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation. Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -252,7 +250,7 @@ public class ComponentOperator extends Operator
 
     /**
      * Constructor. Waits for a component in a container to show. The component
-     * is is the first {@code java.awt.Component} that shows and that lies
+     * is the first {@code java.awt.Component} that shows and that lies
      * below the container in the display containment hierarchy. Uses cont's
      * timeout and output for waiting and to init operator.
      *

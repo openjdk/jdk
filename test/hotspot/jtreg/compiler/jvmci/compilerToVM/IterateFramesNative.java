@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,8 +104,17 @@ public class IterateFramesNative {
     }
 
     private void test() {
-        for (int i = 0; i < CompilerWhiteBoxTest.THRESHOLD + 1; i++) {
+        // Run enough iterations to reach compilation.
+        for (int i = 0; i < (CHECK_COMPILED ? 1 : 10_000); i++) {
             testNativeFrame("someString", i);
+        }
+
+        if (CHECK_COMPILED) {
+            // Verify that we reached compilation at some point.
+            Asserts.assertTrue(WB.isMethodCompiled(ITERATE_FRAMES_METHOD),
+                "Expected native method to be compiled: " + ITERATE_FRAMES_METHOD);
+            Asserts.assertTrue(WB.isMethodCompiled(NATIVE_METHOD),
+                "Expected native method to be compiled: " + NATIVE_METHOD);
         }
     }
 
@@ -125,13 +134,6 @@ public class IterateFramesNative {
 
         Asserts.assertEQ(innerHelper.string, NATIVE_METHOD_RESOLVED.getName(),
             "Native frame not found?: " + NATIVE_METHOD_RESOLVED.getName());
-
-        if (CHECK_COMPILED) {
-            Asserts.assertTrue(WB.isMethodCompiled(ITERATE_FRAMES_METHOD),
-                "Expected native method to be compiled: " + ITERATE_FRAMES_METHOD);
-            Asserts.assertTrue(WB.isMethodCompiled(NATIVE_METHOD),
-                "Expected native method to be compiled: " + NATIVE_METHOD);
-        }
     }
 
     private void testNativeFrameCallback(Helper helper, int iteration) {

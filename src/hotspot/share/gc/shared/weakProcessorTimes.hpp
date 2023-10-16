@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public:
 };
 
 // Record total weak processor time and worker count in times.
-// Does nothing if times is NULL.
+// Does nothing if times is null.
 class WeakProcessorTimeTracker : StackObj {
   WeakProcessorTimes* _times;
   Ticks _start_time;
@@ -89,7 +89,7 @@ public:
 };
 
 // Record time contribution for the current thread.
-// Does nothing if times is NULL.
+// Does nothing if times is null.
 class WeakProcessorParTimeTracker : StackObj {
   WeakProcessorTimes* _times;
   OopStorageSet::WeakId _storage_id;

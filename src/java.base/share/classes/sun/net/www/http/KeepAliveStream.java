@@ -27,7 +27,6 @@ package sun.net.www.http;
 
 import java.io.*;
 
-import sun.net.ProgressSource;
 import sun.net.www.MeteredStream;
 import jdk.internal.misc.InnocuousThread;
 
@@ -56,8 +55,8 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
     /**
      * Constructor
      */
-    public KeepAliveStream(InputStream is, ProgressSource pi, long expected, HttpClient hc)  {
-        super(is, pi, expected);
+    public KeepAliveStream(InputStream is, long expected, HttpClient hc) {
+        super(is, expected);
         this.hc = hc;
     }
 
@@ -101,9 +100,6 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
                     hc.finished();
                 }
             } finally {
-                if (pi != null)
-                    pi.finishTracking();
-
                 if (!queuedForCleanup) {
                     // nulling out the underlying inputstream as well as
                     // httpClient to let gc collect the memories faster

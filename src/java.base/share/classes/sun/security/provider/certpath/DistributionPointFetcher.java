@@ -102,7 +102,7 @@ public class DistributionPointFetcher {
                 return Collections.emptySet();
             }
             List<DistributionPoint> points =
-                    ext.get(CRLDistributionPointsExtension.POINTS);
+                    ext.getDistributionPoints();
             Set<X509CRL> results = new HashSet<>();
             for (Iterator<DistributionPoint> t = points.iterator();
                  t.hasNext() && !Arrays.equals(reasonsMask, ALL_REASONS); ) {
@@ -116,7 +116,7 @@ public class DistributionPointFetcher {
                 debug.println("Returning " + results.size() + " CRLs");
             }
             return results;
-        } catch (CertificateException | IOException e) {
+        } catch (CertificateException e) {
             return Collections.emptySet();
         }
     }
@@ -333,9 +333,7 @@ public class DistributionPointFetcher {
         GeneralNames pointCrlIssuers = point.getCRLIssuer();
         X500Name pointCrlIssuer = null;
         if (pointCrlIssuers != null) {
-            if (idpExt == null ||
-                    idpExt.get(IssuingDistributionPointExtension.INDIRECT_CRL)
-                    == Boolean.FALSE) {
+            if (idpExt == null || !idpExt.isIndirectCRL()) {
                 return false;
             }
             boolean match = false;
@@ -398,8 +396,7 @@ public class DistributionPointFetcher {
         }
 
         if (idpExt != null) {
-            DistributionPointName idpPoint = (DistributionPointName)
-                idpExt.get(IssuingDistributionPointExtension.POINT);
+            DistributionPointName idpPoint = idpExt.getDistributionPoint();
             if (idpPoint != null) {
                 GeneralNames idpNames = idpPoint.getFullName();
                 if (idpNames == null) {
@@ -433,7 +430,7 @@ public class DistributionPointFetcher {
                             debug.println("DP relativeName:" + relativeName);
                         }
                         if (indirectCRL) {
-                            if (pointCrlIssuers.size() != 1) {
+                            if (pointCrlIssuers == null || pointCrlIssuers.size() != 1) {
                                 // RFC 5280: there must be only 1 CRL issuer
                                 // name when relativeName is present
                                 if (debug != null) {
@@ -442,6 +439,9 @@ public class DistributionPointFetcher {
                                 }
                                 return false;
                             }
+                            // if pointCrlIssuers is not null, pointCrlIssuer
+                            // will also be non-null or the code would have
+                            // returned before now
                             pointNames = getFullNames
                                 (pointCrlIssuer, relativeName);
                         } else {
@@ -478,6 +478,9 @@ public class DistributionPointFetcher {
                     // verify that one of the names in the IDP matches one of
                     // the names in the cRLIssuer of the cert's DP
                     boolean match = false;
+                    // the DP's fullName and relativeName fields are null
+                    // which means pointCrlIssuers is non-null; the three
+                    // cannot all be missing from a certificate.
                     for (Iterator<GeneralName> t = pointCrlIssuers.iterator();
                             !match && t.hasNext(); ) {
                         GeneralNameInterface crlIssuerName = t.next().getName();
@@ -495,9 +498,8 @@ public class DistributionPointFetcher {
 
             // if the onlyContainsUserCerts boolean is asserted, verify that the
             // cert is not a CA cert
-            Boolean b = (Boolean)
-                idpExt.get(IssuingDistributionPointExtension.ONLY_USER_CERTS);
-            if (b.equals(Boolean.TRUE) && certImpl.getBasicConstraints() != -1) {
+            boolean b = idpExt.hasOnlyUserCerts();
+            if (b && certImpl.getBasicConstraints() != -1) {
                 if (debug != null) {
                     debug.println("cert must be a EE cert");
                 }
@@ -506,9 +508,8 @@ public class DistributionPointFetcher {
 
             // if the onlyContainsCACerts boolean is asserted, verify that the
             // cert is a CA cert
-            b = (Boolean)
-                idpExt.get(IssuingDistributionPointExtension.ONLY_CA_CERTS);
-            if (b.equals(Boolean.TRUE) && certImpl.getBasicConstraints() == -1) {
+            b = idpExt.hasOnlyCACerts();
+            if (b && certImpl.getBasicConstraints() == -1) {
                 if (debug != null) {
                     debug.println("cert must be a CA cert");
                 }
@@ -517,9 +518,8 @@ public class DistributionPointFetcher {
 
             // verify that the onlyContainsAttributeCerts boolean is not
             // asserted
-            b = (Boolean) idpExt.get
-                (IssuingDistributionPointExtension.ONLY_ATTRIBUTE_CERTS);
-            if (b.equals(Boolean.TRUE)) {
+            b = idpExt.hasOnlyAttributeCerts();
+            if (b) {
                 if (debug != null) {
                     debug.println("cert must not be an AA cert");
                 }
@@ -531,8 +531,7 @@ public class DistributionPointFetcher {
         boolean[] interimReasonsMask = new boolean[9];
         ReasonFlags reasons = null;
         if (idpExt != null) {
-            reasons = (ReasonFlags)
-                idpExt.get(IssuingDistributionPointExtension.REASONS);
+            reasons = idpExt.getRevocationReasons();
         }
 
         boolean[] pointReasonFlags = point.getReasonFlags();
@@ -603,8 +602,7 @@ public class DistributionPointFetcher {
                     certSel.setSubjectKeyIdentifier(kid);
                 }
 
-                SerialNumber asn = (SerialNumber)akidext.get(
-                        AuthorityKeyIdentifierExtension.SERIAL_NUMBER);
+                SerialNumber asn = akidext.getSerialNumber();
                 if (asn != null) {
                     certSel.setSerialNumber(asn.getNumber());
                 }

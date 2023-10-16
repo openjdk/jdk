@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,12 +29,15 @@
             with primitive type are generated.
  * @requires vm.jvmti
  * @compile FastGetField.java
- * @run main/othervm/native -agentlib:FastGetField -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyJNIFields FastGetField
- * @run main/othervm/native -agentlib:FastGetField -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyJNIFields -XX:+UnlockDiagnosticVMOptions -XX:+ForceUnreachable -XX:+SafepointALot -XX:GuaranteedSafepointInterval=1 FastGetField
+ * @run main/othervm/native -agentlib:FastGetField -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyJNIFields FastGetField 0
+ * @run main/othervm/native -agentlib:FastGetField -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyJNIFields FastGetField 1
+ * @run main/othervm/native -agentlib:FastGetField -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyJNIFields FastGetField 2
+ * @run main/othervm/native -agentlib:FastGetField -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyJNIFields -XX:+UnlockDiagnosticVMOptions -XX:+ForceUnreachable -XX:+SafepointALot -XX:GuaranteedSafepointInterval=1 FastGetField 0
+ * @run main/othervm/native -agentlib:FastGetField -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyJNIFields -XX:+UnlockDiagnosticVMOptions -XX:+ForceUnreachable -XX:+SafepointALot -XX:GuaranteedSafepointInterval=1 FastGetField 1
+ * @run main/othervm/native -agentlib:FastGetField -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyJNIFields -XX:+UnlockDiagnosticVMOptions -XX:+ForceUnreachable -XX:+SafepointALot -XX:GuaranteedSafepointInterval=1 FastGetField 2
  */
 
 import java.lang.reflect.Field;
-
 
 public class FastGetField {
 
@@ -41,7 +45,10 @@ public class FastGetField {
 
     private native boolean initFieldIDs(Class c);
     private native boolean initWatchers(Class c);
+    public native void registerGlobal(MyItem i);
+    public native void registerWeak(MyItem i);
     public native long accessFields(MyItem i);
+    public native long accessFieldsViaHandle();
     public static native long getFieldAccessCount();
 
     static final int loop_cnt = 10000;
@@ -92,16 +99,43 @@ public class FastGetField {
         }
     }
 
+    private int mode;
+    private MyItem obj;
+
+    private FastGetField(int mode) {
+        this.mode = mode;
+        this.obj = new MyItem();
+
+        if (mode == 0) {
+            // Direct
+        } else if (mode == 1) {
+            registerGlobal(this.obj);
+        } else if ( mode == 2) {
+            registerWeak(this.obj);
+        } else {
+          throw new IllegalArgumentException("Unexpected mode");
+        }
+    }
+
+    private long accessFields() {
+        if (mode == 0) {
+            return accessFields(obj);
+        }
+
+        // Otherwise through a handle
+        return accessFieldsViaHandle();
+    }
+
     public void TestFieldAccess() throws Exception {
-        MyItem i = new MyItem();
+
         if (!initFieldIDs(MyItem.class)) throw new RuntimeException("FieldID initialization failed!");
 
         long duration = System.nanoTime();
         for (int c = 0; c < loop_cnt; ++c) {
-            if (accessFields(i) != 0l) throw new RuntimeException("Wrong initial result!");
-            i.change_values();
-            if (accessFields(i) != 8l) throw new RuntimeException("Wrong result after changing!");
-            i.reset_values();
+            if (accessFields() != 0l) throw new RuntimeException("Wrong initial result!");
+            obj.change_values();
+            if (accessFields() != 8l) throw new RuntimeException("Wrong result after changing!");
+            obj.reset_values();
         }
         duration = System.nanoTime() - duration;
         System.out.println(loop_cnt + " iterations took " + duration + "ns.");
@@ -112,14 +146,20 @@ public class FastGetField {
         if (!initWatchers(MyItem.class)) throw new RuntimeException("JVMTI missing!");
 
         // Try again with watchers.
-        if (accessFields(i) != 0l) throw new RuntimeException("Wrong initial result!");
-        i.change_values();
-        if (accessFields(i) != 8l) throw new RuntimeException("Wrong result after changing!");
+        if (accessFields() != 0l) throw new RuntimeException("Wrong initial result!");
+        obj.change_values();
+        if (accessFields() != 8l) throw new RuntimeException("Wrong result after changing!");
         if (getFieldAccessCount() != 16) throw new RuntimeException("Unexpected event count!");
     }
 
     public static void main(String[] args) throws Exception {
-        FastGetField inst = new FastGetField();
+        if (args.length != 1) {
+           throw new IllegalArgumentException("Expected one argument");
+        }
+
+        int mode = Integer.parseInt(args[0]);
+
+        FastGetField inst = new FastGetField(mode);
         inst.TestFieldAccess();
     }
 }

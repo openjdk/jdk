@@ -68,15 +68,11 @@ public final class DSAPrivateKey extends PKCS8Key
         this.x = x;
         algid = new AlgIdDSA(p, q, g);
 
-        try {
-            byte[] xbytes = x.toByteArray();
-            DerValue val = new DerValue(DerValue.tag_Integer, xbytes);
-            key = val.toByteArray();
-            val.clear();
-            Arrays.fill(xbytes, (byte)0);
-        } catch (IOException e) {
-            throw new AssertionError("Should not happen", e);
-        }
+        byte[] xbytes = x.toByteArray();
+        DerValue val = new DerValue(DerValue.tag_Integer, xbytes);
+        key = val.toByteArray();
+        val.clear();
+        Arrays.fill(xbytes, (byte)0);
     }
 
     /**

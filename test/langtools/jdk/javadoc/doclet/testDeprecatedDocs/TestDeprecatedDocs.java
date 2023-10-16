@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestDeprecatedDocs extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestDeprecatedDocs tester = new TestDeprecatedDocs();
+        var tester = new TestDeprecatedDocs();
         tester.runTests();
     }
 
@@ -193,7 +193,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                     </div>
                     </div>""");
 
-        checkOutput("pkg/TestClass.html", false,
+        checkOutput("pkg/TestClass.html", true,
                 """
                     <div class="deprecation-comment">class_test2 passes. This is the second sentence\
                      of deprecated description for a field.</div>
@@ -205,7 +205,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                     </div>
                     </div>""",
                 """
-                    <div class="deprecation-comment">class_test4 passes. This is the second sentence\
+                    <div class="deprecation-comment">class_test5 passes. This is the second sentence\
                      of deprecated description for a method.</div>
                     </div>
                     </div>""");
@@ -266,17 +266,17 @@ public class TestDeprecatedDocs extends JavadocTester {
 
         checkOutput("deprecated-list.html", true,
                 """
-                    <ul>
-                    <li><a href="#for-removal">Terminally Deprecated</a></li>
-                    <li><a href="#class">Classes</a></li>
-                    <li><a href="#enum-class">Enum Classes</a></li>
-                    <li><a href="#exception-class">Exception Classes</a></li>
-                    <li><a href="#annotation-interface">Annotation Interfaces</a></li>
-                    <li><a href="#field">Fields</a></li>
-                    <li><a href="#method">Methods</a></li>
-                    <li><a href="#constructor">Constructors</a></li>
-                    <li><a href="#enum-constant">Enum Constants</a></li>
-                    <li><a href="#annotation-interface-member">Annotation Interface Elements</a></li>
+                    <ul class="contents-list">
+                    <li id="contents-for-removal"><a href="#for-removal">Terminally Deprecated</a></li>
+                    <li id="contents-class"><a href="#class">Classes</a></li>
+                    <li id="contents-enum-class"><a href="#enum-class">Enum Classes</a></li>
+                    <li id="contents-exception-class"><a href="#exception-class">Exception Classes</a></li>
+                    <li id="contents-annotation-interface"><a href="#annotation-interface">Annotation Interfaces</a></li>
+                    <li id="contents-field"><a href="#field">Fields</a></li>
+                    <li id="contents-method"><a href="#method">Methods</a></li>
+                    <li id="contents-constructor"><a href="#constructor">Constructors</a></li>
+                    <li id="contents-enum-constant"><a href="#enum-constant">Enum Constants</a></li>
+                    <li id="contents-annotation-interface-member"><a href="#annotation-interface-member">Annotation Interface Elements</a></li>
                     </ul>""",
                 """
                     <div id="for-removal">

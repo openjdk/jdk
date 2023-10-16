@@ -128,12 +128,11 @@ sealed class DirectMethodHandle extends MethodHandle {
     }
     static DirectMethodHandle make(MemberName member) {
         if (member.isConstructor())
-            return makeAllocator(member);
+            return makeAllocator(member.getDeclaringClass(), member);
         return make(member.getDeclaringClass(), member);
     }
-    private static DirectMethodHandle makeAllocator(MemberName ctor) {
+    static DirectMethodHandle makeAllocator(Class<?> instanceClass, MemberName ctor) {
         assert(ctor.isConstructor() && ctor.getName().equals("<init>"));
-        Class<?> instanceClass = ctor.getDeclaringClass();
         ctor = ctor.asConstructor();
         assert(ctor.isConstructor() && ctor.getReferenceKind() == REF_newInvokeSpecial) : ctor;
         MethodType mtype = ctor.getMethodType().changeReturnType(instanceClass);
@@ -170,8 +169,8 @@ sealed class DirectMethodHandle extends MethodHandle {
     }
 
     @Override
-    String internalProperties() {
-        return "\n& DMH.MN="+internalMemberName();
+    String internalProperties(int indentLevel) {
+        return "\n" + debugPrefix(indentLevel) + "& DMH.MN=" + internalMemberName();
     }
 
     //// Implementation methods.
@@ -297,7 +296,7 @@ sealed class DirectMethodHandle extends MethodHandle {
             result = NEW_OBJ;
         }
         names[LINKER_CALL] = new Name(linker, outArgs);
-        LambdaForm lform = new LambdaForm(ARG_LIMIT, names, result, kind);
+        LambdaForm lform = LambdaForm.create(ARG_LIMIT, names, result, kind);
 
         // This is a tricky bit of code.  Don't send it through the LF interpreter.
         lform.compileToBytecode();
@@ -600,7 +599,7 @@ sealed class DirectMethodHandle extends MethodHandle {
     }
 
     Object checkCast(Object obj) {
-        return member.getReturnType().cast(obj);
+        return member.getMethodType().returnType().cast(obj);
     }
 
     // Caching machinery for field accessors:
@@ -814,9 +813,9 @@ sealed class DirectMethodHandle extends MethodHandle {
         LambdaForm form;
         if (needsCast || needsInit) {
             // can't use the pre-generated form when casting and/or initializing
-            form = new LambdaForm(ARG_LIMIT, names, RESULT);
+            form = LambdaForm.create(ARG_LIMIT, names, RESULT);
         } else {
-            form = new LambdaForm(ARG_LIMIT, names, RESULT, kind);
+            form = LambdaForm.create(ARG_LIMIT, names, RESULT, kind);
         }
 
         if (LambdaForm.debugNames()) {

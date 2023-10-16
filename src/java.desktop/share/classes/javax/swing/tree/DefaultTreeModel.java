@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,7 +266,7 @@ public class DefaultTreeModel implements Serializable, TreeModel {
      * preferred way to remove a node as it handles the event creation
      * for you.
      *
-     * @param node the node to be removed from it's parrent
+     * @param node the node to be removed from its parent
      */
     public void removeNodeFromParent(MutableTreeNode node) {
         MutableTreeNode         parent = (MutableTreeNode)node.getParent();
@@ -348,8 +348,8 @@ public class DefaultTreeModel implements Serializable, TreeModel {
       * must be sorted in ascending order. And removedChildren should be
       * the array of the children objects that were removed.
       *
-      * @param node             parent node which childred were removed
-      * @param childIndices     indexes of removed childs
+      * @param node             parent node from which children were removed
+      * @param childIndices     indexes of removed children
       * @param removedChildren  array of the children objects that were removed
       */
     public void nodesWereRemoved(TreeNode node, int[] childIndices,
@@ -362,7 +362,7 @@ public class DefaultTreeModel implements Serializable, TreeModel {
 
     /**
       * Invoke this method after you've changed how the children identified by
-      * childIndicies are to be represented in the tree.
+      * childIndices are to be represented in the tree.
       *
       * @param node         changed node
       * @param childIndices indexes of changed children

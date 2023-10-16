@@ -40,7 +40,7 @@ JNIEXPORT mlib_start_timer awt_setMlibStartTimer();
 JNIEXPORT mlib_stop_timer awt_setMlibStopTimer();
 
 #ifdef __cplusplus
-}; /* end of extern "C" */
+} /* end of extern "C" */
 #endif
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,8 @@ public class Handler extends URLStreamHandler {
         URL ru;
 
         try {
-            ru = new URL("ftp", host, u.getFile() +
+            @SuppressWarnings("deprecation")
+            var _unused = ru = new URL("ftp", host, u.getFile() +
                              (u.getRef() == null ? "": "#" + u.getRef()));
             if (p != null) {
                 uc = ru.openConnection(p);

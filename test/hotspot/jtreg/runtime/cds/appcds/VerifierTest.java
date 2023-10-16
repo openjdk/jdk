@@ -221,6 +221,7 @@ public class VerifierTest implements Opcodes {
                 runtime_arg1 = runtime_arg2 = runtime_arg3 = runtime_setting;
             }
             TestCommon.run("-cp", jar,
+                           "-Xlog:cds",
                            runtime_arg1, runtime_arg2, runtime_arg3,
                            "VerifierTest0")
                 .ifNoMappingFailure(output -> checkRuntimeOutput(output, expected_output_str));
@@ -301,6 +302,7 @@ public class VerifierTest implements Opcodes {
                 runtime_arg1 = runtime_arg2 = runtime_arg3 = runtime_setting;
             }
             TestCommon.run("-cp", jar,
+                           "-Xlog:cds",
                            runtime_arg1, runtime_arg2, runtime_arg3,
                            "Hi")
                 .ifNoMappingFailure(output -> checkRuntimeOutput(output, expected_output_str));

@@ -23,6 +23,7 @@
  * questions.
  */
 
+#include <cmath>
 #include "awt.h"
 #include <jlong.h>
 
@@ -45,9 +46,8 @@
 #include "sun_awt_windows_WCanvasPeer.h"
 
 #include <windowsx.h>
-#include <math.h>
 #if !defined(__int3264)
-typedef __int32 LONG_PTR;
+typedef int32_t LONG_PTR;
 #endif // __int3264
 
 // Used for Swing's Menu/Tooltip animation Support
@@ -370,6 +370,20 @@ void AwtWindow::RepositionSecurityWarning(JNIEnv *env)
 
 MsgRouting AwtWindow::WmWindowPosChanged(LPARAM windowPos) {
     WINDOWPOS * wp = (WINDOWPOS *)windowPos;
+
+    // There's no good way to detect partial maximization (e.g. Aero Snap),
+    // but by inspecting SWP_* flags we can guess it and reset
+    // prevScaleRec to neutralize the CheckWindowDPIChange logic.
+    // Here are the flags, observed on Windows 11 for reference:
+    // Restore/maximize:        SWP_NOZORDER | SWP_DRAWFRAME
+    // Partial Aero Snap:       SWP_NOZORDER | SWP_NOREPOSITION
+    // DPI change (new screen): SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS
+    if (!(wp->flags & (SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE)) &&
+        prevScaleRec.screen != -1 && prevScaleRec.screen != m_screenNum) {
+        prevScaleRec.screen = -1;
+        prevScaleRec.scaleX = -1.0f;
+        prevScaleRec.scaleY = -1.0f;
+    }
 
     // Reposition the warning window
     if (IsUntrusted() && warningWindow != NULL) {
@@ -738,7 +752,7 @@ LRESULT CALLBACK AwtWindow::WarningWindowProc(HWND hwnd, UINT uMsg, WPARAM wPara
 
         case WM_MOUSEACTIVATE:
             {
-                // Retrive the owner of the warning window.
+                // Retrieve the owner of the warning window.
                 HWND javaWindow = ::GetParent(hwnd);
                 if (javaWindow) {
                     // If the window is blocked by a modal dialog, substitute
@@ -1997,7 +2011,7 @@ LRESULT AwtWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
             mr = WmGetIcon(wParam, retValue);
             break;
         case WM_SYSCOMMAND:
-            //Fixed 6355340: Contents of frame are not layed out properly on maximize
+            //Fixed 6355340: Contents of frame are not laid out properly on maximize
             if ((wParam & 0xFFF0) == SC_SIZE) {
                 AwtWindow::sm_resizing = TRUE;
                 mr = WmSysCommand(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
@@ -2740,7 +2754,7 @@ BOOL AwtWindow::UpdateOwnedIconCallback(HWND hWndOwned, LPARAM lParam)
 
 void AwtWindow::DoUpdateIcon()
 {
-    //Does nothing for windows, is overriden for frames and dialogs
+    //Does nothing for windows, is overridden for frames and dialogs
 }
 
 void AwtWindow::RedrawWindow()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import javadoc.tester.JavadocTester;
 public class TestModules extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestModules tester = new TestModules();
+        var tester = new TestModules();
         tester.runTests();
     }
 
@@ -521,7 +521,6 @@ public class TestModules extends JavadocTester {
                 """
                     </nav>
                     </header>
-                    <div class="flex-content">
                     <main role="main">
                     <div class="block">The overview summary page header.</div>
                     <div id="all-modules-table">
@@ -546,8 +545,10 @@ public class TestModules extends JavadocTester {
                     <h1 title="Module moduleA" class="title">Module moduleA</h1>
                     </div>
                     <hr>
+                    <div class="horizontal-scroll">
                     <div class="module-signature"><span class="annotations">@Deprecated(forRemoval=true)
                     </span>module <span class="element-name">moduleA</span></div>
+                    </div>
                     <section class="summary">
                     <ul class="summary-list">
                     <li>
@@ -559,12 +560,14 @@ public class TestModules extends JavadocTester {
                     <h1 title="Module moduleB" class="title">Module moduleB</h1>
                     </div>
                     <hr>
+                    <div class="horizontal-scroll">
                     <div class="module-signature"><span class="annotations"><a href="testpkgmdlB/Ann\
                     otationType.html" title="annotation interface in testpkgmdlB">@AnnotationType</a\
                     >(<a href="testpkgmdlB/AnnotationType.html#optional()">optional</a>="Module Anno\
                     tation",
                                     <a href="testpkgmdlB/AnnotationType.html#required()">required</a>=2016)
                     </span>module <span class="element-name">moduleB</span></div>
+                    </div>
                     <section class="summary">
                     <ul class="summary-list">
                     <li>
@@ -629,7 +632,7 @@ public class TestModules extends JavadocTester {
                 """
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li>"Test see tag"</li>
                     <li><a href="testpkgmdltags/TestClassInModuleTags.html" title="class in testpkgmdlta\
                     gs"><code>TestClassInModuleTags</code></a></li>
@@ -707,7 +710,6 @@ public class TestModules extends JavadocTester {
                 """
                     </nav>
                     </header>
-                    <div class="flex-content">
                     <main role="main">
                     <div class="block">The overview summary page header.</div>
                     <div id="all-packages-table">
@@ -1110,9 +1112,9 @@ public class TestModules extends JavadocTester {
                     </div>""");
         checkOutput("deprecated-list.html", found,
                 """
-                    <ul>
-                    <li><a href="#for-removal">Terminally Deprecated</a></li>
-                    <li><a href="#module">Modules</a></li>
+                    <ul class="contents-list">
+                    <li id="contents-for-removal"><a href="#for-removal">Terminally Deprecated</a></li>
+                    <li id="contents-module"><a href="#module">Modules</a></li>
                     </ul>""",
                 """
                     <div class="col-summary-item-name even-row-color"><a href="moduleA/module-summary.html">moduleA</a></div>
@@ -1129,6 +1131,7 @@ public class TestModules extends JavadocTester {
                     <h1 title="Module moduletags" class="title">Module moduletags</h1>
                     </div>
                     <hr>
+                    <div class="horizontal-scroll">
                     <div class="module-signature"><span class="annotations">@Deprecated
                     </span>module <span class="element-name">moduletags</span></div>""",
                 """
@@ -1142,6 +1145,7 @@ public class TestModules extends JavadocTester {
                     <h1 title="Module moduleB" class="title">Module moduleB</h1>
                     </div>
                     <hr>
+                    <div class="horizontal-scroll">
                     <div class="module-signature"><span class="annotations"><a href="testpkgmdlB/Ann\
                     otationType.html" title="annotation interface in testpkgmdlB">@AnnotationType</a\
                     >(<a href="testpkgmdlB/AnnotationType.html#optional()">optional</a>="Module Anno\
@@ -1354,11 +1358,13 @@ public class TestModules extends JavadocTester {
         checkOutput("moduleA/testpkgmdlA/TestClassInModuleA.html", true,
                 """
                     <section class="class-description" id="class-description">
+                    <div class="horizontal-scroll">
                     <hr>
                     <div class="type-signature"><span class="modifiers">public class </span><span cl\
                     ass="element-name"><a href="../../src-html/moduleA/testpkgmdlA/TestClassInModule\
                     A.html#line-25">TestClassInModuleA</a></span>
                     <span class="extends-implements">extends java.lang.Object</span></div>
+                    </div>
                     </section>""");
         checkOutput("src-html/moduleA/testpkgmdlA/TestClassInModuleA.html", true,
                 """

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,18 +52,17 @@ public:
   virtual void do_oop(narrowOop* p)               { do_oop_nv(p); }
 };
 
-class PCIterateMarkAndPushClosure: public MetadataVisitingOopIterateClosure {
+class PCIterateMarkAndPushClosure: public ClaimMetadataVisitingOopIterateClosure {
 private:
   ParCompactionManager* _compaction_manager;
 public:
-  PCIterateMarkAndPushClosure(ParCompactionManager* cm, ReferenceProcessor* rp) : MetadataVisitingOopIterateClosure(rp), _compaction_manager(cm) { }
+  PCIterateMarkAndPushClosure(ParCompactionManager* cm, ReferenceProcessor* rp) :
+    ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_stw_fullgc_mark, rp),
+    _compaction_manager(cm) { }
 
   template <typename T> void do_oop_nv(T* p)      { _compaction_manager->mark_and_push(p); }
   virtual void do_oop(oop* p)                     { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p)               { do_oop_nv(p); }
-
-  void do_klass_nv(Klass* k)                      { _compaction_manager->follow_klass(k); }
-  void do_cld_nv(ClassLoaderData* cld)            { _compaction_manager->follow_class_loader(cld); }
 };
 
 inline bool ParCompactionManager::steal(int queue_num, oop& t) {
@@ -79,7 +78,7 @@ inline bool ParCompactionManager::steal(int queue_num, size_t& region) {
 }
 
 inline void ParCompactionManager::push(oop obj) {
-  _marking_stack.push(obj);
+  _oop_stack.push(obj);
 }
 
 void ParCompactionManager::push_objarray(oop obj, size_t index)
@@ -119,11 +118,6 @@ inline void ParCompactionManager::mark_and_push(T* p) {
   }
 }
 
-inline void ParCompactionManager::follow_klass(Klass* klass) {
-  oop holder = klass->class_loader_data()->holder_no_keepalive();
-  mark_and_push(&holder);
-}
-
 inline void ParCompactionManager::FollowStackClosure::do_void() {
   _compaction_manager->follow_marking_stacks();
   if (_terminator != nullptr) {
@@ -147,7 +141,7 @@ inline void follow_array_specialized(objArrayOop obj, int index, ParCompactionMa
     cm->push_objarray(obj, end_index); // Push the continuation.
   }
 
-  // Push the non-NULL elements of the next stride on the marking stack.
+  // Push the non-null elements of the next stride on the marking stack.
   for (T* e = beg; e < end; e++) {
     cm->mark_and_push<T>(e);
   }
@@ -168,17 +162,14 @@ inline void ParCompactionManager::update_contents(oop obj) {
   }
 }
 
-inline void ParCompactionManager::follow_class_loader(ClassLoaderData* cld) {
-  PCMarkAndPushClosure mark_and_push_closure(this);
-  cld->oops_do(&mark_and_push_closure, true);
-}
-
 inline void ParCompactionManager::follow_contents(oop obj) {
   assert(PSParallelCompact::mark_bitmap()->is_marked(obj), "should be marked");
+  PCIterateMarkAndPushClosure cl(this, PSParallelCompact::ref_processor());
+
   if (obj->is_objArray()) {
+    cl.do_klass(obj->klass());
     follow_array(objArrayOop(obj), 0);
   } else {
-    PCIterateMarkAndPushClosure cl(this, PSParallelCompact::ref_processor());
     obj->oop_iterate(&cl);
   }
 }

@@ -326,7 +326,9 @@ function convert_path() {
     suffix="${BASH_REMATCH[6]}"
 
     # We only believe this is a path if the first part is an existing directory
-    if [[ -d "/$firstdir" ]];  then
+    # and the prefix is not a subdirectory in the current working directory. Remove
+    # any part leading up to a : or = in the prefix before checking.
+    if [[ -d "/$firstdir" && ! -d "${prefix##*:}" && ! -d "${prefix##*=}" ]];  then
       if [[ $ENVROOT == "" ]]; then
         if [[ $QUIET != true ]]; then
           echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path >&2
@@ -350,6 +352,21 @@ function convert_path() {
     # Return the arg unchanged
     result="$arg"
   fi
+}
+
+# Treat $1 as name of a file containing paths. Convert those paths to Windows style,
+# and output them to the file specified by $2.
+# If the output file already exists, it is overwritten.
+function convert_file() {
+  infile="$1"
+  outfile="$2"
+  if [[ -e $outfile ]] ; then
+    rm $outfile
+  fi
+  while read line; do
+    convert_path "$line"
+    echo "$result" >> $outfile
+  done < $infile
 }
 
 # Treat $1 as name of a file containing paths. Convert those paths to Windows style,
@@ -498,6 +515,8 @@ if [[ "$ACTION" == "import" ]] ; then
 elif [[ "$ACTION" == "print" ]] ; then
   print_command_line "$@"
   echo "$result"
+elif [[ "$ACTION" == "convert" ]] ; then
+  convert_file "$@"
 elif [[ "$ACTION" == "exec" ]] ; then
   exec_command_line "$@"
   # Propagate exit code

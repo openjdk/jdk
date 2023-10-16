@@ -34,8 +34,6 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URI;
 import java.nio.charset.Charset;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -48,7 +46,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -71,8 +68,7 @@ import javax.tools.ToolProvider;
 
 /**
  * Utility methods and classes for writing jtreg tests for
- * javac, javah, javap, and sjavac. (For javadoc support,
- * see JavadocTester.)
+ * javac, javah, and javap. (For javadoc support, see JavadocTester.)
  *
  * <p>There is support for common file operations similar to
  * shell commands like cat, cp, diff, mv, rm, grep.
@@ -93,6 +89,10 @@ import javax.tools.ToolProvider;
 public class ToolBox {
     /** The platform line separator. */
     public static final String lineSeparator = System.getProperty("line.separator");
+    /** The platform path separator. */
+    public static final String pathSeparator = System.getProperty("path.separator");
+    /** The platform file separator character. */
+    public static char fileSeparatorChar = System.getProperty("file.separator").charAt(0);
     /** The platform OS name. */
     public static final String osName = System.getProperty("os.name");
 
@@ -245,7 +245,7 @@ public class ToolBox {
     public void copyFile(Path from, Path to) throws IOException {
         if (Files.isDirectory(to)) {
             to = to.resolve(from.getFileName());
-        } else {
+        } else if (to.getParent() != null) {
             Files.createDirectories(to.getParent());
         }
         Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING);
@@ -990,4 +990,3 @@ public class ToolBox {
         }
     }
 }
-

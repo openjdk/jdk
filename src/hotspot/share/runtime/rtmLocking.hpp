@@ -97,8 +97,6 @@ class RTMLockingCounters {
   }
 
   uintx* total_count_addr()               { return &_total_count; }
-  uintx* abort_count_addr()               { return &_abort_count; }
-  uintx* abortX_count_addr()              { return &_abortX_count[0]; }
 
   static int total_count_offset()         { return (int)offset_of(RTMLockingCounters, _total_count); }
   static int abort_count_offset()         { return (int)offset_of(RTMLockingCounters, _abort_count); }

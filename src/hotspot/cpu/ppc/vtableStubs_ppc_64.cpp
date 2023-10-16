@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,9 +49,9 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(true);
   VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index);
-  // Can be NULL if there is no free space in the code cache.
-  if (s == NULL) {
-    return NULL;
+  // Can be null if there is no free space in the code cache.
+  if (s == nullptr) {
+    return nullptr;
   }
 
   // Count unused bytes in instruction sequences of variable size.
@@ -83,10 +83,8 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
   const Register rcvr_klass = R11_scratch1;
   address npe_addr = __ pc(); // npe = null pointer exception
-  // check if we must do an explicit check (implicit checks disabled, offset too large).
-  __ null_check(R3, oopDesc::klass_offset_in_bytes(), /*implicit only*/NULL);
   // Get receiver klass.
-  __ load_klass(rcvr_klass, R3);
+  __ load_klass_check_null(rcvr_klass, R3);
 
 #ifndef PRODUCT
   if (DebugVtables) {
@@ -104,7 +102,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
   int entry_offset = in_bytes(Klass::vtable_start_offset()) +
                      vtable_index*vtableEntry::size_in_bytes();
-  int v_off        = entry_offset + vtableEntry::method_offset_in_bytes();
+  int v_off        = entry_offset + in_bytes(vtableEntry::method_offset());
 
   __ ld(R19_method, (RegisterOrConstant)v_off, rcvr_klass);
 
@@ -122,7 +120,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
                               // if the vtable entry is null, the method is abstract
                               // NOTE: for vtable dispatches, the vtable entry will never be null.
 
-  __ null_check(R19_method, in_bytes(Method::from_compiled_offset()), /*implicit only*/NULL);
+  __ null_check(R19_method, in_bytes(Method::from_compiled_offset()), /*implicit only*/nullptr);
   __ ld(R12_scratch2, in_bytes(Method::from_compiled_offset()), R19_method);
   __ mtctr(R12_scratch2);
   __ bctr();
@@ -137,9 +135,9 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(false);
   VtableStub* s = new(stub_code_length) VtableStub(false, itable_index);
-  // Can be NULL if there is no free space in the code cache.
-  if (s == NULL) {
-    return NULL;
+  // Can be null if there is no free space in the code cache.
+  if (s == nullptr) {
+    return nullptr;
   }
 
   // Count unused bytes in instruction sequences of variable size.
@@ -180,8 +178,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
                  tmp2       = R22_tmp2;
 
   address npe_addr = __ pc(); // npe = null pointer exception
-  __ null_check(R3_ARG1, oopDesc::klass_offset_in_bytes(), /*implicit only*/NULL);
-  __ load_klass(rcvr_klass, R3_ARG1);
+  __ load_klass_check_null(rcvr_klass, R3_ARG1);
 
   // Receiver subtype check against REFC.
   __ ld(interface, CompiledICHolder::holder_klass_offset(), R19_method);

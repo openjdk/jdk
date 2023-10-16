@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -128,16 +128,12 @@ AC_DEFUN([FLAGS_SETUP_MACOSX_VERSION],
     # The expected format for <version> is either nn.n.n or nn.nn.nn. See
     # /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/AvailabilityVersions.h
 
-    # MACOSX_VERSION_MIN specifies the lowest version of Macosx that the built
+    # MACOSX_VERSION_MIN specifies the lowest version of macOS that the built
     # binaries should be compatible with, even if compiled on a newer version
     # of the OS. It currently has a hard coded value. Setting this also limits
     # exposure to API changes in header files. Bumping this is likely to
     # require code changes to build.
-    if test "x$OPENJDK_TARGET_CPU_ARCH" = xaarch64; then
-      MACOSX_VERSION_MIN=11.00.00
-    else
-      MACOSX_VERSION_MIN=10.12.0
-    fi
+    MACOSX_VERSION_MIN=11.00.00
     MACOSX_VERSION_MIN_NODOTS=${MACOSX_VERSION_MIN//\./}
 
     AC_SUBST(MACOSX_VERSION_MIN)
@@ -301,6 +297,7 @@ AC_DEFUN_ONCE([FLAGS_PRE_TOOLCHAIN],
   EXTRA_LDFLAGS="$MACHINE_FLAG $USER_LDFLAGS"
   EXTRA_ASFLAGS="$USER_ASFLAGS"
 
+  AC_SUBST(MACHINE_FLAG)
   AC_SUBST(EXTRA_CFLAGS)
   AC_SUBST(EXTRA_CXXFLAGS)
   AC_SUBST(EXTRA_LDFLAGS)
@@ -342,6 +339,7 @@ AC_DEFUN([FLAGS_SETUP_TOOLCHAIN_CONTROL],
       AC_MSG_CHECKING([if @file is supported by gcc])
       # Extra empty "" to prevent ECHO from interpreting '--version' as argument
       $ECHO "" "--version" > command.file
+      # Redirect stderr and stdout to config.log (AS_MESSAGE_LOG_FD) via merge
       if $CXX @command.file 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
         AC_MSG_RESULT(yes)
         COMPILER_COMMAND_FILE_FLAG="@"
@@ -427,6 +425,7 @@ AC_DEFUN([FLAGS_SETUP_FLAGS],
   FLAGS_SETUP_ARFLAGS
   FLAGS_SETUP_STRIPFLAGS
   FLAGS_SETUP_RCFLAGS
+  FLAGS_SETUP_NMFLAGS
 
   FLAGS_SETUP_ASFLAGS
   FLAGS_SETUP_ASFLAGS_CPU_DEP([TARGET])
@@ -502,14 +501,14 @@ UTIL_DEFUN_NAMED([FLAGS_CXX_COMPILER_CHECK_ARGUMENTS],
 UTIL_DEFUN_NAMED([FLAGS_COMPILER_CHECK_ARGUMENTS],
     [*ARGUMENT IF_TRUE IF_FALSE PREFIX], [$@],
 [
-  FLAGS_C_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [ARG_ARGUMENT],
+  FLAGS_C_COMPILER_CHECK_ARGUMENTS(ARGUMENT: ARG_ARGUMENT,
       IF_TRUE: [C_COMP_SUPPORTS="yes"],
       IF_FALSE: [C_COMP_SUPPORTS="no"],
-      PREFIX: [ARG_PREFIX])
-  FLAGS_CXX_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [ARG_ARGUMENT],
+      PREFIX: ARG_PREFIX)
+  FLAGS_CXX_COMPILER_CHECK_ARGUMENTS(ARGUMENT: ARG_ARGUMENT,
       IF_TRUE: [CXX_COMP_SUPPORTS="yes"],
       IF_FALSE: [CXX_COMP_SUPPORTS="no"],
-      PREFIX: [ARG_PREFIX])
+      PREFIX: ARG_PREFIX)
 
   AC_MSG_CHECKING([if both ARG_PREFIX[CC] and ARG_PREFIX[CXX] support "ARG_ARGUMENT"])
   supports=no

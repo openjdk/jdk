@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -307,7 +307,7 @@ public abstract class EmbeddedFrame extends Frame
      *    about to transfer the focus backward.
      * 2. The focus in on the last Component of this EmbeddedFrame and we are
      *    about to transfer the focus forward.
-     * This is needed to give the opportuity for keyboard focus to leave the
+     * This is needed to give the opportunity for keyboard focus to leave the
      * EmbeddedFrame. Override this method, initiate focus transfer in it and
      * return true if you want the focus to leave EmbeddedFrame's cycle.
      * The direction parameter specifies which of the two mentioned cases is
@@ -346,7 +346,7 @@ public abstract class EmbeddedFrame extends Frame
         }
     }
 
-    // These three functions consitute RFE 4100710. Do not remove.
+    // These three functions constitute RFE 4100710. Do not remove.
     public void setCursorAllowed(boolean isCursorAllowed) {
         this.isCursorAllowed = isCursorAllowed;
         final FramePeer peer = AWTAccessor.getComponentAccessor().getPeer(this);
@@ -363,7 +363,7 @@ public abstract class EmbeddedFrame extends Frame
 
     protected void setPeer(final ComponentPeer p){
         AWTAccessor.getComponentAccessor().setPeer(EmbeddedFrame.this, p);
-    };
+    }
 
     /**
      * Synthesize native message to activate or deactivate EmbeddedFrame window
@@ -415,7 +415,7 @@ public abstract class EmbeddedFrame extends Frame
      * (0, 0) for backward compatibility. To allow getting location and size
      * of embedded frame getLocationPrivate() and getBoundsPrivate() were
      * introduced, and they work just the same way as getLocation() and getBounds()
-     * for ususal, non-embedded components.
+     * for usual, non-embedded components.
      * </p>
      * <p>
      * Using usual get/setLocation() and get/setBounds() together with new
@@ -480,7 +480,7 @@ public abstract class EmbeddedFrame extends Frame
      * (0, 0) for backward compatibility. To allow getting location and size
      * of embedded frames getLocationPrivate() and getBoundsPrivate() were
      * introduced, and they work just the same way as getLocation() and getBounds()
-     * for ususal, non-embedded components.
+     * for usual, non-embedded components.
      * </p>
      * <p>
      * Using usual get/setLocation() and get/setBounds() together with new
@@ -537,7 +537,7 @@ public abstract class EmbeddedFrame extends Frame
     }
 
     /**
-     * This method should be overriden in subclasses. It is
+     * This method should be overridden in subclasses. It is
      * called when window this frame is within should be blocked
      * by some modal dialog.
      */

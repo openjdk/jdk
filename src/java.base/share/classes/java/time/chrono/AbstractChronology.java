@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,6 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.TemporalField;
 import java.time.temporal.ValueRange;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -193,8 +192,7 @@ public abstract class AbstractChronology implements Chronology {
             registerChrono(ThaiBuddhistChronology.INSTANCE);
 
             // Register Chronologies from the ServiceLoader
-            @SuppressWarnings("rawtypes")
-            ServiceLoader<AbstractChronology> loader =  ServiceLoader.load(AbstractChronology.class, null);
+            ServiceLoader<AbstractChronology> loader = ServiceLoader.load(AbstractChronology.class, null);
             for (AbstractChronology chrono : loader) {
                 String id = chrono.getId();
                 if (id.equals("ISO") || registerChrono(chrono) != null) {
@@ -238,7 +236,6 @@ public abstract class AbstractChronology implements Chronology {
 
         // Look for a Chronology using ServiceLoader of the Thread's ContextClassLoader
         // Application provided Chronologies must not be cached
-        @SuppressWarnings("rawtypes")
         ServiceLoader<Chronology> loader = ServiceLoader.load(Chronology.class);
         for (Chronology chrono : loader) {
             if (type.equals(chrono.getCalendarType())) {
@@ -271,7 +268,6 @@ public abstract class AbstractChronology implements Chronology {
 
         // Look for a Chronology using ServiceLoader of the Thread's ContextClassLoader
         // Application provided Chronologies must not be cached
-        @SuppressWarnings("rawtypes")
         ServiceLoader<Chronology> loader = ServiceLoader.load(Chronology.class);
         for (Chronology chrono : loader) {
             if (id.equals(chrono.getId()) || id.equals(chrono.getCalendarType())) {
@@ -311,7 +307,6 @@ public abstract class AbstractChronology implements Chronology {
         HashSet<Chronology> chronos = new HashSet<>(CHRONOS_BY_ID.values());
 
         /// Add in Chronologies from the ServiceLoader configuration
-        @SuppressWarnings("rawtypes")
         ServiceLoader<Chronology> loader = ServiceLoader.load(Chronology.class);
         for (Chronology chrono : loader) {
             chronos.add(chrono);
@@ -661,7 +656,7 @@ public abstract class AbstractChronology implements Chronology {
      * Subclasses must compare any additional state that they store.
      *
      * @param other  the other chronology to compare to, not null
-     * @return the comparator value, negative if less, positive if greater
+     * @return the comparator value, that is this ID string compared with the {@code other}'s ID string
      */
     @Override
     public int compareTo(Chronology other) {

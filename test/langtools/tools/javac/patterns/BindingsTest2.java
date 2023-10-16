@@ -6,7 +6,7 @@
  */
 public class BindingsTest2 {
     public static boolean Ktrue() { return true; }
-    public static void main(String[] args) {
+    public static void meth() {
         Object o1 = "hello";
         Integer in = 42;
         Object o2 = in;
@@ -246,6 +246,63 @@ public class BindingsTest2 {
             if (o1 instanceof final String s) {
                 s = "";
             }
+        }
+        {
+            LBL1: LBL2: if (!(o1 instanceof String s)) {
+                break LBL1;
+            }
+
+            System.err.println(s);
+        }
+        {
+            LBL1: LBL2: if (!(o1 instanceof String s)) {
+                break LBL2;
+            }
+
+            System.err.println(s);
+        }
+        {
+            LBL1: LBL2: if (o1 instanceof String s) {
+            } else {
+                break LBL1;
+            }
+
+            System.err.println(s);
+        }
+        {
+            LBL1: LBL2: if (o1 instanceof String s) {
+            } else {
+                break LBL2;
+            }
+
+            System.err.println(s);
+        }
+        {
+            switch (0) {
+                case 0:
+                    if (!(o1 instanceof String s)) {
+                        break;
+                    }
+            }
+            s.length();
+        }
+
+        {
+            int j = 0;
+            L: while (j++ < 2)
+                   if (!(o1 instanceof String s)) {
+                       break L;
+                   }
+            s.length();
+        }
+
+        {
+            int j = 0;
+            L: for (; j++ < 2; )
+                   if (!(o1 instanceof String s)) {
+                       break L;
+                   }
+            s.length();
         }
     }
 }

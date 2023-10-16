@@ -32,13 +32,19 @@
  *      jdk.compiler/com.sun.tools.javac.file
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.compiler/com.sun.tools.javac.util
- *      jdk.jdeps/com.sun.tools.classfile
+ *      java.base/jdk.internal.classfile
+ *      java.base/jdk.internal.classfile.attribute
+ *      java.base/jdk.internal.classfile.constantpool
+ *      java.base/jdk.internal.classfile.instruction
+ *      java.base/jdk.internal.classfile.components
+ *      java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
  * @run main PreviewErrors
  */
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,8 +60,8 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import javax.tools.Diagnostic;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.Classfile;
 import java.io.FileWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
@@ -393,7 +399,7 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                     if (!result.get().iterator().hasNext()) {
                         throw new IllegalStateException("Did not succeed as expected for preview=" + preview + ", lint=" + lint + ", suppress=" + suppress + ", elementType=" + elementType + ": actual:\"" + actual + "\"");
                     }
-                    ClassFile cf;
+                    ClassModel cf;
                     try {
                         JavaFileObject testClass = null;
                         for (JavaFileObject classfile : result.get()) {
@@ -404,14 +410,16 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                         if (testClass == null) {
                             throw new IllegalStateException("Cannot find Test.class");
                         }
-                        cf = ClassFile.read(testClass.openInputStream());
-                    } catch (IOException | ConstantPoolException ex) {
+                        try (InputStream input = testClass.openInputStream()) {
+                            cf = Classfile.of().parse(input.readAllBytes());
+                        }
+                    } catch (IOException ex) {
                         throw new IllegalStateException(ex);
                     }
-                    if (previewClass && cf.minor_version != 65535) {
-                        throw new IllegalStateException("Expected preview class, but got: " + cf.minor_version);
-                    } else if (!previewClass && cf.minor_version != 0) {
-                        throw new IllegalStateException("Expected minor version == 0 but got: " + cf.minor_version);
+                    if (previewClass && cf.minorVersion() != 65535) {
+                        throw new IllegalStateException("Expected preview class, but got: " + cf.minorVersion());
+                    } else if (!previewClass && cf.minorVersion() != 0) {
+                        throw new IllegalStateException("Expected minor version == 0 but got: " + cf.minorVersion());
                     }
                 } else {
                     if (result.get().iterator().hasNext()) {

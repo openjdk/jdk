@@ -47,6 +47,7 @@ import java.lang.System.Logger.Level;
  *
  * @since 1.5
  */
+@Deprecated(since="20", forRemoval=true)
 class MLetParser {
 
 /*
@@ -153,6 +154,7 @@ class MLetParser {
     /**
      * Scan an html file for {@literal <mlet>} tags.
      */
+    @SuppressWarnings("removal")
     public List<MLetContent> parse(URL url) throws IOException {
         // Warning Messages
         String requiresTypeWarning = "<arg type=... value=...> tag requires type parameter.";
@@ -249,6 +251,7 @@ class MLetParser {
     /**
      * Parse the document pointed by the URL urlname
      */
+    @SuppressWarnings("removal")
     public List<MLetContent> parseURL(String urlname) throws IOException {
         // Parse the document
         //

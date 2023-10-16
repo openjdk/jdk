@@ -6,7 +6,7 @@
     == NOTICE file corresponding to section 4(d) of the Apache License,    ==
     == Version 2.0, in this case for the Apache Xerces Java distribution.  ==
     =========================================================================
-    
+
     Apache Xerces Java
     Copyright 1999-2022 The Apache Software Foundation
 

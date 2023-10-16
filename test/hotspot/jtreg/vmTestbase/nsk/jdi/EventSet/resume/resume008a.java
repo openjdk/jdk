@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ public class resume008a {
     static final int PASSED = 0;
     static final int FAILED = 2;
     static final int PASS_BASE = 95;
+
+    static final String THREAD_NAME_PREFIX = "resume008-thread";
 
     static ArgumentHandler argHandler;
     static Log log;
@@ -95,18 +97,18 @@ public class resume008a {
             switch (i) {
     //------------------------------------------------------  section tested
             case 0:
-                thread0 = JDIThreadFactory.newThread(new Threadresume008a("thread0"));
+                thread0 = JDIThreadFactory.newThread(new Threadresume008a(THREAD_NAME_PREFIX + 0));
                 methodForCommunication();
                 threadStart(thread0);
-                thread1 = JDIThreadFactory.newThread(new Threadresume008a("thread1"));
+                thread1 = JDIThreadFactory.newThread(new Threadresume008a(THREAD_NAME_PREFIX + 1));
                 // Wait for debugger to complete the first test case
-                // before advancing to the first breakpoint
+                // before advancing to the 2nd breakpoint
                 waitForTestCase(0);
                 methodForCommunication();
                 break;
             case 1:
                 threadStart(thread1);
-                thread2 = JDIThreadFactory.newThread(new Threadresume008a("thread2"));
+                thread2 = JDIThreadFactory.newThread(new Threadresume008a(THREAD_NAME_PREFIX + 2));
                 methodForCommunication();
                 break;
             case 2:
@@ -139,6 +141,7 @@ public class resume008a {
     }
     // Synchronize with debugger progression.
     static void waitForTestCase(int t) {
+        log1("waitForTestCase: " + t);
         while (testCase < t) {
             try {
                 Thread.sleep(100);

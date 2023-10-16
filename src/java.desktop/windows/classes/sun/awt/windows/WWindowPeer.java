@@ -266,7 +266,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         return (WComponentPeer) WToolkit.targetToPeer(owner);
     }
 
-    // should be overriden in WDialogPeer
+    // should be overridden in WDialogPeer
     protected void realShow() {
         super.show();
     }
@@ -598,6 +598,10 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         if (oldDev != newDev) {
             oldDev.removeDisplayChangedListener(this);
             newDev.addDisplayChangedListener(this);
+        }
+
+        if (((Window)target).isVisible()) {
+            updateIconImages();
         }
 
         AWTAccessor.getComponentAccessor().

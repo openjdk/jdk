@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
     // (endPaint) the region that was painted is flushed to the screen
     // (using BufferStrategy.show).
     //
-    // PaintManager.show is overriden to show directly from the
+    // PaintManager.show is overridden to show directly from the
     // BufferStrategy (when using blit), if successful true is
     // returned and a paint event will not be generated.  To avoid
     // showing from the buffer while painting a locking scheme is
@@ -149,8 +149,8 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
      * Cleans up any created BufferStrategies.
      */
     protected void dispose() {
-        // dipose can be invoked at any random time. To avoid
-        // threading dependancies we do the actual diposing via an
+        // dispose can be invoked at any random time. To avoid
+        // threading dependencies we do the actual disposing via an
         // invokeLater.
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
@@ -556,7 +556,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
         }
         if ((root instanceof RootPaneContainer) &&
             (rootJ instanceof JRootPane)) {
-            // We're in a Swing heavyeight (JFrame/JWindow...), use double
+            // We're in a Swing heavyweight (JFrame/JWindow...), use double
             // buffering if double buffering enabled on the JRootPane and
             // the JRootPane wants true double buffering.
             if (rootJ.isDoubleBuffered() &&
@@ -685,12 +685,12 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
         }
 
         /**
-         * Returns the BufferStartegy.  This will return null if
-         * the BufferStartegy hasn't been created and <code>create</code> is
+         * Returns the BufferStrategy.  This will return null if
+         * the BufferStrategy hasn't been created and <code>create</code> is
          * false, or if there is a problem in creating the
-         * <code>BufferStartegy</code>.
+         * <code>BufferStrategy</code>.
          *
-         * @param create If true, and the BufferStartegy is currently null,
+         * @param create If true and the BufferStrategy is currently null,
          *               one will be created.
          */
         public BufferStrategy getBufferStrategy(boolean create) {
@@ -793,7 +793,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                 } catch (AWTException e) {
                     // Type is not supported
                     if (LOGGER.isLoggable(PlatformLogger.Level.FINER)) {
-                        LOGGER.finer("createBufferStratety failed",
+                        LOGGER.finer("createBufferStrategy failed",
                                      e);
                     }
                 }
@@ -805,7 +805,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                 } catch (AWTException e) {
                     // Type not supported
                     if (LOGGER.isLoggable(PlatformLogger.Level.FINER)) {
-                        LOGGER.finer("createBufferStratety failed",
+                        LOGGER.finer("createBufferStrategy failed",
                                      e);
                     }
                 }

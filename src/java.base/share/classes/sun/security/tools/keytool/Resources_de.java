@@ -71,6 +71,8 @@ public class Resources_de extends java.util.ListResourceBundle {
                 "{0} Secret Key generiert"}, //-genseckey
         {"Generated.keysize.bit.keyAlgName.secret.key",
                 "{0}-Bit {1} Secret Key generiert"}, //-genseckey
+        {"key.algorithm.weak", "%1$s verwendet den Algorithmus %2$s. Das gilt als Sicherheitsrisiko."},
+        {"key.size.weak", "%1$s verwendet %2$s. Dies gilt als Sicherheitsrisiko."},
         {"Imports.entries.from.a.JDK.1.1.x.style.identity.database",
                 "Importiert Eintr\u00E4ge aus einer Identity-Datenbank im JDK 1.1.x-Stil"}, //-identitydb
         {"Imports.a.certificate.or.a.certificate.chain",
@@ -369,6 +371,8 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"Enter.alias.name.", "Aliasnamen eingeben:  "},
         {".RETURN.if.same.as.for.otherAlias.",
                 "\t(RETURN, wenn identisch mit <{0}>)"},
+        {"enter.dname.components",
+                "Geben Sie den Distinguished Name ein. Geben Sie einen einzelnen Punkt (.) an, um eine Unterkomponente leer zu lassen, oder dr\u00FCcken Sie die Eingabetaste, um den Standardwert in Klammern zu verwenden."},
         {"What.is.your.first.and.last.name.",
                 "Wie lautet Ihr Vor- und Nachname?"},
         {"What.is.the.name.of.your.organizational.unit.",
@@ -381,6 +385,8 @@ public class Resources_de extends java.util.ListResourceBundle {
                 "Wie lautet der Name Ihres Bundeslands?"},
         {"What.is.the.two.letter.country.code.for.this.unit.",
                 "Wie lautet der L\u00E4ndercode (zwei Buchstaben) f\u00FCr diese Einheit?"},
+        {"no.field.in.dname",
+                "Mindestens ein Feld muss ausgef\u00FCllt werden. Wiederholen Sie die Eingabe."},
         {"Is.name.correct.", "Ist {0} richtig?"},
         {"no", "Nein"},
         {"yes", "Ja"},
@@ -449,6 +455,7 @@ public class Resources_de extends java.util.ListResourceBundle {
         // generating cert/cert req using weak algorithms
         {"the.certificate.request", "Die Zertifikatsanforderung"},
         {"the.issuer", "Der Aussteller"},
+        {"the.generated.secretkey", "Der generierte Secret Key"},
         {"the.generated.certificate", "Das generierte Zertifikat"},
         {"the.generated.crl", "Die generierte CRL"},
         {"the.generated.certificate.request", "Die generierte Zertifikatsanforderung"},
@@ -477,7 +484,7 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"whose.sigalg.disabled", "%1$s verwendet den Signaturalgorithmus %2$s. Dies gilt als Sicherheitsrisiko und ist deaktiviert."},
         {"whose.sigalg.usagesignedjar", "%1$s verwendet den Signaturalgorithmus %2$s. Das gilt als Sicherheitsrisiko und kann nach %3$s nicht zum Signieren von JAR-Archiven verwendet werden."},
         {"Unable.to.parse.denyAfter.string.in.exception.message", "denyAfter-Datumszeichenfolge in Ausnahmemeldung kann nicht geparst werden"},
-        {"whose.sigalg.weak", "%1$s verwendet den Signaturalgorithmus %2$s. Dies gilt als Sicherheitsrisiko. Dieser Algorithmus wird in einem zuk\u00FCnftigen Update deaktiviert."},
+        {"whose.sigalg.weak", "%1$s verwendet den Signaturalgorithmus %2$s. Dies gilt als Sicherheitsrisiko."},
         {"whose.key.disabled", "%1$s verwendet %2$s. Dies gilt als Sicherheitsrisiko und ist deaktiviert."},
         {"whose.key.weak", "%1$s verwendet %2$s. Dies gilt als Sicherheitsrisiko. Diese Schl\u00FCsselgr\u00F6\u00DFe wird in einem zuk\u00FCnftigen Update deaktiviert."},
         {"jks.storetype.warning", "Der %1$s-Keystore verwendet ein propriet\u00E4res Format. Es wird empfohlen, auf PKCS12 zu migrieren, das ein Industriestandardformat mit \"keytool -importkeystore -srckeystore %2$s -destkeystore %2$s -deststoretype pkcs12\" ist."},

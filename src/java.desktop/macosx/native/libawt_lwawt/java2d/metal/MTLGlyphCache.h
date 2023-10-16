@@ -93,7 +93,7 @@ void
 MTLGlyphCache_Free(MTLGlyphCacheInfo *cache);
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 #endif /* MTLGlyphCache_h_Included */

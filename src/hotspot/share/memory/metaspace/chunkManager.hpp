@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -95,6 +95,8 @@ class ChunkManager : public CHeapObj<mtMetaspace> {
   //  chunks.
   void split_chunk_and_add_splinters(Metachunk* c, chunklevel_t target_level);
 
+  Metachunk* get_chunk_locked(chunklevel_t preferred_level, chunklevel_t max_level, size_t min_committed_words);
+
   // Return a single chunk to the freelist without doing any merging, and adjust accounting.
   void return_chunk_simple_locked(Metachunk* c);
 
@@ -113,7 +115,7 @@ public:
 
   // On success, returns a chunk of level of <preferred_level>, but at most <max_level>.
   //  The first <min_committed_words> of the chunk are guaranteed to be committed.
-  // On error, will return NULL.
+  // On error, will return null.
   //
   // This function may fail for two reasons:
   // - Either we are unable to reserve space for a new chunk (if the underlying VirtualSpaceList

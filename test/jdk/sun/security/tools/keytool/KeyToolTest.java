@@ -311,9 +311,9 @@ public class KeyToolTest {
     /**
      * Helper method, load a keystore
      * @param file file for keystore, null or "NONE" for PKCS11
-     * @pass password for the keystore
-     * @type keystore type
-     * @returns the KeyStore object
+     * @param pass password for the keystore
+     * @param type keystore type
+     * @return the KeyStore object
      * @exception Exception if anything goes wrong
      */
     KeyStore loadStore(String file, String pass, String type) throws Exception {

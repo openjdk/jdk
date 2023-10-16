@@ -30,7 +30,7 @@
 #include "ErrorHandling.h"
 
 
-#pragma comment(lib, "ole32")
+// Code in this file requires linking with ole32
 
 
 Guid::Guid(const std::string& str) {

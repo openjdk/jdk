@@ -27,40 +27,41 @@ import com.sun.org.apache.bcel.internal.classfile.ConstantPool;
 import com.sun.org.apache.bcel.internal.classfile.ConstantUtf8;
 
 /**
- * Super class for FieldOrMethod and INVOKEDYNAMIC, since they both have
- * names and signatures
+ * Super class for FieldOrMethod and INVOKEDYNAMIC, since they both have names and signatures
  *
  * @since 6.0
  */
 public abstract class NameSignatureInstruction extends CPInstruction {
 
     public NameSignatureInstruction() {
-        super();
     }
 
     public NameSignatureInstruction(final short opcode, final int index) {
         super(opcode, index);
     }
 
-    public ConstantNameAndType getNameAndType(final ConstantPoolGen cpg) {
-        final ConstantPool cp = cpg.getConstantPool();
-        final ConstantCP cmr = (ConstantCP) cp.getConstant(super.getIndex());
-        return  (ConstantNameAndType) cp.getConstant(cmr.getNameAndTypeIndex());
-    }
-    /** @return signature of referenced method/field.
-     */
-    public String getSignature(final ConstantPoolGen cpg) {
-        final ConstantPool cp = cpg.getConstantPool();
-        final ConstantNameAndType cnat = getNameAndType(cpg);
-        return ((ConstantUtf8) cp.getConstant(cnat.getSignatureIndex())).getBytes();
-    }
-
-    /** @return name of referenced method/field.
+    /**
+     * @return name of referenced method/field.
      */
     public String getName(final ConstantPoolGen cpg) {
         final ConstantPool cp = cpg.getConstantPool();
         final ConstantNameAndType cnat = getNameAndType(cpg);
         return ((ConstantUtf8) cp.getConstant(cnat.getNameIndex())).getBytes();
+    }
+
+    public ConstantNameAndType getNameAndType(final ConstantPoolGen cpg) {
+        final ConstantPool cp = cpg.getConstantPool();
+        final ConstantCP cmr = (ConstantCP) cp.getConstant(super.getIndex());
+        return (ConstantNameAndType) cp.getConstant(cmr.getNameAndTypeIndex());
+    }
+
+    /**
+     * @return signature of referenced method/field.
+     */
+    public String getSignature(final ConstantPoolGen cpg) {
+        final ConstantPool cp = cpg.getConstantPool();
+        final ConstantNameAndType cnat = getNameAndType(cpg);
+        return ((ConstantUtf8) cp.getConstant(cnat.getSignatureIndex())).getBytes();
     }
 
 }

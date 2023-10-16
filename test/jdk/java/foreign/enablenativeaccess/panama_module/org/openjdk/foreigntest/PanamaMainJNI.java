@@ -1,5 +1,8 @@
 package org.openjdk.foreigntest;
 
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+
 public class PanamaMainJNI {
 
     static {
@@ -11,10 +14,10 @@ public class PanamaMainJNI {
     }
 
     public static void testDirectAccessCLinker() {
-        System.out.println("Trying to get Linker");
-        nativeLinker0();
-        System.out.println("Got Linker");
+        System.out.println("Trying to get downcall handle");
+        nativeLinker0(Linker.nativeLinker(), FunctionDescriptor.ofVoid(), new Linker.Option[0]);
+        System.out.println("Got downcall handle");
     }
 
-    static native void nativeLinker0();
+    static native void nativeLinker0(Linker linker, FunctionDescriptor desc, Linker.Option[] options);
 }

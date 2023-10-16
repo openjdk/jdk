@@ -534,7 +534,7 @@ public class Colors {
                 H = 0;
             return H;
         } else {
-            throw new IllegalArgumentException("h outside assumed range 0..360: " + Double.toString(h));
+            throw new IllegalArgumentException("h outside assumed range 0..360: " + h);
         }
     }
 

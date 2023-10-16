@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -247,8 +247,14 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_CDS],
 AC_DEFUN_ONCE([JVM_FEATURES_CHECK_DTRACE],
 [
   JVM_FEATURES_CHECK_AVAILABILITY(dtrace, [
-    AC_MSG_CHECKING([for dtrace tool])
-    if test "x$DTRACE" != "x" && test -x "$DTRACE"; then
+    AC_MSG_CHECKING([for dtrace tool and platform support])
+    if test "x$OPENJDK_TARGET_CPU_ARCH" = "xppc"; then
+      AC_MSG_RESULT([no, $OPENJDK_TARGET_CPU_ARCH])
+      AVAILABLE=false
+    elif test "x$OPENJDK_TARGET_CPU_ARCH" = "xs390"; then
+      AC_MSG_RESULT([no, $OPENJDK_TARGET_CPU_ARCH])
+      AVAILABLE=false
+    elif test "x$DTRACE" != "x" && test -x "$DTRACE"; then
       AC_MSG_RESULT([$DTRACE])
     else
       AC_MSG_RESULT([no])
@@ -274,6 +280,8 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_JVMCI],
     if test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
       AC_MSG_RESULT([yes])
     elif test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
+      AC_MSG_RESULT([yes])
+    elif test "x$OPENJDK_TARGET_CPU" = "xriscv64"; then
       AC_MSG_RESULT([yes])
     else
       AC_MSG_RESULT([no, $OPENJDK_TARGET_CPU])

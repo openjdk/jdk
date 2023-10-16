@@ -28,12 +28,12 @@
  * @requires (os.family == "mac")
  * @summary Test verifies that combo box with custom editor renders
  *          focus ring around arrow button correctly.
- * @run     main CustomComboBoxFocusTest
+ * @run     main/othervm -Dsun.java2d.uiScale=1 CustomComboBoxFocusTest
  */
 
 import java.awt.AWTException;
-import java.awt.Component;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -44,8 +44,8 @@ import java.awt.event.FocusListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CountDownLatch;
+
 import javax.imageio.ImageIO;
 import javax.swing.ComboBoxEditor;
 import javax.swing.JComboBox;

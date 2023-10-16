@@ -52,7 +52,11 @@ import tests.JImageGenerator;
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../lib
  * @modules java.base/jdk.internal.jimage
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.plugin
  *          jdk.jlink/jdk.tools.jimage
@@ -309,6 +313,15 @@ public class JLinkTest {
                     "--compress=2:filter=^/java.base/java/lang/*");
         }
 
+        // Unix style compression arguments
+        {
+            testCompress(helper, "compresscmdcompositezip6", "--compress", "zip-6");
+        }
+
+        {
+            testCompress(helper, "compresscmdcompositezip0", "--compress", "zip-0");
+        }
+
         // compress 0
         {
             testCompress(helper, "compress0filtercmdcomposite2",
@@ -325,6 +338,23 @@ public class JLinkTest {
         {
             testCompress(helper, "compress2filtercmdcomposite2",
                     "--compress=2:filter=^/java.base/java/lang/*");
+        }
+        // compress zip-0 with filter
+        {
+            testCompress(helper, "compresszip0filtercmdcomposite2",
+                    "--compress=zip-0:filter=^/java.base/java/lang/*");
+        }
+
+        // compress zip-6 with filter
+        {
+            testCompress(helper, "compresszip6filtercmdcomposite2",
+                    "--compress=zip-6:filter=^/java.base/java/lang/*");
+        }
+
+        // compress zip-9 with filter
+        {
+            testCompress(helper, "compresszip9filtercmdcomposite2",
+                    "--compress=zip-9:filter=^/java.base/java/lang/*");
         }
 
         // invalid compress level

@@ -34,6 +34,7 @@ import javax.crypto.spec.DHGenParameterSpec;
 
 import sun.security.provider.ParameterCache;
 import static sun.security.util.SecurityProviderConstants.DEF_DH_KEY_SIZE;
+import static sun.security.util.SecurityProviderConstants.getDefDHPrivateExpSize;
 
 /**
  * This class represents the key pair generator for Diffie-Hellman key pairs.
@@ -60,9 +61,6 @@ public final class DHKeyPairGenerator extends KeyPairGeneratorSpi {
     // The size in bits of the prime modulus
     private int pSize;
 
-    // The size in bits of the random exponent (private value)
-    private int lSize;
-
     // The source of randomness
     private SecureRandom random;
 
@@ -71,7 +69,8 @@ public final class DHKeyPairGenerator extends KeyPairGeneratorSpi {
         initialize(DEF_DH_KEY_SIZE, null);
     }
 
-    private static void checkKeySize(int keysize)
+    // pkg private; used by DHParameterGenerator class as well
+    static void checkKeySize(int keysize, int expSize)
             throws InvalidParameterException {
 
         if ((keysize < 512) || (keysize > 8192) || ((keysize & 0x3F) != 0)) {
@@ -79,6 +78,13 @@ public final class DHKeyPairGenerator extends KeyPairGeneratorSpi {
                     "DH key size must be multiple of 64, and can only range " +
                     "from 512 to 8192 (inclusive). " +
                     "The specific key size " + keysize + " is not supported");
+        }
+
+        // optional, could be 0 if not specified
+        if ((expSize < 0) || (expSize > keysize)) {
+            throw new InvalidParameterException
+                    ("Exponent size must be positive and no larger than" +
+                    " modulus size");
         }
     }
 
@@ -91,21 +97,17 @@ public final class DHKeyPairGenerator extends KeyPairGeneratorSpi {
      * @param random the source of randomness
      */
     public void initialize(int keysize, SecureRandom random) {
-        checkKeySize(keysize);
+        checkKeySize(keysize, 0);
 
-        // Use the built-in parameters (ranging from 512 to 8192)
-        // when available.
-        this.params = ParameterCache.getCachedDHParameterSpec(keysize);
-
-        // Due to performance issue, only support DH parameters generation
-        // up to 1024 bits.
-        if ((this.params == null) && (keysize > 1024)) {
-            throw new InvalidParameterException(
-                "Unsupported " + keysize + "-bit DH parameter generation");
+        try {
+            // Use the built-in parameters (ranging from 512 to 8192)
+            // when available.
+            this.params = ParameterCache.getDHParameterSpec(keysize, random);
+        } catch (GeneralSecurityException e) {
+            throw new InvalidParameterException(e.getMessage());
         }
 
         this.pSize = keysize;
-        this.lSize = 0;
         this.random = random;
     }
 
@@ -130,21 +132,12 @@ public final class DHKeyPairGenerator extends KeyPairGeneratorSpi {
                 ("Inappropriate parameter type");
         }
 
-        params = (DHParameterSpec)algParams;
+        params = (DHParameterSpec) algParams;
         pSize = params.getP().bitLength();
         try {
-            checkKeySize(pSize);
+            checkKeySize(pSize, params.getL());
         } catch (InvalidParameterException ipe) {
             throw new InvalidAlgorithmParameterException(ipe.getMessage());
-        }
-
-        // exponent size is optional, could be 0
-        lSize = params.getL();
-
-        // Require exponentSize < primeSize
-        if ((lSize != 0) && (lSize > pSize)) {
-            throw new InvalidAlgorithmParameterException
-                ("Exponent size must not be larger than modulus size");
         }
         this.random = random;
     }
@@ -159,24 +152,12 @@ public final class DHKeyPairGenerator extends KeyPairGeneratorSpi {
             random = SunJCE.getRandom();
         }
 
-        if (params == null) {
-            try {
-                params = ParameterCache.getDHParameterSpec(pSize, random);
-            } catch (GeneralSecurityException e) {
-                // should never happen
-                throw new ProviderException(e);
-            }
-        }
-
         BigInteger p = params.getP();
         BigInteger g = params.getG();
 
-        if (lSize <= 0) {
-            lSize = pSize >> 1;
-            // use an exponent size of (pSize / 2) but at least 384 bits
-            if (lSize < 384) {
-                lSize = 384;
-            }
+        int lSize = params.getL();
+        if (lSize == 0) { // not specified; use our own default
+            lSize = getDefDHPrivateExpSize(params);
         }
 
         BigInteger x;

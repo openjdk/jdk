@@ -279,7 +279,7 @@ void nsk_printHexBytes(const char indent[], int columns,
             char ch = (char)bytes[i + j];
 
             if (!(isascii(ch) && isprint(ch))) ch = '.';
-            sprintf(buf, " %02X", b);
+            snprintf(buf, sizeof(buf), " %02X", b);
             strcat(hex, buf);
             ascii[j] = ch;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,11 @@ final class XCheckboxMenuItemPeer extends XMenuItemPeer
 
     /************************************************
      *
-     * Implementaion of interface methods
+     * Implementation of interface methods
      *
      ************************************************/
 
-    //Prom CheckboxMenuItemtPeer
+    //From CheckboxMenuItemPeer
     @Override
     public void setState(boolean t) {
         repaintIfShowing();

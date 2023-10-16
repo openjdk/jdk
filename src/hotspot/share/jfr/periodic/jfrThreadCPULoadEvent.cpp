@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ bool JfrThreadCPULoadEvent::update_event(EventThreadCPULoad& event, JavaThread* 
   jlong user_time = cur_user_time - prev_user_time;
   jlong system_time = cur_system_time - prev_system_time;
   jlong wallclock_time = cur_wallclock_time - prev_wallclock_time;
-  jlong total_available_time = wallclock_time * processor_count;
+  const float total_available_time = static_cast<float>(wallclock_time * processor_count);
 
   // Avoid reporting percentages above the theoretical max
   if (user_time + system_time > wallclock_time) {
@@ -97,8 +97,8 @@ bool JfrThreadCPULoadEvent::update_event(EventThreadCPULoad& event, JavaThread* 
       system_time -= excess;
     }
   }
-  event.set_user(total_available_time > 0 ? (double)user_time / total_available_time : 0);
-  event.set_system(total_available_time > 0 ? (double)system_time / total_available_time : 0);
+  event.set_user(total_available_time > 0 ? static_cast<float>(user_time) / total_available_time : 0);
+  event.set_system(total_available_time > 0 ? static_cast<float>(system_time) / total_available_time : 0);
   tl->set_user_time(cur_user_time);
   tl->set_cpu_time(cur_cpu_time);
   return true;
@@ -115,11 +115,12 @@ void JfrThreadCPULoadEvent::send_events() {
   int number_of_threads = 0;
   while (iter.has_next()) {
     JavaThread* const jt = iter.next();
-    assert(jt != NULL, "invariant");
+    assert(jt != nullptr, "invariant");
     ++number_of_threads;
     EventThreadCPULoad event(UNTIMED);
     if (JfrThreadCPULoadEvent::update_event(event, jt, cur_wallclock_time, processor_count)) {
       event.set_starttime(event_time);
+      event.set_endtime(event_time);
       if (jt != periodic_thread) {
         // Commit reads the thread id from this thread's trace data, so put it there temporarily
         JfrThreadLocal::impersonate(periodic_thread, JFR_JVM_THREAD_ID(jt));

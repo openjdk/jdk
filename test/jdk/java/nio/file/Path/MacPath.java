@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.Set;
 import java.util.regex.Pattern;
 
 public class MacPath {
+    private static final String PROPERTY_NORMALIZE_FILE_PATHS =
+        "jdk.nio.path.useNormalizationFormD";
 
     public static void main(String args[]) throws Throwable {
         System.out.printf("sun.jnu.encoding=%s, file.encoding=%s%n",
@@ -81,8 +84,10 @@ public class MacPath {
         throws Throwable
     {
         String fname = null;
-        String dname_nfd = Normalizer.normalize(dname, Normalizer.Form.NFD);
-        String fname_nfd = Normalizer.normalize(fname_nfc, Normalizer.Form.NFD);
+        Normalizer.Form form = Boolean.getBoolean(PROPERTY_NORMALIZE_FILE_PATHS)
+            ? Normalizer.Form.NFD : Normalizer.Form.NFC;
+        String dname_nfd = Normalizer.normalize(dname, form);
+        String fname_nfd = Normalizer.normalize(fname_nfc, form);
 
         System.out.printf("%n%n--------Testing...----------%n");
         Path bpath = Paths.get(testdir);

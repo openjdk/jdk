@@ -168,7 +168,7 @@ public class TestFilerConstraints extends JavacTestingAbstractProcessor {
     }
 
     /**
-     * Test that the single expected expected type, name, is the root
+     * Test that the single expected type, name, is the root
      * element.
      */
     private void testExpectedType(RoundEnvironment roundEnv, String name) {

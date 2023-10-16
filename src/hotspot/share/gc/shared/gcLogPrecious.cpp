@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,16 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/os.hpp" // malloc
+#include "runtime/os.hpp"
 #include "utilities/ostream.hpp"
 
-stringStream* GCLogPrecious::_lines = NULL;
-stringStream* GCLogPrecious::_temp = NULL;
-Mutex* GCLogPrecious::_lock = NULL;
+stringStream* GCLogPrecious::_lines = nullptr;
+stringStream* GCLogPrecious::_temp = nullptr;
+Mutex* GCLogPrecious::_lock = nullptr;
 
 void GCLogPrecious::initialize() {
-  _lines = new (ResourceObj::C_HEAP, mtGC) stringStream();
-  _temp = new (ResourceObj::C_HEAP, mtGC) stringStream();
+  _lines = new (mtGC) stringStream();
+  _temp = new (mtGC) stringStream();
   _lock = new Mutex(Mutex::event, /* The lowest lock rank I could find */
                     "GCLogPrecious Lock");
 }
@@ -79,7 +79,7 @@ void GCLogPrecious::vwrite_and_debug(LogTargetHandle log,
 void GCLogPrecious::print_on_error(outputStream* st) {
   st->print_cr("GC Precious Log:");
 
-  if (_lines == NULL) {
+  if (_lines == nullptr) {
     st->print_cr("<Not initialized>\n");
     return;
   }

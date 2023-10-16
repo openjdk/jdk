@@ -1697,7 +1697,7 @@ public class List extends Component implements ItemSelectable, Accessible {
              * Set the background color of this object.
              *
              * @param c the new Color for the background
-             * @see #setBackground
+             * @see #getBackground
              */
             public void setBackground(Color c) {
                 parent.setBackground(c);
@@ -1949,7 +1949,7 @@ public class List extends Component implements ItemSelectable, Accessible {
             /**
              * Resizes this object so that it has width and height.
              *
-             * @param d - The dimension specifying the new size of the object.
+             * @param d The dimension specifying the new size of the object.
              * @see #getSize
              */
             public void setSize(Dimension d) {

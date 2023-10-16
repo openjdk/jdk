@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ public class BasicListUI extends ListUI
     private int columnCount;
     /**
      * Preferred height to make the list, this is only used if the
-     * the list is layed out horizontally.
+     * the list is laid out horizontally.
      */
     private int preferredHeight;
     /**
@@ -142,7 +142,7 @@ public class BasicListUI extends ListUI
     private int rowsPerColumn;
 
     /**
-     * The time factor to treate the series of typed alphanumeric key
+     * The time factor to treat the series of typed alphanumeric key
      * as prefix for first letter navigation.
      */
     private long timeFactor = 1000L;
@@ -363,7 +363,7 @@ public class BasicListUI extends ListUI
 
         for (int colCounter = startColumn; colCounter <= endColumn;
              colCounter++) {
-            // And then how many rows in this columnn
+            // And then how many rows in this column
             int row = convertLocationToRowInColumn(paintBounds.y, colCounter);
             int rowCount = getRowCount(colCounter);
             int index = getModelIndex(colCounter, row);
@@ -1472,7 +1472,7 @@ public class BasicListUI extends ListUI
     }
 
     /**
-     * Invoked when the list is layed out horizontally to determine how
+     * Invoked when the list is laid out horizontally to determine how
      * many columns to create.
      * <p>
      * This updates the <code>rowsPerColumn, </code><code>columnCount</code>,
@@ -2237,7 +2237,7 @@ public class BasicListUI extends ListUI
                         }
                         Rectangle cellBounds = list.getCellBounds(index, index);
                         // go one cell down if first visible cell doesn't fit
-                        // into adjasted visible rectangle
+                        // into adjusted visible rectangle
                         if (cellBounds != null && cellBounds.y < visRect.y) {
                             p.y = cellBounds.y + cellBounds.height;
                             index = list.locationToIndex(p);
@@ -2290,7 +2290,7 @@ public class BasicListUI extends ListUI
                         }
                         cellBounds = list.getCellBounds(index, index);
                         // go one cell up if last visible cell doesn't fit
-                        // into adjasted visible rectangle
+                        // into adjusted visible rectangle
                         if (cellBounds != null &&
                                 cellBounds.y + cellBounds.height >
                                 visRect.y + visRect.height)
@@ -3028,10 +3028,10 @@ public class BasicListUI extends ListUI
         /**
          * Create a Transferable to use as the source for a data transfer.
          *
-         * @param c  The component holding the data to be transfered.  This
+         * @param c  The component holding the data to be transferred.  This
          *  argument is provided to enable sharing of TransferHandlers by
          *  multiple components.
-         * @return  The representation of the data to be transfered.
+         * @return  The representation of the data to be transferred.
          *
          */
         @SuppressWarnings("deprecation")

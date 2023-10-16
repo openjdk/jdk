@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,7 +336,7 @@ class BlockOffsetArray: public BlockOffsetTable {
   // Corresponding setter
   void set_init_to_zero(bool val) {
     _init_to_zero = val;
-    assert(_array != NULL, "_array should be non-NULL");
+    assert(_array != nullptr, "_array should be non-null");
     _array->set_init_to_zero(val);
   }
 
@@ -366,7 +366,7 @@ class BlockOffsetArrayContigSpace: public BlockOffsetArray {
  public:
   BlockOffsetArrayContigSpace(BlockOffsetSharedArray* array, MemRegion mr):
     BlockOffsetArray(array, mr, true) {
-    _next_offset_threshold = NULL;
+    _next_offset_threshold = nullptr;
     _next_offset_index = 0;
   }
 
@@ -384,7 +384,7 @@ class BlockOffsetArrayContigSpace: public BlockOffsetArray {
   // In general, these methods expect to be called with
   // [blk_start, blk_end) representing a block of memory in the heap.
   // In this implementation, however, we are OK even if blk_start and/or
-  // blk_end are NULL because NULL is represented as 0, and thus
+  // blk_end are null because null is represented as 0, and thus
   // never exceeds the "_next_offset_threshold".
   void alloc_block(HeapWord* blk_start, HeapWord* blk_end) {
     if (blk_end > _next_offset_threshold) {

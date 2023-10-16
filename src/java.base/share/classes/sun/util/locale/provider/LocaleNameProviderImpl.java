@@ -169,7 +169,7 @@ public class LocaleNameProviderImpl extends LocaleNameProvider implements Availa
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public String getDisplayUnicodeExtensionKey(String key, Locale locale) {
@@ -180,7 +180,7 @@ public class LocaleNameProviderImpl extends LocaleNameProvider implements Availa
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public String getDisplayUnicodeExtensionType(String extType, String key, Locale locale) {

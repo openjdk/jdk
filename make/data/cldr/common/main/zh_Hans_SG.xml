@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -23,6 +23,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0}至{1}</intervalFormatFallback>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H">vHH–HH</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
 			</calendar>
 			<calendar type="chinese">
 				<dateFormats>
@@ -273,6 +281,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XAG">
 				<displayName draft="contributed">白银</displayName>
+				<displayName count="other">白银</displayName>
 			</currency>
 		</currencies>
 	</numbers>
@@ -307,6 +316,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
+			<unit type="concentr-karat">
+				<displayName>开</displayName>
+				<unitPattern count="other">{0}开</unitPattern>
+			</unit>
 			<unit type="length-picometer">
 				<unitPattern count="other" draft="unconfirmed">{0}皮米</unitPattern>
 			</unit>
@@ -324,6 +337,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="length-light-year">
 				<unitPattern count="other" draft="unconfirmed">{0}光年</unitPattern>
+			</unit>
+			<unit type="temperature-kelvin">
+				<displayName>开氏度</displayName>
+				<unitPattern count="other">{0}°K</unitPattern>
 			</unit>
 		</unitLength>
 	</units>

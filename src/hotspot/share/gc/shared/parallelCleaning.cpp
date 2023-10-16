@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@
 CodeCacheUnloadingTask::CodeCacheUnloadingTask(uint num_workers, bool unloading_occurred) :
   _unloading_occurred(unloading_occurred),
   _num_workers(num_workers),
-  _first_nmethod(NULL),
-  _claimed_nmethod(NULL) {
+  _first_nmethod(nullptr),
+  _claimed_nmethod(nullptr) {
   // Get first alive nmethod
   CompiledMethodIterator iter(CompiledMethodIterator::all_blobs);
   if(iter.next()) {
@@ -60,7 +60,7 @@ void CodeCacheUnloadingTask::claim_nmethods(CompiledMethod** claimed_nmethods, i
     first = _claimed_nmethod;
     last = CompiledMethodIterator(CompiledMethodIterator::all_blobs, first);
 
-    if (first != NULL) {
+    if (first != nullptr) {
 
       for (int i = 0; i < MaxClaimNmethods; i++) {
         if (!last.next()) {
@@ -76,9 +76,9 @@ void CodeCacheUnloadingTask::claim_nmethods(CompiledMethod** claimed_nmethods, i
 
 void CodeCacheUnloadingTask::work(uint worker_id) {
   // The first nmethods is claimed by the first worker.
-  if (worker_id == 0 && _first_nmethod != NULL) {
+  if (worker_id == 0 && _first_nmethod != nullptr) {
     _first_nmethod->do_unloading(_unloading_occurred);
-    _first_nmethod = NULL;
+    _first_nmethod = nullptr;
   }
 
   int num_claimed_nmethods;
@@ -114,7 +114,7 @@ InstanceKlass* KlassCleaningTask::claim_next_klass() {
   Klass* klass;
   do {
     klass =_klass_iterator.next_klass();
-  } while (klass != NULL && !klass->is_instance_klass());
+  } while (klass != nullptr && !klass->is_instance_klass());
 
   // this can be null so don't call InstanceKlass::cast
   return static_cast<InstanceKlass*>(klass);
@@ -130,7 +130,7 @@ void KlassCleaningTask::work() {
 
   // All workers will help cleaning the classes,
   InstanceKlass* klass;
-  while ((klass = claim_next_klass()) != NULL) {
+  while ((klass = claim_next_klass()) != nullptr) {
     clean_klass(klass);
   }
 }

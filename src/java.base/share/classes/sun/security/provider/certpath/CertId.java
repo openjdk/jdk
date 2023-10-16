@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import sun.security.util.*;
  * @author      Ram Marti
  */
 
-public class CertId {
+public class CertId implements DerEncoder {
 
     private static final boolean debug = false;
     private static final AlgorithmId SHA1_ALGID
@@ -154,7 +154,8 @@ public class CertId {
      * Encode the CertId using ASN.1 DER.
      * The hash algorithm used is SHA-1.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
 
         DerOutputStream tmp = new DerOutputStream();
         hashAlgId.encode(tmp);
@@ -171,19 +172,13 @@ public class CertId {
     }
 
     /**
-     * Returns a hashcode value for this CertId.
-     *
-     * @return the hashcode value.
+     * {@return a hashcode value for this CertId}
      */
     @Override public int hashCode() {
         if (myhash == -1) {
             myhash = hashAlgId.hashCode();
-            for (int i = 0; i < issuerNameHash.length; i++) {
-                myhash += issuerNameHash[i] * i;
-            }
-            for (int i = 0; i < issuerKeyHash.length; i++) {
-                myhash += issuerKeyHash[i] * i;
-            }
+            myhash += Arrays.hashCode(issuerNameHash);
+            myhash += Arrays.hashCode(issuerKeyHash);
             myhash += certSerialNumber.getNumber().hashCode();
         }
         return myhash;

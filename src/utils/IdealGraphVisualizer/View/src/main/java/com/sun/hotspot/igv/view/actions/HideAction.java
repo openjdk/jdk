@@ -56,12 +56,12 @@ public final class HideAction extends ModelAwareAction {
 
     @Override
     public String getName() {
-        return NbBundle.getMessage(NextDiagramAction.class, "CTL_HideAction");
+        return NbBundle.getMessage(HideAction.class, "CTL_HideAction");
     }
 
     @Override
     protected String getDescription() {
-        return NbBundle.getMessage(NextDiagramAction.class, "HINT_HideAction");
+        return NbBundle.getMessage(HideAction.class, "HINT_HideAction");
     }
 
     @Override
@@ -69,7 +69,7 @@ public final class HideAction extends ModelAwareAction {
         Set<Integer> selectedNodes = model.getSelectedNodes();
         HashSet<Integer> nodes = new HashSet<>(model.getHiddenNodes());
         nodes.addAll(selectedNodes);
-        model.showNot(nodes);
+        model.setHiddenNodes(nodes);
     }
 
     @Override

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -117,6 +117,24 @@ AC_DEFUN([UTIL_FIXUP_PATH],
     fi
   fi
 ])
+
+##############################################################################
+# Fixup path to be a Windows full long path
+# Note: Only supported with cygwin/msys2 (cygpath tool)
+AC_DEFUN([UTIL_FIXUP_WIN_LONG_PATH],
+[
+  # Only process if variable expands to non-empty
+  path="[$]$1"
+  if test "x$path" != x; then
+    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+      win_path=$($PATHTOOL -wl "$path")
+      if test "x$win_path" != "x$path"; then
+        $1="$win_path"
+      fi
+    fi
+  fi
+])
+
 
 ###############################################################################
 # Check if the given file is a unix-style or windows-style executable, that is,
@@ -521,7 +539,7 @@ AC_DEFUN([UTIL_REMOVE_SYMBOLIC_LINKS],
       sym_link_dir=`pwd -P`
       # Resolve file symlinks
       while test $COUNTER -lt 20; do
-        ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
+        ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP -e '->' | $SED -e 's/.*-> \(.*\)/\1/'`
         if test "x$ISLINK" == x; then
           # This is not a symbolic link! We are done!
           break

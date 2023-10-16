@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
-import java.util.List;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -582,6 +581,7 @@ final class Nodes {
             }
         }
 
+        @SuppressWarnings("overloads")
         private static final class OfInt
                 extends EmptyNode<Integer, int[], IntConsumer>
                 implements Node.OfInt {
@@ -599,6 +599,7 @@ final class Nodes {
             }
         }
 
+        @SuppressWarnings("overloads")
         private static final class OfLong
                 extends EmptyNode<Long, long[], LongConsumer>
                 implements Node.OfLong {
@@ -616,6 +617,7 @@ final class Nodes {
             }
         }
 
+        @SuppressWarnings("overloads")
         private static final class OfDouble
                 extends EmptyNode<Double, double[], DoubleConsumer>
                 implements Node.OfDouble {
@@ -880,6 +882,7 @@ final class Nodes {
             }
         }
 
+        @SuppressWarnings("overloads")
         static final class OfInt
                 extends ConcNode.OfPrimitive<Integer, IntConsumer, int[], Spliterator.OfInt, Node.OfInt>
                 implements Node.OfInt {
@@ -894,6 +897,7 @@ final class Nodes {
             }
         }
 
+        @SuppressWarnings("overloads")
         static final class OfLong
                 extends ConcNode.OfPrimitive<Long, LongConsumer, long[], Spliterator.OfLong, Node.OfLong>
                 implements Node.OfLong {
@@ -908,6 +912,7 @@ final class Nodes {
             }
         }
 
+        @SuppressWarnings("overloads")
         static final class OfDouble
                 extends ConcNode.OfPrimitive<Double, DoubleConsumer, double[], Spliterator.OfDouble, Node.OfDouble>
                 implements Node.OfDouble {
@@ -1160,6 +1165,7 @@ final class Nodes {
             }
         }
 
+        @SuppressWarnings("overloads")
         private static final class OfInt
                 extends OfPrimitive<Integer, IntConsumer, int[], Spliterator.OfInt, Node.OfInt>
                 implements Spliterator.OfInt {
@@ -1169,6 +1175,7 @@ final class Nodes {
             }
         }
 
+        @SuppressWarnings("overloads")
         private static final class OfLong
                 extends OfPrimitive<Long, LongConsumer, long[], Spliterator.OfLong, Node.OfLong>
                 implements Spliterator.OfLong {
@@ -1178,6 +1185,7 @@ final class Nodes {
             }
         }
 
+        @SuppressWarnings("overloads")
         private static final class OfDouble
                 extends OfPrimitive<Double, DoubleConsumer, double[], Spliterator.OfDouble, Node.OfDouble>
                 implements Spliterator.OfDouble {

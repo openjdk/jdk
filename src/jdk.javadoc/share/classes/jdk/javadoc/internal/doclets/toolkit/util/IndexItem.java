@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,7 +209,7 @@ public class IndexItem {
         Objects.requireNonNull(link);
 
         switch (docTree.getKind()) {
-            case INDEX, SYSTEM_PROPERTY -> { }
+            case INDEX, SPEC, SYSTEM_PROPERTY, START_ELEMENT -> { }
             default -> throw new IllegalArgumentException(docTree.getKind().toString());
         }
 
@@ -267,6 +267,9 @@ public class IndexItem {
 
     private IndexItem(Element element, String label) {
         if (label.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+        if (label.contains("\n") || label.contains("\r")) {
             throw new IllegalArgumentException();
         }
 
@@ -337,7 +340,7 @@ public class IndexItem {
 
     protected Category getCategory(DocTree docTree) {
         return switch (docTree.getKind()) {
-            case INDEX, SYSTEM_PROPERTY -> Category.TAGS;
+            case INDEX, SPEC, SYSTEM_PROPERTY, START_ELEMENT -> Category.TAGS;
             default -> throw new IllegalArgumentException(docTree.getKind().toString());
         };
     }
@@ -562,12 +565,12 @@ public class IndexItem {
                 String holder = getHolder();
                 String description = getDescription();
                 item.append("{")
-                        .append("\"l\":\"").append(label).append("\",")
+                        .append("\"l\":\"").append(escapeQuotes(label)).append("\",")
                         .append("\"h\":\"").append(holder).append("\",");
                 if (!description.isEmpty()) {
-                    item.append("\"d\":\"").append(description).append("\",");
+                    item.append("\"d\":\"").append(escapeQuotes(description)).append("\",");
                 }
-                item.append("\"u\":\"").append(url).append("\"")
+                item.append("\"u\":\"").append(escapeQuotes(url)).append("\"")
                         .append("}");
                 break;
 
@@ -576,4 +579,8 @@ public class IndexItem {
         }
         return item.toString();
     }
-}
+
+    private String escapeQuotes(String s) {
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+ }

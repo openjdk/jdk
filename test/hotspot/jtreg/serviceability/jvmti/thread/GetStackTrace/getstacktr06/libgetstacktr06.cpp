@@ -43,6 +43,7 @@ static frame_info expected_platform_frames[] = {
     {"Lgetstacktr06$TestThread;", "chain2", "()V"},
     {"Lgetstacktr06$TestThread;", "chain1", "()V"},
     {"Lgetstacktr06$TestThread;", "run", "()V"},
+    {"Ljava/lang/Thread;", "runWith", "(Ljava/lang/Object;Ljava/lang/Runnable;)V"},
     {"Ljava/lang/Thread;", "run", "()V"},
 };
 
@@ -52,6 +53,7 @@ static frame_info expected_virtual_frames[] = {
     {"Lgetstacktr06$TestThread;", "chain2", "()V"},
     {"Lgetstacktr06$TestThread;", "chain1", "()V"},
     {"Lgetstacktr06$TestThread;", "run", "()V"},
+    {"Ljava/lang/VirtualThread;", "runWith", "(Ljava/lang/Object;Ljava/lang/Runnable;)V"},
     {"Ljava/lang/VirtualThread;", "run", "(Ljava/lang/Runnable;)V"},
     {"Ljava/lang/VirtualThread$VThreadContinuation;", "lambda$new$0", "(Ljava/lang/VirtualThread;Ljava/lang/Runnable;)V"},
     {"Ljava/lang/VirtualThread$VThreadContinuation$$Lambda;", "run", "()V"},

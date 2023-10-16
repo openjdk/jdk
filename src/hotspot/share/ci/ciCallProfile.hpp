@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ private:
     _morphism    = 0;
     _count = -1;
     _receiver_count[0] = -1;
-    _receiver[0] = NULL;
+    _receiver[0] = nullptr;
   }
 
   void add_receiver(ciKlass* receiver, int receiver_count);

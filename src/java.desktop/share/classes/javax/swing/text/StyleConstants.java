@@ -44,6 +44,7 @@ import javax.swing.Icon;
  *      and SpaceBelow a paragraph."></p>
  *
  * @author  Timothy Prinzing
+ * @sealedGraph
  */
 public sealed class StyleConstants
     permits StyleConstants.CharacterConstants,

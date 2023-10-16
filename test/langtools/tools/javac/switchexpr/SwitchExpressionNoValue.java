@@ -42,6 +42,7 @@ import combo.ComboInstance;
 import combo.ComboParameter;
 import combo.ComboTask;
 import combo.ComboTestHelper;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -96,10 +97,7 @@ public class SwitchExpressionNoValue extends ComboInstance<SwitchExpressionNoVal
                         case "EXPRESSION" -> expression;
                         case "CONTEXT" -> context;
                         default -> throw new UnsupportedOperationException(pname);
-                    })
-                .withOption("--enable-preview")
-                .withOption("-source")
-                .withOption(String.valueOf(Runtime.version().feature()));
+                    });
 
         task.generate(result -> {
             try {
@@ -111,7 +109,10 @@ public class SwitchExpressionNoValue extends ComboInstance<SwitchExpressionNoVal
                 if (filesIt.hasNext()) {
                     throw new IllegalStateException("More than one classfile returned!");
                 }
-                byte[] data = file.openInputStream().readAllBytes();
+                byte[] data;
+                try (InputStream input = file.openInputStream()) {
+                    data = input.readAllBytes();
+                }
                 ClassLoader inMemoryLoader = new ClassLoader() {
                     protected Class<?> findClass(String name) throws ClassNotFoundException {
                         if ("Test".equals(name)) {

@@ -35,11 +35,11 @@ import java.util.Set;
  */
 public class SelectionCoordinator {
 
-    private static SelectionCoordinator singleInstance = new SelectionCoordinator();
-    private Set<Object> selectedObjects;
-    private Set<Object> highlightedObjects;
-    private ChangedEvent<SelectionCoordinator> selectedChangedEvent;
-    private ChangedEvent<SelectionCoordinator> highlightedChangedEvent;
+    private static final SelectionCoordinator singleInstance = new SelectionCoordinator();
+    private final Set<Integer> selectedObjects;
+    private final Set<Integer> highlightedObjects;
+    private final ChangedEvent<SelectionCoordinator> selectedChangedEvent;
+    private final ChangedEvent<SelectionCoordinator> highlightedChangedEvent;
 
     public static SelectionCoordinator getInstance() {
         return singleInstance;
@@ -52,11 +52,11 @@ public class SelectionCoordinator {
         highlightedObjects = new HashSet<>();
     }
 
-    public Set<Object> getSelectedObjects() {
+    public Set<Integer> getSelectedObjects() {
         return Collections.unmodifiableSet(selectedObjects);
     }
 
-    public Set<Object> getHighlightedObjects() {
+    public Set<Integer> getHighlightedObjects() {
         return Collections.unmodifiableSet(highlightedObjects);
     }
 
@@ -68,72 +68,18 @@ public class SelectionCoordinator {
         return selectedChangedEvent;
     }
 
-    public void addHighlighted(Object o) {
-        if (!highlightedObjects.contains(o)) {
-            highlightedObjects.add(o);
-            highlightedObjectsChanged();
-        }
-    }
 
-    public void removeHighlighted(Object o) {
-        if (highlightedObjects.contains(o)) {
-            highlightedObjects.remove(o);
-            highlightedObjectsChanged();
-        }
-    }
-
-    public void addAllHighlighted(Set<? extends Object> s) {
-        int oldSize = highlightedObjects.size();
-        highlightedObjects.addAll(s);
-        if (oldSize != highlightedObjects.size()) {
-            highlightedObjectsChanged();
-        }
-    }
-
-    public void removeAllHighlighted(Set<? extends Object> s) {
-        int oldSize = highlightedObjects.size();
-        highlightedObjects.removeAll(s);
-        if (oldSize != highlightedObjects.size()) {
-            highlightedObjectsChanged();
-        }
-    }
-
-    private void highlightedObjectsChanged() {
-        highlightedChangedEvent.fire();
-
-    }
-
-    public void addAllSelected(Set<? extends Object> s) {
-        int oldSize = selectedObjects.size();
-        selectedObjects.addAll(s);
-        if (oldSize != selectedObjects.size()) {
-            selectedObjectsChanged();
-        }
-    }
-
-    public void removeAllSelected(Set<? extends Object> s) {
-        int oldSize = selectedObjects.size();
-        selectedObjects.removeAll(s);
-        if (oldSize != selectedObjects.size()) {
-            selectedObjectsChanged();
-        }
-    }
-
-    public void setSelectedObjects(Set<? extends Object> s) {
+    public void setSelectedObjects(Set<Integer> s) {
         assert s != null;
         selectedObjects.clear();
         selectedObjects.addAll(s);
-        selectedObjectsChanged();
+        getSelectedChangedEvent().fire();
     }
 
-    private void selectedObjectsChanged() {
-        selectedChangedEvent.fire();
-    }
-
-    public void setHighlightedObjects(Set<? extends Object> s) {
+    public void setHighlightedObjects(Set<Integer> s) {
         assert s != null;
-        this.highlightedObjects.clear();
-        this.highlightedObjects.addAll(s);
-        highlightedObjectsChanged();
+        highlightedObjects.clear();
+        highlightedObjects.addAll(s);
+        getHighlightedChangedEvent().fire();
     }
 }

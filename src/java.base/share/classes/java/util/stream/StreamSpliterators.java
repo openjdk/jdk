@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -307,7 +307,7 @@ class StreamSpliterators {
                 Objects.requireNonNull(consumer);
                 init();
 
-                ph.wrapAndCopyInto((Sink<P_OUT>) consumer::accept, spliterator);
+                ph.wrapAndCopyInto(consumer::accept, spliterator);
                 finished = true;
             }
             else {
@@ -572,6 +572,7 @@ class StreamSpliterators {
             }
         }
 
+        @SuppressWarnings("overloads")
         static final class OfInt
                 extends OfPrimitive<Integer, IntConsumer, Spliterator.OfInt>
                 implements Spliterator.OfInt {
@@ -581,6 +582,7 @@ class StreamSpliterators {
             }
         }
 
+        @SuppressWarnings("overloads")
         static final class OfLong
                 extends OfPrimitive<Long, LongConsumer, Spliterator.OfLong>
                 implements Spliterator.OfLong {
@@ -590,6 +592,7 @@ class StreamSpliterators {
             }
         }
 
+        @SuppressWarnings("overloads")
         static final class OfDouble
                 extends OfPrimitive<Double, DoubleConsumer, Spliterator.OfDouble>
                 implements Spliterator.OfDouble {
@@ -815,6 +818,7 @@ class StreamSpliterators {
             protected abstract T_CONS emptyConsumer();
         }
 
+        @SuppressWarnings("overloads")
         static final class OfInt extends OfPrimitive<Integer, Spliterator.OfInt, IntConsumer>
                 implements Spliterator.OfInt {
             OfInt(Spliterator.OfInt s, long sliceOrigin, long sliceFence) {
@@ -839,6 +843,7 @@ class StreamSpliterators {
             }
         }
 
+        @SuppressWarnings("overloads")
         static final class OfLong extends OfPrimitive<Long, Spliterator.OfLong, LongConsumer>
                 implements Spliterator.OfLong {
             OfLong(Spliterator.OfLong s, long sliceOrigin, long sliceFence) {
@@ -863,6 +868,7 @@ class StreamSpliterators {
             }
         }
 
+        @SuppressWarnings("overloads")
         static final class OfDouble extends OfPrimitive<Double, Spliterator.OfDouble, DoubleConsumer>
                 implements Spliterator.OfDouble {
             OfDouble(Spliterator.OfDouble s, long sliceOrigin, long sliceFence) {
@@ -1128,6 +1134,7 @@ class StreamSpliterators {
             protected abstract T_BUFF bufferCreate(int initialCapacity);
         }
 
+        @SuppressWarnings("overloads")
         static final class OfInt
                 extends OfPrimitive<Integer, IntConsumer, ArrayBuffer.OfInt, Spliterator.OfInt>
                 implements Spliterator.OfInt, IntConsumer {
@@ -1163,6 +1170,7 @@ class StreamSpliterators {
             }
         }
 
+        @SuppressWarnings("overloads")
         static final class OfLong
                 extends OfPrimitive<Long, LongConsumer, ArrayBuffer.OfLong, Spliterator.OfLong>
                 implements Spliterator.OfLong, LongConsumer {
@@ -1198,6 +1206,7 @@ class StreamSpliterators {
             }
         }
 
+        @SuppressWarnings("overloads")
         static final class OfDouble
                 extends OfPrimitive<Double, DoubleConsumer, ArrayBuffer.OfDouble, Spliterator.OfDouble>
                 implements Spliterator.OfDouble, DoubleConsumer {

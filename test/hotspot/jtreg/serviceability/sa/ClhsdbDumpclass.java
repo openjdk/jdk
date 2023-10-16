@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.SA.SATestUtils;
 import jtreg.SkippedException;
 
 /**
@@ -47,6 +48,10 @@ public class ClhsdbDumpclass {
     static final String APP_SLASH_CLASSNAME = APP_DOT_CLASSNAME.replace('.', '/');
 
     public static void main(String[] args) throws Exception {
+        if (SATestUtils.needsPrivileges()) {
+            // This test will create a file as root that cannot be easily deleted, so don't run it.
+            throw new SkippedException("Cannot run this test on OSX if adding privileges is required.");
+        }
         System.out.println("Starting ClhsdbDumpclass test");
 
         LingeredApp theApp = null;
@@ -70,6 +75,8 @@ public class ClhsdbDumpclass {
             // Run javap on the generated class file to make sure it's valid.
             JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("javap");
             launcher.addVMArgs(Utils.getTestJavaOpts());
+            // Let javap print additional info, e.g., StackMapTable
+            launcher.addToolArg("-verbose");
             launcher.addToolArg(classFile.toString());
             System.out.println("> javap " + classFile.toString());
             List<String> cmdStringList = Arrays.asList(launcher.getCommand());
@@ -81,6 +88,12 @@ public class ClhsdbDumpclass {
             System.err.println(out.getStderr());
             out.shouldHaveExitValue(0);
             out.shouldMatch("public class " + APP_DOT_CLASSNAME);
+            // StackMapTable might not be generated for a class
+            // containing only methods with sequential control flows.
+            // But the class used here (LingeredApp) is not such a case.
+            out.shouldContain("StackMapTable:");
+            out.shouldContain("BootstrapMethods:");
+            out.shouldNotContain("Error:");
         } catch (SkippedException se) {
             throw se;
         } catch (Exception ex) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public final class ResponseAPDU implements java.io.Serializable {
     }
 
     /**
-     * Returns a copy of the data bytes in the response body. If this APDU as
+     * Returns a copy of the data bytes in the response body. If this APDU has
      * no body, this method returns a byte array with a length of zero.
      *
      * @return a copy of the data bytes in the response body or the empty

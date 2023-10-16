@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -651,10 +651,11 @@ final class Int64Vector extends IntVector {
 
         @Override
         @ForceInline
-        public Int64Mask eq(VectorMask<Integer> mask) {
-            Objects.requireNonNull(mask);
-            Int64Mask m = (Int64Mask)mask;
-            return xor(m.not());
+        /*package-private*/
+        Int64Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Int64Mask) VectorSupport.indexPartiallyInUpperRange(
+                Int64Mask.class, int.class, VLENGTH, offset, limit,
+                (o, l) -> (Int64Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations
@@ -696,9 +697,9 @@ final class Int64Vector extends IntVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Int64Mask xor(VectorMask<Integer> mask) {
+        public Int64Mask xor(VectorMask<Integer> mask) {
             Objects.requireNonNull(mask);
             Int64Mask m = (Int64Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Int64Mask.class, null, int.class, VLENGTH,
@@ -737,6 +738,16 @@ final class Int64Vector extends IntVector {
             }
             return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Int64Mask.class, int.class, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
+        }
+
+        // laneIsSet
+
+        @Override
+        @ForceInline
+        public boolean laneIsSet(int i) {
+            Objects.checkIndex(i, length());
+            return VectorSupport.extract(Int64Mask.class, int.class, VLENGTH,
+                                         this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
         // Reductions

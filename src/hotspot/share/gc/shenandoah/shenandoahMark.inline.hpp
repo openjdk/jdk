@@ -60,9 +60,9 @@ template <class T, StringDedupMode STRING_DEDUP>
 void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Requests* const req, ShenandoahMarkTask* task) {
   oop obj = task->obj();
 
-  shenandoah_assert_not_forwarded(NULL, obj);
-  shenandoah_assert_marked(NULL, obj);
-  shenandoah_assert_not_in_cset_except(NULL, obj, ShenandoahHeap::heap()->cancelled_gc());
+  shenandoah_assert_not_forwarded(nullptr, obj);
+  shenandoah_assert_marked(nullptr, obj);
+  shenandoah_assert_not_in_cset_except(nullptr, obj, ShenandoahHeap::heap()->cancelled_gc());
 
   // Are we in weak subgraph scan?
   bool weak = task->is_weak();
@@ -121,7 +121,7 @@ inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop ob
       live_data[region_idx] = (ShenandoahLiveData) new_val;
     }
   } else {
-    shenandoah_assert_in_correct_region(NULL, obj);
+    shenandoah_assert_in_correct_region(nullptr, obj);
     size_t num_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
 
     for (size_t i = region_idx; i < region_idx + num_regions; i++) {

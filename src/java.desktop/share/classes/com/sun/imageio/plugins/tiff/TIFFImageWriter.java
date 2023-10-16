@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ public class TIFFImageWriter extends ImageWriter {
     private boolean isImageSimple; // Whether image can be copied into directly
     private boolean isInverted; // Whether photometric inversion is required
 
-    private boolean isTiled; // Whether the image is tiled (true) or stipped (false).
+    private boolean isTiled; // Whether the image is tiled (true) or stripped (false).
 
     private int nativePhotometricInterpretation;
     private int photometricInterpretation;
@@ -2012,7 +2012,7 @@ public class TIFFImageWriter extends ImageWriter {
                                 currTile[tcount++] = scalel[b][sample];
                             }
                         }
-                    } else { // ByteOrder.LITLE_ENDIAN
+                    } else { // ByteOrder.LITTLE_ENDIAN
                         for (int s = 0; s < numSamples; s += xSkip) {
                             for (int b = 0; b < numBands; b++) {
                                 int sample = samples[s + b];
@@ -2032,7 +2032,7 @@ public class TIFFImageWriter extends ImageWriter {
                                     (byte)(sample & 0xff);
                             }
                         }
-                    } else { // ByteOrder.LITLE_ENDIAN
+                    } else { // ByteOrder.LITTLE_ENDIAN
                         for (int s = 0; s < numSamples; s += xSkip) {
                             for (int b = 0; b < numBands; b++) {
                                 int sample = samples[s + b];
@@ -2064,7 +2064,7 @@ public class TIFFImageWriter extends ImageWriter {
                                     (byte)(isample & 0x000000ff);
                             }
                         }
-                    } else { // ByteOrder.LITLE_ENDIAN
+                    } else { // ByteOrder.LITTLE_ENDIAN
                         for (int s = 0; s < numSamples; s += xSkip) {
                             for (int b = 0; b < numBands; b++) {
                                 float fsample = fsamples[s + b];
@@ -2107,7 +2107,7 @@ public class TIFFImageWriter extends ImageWriter {
                                         (byte)(sampleOut & 0x000000ff);
                                 }
                             }
-                        } else { // ByteOrder.LITLE_ENDIAN
+                        } else { // ByteOrder.LITTLE_ENDIAN
                             for (int s = 0; s < numSamples; s += xSkip) {
                                 for (int b = 0; b < numBands; b++) {
                                     long sampleOut =
@@ -2139,7 +2139,7 @@ public class TIFFImageWriter extends ImageWriter {
                                         (byte)(isample & 0x000000ff);
                                 }
                             }
-                        } else { // ByteOrder.LITLE_ENDIAN
+                        } else { // ByteOrder.LITTLE_ENDIAN
                             for (int s = 0; s < numSamples; s += xSkip) {
                                 for (int b = 0; b < numBands; b++) {
                                     int isample = samples[s + b];
@@ -2184,7 +2184,7 @@ public class TIFFImageWriter extends ImageWriter {
                                     (byte)(lsample & 0x00000000000000ffL);
                             }
                         }
-                    } else { // ByteOrder.LITLE_ENDIAN
+                    } else { // ByteOrder.LITTLE_ENDIAN
                         for (int s = 0; s < numSamples; s += xSkip) {
                             for (int b = 0; b < numBands; b++) {
                                 double dsample = dsamples[s + b];

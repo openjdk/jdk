@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,12 +101,17 @@ public class CustomRunTestExample {
         return x;
     }
 
-    // This version of @Run passes the RunInfo object as an argument. No other arguments and combiniations are allowed.
+    // This version of @Run passes the RunInfo object as an argument. No other arguments and combinations are allowed.
     @Run(test = "test2")
-    public void runWithRunInfo() {
-        // We could also skip some invocations. This might have an influence on possible @IR rules, need to be careful.
+    public void runWithRunInfo(RunInfo runInfo) {
+        // We could invoke a test multiple times or even skip some invocations completely. This might have an influence
+        // on profiling and possible @IR rules as the graph could be different.
+        if (runInfo.isWarmUp()) {
+            // Do something only when warming this method up (i.e. the IR framework has not queued this method for
+            // compilation, yet).
+        }
         if (RunInfo.getRandom().nextBoolean()) {
-            int returnValue = test(34);
+            int returnValue = test2(34);
             if (returnValue != 34) {
                 throw new RuntimeException("Must match");
             }
@@ -123,6 +128,23 @@ public class CustomRunTestExample {
     @Warmup(100)
     public void runWithWarmUp() {
         int returnValue = test3(34);
+        if (returnValue != 34) {
+            throw new RuntimeException("Must match");
+        }
+    }
+
+    @Test
+    public int test3a(int x) {
+        return x;
+    }
+
+    // To simulate -Xcomp, we can specify a zero warm-up. The IR framework directly compiles the @Test method test3a()
+    // before any invocation of it (called over this @Run method). Afterwards the IR framework invokes the @Run method
+    // exactly once.
+    @Run(test = "test3a")
+    @Warmup(0)
+    public void runSimulateXcomp() {
+        int returnValue = test3a(34);
         if (returnValue != 34) {
             throw new RuntimeException("Must match");
         }
@@ -164,5 +186,30 @@ public class CustomRunTestExample {
         if (returnValue != 42) {
             throw new RuntimeException("Must match");
         }
+    }
+
+    @Test
+    public int test7(int x) {
+        return x;
+    }
+
+    // RunMode.STANDALONE gives the user full control over how the associated @Test method is compiled: The IR framework
+    // only invokes this @Run method once, without any additional warm-up iterations, and does NOT initiate a compilation.
+    // This is entirely left to the @Run method to do. When also doing IR matching, it needs to be ensured that a C2
+    // compilation is triggered. Otherwise, IR matching will fail due to a missing C2 compilation output to match on.
+    @Run(test = "test7", mode = RunMode.STANDALONE)
+    public void run() {
+        final int interpreterResult = test7(34); // First invocation of test7() with interpreter
+        int compiledResult = 0;
+        for (int i = 0; i < 10000; i++) {
+            compiledResult = test7(34); // At some point, test7() is normally C1 and C2 compiled.
+            if (interpreterResult != compiledResult) {
+                // At some point, compiledResult is the value returned by C1 compiled code and later C2 compiled code
+                // of test7(). These values should always match the value returned by the interpreter.
+                throw new RuntimeException("Different result compared to interpreter run");
+            }
+        }
+        // At this point, test7() is definitely C2 compiled due to the high number of invocations in the loop above.
+        // There is not further invocation of this method (and hence of test7()).
     }
 }

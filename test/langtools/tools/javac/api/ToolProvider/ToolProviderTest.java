@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public class ToolProviderTest {
     public static void main(String... args) {
         // The following code allows the test to be skipped when run on
         // an exploded image.
-        // See https://bugs.openjdk.java.net/browse/JDK-8155858
+        // See https://bugs.openjdk.org/browse/JDK-8155858
         Path javaHome = Paths.get(System.getProperty("java.home"));
         Path image = javaHome.resolve("lib").resolve("modules");
         Path modules = javaHome.resolve("modules");

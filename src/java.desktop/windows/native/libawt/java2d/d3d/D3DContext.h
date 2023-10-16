@@ -106,7 +106,7 @@ class D3DGlyphCache;
  *  - holds a glyph cache texture for the associated device
  *  - implements primitives batching mechanism
  */
-class D3DPIPELINE_API D3DContext {
+class D3DContext {
 public:
     /**
      * Releases the old device (if there was one) and all associated

@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4705389
  * @summary Make sure to find removed slots, which test case will be timed out without the fix.

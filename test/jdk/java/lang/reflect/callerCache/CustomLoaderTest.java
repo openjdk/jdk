@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  * @modules jdk.compiler
  * @build CustomLoaderTest jdk.test.lib.compiler.CompilerUtils
  * @run testng/othervm CustomLoaderTest
- * @run testng/othervm -Dsun.reflect.noInflation=true CustomLoaderTest
  *
  * @summary Test method whose parameter types and return type are not visible to the caller.
  */

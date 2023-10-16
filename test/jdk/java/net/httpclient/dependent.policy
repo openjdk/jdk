@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,15 @@ grant codeBase "file:${test.classes}/../../../../test/lib/-" {
     permission java.io.FilePermission "${test.src}/../../../../lib/jdk/test/lib/net/testkeys", "read";
 };
 
-// for JTwork//classes/0/java/net/httpclient/http2/server/*
-grant codeBase "file:${test.classes}/../../../../java/net/httpclient/http2/server/*" {
+// for jdk/httpclient/test/lib/* classes
+grant codeBase "file:${test.classes}/../../../../test/jdk/java/net/httpclient/lib/-" {
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.common";
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.frame";
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.hpack";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.net.www.http";
 
-    permission java.net.SocketPermission "localhost:*", "listen,accept,resolve";
+    permission java.net.SocketPermission "127.0.0.1:*", "listen,accept,resolve";
+    permission java.net.SocketPermission "[::1]:*", "listen,accept,resolve";
     permission java.lang.RuntimePermission "modifyThread";
 };
 
@@ -42,11 +43,15 @@ grant codeBase "file:${test.classes}/*" {
     permission java.io.FilePermission "${user.dir}${/}asFileDownloadTest.tmp.dir", "read,write";
     permission java.io.FilePermission "${user.dir}${/}asFileDownloadTest.tmp.dir/-", "read,write";
 
-    permission java.net.URLPermission "http://localhost:*/http1/-",   "GET,POST";
-    permission java.net.URLPermission "https://localhost:*/https1/-", "GET,POST";
-    permission java.net.URLPermission "http://localhost:*/http2/-",   "GET,POST";
-    permission java.net.URLPermission "https://localhost:*/https2/-", "GET,POST";
-
+    permission java.net.URLPermission "http://127.0.0.1:*/http1/-",   "GET,POST";
+    permission java.net.URLPermission "https://127.0.0.1:*/https1/-", "GET,POST";
+    permission java.net.URLPermission "http://127.0.0.1:*/http2/-",   "GET,POST";
+    permission java.net.URLPermission "https://127.0.0.1:*/https2/-", "GET,POST";
+    // ipv6
+    permission java.net.URLPermission "http://[::1]:*/http1/-",   "GET,POST";
+    permission java.net.URLPermission "https://[::1]:*/https1/-", "GET,POST";
+    permission java.net.URLPermission "http://[::1]:*/http2/-",   "GET,POST";
+    permission java.net.URLPermission "https://[::1]:*/https2/-", "GET,POST";
 
     // needed to grant permission to the HTTP/2 server
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.common";
@@ -58,7 +63,8 @@ grant codeBase "file:${test.classes}/*" {
     permission java.util.logging.LoggingPermission "control";
 
     // needed to grant the HTTP servers
-    permission java.net.SocketPermission "localhost:*", "listen,accept,resolve";
+    permission java.net.SocketPermission "127.0.0.1:*", "listen,accept,resolve";
+    permission java.net.SocketPermission "[::1]:*", "listen,accept,resolve";
 
     permission java.util.PropertyPermission "*", "read";
     permission java.lang.RuntimePermission "modifyThread";

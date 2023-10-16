@@ -98,7 +98,7 @@ final class ExecutableRebrander {
                     createSubstituteData(
                             params), target);
             if (icon != null) {
-                iconSwap(resourceLock, icon.toString());
+                iconSwapWrapper(resourceLock, icon.toString());
             }
         });
     }
@@ -208,10 +208,8 @@ final class ExecutableRebrander {
             });
         }
 
-        if (versionSwap(resourceLock, propList.toArray(String[]::new)) != 0) {
-            throw new RuntimeException(MessageFormat.format(
-                    I18N.getString("error.version-swap"), target));
-        }
+        versionSwapWrapper(resourceLock, propList.toArray(String[]::new),
+                target.toString());
     }
 
     private static void validateValueAndPut(
@@ -226,6 +224,22 @@ final class ExecutableRebrander {
             return;
         }
         data.put(key, value);
+    }
+
+    private static void iconSwapWrapper(long resourceLock,
+            String iconTarget) {
+        if (iconSwap(resourceLock, iconTarget) != 0) {
+            throw new RuntimeException(MessageFormat.format(I18N.getString(
+                    "error.icon-swap"), iconTarget));
+        }
+    }
+
+    private static void versionSwapWrapper(long resourceLock,
+            String[] executableProperties, String target) {
+        if (versionSwap(resourceLock, executableProperties) != 0) {
+            throw new RuntimeException(MessageFormat.format(I18N.getString(
+                    "error.version-swap"), target));
+        }
     }
 
     private List<UpdateResourceAction> extraActions;

@@ -378,10 +378,15 @@ test_GetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread cthread, jthread vthread, co
   }
 
   // #0: Test JVMTI GetLocalInstance function for carrier thread
-  err = jvmti->GetLocalInstance(cthread, 3, &obj);
-  check_jvmti_status(jni, err, "event handler: error in JVMTI GetLocalInstance for carrier thread top frame Continuation.run");
+  {
+    suspend_thread(jvmti, jni, cthread);
 
-  LOG("JVMTI GetLocalInstance succeed for carrier thread top frame Continuation.run()\n");
+    err = jvmti->GetLocalInstance(cthread, 3, &obj);
+    check_jvmti_status(jni, err, "event handler: error in JVMTI GetLocalInstance for carrier thread top frame Continuation.run");
+    LOG("JVMTI GetLocalInstance succeed for carrier thread top frame Continuation.run()\n");
+
+    resume_thread(jvmti, jni, cthread);
+  }
 
   depth = find_method_depth(jvmti, jni, vthread, "producer");
   if (depth == -1) {
@@ -589,6 +594,7 @@ Agent_OnLoad(JavaVM *jvm, char *options,
   memset(&caps, 0, sizeof(caps));
   caps.can_support_virtual_threads = 1;
   caps.can_access_local_variables = 1;
+  caps.can_suspend = 1;
 
   err = jvmti->AddCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {

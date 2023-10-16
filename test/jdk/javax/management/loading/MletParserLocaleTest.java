@@ -39,6 +39,7 @@ import javax.management.MBeanServerFactory;
 import javax.management.ObjectName;
 import javax.management.loading.MLet;
 
+@SuppressWarnings("removal")
 public class MletParserLocaleTest {
 
     public static void main(String[] args) throws Exception {

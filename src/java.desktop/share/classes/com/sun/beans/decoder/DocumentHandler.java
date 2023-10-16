@@ -230,18 +230,18 @@ public final class DocumentHandler extends DefaultHandler {
     }
 
     /**
-     * Returns the array of readed objects.
+     * Returns the array of read objects.
      *
-     * @return the array of readed objects
+     * @return the array of read objects
      */
     public Object[] getObjects() {
         return this.objects.toArray();
     }
 
     /**
-     * Adds the object to the list of readed objects.
+     * Adds the object to the list of read objects.
      *
-     * @param object  the object that is readed from XML document
+     * @param object  the object that is read from XML document
      */
     void addObject(Object object) {
         this.objects.add(object);

@@ -127,9 +127,13 @@ test_GetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread cthread, jthread vthread,
 
   // #0: Test JVMTI GetLocalInstance function for carrier thread
   if (cthread != NULL) {
+    suspend_thread(jvmti, jni, cthread);
+
     err = jvmti->GetLocalInstance(cthread, 3, &msg);
     check_jvmti_status(jni, err, "error in JVMTI GetLocalInstance for carrier thread top frame Continuation.run");
     LOG("JVMTI GetLocalInstance succeed for carrier thread top frame Continuation.run()\n");
+
+    resume_thread(jvmti, jni, cthread);
   }
 
   // #1: Test JVMTI GetLocalObject function with negative frame depth

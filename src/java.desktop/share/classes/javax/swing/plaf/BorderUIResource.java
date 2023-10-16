@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,6 +172,8 @@ public class BorderUIResource implements Border, UIResource, Serializable
         /**
          * Constructs an {@code EmptyBorderUIResource}.
          * @param insets the insets of the border
+         * @throws NullPointerException if the specified {@code insets}
+         *         is {@code null}
          */
         @ConstructorProperties({"borderInsets"})
         public EmptyBorderUIResource(Insets insets) {
@@ -362,7 +364,7 @@ public class BorderUIResource implements Border, UIResource, Serializable
          * Constructs a {@code TitledBorderUIResource}.
          * @param border the border
          * @param title the title the border should display
-         * @param titleJustification the justification fro the title
+         * @param titleJustification the justification for the title
          * @param titlePosition the position for the title
          */
         public TitledBorderUIResource(Border border,
@@ -376,7 +378,7 @@ public class BorderUIResource implements Border, UIResource, Serializable
          * Constructs a {@code TitledBorderUIResource}.
          * @param border the border
          * @param title the title the border should display
-         * @param titleJustification the justification fro the title
+         * @param titleJustification the justification for the title
          * @param titlePosition the position for the title
          * @param titleFont the font for rendering the title
          */
@@ -392,7 +394,7 @@ public class BorderUIResource implements Border, UIResource, Serializable
          * Constructs a {@code TitledBorderUIResource}.
          * @param border the border
          * @param title the title the border should display
-         * @param titleJustification the justification fro the title
+         * @param titleJustification the justification for the title
          * @param titlePosition the position for the title
          * @param titleFont the font for rendering the title
          * @param titleColor the color of the title

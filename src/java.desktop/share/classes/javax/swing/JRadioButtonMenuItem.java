@@ -238,7 +238,7 @@ public class JRadioButtonMenuItem extends JMenuItem implements Accessible {
     }
 
     /**
-     * Overriden to return true, JRadioButtonMenuItem supports
+     * Overridden to return true, JRadioButtonMenuItem supports
      * the selected state.
      */
     boolean shouldUpdateSelectedStateFromAction() {

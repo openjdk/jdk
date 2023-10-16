@@ -6,7 +6,7 @@
  */
 
 class T8238735 {
-     public static void main(String[] args) {
+     public static void meth() {
         boolean first = true;
         first = first ? false : (boolean)(() -> false) ;
     }

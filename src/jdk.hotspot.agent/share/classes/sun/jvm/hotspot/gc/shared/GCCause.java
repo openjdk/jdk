@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ public enum GCCause {
   _heap_inspection ("Heap Inspection Initiated GC"),
   _heap_dump ("Heap Dump Initiated GC"),
   _wb_young_gc ("WhiteBox Initiated Young GC"),
-  _wb_conc_mark ("WhiteBox Initiated Concurrent Mark"),
   _wb_full_gc ("WhiteBox Initiated Full GC"),
 
   _no_gc ("No GC"),
@@ -46,11 +45,6 @@ public enum GCCause {
   _tenured_generation_full ("Tenured Generation Full"),
   _metadata_GC_threshold ("Metadata GC Threshold"),
   _metadata_GC_clear_soft_refs ("Metadata GC Clear Soft References"),
-
-  _cms_generation_full ("CMS Generation Full"),
-  _cms_initial_mark ("CMS Initial Mark"),
-  _cms_final_remark ("CMS Final Remark"),
-  _cms_concurrent_mark ("CMS Concurrent Mark"),
 
   _old_generation_expanded_on_last_scavenge ("Old Generation Expanded On Last Scavenge"),
   _old_generation_too_full_to_scavenge ("Old Generation Too Full To Scavenge"),

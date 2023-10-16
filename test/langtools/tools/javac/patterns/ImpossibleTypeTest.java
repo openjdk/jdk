@@ -6,7 +6,7 @@
  */
 public class ImpossibleTypeTest {
 
-    public static void main(String[] args) {
+    public static void meth() {
 
         int in = 42;
         Integer i = 42;

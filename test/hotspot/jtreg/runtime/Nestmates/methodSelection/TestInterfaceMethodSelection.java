@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
  *          PB_A_PI.jcod \
  *          PB_PA_I.jcod
  * @run main TestInterfaceMethodSelection
- * @run main/othervm -Dsun.reflect.noInflation=true TestInterfaceMethodSelection
  */
 
 // The first run will use NativeMethodAccessor and due to the limited number

@@ -27,8 +27,9 @@
 #include "utilities/population_count.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include <limits>
 #include "unittest.hpp"
+
+#include <limits>
 
 #define BITS_IN_BYTE_ARRAY_SIZE 256
 

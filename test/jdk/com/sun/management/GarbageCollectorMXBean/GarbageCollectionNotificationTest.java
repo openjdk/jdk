@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,11 @@
  * @requires vm.opt.ExplicitGCInvokesConcurrent == null | vm.opt.ExplicitGCInvokesConcurrent == false
  * @modules java.management/sun.management
  *          jdk.management
- * @run     main/othervm GarbageCollectionNotificationTest
+ * @library /test/lib /test/hotspot/jtreg
+ * @build   jdk.test.whitebox.WhiteBox
+ * @run     driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run     main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                       GarbageCollectionNotificationTest
  */
 
 import java.util.*;
@@ -42,6 +46,8 @@ import com.sun.management.GcInfo;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.lang.reflect.Field;
+import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.gc.GC;
 
 public class GarbageCollectionNotificationTest {
     private static HashMap<String,Boolean> listenerInvoked = new HashMap<String,Boolean>();
@@ -98,6 +104,10 @@ public class GarbageCollectionNotificationTest {
         Object data[] = new Object[32];
         for(int i = 0; i<100000000; i++) {
             data[i%32] = new int[8];
+        }
+        // Trigger G1's concurrent mark
+        if (GC.G1.isSelected()) {
+            WhiteBox.getWhiteBox().g1RunConcurrentGC();
         }
         int wakeup = 0;
         synchronized(synchronizer) {

@@ -1,0 +1,2 @@
+StaticFinalInit.java:8:22: compiler.err.var.might.not.have.been.initialized: i
+1 error

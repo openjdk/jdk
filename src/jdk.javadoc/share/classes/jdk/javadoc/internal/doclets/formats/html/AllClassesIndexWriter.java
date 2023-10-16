@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import javax.lang.model.element.TypeElement;
 
@@ -37,12 +38,8 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
-import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
 
 /**
@@ -51,47 +48,18 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
 public class AllClassesIndexWriter extends HtmlDocletWriter {
 
     /**
-     * Index of all the classes.
-     */
-    protected IndexBuilder indexBuilder;
-
-    /**
      * Construct AllClassesIndexWriter object. Also initializes the indexBuilder variable in this
      * class.
      *
      * @param configuration The current configuration
-     * @param filename Path to the file which is getting generated.
-     * @param indexBuilder Unicode based Index from {@link IndexBuilder}
      */
-    public AllClassesIndexWriter(HtmlConfiguration configuration,
-            DocPath filename, IndexBuilder indexBuilder) {
-        super(configuration, filename);
-        this.indexBuilder = indexBuilder;
+    public AllClassesIndexWriter(HtmlConfiguration configuration) {
+        super(configuration, DocPaths.ALLCLASSES_INDEX);
     }
 
-    /**
-     * Create AllClassesIndexWriter object.
-     *
-     * @param configuration The current configuration
-     * @param indexBuilder IndexBuilder object for all classes index.
-     * @throws DocFileIOException
-     */
-    public static void generate(HtmlConfiguration configuration,
-            IndexBuilder indexBuilder) throws DocFileIOException {
-        generate(configuration, indexBuilder, DocPaths.ALLCLASSES_INDEX);
-    }
-
-    private static void generate(HtmlConfiguration configuration, IndexBuilder indexBuilder,
-            DocPath fileName) throws DocFileIOException {
-        AllClassesIndexWriter allClassGen = new AllClassesIndexWriter(configuration,
-                fileName, indexBuilder);
-        allClassGen.buildAllClassesFile();
-    }
-
-    /**
-     * Print all the classes in the file.
-     */
-    protected void buildAllClassesFile() throws DocFileIOException {
+    @Override
+    public void buildPage() throws DocFileIOException {
+        messages.notice("doclet.Building_Index_For_All_Classes");
         String label = resources.getText("doclet.All_Classes_And_Interfaces");
         Content allClassesContent = new ContentBuilder();
         addContents(allClassesContent);
@@ -111,24 +79,20 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      * @param target the content to which the links will be added
      */
     protected void addContents(Content target) {
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<TypeElement>(HtmlStyle.summaryTable)
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                 .setId(HtmlIds.ALL_CLASSES_TABLE)
                 .setDefaultTab(contents.allClassesAndInterfacesLabel)
                 .addTab(contents.interfaces, utils::isPlainInterface)
-                .addTab(contents.classes, e -> utils.isNonThrowableClass((TypeElement)e))
+                .addTab(contents.classes, utils::isNonThrowableClass)
                 .addTab(contents.enums, utils::isEnum)
-                .addTab(contents.records, e -> utils.isRecord((TypeElement)e))
-                .addTab(contents.exceptionClasses, e -> utils.isThrowable((TypeElement)e))
+                .addTab(contents.records, utils::isRecord)
+                .addTab(contents.exceptionClasses, utils::isThrowable)
                 .addTab(contents.annotationTypes, utils::isAnnotationInterface);
-        for (Character unicode : indexBuilder.getFirstCharacters()) {
-            for (IndexItem indexItem : indexBuilder.getItems(unicode)) {
-                TypeElement typeElement = (TypeElement) indexItem.getElement();
-                if (typeElement != null && utils.isCoreClass(typeElement)) {
-                    addTableRow(table, typeElement);
-                }
-            }
+        Set<TypeElement> typeElements = getTypeElements();
+        for (TypeElement typeElement : typeElements) {
+            addTableRow(table, typeElement);
         }
         Content titleContent = contents.allClassesAndInterfacesLabel;
         var pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
@@ -140,16 +104,34 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         }
     }
 
+    private Set<TypeElement> getTypeElements() {
+        Set<TypeElement> classes = new TreeSet<>(utils.comparators.allClassesComparator());
+        boolean noDeprecated = options.noDeprecated();
+        Set<TypeElement> includedTypes = configuration.getIncludedTypeElements();
+        for (TypeElement typeElement : includedTypes) {
+            if (utils.hasHiddenTag(typeElement) || !utils.isCoreClass(typeElement)) {
+                continue;
+            }
+            if (noDeprecated
+                    && (utils.isDeprecated(typeElement)
+                    || utils.isDeprecated(utils.containingPackage(typeElement)))) {
+                continue;
+            }
+            classes.add(typeElement);
+        }
+        return classes;
+    }
+
     /**
      * Add table row.
      *
      * @param table the table to which the row will be added
      * @param klass the type to be added to the table
      */
-    protected void addTableRow(Table table, TypeElement klass) {
+    protected void addTableRow(Table<TypeElement> table, TypeElement klass) {
         List<Content> rowContents = new ArrayList<>();
         Content classLink = getLink(new HtmlLinkInfo(
-                configuration, HtmlLinkInfo.Kind.INDEX, klass));
+                configuration, HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_IN_LABEL, klass));
         ContentBuilder description = new ContentBuilder();
         Set<ElementFlag> flags = utils.elementFlags(klass);
         if (flags.contains(ElementFlag.PREVIEW)) {

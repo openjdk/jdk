@@ -33,13 +33,13 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -55,11 +55,8 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
-import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
-import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
@@ -193,74 +190,6 @@ public class WorkArounds {
         return elementUtils.getTypeElement(className);
     }
 
-    // TODO:  need to re-implement this using j.l.m. correctly!, this has
-    //        implications on testInterface, the note here is that javac's supertype
-    //        does the right thing returning Parameters in scope.
-    /*
-     * Returns the closest superclass (not the superinterface) that contains
-     * a method that is both:
-     *
-     *   - overridden by the specified method, and
-     *   - is not itself a *simple* override
-     *
-     * If no such class can be found, returns null.
-     *
-     * If the specified method belongs to an interface, the only considered
-     * superclass is java.lang.Object no matter how many other interfaces
-     * that interface extends.
-     */
-    public DeclaredType overriddenType(ExecutableElement method) {
-        if (utils.isStatic(method)) {
-            return null;
-        }
-        MethodSymbol sym = (MethodSymbol) method;
-        ClassSymbol origin = (ClassSymbol) sym.owner;
-        for (Type t = javacTypes.supertype(origin.type);
-             t.hasTag(TypeTag.CLASS);
-             t = javacTypes.supertype(t)) {
-            ClassSymbol c = (ClassSymbol) t.tsym;
-            for (Symbol sym2 : c.members().getSymbolsByName(sym.name)) {
-                if (sym.overrides(sym2, origin, javacTypes, true)) {
-                    // Ignore those methods that may be a simple override
-                    // and allow the real API method to be found.
-                    if (utils.isSimpleOverride((MethodSymbol)sym2)) {
-                        continue;
-                    }
-                    assert t.hasTag(TypeTag.CLASS) && !t.isInterface();
-                    return (Type.ClassType) t;
-                }
-            }
-        }
-        return null;
-    }
-
-    // TODO: the method jx.l.m.Elements::overrides does not check
-    // the return type, see JDK-8174840 until that is resolved,
-    // use a  copy of the same method, with a return type check.
-
-    // Note: the rider.overrides call in this method *must* be consistent
-    // with the call in overrideType(....), the method above.
-    public boolean overrides(ExecutableElement e1, ExecutableElement e2, TypeElement cls) {
-        MethodSymbol rider = (MethodSymbol)e1;
-        MethodSymbol ridee = (MethodSymbol)e2;
-        ClassSymbol origin = (ClassSymbol)cls;
-
-        return rider.name == ridee.name &&
-
-               // not reflexive as per JLS
-               rider != ridee &&
-
-               // we don't care if ridee is static, though that wouldn't
-               // compile
-               !rider.isStatic() &&
-
-               // Symbol.overrides assumes the following
-               ridee.isMemberOf(origin, javacTypes) &&
-
-               // check access, signatures and check return types
-               rider.overrides(ridee, origin, javacTypes, true);
-    }
-
     // TODO: jx.l.m ?
     public Location getLocationForModule(ModuleElement mdle) {
         ModuleSymbol msym = (ModuleSymbol)mdle;
@@ -347,8 +276,8 @@ public class WorkArounds {
         NewSerializedForm(Utils utils, Elements elements, TypeElement te) {
             this.utils = utils;
             this.elements = elements;
-            methods = new TreeSet<>(utils.comparators.makeGeneralPurposeComparator());
-            fields = new TreeSet<>(utils.comparators.makeGeneralPurposeComparator());
+            methods = new TreeSet<>(utils.comparators.generalPurposeComparator());
+            fields = new TreeSet<>(utils.comparators.generalPurposeComparator());
             if (utils.isExternalizable(te)) {
                 /* look up required public accessible methods,
                  *   writeExternal and readExternal.
@@ -525,6 +454,30 @@ public class WorkArounds {
     public boolean accessInternalAPI() {
         Options compilerOptions = Options.instance(toolEnv.context);
         return compilerOptions.isSet("accessInternalAPI");
+    }
+
+    /**
+     * Returns a map containing {@code jdk.internal.javac.PreviewFeature.JEP} element values associated with the
+     * {@code jdk.internal.javac.PreviewFeature.Feature} enum constant identified by {@code feature}.
+     *
+     * This method uses internal javac features (although only reflectively).
+     *
+     * @param feature the name of the PreviewFeature.Feature enum value
+     * @return the map of PreviewFeature.JEP annotation element values, or an empty map
+     */
+    public Map<? extends ExecutableElement, ? extends AnnotationValue> getJepInfo(String feature) {
+        TypeElement featureType = elementUtils.getTypeElement("jdk.internal.javac.PreviewFeature.Feature");
+        TypeElement jepType = elementUtils.getTypeElement("jdk.internal.javac.PreviewFeature.JEP");
+        var featureVar = featureType.getEnclosedElements().stream()
+                .filter(e -> feature.equals(e.getSimpleName().toString())).findFirst();
+        if (featureVar.isPresent()) {
+            for (AnnotationMirror anno : featureVar.get().getAnnotationMirrors()) {
+                if (anno.getAnnotationType().asElement().equals(jepType)) {
+                    return anno.getElementValues();
+                }
+            }
+        }
+        return Map.of();
     }
 
 }

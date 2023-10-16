@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,7 +206,7 @@ public class BasicTableUI extends TableUI
                 boolean inSelection) {
             super(name);
 
-            // Actions spcifying true for "inSelection" are
+            // Actions specifying true for "inSelection" are
             // fairly sensitive to bad parameter values. They require
             // that one of dx and dy be 0 and the other be -1 or 1.
             // Bogus parameter values could cause an infinite loop.
@@ -296,7 +296,7 @@ public class BasicTableUI extends TableUI
             } else {
                 totalCount = 0;
                 // A bogus assignment to stop javac from complaining
-                // about unitialized values. In this case, these
+                // about uninitialized values. In this case, these
                 // won't even be used.
                 minX = maxX = minY = maxY = 0;
             }
@@ -437,7 +437,7 @@ public class BasicTableUI extends TableUI
                         return;
                     }
 
-                    Dimension delta = table.getParent().getSize();
+                    Dimension delta = SwingUtilities.getUnwrappedParent(table).getSize();
 
                     if (vertically) {
                         Rectangle r = table.getCellRect(leadRow, 0, true);
@@ -526,7 +526,7 @@ public class BasicTableUI extends TableUI
                 // for the focus regardless of who owns the focus at the
                 // time the call to requestFocus() is made. The optimisation
                 // to ignore the call to requestFocus() when the component
-                // already has focus may ligitimately be made as the
+                // already has focus may legitimately be made as the
                 // request focus event is dequeued, not before.
 
                 // boolean wasEditingWithFocus = table.isEditing() &&
@@ -617,6 +617,9 @@ public class BasicTableUI extends TableUI
                 }
                 */
             } else if (key == CANCEL_EDITING) {
+                if (table.isEditing()) {
+                    table.getCellEditor().cancelCellEditing();
+                }
                 table.removeEditor();
             } else if (key == SELECT_ALL) {
                 table.selectAll();
@@ -1444,9 +1447,9 @@ public class BasicTableUI extends TableUI
         // JTable's original row height is 16.  To correctly display the
         // contents on Linux we should have set it to 18, Windows 19 and
         // Solaris 20.  As these values vary so much it's too hard to
-        // be backward compatable and try to update the row height, we're
-        // therefor NOT going to adjust the row height based on font.  If the
-        // developer changes the font, it's there responsability to update
+        // be backward compatible and try to update the row height, we're
+        // therefore NOT going to adjust the row height based on font.  If the
+        // developer changes the font, it's their responsibility to update
         // the row height.
 
         LookAndFeel.installProperty(table, "opaque", Boolean.TRUE);
@@ -2118,6 +2121,9 @@ public class BasicTableUI extends TableUI
     private void paintDraggedArea(Graphics g, int rMin, int rMax, TableColumn draggedColumn, int distance) {
         int draggedColumnIndex = viewIndexForColumn(draggedColumn);
 
+        if (draggedColumnIndex == -1) {
+            return;
+        }
         Rectangle minCell = table.getCellRect(rMin, draggedColumnIndex, true);
         Rectangle maxCell = table.getCellRect(rMax, draggedColumnIndex, true);
 
@@ -2207,10 +2213,10 @@ public class BasicTableUI extends TableUI
         /**
          * Create a Transferable to use as the source for a data transfer.
          *
-         * @param c  The component holding the data to be transfered.  This
+         * @param c  The component holding the data to be transferred.  This
          *  argument is provided to enable sharing of TransferHandlers by
          *  multiple components.
-         * @return  The representation of the data to be transfered.
+         * @return  The representation of the data to be transferred.
          *
          */
         protected Transferable createTransferable(JComponent c) {

@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.management.*;
 import javax.management.openmbean.CompositeData;
 import java.lang.management.*;
-import static java.lang.management.MemoryNotificationInfo.*;;
+import static java.lang.management.MemoryNotificationInfo.*;
 import static java.lang.management.ManagementFactory.*;
 
 import jdk.test.whitebox.code.Compiler;

@@ -23,7 +23,7 @@
 
 package q;
 
-import jdk.internal.perf.PerfCounter;;
+import jdk.internal.perf.PerfCounter;
 
 public class Counter {
      public static void create(String name) {

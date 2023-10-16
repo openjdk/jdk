@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public class InputContext extends java.awt.im.InputContext
     // holding bin for previously used input method instances, but not the current one
     private HashMap<InputMethodLocator, InputMethod> usedInputMethods;
 
-    // the current client component is kept until the user focusses on a different
+    // the current client component is kept until the user focuses on a different
     // client component served by the same input context. When that happens, we call
     // endComposition so that text doesn't jump from one component to another.
     private Component currentClientComponent;
@@ -444,7 +444,7 @@ public class InputContext extends java.awt.im.InputContext
      * input method window.
      *
      * @param source the component losing the focus
-     * @isTemporary whether the focus change is temporary
+     * @param isTemporary whether the focus change is temporary
      */
     private void focusLost(Component source, boolean isTemporary) {
 
@@ -782,8 +782,8 @@ public class InputContext extends java.awt.im.InputContext
     }
 
     /**
-     * Turns off the native IM. The native IM is diabled when
-     * the deactive method of InputMethod is called. It is
+     * Turns off the native IM. The native IM is disabled when
+     * the deactivate method of InputMethod is called. It is
      * delayed until the active method is called on a different
      * peer component. This method is provided to explicitly disable
      * the native IM.

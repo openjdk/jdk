@@ -46,19 +46,13 @@ namespace metaspace {
 // From there on it goes:
 //
 // size    level
-// 4MB     0
-// 2MB     1
-// 1MB     2
-// 512K    3
-// 256K    4
-// 128K    5
-// 64K     6
-// 32K     7
-// 16K     8
-// 8K      9
-// 4K      10
-// 2K      11
-// 1K      12
+// 16MB    0
+// 8MB     1
+// 4MB     2
+// ...
+// 4K      12
+// 2K      13
+// 1K      14
 
 // Metachunk level (must be signed)
 typedef signed char chunklevel_t;
@@ -67,8 +61,8 @@ typedef signed char chunklevel_t;
 
 namespace chunklevel {
 
-static const size_t   MAX_CHUNK_BYTE_SIZE    = 4 * M;
-static const int      NUM_CHUNK_LEVELS       = 13;
+static const size_t   MAX_CHUNK_BYTE_SIZE    = 16 * M;
+static const int      NUM_CHUNK_LEVELS       = 15;
 static const size_t   MIN_CHUNK_BYTE_SIZE    = (MAX_CHUNK_BYTE_SIZE >> ((size_t)NUM_CHUNK_LEVELS - 1));
 
 static const size_t   MIN_CHUNK_WORD_SIZE    = MIN_CHUNK_BYTE_SIZE / sizeof(MetaWord);
@@ -101,22 +95,24 @@ inline size_t word_size_for_level(chunklevel_t level) {
 chunklevel_t level_fitting_word_size(size_t word_size);
 
 // Shorthands to refer to exact sizes
-static const chunklevel_t CHUNK_LEVEL_4M =     ROOT_CHUNK_LEVEL;
-static const chunklevel_t CHUNK_LEVEL_2M =    (ROOT_CHUNK_LEVEL + 1);
-static const chunklevel_t CHUNK_LEVEL_1M =    (ROOT_CHUNK_LEVEL + 2);
-static const chunklevel_t CHUNK_LEVEL_512K =  (ROOT_CHUNK_LEVEL + 3);
-static const chunklevel_t CHUNK_LEVEL_256K =  (ROOT_CHUNK_LEVEL + 4);
-static const chunklevel_t CHUNK_LEVEL_128K =  (ROOT_CHUNK_LEVEL + 5);
-static const chunklevel_t CHUNK_LEVEL_64K =   (ROOT_CHUNK_LEVEL + 6);
-static const chunklevel_t CHUNK_LEVEL_32K =   (ROOT_CHUNK_LEVEL + 7);
-static const chunklevel_t CHUNK_LEVEL_16K =   (ROOT_CHUNK_LEVEL + 8);
-static const chunklevel_t CHUNK_LEVEL_8K =    (ROOT_CHUNK_LEVEL + 9);
-static const chunklevel_t CHUNK_LEVEL_4K =    (ROOT_CHUNK_LEVEL + 10);
-static const chunklevel_t CHUNK_LEVEL_2K =    (ROOT_CHUNK_LEVEL + 11);
-static const chunklevel_t CHUNK_LEVEL_1K =    (ROOT_CHUNK_LEVEL + 12);
+static const chunklevel_t CHUNK_LEVEL_16M =    ROOT_CHUNK_LEVEL;
+static const chunklevel_t CHUNK_LEVEL_8M =    (ROOT_CHUNK_LEVEL + 1);
+static const chunklevel_t CHUNK_LEVEL_4M =    (ROOT_CHUNK_LEVEL + 2);
+static const chunklevel_t CHUNK_LEVEL_2M =    (ROOT_CHUNK_LEVEL + 3);
+static const chunklevel_t CHUNK_LEVEL_1M =    (ROOT_CHUNK_LEVEL + 4);
+static const chunklevel_t CHUNK_LEVEL_512K =  (ROOT_CHUNK_LEVEL + 5);
+static const chunklevel_t CHUNK_LEVEL_256K =  (ROOT_CHUNK_LEVEL + 6);
+static const chunklevel_t CHUNK_LEVEL_128K =  (ROOT_CHUNK_LEVEL + 7);
+static const chunklevel_t CHUNK_LEVEL_64K =   (ROOT_CHUNK_LEVEL + 8);
+static const chunklevel_t CHUNK_LEVEL_32K =   (ROOT_CHUNK_LEVEL + 9);
+static const chunklevel_t CHUNK_LEVEL_16K =   (ROOT_CHUNK_LEVEL + 10);
+static const chunklevel_t CHUNK_LEVEL_8K =    (ROOT_CHUNK_LEVEL + 11);
+static const chunklevel_t CHUNK_LEVEL_4K =    (ROOT_CHUNK_LEVEL + 12);
+static const chunklevel_t CHUNK_LEVEL_2K =    (ROOT_CHUNK_LEVEL + 13);
+static const chunklevel_t CHUNK_LEVEL_1K =    (ROOT_CHUNK_LEVEL + 14);
 
 STATIC_ASSERT(CHUNK_LEVEL_1K == HIGHEST_CHUNK_LEVEL);
-STATIC_ASSERT(CHUNK_LEVEL_4M == LOWEST_CHUNK_LEVEL);
+STATIC_ASSERT(CHUNK_LEVEL_16M == LOWEST_CHUNK_LEVEL);
 STATIC_ASSERT(ROOT_CHUNK_LEVEL == LOWEST_CHUNK_LEVEL);
 
 /////////////////////////////////////////////////////////

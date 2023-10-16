@@ -67,16 +67,16 @@ public enum EventWriterMethod {
      *
      * @return the method
      */
-    public static EventWriterMethod lookupMethod(FieldInfo v) {
+    public static EventWriterMethod lookupMethod(FieldInfo field) {
         // event thread
-        if (v.fieldName().equals(EventInstrumentation.FIELD_EVENT_THREAD)) {
+        if (field.name().equals(EventInstrumentation.FIELD_EVENT_THREAD)) {
             return EventWriterMethod.PUT_EVENT_THREAD;
         }
         for (EventWriterMethod m : EventWriterMethod.values()) {
-            if (v.fieldDescriptor().equals(m.typeDescriptor)) {
+            if (field.descriptor().equals(m.typeDescriptor)) {
                 return m;
             }
         }
-        throw new Error("Unknown type " + v.fieldDescriptor());
+        throw new Error("Unknown type " + field.descriptor());
     }
 }

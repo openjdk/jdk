@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ class CheckForUnmarkedOops : public BasicOopIterateClosure {
     if (_young_gen->is_in_reserved(obj) &&
         !_card_table->addr_is_marked_imprecise(p)) {
       // Don't overwrite the first missing card mark
-      if (_unmarked_addr == NULL) {
+      if (_unmarked_addr == nullptr) {
         _unmarked_addr = (HeapWord*)p;
       }
     }
@@ -57,13 +57,13 @@ class CheckForUnmarkedOops : public BasicOopIterateClosure {
 
  public:
   CheckForUnmarkedOops(PSYoungGen* young_gen, PSCardTable* card_table) :
-    _young_gen(young_gen), _card_table(card_table), _unmarked_addr(NULL) { }
+    _young_gen(young_gen), _card_table(card_table), _unmarked_addr(nullptr) { }
 
   virtual void do_oop(oop* p)       { CheckForUnmarkedOops::do_oop_work(p); }
   virtual void do_oop(narrowOop* p) { CheckForUnmarkedOops::do_oop_work(p); }
 
   bool has_unmarked_oop() {
-    return _unmarked_addr != NULL;
+    return _unmarked_addr != nullptr;
   }
 };
 

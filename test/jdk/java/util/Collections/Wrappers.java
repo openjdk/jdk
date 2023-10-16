@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
 
-import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 @Test(groups = "unit")
 public class Wrappers {
@@ -66,9 +65,11 @@ public class Wrappers {
         }
 
         cases.add(new Object[] { Collections.unmodifiableCollection(seedList) });
+        cases.add(new Object[] { Collections.unmodifiableSequencedCollection(seedList) });
         cases.add(new Object[] { Collections.unmodifiableList(seedList) });
         cases.add(new Object[] { Collections.unmodifiableList(seedRandomAccess) });
         cases.add(new Object[] { Collections.unmodifiableSet(seedSet) });
+        cases.add(new Object[] { Collections.unmodifiableSequencedSet(seedSet) });
         cases.add(new Object[] { Collections.unmodifiableSortedSet(seedSet) });
         cases.add(new Object[] { Collections.unmodifiableNavigableSet(seedSet) });
 
@@ -77,6 +78,24 @@ public class Wrappers {
         cases.add(new Object[] { Collections.unmodifiableMap(seedMap).entrySet() });
         cases.add(new Object[] { Collections.unmodifiableMap(seedMap).keySet() });
         cases.add(new Object[] { Collections.unmodifiableMap(seedMap).values() });
+        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).entrySet() });
+        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).keySet() });
+        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).values() });
+        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().entrySet() });
+        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().keySet() });
+        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().values() });
+        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedEntrySet() });
+        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedKeySet() });
+        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedValues() });
+        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedEntrySet().reversed() });
+        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedKeySet().reversed() });
+        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedValues().reversed() });
+        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedEntrySet() });
+        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedKeySet() });
+        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedValues() });
+        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedEntrySet().reversed() });
+        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedKeySet().reversed() });
+        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedValues().reversed() });
         cases.add(new Object[] { Collections.unmodifiableSortedMap(seedMap).entrySet() });
         cases.add(new Object[] { Collections.unmodifiableSortedMap(seedMap).keySet() });
         cases.add(new Object[] { Collections.unmodifiableSortedMap(seedMap).values() });
@@ -136,11 +155,14 @@ public class Wrappers {
     @Test(dataProvider = "collections")
     public static void testAllDefaultMethodsOverridden(Collection c) throws NoSuchMethodException {
         Class cls = c.getClass();
+        var notOverridden = new ArrayList<Method>();
         for (Method m: defaultMethods) {
             Method m2 = cls.getMethod(m.getName(), m.getParameterTypes());
-            // default had been override
-            assertFalse(m2.isDefault(), cls.getCanonicalName());
+            if (m2.isDefault()) {
+                notOverridden.add(m);
+            }
         }
+        assertTrue(notOverridden.isEmpty(), cls.getName() + " does not override " + notOverridden);
     }
 }
 

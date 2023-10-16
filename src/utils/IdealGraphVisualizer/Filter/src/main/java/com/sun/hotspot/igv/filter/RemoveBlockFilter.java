@@ -23,9 +23,9 @@
  */
 package com.sun.hotspot.igv.filter;
 
-import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Block;
 import com.sun.hotspot.igv.graph.BlockSelector;
+import com.sun.hotspot.igv.graph.Diagram;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;

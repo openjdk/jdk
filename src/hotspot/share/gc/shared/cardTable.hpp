@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,64 +44,31 @@ protected:
   // The declaration order of these const fields is important; see the
   // constructor before changing.
   const MemRegion _whole_heap;       // the region covered by the card table
-  size_t          _guard_index;      // index of very last element in the card
-                                     // table; it is set to a guard value
-                                     // (last_card) and should never be modified
-  size_t          _last_valid_index; // index of the last valid element
   const size_t    _page_size;        // page size used when mapping _byte_map
   size_t          _byte_map_size;    // in bytes
   CardValue*      _byte_map;         // the card marking array
   CardValue*      _byte_map_base;
-
-  int _cur_covered_regions;
-
-  // The covered regions should be in address order.
-  MemRegion* _covered;
-  // The committed regions correspond one-to-one to the covered regions.
-  // They represent the card-table memory that has been committed to service
-  // the corresponding covered region.  It may be that committed region for
-  // one covered region corresponds to a larger region because of page-size
-  // roundings.  Thus, a committed region for one covered region may
-  // actually extend onto the card-table space for the next covered region.
-  MemRegion* _committed;
-
-  // The last card is a guard card, and we commit the page for it so
-  // we can use the card for verification purposes. We make sure we never
-  // uncommit the MemRegion for that page.
-  MemRegion _guard_region;
-
-  inline size_t compute_byte_map_size();
-
-  // Finds and return the index of the region, if any, to which the given
-  // region would be contiguous.  If none exists, assign a new region and
-  // returns its index.  Requires that no more than the maximum number of
-  // covered regions defined in the constructor are ever in use.
-  int find_covering_region_by_base(HeapWord* base);
-
-  // Returns the leftmost end of a committed region corresponding to a
-  // covered region before covered region "ind", or else "NULL" if "ind" is
-  // the first covered region.
-  HeapWord* largest_prev_committed_end(int ind) const;
-
-  // Returns the part of the region mr that doesn't intersect with
-  // any committed region other than self.  Used to prevent uncommitting
-  // regions that are also committed by other regions.  Also protects
-  // against uncommitting the guard region.
-  MemRegion committed_unique_to_self(int self, MemRegion mr) const;
 
   // Some barrier sets create tables whose elements correspond to parts of
   // the heap; the CardTableBarrierSet is an example.  Such barrier sets will
   // normally reserve space for such tables, and commit parts of the table
   // "covering" parts of the heap that are committed. At most one covered
   // region per generation is needed.
-  static const int _max_covered_regions = 2;
+  static constexpr int max_covered_regions = 2;
+
+  // The covered regions should be in address order.
+  MemRegion _covered[max_covered_regions];
+
+  // The last card is a guard card; never committed.
+  MemRegion _guard_region;
+
+  inline size_t compute_byte_map_size(size_t num_bytes);
 
   enum CardValues {
     clean_card                  = (CardValue)-1,
 
     dirty_card                  =  0,
-    last_card                   =  1,
-    CT_MR_BS_last_reserved      =  2
+    CT_MR_BS_last_reserved      =  1
   };
 
   // a word's worth (row) of clean card values
@@ -112,30 +79,27 @@ protected:
   static uint _card_size;
   static uint _card_size_in_words;
 
+  size_t last_valid_index() const {
+    return cards_required(_whole_heap.word_size()) - 1;
+  }
+
+private:
+  void initialize_covered_region(void* region0_start, void* region1_start);
+
+  MemRegion committed_for(const MemRegion mr) const;
 public:
   CardTable(MemRegion whole_heap);
-  virtual ~CardTable();
-  virtual void initialize();
+  virtual ~CardTable() = default;
 
-  // The kinds of precision a CardTable may offer.
-  enum PrecisionStyle {
-    Precise,
-    ObjHeadPreciseArray
-  };
-
-  // Tells what style of precision this card table offers.
-  PrecisionStyle precision() {
-    return ObjHeadPreciseArray; // Only one supported for now.
-  }
+  void initialize(void* region0_start, void* region1_start);
 
   // *** Barrier set functions.
 
   // Initialization utilities; covered_words is the size of the covered region
   // in, um, words.
-  inline size_t cards_required(size_t covered_words) {
-    // Add one for a guard card, used to detect errors.
-    const size_t words = align_up(covered_words, _card_size_in_words);
-    return words / _card_size_in_words + 1;
+  inline size_t cards_required(size_t covered_words) const {
+    assert(is_aligned(covered_words, _card_size_in_words), "precondition");
+    return covered_words / _card_size_in_words;
   }
 
   // Dirty the bytes corresponding to "mr" (not all of which must be
@@ -171,8 +135,7 @@ public:
     return byte_for(p) + 1;
   }
 
-  virtual void invalidate(MemRegion mr);
-  void clear(MemRegion mr);
+  void invalidate(MemRegion mr);
 
   // Provide read-only access to the card table array.
   const CardValue* byte_for_const(const void* p) const {
@@ -213,7 +176,7 @@ public:
   }
 
   // Resize one of the regions covered by the remembered set.
-  virtual void resize_covered_region(MemRegion new_region);
+  void resize_covered_region(MemRegion new_region);
 
   // *** Card-table-RemSet-specific things.
 
@@ -248,9 +211,6 @@ public:
 
   // Print a description of the memory for the card table
   virtual void print_on(outputStream* st) const;
-
-  void verify();
-  void verify_guard();
 
   // val_equals -> it will check that all cards covered by mr equal val
   // !val_equals -> it will check that all cards covered by mr do not equal val

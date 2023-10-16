@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /*
  * @summary This is a helper class to find the location of a system tray icon,
@@ -210,7 +212,7 @@ public class SystemTrayIconHelper {
         String sysv = System.getProperty("os.version");
         System.out.println("System version is " + sysv);
         //Additional step to raise the system try in Gnome 3 in OEL 7
-        if(isOel7()) {
+        if(isOel7orLater()) {
             System.out.println("OEL 7 detected");
             GraphicsConfiguration gc = GraphicsEnvironment.
                     getLocalGraphicsEnvironment().getDefaultScreenDevice().
@@ -234,9 +236,17 @@ public class SystemTrayIconHelper {
         return false;
     }
 
-    public static boolean isOel7() {
-        return System.getProperty("os.name").toLowerCase()
-                .contains("linux") && System.getProperty("os.version")
-                .toLowerCase().contains("el7");
+    public static boolean isOel7orLater() {
+        if (System.getProperty("os.name").toLowerCase().contains("linux") &&
+            System.getProperty("os.version").toLowerCase().contains("el")) {
+            Pattern p = Pattern.compile("el(\\d+)");
+            Matcher m = p.matcher(System.getProperty("os.version"));
+            if (m.find()) {
+                try {
+                    return Integer.parseInt(m.group(1)) >= 7;
+                } catch (NumberFormatException nfe) {}
+            }
+        }
+        return false;
     }
 }

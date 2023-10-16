@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "ci/ciMethodType.hpp"
 #include "ci/ciSignature.hpp"
+#include "ci/ciStreams.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -38,34 +39,31 @@
 // ------------------------------------------------------------------
 // ciSignature::ciSignature
 ciSignature::ciSignature(ciKlass* accessing_klass, const constantPoolHandle& cpool, ciSymbol* symbol)
-  : _symbol(symbol), _accessing_klass(accessing_klass), _types(CURRENT_ENV->arena(), 8, 0, NULL) {
+  : _symbol(symbol), _accessing_klass(accessing_klass), _types(CURRENT_ENV->arena(), 8, 0, nullptr) {
   ASSERT_IN_VM;
   EXCEPTION_CONTEXT;
-  assert(accessing_klass != NULL, "need origin of access");
+  assert(accessing_klass != nullptr, "need origin of access");
 
   ciEnv* env = CURRENT_ENV;
 
   int size = 0;
-  int count = 0;
   ResourceMark rm(THREAD);
-  Symbol* sh = symbol->get_symbol();
-  SignatureStream ss(sh);
-  for (; ; ss.next()) {
+  for (SignatureStream ss(symbol->get_symbol()); !ss.is_done(); ss.next()) {
     // Process one element of the signature
-    ciType* type;
-    if (!ss.is_reference()) {
-      type = ciType::make(ss.type());
-    } else {
+    ciType* type = nullptr;
+    if (ss.is_reference()) {
       ciSymbol* klass_name = env->get_symbol(ss.as_symbol());
       type = env->get_klass_by_name_impl(_accessing_klass, cpool, klass_name, false);
+    } else {
+      type = ciType::make(ss.type());
     }
     if (ss.at_return_type()) {
       // don't include return type in size calculation
       _return_type = type;
-      break;
+    } else {
+      _types.append(type);
+      size += type->size();
     }
-    _types.append(type);
-    size += type->size();
   }
   _size = size;
 }
@@ -95,6 +93,22 @@ bool ciSignature::equals(ciSignature* that) {
     return false;
   }
   return true;
+}
+
+// ------------------------------------------------------------------
+// ciSignature::has_unloaded_classes
+//
+// Reports if there are any unloaded classes present in the signature.
+// Each ciSignature when instantiated is resolved against some accessing class
+// and the resolved classes aren't required to be local, but can be revealed
+// through loader constraints.
+bool ciSignature::has_unloaded_classes() {
+  for (ciSignatureStream str(this); !str.is_done(); str.next()) {
+    if (!str.type()->is_loaded()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // ------------------------------------------------------------------

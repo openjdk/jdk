@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package com.sun.crypto.provider;
+
+import jdk.internal.access.SharedSecrets;
 
 import java.util.Arrays;
 
@@ -75,6 +77,12 @@ abstract class PBMAC1Core extends HmacCore {
                 break;
         case "HmacSHA512":
                 kdf = new PBKDF2Core.HmacSHA512();
+                break;
+        case "HmacSHA512/224":
+                kdf = new PBKDF2Core.HmacSHA512_224();
+                break;
+        case "HmacSHA512/256":
+                kdf = new PBKDF2Core.HmacSHA512_256();
                 break;
         default:
                 throw new ProviderException(
@@ -173,23 +181,29 @@ abstract class PBMAC1Core extends HmacCore {
         }
 
         PBKDF2KeyImpl s = null;
-        PBKDF2Core kdf = getKDFImpl(kdfAlgo);
-        byte[] derivedKey;
+        byte[] derivedKey = null;
+        SecretKeySpec cipherKey = null;
         try {
+            PBKDF2Core kdf = getKDFImpl(kdfAlgo);
             s = (PBKDF2KeyImpl)kdf.engineGenerateSecret(pbeSpec);
             derivedKey = s.getEncoded();
+            cipherKey = new SecretKeySpec(derivedKey, kdfAlgo);
+            super.engineInit(cipherKey, null);
         } catch (InvalidKeySpecException ikse) {
             throw new InvalidKeyException("Cannot construct PBE key", ikse);
         } finally {
-            pbeSpec.clearPassword();
-            if (s != null) {
-                s.clearPassword();
+            if (cipherKey != null) {
+                SharedSecrets.getJavaxCryptoSpecAccess()
+                        .clearSecretKeySpec(cipherKey);
             }
+            if (derivedKey != null) {
+                Arrays.fill(derivedKey, (byte) 0);
+            }
+            if (s != null) {
+                s.clear();
+            }
+            pbeSpec.clearPassword();
         }
-        SecretKey cipherKey = new SecretKeySpec(derivedKey, kdfAlgo);
-        Arrays.fill(derivedKey, (byte)0);
-
-        super.engineInit(cipherKey, null);
     }
 
     public static final class HmacSHA1 extends PBMAC1Core {
@@ -219,6 +233,18 @@ abstract class PBMAC1Core extends HmacCore {
     public static final class HmacSHA512 extends PBMAC1Core {
         public HmacSHA512() throws NoSuchAlgorithmException {
             super("HmacSHA512", "SHA-512", 128);
+        }
+    }
+
+    public static final class HmacSHA512_224 extends PBMAC1Core {
+        public HmacSHA512_224() throws NoSuchAlgorithmException {
+            super("HmacSHA512/224", "SHA-512/224", 128);
+        }
+    }
+
+    public static final class HmacSHA512_256 extends PBMAC1Core {
+        public HmacSHA512_256() throws NoSuchAlgorithmException {
+            super("HmacSHA512/256", "SHA-512/256", 128);
         }
     }
 }

@@ -103,7 +103,7 @@ class XAtomList {
     }
 
     /**
-     * Removes atom from the list. Does nothing if arrays doesn't conaint this atom.
+     * Removes atom from the list. Does nothing if arrays doesn't contain this atom.
      */
     public void remove(XAtom atom) {
         atoms.remove(atom);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,13 @@ class NativeMethodPrefixAgent {
 
     static ClassFileTransformer t0, t1, t2;
     static Instrumentation inst;
+    private static Throwable agentError;
+
+    public static void checkErrors() {
+        if (agentError != null) {
+            throw new RuntimeException("Agent error", agentError);
+        }
+    }
 
     static class Tr implements ClassFileTransformer {
         final String trname;
@@ -87,10 +94,12 @@ class NativeMethodPrefixAgent {
 
                     return redef? null : newcf;
                 } catch (Throwable ex) {
+                    if (agentError == null) {
+                        agentError = ex;
+                    }
                     System.err.println("ERROR: Injection failure: " + ex);
                     ex.printStackTrace();
-                    System.err.println("Returning bad class file, to cause test failure");
-                    return new byte[0];
+                    return null;
                 }
             }
             return null;

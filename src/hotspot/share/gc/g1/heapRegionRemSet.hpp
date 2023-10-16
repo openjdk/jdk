@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,10 @@
 
 #include "gc/g1/g1CardSet.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
-#include "gc/g1/g1CodeCacheRemSet.hpp"
+#include "gc/g1/g1CodeRootSet.hpp"
 #include "gc/g1/g1FromCardCache.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/bitMap.hpp"
 
@@ -39,7 +40,6 @@ class outputStream;
 class HeapRegionRemSet : public CHeapObj<mtGC> {
   friend class VMStructs;
 
-  Mutex _m;
   // A set of code blobs (nmethods) whose code contains pointers into
   // the region that owns this RSet.
   G1CodeRootSet _code_roots;
@@ -54,9 +54,6 @@ class HeapRegionRemSet : public CHeapObj<mtGC> {
   // Cached value of heap base address.
   static HeapWord* _heap_base_address;
 
-  // Split the given address into region of that card and the card within that
-  // region.
-  inline void split_card(OopOrNarrowOopStar from, uint& card_region, uint& card_within_region) const;
   void clear_fcc();
 
 public:
@@ -111,7 +108,7 @@ public:
   bool is_updating() { return _state == Updating; }
   bool is_complete() { return _state == Complete; }
 
-  inline void set_state_empty();
+  inline void set_state_untracked();
   inline void set_state_updating();
   inline void set_state_complete();
 
@@ -119,10 +116,11 @@ public:
 
   // The region is being reclaimed; clear its remset, and any mention of
   // entries for this region in other remsets.
-  void clear(bool only_cardset = false);
-  void clear_locked(bool only_cardset = false);
+  void clear(bool only_cardset = false, bool keep_tracked = false);
 
-  G1SegmentedArrayMemoryStats card_set_memory_stats() const;
+  void reset_table_scanner();
+
+  G1MonotonicArenaMemoryStats card_set_memory_stats() const;
 
   // The actual # of bytes this hr_remset takes up. Also includes the code
   // root set.
@@ -139,7 +137,7 @@ public:
   // Returns the memory occupancy of all static data structures associated
   // with remembered sets.
   static size_t static_mem_size() {
-    return G1CardSet::static_mem_size() + G1CodeRootSet::static_mem_size() + sizeof(G1CardSetFreePool);
+    return G1CardSet::static_mem_size();
   }
 
   static void print_static_mem_size(outputStream* out);
@@ -156,7 +154,7 @@ public:
 
   // Applies blk->do_code_blob() to each of the entries in _code_roots
   void code_roots_do(CodeBlobClosure* blk) const;
-
+  // Clean out code roots not having an oop pointing into this region any more.
   void clean_code_roots(HeapRegion* hr);
 
   // Returns the number of elements in _code_roots

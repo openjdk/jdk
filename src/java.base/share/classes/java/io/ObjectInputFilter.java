@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,14 +80,15 @@ import static java.lang.System.Logger.Level.ERROR;
  *
  * <p>For example, a filter that allows example classes, allows classes in the
  * {@code java.base} module, and rejects all other classes can be set:
- *
- * <pre>{@code As a command line property:
- *     % java -Djdk.serialFilter="example.*;java.base/*;!*" ...}</pre>
- *
- * <pre>{@code Or programmatically:
+ * As a command line property:
+ * {@snippet :
+ *     % java -Djdk.serialFilter="example.*;java.base/*;!*" ...
+ * }
+ * Or programmatically:
+ * {@snippet lang="java":
  *     var filter = ObjectInputFilter.Config.createFilter("example.*;java.base/*;!*")
- *     ObjectInputFilter.Config.setSerialFilter(filter);}</pre>
- *
+ *     ObjectInputFilter.Config.setSerialFilter(filter);
+ * }
  * <p>In an application with multiple execution contexts, the application can provide a
  * {@linkplain Config#setSerialFilterFactory(BinaryOperator) filter factory} to
  * protect individual contexts by providing a custom filter for each. When the stream
@@ -186,12 +187,15 @@ import static java.lang.System.Logger.Level.ERROR;
  *
  * This class shows how an application provided filter factory can combine filters
  * to check every deserialization operation that takes place in a thread.
- * It defines a thread-local variable to hold the thread-specific filter, and constructs a filter factory
- * that composes that filter with the static JVM-wide filter and the stream-specific filter.
+ * It defines a thread-local variable to hold the thread-specific filter, and construct a filter factory
+ * that composes that filter with the static JVM-wide filter and the stream-specific filter,
+ * rejecting any classes not handled by those two filters.
+ * If a stream specific filter is set and does not accept or reject a class,
+ * the combined JVM-wide filter and thread filter is applied.
  * The {@code doWithSerialFilter} method does the setup of the thread-specific filter
  * and invokes the application provided {@link Runnable Runnable}.
  *
- * <pre>{@code
+ * {@snippet lang="java":
  * public static final class FilterInThread implements BinaryOperator<ObjectInputFilter> {
  *
  *     private final ThreadLocal<ObjectInputFilter> filterThreadLocal = new ThreadLocal<>();
@@ -206,26 +210,18 @@ import static java.lang.System.Logger.Level.ERROR;
  *             // Called from the OIS constructor or perhaps OIS.setObjectInputFilter with no current filter
  *             var filter = filterThreadLocal.get();
  *             if (filter != null) {
- *                 // Wrap the filter to reject UNDECIDED results
- *                 filter = ObjectInputFilter.rejectUndecidedClass(filter);
+ *                 // Merge to invoke the thread local filter and then the JVM-wide filter (if any)
+ *                 filter = ObjectInputFilter.merge(filter, next);
+ *                 return ObjectInputFilter.rejectUndecidedClass(filter);
  *             }
- *             if (next != null) {
- *                 // Merge the next filter with the thread filter, if any
- *                 // Initially this is the static JVM-wide filter passed from the OIS constructor
- *                 // Wrap the filter to reject UNDECIDED results
- *                 filter = ObjectInputFilter.merge(next, filter);
- *                 filter = ObjectInputFilter.rejectUndecidedClass(filter);
- *             }
- *             return filter;
+ *             return (next == null) ? null : ObjectInputFilter.rejectUndecidedClass(next);
  *         } else {
  *             // Called from OIS.setObjectInputFilter with a current filter and a stream-specific filter.
  *             // The curr filter already incorporates the thread filter and static JVM-wide filter
  *             // and rejection of undecided classes
- *             // If there is a stream-specific filter wrap it and a filter to recheck for undecided
+ *             // If there is a stream-specific filter merge to invoke it and then the current filter.
  *             if (next != null) {
- *                 next = ObjectInputFilter.merge(next, curr);
- *                 next = ObjectInputFilter.rejectUndecidedClass(next);
- *                 return next;
+ *                 return ObjectInputFilter.merge(next, curr);
  *             }
  *             return curr;
  *         }
@@ -242,12 +238,12 @@ import static java.lang.System.Logger.Level.ERROR;
  *         }
  *     }
  * }
- * }</pre>
+ * }
  * <h3>Using the Filter Factory</h3>
  * To use {@code FilterInThread} utility create an instance and configure it as the
  * JVM-wide filter factory.  The {@code doWithSerialFilter} method is invoked with a
  * filter allowing the example application and core classes:
- * <pre>{@code
+ * {@snippet lang="java":
  *        // Create a FilterInThread filter factory and set
  *        var filterInThread = new FilterInThread();
  *        ObjectInputFilter.Config.setSerialFilterFactory(filterInThread);
@@ -258,7 +254,7 @@ import static java.lang.System.Logger.Level.ERROR;
  *              byte[] bytes = ...;
  *              var o = deserializeObject(bytes);
  *        });
- * }</pre>
+ * }
  * <p>
  * Unless otherwise noted, passing a {@code null} argument to a
  * method in this interface and its nested classes will cause a
@@ -310,11 +306,11 @@ public interface ObjectInputFilter {
      * <p>
      * Example, to create a filter that will allow any class loaded from the platform
      * or bootstrap classloaders.
-     * <pre><code>
+     * {@snippet lang="java":
      *     ObjectInputFilter f
      *         = allowFilter(cl -> cl.getClassLoader() == ClassLoader.getPlatformClassLoader() ||
      *                       cl.getClassLoader() == null, Status.UNDECIDED);
-     * </code></pre>
+     * }
      *
      * @param predicate a predicate to test a non-null Class
      * @param otherStatus a Status to use if the predicate is {@code false}
@@ -344,10 +340,10 @@ public interface ObjectInputFilter {
      * </ul>
      * <p>
      * Example, to create a filter that will reject any class loaded from the application classloader.
-     * <pre><code>
+     * {@snippet lang="java":
      *     ObjectInputFilter f = rejectFilter(cl ->
      *          cl.getClassLoader() == ClassLoader.ClassLoader.getSystemClassLoader(), Status.UNDECIDED);
-     * </code></pre>
+     * }
      *
      * @param predicate a predicate to test a non-null Class
      * @param otherStatus a Status to use if the predicate is {@code false}

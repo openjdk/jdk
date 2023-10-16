@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,19 @@ import java.util.Optional;
 /*
  * @test
  * @summary Throw error if default java.security file is missing
- * @bug 8155246 8292297
+ * @bug 8155246 8292297 8292177 8281658
  * @library /test/lib
  * @run main ConfigFileTest
  */
 public class ConfigFileTest {
+
+    private static final String EXPECTED_DEBUG_OUTPUT =
+        "Initial security property: crypto.policy=unlimited";
+
+    private static final String UNEXPECTED_DEBUG_OUTPUT =
+            "Initial security property: postInitTest=shouldNotRecord";
+
+    private static boolean overrideDetected = false;
 
     public static void main(String[] args) throws Exception {
         Path copyJdkDir = Path.of("./jdk-8155246-tmpdir");
@@ -52,6 +60,7 @@ public class ConfigFileTest {
         if (args.length == 1) {
             // set up is complete. Run code to exercise loading of java.security
             Provider[] provs = Security.getProviders();
+            Security.setProperty("postInitTest", "shouldNotRecord");
             System.out.println(Arrays.toString(provs) + "NumProviders: " + provs.length);
         } else {
             Files.createDirectory(copyJdkDir);
@@ -61,6 +70,10 @@ public class ConfigFileTest {
 
             copyJDK(jdkTestDir, copyJdkDir);
             String extraPropsFile = Path.of(System.getProperty("test.src"), "override.props").toString();
+
+            // sanity test -XshowSettings:security option
+            exerciseShowSettingsSecurity(copiedJava.toString(), "-cp", System.getProperty("test.classes"),
+                    "-Djava.security.debug=all", "-XshowSettings:security", "ConfigFileTest", "runner");
 
             // exercise some debug flags while we're here
             // regular JDK install - should expect success
@@ -99,13 +112,42 @@ public class ConfigFileTest {
                     copiedJava.toString(), "-cp", System.getProperty("test.classes"),
                     "-Djava.security.debug=all", "-Djavax.net.debug=all",
                     "-Djava.security.properties==file:///" + extraPropsFile, "ConfigFileTest", "runner");
+
+            if (!overrideDetected) {
+                throw new RuntimeException("Override scenario not seen");
+            }
         }
     }
 
     private static void exerciseSecurity(int exitCode, String output, String... args) throws Exception {
         ProcessBuilder process = new ProcessBuilder(args);
         OutputAnalyzer oa = ProcessTools.executeProcess(process);
-        oa.shouldHaveExitValue(exitCode).shouldContain(output);
+        oa.shouldHaveExitValue(exitCode)
+                .shouldContain(output);
+
+        // extra checks on debug output
+        if (exitCode != 1) {
+            if (oa.getStderr().contains("overriding other security properties files!")) {
+                overrideDetected = true;
+                // master file is not in use - only provider properties are set in custom file
+                oa.shouldContain("security.provider.2=SunRsaSign")
+                        .shouldNotContain(EXPECTED_DEBUG_OUTPUT)
+                        .shouldNotContain(UNEXPECTED_DEBUG_OUTPUT);
+            } else {
+                oa.shouldContain(EXPECTED_DEBUG_OUTPUT)
+                        .shouldNotContain(UNEXPECTED_DEBUG_OUTPUT);
+            }
+        }
+    }
+
+    // exercise the -XshowSettings:security launcher
+    private static void exerciseShowSettingsSecurity(String... args) throws Exception {
+        ProcessBuilder process = new ProcessBuilder(args);
+        OutputAnalyzer oa = ProcessTools.executeProcess(process);
+        oa.shouldHaveExitValue(0)
+                .shouldContain("Security properties:")
+                .shouldContain("Security provider static configuration:")
+                .shouldContain("Security TLS configuration");
     }
 
     private static void copyJDK(Path src, Path dst) throws Exception {

@@ -126,6 +126,7 @@ public final class VersionHelper {
         return AccessController.doPrivileged(act);
     }
 
+    @SuppressWarnings("deprecation")
     private static URL[] getUrlArray(String[] url) throws MalformedURLException {
         URL[] urlArray = new URL[url.length];
         for (int i = 0; i < urlArray.length; i++) {

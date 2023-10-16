@@ -985,7 +985,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     }
 
     /**
-     * Returns the hashcode for this session
+     * {@return the hashcode for this session}
      */
     @Override
     public int hashCode() {
@@ -1002,12 +1002,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             return true;
         }
 
-        if (obj instanceof SSLSessionImpl sess) {
-            return (sessionId != null) && (sessionId.equals(
-                        sess.getSessionId()));
-        }
-
-        return false;
+        return obj instanceof SSLSessionImpl other
+                && sessionId != null
+                && sessionId.equals(other.getSessionId());
     }
 
 
@@ -1311,9 +1308,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     public String[] getValueNames() {
         ArrayList<Object> v = new ArrayList<>();
         Object securityCtx = SecureKey.getCurrentSecurityContext();
-        for (Enumeration<SecureKey> e = boundValues.keys();
-                e.hasMoreElements(); ) {
-            SecureKey key = e.nextElement();
+        for (SecureKey key : boundValues.keySet()) {
             if (securityCtx.equals(key.getSecurityContext())) {
                 v.add(key.getAppKey());
             }

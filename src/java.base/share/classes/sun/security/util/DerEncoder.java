@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1922, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,6 @@
 
 package sun.security.util;
 
-import java.io.IOException;
-import java.io.OutputStream;
-
 /**
  * Interface to an object that knows how to write its own DER
  * encoding to an output stream.
@@ -41,7 +38,6 @@ public interface DerEncoder {
      *
      * @param out  the stream on which the DER encoding is written.
      */
-    void derEncode(OutputStream out)
-        throws IOException;
+    void encode(DerOutputStream out);
 
 }

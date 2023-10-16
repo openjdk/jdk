@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,7 +247,7 @@ public:
   int                      bci() const { return _bci; }
   bool        should_reexecute() const { return _reexecute==Reexecute_True; }
   bool  is_reexecute_undefined() const { return _reexecute==Reexecute_Undefined; }
-  bool              has_method() const { return _method != NULL; }
+  bool              has_method() const { return _method != nullptr; }
   ciMethod*             method() const { assert(has_method(), ""); return _method; }
   JVMState*             caller() const { return _caller; }
   SafePointNode*           map() const { return _map; }
@@ -335,13 +335,13 @@ protected:
   bool            _has_ea_local_in_scope; // NoEscape or ArgEscape objects in JVM States
 
   void set_jvms(JVMState* s) {
-  assert(s != nullptr, "assign NULL value to _jvms");
+  assert(s != nullptr, "assign null value to _jvms");
     *(JVMState**)&_jvms = s;  // override const attribute in the accessor
   }
 public:
   SafePointNode(uint edges, JVMState* jvms,
-                // A plain safepoint advertises no memory effects (NULL):
-                const TypePtr* adr_type = NULL)
+                // A plain safepoint advertises no memory effects (null):
+                const TypePtr* adr_type = nullptr)
     : MultiNode( edges ),
       _jvms(jvms),
       _adr_type(adr_type),
@@ -353,7 +353,7 @@ public:
   JVMState* jvms() const { return _jvms; }
   virtual bool needs_deep_clone_jvms(Compile* C) { return false; }
   void clone_jvms(Compile* C) {
-    if (jvms() != NULL) {
+    if (jvms() != nullptr) {
       if (needs_deep_clone_jvms(C)) {
         set_jvms(jvms()->clone_deep(C));
         jvms()->set_map_deep(this);
@@ -434,7 +434,7 @@ public:
   }
 
   // The parser marks useless maps as dead when it's done with them:
-  bool is_killed() { return in(TypeFunc::Control) == NULL; }
+  bool is_killed() { return in(TypeFunc::Control) == nullptr; }
 
   // Exception states bubbling out of subgraphs such as inlined calls
   // are recorded here.  (There might be more than one, hence the "next".)
@@ -442,7 +442,7 @@ public:
   // for JVM states during parsing, intrinsic expansion, etc.
   SafePointNode*         next_exception() const;
   void               set_next_exception(SafePointNode* n);
-  bool                   has_exceptions() const { return next_exception() != NULL; }
+  bool                   has_exceptions() const { return next_exception() != nullptr; }
 
   // Helper methods to operate on replaced nodes
   ReplacedNodes replaced_nodes() const {
@@ -505,25 +505,22 @@ public:
 //------------------------------SafePointScalarObjectNode----------------------
 // A SafePointScalarObjectNode represents the state of a scalarized object
 // at a safepoint.
-
 class SafePointScalarObjectNode: public TypeNode {
-  uint _first_index; // First input edge relative index of a SafePoint node where
-                     // states of the scalarized object fields are collected.
-                     // It is relative to the last (youngest) jvms->_scloff.
-  uint _n_fields;    // Number of non-static fields of the scalarized object.
-  DEBUG_ONLY(Node* _alloc;)
+  uint _first_index;              // First input edge relative index of a SafePoint node where
+                                  // states of the scalarized object fields are collected.
+                                  // It is relative to the last (youngest) jvms->_scloff.
+  uint _n_fields;                 // Number of non-static fields of the scalarized object.
 
-  virtual uint hash() const ; // { return NO_HASH; }
+  Node* _alloc;                   // Just for debugging purposes.
+
+  virtual uint hash() const;
   virtual bool cmp( const Node &n ) const;
 
   uint first_index() const { return _first_index; }
 
 public:
-  SafePointScalarObjectNode(const TypeOopPtr* tp,
-#ifdef ASSERT
-                            Node* alloc,
-#endif
-                            uint first_index, uint n_fields);
+  SafePointScalarObjectNode(const TypeOopPtr* tp, Node* alloc, uint first_index, uint n_fields);
+
   virtual int Opcode() const;
   virtual uint           ideal_reg() const;
   virtual const RegMask &in_RegMask(uint) const;
@@ -531,7 +528,7 @@ public:
   virtual uint           match_edge(uint idx) const;
 
   uint first_index(JVMState* jvms) const {
-    assert(jvms != NULL, "missed JVMS");
+    assert(jvms != nullptr, "missed JVMS");
     return jvms->scloff() + _first_index;
   }
   uint n_fields()    const { return _n_fields; }
@@ -556,6 +553,92 @@ public:
 #endif
 };
 
+//------------------------------SafePointScalarMergeNode----------------------
+//
+// This class represents an allocation merge that is used as debug information
+// and had at least one of its input scalar replaced.
+//
+// The required inputs of this node, except the control, are pointers to
+// SafePointScalarObjectNodes that describe scalarized inputs of the original
+// allocation merge. The other(s) properties of the class are described below.
+//
+// _merge_pointer_idx : index in the SafePointNode's input array where the
+//   description of the _allocation merge_ starts. The index is zero based and
+//   relative to the SafePoint's scloff. The two entries in the SafePointNode's
+//   input array starting at '_merge_pointer_idx` are Phi nodes representing:
+//
+//   1) The original merge Phi. During rematerialization this input will only be
+//   used if the "selector Phi" (see below) indicates that the execution of the
+//   Phi took the path of a non scalarized input.
+//
+//   2) A "selector Phi". The output of this Phi will be '-1' if the execution
+//   of the method exercised a non scalarized input of the original Phi.
+//   Otherwise, the output will be >=0, and it will indicate the index-1 in the
+//   SafePointScalarMergeNode input array where the description of the
+//   scalarized object that should be used is.
+//
+// As an example, consider a Phi merging 3 inputs, of which the last 2 are
+// scalar replaceable.
+//
+//    Phi(Region, NSR, SR, SR)
+//
+// During scalar replacement the SR inputs will be changed to null:
+//
+//    Phi(Region, NSR, nullptr, nullptr)
+//
+// A corresponding selector Phi will be created with a configuration like this:
+//
+//    Phi(Region, -1, 0, 1)
+//
+// During execution of the compiled method, if the execution reaches a Trap, the
+// output of the selector Phi will tell if we need to rematerialize one of the
+// scalar replaced inputs or if we should just use the pointer returned by the
+// original Phi.
+
+class SafePointScalarMergeNode: public TypeNode {
+  int _merge_pointer_idx;         // This is the first input edge relative
+                                  // index of a SafePoint node where metadata information relative
+                                  // to restoring the merge is stored. The corresponding input
+                                  // in the associated SafePoint will point to a Phi representing
+                                  // potential non-scalar replaced objects.
+
+  virtual uint hash() const;
+  virtual bool cmp( const Node &n ) const;
+
+public:
+  SafePointScalarMergeNode(const TypeOopPtr* tp, int merge_pointer_idx);
+
+  virtual int            Opcode() const;
+  virtual uint           ideal_reg() const;
+  virtual const RegMask &in_RegMask(uint) const;
+  virtual const RegMask &out_RegMask() const;
+  virtual uint           match_edge(uint idx) const;
+
+  virtual uint size_of() const { return sizeof(*this); }
+
+  int merge_pointer_idx(JVMState* jvms) const {
+    assert(jvms != nullptr, "JVMS reference is null.");
+    return jvms->scloff() + _merge_pointer_idx;
+  }
+
+  int selector_idx(JVMState* jvms) const {
+    assert(jvms != nullptr, "JVMS reference is null.");
+    return jvms->scloff() + _merge_pointer_idx + 1;
+  }
+
+  // Assumes that "this" is an argument to a safepoint node "s", and that
+  // "new_call" is being created to correspond to "s".  But the difference
+  // between the start index of the jvmstates of "new_call" and "s" is
+  // "jvms_adj".  Produce and return a SafePointScalarObjectNode that
+  // corresponds appropriately to "this" in "new_call".  Assumes that
+  // "sosn_map" is a map, specific to the translation of "s" to "new_call",
+  // mapping old SafePointScalarObjectNodes to new, to avoid multiple copies.
+  SafePointScalarMergeNode* clone(Dict* sosn_map, bool& new_node) const;
+
+#ifndef PRODUCT
+  virtual void              dump_spec(outputStream *st) const;
+#endif
+};
 
 // Simple container for the outgoing projections of a call.  Useful
 // for serious surgery on calls.
@@ -581,29 +664,29 @@ class CallNode : public SafePointNode {
   friend class VMStructs;
 
 protected:
-  bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseTransform* phase);
+  bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase);
 
 public:
   const TypeFunc* _tf;          // Function type
   address         _entry_point; // Address of method being called
   float           _cnt;         // Estimate of number of times called
   CallGenerator*  _generator;   // corresponding CallGenerator for some late inline calls
-  const char*     _name;        // Printable name, if _method is NULL
+  const char*     _name;        // Printable name, if _method is null
 
   CallNode(const TypeFunc* tf, address addr, const TypePtr* adr_type, JVMState* jvms = nullptr)
     : SafePointNode(tf->domain()->cnt(), jvms, adr_type),
       _tf(tf),
       _entry_point(addr),
       _cnt(COUNT_UNKNOWN),
-      _generator(NULL),
-      _name(NULL)
+      _generator(nullptr),
+      _name(nullptr)
   {
     init_class_id(Class_Call);
   }
 
   const TypeFunc* tf()         const { return _tf; }
-  const address  entry_point() const { return _entry_point; }
-  const float    cnt()         const { return _cnt; }
+  address  entry_point()       const { return _entry_point; }
+  float    cnt()               const { return _cnt; }
   CallGenerator* generator()   const { return _generator; }
 
   void set_tf(const TypeFunc* tf)       { _tf = tf; }
@@ -629,12 +712,12 @@ public:
   virtual bool needs_deep_clone_jvms(Compile* C) { return C->needs_deep_clone_jvms(); }
 
   // Returns true if the call may modify n
-  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseTransform* phase);
+  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase);
   // Does this node have a use of n other than in debug information?
   bool                has_non_debug_use(Node* n);
   // Returns the unique CheckCastPP of a call
   // or result projection is there are several CheckCastPP
-  // or returns NULL if there is no one.
+  // or returns null if there is no one.
   Node* result_cast();
   // Does this node returns pointer?
   bool returns_pointer() const {
@@ -720,13 +803,13 @@ public:
   CallStaticJavaNode(Compile* C, const TypeFunc* tf, address addr, ciMethod* method)
     : CallJavaNode(tf, addr, method) {
     init_class_id(Class_CallStaticJava);
-    if (C->eliminate_boxing() && (method != NULL) && method->is_boxing_method()) {
+    if (C->eliminate_boxing() && (method != nullptr) && method->is_boxing_method()) {
       init_flags(Flag_is_macro);
       C->add_macro_node(this);
     }
   }
   CallStaticJavaNode(const TypeFunc* tf, address addr, const char* name, const TypePtr* adr_type)
-    : CallJavaNode(tf, addr, NULL) {
+    : CallJavaNode(tf, addr, nullptr) {
     init_class_id(Class_CallStaticJava);
     // This node calls a runtime stub, which often has narrow memory effects.
     _adr_type = adr_type;
@@ -735,10 +818,11 @@ public:
 
   // If this is an uncommon trap, return the request code, else zero.
   int uncommon_trap_request() const;
+  bool is_uncommon_trap() const;
   static int extract_uncommon_trap_request(const Node* call);
 
   bool is_boxing_method() const {
-    return is_macro() && (method() != NULL) && method()->is_boxing_method();
+    return is_macro() && (method() != nullptr) && method()->is_boxing_method();
   }
   // Late inlining modifies the JVMState, so we need to deep clone it
   // when the call node is cloned (because it is macro node).
@@ -874,6 +958,7 @@ public:
     KlassNode,                        // type (maybe dynamic) of the obj.
     InitialTest,                      // slow-path test (may be constant)
     ALength,                          // array length (or TOP if none)
+    ValidLengthTest,
     ParmLimit
   };
 
@@ -883,6 +968,7 @@ public:
     fields[KlassNode]   = TypeInstPtr::NOTNULL;
     fields[InitialTest] = TypeInt::BOOL;
     fields[ALength]     = t;  // length (can be a bad length)
+    fields[ValidLengthTest] = TypeInt::BOOL;
 
     const TypeTuple *domain = TypeTuple::make(ParmLimit, fields);
 
@@ -911,7 +997,7 @@ public:
   virtual bool        guaranteed_safepoint()  { return false; }
 
   // allocations do not modify their arguments
-  virtual bool        may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) { return false;}
+  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) { return false;}
 
   // Pattern-match a possible usage of AllocateNode.
   // Return null if no allocation is recognized.
@@ -920,18 +1006,18 @@ public:
   // (Note:  This function is defined in file graphKit.cpp, near
   // GraphKit::new_instance/new_array, whose output it recognizes.)
   // The 'ptr' may not have an offset unless the 'offset' argument is given.
-  static AllocateNode* Ideal_allocation(Node* ptr, PhaseTransform* phase);
+  static AllocateNode* Ideal_allocation(Node* ptr);
 
   // Fancy version which uses AddPNode::Ideal_base_and_offset to strip
   // an offset, which is reported back to the caller.
   // (Note:  AllocateNode::Ideal_allocation is defined in graphKit.cpp.)
-  static AllocateNode* Ideal_allocation(Node* ptr, PhaseTransform* phase,
+  static AllocateNode* Ideal_allocation(Node* ptr, PhaseValues* phase,
                                         intptr_t& offset);
 
   // Dig the klass operand out of a (possible) allocation site.
-  static Node* Ideal_klass(Node* ptr, PhaseTransform* phase) {
-    AllocateNode* allo = Ideal_allocation(ptr, phase);
-    return (allo == NULL) ? NULL : allo->in(KlassNode);
+  static Node* Ideal_klass(Node* ptr, PhaseValues* phase) {
+    AllocateNode* allo = Ideal_allocation(ptr);
+    return (allo == nullptr) ? nullptr : allo->in(KlassNode);
   }
 
   // Conservatively small estimate of offset of first non-header byte.
@@ -952,13 +1038,13 @@ public:
   // Return true if allocation doesn't escape thread, its escape state
   // needs be noEscape or ArgEscape. InitializeNode._does_not_escape
   // is true when its allocation's escape state is noEscape or
-  // ArgEscape. In case allocation's InitializeNode is NULL, check
+  // ArgEscape. In case allocation's InitializeNode is null, check
   // AlllocateNode._is_non_escaping flag.
   // AlllocateNode._is_non_escaping is true when its escape state is
   // noEscape.
   bool does_not_escape_thread() {
-    InitializeNode* init = NULL;
-    return _is_non_escaping || (((init = initialization()) != NULL) && init->does_not_escape());
+    InitializeNode* init = nullptr;
+    return _is_non_escaping || (((init = initialization()) != nullptr) && init->does_not_escape());
   }
 
   // If object doesn't escape in <.init> method and there is memory barrier
@@ -977,18 +1063,16 @@ public:
 //
 class AllocateArrayNode : public AllocateNode {
 public:
-  AllocateArrayNode(Compile* C, const TypeFunc *atype, Node *ctrl, Node *mem, Node *abio,
-                    Node* size, Node* klass_node, Node* initial_test,
-                    Node* count_val
-                    )
+  AllocateArrayNode(Compile* C, const TypeFunc* atype, Node* ctrl, Node* mem, Node* abio, Node* size, Node* klass_node,
+                    Node* initial_test, Node* count_val, Node* valid_length_test)
     : AllocateNode(C, atype, ctrl, mem, abio, size, klass_node,
                    initial_test)
   {
     init_class_id(Class_AllocateArray);
     set_req(AllocateNode::ALength,        count_val);
+    set_req(AllocateNode::ValidLengthTest, valid_length_test);
   }
   virtual int Opcode() const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
   // Dig the length operand out of a array allocation site.
   Node* Ideal_length() {
@@ -997,14 +1081,14 @@ public:
 
   // Dig the length operand out of a array allocation site and narrow the
   // type with a CastII, if necesssary
-  Node* make_ideal_length(const TypeOopPtr* ary_type, PhaseTransform *phase, bool can_create = true);
+  Node* make_ideal_length(const TypeOopPtr* ary_type, PhaseValues* phase, bool can_create = true);
 
   // Pattern-match a possible usage of AllocateArrayNode.
   // Return null if no allocation is recognized.
-  static AllocateArrayNode* Ideal_array_allocation(Node* ptr, PhaseTransform* phase) {
-    AllocateNode* allo = Ideal_allocation(ptr, phase);
-    return (allo == NULL || !allo->is_AllocateArray())
-           ? NULL : allo->as_AllocateArray();
+  static AllocateArrayNode* Ideal_array_allocation(Node* ptr) {
+    AllocateNode* allo = Ideal_allocation(ptr);
+    return (allo == nullptr || !allo->is_AllocateArray())
+           ? nullptr : allo->as_AllocateArray();
   }
 };
 
@@ -1041,11 +1125,11 @@ protected:
 
 public:
   AbstractLockNode(const TypeFunc *tf)
-    : CallNode(tf, NULL, TypeRawPtr::BOTTOM),
+    : CallNode(tf, nullptr, TypeRawPtr::BOTTOM),
       _kind(Regular)
   {
 #ifndef PRODUCT
-    _counter = NULL;
+    _counter = nullptr;
 #endif
   }
   virtual int Opcode() const = 0;
@@ -1064,14 +1148,14 @@ public:
   bool is_nested()      const { return (_kind == Nested); }
 
   const char * kind_as_string() const;
-  void log_lock_optimization(Compile* c, const char * tag, Node* bad_lock = NULL) const;
+  void log_lock_optimization(Compile* c, const char * tag, Node* bad_lock = nullptr) const;
 
   void set_non_esc_obj() { _kind = NonEscObj; set_eliminated_lock_counter(); }
   void set_coarsened()   { _kind = Coarsened; set_eliminated_lock_counter(); }
   void set_nested()      { _kind = Nested; set_eliminated_lock_counter(); }
 
   // locking does not modify its arguments
-  virtual bool may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase){ return false;}
+  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase){ return false; }
 
 #ifndef PRODUCT
   void create_lock_counter(JVMState* s);
@@ -1138,7 +1222,7 @@ public:
   virtual uint size_of() const; // Size is bigger
   UnlockNode(Compile* C, const TypeFunc *tf) : AbstractLockNode( tf )
 #ifdef ASSERT
-    , _dbg_jvms(NULL)
+    , _dbg_jvms(nullptr)
 #endif
   {
     init_class_id(Class_Unlock);
@@ -1154,7 +1238,7 @@ public:
   }
   JVMState* dbg_jvms() const { return _dbg_jvms; }
 #else
-  JVMState* dbg_jvms() const { return NULL; }
+  JVMState* dbg_jvms() const { return nullptr; }
 #endif
 };
 #endif // SHARE_OPTO_CALLNODE_HPP

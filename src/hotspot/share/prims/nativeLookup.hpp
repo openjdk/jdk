@@ -39,7 +39,6 @@ class NativeLookup : AllStatic {
   static address lookup_entry(const methodHandle& method, TRAPS);
   static address lookup_entry_prefixed(const methodHandle& method, TRAPS);
 
-  static void* dll_load(const methodHandle& method);
   static const char* compute_complete_jni_name(const char* pure_name, const char* long_name, int args_size, bool os_style);
  public:
   // JNI name computation

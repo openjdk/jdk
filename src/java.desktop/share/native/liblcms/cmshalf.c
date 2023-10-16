@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2023 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -406,7 +406,7 @@ static const cmsUInt32Number Mantissa[2048] = {
 0x387fc000, 0x387fe000
 };
 
-static cmsUInt16Number Offset[64] = {
+static const cmsUInt16Number Offset[64] = {
 0x0000, 0x0400, 0x0400, 0x0400, 0x0400, 0x0400,
 0x0400, 0x0400, 0x0400, 0x0400, 0x0400, 0x0400,
 0x0400, 0x0400, 0x0400, 0x0400, 0x0400, 0x0400,

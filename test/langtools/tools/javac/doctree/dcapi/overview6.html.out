@@ -25,7 +25,7 @@ DocComment[DOC_COMMENT, pos:0
       name:BODY
       attributes: empty
     ]
-    Text[TEXT, pos:104, Illegal_second_b...ody_pair,_the_first_body_should_not_be_ignored.|]
+    Text[TEXT, pos:104, Illegal_second_body_pair,_the_first_body_should_not_be_ignored.|]
     EndElement[END_ELEMENT, pos:168, BODY]
     EndElement[END_ELEMENT, pos:176, HTML]
 ]

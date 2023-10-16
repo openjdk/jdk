@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 package org.openjdk.bench.java.lang.foreign;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -36,10 +36,9 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.lang.foreign.Arena;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
@@ -47,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Fork(value = 3, jvmArgsAppend = "--enable-preview")
+@Fork(3)
 public class MemorySessionClose {
 
     static final int ALLOC_SIZE = 1024;
@@ -104,27 +103,27 @@ public class MemorySessionClose {
 
     @Benchmark
     public MemorySegment confined_close() {
-        try (MemorySession session = MemorySession.openConfined()) {
-            return MemorySegment.allocateNative(ALLOC_SIZE, 4, session);
+        try (Arena arena = Arena.ofConfined()) {
+            return arena.allocate(ALLOC_SIZE, 4);
         }
     }
 
     @Benchmark
     public MemorySegment shared_close() {
-        try (MemorySession session = MemorySession.openShared()) {
-            return MemorySegment.allocateNative(ALLOC_SIZE, 4, session);
+        try (Arena arena = Arena.ofShared()) {
+            return arena.allocate(ALLOC_SIZE, 4);
         }
     }
 
     @Benchmark
     public MemorySegment implicit_close() {
-        return MemorySegment.allocateNative(ALLOC_SIZE, 4, MemorySession.openImplicit());
+        return Arena.ofAuto().allocate(ALLOC_SIZE, 4);
     }
 
     @Benchmark
     public MemorySegment implicit_close_systemgc() {
         if (gcCount++ == 0) System.gc(); // GC when we overflow
-        return MemorySegment.allocateNative(ALLOC_SIZE, 4, MemorySession.openImplicit());
+        return Arena.ofAuto().allocate(ALLOC_SIZE, 4);
     }
 
     // keep

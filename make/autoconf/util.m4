@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ m4_include([util_paths.m4])
 AC_DEFUN([UTIL_DEFUN_NAMED],
 [
   AC_DEFUN($1, [
-    m4_foreach(arg, m4_split(m4_normalize($2)), [
+    m4_foreach([arg], m4_split(m4_normalize($2)), [
       m4_if(m4_bregexp(arg, [^\*]), -1,
         [
           m4_set_add(legal_named_args, arg)
@@ -64,13 +64,18 @@ AC_DEFUN([UTIL_DEFUN_NAMED],
       )
     ])
 
-    m4_foreach([arg], [$3], [
-      m4_if(m4_bregexp(arg, [: ]), -1, m4_define([arg], m4_bpatsubst(arg, [:], [: ])))
-      m4_define(arg_name, m4_substr(arg, 0, m4_bregexp(arg, [: ])))
+    # Delicate quoting and unquoting sequence to ensure the actual value is passed along unchanged
+    # For details on how this works, see https://git.openjdk.org/jdk/pull/11458#discussion_r1038173051
+    # WARNING: Proceed at the risk of your own sanity, getting this to work has made me completely
+    # incapable of feeling love or any other positive emotion
+    # ~Julian
+    m4_foreach([arg], m4_dquote(m4_dquote_elt($3)), [
+      m4_if(m4_index(arg, [: ]), -1, [m4_define([arg], m4_dquote(m4_bpatsubst(m4_dquote(arg), [:], [: ])))])
+      m4_define(arg_name, m4_substr(arg, 0, m4_index(arg, [: ])))
       m4_set_contains(legal_named_args, arg_name, [],[AC_MSG_ERROR([Internal error: m4_if(arg_name, , arg, arg_name) is not a valid named argument to [$1]. Valid arguments are 'm4_set_contents(defined_args, [ ]) m4_set_contents(legal_named_args, [ ])'.])])
       m4_set_remove(required_named_args, arg_name)
       m4_set_remove(legal_named_args, arg_name)
-      m4_pushdef([ARG_][]arg_name, m4_bpatsubst(m4_substr(arg, m4_incr(m4_incr(m4_bregexp(arg, [: ])))), [^\s*], []))
+      m4_pushdef([ARG_][]arg_name, m4_bpatsubst(m4_bpatsubst(m4_dquote(m4_dquote(arg)), arg_name[: ]), [^\s*]))
       m4_set_add(defined_args, arg_name)
       m4_undefine([arg_name])
     ])
@@ -376,18 +381,18 @@ UTIL_DEFUN_NAMED([UTIL_ARG_ENABLE],
   m4_define(ARG_GIVEN, m4_translit(ARG_NAME, [a-z-], [A-Z_])[_GIVEN])
 
   # If DESC is not specified, set it to a generic description.
-  m4_define([ARG_DESC], m4_if(ARG_DESC, , [Enable the ARG_NAME feature], m4_normalize(ARG_DESC)))
+  m4_define([ARG_DESC], m4_if(m4_quote(ARG_DESC), , [[Enable the ARG_NAME feature]], [m4_normalize(ARG_DESC)]))
 
   # If CHECKING_MSG is not specified, set it to a generic description.
-  m4_define([ARG_CHECKING_MSG], m4_if(ARG_CHECKING_MSG, , [for --enable-ARG_NAME], m4_normalize(ARG_CHECKING_MSG)))
+  m4_define([ARG_CHECKING_MSG], m4_if(m4_quote(ARG_CHECKING_MSG), , [[for --enable-ARG_NAME]], [m4_normalize(ARG_CHECKING_MSG)]))
 
   # If the code blocks are not given, set them to the empty statements to avoid
   # tripping up bash.
-  m4_define([ARG_CHECK_AVAILABLE], m4_if(ARG_CHECK_AVAILABLE, , :, ARG_CHECK_AVAILABLE))
-  m4_define([ARG_IF_GIVEN], m4_if(ARG_IF_GIVEN, , :, ARG_IF_GIVEN))
-  m4_define([ARG_IF_NOT_GIVEN], m4_if(ARG_IF_NOT_GIVEN, , :, ARG_IF_NOT_GIVEN))
-  m4_define([ARG_IF_ENABLED], m4_if(ARG_IF_ENABLED, , :, ARG_IF_ENABLED))
-  m4_define([ARG_IF_DISABLED], m4_if(ARG_IF_DISABLED, , :, ARG_IF_DISABLED))
+  m4_if(ARG_CHECK_AVAILABLE, , [m4_define([ARG_CHECK_AVAILABLE], [:])])
+  m4_if(ARG_IF_GIVEN, , [m4_define([ARG_IF_GIVEN], [:])])
+  m4_if(ARG_IF_NOT_GIVEN, , [m4_define([ARG_IF_NOT_GIVEN], [:])])
+  m4_if(ARG_IF_ENABLED, , [m4_define([ARG_IF_ENABLED], [:])])
+  m4_if(ARG_IF_DISABLED, , [m4_define([ARG_IF_DISABLED], [:])])
 
   ##########################
   # Part 2: Set up autoconf shell code
@@ -504,7 +509,7 @@ AC_DEFUN([UTIL_CHECK_TYPE_directory],
     FAILURE="Directory $1 does not exist or is not readable"
   fi
 
-  if test "[x]ARG_CHECK_FOR_FILES" != x; then
+  if test "[x]ARG_CHECK_FOR_FILES" != "x:"; then
     for file in ARG_CHECK_FOR_FILES; do
       found_files=$($ECHO $(ls $1/$file 2> /dev/null))
       if test "x$found_files" = x; then
@@ -650,21 +655,21 @@ UTIL_DEFUN_NAMED([UTIL_ARG_WITH],
   m4_define(ARG_GIVEN, m4_translit(ARG_NAME, [a-z-], [A-Z_])[_GIVEN])
 
   # If DESC is not specified, set it to a generic description.
-  m4_define([ARG_DESC], m4_if(ARG_DESC, , [Give a value for the ARG_NAME feature], m4_normalize(ARG_DESC)))
+  m4_define([ARG_DESC], m4_if(m4_quote(ARG_DESC), , [[Give a value for the ARG_NAME feature]], [m4_normalize(ARG_DESC)]))
 
   # If CHECKING_MSG is not specified, set it to a generic description.
-  m4_define([ARG_CHECKING_MSG], m4_if(ARG_CHECKING_MSG, , [for --with-ARG_NAME], m4_normalize(ARG_CHECKING_MSG)))
+  m4_define([ARG_CHECKING_MSG], m4_if(m4_quote(ARG_CHECKING_MSG), , [[for --with-ARG_NAME]], [m4_normalize(ARG_CHECKING_MSG)]))
 
   m4_define([ARG_HAS_AUTO_BLOCK], m4_if(ARG_IF_AUTO, , false, true))
 
   # If the code blocks are not given, set them to the empty statements to avoid
   # tripping up bash.
-  m4_define([ARG_CHECK_AVAILABLE], m4_if(ARG_CHECK_AVAILABLE, , :, ARG_CHECK_AVAILABLE))
-  m4_define([ARG_CHECK_VALUE], m4_if(ARG_CHECK_VALUE, , :, ARG_CHECK_VALUE))
-  m4_define([ARG_CHECK_FOR_FILES], m4_if(ARG_CHECK_FOR_FILES, , :, ARG_CHECK_FOR_FILES))
-  m4_define([ARG_IF_AUTO], m4_if(ARG_IF_AUTO, , :, ARG_IF_AUTO))
-  m4_define([ARG_IF_GIVEN], m4_if(ARG_IF_GIVEN, , :, ARG_IF_GIVEN))
-  m4_define([ARG_IF_NOT_GIVEN], m4_if(ARG_IF_NOT_GIVEN, , :, ARG_IF_NOT_GIVEN))
+  m4_if(ARG_CHECK_AVAILABLE, , [m4_define([ARG_CHECK_AVAILABLE], [:])])
+  m4_if(ARG_CHECK_VALUE, , [m4_define([ARG_CHECK_VALUE], [:])])
+  m4_if(ARG_CHECK_FOR_FILES, , [m4_define([ARG_CHECK_FOR_FILES], [:])])
+  m4_if(ARG_IF_AUTO, , [m4_define([ARG_IF_AUTO], [:])])
+  m4_if(ARG_IF_GIVEN, , [m4_define([ARG_IF_GIVEN], [:])])
+  m4_if(ARG_IF_NOT_GIVEN, , [m4_define([ARG_IF_NOT_GIVEN], [:])])
 
   ##########################
   # Part 2: Set up autoconf shell code
@@ -776,25 +781,25 @@ UTIL_DEFUN_NAMED([UTIL_ARG_WITH],
     else
       AC_MSG_RESULT([$ARG_RESULT, $REASON])
     fi
-  fi
 
-  # Verify value
-  # First use our dispatcher to verify that type requirements are satisfied
-  UTIL_CHECK_TYPE(ARG_TYPE, $ARG_RESULT)
+    # Verify value
+    # First use our dispatcher to verify that type requirements are satisfied
+    UTIL_CHECK_TYPE(ARG_TYPE, $ARG_RESULT)
 
-  if test "x$FAILURE" = x; then
-    # Execute custom verification payload, if present
-    RESULT="$ARG_RESULT"
+    if test "x$FAILURE" = x; then
+      # Execute custom verification payload, if present
+      RESULT="$ARG_RESULT"
 
-    ARG_CHECK_VALUE
+      ARG_CHECK_VALUE
 
-    ARG_RESULT="$RESULT"
-  fi
+      ARG_RESULT="$RESULT"
+    fi
 
-  if test "x$FAILURE" != x; then
-    AC_MSG_NOTICE([Invalid value for [--with-]ARG_NAME: "$ARG_RESULT"])
-    AC_MSG_NOTICE([$FAILURE])
-    AC_MSG_ERROR([Cannot continue])
+    if test "x$FAILURE" != x; then
+      AC_MSG_NOTICE([Invalid value for [--with-]ARG_NAME: "$ARG_RESULT"])
+      AC_MSG_NOTICE([$FAILURE])
+      AC_MSG_ERROR([Cannot continue])
+    fi
   fi
 
   # Execute result payloads, if present
@@ -811,5 +816,14 @@ AC_DEFUN([UTIL_CHECK_STRING_NON_EMPTY],
 [
   if test "x$RESULT" = "x"; then
     FAILURE="Value cannot be empty"
+  fi
+])
+
+AC_DEFUN([UTIL_CHECK_STRING_NON_EMPTY_PRINTABLE],
+[
+  if test "x$RESULT" = x; then
+    FAILURE="Value cannot be empty"
+  elif [ ! [[ $RESULT =~ ^[[:print:]]*$ ]] ]; then
+    FAILURE="Value contains non-printing characters: $RESULT"
   fi
 ])

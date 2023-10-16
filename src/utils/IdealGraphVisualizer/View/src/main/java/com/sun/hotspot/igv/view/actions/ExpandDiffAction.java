@@ -52,12 +52,12 @@ public final class ExpandDiffAction extends ModelAwareAction {
 
     @Override
     public String getName() {
-        return NbBundle.getMessage(NextDiagramAction.class, "CTL_ExpandDiffAction");
+        return NbBundle.getMessage(ExpandDiffAction.class, "CTL_ExpandDiffAction");
     }
 
     @Override
     protected String getDescription() {
-        return NbBundle.getMessage(NextDiagramAction.class, "HINT_ExpandDiffAction");
+        return NbBundle.getMessage(ExpandDiffAction.class, "HINT_ExpandDiffAction");
     }
 
     @Override
