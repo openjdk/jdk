@@ -50,9 +50,8 @@ import java.util.Objects;
 
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.MappedMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.SegmentFactories;
 import jdk.internal.misc.Blocker;
 import jdk.internal.misc.ExtendedMapMode;
 import jdk.internal.misc.Unsafe;
@@ -1154,10 +1153,10 @@ public class FileChannelImpl
 
     // -- Memory-mapped buffers --
 
-    private abstract static class Unmapper
+    private sealed abstract static class Unmapper
         implements Runnable, UnmapperProxy
     {
-        private volatile long address;
+        private final long address;
         protected final long size;
         protected final long cap;
         private final FileDescriptor fd;
@@ -1194,10 +1193,7 @@ public class FileChannelImpl
         }
 
         public void unmap() {
-            if (address == 0)
-                return;
             nd.unmap(address, size);
-            address = 0;
 
             // if this mapping has a valid file descriptor then we close it
             if (fd.valid()) {
@@ -1214,7 +1210,7 @@ public class FileChannelImpl
         protected abstract void decrementStats();
     }
 
-    private static class DefaultUnmapper extends Unmapper {
+    private static final class DefaultUnmapper extends Unmapper {
 
         // keep track of non-sync mapped buffer usage
         static volatile int count;
@@ -1247,7 +1243,7 @@ public class FileChannelImpl
         }
     }
 
-    private static class SyncUnmapper extends Unmapper {
+    private static final class SyncUnmapper extends Unmapper {
 
         // keep track of mapped buffer usage
         static volatile int count;
@@ -1338,22 +1334,7 @@ public class FileChannelImpl
         if (mode == MapMode.READ_ONLY) {
             readOnly = true;
         }
-        if (unmapper != null) {
-            AbstractMemorySegmentImpl segment =
-                new MappedMemorySegmentImpl(unmapper.address(), unmapper, size,
-                                            readOnly, sessionImpl);
-            MemorySessionImpl.ResourceList.ResourceCleanup resource =
-                new MemorySessionImpl.ResourceList.ResourceCleanup() {
-                    @Override
-                    public void cleanup() {
-                        unmapper.unmap();
-                    }
-                };
-            sessionImpl.addOrCleanupIfFail(resource);
-            return segment;
-        } else {
-            return new MappedMemorySegmentImpl(0, null, 0, readOnly, sessionImpl);
-        }
+        return SegmentFactories.mapSegment(size, unmapper, readOnly, sessionImpl);
     }
 
     private Unmapper mapInternal(MapMode mode, long position, long size, int prot, boolean isSync)

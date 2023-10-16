@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @run testng/othervm TestSegmentOverlap
  */
 

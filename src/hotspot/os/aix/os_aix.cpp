@@ -769,7 +769,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // Init thread attributes.
   pthread_attr_t attr;
-  pthread_attr_init(&attr);
+  int rslt = pthread_attr_init(&attr);
+  guarantee(rslt == 0, "pthread_attr_init has to return 0");
   guarantee(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) == 0, "???");
 
   // Make sure we run in 1:1 kernel-user-thread mode.
@@ -803,6 +804,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
                             stack_size / K);
     thread->set_osthread(nullptr);
     delete osthread;
+    pthread_attr_destroy(&attr);
     return false;
   }
 
@@ -1911,7 +1913,7 @@ int os::numa_get_group_id() {
   return 0;
 }
 
-size_t os::numa_get_leaf_groups(int *ids, size_t size) {
+size_t os::numa_get_leaf_groups(uint *ids, size_t size) {
   if (size > 0) {
     ids[0] = 0;
     return 1;
@@ -3043,3 +3045,32 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
 void os::jfr_report_memory_info() {}
 
 #endif // INCLUDE_JFR
+
+// Simulate the library search algorithm of dlopen() (in os::dll_load)
+int os::Aix::stat64x_via_LIBPATH(const char* path, struct stat64x* stat) {
+  if (path[0] == '/' ||
+      (path[0] == '.' && (path[1] == '/' ||
+                          (path[1] == '.' && path[2] == '/')))) {
+    return stat64x(path, stat);
+  }
+
+  const char* env = getenv("LIBPATH");
+  if (env == nullptr || *env == 0)
+    return -1;
+
+  int ret = -1;
+  size_t libpathlen = strlen(env);
+  char* libpath = NEW_C_HEAP_ARRAY(char, libpathlen + 1, mtServiceability);
+  char* combined = NEW_C_HEAP_ARRAY(char, libpathlen + strlen(path) + 1, mtServiceability);
+  char *saveptr, *token;
+  strcpy(libpath, env);
+  for (token = strtok_r(libpath, ":", &saveptr); token != nullptr; token = strtok_r(nullptr, ":", &saveptr)) {
+    sprintf(combined, "%s/%s", token, path);
+    if (0 == (ret = stat64x(combined, stat)))
+      break;
+  }
+
+  FREE_C_HEAP_ARRAY(char*, combined);
+  FREE_C_HEAP_ARRAY(char*, libpath);
+  return ret;
+}

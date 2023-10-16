@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1602,7 +1602,7 @@ public class IndexColorModel extends ColorModel {
              * We are intentionally not calculating hashCode for validBits,
              * because it is only used for 8-bit indexed screens and they
              * are very rare. It is very unlikely for 2 IndexColorModels
-             * to have different valiBits and have same value for all
+             * to have different validBits and have same value for all
              * other properties.
              */
             result = 7;
