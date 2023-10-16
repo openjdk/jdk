@@ -201,7 +201,6 @@ public final class PlatformLayouts {
      * This class defines layout constants modelling standard primitive types supported by the PPC64 ABI.
      */
     public static final class PPC64 {
-        public static final boolean IS_AIX = System.getProperty("os.name").startsWith("AIX");
 
         private PPC64() {
             //just the one
@@ -245,7 +244,7 @@ public final class PlatformLayouts {
         /**
          * The {@code double} native type.
          */
-        public static final ValueLayout.OfDouble C_DOUBLE = ValueLayout.JAVA_DOUBLE.withByteAlignment(IS_AIX ? 4 : 8);
+        public static final ValueLayout.OfDouble C_DOUBLE = ValueLayout.JAVA_DOUBLE;
 
         /**
          * The {@code T*} native type.
