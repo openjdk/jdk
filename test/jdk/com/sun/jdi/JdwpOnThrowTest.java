@@ -88,7 +88,7 @@ public class JdwpOnThrowTest {
                             }
                             if (!ex.location().equals(ex.thread().frame(0).location())) {
                                 throw new RuntimeException(
-                                    String.format("Throw location %s and location if first frame %s are not equal",
+                                    String.format("Throw location %s and location of first frame %s are not equal",
                                                   ex.location(), ex.thread().frame(0).location()));
                             }
                             if (!ex.exception().type().name().equals("Ex")) {
