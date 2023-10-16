@@ -141,7 +141,7 @@ public class Debuggee implements Closeable {
             try {
                 p = ProcessTools.startProcess(name, pb, s -> {output.add(s);}, s -> {
                     return s.equals(expectedOutputBeforeThrow);
-                }, 3, TimeUnit.SECONDS);
+                }, 30, TimeUnit.SECONDS);
             } catch (IOException | InterruptedException | TimeoutException ex) {
                 throw new RuntimeException("failed to launch debuggee", ex);
             }

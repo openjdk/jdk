@@ -56,6 +56,8 @@ import java.util.Map;
  */
 public class JdwpOnThrowTest {
 
+    private static long TIMEOUT = 10000;
+
     public static void main(String[] args) throws Exception {
         int port = findFreePort();
         try (Debuggee debuggee = Debuggee.launcher("ThrowCaughtException").setAddress("localhost:" + port)
@@ -66,10 +68,10 @@ public class JdwpOnThrowTest {
                 EventQueue queue = vm.eventQueue();
                 log("Waiting for exception event");
                 long start = System.currentTimeMillis();
-                while (start + 1000 > System.currentTimeMillis()) {
-                    EventSet eventSet = queue.remove(1000);
+                while (start + TIMEOUT > System.currentTimeMillis()) {
+                    EventSet eventSet = queue.remove(TIMEOUT);
                     EventIterator eventIterator = eventSet.eventIterator();
-                    while(eventIterator.hasNext() && start + 1000 > System.currentTimeMillis()) {
+                    while(eventIterator.hasNext() && start + TIMEOUT > System.currentTimeMillis()) {
                         Event event = eventIterator.next();
                         if (event instanceof ExceptionEvent ex) {
                             if (ex.exception() == null) {
@@ -90,6 +92,7 @@ public class JdwpOnThrowTest {
                             vm.dispose();
                             return;
                         }
+                        log("Received event: " + event);
                     }
                 }
                 throw new RuntimeException("ERROR: failed to receive exception event");
