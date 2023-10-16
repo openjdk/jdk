@@ -73,14 +73,15 @@ public class SSLSocketParametersTest implements Serializable {
         }
     }
 
-    public void testRmiCommunication(RMIServerSocketFactory serverFactory) throws Exception {
-            Hello stub = (Hello)UnicastRemoteObject.exportObject(new HelloImpl(),
-                    0, new SslRMIClientSocketFactory(), serverFactory);
-            HelloClient client = new HelloClient();
-            client.runClient(stub);
+    public void testRmiCommunication(RMIServerSocketFactory serverSocketFactory) throws Exception {
+        HelloImpl server = new HelloImpl();
+        Hello stub = (Hello)UnicastRemoteObject.exportObject(server,
+                0, new SslRMIClientSocketFactory(), serverSocketFactory);
+        HelloClient client = new HelloClient();
+        client.runClient(stub);
     }
 
-    private static void testServerFactory(String[] cipherSuites, String[] protocol) throws Exception {
+    private static void testSslServerSocketFactory(String[] cipherSuites, String[] protocol) throws Exception {
         new SslRMIServerSocketFactory(SSLContext.getDefault(),
                     cipherSuites, protocol, false);
     }
@@ -104,7 +105,7 @@ public class SSLSocketParametersTest implements Serializable {
             /* server side dummy_ciphersuite */
             case 4 -> {
                 Exception exc = Asserts.assertThrownException(IllegalArgumentException.class,
-                        () -> testServerFactory(new String[]{"dummy_ciphersuite"}, null));
+                        () -> testSslServerSocketFactory(new String[]{"dummy_ciphersuite"}, null));
                 if (!exc.getMessage().toLowerCase().contains("unsupported ciphersuite")) {
                     throw exc;
                 }
@@ -113,7 +114,7 @@ public class SSLSocketParametersTest implements Serializable {
             /* server side dummy_protocol */
             case 5 -> {
                 Exception thrown = Asserts.assertThrownException(IllegalArgumentException.class,
-                        () -> testServerFactory(null, new String[]{"dummy_protocol"}));
+                        () -> testSslServerSocketFactory(null, new String[]{"dummy_protocol"}));
                 if (!thrown.getMessage().toLowerCase().contains("unsupported protocol")) {
                     throw thrown;
                 }
