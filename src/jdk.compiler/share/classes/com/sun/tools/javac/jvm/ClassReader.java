@@ -1509,6 +1509,9 @@ public class ClassReader {
             } else if (proxy.type.tsym.flatName() == syms.valueBasedInternalType.tsym.flatName()) {
                 Assert.check(sym.kind == TYP);
                 sym.flags_field |= VALUE_BASED;
+            } else if (proxy.type.tsym.flatName() == syms.restrictedType.tsym.flatName()) {
+                Assert.check(sym.kind == MTH);
+                sym.flags_field |= RESTRICTED;
             } else {
                 if (proxy.type.tsym == syms.annotationTargetType.tsym) {
                     target = proxy;
@@ -1522,6 +1525,9 @@ public class ClassReader {
                     setFlagIfAttributeTrue(proxy, sym, names.reflective, PREVIEW_REFLECTIVE);
                 }  else if (proxy.type.tsym == syms.valueBasedType.tsym && sym.kind == TYP) {
                     sym.flags_field |= VALUE_BASED;
+                }  else if (proxy.type.tsym == syms.restrictedType.tsym) {
+                    Assert.check(sym.kind == MTH);
+                    sym.flags_field |= RESTRICTED;
                 }
                 proxies.append(proxy);
             }

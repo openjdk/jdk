@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/generation.hpp"
+#include "gc/serial/generation.hpp"
 #include "gc/shared/genMemoryPools.hpp"
 #include "gc/shared/space.hpp"
 #if INCLUDE_SERIALGC
