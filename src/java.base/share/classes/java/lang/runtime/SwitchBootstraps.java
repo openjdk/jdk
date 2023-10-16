@@ -354,21 +354,19 @@ public class SwitchBootstraps {
         return value == 0;
     }
 
-    private static boolean unconditionalExactnessCheck(Object selectorType, Class<?> targetType) {
-        if ((selectorType.equals(byte.class) && targetType.equals(Byte.class)) ||
-            (selectorType.equals(char.class) && targetType.equals(Character.class)) ||
-            (selectorType.equals(long.class) && targetType.equals(Long.class)) ||
-            (selectorType.equals(double.class) && targetType.equals(Double.class)) ||
-            (selectorType.equals(float.class) && targetType.equals(Float.class)) ||
-            (selectorType.equals(short.class) && targetType.equals(Short.class)) ||
-            (selectorType.equals(int.class) && targetType.equals(Integer.class)))
+    // this method should be in sync with com.sun.tools.javac.code.Types.checkUnconditionallyExactPrimitives
+    private static boolean unconditionalExactnessCheck(Class<?> selectorType, Class<?> targetType) {
+        Wrapper selectorWrapper = Wrapper.forBasicType(selectorType);
+        Wrapper targetWrapper   = Wrapper.forBasicType(targetType);
+        if (selectorType.isPrimitive() && targetType.equals(selectorWrapper.wrapperType())) {
             return true;
-        else if (selectorType.equals(targetType) || (selectorType.equals(byte.class) && !targetType.equals(char.class)  ||
-                (selectorType.equals(short.class) && (targetType.equals(int.class)   || targetType.equals(long.class) || targetType.equals(float.class) || targetType.equals(double.class))) ||
-                (selectorType.equals(char.class)  && (targetType.equals(int.class)   || targetType.equals(long.class) || targetType.equals(float.class) || targetType.equals(double.class))) ||
-                (selectorType.equals(long.class) && (targetType.equals(long.class))) ||
-                (selectorType.equals(int.class) && (targetType.equals(double.class)  || targetType.equals(long.class))) ||
-                (selectorType.equals(float.class) && (targetType.equals(double.class))))) return true;
+        }
+        else if (selectorType.equals(targetType) ||
+                ((selectorType.equals(byte.class) && !targetType.equals(char.class)) ||
+                 (selectorType.equals(short.class) && (selectorWrapper.isStrictSubRangeOf(targetWrapper))) ||
+                 (selectorType.equals(char.class)  && (selectorWrapper.isStrictSubRangeOf(targetWrapper)))  ||
+                 (selectorType.equals(int.class)   && (targetType.equals(double.class) || targetType.equals(long.class))) ||
+                 (selectorType.equals(float.class) && (selectorWrapper.isStrictSubRangeOf(targetWrapper))))) return true;
         return false;
     }
 
@@ -560,32 +558,32 @@ public class SwitchBootstraps {
 
         public static HashMap<TypePairs, String> initialize() {
             HashMap<TypePairs, String> typePairToName = new HashMap<>();
-            typePairToName.put(new TypePairs(byte.class,   char.class),   "intToCharExact");      // redirected
-            typePairToName.put(new TypePairs(short.class,  byte.class),   "intToByteExact");      // redirected
-            typePairToName.put(new TypePairs(short.class,  char.class),   "intToCharExact");      // redirected
-            typePairToName.put(new TypePairs(char.class,   byte.class),   "intToByteExact");      // redirected
-            typePairToName.put(new TypePairs(char.class,   short.class),  "intToShortExact");     // redirected
-            typePairToName.put(new TypePairs(int.class,    byte.class),   "intToByteExact");
-            typePairToName.put(new TypePairs(int.class,    short.class),  "intToShortExact");
-            typePairToName.put(new TypePairs(int.class,    char.class),   "intToCharExact");
-            typePairToName.put(new TypePairs(int.class,    float.class),  "intToFloatExact");
-            typePairToName.put(new TypePairs(long.class,   byte.class),   "longToByteExact");
-            typePairToName.put(new TypePairs(long.class,   short.class),  "longToShortExact");
-            typePairToName.put(new TypePairs(long.class,   char.class),   "longToCharExact");
-            typePairToName.put(new TypePairs(long.class,   int.class),    "longToIntExact");
-            typePairToName.put(new TypePairs(long.class,   float.class),  "longToFloatExact");
-            typePairToName.put(new TypePairs(long.class,   double.class), "longToDoubleExact");
-            typePairToName.put(new TypePairs(float.class,  byte.class),   "floatToByteExact");
-            typePairToName.put(new TypePairs(float.class,  short.class),  "floatToShortExact");
-            typePairToName.put(new TypePairs(float.class,  char.class),   "floatToCharExact");
-            typePairToName.put(new TypePairs(float.class,  int.class),    "floatToIntExact");
-            typePairToName.put(new TypePairs(float.class,  long.class),   "floatToLongExact");
-            typePairToName.put(new TypePairs(double.class, byte.class),   "doubleToByteExact");
-            typePairToName.put(new TypePairs(double.class, short.class),  "doubleToShortExact");
-            typePairToName.put(new TypePairs(double.class, char.class),   "doubleToCharExact");
-            typePairToName.put(new TypePairs(double.class, int.class),    "doubleToIntExact");
-            typePairToName.put(new TypePairs(double.class, long.class),   "doubleToLongExact");
-            typePairToName.put(new TypePairs(double.class, float.class),  "doubleToFloatExact");
+            typePairToName.put(new TypePairs(byte.class,   char.class),   "isIntToCharExact");      // redirected
+            typePairToName.put(new TypePairs(short.class,  byte.class),   "isIntToByteExact");      // redirected
+            typePairToName.put(new TypePairs(short.class,  char.class),   "isIntToCharExact");      // redirected
+            typePairToName.put(new TypePairs(char.class,   byte.class),   "isIntToByteExact");      // redirected
+            typePairToName.put(new TypePairs(char.class,   short.class),  "isIntToShortExact");     // redirected
+            typePairToName.put(new TypePairs(int.class,    byte.class),   "isIntToByteExact");
+            typePairToName.put(new TypePairs(int.class,    short.class),  "isIntToShortExact");
+            typePairToName.put(new TypePairs(int.class,    char.class),   "isIntToCharExact");
+            typePairToName.put(new TypePairs(int.class,    float.class),  "isIntToFloatExact");
+            typePairToName.put(new TypePairs(long.class,   byte.class),   "isLongToByteExact");
+            typePairToName.put(new TypePairs(long.class,   short.class),  "isLongToShortExact");
+            typePairToName.put(new TypePairs(long.class,   char.class),   "isLongToCharExact");
+            typePairToName.put(new TypePairs(long.class,   int.class),    "isLongToIntExact");
+            typePairToName.put(new TypePairs(long.class,   float.class),  "isLongToFloatExact");
+            typePairToName.put(new TypePairs(long.class,   double.class), "isLongToDoubleExact");
+            typePairToName.put(new TypePairs(float.class,  byte.class),   "isFloatToByteExact");
+            typePairToName.put(new TypePairs(float.class,  short.class),  "isFloatToShortExact");
+            typePairToName.put(new TypePairs(float.class,  char.class),   "isFloatToCharExact");
+            typePairToName.put(new TypePairs(float.class,  int.class),    "isFloatToIntExact");
+            typePairToName.put(new TypePairs(float.class,  long.class),   "isFloatToLongExact");
+            typePairToName.put(new TypePairs(double.class, byte.class),   "isDoubleToByteExact");
+            typePairToName.put(new TypePairs(double.class, short.class),  "isDoubleToShortExact");
+            typePairToName.put(new TypePairs(double.class, char.class),   "isDoubleToCharExact");
+            typePairToName.put(new TypePairs(double.class, int.class),    "isDoubleToIntExact");
+            typePairToName.put(new TypePairs(double.class, long.class),   "isDoubleToLongExact");
+            typePairToName.put(new TypePairs(double.class, float.class),  "isDoubleToFloatExact");
             return typePairToName;
         }
     }

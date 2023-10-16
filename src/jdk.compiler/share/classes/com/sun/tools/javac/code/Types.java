@@ -5042,21 +5042,20 @@ public class Types {
      *  - widening from byte, short, or char to a floating point type,
      *  - widening from int to double.
      *
-     *  @param source     Source primitive type
-     *  @param target     Target primitive type
+     *  @param selectorType     Type of selector
+     *  @param targetType       Target type
      */
-    public boolean checkUnconditionallyExactPrimitives(Type source, Type target) {
-        if (isSameType(source, target)) {
+    public boolean checkUnconditionallyExactPrimitives(Type selectorType, Type targetType) {
+        if (isSameType(selectorType, targetType)) {
             return true;
         }
 
-        return (source.isPrimitive() && target.isPrimitive()) &&
-                ((source.hasTag(BYTE) && !target.hasTag(CHAR) ||
-                        (source.hasTag(SHORT) && (target.hasTag(INT) || target.hasTag(LONG) || target.hasTag(FLOAT) || target.hasTag(DOUBLE)))||
-                        (source.hasTag(CHAR)  && (target.hasTag(INT) || target.hasTag(LONG) || target.hasTag(FLOAT) || target.hasTag(DOUBLE))) ||
-                        (source.hasTag(LONG) && (target.hasTag(LONG))) ||
-                        (source.hasTag(INT) && (target.hasTag(DOUBLE) || target.hasTag(LONG))) ||
-                        (source.hasTag(FLOAT) && (target.hasTag(DOUBLE)))));
+        return (selectorType.isPrimitive() && targetType.isPrimitive()) &&
+                ((selectorType.hasTag(BYTE) && !targetType.hasTag(CHAR)) ||
+                 (selectorType.hasTag(SHORT) && (selectorType.getTag().isStrictSubRangeOf(targetType.getTag()))) ||
+                 (selectorType.hasTag(CHAR)  && (selectorType.getTag().isStrictSubRangeOf(targetType.getTag())))  ||
+                 (selectorType.hasTag(INT)   && (targetType.hasTag(DOUBLE) || targetType.hasTag(LONG))) ||
+                 (selectorType.hasTag(FLOAT) && (selectorType.getTag().isStrictSubRangeOf(targetType.getTag()))));
     }
     // </editor-fold>
 

@@ -2907,6 +2907,46 @@ public class Lower extends TreeTranslator {
         result = tree;
     }
 
+    /**
+     * All the exactness checks between primitive types that require a run-time check
+     * are in `java.lang.runtime.ExactConversionsSupport`. Those methods are in the
+     * form `ExactConversionsSupport.<S>_<T>` where both `S` and `T` are primitive
+     * types and correspond to the runtime check that will be executed when the program
+     * needs to check whether a certain value (that is passed as a parameter) can be
+     * converted to T without loss of information.
+     * Rewrite instanceof if expr : Object and Type is primitive type
+     *
+     * According to the Table 5.5-A. Casting conversions to primitive types in the JLS this
+     * conversion is permitted under a casting context, and employs a narrowing reference conversion
+     * followed by an unboxing conversion. As a result the only check that needs to be done is an
+     * `instanceof` to `Float`. The unboxing conversion from `Float` to `float` is always exact
+     * so if `v` is `Float` then `v` will be `instanceof float` too (without further checks).
+     *
+     *   Object v = ...
+     *   if (v instanceof float)
+     *   =>
+     *   if (v instanceof Float)
+     *
+     * Rewrite instanceof if expr : wrapper reference type
+     *
+     *   Integer v = ...
+     *   if (v instanceof float)
+     *   =>
+     *   if (let tmp$123 = v; tmp$123 != null && ExactConversionsSupport.intToFloatExact(tmp$123.intValue()))
+     *
+     * Rewrite instanceof if expr : primitive
+     *
+     *   int v = ...
+     *   if (v instanceof float)
+     *   =>
+     *   if (let tmp$123 = v; ExactConversionsSupport.intToFloatExact(tmp$123))
+     *
+     * More rewritings:
+     *
+     * - If the `instanceof` check is unconditionally exact rewrite to true.
+     * - If expression type is `Byte`, `Short`, `Integer`, an unboxing conversion followed by a widening primitive conversion.
+     * - If expression type is a supertype: `Number`, a narrowing reference conversion followed by an unboxing conversion
+     */
     public void visitTypeTest(JCInstanceOf tree) {
         if (tree.expr.type.isPrimitive() || tree.pattern.type.isPrimitive()) {
             JCExpression exactnessCheck = null;
@@ -2989,32 +3029,32 @@ public class Lower extends TreeTranslator {
 
         public static HashMap<TypePairs, String> initialize(Symtab syms) {
             HashMap<TypePairs, String> typePairToName = new HashMap<>();
-            typePairToName.put(new TypePairs(syms.byteType,   syms.charType),   "intToCharExact");      // redirected
-            typePairToName.put(new TypePairs(syms.shortType,  syms.byteType),   "intToByteExact");      // redirected
-            typePairToName.put(new TypePairs(syms.shortType,  syms.charType),   "intToCharExact");      // redirected
-            typePairToName.put(new TypePairs(syms.charType,   syms.byteType),   "intToByteExact");      // redirected
-            typePairToName.put(new TypePairs(syms.charType,   syms.shortType),  "intToShortExact");     // redirected
-            typePairToName.put(new TypePairs(syms.intType,    syms.byteType),   "intToByteExact");
-            typePairToName.put(new TypePairs(syms.intType,    syms.shortType),  "intToShortExact");
-            typePairToName.put(new TypePairs(syms.intType,    syms.charType),   "intToCharExact");
-            typePairToName.put(new TypePairs(syms.intType,    syms.floatType),  "intToFloatExact");
-            typePairToName.put(new TypePairs(syms.longType,   syms.byteType),   "longToByteExact");
-            typePairToName.put(new TypePairs(syms.longType,   syms.shortType),  "longToShortExact");
-            typePairToName.put(new TypePairs(syms.longType,   syms.charType),   "longToCharExact");
-            typePairToName.put(new TypePairs(syms.longType,   syms.intType),    "longToIntExact");
-            typePairToName.put(new TypePairs(syms.longType,   syms.floatType),  "longToFloatExact");
-            typePairToName.put(new TypePairs(syms.longType,   syms.doubleType), "longToDoubleExact");
-            typePairToName.put(new TypePairs(syms.floatType,  syms.byteType),   "floatToByteExact");
-            typePairToName.put(new TypePairs(syms.floatType,  syms.shortType),  "floatToShortExact");
-            typePairToName.put(new TypePairs(syms.floatType,  syms.charType),   "floatToCharExact");
-            typePairToName.put(new TypePairs(syms.floatType,  syms.intType),    "floatToIntExact");
-            typePairToName.put(new TypePairs(syms.floatType,  syms.longType),   "floatToLongExact");
-            typePairToName.put(new TypePairs(syms.doubleType, syms.byteType),   "doubleToByteExact");
-            typePairToName.put(new TypePairs(syms.doubleType, syms.shortType),  "doubleToShortExact");
-            typePairToName.put(new TypePairs(syms.doubleType, syms.charType),   "doubleToCharExact");
-            typePairToName.put(new TypePairs(syms.doubleType, syms.intType),    "doubleToIntExact");
-            typePairToName.put(new TypePairs(syms.doubleType, syms.longType),   "doubleToLongExact");
-            typePairToName.put(new TypePairs(syms.doubleType, syms.floatType),  "doubleToFloatExact");
+            typePairToName.put(new TypePairs(syms.byteType,   syms.charType),   "isIntToCharExact");      // redirected
+            typePairToName.put(new TypePairs(syms.shortType,  syms.byteType),   "isIntToByteExact");      // redirected
+            typePairToName.put(new TypePairs(syms.shortType,  syms.charType),   "isIntToCharExact");      // redirected
+            typePairToName.put(new TypePairs(syms.charType,   syms.byteType),   "isIntToByteExact");      // redirected
+            typePairToName.put(new TypePairs(syms.charType,   syms.shortType),  "isIntToShortExact");     // redirected
+            typePairToName.put(new TypePairs(syms.intType,    syms.byteType),   "isIntToByteExact");
+            typePairToName.put(new TypePairs(syms.intType,    syms.shortType),  "isIntToShortExact");
+            typePairToName.put(new TypePairs(syms.intType,    syms.charType),   "isIntToCharExact");
+            typePairToName.put(new TypePairs(syms.intType,    syms.floatType),  "isIntToFloatExact");
+            typePairToName.put(new TypePairs(syms.longType,   syms.byteType),   "isLongToByteExact");
+            typePairToName.put(new TypePairs(syms.longType,   syms.shortType),  "isLongToShortExact");
+            typePairToName.put(new TypePairs(syms.longType,   syms.charType),   "isLongToCharExact");
+            typePairToName.put(new TypePairs(syms.longType,   syms.intType),    "isLongToIntExact");
+            typePairToName.put(new TypePairs(syms.longType,   syms.floatType),  "isLongToFloatExact");
+            typePairToName.put(new TypePairs(syms.longType,   syms.doubleType), "isLongToDoubleExact");
+            typePairToName.put(new TypePairs(syms.floatType,  syms.byteType),   "isFloatToByteExact");
+            typePairToName.put(new TypePairs(syms.floatType,  syms.shortType),  "isFloatToShortExact");
+            typePairToName.put(new TypePairs(syms.floatType,  syms.charType),   "isFloatToCharExact");
+            typePairToName.put(new TypePairs(syms.floatType,  syms.intType),    "isFloatToIntExact");
+            typePairToName.put(new TypePairs(syms.floatType,  syms.longType),   "isFloatToLongExact");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.byteType),   "isDoubleToByteExact");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.shortType),  "isDoubleToShortExact");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.charType),   "isDoubleToCharExact");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.intType),    "isDoubleToIntExact");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.longType),   "isDoubleToLongExact");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.floatType),  "isDoubleToFloatExact");
             return typePairToName;
         }
     }
