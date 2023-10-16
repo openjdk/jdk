@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,4 +97,28 @@ public interface Function<T, R> {
     static <T> Function<T, T> identity() {
         return t -> t;
     }
+
+    /**
+     * {@return a representation of the provided {@code uncaptured} lambda or method reference
+     * in the form of a {@code Function}}
+     * <p>
+     * This method is useful in cases where there is an ambiguity in a lambda or method reference
+     * or when using composition or fluent coding as shown in these examples:
+     * {@snippet :
+     * // Resolve ambiguity
+     * var function = Function.of(String::isEmpty); // Function<String, Boolean>
+     * var predicate = Predicate.of(String::isEmpty); // Predicate<String>
+     *
+     * // Fluent composition
+     * var chained = Function.of(String::length)       // Function<String, Integer>
+     *                   .andThen(Integer::byteValue); // Function<String, Byte>
+     * }
+     * @param uncaptured to capture
+     * @param <T> the type of the input to the function
+     * @param <R> the type of the result of the function
+     */
+    static <T, R> Function<T, R> of(Function<T, R> uncaptured) {
+        return uncaptured;
+    }
+
 }

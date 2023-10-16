@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,4 +137,29 @@ public interface Predicate<T> {
         Objects.requireNonNull(target);
         return (Predicate<T>)target.negate();
     }
+
+    /**
+     * {@return a representation of the provided {@code uncaptured} lambda or method reference
+     * in the form of a {@code Predicate}}
+     * <p>
+     * This method is useful in cases where there is an ambiguity of a lambda or method reference
+     * or when using composition and/or fluent coding as shown in this example:
+     * {@snippet :
+     * // Resolve ambiguity
+     * var function = Function.of(String::isEmpty); // Function<String, Boolean>
+     * var predicate = Predicate.of(String::isEmpty); // Predicate<String>
+     *
+     * // Fluent composition
+     * var composed = Predicate.of(String::isEmpty)
+     *                   .or(s -> s.startsWith("*")); // Predicate<String>
+     *
+     * }
+     *
+     * @param uncaptured to capture
+     * @param <T> the type of the input to the predicate
+     */
+    static <T> Predicate<T> of(Predicate<T> uncaptured) {
+        return uncaptured;
+    }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,4 +72,33 @@ public interface BiConsumer<T, U> {
             after.accept(l, r);
         };
     }
+
+    /**
+     * {@return a representation of the provided {@code uncaptured} lambda or method reference
+     * in the form of a {@code BiConsumer}}
+     * <p>
+     * This method is useful in cases where there is an ambiguity in a lambda or method reference
+     * or when using composition or fluent coding as shown in this example:
+     * {@snippet :
+     * void toConsole(long id, String message) {
+     *      System.out.format("%d = %s%n", id, message);
+     * }
+     *
+     * void toLogger(long id, String message) {
+     *      LOGGER.info(String.format("%d = %s", id, message));
+     * }
+     *
+     * // Fluent composition
+     * var composed = BiConsumer.of(this::toConsole)
+     *                    .andThen(this::toLogger);  // BiConsumer<Long, String>
+     *
+     * }
+     * @param uncaptured to capture
+     * @param <T> the type of the first argument to the operation
+     * @param <U> the type of the second argument to the operation
+     */
+    static <T, U> BiConsumer<T, U> of(BiConsumer<T, U> uncaptured) {
+        return uncaptured;
+    }
+
 }
