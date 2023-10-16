@@ -727,13 +727,9 @@ void ArchiveBuilder::make_klasses_shareable() {
 #ifdef _LP64
     if (UseCompactObjectHeaders) {
       Klass* requested_k = to_requested(k);
-#if INCLUDE_CDS_JAVA_HEAP
       address narrow_klass_base = _requested_static_archive_bottom; // runtime encoding base == runtime mapping start
-      const int narrow_klass_shift = ArchiveHeapWriter::precomputed_narrow_klass_shift;
+      const int narrow_klass_shift = precomputed_narrow_klass_shift;
       narrowKlass nk = CompressedKlassPointers::encode_not_null(requested_k, narrow_klass_base, narrow_klass_shift);
-#else
-      narrowKlass nk = CompressedKlassPointers::encode_not_null(requested_k);
-#endif
       k->set_prototype_header(markWord::prototype().set_narrow_klass(nk));
     }
 #endif //_LP64
@@ -839,7 +835,7 @@ narrowKlass ArchiveBuilder::get_requested_narrow_klass(Klass* k) {
   k = get_buffered_klass(k);
   Klass* requested_k = to_requested(k);
   address narrow_klass_base = _requested_static_archive_bottom; // runtime encoding base == runtime mapping start
-  const int narrow_klass_shift = ArchiveHeapWriter::precomputed_narrow_klass_shift;
+  const int narrow_klass_shift = precomputed_narrow_klass_shift;
   return CompressedKlassPointers::encode_not_null(requested_k, narrow_klass_base, narrow_klass_shift);
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
