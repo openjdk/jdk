@@ -35,6 +35,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
@@ -269,10 +270,10 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
      * knowledge of the PEM data class type and specify the returned object's
      * class.
      *
-     * @param <S>    the type parameter
+     * @param <S extends SecurityObject> Type parameter
      * @param string the String containing PEM data.
      * @param tClass the class instance of the returned object.  The class must implement {@code SecurityObject}.
-     * @return fpp s
+     * @return The SecurityObject typecasted to tClass.
      * @throws IOException on an error in decoding or if the PEM is unsupported.
      */
     @Override
@@ -280,6 +281,17 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
         Class<S> tClass) throws IOException {
         Objects.requireNonNull(string);
         Objects.requireNonNull(tClass);
+
+        // KeySpec's other that EncodedKeySpec's do not differentiate between
+        // public or private key via a subclass.  Specifying each class is
+        // in this the decoder error-prone and not extensible.
+        if (tClass.isInstance(KeySpec.class) &&
+            (!tClass.isInstance(X509EncodedKeySpec.class) &&
+                !tClass.isInstance(PKCS8EncodedKeySpec.class))) {
+            throw new IOException("Decoder does not support the provided " +
+                "KeySpec.");
+        }
+
         try {
             return tClass.cast(decode(new StringReader(string)));
         } catch (ClassCastException e) {

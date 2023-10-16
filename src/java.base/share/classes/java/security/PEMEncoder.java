@@ -33,6 +33,7 @@ import sun.security.x509.AlgorithmId;
 
 import javax.crypto.Cipher;
 import javax.crypto.EncryptedPrivateKeyInfo;
+import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import java.io.*;
@@ -48,39 +49,24 @@ import java.util.Objects;
  */
 final public class PEMEncoder implements Encoder<SecurityObject> {
 
-    // XXX This is in java.security file
-    /**
-     * The Cipher.
-     */
-    //protected static final String DEFAULT_ALGO = "PBEWithHmacSHA256AndAES_128";
-
-    /**
-     * The Cipher.
-     */
+    // If non-null, encoder is configured for encryption
     Cipher cipher;
-    /**
-     * The Algid.
-     */
-    AlgorithmId algid;
 
     /**
      * Instantiates a new Encoder.
      *
      * @param c the c
-     * @param a the a
      */
-    PEMEncoder(Cipher c, AlgorithmId a) {
+    PEMEncoder(Cipher c) {
         cipher = c;
-        algid = a;
     }
 
     /**
-     * Instantiates a new Encoder.
+     * Instantiates a new PEMEncoder.
      *
-     * @return the pem encoder
      */
-    PEMEncoder() {
-        new PEMEncoder(null,null);
+    public PEMEncoder() {
+        new PEMEncoder(null);
     }
 
     /**
@@ -90,7 +76,7 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
      * @param encoded the encoded
      * @return the string
      */
-    String pemEncoded(Pem.KeyType keyType, byte[] encoded) {
+    private String pemEncoded(Pem.KeyType keyType, byte[] encoded) {
         StringBuilder sb = new StringBuilder(100);
         Base64.Encoder e = Base64.getEncoder();
         switch (keyType) {
@@ -116,9 +102,17 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
         return sb.toString();
     }
 
+    /**
+     * Encodes a given SecurityObject into PEM.
+     * The supported classes and sub-classes include:
+     * {@code PrivateKey}, {@code PublicKey}, {@code KeyPair},
+     * {@code X509EncodedKeySpec}, {@code PKCS8EncodedKeySpec},
+     * {@code EncryptedPrivateKeyInfo}, {@code Certificate}, and {@code CRL}.
+     */
     @Override
     public String encode(SecurityObject so) throws IOException {
         Objects.requireNonNull(so);
+        /*
         if (so instanceof PublicKey)
             return build(null, ((PublicKey) so).getEncoded());
         else if (so instanceof PrivateKey)
@@ -174,7 +168,7 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
             throw new IOException("PEM does not support " +
                 so.getClass().getCanonicalName());
         }
-        /*
+         */
         return switch (so) {
             case PublicKey pu -> build(null, pu.getEncoded());
             case PrivateKey pr -> build(pr.getEncoded(), null);
@@ -186,7 +180,7 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
                 if (kp.getPrivate() == null) {
                     throw new IOException("KeyPair does not contain PrivateKey.");
                 }
-                build(kp.getPrivate().getEncoded(),
+                yield build(kp.getPrivate().getEncoded(),
                     kp.getPublic().getEncoded());
             }
             case X509EncodedKeySpec x -> build(null, x.getEncoded());
@@ -207,7 +201,6 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
                 }
                 sb.append(Pem.CERTFOOTER);
                 yield sb.toString();
-
             }
             case CRL crl -> {
                 X509CRL xcrl = (X509CRL)crl;
@@ -222,9 +215,9 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
                 yield sb.toString();
             }
             default -> throw new IOException("PEM does not support " +
-                tClass.getCanonicalName());
+                so.getClass().getCanonicalName());
         };
-         */
+
     }
 
     /**
@@ -236,22 +229,16 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
      */
     public PEMEncoder withEncryption(char[] password) throws IOException {
         Objects.requireNonNull(password);
-        if (cipher != null) {
-            throw new IOException("Encryption cannot be used more than once");
-        }
 
-        AlgorithmId algid;
-        Cipher c;
+        // PBEKeySpec clones password
+        PBEKeySpec spec = new PBEKeySpec(password);
+
         try {
-            var spec = new PBEKeySpec(password);
-            // PBEKeySpec clones password
             SecretKeyFactory factory;
             factory = SecretKeyFactory.getInstance(Pem.DEFAULT_ALGO);
-            c = Cipher.getInstance(Pem.DEFAULT_ALGO);
-            var skey = factory.generateSecret(spec);
-            c.init(Cipher.ENCRYPT_MODE, skey);
-            algid = new AlgorithmId(Pem.getPBEID(Pem.DEFAULT_ALGO),
-                c.getParameters());
+            Cipher c = Cipher.getInstance(Pem.DEFAULT_ALGO);
+            c.init(Cipher.ENCRYPT_MODE, factory.generateSecret(spec));
+            return new PEMEncoder(c);
         } catch (NoSuchAlgorithmException e) {
             throw new IOException("Security property " +
                 "\"jdk.epkcs8.defaultAlgorithm\" may not specify a " +
@@ -260,7 +247,6 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
             throw new IOException(e);
         }
 
-        return new PEMEncoder(c, algid);
     }
 
 
@@ -283,7 +269,8 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
                 throw new IOException("Can only encrypt a PrivateKey.");
             }
             try {
-                algid.encode(out);
+                new AlgorithmId(Pem.getPBEID(Pem.DEFAULT_ALGO),
+                    cipher.getParameters()).encode(out);
                 out.putOctetString(cipher.doFinal(privateBytes));
                 encoded = DerValue.wrap(DerValue.tag_Sequence, out).
                     toByteArray();
