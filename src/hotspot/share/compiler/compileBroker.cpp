@@ -31,6 +31,7 @@
 #include "code/codeHeapState.hpp"
 #include "code/dependencyContext.hpp"
 #include "compiler/compilationLog.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
@@ -649,6 +650,10 @@ void CompileBroker::compilation_init(JavaThread* THREAD) {
      JFR_ONLY(register_jfr_phasetype_serializer(compiler_jvmci);)
    }
 #endif // INCLUDE_JVMCI
+
+  if (CompilerOracle::should_collect_memstat()) {
+    CompilationMemoryStatistic::initialize();
+  }
 
   // Start the compiler thread(s)
   init_compiler_threads();

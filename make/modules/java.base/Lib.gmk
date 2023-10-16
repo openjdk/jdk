@@ -227,7 +227,7 @@ ifeq ($(ENABLE_FALLBACK_LINKER), true)
       NAME := fallbackLinker, \
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBFFI_CFLAGS), \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
-                  $(call SET_SHARED_LIBRARY_ORIGIN), \
+                 $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := $(LIBFFI_LIBS), \
       LIBS_windows := $(LIBFFI_LIBS) ws2_32.lib, \
   ))
