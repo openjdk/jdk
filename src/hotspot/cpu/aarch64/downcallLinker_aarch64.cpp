@@ -204,6 +204,7 @@ void DowncallStubGenerator::generate() {
   bool has_objects = false;
   GrowableArray<VMStorage> filtered_java_regs = ForeignGlobals::downcall_filter_offset_regs(java_regs, _signature,
                                                                                              _num_args, has_objects);
+  assert(!(_needs_transition && has_objects), "can not pass objects when doing transition");
 
   int allocated_frame_size = 0;
   assert(_abi._shadow_space_bytes == 0, "not expecting shadow space on AArch64");
@@ -220,14 +221,6 @@ void DowncallStubGenerator::generate() {
     // and spill area is only used after.
     allocated_frame_size = out_reg_spiller.spill_size_bytes() > allocated_frame_size
       ? out_reg_spiller.spill_size_bytes()
-      : allocated_frame_size;
-  }
-
-  if (has_objects) {
-    spill_offset = 0;
-    // in spill area can also be shared
-    allocated_frame_size = in_reg_spiller.spill_size_bytes() > allocated_frame_size
-      ? in_reg_spiller.spill_size_bytes()
       : allocated_frame_size;
   }
 
@@ -294,13 +287,6 @@ void DowncallStubGenerator::generate() {
   }
 
   if (has_objects) {
-    in_reg_spiller.generate_spill(_masm, spill_offset);
-
-    __ mov(c_rarg0, rthread);
-    __ rt_call(CAST_FROM_FN_PTR(address, DowncallLinker::lock_gc));
-
-    in_reg_spiller.generate_fill(_masm, spill_offset);
-
     add_offsets_to_oops(java_regs, tmp1, tmp2);
   }
 
@@ -325,19 +311,6 @@ void DowncallStubGenerator::generate() {
       } else {
         ShouldNotReachHere();
       }
-    }
-  }
-
-  if (has_objects) {
-    if (should_save_return_value) {
-      out_reg_spiller.generate_spill(_masm, spill_offset);
-    }
-
-    __ mov(c_rarg0, rthread);
-    __ rt_call(CAST_FROM_FN_PTR(address, DowncallLinker::unlock_gc));
-
-    if (should_save_return_value) {
-      out_reg_spiller.generate_fill(_masm, spill_offset);
     }
   }
 

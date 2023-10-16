@@ -55,11 +55,3 @@ JVM_LEAF(void, DowncallLinker::capture_state(int32_t* value_ptr, int captured_st
     *value_ptr = errno;
   }
 JVM_END
-
-// We call these from _thread_in_java, since there is no state transition
-JRT_ENTRY(void, DowncallLinker::lock_gc(JavaThread* current))
-  GCLocker::lock_critical(current);
-JRT_END
-JRT_ENTRY(void, DowncallLinker::unlock_gc(JavaThread* current))
-  GCLocker::unlock_critical(current);
-JRT_END
