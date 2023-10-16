@@ -760,7 +760,7 @@ jdk/jfr/event/runtime/TestResidentSetSizeEvent.java             8309846 aix-ppc6
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
 jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
-jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x64
+jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x64,linux-aarch64
 
 ############################################################################
 

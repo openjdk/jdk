@@ -2436,6 +2436,16 @@ C2V_VMENTRY_0(jint, arrayIndexScale, (JNIEnv* env, jobject, jchar type_char))
   return type2aelembytes(type);
 C2V_END
 
+C2V_VMENTRY(void, clearOopHandle, (JNIEnv* env, jobject, jlong oop_handle))
+  if (oop_handle == 0L) {
+    JVMCI_THROW(NullPointerException);
+  }
+  // Assert before nulling out, for better debugging.
+  assert(JVMCIRuntime::is_oop_handle(oop_handle), "precondition");
+  oop* oop_ptr = (oop*) oop_handle;
+  NativeAccess<>::oop_store(oop_ptr, (oop) nullptr);
+C2V_END
+
 C2V_VMENTRY(void, releaseClearedOopHandles, (JNIEnv* env, jobject))
   JVMCIENV->runtime()->release_cleared_oop_handles();
 C2V_END
@@ -3260,6 +3270,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "readArrayElement",                             CC "(" OBJECTCONSTANT "I)Ljava/lang/Object;",                                         FN_PTR(readArrayElement)},
   {CC "arrayBaseOffset",                              CC "(C)I",                                                                            FN_PTR(arrayBaseOffset)},
   {CC "arrayIndexScale",                              CC "(C)I",                                                                            FN_PTR(arrayIndexScale)},
+  {CC "clearOopHandle",                               CC "(J)V",                                                                            FN_PTR(clearOopHandle)},
   {CC "releaseClearedOopHandles",                     CC "()V",                                                                             FN_PTR(releaseClearedOopHandles)},
   {CC "registerNativeMethods",                        CC "(" CLASS ")[J",                                                                   FN_PTR(registerNativeMethods)},
   {CC "isCurrentThreadAttached",                      CC "()Z",                                                                             FN_PTR(isCurrentThreadAttached)},
