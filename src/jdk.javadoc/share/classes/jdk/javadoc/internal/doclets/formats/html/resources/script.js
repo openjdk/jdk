@@ -227,3 +227,10 @@ function switchCopyLabel(button, span) {
         }, 100);
     }, 1900);
 }
+// Dynamically set scroll margin to accomodate for draft header
+document.addEventListener("DOMContentLoaded", function(e) {
+    document.querySelectorAll(':not(input)[id]').forEach(
+        function(c) {
+            c.style["scroll-margin-top"] = Math.ceil(document.querySelector("header").offsetHeight) + "px"
+        });
+});
