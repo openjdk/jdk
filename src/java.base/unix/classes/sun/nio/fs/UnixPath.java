@@ -27,7 +27,6 @@ package sun.nio.fs;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.CharacterCodingException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.InvalidPathException;
 import java.nio.file.LinkOption;
@@ -127,7 +126,7 @@ class UnixPath implements Path {
         input = fs.normalizeNativePath(input);
         try {
             return JLA.getBytesNoRepl(input, Util.jnuEncoding());
-        } catch (CharacterCodingException cce) {
+        } catch (IllegalArgumentException iae) {
             throw new InvalidPathException(input,
                 "Malformed input or input contains unmappable characters");
         }

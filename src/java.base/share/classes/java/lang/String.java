@@ -769,21 +769,8 @@ public final class String
         return new String(dst, UTF16);
     }
 
-    static String newStringNoRepl(byte[] src, Charset cs) throws CharacterCodingException {
-        try {
-            return newStringNoRepl1(src, cs);
-        } catch (IllegalArgumentException e) {
-            //newStringNoRepl1 throws IAE with MalformedInputException or CCE as the cause
-            Throwable cause = e.getCause();
-            if (cause instanceof MalformedInputException mie) {
-                throw mie;
-            }
-            throw (CharacterCodingException)cause;
-        }
-    }
-
     @SuppressWarnings("removal")
-    private static String newStringNoRepl1(byte[] src, Charset cs) {
+    static String newStringNoRepl(byte[] src, Charset cs) {
         int len = src.length;
         if (len == 0) {
             return "";
@@ -941,23 +928,11 @@ public final class String
         return !StringCoding.hasNegatives(src, 0, src.length);
     }
 
-    /*
-     * Throws CCE, instead of replacing, if unmappable.
-     */
-    static byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
-        try {
-            return getBytesNoRepl1(s, cs);
-        } catch (IllegalArgumentException e) {
-            //getBytesNoRepl1 throws IAE with UnmappableCharacterException or CCE as the cause
-            Throwable cause = e.getCause();
-            if (cause instanceof UnmappableCharacterException) {
-                throw (UnmappableCharacterException)cause;
-            }
-            throw (CharacterCodingException)cause;
-        }
+    private static byte[] getBytesNoRepl1(String s, Charset cs) {
+        return getBytesNoRepl1(s, cs);
     }
 
-    private static byte[] getBytesNoRepl1(String s, Charset cs) {
+    static byte[] getBytesNoRepl(String s, Charset cs) {
         byte[] val = s.value();
         byte coder = s.coder();
         if (cs == UTF_8.INSTANCE) {

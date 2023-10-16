@@ -315,7 +315,7 @@ class ZipCoder {
                 } else {
                     return Comparison.NO_MATCH;
                 }
-            } catch (CharacterCodingException e) {
+            } catch (IllegalArgumentException e) {
                 return Comparison.NO_MATCH;
             }
         }

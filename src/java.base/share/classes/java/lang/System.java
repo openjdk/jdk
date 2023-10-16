@@ -48,7 +48,6 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
-import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.security.AccessControlContext;
 import java.security.AccessController;
@@ -2473,13 +2472,13 @@ public final class System {
             public int countPositives(byte[] bytes, int offset, int length) {
                 return StringCoding.countPositives(bytes, offset, length);
             }
-            public String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
+            public String newStringNoRepl(byte[] bytes, Charset cs) {
                 return String.newStringNoRepl(bytes, cs);
             }
             public char getUTF16Char(byte[] bytes, int index) {
                 return StringUTF16.getChar(bytes, index);
             }
-            public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
+            public byte[] getBytesNoRepl(String s, Charset cs) {
                 return String.getBytesNoRepl(s, cs);
             }
 
