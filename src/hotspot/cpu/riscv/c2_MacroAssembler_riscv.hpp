@@ -158,7 +158,7 @@
                          Register tmp1, Register tmp2, Register tmp3);
 
   void signum_fp(FloatRegister dst, FloatRegister src, FloatRegister one,
-                 Register tmp1, bool is_double);
+                 bool is_double);
 
   // intrinsic methods implemented by rvv instructions
   void string_equals_v(Register r1, Register r2,
