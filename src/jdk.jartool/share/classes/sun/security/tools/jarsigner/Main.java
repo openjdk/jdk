@@ -150,10 +150,6 @@ public class Main {
         }
     }
 
-    private static void exit(int exitCode) {
-        throw new ExitException(exitCode);
-    }
-
     X509Certificate[] certChain;    // signer's cert chain (when composing)
     PrivateKey privateKey;          // private key
     KeyStore store;                 // the keystore specified by -keystore
@@ -620,12 +616,12 @@ public class Main {
     static void usage() {
         System.out.println();
         System.out.println(rb.getString("Please.type.jarsigner.help.for.usage"));
-        exit(1);
+        throw new ExitException(1);
     }
 
     static void doPrintVersion() {
         System.out.println("jarsigner " + System.getProperty("java.version"));
-        exit(0);
+        throw new ExitException(0);
     }
 
     static void fullusage() {
@@ -727,7 +723,7 @@ public class Main {
                 (".print.this.help.message"));
         System.out.println();
 
-        exit(0);
+        throw new ExitException(0);
     }
 
     void verifyJar(String jarName)
@@ -2469,7 +2465,7 @@ public class Main {
 
     void error(String message) {
         System.out.println(rb.getString("jarsigner.")+message);
-        exit(1);
+        throw new ExitException(1);
     }
 
 
@@ -2478,7 +2474,7 @@ public class Main {
         if (debug) {
             e.printStackTrace();
         }
-        exit(1);
+        throw new ExitException(1);
     }
 
     /**

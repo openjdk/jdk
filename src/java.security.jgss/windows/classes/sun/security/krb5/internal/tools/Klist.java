@@ -148,7 +148,7 @@ public class Klist {
             } else
                 target = CredentialsCache.getInstance(name);
 
-            if (target != null)  {
+            if (target != null) {
                 return displayCache();
             } else {
                 return displayError("Credentials cache");
@@ -197,7 +197,7 @@ public class Klist {
                                    entries.length + " entries found.\n");
             for (int i = 0; i < entries.length; i++) {
                 System.out.println("[" + (i + 1) + "] " +
-                                   "Service principal: "  +
+                                   "Service principal: " +
                                    entries[i].getService().toString());
                 System.out.println("\t KVNO: " +
                                    entries[i].getKey().getKeyVersionNumber());
@@ -229,7 +229,7 @@ public class Klist {
                                 name);
             return -1;
         }
-        System.out.println("\nCredentials cache: " +  name);
+        System.out.println("\nCredentials cache: " + name);
         String defaultPrincipal = cache.getPrimaryPrincipal().toString();
         int num = creds.length;
 
