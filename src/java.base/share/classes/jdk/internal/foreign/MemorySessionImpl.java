@@ -77,17 +77,7 @@ public abstract sealed class MemorySessionImpl
     }
 
     public Arena asArena() {
-        return new Arena() {
-            @Override
-            public Scope scope() {
-                return MemorySessionImpl.this;
-            }
-
-            @Override
-            public void close() {
-                MemorySessionImpl.this.close();
-            }
-        };
+        return new ArenaImpl(this);
     }
 
     @ForceInline
@@ -151,11 +141,6 @@ public abstract sealed class MemorySessionImpl
 
     public static MemorySessionImpl createImplicit(Cleaner cleaner) {
         return new ImplicitSession(cleaner);
-    }
-
-    public MemorySegment allocate(long byteSize, long byteAlignment) {
-        Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
-        return NativeMemorySegmentImpl.makeNativeSegment(byteSize, byteAlignment, this);
     }
 
     public abstract void release0();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,36 @@
  * questions.
  */
 
-/*
- * @test
- * @enablePreview
- *
- * @run testng/othervm -Djdk.internal.foreign.CABI=UNSUPPORTED --enable-native-access=ALL-UNNAMED TestUnsupportedLinker
- */
+package jdk.test.lib.hprof.model;
 
-import java.lang.foreign.Linker;
+import jdk.test.lib.hprof.util.Misc;
 
-import org.testng.annotations.Test;
+public class ThreadObject {
 
-public class TestUnsupportedLinker {
+    private final long id;            // ID of the JavaThing we refer to
+    private final StackTrace stackTrace;
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testLinker() {
-        Linker.nativeLinker();
+    public ThreadObject(long id, StackTrace stackTrace) {
+        this.id = id;
+        this.stackTrace = stackTrace;
     }
+
+    public long getId() {
+        return id;
+    }
+
+    public String getIdString() {
+        return Misc.toHex(id);
+    }
+
+    public StackTrace getStackTrace() {
+        return stackTrace;
+    }
+
+    void resolve(Snapshot ss) {
+        if (stackTrace != null) {
+            stackTrace.resolve(ss);
+        }
+    }
+
 }

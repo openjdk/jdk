@@ -24,13 +24,13 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/cardTableRS.hpp"
+#include "gc/serial/generation.hpp"
+#include "gc/serial/serialHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/generation.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
@@ -58,11 +58,11 @@ Generation::Generation(ReservedSpace rs, size_t initial_size) :
 }
 
 size_t Generation::initial_size() {
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  if (gch->is_young_gen(this)) {
-    return gch->young_gen_spec()->init_size();
+  SerialHeap* serial_heap = SerialHeap::heap();
+  if (serial_heap->is_young_gen(this)) {
+    return serial_heap->young_gen_spec()->init_size();
   }
-  return gch->old_gen_spec()->init_size();
+  return serial_heap->old_gen_spec()->init_size();
 }
 
 size_t Generation::max_capacity() const {
@@ -86,25 +86,13 @@ void Generation::print_summary_info_on(outputStream* st) {
   double time = sr->accumulated_time.seconds();
   st->print_cr("Accumulated %s generation GC time %3.7f secs, "
                "%u GC's, avg GC time %3.7f",
-               GenCollectedHeap::heap()->is_young_gen(this) ? "young" : "old" ,
+               SerialHeap::heap()->is_young_gen(this) ? "young" : "old" ,
                time,
                sr->invocations,
                sr->invocations > 0 ? time / sr->invocations : 0.0);
 }
 
 // Utility iterator classes
-
-class GenerationIsInReservedClosure : public SpaceClosure {
- public:
-  const void* _p;
-  Space* sp;
-  virtual void do_space(Space* s) {
-    if (sp == nullptr) {
-      if (s->is_in_reserved(_p)) sp = s;
-    }
-  }
-  GenerationIsInReservedClosure(const void* p) : _p(p), sp(nullptr) {}
-};
 
 class GenerationIsInClosure : public SpaceClosure {
  public:
@@ -128,8 +116,8 @@ size_t Generation::max_contiguous_available() const {
   // The largest number of contiguous free words in this or any higher generation.
   size_t avail = contiguous_available();
   size_t old_avail = 0;
-  if (GenCollectedHeap::heap()->is_young_gen(this)) {
-    old_avail = GenCollectedHeap::heap()->old_gen()->contiguous_available();
+  if (SerialHeap::heap()->is_young_gen(this)) {
+    old_avail = SerialHeap::heap()->old_gen()->contiguous_available();
   }
   return MAX2(avail, old_avail);
 }
@@ -147,7 +135,7 @@ oop Generation::promote(oop obj, size_t obj_size) {
   assert(obj_size == obj->size(), "bad obj_size passed in");
 
 #ifndef PRODUCT
-  if (GenCollectedHeap::heap()->promotion_should_fail()) {
+  if (SerialHeap::heap()->promotion_should_fail()) {
     return nullptr;
   }
 #endif  // #ifndef PRODUCT
@@ -248,8 +236,6 @@ void Generation::object_iterate(ObjectClosure* cl) {
   space_iterate(&blk);
 }
 
-#if INCLUDE_SERIALGC
-
 void Generation::prepare_for_compaction(CompactPoint* cp) {
   // Generic implementation, can be specialized
   ContiguousSpace* space = first_compaction_space();
@@ -280,5 +266,3 @@ void Generation::compact() {
     sp = sp->next_compaction_space();
   }
 }
-
-#endif // INCLUDE_SERIALGC
