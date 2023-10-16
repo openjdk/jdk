@@ -128,8 +128,6 @@ class x86 {
   static jint    _mxcsr_std;
 #ifdef _LP64
   static jint    _mxcsr_rz;
-  static double  _unity;
-  static double  _thresh;
 #endif // _LP64
 
   static address _verify_mxcsr_entry;
@@ -214,8 +212,6 @@ class x86 {
   static address addr_mxcsr_std()        { return (address)&_mxcsr_std; }
 #ifdef _LP64
   static address addr_mxcsr_rz()        { return (address)&_mxcsr_rz; }
-  static address addr_unity()            { return (address)&_unity; }
-  static address addr_thresh()           { return (address)&_thresh; }
 #endif // _LP64
   static address verify_mxcsr_entry()    { return _verify_mxcsr_entry; }
   static address crc_by128_masks_addr()  { return (address)_crc_by128_masks; }

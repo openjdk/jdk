@@ -974,7 +974,7 @@ bool os::dll_address_to_library_name(address addr, char* buf,
 // same architecture as Hotspot is running on
 
 void *os::Bsd::dlopen_helper(const char *filename, int mode) {
-#if defined(__GNUC__)
+#ifndef IA32
   // Save and restore the floating-point environment around dlopen().
   // There are known cases where global library initialization sets
   // FPU flags that affect computation accuracy, for example, enabling
@@ -984,30 +984,26 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode) {
   // numerical "accuracy", but we need to protect Java semantics first
   // and foremost. See JDK-8295159.
 
+  // This workaround is ineffective on IA32 systems because the MXCSR
+  // register (which controls flush-to-zero mode) is not stored in the
+  // legacy fenv.
+
   fenv_t default_fenv;
   int rtn = fegetenv(&default_fenv);
   assert(rtn == 0, "fegetnv must succeed");
-#endif // defined(__GNUC__)
+#endif // IA32
 
   void * result= ::dlopen(filename, RTLD_LAZY);
 
-#if defined(__GNUC__)
-  if (result  != nullptr) {
-    // Quickly test to make sure denormals are correctly handled.
-    static const double unity
-      = jdouble_cast(0x0030000000000000); // 0x1.0p-1020;
-    static const volatile double thresh
-      = jdouble_cast(0x0000000000000003); // 0x0.0000000000003p-1022;
-    if (unity + thresh == unity || -unity - thresh == -unity) {
-      // We just dlopen()ed a library that mangled the floating-point
-      // flags. Silently fix things now.
-      int rtn = fesetenv(&default_fenv);
-      assert(rtn == 0, "fesetenv must succeed");
-      assert(unity + thresh != unity && -unity - thresh != -unity,
-             "fsetenv didn't work");
-    }
+#ifndef IA32
+  if (result  != nullptr && StubRoutines::FTZ_mode_enabled()) {
+    // We just dlopen()ed a library that mangled the floating-point
+    // flags. Silently fix things now.
+    int rtn = fesetenv(&default_fenv);
+    assert(rtn == 0, "fesetenv must succeed");
+    assert(! StubRoutines::FTZ_mode_enabled, "fsetenv didn't work");
   }
-#endif // defined(__GNUC__)
+#endif // IA32
 
   return result;
 }

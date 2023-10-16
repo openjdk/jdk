@@ -21,8 +21,6 @@
  * questions.
  */
 
-#include <assert.h>
-#include <fenv.h>
 #include "jni.h"
 
 // See GCC bug 55522:
@@ -34,9 +32,14 @@
 // This breaks Java's floating point arithmetic.
 
 #if defined(__GNUC__)
+
+// On systems on which GCC bug 55522 has been fixed, this constructor
+// serves to reproduce the original bug for the purposes of testing
+// HotSpot.
 static void __attribute__((constructor)) set_flush_to_zero(void) {
 
-#if defined(__x86_64__) && defined(SSE)
+#if defined(__x86_64__)
+
 #define MXCSR_DAZ (1 << 6)      /* Enable denormals are zero mode */
 #define MXCSR_FTZ (1 << 15)     /* Enable flush to zero mode */
   unsigned int mxcsr = __builtin_ia32_stmxcsr ();
@@ -44,9 +47,11 @@ static void __attribute__((constructor)) set_flush_to_zero(void) {
   __builtin_ia32_ldmxcsr (mxcsr);
 
 #elif defined(__aarch64__)
+
 #define _FPU_FPCR_FZ (unsigned long)0x1000000
 #define _FPU_SETCW(fpcr) \
-  {  __asm__ __volatile__ ("msr fpcr, %0" : : "r" (fpcr)); }
+  __asm__ __volatile__ ("msr fpcr, %0" : : "r" (fpcr));
+
   /* Flush to zero, round to nearest, IEEE exceptions disabled.  */
   _FPU_SETCW (_FPU_FPCR_FZ);
 

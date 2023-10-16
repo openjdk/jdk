@@ -5167,8 +5167,8 @@ void MacroAssembler::restore_cpu_control_state_after_jni(Register rscratch) {
       // Perform a little arithmetic to make sure that denormal
       // numbers are handled correctly, i.e. that the "Denormals Are
       // Zeros" flag has not been set.
-      movsd(xmm9, ExternalAddress(StubRoutines::x86::addr_unity()), rsi);
-      movsd(xmm8, ExternalAddress(StubRoutines::x86::addr_thresh()), rsi);
+      movsd(xmm9, ExternalAddress(StubRoutines::large_denormal_addr()), rsi);
+      movsd(xmm8, ExternalAddress(StubRoutines::small_denormal_addr()), rsi);
       addsd(xmm8, xmm9);
       ucomisd(xmm8, xmm9);
       jcc(Assembler::equal, FAIL);

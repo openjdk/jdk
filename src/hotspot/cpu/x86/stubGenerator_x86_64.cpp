@@ -3899,10 +3899,6 @@ void StubGenerator::create_control_words() {
   StubRoutines::x86::_mxcsr_std = 0x1F80;
   // Round to zero, 64-bit mode, exceptions masked
   StubRoutines::x86::_mxcsr_rz = 0x7F80;
-  StubRoutines::x86::_unity
-    = jdouble_cast(0x0030000000000000); // 0x1.0p-1020;
-  StubRoutines::x86::_thresh
-    = jdouble_cast(0x0000000000000003); // 0x0.0000000000003p-1022;
 }
 
 // Initialization
