@@ -42,7 +42,7 @@ import jdk.internal.classfile.components.ClassPrinter;
  */
 public final class Bytecode {
 
-    private final static ClassDesc CD_Thread = classDesc(Thread.class);
+    private static final ClassDesc CD_Thread = classDesc(Thread.class);
 
     public record ClassMethodDesc(ClassDesc type, MethodDesc method) {
         public static ClassMethodDesc of(Class<?> clazz, String method, String desrciptor) {
