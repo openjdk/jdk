@@ -166,9 +166,9 @@ final class DualPivotQuicksort {
         /**
          * Partitions the specified range of the array using the given pivots.
          *
-         * @param a the array to be sorted
-         * @param low the index of the first element, inclusive, to be sorted
-         * @param high the index of the last element, exclusive, to be sorted
+         * @param a the array to be partitioned
+         * @param low the index of the first element, inclusive, to be partitioned
+         * @param high the index of the last element, exclusive, to be partitioned
          * @param pivotIndex1 the index of pivot1, the first pivot
          * @param pivotIndex2 the index of pivot2, the second pivot
          */
@@ -178,13 +178,13 @@ final class DualPivotQuicksort {
     /**
      * Partitions the specified range of the array using the two pivots provided.
      *
-     * @param elemType the class of the array to be sorted
-     * @param array the array to be sorted
+     * @param elemType the class of the array to be partitioned
+     * @param array the array to be partitioned
      * @param offset the relative offset, in bytes, from the base address of
      * the array to partition, otherwise if the array is {@code null},an absolute
      * address pointing to the first element to partition from.
-     * @param low the index of the first element, inclusive, to be sorted
-     * @param high the index of the last element, exclusive, to be sorted
+     * @param low the index of the first element, inclusive, to be partitioned
+     * @param high the index of the last element, exclusive, to be partitioned
      * @param pivotIndex1 the index of pivot1, the first pivot
      * @param pivotIndex2 the index of pivot2, the second pivot
      * @param po the method reference for the fallback implementation
