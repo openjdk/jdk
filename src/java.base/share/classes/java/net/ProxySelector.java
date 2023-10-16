@@ -178,7 +178,8 @@ public abstract class ProxySelector {
 
     /**
      * Returns a ProxySelector which uses the given proxy address for all HTTP
-     * and HTTPS requests. If proxy is {@code null} then proxying is disabled.
+     * and HTTPS requests. If {@code proxyAddress} is {@code null}
+     * then proxying is disabled.
      *
      * @param proxyAddress
      *        The address of the proxy
@@ -211,8 +212,15 @@ public abstract class ProxySelector {
         }
 
         @Override
-        public synchronized List<Proxy> select(URI uri) {
-            String scheme = uri.getScheme().toLowerCase(Locale.ROOT);
+        public List<Proxy> select(URI uri) {
+            if (uri == null) {
+                throw new IllegalArgumentException("URI can't be null");
+            }
+            String scheme = uri.getScheme();
+            if (scheme == null) {
+                throw new IllegalArgumentException("protocol can't be null");
+            }
+            scheme = scheme.toLowerCase(Locale.ROOT);
             if (scheme.equals("http") || scheme.equals("https")) {
                 return list;
             } else {
