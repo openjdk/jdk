@@ -71,8 +71,8 @@ using IntrusiveListEntryAccessor =
  * in the list, the actual type of such objects may be more specific
  * than the list's element type.
  *
- * * T is the class of the elements in the list.  Must be a possibly
- * const-qualified class type.
+ * * T is the class of the elements in the list.  Must be a class type,
+ * possibly const-qualified.
  *
  * * get_entry is a function of type IntrusiveListEntryAccessor<T> used
  * for accessing the IntrusiveListEntry subobject of T used by this list.
@@ -83,17 +83,21 @@ using IntrusiveListEntryAccessor =
  * is to not provide a constant-time size() operation.
  *
  * * Base is the base class for the list.  This is typically
- * used to specify the allocation class.  The default is void, indicating
- * no allocation class for the list.
+ * used to specify the allocation class, such as CHeapObj<>.  The default
+ * is void, indicating the list is not derived from an allocation class.
  *
- * The value type for a list may be const-qualified.  Such a list provides
- * const iterators and access to const-qualified elements.  A list whose value
- * type is not const-qualified can provide both const and non-const iterators
- * and can provide access to either const or unqualified elements, depending
- * on the operation used.  A list that is itself const only provides const
- * iterators and access to const-qualified elements.  A const object cannot be
- * added to a list whose value type is not const-qualified, as that would be
- * an implicit casting away of the const qualifier.
+ * A const-element iterator has a const-qualified element type.  Such an
+ * iterator provides const-qualified access to the elements it designates.
+ * A list's const_iterator type is always a const-element iterator type.
+ *
+ * A const-element list has a const-qualified element type.  Such a list
+ * provides const-element iterators and const-qualified access to its
+ * elements.  A const list similarly provides const access to elements, but
+ * does not support changing the sequence of elements.
+ *
+ * A const object can only be added to a const-element list.  Adding a const
+ * object to a non-const-element list would be an implicit casting away of the
+ * object's const qualifier.
  *
  * Some operations that remove elements from a list take a disposer argument.
  * This is a function or function object that will be called with one
@@ -136,7 +140,7 @@ using IntrusiveListEntryAccessor =
  *   ...
  * public:
  *   ...
- *   usnig MyList = IntrusiveList<MyClass, &get_entry>;
+ *   using MyList = IntrusiveList<MyClass, &get_entry>;
  *   ...
  * };
  *
@@ -198,6 +202,9 @@ private:
   DEBUG_ONLY(mutable IntrusiveListImpl* _list;)
 };
 
+// IntrusiveListImpl provides implementation support for IntrusiveList.
+// There's nothing for clients to see here. That support is all private, with
+// the IntrusiveList class given access via friendship.
 class IntrusiveListImpl {
 public:
   struct TestSupport;            // For unit tests
@@ -205,8 +212,6 @@ public:
 private:
   using Entry = IntrusiveListEntry;
 
-  // Nothing for clients to see here, everything is private.  Only
-  // the IntrusiveList class template has access, via friendship.
   template<typename T,
            IntrusiveListEntryAccessor<T>,
            bool,
@@ -257,9 +262,9 @@ private:
   // Support for optional constant-time size() operation.
   template<bool has_size, typename Base> class SizeBase;
 
-  // Conversion from T* to Entry*, along with relevant type aliases.  A
-  // corresponding specialization is used directly by IntrusiveList,
-  // and by the list's iterators.
+  // Relevant type aliases.  A corresponding specialization is used directly
+  // by IntrusiveList, and by the list's iterators to obtain their
+  // corresponding nested types.
   template<typename T>
   struct ListTraits : public AllStatic {
     static_assert(std::is_class<T>::value, "precondition");
@@ -362,8 +367,7 @@ template<typename T,
 struct IntrusiveListImpl::EntryAccess<
   IntrusiveListImpl::IteratorImpl<T, accessor, is_forward>>
 {
-  using const_reference = std::add_lvalue_reference_t<std::add_const_t<T>>;
-  static const Entry& get_entry(const_reference v) {
+  static const Entry& get_entry(typename ListTraits<T>::const_reference v) {
     return accessor(v);
   }
 };
@@ -599,11 +603,12 @@ public:
  * over the elements of an IntrusiveList.  The IntrusiveList class
  * uses specializations of this class as its iterator types.
  *
- * An iterator may be either const or non-const.  The value type of a const
- * iterator is const-qualified, and a const iterator only provides access to
- * const-qualified elements.  Similarly, a non-const iterator provides access
- * to unqualified elements.  A non-const iterator can be implicitly converted
- * to a const iterator, but not vice versa.
+ * An iterator may be either const-element or non-const-element.  The value
+ * type of a const-element iterator is const-qualified, and a const-element
+ * iterator only provides access to const-qualified elements.  Similarly, a
+ * non-const-element iterator provides access to unqualified elements.  A
+ * non-const-element iterator can be converted to a const-element iterator,
+ * but not vice versa.
  */
 template<typename T,
          IntrusiveListEntryAccessor<T> get_entry,
@@ -612,20 +617,20 @@ class IntrusiveListImpl::IteratorImpl {
   friend class IntrusiveListImpl;
 
   static const bool _is_forward = is_forward;
-  static const bool _is_const = std::is_const<T>::value;
+  static const bool _is_const_element = std::is_const<T>::value;
 
   using Impl = IntrusiveListImpl;
   using ListTraits = Impl::ListTraits<T>;
   using IOps = Impl::IteratorOperations<IteratorImpl>;
 
   // Test whether From is an iterator type different from this type that can
-  // be implicitly converted to this iterator type.  A const iterator type
-  // supports implicit conversion from the corresponding non-const iterator
-  // type.
+  // be implicitly converted to this iterator type.  A const_element iterator
+  // type supports implicit conversion from the corresponding
+  // non-const-element iterator type.
   template<typename From>
   static constexpr bool is_convertible_iterator() {
     using NonConst = IteratorImpl<std::remove_const_t<T>, get_entry, _is_forward>;
-    return _is_const && std::is_same<From, NonConst>::value;
+    return _is_const_element && std::is_same<From, NonConst>::value;
   }
 
 public:
@@ -773,7 +778,8 @@ public:
   // conversions.  For example, const_iterator == iterator is handled
   // by const_iterator::operator==(const_iterator) plus implicit
   // conversion of iterator to const_iterator.  But we need an
-  // additional overload to handle iterator == const_iterator.
+  // additional overload to handle iterator == const_iterator when those
+  // types are different.
 
   template<typename From, ENABLE_IF(is_convertible_iterator<From>())>
   friend bool operator==(const From& lhs, const IteratorImpl& rhs) {
@@ -824,8 +830,8 @@ class IntrusiveList : public IntrusiveListImpl::SizeBase<has_size, Base> {
 
   // A subsequence of one list can be transferred to another list via splice
   // if the lists have the same (ignoring const qualifiers) element type, use
-  // the same entry member, and either the receiver's element type is const or
-  // neither element type is const.  A const element of a list cannot be
+  // the same entry member, and either the receiver is a const-element list
+  // or neither is a const-element list.  A const element of a list cannot be
   // transferred to a list with non-const elements.  That would effectively be
   // a quiet casting away of const.  Assuming Other is a List, these
   // constraints are equivalent to the constraints on conversion of
@@ -860,28 +866,28 @@ public:
   /** Type of a pointer to a list element. */
   using pointer = typename ListTraits::pointer;
 
-  /** Type of a const pointer to a list element. */
+  /** Type of a pointer to a const list element. */
   using const_pointer = typename ListTraits::const_pointer;
 
   /** Type of a reference to a list element. */
   using reference = typename ListTraits::reference;
 
-  /** Type of a const reference to a list element. */
+  /** Type of a reference to a const list element. */
   using const_reference = typename ListTraits::const_reference;
 
-  /** Forward iterator type allowing modification of elements. */
+  /** Forward iterator type. */
   using iterator =
     Impl::IteratorImpl<T, get_entry, true>;
 
-  /** Forward iterator type disallowing modification of elements. */
+  /** Forward iterator type with const elements. */
   using const_iterator =
     Impl::IteratorImpl<std::add_const_t<T>, get_entry, true>;
 
-  /** Reverse iterator type allowing modification of elements. */
+  /** Reverse iterator type. */
   using reverse_iterator =
     Impl::IteratorImpl<T, get_entry, false>;
 
-  /** Reverse iterator type disallowing modification of elements. */
+  /** Reverse iterator type with const elements. */
   using const_reverse_iterator =
     Impl::IteratorImpl<std::add_const_t<T>, get_entry, false>;
 
