@@ -46,7 +46,7 @@ InstanceKlass* UnregisteredClasses::load_class(Symbol* name, const char* path, T
   assert(name != nullptr, "invariant");
   assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
 
-  PerfClassTraceTime vmtimer(ClassLoader::perf_sys_class_lookup_time(),
+  PerfClassTraceTime vmtimer(ClassLoader::perf_app_classload_time(),
                              THREAD->get_thread_stat()->perf_timers_addr(),
                              PerfClassTraceTime::CLASS_LOAD);
 
