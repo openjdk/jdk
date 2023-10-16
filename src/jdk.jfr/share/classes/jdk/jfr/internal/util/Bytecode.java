@@ -55,7 +55,7 @@ public final class Bytecode {
             return new FieldDesc(type, name);
         }
 
-        public static FieldDesc of(String name, Class<?> type) {
+        public static FieldDesc of(Class<?> type, String name) {
             return of(classDesc(type), name);
         }
     }

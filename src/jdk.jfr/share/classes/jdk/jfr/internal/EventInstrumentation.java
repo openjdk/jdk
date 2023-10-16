@@ -29,7 +29,6 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -48,7 +47,6 @@ import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.CodeBuilder.BlockCodeBuilder;
 import jdk.internal.classfile.FieldModel;
 import jdk.internal.classfile.Label;
-import jdk.internal.classfile.MethodElement;
 import jdk.internal.classfile.MethodModel;
 import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.TypeKind;
@@ -79,9 +77,9 @@ final class EventInstrumentation {
     private record SettingDesc(ClassDesc paramType, String methodName) {
     }
 
-    private static final FieldDesc FIELD_DURATION = FieldDesc.of(Utils.FIELD_DURATION, long.class);
-    private static final FieldDesc FIELD_EVENT_CONFIGURATION = FieldDesc.of("eventConfiguration", Object.class);;
-    private static final FieldDesc FIELD_START_TIME = FieldDesc.of(Utils.FIELD_START_TIME, long.class);
+    private static final FieldDesc FIELD_DURATION = FieldDesc.of(long.class, Utils.FIELD_DURATION);
+    private static final FieldDesc FIELD_EVENT_CONFIGURATION = FieldDesc.of(Object.class, "eventConfiguration");;
+    private static final FieldDesc FIELD_START_TIME = FieldDesc.of(long.class, Utils.FIELD_START_TIME);
     private static final ClassDesc ANNOTATION_ENABLED = classDesc(Enabled.class);
     private static final ClassDesc ANNOTATION_NAME = classDesc(Name.class);
     private static final ClassDesc ANNOTATION_REGISTERED = classDesc(Registered.class);
@@ -198,7 +196,8 @@ final class EventInstrumentation {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> T annotationValue(ClassModel classModel, ClassDesc classDesc, Class<?> type) {
+    // Only supports String and Boolean values
+    private static <T> T annotationValue(ClassModel classModel, ClassDesc classDesc, Class<T> type) {
         String typeDescriptor = classDesc.descriptorString();
         for (ClassElement ce : classModel.elements()) {
             if (ce instanceof RuntimeVisibleAnnotationsAttribute rvaa) {
@@ -207,8 +206,13 @@ final class EventInstrumentation {
                         if (a.elements().size() == 1) {
                             AnnotationElement ae = a.elements().getFirst();
                             if (ae.name().equalsString("value")) {
-                                if (ae.value() instanceof AnnotationValue.OfString s) {
-                                    return (T) s.stringValue();
+                                if (ae.value() instanceof AnnotationValue.OfBoolean ofb && type.equals(Boolean.class)) {
+                                    Boolean b = ofb.booleanValue();
+                                    return (T)b;
+                                }
+                                if (ae.value() instanceof AnnotationValue.OfString ofs && type.equals(String.class)) {
+                                    String s = ofs.stringValue();
+                                    return (T)s;
                                 }
                             }
                         }
@@ -223,7 +227,7 @@ final class EventInstrumentation {
         Set<String> methodSet = new HashSet<>();
         List<SettingDesc> settingDescs = new ArrayList<>();
         for (MethodModel m : classModel.methods()) {
-            for (MethodElement me : m.elements()) {
+            for (var me : m.elements()) {
                 if (me instanceof RuntimeVisibleAnnotationsAttribute rvaa) {
                     for (Annotation a : rvaa.annotations()) {
                         // We can't really validate the method at this
@@ -248,11 +252,11 @@ final class EventInstrumentation {
                             MethodTypeDesc mtd = m.methodTypeSymbol();
                             if ("Z".equals(mtd.returnType().descriptorString())) {
                                 if (mtd.parameterList().size() == 1) {
-                                    ClassDesc paramType = mtd.parameterList().getFirst();
-                                    if (!paramType.isPrimitive()) {
+                                    ClassDesc type = mtd.parameterList().getFirst();
+                                    if (type.isClassOrInterface()) {
                                         String methodName = m.methodName().stringValue();
                                         methodSet.add(methodName);
-                                        settingDescs.add(new SettingDesc(paramType, methodName));
+                                        settingDescs.add(new SettingDesc(type, methodName));
                                     }
                                 }
                             }
@@ -268,9 +272,9 @@ final class EventInstrumentation {
                     if (!Modifier.isPrivate(method.getModifiers())) {
                         if (method.getReturnType().equals(Boolean.TYPE)) {
                             if (method.getParameterCount() == 1) {
-                                Parameter param = method.getParameters()[0];
-                                if (!param.getType().isPrimitive()) {
-                                    ClassDesc paramType = Bytecode.classDesc(param.getType());
+                                Class<?> type = method.getParameters()[0].getType();
+                                if (SettingControl.class.isAssignableFrom(type)) {
+                                    ClassDesc paramType = Bytecode.classDesc(type);
                                     methodSet.add(method.getName());
                                     settingDescs.add(new SettingDesc(paramType, method.getName()));
                                 }
@@ -308,7 +312,7 @@ final class EventInstrumentation {
                     if (isValidField(field.getModifiers(), field.getType().getName())) {
                         String fieldName = field.getName();
                         if (!fieldSet.contains(fieldName)) {
-                            fieldDescs.add(FieldDesc.of(fieldName, field.getType()));
+                            fieldDescs.add(FieldDesc.of(field.getType(), fieldName));
                             fieldSet.add(fieldName);
                         }
                     }

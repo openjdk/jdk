@@ -30,8 +30,6 @@ import static jdk.jfr.internal.util.Bytecode.invokespecial;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.reflect.AccessFlag;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -69,12 +67,7 @@ public final class EventClassBuilder {
 
     public Class<? extends Event> build() {
         byte[] bytes = Classfile.of().build(ClassDesc.of(fullClassName), cb -> build(cb));
-        try {
-            String name = "/Users/egahlin/DynamicEvent" + (idCounter.longValue() - 1);
-            Files.write(Path.of(name + ".class"), bytes);
-        } catch (Exception ioe) {
-
-        }
+        Bytecode.log(fullClassName, bytes);
         return SecuritySupport.defineClass(Event.class, bytes).asSubclass(Event.class);
     }
 
