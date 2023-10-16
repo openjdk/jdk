@@ -254,7 +254,12 @@ public final class TransLiterals extends TreeTranslator {
         }
 
         boolean isNamedProcessor(Name name) {
-            if (processor instanceof JCIdent ident && ident.sym instanceof VarSymbol varSym) {
+            Symbol sym = switch (processor) {
+                case JCIdent ident -> ident.sym;
+                case JCFieldAccess access -> access.sym;
+                default -> null;
+            };
+            if (sym instanceof VarSymbol varSym) {
                 if (varSym.flags() == (Flags.PUBLIC | Flags.FINAL | Flags.STATIC) &&
                         varSym.name == name &&
                         types.isSameType(varSym.owner.type, syms.stringTemplateType)) {
