@@ -136,7 +136,7 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  *
  * <p> <i>Global</i> addresses are unique across the internet.
  *
- * <h3> Textual representation of IP addresses </h3>
+ * <h3> <a id="format">Textual representation of IP addresses</a> </h3>
  *
  * The textual representation of an IP address is address family specific.
  *
@@ -1705,12 +1705,12 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     }
 
     /**
-     * Creates an {@code InetAddress} based on the provided textual representation of
-     * an IP address.
-     * <p> The provided IP address literal is parsed as an IPv4 address literal first.
-     * If it cannot be parsed as {@linkplain Inet4Address#ofLiteral(String) IPv4 address
-     * literal}, then the method attempts to parse it as
-     * {@linkplain Inet6Address#ofLiteral(String) an IPv6 address literal}.
+     * Creates an {@code InetAddress} based on the provided {@linkplain InetAddress##format
+     * textual representation} of an IP address.
+     * <p> The provided IP address literal is parsed as
+     * {@linkplain Inet4Address#ofLiteral(String) an IPv4 address literal} first.
+     * If it cannot be parsed as an IPv4 address literal, then the method attempts
+     * to parse it as {@linkplain Inet6Address#ofLiteral(String) an IPv6 address literal}.
      * If neither attempts succeed an {@code IllegalArgumentException} is thrown.
      * <p> This method doesn't block, i.e. no reverse lookup is performed.
      *

@@ -39,7 +39,7 @@ import java.util.Objects;
  * and <a href="http://www.ietf.org/rfc/rfc2365.txt"><i>RFC&nbsp;2365:
  * Administratively Scoped IP Multicast</i></a>
  *
- * <h2> <a id="format">Textual representation of IP addresses</a> </h2>
+ * <h2> <a id="format">Textual representation of IPv4 addresses</a> </h2>
  *
  * Textual representation of IPv4 address used as input to methods
  * takes one of the following forms:
@@ -162,7 +162,7 @@ class Inet4Address extends InetAddress {
 
     /**
      * Creates an {@code Inet4Address} based on the provided {@linkplain
-     * Inet4Address##format textual representations} of an IPv4 address.
+     * Inet4Address##format textual representation} of an IPv4 address.
      * <p> If the provided IPv4 address literal cannot represent a {@linkplain
      * Inet4Address##format valid IPv4 address} an {@code IllegalArgumentException} is thrown.
      * <p> This method doesn't block, i.e. no reverse lookup is performed.

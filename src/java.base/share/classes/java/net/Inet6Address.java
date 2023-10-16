@@ -41,7 +41,7 @@ import java.util.Objects;
  * Defined by <a href="http://www.ietf.org/rfc/rfc2373.txt">
  * <i>RFC&nbsp;2373: IP Version 6 Addressing Architecture</i></a>.
  *
- * <h2> <a id="format">Textual representation of IP addresses</a> </h2>
+ * <h2> <a id="format">Textual representation of IPv6 addresses</a> </h2>
  *
  * Textual representation of IPv6 address used as input to methods
  * takes one of the following forms:
@@ -497,7 +497,7 @@ class Inet6Address extends InetAddress {
 
     /**
      * Creates an {@code InetAddress} based on the provided {@linkplain
-     * Inet6Address##format textual representations} of an IPv6 address.
+     * Inet6Address##format textual representation} of an IPv6 address.
      * <p> If the provided address literal cannot represent {@linkplain Inet6Address##format
      * a valid IPv6 address} an {@code IllegalArgumentException} is thrown.
      * An {@code IllegalArgumentException} is also thrown if an IPv6 scoped address literal
