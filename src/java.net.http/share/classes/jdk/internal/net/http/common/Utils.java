@@ -45,6 +45,8 @@ import java.net.http.HttpHeaders;
 import java.net.http.HttpTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.channels.CancelledKeyException;
+import java.nio.channels.SelectionKey;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CodingErrorAction;
@@ -61,6 +63,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
@@ -322,6 +325,55 @@ public final class Utils {
         request.setSystemHeader(HEADER_CONNECTION, "Upgrade");
     }
 
+    private static final ConcurrentHashMap<Integer, String> opsMap = new ConcurrentHashMap<>();
+    static {
+        opsMap.put(0, "None");
+    }
+
+    public static String interestOps(SelectionKey key) {
+        try {
+            return describeOps(key.interestOps());
+        } catch (CancelledKeyException x) {
+            return "cancelled-key";
+        }
+    }
+
+    public static String readyOps(SelectionKey key) {
+        try {
+            return describeOps(key.readyOps());
+        } catch (CancelledKeyException x) {
+            return "cancelled-key";
+        }
+    }
+
+    public static String describeOps(int interestOps) {
+        String ops = opsMap.get(interestOps);
+        if (ops != null) return ops;
+        StringBuilder opsb = new StringBuilder();
+        int mask = SelectionKey.OP_READ
+                | SelectionKey.OP_WRITE
+                | SelectionKey.OP_CONNECT
+                | SelectionKey.OP_ACCEPT;
+        if ((interestOps & SelectionKey.OP_READ) == SelectionKey.OP_READ) {
+            opsb.append("R");
+        }
+        if ((interestOps & SelectionKey.OP_WRITE) == SelectionKey.OP_WRITE) {
+            opsb.append("W");
+        }
+        if ((interestOps & SelectionKey.OP_ACCEPT) == SelectionKey.OP_ACCEPT) {
+            opsb.append("A");
+        }
+        if ((interestOps & SelectionKey.OP_CONNECT) == SelectionKey.OP_CONNECT) {
+            opsb.append("C");
+        }
+        if ((interestOps | mask) != mask) {
+            opsb.append("("+interestOps+")");
+        }
+        ops = opsb.toString();
+        opsMap.put(interestOps, ops);
+        return ops;
+    }
+
     public static IllegalArgumentException newIAE(String message, Object... args) {
         return new IllegalArgumentException(format(message, args));
     }
@@ -477,22 +529,7 @@ public final class Utils {
         return !token.isEmpty();
     }
 
-    public static class ServerName {
-        ServerName(String name, boolean isLiteral) {
-            this.name = name;
-            this.isLiteral = isLiteral;
-        }
-
-        final String name;
-        final boolean isLiteral;
-
-        public String getName() {
-            return name;
-        }
-
-        public boolean isLiteral() {
-            return isLiteral;
-        }
+    public record ServerName (String name, boolean isLiteral) {
     }
 
     /**

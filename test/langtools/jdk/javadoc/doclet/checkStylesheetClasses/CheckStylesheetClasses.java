@@ -27,7 +27,7 @@
  * @bug 8267574
  * @summary check stylesheet names against HtmlStyle
  * @modules jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.markup
- *          jdk.javadoc/jdk.javadoc.internal.doclets.toolkit.resources:open
+ *          jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.resources:open
  */
 
 import java.io.BufferedWriter;
@@ -192,7 +192,7 @@ public class CheckStylesheetClasses {
 
     Set<String> getStylesheetNames() throws IOException {
         Set<String> names = new TreeSet<>();
-        String stylesheet = "/jdk/javadoc/internal/doclets/toolkit/resources/stylesheet.css";
+        String stylesheet = "/jdk/javadoc/internal/doclets/formats/html/resources/stylesheet.css";
         URL url = HtmlStyle.class.getResource(stylesheet);
         readStylesheet(url, names);
         return names;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
     Color foreground;
     Color background;
 
-    // Colors calculated as on Motif using MotifColorUtilties.
+    // Colors calculated as on Motif using MotifColorUtilities.
     // If you use these, call updateMotifColors() in the peer's Constructor and
     // setBackground().  Examples are XCheckboxPeer and XButtonPeer.
     Color darkShadow;
@@ -479,7 +479,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
                   Window parentWindow = ((Window)parentXWindow.getTarget());
                   // Simple windows are non-focusable in X terms but focusable in Java terms.
                   // As X-non-focusable they don't receive any focus events - we should generate them
-                  // by ourselfves.
+                  // by ourselves.
 //                   if (parentXWindow.isFocusableWindow() /*&& parentXWindow.isSimpleWindow()*/ &&
 //                       !(getCurrentNativeFocusedWindow() == parentWindow))
 //                   {

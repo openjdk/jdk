@@ -113,9 +113,11 @@ class InvokeMethodKey : public StackObj {
 
 };
 
-ResourceHashtable<InvokeMethodKey, Method*, 139, AnyObj::C_HEAP, mtClass,
-                  InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison> _invoke_method_intrinsic_table;
-ResourceHashtable<SymbolHandle, OopHandle, 139, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash> _invoke_method_type_table;
+using InvokeMethodIntrinsicTable = ResourceHashtable<InvokeMethodKey, Method*, 139, AnyObj::C_HEAP, mtClass,
+                  InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison>;
+static InvokeMethodIntrinsicTable* _invoke_method_intrinsic_table;
+using InvokeMethodTypeTable = ResourceHashtable<SymbolHandle, OopHandle, 139, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash>;
+static InvokeMethodTypeTable* _invoke_method_type_table;
 
 OopHandle   SystemDictionary::_java_system_loader;
 OopHandle   SystemDictionary::_java_platform_loader;
@@ -1522,6 +1524,8 @@ InstanceKlass* SystemDictionary::find_or_define_instance_class(Symbol* class_nam
     assert(defined_k != nullptr, "Should have a klass if there's no exception");
     k->class_loader_data()->add_to_deallocate_list(k);
   } else if (HAS_PENDING_EXCEPTION) {
+    // Remove this InstanceKlass from the LoaderConstraintTable if added.
+    LoaderConstraintTable::remove_failed_loaded_klass(k, class_loader_data(class_loader));
     assert(defined_k == nullptr, "Should not have a klass if there's an exception");
     k->class_loader_data()->add_to_deallocate_list(k);
   }
@@ -1543,10 +1547,10 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
     // First, mark for unload all ClassLoaderData referencing a dead class loader.
     unloading_occurred = ClassLoaderDataGraph::do_unloading();
     if (unloading_occurred) {
-      MutexLocker ml2(is_concurrent ? Module_lock : nullptr);
+      ConditionalMutexLocker ml2(Module_lock, is_concurrent);
       JFR_ONLY(Jfr::on_unloading_classes();)
       MANAGEMENT_ONLY(FinalizerService::purge_unloaded();)
-      MutexLocker ml1(is_concurrent ? SystemDictionary_lock : nullptr);
+      ConditionalMutexLocker ml1(SystemDictionary_lock, is_concurrent);
       ClassLoaderDataGraph::clean_module_and_package_info();
       LoaderConstraintTable::purge_loader_constraints();
       ResolutionErrorTable::purge_resolution_errors();
@@ -1569,7 +1573,7 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
       assert(ProtectionDomainCacheTable::number_of_entries() == 0, "should be empty");
     }
 
-    MutexLocker ml(is_concurrent ? ClassInitError_lock : nullptr);
+    ConditionalMutexLocker ml(ClassInitError_lock, is_concurrent);
     InstanceKlass::clean_initialization_error_table();
   }
 
@@ -1592,7 +1596,7 @@ void SystemDictionary::methods_do(void f(Method*)) {
 
   {
     MutexLocker ml(InvokeMethodIntrinsicTable_lock);
-    _invoke_method_intrinsic_table.iterate_all(doit);
+    _invoke_method_intrinsic_table->iterate_all(doit);
   }
 
 }
@@ -1601,10 +1605,15 @@ void SystemDictionary::methods_do(void f(Method*)) {
 // Initialization
 
 void SystemDictionary::initialize(TRAPS) {
+  _invoke_method_intrinsic_table = new (mtClass) InvokeMethodIntrinsicTable();
+  _invoke_method_type_table = new (mtClass) InvokeMethodTypeTable();
+  ResolutionErrorTable::initialize();
+  LoaderConstraintTable::initialize();
+  PlaceholderTable::initialize();
+  ProtectionDomainCacheTable::initialize();
 #if INCLUDE_CDS
   SystemDictionaryShared::initialize();
 #endif
-
   // Resolve basic classes
   vmClasses::resolve_all(CHECK);
   // Resolve classes used by archived heap objects
@@ -1954,7 +1963,7 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
     MonitorLocker ml(THREAD, InvokeMethodIntrinsicTable_lock);
     while (true) {
       bool created;
-      met = _invoke_method_intrinsic_table.put_if_absent(key, &created);
+      met = _invoke_method_intrinsic_table->put_if_absent(key, &created);
       assert(met != nullptr, "either created or found");
       if (*met != nullptr) {
         return *met;
@@ -1985,7 +1994,7 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
     MonitorLocker ml(THREAD, InvokeMethodIntrinsicTable_lock);
     if (throw_error) {
       // Remove the entry and let another thread try, or get the same exception.
-      bool removed = _invoke_method_intrinsic_table.remove(key);
+      bool removed = _invoke_method_intrinsic_table->remove(key);
       assert(removed, "must be the owner");
       ml.notify_all();
     } else {
@@ -2148,7 +2157,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
   OopHandle* o;
   {
     MutexLocker ml(THREAD, InvokeMethodTypeTable_lock);
-    o = _invoke_method_type_table.get(signature);
+    o = _invoke_method_type_table->get(signature);
   }
 
   if (o != nullptr) {
@@ -2219,11 +2228,11 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
     MutexLocker ml(THREAD, InvokeMethodTypeTable_lock);
     bool created = false;
     assert(method_type != nullptr, "unexpected null");
-    OopHandle* h = _invoke_method_type_table.get(signature);
+    OopHandle* h = _invoke_method_type_table->get(signature);
     if (h == nullptr) {
       signature->make_permanent(); // The signature is never unloaded.
       OopHandle elem = OopHandle(Universe::vm_global(), method_type());
-      bool created = _invoke_method_type_table.put(signature, elem);
+      bool created = _invoke_method_type_table->put(signature, elem);
       assert(created, "better be created");
     }
   }

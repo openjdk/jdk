@@ -32,14 +32,17 @@
 
 #define SUPPORT_MONITOR_COUNT
 
-#ifdef __APPLE__
-#define FFI_GO_CLOSURES 0
-#endif
-
 #include <ffi.h>
 
 // Indicates whether the C calling conventions require that
 // 32-bit integer argument values are extended to 64 bits.
 const bool CCallingConventionRequiresIntsAsLongs = false;
+#if defined(AIX)
+const size_t pd_segfault_address = -1;
+#elif defined(S390)
+const size_t pd_segfault_address = 4096;
+#else
+const size_t pd_segfault_address = 1024;
+#endif
 
 #endif // CPU_ZERO_GLOBALDEFINITIONS_ZERO_HPP

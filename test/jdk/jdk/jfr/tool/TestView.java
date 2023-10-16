@@ -37,7 +37,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  *           & vm.opt.ExplicitGCInvokesConcurrent != false
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:-ExplicitGCInvokesConcurrent -XX:-DisableExplicitGC
- *                   -XX:+UseG1GC jdk.jfr.jcmd.TestJcmdView
+ *                   -XX:+UseG1GC jdk.jfr.tool.TestView
  */
 public class TestView {
 

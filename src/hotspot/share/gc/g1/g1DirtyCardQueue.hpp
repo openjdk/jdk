@@ -194,7 +194,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
 
   void abandon_completed_buffers();
 
-  // Refine the cards in "node" from its index to buffer_size.
+  // Refine the cards in "node" from its index to buffer_capacity.
   // Stops processing if SuspendibleThreadSet::should_yield() is true.
   // Returns true if the entire buffer was processed, false if there
   // is a pending yield request.  The node's index is updated to exclude

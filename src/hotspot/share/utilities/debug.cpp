@@ -534,10 +534,7 @@ extern "C" JNIEXPORT void findpc(intptr_t x) {
 }
 
 // For findmethod() and findclass():
-// - The patterns are matched by StringUtils::is_star_match()
-// - class_name_pattern matches Klass::external_name(). E.g., "java/lang/Object" or "*ang/Object"
-// - method_pattern may optionally the signature. E.g., "wait", "wait:()V" or "*ai*t:(*)V"
-// - flags must be OR'ed from ClassPrinter::Mode for findclass/findmethod
+//   See comments in classPrinter.hpp about the meanings of class_name_pattern, method_pattern and flags.
 // Examples (in gdb):
 //   call findclass("java/lang/Object", 0x3)             -> find j.l.Object and disasm all of its methods
 //   call findmethod("*ang/Object*", "wait", 0xff)       -> detailed disasm of all "wait" methods in j.l.Object
@@ -654,7 +651,8 @@ extern "C" JNIEXPORT void pns(void* sp, void* fp, void* pc) { // print native st
 extern "C" JNIEXPORT void pns2() { // print native stack
   Command c("pns2");
   static char buf[O_BUFLEN];
-  if (os::platform_print_native_stack(tty, nullptr, buf, sizeof(buf))) {
+  address lastpc = nullptr;
+  if (os::platform_print_native_stack(tty, nullptr, buf, sizeof(buf), lastpc)) {
     // We have printed the native stack in platform-specific code,
     // so nothing else to do in this case.
   } else {

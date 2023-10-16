@@ -88,7 +88,7 @@ public class TestGCLockerEvent {
         // Verify recording
         var all = Events.fromRecording(recording);
         Events.hasEvents(all);
-        var event = all.get(0);
+        var event = all.getFirst();
 
         assertTrue(Events.isEventType(event, EVENT_NAME));
         Events.assertField(event, "lockCount").equal(CRITICAL_THREAD_COUNT);

@@ -1416,7 +1416,7 @@ jvmtiEnv *jvmti;
         <example>
             JVMTI_THREAD_STATE_ALIVE + JVMTI_THREAD_STATE_WAITING +
                 JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT +
-                JVMTI_THREAD_STATE_MONITOR_WAITING
+                JVMTI_THREAD_STATE_IN_OBJECT_WAIT
         </example>
         The state of a thread suspended while runnable would be:
         <example>
@@ -13041,7 +13041,7 @@ myInit() {
   </event>
 
  <event label="Virtual Thread Start"
-         id="VirtualThreadStart" const="JVMTI_EVENT_VIRTUAL_THREAD_START" filtered="thread" num="87" phase="start" since="21">
+         id="VirtualThreadStart" const="JVMTI_EVENT_VIRTUAL_THREAD_START" num="87" phase="start" since="21">
     <description>
       A virtual thread start event is generated before its initial method executes.
       <p/>

@@ -81,7 +81,7 @@ public class TestLargePageUseForHeap {
     }
 
     static void checkHeap(OutputAnalyzer output, long expectedPageSize) throws Exception {
-        checkSize(output, expectedPageSize, "Heap: .*page_size=([^ ]+)");
+        checkSize(output, expectedPageSize, "Heap: .* page_size=(\\d+[BKMG])");
     }
 
     static void testVM(long regionSize) throws Exception {

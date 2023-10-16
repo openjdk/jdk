@@ -57,6 +57,7 @@ JVM_DumpAllStacks
 JVM_DumpClassListToFile
 JVM_DumpDynamicArchive
 JVM_DumpThreads
+JVM_ExpandStackFrameInfo
 JVM_FillInStackTrace
 JVM_FindClassFromCaller
 JVM_FindClassFromClass
@@ -200,7 +201,7 @@ JVM_SetNativeThreadName
 JVM_SetPrimitiveArrayElement
 JVM_SetStackWalkContinuation
 JVM_SetThreadPriority
-JVM_Sleep
+JVM_SleepNanos
 JVM_StartThread
 JVM_SupportsCX8
 JVM_TotalMemory

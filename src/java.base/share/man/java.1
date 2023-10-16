@@ -1,4 +1,4 @@
-.\" Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JAVA" "1" "2023" "JDK 21-ea" "JDK Commands"
+.TH "JAVA" "1" "2024" "JDK 22-ea" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -187,7 +187,7 @@ with new values added and old values removed.
 You\[aq]ll get an error message if you use a value of \f[I]N\f[R] that
 is no longer supported.
 The supported values of \f[I]N\f[R] are the current Java SE release
-(\f[V]21\f[R]) and a limited number of previous releases, detailed in
+(\f[V]22\f[R]) and a limited number of previous releases, detailed in
 the command-line help for \f[V]javac\f[R], under the \f[V]--source\f[R]
 and \f[V]--release\f[R] options.
 .RE
@@ -530,20 +530,25 @@ The value \[dq]disabled\[dq] disables finalization, so that no
 finalizers are invoked.
 .TP
 \f[V]--module-path\f[R] \f[I]modulepath\f[R]... or \f[V]-p\f[R] \f[I]modulepath\f[R]
-Specifies a list of directories in which each directory is a directory
-of modules.
+Specifies where to find application modules with a list of path elements.
+The elements of a module path can be a file path to a module or a directory
+containing modules. Each module is either a modular JAR or an
+exploded-module directory.
 .RS
 .PP
-On Windows, semicolons (\f[V];\f[R]) separate directories in this list;
+On Windows, semicolons (\f[V];\f[R]) separate path elements in this list;
 on other platforms it is a colon (\f[V]:\f[R]).
 .RE
 .TP
 \f[V]--upgrade-module-path\f[R] \f[I]modulepath\f[R]...
-Specifies a list of directories in which each directory is a directory
-of modules that replace upgradeable modules in the runtime image.
+Specifies where to find module replacements of upgradeable modules in the
+runtime image with a list of path elements.
+The elements of a module path can be a file path to a module or a directory
+containing modules. Each module is either a modular JAR or an
+exploded-module directory.
 .RS
 .PP
-On Windows, semicolons (\f[V];\f[R]) separate directories in this list;
+On Windows, semicolons (\f[V];\f[R]) separate path elements in this list;
 on other platforms it is a colon (\f[V]:\f[R]).
 .RE
 .TP
@@ -833,8 +838,7 @@ Testing mode to exercise JIT compilers.
 This option should not be used in production environments.
 .TP
 \f[V]-Xdebug\f[R]
-Does nothing.
-Provided for backward compatibility.
+Does nothing; deprecated for removal in a future release.
 .TP
 \f[V]-Xdiag\f[R]
 Shows additional diagnostic messages.
@@ -3813,24 +3817,13 @@ This option was deprecated in JDK 16 by \f[B]JEP 396\f[R]
 403\f[R] [https://openjdk.org/jeps/403].
 .SH REMOVED JAVA OPTIONS
 .PP
-These \f[V]java\f[R] options have been removed in JDK 21 and using them
-results in an error of:
-.RS
-.PP
-\f[V]Unrecognized VM option\f[R] \f[I]option-name\f[R]
-.RE
-.TP
-\f[V]-XX:+ExtendedDTraceProbes\f[R]
-\f[B]Linux and macOS:\f[R] Enables additional \f[V]dtrace\f[R] tool
-probes that affect performance.
-By default, this option is disabled and \f[V]dtrace\f[R] performs only
-standard probes.
-Use the combination of these flags instead:
-\f[V]-XX:+DTraceMethodProbes\f[R], \f[V]-XX:+DTraceAllocProbes\f[R],
-\f[V]-XX:+DTraceMonitorProbes\f[R].
+No documented java options have been removed in JDK 22.
 .PP
 For the lists and descriptions of options removed in previous releases
 see the \f[I]Removed Java Options\f[R] section in:
+.IP \[bu] 2
+\f[B]The \f[VB]java\f[B] Command, Release 21\f[R]
+[https://docs.oracle.com/en/java/javase/21/docs/specs/man/java.html]
 .IP \[bu] 2
 \f[B]The \f[VB]java\f[B] Command, Release 20\f[R]
 [https://docs.oracle.com/en/java/javase/20/docs/specs/man/java.html]

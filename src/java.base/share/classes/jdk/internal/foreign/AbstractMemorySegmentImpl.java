@@ -114,6 +114,8 @@ public abstract sealed class AbstractMemorySegmentImpl
     @Override
     public MemorySegment asSlice(long offset, long newSize, long byteAlignment) {
         checkBounds(offset, newSize);
+        Utils.checkAlign(byteAlignment);
+
         if (!isAlignedForElement(offset, byteAlignment)) {
             throw new IllegalArgumentException("Target offset incompatible with alignment constraints");
         }
@@ -149,9 +151,9 @@ public abstract sealed class AbstractMemorySegmentImpl
         }
         if (!isNative()) throw new UnsupportedOperationException("Not a native segment");
         Runnable action = cleanup != null ?
-                () -> cleanup.accept(NativeMemorySegmentImpl.makeNativeSegmentUnchecked(address(), newSize)) :
+                () -> cleanup.accept(SegmentFactories.makeNativeSegmentUnchecked(address(), newSize)) :
                 null;
-        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(address(), newSize,
+        return SegmentFactories.makeNativeSegmentUnchecked(address(), newSize,
                 (MemorySessionImpl)scope, action);
     }
 
@@ -262,21 +264,12 @@ public abstract sealed class AbstractMemorySegmentImpl
             final long thatEnd = thatStart + that.byteSize();
 
             if (thisStart < thatEnd && thisEnd > thatStart) {  //overlap occurs
-                long offsetToThat = this.segmentOffset(that);
+                long offsetToThat = that.address() - this.address();
                 long newOffset = offsetToThat >= 0 ? offsetToThat : 0;
                 return Optional.of(asSlice(newOffset, Math.min(this.byteSize() - newOffset, that.byteSize() + offsetToThat)));
             }
         }
         return Optional.empty();
-    }
-
-    @Override
-    public final long segmentOffset(MemorySegment other) {
-        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl) Objects.requireNonNull(other);
-        if (unsafeGetBase() == that.unsafeGetBase()) {
-            return that.unsafeGetOffset() - this.unsafeGetOffset();
-        }
-        throw new UnsupportedOperationException("Cannot compute offset from native to heap (or vice versa).");
     }
 
     @Override
@@ -503,7 +496,11 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public String toString() {
-        return "MemorySegment{ heapBase: " + heapBase() + " address:" + address() + " limit: " + length + " }";
+        return "MemorySegment{ " +
+                heapBase().map(hb -> "heapBase: " + hb + ", ").orElse("") +
+                "address: " + Utils.toHexString(address()) +
+                ", byteSize: " + length +
+                " }";
     }
 
     @Override

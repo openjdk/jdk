@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public abstract class AbstractWriter {
     private int startOffset = 0;
     private int endOffset = 0;
     // If (indentLevel * indentSpace) becomes >= maxLineLength, this will
-    // get incremened instead of indentLevel to avoid indenting going greater
+    // get incremented instead of indentLevel to avoid indenting going greater
     // than line length.
     private int offsetIndent = 0;
 
