@@ -56,9 +56,16 @@ public class ZipSourceCache {
 
     @AfterAll
     public static void cleanup() throws IOException {
-        Files.deleteIfExists(Path.of(ZIPENTRY_NAME));
+        Files.deleteIfExists(Path.of(ZIPFILE_NAME));
     }
 
+    /*
+     * Monitor the internal "files" HashMap to ensure that we only
+     * create one <Key, Source> mapping per unique zip file.
+     *
+     * This test also ensures that a new <Key, Source> mapping is created
+     * if an update to an existing zip file is detected.
+     */
     @Test
     public void test() throws Exception {
         ZipFile absoluteZipFile;

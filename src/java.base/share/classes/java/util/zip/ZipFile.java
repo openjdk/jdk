@@ -1416,17 +1416,27 @@ public class ZipFile implements ZipConstants, Closeable {
                 if (System.getSecurityManager() == null) {
                     return file.getCanonicalFile();
                 } else {
+                    PrivilegedExceptionAction<File> pa = file::getCanonicalFile;
                     try {
-                        return AccessController.doPrivileged(
-                                (PrivilegedExceptionAction<File>) file::getCanonicalFile);
+                        return AccessController.doPrivileged(pa);
                     } catch (PrivilegedActionException pae) {
-                        throw new IOException(pae.getException());
+                        Throwable cause = pae.getCause();
+                        if (cause instanceof IOException ioe) {
+                            throw ioe;
+                        } else {
+                            throw new IOException(cause);
+                        }
                     }
                 }
             }
 
             public int hashCode() {
                 long t = utf8 ? 0 : Long.MAX_VALUE;
+                /*
+                 * The lastModifiedTime attribute is used to detect cases where
+                 * an existing file is updated. The other hash code properties
+                 * by themselves won't detect such a change.
+                 */
                 t += attrs.lastModifiedTime().toMillis();
                 Object fk = attrs.fileKey();
                 return Long.hashCode(t) +
@@ -1438,6 +1448,10 @@ public class ZipFile implements ZipConstants, Closeable {
                     if (key.utf8 != utf8) {
                         return false;
                     }
+                    /*
+                     * The lastModifiedTime attribute is used to detect cases where
+                     * an existing file is updated.
+                     */
                     if (!attrs.lastModifiedTime().equals(key.attrs.lastModifiedTime())) {
                         return false;
                     }
