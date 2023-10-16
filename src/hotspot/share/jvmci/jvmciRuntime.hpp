@@ -317,11 +317,12 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // used when creating an IndirectHotSpotObjectConstantImpl in the
   // shared library JavaVM.
   jlong make_oop_handle(const Handle& obj);
+#ifdef ASSERT
+  static bool is_oop_handle(jlong handle);
+#endif
 
   // Releases all the non-null entries in _oop_handles whose referent is null.
   // Returns the number of handles released by this call.
-  // The method also resets _last_found_oop_handle_index to -1
-  // and _null_oop_handles to 0.
   int release_cleared_oop_handles();
 
   // Allocation and management of metadata handles.
