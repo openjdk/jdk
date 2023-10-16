@@ -29,6 +29,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.io.IOException;
@@ -541,7 +542,7 @@ public final class Channels {
                                    int minBufferCap)
     {
         Objects.requireNonNull(ch, "ch");
-        return StreamEncoder.forEncoder(ch, enc.reset(), minBufferCap);
+        return new OutputStreamWriter(newOutputStream(ch), enc.reset());
     }
 
     /**
