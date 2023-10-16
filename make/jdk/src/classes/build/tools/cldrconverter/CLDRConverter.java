@@ -91,7 +91,12 @@ public class CLDRConverter {
     static final String META_EMPTY_ZONE_NAME = "EMPTY_ZONE";
     static final String[] EMPTY_ZONE = {"", "", "", "", "", ""};
     static final String META_ETCUTC_ZONE_NAME = "ETC_UTC";
-    private static final String SEP = "\u00A0"; // NBSP
+
+    // constants used for TZDB short names
+    private static final String NBSP = "\u00A0";
+    private static final String STD = "std";
+    private static final String DST = "dst";
+    private static final String NO_SUBST = "-";
     private static final Pattern OFFSET_PATTERN = Pattern.compile(("([-+]\\d{2})(\\d{2})*"));
 
     private static SupplementDataParseHandler handlerSuppl;
@@ -1259,6 +1264,31 @@ public class CLDRConverter {
         return covMap;
     }
 
+    /*
+     * Generates two maps from TZ database files, where they have usual abbreviation
+     * of the time zone names as "FORMAT".
+     *
+     * `tzdbShortNamesMap` maps the time zone id, such as "America/Los_Angeles" to
+     * its FORMAT and Rule which determines the substitution. In "America/Los_Angeles"
+     * case, its FORMAT is "P%sT" and the Rule is "US". They are concatenated with
+     * an NBSP, so the eventual mapping will be:
+     *
+     * "America/Los_Angeles" -> "P%sT<NBSP>US"
+     *
+     * The other map, `tzdbSubstLetters` maps the Rule to its substitution letters.
+     * The key of the map is the Rule name, appended with "<NBSP>std" or "<NBSP>dst"
+     * depending on the savings, e.g.,
+     *
+     * "US<NBSP>std" -> "S"
+     * "US<NBSP>dst" -> "D"
+     *
+     * These two mappings resolve the short names for time zones in each type,
+     * such as:
+     *
+     * Standard short name for "America/Los_Angeles" -> "PST"
+     * DST short name for "America/Los_Angeles" -> "PDT"
+     * Generic short name for "America/Los_Angeles" -> "PT"
+     */
     private static void generateTZDBShortNamesMap() throws IOException {
         Files.walk(Path.of(tzDataDir), 1, FileVisitOption.FOLLOW_LINKS)
             .map(Path::toFile)
@@ -1272,7 +1302,7 @@ public class CLDRConverter {
                         if (line.contains("#STDOFF")) continue;
                         line = line.replaceAll("[ \t]*#.*", "");
 
-                        // Zone
+                        // Zone line
                         if (line.startsWith("Zone")) {
                             var zl = line.split("[ \t]+", -1);
                             zone = zl[1];
@@ -1281,7 +1311,7 @@ public class CLDRConverter {
                         } else {
                             if (zone != null) {
                                 if (line.isBlank()) {
-                                    tzdbShortNamesMap.put(zone, format + SEP + rule);
+                                    tzdbShortNamesMap.put(zone, format + NBSP + rule);
                                     zone = null;
                                     rule = null;
                                     format = null;
@@ -1293,10 +1323,11 @@ public class CLDRConverter {
                             }
                         }
 
-                        // Rule
+                        // Rule line
                         if (line.startsWith("Rule")) {
                             var rl = line.split("[ \t]+", -1);
-                            tzdbSubstLetters.put(rl[1] + SEP + (rl[8].equals("0") ? "std" : "dst"), rl[9].replace("-", ""));
+                            tzdbSubstLetters.put(rl[1] + NBSP + (rl[8].equals("0") ? STD : DST),
+                                    rl[9].replace(NO_SUBST, ""));
                         }
                     }
                 } catch (IOException ioe) {
@@ -1304,48 +1335,48 @@ public class CLDRConverter {
                 }
             });
     }
-    //
+
+    /*
+     * Fill the TZDB short names if there is no name provided by the CLDR
+     */
     private static void fillTZDBShortNames(String tzid, String[] names) {
         var val = tzdbShortNamesMap.get(tzid);
         if (val != null) {
-            var format = val.split(SEP)[0];
-            var rule = val.split(SEP)[1];
+            var format = val.split(NBSP)[0];
+            var rule = val.split(NBSP)[1];
             IntStream.of(1, 3, 5).forEach(i -> {
                 if (names[i] == null) {
-                    names[i] = getTZDBShortName(format, rule, i);
+                    if (format.contains("%s")) {
+                        names[i] = switch (i) {
+                            case 1 -> format.formatted(tzdbSubstLetters.get(rule + NBSP + STD));
+                            case 3 -> format.formatted(tzdbSubstLetters.get(rule + NBSP + DST));
+                            case 5 -> format.formatted("");
+                            default -> throw new InternalError();
+                        };
+                    } else if (format.contains("/")) { // such as "+08/+09" or "GMT/BST"
+                        names[i] = switch (i) {
+                            case 1, 5 -> convertGMTName(format.substring(0, format.indexOf("/")));
+                            case 3 -> convertGMTName(format.substring(format.indexOf("/") + 1));
+                            default -> throw new InternalError();
+                        };
+                    } else {
+                        names[i] = convertGMTName(format);
+                    }
                 }
             });
         }
     }
 
-    // fmt could be either
-    // X%sT, +XX/+YY, or +XX
-    private static String getTZDBShortName(String f, String r, int i) {
-        if (f.contains("%s")) {
-            return switch (i) {
-                case 1 -> f.formatted(tzdbSubstLetters.get(r + SEP + "std"));
-                case 3 -> f.formatted(tzdbSubstLetters.get(r + SEP + "dst"));
-                case 5 -> f.formatted("");
-                default -> throw new InternalError();
-            };
-        } else if (f.contains("/")) {
-            return switch (i) {
-                case 1, 5 -> convertGMTName(f.substring(0, f.indexOf("/")));
-                case 3 -> convertGMTName(f.substring(f.indexOf("/") + 1));
-                default -> throw new InternalError();
-            };
-        } else {
-            return convertGMTName(f);
-        }
-    }
-
+    /*
+     * Convert TZDB offsets to JDK's offsets, eg, "-08" to "GMT-08:00".
+     * If it cannot recognize the pattern, return the argument as is.
+     */
     private static String convertGMTName(String f) {
         var m = OFFSET_PATTERN.matcher(f);
 
         if (m.matches()) {
-            var hour = m.group(1);
             var min = m.group(2);
-            return "GMT" + hour + (min != null ? ":" + min : ":00");
+            return "GMT" + m.group(1) + (min != null ? ":" + min : ":00");
         } else {
             return f;
         }
