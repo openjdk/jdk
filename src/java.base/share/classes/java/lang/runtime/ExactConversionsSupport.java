@@ -30,7 +30,7 @@ package java.lang.runtime;
  * otherwise it is considered inexact.
  * The methods in this class provide the run-time support for primitive conversions exactness checks.
  * These methods may be used, for example, by Java compiler implementations to implement checks
- * for instanceof and pattern matching runtime implementations.
+ * for `instanceof` and pattern matching runtime implementations.
  * See JLS section 5.5.1 for more information on exact casting conversions.
  *
  * @jls 5.5.1 Exact Casting Conversions
@@ -38,12 +38,9 @@ package java.lang.runtime;
  *
  * @implNote Methods that describe a conversion check among unconditionally exact types
  * (they would return true) are ommited. Similarly, methods that describe a conversion check
- * which can be redirected through one of the methods in this classes are omitted too. These are the following:
- *  - byte to char ~> isIntToCharExact
- *  - short to byte ~> isIntToByteExact
- *  - short to char ~> isIntToCharExact
- *  - char to byte ~> isIntToByteExact
- *  - char to short ~> isIntToShortExact
+ * which can be redirected through one of the methods in this class are omitted too (i.e.,
+ * byte to char can be redirected safely to `isIntToCharExact`, similarly `short` to `byte`,
+ * `short` to `char`, `char` to `byte` and `char` to `short`).
  *
  * @since 22
  */
