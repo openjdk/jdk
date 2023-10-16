@@ -271,7 +271,7 @@
  * constant pool entries directly. Constant pool entries can be constructed also
  * directly from raw values, with no additional conversions or validations.
  * Following example uses intentionally wrong class name form and it is applied
- * without any validation or conversion. 
+ * without any validation or conversion.
  * {@snippet lang=java :
  * var invalidClassEntry = constantPoolBuilder.classEntry(
  *                             constantPoolBuilder.utf8Entry("mypackage.MyClass"));
