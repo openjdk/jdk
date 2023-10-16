@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,37 +23,10 @@
  * questions.
  */
 
-#include <errno.h>
+#include <jni.h>
+#include <stdlib.h>
+#include <string.h>
 
-#ifdef _WIN64
-#define EXPORT __declspec(dllexport)
-#else
-#define EXPORT
-#endif
-
-EXPORT void empty() {}
-
-EXPORT int identity(int value) {
-    return value;
-}
-
-// 128 bit struct returned in buffer on SysV
-struct Big {
-    long long x;
-    long long y;
-};
-
-EXPORT struct Big with_return_buffer() {
-    struct Big b;
-    b.x = 10;
-    b.y = 11;
-    return b;
-}
-
-EXPORT void capture_errno(int value) {
-    errno = value;
-}
-
-EXPORT void do_upcall(void(*f)(void)) {
-    f();
+JNIEXPORT jstring JNICALL Java_org_openjdk_bench_java_lang_foreign_ToJavaStringTest_readString(JNIEnv *const env, const jclass cls, jlong addr) {
+    return (*env)->NewStringUTF(env, (char*)(void*)addr);
 }

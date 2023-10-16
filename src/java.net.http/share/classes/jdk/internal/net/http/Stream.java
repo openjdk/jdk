@@ -183,7 +183,7 @@ class Stream<T> extends ExchangeImpl<T> {
                 if (debug.on()) debug.log("subscribing user subscriber");
                 subscriber.onSubscribe(userSubscription);
             }
-            while (!inputQ.isEmpty()) {
+            while (!inputQ.isEmpty() && errorRef.get() == null) {
                 Http2Frame frame = inputQ.peek();
                 if (frame instanceof ResetFrame rf) {
                     inputQ.remove();
@@ -417,6 +417,10 @@ class Stream<T> extends ExchangeImpl<T> {
     // pushes entire response body into response subscriber
     // blocking when required by local or remote flow control
     CompletableFuture<T> receiveData(BodySubscriber<T> bodySubscriber, Executor executor) {
+        // ensure that the body subscriber will be subscribed and onError() is
+        // invoked
+        pendingResponseSubscriber = bodySubscriber;
+
         // We want to allow the subscriber's getBody() method to block so it
         // can work with InputStreams. So, we offload execution.
         responseBodyCF = ResponseSubscribers.getBodyAsync(executor, bodySubscriber,
@@ -427,9 +431,6 @@ class Stream<T> extends ExchangeImpl<T> {
             responseBodyCF.completeExceptionally(t);
         }
 
-        // ensure that the body subscriber will be subscribed and onError() is
-        // invoked
-        pendingResponseSubscriber = bodySubscriber;
         sched.runOrSchedule(); // in case data waiting already to be processed, or error
 
         return responseBodyCF;
