@@ -111,10 +111,10 @@ final class SSLConfiguration implements Cloneable {
     // Maximum allowed certificate chain length
     static final int maxCertificateChainLength;
 
-    // Limit the maximum certificate chain length accepted from clients
+    // Limit the certificate chain length accepted from clients
     static final int maxClientCertificateChainLength;
 
-    // Limit the maximum certificate chain length accepted from servers
+    // Limit the certificate chain length accepted from servers
     static final int maxServerCertificateChainLength;
 
     // To switch off the supported_groups extension for DHE cipher suite.
@@ -139,26 +139,36 @@ final class SSLConfiguration implements Cloneable {
     }
 
     static {
+        boolean globalPropSet = false;
+        boolean clientPropSet = false;
+        boolean serverPropSet = false;
+
         // jdk.tls.maxCertificateChainLength property has no default
         Integer certLen = GetIntegerAction.privilegedGetProperty(
                 "jdk.tls.maxCertificateChainLength");
-        if (certLen == null || (int)certLen < 0) {
+        if (certLen == null || certLen < 0) {
             certLen = 0;
+        } else {
+            globalPropSet = true;
         }
         maxCertificateChainLength = certLen;
 
         // Default for jdk.tls.maxClientCertificateChainLength is 8
-        int clientLen = GetIntegerAction.privilegedGetProperty(
-                "jdk.tls.maxClientCertificateChainLength", 8);
-        if (clientLen < 0) {
+        Integer clientLen = GetIntegerAction.privilegedGetProperty(
+                "jdk.tls.maxClientCertificateChainLength");
+        if (clientLen == null || clientLen < 0) {
             clientLen = 8;
+        } else {
+            clientPropSet = true;
         }
 
         // Default for jdk.tls.maxServerCertificateChainLength is 10
-        int serverLen = GetIntegerAction.privilegedGetProperty(
-                "jdk.tls.maxServerCertificateChainLength", 10);
-        if (serverLen < 0) {
+        Integer serverLen = GetIntegerAction.privilegedGetProperty(
+                "jdk.tls.maxServerCertificateChainLength");
+        if (serverLen == null || serverLen < 0) {
             serverLen = 10;
+        } else {
+            serverPropSet = true;
         }
 
         /*
@@ -169,11 +179,11 @@ final class SSLConfiguration implements Cloneable {
          * the jdk.tls.maxCertificateChainLength property will not override
          * the values.
          */
-        if (maxCertificateChainLength > 0) {
-            if (clientLen == 8) {
+        if (globalPropSet) {
+            if (!clientPropSet) {
                 clientLen = maxCertificateChainLength;
             }
-            if (serverLen == 10) {
+            if (!serverPropSet) {
                 serverLen = maxCertificateChainLength;
             }
         }
