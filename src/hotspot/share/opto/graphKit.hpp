@@ -82,7 +82,7 @@ class GraphKit : public Phase {
 
 #ifdef ASSERT
   ~GraphKit() {
-    assert(!has_exceptions(), "user must call transfer_exceptions_into_jvms");
+    assert(Compile::current()->failing() || !has_exceptions(), "user must call transfer_exceptions_into_jvms");
   }
 #endif
 
