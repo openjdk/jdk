@@ -33,7 +33,6 @@ import java.nio.file.*;
 import java.time.*;
 import java.util.*;
 import java.util.ResourceBundle.Control;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -97,7 +96,6 @@ public class CLDRConverter {
     private static final String STD = "std";
     private static final String DST = "dst";
     private static final String NO_SUBST = "-";
-    private static final Pattern OFFSET_PATTERN = Pattern.compile(("([-+]\\d{2})(\\d{2})*"));
 
     private static SupplementDataParseHandler handlerSuppl;
     private static LikelySubtagsParseHandler handlerLikelySubtags;
@@ -1372,14 +1370,12 @@ public class CLDRConverter {
      * If it cannot recognize the pattern, return the argument as is.
      */
     private static String convertGMTName(String f) {
-        var m = OFFSET_PATTERN.matcher(f);
-
-        if (m.matches()) {
-            var min = m.group(2);
-            return "GMT" + m.group(1) + (min != null ? ":" + min : ":00");
-        } else {
-            return f;
+        try {
+            return TimeZone.getTimeZone(ZoneOffset.of(f)).getDisplayName();
+        } catch (DateTimeException dte) {
+            // ignore
         }
+        return f;
     }
 
     // for debug
