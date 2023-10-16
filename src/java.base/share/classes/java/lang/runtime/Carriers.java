@@ -80,7 +80,7 @@ import static java.lang.invoke.MethodType.methodType;
  * @implNote The strategy for storing components is deliberately left unspecified
  * so that future improvements will not be hampered by issues of backward compatibility.
  *
- * @since 22
+ * @since 21
  *
  * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
  *          Do not rely on its availability.

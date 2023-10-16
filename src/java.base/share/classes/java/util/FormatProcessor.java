@@ -90,7 +90,7 @@ import jdk.internal.javac.PreviewFeature;
  * }
  * In the above example, the value of {@code result} will be {@code "0x000a + 0x0014 = 0x001E"}.
  *
- * @since 22
+ * @since 21
  *
  * @see Processor
  */
