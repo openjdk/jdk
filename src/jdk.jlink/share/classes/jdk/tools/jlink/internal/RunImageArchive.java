@@ -58,17 +58,15 @@ public class RunImageArchive implements Archive {
     private final Path path;
     private final ModuleReference ref;
     private final List<RunImageFile> files = new ArrayList<>();
-    private final boolean failOnMod;
     private final boolean singleHop;
 
-    RunImageArchive(String module, Path path, boolean failOnMod, boolean singleHop) {
+    RunImageArchive(String module, Path path, boolean singleHop) {
         this.module = module;
         this.path = path;
         this.ref = ModuleFinder.ofSystem()
                     .find(module)
                     .orElseThrow(() ->
                         new IllegalArgumentException("Module " + module + " not part of the JDK install"));
-        this.failOnMod = failOnMod;
         this.singleHop = singleHop;
     }
 
@@ -134,7 +132,7 @@ public class RunImageArchive implements Archive {
             files.addAll(ref.open().list()
                                    .map(s -> {
                 return new RunImageFile(RunImageArchive.this, s,
-                        Type.CLASS_OR_RESOURCE, null /* sha */, false /* symlink */, failOnMod);
+                        Type.CLASS_OR_RESOURCE, null /* sha */, false /* symlink */, singleHop);
             }).collect(Collectors.toList()));
             // if we use single-hop and we find a stamp file we fail the link
             if (files.stream().anyMatch(f -> { return RUNIMAGE_SINGLE_HOP_STAMP.equals(f.resPath);})) {
@@ -151,7 +149,7 @@ public class RunImageArchive implements Archive {
     }
 
     private RunImageFile createRunImageSingleHopStamp() {
-        return new RunImageStampFile(this, RUNIMAGE_SINGLE_HOP_STAMP, Type.CLASS_OR_RESOURCE, null, false, failOnMod);
+        return new RunImageStampFile(this, RUNIMAGE_SINGLE_HOP_STAMP, Type.CLASS_OR_RESOURCE, null, false, singleHop);
     }
 
     private void addNonClassResources() throws IOException {
@@ -164,7 +162,7 @@ public class RunImageArchive implements Archive {
                 files.addAll(Arrays.asList(input.split("\n")).stream()
                         .map(s -> {
                             TypePathMapping m = mappingResource(s);
-                            return new RunImageFile(RunImageArchive.this, m.resPath, m.resType, m.sha, m.symlink, failOnMod);
+                            return new RunImageFile(RunImageArchive.this, m.resPath, m.resType, m.sha, m.symlink, singleHop);
                         })
                         .filter(m -> m != null)
                         .collect(Collectors.toList()));
@@ -221,7 +219,7 @@ public class RunImageArchive implements Archive {
         final Archive archive;
         final String sha; // Checksum for non-resource files
         final boolean symlink;
-        final boolean failOnMod;
+        final boolean failOnMod; // Only allow non-failure in multi-hop mode
 
         RunImageFile(Archive archive, String resPath, Type resType, String sha, boolean symlink, boolean failOnMod) {
             this.resPath = resPath;

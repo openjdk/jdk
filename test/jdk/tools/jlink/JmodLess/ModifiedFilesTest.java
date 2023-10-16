@@ -43,7 +43,7 @@ public abstract class ModifiedFilesTest extends AbstractJmodLessTest {
                 .addModule("java.base")
                 .addModule("jdk.jlink")
                 .validatingModule("java.base")
-                .addExtraOption("--run-image-ignore-single-hop")
+                .addExtraOption("--unlock-run-image")
                 .helper(helper)
                 .build());
 

@@ -61,7 +61,7 @@ public class ModifiedFilesWarningTest extends ModifiedFilesTest {
                                 .name("java-base-jlink-with-mod-warn-target")
                                 .addModule("java.base")
                                 .validatingModule("java.base")
-                                .extraJlinkOpt("--run-image-only-warnings") // only generate a warning
+                                .extraJlinkOpt("--unlock-run-image") // only generate a warning
                                 .build(), handler);
         // verify we get the warning message
         expectMatch(modifiedFile.toString(), handler.stdErr());
