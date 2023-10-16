@@ -1594,13 +1594,14 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
       }
     }
 
-    // If changed Cast input, notify down for Phi and Sub - both do "uncast"
+    // If changed Cast input, notify down for Phi, Sub, and Xor - all do "uncast"
     // Patterns:
     // ConstraintCast+ -> Sub
     // ConstraintCast+ -> Phi
+    // ConstraintCast+ -> Xor
     if (use->is_ConstraintCast()) {
       auto push_phi_or_sub_uses_to_worklist = [&](Node* n){
-        if (n->is_Phi() || n->is_Sub()) {
+        if (n->is_Phi() || n->is_Sub() || n->Opcode() == Op_XorI || n->Opcode() == Op_XorL) {
           _worklist.push(n);
         }
       };
