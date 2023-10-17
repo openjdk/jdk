@@ -330,7 +330,6 @@ ExceptionCache* ExceptionCache::next() {
 }
 
 void ExceptionCache::set_next(ExceptionCache *ec) {
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
   Atomic::store(&_next, ec);
 }
 
@@ -1255,7 +1254,6 @@ void nmethod::verify_clean_inline_caches() {
 }
 
 void nmethod::mark_as_maybe_on_stack() {
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
   Atomic::store(&_gc_epoch, CodeCache::gc_epoch());
 }
 
@@ -1284,7 +1282,6 @@ bool nmethod::try_transition(signed char new_state_int) {
     // Ensure monotonicity of transitions.
     return false;
   }
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
   Atomic::store(&_state, new_state);
   return true;
 }
@@ -1725,7 +1722,6 @@ bool nmethod::is_unloading() {
   // different outcomes, so we guard the computed result with a CAS
   // to ensure all threads have a shared view of whether an nmethod
   // is_unloading or not.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
   uint8_t found_state = Atomic::cmpxchg(&_is_unloading_state, state, new_state, memory_order_relaxed);
 
   if (found_state == state) {
@@ -1739,7 +1735,6 @@ bool nmethod::is_unloading() {
 
 void nmethod::clear_unloading_state() {
   uint8_t state = IsUnloadingState::create(false, CodeCache::unloading_cycle());
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
   Atomic::store(&_is_unloading_state, state);
 }
 
@@ -1824,7 +1819,6 @@ bool nmethod::oops_do_try_claim() {
 
 bool nmethod::oops_do_try_claim_weak_request() {
   assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
 
   if ((_oops_do_mark_link == nullptr) &&
       (Atomic::replace_if_null(&_oops_do_mark_link, mark_link(this, claim_weak_request_tag)))) {
@@ -1840,7 +1834,6 @@ void nmethod::oops_do_set_strong_done(nmethod* old_head) {
 
 nmethod::oops_do_mark_link* nmethod::oops_do_try_claim_strong_done() {
   assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
 
   oops_do_mark_link* old_next = Atomic::cmpxchg(&_oops_do_mark_link, mark_link(nullptr, claim_weak_request_tag), mark_link(this, claim_strong_done_tag));
   if (old_next == nullptr) {
@@ -1852,7 +1845,6 @@ nmethod::oops_do_mark_link* nmethod::oops_do_try_claim_strong_done() {
 nmethod::oops_do_mark_link* nmethod::oops_do_try_add_strong_request(nmethod::oops_do_mark_link* next) {
   assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
   assert(next == mark_link(this, claim_weak_request_tag), "Should be claimed as weak");
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
 
   oops_do_mark_link* old_next = Atomic::cmpxchg(&_oops_do_mark_link, next, mark_link(this, claim_strong_request_tag));
   if (old_next == next) {
@@ -1864,7 +1856,6 @@ nmethod::oops_do_mark_link* nmethod::oops_do_try_add_strong_request(nmethod::oop
 bool nmethod::oops_do_try_claim_weak_done_as_strong_done(nmethod::oops_do_mark_link* next) {
   assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
   assert(extract_state(next) == claim_weak_done_tag, "Should be claimed as weak done");
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
 
   oops_do_mark_link* old_next = Atomic::cmpxchg(&_oops_do_mark_link, next, mark_link(extract_nmethod(next), claim_strong_done_tag));
   if (old_next == next) {
@@ -1880,7 +1871,6 @@ nmethod* nmethod::oops_do_try_add_to_list_as_weak_done() {
   assert(extract_state(_oops_do_mark_link) == claim_weak_request_tag ||
          extract_state(_oops_do_mark_link) == claim_strong_request_tag,
          "must be but is nmethod " PTR_FORMAT " %u", p2i(extract_nmethod(_oops_do_mark_link)), extract_state(_oops_do_mark_link));
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
 
   nmethod* old_head = Atomic::xchg(&_oops_do_mark_nmethods, this);
   // Self-loop if needed.
@@ -1898,7 +1888,6 @@ nmethod* nmethod::oops_do_try_add_to_list_as_weak_done() {
 
 void nmethod::oops_do_add_to_list_as_strong_done() {
   assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
 
   nmethod* old_head = Atomic::xchg(&_oops_do_mark_nmethods, this);
   // Self-loop if needed.
@@ -2075,8 +2064,6 @@ static PcDesc* linear_search(const PcDescSearch& search, int pc_offset, bool app
 
 // Finds a PcDesc with real-pc equal to "pc"
 PcDesc* PcDescContainer::find_pc_desc_internal(address pc, bool approximate, const PcDescSearch& search) {
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
-
   address base_address = search.code_begin();
   if ((pc < base_address) ||
       (pc - base_address) >= (ptrdiff_t) PcDesc::upper_offset_limit) {
@@ -2763,6 +2750,10 @@ void nmethod::decode2(outputStream* ost) const {
   const bool compressed_with_comments = use_compressed_format && (AbstractDisassembler::show_comment() ||
                                                                   AbstractDisassembler::show_block_comment());
 #endif
+
+  // Decoding an nmethod can write to a PcDescCache (see PcDescCache::add_pc_desc)
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current());)
+
   st->cr();
   this->print(st);
   st->cr();
