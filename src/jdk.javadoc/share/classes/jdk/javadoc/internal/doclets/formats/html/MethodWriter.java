@@ -109,6 +109,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
                 buildSignature(div);
                 buildDeprecationInfo(div);
                 buildPreviewInfo(div);
+                buildRestrictedInfo(div);
                 buildMethodComments(div);
                 buildTagInfo(div);
                 methodContent.add(div);
@@ -132,6 +133,15 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
     @Override
     protected void buildPreviewInfo(Content target) {
         addPreview(currentMethod, target);
+    }
+
+    /**
+     * Builds the restricted method info.
+     *
+     * @param target the content to which the documentation will be added
+     */
+    protected void buildRestrictedInfo(Content target) {
+        addRestricted(currentMethod, target);
     }
 
     /**
@@ -213,6 +223,10 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
 
     protected void addPreview(ExecutableElement method, Content content) {
         addPreviewInfo(method, content);
+    }
+
+    protected void addRestricted(ExecutableElement method, Content content) {
+        addRestrictedInfo(method, content);
     }
 
     protected void addComments(TypeMirror holderType, ExecutableElement method, Content methodContent) {
