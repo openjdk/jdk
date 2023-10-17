@@ -128,7 +128,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   int code_size = upcall_stub_code_base_size + (total_out_args * upcall_stub_size_per_arg);
   CodeBuffer buffer("upcall_stub", code_size, /* locs_size = */ 1);
 
-  Register shuffle_reg = r19;
   GrowableArray<VMStorage> unfiltered_out_regs;
   int out_arg_bytes = ForeignGlobals::java_calling_convention(out_sig_bt, total_out_args, unfiltered_out_regs);
   int preserved_bytes = SharedRuntime::out_preserve_stack_slots() * VMRegImpl::stack_slot_size;
@@ -162,6 +161,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
     locs.set(StubLocations::RETURN_BUFFER, abi._scratch1);
   }
 
+  Register shuffle_reg = r19;
   GrowableArray<VMStorage> in_regs = ForeignGlobals::replace_place_holders(call_regs._arg_regs, locs);
   GrowableArray<VMStorage> filtered_out_regs = ForeignGlobals::upcall_filter_receiver_reg(unfiltered_out_regs);
   ArgumentShuffle arg_shuffle(in_regs, filtered_out_regs, as_VMStorage(shuffle_reg));
@@ -231,7 +231,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
     assert(ret_buf_offset != -1, "no return buffer allocated");
     __ lea(as_Register(locs.get(StubLocations::RETURN_BUFFER)), Address(sp, ret_buf_offset));
   }
-  arg_shuffle.generate(_masm, abi._shadow_space_bytes, 0);
+  arg_shuffle.generate(_masm, as_VMStorage(shuffle_reg), abi._shadow_space_bytes, 0);
   __ block_comment("} argument shuffle");
 
   __ block_comment("{ receiver ");

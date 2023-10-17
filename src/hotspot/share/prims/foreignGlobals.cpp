@@ -369,5 +369,4 @@ ArgumentShuffle::ArgumentShuffle(
     const GrowableArray<VMStorage>& out_regs,
     VMStorage shuffle_temp) {
   _moves = ComputeMoveOrder::compute_move_order(in_regs, out_regs, shuffle_temp);
-  _shuffle_temp = shuffle_temp;
 }

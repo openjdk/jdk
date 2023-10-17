@@ -162,8 +162,8 @@ static void move_xmm(MacroAssembler* masm, int out_stk_bias,
   }
 }
 
-void ArgumentShuffle::pd_generate(MacroAssembler* masm, int in_stk_bias, int out_stk_bias) const {
-  Register tmp_reg = as_Register(_shuffle_temp);
+void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias) const {
+  Register tmp_reg = as_Register(tmp);
   for (int i = 0; i < _moves.length(); i++) {
     Move move = _moves.at(i);
     VMStorage from_reg = move.from;

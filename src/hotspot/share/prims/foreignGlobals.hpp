@@ -135,20 +135,19 @@ private:
   };
 
   GrowableArray<Move> _moves;
-  VMStorage _shuffle_temp;
 public:
   ArgumentShuffle(
     const GrowableArray<VMStorage>& in_regs,
     const GrowableArray<VMStorage>& out_regs,
     VMStorage shuffle_temp);
 
-  void generate(MacroAssembler* masm, int in_stk_bias, int out_stk_bias) const {
-    pd_generate(masm, in_stk_bias, out_stk_bias);
+  void generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias) const {
+    pd_generate(masm, tmp, in_stk_bias, out_stk_bias);
   }
 
   void print_on(outputStream* os) const;
 private:
-  void pd_generate(MacroAssembler* masm, int in_stk_bias, int out_stk_bias) const;
+  void pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias) const;
 };
 
 #endif // SHARE_PRIMS_FOREIGN_GLOBALS

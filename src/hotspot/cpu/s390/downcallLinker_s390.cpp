@@ -91,6 +91,11 @@ class DowncallStubGenerator : public StubCodeGenerator {
   }
 };
 
+void DowncallLinker::StubGenerator::pd_add_offset_to_oop(VMStorage reg_oop, VMStorage reg_offset,
+                                                         VMStorage tmp1, VMStorage tmp2) const {
+  Unimplemented();
+}
+
 static const int native_invoker_code_base_size = 512;
 static const int native_invoker_size_per_args = 8;
 
@@ -138,24 +143,9 @@ void DowncallStubGenerator::generate() {
   Register call_target_address = Z_R1_scratch,
            tmp = Z_R0_scratch;
 
-  VMStorage shuffle_reg = _abi._scratch1;
-
-  JavaCallingConvention in_conv;
-  NativeCallingConvention out_conv(_input_registers);
-  ArgumentShuffle arg_shuffle(_signature, _num_args, _signature, _num_args, &in_conv, &out_conv, shuffle_reg);
-
-#ifndef PRODUCT
-  LogTarget(Trace, foreign, downcall) lt;
-  if (lt.is_enabled()) {
-    ResourceMark rm;
-    LogStream ls(lt);
-    arg_shuffle.print_on(&ls);
-  }
-#endif
-
   assert(_abi._shadow_space_bytes == frame::z_abi_160_size, "expected space according to ABI");
   int allocated_frame_size = _abi._shadow_space_bytes;
-  allocated_frame_size += arg_shuffle.out_arg_bytes();
+  allocated_frame_size += ForeignGlobals::compute_out_arg_bytes(_input_registers);
 
   assert(!_needs_return_buffer, "unexpected needs_return_buffer");
   RegSpiller out_reg_spiller(_output_registers);
@@ -171,6 +161,20 @@ void DowncallStubGenerator::generate() {
     allocated_frame_size += BytesPerWord;
     __ block_comment("} _captured_state_mask is set");
   }
+
+  GrowableArray<VMStorage> java_regs;
+  ForeignGlobals::java_calling_convention(_signature, _num_args, java_regs);
+  GrowableArray<VMStorage> out_regs = ForeignGlobals::replace_place_holders(_input_registers, locs);
+  ArgumentShuffle arg_shuffle(java_regs, out_regs, _abi._scratch1);
+
+#ifndef PRODUCT
+  LogTarget(Trace, foreign, downcall) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    arg_shuffle.print_on(&ls);
+  }
+#endif
 
   allocated_frame_size = align_up(allocated_frame_size, StackAlignmentInBytes);
   _frame_size_slots = allocated_frame_size >> LogBytesPerInt;
@@ -197,7 +201,7 @@ void DowncallStubGenerator::generate() {
     __ block_comment("} thread java2native");
   }
   __ block_comment("{ argument shuffle");
-  arg_shuffle.generate(_masm, shuffle_reg, frame::z_jit_out_preserve_size, _abi._shadow_space_bytes, locs);
+  arg_shuffle.generate(_masm, frame::z_jit_out_preserve_size, _abi._shadow_space_bytes);
   __ block_comment("} argument shuffle");
 
   __ call(as_Register(locs.get(StubLocations::TARGET_ADDRESS)));

@@ -211,9 +211,10 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
     locs.set(StubLocations::RETURN_BUFFER, abi._scratch1);
   }
 
+  VMStorage shuffle_reg = as_VMStorage(rbx);
   GrowableArray<VMStorage> in_regs = ForeignGlobals::replace_place_holders(call_regs._arg_regs, locs);
   GrowableArray<VMStorage> filtered_out_regs = ForeignGlobals::upcall_filter_receiver_reg(unfiltered_out_regs);
-  ArgumentShuffle arg_shuffle(in_regs, filtered_out_regs, as_VMStorage(rbx));
+  ArgumentShuffle arg_shuffle(in_regs, filtered_out_regs, shuffle_reg);
 
 #ifndef PRODUCT
   LogTarget(Trace, foreign, upcall) lt;
@@ -285,7 +286,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
     assert(ret_buf_offset != -1, "no return buffer allocated");
     __ lea(as_Register(locs.get(StubLocations::RETURN_BUFFER)), Address(rsp, ret_buf_offset));
   }
-  arg_shuffle.generate(_masm, abi._shadow_space_bytes, 0);
+  arg_shuffle.generate(_masm, shuffle_reg, abi._shadow_space_bytes, 0);
   __ block_comment("} argument shuffle");
 
   __ block_comment("{ receiver ");

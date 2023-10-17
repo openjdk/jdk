@@ -94,6 +94,11 @@ public:
   }
 };
 
+void DowncallLinker::StubGenerator::pd_add_offset_to_oop(VMStorage reg_oop, VMStorage reg_offset,
+                                                         VMStorage tmp1, VMStorage tmp2) const {
+  Unimplemented();
+}
+
 static const int native_invoker_code_base_size = 256;
 static const int native_invoker_size_per_arg = 8;
 
@@ -147,20 +152,6 @@ void DowncallStubGenerator::generate() {
     // out arg area (e.g. for stack args)
   };
 
-  VMStorage shuffle_reg = as_VMStorage(x9);
-  JavaCallingConvention in_conv;
-  NativeCallingConvention out_conv(_input_registers);
-  ArgumentShuffle arg_shuffle(_signature, _num_args, _signature, _num_args, &in_conv, &out_conv, shuffle_reg);
-
-#ifndef PRODUCT
-  LogTarget(Trace, foreign, downcall) lt;
-  if (lt.is_enabled()) {
-    ResourceMark rm;
-    LogStream ls(lt);
-    arg_shuffle.print_on(&ls);
-  }
-#endif
-
   int allocated_frame_size = 0;
   assert(_abi._shadow_space_bytes == 0, "not expecting shadow space on RISCV64");
   allocated_frame_size += arg_shuffle.out_arg_bytes();
@@ -189,6 +180,21 @@ void DowncallStubGenerator::generate() {
     locs.set_frame_data(StubLocations::CAPTURED_STATE_BUFFER, allocated_frame_size);
     allocated_frame_size += BytesPerWord;
   }
+
+  VMStorage shuffle_reg = as_VMStorage(x9);
+  GrowableArray<VMStorage> java_regs;
+  ForeignGlobals::java_calling_convention(_signature, _num_args, java_regs);
+  GrowableArray<VMStorage> out_regs = ForeignGlobals::replace_place_holders(_input_registers, locs);
+  ArgumentShuffle arg_shuffle(java_regs, out_regs, shuffle_reg);
+
+#ifndef PRODUCT
+  LogTarget(Trace, foreign, downcall) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    arg_shuffle.print_on(&ls);
+  }
+#endif
 
   allocated_frame_size = align_up(allocated_frame_size, 16);
   // _frame_size_slots is in 32-bit stack slots:
@@ -220,7 +226,7 @@ void DowncallStubGenerator::generate() {
   }
 
   __ block_comment("{ argument shuffle");
-  arg_shuffle.generate(_masm, shuffle_reg, 0, _abi._shadow_space_bytes, locs);
+  arg_shuffle.generate(_masm, shuffle_reg, 0, _abi._shadow_space_bytes);
   __ block_comment("} argument shuffle");
 
   __ jalr(as_Register(locs.get(StubLocations::TARGET_ADDRESS)));

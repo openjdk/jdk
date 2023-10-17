@@ -223,7 +223,7 @@ void DowncallLinker::StubGenerator::generate() {
   }
 
   __ block_comment("{ argument shuffle");
-  arg_shuffle.generate(_masm, 0, _abi._shadow_space_bytes);
+  arg_shuffle.generate(_masm, shuffle_reg, 0, _abi._shadow_space_bytes);
   __ block_comment("} argument shuffle");
 
   __ call(as_Register(locs.get(StubLocations::TARGET_ADDRESS)));

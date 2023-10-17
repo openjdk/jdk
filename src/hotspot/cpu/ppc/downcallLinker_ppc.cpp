@@ -93,6 +93,11 @@ public:
   }
 };
 
+void DowncallLinker::StubGenerator::pd_add_offset_to_oop(VMStorage reg_oop, VMStorage reg_offset,
+                                                         VMStorage tmp1, VMStorage tmp2) const {
+  Unimplemented();
+}
+
 static const int native_invoker_code_base_size = 384;
 static const int native_invoker_size_per_arg = 8;
 
@@ -138,19 +143,6 @@ void DowncallStubGenerator::generate() {
   Register callerSP            = R2, // C/C++ uses R2 as TOC, but we can reuse it here
            tmp                 = R11_scratch1, // same as shuffle_reg
            call_target_address = R12_scratch2; // same as _abi._scratch2 (ABIv2 requires this reg!)
-  VMStorage shuffle_reg = _abi._scratch1;
-  JavaCallingConvention in_conv;
-  NativeCallingConvention out_conv(_input_registers);
-  ArgumentShuffle arg_shuffle(_signature, _num_args, _signature, _num_args, &in_conv, &out_conv, shuffle_reg);
-
-#ifndef PRODUCT
-  LogTarget(Trace, foreign, downcall) lt;
-  if (lt.is_enabled()) {
-    ResourceMark rm;
-    LogStream ls(lt);
-    arg_shuffle.print_on(&ls);
-  }
-#endif
 
   // Stack frame size computation:
   // We use the number of input VMStorage elements because PPC64 requires slots for all arguments
@@ -191,6 +183,20 @@ void DowncallStubGenerator::generate() {
     allocated_frame_size += BytesPerWord;
   }
 
+  GrowableArray<VMStorage> java_regs;
+  ForeignGlobals::java_calling_convention(_signature, _num_args, java_regs);
+  GrowableArray<VMStorage> out_regs = ForeignGlobals::replace_place_holders(_input_registers, locs);
+  ArgumentShuffle arg_shuffle(java_regs, out_regs, _abi._scratch1);
+
+#ifndef PRODUCT
+  LogTarget(Trace, foreign, downcall) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    arg_shuffle.print_on(&ls);
+  }
+#endif
+
   allocated_frame_size = align_up(allocated_frame_size, StackAlignmentInBytes);
   _frame_size_slots = allocated_frame_size >> LogBytesPerInt;
 
@@ -217,7 +223,7 @@ void DowncallStubGenerator::generate() {
   }
 
   __ block_comment("{ argument shuffle");
-  arg_shuffle.generate(_masm, as_VMStorage(callerSP), frame::jit_out_preserve_size, frame::native_abi_minframe_size, locs);
+  arg_shuffle.generate(_masm, as_VMStorage(callerSP), frame::jit_out_preserve_size, frame::native_abi_minframe_size);
   __ block_comment("} argument shuffle");
 
   __ call_c(call_target_address);

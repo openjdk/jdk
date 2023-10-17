@@ -176,8 +176,9 @@ void DowncallLinker::StubGenerator::generate() {
   //
   // Note how the last chunk can be shared, since the 3 uses occur at different times.
 
+  VMStorage shuffle_reg = as_VMStorage(r19);
   GrowableArray<VMStorage> out_regs = ForeignGlobals::replace_place_holders(_input_registers, locs);
-  ArgumentShuffle arg_shuffle(filtered_java_regs, out_regs, as_VMStorage(r19));
+  ArgumentShuffle arg_shuffle(filtered_java_regs, out_regs, shuffle_reg);
 
 #ifndef PRODUCT
   LogTarget(Trace, foreign, downcall) lt;
@@ -218,7 +219,7 @@ void DowncallLinker::StubGenerator::generate() {
   }
 
   __ block_comment("{ argument shuffle");
-  arg_shuffle.generate(_masm, 0, _abi._shadow_space_bytes);
+  arg_shuffle.generate(_masm, shuffle_reg, 0, _abi._shadow_space_bytes);
   __ block_comment("} argument shuffle");
 
   __ blr(as_Register(locs.get(StubLocations::TARGET_ADDRESS)));
