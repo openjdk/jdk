@@ -28,6 +28,7 @@ package gc.arguments;
  * @bug 7057939
  * @summary Make sure that MaxNewSize always has a useful value after argument
  * processing.
+ * @key flag-sensitive
  * @requires vm.gc.Serial & vm.opt.MaxNewSize == null & vm.opt.NewRatio == null & vm.opt.NewSize == null & vm.opt.OldSize == null & vm.opt.x.Xms == null & vm.opt.x.Xmx == null
  * @library /test/lib
  * @library /
@@ -42,6 +43,7 @@ package gc.arguments;
  * @bug 7057939
  * @summary Make sure that MaxNewSize always has a useful value after argument
  * processing.
+ * @key flag-sensitive
  * @requires vm.gc.Parallel & vm.opt.MaxNewSize == null & vm.opt.NewRatio == null & vm.opt.NewSize == null & vm.opt.OldSize == null & vm.opt.x.Xms == null & vm.opt.x.Xmx == null
  * @library /test/lib
  * @library /
@@ -56,6 +58,7 @@ package gc.arguments;
  * @bug 7057939
  * @summary Make sure that MaxNewSize always has a useful value after argument
  * processing.
+ * @key flag-sensitive
  * @requires vm.gc.G1 & vm.opt.MaxNewSize == null & vm.opt.NewRatio == null & vm.opt.NewSize == null & vm.opt.OldSize == null & vm.opt.x.Xms == null & vm.opt.x.Xmx == null
  * @library /test/lib
  * @library /
