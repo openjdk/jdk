@@ -677,10 +677,6 @@ public:
   virtual int compile_id() const { return _compile_id; }
   const char* compile_kind() const;
 
-  // tells if any of this method's dependencies have been invalidated
-  // (this is expensive!)
-  static void check_all_dependencies(DepChange& changes);
-
   // tells if this compiled method is dependent on the given changes,
   // and the changes have invalidated it
   bool check_dependency_on(DepChange& changes);

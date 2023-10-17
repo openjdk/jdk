@@ -48,10 +48,6 @@ EXPORT struct Big with_return_buffer() {
     return b;
 }
 
-EXPORT void capture_errno(int value) {
-    errno = value;
-}
-
 EXPORT void do_upcall(void(*f)(void)) {
     f();
 }
