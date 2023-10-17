@@ -47,7 +47,7 @@ static uint64_t rate_per_second(uint64_t current, uint64_t old, const JfrTickspa
 void JfrCompilerQueueUtilization::send_events() {
   static CompilerQueueEntry compilerQueueEntries[2] = {
     {CompileBroker::c1_compile_queue(), 1, 0, 0},
-    {CompileBroker::c2_compile_queue(), 2, 0,0}};
+    {CompileBroker::c2_compile_queue(), 2, 0, 0}};
 
   const JfrTicks cur_time = JfrTicks::now();
   static JfrTicks last_sample_instant;
