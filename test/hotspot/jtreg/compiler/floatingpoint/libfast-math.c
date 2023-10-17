@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,7 @@
 #if defined(__GNUC__)
 
 // On systems on which GCC bug 55522 has been fixed, this constructor
-// serves to reproduce the original bug for the purposes of testing
-// HotSpot.
+// serves to reproduce that bug for the purposes of testing HotSpot.
 static void __attribute__((constructor)) set_flush_to_zero(void) {
 
 #if defined(__x86_64__)
