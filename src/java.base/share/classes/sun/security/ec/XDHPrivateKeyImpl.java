@@ -103,7 +103,7 @@ public final class XDHPrivateKeyImpl extends PKCS8Key implements XECPrivateKey {
 
     @Override
     public PublicKey calculatePublicKey() {
-        XECParameters params = paramSpec.getName().equals("X25519")
+        XECParameters params = paramSpec.getName().equalsIgnoreCase("X25519")
                 ? XECParameters.X25519
                 : XECParameters.X448;
         try {
