@@ -1369,7 +1369,9 @@ public abstract class HtmlDocletWriter {
                 @Override
                 public Boolean visitStartElement(StartElementTree node, Content content) {
                     Content attrs = new ContentBuilder();
-                    if (node.getName().toString().matches("(?i)h[1-6]")) {
+                    if (node.getName().toString().matches("(?i)h[1-6]")
+                            && !(HtmlDocletWriter.this instanceof IndexWriter)
+                            && !(HtmlDocletWriter.this instanceof SummaryListWriter<?>)) {
                         createSectionIdAndIndex(node, trees, attrs, element, context);
                     }
                     for (DocTree dt : node.getAttributes()) {
