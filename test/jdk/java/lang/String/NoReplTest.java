@@ -59,12 +59,8 @@ public class NoReplTest {
                             .withPrefix("x")
                             .withUpperCase()
                             .formatHex(read.getBytes(UTF_16)));
-        } catch (IllegalArgumentException e) {
-            if (e.getCause() instanceof CharacterCodingException) {
-                // success
-            } else {
-                throw e;
-            }
+        } catch (CharacterCodingException cce) {
+            // success
         } finally {
             Files.delete(f);
         }
@@ -80,13 +76,8 @@ public class NoReplTest {
         try {
             Files.writeString(f, MALFORMED_WINDOWS_1252, WINDOWS_1252);
             throw new RuntimeException("Exception should be thrown");
-        } catch (IllegalArgumentException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof CharacterCodingException) {
-                // success
-            } else {
-                throw e;
-            }
+        } catch (CharacterCodingException cce) {
+            // success
         } finally {
             Files.delete(f);
         }
