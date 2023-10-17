@@ -530,26 +530,27 @@ The value \[dq]disabled\[dq] disables finalization, so that no
 finalizers are invoked.
 .TP
 \f[V]--module-path\f[R] \f[I]modulepath\f[R]... or \f[V]-p\f[R] \f[I]modulepath\f[R]
-Specifies where to find application modules with a list of path elements.
-The elements of a module path can be a file path to a module or a directory
-containing modules. Each module is either a modular JAR or an
-exploded-module directory.
+Specifies where to find application modules with a list of path
+elements.
+The elements of a module path can be a file path to a module or a
+directory containing modules.
+Each module is either a modular JAR or an exploded-module directory.
 .RS
 .PP
-On Windows, semicolons (\f[V];\f[R]) separate path elements in this list;
-on other platforms it is a colon (\f[V]:\f[R]).
+On Windows, semicolons (\f[V];\f[R]) separate path elements in this
+list; on other platforms it is a colon (\f[V]:\f[R]).
 .RE
 .TP
 \f[V]--upgrade-module-path\f[R] \f[I]modulepath\f[R]...
-Specifies where to find module replacements of upgradeable modules in the
-runtime image with a list of path elements.
-The elements of a module path can be a file path to a module or a directory
-containing modules. Each module is either a modular JAR or an
-exploded-module directory.
+Specifies where to find module replacements of upgradeable modules in
+the runtime image with a list of path elements.
+The elements of a module path can be a file path to a module or a
+directory containing modules.
+Each module is either a modular JAR or an exploded-module directory.
 .RS
 .PP
-On Windows, semicolons (\f[V];\f[R]) separate path elements in this list;
-on other platforms it is a colon (\f[V]:\f[R]).
+On Windows, semicolons (\f[V];\f[R]) separate path elements in this
+list; on other platforms it is a colon (\f[V]:\f[R]).
 .RE
 .TP
 \f[V]--add-modules\f[R] \f[I]module\f[R][\f[V],\f[R]\f[I]module\f[R]...]
@@ -1304,6 +1305,7 @@ By default this option is disabled.
 .TP
 \f[V]-XX:FlightRecorderOptions=\f[R]\f[I]parameter\f[R]\f[V]=\f[R]\f[I]value\f[R] (or) \f[V]-XX:FlightRecorderOptions:\f[R]\f[I]parameter\f[R]\f[V]=\f[R]\f[I]value\f[R]
 Sets the parameters that control the behavior of JFR.
+Multiple parameters can be specified by separating them with a comma.
 .RS
 .PP
 The following list contains the available JFR
@@ -1369,9 +1371,6 @@ By default, the local buffer size is set to 8 kilobytes, with a minimum
 value of 4 kilobytes.
 Overriding this parameter could reduce performance and is not
 recommended.
-.PP
-You can specify values for multiple parameters by separating them with a
-comma.
 .RE
 .TP
 \f[V]-XX:LargePageSizeInBytes=\f[R]\f[I]size\f[R]
@@ -1658,6 +1657,9 @@ written when the recording is stopped, for example:
 \f[V]/home/user/recordings/recording.jfr\f[R]
 .IP \[bu] 2
 \f[V]c:\[rs]recordings\[rs]recording.jfr\f[R]
+.PP
+If %p and/or %t is specified in the filename, it expands to the
+JVM\[aq]s PID and the current timestamp, respectively.
 .RE
 .TP
 \f[V]name=\f[R]\f[I]identifier\f[R]
@@ -1810,19 +1812,6 @@ Use \f[V]-Xlog:os+container=trace\f[R] for maximum logging of container
 information.
 See \f[B]Enable Logging with the JVM Unified Logging Framework\f[R] for
 a description of using Unified Logging.
-.RE
-.TP
-\f[V]-XX:+UseHugeTLBFS\f[R]
-\f[B]Linux only:\f[R] This option is the equivalent of specifying
-\f[V]-XX:+UseLargePages\f[R].
-This option is disabled by default.
-This option pre-allocates all large pages up-front, when memory is
-reserved; consequently the JVM can\[aq]t dynamically grow or shrink
-large pages memory areas; see \f[V]-XX:UseTransparentHugePages\f[R] if
-you want this behavior.
-.RS
-.PP
-See \f[B]Large Pages\f[R].
 .RE
 .TP
 \f[V]-XX:+UseLargePages\f[R]
@@ -2172,37 +2161,16 @@ unlocks diagnostic JVM options.
 Sets the list of methods (separated by commas) to which compilation
 should be restricted.
 Only the specified methods are compiled.
-Specify each method with the full class name (including the packages and
-subpackages).
-For example, to compile only the \f[V]length()\f[R] method of the
-\f[V]String\f[R] class and the \f[V]size()\f[R] method of the
-\f[V]List\f[R] class, use the following:
-.RS
 .RS
 .PP
-\f[V]-XX:CompileOnly=java/lang/String.length,java/util/List.size\f[R]
-.RE
-.PP
-Note that the full class name is specified, including all packages and
-subpackages separated by a slash (\f[V]/\f[R]).
-For easier cut and paste operations, it\[aq]s also possible to use the
-method name format produced by the \f[V]-XX:+PrintCompilation\f[R] and
-\f[V]-XX:+LogCompilation\f[R] options:
-.RS
-.PP
-\f[V]-XX:CompileOnly=java.lang.String::length,java.util.List::size\f[R]
-.RE
-.PP
-Although wildcards aren\[aq]t supported, you can specify only the class
-or package name to compile all methods in that class or package, as well
-as specify just the method to compile methods with this name in any
-class:
+\f[V]-XX:CompileOnly=method1,method2,...,methodN\f[R] is an alias for:
 .IP
 .nf
 \f[CB]
--XX:CompileOnly=java/lang/String
--XX:CompileOnly=java/lang
--XX:CompileOnly=.length
+-XX:CompileCommand=compileonly,method1
+-XX:CompileCommand=compileonly,method2
+\&...
+-XX:CompileCommand=compileonly,methodN
 \f[R]
 .fi
 .RE
@@ -3655,14 +3623,6 @@ This is generally the best choice for small and simple applications that
 don\[aq]t require any special functionality from garbage collection.
 By default, this option is disabled and the default collector is used.
 .TP
-\f[V]-XX:+UseSHM\f[R]
-\f[B]Linux only:\f[R] Enables the JVM to use shared memory to set up
-large pages.
-.RS
-.PP
-See \f[B]Large Pages\f[R] for setting up large pages.
-.RE
-.TP
 \f[V]-XX:+UseStringDeduplication\f[R]
 Enables string deduplication.
 By default, this option is disabled.
@@ -3815,6 +3775,19 @@ Controlled \f[I]relaxed strong encapsulation\f[R], as defined in
 This option was deprecated in JDK 16 by \f[B]JEP 396\f[R]
 [https://openjdk.org/jeps/396] and made obsolete in JDK 17 by \f[B]JEP
 403\f[R] [https://openjdk.org/jeps/403].
+.TP
+\f[V]-XX:+UseHugeTLBFS\f[R]
+\f[B]Linux only:\f[R] This option is the equivalent of specifying
+\f[V]-XX:+UseLargePages\f[R].
+This option is disabled by default.
+This option pre-allocates all large pages up-front, when memory is
+reserved; consequently the JVM can\[aq]t dynamically grow or shrink
+large pages memory areas; see \f[V]-XX:UseTransparentHugePages\f[R] if
+you want this behavior.
+.TP
+\f[V]-XX:+UseSHM\f[R]
+\f[B]Linux only:\f[R] Enables the JVM to use shared memory to set up
+large pages.
 .SH REMOVED JAVA OPTIONS
 .PP
 No documented java options have been removed in JDK 22.
@@ -4915,20 +4888,6 @@ login as \f[V]root\f[R] and run:
 It is always recommended to check the value of \f[V]nr_hugepages\f[R]
 after the request to make sure the kernel was able to allocate the
 requested number of large pages.
-.PP
-When using the option \f[V]-XX:+UseSHM\f[R] to enable large pages you
-also need to make sure the \f[V]SHMMAX\f[R] parameter is configured to
-allow large enough shared memory segments to be allocated.
-To allow a maximum shared segment of 8 GB, login as \f[V]root\f[R] and
-run:
-.RS
-.PP
-\f[V]# echo 8589934592 > /proc/sys/kernel/shmmax\f[R]
-.RE
-.PP
-In some environments this is not needed since the default value is large
-enough, but it is important to make sure the value is large enough to
-fit the amount of memory intended to be backed by large pages.
 .RS
 .PP
 \f[B]Note:\f[R] The values contained in \f[V]/proc\f[R] and
