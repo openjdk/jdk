@@ -626,7 +626,7 @@ public:
   IteratorImpl(const IteratorImpl&) = default;
   IteratorImpl& operator=(const IteratorImpl&) = default;
 
-  // Implicit conversion from non-const to const element type.
+  /** Implicit conversion from non-const to const element type. */
   template<typename From, ENABLE_IF(is_convertible_iterator<From>())>
   IteratorImpl(const From& other)
     : _encoded_value(IteratorOperations<From>::encoded_value(other))
@@ -809,14 +809,30 @@ class IntrusiveList : public IntrusiveListImpl::SizeBase<has_size> {
   template<typename Other>
   static constexpr bool can_splice_from() {
     return Conjunction<Impl::IsListType<Other>,
-                       std::is_convertible<typename Other::iterator, iterator>>::value;
+                       HasConvertibleIterator<Other, iterator>>::value;
   }
 
+  // Helper for can_splice_from, delaying instantiation that includes
+  // "Other::iterator" until Other is known to be a List type.
+  template<typename Other, typename Iterator>
+  struct HasConvertibleIterator
+    : public BoolConstant<std::is_convertible<typename Other::iterator, Iterator>::value>
+  {};
+
+  // Swapping can be thought of as bi-directional slicing (see
+  // can_splice_from).  So Other::iterator must be the same as iterator.
   template<typename Other>
   static constexpr bool can_swap() {
     return Conjunction<Impl::IsListType<Other>,
-                       std::is_same<typename Other::iterator, iterator>>::value;
+                       HasSameIterator<Other, iterator>>::value;
   }
+
+  // Helper for can_swap, delaying instantiation that includes
+  // "Other::iterator" until Other is known to be a List type.
+  template<typename Other, typename Iterator>
+  struct HasSameIterator
+    : public BoolConstant<std::is_same<typename Other::iterator, Iterator>::value>
+  {};
 
 public:
   /** Flag indicating presence of a constant-time size() operation. */
@@ -1229,6 +1245,18 @@ private:
 
 public:
 
+  // The use of SFINAE with splice() and swap() is done for two reasons.
+  //
+  // It provides better compile-time error messages for certain kinds of usage
+  // mistakes.  For example, if a splice from_list is not actually a list, or
+  // a list with a different get_entry function, we get some kind of "no
+  // applicable function" failure at the call site, rather than some obscure
+  // access failure deep inside the implementation of the operation.
+  //
+  // It ensures const-correctness at the API boundary, permitting the
+  // implementation to be simpler by decaying to const iterators and
+  // references in various places.
+
   /**
    * Transfers the elements of from_list in the range designated by
    * from and to to this list, inserted before pos.  Returns an
@@ -1331,7 +1359,7 @@ public:
    * constant-time size() operation; otherwise O(number of elements
    * transferred).
    */
-  template<typename FromList, ENABLE_IF(Impl::IsListType<FromList>::value)>
+  template<typename FromList, ENABLE_IF(can_splice_from<FromList>())>
   iterator splice(const_iterator pos, FromList& from_list) {
     assert(!is_same_list(from_list), "precondition");
     return splice(pos, from_list, from_list.begin(), from_list.end());

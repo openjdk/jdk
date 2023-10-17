@@ -1365,10 +1365,19 @@ TEST_F(IntrusiveListTestSplice, splice_into_const) {
     SCOPED_TRACE("check values");
     check(clist.begin(), clist.end(), 0);
   }
+
+  // Some invalid uses to allow one to examine the compiler errors.
+
   // This doesn't compile, which is as expected.  Transfer from list with
   // const elements to a list with non-const elements is disallowed, because
   // it implicitly casts away const.
   // List1::iterator sresult_c = list_a.splice(list_a.end(), clist);
+
+  // This doesn't compile either, as expected.  Splicing from a non-list.
+  // class Foo {};
+  // Foo foo{};
+  // clist.splice(clist.end(), foo);
+
   clist.clear();
 }
 
