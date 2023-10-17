@@ -473,10 +473,8 @@ public class HBShaper {
                 float startX = (float)startPt.getX();
                 float startY = (float)startPt.getY();
 
-                MemorySegment matrix = arena.allocateFrom(
-                    JAVA_FLOAT, MemorySegment.ofArray(mat), JAVA_FLOAT, 0, mat.length);
-                MemorySegment chars = arena.allocateFrom(
-                    JAVA_CHAR, MemorySegment.ofArray(text), JAVA_CHAR, 0, text.length);
+                MemorySegment matrix = arena.allocateFrom(JAVA_FLOAT, mat);
+                MemorySegment chars = arena.allocateFrom(JAVA_CHAR, text);
 
                 /*int ret =*/ jdk_hb_shape_handle.invokeExact(
                      ptSize, matrix, hbface, chars, text.length,
@@ -642,7 +640,7 @@ public class HBShaper {
              int x_offset = (int)x_offsetHandle.get(glyphPosArr, (long)i);
              int y_offset = (int)y_offsetHandle.get(glyphPosArr, (long)i);
              gvdata._positions[(storei*2)]   = startX + x + (x_offset * scale);
-             gvdata._positions[(storei*2)+1] = startY + y + (y_offset * scale);
+             gvdata._positions[(storei*2)+1] = startY + y - (y_offset * scale);
              int x_advance = (int)x_advanceHandle.get(glyphPosArr, (long)i);
              int y_advance = (int)y_advanceHandle.get(glyphPosArr, (long)i);
              x += x_advance * scale;

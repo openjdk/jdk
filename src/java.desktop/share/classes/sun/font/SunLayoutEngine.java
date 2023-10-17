@@ -164,14 +164,14 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
         return ref.getNativePtr();
     }
 
-    static boolean usePanama = true;
+    static boolean useFFM = true;
     static boolean logTime = false;
     static {
         @SuppressWarnings("removal")
         String prop = AccessController.doPrivileged(
             (PrivilegedAction<String>) () ->
-               System.getProperty("sun.font.layout.panama", "true"));
-        usePanama = "true".equals(prop);
+               System.getProperty("sun.font.layout.ffm", "true"));
+        useFFM = "true".equals(prop);
 
         @SuppressWarnings("removal")
         String prop2 = AccessController.doPrivileged(
@@ -194,7 +194,7 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
         }
         Font2D font = key.font();
         FontStrike strike = font.getStrike(desc);
-        if (usePanama) {
+        if (useFFM) {
             java.lang.foreign.MemorySegment face = HBShaper.getFace(font);
             if (face != null) {
                 HBShaper.shape(font, strike, ptSize, mat, face,
@@ -212,7 +212,7 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
         if (logTime) {
             long t1 = System.nanoTime();
             totalTime += (t1-t0);
-            if ((layoutCnt <= 5) || ((layoutCnt % 10000) == 0)) {
+            if ((layoutCnt <= 5) || ((layoutCnt % 1000) == 0)) {
                 System.out.println("layoutCnt="+layoutCnt +" total="+totalTime/1000000+"ms");
             }
         }
