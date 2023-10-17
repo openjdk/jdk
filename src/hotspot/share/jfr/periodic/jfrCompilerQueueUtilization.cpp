@@ -27,9 +27,18 @@
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/jfrCompilerQueueUtilization.hpp"
 
+enum {
+    c1_compiler_queue_id = 1,
+    c2_compiler_queue_id = 2,
+    num_compiler_queues = 2
+};
+
+typedef int (*GET_COMPILER_THREAD_COUNT)();
+
 struct CompilerQueueEntry {
   CompileQueue* compilerQueue;
-  u8 compiler;
+  u8 compiler_queue_id;
+  GET_COMPILER_THREAD_COUNT get_compiler_thread_count;
   uint64_t added;
   uint64_t removed;
 };
@@ -44,15 +53,17 @@ static uint64_t rate_per_second(uint64_t current, uint64_t old, const JfrTickspa
   return ((current - old) * NANOSECS_PER_SEC) / interval.nanoseconds();
 }
 
+
+
 void JfrCompilerQueueUtilization::send_events() {
-  static CompilerQueueEntry compilerQueueEntries[2] = {
-    {CompileBroker::c1_compile_queue(), 1, 0, 0},
-    {CompileBroker::c2_compile_queue(), 2, 0, 0}};
+  static CompilerQueueEntry compilerQueueEntries[num_compiler_queues] = {
+    {CompileBroker::c1_compile_queue(), c1_compiler_queue_id, &CompileBroker::get_c1_thread_count, 0, 0},
+    {CompileBroker::c2_compile_queue(), c2_compiler_queue_id, &CompileBroker::get_c2_thread_count, 0, 0}};
 
   const JfrTicks cur_time = JfrTicks::now();
   static JfrTicks last_sample_instant;
   const JfrTickspan interval = cur_time - last_sample_instant;
-  for(int i = 0; i < 2; i ++)
+  for(int i = 0; i < num_compiler_queues; i ++)
   {
     CompilerQueueEntry* entry = &compilerQueueEntries[i];
     if (entry->compilerQueue != NULL)
@@ -63,8 +74,7 @@ void JfrCompilerQueueUtilization::send_events() {
       const uint64_t egress = rate_per_second(current_removed, entry->removed, interval);
 
       EventCompilerQueueUtilization event;
-      event.set_compiler(entry->compiler);
-      event.set_compilerThreadCount((i == 0) ? CompileBroker::get_c1_thread_count() : CompileBroker::get_c2_thread_count());
+      event.set_compiler(entry->compiler_queue_id);
       event.set_ingress(ingress);
       event.set_egress(egress);
       event.set_size(entry->compilerQueue->size());
@@ -73,6 +83,7 @@ void JfrCompilerQueueUtilization::send_events() {
       event.set_removed(current_removed - entry->removed);
       event.set_totalAdded(current_added);
       event.set_totalRemoved(current_removed);
+      event.set_compilerThreadCount(entry->get_compiler_thread_count());
       event.commit();
 
       entry->added = current_added;
