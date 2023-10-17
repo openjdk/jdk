@@ -928,10 +928,6 @@ public final class String
         return !StringCoding.hasNegatives(src, 0, src.length);
     }
 
-    private static byte[] getBytesNoRepl1(String s, Charset cs) {
-        return getBytesNoRepl1(s, cs);
-    }
-
     static byte[] getBytesNoRepl(String s, Charset cs) {
         byte[] val = s.value();
         byte coder = s.coder();

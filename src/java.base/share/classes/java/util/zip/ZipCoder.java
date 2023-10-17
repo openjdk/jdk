@@ -316,7 +316,11 @@ class ZipCoder {
                     return Comparison.NO_MATCH;
                 }
             } catch (IllegalArgumentException e) {
-                return Comparison.NO_MATCH;
+                Throwable cause = e.getCause();
+                if (cause instanceof CharacterCodingException) {
+                    return Comparison.NO_MATCH;
+                }
+                throw e;
             }
         }
     }
