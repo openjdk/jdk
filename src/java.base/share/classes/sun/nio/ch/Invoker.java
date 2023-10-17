@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,12 +70,8 @@ class Invoker {
             handlerInvokeCount++;
         }
     }
-    private static final ThreadLocal<GroupAndInvokeCount> myGroupAndInvokeCount =
-        new ThreadLocal<GroupAndInvokeCount>() {
-            @Override protected GroupAndInvokeCount initialValue() {
-                return null;
-            }
-        };
+    private static final ThreadLocal<GroupAndInvokeCount> myGroupAndInvokeCount
+        = new ThreadLocal<GroupAndInvokeCount>();
 
     /**
      * Binds this thread to the given group

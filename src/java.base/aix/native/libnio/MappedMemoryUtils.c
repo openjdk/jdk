@@ -158,6 +158,11 @@ static void check_aix_einval(JNIEnv* env, void* end_address)
     FILE* proc_file;
     {
         char* fname = (char*) malloc(sizeof(char) * PFNAME_LEN);
+        if (fname == NULL) {
+            JNU_ThrowOutOfMemoryError(env, NULL);
+            return;
+        }
+
         pid_t the_pid = getpid();
         jio_snprintf(fname, PFNAME_LEN, "/proc/%d/map", the_pid);
         proc_file = fopen(fname, "r");
@@ -170,6 +175,11 @@ static void check_aix_einval(JNIEnv* env, void* end_address)
     }
     {
         prmap_t* map_entry = (prmap_t*) malloc(sizeof(prmap_t));
+        if (map_entry == NULL) {
+            JNU_ThrowOutOfMemoryError(env, NULL);
+            fclose(proc_file);
+            return;
+        }
         check_proc_map_array(env, proc_file, map_entry, end_address);
         free(map_entry);
     }
