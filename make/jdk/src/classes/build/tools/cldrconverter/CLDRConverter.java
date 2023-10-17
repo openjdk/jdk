@@ -1289,14 +1289,13 @@ public class CLDRConverter {
      */
     private static void generateTZDBShortNamesMap() throws IOException {
         Files.walk(Path.of(tzDataDir), 1, FileVisitOption.FOLLOW_LINKS)
-            .map(Path::toFile)
-            .filter(File::isFile)
-            .forEach(f -> {
+            .filter(p -> p.toFile().isFile())
+            .forEach(p -> {
                 try {
                     String zone = null;
                     String rule = null;
                     String format = null;
-                    for (var line : Files.readAllLines(f.toPath())) {
+                    for (var line : Files.readAllLines(p)) {
                         if (line.contains("#STDOFF")) continue;
                         line = line.replaceAll("[ \t]*#.*", "");
 
@@ -1371,9 +1370,13 @@ public class CLDRConverter {
      */
     private static String convertGMTName(String f) {
         try {
-            return TimeZone.getTimeZone(ZoneOffset.of(f)).getDisplayName();
+            // Should pre-fill GMT format once COMPAT is gone.
+            // Till then, fall back to GMT format at runtime, after COMPAT short
+            // names are populated
+            ZoneOffset.of(f);
+            return null;
         } catch (DateTimeException dte) {
-            // ignore
+            // textual representation. return as is
         }
         return f;
     }
