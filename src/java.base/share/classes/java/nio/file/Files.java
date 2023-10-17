@@ -3355,10 +3355,7 @@ public final class Files {
         try {
             return JLA.newStringNoRepl(ba, cs);
         } catch (IllegalArgumentException e) {
-            if (e.getCause() instanceof CharacterCodingException cause) {
-                throw cause;
-            }
-            throw e;
+            throw (CharacterCodingException) e.getCause();
         }
     }
 
@@ -3725,10 +3722,7 @@ public final class Files {
         try {
             bytes = JLA.getBytesNoRepl(String.valueOf(csq), cs);
         } catch (IllegalArgumentException e) {
-            if (e.getCause() instanceof CharacterCodingException cause) {
-                throw cause;
-            }
-            throw e;
+            throw (CharacterCodingException) e.getCause();
         }
         if (path.getClass().getModule() != Object.class.getModule())
             bytes = bytes.clone();
