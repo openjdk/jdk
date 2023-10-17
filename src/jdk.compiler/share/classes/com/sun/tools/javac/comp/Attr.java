@@ -5027,6 +5027,7 @@ public class Attr extends JCTree.Visitor {
         Type processorType = attribTree(processor, env, new ResultInfo(KindSelector.VAL, Type.noType));
         chk.checkProcessorType(processor, processorType, env);
         Type processMethodType = getProcessMethodType(tree, processorType);
+        tree.processMethodType = processMethodType;
         Type resultType = processMethodType.getReturnType();
 
         Env<AttrContext> localEnv = env.dup(tree, env.info.dup());
