@@ -50,9 +50,8 @@ import java.util.Objects;
 
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.MappedMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.SegmentFactories;
 import jdk.internal.misc.Blocker;
 import jdk.internal.misc.ExtendedMapMode;
 import jdk.internal.misc.Unsafe;
@@ -1335,22 +1334,7 @@ public class FileChannelImpl
         if (mode == MapMode.READ_ONLY) {
             readOnly = true;
         }
-        if (unmapper != null) {
-            AbstractMemorySegmentImpl segment =
-                new MappedMemorySegmentImpl(unmapper.address(), unmapper, size,
-                                            readOnly, sessionImpl);
-            MemorySessionImpl.ResourceList.ResourceCleanup resource =
-                new MemorySessionImpl.ResourceList.ResourceCleanup() {
-                    @Override
-                    public void cleanup() {
-                        unmapper.unmap();
-                    }
-                };
-            sessionImpl.addOrCleanupIfFail(resource);
-            return segment;
-        } else {
-            return new MappedMemorySegmentImpl(0, null, 0, readOnly, sessionImpl);
-        }
+        return SegmentFactories.mapSegment(size, unmapper, readOnly, sessionImpl);
     }
 
     private Unmapper mapInternal(MapMode mode, long position, long size, int prot, boolean isSync)

@@ -1790,6 +1790,11 @@ enum Nf {
   INSN(vlse32_v, 0b0000111, 0b110, 0b10, 0b0);
   INSN(vlse64_v, 0b0000111, 0b111, 0b10, 0b0);
 
+  INSN(vsse8_v,  0b0100111, 0b000, 0b10, 0b0);
+  INSN(vsse16_v, 0b0100111, 0b101, 0b10, 0b0);
+  INSN(vsse32_v, 0b0100111, 0b110, 0b10, 0b0);
+  INSN(vsse64_v, 0b0100111, 0b111, 0b10, 0b0);
+
 #undef INSN
 #undef patch_VLdSt
 

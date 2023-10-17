@@ -93,7 +93,7 @@
  * );
  *
  * try (Arena arena = Arena.ofConfined()) {
- *     MemorySegment cString = arena.allocateUtf8String("Hello");
+ *     MemorySegment cString = arena.allocateFrom("Hello");
  *     long len = (long)strlen.invokeExact(cString); // 5
  * }
  *}
@@ -109,7 +109,7 @@
  * into a foreign function call, according to the rules specified by the ABI of the underlying platform.
  * The {@link java.lang.foreign.Arena} class also provides many useful methods for
  * interacting with foreign code, such as
- * {@linkplain java.lang.foreign.SegmentAllocator#allocateUtf8String(java.lang.String) converting} Java strings into
+ * {@linkplain java.lang.foreign.SegmentAllocator#allocateFrom(java.lang.String) converting} Java strings into
  * zero-terminated, UTF-8 strings, as demonstrated in the above example.
  *
  * <h2 id="restricted">Restricted methods</h2>
@@ -147,9 +147,7 @@
  *
  * @spec jni/index.html Java Native Interface Specification
  *
- * @since 19
+ * @since 22
  */
-@PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 package java.lang.foreign;
 
-import jdk.internal.javac.PreviewFeature;
