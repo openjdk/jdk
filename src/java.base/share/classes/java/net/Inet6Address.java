@@ -174,6 +174,8 @@ import java.util.Objects;
  * Inet6Address instances returned from the NetworkInterface class. This can be
  * used to find out the current scope ids configured on the system.
  *
+ * <h3><a id="input">Textual representation of IPv6 addresses as method inputs</a></h3>
+ *
  * <p> Methods of {@code InetAddress} and {@code Inet6Address} that accept a
  * textual representation of an IPv6 address allow for that representation
  * to be enclosed in square brackets. For example,
