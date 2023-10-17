@@ -88,9 +88,9 @@ class CompileQueue : public CHeapObj<mtCompiler> {
   CompileTask* _first_stale;
 
   int _size;
-  int _total_added;
-  int _total_removed;
   int _peak_size;
+  uint _total_added;
+  uint _total_removed;
 
   void purge_stale_tasks();
  public:

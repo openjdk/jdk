@@ -53,8 +53,6 @@ static uint64_t rate_per_second(uint64_t current, uint64_t old, const JfrTickspa
   return ((current - old) * NANOSECS_PER_SEC) / interval.nanoseconds();
 }
 
-
-
 void JfrCompilerQueueUtilization::send_events() {
   static CompilerQueueEntry compilerQueueEntries[num_compiler_queues] = {
     {CompileBroker::c1_compile_queue(), c1_compiler_queue_id, &CompileBroker::get_c1_thread_count, 0, 0},
@@ -63,11 +61,9 @@ void JfrCompilerQueueUtilization::send_events() {
   const JfrTicks cur_time = JfrTicks::now();
   static JfrTicks last_sample_instant;
   const JfrTickspan interval = cur_time - last_sample_instant;
-  for(int i = 0; i < num_compiler_queues; i ++)
-  {
+  for (int i = 0; i < num_compiler_queues; i ++) {
     CompilerQueueEntry* entry = &compilerQueueEntries[i];
-    if (entry->compilerQueue != NULL)
-    {
+    if (entry->compilerQueue != NULL) {
       const uint64_t current_added = entry->compilerQueue->get_total_added();
       const uint64_t current_removed = entry->compilerQueue->get_total_removed();
       const uint64_t ingress = rate_per_second(current_added, entry->added, interval);
