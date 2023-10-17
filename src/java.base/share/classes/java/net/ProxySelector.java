@@ -27,7 +27,6 @@ package java.net;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Locale;
 
 import sun.security.util.SecurityConstants;
 
@@ -223,8 +222,7 @@ public abstract class ProxySelector {
             if (scheme == null) {
                 throw new IllegalArgumentException("protocol can't be null");
             }
-            scheme = scheme.toLowerCase(Locale.ROOT);
-            if (scheme.equals("http") || scheme.equals("https")) {
+            if (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https")) {
                 return list;
             } else {
                 return NO_PROXY_LIST;
