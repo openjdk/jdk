@@ -58,10 +58,10 @@ public interface EdECPublicKey extends EdECKey, PublicKey {
      * @implSpec
      * The default implementation returns {@code null}.
      *
-     * @return the associated parameters, may be null
+     * @return the associated parameters, may be {@code null}
      * @since 22
      */
-    default NamedParameterSpec getParams(){
+    default NamedParameterSpec getParams() {
         return null;
     }
 }

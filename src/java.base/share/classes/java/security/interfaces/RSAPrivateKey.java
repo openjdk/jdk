@@ -70,10 +70,10 @@ public interface RSAPrivateKey extends java.security.PrivateKey, RSAKey
      * @implSpec
      * The default implementation returns {@code null}.
      *
-     * @return the associated parameters, may be null
+     * @return the associated parameters, may be {@code null}
      * @since 22
      */
-    default AlgorithmParameterSpec getParams(){
+    default AlgorithmParameterSpec getParams() {
         return null;
     }
 }

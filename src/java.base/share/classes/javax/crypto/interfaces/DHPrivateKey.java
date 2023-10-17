@@ -67,10 +67,10 @@ public interface DHPrivateKey extends DHKey, java.security.PrivateKey {
      * @implSpec
      * The default implementation returns {@code null}.
      *
-     * @return the associated parameters, may be null
+     * @return the associated parameters, may be {@code null}
      * @since 22
      */
-    default DHParameterSpec getParams(){
+    default DHParameterSpec getParams() {
         return null;
     }
 }
