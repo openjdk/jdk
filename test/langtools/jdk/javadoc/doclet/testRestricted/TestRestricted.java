@@ -111,12 +111,12 @@ public class TestRestricted extends JavadocTester {
                 s="return-type">void</span>&nbsp;<span class="element-name">restrictedMethod</span>\
                 ()</div>
                 <div class="restricted-block" id="restricted-restrictedMethod()"><span class="restr\
-                icted-label"><code>restrictedMethod</code> is a restricted API of the Java platform\
-                .</span>
+                icted-label"><code>restrictedMethod</code> is a restricted method of the Java platf\
+                orm.</span>
                 <div class="restricted-comment">Programs can only use <code>restrictedMethod</code>\
-                 when access to restricted method is enabled.</div>
+                 when access to restricted methods is enabled.</div>
                 <div class="restricted-comment">Restricted methods are unsafe, and, if used incorre\
-                ctly, they might crash the JVM or result in memory corruption.</div>
+                ctly, might crash the JVM or result in memory corruption.</div>
                 </div>""",
                         """
                 <h3>restrictedPreviewMethod</h3>
@@ -133,12 +133,12 @@ public class TestRestricted extends JavadocTester {
                 r upgraded to permanent features of the Java platform.</div>
                 </div>
                 <div class="restricted-block" id="restricted-restrictedPreviewMethod()"><span class\
-                ="restricted-label"><code>restrictedPreviewMethod</code> is a restricted API of the\
-                 Java platform.</span>
+                ="restricted-label"><code>restrictedPreviewMethod</code> is a restricted method of \
+                the Java platform.</span>
                 <div class="restricted-comment">Programs can only use <code>restrictedPreviewMethod\
-                </code> when access to restricted method is enabled.</div>
+                </code> when access to restricted methods is enabled.</div>
                 <div class="restricted-comment">Restricted methods are unsafe, and, if used incorre\
-                ctly, they might crash the JVM or result in memory corruption.</div>
+                ctly, might crash the JVM or result in memory corruption.</div>
                 </div>""");
 
         // Test link on index page
