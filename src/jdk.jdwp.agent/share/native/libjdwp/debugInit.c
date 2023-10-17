@@ -719,16 +719,13 @@ initialize(JNIEnv *env, jthread thread, EventIndex triggering_ei, EventInfo *opt
          * can get in the queue (from other not-yet-suspended threads)
          * before this one does. (Also need to handle allocation error below?)
          */
-        EventInfo info;
         struct bag *initEventBag;
-        LOG_MISC(("triggering_ei != EI_VM_INIT"));
+        LOG_MISC(("triggering_ei == EI_EXCEPTION"));
+        JDI_ASSERT(triggering_ei == EI_EXCEPTION);
+        JDI_ASSERT(opt_info != NULL);
         initEventBag = eventHelper_createEventBag();
-        (void)memset(&info,0,sizeof(info));
-        info.ei = triggering_ei;
-        if (opt_info != NULL) {
-            info = *opt_info;
-        }
-        eventHelper_recordEvent(&info, 0, suspendPolicy, initEventBag);
+        threadControl_onEventHandlerEntry(currentSessionID, opt_info, NULL);
+        eventHelper_recordEvent(opt_info, 0, suspendPolicy, initEventBag);
         (void)eventHelper_reportEvents(currentSessionID, initEventBag);
         bagDestroyBag(initEventBag);
     }
