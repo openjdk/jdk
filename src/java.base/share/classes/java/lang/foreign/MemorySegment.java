@@ -573,10 +573,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * the alignment constraint specified by {@code layout}.
      * @return a slice of this memory segment.
      */
-    default MemorySegment asSlice(long offset, MemoryLayout layout) {
-        Objects.requireNonNull(layout);
-        return asSlice(offset, layout.byteSize(), layout.byteAlignment());
-    }
+    MemorySegment asSlice(long offset, MemoryLayout layout);
 
     /**
      * Returns a slice of this memory segment, at the given offset. The returned segment's address is the address
@@ -788,10 +785,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      * @return this segment.
      */
-    default MemorySegment copyFrom(MemorySegment src) {
-        MemorySegment.copy(src, 0, this, 0, src.byteSize());
-        return this;
-    }
+    MemorySegment copyFrom(MemorySegment src);
 
     /**
      * Finds and returns the offset, in bytes, of the first mismatch between
@@ -820,10 +814,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code other.isAccessibleBy(T) == false}.
      */
-    default long mismatch(MemorySegment other) {
-        Objects.requireNonNull(other);
-        return MemorySegment.mismatch(this, 0, byteSize(), other, 0, other.byteSize());
-    }
+    long mismatch(MemorySegment other);
 
     /**
      * Determines whether the contents of this mapped segment is resident in physical
@@ -1068,9 +1059,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      */
-    default String getString(long offset) {
-        return getString(offset, sun.nio.cs.UTF_8.INSTANCE);
-    }
+    String getString(long offset);
 
     /**
      * Reads a null-terminated string from this segment at the given offset, using the provided charset.
@@ -1099,10 +1088,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *                                  such that {@code isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if {@code charset} is not a {@linkplain StandardCharsets standard charset}.
      */
-    default String getString(long offset, Charset charset) {
-        Objects.requireNonNull(charset);
-        return StringSupport.read(this, offset, charset);
-    }
+    String getString(long offset, Charset charset);
 
     /**
      * Writes the given string into this segment at the given offset, converting it to a null-terminated byte sequence
@@ -1123,10 +1109,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      */
-    default void setString(long offset, String str) {
-        Objects.requireNonNull(str);
-        setString(offset, str, sun.nio.cs.UTF_8.INSTANCE);
-    }
+    void setString(long offset, String str);
 
     /**
      * Writes the given string into this segment at the given offset, converting it to a null-terminated byte sequence
@@ -1160,11 +1143,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *                                  such that {@code isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if {@code charset} is not a {@linkplain StandardCharsets standard charset}.
      */
-    default void setString(long offset, String str, Charset charset) {
-        Objects.requireNonNull(charset);
-        Objects.requireNonNull(str);
-        StringSupport.write(this, offset, charset, str);
-    }
+    void setString(long offset, String str, Charset charset);
 
     /**
      * Creates a memory segment that is backed by the same region of memory that backs the given {@link Buffer} instance.
@@ -1411,10 +1390,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}.
      */
-    @ForceInline
-    default byte get(ValueLayout.OfByte layout, long offset) {
-        return (byte) layout.varHandle().get(this, offset);
-    }
+    byte get(ValueLayout.OfByte layout, long offset);
 
     /**
      * Writes a byte into this segment at the given offset, with the given layout.
@@ -1431,10 +1407,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
-    @ForceInline
-    default void set(ValueLayout.OfByte layout, long offset, byte value) {
-        layout.varHandle().set(this, offset, value);
-    }
+    void set(ValueLayout.OfByte layout, long offset, byte value);
 
     /**
      * Reads a boolean from this segment at the given offset, with the given layout.
@@ -1450,10 +1423,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}.
      */
-    @ForceInline
-    default boolean get(ValueLayout.OfBoolean layout, long offset) {
-        return (boolean) layout.varHandle().get(this, offset);
-    }
+    boolean get(ValueLayout.OfBoolean layout, long offset);
 
     /**
      * Writes a boolean into this segment at the given offset, with the given layout.
@@ -1470,10 +1440,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
-    @ForceInline
-    default void set(ValueLayout.OfBoolean layout, long offset, boolean value) {
-        layout.varHandle().set(this, offset, value);
-    }
+    void set(ValueLayout.OfBoolean layout, long offset, boolean value);
 
     /**
      * Reads a char from this segment at the given offset, with the given layout.
@@ -1489,10 +1456,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}.
      */
-    @ForceInline
-    default char get(ValueLayout.OfChar layout, long offset) {
-        return (char) layout.varHandle().get(this, offset);
-    }
+    char get(ValueLayout.OfChar layout, long offset);
 
     /**
      * Writes a char into this segment at the given offset, with the given layout.
@@ -1509,10 +1473,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
-    @ForceInline
-    default void set(ValueLayout.OfChar layout, long offset, char value) {
-        layout.varHandle().set(this, offset, value);
-    }
+    void set(ValueLayout.OfChar layout, long offset, char value);
 
     /**
      * Reads a short from this segment at the given offset, with the given layout.
@@ -1528,10 +1489,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}.
      */
-    @ForceInline
-    default short get(ValueLayout.OfShort layout, long offset) {
-        return (short) layout.varHandle().get(this, offset);
-    }
+    short get(ValueLayout.OfShort layout, long offset);
 
     /**
      * Writes a short into this segment at the given offset, with the given layout.
@@ -1548,10 +1506,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
-    @ForceInline
-    default void set(ValueLayout.OfShort layout, long offset, short value) {
-        layout.varHandle().set(this, offset, value);
-    }
+    void set(ValueLayout.OfShort layout, long offset, short value);
 
     /**
      * Reads an int from this segment at the given offset, with the given layout.
@@ -1567,10 +1522,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}.
      */
-    @ForceInline
-    default int get(ValueLayout.OfInt layout, long offset) {
-        return (int) layout.varHandle().get(this, offset);
-    }
+    int get(ValueLayout.OfInt layout, long offset);
 
     /**
      * Writes an int into this segment at the given offset, with the given layout.
@@ -1587,10 +1539,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
-    @ForceInline
-    default void set(ValueLayout.OfInt layout, long offset, int value) {
-        layout.varHandle().set(this, offset, value);
-    }
+    void set(ValueLayout.OfInt layout, long offset, int value);
 
     /**
      * Reads a float from this segment at the given offset, with the given layout.
@@ -1606,10 +1555,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}.
      */
-    @ForceInline
-    default float get(ValueLayout.OfFloat layout, long offset) {
-        return (float)layout.varHandle().get(this, offset);
-    }
+    float get(ValueLayout.OfFloat layout, long offset);
 
     /**
      * Writes a float into this segment at the given offset, with the given layout.
@@ -1626,10 +1572,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
-    @ForceInline
-    default void set(ValueLayout.OfFloat layout, long offset, float value) {
-        layout.varHandle().set(this, offset, value);
-    }
+    void set(ValueLayout.OfFloat layout, long offset, float value);
 
     /**
      * Reads a long from this segment at the given offset, with the given layout.
@@ -1645,10 +1588,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}.
      */
-    @ForceInline
-    default long get(ValueLayout.OfLong layout, long offset) {
-        return (long) layout.varHandle().get(this, offset);
-    }
+    long get(ValueLayout.OfLong layout, long offset);
 
     /**
      * Writes a long into this segment at the given offset, with the given layout.
@@ -1665,10 +1605,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
-    @ForceInline
-    default void set(ValueLayout.OfLong layout, long offset, long value) {
-        layout.varHandle().set(this, offset, value);
-    }
+    void set(ValueLayout.OfLong layout, long offset, long value);
 
     /**
      * Reads a double from this segment at the given offset, with the given layout.
@@ -1684,10 +1621,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}.
      */
-    @ForceInline
-    default double get(ValueLayout.OfDouble layout, long offset) {
-        return (double) layout.varHandle().get(this, offset);
-    }
+    double get(ValueLayout.OfDouble layout, long offset);
 
     /**
      * Writes a double into this segment at the given offset, with the given layout.
@@ -1704,10 +1638,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
-    @ForceInline
-    default void set(ValueLayout.OfDouble layout, long offset, double value) {
-        layout.varHandle().set(this, offset, value);
-    }
+    void set(ValueLayout.OfDouble layout, long offset, double value);
 
     /**
      * Reads an address from this segment at the given offset, with the given layout. The read address is wrapped in
@@ -1729,10 +1660,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in {@code T}.
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}.
      */
-    @ForceInline
-    default MemorySegment get(AddressLayout layout, long offset) {
-        return (MemorySegment) layout.varHandle().get(this, offset);
-    }
+    MemorySegment get(AddressLayout layout, long offset);
 
     /**
      * Writes an address into this segment at the given offset, with the given layout.
@@ -1750,10 +1678,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      * @throws UnsupportedOperationException if {@code value} is not a {@linkplain #isNative() native} segment.
      */
-    @ForceInline
-    default void set(AddressLayout layout, long offset, MemorySegment value) {
-        layout.varHandle().set(this, offset, value);
-    }
+    void set(AddressLayout layout, long offset, MemorySegment value);
 
     /**
      * Reads a byte from this segment at the given index, scaled by the given layout size.
@@ -1772,12 +1697,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      */
-    @ForceInline
-    default byte getAtIndex(ValueLayout.OfByte layout, long index) {
-        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        return (byte) layout.varHandle().get(this, index * layout.byteSize());
-    }
+    byte getAtIndex(ValueLayout.OfByte layout, long index);
 
     /**
      * Reads a boolean from this segment at the given index, scaled by the given layout size.
@@ -1796,12 +1716,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      */
-    @ForceInline
-    default boolean getAtIndex(ValueLayout.OfBoolean layout, long index) {
-        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        return (boolean) layout.varHandle().get(this, index * layout.byteSize());
-    }
+    boolean getAtIndex(ValueLayout.OfBoolean layout, long index);
 
     /**
      * Reads a char from this segment at the given index, scaled by the given layout size.
@@ -1820,12 +1735,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      */
-    @ForceInline
-    default char getAtIndex(ValueLayout.OfChar layout, long index) {
-        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        return (char) layout.varHandle().get(this, index * layout.byteSize());
-    }
+    char getAtIndex(ValueLayout.OfChar layout, long index);
 
     /**
      * Writes a char into this segment at the given index, scaled by the given layout size.
@@ -1845,12 +1755,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
-    @ForceInline
-    default void setAtIndex(ValueLayout.OfChar layout, long index, char value) {
-        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        layout.varHandle().set(this, index * layout.byteSize(), value);
-    }
+    void setAtIndex(ValueLayout.OfChar layout, long index, char value);
 
     /**
      * Reads a short from this segment at the given index, scaled by the given layout size.
@@ -1869,12 +1774,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      */
-    @ForceInline
-    default short getAtIndex(ValueLayout.OfShort layout, long index) {
-        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        return (short) layout.varHandle().get(this, index * layout.byteSize());
-    }
+    short getAtIndex(ValueLayout.OfShort layout, long index);
 
     /**
      * Writes a byte into this segment at the given index, scaled by the given layout size.
@@ -1894,13 +1794,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
-    @ForceInline
-    default void setAtIndex(ValueLayout.OfByte layout, long index, byte value) {
-        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        layout.varHandle().set(this, index * layout.byteSize(), value);
-
-    }
+    void setAtIndex(ValueLayout.OfByte layout, long index, byte value);
 
     /**
      * Writes a boolean into this segment at the given index, scaled by the given layout size.
@@ -1920,12 +1814,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
-    @ForceInline
-    default void setAtIndex(ValueLayout.OfBoolean layout, long index, boolean value) {
-        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        layout.varHandle().set(this, index * layout.byteSize(), value);
-    }
+    void setAtIndex(ValueLayout.OfBoolean layout, long index, boolean value);
 
     /**
      * Writes a short into this segment at the given index, scaled by the given layout size.
@@ -1945,12 +1834,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
-    @ForceInline
-    default void setAtIndex(ValueLayout.OfShort layout, long index, short value) {
-        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        layout.varHandle().set(this, index * layout.byteSize(), value);
-    }
+    void setAtIndex(ValueLayout.OfShort layout, long index, short value);
 
     /**
      * Reads an int from this segment at the given index, scaled by the given layout size.
@@ -1969,12 +1853,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      */
-    @ForceInline
-    default int getAtIndex(ValueLayout.OfInt layout, long index) {
-        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        return (int) layout.varHandle().get(this, index * layout.byteSize());
-    }
+    int getAtIndex(ValueLayout.OfInt layout, long index);
 
     /**
      * Writes an int into this segment at the given index, scaled by the given layout size.
@@ -1994,12 +1873,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
-    @ForceInline
-    default void setAtIndex(ValueLayout.OfInt layout, long index, int value) {
-        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        layout.varHandle().set(this, index * layout.byteSize(), value);
-    }
+    void setAtIndex(ValueLayout.OfInt layout, long index, int value);
 
     /**
      * Reads a float from this segment at the given index, scaled by the given layout size.
@@ -2018,12 +1892,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      */
-    @ForceInline
-    default float getAtIndex(ValueLayout.OfFloat layout, long index) {
-        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        return (float) layout.varHandle().get(this, index * layout.byteSize());
-    }
+    float getAtIndex(ValueLayout.OfFloat layout, long index);
 
     /**
      * Writes a float into this segment at the given index, scaled by the given layout size.
@@ -2043,12 +1912,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
-    @ForceInline
-    default void setAtIndex(ValueLayout.OfFloat layout, long index, float value) {
-        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        layout.varHandle().set(this, index * layout.byteSize(), value);
-    }
+    void setAtIndex(ValueLayout.OfFloat layout, long index, float value);
 
     /**
      * Reads a long from this segment at the given index, scaled by the given layout size.
@@ -2067,12 +1931,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      */
-    @ForceInline
-    default long getAtIndex(ValueLayout.OfLong layout, long index) {
-        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        return (long) layout.varHandle().get(this, index * layout.byteSize());
-    }
+    long getAtIndex(ValueLayout.OfLong layout, long index);
 
     /**
      * Writes a long into this segment at the given index, scaled by the given layout size.
@@ -2092,12 +1951,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
-    @ForceInline
-    default void setAtIndex(ValueLayout.OfLong layout, long index, long value) {
-        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        layout.varHandle().set(this, index * layout.byteSize(), value);
-    }
+    void setAtIndex(ValueLayout.OfLong layout, long index, long value);
 
     /**
      * Reads a double from this segment at the given index, scaled by the given layout size.
@@ -2116,12 +1970,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      */
-    @ForceInline
-    default double getAtIndex(ValueLayout.OfDouble layout, long index) {
-        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        return (double) layout.varHandle().get(this, index * layout.byteSize());
-    }
+    double getAtIndex(ValueLayout.OfDouble layout, long index);
 
     /**
      * Writes a double into this segment at the given index, scaled by the given layout size.
@@ -2141,12 +1990,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
-    @ForceInline
-    default void setAtIndex(ValueLayout.OfDouble layout, long index, double value) {
-        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        layout.varHandle().set(this, index * layout.byteSize(), value);
-    }
+    void setAtIndex(ValueLayout.OfDouble layout, long index, double value);
 
     /**
      * Reads an address from this segment at the given at the given index, scaled by the given layout size. The read address is wrapped in
@@ -2171,12 +2015,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      */
-    @ForceInline
-    default MemorySegment getAtIndex(AddressLayout layout, long index) {
-        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        return (MemorySegment) layout.varHandle().get(this, index * layout.byteSize());
-    }
+    MemorySegment getAtIndex(AddressLayout layout, long index);
 
     /**
      * Writes an address into this segment at the given index, scaled by the given layout size.
@@ -2197,12 +2036,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      * @throws UnsupportedOperationException if {@code value} is not a {@linkplain #isNative() native} segment.
      */
-    @ForceInline
-    default void setAtIndex(AddressLayout layout, long index, MemorySegment value) {
-        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        layout.varHandle().set(this, index * layout.byteSize(), value);
-    }
+    void setAtIndex(AddressLayout layout, long index, MemorySegment value);
 
     /**
      * Compares the specified object with this memory segment for equality. Returns {@code true} if and only if the specified
