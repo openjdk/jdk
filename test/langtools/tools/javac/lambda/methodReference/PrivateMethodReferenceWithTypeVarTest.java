@@ -12,7 +12,15 @@ class PrivateMethodReferenceWithTypeVarTest {
         return "bar";
     }
 
-    static <T extends Test> Function<T, String> foo() {
+    private String asString2() {
+        return "bar";
+    }
+
+    static <T extends Test> Function<T, String> m1() {
         return T::asString;
+    }
+
+    static <T extends Test> Function<T, String> m2(T t) {
+        return t::asString2;
     }
 }

@@ -1,3 +1,5 @@
-PrivateMethodReferenceWithTypeVarTest.java:15:23: compiler.err.cant.resolve.location: kindname.class, Test, , , (compiler.misc.location: kindname.class, PrivateMethodReferenceWithTypeVarTest, null)
-PrivateMethodReferenceWithTypeVarTest.java:16:16: compiler.err.invalid.mref: kindname.method, (compiler.misc.cant.resolve.location.args: kindname.method, asString, , T, (compiler.misc.location: kindname.type.variable.bound, T, null))
-2 errors
+PrivateMethodReferenceWithTypeVarTest.java:19:23: compiler.err.cant.resolve.location: kindname.class, Test, , , (compiler.misc.location: kindname.class, PrivateMethodReferenceWithTypeVarTest, null)
+PrivateMethodReferenceWithTypeVarTest.java:23:23: compiler.err.cant.resolve.location: kindname.class, Test, , , (compiler.misc.location: kindname.class, PrivateMethodReferenceWithTypeVarTest, null)
+PrivateMethodReferenceWithTypeVarTest.java:20:16: compiler.err.invalid.mref: kindname.method, (compiler.misc.cant.resolve.location.args: kindname.method, asString, , T, (compiler.misc.location: kindname.type.variable.bound, T, null))
+PrivateMethodReferenceWithTypeVarTest.java:24:16: compiler.err.invalid.mref: kindname.method, (compiler.misc.cant.resolve.location.args: kindname.method, asString2, , T, (compiler.misc.location: kindname.type.variable.bound, T, null))
+4 errors
