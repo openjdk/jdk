@@ -37,7 +37,7 @@ package java.lang.runtime;
  * @jls 15.20.2 The instanceof Operator
  *
  * @implNote Methods that describe a conversion check among unconditionally exact types
- * (they would return true) are ommited. Similarly, methods that describe a conversion check
+ * (they would return true) are omitted. Similarly, methods that describe a conversion check
  * which can be redirected through one of the methods in this class are omitted too (i.e.,
  * byte to char can be redirected safely to `isIntToCharExact`, similarly `short` to `byte`,
  * `short` to `char`, `char` to `byte` and `char` to `short`).
@@ -51,66 +51,67 @@ public final class ExactConversionsSupport {
     /**
      * Exactness method from int to byte
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      */
     public static boolean isIntToByteExact(int n)      {return n == (int)(byte)n;}
 
     /**
      * Exactness method from int to short
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      */
     public static boolean isIntToShortExact(int n)     {return n == (int)(short)n;}
 
     /**
      * Exactness method from int to char
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      */
     public static boolean isIntToCharExact(int n)      {return n == (int)(char)n;}
 
     /**
      * Exactness method from int to float
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      *
      * @implSpec relies on the notion of representation equivalence defined in the
      * specification of the {@linkplain Double} class.
      */
-    public static boolean isIntToFloatExact(int n) { return n == (int)(float)n && n != Integer.MAX_VALUE; }
-
+    public static boolean isIntToFloatExact(int n) {
+        return n == (int)(float)n && n != Integer.MAX_VALUE;
+    }
     /**
      * Exactness method from long to byte
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      */
     public static boolean isLongToByteExact(long n)    {return n == (long)(byte)n;}
 
     /**
      * Exactness method from long to short
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      */
     public static boolean isLongToShortExact(long n)   {return n == (long)(short)n;}
 
     /**
      * Exactness method from long to char
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      */
     public static boolean isLongToCharExact(long n)    {return n == (long)(char)n;}
 
     /**
      * Exactness method from long to int
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      */
     public static boolean isLongToIntExact(long n)     {return n == (long)(int)n;}
 
     /**
      * Exactness method from long to float
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      * @implSpec relies on the notion of representation equivalence defined in the
      * specification of the {@linkplain Double} class.
      */
@@ -121,7 +122,7 @@ public final class ExactConversionsSupport {
     /**
      * Exactness method from long to double
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      * @implSpec relies on the notion of representation equivalence defined in the
      * specification of the {@linkplain Double} class.
      */
@@ -132,7 +133,7 @@ public final class ExactConversionsSupport {
     /**
      * Exactness method from float to byte
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      * @implSpec relies on the notion of representation equivalence defined in the
      * specification of the {@linkplain Double} class.
      */
@@ -143,7 +144,7 @@ public final class ExactConversionsSupport {
     /**
      * Exactness method from float to short
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      * @implSpec relies on the notion of representation equivalence defined in the
      * specification of the {@linkplain Double} class.
      */
@@ -154,7 +155,7 @@ public final class ExactConversionsSupport {
     /**
      * Exactness method from float to char
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      * @implSpec relies on the notion of representation equivalence defined in the
      * specification of the {@linkplain Double} class.
      */
@@ -165,7 +166,7 @@ public final class ExactConversionsSupport {
     /**
      * Exactness method from float to int
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      * @implSpec relies on the notion of representation equivalence defined in the
      * specification of the {@linkplain Double} class.
      */
@@ -176,7 +177,7 @@ public final class ExactConversionsSupport {
     /**
      * Exactness method from float to long
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      * @implSpec relies on the notion of representation equivalence defined in the
      * specification of the {@linkplain Double} class.
      */
@@ -187,7 +188,7 @@ public final class ExactConversionsSupport {
     /**
      * Exactness method from double to byte
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      * @implSpec relies on the notion of representation equivalence defined in the
      * specification of the {@linkplain Double} class.
      */
@@ -198,7 +199,7 @@ public final class ExactConversionsSupport {
     /**
      * Exactness method from double to short
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      * @implSpec relies on the notion of representation equivalence defined in the
      * specification of the {@linkplain Double} class.
      */
@@ -209,7 +210,7 @@ public final class ExactConversionsSupport {
     /**
      * Exactness method from double to char
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      * @implSpec relies on the notion of representation equivalence defined in the
      * specification of the {@linkplain Double} class.
      */
@@ -220,7 +221,7 @@ public final class ExactConversionsSupport {
     /**
      * Exactness method from double to int
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      * @implSpec relies on the notion of representation equivalence defined in the
      * specification of the {@linkplain Double} class.
      */
@@ -231,7 +232,7 @@ public final class ExactConversionsSupport {
     /**
      * Exactness method from double to long
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      * @implSpec relies on the notion of representation equivalence defined in the
      * specification of the {@linkplain Double} class.
      */
@@ -242,7 +243,7 @@ public final class ExactConversionsSupport {
     /**
      * Exactness method from double to float
      * @param n value
-     * @return  true if the passed value can be converted exactly to the target type
+     * @return true if and only if the passed value can be converted exactly to the target type
      * @implSpec relies on the notion of representation equivalence defined in the
      * specification of the {@linkplain Double} class.
      */
