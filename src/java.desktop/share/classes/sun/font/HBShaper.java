@@ -106,10 +106,11 @@ public class HBShaper {
         VarIntLayout.withName("var2")
     ).withName("hb_glyph_info_t");
 
-    private static VarHandle getVarHandle(SequenceLayout layout, String name) {
-        VarHandle h = layout.varHandle(
-            PathElement.sequenceElement(),
-            PathElement.groupElement(name));
+    private static VarHandle getVarHandle(StructLayout struct, String name) {
+        VarHandle h = struct.varHandle(PathElement.groupElement(name));
+        /* return a new VarHandle where the offset calculated from the index
+         * supplied when using it scales the index by the size of the struct. */
+        h = MethodHandles.collectCoordinates(h, 1, struct.scaleHandle());
         /* insert 0 offset so don't need to pass arg every time */
         return MethodHandles.insertCoordinates(h, 1, 0L).withInvokeExactBehavior();
     }
@@ -275,13 +276,13 @@ public class HBShaper {
                 get_h_advance_stub,
                 get_v_advance_stub,
                 get_contour_pt_stub);
-       } catch (Throwable t) {
-          t.printStackTrace();
-       }
-       hb_jdk_font_funcs_struct = s;
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        hb_jdk_font_funcs_struct = s;
 
-       FunctionDescriptor store_layout_fd =
-          FunctionDescriptor.ofVoid(
+        FunctionDescriptor store_layout_fd =
+           FunctionDescriptor.ofVoid(
                    JAVA_INT,               // slot
                    JAVA_INT,               // baseIndex
                    JAVA_INT,               // offset
@@ -292,22 +293,18 @@ public class HBShaper {
                    JAVA_INT,               // glyphCount
                    ADDRESS,                // glyphInfo
                    ADDRESS);               // glyphPos
-       MethodHandle store_layout_mh =
-          getMethodHandle("store_layout_results", store_layout_fd);
-       @SuppressWarnings("restricted")
-       MemorySegment tmp10 = LINKER.upcallStub(store_layout_mh, store_layout_fd, garena);
-       store_layout_results_stub = tmp10;
+        MethodHandle store_layout_mh =
+            getMethodHandle("store_layout_results", store_layout_fd);
+        @SuppressWarnings("restricted")
+        MemorySegment tmp10 = LINKER.upcallStub(store_layout_mh, store_layout_fd, garena);
+        store_layout_results_stub = tmp10;
 
-        long maxpos = Long.MAX_VALUE / PositionLayout.byteSize();
-        SequenceLayout glyphPosLayout = MemoryLayout.sequenceLayout(maxpos, PositionLayout);
-        x_offsetHandle = getVarHandle(glyphPosLayout, "x_offset");
-        y_offsetHandle = getVarHandle(glyphPosLayout, "y_offset");
-        x_advanceHandle = getVarHandle(glyphPosLayout, "x_advance");
-        y_advanceHandle = getVarHandle(glyphPosLayout, "y_advance");
-        long maxinfo = Long.MAX_VALUE / GlyphInfoLayout.byteSize();
-        SequenceLayout glyphInfosLayout = MemoryLayout.sequenceLayout(maxinfo, GlyphInfoLayout);
-        codePointHandle = getVarHandle(glyphInfosLayout, "codepoint");
-        clusterHandle = getVarHandle(glyphInfosLayout, "cluster");
+        x_offsetHandle = getVarHandle(PositionLayout, "x_offset");
+        y_offsetHandle = getVarHandle(PositionLayout, "y_offset");
+        x_advanceHandle = getVarHandle(PositionLayout, "x_advance");
+        y_advanceHandle = getVarHandle(PositionLayout, "y_advance");
+        codePointHandle = getVarHandle(GlyphInfoLayout, "codepoint");
+        clusterHandle = getVarHandle(GlyphInfoLayout, "cluster");
     }
 
 
