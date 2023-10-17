@@ -316,8 +316,7 @@ class ZipCoder {
                     return Comparison.NO_MATCH;
                 }
             } catch (IllegalArgumentException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof CharacterCodingException) {
+                if (e.getCause() instanceof CharacterCodingException) {
                     return Comparison.NO_MATCH;
                 }
                 throw e;

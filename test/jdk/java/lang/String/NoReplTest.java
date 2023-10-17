@@ -60,8 +60,7 @@ public class NoReplTest {
                             .withUpperCase()
                             .formatHex(read.getBytes(UTF_16)));
         } catch (IllegalArgumentException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof CharacterCodingException) {
+            if (e.getCause() instanceof CharacterCodingException) {
                 // success
             } else {
                 throw e;

@@ -40,6 +40,7 @@ import java.io.Writer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
@@ -3351,7 +3352,14 @@ public final class Files {
         byte[] ba = readAllBytes(path);
         if (path.getClass().getModule() != Object.class.getModule())
             ba = ba.clone();
-        return JLA.newStringNoRepl(ba, cs);
+        try {
+            return JLA.newStringNoRepl(ba, cs);
+        } catch (IllegalArgumentException e) {
+            if (e.getCause() instanceof CharacterCodingException cause) {
+                throw cause;
+            }
+            throw e;
+        }
     }
 
     /**
@@ -3713,7 +3721,15 @@ public final class Files {
         Objects.requireNonNull(csq);
         Objects.requireNonNull(cs);
 
-        byte[] bytes = JLA.getBytesNoRepl(String.valueOf(csq), cs);
+        byte[] bytes;
+        try {
+            bytes = JLA.getBytesNoRepl(String.valueOf(csq), cs);
+        } catch (IllegalArgumentException e) {
+            if (e.getCause() instanceof CharacterCodingException cause) {
+                throw cause;
+            }
+            throw e;
+        }
         if (path.getClass().getModule() != Object.class.getModule())
             bytes = bytes.clone();
         write(path, bytes, options);
