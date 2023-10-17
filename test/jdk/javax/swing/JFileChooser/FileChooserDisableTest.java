@@ -36,6 +36,7 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import java.util.function.Predicate;
 
@@ -47,54 +48,69 @@ import java.util.function.Predicate;
  * @run main FileChooserDisableTest
  */
 public class FileChooserDisableTest {
-    static Robot robot;
     static JFrame frame;
     static JFileChooser jfc;
     static volatile Point movePoint;
+    static String buttonToolTip;
+    static volatile AbstractButton openBtn;
 
     public static void main(String[] args) throws Exception {
-        robot = new Robot();
-        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
-        try {
+        Robot robot = new Robot();
 
-            SwingUtilities.invokeAndWait(() -> {
-                initialize();
-            });
-            String defaultDirectory = jfc.getCurrentDirectory().toString();
-            robot.delay(1000);
-            robot.waitForIdle();
-            final AbstractButton[] desktopBtn = new AbstractButton[1];
-            SwingUtilities.invokeAndWait(() -> {
-                desktopBtn[0] = clickDetails();
-                movePoint = desktopBtn[0].getLocationOnScreen();
-            });
-            Dimension btnSize = desktopBtn[0].getSize();
-            robot.mouseMove(movePoint.x + btnSize.width / 2, movePoint.y + btnSize.height / 2);
-            robot.delay(2000);
-            robot.waitForIdle();
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.delay(2000);
-            robot.waitForIdle();
-            String currentDirectory = jfc.getCurrentDirectory().toString();
-            if (!currentDirectory.equals(defaultDirectory)) {
-                throw new RuntimeException("File chooser disable failed");
+        for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
+            if (laf.getClassName().toLowerCase().contains("motif")) {
+                continue;
             }
-            System.out.println("Test Pass");
 
-        } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (frame != null) {
-                    frame.dispose();
+            if (laf.getClassName().toLowerCase().contains("gtk")) {
+                buttonToolTip = "Open selected file.";
+            } else {
+                buttonToolTip = "Open selected file";
+            }
+
+            System.out.println("Testing LAF: " + laf.getClassName());
+            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+            try {
+                SwingUtilities.invokeAndWait(() -> {
+                    initialize();
+                });
+                String defaultDirectory = jfc.getCurrentDirectory().toString();
+                robot.delay(1000);
+                robot.waitForIdle();
+                SwingUtilities.invokeAndWait(() -> {
+                    openBtn = clickOpenButton();
+                    movePoint = openBtn.getLocationOnScreen();
+                });
+                Dimension btnSize = openBtn.getSize();
+                robot.mouseMove(movePoint.x + btnSize.width / 2, movePoint.y + btnSize.height / 2);
+                robot.delay(100);
+                robot.waitForIdle();
+                robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+                robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+                robot.delay(100);
+                robot.waitForIdle();
+                String currentDirectory = jfc.getCurrentDirectory().toString();
+                if (!currentDirectory.equals(defaultDirectory)) {
+                    throw new RuntimeException("File chooser disable failed");
                 }
-            });
+                System.out.println("Test Pass");
+
+            } finally {
+                SwingUtilities.invokeAndWait(() -> {
+                    if (frame != null) {
+                        frame.dispose();
+                    }
+                });
+            }
+            robot.delay(200);
+            robot.waitForIdle();
         }
     }
 
-    private static AbstractButton clickDetails() {
-        AbstractButton details = findDetailsButton(jfc);
+    private static AbstractButton clickOpenButton() {
+        AbstractButton details = findOpenButton(jfc);
         if (details == null) {
-            throw new Error("Didn't find 'Home' button in JFileChooser");
+            throw new Error("Didn't find 'Open Selected File' button in JFileChooser");
         }
         return details;
     }
@@ -115,10 +131,10 @@ public class FileChooserDisableTest {
         return null;
     }
 
-    private static AbstractButton findDetailsButton(final Container container) {
+    private static AbstractButton findOpenButton(final Container container) {
         Component result = findComponent(container,
                 c -> c instanceof JButton button
-                        && "Home".equals(button.getToolTipText()));
+                        && buttonToolTip.equals(button.getToolTipText()));
         return (AbstractButton) result;
     }
 
@@ -130,5 +146,16 @@ public class FileChooserDisableTest {
         frame.add(jfc, BorderLayout.CENTER);
         frame.pack();
         frame.setVisible(true);
+    }
+
+    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
+        try {
+            UIManager.setLookAndFeel(laf.getClassName());
+        } catch (UnsupportedLookAndFeelException ignored) {
+            System.out.println("Unsupported LAF: " + laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException
+                 | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
