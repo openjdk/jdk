@@ -26,7 +26,9 @@
  * @test
  * @summary Test shared strings together with string intern operation
  * @requires vm.cds.write.archived.java.heap
- * @requires vm.gc == null & !vm.opt.UseLargePages
+ * @requires vm.gc == null
+ * @comment CDS archive heap mapping is not supported with large pages
+ * @requires vm.opt.UseLargePages == null | !vm.opt.UseLargePages
  * @library /test/hotspot/jtreg/runtime/cds/appcds /test/lib
  * @compile InternStringTest.java
  * @build jdk.test.whitebox.WhiteBox
