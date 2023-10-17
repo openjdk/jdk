@@ -627,11 +627,22 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
     log_debug(metaspace, map)("Trying between " UINT64_FORMAT_X " and " UINT64_FORMAT_X
                               " with " SIZE_FORMAT_X " alignment", min, max, alignment);
     result = os::attempt_reserve_memory_between((char*)min, (char*)max, size, alignment, randomize);
+
+#ifdef AARCH64
+    if (result == nullptr) {
+      // If that failed, attempt to allocate at any 4G aligned address. The disadvantage to the
+      // approach taken above is that os::reserve_memory_aligned needs to overallocate to guarantee
+      // the alignment, and that will temporarily spike the vsize of the process.
+      const size_t alignment2 = 4 * G;
+      log_debug(metaspace, map)("Trying to allocate at any " SIZE_FORMAT_X "-aligned address", alignment2);
+      result = os::reserve_memory_aligned(size, alignment2, false);
+    }
+#endif // AARCH64
   }
 #endif // defined(AARCH64) || defined(PPC64) || defined(S390)
 
   if (result == nullptr) {
-    // Fallback: reserve anywhere and hope the resulting block is usable.
+    // Fallback: reserve anywhere and (for aarch64) hope the resulting block is usable.
     log_debug(metaspace, map)("Trying anywhere...");
     result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), false);
   }
@@ -639,10 +650,12 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   // Wrap resulting range in ReservedSpace
   ReservedSpace rs;
   if (result != nullptr) {
+    log_debug(metaspace, map)("Mapped at " PTR_FORMAT, p2i(result));
     assert(is_aligned(result, Metaspace::reserve_alignment()), "Alignment too small for metaspace");
     rs = ReservedSpace::space_for_range(result, size, Metaspace::reserve_alignment(),
                                                       os::vm_page_size(), false, false);
   } else {
+    log_debug(metaspace, map)("Failed to map.");
     rs = ReservedSpace();
   }
   return rs;
