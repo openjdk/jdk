@@ -60,6 +60,7 @@
 #include "services/management.hpp"
 #include "services/nmtCommon.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
@@ -523,6 +524,12 @@ static SpecialFlag const special_jvm_flags[] = {
   { "G1ConcRSHotCardLimit",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "RefDiscoveryPolicy",           JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+  { "DoReserveCopyInSuperWord",     JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
+
+#ifdef LINUX
+  { "UseHugeTLBFS",                 JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
+  { "UseSHM",                       JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
+#endif
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1902,22 +1909,12 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif
 
-
-#if !defined(X86) && !defined(AARCH64) && !defined(RISCV64) && !defined(ARM) && !defined(PPC64)
+#if !defined(X86) && !defined(AARCH64) && !defined(RISCV64) && !defined(ARM) && !defined(PPC64) && !defined(S390)
   if (LockingMode == LM_LIGHTWEIGHT) {
     FLAG_SET_CMDLINE(LockingMode, LM_LEGACY);
     warning("New lightweight locking not supported on this platform");
   }
 #endif
-
-  if (UseHeavyMonitors) {
-    if (FLAG_IS_CMDLINE(LockingMode) && LockingMode != LM_MONITOR) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "Conflicting -XX:+UseHeavyMonitors and -XX:LockingMode=%d flags\n", LockingMode);
-      return false;
-    }
-    FLAG_SET_CMDLINE(LockingMode, LM_MONITOR);
-  }
 
 #if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64) && !defined(S390)
   if (LockingMode == LM_MONITOR) {

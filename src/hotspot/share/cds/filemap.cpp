@@ -223,8 +223,8 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
 
   _app_class_paths_start_index = ClassLoaderExt::app_class_paths_start_index();
   _app_module_paths_start_index = ClassLoaderExt::app_module_paths_start_index();
-  _num_module_paths = ClassLoader::num_module_path_entries();
   _max_used_path_index = ClassLoaderExt::max_used_path_index();
+  _num_module_paths = ClassLoader::num_module_path_entries();
 
   _verify_local = BytecodeVerificationLocal;
   _verify_remote = BytecodeVerificationRemote;
@@ -354,7 +354,7 @@ void SharedClassPathEntry::copy_from(SharedClassPathEntry* ent, ClassLoaderData*
   _from_class_path_attr = ent->_from_class_path_attr;
   set_name(ent->name(), CHECK);
 
-  if (ent->is_jar() && !ent->is_signed() && ent->manifest() != nullptr) {
+  if (ent->is_jar() && ent->manifest() != nullptr) {
     Array<u1>* buf = MetadataFactory::new_array<u1>(loader_data,
                                                     ent->manifest_size(),
                                                     CHECK);
@@ -608,29 +608,6 @@ class ManifestStream: public ResourceObj {
     buf[len] = 0;
     return buf;
   }
-
-  // The return value indicates if the JAR is signed or not
-  bool check_is_signed() {
-    u1* attr = _current;
-    bool isSigned = false;
-    while (_current < _buffer_end) {
-      if (*_current == '\n') {
-        *_current = '\0';
-        u1* value = (u1*)strchr((char*)attr, ':');
-        if (value != nullptr) {
-          assert(*(value+1) == ' ', "Unrecognized format" );
-          if (strstr((char*)attr, "-Digest") != nullptr) {
-            isSigned = true;
-            break;
-          }
-        }
-        *_current = '\n'; // restore
-        attr = _current + 1;
-      }
-      _current ++;
-    }
-    return isSigned;
-  }
 };
 
 void FileMapInfo::update_jar_manifest(ClassPathEntry *cpe, SharedClassPathEntry* ent, TRAPS) {
@@ -643,18 +620,14 @@ void FileMapInfo::update_jar_manifest(ClassPathEntry *cpe, SharedClassPathEntry*
   if (manifest != nullptr) {
     ManifestStream* stream = new ManifestStream((u1*)manifest,
                                                 manifest_size);
-    if (stream->check_is_signed()) {
-      ent->set_is_signed();
-    } else {
-      // Copy the manifest into the shared archive
-      manifest = ClassLoaderExt::read_raw_manifest(THREAD, cpe, &manifest_size);
-      Array<u1>* buf = MetadataFactory::new_array<u1>(loader_data,
-                                                      manifest_size,
-                                                      CHECK);
-      char* p = (char*)(buf->data());
-      memcpy(p, manifest, manifest_size);
-      ent->set_manifest(buf);
-    }
+    // Copy the manifest into the shared archive
+    manifest = ClassLoaderExt::read_raw_manifest(THREAD, cpe, &manifest_size);
+    Array<u1>* buf = MetadataFactory::new_array<u1>(loader_data,
+                                                    manifest_size,
+                                                    CHECK);
+    char* p = (char*)(buf->data());
+    memcpy(p, manifest, manifest_size);
+    ent->set_manifest(buf);
   }
 }
 
@@ -1683,6 +1656,20 @@ void FileMapInfo::close() {
   }
 }
 
+/*
+ * Same as os::map_memory() but also pretouches if AlwaysPreTouch is enabled.
+ */
+char* map_memory(int fd, const char* file_name, size_t file_offset,
+                 char *addr, size_t bytes, bool read_only,
+                 bool allow_exec, MEMFLAGS flags = mtNone) {
+  char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,
+                             AlwaysPreTouch ? false : read_only,
+                             allow_exec, flags);
+  if (mem != nullptr && AlwaysPreTouch) {
+    os::pretouch_memory(mem, mem + bytes);
+  }
+  return mem;
+}
 
 // JVM/TI RedefineClasses() support:
 // Remap the shared readonly space to shared readwrite, private.
@@ -1818,9 +1805,9 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
     // Note that this may either be a "fresh" mapping into unreserved address
     // space (Windows, first mapping attempt), or a mapping into pre-reserved
     // space (Posix). See also comment in MetaspaceShared::map_archives().
-    char* base = os::map_memory(_fd, _full_path, r->file_offset(),
-                                requested_addr, size, r->read_only(),
-                                r->allow_exec(), mtClassShared);
+    char* base = map_memory(_fd, _full_path, r->file_offset(),
+                            requested_addr, size, r->read_only(),
+                            r->allow_exec(), mtClassShared);
     if (base != requested_addr) {
       log_info(cds)("Unable to map %s shared space at " INTPTR_FORMAT,
                     shared_region_name[i], p2i(requested_addr));
@@ -1846,8 +1833,8 @@ char* FileMapInfo::map_bitmap_region() {
   }
   bool read_only = true, allow_exec = false;
   char* requested_addr = nullptr; // allow OS to pick any location
-  char* bitmap_base = os::map_memory(_fd, _full_path, r->file_offset(),
-                                     requested_addr, r->used_aligned(), read_only, allow_exec, mtClassShared);
+  char* bitmap_base = map_memory(_fd, _full_path, r->file_offset(),
+                                 requested_addr, r->used_aligned(), read_only, allow_exec, mtClassShared);
   if (bitmap_base == nullptr) {
     log_info(cds)("failed to map relocation bitmap");
     return nullptr;
@@ -2127,9 +2114,9 @@ bool FileMapInfo::map_heap_region_impl() {
   // Map the archived heap data. No need to call MemTracker::record_virtual_memory_type()
   // for mapped region as it is part of the reserved java heap, which is already recorded.
   char* addr = (char*)_mapped_heap_memregion.start();
-  char* base = os::map_memory(_fd, _full_path, r->file_offset(),
-                              addr, _mapped_heap_memregion.byte_size(), r->read_only(),
-                              r->allow_exec());
+  char* base = map_memory(_fd, _full_path, r->file_offset(),
+                          addr, _mapped_heap_memregion.byte_size(), r->read_only(),
+                          r->allow_exec());
   if (base == nullptr || base != addr) {
     dealloc_heap_region();
     log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "

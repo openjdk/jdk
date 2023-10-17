@@ -22,6 +22,9 @@
  */
 
 // no precompiled headers
+#ifdef COMPILER1
+#include "c1/c1_Compiler.hpp"
+#endif
 #include "ci/ciUtilities.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/oopMap.hpp"
@@ -42,6 +45,9 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/klass.inline.hpp"
+#ifdef COMPILER2
+#include "opto/c2compiler.hpp"
+#endif
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -223,6 +229,22 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
 #undef SET_TRIGFUNC
 }
 
+static jboolean is_c1_supported(vmIntrinsics::ID id){
+    jboolean supported = false;
+#ifdef COMPILER1
+    supported = (jboolean) Compiler::is_intrinsic_supported(id);
+#endif
+    return supported;
+}
+
+static jboolean is_c2_supported(vmIntrinsics::ID id){
+    jboolean supported = false;
+#ifdef COMPILER2
+    supported = (jboolean) C2Compiler::is_intrinsic_supported(id);
+#endif
+    return supported;
+}
+
 JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   int len = vmIntrinsics::number_of_intrinsics() - 1; // Exclude vmIntrinsics::_none, which is 0
   JVMCIObjectArray vmIntrinsics = JVMCIENV->new_VMIntrinsicMethod_array(len, JVMCI_CHECK_NULL);
@@ -239,7 +261,10 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
     }                                                                    \
     JVMCIObject name_str = VM_SYMBOL_TO_STRING(name);                    \
     JVMCIObject sig_str = VM_SYMBOL_TO_STRING(sig);                      \
-    JVMCIObject vmIntrinsicMethod = JVMCIENV->new_VMIntrinsicMethod(kls_str, name_str, sig_str, (jint) vmIntrinsics::id, JVMCI_CHECK_NULL); \
+    JVMCIObject vmIntrinsicMethod = JVMCIENV->new_VMIntrinsicMethod(kls_str, name_str, sig_str, (jint) vmIntrinsics::id, \
+                                    (jboolean) vmIntrinsics::is_intrinsic_available(vmIntrinsics::id),                   \
+                                    is_c1_supported(vmIntrinsics::id),                       \
+                                    is_c2_supported(vmIntrinsics::id), JVMCI_CHECK_NULL);    \
     JVMCIENV->put_object_at(vmIntrinsics, index++, vmIntrinsicMethod);   \
   }
 
@@ -253,12 +278,12 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
 }
 
 #define PREDEFINED_CONFIG_FLAGS(do_bool_flag, do_int_flag, do_intx_flag, do_uintx_flag) \
-  do_intx_flag(AllocateInstancePrefetchLines)                              \
-  do_intx_flag(AllocatePrefetchDistance)                                   \
+  do_int_flag(AllocateInstancePrefetchLines)                               \
+  do_int_flag(AllocatePrefetchDistance)                                    \
   do_intx_flag(AllocatePrefetchInstr)                                      \
-  do_intx_flag(AllocatePrefetchLines)                                      \
-  do_intx_flag(AllocatePrefetchStepSize)                                   \
-  do_intx_flag(AllocatePrefetchStyle)                                      \
+  do_int_flag(AllocatePrefetchLines)                                       \
+  do_int_flag(AllocatePrefetchStepSize)                                    \
+  do_int_flag(AllocatePrefetchStyle)                                       \
   do_intx_flag(BciProfileWidth)                                            \
   do_bool_flag(BootstrapJVMCI)                                             \
   do_bool_flag(CITime)                                                     \
@@ -275,7 +300,6 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   do_bool_flag(Inline)                                                     \
   do_intx_flag(JVMCICounterSize)                                           \
   do_bool_flag(JVMCIPrintProperties)                                       \
-  do_bool_flag(JVMCIUseFastLocking)                                        \
   do_int_flag(ObjectAlignmentInBytes)                                      \
   do_bool_flag(PrintInlining)                                              \
   do_bool_flag(ReduceInitialCardMarks)                                     \
@@ -286,7 +310,7 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   do_uintx_flag(TLABWasteIncrement)                                        \
   do_intx_flag(TypeProfileWidth)                                           \
   do_bool_flag(UseAESIntrinsics)                                           \
-  X86_ONLY(do_int_flag(UseAVX))                                           \
+  X86_ONLY(do_int_flag(UseAVX))                                            \
   do_bool_flag(UseCRC32Intrinsics)                                         \
   do_bool_flag(UseAdler32Intrinsics)                                       \
   do_bool_flag(UseCompressedClassPointers)                                 \
@@ -306,7 +330,7 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   do_bool_flag(UseSHA1Intrinsics)                                          \
   do_bool_flag(UseSHA256Intrinsics)                                        \
   do_bool_flag(UseSHA512Intrinsics)                                        \
-  X86_ONLY(do_int_flag(UseSSE))                                           \
+  X86_ONLY(do_int_flag(UseSSE))                                            \
   COMPILER2_PRESENT(do_bool_flag(UseSquareToLenIntrinsic))                 \
   do_bool_flag(UseTLAB)                                                    \
   do_bool_flag(VerifyOops)                                                 \
@@ -374,6 +398,7 @@ jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
         assert(box.is_non_null(), "must have a box");
       } else if (strcmp(vmField.typeString, "int") == 0 ||
                  strcmp(vmField.typeString, "jint") == 0 ||
+                 strcmp(vmField.typeString, "uint") == 0 ||
                  strcmp(vmField.typeString, "uint32_t") == 0) {
         BOXED_LONG(box, *(jint*) vmField.address);
         assert(box.is_non_null(), "must have a box");

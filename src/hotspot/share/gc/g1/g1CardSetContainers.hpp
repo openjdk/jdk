@@ -78,7 +78,7 @@ class G1CardSetInlinePtr : public StackObj {
 
   static const uintptr_t SizeFieldMask = (((uint)1 << SizeFieldLen) - 1) << SizeFieldPos;
 
-  static uint8_t card_pos_for(uint const idx, uint const bits_per_card) {
+  static uint card_pos_for(uint const idx, uint const bits_per_card) {
     return (idx * bits_per_card + HeaderSize);
   }
 

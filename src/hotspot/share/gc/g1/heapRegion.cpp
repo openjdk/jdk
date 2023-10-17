@@ -48,8 +48,8 @@
 #include "runtime/globals_extension.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-int    HeapRegion::LogOfHRGrainBytes = 0;
-int    HeapRegion::LogCardsPerRegion = 0;
+uint   HeapRegion::LogOfHRGrainBytes = 0;
+uint   HeapRegion::LogCardsPerRegion = 0;
 size_t HeapRegion::GrainBytes        = 0;
 size_t HeapRegion::GrainWords        = 0;
 size_t HeapRegion::CardsPerRegion    = 0;
@@ -78,12 +78,9 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   // Now make sure that we don't go over or under our limits.
   region_size = clamp(region_size, HeapRegionBounds::min_size(), HeapRegionBounds::max_size());
 
-  // Calculate the log for the region size.
-  int region_size_log = log2i_exact(region_size);
-
   // Now, set up the globals.
   guarantee(LogOfHRGrainBytes == 0, "we should only set it once");
-  LogOfHRGrainBytes = region_size_log;
+  LogOfHRGrainBytes = log2i_exact(region_size);
 
   guarantee(GrainBytes == 0, "we should only set it once");
   GrainBytes = region_size;
@@ -94,7 +91,7 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   guarantee(CardsPerRegion == 0, "we should only set it once");
   CardsPerRegion = GrainBytes >> G1CardTable::card_shift();
 
-  LogCardsPerRegion = log2i(CardsPerRegion);
+  LogCardsPerRegion = log2i_exact(CardsPerRegion);
 
   if (G1HeapRegionSize != GrainBytes) {
     FLAG_SET_ERGO(G1HeapRegionSize, GrainBytes);
@@ -108,7 +105,7 @@ void HeapRegion::handle_evacuation_failure(bool retain) {
   move_to_old();
 
   _rem_set->clean_code_roots(this);
-  _rem_set->clear_locked(true /* only_cardset */, retain /* keep_tracked */);
+  _rem_set->clear(true /* only_cardset */, retain /* keep_tracked */);
 }
 
 void HeapRegion::unlink_from_list() {
@@ -125,7 +122,7 @@ void HeapRegion::hr_clear(bool clear_space) {
   set_free();
   reset_pre_dummy_top();
 
-  rem_set()->clear_locked();
+  rem_set()->clear();
 
   init_top_at_mark_start();
   if (clear_space) clear(SpaceDecorator::Mangle);
@@ -208,7 +205,7 @@ void HeapRegion::clear_humongous() {
 }
 
 void HeapRegion::prepare_remset_for_scan() {
-  return _rem_set->reset_table_scanner();
+  _rem_set->reset_table_scanner();
 }
 
 HeapRegion::HeapRegion(uint hrm_index,
@@ -278,24 +275,15 @@ void HeapRegion::note_self_forward_chunk_done(size_t garbage_bytes) {
 
 // Code roots support
 void HeapRegion::add_code_root(nmethod* nm) {
-  HeapRegionRemSet* hrrs = rem_set();
-  hrrs->add_code_root(nm);
-}
-
-void HeapRegion::add_code_root_locked(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-  HeapRegionRemSet* hrrs = rem_set();
-  hrrs->add_code_root_locked(nm);
+  rem_set()->add_code_root(nm);
 }
 
 void HeapRegion::remove_code_root(nmethod* nm) {
-  HeapRegionRemSet* hrrs = rem_set();
-  hrrs->remove_code_root(nm);
+  rem_set()->remove_code_root(nm);
 }
 
 void HeapRegion::code_roots_do(CodeBlobClosure* blk) const {
-  HeapRegionRemSet* hrrs = rem_set();
-  hrrs->code_roots_do(blk);
+  rem_set()->code_roots_do(blk);
 }
 
 class VerifyCodeRootOopClosure: public OopClosure {
@@ -430,7 +418,7 @@ void HeapRegion::print_on(outputStream* st) const {
   if (UseNUMA) {
     G1NUMA* numa = G1NUMA::numa();
     if (node_index() < numa->num_active_nodes()) {
-      st->print("|%d", numa->numa_id(node_index()));
+      st->print("|%u", numa->numa_id(node_index()));
     } else {
       st->print("|-");
     }
