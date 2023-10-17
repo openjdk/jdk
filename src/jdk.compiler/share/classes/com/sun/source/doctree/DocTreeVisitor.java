@@ -248,6 +248,21 @@ public interface DocTreeVisitor<R,P> {
     }
 
     /**
+     * Visits a {@code RawTextTree} node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     *
+     * @implSpec Visits the provided {@code RawTextTree} node
+     * by calling {@code visitOther(node, p)}.
+     *
+     * @since 21
+     */
+    default R visitRawText(RawTextTree node, P p) {
+        return visitOther(node, p);
+    }
+
+    /**
      * Visits a {@code ReferenceTree} node.
      * @param node the node being visited
      * @param p a parameter value

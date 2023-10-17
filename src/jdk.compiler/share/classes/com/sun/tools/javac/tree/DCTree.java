@@ -158,6 +158,11 @@ public abstract class DCTree implements DocTree {
         }
 
         switch (getKind()) {
+            case MARKDOWN -> {
+                DCRawText markdown = (DCRawText) this;
+                return markdown.pos + markdown.code.length();
+            }
+
             case TEXT -> {
                 DCText text = (DCText) this;
                 return text.pos + text.text.length();
@@ -893,6 +898,39 @@ public abstract class DCTree implements DocTree {
         @Override @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getDescription() {
             return description;
+        }
+    }
+
+    public static class DCRawText extends DCTree implements RawTextTree {
+        public final Kind kind;
+        public final String code;
+
+        DCRawText(Kind kind, String code) {
+            if (kind != Kind.MARKDOWN) {
+                throw new IllegalArgumentException(kind.toString());
+            }
+            this.kind = kind;
+            this.code = code;
+        }
+
+        @Override
+        public boolean isBlank() {
+            return code.isBlank();
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() {
+            return Kind.MARKDOWN;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
+            return v.visitRawText(this, d);
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public String getContent() {
+            return code;
         }
     }
 

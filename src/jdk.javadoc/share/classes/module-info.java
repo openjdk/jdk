@@ -58,6 +58,7 @@
  */
 module jdk.javadoc {
     requires java.xml;
+    requires jdk.internal.md;
 
     requires transitive java.compiler;
     requires transitive jdk.compiler;

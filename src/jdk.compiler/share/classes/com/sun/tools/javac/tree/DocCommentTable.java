@@ -25,7 +25,9 @@
 
 package com.sun.tools.javac.tree;
 
+import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.ErroneousTree;
+
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.tree.DCTree.DCDocComment;
 
@@ -58,7 +60,7 @@ public interface DocCommentTable {
      * are detected during parsing, they will be reported via
      * {@link ErroneousTree ErroneousTree} nodes within the resulting tree.
      */
-    DCDocComment getCommentTree(JCTree tree);
+    DocCommentTree getCommentTree(JCTree tree);
 
     /**
      * Set the Comment to be associated with a tree node.

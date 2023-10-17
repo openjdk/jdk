@@ -44,9 +44,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import sampleapi.SampleApi;
-import sampleapi.util.PoorDocCommentTable;
-
-import static com.sun.tools.javac.parser.Tokens.Comment.CommentStyle.JAVADOC;
 
 /**
  *

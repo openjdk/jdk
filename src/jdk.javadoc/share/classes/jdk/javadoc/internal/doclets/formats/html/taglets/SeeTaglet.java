@@ -157,7 +157,7 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
         assert !ref.isEmpty();
         DocTree ref0 = ref.get(0);
         switch (ref0.getKind()) {
-            case TEXT, START_ELEMENT -> {
+            case TEXT, MARKDOWN, START_ELEMENT -> {
                 // @see "Reference"
                 // @see <a href="...">...</a>
                 return htmlWriter.commentTagsToContent(element, ref, false, false);

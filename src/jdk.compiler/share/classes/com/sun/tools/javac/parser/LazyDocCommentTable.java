@@ -28,6 +28,8 @@ package com.sun.tools.javac.parser;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.sun.source.doctree.DocCommentTree;
+
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.tree.DCTree.DCDocComment;
 import com.sun.tools.javac.tree.DocCommentTable;
@@ -79,12 +81,16 @@ public class LazyDocCommentTable implements DocCommentTable {
     }
 
     @Override
-    public DCDocComment getCommentTree(JCTree tree) {
+    public DocCommentTree getCommentTree(JCTree tree) {
         Entry e = table.get(tree);
-        if (e == null)
+        if (e == null) {
             return null;
-        if (e.tree == null)
-            e.tree = new DocCommentParser(fac, diagSource, e.comment).parse();
+        }
+        if (e.tree == null) {
+            var dct = new DocCommentParser(fac, diagSource, e.comment).parse();
+            var transformer = fac.getDocCommentTreeTransformer(); // lazy!
+            e.tree = transformer == null ? dct : (DCDocComment) transformer.transform(dct);
+        }
         return e.tree;
     }
 
@@ -92,5 +98,4 @@ public class LazyDocCommentTable implements DocCommentTable {
     public void putComment(JCTree tree, Comment c) {
         table.put(tree, new Entry(c));
     }
-
 }

@@ -626,7 +626,7 @@ public class CommentUtils {
 
     public DocCommentTree parse(URI uri, String text) {
         return trees.getDocCommentTree(new SimpleJavaFileObject(
-                uri, JavaFileObject.Kind.SOURCE) {
+                uri, JavaFileObject.Kind.HTML) {
             @Override @DefinedBy(Api.COMPILER)
             public CharSequence getCharContent(boolean ignoreEncoding) {
                 return text;

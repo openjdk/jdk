@@ -75,6 +75,13 @@ public class ContentBuilder extends Content {
         return this;
     }
 
+    /**
+     * {@return the contents of this builder}
+     */
+    public List<Content> getContents() {
+        return contents;
+    }
+
     @Override
     public boolean write(Writer writer, String newline, boolean atNewline) throws IOException {
         for (Content content: contents) {

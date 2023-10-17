@@ -67,7 +67,6 @@ import com.sun.source.tree.Scope;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTreePath;
-import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePath;
@@ -169,10 +168,12 @@ public class JavacTrees extends DocTrees {
     private final Types types;
     private final DocTreeMaker docTreeMaker;
     private final JavaFileManager fileManager;
-    private final ParserFactory parser;
     private final Symtab syms;
 
     private BreakIterator breakIterator;
+    private final ParserFactory parserFactory;
+
+    private DocCommentTreeTransformer docCommentTreeTransformer;
 
     private final Map<Type, Type> extraType2OriginalMap = new WeakHashMap<>();
 
@@ -214,7 +215,7 @@ public class JavacTrees extends DocTrees {
         names = Names.instance(context);
         types = Types.instance(context);
         docTreeMaker = DocTreeMaker.instance(context);
-        parser = ParserFactory.instance(context);
+        parserFactory = ParserFactory.instance(context);
         syms = Symtab.instance(context);
         fileManager = context.get(JavaFileManager.class);
         var task = context.get(JavacTask.class);
@@ -259,20 +260,6 @@ public class JavacTrees extends DocTrees {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DocTreeMaker getDocTreeFactory() {
         return docTreeMaker;
-    }
-
-    private DocTree getLastChild(DocTree tree) {
-        final DocTree[] last = new DocTree[] {null};
-
-        tree.accept(new DocTreeScanner<Void, Void>() {
-            @Override @DefinedBy(Api.COMPILER_TREE)
-            public Void scan(DocTree node, Void p) {
-                if (node != null) last[0] = node;
-                return null;
-            }
-        }, null);
-
-        return last[0];
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -715,8 +702,8 @@ public class JavacTrees extends DocTrees {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public TypeMirror getTypeMirror(TreePath path) {
-        Tree t = path.getLeaf();
-        Type ty = ((JCTree)t).type;
+        Tree leaf = path.getLeaf();
+        Type ty = ((JCTree) leaf).type;
         return ty == null ? null : ty.stripMetadataIfNeeded();
     }
 
@@ -726,25 +713,39 @@ public class JavacTrees extends DocTrees {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
+    public CommentKind getDocCommentKind(TreePath path) {
+        var compUnit = path.getCompilationUnit();
+        var leaf = path.getLeaf();
+        if (compUnit instanceof JCTree.JCCompilationUnit cu && leaf instanceof JCTree l
+                && cu.docComments != null) {
+            Comment c = cu.docComments.getComment(l);
+            return (c == null) ? null : switch (c.getStyle()) {
+                case JAVADOC_BLOCK -> DocTrees.CommentKind.BLOCK;
+                case JAVADOC_LINE -> DocTrees.CommentKind.LINE;
+                default -> null;
+            };
+        }
+        return null;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public String getDocComment(TreePath path) {
-        CompilationUnitTree t = path.getCompilationUnit();
-        Tree leaf = path.getLeaf();
-        if (t instanceof JCTree.JCCompilationUnit compilationUnit && leaf instanceof JCTree tree) {
-            if (compilationUnit.docComments != null) {
-                return compilationUnit.docComments.getCommentText(tree);
-            }
+        var compUnit = path.getCompilationUnit();
+        var leaf = path.getLeaf();
+        if (compUnit instanceof JCTree.JCCompilationUnit cu && leaf instanceof JCTree l
+                && cu.docComments != null) {
+            return cu.docComments.getCommentText(l);
         }
         return null;
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DocCommentTree getDocCommentTree(TreePath path) {
-        CompilationUnitTree t = path.getCompilationUnit();
-        Tree leaf = path.getLeaf();
-        if (t instanceof JCTree.JCCompilationUnit compilationUnit && leaf instanceof JCTree tree) {
-            if (compilationUnit.docComments != null) {
-                return compilationUnit.docComments.getCommentTree(tree);
-            }
+        var compUnit = path.getCompilationUnit();
+        var leaf = path.getLeaf();
+        if (compUnit instanceof JCTree.JCCompilationUnit cu && leaf instanceof JCTree l
+                && cu.docComments != null) {
+            return cu.docComments.getCommentTree(l);
         }
         return null;
     }
@@ -982,33 +983,40 @@ public class JavacTrees extends DocTrees {
         return flatNameForClass;
     }
 
-    static JavaFileObject asJavaFileObject(FileObject fileObject) {
-        JavaFileObject jfo = null;
+    private static boolean isHtmlFile(FileObject fo) {
+        return fo.getName().endsWith(".html");
+    }
 
-        if (fileObject instanceof JavaFileObject javaFileObject) {
-            checkHtmlKind(fileObject, Kind.HTML);
-            return javaFileObject;
+    private static boolean isMarkdownFile(FileObject fo) {
+        return fo.getName().endsWith(".md");
+    }
+
+
+    static JavaFileObject asDocFileObject(FileObject fo) {
+        if (fo instanceof JavaFileObject jfo) {
+            switch (jfo.getKind()) {
+                case HTML -> {
+                    return jfo;
+                }
+                case OTHER -> {
+                    if (isMarkdownFile(jfo)) {
+                        return jfo;
+                    }
+                }
+            }
+        } else {
+            if (isHtmlFile(fo) || isMarkdownFile(fo)) {
+                return new DocFileObject(fo);
+            }
         }
 
-        checkHtmlKind(fileObject);
-        jfo = new HtmlFileObject(fileObject);
-        return jfo;
+        throw new IllegalArgumentException(("Not a documentation file: " + fo.getName()));
     }
 
-    private static void checkHtmlKind(FileObject fileObject) {
-        checkHtmlKind(fileObject, BaseFileManager.getKind(fileObject.getName()));
-    }
-
-    private static void checkHtmlKind(FileObject fileObject, JavaFileObject.Kind kind) {
-        if (kind != JavaFileObject.Kind.HTML) {
-            throw new IllegalArgumentException("HTML file expected:" + fileObject.getName());
-        }
-    }
-
-    private static class HtmlFileObject extends ForwardingFileObject<FileObject>
+    private static class DocFileObject extends ForwardingFileObject<FileObject>
             implements JavaFileObject {
 
-        public HtmlFileObject(FileObject fileObject) {
+        public DocFileObject(FileObject fileObject) {
             super(fileObject);
         }
 
@@ -1035,7 +1043,7 @@ public class JavacTrees extends DocTrees {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DocCommentTree getDocCommentTree(FileObject fileObject) {
-        JavaFileObject jfo = asJavaFileObject(fileObject);
+        JavaFileObject jfo = asDocFileObject(fileObject);
         DiagnosticSource diagSource = new DiagnosticSource(jfo, log);
 
         final Comment comment = new Comment() {
@@ -1058,21 +1066,40 @@ public class JavacTrees extends DocTrees {
 
             @Override
             public CommentStyle getStyle() {
-                throw new UnsupportedOperationException();
+                return isHtmlFile(fileObject) ? CommentStyle.JAVADOC_BLOCK
+                        : isMarkdownFile(fileObject) ? CommentStyle.JAVADOC_LINE
+                        : null;
             }
 
             @Override
             public boolean isDeprecated() {
-                throw new UnsupportedOperationException();
+                return false;
+            }
+
+            private String info(FileObject fo) {
+                try {
+                    var text = fo.getCharContent(true).toString();
+                    int MAX_LENGTH = 48;
+                    String ELLIPSIS = "...";
+                    return fo.getName() + ": "
+                            + (text.length() < MAX_LENGTH ? text
+                                : text.substring(0, MAX_LENGTH / 2)
+                                    + ELLIPSIS
+                                    + text.substring(text.length() - MAX_LENGTH / 2));
+                } catch (IOException e) {
+                    return fo.getName() + ": " + e;
+                }
             }
         };
 
-        return new DocCommentParser(parser, diagSource, comment, true).parse();
+        boolean isHtmlFile = jfo.getKind() == Kind.HTML;
+
+        return new DocCommentParser(parserFactory, diagSource, comment, isHtmlFile).parse();
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DocTreePath getDocTreePath(FileObject fileObject, PackageElement packageElement) {
-        JavaFileObject jfo = asJavaFileObject(fileObject);
+        JavaFileObject jfo = asDocFileObject(fileObject);
         DocCommentTree docCommentTree = getDocCommentTree(jfo);
         if (docCommentTree == null)
             return null;
@@ -1088,6 +1115,16 @@ public class JavacTrees extends DocTrees {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public String getCharacters(EntityTree tree) {
         return Entity.getCharacters(tree);
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public void setDocCommentTreeTransformer(DocTrees.DocCommentTreeTransformer transformer) {
+        this.docCommentTreeTransformer = transformer;
+        parserFactory.setDocCommentTreeTransformer(transformer);
+    }
+
+    public ParserFactory getParserFactory() {
+        return parserFactory;
     }
 
     /**
@@ -1193,20 +1230,10 @@ public class JavacTrees extends DocTrees {
 
         try {
             switch (kind) {
-            case ERROR:
-                log.error(DiagnosticFlag.API, pos, Errors.ProcMessager(msg.toString()));
-                break;
-
-            case WARNING:
-                log.warning(pos, Warnings.ProcMessager(msg.toString()));
-                break;
-
-            case MANDATORY_WARNING:
-                log.mandatoryWarning(pos, Warnings.ProcMessager(msg.toString()));
-                break;
-
-            default:
-                log.note(pos, Notes.ProcMessager(msg.toString()));
+                case ERROR ->             log.error(DiagnosticFlag.API, pos, Errors.ProcMessager(msg.toString()));
+                case WARNING ->           log.warning(pos, Warnings.ProcMessager(msg.toString()));
+                case MANDATORY_WARNING -> log.mandatoryWarning(pos, Warnings.ProcMessager(msg.toString()));
+                default ->                log.note(pos, Notes.ProcMessager(msg.toString()));
             }
         } finally {
             if (oldSource != null)
