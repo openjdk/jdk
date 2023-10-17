@@ -39,7 +39,7 @@ public class TestDenormalFloat {
         lastFloat = 0x1.0p-149f;
         for (float x = lastFloat * 2; x <= 0x1.0p127f; x *= 2) {
             if (x != x || x <= lastFloat) {
-                throw new AssertionError("TEST FAILED: " + x);
+                throw new RuntimeException("TEST FAILED: " + x);
             }
             lastFloat = x;
         }

@@ -1814,7 +1814,7 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
 
   fenv_t default_fenv;
   int rtn = fegetenv(&default_fenv);
-  assert(rtn == 0, "fegetnv must succeed");
+  assert(rtn == 0, "fegetenv must succeed");
 #endif // IA32
 
   void * result = ::dlopen(filename, RTLD_LAZY);

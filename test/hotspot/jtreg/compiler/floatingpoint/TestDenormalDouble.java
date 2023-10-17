@@ -39,7 +39,7 @@ public class TestDenormalDouble {
         lastDouble = 0x1.0p-1074;
         for (double x = lastDouble * 2; x <= 0x1.0p1022; x *= 2) {
             if (x != x || x <= lastDouble) {
-                throw new AssertionError("TEST FAILED: " + x);
+                throw new RuntimeException("TEST FAILED: " + x);
             }
             lastDouble = x;
         }

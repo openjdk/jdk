@@ -321,15 +321,15 @@ void compiler_stubs_init(bool in_compiler_thread) {
 bool StubRoutines::FTZ_mode_enabled() {
   // Quickly test to make sure denormals are correctly handled.
 
+  // _small_denormal is the smallest denormal number that has two bits
+  // set. _large_denormal is a number such that, when _small_denormal
+  // is added to it, must be rounded according to the mode. These two
+  // tests detect the rounding mode in use. If denormals are turned
+  // off (i.e. denormals-are-zero) FTZ mode is in use.
+
   // We need the addition of _large_denormal and _small_denormal to be
   // performed at runtime. Making _small_denormal volatile ensures
   // that the following expression isn't evaluated at compile time:
-
-  // _small_denormal is the smallest denormal number that has two bits
-  // set. _large_denormal is a number such that, when _small_denormal
-  // is added it it, must be rounded according to the mode. These two
-  // tests detect the rounding mode in use. If denormals are turned
-  // off (i.e. denormals-are-zero) FTZ mode is in use.
   return (_large_denormal + _small_denormal == _large_denormal
       || -_large_denormal - _small_denormal == -_large_denormal);
 }
