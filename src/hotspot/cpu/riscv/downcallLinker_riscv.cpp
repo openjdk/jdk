@@ -154,7 +154,7 @@ void DowncallStubGenerator::generate() {
 
   int allocated_frame_size = 0;
   assert(_abi._shadow_space_bytes == 0, "not expecting shadow space on RISCV64");
-  allocated_frame_size += arg_shuffle.out_arg_bytes();
+  allocated_frame_size += ForeignGlobals::compute_out_arg_bytes(_input_registers);
 
   bool should_save_return_value = !_needs_return_buffer;
   RegSpiller out_reg_spiller(_output_registers);

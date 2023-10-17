@@ -135,7 +135,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   GrowableArray<VMStorage> unfiltered_out_regs;
   int out_arg_bytes = ForeignGlobals::java_calling_convention(out_sig_bt, total_out_args, unfiltered_out_regs);
   // The Java call uses the JIT ABI, but we also call C.
-  int out_arg_area = MAX2(frame::jit_out_preserve_size + arg_shuffle.out_arg_bytes(), (int)frame::native_abi_reg_args_size);
+  int out_arg_area = MAX2(frame::jit_out_preserve_size + out_arg_bytes, (int)frame::native_abi_reg_args_size);
 
   int reg_save_area_size = compute_reg_save_area_size(abi);
   RegSpiller arg_spiller(call_regs._arg_regs);

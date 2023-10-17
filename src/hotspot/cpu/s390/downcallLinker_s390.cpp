@@ -162,10 +162,11 @@ void DowncallStubGenerator::generate() {
     __ block_comment("} _captured_state_mask is set");
   }
 
+  VMStorage shuffle_reg = _abi._scratch1;
   GrowableArray<VMStorage> java_regs;
   ForeignGlobals::java_calling_convention(_signature, _num_args, java_regs);
   GrowableArray<VMStorage> out_regs = ForeignGlobals::replace_place_holders(_input_registers, locs);
-  ArgumentShuffle arg_shuffle(java_regs, out_regs, _abi._scratch1);
+  ArgumentShuffle arg_shuffle(java_regs, out_regs, shuffle_reg);
 
 #ifndef PRODUCT
   LogTarget(Trace, foreign, downcall) lt;
@@ -201,7 +202,7 @@ void DowncallStubGenerator::generate() {
     __ block_comment("} thread java2native");
   }
   __ block_comment("{ argument shuffle");
-  arg_shuffle.generate(_masm, frame::z_jit_out_preserve_size, _abi._shadow_space_bytes);
+  arg_shuffle.generate(_masm, shuffle_reg, frame::z_jit_out_preserve_size, _abi._shadow_space_bytes);
   __ block_comment("} argument shuffle");
 
   __ call(as_Register(locs.get(StubLocations::TARGET_ADDRESS)));
