@@ -1417,9 +1417,9 @@ public class CSS implements Serializable {
         }
         String strlc = str.toLowerCase(Locale.ROOT);
         if (strlc.startsWith("rgb(")) {
-            return parseRGB(str);
+            return parseRGB(str, (byte)3);
         } else if (strlc.startsWith("rgba(")) {
-            return parseRGBA(str);
+            return parseRGB(str, (byte)4);
         } else if (strlc.charAt(0) == '#') {
             return hexToColor(str);
         } else {
@@ -1590,85 +1590,310 @@ public class CSS implements Serializable {
     }
 
     /**
-     * Parses a String in the format {@code rgb(r, g, b)} where
-     * each of the Color components is either an integer, or a floating number
-     * with a % after indicating a percentage value of 255. Values are
-     * constrained to fit with 0-255. The resulting Color is returned.
+     * Parses a String using the grammar described in the
+     * <a href="https://www.w3.org/TR/css-color-4/#rgb-functions">
+     *     CSS-COLOR-4 5.1.The RGB functions
+     * </a> specifications.
+     * By example {@code rgb(rc gc bc)}, {@code rgb(rc,gc,bc)},
+     * {@code rgb(rc gc bc / ac)}, {@code rgb(rc,gc,bc,ac)} including
+     * {@code rgba} notations are valid. Each of the rc, gc, bc color
+     * components is a number in [[0,255]] or a percentage (number with a % after),
+     * indicating a percentage value of the color channel maximal value.
+     * These values are constrained to repectively fit with 0-255 or 0%-100%.
+     * The ac Color component is a single number or a percentage (number with
+     * a %) in [0,1].
+     * This value is constrained to fit with 0-1 or 0%-100%.
+     * See
+     * <a href="https://www.w3.org/TR/css-values-4/#number-value">
+     *     number
+     * </a> and
+     * <a href="https://www.w3.org/TR/css-values-4/#percentage-value">
+     *     percentage
+     * </a> in the
+     * <a href="https://www.w3.org/TR/css-values-4">
+     *    CSS-VALUE-4
+     * </a> specifications.
+     * The resulting Color is returned.
      */
-    private static Color parseRGB(String string) {
+    private static Color parseRGB(String string, byte start) {
+
+        // The array index argument :
+        // - first element : start parsing index.
+        // - second element : the color channel,
+        //   -
+        //   - red   : 1.
+        //   - green : 2.
+        //   - blue  : 3.
+        //   - alpha : 4.
+        // - third element : type value.
+        //   - indeterminated : -1.
+        //   - conflict       : 0. return black color.
+        //   - a number       : 1. rc, gc and bc are numbers.
+        //         Use Color(int r, int g, int b) or
+        //         Color(int r, int g, int b, int a). Linear transform alpha value from [0,1] to [0,255].
+        //   - a percentage   : 2. rc, gc and bc are percentages.
+        //         Use Color(float r, float g, float b) or
+        //         Color(float r, float g, float b, float a).
+        byte[] index = new byte[3];
+
         // Find the next numeric char
-        int[] index = new int[1];
-
-        index[0] = 4;
-        int red = (int)getColorComponent(string, index);
-        int green = (int)getColorComponent(string, index);
-        int blue = (int)getColorComponent(string, index);
-
-        return new Color(red, green, blue);
+        index[0] = start;
+        index[1] = 1;
+        index[2] = -1;
+        // A negative compoment means color is not well formed and
+        float red = getColorComponent(string, index);
+        if (red < 0) return new Color(0f, 0f, 0f);
+        float green = getColorComponent(string, index);
+        if (green < 0) return new Color(0f, 0f, 0f);
+        float blue = getColorComponent(string, index);
+        if (blue < 0) return new Color(0f, 0f, 0f);
+        float alpha = getColorComponent(string, index);
+        if (alpha == -1) return new Color(0f, 0f, 0f);
+        if (alpha < 0) {
+            return new Color(red, green, blue);
+        } else {
+            return new Color(red, green, blue, alpha);
+        }
     }
 
+    /*
     private static Color parseRGBA(String string) {
         // Find the next numeric char
-        int[] index = new int[1];
+        byte[] index = new byte[2];
 
         index[0] = 4;
-        float red = getColorComponent(string, index)/255f;
-        float green = getColorComponent(string, index)/255f;
-        float blue = getColorComponent(string, index)/255f;
+        index[1] = 1;
+        float red = getColorComponent(string, index);
+        if (red < 0) return new Color(0, 0, 0);
+        float green = getColorComponent(string, index);
+        if (green < 0) return new Color(0, 0, 0);
+        float blue = getColorComponent(string, index);
+        if (blue < 0) return new Color(0, 0, 0);
         float alpha = getColorComponent(string, index);
-
-        return new Color(red, green, blue, alpha);
+        if (alpha == -1) return new Color(0, 0, 0);
+        if (alpha < 0) {
+            return new Color(red, green, blue);
+        } else {
+            return new Color(red, green, blue, alpha);
+        }
     }
+    */
 
+    private static int SIGNIFICAND_MAX = 655350000;
     /**
-     * Returns the next integer value from {@code string} starting
-     * at {@code index[0]}. The value can either can an integer, or
-     * a percentage (floating number ending with %), in which case it is
-     * multiplied by 255.
+     * Returns the next float value from {@code string} starting
+     * at {@code index[0]}. The value can either can a number, or
+     * a percentage (number ending with %), in which case it is
+     * multiplied by 255 except for the alpha Color component.
      */
-    private static float getColorComponent(String string, int[] index) {
+    private static float getColorComponent(String string, byte[] index) {
         int length = string.length();
-        char aChar;
+        char aChar = '?';
+        boolean sep = false;
+        // Only one separator
+        boolean oosep = false;
 
-        // Skip non-decimal chars
-        while(index[0] < length && (aChar = string.charAt(index[0])) != '-' &&
-              !Character.isDigit(aChar) && aChar != '.') {
+        // Principles
+        // - the attribute value is supposed to be well-formed i.e. as provided by the CSSParser.java :
+        //   - Does not contain white space(s) at the beginning of the string and the end of the string.
+        //   - Match the sequence directly following the name of the rgb or rgba functions.
+        //     White-space(s) between rgb or rgba and ( is (are) removed.
+        //   - Multiple spaces between '(', value, ',' or ')' are replaced by only one space.
+        //   - contains well formed blocks (), this is ensured by the parser CSSParser.java but through an Exception.
+        //   - Components are well-formed and must be a none keyword, a number or a percentage.
+        //   - The sequence of characters is predictable.
+        // - Any deviation from the expected, generates the rejection of the component.
+
+        // Must return :
+        // - a positive float if succeed to parse a decimal value or percent value.
+        // - the value -1 if the argument format is wrong.
+        // - the value -2 if failed to parse expected separator.
+        // - the value -3 if conflict between number and percentage.
+        //
+        // The index argument
+        // - Update the index of
+        //   - start parsing index value,
+        //   - component,
+        //   -
+        // - the value -3 rc, gc and bc are numbers. Use Color(int r, int g, int b) or Color(int r, int g, int b, int a).
+        // - the value -4 rc, gc and bc are percentages. Use Color(float r, float g, float b) or Color(float r, float g, float b, float a).
+
+        // Alphabet :
+        // - "( ,.-+0123456789/%)noe"
+
+        // Keyword :
+        // - Only one : none
+
+        // Grammar
+        // - argument :== ("rgb" | "rgba") "(" {<decimal-number> "%"? (" "* | ",")}3 ["/" <decimal-number> "%"?] ")"
+        // - decimal-number :== ["+" | "-"] digit* ["." digit*]  ["e" ["+" | "-"] digit*]
+        // - digit :== "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+        // - rgbc :: 'rgb'
+        // - delimitors :: = ( none
+        //
+        // Skip unauthorized characters :
+        // - Starting number alphabet
+        //   - non-number sign,
+        //   - non-decimal digit,
+        // - Separator signs
+        //   - non-whitespace,
+        //   - non-comma,
+        //   - non-slash,
+        // And store last word of 6 characters, may contain keyword "none"
+
+        // Try to detect the rigth separator and reach the first character different from ' '.
+        String seplist = index[1] == 1 ? "( " :
+                         index[1] > 3 ? " ,/" : " ,";
+
+        // Can continue to scan
+        boolean notReachEnd = true;
+        while(notReachEnd = (index[0] < length
+              && ((aChar = string.charAt(index[0])) != ')'))) {
+            if (seplist.indexOf(aChar) > -1/* || Character.isSpaceChar(aChar)*/) {
+                sep = true;
+                if (oosep && aChar != ' ') {
+                    // Two consecutive non space separators.
+                    // - Never happens with a parsed string because of CSSParser
+                    // - But useful for StyleSheet.stringToColor
+                    return -1;
+                } else {
+                    if (aChar != ' ') oosep = true;
+                }
+            } else {
+                break;
+            }
             index[0]++;
         }
+        // End of string or no separator detected, terminate.
+        if (!notReachEnd || !sep) return -2;
 
+        // From here
+        // - current char is in +-0123456789n
+        // - start build value
+        //   - value could be 0 if none detected
+        //   - a number or a percentage
+
+        // Try to detect 'none' keyword
+        if (aChar == 'n') {
+            String snkw = string.substring(index[0], Math.min(index[0] + 4, length));
+            if (snkw.equals("none")) {
+                index[1]++;
+                index[0] += 4;
+                return 0;
+            } else {
+                return -1;
+            }
+        }
+
+        // From here, next expected char is only +-0123456789
         int start = index[0];
-
-        if (start < length && string.charAt(index[0]) == '-') {
+        boolean negative = false;
+        if (aChar == '+' || (negative = aChar == '-')) {
             index[0]++;
         }
-        while(index[0] < length &&
-                         Character.isDigit(string.charAt(index[0]))) {
+
+        // From here next expected chars are only 0123456789
+        int significand = 0;
+        int tenpower = 0;
+        float fvalueIntergerPart = 0;
+        float fvalueFractionalPart = 0;
+
+        while (notReachEnd = (index[0] < length
+               && ((aChar = string.charAt(index[0])) != ')')
+               && Character.isDigit(aChar))) {
             index[0]++;
+            if (significand < SIGNIFICAND_MAX) {
+                significand = significand * 10 + (aChar - '0')/* * 10000*/;
+            } else if (tenpower < Integer.MAX_VALUE) {
+                tenpower++;
+            } else {
+                // Treatement over capacity Treat as 0, not sure ! May as infinite.
+                return 0;
+            }
         }
         if (index[0] < length && string.charAt(index[0]) == '.') {
-            // Decimal value
+            // Fractional part
             index[0]++;
-            while(index[0] < length &&
-                  Character.isDigit(string.charAt(index[0]))) {
+            // From here next expected chars are only 0123456789.
+            // Only next four digits are take in count.
+            while(index[0] < length
+                  && ((aChar = string.charAt(index[0])) != ')')
+                  && Character.isDigit(aChar)) {
+                index[0]++;
+                if (significand < SIGNIFICAND_MAX) {
+                   if (tenpower > Integer.MIN_VALUE) {
+                       significand = significand * 10 + (aChar - '0');
+                       tenpower--;
+                   }
+                }
+            }
+        }
+        if (index[0] < length && (string.charAt(index[0]) == 'e' || string.charAt(index[0]) == 'E')) {
+            boolean negativeExpSign = false;
+            index[0]++;
+            if (index[0] < length && ((aChar = string.charAt(index[0])) == '+' || (negativeExpSign = (aChar == '-')))) {
                 index[0]++;
             }
-        }
-        if (start != index[0]) {
-            try {
-                float value = Float.parseFloat(string.substring
-                                               (start, index[0]));
-
-                if (index[0] < length && string.charAt(index[0]) == '%') {
-                    index[0]++;
-                    value = value * 255f / 100f;
-                }
-                return Math.min(255f, Math.max(0, value));
-            } catch (NumberFormatException nfe) {
-                // Treat as 0
+            // Exponent value
+            int exponent = 0;
+            // From here next expected chars are only 0123456789
+            while(index[0] < length
+                  && ((aChar = string.charAt(index[0])) != ')')
+                  && Character.isDigit(aChar)) {
+                index[0]++;
+                exponent = exponent * 10 + aChar - '0';
             }
+            tenpower = negativeExpSign ? tenpower - exponent : tenpower + exponent;
         }
-        return 0;
+
+        // From here next expected char is "% ,/)"
+        if (index[0] < length
+            && "% ,/)".indexOf(aChar) < 0) return -1;
+        if (tenpower < -10) return 0;
+        // Not sure : over capacity should return infinite.
+        if (tenpower > 10) return 0;
+        if (start != index[0]) {
+            float value = significand;
+            if (index[0] < length && string.charAt(index[0]) == '%') {
+                if (index[2] == 2) {
+                    index[0]++;
+                } else {
+                    index[2] = 0;
+                    return 0;
+                }
+                if (tenpower > Integer.MIN_VALUE + 2) {
+                    tenpower -= 2;
+                } else return 0;
+            } else if (index[1] < 4) {
+                if (index[2] == 1) {
+                    value = value / 255f;
+                } else {
+                    index[2] = 0;
+                    return 0;
+                }
+            }
+            // Reject negative value;
+            // Clamp value in [[0,255]] or [0,1]
+            // By example -12 ou -12% must return 0 !
+            // Not return before to be sure the value is valid.
+            // That's why, I set it here.
+            if (negative) return 0;
+            if (tenpower < 0) {
+                value = value / FLOAT_10_POW[-tenpower];
+            } else {
+                value = value * FLOAT_10_POW[tenpower];
+            }
+            index[1]++;
+            return Math.min(1, value);
+        }
+        return -1;
     }
+
+    private static final float[] FLOAT_10_POW = {
+        1.0e0f,
+        1.0e1f, 1.0e2f, 1.0e3f, 1.0e4f, 1.0e5f,
+        1.0e6f, 1.0e7f, 1.0e8f, 1.0e9f, 1.0e10f
+    };
 
     static int getIndexOfSize(float pt, int[] sizeMap) {
         for (int i = 0; i < sizeMap.length; i ++ )
