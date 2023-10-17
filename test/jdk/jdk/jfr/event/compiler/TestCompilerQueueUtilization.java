@@ -34,6 +34,7 @@ import jdk.test.lib.jfr.Events;
  * @test
  * @key jfr
  * @requires vm.hasJFR
+ * @requires vm.compMode!="Xint"
  * @library /test/lib
  * @run main/othervm jdk.jfr.event.compiler.TestCompilerQueueUtilization
  */
