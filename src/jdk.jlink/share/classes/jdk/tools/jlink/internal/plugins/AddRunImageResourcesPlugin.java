@@ -165,8 +165,8 @@ public final class AddRunImageResourcesPlugin extends AbstractPlugin {
             }
         } catch (RunImageLinkException e) {
             // RunImageArchive::RunImageFile.content() may throw this when
-            // getting the content(). Populate the actual reason.
-            throw e.getReason();
+            // getting the content(). Propagate this specific exeption.
+            throw e;
         } catch (Exception e) {
             throw new AssertionError("Failed to generate hash sum for " + entry.path());
         }

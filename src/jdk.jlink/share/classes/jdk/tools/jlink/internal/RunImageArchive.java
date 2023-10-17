@@ -214,6 +214,7 @@ public class RunImageArchive implements Archive {
     static class RunImageFile {
         private static final String JAVA_HOME = System.getProperty("java.home");
         private static final Path BASE = Paths.get(JAVA_HOME);
+        private static final String MISMATCH_FORMAT = "%s has been modified. Please double check!%s%n";
         final String resPath;
         final Archive.Entry.EntryType resType;
         final Archive archive;
@@ -263,11 +264,13 @@ public class RunImageArchive implements Archive {
                         // Read from the base JDK image.
                         Path path = BASE.resolve(resPath);
                         if (shaSumMismatch(path, sha, symlink)) {
-                            String msg = String.format("%s has been modified. Please double check!%n", path.toString());
                             if (failOnMod) {
+                                String hint = " You may force the link with '--unlock-run-image'.";
+                                String msg = String.format(MISMATCH_FORMAT, path.toString(), hint);
                                 IllegalArgumentException ise = new IllegalArgumentException(msg);
                                 throw new RunImageLinkException(ise);
                             } else if (!warningProduced) {
+                                String msg = String.format(MISMATCH_FORMAT, path.toString(), "");
                                 System.err.printf("WARNING: %s", msg);
                                 warningProduced = true;
                             }

@@ -187,6 +187,13 @@ public final class ImageFileCreator {
                 pe.printStackTrace();
             }
             throw pe;
+        } catch (RunImageLinkException re) {
+            // might be thrown in the run-image link case. Populate the
+            // actual reason.
+            if (JlinkTask.DEBUG) {
+                re.printStackTrace();
+            }
+            throw re.getReason();
         } catch (Exception ex) {
             if (JlinkTask.DEBUG) {
                 ex.printStackTrace();
