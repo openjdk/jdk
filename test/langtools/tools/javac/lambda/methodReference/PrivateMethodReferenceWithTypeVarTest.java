@@ -12,7 +12,7 @@ class PrivateMethodReferenceWithTypeVarTest {
         return "bar";
     }
 
-    private String asString2() {
+    private String asString2(Object o) {
         return "bar";
     }
 
