@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.security.interfaces;
 
 import java.math.BigInteger;
+import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * The interface to an RSA public key.
@@ -56,4 +57,20 @@ public interface RSAPublicKey extends java.security.PublicKey, RSAKey
      * @return the public exponent
      */
     BigInteger getPublicExponent();
+
+    /**
+     * Returns the parameters associated with this key.
+     * The parameters are optional and may be either
+     * explicitly specified or implicitly created during
+     * key pair generation.
+     *
+     * @implSpec
+     * The default implementation returns {@code null}.
+     *
+     * @return the associated parameters, may be null
+     * @since 22
+     */
+    default AlgorithmParameterSpec getParams(){
+        return null;
+    }
 }

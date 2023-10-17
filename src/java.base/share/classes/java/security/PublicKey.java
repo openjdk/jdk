@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.security;
+
+import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * <p>A public key. This interface contains no methods or constants.
@@ -57,4 +59,20 @@ public interface PublicKey extends Key {
     @SuppressWarnings("serial")
     @java.io.Serial
     long serialVersionUID = 7187392471159151072L;
+
+    /**
+     * Returns the parameters associated with this key.
+     * The parameters are optional and may be either
+     * explicitly specified or implicitly created during
+     * key pair generation.
+     *
+     * @implSpec
+     * The default implementation returns {@code null}.
+     *
+     * @return the associated parameters, may be null
+     * @since 22
+     */
+    default AlgorithmParameterSpec getParams(){
+        return null;
+    }
 }
