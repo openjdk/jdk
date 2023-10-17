@@ -874,24 +874,32 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       result = allocate_memory_under_lock(req, in_new_region);
     }
 
-    // Allocation failed, block until control thread reacted, then retry allocation.
-    //
-    // It might happen that one of the threads requesting allocation would unblock
-    // way later after GC happened, only to fail the second allocation, because
-    // other threads have already depleted the free storage. In this case, a better
-    // strategy is to try again, as long as GC makes progress (or until at least
-    // one full GC has completed).
+
     if (result == nullptr) {
-      size_t original_count = get_gc_no_progress_count() + 1;
-      while (result == nullptr && original_count > get_gc_no_progress_count()) {
-        if (!req.is_lab_alloc() && get_gc_no_progress_count() > ShenandoahNoProgressThreshold) {
-          // Shenandoah will grind along for quite a while allocating one
-          // object at a time using shared (non-tlab) allocations. This will notify
-          // the collector to start a cycle, but will raise an OOME to the
-          // mutator if the last Full GCs have not made progress.
-          control_thread()->handle_alloc_failure(req, false);
-          break;
-        }
+      // Allocation failed.
+
+      // Check that gc overhead is not exceeded.
+      //
+      // Shenandoah will grind along for quite a while allocating one
+      // object at a time using shared (non-tlab) allocations. This check
+      // is testing that the GC overhead limit has not been exceeded.
+      // This will notify the collector to start a cycle, but will raise
+      // an OOME to the mutator if the last Full GCs have not made progress.
+      if (!req.is_lab_alloc() && get_gc_no_progress_count() > ShenandoahNoProgressThreshold) {
+        control_thread()->handle_alloc_failure(req, false);
+        return nullptr;
+      }
+
+      // Block until control thread reacted, then retry allocation.
+      //
+      // It might happen that one of the threads requesting allocation would unblock
+      // way later after GC happened, only to fail the second allocation, because
+      // other threads have already depleted the free storage. In this case, a better
+      // strategy is to try again, as long as GC makes progress (or until at least
+      // one full GC completes).
+      size_t original_count = shenandoah_policy()->full_gc_count();
+      while (result == nullptr
+          && (get_gc_no_progress_count() == 0 || original_count == shenandoah_policy()->full_gc_count())) {
         control_thread()->handle_alloc_failure(req);
         result = allocate_memory_under_lock(req, in_new_region);
       }
