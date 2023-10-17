@@ -2214,20 +2214,20 @@ public abstract class HtmlDocletWriter {
     public void addRestrictedInfo(ExecutableElement forWhat, Content target) {
         if (utils.isRestrictedAPI(forWhat)) {
             //in Java platform:
-            var previewDiv = HtmlTree.DIV(HtmlStyle.restrictedBlock);
-            previewDiv.setId(htmlIds.forRestrictedSection(forWhat));
+            var restrictedDiv = HtmlTree.DIV(HtmlStyle.restrictedBlock);
+            restrictedDiv.setId(htmlIds.forRestrictedSection(forWhat));
             String name = forWhat.getSimpleName().toString();
             var nameCode = HtmlTree.CODE(Text.of(name));
             String leadingNoteKey = "doclet.RestrictedLeadingNote";
             Content leadingNote =
                     contents.getContent(leadingNoteKey, nameCode);
-            previewDiv.add(HtmlTree.SPAN(HtmlStyle.restrictedLabel,
+            restrictedDiv.add(HtmlTree.SPAN(HtmlStyle.restrictedLabel,
                     leadingNote));
             Content note1 = contents.getContent("doclet.RestrictedTrailingNote1", nameCode);
-            previewDiv.add(HtmlTree.DIV(HtmlStyle.restrictedComment, note1));
+            restrictedDiv.add(HtmlTree.DIV(HtmlStyle.restrictedComment, note1));
             Content note2 = contents.getContent("doclet.RestrictedTrailingNote2", nameCode);
-            previewDiv.add(HtmlTree.DIV(HtmlStyle.restrictedComment, note2));
-            target.add(previewDiv);
+            restrictedDiv.add(HtmlTree.DIV(HtmlStyle.restrictedComment, note2));
+            target.add(restrictedDiv);
         }
     }
 
