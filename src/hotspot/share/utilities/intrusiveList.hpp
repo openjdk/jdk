@@ -82,10 +82,6 @@ using IntrusiveListEntryAccessor =
  * operation is present, it has constant-time complexity.  The default
  * is to not provide a constant-time size() operation.
  *
- * * Base is the base class for the list.  This is typically
- * used to specify the allocation class, such as CHeapObj<>.  The default
- * is void, indicating the list is not derived from an allocation class.
- *
  * A const-element iterator has a const-qualified element type.  Such an
  * iterator provides const-qualified access to the elements it designates.
  * A list's const_iterator type is always a const-element iterator type.
@@ -151,8 +147,7 @@ using IntrusiveListEntryAccessor =
  */
 template<typename T,
          IntrusiveListEntryAccessor<T> entry_accessor,
-         bool has_size = false,
-         typename Base = void>
+         bool has_size = false>
 class IntrusiveList;
 
 /**
@@ -212,10 +207,7 @@ public:
 private:
   using Entry = IntrusiveListEntry;
 
-  template<typename T,
-           IntrusiveListEntryAccessor<T>,
-           bool,
-           typename>
+  template<typename T, IntrusiveListEntryAccessor<T>, bool>
   friend class IntrusiveList;
 
   using size_type = size_t;
@@ -256,11 +248,8 @@ private:
     DEBUG_ONLY(entry._list = nullptr;)
   }
 
-  class NoAllocationBase {};
-  template<typename Base> struct ResolveBase;
-
   // Support for optional constant-time size() operation.
-  template<bool has_size, typename Base> class SizeBase;
+  template<bool has_size> class SizeBase;
 
   // Relevant type aliases.  A corresponding specialization is used directly
   // by IntrusiveList, and by the list's iterators to obtain their
@@ -316,26 +305,11 @@ private:
 #endif // ASSERT
 };
 
-// Metafunction for resolving the Base template parameter for
-// IntrusiveList, handling the default void type and transforming it
-// into the internal NoAllocationBase.
-
-template<typename Base>
-struct IntrusiveListImpl::ResolveBase {
-  using type = Base;
-};
-
-template<>
-struct IntrusiveListImpl::ResolveBase<void> {
-  using type = NoAllocationBase;
-};
-
 // Base class for IntrusiveList, with specializations either providing
-// or not providing constant-time size.  Base is the corresponding template
-// parameter from IntrusiveList.
+// or not providing constant-time size.
 
-template<bool has_size, typename Base>
-class IntrusiveListImpl::SizeBase : public ResolveBase<Base>::type {
+template<bool has_size>
+class IntrusiveListImpl::SizeBase {
 protected:
   SizeBase() = default;
   ~SizeBase() = default;
@@ -344,8 +318,8 @@ protected:
   void adjust_size(difference_type n) {}
 };
 
-template<typename Base>
-class IntrusiveListImpl::SizeBase<true, Base> : public ResolveBase<Base>::type {
+template<>
+class IntrusiveListImpl::SizeBase<true> {
 public:
   size_type size() const { return _size; }
 
@@ -374,9 +348,8 @@ struct IntrusiveListImpl::EntryAccess<
 
 template<typename T,
          IntrusiveListEntryAccessor<T> accessor,
-         bool has_size,
-         typename Base>
-struct IntrusiveListImpl::IsListType<IntrusiveList<T, accessor, has_size, Base>>
+         bool has_size>
+struct IntrusiveListImpl::IsListType<IntrusiveList<T, accessor, has_size>>
   : public std::true_type
 {};
 
@@ -813,11 +786,10 @@ private:
 
 template<typename T,
          IntrusiveListEntryAccessor<T> get_entry,
-         bool has_size,
-         typename Base>
-class IntrusiveList : public IntrusiveListImpl::SizeBase<has_size, Base> {
+         bool has_size>
+class IntrusiveList : public IntrusiveListImpl::SizeBase<has_size> {
   // Give access to other instantiations, for splice().
-  template<typename U, IntrusiveListEntryAccessor<U>, bool, typename>
+  template<typename U, IntrusiveListEntryAccessor<U>, bool>
   friend class IntrusiveList;
 
   // Give access for unit testing.
@@ -826,7 +798,7 @@ class IntrusiveList : public IntrusiveListImpl::SizeBase<has_size, Base> {
   using Entry = IntrusiveListEntry;
   using Impl = IntrusiveListImpl;
   using ListTraits = Impl::ListTraits<T>;
-  using Super = Impl::SizeBase<has_size, Base>;
+  using Super = Impl::SizeBase<has_size>;
 
   // A subsequence of one list can be transferred to another list via splice
   // if the lists have the same (ignoring const qualifiers) element type, use
@@ -836,8 +808,8 @@ class IntrusiveList : public IntrusiveListImpl::SizeBase<has_size, Base> {
   // a quiet casting away of const.  Assuming Other is a List, these
   // constraints are equivalent to the constraints on conversion of
   // Other::iterator -> iterator.  The presence or absence of constant-time
-  // size support and the base types of the lists don't affect whether
-  // splicing is permitted.
+  // size support for either of the lists doesn't affect whether splicing is
+  // permitted.
   template<typename Other>
   static constexpr bool can_splice_from() {
     return Conjunction<Impl::IsListType<Other>,

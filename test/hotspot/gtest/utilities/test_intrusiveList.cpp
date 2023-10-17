@@ -65,7 +65,6 @@ struct TestIntrusiveListValue : public CHeapObj<mtInternal> {
 using Value = TestIntrusiveListValue;
 
 using List1 = IntrusiveList<Value, &Value::entry1>;
-using CHeapList1 = IntrusiveList<Value, &Value::entry1, false, CHeapObj<mtInternal>>;
 using List2 = IntrusiveList<Value, &Value::entry2>;
 
 using CList1 = IntrusiveList<const Value, &Value::entry1>;
@@ -224,16 +223,6 @@ static It step_iterator(It it, ptrdiff_t n) {
 template<typename List>
 static typename List::reference list_elt(List& list, size_t n) {
   return *step_iterator(list.begin(), n);
-}
-
-////////////////////
-// CHeapObj List construction
-
-TEST(IntrusiveListBasics, construct_CHeapObj) {
-  CHeapList1* list1 = new CHeapList1();
-  EXPECT_TRUE(list1->empty());
-  EXPECT_EQ(0u, list1->length());
-  delete list1;
 }
 
 ////////////////////
@@ -1269,40 +1258,6 @@ TEST_F(IntrusiveListTestSplice, splice_some_middle) {
   }
 }
 
-// Verify we can splice between lists with different Base template paramters.
-TEST_F(IntrusiveListTestSplice, splice_different_base) {
-  CHeapList1 cheap;
-  size_t a_size = list_a.length();
-  size_t b_size = list_b.length();
-  List1::iterator a_begin = list_a.begin();
-  List1::iterator a_penultimate = --list_a.end();
-
-  List1::iterator sresult = cheap.splice(cheap.begin(), list_a);
-  EXPECT_EQ(cheap.begin(), sresult);
-  EXPECT_EQ(a_size, cheap.length());
-  EXPECT_TRUE(list_a.empty());
-  EXPECT_EQ(a_begin, cheap.cbegin());
-  EXPECT_EQ(a_penultimate, --cheap.cend());
-  {
-    SCOPED_TRACE("check transfer to cheap");
-    check(cheap.cbegin(), cheap.cend(), 0);
-  }
-
-  List1::iterator b_begin = list_b.begin();
-  list_b.splice(b_begin, cheap);
-  EXPECT_EQ(a_size + b_size, list_b.length());
-  EXPECT_TRUE(cheap.empty());
-  EXPECT_EQ(a_begin, list_b.cbegin());
-  {
-    SCOPED_TRACE("check cheap (was a) prepend to b");
-    check(list_b.cbegin(), b_begin, 0);
-  }
-  {
-    SCOPED_TRACE("check old b");
-    check(b_begin, list_b.cend(), group_size);
-  }
-}
-
 TEST_F(IntrusiveListTestSplice, splice_one_front) {
   const size_t move_start = 1;
   size_t a_size = list_a.length();
@@ -1563,7 +1518,6 @@ class IntrusiveListTestWithSize : public IntrusiveListTestWithValues {
 
 public:
   typedef IntrusiveList<Value, &Value::entry1, true> ListWithSize;
-  typedef IntrusiveList<Value, &Value::entry1, true, CHeapObj<mtInternal> > CHeapListWithSize;
 
   virtual void SetUp() {
     super::SetUp();
