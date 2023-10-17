@@ -2455,7 +2455,8 @@ class EAPopFrameNotInlinedReallocFailure extends EATestCaseBaseDebugger {
         return super.shouldSkip() ||
                 !env.targetVMOptions.EliminateAllocations ||
                 // With ZGC or Shenandoah the OOME is not always thrown as expected
-                env.targetVMOptions.ZGCIsSelected || env.targetVMOptions.ShenandoahGCIsSelected ||
+                env.targetVMOptions.ZGCIsSelected ||
+                env.targetVMOptions.ShenandoahGCIsSelected ||
                 env.targetVMOptions.DeoptimizeObjectsALot ||
                 env.targetVMOptions.UseJVMCICompiler;
     }
@@ -2500,7 +2501,8 @@ class EAPopFrameNotInlinedReallocFailureTarget extends EATestCaseBaseTarget {
         return super.shouldSkip() ||
                 !EliminateAllocations ||
                 // With ZGC or Shenandoah the OOME is not always thrown as expected
-                ZGCIsSelected || ShenandoahGCIsSelected ||
+                ZGCIsSelected ||
+                ShenandoahGCIsSelected ||
                 DeoptimizeObjectsALot ||
                 UseJVMCICompiler;
     }
@@ -2553,7 +2555,8 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailure extends EATestCa
         return super.shouldSkip() ||
                 !env.targetVMOptions.EliminateAllocations ||
                 // With ZGC or Shenandoah the OOME is not always thrown as expected
-                env.targetVMOptions.ZGCIsSelected || env.targetVMOptions.ShenandoahGCIsSelected ||
+                env.targetVMOptions.ZGCIsSelected ||
+                env.targetVMOptions.ShenandoahGCIsSelected ||
                 env.targetVMOptions.DeoptimizeObjectsALot ||
                 env.targetVMOptions.UseJVMCICompiler;
     }
@@ -2614,7 +2617,8 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailureTarget extends EA
         return super.shouldSkip() ||
                 !EliminateAllocations ||
                 // With ZGC or Shenandoah the OOME is not always thrown as expected
-                ZGCIsSelected || ShenandoahGCIsSelected ||
+                ZGCIsSelected ||
+                ShenandoahGCIsSelected ||
                 DeoptimizeObjectsALot ||
                 UseJVMCICompiler;
     }
@@ -2820,7 +2824,8 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjectsReallocFailure e
         return super.shouldSkip() ||
                 !env.targetVMOptions.EliminateAllocations ||
                 // With ZGC or Shenandoah the OOME is not always thrown as expected
-                env.targetVMOptions.ZGCIsSelected || env.targetVMOptions.ShenandoahGCIsSelected ||
+                env.targetVMOptions.ZGCIsSelected ||
+                env.targetVMOptions.ShenandoahGCIsSelected ||
                 env.targetVMOptions.DeoptimizeObjectsALot ||
                 env.targetVMOptions.UseJVMCICompiler;
     }
@@ -2882,7 +2887,8 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjectsReallocFailureTa
         return super.shouldSkip() ||
                 !EliminateAllocations ||
                 // With ZGC or Shenandoah the OOME is not always thrown as expected
-                ZGCIsSelected || ShenandoahGCIsSelected ||
+                ZGCIsSelected ||
+                ShenandoahGCIsSelected ||
                 DeoptimizeObjectsALot ||
                 UseJVMCICompiler;
     }
