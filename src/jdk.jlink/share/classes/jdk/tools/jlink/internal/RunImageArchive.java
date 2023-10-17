@@ -53,7 +53,7 @@ public class RunImageArchive implements Archive {
     // File marker in lib/modules file for java.base indicating it got created
     // with a run-image-type link.
     private static final String RUNIMAGE_SINGLE_HOP_STAMP = ".runimage.stamp";
-    private static final String OTHER_RESOURCES_FILE = "jmod_resources";
+    private static final String OTHER_RESOURCES_FILE = "runimage_resources";
     private final String module;
     private final Path path;
     private final ModuleReference ref;

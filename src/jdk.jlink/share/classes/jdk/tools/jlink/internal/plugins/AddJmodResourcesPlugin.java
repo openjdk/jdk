@@ -57,12 +57,12 @@ public final class AddJmodResourcesPlugin extends AbstractPlugin {
     private static final int REGULAR_RES = 0;
     private static final String BIN_DIRNAME = "bin";
     private static final String LIB_DIRNAME = "lib";
-    private static final String NAME = "add-jmod-resources";
+    private static final String NAME = "add-run-image-resources";
     // This ought to be a package-less resource so as to not conflict with
     // packages listed in the module descriptors. Making it package-less ensures
     // it works for any module, regardless of packages present. This resource
     // is being used in RunImageArchive class
-    private static final String RESPATH = "/%s/jmod_resources";
+    private static final String RESPATH = "/%s/runimage_resources";
 
     // Type file format:
     // '<type>|{0,1}|<sha-sum>|<file-path>'
