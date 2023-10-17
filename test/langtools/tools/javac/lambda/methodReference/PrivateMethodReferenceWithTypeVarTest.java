@@ -8,6 +8,10 @@
 import java.util.function.*;
 
 class PrivateMethodReferenceWithTypeVarTest {
+    class Foo<X> {
+        X get() { return null; }
+    }
+
     private String asString() {
         return "bar";
     }
@@ -22,5 +26,9 @@ class PrivateMethodReferenceWithTypeVarTest {
 
     static <T extends PrivateMethodReferenceWithTypeVarTest> Function<T, String> m2(T t) {
         return t::asString2;
+    }
+
+    static Function<?, String> m2(Foo<? extends PrivateMethodReferenceWithTypeVarTest> foo) {
+        return foo.get()::asString2;
     }
 }
