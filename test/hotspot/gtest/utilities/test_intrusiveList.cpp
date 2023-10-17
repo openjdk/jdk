@@ -1519,12 +1519,12 @@ class IntrusiveListTestWithSize : public IntrusiveListTestWithValues {
 public:
   typedef IntrusiveList<Value, &Value::entry1, true> ListWithSize;
 
-  virtual void SetUp() {
+  void SetUp() override {
     super::SetUp();
     fill_list();
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     list.clear();
     EXPECT_EQ(0u, list.size());
     EXPECT_EQ(list.length(), list.size());
