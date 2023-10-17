@@ -858,7 +858,7 @@
     <Field type="long" contentType="count" name="removed" label="Removed" description="Removed requests"/>
     <Field type="long" contentType="count" name="totalAdded" label="Total Added" description="Total requests"/>
     <Field type="long" contentType="count" name="totalRemoved" label="Total Removed" description="Total removed requests"/>
-    <Field type="int" name="compilerThreadCount" label="Number of Compiler Threads for this queue" />
+    <Field type="int" name="compilerThreadCount" label="Number of Compiler Threads for this queue"/>
   </Event>
 
   <Event name="NetworkUtilization" category="Operating System, Network" label="Network Utilization" period="everyChunk">
