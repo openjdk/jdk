@@ -88,11 +88,15 @@ public interface BiConsumer<T, U> {
      *      LOGGER.info(String.format("%d = %s", id, message));
      * }
      *
-     * // Fluent composition
+     * // Capturing
+     * var con = BiConsumer.of(this::toConsole); // BiConsumer<Long, String>
+     *
+     *  // Fluent composition
      * var composed = BiConsumer.of(this::toConsole)
      *                    .andThen(this::toLogger);  // BiConsumer<Long, String>
      *
      * }
+     *
      * @param uncaptured to capture
      * @param <T> the type of the first argument to the operation
      * @param <U> the type of the second argument to the operation

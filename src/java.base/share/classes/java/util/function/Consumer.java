@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,4 +64,27 @@ public interface Consumer<T> {
         Objects.requireNonNull(after);
         return (T t) -> { accept(t); after.accept(t); };
     }
+
+    /**
+     * {@return a representation of the provided {@code uncaptured} lambda or method reference
+     * in the form of a {@code Consumer}}
+     * <p>
+     * This method is useful in cases where there is an ambiguity in a lambda or method reference
+     * or when using composition or fluent coding as shown in this example:
+     * {@snippet :
+     * // Capturing
+     * var con = Consumer.of(System.out::println); // Consumer<Object>
+     *
+     * // Fluent composition
+     * var composed = Consumer.of(System.out::println)   // Consumer<String>
+     *                    .andThen(Logger::info);        // Consumer<String>
+     *}
+     *
+     * @param uncaptured to capture
+     * @param <T> the type of the input to the operation
+     */
+    static <T> Consumer<T> of(Consumer<T> uncaptured) {
+        return uncaptured;
+    }
+
 }

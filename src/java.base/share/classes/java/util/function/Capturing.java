@@ -55,8 +55,20 @@ public class Capturing {
         // BiConsumer
         {
 
+            Capturing c = new Capturing();
 
+            var biConsumer = BiConsumer.of(c::toConsole)
+                    .andThen(c::toLogger); // BiConsumer<Long, String>
+
+            var unaryOperator = UnaryOperator.of(String::stripTrailing); // UnaryOperator<String>
+
+            // Fluent composition
+            var composed = UnaryOperator.of(String::stripTrailing)
+                    .andThenUnary(String::stripIndent);  // UnaryOperator<String>
         }
+
+        // BiConsumer
+        {
 
             Capturing c = new Capturing();
 
@@ -70,16 +82,68 @@ public class Capturing {
                     .andThenUnary(String::stripIndent);  // UnaryOperator<String>
         }
 
-        void toConsole(long id, String message) {
-            System.out.format("%d = %s%n", id, message);
+        // BiFunction
+        {
+            // Resolve ambiguity
+            var function = BiFunction.of(String::endsWith);   // BiFunction<String, String, Boolean>
+            var predicate = BiPredicate.of(String::endsWith); // BiPredicate<String, String>
+
+            // Fluent composition
+            var chained = BiFunction.of(String::repeat)     // BiFunction<String, Integer, String>
+                    .andThen(String::length);               // Function<String, Integer>
         }
 
-        static Logger LOGGER = null;
+        // BinaryOperator
+        {
+            // Resolve ambiguity
+            var biFunction = BiFunction.of(Integer::sum);        // BiFunction<Integer, Integer, Integer>
+            var unaryOperator = BinaryOperator.of(Integer::sum); // BinaryOperator<Integer>
 
-        void toLogger(long id, String message) {
-            LOGGER.info(String.format("%d = %s", id, message));
+            // Fluent composition
+            var composed = BinaryOperator.of(Integer::sum)     // BinaryOperator<Integer>
+                               .andThen(Integer::toHexString); // BiFunction<Integer, Integer, String>
         }
 
+        // BiPredicate
+        {
+            var biFunction = BiFunction.of(String::equals);      // BiFunction<String, Object, Boolean>
+            var biPredicate = BiPredicate.of(String::equals);    // BiPredicate<Integer, Object>
+
+            // Fluent composition
+            var composed = BiPredicate.of(String::endsWith)     // BiPredicate<String, String>
+                    .or(String::startsWith);                    // BiPredicate<String, String>
+        }
+
+        // ObjDoubleConsumer
+        {
+            Capturing c = new Capturing();
+
+            var odc = ObjDoubleConsumer.of(c::action);  // ObjDoubleConsumer<String>
+            var bc = BiConsumer.of(c::action);          // BiConsumer<String, Double>
+        }
+
+
+
+
+    }
+
+    void action(String s, double d) {
+
+    }
+
+    void action(String s, int d) {
+
+    }
+
+
+    void toConsole(long id, String message) {
+        System.out.format("%d = %s%n", id, message);
+    }
+
+    static Logger LOGGER = null;
+
+    void toLogger(long id, String message) {
+        LOGGER.info(String.format("%d = %s", id, message));
     }
 
 }

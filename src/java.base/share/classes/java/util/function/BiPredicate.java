@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,4 +104,29 @@ public interface BiPredicate<T, U> {
         Objects.requireNonNull(other);
         return (T t, U u) -> test(t, u) || other.test(t, u);
     }
+
+    /**
+     * {@return a representation of the provided {@code uncaptured} lambda or method reference
+     * in the form of a {@code BinaryOperator}}
+     * <p>
+     * This method is useful in cases where there is an ambiguity in a lambda or method reference
+     * or when using composition or fluent coding as shown in this example:
+     * {@snippet :
+     * // Resolve ambiguity
+     * var biFunction = BiFunction.of(String::equals);     // BiFunction<String, Object, Boolean>
+     * var biPredicate = BiPredicate.of(String::equals);   // BiPredicate<Integer, Object>
+     *
+     * // Fluent composition
+     * var composed = BiPredicate.of(String::endsWith)     // BiPredicate<String, String>
+     *                    .or(String::startsWith);         // BiPredicate<String, String>
+     *}
+     *
+     * @param uncaptured to capture
+     * @param <T> the type of the first argument to the predicate
+     * @param <U> the type of the second argument the predicate
+     */
+    static <T, U> BiPredicate<T, U> of(BiPredicate<T, U> uncaptured) {
+        return uncaptured;
+    }
+
 }

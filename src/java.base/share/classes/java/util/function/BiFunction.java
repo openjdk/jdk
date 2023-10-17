@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,4 +69,30 @@ public interface BiFunction<T, U, R> {
         Objects.requireNonNull(after);
         return (T t, U u) -> after.apply(apply(t, u));
     }
+
+    /**
+     * {@return a representation of the provided {@code uncaptured} lambda or method reference
+     * in the form of a {@code BiFunction}}
+     * <p>
+     * This method is useful in cases where there is an ambiguity in a lambda or method reference
+     * or when using composition or fluent coding as shown in this example:
+     * {@snippet :
+     * // Resolve ambiguity
+     * var function = BiFunction.of(String::endsWith);   // BiFunction<String, String, Boolean>
+     * var predicate = BiPredicate.of(String::endsWith); // BiPredicate<String, String>
+     *
+     * // Fluent composition
+     * var chained = BiFunction.of(String::repeat)     // BiFunction<String, Integer, String>
+     *                   .andThen(String::length);     // Function<String, Integer>
+     * }
+     *
+     * @param uncaptured to capture
+     * @param <T> the type of the first argument to the function
+     * @param <U> the type of the second argument to the function
+     * @param <R> the type of the result of the function
+     */
+    static <T, U, R> BiFunction<T, U, R> of(BiFunction<T, U, R> uncaptured) {
+        return uncaptured;
+    }
+
 }

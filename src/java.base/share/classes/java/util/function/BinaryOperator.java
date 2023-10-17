@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,5 +72,28 @@ public interface BinaryOperator<T> extends BiFunction<T,T,T> {
     public static <T> BinaryOperator<T> maxBy(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator);
         return (a, b) -> comparator.compare(a, b) >= 0 ? a : b;
+    }
+
+    /**
+     * {@return a representation of the provided {@code uncaptured} lambda or method reference
+     * in the form of a {@code BinaryOperator}}
+     * <p>
+     * This method is useful in cases where there is an ambiguity in a lambda or method reference
+     * or when using composition or fluent coding as shown in this example:
+     * {@snippet :
+     * // Resolve ambiguity
+     * var biFunction = BiFunction.of(Integer::sum);        // BiFunction<Integer, Integer, Integer>
+     * var unaryOperator = BinaryOperator.of(Integer::sum); // BinaryOperator<Integer>
+     *
+     * // Fluent composition
+     * var composed = BinaryOperator.of(Integer::sum)     // BinaryOperator<Integer>
+     *                    .andThen(Integer::toHexString); // BiFunction<Integer, Integer, String>
+     * }
+     *
+     * @param uncaptured to capture
+     * @param <T> the type of the operands and result of the operator
+     */
+    static <T> BinaryOperator<T> of(BinaryOperator<T> uncaptured) {
+        return uncaptured;
     }
 }

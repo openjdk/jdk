@@ -146,13 +146,12 @@ public interface Predicate<T> {
      * or when using composition and/or fluent coding as shown in this example:
      * {@snippet :
      * // Resolve ambiguity
-     * var function = Function.of(String::isEmpty); // Function<String, Boolean>
+     * var function = Function.of(String::isEmpty);   // Function<String, Boolean>
      * var predicate = Predicate.of(String::isEmpty); // Predicate<String>
      *
      * // Fluent composition
      * var composed = Predicate.of(String::isEmpty)
      *                   .or(s -> s.startsWith("*")); // Predicate<String>
-     *
      * }
      *
      * @param uncaptured to capture

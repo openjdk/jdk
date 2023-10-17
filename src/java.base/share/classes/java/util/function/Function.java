@@ -113,6 +113,7 @@ public interface Function<T, R> {
      * var chained = Function.of(String::length)       // Function<String, Integer>
      *                   .andThen(Integer::byteValue); // Function<String, Byte>
      * }
+     *
      * @param uncaptured to capture
      * @param <T> the type of the input to the function
      * @param <R> the type of the result of the function
