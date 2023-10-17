@@ -156,8 +156,7 @@ int os::get_native_stack(address* stack, int frames, int toSkip) {
       stack[frame_idx ++] = fr.pc();
     }
     if (fr.fp() == nullptr || fr.cb() != nullptr ||
-        fr.sender_pc() == nullptr || os::is_first_C_frame(&fr) ||
-        fr.sender_pc() == nullptr) {
+        fr.sender_pc() == nullptr || os::is_first_C_frame(&fr)) {
       break;
     }
     fr = os::get_sender_for_C_frame(&fr);
