@@ -65,6 +65,9 @@ public final class AixPPC64Linker extends AbstractLinker {
             if (vl.byteAlignment() != 4) {
                 throw new IllegalArgumentException("double struct member " + vl + " at offset " + offset + " should be 4-byte aligned");
             }
+            if (vl.order() != linkerByteOrder()) {
+                throw new IllegalArgumentException("double struct member " + vl + " at offset " + offset + " has an unexpected byte order");
+            }
         } else {
             super.checkStructMember(member, offset);
         }
