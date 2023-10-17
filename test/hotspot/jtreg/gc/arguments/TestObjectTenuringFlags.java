@@ -161,7 +161,7 @@ public class TestObjectTenuringFlags {
     }
     Collections.addAll(vmOpts, "-XX:+UseParallelGC", "-XX:+PrintFlagsFinal", "-version");
 
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilderIgnoreTestJavaOpts(vmOpts);
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(vmOpts);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     if (shouldFail) {

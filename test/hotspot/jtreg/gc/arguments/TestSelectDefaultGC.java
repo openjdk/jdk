@@ -44,7 +44,7 @@ public class TestSelectDefaultGC {
 
     public static void testDefaultGC(boolean actAsServer) throws Exception {
         // Start VM without specifying GC
-        ProcessBuilder pb = GCArguments.createJavaProcessBuilderIgnoreTestJavaOpts(
+        ProcessBuilder pb = GCArguments.createJavaProcessBuilder(
             "-XX:" + (actAsServer ? "+" : "-") + "AlwaysActAsServerClassMachine",
             "-XX:" + (actAsServer ? "-" : "+") + "NeverActAsServerClassMachine",
             "-XX:+PrintFlagsFinal",

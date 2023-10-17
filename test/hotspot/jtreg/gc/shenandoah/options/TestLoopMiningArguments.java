@@ -44,7 +44,7 @@ public class TestLoopMiningArguments {
         cmds[args.length] = "-Xmx128m";
         cmds[args.length + 1] = "-XX:+PrintFlagsFinal";
         cmds[args.length + 2] = "-version";
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(cmds);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(cmds);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.shouldContain("UseCountedLoopSafepoints");

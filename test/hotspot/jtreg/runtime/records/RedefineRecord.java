@@ -102,7 +102,7 @@ public class RedefineRecord {
             return;
         }
         if (argv.length == 1 && argv[0].equals("runtest")) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:MetaspaceSize=12m",
                 "-XX:MaxMetaspaceSize=12m",
                 "-javaagent:redefineagent.jar",

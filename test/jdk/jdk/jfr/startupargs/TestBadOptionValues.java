@@ -54,7 +54,7 @@ public class TestBadOptionValues {
         Asserts.assertGreaterThan(options.length, 0);
 
         for (String option : options) {
-            pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(prepend + option, "-version");
+            pb = ProcessTools.createJavaProcessBuilder(prepend + option, "-version");
             output = new OutputAnalyzer(pb.start());
             output.shouldContain(expectedOutput);
         }

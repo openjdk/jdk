@@ -49,7 +49,7 @@ public class TestBit {
             "-XX:CompileCommand=compileonly," + className + "::tst*",
             className, testName};
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(procArgs);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(procArgs);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         String expectedTestBitInstruction =

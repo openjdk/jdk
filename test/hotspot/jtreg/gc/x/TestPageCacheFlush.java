@@ -68,7 +68,7 @@ public class TestPageCacheFlush {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessTools.executeProcess(ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        ProcessTools.executeProcess(ProcessTools.createJavaProcessBuilder(
                                     "-XX:+UseZGC",
                                     "-XX:-ZGenerational",
                                     "-Xms128M",

@@ -96,7 +96,7 @@ public class ErrorFileOverwriteTest {
 
     System.out.println("First crash...");
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-Xmx64M",
             "-XX:-CreateCoredumpOnCrash",
             "-XX:ErrorHandlerTest=1",
@@ -122,7 +122,7 @@ public class ErrorFileOverwriteTest {
 
     System.out.println("Second crash...");
 
-    pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+    pb = ProcessTools.createJavaProcessBuilder(
             "-Xmx64M",
             "-XX:-CreateCoredumpOnCrash",
             "-XX:ErrorHandlerTest=2", // << now 2

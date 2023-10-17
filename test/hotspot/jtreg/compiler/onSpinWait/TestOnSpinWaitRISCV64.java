@@ -64,7 +64,7 @@ public class TestOnSpinWaitRISCV64 {
         command.add("-Xbatch");
         command.add(Launcher.class.getName());
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(command);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(command);
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 

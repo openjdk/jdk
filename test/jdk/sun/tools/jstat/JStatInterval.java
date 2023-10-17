@@ -60,7 +60,7 @@ public class JStatInterval {
         }
     }
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-cp",
             System.getProperty("test.class.path"),
             "-XX:+UsePerfData",

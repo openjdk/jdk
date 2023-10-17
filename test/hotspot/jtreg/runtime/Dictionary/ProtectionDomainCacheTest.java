@@ -98,7 +98,7 @@ public class ProtectionDomainCacheTest {
     }
 
     public static void main(String args[]) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                                       "-Djava.security.policy==" + System.getProperty("test.src") + File.separator + "test.policy",
                                       "-Dtest.classes=" + System.getProperty("test.classes", "."),
                                       "-XX:+UnlockDiagnosticVMOptions",

@@ -102,7 +102,7 @@ public final class ScreenInsetsDPIVariation {
 
     private static void runProcess(String dpi, int screen, Insets insets)
             throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-Dsun.java2d.uiScale=" + dpi,
                 ScreenInsetsDPIVariation.class.getSimpleName(),
                 String.valueOf(screen), String.valueOf(insets.left),

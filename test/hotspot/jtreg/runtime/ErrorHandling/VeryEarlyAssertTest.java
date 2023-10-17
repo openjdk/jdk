@@ -49,7 +49,7 @@ public class VeryEarlyAssertTest {
   public static void main(String[] args) throws Exception {
 
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-version");
     Map<String, String> env = pb.environment();
     env.put("HOTSPOT_FATAL_ERROR_DURING_DYNAMIC_INITIALIZATION", "1");

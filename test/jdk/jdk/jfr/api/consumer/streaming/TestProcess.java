@@ -66,7 +66,7 @@ public final class TestProcess implements AutoCloseable {
                 "-XX:" + (createCore ? "+" : "-") + "CreateCoredumpOnCrash",
                 TestProcess.class.getName(), path.toString()
             };
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(args);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
         process = ProcessTools.startProcess(name, pb);
     }
 

@@ -50,7 +50,7 @@ public class CompressedKlassPointerAndOops {
         ProcessBuilder pb;
         OutputAnalyzer output;
 
-        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UseCompressedClassPointers",
             "-XX:+UseCompressedOops",
             "-XX:ObjectAlignmentInBytes=" + alignment,

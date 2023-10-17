@@ -338,7 +338,7 @@ public class CheckCompileThresholdScaling {
         ProcessBuilder pb;
         OutputAnalyzer out;
 
-        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(arguments);
+        pb = ProcessTools.createJavaProcessBuilder(arguments);
         out = new OutputAnalyzer(pb.start());
 
         try {

@@ -149,7 +149,7 @@ public class TestMainKeyWindow
 
     private Process execute() {
         try {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                     TestMainKeyWindow.class.getSimpleName(), "mark");
             return ProcessTools.startProcess("Other frame", pb);
         } catch (IOException ex) {

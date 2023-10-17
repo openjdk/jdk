@@ -56,7 +56,7 @@ public class TestCompileCommand {
         ProcessBuilder pb;
         OutputAnalyzer out;
 
-        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(arguments);
+        pb = ProcessTools.createJavaProcessBuilder(arguments);
         out = new OutputAnalyzer(pb.start());
 
         for (String expected_output : expected_outputs) {

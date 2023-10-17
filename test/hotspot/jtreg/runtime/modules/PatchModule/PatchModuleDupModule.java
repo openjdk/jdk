@@ -39,7 +39,7 @@ public class PatchModuleDupModule {
   // if --patch-module is specified with the same module more than once.
 
   public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
       "--patch-module=module_one=module_one_dir",
       "--patch-module=module_one=module_one_dir",
       "-version");

@@ -73,7 +73,7 @@ public class XbootcpNoVisibility {
         ClassFileInstaller.writeClassToDisk("Vis3_A",
                 InMemoryJavaCompiler.compile("Vis3_A", Vis3_A_src), System.getProperty("test.classes"));
 
-        new OutputAnalyzer(ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        new OutputAnalyzer(ProcessTools.createJavaProcessBuilder(
                 "-Xbootclasspath/a:.",
                 "Vis3_A")
             .start())

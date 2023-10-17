@@ -52,7 +52,7 @@ public class MaxMetaspaceSize {
     }
 
     String msg = "OutOfMemoryError: ((Metaspace)|(Compressed class space))";
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(processArgs);
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(processArgs);
     CDSTestUtils.executeAndLog(pb, "dump").shouldMatch(msg).shouldHaveExitValue(1);
   }
 }

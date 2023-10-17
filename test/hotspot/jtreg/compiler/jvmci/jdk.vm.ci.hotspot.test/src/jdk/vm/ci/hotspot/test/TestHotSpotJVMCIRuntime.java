@@ -167,7 +167,7 @@ public class TestHotSpotJVMCIRuntime {
         }
         String[] names = {"translate", "attachCurrentThread", "registerNativeMethods"};
         for (String name : names) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:+EnableJVMCI",
                 "-XX:-UseJVMCICompiler",

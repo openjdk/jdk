@@ -70,7 +70,7 @@ public class JsrRewriting {
         // ======= execute the test
         // We run the test with MallocLimit set to 768m in oom mode,
         // in order to trigger and observe a fake os::malloc oom. This needs NMT.
-        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        pb = ProcessTools.createJavaProcessBuilder(
             "-cp", ".",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:NativeMemoryTracking=summary",

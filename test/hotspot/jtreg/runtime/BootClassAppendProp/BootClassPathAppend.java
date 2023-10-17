@@ -38,7 +38,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class BootClassPathAppend {
   public static void main(String[] args) throws Exception {
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
         "-XX:+PrintCompilation", "-Xcomp", "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());

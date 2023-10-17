@@ -77,7 +77,7 @@ public class TestParallelRefProc {
         result.addAll(Arrays.asList(args));
         result.add("-XX:+PrintFlagsFinal");
         result.add("-version");
-        ProcessBuilder pb = GCArguments.createJavaProcessBuilderIgnoreTestJavaOpts(result);
+        ProcessBuilder pb = GCArguments.createJavaProcessBuilder(result);
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 

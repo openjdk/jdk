@@ -67,7 +67,7 @@ public class AttachSetGetFlag {
   }
 
   public static ProcessBuilder runTarget(String flagName, String flagValue) throws Exception {
-    return ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+    return ProcessTools.createJavaProcessBuilder(
         "-XX:+UnlockExperimentalVMOptions",
         "-XX:" + flagName + "=" + flagValue,
         "AttachSetGetFlag$Target");

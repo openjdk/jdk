@@ -178,7 +178,7 @@ public class TestVerifyGCType {
 
         basicOpts.add(TriggerGCs.class.getName());
 
-        ProcessBuilder procBuilder =  ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(basicOpts);
+        ProcessBuilder procBuilder =  ProcessTools.createJavaProcessBuilder(basicOpts);
         OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
 
         return analyzer;

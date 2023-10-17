@@ -60,7 +60,7 @@ public class PatchModule2Dirs {
              InMemoryJavaCompiler.compile("java.beans.Encoder", source2, "--patch-module=java.desktop"),
              "mods2/java.desktop");
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
              "--patch-module=java.naming=mods/java.naming",
              "--patch-module=java.desktop=mods2/java.desktop",
              "PatchModule2DirsMain", "javax.naming.spi.NamingManager", "java.beans.Encoder");

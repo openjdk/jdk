@@ -60,7 +60,7 @@ public class LoadJsvmlTest {
     }
 
     public static void main(String... args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-Xmn8m", "-Xlog:library=info",
             "--add-modules=jdk.incubator.vector",
             VectorTest.class.getName());

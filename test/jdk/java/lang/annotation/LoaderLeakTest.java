@@ -55,7 +55,7 @@ public class LoaderLeakTest {
     }
 
     private void runJavaProcessExpectSuccessExitCode(String ... command) throws Throwable {
-        var processBuilder = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(command)
+        var processBuilder = ProcessTools.createJavaProcessBuilder(command)
                                                       .directory(Paths.get(Utils.TEST_CLASSES).toFile());
         ProcessTools.executeCommand(processBuilder).shouldHaveExitValue(0);
     }

@@ -42,7 +42,7 @@ public class LoadClassNegative {
   public static void main(String args[]) throws Exception {
     String bootCP = "-Xbootclasspath/a:" + System.getProperty("test.src")
                        + File.separator + "dummy.jar";
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
         bootCP,
         "TestForName");
 

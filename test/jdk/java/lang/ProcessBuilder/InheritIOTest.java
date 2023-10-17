@@ -54,7 +54,7 @@ public class InheritIOTest {
 
     @Test(dataProvider = "testCases")
     public void testInheritWithoutRedirect(List<String> arguments) throws Throwable {
-        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(arguments);
+        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(arguments);
         OutputAnalyzer outputAnalyzer = ProcessTools.executeCommand(processBuilder);
         outputAnalyzer.shouldHaveExitValue(0);
         assertEquals(outputAnalyzer.getStdout(), EXPECTED_RESULT_STDOUT);

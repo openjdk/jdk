@@ -190,7 +190,7 @@ public class CheckCICompilerCount {
         ProcessBuilder pb;
         OutputAnalyzer out;
 
-        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(arguments);
+        pb = ProcessTools.createJavaProcessBuilder(arguments);
         out = new OutputAnalyzer(pb.start());
 
         try {

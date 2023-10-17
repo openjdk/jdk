@@ -59,7 +59,7 @@ public class CreateCoredumpOnCrash {
     }
     public static OutputAnalyzer runTest(String option) throws Exception {
         return new OutputAnalyzer(
-            ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+            ProcessTools.createJavaProcessBuilder(
             "-Xmx128m", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED", option, Crasher.class.getName())
             .start());
     }

@@ -69,7 +69,7 @@ public class JcstressRunner {
         }
         Path out = Paths.get("jcstress.out").toAbsolutePath();
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(getCmd(args))
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(getCmd(args))
                                         .redirectErrorStream(true)
                                         .redirectOutput(out.toFile());
         OutputAnalyzer oa = ProcessTools.executeProcess(pb);

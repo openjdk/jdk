@@ -81,7 +81,7 @@ public class MaxMetaspaceSizeEnvVarTest {
         test++;
 
         report("Test " + test + ": normal command-line flag");
-        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(flag, main, max);
+        pb = ProcessTools.createJavaProcessBuilder(flag, main, max);
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.reportDiagnosticSummary();
@@ -96,7 +96,7 @@ public class MaxMetaspaceSizeEnvVarTest {
 
         for (String envVar :  envVars) {
             report("Test " + test + ": " + envVar + " env-var");
-            pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(main, max);
+            pb = ProcessTools.createJavaProcessBuilder(main, max);
             pb.environment().put(envVar, flag);
             output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
@@ -112,7 +112,7 @@ public class MaxMetaspaceSizeEnvVarTest {
         PrintWriter pw = new PrintWriter(rcFile);
         pw.println(flagRaw);
         pw.close();
-        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(rcFileFlag, main, max);
+        pb = ProcessTools.createJavaProcessBuilder(rcFileFlag, main, max);
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.reportDiagnosticSummary();

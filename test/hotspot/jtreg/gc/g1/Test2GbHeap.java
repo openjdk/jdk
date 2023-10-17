@@ -49,7 +49,7 @@ public class Test2GbHeap {
     testArguments.add("-Xmx2g");
     testArguments.add("-version");
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(testArguments);
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(testArguments);
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);

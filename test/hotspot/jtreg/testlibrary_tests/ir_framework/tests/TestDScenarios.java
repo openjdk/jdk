@@ -73,7 +73,7 @@ public class TestDScenarios {
         } else {
             // Test invalid -DScenario flag.
             OutputAnalyzer oa;
-            ProcessBuilder process = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+            ProcessBuilder process = ProcessTools.createJavaProcessBuilder(
                     "-Dtest.jdk=" + Utils.TEST_JDK, "-DScenarios=a,1,b,10",
                     "ir_framework.tests.TestDScenarios", " test3");
             oa = ProcessTools.executeProcess(process);

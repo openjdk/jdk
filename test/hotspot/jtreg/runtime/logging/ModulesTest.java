@@ -75,7 +75,7 @@ public class ModulesTest {
     }
 
     static OutputAnalyzer run(String... args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(args);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
         return new OutputAnalyzer(pb.start());
     }
 }

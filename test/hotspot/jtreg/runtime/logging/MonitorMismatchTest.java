@@ -40,7 +40,7 @@ public class MonitorMismatchTest {
 
     public static void main(String... args) throws Exception {
         // monitormismatch should turn on.
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xcomp",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xcomp",
                                                                   "-XX:+TieredCompilation",
                                                                   "-Xlog:monitormismatch=info",
                                                                   "MonitorMismatchHelper");
@@ -49,7 +49,7 @@ public class MonitorMismatchTest {
         o.shouldContain("[monitormismatch] Monitor mismatch in method");
 
         // monitormismatch should turn off.
-        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xcomp",
+        pb = ProcessTools.createJavaProcessBuilder("-Xcomp",
                                                    "-XX:+TieredCompilation",
                                                    "-Xlog:monitormismatch=off",
                                                    "MonitorMismatchHelper");

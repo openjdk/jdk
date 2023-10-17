@@ -107,7 +107,7 @@ public class LocalManagementTest {
             args.add(arg);
         }
         args.add("TestApplication");
-        ProcessBuilder server = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        ProcessBuilder server = ProcessTools.createJavaProcessBuilder(
             args.toArray(new String[args.size()])
         );
 
@@ -133,7 +133,7 @@ public class LocalManagementTest {
             System.out.println("  PID           : " + serverPrc.pid());
             System.out.println("  shutdown port : " + port.get());
 
-            ProcessBuilder client = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+            ProcessBuilder client = ProcessTools.createJavaProcessBuilder(
                 "-cp",
                 TEST_CLASSPATH,
                 "--add-exports", "jdk.management.agent/jdk.internal.agent=ALL-UNNAMED",

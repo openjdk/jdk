@@ -110,7 +110,7 @@ public final class MinimumSizeDPIVariation {
 
     private static void runProcess(String dpi, String comp, int w, int h)
             throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-Dsun.java2d.uiScale=" + dpi,
                 MinimumSizeDPIVariation.class.getSimpleName(), comp,
                 String.valueOf(w), String.valueOf(h), dpi);

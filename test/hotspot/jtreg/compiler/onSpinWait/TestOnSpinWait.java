@@ -43,7 +43,7 @@ public class TestOnSpinWait {
 
     public static void main(String[] args) throws Exception {
         // Test C2 compiler
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
           "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
           "-XX:-TieredCompilation", "-Xbatch",
           "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions",

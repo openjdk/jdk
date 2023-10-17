@@ -41,77 +41,77 @@ public class ModuleOptionsWarn {
     public static void main(String[] args) throws Exception {
 
         // Test that a warning is not issued for extraneous jdk.module properties.
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+PrintWarnings", "-Djdk.module.ignored", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("Ignoring system property option");
         output.shouldHaveExitValue(0);
 
         // Test that a warning is issued for a reserved jdk.module property.
-        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+PrintWarnings", "-Djdk.module.addmods", "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Ignoring system property option");
         output.shouldHaveExitValue(0);
 
         // Test that a warning is issued for a reserved jdk.module property ending in '.'.
-        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+PrintWarnings", "-Djdk.module.limitmods.", "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Ignoring system property option");
         output.shouldHaveExitValue(0);
 
         // Test that a warning is issued for a reserved jdk.module property ending in '='.
-        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+PrintWarnings", "-Djdk.module.addexports=", "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Ignoring system property option");
         output.shouldHaveExitValue(0);
 
         // Test that a warning is issued for a reserved jdk.module property ending in ".stuff"
-        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+PrintWarnings", "-Djdk.module.addreads.stuff", "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Ignoring system property option");
         output.shouldHaveExitValue(0);
 
         // Test that a warning is issued for a reserved jdk.module property ending in "=stuff"
-        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+PrintWarnings", "-Djdk.module.path=stuff", "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Ignoring system property option");
         output.shouldHaveExitValue(0);
 
         // Test that a warning is issued for a reserved jdk.module property ending in ".="
-        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+PrintWarnings", "-Djdk.module.upgrade.path.=xx", "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Ignoring system property option");
         output.shouldHaveExitValue(0);
 
         // Test that a warning is issued for a reserved jdk.module property ending in ".<num>"
-        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+PrintWarnings", "-Djdk.module.patch.3=xx", "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Ignoring system property option");
         output.shouldHaveExitValue(0);
 
         // Test that a warning can be suppressed for module related properties that get ignored.
-        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        pb = ProcessTools.createJavaProcessBuilder(
             "-Djdk.module.addmods", "-XX:-PrintWarnings", "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("Ignoring system property option");
         output.shouldHaveExitValue(0);
 
         // Test that a warning is not issued for properties of the form "jdk.module.main"
-        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+PrintWarnings", "-Djdk.module.main.ignored", "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("Ignoring system property option");
         output.shouldHaveExitValue(0);
 
         // Test that a warning is issued for module related properties specified using _JAVA_OPTIONS.
-        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:+PrintWarnings", "-version");
+        pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintWarnings", "-version");
         Map<String, String> env = pb.environment();
         env.put("_JAVA_OPTIONS", "-Djdk.module.addreads");
         output = new OutputAnalyzer(pb.start());

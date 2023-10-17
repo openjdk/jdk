@@ -45,7 +45,7 @@ public class TestJVMCISavedProperties {
             System.out.println("DONE IN MAIN");
             return;
         }
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+EagerJVMCI",
             "-XX:+UseJVMCICompiler",

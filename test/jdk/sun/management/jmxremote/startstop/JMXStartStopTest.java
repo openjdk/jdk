@@ -400,7 +400,7 @@ public class JMXStartStopTest {
         pbArgs.addAll(Arrays.asList(args));
         pbArgs.add(TEST_APP_NAME);
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 pbArgs.toArray(new String[pbArgs.size()])
         );
         TestAppRun s = new TestAppRun(pb, name);

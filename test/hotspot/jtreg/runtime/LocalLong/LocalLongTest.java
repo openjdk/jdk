@@ -37,7 +37,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class LocalLongTest {
     public static void main(String... args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xint",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xint",
                                                                   "--add-opens",   "java.base/java.lang=ALL-UNNAMED",
                                                                   "--add-opens",   "java.base/java.lang.invoke=ALL-UNNAMED",
                                                                   "--add-exports", "java.base/jdk.internal.vm=ALL-UNNAMED",

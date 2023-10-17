@@ -47,7 +47,7 @@ public class MakeJavaSecurityTest {
     public static void main(String[] args) throws Exception {
         Path toolPath = getMakeJavaSecPath();
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 toolPath.toString(),
                 TEST_SRC + "/raw_java_security",
                 "outfile",

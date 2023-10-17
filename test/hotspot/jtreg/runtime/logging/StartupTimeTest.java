@@ -52,11 +52,11 @@ public class StartupTimeTest {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:startuptime",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:startuptime",
                                                                   InnerClass.class.getName());
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:startuptime=off",
+        pb = ProcessTools.createJavaProcessBuilder("-Xlog:startuptime=off",
                                                    InnerClass.class.getName());
         analyzeOutputOff(pb);
     }

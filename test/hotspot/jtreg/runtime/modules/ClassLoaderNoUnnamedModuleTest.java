@@ -37,7 +37,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class ClassLoaderNoUnnamedModuleTest {
     public static void main(String args[]) throws Throwable {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                                "--add-modules=java.base",
                                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                                "-XX:-CreateCoredumpOnCrash",

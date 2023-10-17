@@ -50,7 +50,7 @@ public class ClassPathEnvVar {
     }
     private static OutputAnalyzer runCrasher() throws Exception {
         ProcessBuilder pb =
-            ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:-CreateCoredumpOnCrash",
+            ProcessTools.createJavaProcessBuilder("-XX:-CreateCoredumpOnCrash",
                                                   "-XX:ErrorHandlerTest=14",
                                                   "-XX:+ErrorFileToStdout");
 

@@ -272,7 +272,7 @@ public class DeflationIntervalsTest {
         opts.addAll(Arrays.asList(args));
         opts.add("DeflationIntervalsTest$Test");
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(opts);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(opts);
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
         oa.shouldHaveExitValue(0);
 

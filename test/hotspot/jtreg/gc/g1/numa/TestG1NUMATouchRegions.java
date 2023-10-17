@@ -181,7 +181,7 @@ public class TestG1NUMATouchRegions {
             return;
         }
 
-        ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilder(
                                               "-Xbootclasspath/a:.",
                                               "-Xlog:pagesize,gc+heap+region=trace",
                                               "-XX:+UseG1GC",

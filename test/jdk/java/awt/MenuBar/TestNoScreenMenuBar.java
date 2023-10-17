@@ -148,7 +148,7 @@ public class TestNoScreenMenuBar
 
     private Process execute() {
         try {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                     TestNoScreenMenuBar.class.getSimpleName(), "mark");
             return ProcessTools.startProcess("Other frame", pb);
         } catch (IOException ex) {

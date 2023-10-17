@@ -59,7 +59,7 @@ public class JMXStatusPerfCountersTest {
 
     @BeforeClass
     public static void setupClass() throws Exception {
-        testAppPb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
+        testAppPb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UsePerfData",
             "-cp", System.getProperty("test.class.path"),
             TEST_APP_NAME
