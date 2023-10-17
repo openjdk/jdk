@@ -34,7 +34,7 @@ struct CompilerQueueEntry {
   uint64_t removed;
 };
 
-// If current counters are less than previous we assume the interface has been reset
+// If current counters are less than previous, we assume the interface has been reset
 // If no bytes have been either sent or received, we'll also skip the event
 static uint64_t rate_per_second(uint64_t current, uint64_t old, const JfrTickspan& interval) {
   assert(interval.value() > 0, "invariant");
