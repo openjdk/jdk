@@ -31,6 +31,7 @@
 import java.io.*;
 import java.lang.reflect.*;
 import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.zip.*;
 
@@ -48,10 +49,13 @@ public class ZipSourceCache {
 
     private static File relativeFile = new File(ZIPFILE_NAME);
     private static File absoluteFile = new File(ZIPFILE_NAME).getAbsoluteFile();
+    private static boolean hasfileKeySupport;
 
     @BeforeAll
     public static void setup() throws Exception {
         createZipFile("test1");
+        var attrs = Files.readAttributes(relativeFile.toPath(), BasicFileAttributes.class);
+        hasfileKeySupport = (attrs.fileKey() != null);
     }
 
     @AfterAll
@@ -77,27 +81,37 @@ public class ZipSourceCache {
             filesMap.setAccessible(true);
             internalMap = (HashMap) filesMap.get(zipFile);
             numSources = internalMap.size();
-            // opening of same zip file shouldn't cause new Source to be constructed
+            // opening of same zip file shouldn't cause new Source
+            // to be constructed on filesystems which support fileKey()
             absoluteZipFile = new ZipFile(absoluteFile);
-            assertEquals(numSources, internalMap.size());
+            if (hasfileKeySupport) {
+                assertEquals(numSources, internalMap.size());
+            } else {
+                assertEquals(++numSources, internalMap.size());
+            }
 
             // update the zip file, should expect a new Source Object
             // ignore this part of test if file can't be updated (can't overwrite)
             if (createZipFile("differentContent")) {
                 ZipFile z = new ZipFile(ZIPFILE_NAME);
-                // new Source created, should map fine
+                // update of file should trigger new <Key, Source> mapping
+                assertEquals(++numSources, internalMap.size());
+                // new Source created, CEN structure should map fine
                 readZipFileContents(z);
                 // the old Source in use for old file, should no longer map correctly
                 IOException ioe = assertThrows(IOException.class, () -> readZipFileContents(absoluteZipFile));
                 assertEquals("ZipFile invalid LOC header (bad signature)", ioe.getMessage());
-                assertEquals(++numSources, internalMap.size());
                 z.close();
                 assertEquals(--numSources, internalMap.size());
             }
         }
-        // the close() call shouldn't remove the Source entry
-        // just yet since we still have one reference to the file
-        assertEquals(numSources, internalMap.size());
+        // with fileKey() support, the close() call shouldn't remove the
+        // Source entry just yet since we still have one reference to the file
+        if (hasfileKeySupport) {
+            assertEquals(numSources, internalMap.size());
+        } else {
+            assertEquals(--numSources, internalMap.size());
+        }
         if (absoluteZipFile != null) {
             absoluteZipFile.close();
         }

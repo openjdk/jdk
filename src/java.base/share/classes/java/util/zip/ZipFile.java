@@ -37,9 +37,6 @@ import java.nio.charset.Charset;
 import java.nio.file.InvalidPathException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.Files;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1403,31 +1400,10 @@ public class ZipFile implements ZipConstants, Closeable {
             File file;
             final boolean utf8;
 
-            public Key(File file, BasicFileAttributes attrs, ZipCoder zc)
-                    throws IOException {
+            public Key(File file, BasicFileAttributes attrs, ZipCoder zc) {
                 this.attrs = attrs;
-                Object fk = attrs.fileKey();
-                this.file = (fk != null) ? file : getCanonicalFile(file);
+                this.file = file;
                 this.utf8 = zc.isUTF8();
-            }
-
-            @SuppressWarnings("removal")
-            private static File getCanonicalFile(File file) throws IOException {
-                if (System.getSecurityManager() == null) {
-                    return file.getCanonicalFile();
-                } else {
-                    PrivilegedExceptionAction<File> pa = file::getCanonicalFile;
-                    try {
-                        return AccessController.doPrivileged(pa);
-                    } catch (PrivilegedActionException pae) {
-                        Throwable cause = pae.getCause();
-                        if (cause instanceof IOException ioe) {
-                            throw ioe;
-                        } else {
-                            throw new IOException(cause);
-                        }
-                    }
-                }
             }
 
             public int hashCode() {
