@@ -238,7 +238,7 @@ TEST(IntrusiveListBasics, construct_CHeapObj) {
 
 ////////////////////
 // push_front(), pop_front(), length(), empty()
-// front(), back(), operator[]
+// front(), back()
 
 TEST_F(IntrusiveListTestWithValues, push_front) {
   List1 list1;
@@ -302,9 +302,6 @@ TEST_F(IntrusiveListTestWithValues, push_back) {
       EXPECT_EQ(i++, v.value());
     }
   }
-  for (size_t i = 0; i < nvalues; ++i) {
-    EXPECT_EQ(i, list2[i].value());
-  }
   list2.clear();
 }
 
@@ -328,9 +325,6 @@ TEST_F(IntrusiveListTestWithValues, push_back_const) {
     for (const Value& v : list2) {
       EXPECT_EQ(i++, v.value());
     }
-  }
-  for (size_t i = 0; i < nvalues; ++i) {
-    EXPECT_EQ(i, list2[i].value());
   }
   list2.clear();
 }

@@ -980,34 +980,6 @@ public:
   const_reference back() const { return *rbegin(); }
 
   /**
-   * Returns a [const_]reference to the n'th element of the list.
-   *
-   * precondition: n < length()
-   * complexity: O(length())
-   */
-  reference operator[](size_type n) {
-    return nth_element(begin(), end(), n);
-  }
-
-  const_reference operator[](size_type n) const {
-    return nth_element(cbegin(), cend(), n);
-  }
-
-private:
-
-  // Implementation of operator[].
-  template<typename Iterator>
-  static typename Iterator::reference
-  nth_element(Iterator it, Iterator end, size_type n) {
-    for (size_type index = 0; true; ++it, ++index) {
-      assert(it != end, "index out of bounds: %ju", uintmax_t(n));
-      if (index == n) return *it;
-    }
-  }
-
-public:
-
-  /**
    * Returns a [const_]iterator referring to the first element of the
    * list, or end-of-list if the list is empty.
    *
