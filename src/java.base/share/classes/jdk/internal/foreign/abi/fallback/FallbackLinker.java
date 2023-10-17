@@ -24,13 +24,6 @@
  */
 package jdk.internal.foreign.abi.fallback;
 
-import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.foreign.abi.AbstractLinker;
-import jdk.internal.foreign.abi.CapturableState;
-import jdk.internal.foreign.abi.LinkerOptions;
-import jdk.internal.foreign.abi.SharedUtils;
-
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
@@ -39,16 +32,6 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.ValueLayout;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.ref.Reference;
-import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
-
 import static java.lang.foreign.ValueLayout.ADDRESS;
 import static java.lang.foreign.ValueLayout.JAVA_BOOLEAN;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
@@ -58,7 +41,21 @@ import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import static java.lang.invoke.MethodHandles.foldArguments;
+import java.lang.invoke.MethodType;
+import java.lang.ref.Reference;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.abi.AbstractLinker;
+import jdk.internal.foreign.abi.CapturableState;
+import jdk.internal.foreign.abi.LinkerOptions;
+import jdk.internal.foreign.abi.SharedUtils;
 
 public final class FallbackLinker extends AbstractLinker {
 
@@ -181,7 +178,6 @@ public final class FallbackLinker extends AbstractLinker {
             for (int i = 0; i < argLayouts.size(); i++) {
                 Object arg = args[argStart + i];
                 MemoryLayout layout = argLayouts.get(i);
-                MemorySegment argSeg = arena.allocate(layout);
 
                 if (layout instanceof AddressLayout) {
                     AbstractMemorySegmentImpl ms = (AbstractMemorySegmentImpl) arg;
@@ -196,6 +192,7 @@ public final class FallbackLinker extends AbstractLinker {
                     }
                 }
 
+                MemorySegment argSeg = arena.allocate(layout);
                 writeValue(arg, layout, argSeg);
                 argPtrs.setAtIndex(ADDRESS, i, argSeg);
             }
