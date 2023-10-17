@@ -2258,43 +2258,6 @@ void TemplateTable::_return(TosState state)
 // volatile-stores although it could just as well go before
 // volatile-loads.
 
-void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
-                                            Register Rcache,
-                                            Register index) {
-  const Register temp = r19;
-  assert_different_registers(Rcache, index, temp);
-
-  Label resolved;
-
-  Bytecodes::Code code = bytecode();
-  switch (code) {
-  case Bytecodes::_nofast_getfield: code = Bytecodes::_getfield; break;
-  case Bytecodes::_nofast_putfield: code = Bytecodes::_putfield; break;
-  default: break;
-  }
-
-  assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
-  __ load_field_entry(Rcache, index);
-  if (byte_no == f1_byte) {
-    __ lea(temp, Address(Rcache, in_bytes(ResolvedFieldEntry::get_code_offset())));
-  } else {
-    __ lea(temp, Address(Rcache, in_bytes(ResolvedFieldEntry::put_code_offset())));
-  }
-  // Load-acquire the bytecode to match store-release in ResolvedFieldEntry::fill_in()
-  __ ldarb(temp, temp);
-  __ subs(zr, temp, (int) code);  // have we resolved this bytecode?
-  __ br(Assembler::EQ, resolved);
-
-  // resolve first time through
-  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
-  __ mov(temp, (int) code);
-  __ call_VM(noreg, entry, temp);
-
-  // Update registers with resolved info
-  __ load_field_entry(Rcache, index);
-  __ bind(resolved);
-}
-
 void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
                                             Register Rcache,
                                             Register index) {
@@ -2340,6 +2303,43 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   }
 }
 
+void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
+                                            Register Rcache,
+                                            Register index) {
+  const Register temp = r19;
+  assert_different_registers(Rcache, index, temp);
+
+  Label resolved;
+
+  Bytecodes::Code code = bytecode();
+  switch (code) {
+  case Bytecodes::_nofast_getfield: code = Bytecodes::_getfield; break;
+  case Bytecodes::_nofast_putfield: code = Bytecodes::_putfield; break;
+  default: break;
+  }
+
+  assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
+  __ load_field_entry(Rcache, index);
+  if (byte_no == f1_byte) {
+    __ lea(temp, Address(Rcache, in_bytes(ResolvedFieldEntry::get_code_offset())));
+  } else {
+    __ lea(temp, Address(Rcache, in_bytes(ResolvedFieldEntry::put_code_offset())));
+  }
+  // Load-acquire the bytecode to match store-release in ResolvedFieldEntry::fill_in()
+  __ ldarb(temp, temp);
+  __ subs(zr, temp, (int) code);  // have we resolved this bytecode?
+  __ br(Assembler::EQ, resolved);
+
+  // resolve first time through
+  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
+  __ mov(temp, (int) code);
+  __ call_VM(noreg, entry, temp);
+
+  // Update registers with resolved info
+  __ load_field_entry(Rcache, index);
+  __ bind(resolved);
+}
+
 void TemplateTable::load_resolved_field_entry(Register obj,
                                               Register cache,
                                               Register tos_state,
@@ -2366,9 +2366,9 @@ void TemplateTable::load_resolved_field_entry(Register obj,
   }
 }
 
-void TemplateTable::load_resolved_method_entry_common(Register cache,
-                                               Register method,
-                                               Register flags) {
+void TemplateTable::load_resolved_method_entry_special_or_static(Register cache,
+                                                                 Register method,
+                                                                 Register flags) {
 
   // setup registers
   const Register index = r4;
@@ -2386,7 +2386,6 @@ void TemplateTable::load_resolved_method_entry_handle(Register cache,
                                                       Register ref_index,
                                                       Register flags) {
   // setup registers
-  //const Register cache = rscratch2;
   const Register index = r4;
   assert_different_registers(method, flags);
   assert_different_registers(method, cache, index);
@@ -2419,14 +2418,11 @@ void TemplateTable::load_resolved_method_entry_interface(Register cache,
                                                          Register flags) {
   // setup registers
   const Register index = r4;
-  assert_different_registers(method_or_table_index, flags);
   assert_different_registers(method_or_table_index, cache, flags);
 
   // determine constant pool cache field offsets
   resolve_cache_and_index_for_method(f1_byte, cache, index);
   __ load_unsigned_byte(flags, Address(cache, in_bytes(ResolvedMethodEntry::flags_offset())));
-
-  // table_or_ref_index can either be an itable index or a resolved reference index depending on the bytecode
 
   // Invokeinterface can behave in different ways:
   // If calling a method from java.lang.Object, the forced virtual flag is true so the invocation will
@@ -3302,7 +3298,7 @@ void TemplateTable::prepare_invoke(Register recv,   // if caller wants to see it
   assert_different_registers(recv, flags);
 
   // save 'interpreter return address'
-  __ save_bcp(); // probably don't need this
+  __ save_bcp();
 
   // Load TOS state for later
   __ load_unsigned_byte(rscratch2, Address(cache, in_bytes(ResolvedMethodEntry::type_offset())));
@@ -3310,12 +3306,7 @@ void TemplateTable::prepare_invoke(Register recv,   // if caller wants to see it
   // load receiver if needed (note: no return address pushed yet)
   if (load_receiver) {
     __ load_unsigned_short(recv, Address(cache, in_bytes(ResolvedMethodEntry::num_parameters_offset())));
-    // FIXME -- is this actually correct? looks like it should be 2
-    // const int no_return_pc_pushed_yet = -1;  // argument slot correction before we push return address
-    // const int receiver_is_at_end      = -1;  // back off one slot to get receiver
-    // Address recv_addr = __ argument_address(recv, no_return_pc_pushed_yet + receiver_is_at_end);
-    // __ movptr(recv, recv_addr);
-    __ add(rscratch1, esp, recv, ext::uxtx, 3); // FIXME: uxtb here?
+    __ add(rscratch1, esp, recv, ext::uxtx, 3);
     __ ldr(recv, Address(rscratch1, -Interpreter::expr_offset_in_bytes(1)));
     __ verify_oop(recv);
   }
@@ -3397,9 +3388,9 @@ void TemplateTable::invokespecial(int byte_no)
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
 
-  load_resolved_method_entry_common(r2,      // ResolvedMethodEntry*
-                                    rmethod, // Method*
-                                    r3);     // flags
+  load_resolved_method_entry_special_or_static(r2,      // ResolvedMethodEntry*
+                                               rmethod, // Method*
+                                               r3);     // flags
   prepare_invoke(r2, r3);  // get receiver also for null check and flags
   __ verify_oop(r2);
   __ null_check(r2);
@@ -3414,9 +3405,9 @@ void TemplateTable::invokestatic(int byte_no)
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
 
-  load_resolved_method_entry_common(r2,      // ResolvedMethodEntry*
-                                    rmethod, // Method*
-                                    r3);     // flags
+  load_resolved_method_entry_special_or_static(r2,      // ResolvedMethodEntry*
+                                               rmethod, // Method*
+                                               r3);     // flags
   prepare_invoke(r2, r3);  // get receiver also for null check and flags
 
   // do the call
@@ -3584,9 +3575,9 @@ void TemplateTable::invokedynamic(int byte_no) {
   load_invokedynamic_entry(rmethod);
 
   // r0: CallSite object (from cpool->resolved_references[])
-  // rmethod: MH.linkToCallSite method (from f2)
+  // rmethod: MH.linkToCallSite method
 
-  // Note:  r0_callsite is already pushed by prepare_invoke
+  // Note:  r0_callsite is already pushed
 
   // %%% should make a type profile for any invokedynamic that takes a ref argument
   // profile this call

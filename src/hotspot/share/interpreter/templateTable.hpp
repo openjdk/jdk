@@ -279,9 +279,9 @@ class TemplateTable: AllStatic {
                                         Register off,
                                         Register flags,
                                         bool is_static);
-  static void load_resolved_method_entry_common(Register cache,
-                                               Register method,
-                                               Register flags);
+  static void load_resolved_method_entry_special_or_static(Register cache,
+                                                           Register method,
+                                                           Register flags);
   static void load_resolved_method_entry_handle(Register cache,
                                                Register method,
                                                Register ref_index,

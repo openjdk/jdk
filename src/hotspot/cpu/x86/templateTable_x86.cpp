@@ -2835,9 +2835,9 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ push(index);
 }
 
-void TemplateTable::load_resolved_method_entry_common(Register cache,
-                                               Register method,
-                                               Register flags) {
+void TemplateTable::load_resolved_method_entry_special_or_static(Register cache,
+                                                                 Register method,
+                                                                 Register flags) {
   // setup registers
   const Register index = rdx;
   assert_different_registers(cache, index);
@@ -2892,8 +2892,6 @@ void TemplateTable::load_resolved_method_entry_interface(Register cache,
   // determine constant pool cache field offsets
   resolve_cache_and_index_for_method(f1_byte, cache, index);
   __ load_unsigned_byte(flags, Address(cache, in_bytes(ResolvedMethodEntry::flags_offset())));
-
-  // table_or_ref_index can either be an itable index or a resolved reference index depending on the bytecode
 
   // Invokeinterface can behave in different ways:
   // If calling a method from java.lang.Object, the forced virtual flag is true so the invocation will
@@ -3796,10 +3794,10 @@ void TemplateTable::invokespecial(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
 
-  load_resolved_method_entry_common(rcx, // ResolvedMethodEntry*
-                                    rbx, // Method*
-                                    rdx // flags
-                                    );
+  load_resolved_method_entry_special_or_static(rcx, // ResolvedMethodEntry*
+                                               rbx, // Method*
+                                               rdx // flags
+                                               );
   prepare_invoke(rcx,
                  rcx,  // get receiver also for null check
                  rdx); // flags
@@ -3816,10 +3814,10 @@ void TemplateTable::invokestatic(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
 
-  load_resolved_method_entry_common(rcx, // ResolvedMethodEntry*
-                                    rbx, // Method*
-                                    rdx // flags
-                                    );
+  load_resolved_method_entry_special_or_static(rcx, // ResolvedMethodEntry*
+                                               rbx, // Method*
+                                               rdx // flags
+                                               );
   prepare_invoke(rcx, rcx, rdx);  // cache and flags
 
   // do the call
@@ -4014,7 +4012,7 @@ void TemplateTable::invokedynamic(int byte_no) {
   const Register rax_callsite = rax;
 
   load_invokedynamic_entry(rbx_method);
-  // rax: CallSite object (from cpool->resolved_references[f1])
+  // rax: CallSite object (from cpool->resolved_references[])
   // rbx: MH.linkToCallSite method
 
   // Note:  rax_callsite is already pushed

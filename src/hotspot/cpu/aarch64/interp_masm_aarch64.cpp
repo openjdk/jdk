@@ -1801,7 +1801,6 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
 void InterpreterMacroAssembler::load_method_entry(Register cache, Register index, int bcp_offset) {
   // Get index out of bytecode pointer
   get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
-  // Take shortcut if the size is a power of 2
   mov(cache, sizeof(ResolvedMethodEntry));
   mul(index, index, cache); // Scale the index to be the entry index * sizeof(ResolvedMethodEntry)
 
