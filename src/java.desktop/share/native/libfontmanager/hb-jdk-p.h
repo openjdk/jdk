@@ -26,20 +26,19 @@
 #ifndef HB_JDK_H
 #define HB_JDK_H
 
-#define JDKEXPORT  __attribute__((visibility("default")))
 #ifndef JDKEXPORT
   #ifdef WIN32
     #define JDKEXPORT __declspec(dllexport)
-  #endif
-#else
-  #if (defined(__GNUC__) && ((__GNUC__ > 4) || (__GNUC__ == 4) && (__GNUC_MINOR__ > 2))) || __has_attribute(visibility)
-    #ifdef ARM
-      #define JDKEXPORT  __attribute__((externally_visible,visibility("default")))
-    #else
-      #define JDKEXPORT  __attribute__((visibility("default")))
-    #endif
   #else
-    #define JDKEXPORT
+    #if (defined(__GNUC__) && ((__GNUC__ > 4) || (__GNUC__ == 4) && (__GNUC_MINOR__ > 2))) || __has_attribute(visibility)
+      #ifdef ARM
+        #define JDKEXPORT  __attribute__((externally_visible,visibility("default")))
+      #else
+        #define JDKEXPORT  __attribute__((visibility("default")))
+      #endif
+    #else
+      #define JDKEXPORT
+    #endif
   #endif
 #endif
 
