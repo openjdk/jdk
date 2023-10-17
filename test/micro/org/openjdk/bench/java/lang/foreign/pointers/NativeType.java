@@ -41,6 +41,16 @@ public sealed abstract class NativeType<X> {
 
     private static Linker LINKER = Linker.nativeLinker();
 
+    /**
+     * The layout for the {@code int} C type
+     */
+    private static final ValueLayout.OfInt CANONICAL_INT = (ValueLayout.OfInt) LINKER.canonicalLayouts().get("int");
+    /**
+     * The layout for the {@code double} C type
+     */
+    private static final ValueLayout.OfDouble CANONICAL_DOUBLE = (ValueLayout.OfDouble) LINKER.canonicalLayouts().get("double");
+
+
     private static final AddressLayout UNSAFE_ADDRESS = ValueLayout.ADDRESS
             .withTargetLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, ValueLayout.JAVA_BYTE));
 
@@ -58,14 +68,14 @@ public sealed abstract class NativeType<X> {
     public static final OfInt<Integer> C_INT = new OfInt<>() {
         @Override
         public ValueLayout.OfInt layout() {
-            return (ValueLayout.OfInt) LINKER.canonicalLayouts().get("int");
+            return CANONICAL_INT;
         }
     };
 
     public static final OfDouble<Double> C_DOUBLE = new OfDouble<>() {
         @Override
         public ValueLayout.OfDouble layout() {
-            return (ValueLayout.OfDouble) LINKER.canonicalLayouts().get("double");
+            return CANONICAL_DOUBLE;
         }
     };
 
