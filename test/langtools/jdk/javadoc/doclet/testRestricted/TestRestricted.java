@@ -106,6 +106,7 @@ public class TestRestricted extends JavadocTester {
                 <div class="block">Restricted preview method.</div>""",
                         """
                 <h3>restrictedMethod</h3>
+                <div class="horizontal-scroll">
                 <div class="member-signature"><span class="modifiers">sealed</span>&nbsp;<span clas\
                 s="return-type">void</span>&nbsp;<span class="element-name">restrictedMethod</span>\
                 ()</div>
@@ -119,6 +120,7 @@ public class TestRestricted extends JavadocTester {
                 </div>""",
                         """
                 <h3>restrictedPreviewMethod</h3>
+                <div class="horizontal-scroll">
                 <div class="member-signature"><span class="modifiers">sealed</span>&nbsp;<span clas\
                 s="return-type">int</span>&nbsp;<span class="element-name">restrictedPreviewMethod<\
                 /span>()</div>

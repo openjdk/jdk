@@ -54,7 +54,6 @@ class GenerationSpec;
 class ContiguousSpace;
 class CompactPoint;
 class OopClosure;
-class GenCollectedHeap;
 class GCStats;
 
 // A "ScratchBlock" represents a block of memory in one generation usable by
@@ -290,14 +289,12 @@ class Generation: public CHeapObj<mtGC> {
   GCStats* gc_stats() const { return _gc_stats; }
   virtual void update_gc_stats(Generation* current_generation, bool full) {}
 
-#if INCLUDE_SERIALGC
   // Mark sweep support phase2
   virtual void prepare_for_compaction(CompactPoint* cp);
   // Mark sweep support phase3
   virtual void adjust_pointers();
   // Mark sweep support phase4
   virtual void compact();
-#endif
 
   // Accessing "marks".
 
@@ -377,4 +374,4 @@ public:
 
 };
 
-#endif // SHARE_GC_SHARED_GENERATION_HPP
+#endif // SHARE_GC_SERIAL_GENERATION_HPP
