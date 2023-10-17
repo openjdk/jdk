@@ -60,25 +60,12 @@ public class SSLSocketParametersTest implements Serializable {
         }
     }
 
-    public class HelloClient {
-
-        public void runClient(Remote stub) throws IOException {
-            System.out.println("Inside HelloClient::runClient");
-            // "obj" is the identifier that we'll use to refer
-            // to the remote object that implements the "Hello"
-            // interface
-            Hello obj = (Hello) stub;
-            String message = obj.sayHello();
-            System.out.println(message);
-        }
-    }
-
     public void testRmiCommunication(RMIServerSocketFactory serverSocketFactory) throws Exception {
         HelloImpl server = new HelloImpl();
         Hello stub = (Hello)UnicastRemoteObject.exportObject(server,
                 0, new SslRMIClientSocketFactory(), serverSocketFactory);
-        HelloClient client = new HelloClient();
-        client.runClient(stub);
+        String msg = stub.sayHello();
+        Asserts.assertEquals("Hello World!", msg);
     }
 
     private static void testSslServerSocketFactory(String[] cipherSuites, String[] protocol) throws Exception {
@@ -104,7 +91,7 @@ public class SSLSocketParametersTest implements Serializable {
 
             /* server side dummy_ciphersuite */
             case 4 -> {
-                Exception exc = Asserts.assertThrownException(IllegalArgumentException.class,
+                Exception exc = Asserts.assertThrows(IllegalArgumentException.class,
                         () -> testSslServerSocketFactory(new String[]{"dummy_ciphersuite"}, null));
                 if (!exc.getMessage().toLowerCase().contains("unsupported ciphersuite")) {
                     throw exc;
@@ -113,7 +100,7 @@ public class SSLSocketParametersTest implements Serializable {
 
             /* server side dummy_protocol */
             case 5 -> {
-                Exception thrown = Asserts.assertThrownException(IllegalArgumentException.class,
+                Exception thrown = Asserts.assertThrows(IllegalArgumentException.class,
                         () -> testSslServerSocketFactory(null, new String[]{"dummy_protocol"}));
                 if (!thrown.getMessage().toLowerCase().contains("unsupported protocol")) {
                     throw thrown;
@@ -124,7 +111,7 @@ public class SSLSocketParametersTest implements Serializable {
             case 6 -> {
                 System.setProperty("javax.rmi.ssl.client.enabledCipherSuites",
                         "dummy_ciphersuite");
-                Asserts.assertThrownException(ConnectIOException.class,
+                Asserts.assertThrows(ConnectIOException.class,
                         () -> testRmiCommunication(new SslRMIServerSocketFactory()));
             }
 
@@ -132,7 +119,7 @@ public class SSLSocketParametersTest implements Serializable {
             case 7 -> {
                 System.setProperty("javax.rmi.ssl.client.enabledProtocols",
                         "dummy_protocol");
-                Asserts.assertThrownException(ConnectIOException.class,
+                Asserts.assertThrows(ConnectIOException.class,
                         () -> testRmiCommunication(new SslRMIServerSocketFactory()));
             }
 

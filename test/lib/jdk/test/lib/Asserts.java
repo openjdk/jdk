@@ -557,7 +557,12 @@ public class Asserts {
      */
     @FunctionalInterface
     public interface TestMethod {
-        void execute() throws Exception;
+        void execute() throws Throwable;
+    }
+
+
+    public static <T extends Throwable> T assertThrows(Class<T> expected, TestMethod testMethod) {
+        return assertThrows(expected, testMethod, "An unexpected exception was thrown.");
     }
 
     /**
@@ -570,22 +575,21 @@ public class Asserts {
      *
      * @param expected The expected exception
      * @param testMethod The code to execute that should throw the exception
+     * @param msg A description of the assumption
      * @return The thrown exception.
      */
-    public static Exception assertThrownException(Class<? extends Exception> expected, TestMethod testMethod) {
+    public static <T extends Throwable> T assertThrows(Class<T> expected, TestMethod testMethod, String msg) {
         try {
             testMethod.execute();
-            fail("No exception was thrown. Expected: " + expected.getName());
-        } catch (Exception exc) {
-            if (expected.isAssignableFrom(exc.getClass())) {
-                return exc;
+        } catch (Throwable exc) {
+            if (expected.isInstance(exc)) {
+                return (T) exc;
             } else {
-                fail("An unexpected exception was thrown. Expected: "
-                        + expected.getName() + " Got: " + exc.getClass().getName());
+                fail(Objects.toString(msg, "An unexpected exception was thrown.")
+                        + " Expected " + expected.getName(), exc);
             }
         }
-        // fail() throws a RuntimeException so this is unreachable.
-        return null;
+        throw new RuntimeException("No exception was thrown. Expected: " + expected.getName());
     }
 
     /**
