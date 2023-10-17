@@ -105,7 +105,6 @@ using IntrusiveListEntryAccessor =
  * contains a IntrusiveListEntry member, and using a corresponding
  * specialization of the IntrusiveList class, e.g.
  *
- * <code>
  * class MyClass {
  *   ...
  *   IntrusiveListEntry _entry;
@@ -121,12 +120,10 @@ using IntrusiveListEntryAccessor =
  *   ...
  *   IntrusiveList<MyClass, &MyClass::get_entry> mylist;
  *   ... use mylist ...
- * </code>
  *
  * Alternatively, the scope of the entry accessor can be limited, with a
  * type alias of a list specialization providing access, e.g.
  *
- * <code>
  * class MyClass {
  *   ...
  *   IntrusiveListEntry _entry;
@@ -143,7 +140,6 @@ using IntrusiveListEntryAccessor =
  *   ...
  *   MyClass::MyList mylist;
  *   ... use mylist ...
- * </code>
  */
 template<typename T,
          IntrusiveListEntryAccessor<T> entry_accessor,
