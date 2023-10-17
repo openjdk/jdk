@@ -72,19 +72,20 @@ public interface Consumer<T> {
      * This method is useful in cases where there is an ambiguity in a lambda or method reference
      * or when using composition or fluent coding as shown in this example:
      * {@snippet :
-     * // Capturing
-     * var con = Consumer.of(System.out::println); // Consumer<Object>
+     * List<String> list = new ArrayList<>();
+     *
+     * var con = Consumer.of(list::addLast); // Consumer<String>
      *
      * // Fluent composition
-     * var composed = Consumer.of(System.out::println)   // Consumer<String>
-     *                    .andThen(Logger::info);        // Consumer<String>
+     * var composed = Consumer.of(list::addLast)       // Consumer<String>
+     *                    .andThen(System.out::print); // Consumer<String>
      *}
      *
      * @param uncaptured to capture
      * @param <T> the type of the input to the operation
      */
     static <T> Consumer<T> of(Consumer<T> uncaptured) {
-        return uncaptured;
+        return Objects.requireNonNull(uncaptured);
     }
 
 }

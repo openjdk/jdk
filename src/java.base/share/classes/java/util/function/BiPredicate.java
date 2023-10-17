@@ -126,7 +126,7 @@ public interface BiPredicate<T, U> {
      * @param <U> the type of the second argument the predicate
      */
     static <T, U> BiPredicate<T, U> of(BiPredicate<T, U> uncaptured) {
-        return uncaptured;
+        return Objects.requireNonNull(uncaptured);
     }
 
 }

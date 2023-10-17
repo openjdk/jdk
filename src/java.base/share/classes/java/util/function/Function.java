@@ -119,7 +119,7 @@ public interface Function<T, R> {
      * @param <R> the type of the result of the function
      */
     static <T, R> Function<T, R> of(Function<T, R> uncaptured) {
-        return uncaptured;
+        return Objects.requireNonNull(uncaptured);
     }
 
 }

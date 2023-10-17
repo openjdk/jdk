@@ -92,7 +92,7 @@ public interface BiFunction<T, U, R> {
      * @param <R> the type of the result of the function
      */
     static <T, U, R> BiFunction<T, U, R> of(BiFunction<T, U, R> uncaptured) {
-        return uncaptured;
+        return Objects.requireNonNull(uncaptured);
     }
 
 }

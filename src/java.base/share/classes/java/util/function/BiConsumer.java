@@ -102,7 +102,7 @@ public interface BiConsumer<T, U> {
      * @param <U> the type of the second argument to the operation
      */
     static <T, U> BiConsumer<T, U> of(BiConsumer<T, U> uncaptured) {
-        return uncaptured;
+        return Objects.requireNonNull(uncaptured);
     }
 
 }

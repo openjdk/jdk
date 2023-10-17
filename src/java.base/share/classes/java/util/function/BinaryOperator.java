@@ -94,6 +94,6 @@ public interface BinaryOperator<T> extends BiFunction<T,T,T> {
      * @param <T> the type of the operands and result of the operator
      */
     static <T> BinaryOperator<T> of(BinaryOperator<T> uncaptured) {
-        return uncaptured;
+        return Objects.requireNonNull(uncaptured);
     }
 }

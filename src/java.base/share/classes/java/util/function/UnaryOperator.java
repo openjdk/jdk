@@ -90,7 +90,7 @@ public interface UnaryOperator<T> extends Function<T, T> {
      * @param <T> the type of the operand and result of the operator
      */
     static <T> UnaryOperator<T> of(UnaryOperator<T> uncaptured) {
-        return uncaptured;
+        return Objects.requireNonNull(uncaptured);
     }
 
 }
