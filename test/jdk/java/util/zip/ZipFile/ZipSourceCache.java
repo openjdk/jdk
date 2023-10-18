@@ -45,6 +45,8 @@ public class ZipSourceCache {
     private static final String ZIPFILE_NAME =
             System.currentTimeMillis() + "-bug8317678.zip";
     private static final String ZIPENTRY_NAME = "random.txt";
+    private static final String INVALID_LOC_EXCEPTION =
+            "ZipFile invalid LOC header (bad signature)";
     private static final boolean DEBUG = false;
 
     private static File relativeFile = new File(ZIPFILE_NAME);
@@ -71,7 +73,7 @@ public class ZipSourceCache {
      * if an update to an existing zip file is detected.
      */
     @Test
-    public void test() throws Exception {
+    public void testKeySourceMapping() throws Exception {
         ZipFile absoluteZipFile;
         HashMap internalMap;
         int numSources;
@@ -100,7 +102,7 @@ public class ZipSourceCache {
                 readZipFileContents(z);
                 // the old Source in use for old file, should no longer map correctly
                 IOException ioe = assertThrows(IOException.class, () -> readZipFileContents(absoluteZipFile));
-                assertEquals("ZipFile invalid LOC header (bad signature)", ioe.getMessage());
+                assertEquals(INVALID_LOC_EXCEPTION, ioe.getMessage());
                 z.close();
                 assertEquals(--numSources, internalMap.size());
             }
