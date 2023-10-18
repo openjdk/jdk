@@ -227,6 +227,20 @@ public class CompressedClassPointers {
         output.shouldHaveExitValue(0);
     }
 
+    static final long unscaledClassSpaceMax = Long.decode("0x100000000");
+
+    private static void checkNarrowKlassShift(OutputAnalyzer output) throws Exception {
+        String s = output.firstMatch("Narrow klass base: .*");
+        int startIdx = s.indexOf("range:") + 7;
+        String longString = s.substring(startIdx);
+        long narrowKlassRange = Long.decode(longString);
+        if (narrowKlassRange < unscaledClassSpaceMax) {
+            output.shouldContain("Narrow klass shift: 0");
+        } else {
+            output.shouldContain("Narrow klass shift: 3");
+        }
+    }
+
     public static void smallHeapTestWith1GNoCoop() throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:-UseCompressedOops",
@@ -244,7 +258,7 @@ public class CompressedClassPointers {
         }
         if (!Platform.isAArch64() && !Platform.isPPC()) {
             // Currently relax this test for Aarch64 and ppc.
-            output.shouldContain("Narrow klass shift: 0");
+            checkNarrowKlassShift(output);
         }
         output.shouldHaveExitValue(0);
     }
@@ -266,7 +280,7 @@ public class CompressedClassPointers {
         }
         if (!Platform.isAArch64() && !Platform.isPPC()) {
             // Currently relax this test for Aarch64 and ppc.
-            output.shouldContain("Narrow klass shift: 0");
+            checkNarrowKlassShift(output);
         }
         output.shouldHaveExitValue(0);
     }
