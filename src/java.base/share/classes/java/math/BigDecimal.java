@@ -4146,15 +4146,15 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     static final class ConcatHelper {
-        private static final MethodHandle LONG_CHAR_CHAR_CHAR;
+        private static final MethodHandle LONG_DOT_CHAR_CHAR;
         static {
             try {
-                LONG_CHAR_CHAR_CHAR
+                LONG_DOT_CHAR_CHAR
                         = StringConcatFactory.makeConcatWithConstants(
                             MethodHandles.lookup(),
                             "scale2",
-                            MethodType.methodType(String.class, long.class, char.class, char.class, char.class),
-                            "\1\1\1\1"
+                            MethodType.methodType(String.class, long.class, char.class, char.class),
+                            "\1.\1\1"
                         ).dynamicInvoker();
             } catch (Exception e) {
                 throw new Error("Bootstrap error", e);
@@ -4175,7 +4175,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     return JLA.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
                 }
 
-                return (String) LONG_CHAR_CHAR_CHAR.invokeExact(highInt, '.', (char)(pair & 0xff), (char)(pair >> 8));
+                return (String) LONG_DOT_CHAR_CHAR.invokeExact(highInt, (char)(pair & 0xff), (char)(pair >> 8));
             } catch (Throwable e) {
                 throw new AssertionError(e);
             }
