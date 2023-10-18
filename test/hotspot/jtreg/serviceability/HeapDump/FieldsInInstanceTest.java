@@ -63,7 +63,7 @@ class FieldsInInstanceTarg extends LingeredApp {
     }
 
     interface I {
-            int i = -10;
+        int i = -10;
     }
     static abstract class A implements I {
         static boolean b;
