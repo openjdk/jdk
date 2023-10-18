@@ -28,6 +28,7 @@
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
+ * @run driver ModuleOption
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

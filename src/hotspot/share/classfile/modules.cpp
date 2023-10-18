@@ -564,7 +564,7 @@ void Modules::verify_archived_modules() {
 char* Modules::_archived_main_module_name = nullptr;
 #endif
 
-void Modules::dump_module_name() {
+void Modules::dump_main_module_name() {
   const char* module_name = Arguments::get_property("jdk.module.main");
   if (module_name != nullptr) {
     _archived_main_module_name = ArchiveBuilder::current()->ro_strdup(module_name);

@@ -468,14 +468,14 @@ public final class ModuleBootstrap {
                 limitedFinder = new SafeModuleFinder(finder);
         }
 
-        // if -Xshare:dump and mainModule are specified, check if the mainModule
-        // is a builtin JDK module. If so, set canArchive to true so that the
-        // module graph can be archived.
+        // If -Xshare:dump and mainModule are specified, check if the mainModule
+        // is in the runtime image and not in the upgrade module path. If so,
+        // set canArchive to true so that the module graph can be archived.
         if (CDS.isDumpingStaticArchive() && mainModule != null) {
             ModuleReference mainModuleRef = systemModuleFinder.find(mainModule).orElse(null);
             if (mainModuleRef != null) {
                 URI mainModuleLocation = mainModuleRef.location().orElse(null);
-                if (mainModuleLocation != null && mainModuleLocation.getScheme().equals("jrt")) {
+                if (mainModuleLocation != null && mainModuleLocation.getScheme().equalsIgnoreCase("jrt")) {
                     canArchive = true;
                 }
             }

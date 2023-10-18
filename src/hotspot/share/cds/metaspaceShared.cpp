@@ -481,7 +481,7 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   // Write lambform lines into archive
   LambdaFormInvokers::dump_static_archive_invokers();
   // Write module name into archive
-  CDS_JAVA_HEAP_ONLY(Modules::dump_module_name();)
+  CDS_JAVA_HEAP_ONLY(Modules::dump_main_module_name();)
   // Write the other data to the output array.
   DumpRegion* ro_region = ArchiveBuilder::current()->ro_region();
   char* start = ro_region->top();
