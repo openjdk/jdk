@@ -87,13 +87,16 @@ public class TestCritical extends NativeTestHelper {
     }
 
     public record AllowHeapCase(IntFunction<MemorySegment> newArraySegment, ValueLayout elementLayout,
-                                String fName, FunctionDescriptor fDesc) {}
+                                String fName, FunctionDescriptor fDesc, boolean readOnly) {}
 
     @Test(dataProvider = "allowHeapCases")
     public void testAllowHeap(AllowHeapCase testCase) throws Throwable {
         MethodHandle handle = downcallHandle(testCase.fName(), testCase.fDesc(), Linker.Option.critical(true));
         int elementCount = 10;
         MemorySegment heapSegment = testCase.newArraySegment().apply(elementCount);
+        if (testCase.readOnly()) {
+            heapSegment = heapSegment.asReadOnly();
+        }
         SequenceLayout sequence = MemoryLayout.sequenceLayout(elementCount, testCase.elementLayout());
 
         try (Arena arena = Arena.ofConfined()) {
@@ -147,11 +150,13 @@ public class TestCritical extends NativeTestHelper {
         List<AllowHeapCase> cases = new ArrayList<>();
 
         for (HeapSegmentFactory hsf : HeapSegmentFactory.values()) {
-            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_void", voidDesc));
-            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_int", intDesc));
-            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_return_buffer", L2Desc));
-            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_imr", L3Desc));
-            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_void_stack", stackDesc));
+            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_void", voidDesc, false));
+            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_int", intDesc, false));
+            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_return_buffer", L2Desc, false));
+            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_imr", L3Desc, false));
+            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_void_stack", stackDesc, false));
+            // readOnly
+            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_void", voidDesc, true));
         }
 
         return cases.stream().map(e -> new Object[]{ e }).toArray(Object[][]::new);
