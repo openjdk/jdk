@@ -87,6 +87,7 @@ public class CustomOutputBin extends OutputBin {
     /**
      * Returns the string table for class CustomOutputBin.
      */
+    @Override
     protected String[] getStringTable() {
       String[] nameTable = new String[customStringTable.size()];
       return customStringTable.toArray(nameTable);
@@ -102,6 +103,7 @@ public class CustomOutputBin extends OutputBin {
     /**
      * Returns the enumeration value table for class CustomOutputBin.
      */
+    @Override
     protected CustomOutputBin[] getEnumValueTable() {
         CustomOutputBin[] enumTable = new CustomOutputBin[customEnumTable.size()];
       return customEnumTable.toArray(enumTable);

@@ -153,6 +153,7 @@ public class OutputBin extends EnumSyntax
     /**
      * Returns the string table for class {@code OutputBin}.
      */
+    @Override
     protected String[] getStringTable() {
         return myStringTable.clone();
     }
@@ -160,6 +161,7 @@ public class OutputBin extends EnumSyntax
     /**
      * Returns the enumeration value table for class {@code OutputBin}.
      */
+    @Override
     protected EnumSyntax[] getEnumValueTable() {
         return (EnumSyntax[]) myEnumValueTable.clone();
     }
@@ -174,6 +176,7 @@ public class OutputBin extends EnumSyntax
      * @return printing attribute class (category), an instance of class
      *         {@link Class java.lang.Class}
      */
+    @Override
     public final Class<? extends Attribute> getCategory() {
         return OutputBin.class;
     }
@@ -187,6 +190,7 @@ public class OutputBin extends EnumSyntax
      *
      * @return attribute category name
      */
+    @Override
     public final String getName() {
         return "output-bin";
     }
