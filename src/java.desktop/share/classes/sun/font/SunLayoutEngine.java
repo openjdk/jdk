@@ -173,7 +173,7 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
         useFFM = "true".equals(prop);
 
     }
-       
+
     public void layout(FontStrikeDesc desc, float[] mat, float ptSize, int gmask,
                        int baseIndex, TextRecord tr, int typo_flags,
                        Point2D.Float pt, GVData data) {
