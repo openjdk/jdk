@@ -101,8 +101,9 @@ public interface BiConsumer<T, U> {
      * @param <T> the type of the first argument to the operation
      * @param <U> the type of the second argument to the operation
      */
-    static <T, U> BiConsumer<T, U> of(BiConsumer<T, U> uncaptured) {
-        return Objects.requireNonNull(uncaptured);
+    @SuppressWarnings("unchecked")
+    static <T, U> BiConsumer<T, U> of(BiConsumer<? super T, ? super U> uncaptured) {
+        return (BiConsumer<T, U>) Objects.requireNonNull(uncaptured);
     }
 
 }

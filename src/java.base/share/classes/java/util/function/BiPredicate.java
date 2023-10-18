@@ -125,8 +125,9 @@ public interface BiPredicate<T, U> {
      * @param <T> the type of the first argument to the predicate
      * @param <U> the type of the second argument the predicate
      */
-    static <T, U> BiPredicate<T, U> of(BiPredicate<T, U> uncaptured) {
-        return Objects.requireNonNull(uncaptured);
+    @SuppressWarnings("unchecked")
+    static <T, U> BiPredicate<T, U> of(BiPredicate<? super T, ? super U> uncaptured) {
+        return (BiPredicate<T, U>) Objects.requireNonNull(uncaptured);
     }
 
 }

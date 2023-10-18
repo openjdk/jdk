@@ -84,8 +84,9 @@ public interface Consumer<T> {
      * @param uncaptured to capture
      * @param <T> the type of the input to the operation
      */
-    static <T> Consumer<T> of(Consumer<T> uncaptured) {
-        return Objects.requireNonNull(uncaptured);
+    @SuppressWarnings("unchecked")
+    static <T> Consumer<T> of(Consumer<? super T> uncaptured) {
+        return (Consumer<T>) Objects.requireNonNull(uncaptured);
     }
 
 }

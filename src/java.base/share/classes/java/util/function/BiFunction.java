@@ -91,8 +91,9 @@ public interface BiFunction<T, U, R> {
      * @param <U> the type of the second argument to the function
      * @param <R> the type of the result of the function
      */
-    static <T, U, R> BiFunction<T, U, R> of(BiFunction<T, U, R> uncaptured) {
-        return Objects.requireNonNull(uncaptured);
+    @SuppressWarnings("unchecked")
+    static <T, U, R> BiFunction<T, U, R> of(BiFunction<? super T, ? super U, ? extends R> uncaptured) {
+        return (BiFunction<T, U, R>) Objects.requireNonNull(uncaptured);
     }
 
 }

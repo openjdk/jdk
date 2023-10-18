@@ -39,7 +39,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
-import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -163,6 +162,21 @@ final class CapturingFactoriesTest {
                 .andThenUnary(String::stripIndent);  // UnaryOperator<String>
 
         assertEquals("a", composed.apply(" a "));
+    }
+
+
+    @Test
+    void coVariants() {
+        var function = Function.of(Number::toString);                // Function<Number, String>
+        Function<Integer, String> sFunction = Function.of(function); // Function<String, String>
+        var sFunction2 = Function.of(function);                      // Function<Number, String>
+    }
+
+    @Test
+    void contraVariants() {
+        var function = Function.of(Object::toString);                // Function<Object, String>
+        Function<String, String> sFunction = Function.of(function);  // Function<String, String>
+        var sFunction2 = Function.of(function);                      // Function<Object, String>
     }
 
     // Methods

@@ -157,8 +157,9 @@ public interface Predicate<T> {
      * @param uncaptured to capture
      * @param <T> the type of the input to the predicate
      */
-    static <T> Predicate<T> of(Predicate<T> uncaptured) {
-        return Objects.requireNonNull(uncaptured);
+    @SuppressWarnings("unchecked")
+    static <T> Predicate<T> of(Predicate<? super T> uncaptured) {
+        return (Predicate<T>) Objects.requireNonNull(uncaptured);
     }
 
 }

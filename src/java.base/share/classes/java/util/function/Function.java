@@ -118,8 +118,9 @@ public interface Function<T, R> {
      * @param <T> the type of the input to the function
      * @param <R> the type of the result of the function
      */
-    static <T, R> Function<T, R> of(Function<T, R> uncaptured) {
-        return Objects.requireNonNull(uncaptured);
+    @SuppressWarnings("unchecked")
+    static <T, R> Function<T, R> of(Function<? super T, ? extends R> uncaptured) {
+        return (Function<T, R>) Objects.requireNonNull(uncaptured);
     }
 
 }
