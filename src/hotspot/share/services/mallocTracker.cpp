@@ -72,11 +72,8 @@ void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
     total_size += s->_malloc[index].malloc_size();
     total_count += s->_malloc[index].malloc_count();
   }
-  // ThreadCritical is used only for Virtual Memory de-/allocations.
-  // So, it is possible that concurrent malloc/free happened during the copy to snapshot.
-  if (s->_all_mallocs.size() != total_size || s->_all_mallocs.count() != total_count) {
-    s->_all_mallocs.set_size_and_count(total_size, total_count);
-  }
+  // malloc counters may be updated concurrently
+  s->_all_mallocs.set_size_and_count(total_size, total_count);
 }
 
 // Total malloc'd memory used by arenas
