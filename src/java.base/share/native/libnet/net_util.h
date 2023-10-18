@@ -170,12 +170,6 @@ NET_SetSockOpt(int fd, int level, int opt, const void *arg, int len);
 JNIEXPORT int JNICALL
 NET_Bind(int fd, SOCKETADDRESS *sa, int len);
 
-JNIEXPORT int JNICALL
-NET_MapSocketOption(jint cmd, int *level, int *optname);
-
-JNIEXPORT int JNICALL
-NET_MapSocketOptionV6(jint cmd, int *level, int *optname);
-
 JNIEXPORT jint JNICALL
 NET_EnableFastTcpLoopback(int fd);
 

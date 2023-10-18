@@ -909,6 +909,7 @@ public class JavacParser implements Parser {
                 if (mods.annotations.nonEmpty()) {
                     log.error(mods.annotations.head.pos(), Errors.RecordPatternsAnnotationsNotAllowed);
                 }
+                checkNoMods(pos, mods.flags & Flags.FINAL);
                 new TreeScanner() {
                     @Override
                     public void visitAnnotatedType(JCAnnotatedType tree) {
