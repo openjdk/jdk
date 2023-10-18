@@ -123,7 +123,6 @@ PerfCounter*    ClassLoader::_perf_class_verify_selftime = nullptr;
 PerfCounter*    ClassLoader::_perf_classes_linked = nullptr;
 PerfCounter*    ClassLoader::_perf_class_link_time = nullptr;
 PerfCounter*    ClassLoader::_perf_class_link_selftime = nullptr;
-PerfCounter*    ClassLoader::_perf_sys_class_lookup_time = nullptr;
 PerfCounter*    ClassLoader::_perf_shared_classload_time = nullptr;
 PerfCounter*    ClassLoader::_perf_sys_classload_time = nullptr;
 PerfCounter*    ClassLoader::_perf_app_classload_time = nullptr;
@@ -1377,7 +1376,6 @@ void ClassLoader::initialize(TRAPS) {
     NEWPERFEVENTCOUNTER(_perf_classes_linked, SUN_CLS, "linkedClasses");
     NEWPERFEVENTCOUNTER(_perf_classes_verified, SUN_CLS, "verifiedClasses");
 
-    NEWPERFTICKCOUNTER(_perf_sys_class_lookup_time, SUN_CLS, "lookupSysClassTime");
     NEWPERFTICKCOUNTER(_perf_shared_classload_time, SUN_CLS, "sharedClassLoadTime");
     NEWPERFTICKCOUNTER(_perf_sys_classload_time, SUN_CLS, "sysClassLoadTime");
     NEWPERFTICKCOUNTER(_perf_app_classload_time, SUN_CLS, "appClassLoadTime");

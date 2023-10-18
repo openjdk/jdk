@@ -911,7 +911,12 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // init thread attributes
   pthread_attr_t attr;
-  pthread_attr_init(&attr);
+  int rslt = pthread_attr_init(&attr);
+  if (rslt != 0) {
+    thread->set_osthread(nullptr);
+    delete osthread;
+    return false;
+  }
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
   // Calculate stack size if it's not specified by caller.
@@ -960,6 +965,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
                             stack_size / K);
     thread->set_osthread(nullptr);
     delete osthread;
+    pthread_attr_destroy(&attr);
     return false;
   }
 

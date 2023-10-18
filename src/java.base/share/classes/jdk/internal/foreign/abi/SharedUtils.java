@@ -54,10 +54,8 @@ import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.invoke.VarHandle;
 import java.lang.ref.Reference;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
@@ -127,6 +125,10 @@ public final class SharedUtils {
 
     public static long alignUp(long addr, long alignment) {
         return ((addr - 1) | (alignment - 1)) + 1;
+    }
+
+    public static long remainsToAlignment(long addr, long alignment) {
+        return alignUp(addr, alignment) - addr;
     }
 
     /**
