@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,14 @@ import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.connect.AttachingConnector;
 import com.sun.jdi.connect.Connector;
 import com.sun.jdi.connect.IllegalConnectorArgumentsException;
-import com.sun.jdi.connect.ListeningConnector;
 import com.sun.jdi.event.EventIterator;
 import com.sun.jdi.event.EventQueue;
 import com.sun.jdi.event.EventSet;
 import com.sun.jdi.event.Event;
 import com.sun.jdi.event.ExceptionEvent;
-import com.sun.jdi.request.EventRequestManager;
-import jdk.test.lib.Utils;
 import lib.jdb.Debuggee;
 
 import java.io.IOException;
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.Iterator;
 import java.util.List;
@@ -57,6 +51,10 @@ import java.util.Map;
 public class JdwpOnThrowTest {
 
     private static long TIMEOUT = 10000;
+
+    private static String ATTACH_CONNECTOR = "com.sun.jdi.SocketAttach";
+    // cache socket attaching connector
+    private static AttachingConnector attachingConnector;
 
     public static void main(String[] args) throws Exception {
         int port = findFreePort();
@@ -116,10 +114,6 @@ public class JdwpOnThrowTest {
         }
     }
 
-    private static String ATTACH_CONNECTOR = "com.sun.jdi.SocketAttach";
-    // cache socket attaching connector
-    private static AttachingConnector attachingConnector;
-
     private static VirtualMachine attach(String address, String port) throws IOException {
         if (attachingConnector == null) {
             attachingConnector = (AttachingConnector)getConnector(ATTACH_CONNECTOR);
@@ -137,8 +131,7 @@ public class JdwpOnThrowTest {
 
     private static Connector getConnector(String name) {
         List<Connector> connectors = Bootstrap.virtualMachineManager().allConnectors();
-        for (Iterator<Connector> iter = connectors.iterator(); iter.hasNext(); ) {
-            Connector connector = iter.next();
+        for (Connector connector : Bootstrap.virtualMachineManager().allConnectors()) {
             if (connector.name().equalsIgnoreCase(name)) {
                 return connector;
             }
