@@ -1614,7 +1614,10 @@ public class JavaTokenizer extends UnicodeReader {
                 int start = position();
 
                 if (accept("/**")) {
-                    skip('*');
+                    if (skip('*') != 0 && is('/')) {
+                        return ;
+                    }
+
                     skipWhitespace();
 
                     if (isEOLN()) {
