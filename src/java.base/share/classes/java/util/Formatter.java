@@ -2915,6 +2915,8 @@ public final class Formatter implements Closeable, Flushable {
             } else if (isConversion(c)) {
                 conversion = c;
                 ++off;
+            } else {
+                return 0;
             }
 
             if (argSize + flagSize + widthSize + precisionSize + t + conversion != 0) {

@@ -218,7 +218,6 @@ public final class FormatProcessor implements Processor<String, RuntimeException
      * @throws MissingFormatArgumentException if not at end or found and not needed
      */
     private static boolean findFormat(String fragment, boolean needed) {
-        Formatter.FormatSpecifierParser parser = null;
         int max = fragment.length();
         for (int i = 0; i < max;) {
             int n = fragment.indexOf('%', i);
@@ -232,31 +231,21 @@ public final class FormatProcessor implements Processor<String, RuntimeException
             }
 
             char c = fragment.charAt(i);
-            if (parser == null) {
-                parser = new Formatter.FormatSpecifierParser(null, c, i, fragment, max);
-            } else {
-                parser.reset(c, i);
+            if (c == '%' || c == 'n') {
+                i++;
+                continue;
             }
-
-            String group;
-            int off = parser.parse();
-
-            if (off == 1) {
-                char c1 = fragment.charAt(off);
-                if (c1 == '%' || c1 == 'n') {
-                    continue;
-                }
-            }
-
+            int off = new Formatter.FormatSpecifierParser(null, c, i, fragment, max)
+                    .parse();
             if (off > 0) {
                 if (i + off == max && needed) {
                     return true;
                 }
-                group = fragment.substring(i - 1, i + off + 1);
+                String group = fragment.substring(i - 1, i + off);
+                throw new MissingFormatArgumentException(group + " is not immediately followed by an embedded expression");
             } else {
-                group = String.valueOf(c);
+                throw new UnknownFormatConversionException(String.valueOf(c));
             }
-            throw new MissingFormatArgumentException(group + " is not immediately followed by an embedded expression");
         }
         return false;
     }
