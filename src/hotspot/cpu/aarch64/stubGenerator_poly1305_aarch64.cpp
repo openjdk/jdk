@@ -78,7 +78,6 @@ address generate_poly1305_processBlocks2() {
   __ push(callee_saved, sp);
 
   auto regs = (RegSet::range(c_rarg0, r28) - r18_tls - rscratch1 - rscratch2 + lr).begin();
-  auto vregs = (vRegSet::range(v0, v7) + vRegSet::range(v16, v31)).begin();
 
   // Arguments
   const Register input_start = *regs++, length = *regs++, acc_start = *regs++, r_start = *regs++;
@@ -105,17 +104,11 @@ address generate_poly1305_processBlocks2() {
   __ subs(zr, length, POLY1305_BLOCK_LENGTH * 8);
   __ br(__ LE, SMALL);
 
-  // We're going to use R**4
+  // We're going to use R**2
   {
     Regs u1_lo(u1[0]._lo, u1[1]._lo, u1[2]._lo);
 
     poo = __ pc();
-
-    __ poly1305_field_multiply(u1, R, R, RR2, regs);
-    __ copy_3_regs(R, u1_lo);
-
-    __ lsl(RR2, R[2], 26);
-    __ add(RR2, RR2, RR2, __ LSL, 2);
 
     __ poly1305_field_multiply(u1, R, R, RR2, regs);
     __ copy_3_regs(R, u1_lo);
@@ -130,38 +123,10 @@ address generate_poly1305_processBlocks2() {
     __ mov(u1[i]._lo, 0); __ mov(u1[i]._hi, 0);
   }
 
-  const FloatRegister v_u0[] = {*vregs++, *vregs++, *vregs++, *vregs++, *vregs++};
-  const FloatRegister s_v[] = {*vregs++, *vregs++, *vregs++};
+  __ m_print52(u0[2]._lo, u0[1]._lo, u0[0]._lo, "\n\nBefore\n  u0");
+  __ m_print52(u1[2]._lo, u1[1]._lo, u1[0]._lo, "  u1");
 
-  const FloatRegister zero = *vregs++;
-  const FloatRegister r_v[] = {*vregs++, *vregs++};
-  const FloatRegister rr_v[] = {*vregs++, *vregs++};
-
-  // if (use_vec) {
-    __ movi(zero, __ T16B, 0);
-
-    __ copy_3_regs_to_5_elements(r_v, R[0], R[1], R[2]);
-
-    // rr_v = r_v * 5
-    { FloatRegister vtmp = *vregs;
-      __ shl(vtmp, __ T4S, r_v[0], 2);
-      __ addv(rr_v[0], __ T4S, r_v[0], vtmp);
-      __ shl(vtmp, __ T4S, r_v[1], 2);
-      __ addv(rr_v[1], __ T4S, r_v[1], vtmp);
-    }
-
-    for (int i = 0; i < 5; i++) {
-      __ movi(v_u0[i], __ T16B, 0);
-    }
-  //   __ copy_3_to_5_regs(v_u0, u0[0]._lo, u0[1]._lo, u0[2]._lo);
-  // }
-
-    __ m_print52(u0[2]._lo, u0[1]._lo, u0[0]._lo, "\n\nBefore\n  u0");
-    __ m_print52(u1[2]._lo, u1[1]._lo, u1[0]._lo, "  u1");
-    __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 0, "v[2]");
-    __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 1, "v[3]");
-
-    {
+  {
     Label DONE, LOOP;
 
     __ subsw(rscratch1, length, POLY1305_BLOCK_LENGTH * 8);
@@ -170,10 +135,7 @@ address generate_poly1305_processBlocks2() {
     __ align(OptoLoopAlignment);
     __ bind(LOOP);
     {
-      // __ poly1305_load(S0, input_start);
-      // __ poly1305_load(S1, input_start);
-
-      constexpr int COLS = 3;
+      constexpr int COLS = 2;
       LambdaAccumulator gen[COLS];
 
       __ poly1305_step(gen[0], S0, u0, input_start);
@@ -181,10 +143,6 @@ address generate_poly1305_processBlocks2() {
 
       __ poly1305_step(gen[1], S1, u1, input_start);
       __ poly1305_field_multiply(gen[1], u1, S1, R, RR2, regs);
-
-      __ poly1305_step_vec(gen[2], s_v, v_u0, zero, input_start, vregs.remaining());
-      __ poly1305_multiply_vec(gen[2], v_u0, vregs.remaining(), s_v, r_v, rr_v);
-      __ poly1305_reduce_vec(gen[2], v_u0, zero, vregs.remaining());
 
       LambdaAccumulator::Iterator it[COLS];
       int len[COLS];
@@ -219,22 +177,20 @@ address generate_poly1305_processBlocks2() {
 
       __ m_print52(u0[2]._lo, u0[1]._lo, u0[0]._lo, "  u0");
       __ m_print52(u1[2]._lo, u1[1]._lo, u1[0]._lo, "  u1");
-      __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 0, "u[2]");
-      __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 1, "u[3]");
 
       for (int col = 0; col < COLS; col++) {
         assert(*(it[col]) == nullptr, "Make sure all generators are exhausted");
       }
     }
 
-    __ subw(length, length, POLY1305_BLOCK_LENGTH * 4);
-    __ subsw(rscratch1, length, POLY1305_BLOCK_LENGTH * 8);
+    __ subw(length, length, POLY1305_BLOCK_LENGTH * 2);
+    __ subsw(rscratch1, length, POLY1305_BLOCK_LENGTH * 4);
     __ br(Assembler::GE, LOOP);
 
     __ bind(DONE);
   }
 
-  // Last four parallel blocks
+  // Last two parallel blocks
   {
     // Load R**1
     __ pack_26(R[0], R[1], R[2], r_start);
@@ -250,19 +206,7 @@ address generate_poly1305_processBlocks2() {
     __ poly1305_add(S0, u1);
     __ poly1305_field_multiply(u0, S0, R, RR2, regs);
 
-    __ poly1305_load(S0, input_start);
-    __ poly1305_add(S0, u0);
-    __ poly1305_transfer(u1, v_u0, 0, *vregs);
-    __ poly1305_add(S0, u1);
-    __ poly1305_field_multiply(u0, S0, R, RR2, regs);
-
-    __ poly1305_load(S0, input_start);
-    __ poly1305_add(S0, u0);
-    __ poly1305_transfer(u1, v_u0, 1, *vregs);
-    __ poly1305_add(S0, u1);
-    __ poly1305_field_multiply(u0, S0, R, RR2, regs);
-
-    __ subw(length, length, POLY1305_BLOCK_LENGTH * 4);
+    __ subw(length, length, POLY1305_BLOCK_LENGTH * 2);
   }
 
   // Maybe some last blocks
