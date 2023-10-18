@@ -35,7 +35,7 @@ import jdk.internal.misc.ScopedMemoryAccess;
  * memory mapped segment, such as the file descriptor associated with the mapping. This information is crucial
  * in order to correctly reconstruct a byte buffer object from the segment (see {@link #makeByteBuffer()}).
  */
-public final class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
+final class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
 
     private final UnmapperProxy unmapper;
 

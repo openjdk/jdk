@@ -21,7 +21,7 @@
  * questions.
  */
 
-package org.openjdk.foreigntest;
+package org.openjdk.foreigntest.unnamed;
 
 import java.lang.foreign.*;
 import java.lang.foreign.Linker.Option;
