@@ -897,16 +897,17 @@ public abstract class NumberFormat extends Format  {
     /**
      * Gets the currency used by this number format when formatting
      * currency values. The initial value is derived in a locale dependent
-     * way. The returned value may be null if no valid
+     * way. The returned value may be {@code null} if no valid
      * currency could be determined and no currency has been set using
-     * {@link #setCurrency(java.util.Currency) setCurrency}.
-     * <p>
-     * The default implementation throws
-     * {@code UnsupportedOperationException}.
+     * {@link #setCurrency(Currency)}.
      *
+     * @implSpec The default implementation always throws {@code
+     * UnsupportedOperationException}. Subclasses should override this method
+     * if currency formatting is desired.
+     * @implNote {@link DecimalFormat} supports this method.
      * @return the currency used by this number format, or {@code null}
-     * @throws    UnsupportedOperationException if the number format class
-     * doesn't implement currency formatting
+     * @throws    UnsupportedOperationException if this implementation does
+     *            not support this operation
      * @since 1.4
      */
     public Currency getCurrency() {
@@ -917,14 +918,15 @@ public abstract class NumberFormat extends Format  {
      * Sets the currency used by this number format when formatting
      * currency values. This does not update the minimum or maximum
      * number of fraction digits used by the number format.
-     * <p>
-     * The default implementation throws
-     * {@code UnsupportedOperationException}.
      *
+     * @implSpec The default implementation always throws {@code
+     * UnsupportedOperationException}. Subclasses should override this method
+     * if currency formatting is desired.
+     * @implNote {@link DecimalFormat} supports this method.
      * @param currency the new currency to be used by this number format
-     * @throws    UnsupportedOperationException if the number format class
-     * doesn't implement currency formatting
-     * @throws    NullPointerException if {@code currency} is null
+     * @throws    NullPointerException if {@code currency} is {@code null}
+     * @throws    UnsupportedOperationException if this implementation does
+     *            not support this operation
      * @since 1.4
      */
     public void setCurrency(Currency currency) {
@@ -933,14 +935,14 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * Gets the {@link java.math.RoundingMode} used in this NumberFormat.
-     * The default implementation of this method in NumberFormat
-     * always throws {@link java.lang.UnsupportedOperationException}.
-     * Subclasses which handle different rounding modes should override
-     * this method.
      *
-     * @throws    UnsupportedOperationException The default implementation
-     *     always throws this exception
+     * @implSpec The default implementation always throws {@code
+     * UnsupportedOperationException}. Subclasses which handle different
+     * rounding modes should override this method.
+     * @implNote {@link DecimalFormat} and {@link CompactNumberFormat} support this method.
      * @return The {@code RoundingMode} used for this NumberFormat.
+     * @throws    UnsupportedOperationException if this implementation does
+     *            not support this operation
      * @see #setRoundingMode(RoundingMode)
      * @since 1.6
      */
@@ -950,14 +952,13 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * Sets the {@link java.math.RoundingMode} used in this NumberFormat.
-     * The default implementation of this method in NumberFormat always
-     * throws {@link java.lang.UnsupportedOperationException}.
-     * Subclasses which handle different rounding modes should override
-     * this method.
      *
-     * @throws    UnsupportedOperationException The default implementation
-     *     always throws this exception
-     * @throws    NullPointerException if {@code roundingMode} is null
+     * @implSpec The default implementation throws {@code UnsupportedOperationException}.
+     * Subclasses which handle different rounding modes should override this method.
+     * @implNote {@link DecimalFormat} and {@link CompactNumberFormat} support this method.
+     * @throws    NullPointerException if {@code roundingMode} is {@code null}
+     * @throws    UnsupportedOperationException if this implementation does
+     *            not support this operation
      * @param roundingMode The {@code RoundingMode} to be used
      * @see #getRoundingMode()
      * @since 1.6
