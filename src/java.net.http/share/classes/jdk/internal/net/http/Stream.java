@@ -179,6 +179,8 @@ class Stream<T> extends ExchangeImpl<T> {
         try {
             if (subscriber == null) {
                 subscriber = responseSubscriber = pendingResponseSubscriber;
+                // pendingResponseSubscriber will be null until response headers have been received and
+                // readBodyAsync is called.
                 if (subscriber == null) {
                     // can't process anything yet
                     return;

@@ -76,8 +76,8 @@ public class ExpectContinueResetTest {
 
     static PrintStream err = new PrintStream(System.err);
 
-    @DataProvider(name = "testDataUnconsumedBody")
-    public Object[][] testDataUnconsumedBody() {
+    @DataProvider(name = "testData")
+    public Object[][] testData() {
         // Not consuming the InputStream in the server's handler results in different handling of RST_STREAM client-side
         return new Object[][] {
                 { partialResponseResetNoError },
@@ -88,8 +88,8 @@ public class ExpectContinueResetTest {
     }
 
 
-    @Test(dataProvider = "testDataUnconsumedBody")
-    public void testUnconsumedBody(URI uri) {
+    @Test(dataProvider = "testData")
+    public void test(URI uri) {
         err.printf("\nTesting with Version: %s, URI: %s\n", HTTP_2, uri.toASCIIString());
         Iterable<byte[]> iterable = EndlessDataChunks::new;
         HttpRequest.BodyPublisher testPub = HttpRequest.BodyPublishers.ofByteArrays(iterable);
