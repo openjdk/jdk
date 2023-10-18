@@ -305,7 +305,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * {@inheritDoc}
      *
      * @implSpec
-     * This implementation returns a set that subclasses {@link AbstractSet}.
+     * This implementation returns a fresh set that subclasses {@link AbstractSet}.
      * The subclass's iterator method returns a "wrapper object" over this
      * map's {@code entrySet()} iterator.  The {@code size} method
      * delegates to this map's {@code size} method and the
@@ -327,7 +327,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * {@inheritDoc}
      *
      * @implSpec
-     * This implementation returns a collection that subclasses {@link
+     * This implementation returns a fresh collection that subclasses {@link
      * AbstractCollection}.  The subclass's iterator method returns a
      * "wrapper object" over this map's {@code entrySet()} iterator.
      * The {@code size} method delegates to this map's {@code size}
