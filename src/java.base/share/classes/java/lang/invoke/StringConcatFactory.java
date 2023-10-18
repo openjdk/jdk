@@ -701,7 +701,7 @@ public final class StringConcatFactory {
     // building block for complex prepender combinators.
     private static MethodHandle prepender(String prefix, Class<?> cl) {
         if (prefix == null || prefix.isEmpty()) {
-            return noConstantPrepender(cl);
+            return noPrefixPrepender(cl);
         } else {
             return MethodHandles.insertArguments(
                     prepender(cl), 3, prefix);
@@ -722,7 +722,7 @@ public final class StringConcatFactory {
         return prepend;
     }
 
-    private static MethodHandle noConstantPrepender(Class<?> cl) {
+    private static MethodHandle noPrefixPrepender(Class<?> cl) {
         int idx = classIndex(cl);
         MethodHandle prepend = NO_PREFIX_PREPENDERS[idx];
         if (prepend == null) {
