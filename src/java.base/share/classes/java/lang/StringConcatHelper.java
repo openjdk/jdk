@@ -138,7 +138,6 @@ final class StringConcatHelper {
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     static long mix(long lengthCoder, FormatConcatItem value) {
         lengthCoder = value.mix(lengthCoder);
-
         return checkOverflow(lengthCoder);
     }
 
@@ -198,7 +197,7 @@ final class StringConcatHelper {
      */
     static long prepend(long indexCoder, byte[] buf, boolean value, String prefix) {
         indexCoder = prepend(indexCoder, buf, value);
-        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
+        indexCoder = prepend(indexCoder, buf, prefix);
         return indexCoder;
     }
 
@@ -234,7 +233,7 @@ final class StringConcatHelper {
      */
     static long prepend(long indexCoder, byte[] buf, char value, String prefix) {
         indexCoder = prepend(indexCoder, buf, value);
-        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
+        indexCoder = prepend(indexCoder, buf, prefix);
         return indexCoder;
     }
 
@@ -269,7 +268,7 @@ final class StringConcatHelper {
      */
     static long prepend(long indexCoder, byte[] buf, int value, String prefix) {
         indexCoder = prepend(indexCoder, buf, value);
-        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
+        indexCoder = prepend(indexCoder, buf, prefix);
         return indexCoder;
     }
 
@@ -304,7 +303,7 @@ final class StringConcatHelper {
      */
     static long prepend(long indexCoder, byte[] buf, long value, String prefix) {
         indexCoder = prepend(indexCoder, buf, value);
-        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
+        indexCoder = prepend(indexCoder, buf, prefix);
         return indexCoder;
     }
 
@@ -341,7 +340,7 @@ final class StringConcatHelper {
      */
     static long prepend(long indexCoder, byte[] buf, String value, String prefix) {
         indexCoder = prepend(indexCoder, buf, value);
-        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
+        indexCoder = prepend(indexCoder, buf, prefix);
         return indexCoder;
     }
 
@@ -384,7 +383,7 @@ final class StringConcatHelper {
     static long prepend(long indexCoder, byte[] buf,
                         FormatConcatItem value, String prefix) {
         indexCoder = prepend(indexCoder, buf, value);
-        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
+        indexCoder = prepend(indexCoder, buf, prefix);
         return indexCoder;
     }
 

@@ -700,19 +700,12 @@ public final class StringConcatFactory {
     // Simple prependers, single argument. May be used directly or as a
     // building block for complex prepender combinators.
     private static MethodHandle prepender(String prefix, Class<?> cl) {
-        MethodHandle prepend;
-        int idx = classIndex(cl);
-        if (prefix == null) {
-            prepend = NULL_PREPENDERS[idx];
-            if (prepend == null) {
-                NULL_PREPENDERS[idx] = prepend = MethodHandles.insertArguments(
-                                prepender(cl), 3, (String)null);
-            }
+        if (prefix == null || prefix.isEmpty()) {
+            return noConstantPrepender(cl);
         } else {
-            prepend = MethodHandles.insertArguments(
+            return MethodHandles.insertArguments(
                     prepender(cl), 3, prefix);
         }
-        return prepend;
     }
 
     private static MethodHandle prepender(Class<?> cl) {
@@ -725,6 +718,20 @@ public final class StringConcatFactory {
             PREPENDERS[idx] = prepend = JLA.stringConcatHelper("prepend",
                     methodType(long.class, long.class, byte[].class,
                             Wrapper.asPrimitiveType(cl), String.class)).rebind();
+        }
+        return prepend;
+    }
+
+    private static MethodHandle noConstantPrepender(Class<?> cl) {
+        int idx = classIndex(cl);
+        MethodHandle prepend = NULL_PREPENDERS[idx];
+        if (prepend == null) {
+            if (idx == STRING_CONCAT_ITEM) {
+                cl = FormatConcatItem.class;
+            }
+            NULL_PREPENDERS[idx] = prepend = JLA.stringConcatHelper("prepend",
+                    methodType(long.class, long.class, byte[].class,
+                            Wrapper.asPrimitiveType(cl))).rebind();
         }
         return prepend;
     }
@@ -1117,7 +1124,7 @@ public final class StringConcatFactory {
 
             Class<?> ttype = ttypes[pos];
             // (long,byte[],ttype) -> long
-            MethodHandle prepender = prepender(fragment.isEmpty() ? null : fragment, ttype);
+            MethodHandle prepender = prepender(fragment, ttype);
             // (byte[],long,ttypes...) -> String (unchanged)
             mh = MethodHandles.filterArgumentsWithCombiner(mh, 1, prepender,1, 0, 2 + pos);
 
