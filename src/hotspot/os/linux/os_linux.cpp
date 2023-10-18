@@ -3482,7 +3482,7 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
 // 'requested_addr' is only treated as a hint, the return value may or
 // may not start from the requested address. Unlike Linux mmap(), this
 // function returns null to indicate failure.
-static char* anon_mmap(char* requested_addr, size_t bytes) {
+static char* anon_mmap(char* requested_addr, size_t bytes, int *fail_reason) {
   // If a requested address was given:
   //
   // The POSIX-conforming way is to *omit* MAP_FIXED. This will leave existing mappings intact.
@@ -3506,6 +3506,9 @@ static char* anon_mmap(char* requested_addr, size_t bytes) {
   // succeed if we have enough swap space to back the physical page.
   char* addr = (char*)::mmap(requested_addr, bytes, PROT_NONE, flags, -1, 0);
 
+  if (fail_reason != nullptr)
+    *fail_reason = errno;
+
   return addr == MAP_FAILED ? nullptr : addr;
 }
 
@@ -3523,7 +3526,7 @@ static char* anon_mmap_aligned(char* req_addr, size_t bytes, size_t alignment) {
     extra_size += alignment;
   }
 
-  char* start = anon_mmap(req_addr, extra_size);
+  char* start = anon_mmap(req_addr, extra_size, nullptr);
   if (start != nullptr) {
     if (req_addr != nullptr) {
       if (start != req_addr) {
@@ -3551,7 +3554,7 @@ static int anon_munmap(char * addr, size_t size) {
 }
 
 char* os::pd_reserve_memory(size_t bytes, bool exec) {
-  return anon_mmap(nullptr, bytes);
+  return anon_mmap(nullptr, bytes, nullptr);
 }
 
 bool os::pd_release_memory(char* addr, size_t size) {
@@ -4210,7 +4213,7 @@ bool os::can_execute_large_page_memory() {
 
 char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
-  char* result = pd_attempt_reserve_memory_at(requested_addr, bytes, !ExecMem);
+  char* result = pd_attempt_reserve_memory_at(requested_addr, bytes, !ExecMem, nullptr);
   if (result != nullptr) {
     if (replace_existing_mapping_with_file_mapping(result, bytes, file_desc) == nullptr) {
       vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
@@ -4222,7 +4225,7 @@ char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, i
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
 
-char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec, int *fail_reason) {
   // Assert only that the size is a multiple of the page size, since
   // that's all that mmap requires, and since that's all we really know
   // about at this low abstraction level.  If we need higher alignment,
@@ -4232,7 +4235,7 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
 
   // Linux mmap allows caller to pass an address as hint; give it a try first,
   // if kernel honors the hint then we can return immediately.
-  char * addr = anon_mmap(requested_addr, bytes);
+  char * addr = anon_mmap(requested_addr, bytes, fail_reason);
   if (addr == requested_addr) {
     return requested_addr;
   }

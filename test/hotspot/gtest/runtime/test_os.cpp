@@ -506,8 +506,12 @@ TEST_VM(os, release_multi_mappings) {
   PRINT_MAPPINGS("B");
 
   // ...re-reserve the middle stripes. This should work unless release silently failed.
-  address p2 = (address)os::attempt_reserve_memory_at((char*)p_middle_stripes, middle_stripe_len);
-  ASSERT_EQ(p2, p_middle_stripes);
+  int fail_reason = 0;
+
+  address p2 = (address)os::attempt_reserve_memory_at((char*)p_middle_stripes, middle_stripe_len, false, &fail_reason);
+
+  ASSERT_EQ(p2, p_middle_stripes) << err_msg("allocation failed errno = %d, err-text: %s\n" , fail_reason, os::strerror(fail_reason));
+
   PRINT_MAPPINGS("C");
 
   // Clean up. Release all mappings.
@@ -564,9 +568,13 @@ TEST_VM(os, release_one_mapping_multi_commits) {
   ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
   PRINT_MAPPINGS("B");
 
-  // re-reserve it. This should work unless release failed.
-  address p2 = (address)os::attempt_reserve_memory_at((char*)p, total_range_len);
-  ASSERT_EQ(p2, p);
+  // re-reserve it. If failed, the reason is reported back through fail_reason.
+  int fail_reason = 0;
+
+  address p2 = (address)os::attempt_reserve_memory_at((char*)p, total_range_len, false, &fail_reason);
+
+  ASSERT_EQ(p2, p) << err_msg("allocation at address failed errno = %d, err-text: %s" , fail_reason, os::strerror(fail_reason));
+
   PRINT_MAPPINGS("C");
 
   ASSERT_TRUE(os::release_memory((char*)p, total_range_len));

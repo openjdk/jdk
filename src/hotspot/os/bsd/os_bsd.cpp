@@ -1799,7 +1799,7 @@ char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, i
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
 
-char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec, int *fail_reason) {
   // Assert only that the size is a multiple of the page size, since
   // that's all that mmap requires, and since that's all we really know
   // about at this low abstraction level.  If we need higher alignment,
@@ -1810,6 +1810,9 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   // Bsd mmap allows caller to pass an address as hint; give it a try first,
   // if kernel honors the hint then we can return immediately.
   char * addr = anon_mmap(requested_addr, bytes, exec);
+  // Keep the error number to report it back
+  if (fail_reason != nullptr)
+    *fail_reason = errno;
   if (addr == requested_addr) {
     return requested_addr;
   }

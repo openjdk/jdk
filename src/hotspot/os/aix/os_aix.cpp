@@ -1671,7 +1671,7 @@ static bool uncommit_shmated_memory(char* addr, size_t size) {
 // Reserve memory via mmap.
 // If <requested_addr> is given, an attempt is made to attach at the given address.
 // Failing that, memory is allocated at any address.
-static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
+static char* reserve_mmaped_memory(size_t bytes, char* requested_addr, int *fail_reason) {
   trcVerbose("reserve_mmaped_memory " UINTX_FORMAT " bytes, wishaddress " PTR_FORMAT "...",
     bytes, p2i(requested_addr));
 
@@ -1727,6 +1727,8 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
 
   if (addr == MAP_FAILED) {
     trcVerbose("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) failed (%d)", p2i(requested_addr), size, errno);
+    if (fail_reason != nullptr)
+      *fail_reason = errno;
     return nullptr;
   } else if (requested_addr != nullptr && addr != requested_addr) {
     trcVerbose("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) succeeded, but at a different address than requested (" PTR_FORMAT "), will unmap",
@@ -2148,7 +2150,7 @@ char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, i
 
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
-char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec, int *fail_reason) {
   char* addr = nullptr;
 
   // Always round to os::vm_page_size(), which may be larger than 4K.
@@ -2157,12 +2159,12 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   // In 4K mode always use mmap.
   // In 64K mode allocate small sizes with mmap, large ones with 64K shmatted.
   if (os::vm_page_size() == 4*K) {
-    return reserve_mmaped_memory(bytes, requested_addr);
+    return reserve_mmaped_memory(bytes, requested_addr, fail_reason);
   } else {
     if (bytes >= Use64KPagesThreshold) {
       return reserve_shmated_memory(bytes, requested_addr);
     } else {
-      return reserve_mmaped_memory(bytes, requested_addr);
+      return reserve_mmaped_memory(bytes, requested_addr, fail_reason);
     }
   }
 
