@@ -33,6 +33,9 @@
 #include "c1/c1_ValueMap.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "code/debugInfoRec.hpp"
+#ifndef PRODUCT
+#include "compiler/compilationFailureInfo.hpp"
+#endif
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compileLog.hpp"
@@ -583,6 +586,9 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _has_monitors(false)
 , _install_code(install_code)
 , _bailout_msg(nullptr)
+#ifndef PRODUCT
+, _first_failure_details(nullptr)
+#endif
 , _exception_info_list(nullptr)
 , _allocator(nullptr)
 , _code(buffer_blob)
@@ -624,7 +630,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 Compilation::~Compilation() {
   // simulate crash during compilation
   assert(CICrashAt < 0 || (uintx)_env->compile_id() != (uintx)CICrashAt, "just as planned");
-
+  NOT_PRODUCT(delete _first_failure_details;)
   _env->set_compiler_data(nullptr);
 }
 
@@ -650,6 +656,9 @@ void Compilation::bailout(const char* msg) {
     // keep first bailout message
     if (PrintCompilation || PrintBailouts) tty->print_cr("compilation bailout: %s", msg);
     _bailout_msg = msg;
+#ifndef PRODUCT
+    _first_failure_details = new CompilationFailureInfo(msg);
+#endif
   }
 }
 

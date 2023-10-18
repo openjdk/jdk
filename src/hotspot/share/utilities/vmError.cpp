@@ -27,6 +27,7 @@
 #include "precompiled.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/compilationFailureInfo.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/gcConfig.hpp"
@@ -1047,6 +1048,12 @@ void VMError::report(outputStream* st, bool _verbose) {
     // Print an explicit hint if we crashed on access to the CDS archive.
     check_failing_cds_access(st, _siginfo);
     st->cr();
+
+#ifndef PRODUCT
+  STEP_IF("printing pending compilation failure",
+         _verbose && _thread != nullptr && _thread->is_Compiler_thread())
+    CompilationFailureInfo::print_pending_compilation_failure(st);
+#endif
 
   STEP_IF("printing registers", _verbose && _context != nullptr)
     // printing registers
