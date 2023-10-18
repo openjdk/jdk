@@ -47,6 +47,7 @@ private:
   size_t _success_degenerated_gcs;
   // Written by control thread, read by mutators
   volatile size_t _success_full_gcs;
+  volatile size_t _consecutive_young_gcs;
   size_t _alloc_failure_degenerated;
   size_t _alloc_failure_degenerated_upgrade_to_full;
   size_t _alloc_failure_full;
@@ -69,10 +70,10 @@ public:
 
   void record_mixed_cycle();
   void record_abbreviated_cycle();
-  void record_success_concurrent();
+  void record_success_concurrent(bool is_young);
   void record_success_old();
   void record_interrupted_old();
-  void record_success_degenerated();
+  void record_success_degenerated(bool is_young);
   void record_success_full();
   void record_alloc_failure_to_degenerated(ShenandoahGC::ShenandoahDegenPoint point);
   void record_alloc_failure_to_full();
@@ -93,6 +94,10 @@ public:
 
   size_t full_gc_count() const {
     return _success_full_gcs + _alloc_failure_degenerated_upgrade_to_full;
+  }
+
+  inline size_t consecutive_young_gc_count() const {
+    return _consecutive_young_gcs;
   }
 };
 

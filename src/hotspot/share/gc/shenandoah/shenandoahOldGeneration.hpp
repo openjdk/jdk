@@ -98,17 +98,20 @@ private:
   // memory at the end of the first old-gen collection.  Then we trigger again when old-gen growns 12.5%
   // more than its live memory at the end of the previous old-gen collection.  Thereafter, we trigger each time
   // old-gen grows more than 12.5% following the end of its previous old-gen collection.
-  static const size_t INITIAL_GROWTH_BEFORE_COMPACTION = FRACTIONAL_DENOMINATOR / 2;          //  50.0%
-  static const size_t MINIMUM_GROWTH_BEFORE_COMPACTION = FRACTIONAL_DENOMINATOR / 8;          //  12.5%
+  static const size_t INITIAL_GROWTH_BEFORE_COMPACTION = FRACTIONAL_DENOMINATOR / 2;        //  50.0%
 
   // INITIAL_LIVE_FRACTION represents the initial guess of how large old-gen should be.  We estimate that old-gen
-  // needs to consume 3.125% of the total heap size.  And we "pretend" that we start out with this amount of live
+  // needs to consume 6.25% of the total heap size.  And we "pretend" that we start out with this amount of live
   // old-gen memory.  The first old-collection trigger will occur when old-gen occupies 50% more than this initial
-  // approximation of the old-gen memory requirement, in other words when old-gen usage is 150% of 3.125%, which
-  // is 4.6875% of the total heap size.
-  static const uint16_t INITIAL_LIVE_FRACTION = FRACTIONAL_DENOMINATOR / 32;                    //   3.125%
+  // approximation of the old-gen memory requirement, in other words when old-gen usage is 150% of 6.25%, which
+  // is 9.375% of the total heap size.
+  static const uint16_t INITIAL_LIVE_FRACTION = FRACTIONAL_DENOMINATOR / 16;                //   6.25%
+
   size_t _live_bytes_after_last_mark;
-  size_t _growth_before_compaction; // How much growth in usage before we trigger old collection, per 65_536
+
+  // How much growth in usage before we trigger old collection, per FRACTIONAL_DENOMINATOR (65_536)
+  size_t _growth_before_compaction;
+  const size_t _min_growth_before_compaction;                                               // Default is 12.5%
 
   void validate_transition(State new_state) NOT_DEBUG_RETURN;
 

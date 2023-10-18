@@ -175,7 +175,8 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_cap
   : ShenandoahGeneration(OLD, max_queues, max_capacity, soft_max_capacity),
     _coalesce_and_fill_region_array(NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, ShenandoahHeap::heap()->num_regions(), mtGC)),
     _state(IDLE),
-    _growth_before_compaction(INITIAL_GROWTH_BEFORE_COMPACTION)
+    _growth_before_compaction(INITIAL_GROWTH_BEFORE_COMPACTION),
+    _min_growth_before_compaction ((ShenandoahMinOldGenGrowthPercent * FRACTIONAL_DENOMINATOR) / 100)
 {
   _live_bytes_after_last_mark = ShenandoahHeap::heap()->capacity() * INITIAL_LIVE_FRACTION / FRACTIONAL_DENOMINATOR;
   // Always clear references for old generation
@@ -188,8 +189,9 @@ size_t ShenandoahOldGeneration::get_live_bytes_after_last_mark() const {
 
 void ShenandoahOldGeneration::set_live_bytes_after_last_mark(size_t bytes) {
   _live_bytes_after_last_mark = bytes;
-  if (_growth_before_compaction > MINIMUM_GROWTH_BEFORE_COMPACTION) {
-    _growth_before_compaction /= 2;
+  _growth_before_compaction /= 2;
+  if (_growth_before_compaction < _min_growth_before_compaction) {
+    _growth_before_compaction = _min_growth_before_compaction;
   }
 }
 

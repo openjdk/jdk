@@ -38,6 +38,7 @@ ShenandoahCollectorPolicy::ShenandoahCollectorPolicy() :
   _interrupted_old_gcs(0),
   _success_degenerated_gcs(0),
   _success_full_gcs(0),
+  _consecutive_young_gcs(0),
   _alloc_failure_degenerated(0),
   _alloc_failure_degenerated_upgrade_to_full(0),
   _alloc_failure_full(0),
@@ -84,7 +85,12 @@ void ShenandoahCollectorPolicy::record_degenerated_upgrade_to_full() {
   _alloc_failure_degenerated_upgrade_to_full++;
 }
 
-void ShenandoahCollectorPolicy::record_success_concurrent() {
+void ShenandoahCollectorPolicy::record_success_concurrent(bool is_young) {
+  if (is_young) {
+    _consecutive_young_gcs++;
+  } else {
+    _consecutive_young_gcs = 0;
+  }
   _success_concurrent_gcs++;
 }
 
@@ -97,18 +103,26 @@ void ShenandoahCollectorPolicy::record_abbreviated_cycle() {
 }
 
 void ShenandoahCollectorPolicy::record_success_old() {
+  _consecutive_young_gcs = 0;
   _success_old_gcs++;
 }
 
 void ShenandoahCollectorPolicy::record_interrupted_old() {
+  _consecutive_young_gcs = 0;
   _interrupted_old_gcs++;
 }
 
-void ShenandoahCollectorPolicy::record_success_degenerated() {
+void ShenandoahCollectorPolicy::record_success_degenerated(bool is_young) {
+  if (is_young) {
+    _consecutive_young_gcs++;
+  } else {
+    _consecutive_young_gcs = 0;
+  }
   _success_degenerated_gcs++;
 }
 
 void ShenandoahCollectorPolicy::record_success_full() {
+  _consecutive_young_gcs = 0;
   _success_full_gcs++;
 }
 
