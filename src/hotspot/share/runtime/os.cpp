@@ -754,6 +754,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
       return nullptr;
     }
 
+    NMT_MemoryLogRecorder::log(memflags, size, (address)rc, (address)memblock, nullptr);
   }
 
   DEBUG_ONLY(break_if_ptr_caught(rc);)

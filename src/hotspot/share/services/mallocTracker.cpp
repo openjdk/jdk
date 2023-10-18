@@ -171,7 +171,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
 #endif
 
 #ifdef ASSERT
-    NMT_MemoryLogRecorder::log(size, (address)malloc_base, (address)malloc_base_old, flags, &stack);
+    NMT_MemoryLogRecorder::log(flags, size, (address)malloc_base, (address)malloc_base_old, &stack);
 #endif
   return memblock;
 }
@@ -181,13 +181,13 @@ void* MallocTracker::record_free_block(void* memblock) {
   assert(memblock != nullptr, "precondition");
 
   MallocHeader* header = MallocHeader::resolve_checked(memblock);
-
+  MEMFLAGS flags = header->flags();
   deaccount(header->free_info());
 
   header->mark_block_as_dead();
 
 #ifdef ASSERT
-    NMT_MemoryLogRecorder::log(0, (address)header);
+    NMT_MemoryLogRecorder::log(flags, 0, (address)header);
 #endif
   return (void*)header;
 }

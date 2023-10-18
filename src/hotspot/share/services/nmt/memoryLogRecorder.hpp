@@ -42,20 +42,24 @@ private:
     size_t actual;
     MEMFLAGS flags;
   };
+  static Entry* find_free_entry(Entry* entries, size_t count);
+  static Entry* find_realloc_entry(Entry* entries, size_t count);
+  static void print_entry(Entry* entries);
   static void calculate_good_sizes(Entry* entries, size_t count);
   static bool print_histogram(Entry* entries, size_t count);
   static void print_records(Entry* entries, size_t count);
   static bool print_by_thread(Entry* entries, size_t count);
-  static size_t print_summary(Entry* entries, size_t count, bool substract_nmt = false);
+  static void print_summary(Entry* entries, size_t count);
   static void dump(Entry* entries, size_t count);
 
 public:
+  static bool is_nmt(Entry* e)     { return (e->flags == MEMFLAGS::mtNMT); };
   static bool is_free(Entry* e)    { return (e->requested == 0) && (e->old == nullptr); };
   static bool is_realloc(Entry* e) { return (e->requested > 0)  && (e->old != nullptr); };
   static bool is_malloc(Entry* e)  { return (e->requested > 0)  && (e->old == nullptr); };
   static bool is_alloc(Entry* e)   { return is_malloc(e) || is_realloc(e); };
-  static void log(size_t requested = 0, address ptr = nullptr, address old = nullptr,
-                  MEMFLAGS flags = mtNone, const NativeCallStack *stack = nullptr);
+  static void log(MEMFLAGS flags = mtNone, size_t requested = 0, address ptr = nullptr, address old = nullptr,
+                  const NativeCallStack *stack = nullptr);
 };
 
 #endif // ASSERT
