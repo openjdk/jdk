@@ -73,7 +73,7 @@ define_pd_global(bool, CompactStrings, false);
 
 define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
 
-// Not implemented yet
+// Not implemented yet, see JDK-8318414
 define_pd_global(uint, SecondarySuperMissBackoff, 0);
 
 #define ARCH_FLAGS(develop,     \
