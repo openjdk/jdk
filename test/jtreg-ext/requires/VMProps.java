@@ -47,9 +47,10 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jdk.internal.foreign.CABI;
-
 import jdk.test.whitebox.code.Compiler;
 import jdk.test.whitebox.cpuinfo.CPUInfo;
 import jdk.test.whitebox.gc.GC;
@@ -82,6 +83,10 @@ public class VMProps implements Callable<Map<String, String>> {
                 value = ERROR_STATE + t;
             }
             map.put(key, value);
+        }
+
+        public void putAll(Map<String, String> map) {
+            map.entrySet().forEach(e -> put(e.getKey(), () -> e.getValue()));
         }
     }
 
@@ -135,6 +140,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
         map.put("jdk.foreign.linker", this::jdkForeignLinker);
+        map.putAll(xOptFlags()); // -Xmx4g -> @requires vm.opt.x.Xmx == "4g" )
         vmGC(map); // vm.gc.X = true/false
         vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
@@ -662,9 +668,7 @@ public class VMProps implements Callable<Map<String, String>> {
             return "" + result;
         }
 
-        List<String> allFlags = new ArrayList<String>();
-        Collections.addAll(allFlags, System.getProperty("test.vm.opts", "").trim().split("\\s+"));
-        Collections.addAll(allFlags, System.getProperty("test.java.opts", "").trim().split("\\s+"));
+        List<String> allFlags = allFlags().toList();
 
         // check -XX flags
         var ignoredXXFlags = Set.of(
@@ -709,6 +713,31 @@ public class VMProps implements Callable<Map<String, String>> {
                           .isEmpty();
 
         return "" + result;
+    }
+
+    private Stream<String> allFlags() {
+        return Stream.of((System.getProperty("test.vm.opts", "") + " " + System.getProperty("test.java.opts", "")).trim().split("\\s+"));
+    }
+
+    /**
+     * Parses extra options, options that start with -X excluding the
+     * bare -X option (as it is not considered an extra option).
+     * Ignores extra options not starting with -X
+     *
+     * This could be improved to handle extra options not starting
+     * with -X as well as "standard" options.
+     */
+    private Map<String, String> xOptFlags() {
+        return allFlags()
+            .filter(s -> s.startsWith("-X") && !s.startsWith("-XX:") && !s.equals("-X"))
+            .map(s -> s.replaceFirst("-", ""))
+            .map(flag -> flag.splitWithDelimiters("[:0123456789]", 2))
+            .collect(Collectors.toMap(a -> "vm.opt.x." + a[0],
+                                      a -> (a.length == 1)
+                                      ? "true" // -Xnoclassgc
+                                      : (a[1].equals(":")
+                                         ? a[2]            // ["-XshowSettings", ":", "system"]
+                                         : a[1] + a[2]))); // ["-Xmx", "4", "g"]
     }
 
     /*
