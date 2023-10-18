@@ -185,7 +185,7 @@ public final class FallbackLinker extends AbstractLinker {
                     sessionImpl.acquire0();
                     acquiredSessions.add(sessionImpl);
                     if (invData.allowsHeapAccess() && !ms.isNative()) {
-                        heapBases[i] = ms.heapBase().get();
+                        heapBases[i] = ms.unsafeGetBase();
                         // write the offset to the arg segment, add array ptr to it in native code
                         layout = JAVA_LONG;
                         arg = ms.address();
