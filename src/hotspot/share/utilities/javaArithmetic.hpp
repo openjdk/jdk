@@ -62,7 +62,7 @@ constexpr julong  max_julong  = std::numeric_limits<julong>::max();
 
 using uint = unsigned int; NEEDS_CLEANUP
 
-//----------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Sum and product which can never overflow: they wrap, just like the
 // Java operations.  Note that we don't intend these to be used for
 // general-purpose arithmetic: their purpose is to emulate Java
@@ -132,7 +132,7 @@ JAVA_INTEGER_SHIFT_OP(>>, java_shift_right_unsigned, jlong, julong)
 
 #undef JAVA_INTEGER_SHIFT_OP
 
-//----------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // The goal of this code is to provide saturating operations for int/uint.
 // Checks overflow conditions and saturates the result to min_jint/max_jint.
 #define SATURATED_INTEGER_OP(OP, NAME, TYPE1, TYPE2) \
@@ -186,7 +186,7 @@ inline constexpr int64_t multiply_high_signed(const int64_t x, const int64_t y) 
   return x1 * y1 + z0 + java_shift_right((jlong)z1, 32);
 }
 
-//----------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Provide methods to calculate the magic constants in transforming divisions
 // by constants into series of multiplications and shifts.
 template <class T>
