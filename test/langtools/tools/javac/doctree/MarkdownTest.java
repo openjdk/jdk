@@ -126,6 +126,17 @@ DocComment[DOC_COMMENT, pos:0
 ]
 */
 
+    ///123 `abc`
+    void simpleCodeSpanAtEndOfInput() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 1
+    RawText[MARKDOWN, pos:0, 123_`abc`]
+  body: empty
+  block tags: empty
+]
+*/
+
     ///123 ```abc``` 456.
     void mediumCodeSpan() { }
 /*
@@ -200,6 +211,21 @@ DocComment[DOC_COMMENT, pos:0
     RawText[MARKDOWN, pos:0, 123.]
   body: 1
     RawText[MARKDOWN, pos:5, ~~~|abc|{@dummy_...}|~~~|456.]
+  block tags: empty
+]
+*/
+
+    ///123.
+    ///```
+    ///abc
+    ///```
+    void simpleFencedCodeBlock_atEndOfInput() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 1
+    RawText[MARKDOWN, pos:0, 123.]
+  body: 1
+    RawText[MARKDOWN, pos:5, ```|abc|```]
   block tags: empty
 ]
 */

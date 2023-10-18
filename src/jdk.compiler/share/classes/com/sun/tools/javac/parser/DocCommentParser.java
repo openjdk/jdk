@@ -420,6 +420,8 @@ public class DocCommentParser {
                                 if (end == -1) {
                                     bp = lastNonWhite;
                                     nextChar();
+                                } else {
+                                    lastNonWhite = end - 1;
                                 }
                             } else {
                                 nextChar();

@@ -991,11 +991,11 @@ public class DocCommentTester {
 
             if (!pretty.equals(normRaw)) {
                 error("mismatch");
-                System.err.println("*** raw:");
+                System.err.println("*** raw: (" + raw.length() + ")");
                 System.err.println(raw.replace(" ", "_"));
-                System.err.println("*** expected:");
+                System.err.println("*** expected: (" + normRaw.length() + ")");
                 System.err.println(normRaw.replace(" ", "_"));
-                System.err.println("*** found:");
+                System.err.println("*** found: (" + pretty.length() + ")");
                 System.err.println(pretty.replace(" ", "_"));
             }
         }
