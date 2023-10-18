@@ -103,7 +103,7 @@ public interface BinaryOperator<T> extends BiFunction<T,T,T> {
      * // Works because an override is explicitly picked by the lambda
      * var f2 = Function.of((String s) -> s.toLowerCase());
      * // Does NOT work as toLowerCase cannot be resolved
-     * // var f3 = Function.of(String::toLowerCase);
+     * var f3 = Function.of(String::toLowerCase); // ERROR
      * }
      *
      * @param source to convert
