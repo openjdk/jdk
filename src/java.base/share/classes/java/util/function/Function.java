@@ -99,28 +99,30 @@ public interface Function<T, R> {
     }
 
     /**
-     * {@return a representation of the provided {@code uncaptured} lambda or method reference
+     * {@return a representation of the provided {@code source} construct
      * in the form of a {@code Function}}
      * <p>
-     * This method is useful in cases where there is an ambiguity in a lambda or method reference
-     * or when using composition or fluent coding as shown in these examples:
+     * This method is particularly useful in cases where there is; an ambiguity
+     * in a lambda or method reference, when inferring a local-variable type or
+     * when using composition or fluent coding as shown in these examples:
      * {@snippet :
-     * // Resolve ambiguity
-     * var function = Function.of(String::isEmpty); // Function<String, Boolean>
-     * var predicate = Predicate.of(String::isEmpty); // Predicate<String>
+     * // Inferring and resolving ambiguity
+     * var function = Function.of(String::isEmpty);    // Function<String, Boolean>
+     * var predicate = Predicate.of(String::isEmpty);  // Predicate<String>
      *
      * // Fluent composition
      * var chained = Function.of(String::length)       // Function<String, Integer>
      *                   .andThen(Integer::byteValue); // Function<String, Byte>
      * }
      *
-     * @param uncaptured to capture
+     * @param source to convert
      * @param <T> the type of the input to the function
      * @param <R> the type of the result of the function
+     * @throws NullPointerException if source is null
      */
     @SuppressWarnings("unchecked")
-    static <T, R> Function<T, R> of(Function<? super T, ? extends R> uncaptured) {
-        return (Function<T, R>) Objects.requireNonNull(uncaptured);
+    static <T, R> Function<T, R> of(Function<? super T, ? extends R> source) {
+        return (Function<T, R>) Objects.requireNonNull(source);
     }
 
 }

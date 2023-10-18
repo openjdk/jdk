@@ -139,13 +139,14 @@ public interface Predicate<T> {
     }
 
     /**
-     * {@return a representation of the provided {@code uncaptured} lambda or method reference
+     * {@return a representation of the provided {@code source} construct
      * in the form of a {@code Predicate}}
      * <p>
-     * This method is useful in cases where there is an ambiguity of a lambda or method reference
-     * or when using composition and/or fluent coding as shown in this example:
+     * This method is particularly useful in cases where there is; an ambiguity
+     * in a lambda or method reference, when inferring a local-variable type or
+     * when using composition or fluent coding as shown in these examples:
      * {@snippet :
-     * // Resolve ambiguity
+     * // Inferring and resolving ambiguity
      * var function = Function.of(String::isEmpty);   // Function<String, Boolean>
      * var predicate = Predicate.of(String::isEmpty); // Predicate<String>
      *
@@ -154,12 +155,13 @@ public interface Predicate<T> {
      *                   .or(s -> s.startsWith("*")); // Predicate<String>
      * }
      *
-     * @param uncaptured to capture
+     * @param source to convert
      * @param <T> the type of the input to the predicate
+     * @throws NullPointerException if source is null
      */
     @SuppressWarnings("unchecked")
-    static <T> Predicate<T> of(Predicate<? super T> uncaptured) {
-        return (Predicate<T>) Objects.requireNonNull(uncaptured);
+    static <T> Predicate<T> of(Predicate<? super T> source) {
+        return (Predicate<T>) Objects.requireNonNull(source);
     }
 
 }

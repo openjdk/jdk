@@ -71,13 +71,14 @@ public interface BiFunction<T, U, R> {
     }
 
     /**
-     * {@return a representation of the provided {@code uncaptured} lambda or method reference
+     * {@return a representation of the provided {@code source} construct
      * in the form of a {@code BiFunction}}
      * <p>
-     * This method is useful in cases where there is an ambiguity in a lambda or method reference
-     * or when using composition or fluent coding as shown in this example:
+     * This method is particularly useful in cases where there is; an ambiguity
+     * in a lambda or method reference, when inferring a local-variable type or
+     * when using composition or fluent coding as shown in these examples:
      * {@snippet :
-     * // Resolve ambiguity
+     * // Inferring and resolving ambiguity
      * var function = BiFunction.of(String::endsWith);   // BiFunction<String, String, Boolean>
      * var predicate = BiPredicate.of(String::endsWith); // BiPredicate<String, String>
      *
@@ -86,14 +87,15 @@ public interface BiFunction<T, U, R> {
      *                   .andThen(String::length);     // Function<String, Integer>
      * }
      *
-     * @param uncaptured to capture
+     * @param source to convert
      * @param <T> the type of the first argument to the function
      * @param <U> the type of the second argument to the function
      * @param <R> the type of the result of the function
+     * @throws NullPointerException if source is null
      */
     @SuppressWarnings("unchecked")
-    static <T, U, R> BiFunction<T, U, R> of(BiFunction<? super T, ? super U, ? extends R> uncaptured) {
-        return (BiFunction<T, U, R>) Objects.requireNonNull(uncaptured);
+    static <T, U, R> BiFunction<T, U, R> of(BiFunction<? super T, ? super U, ? extends R> source) {
+        return (BiFunction<T, U, R>) Objects.requireNonNull(source);
     }
 
 }

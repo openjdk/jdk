@@ -106,13 +106,14 @@ public interface BiPredicate<T, U> {
     }
 
     /**
-     * {@return a representation of the provided {@code uncaptured} lambda or method reference
-     * in the form of a {@code BinaryOperator}}
+     * {@return a representation of the provided {@code source} construct
+     * in the form of a {@code BiPredicate}}
      * <p>
-     * This method is useful in cases where there is an ambiguity in a lambda or method reference
-     * or when using composition or fluent coding as shown in this example:
+     * This method is particularly useful in cases where there is; an ambiguity
+     * in a lambda or method reference, when inferring a local-variable type or
+     * when using composition or fluent coding as shown in these examples:
      * {@snippet :
-     * // Resolve ambiguity
+     * // Inferring and resolving ambiguity
      * var biFunction = BiFunction.of(String::equals);     // BiFunction<String, Object, Boolean>
      * var biPredicate = BiPredicate.of(String::equals);   // BiPredicate<Integer, Object>
      *
@@ -121,13 +122,14 @@ public interface BiPredicate<T, U> {
      *                    .or(String::startsWith);         // BiPredicate<String, String>
      *}
      *
-     * @param uncaptured to capture
+     * @param source to convert
      * @param <T> the type of the first argument to the predicate
      * @param <U> the type of the second argument the predicate
+     * @throws NullPointerException if source is null
      */
     @SuppressWarnings("unchecked")
-    static <T, U> BiPredicate<T, U> of(BiPredicate<? super T, ? super U> uncaptured) {
-        return (BiPredicate<T, U>) Objects.requireNonNull(uncaptured);
+    static <T, U> BiPredicate<T, U> of(BiPredicate<? super T, ? super U> source) {
+        return (BiPredicate<T, U>) Objects.requireNonNull(source);
     }
 
 }

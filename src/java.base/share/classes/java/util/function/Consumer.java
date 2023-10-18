@@ -66,14 +66,16 @@ public interface Consumer<T> {
     }
 
     /**
-     * {@return a representation of the provided {@code uncaptured} lambda or method reference
+     * {@return a representation of the provided {@code source} construct
      * in the form of a {@code Consumer}}
      * <p>
-     * This method is useful in cases where there is an ambiguity in a lambda or method reference
-     * or when using composition or fluent coding as shown in this example:
+     * This method is particularly useful in cases where there is; an ambiguity
+     * in a lambda or method reference, when inferring a local-variable type or
+     * when using composition or fluent coding as shown in these examples:
      * {@snippet :
      * List<String> list = new ArrayList<>();
      *
+     * // Inferring
      * var con = Consumer.of(list::addLast); // Consumer<String>
      *
      * // Fluent composition
@@ -81,12 +83,13 @@ public interface Consumer<T> {
      *                    .andThen(System.out::print); // Consumer<String>
      *}
      *
-     * @param uncaptured to capture
+     * @param source to convert
      * @param <T> the type of the input to the operation
+     * @throws NullPointerException if source is null
      */
     @SuppressWarnings("unchecked")
-    static <T> Consumer<T> of(Consumer<? super T> uncaptured) {
-        return (Consumer<T>) Objects.requireNonNull(uncaptured);
+    static <T> Consumer<T> of(Consumer<? super T> source) {
+        return (Consumer<T>) Objects.requireNonNull(source);
     }
 
 }

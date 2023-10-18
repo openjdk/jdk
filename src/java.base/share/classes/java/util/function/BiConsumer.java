@@ -74,11 +74,12 @@ public interface BiConsumer<T, U> {
     }
 
     /**
-     * {@return a representation of the provided {@code uncaptured} lambda or method reference
+     * {@return a representation of the provided {@code source} construct
      * in the form of a {@code BiConsumer}}
      * <p>
-     * This method is useful in cases where there is an ambiguity in a lambda or method reference
-     * or when using composition or fluent coding as shown in this example:
+     * This method is particularly useful in cases where there is; an ambiguity
+     * in a lambda or method reference, when inferring a local-variable type or
+     * when using composition or fluent coding as shown in these examples:
      * {@snippet :
      * void toConsole(long id, String message) {
      *      System.out.format("%d = %s%n", id, message);
@@ -88,7 +89,7 @@ public interface BiConsumer<T, U> {
      *      LOGGER.info(String.format("%d = %s", id, message));
      * }
      *
-     * // Capturing
+     * // Inferring
      * var con = BiConsumer.of(this::toConsole); // BiConsumer<Long, String>
      *
      *  // Fluent composition
@@ -97,13 +98,14 @@ public interface BiConsumer<T, U> {
      *
      * }
      *
-     * @param uncaptured to capture
+     * @param source to convert
      * @param <T> the type of the first argument to the operation
      * @param <U> the type of the second argument to the operation
+     * @throws NullPointerException if source is null
      */
     @SuppressWarnings("unchecked")
-    static <T, U> BiConsumer<T, U> of(BiConsumer<? super T, ? super U> uncaptured) {
-        return (BiConsumer<T, U>) Objects.requireNonNull(uncaptured);
+    static <T, U> BiConsumer<T, U> of(BiConsumer<? super T, ? super U> source) {
+        return (BiConsumer<T, U>) Objects.requireNonNull(source);
     }
 
 }

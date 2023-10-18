@@ -71,13 +71,14 @@ public interface UnaryOperator<T> extends Function<T, T> {
     }
 
     /**
-     * {@return a representation of the provided {@code uncaptured} lambda or method reference
+     * {@return a representation of the provided {@code source} construct
      * in the form of a {@code UnaryOperator}}
      * <p>
-     * This method is useful in cases where there is an ambiguity of a lambda or method reference
-     * or when using composition and/or fluent coding as shown in this example:
+     * This method is particularly useful in cases where there is; an ambiguity
+     * in a lambda or method reference, when inferring a local-variable type or
+     * when using composition or fluent coding as shown in these examples:
      * {@snippet :
-     * // Resolve ambiguity
+     * // // Inferring and resolving ambiguity
      * var function = Function.of(String::stripTrailing); // Function<String, String>
      * var unaryOperator = UnaryOperator.of(String::stripTrailing); // UnaryOperator<String>
      *
@@ -86,11 +87,12 @@ public interface UnaryOperator<T> extends Function<T, T> {
      *                    .andThenUnary(String::stripIndent);  // UnaryOperator<String>
      * }
      *
-     * @param uncaptured to capture
+     * @param source to convert
      * @param <T> the type of the operand and result of the operator
+     * @throws NullPointerException if source is null
      */
-    static <T> UnaryOperator<T> of(UnaryOperator<T> uncaptured) {
-        return Objects.requireNonNull(uncaptured);
+    static <T> UnaryOperator<T> of(UnaryOperator<T> source) {
+        return Objects.requireNonNull(source);
     }
 
 }
