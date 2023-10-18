@@ -4173,7 +4173,7 @@ void StubGenerator::generate_compiler_stubs() {
   }
 
   // Load x86_64_sort library on supported hardware to enable avx512 sort and partition intrinsics
-  if (UseAVX > 2 && VM_Version::supports_avx512dq()) {
+  if (VM_Version::is_intel() && VM_Version::supports_avx512dq()) {
     void *libsimdsort = nullptr;
     char ebuf_[1024];
     char dll_name_simd_sort[JVM_MAXPATHLEN];

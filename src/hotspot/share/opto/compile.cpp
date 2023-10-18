@@ -646,8 +646,8 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _unique(0),
                   _dead_node_count(0),
                   _dead_node_list(comp_arena()),
-                  _node_arena_one(mtCompiler),
-                  _node_arena_two(mtCompiler),
+                  _node_arena_one(mtCompiler, Arena::Tag::tag_node),
+                  _node_arena_two(mtCompiler, Arena::Tag::tag_node),
                   _node_arena(&_node_arena_one),
                   _mach_constant_base_node(nullptr),
                   _Compile_types(mtCompiler),
@@ -4009,8 +4009,6 @@ bool Compile::final_graph_reshaping() {
 
       // Recheck with a better notion of 'required_outcnt'
       if (n->outcnt() != required_outcnt) {
-        DEBUG_ONLY( n->dump_bfs(1, 0, "-"); );
-        assert(false, "malformed control flow");
         record_method_not_compilable("malformed control flow");
         return true;            // Not all targets reachable!
       }
