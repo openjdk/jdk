@@ -543,6 +543,11 @@ public class JlinkTask {
                     taskHelper.getMessage("err.automatic.module", mref.descriptor().name(), loc));
             });
 
+        // Print info message when a run-image link is being performed
+        if (log != null && !config.useModulePath()) {
+            log.println("'jmods' folder not present, performing a run-image based link.");
+        }
+
         if (verbose && log != null) {
             // print modules to be linked in
             cf.modules().stream()
