@@ -88,6 +88,10 @@ DISABLED_WARNINGS_gcc := array-bounds comment delete-non-virtual-dtor \
     maybe-uninitialized missing-field-initializers parentheses \
     shift-negative-value unknown-pragmas
 
+ifeq ($(call isTargetCpu, arm), true)
+    DISABLED_WARNINGS_gcc += attributes
+endif
+
 DISABLED_WARNINGS_clang := sometimes-uninitialized \
     missing-braces delete-non-abstract-non-virtual-dtor unknown-pragmas
 
