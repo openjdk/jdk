@@ -78,6 +78,12 @@ public final class StreamEncoder extends Writer {
         return new StreamEncoder(out, lock, enc);
     }
 
+    public static StreamEncoder forOutputStreamWriter(OutputStream out,
+                                                      CharsetEncoder enc)
+    {
+        return new StreamEncoder(out, enc);
+    }
+
     // -- Public methods corresponding to those in OutputStreamWriter --
 
     // All synchronization and state/argument checking is done in these public
@@ -257,6 +263,16 @@ public final class StreamEncoder extends Writer {
 
     private StreamEncoder(OutputStream out, Object lock, CharsetEncoder enc) {
         super(lock);
+        this.out = out;
+        this.cs = enc.charset();
+        this.encoder = enc;
+
+        this.bb = ByteBuffer.allocate(INITIAL_BYTE_BUFFER_CAPACITY);
+        this.maxBufferCapacity = MAX_BYTE_BUFFER_CAPACITY;
+    }
+
+    private StreamEncoder(OutputStream out, CharsetEncoder enc) {
+        super();
         this.out = out;
         this.cs = enc.charset();
         this.encoder = enc;

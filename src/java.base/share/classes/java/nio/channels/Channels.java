@@ -542,8 +542,8 @@ public final class Channels {
     {
         Objects.requireNonNull(ch, "ch");
         Objects.requireNonNull(enc, "enc");
-        return StreamEncoder.forOutputStreamWriter(newOutputStream(ch),
-            new Object(), enc.reset());
+        OutputStream out = newOutputStream(ch);
+        return StreamEncoder.forOutputStreamWriter(out, enc.reset());
     }
 
     /**
