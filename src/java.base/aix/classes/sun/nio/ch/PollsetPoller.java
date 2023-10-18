@@ -42,11 +42,12 @@ class PollsetPoller extends Poller {
         MAX_EVENTS_TO_POLL = 512;
     }
 
+    private final int event;
     private final int setid;
     private final long pollBuffer;
 
     PollsetPoller(boolean read) throws IOException {
-        super(read);
+        this.event = (read) ? Net.POLLIN : Net.POLLOUT;
         this.setid = Pollset.pollsetCreate();
         this.pollBuffer = Pollset.allocatePollArray(MAX_EVENTS_TO_POLL);
     }
@@ -58,8 +59,7 @@ class PollsetPoller extends Poller {
 
     @Override
     void implRegister(int fd) throws IOException {
-        int ret = Pollset.pollsetCtl(setid, Pollset.PS_MOD, fd,
-                          Pollset.PS_POLLPRI | (this.reading() ? Net.POLLIN : Net.POLLOUT));
+        int ret = Pollset.pollsetCtl(setid, Pollset.PS_MOD, fd, Pollset.PS_POLLPRI | event);
         if (ret != 0) {
             throw new IOException("Unable to register fd " + fd);
         }
