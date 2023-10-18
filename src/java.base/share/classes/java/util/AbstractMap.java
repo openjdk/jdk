@@ -458,17 +458,6 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     }
 
     /**
-     * Returns a shallow copy of this {@code AbstractMap} instance: the keys
-     * and values themselves are not cloned.
-     *
-     * @return a shallow copy of this map
-     */
-    protected Object clone() throws CloneNotSupportedException {
-        AbstractMap<?,?> result = (AbstractMap<?,?>)super.clone();
-        return result;
-    }
-
-    /**
      * Utility method for SimpleEntry and SimpleImmutableEntry.
      * Test for equality, checking for nulls.
      *
