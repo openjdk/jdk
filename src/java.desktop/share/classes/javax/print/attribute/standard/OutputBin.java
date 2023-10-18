@@ -58,6 +58,7 @@ public class OutputBin extends EnumSyntax
      */
     @Serial
     private static final long serialVersionUID = -3718893309873137109L;
+
     /**
      * The top output bin in the printer.
      */
@@ -77,30 +78,37 @@ public class OutputBin extends EnumSyntax
      * The side output bin in the printer.
      */
     public static final OutputBin SIDE = new OutputBin(3);
+
     /**
      * The left output bin in the printer.
      */
     public static final OutputBin LEFT = new OutputBin(4);
+
     /**
      * The right output bin in the printer.
      */
     public static final OutputBin RIGHT = new OutputBin(5);
+
     /**
      * The center output bin in the printer.
      */
     public static final OutputBin CENTER = new OutputBin(6);
+
     /**
      * The rear output bin in the printer.
      */
     public static final OutputBin REAR = new OutputBin(7);
+
     /**
      * The face up output bin in the printer.
      */
     public static final OutputBin FACE_UP = new OutputBin(8);
+
     /**
      * The face down output bin in the printer.
      */
     public static final OutputBin FACE_DOWN = new OutputBin(9);
+
     /**
      * The large-capacity output bin in the printer.
      */
