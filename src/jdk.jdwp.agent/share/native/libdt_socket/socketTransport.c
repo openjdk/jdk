@@ -727,11 +727,13 @@ socketTransport_startListening(jdwpTransportEnv* env, const char* address,
         return err;
     }
 
-    // Try to find bind address of preferred address family first.
-    for (ai = addrInfo; ai != NULL; ai = ai->ai_next) {
-        if (ai->ai_family == preferredAddressFamily) {
-            listenAddr = ai;
-            break;
+    // Try to find bind address of preferred address family first (if java.net.preferIPv6Addresses != "system").
+    if (preferredAddressFamily != AF_UNSPEC) {
+        for (ai = addrInfo; ai != NULL; ai = ai->ai_next) {
+            if (ai->ai_family == preferredAddressFamily) {
+                listenAddr = ai;
+                break;
+            }
         }
     }
 
@@ -743,9 +745,9 @@ socketTransport_startListening(jdwpTransportEnv* env, const char* address,
     // Binding to IN6ADDR_ANY allows to serve both IPv4 and IPv6 connections,
     // but binding to mapped INADDR_ANY (::ffff:0.0.0.0) allows to serve IPv4
     // connections only. Make sure that IN6ADDR_ANY is preferred over
-    // mapped INADDR_ANY if preferredAddressFamily is AF_INET6 or not set.
+    // mapped INADDR_ANY if preferIPv4Stack is false.
 
-    if (preferredAddressFamily != AF_INET) {
+    if (!allowOnlyIPv4) {
         inet_pton(AF_INET6, "::ffff:0.0.0.0", &mappedAny);
 
         if (isEqualIPv6Addr(listenAddr, mappedAny)) {
@@ -967,8 +969,10 @@ socketTransport_attach(jdwpTransportEnv* env, const char* addressString, jlong a
         return err;
     }
 
-    /* 1st pass - preferredAddressFamily (by default IPv4), 2nd pass - the rest */
-    for (pass = 0; pass < 2 && socketFD < 0; pass++) {
+    // 1st pass - preferredAddressFamily (by default IPv4), 2nd pass - the rest;
+    // if java.net.preferIPv6Addresses == "system", only 2nd pass is needed
+    pass = preferredAddressFamily != AF_UNSPEC ? 0 : 1;
+    for (; pass < 2 && socketFD < 0; pass++) {
         for (ai = addrInfo; ai != NULL; ai = ai->ai_next) {
             if ((pass == 0 && ai->ai_family == preferredAddressFamily) ||
                 (pass == 1 && ai->ai_family != preferredAddressFamily))
@@ -1305,6 +1309,43 @@ static int readBooleanSysProp(int *result, int trueValue, int falseValue,
     return JNI_OK;
 }
 
+/*
+ * Reads java.net.preferIPv6Addresses system value, sets preferredAddressFamily to
+ *  - AF_INET6 if the property is "true";
+ *  - AF_INET if the property is "false".
+ *  - AF_UNSPEC if the property is "system".
+ * Doesn't change preferredAddressFamily if the property is not set or failed to read.
+ */
+static int readPreferIPv6Addresses(JNIEnv* jniEnv,
+    jclass sysClass, jmethodID getPropMethod, const char *propName)
+{
+    jstring value;
+    jstring name = (*jniEnv)->NewStringUTF(jniEnv, propName);
+
+    if (name == NULL) {
+        return JNI_ERR;
+    }
+    value = (jstring)(*jniEnv)->CallStaticObjectMethod(jniEnv, sysClass, getPropMethod, name);
+    if ((*jniEnv)->ExceptionCheck(jniEnv)) {
+        return JNI_ERR;
+    }
+    if (value != NULL) {
+        const char *theValue = (*jniEnv)->GetStringUTFChars(jniEnv, value, NULL);
+        if (theValue == NULL) {
+            return JNI_ERR;
+        }
+        if (strcmp(theValue, "true") == 0) {
+            preferredAddressFamily = AF_INET6;
+        } else if (strcmp(theValue, "false") == 0) {
+            preferredAddressFamily = AF_INET;
+        } else if (strcmp(theValue, "system") == 0) {
+            preferredAddressFamily = AF_UNSPEC;
+        }
+        (*jniEnv)->ReleaseStringUTFChars(jniEnv, value, theValue);
+    }
+    return JNI_OK;
+}
+
 JNIEXPORT jint JNICALL
 jdwpTransport_OnLoad(JavaVM *vm, jdwpTransportCallback* cbTablePtr,
                      jint version, jdwpTransportEnv** env)
@@ -1362,7 +1403,7 @@ jdwpTransport_OnLoad(JavaVM *vm, jdwpTransportCallback* cbTablePtr,
         }
         readBooleanSysProp(&allowOnlyIPv4, 1, 0,
             jniEnv, sysClass, getPropMethod, "java.net.preferIPv4Stack");
-        readBooleanSysProp(&preferredAddressFamily, AF_INET6, AF_INET,
+        readPreferIPv6Addresses(
             jniEnv, sysClass, getPropMethod, "java.net.preferIPv6Addresses");
     } while (0);
 
