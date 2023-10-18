@@ -127,7 +127,6 @@ void DowncallLinker::StubGenerator::generate() {
 
   GrowableArray<VMStorage> java_regs;
   ForeignGlobals::java_calling_convention(_signature, _num_args, java_regs);
-  RegSpiller in_reg_spiller(java_regs); // spill to lock GCLocker
   bool has_objects = false;
   GrowableArray<VMStorage> filtered_java_regs = ForeignGlobals::downcall_filter_offset_regs(java_regs, _signature,
                                                                                              _num_args, has_objects);
@@ -172,7 +171,7 @@ void DowncallLinker::StubGenerator::generate() {
   //      | (optional)          |
   //      | return buffer       |
   //      |---------------------| = StubLocations::RETURN_BUFFER
-  // SP-> | out/stack args      | or | out_reg_spiller area | or | in_reg_spiller area |
+  // SP-> | out/stack args      | or | out_reg_spiller area |
   //
   // Note how the last chunk can be shared, since the 3 uses occur at different times.
 
