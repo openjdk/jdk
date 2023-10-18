@@ -21,37 +21,36 @@
  * questions.
  */
 
-#include <errno.h>
+package jdk.test.lib.hprof.model;
 
-#ifdef _WIN64
-#define EXPORT __declspec(dllexport)
-#else
-#define EXPORT
-#endif
+import jdk.test.lib.hprof.util.Misc;
 
-EXPORT void empty() {}
+public class ThreadObject {
 
-EXPORT int identity(int value) {
-    return value;
-}
+    private final long id;            // ID of the JavaThing we refer to
+    private final StackTrace stackTrace;
 
-// 128 bit struct returned in buffer on SysV
-struct Big {
-    long long x;
-    long long y;
-};
+    public ThreadObject(long id, StackTrace stackTrace) {
+        this.id = id;
+        this.stackTrace = stackTrace;
+    }
 
-EXPORT struct Big with_return_buffer() {
-    struct Big b;
-    b.x = 10;
-    b.y = 11;
-    return b;
-}
+    public long getId() {
+        return id;
+    }
 
-EXPORT void capture_errno(int value) {
-    errno = value;
-}
+    public String getIdString() {
+        return Misc.toHex(id);
+    }
 
-EXPORT void do_upcall(void(*f)(void)) {
-    f();
+    public StackTrace getStackTrace() {
+        return stackTrace;
+    }
+
+    void resolve(Snapshot ss) {
+        if (stackTrace != null) {
+            stackTrace.resolve(ss);
+        }
+    }
+
 }

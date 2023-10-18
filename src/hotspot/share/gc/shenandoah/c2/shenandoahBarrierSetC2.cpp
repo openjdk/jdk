@@ -530,7 +530,7 @@ Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue&
 Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) const {
   // 1: non-reference load, no additional barrier is needed
   if (!access.is_oop()) {
-    return BarrierSetC2::load_at_resolved(access, val_type);;
+    return BarrierSetC2::load_at_resolved(access, val_type);
   }
 
   Node* load = BarrierSetC2::load_at_resolved(access, val_type);

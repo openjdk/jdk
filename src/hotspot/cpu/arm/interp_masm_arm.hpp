@@ -102,6 +102,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void load_resolved_klass_at_offset(Register Rcpool, Register Rindex, Register Rklass);
 
   void load_resolved_indy_entry(Register cache, Register index);
+  void load_field_entry(Register cache, Register index, int bcp_offset = 1);
 
   void pop_ptr(Register r);
   void pop_i(Register r = R0_tos);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,8 +74,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * @since 1.8
  */
 abstract class GaloisCounterMode extends CipherSpi {
-    static int DEFAULT_IV_LEN = 12; // in bytes
-    static int DEFAULT_TAG_LEN = 16; // in bytes
+    private static final int DEFAULT_IV_LEN = 12; // in bytes
+    private static final int DEFAULT_TAG_LEN = 16; // in bytes
     // In NIST SP 800-38D, GCM input size is limited to be no longer
     // than (2^36 - 32) bytes. Otherwise, the counter will wrap
     // around and lead to a leak of plaintext.
@@ -98,7 +98,7 @@ abstract class GaloisCounterMode extends CipherSpi {
 
     private boolean initialized = false;
 
-    SymmetricCipher blockCipher;
+    final SymmetricCipher blockCipher;
     // Engine instance for encryption or decryption
     private GCMEngine engine;
     private boolean encryption = true;
@@ -106,7 +106,7 @@ abstract class GaloisCounterMode extends CipherSpi {
     // Default value is 128bits, this is in bytes.
     int tagLenBytes = DEFAULT_TAG_LEN;
     // Key size if the value is passed, in bytes.
-    int keySize;
+    private final int keySize;
     // Prevent reuse of iv or key
     boolean reInit = false;
     byte[] lastKey = EMPTY_BUF;

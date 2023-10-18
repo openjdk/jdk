@@ -84,7 +84,9 @@ $(eval $(call SetupJavaCompilation, BUILD_INDIFY, \
 #### Compile Targets
 
 # Building microbenchmark requires the jdk.unsupported and java.management modules.
-# sun.security.util is required to compile Cache benchmark
+# sun.security.util is required to compile Cache benchmark.
+# jmh uses annotation processors to generate the benchmark jar and thus
+# requires the use of -processor option during benchmark compilation.
 
 # Build microbenchmark suite for the current JDK
 $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
@@ -106,7 +108,9 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
         --add-exports java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.event=ALL-UNNAMED \
-        --enable-preview, \
+        --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
+        --enable-preview \
+        -processor org.openjdk.jmh.generators.BenchmarkProcessor, \
     JAVA_FLAGS := --add-modules jdk.unsupported --limit-modules java.management \
         --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
         --enable-preview, \
