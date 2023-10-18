@@ -4616,7 +4616,6 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   else  jcc(Assembler::notEqual, *L_failure);
 
   // Success. Try to cache the super we found and proceed in triumph.
-
 #ifdef _LP64
   uint32_t super_cache_backoff = checked_cast<uint32_t>(SecondarySuperMissBackoff);
   if (super_cache_backoff > 0) {

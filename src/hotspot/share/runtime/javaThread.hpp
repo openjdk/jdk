@@ -143,7 +143,7 @@ class JavaThread: public Thread {
   Metadata*     _vm_result_2;  // non-oop result
 
   // Used to back off on secondary super cache updates to mitigate contention on it.
-  uint32_t       _backoff_secondary_super_miss;
+  uint32_t      _backoff_secondary_super_miss;
 
   // See ReduceInitialCardMarks: this holds the precise space interval of
   // the most recent slow path allocation for which compiled code has
