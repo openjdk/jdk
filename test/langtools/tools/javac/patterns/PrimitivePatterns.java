@@ -87,6 +87,8 @@ public class PrimitivePatterns {
         assertEquals(-1, switchRedirectedExactnessMethods1('\u03A9'));
         assertEquals(1, switchRedirectedExactnessMethods2('\u03A9'));
         assertEquals(-1, switchRedirectedExactnessMethods2('\uFFFF'));
+        assertEquals(1, switchLongAndUnconditional(32778L));
+        assertEquals(2, switchLongAndUnconditional(42L));
     }
 
     public static int primitivePattern() {
@@ -437,6 +439,13 @@ public class PrimitivePatterns {
         return switch (c) {
             case byte _ -> 1;
             default -> -1;
+        };
+    }
+
+    public static int switchLongAndUnconditional(long l) {
+        return switch (l) {
+            case 32778L -> 1;
+            case long c -> 2;
         };
     }
 

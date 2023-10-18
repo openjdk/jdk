@@ -59,6 +59,7 @@ public class SwitchBootstraps {
     private static final MethodHandle INSTANCEOF_CHECK;
     private static final MethodHandle IS_ASSIGNABLE_FROM_CHECK;
     private static final MethodHandle INTEGER_EQ_CHECK;
+    private static final MethodHandle LONG_EQ_CHECK;
     private static final MethodHandle FLOAT_EQ_CHECK;
     private static final MethodHandle DOUBLE_EQ_CHECK;
     private static final MethodHandle BOOLEAN_EQ_CHECK;
@@ -81,6 +82,8 @@ public class SwitchBootstraps {
                                                               MethodType.methodType(boolean.class, Class.class, Class.class), 1, 0);
             INTEGER_EQ_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "integerEqCheck",
                                            MethodType.methodType(boolean.class, Object.class, Integer.class));
+            LONG_EQ_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "longEqCheck",
+                    MethodType.methodType(boolean.class, long.class, Long.class));
             FLOAT_EQ_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "floatEqCheck",
                     MethodType.methodType(boolean.class, float.class, Float.class));
             DOUBLE_EQ_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "doubleEqCheck",
@@ -191,6 +194,7 @@ public class SwitchBootstraps {
             labelClass != String.class &&
             labelClass != Integer.class &&
             labelClass != Float.class &&
+            labelClass != Long.class &&
             labelClass != Double.class &&
             labelClass != Boolean.class &&
             labelClass != EnumDesc.class) {
@@ -249,13 +253,17 @@ public class SwitchBootstraps {
                     } else {
                         currentTest = INSTANCEOF_CHECK;
                     }
-                } else if (currentLabel instanceof Integer ii) {
+                }
+                else if (currentLabel instanceof Integer ii) {
                     if (selectorType.equals(boolean.class)) {
                         testLabel = ii.intValue() == 1;
                         currentTest = BOOLEAN_EQ_CHECK;
                     } else {
                         currentTest = INTEGER_EQ_CHECK;
                     }
+                }
+                else if (selectorType.isPrimitive() && currentLabel instanceof Long) {
+                    currentTest = LONG_EQ_CHECK;
                 }
                 else if (selectorType.isPrimitive() && currentLabel instanceof Float) {
                     currentTest = FLOAT_EQ_CHECK;
@@ -317,6 +325,7 @@ public class SwitchBootstraps {
         return withIndexCheck(switchImpl, labels.length);
     }
 
+    //<editor-fold desc="Equality checks for numerics and boolean">
     private static boolean floatEqCheck(float value, Float constant) {
         if (Float.valueOf(value).equals(constant.floatValue())) {
             return true;
@@ -326,6 +335,13 @@ public class SwitchBootstraps {
 
     private static boolean doubleEqCheck(double value, Double constant) {
         if (Double.valueOf(value).equals(constant.doubleValue())) {
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean longEqCheck(long value, Long constant) {
+        if (Long.valueOf(value).equals(constant.longValue())) {
             return true;
         }
         return false;
@@ -349,6 +365,7 @@ public class SwitchBootstraps {
         }
         return false;
     }
+    //</editor-fold>
 
     private static boolean isZero(int value) {
         return value == 0;
