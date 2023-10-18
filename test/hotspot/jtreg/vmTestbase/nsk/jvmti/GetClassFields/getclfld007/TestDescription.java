@@ -45,6 +45,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm/native -agentlib:getclfld007=printdump nsk.jvmti.GetClassFields.getclfld007
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ * @run main/othervm/native -agentlib:getclfld007 nsk.jvmti.GetClassFields.getclfld007
  */
 
