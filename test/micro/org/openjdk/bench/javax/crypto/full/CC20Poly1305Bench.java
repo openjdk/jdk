@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,25 +40,29 @@ import javax.crypto.spec.SecretKeySpec;
  * benchmark operation
  */
 
-public class AESGCMBench extends CryptoBase {
+public class CC20Poly1305Bench extends CryptoBase {
+
+    @Param({"256"})
+    private int keyLength;
 
     @Param({"1024", "1500", "4096", "16384"})
     private int dataSize;
 
-    private final String algorithm = "AES/GCM/NoPadding";
+    private final String algorithm = "ChaCha20-Poly1305/None/NoPadding";
     private Cipher encryptCipher, decryptCipher;
     byte[] encryptedData, in, out, iv;
     SecretKeySpec ks;
     AlgorithmParameterSpec spec;
 
-    private static final int IV_BUFFER_SIZE = 32;
+    private static final int IV_BUFFER_SIZE = 24;
     private static final int IV_MODULO = IV_BUFFER_SIZE / 2;
+    private static final int KEYLEN = 32;
     int iv_index = 0;
     int updateLen = 0;
 
     private AlgorithmParameterSpec getNewSpec() {
         iv_index = (iv_index + 1) % IV_MODULO;
-        return new GCMParameterSpec(96, iv, iv_index, 12);
+        return new IvParameterSpec(iv, iv_index, 12);
     }
 
     @Setup
@@ -68,7 +72,8 @@ public class AESGCMBench extends CryptoBase {
         // Setup key material
         iv = fillSecureRandom(new byte[IV_BUFFER_SIZE]);
         spec = getNewSpec();
-        ks = new SecretKeySpec(fillSecureRandom(new byte[keyLength / 8]), "AES");
+        ks = new SecretKeySpec(fillSecureRandom(new byte[keyLength / 8]), "");
+
 
         // Setup Cipher classes
         encryptCipher = makeCipher(prov, algorithm);

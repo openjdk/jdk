@@ -27,6 +27,7 @@ package com.sun.crypto.provider;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.HexFormat;
 
 /**
@@ -44,15 +45,22 @@ final class JCEBufferedStream extends ByteArrayOutputStream {
         count = 0;
     }
 
+    public JCEBufferedStream(int len) {
+        buf = new byte[len];
+        count = 0;
+    }
+
     /**
-     * This method saves memory by sending the caller the internal buffer.  The
-     * `count` is set to zero which will allocate a new byte[] if a follow when
-     * written to.
-     * @return internal byte array of non-blocksize data
+     * This method saves memory by sending the caller the internal buffer. If
+     * internal buffer is larger than the data stored, a copy is returned.
+     * @return internal or new byte array of non-blocksize data.
      */
     @Override
     public synchronized byte[] toByteArray() {
-        count = 0;
+        //count = 0;
+        if (buf.length > count) {
+            return Arrays.copyOfRange(buf, 0, count);
+        }
         return buf;
     }
 
@@ -62,34 +70,40 @@ final class JCEBufferedStream extends ByteArrayOutputStream {
      * @param src remaining non-blocksize ByteBuffer
      */
     public void write(ByteBuffer src) {
-        if (count == 0) {
-            buf = new byte[src.remaining()];
+        int pos = src.position();
+        int len = src.remaining();
+
+        if (src.hasArray()) {
+            write(src.array(), pos + src.arrayOffset(), len);
+            src.position(pos + len);
+            return;
+        }
+        if (buf == null) {
+            buf = new byte[len];
             src.get(buf);
             count = buf.length;
         } else {
-            int len = src.remaining();
-            //byte[] newbuf = (buf.length > count + len ? buf :
-            //    new byte[count + len]);
-            byte[] newbuf = new byte[count + len];
-            System.arraycopy(buf, 0, newbuf, 0, count);
-            src.get(newbuf, count, len);
-            buf = newbuf;
+            if (buf.length < (count + len)) {
+                buf = Arrays.copyOf(buf, count + len);
+            }
+            src.get(buf, count, len);
             count += len;
         }
     }
 
     @Override
     public void write(byte[] in, int offset, int len) {
-        if (count == 0) {
+        if (buf == null) {
             buf = new byte[len];
             System.arraycopy(in, offset, buf, 0, len);
             count = buf.length;
         } else {
-            //byte[] newbuf = (buf.length > count + len ? buf : new byte[count + len]);
-            byte[] newbuf = new byte[count + len];
-            System.arraycopy(buf, 0, newbuf, 0, count);
-            System.arraycopy(in, offset, newbuf, count, len);
-            buf = newbuf;
+            // Create a new larger buffer and append the new data
+            if (buf.length < count + len) {
+                buf = Arrays.copyOf(buf, count + len);
+            }
+
+            System.arraycopy(in, offset, buf, count, len);
             count += len;
         }
     }

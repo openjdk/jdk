@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -680,12 +680,12 @@ abstract class GaloisCounterMode extends CipherSpi {
         final int blockSize;
 
         // buffer for AAD data; if null, meaning update has been called
-        JCEBufferedStream aadBuffer = new JCEBufferedStream();
+        JCEBufferedStream aadBuffer = null;
         int sizeOfAAD = 0;
         boolean aadProcessed = false;
 
         // buffer data for crypto operation
-        JCEBufferedStream ibuffer = new JCEBufferedStream();
+        JCEBufferedStream ibuffer = null;
 
         // Original dst buffer if there was an overlap situation
         ByteBuffer originalDst = null;
@@ -732,6 +732,18 @@ abstract class GaloisCounterMode extends CipherSpi {
         abstract int doFinal(ByteBuffer src, ByteBuffer dst)
             throws IllegalBlockSizeException, AEADBadTagException,
             ShortBufferException;
+
+        // Initialize internal data buffer, if not already.
+        void initBuffer(int len) {
+            if (ibuffer == null) {
+                ibuffer = new JCEBufferedStream(len);
+            }
+        }
+
+        // Helper method for getting ibuffer size
+        int getBufferedLength() {
+            return (ibuffer == null ? 0 : ibuffer.size());
+        }
 
         /**
          *  ByteBuffer wrapper for intrinsic implGCMCrypt.  It will operate
@@ -829,31 +841,36 @@ abstract class GaloisCounterMode extends CipherSpi {
                 checkReInit();
             }
 
-            if (sizeOfAAD == 0 && !aadProcessed) {
-                aadBuffer = new JCEBufferedStream();
-            } else {
-                // update has already been called
-                throw new IllegalStateException
-                    ("Update has been called; no more AAD data");
+            if (aadBuffer == null) {
+                if (sizeOfAAD == 0 && !aadProcessed) {
+                    aadBuffer = new JCEBufferedStream(len);
+                } else {
+                    // update has already been called
+                    throw new IllegalStateException
+                        ("Update has been called; no more AAD data");
+                }
             }
             aadBuffer.write(src, offset, len);
         }
 
         // Feed the AAD data to GHASH, pad if necessary
         void processAAD() {
-            if (aadBuffer.size() > 0) {
-                byte[] aad = aadBuffer.toByteArray();
-                sizeOfAAD = aad.length;
+            if (aadBuffer != null) {
+                if (aadBuffer.size() > 0) {
+                    byte[] aad = aadBuffer.toByteArray();
+                    sizeOfAAD = aad.length;
 
-                int lastLen = aad.length % blockSize;
-                if (lastLen != 0) {
-                    ghash.update(aad, 0, aad.length - lastLen);
-                    byte[] padded = expandToOneBlock(aad,
-                        aad.length - lastLen, lastLen, blockSize);
-                    ghash.update(padded);
-                } else {
-                    ghash.update(aad);
+                    int lastLen = aad.length % blockSize;
+                    if (lastLen != 0) {
+                        ghash.update(aad, 0, aad.length - lastLen);
+                        byte[] padded = expandToOneBlock(aad,
+                            aad.length - lastLen, lastLen, blockSize);
+                        ghash.update(padded);
+                    } else {
+                        ghash.update(aad);
+                    }
                 }
+                aadBuffer = null;
             }
             aadProcessed = true;
         }
@@ -1086,7 +1103,7 @@ abstract class GaloisCounterMode extends CipherSpi {
 
         @Override
         public int getOutputSize(int inLen, boolean isFinal) {
-            int len = ibuffer.size();
+            int len = getBufferedLength();
             if (isFinal) {
                 return len + inLen + tagLenBytes;
             } else {
@@ -1122,7 +1139,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             // 'inLen' stores the length to use with buffer 'in'.
             // 'len' stores the length returned by the method.
             int len = 0;
-            int bLen = ibuffer.size();
+            int bLen = getBufferedLength();
             checkDataLength(inLen, bLen);
 
             processAAD();
@@ -1150,7 +1167,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 }
             }
 
-            // Encrypt the remaining blocks inside of 'in'
+            // Encrypt the remaining blocks inside 'in'
             if (inLen >= PARALLEL_LEN) {
                 int r = GaloisCounterMode.implGCMCrypt(in, inOfs, inLen, out,
                     outOfs, out, outOfs, gctr, ghash);
@@ -1170,6 +1187,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             // Write any remaining bytes less than a blockSize into ibuffer.
             int remainder = inLen % blockSize;
             if (remainder > 0) {
+                initBuffer(remainder);
                 inLen -= remainder;
                 // remainder offset is based on original buffer length
                 ibuffer.write(in, inOfs + inLen, remainder);
@@ -1189,7 +1207,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         public int doUpdate(ByteBuffer src, ByteBuffer dst)
             throws ShortBufferException {
             checkReInit();
-            int bLen = ibuffer.size();
+            int bLen = getBufferedLength();
             checkDataLength(src.remaining(), bLen);
 
             // 'len' stores the length returned by the method.
@@ -1232,6 +1250,7 @@ abstract class GaloisCounterMode extends CipherSpi {
 
             // Write the remaining bytes into the 'ibuffer'
             if (srcLen > 0) {
+                initBuffer(srcLen);
                 // remainder offset is based on original buffer length
                 ibuffer.write(src);
             }
@@ -1255,7 +1274,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 throw new ShortBufferException("Output buffer invalid");
             }
 
-            int bLen = ibuffer.size();
+            int bLen = getBufferedLength();
             checkDataLength(inLen, bLen, tagLenBytes);
             processAAD();
             out = overlapDetection(in, inOfs, out, outOfs);
@@ -1315,7 +1334,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             IllegalBlockSizeException, ShortBufferException {
             checkReInit();
             dst = overlapDetection(src, dst);
-            int len = src.remaining() + ibuffer.size();
+            int len = src.remaining() + getBufferedLength();
 
             // 'len' includes ibuffer data
             checkDataLength(len, tagLenBytes);
@@ -1383,7 +1402,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             if (!isFinal) {
                 return 0;
             }
-            return Math.max(inLen + ibuffer.size() - tagLenBytes, 0);
+            return Math.max(inLen + getBufferedLength() - tagLenBytes, 0);
         }
 
         /**
@@ -1429,6 +1448,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             if (inLen > 0) {
                 // store internally until doFinal.  Per the spec, data is
                 // returned after tag is successfully verified.
+                initBuffer(inLen);
                 ibuffer.write(in, inOfs, inLen);
             }
             return 0;
@@ -1449,6 +1469,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                         src.remaining(), null, 0);
                     src.position(src.limit());
                 } else {
+                    initBuffer(src.remaining());
                     ibuffer.write(src);
                 }
             }
@@ -1465,7 +1486,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             int outOfs) throws IllegalBlockSizeException, AEADBadTagException,
             ShortBufferException {
 
-            int len = inLen + ibuffer.size();
+            int len = inLen + getBufferedLength();
             if (len < tagLenBytes) {
                 throw new AEADBadTagException("Input data too short to " +
                     "contain an expected tag length of " + tagLenBytes +
@@ -1533,7 +1554,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             int len = ct.remaining() - tagLenBytes;
 
             // Check if ibuffer has data
-            if (ibuffer.size() != 0) {
+            if (getBufferedLength() != 0) {
                 buffer = ByteBuffer.wrap(ibuffer.toByteArray());
                 len += buffer.remaining();
             }
@@ -1639,7 +1660,7 @@ abstract class GaloisCounterMode extends CipherSpi {
 
             // Calculate the encrypted data length inside the ibuffer
             // considering the tag location
-            int bLen = ibuffer.size();
+            int bLen = getBufferedLength();
 
             // Change the inLen based of the tag location.
             if (tagOfs < 0) {

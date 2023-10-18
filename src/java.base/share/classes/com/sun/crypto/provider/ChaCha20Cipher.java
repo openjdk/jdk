@@ -64,7 +64,6 @@ abstract class ChaCha20Cipher extends CipherSpi {
     private static final int KS_MAX_LEN = 1024;
     private static final int KS_BLK_SIZE = 64;
     private static final int KS_SIZE_INTS = KS_BLK_SIZE / Integer.BYTES;
-    private static final int CIPHERBUF_BASE = 1024;
 
     // The initialization state of the cipher
     private boolean initialized;
@@ -1352,7 +1351,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
 
     private final class EngineAEADDec implements ChaChaEngine {
 
-        private final ByteArrayOutputStream cipherBuf;
+        private JCEBufferedStream cipherBuf;
         private final byte[] tag;
 
         @Override
@@ -1364,14 +1363,26 @@ abstract class ChaCha20Cipher extends CipherSpi {
             // size.
             return (isFinal ?
                     Integer.max(Math.addExact((inLen - TAG_LENGTH),
-                            cipherBuf.size()), 0) : 0);
+                            getBufferedLength()), 0) : 0);
+        }
+
+        private void initBuffer(int len) {
+            if (cipherBuf == null) {
+                cipherBuf = new JCEBufferedStream(len);
+            }
+        }
+
+        private int getBufferedLength() {
+            if (cipherBuf != null) {
+                return cipherBuf.size();
+            }
+            return 0;
         }
 
         private EngineAEADDec() throws InvalidKeyException {
             initAuthenticator();
             initCounterValue = 1;
             counter = initCounterValue;
-            cipherBuf = new JCEBufferedStream();
             tag = new byte[TAG_LENGTH];
         }
 
@@ -1389,6 +1400,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
 
                 if (in != null) {
                     Objects.checkFromIndexSize(inOff, inLen, in.length);
+                    initBuffer(inLen);
                     cipherBuf.write(in, inOff, inLen);
                 }
             } else {
@@ -1406,7 +1418,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
 
             byte[] ctPlusTag;
             int ctPlusTagLen;
-            if (cipherBuf.size() == 0 && inOff == 0) {
+            if (getBufferedLength() == 0) {
                 // No previous data has been seen before doFinal, so we do
                 // not need to hold any ciphertext in a buffer.  We can
                 // process it directly from the "in" parameter.
@@ -1417,8 +1429,8 @@ abstract class ChaCha20Cipher extends CipherSpi {
                 doUpdate(in, inOff, inLen, out, outOff);
                 ctPlusTag = cipherBuf.toByteArray();
                 ctPlusTagLen = ctPlusTag.length;
+                cipherBuf.reset();
             }
-            cipherBuf.reset();
 
             // There must at least be a tag length's worth of ciphertext
             // data in the buffered input.
