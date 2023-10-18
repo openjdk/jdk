@@ -93,12 +93,12 @@ address generate_poly1305_processBlocks2() {
   // Un is the current checksum
   RegPairs u0(regs, 3), u1(regs, 3);
 
+  // Load the initial state
+  __ pack_26(u0[0]._lo, u0[1]._lo, u0[2]._lo, acc_start);
+
   Register RR2 = *regs++;
   __ lsl(RR2, R[2], 26);
   __ add(RR2, RR2, RR2, __ LSL, 2);
-
-  // Load the initial state
-  __ pack_26(u0[0]._lo, u0[1]._lo, u0[2]._lo, acc_start);
 
   // Just one block?
   Label SMALL;
@@ -117,8 +117,7 @@ address generate_poly1305_processBlocks2() {
     __ lsl(RR2, R[2], 26);
     __ add(RR2, RR2, RR2, __ LSL, 2);
 
-    __ poly1305_multiply(u1, R, R, RR2, regs);
-    __ poly1305_reduce(u1);
+    __ poly1305_field_multiply(u1, R, R, RR2, regs);
     __ copy_3_regs(R, u1_lo);
 
     __ lsl(RR2, R[2], 26);
@@ -276,8 +275,7 @@ address generate_poly1305_processBlocks2() {
     __ br(__ LT, DONE);
 
     __ poly1305_step(S0, u0, input_start);
-    __ poly1305_multiply(u0, S0, R, RR2, regs);
-    __ poly1305_reduce(u0);
+    __ poly1305_field_multiply(u0, S0, R, RR2, regs);
 
     __ b(LOOP);
     __ bind(DONE);
