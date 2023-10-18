@@ -33,7 +33,6 @@
 #include "ci/ciEnv.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compilationFailureInfo.hpp"
-#include "compiler/compilerDefinitions.hpp"
 #include "compiler/compileTask.hpp"
 #ifdef COMPILER2
 #include "opto/node.hpp"
