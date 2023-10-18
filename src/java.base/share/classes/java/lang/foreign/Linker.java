@@ -797,10 +797,6 @@ public sealed interface Linker permits AbstractLinker {
          * short-lived access to Java heap memory, and copying the relevant data to an off-heap memory segment would be
          * prohibitive in terms of performance.
          *
-         * @implNote As a consequence of allowing heap access, the JVM will either lock the garbage collector, or pin the
-         * individual region of the heap in which the memory represented by a given memory segment resides, for the
-         * duration of the function call.
-         *
          * @param allowHeapAccess whether the linked function should allow access to the Java heap.
          */
         static Option critical(boolean allowHeapAccess) {
