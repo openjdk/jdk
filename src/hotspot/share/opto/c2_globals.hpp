@@ -347,6 +347,9 @@
   notproduct(bool, TraceNewVectors, false,                                  \
           "Trace creation of Vector nodes")                                 \
                                                                             \
+  notproduct(bool, TraceMergeStores, false,                                 \
+          "Trace creation of merged stores")                                \
+                                                                            \
   product_pd(bool, OptoBundling,                                            \
           "Generate nops to fill i-cache lines")                            \
                                                                             \

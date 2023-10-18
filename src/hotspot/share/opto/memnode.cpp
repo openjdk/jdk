@@ -2744,7 +2744,225 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
+  Node* progress = Ideal_merge_stores(phase);
+  if(progress != nullptr) { return progress; }
+
   return nullptr;                  // No further progress
+}
+
+// Link together multiple stores (B/S/C/I) into alonger one.
+Node* StoreNode::Ideal_merge_stores(PhaseGVN* phase) {
+  int opc = Opcode();
+  if (opc != Op_StoreB && opc != Op_StoreC && opc != Op_StoreI) {
+    return nullptr;
+  }
+
+  // If we can merge with use, then we must process use first.
+  StoreNode* use = can_merge_with_use(phase, true);
+  if (use != nullptr) {
+    return nullptr;
+  }
+
+  // Check if we can merge with at least one def.
+  StoreNode* def = can_merge_with_def(phase, true);
+  if (def == nullptr) {
+    return nullptr;
+  }
+
+  // Now we know we can merge at least two stores.
+  ResourceMark rm;
+  Node_List merge_list;
+  merge_list.push(this);
+
+  uint merge_list_max_size = 8 / memory_size();
+  assert(merge_list_max_size >= 2 &&
+         merge_list_max_size <= 8 &&
+         is_power_of_2(merge_list_max_size),
+         "must be 2, 4 or 8");
+
+  // Collect list of stores
+  while (def != nullptr && merge_list.size() <= merge_list_max_size) {
+    merge_list.push(def);
+    def = def->can_merge_with_def(phase, true);
+  }
+
+  int pow2size = round_down_power_of_2(merge_list.size());
+  assert(pow2size >= 2, "must be merging at least 2 stores");
+
+  // Create / find new value:
+  Node* new_value = nullptr;
+  int new_memory_size = memory_size() * pow2size;
+  if (in(MemNode::ValueIn)->Opcode() == Op_ConI) {
+    // Collect all constants
+    jlong con = 0;
+    int bits_per_store = memory_size() * 8;
+    jlong mask = (1L << bits_per_store) - 1;
+    for (int i = 0; i < pow2size; i++) {
+      jlong con_i = merge_list.at(i)->in(MemNode::ValueIn)->get_int();
+      con = con << bits_per_store;
+      con = con | (mask & con_i);
+    }
+    new_value = new_memory_size == 8 ? (Node*)phase->longcon(con)
+                                     : (Node*)phase->intcon((jint)con);
+  } else {
+    Node* first = merge_list.at(pow2size-1);
+    new_value = first->in(MemNode::ValueIn);
+    Node* base_last;
+    jint shift_last;
+    bool is_true = is_con_RShift(in(MemNode::ValueIn), base_last, shift_last);
+    assert(is_true, "must detect con RShift");
+    if (new_value != base_last) {
+      // new_value is not the base
+      return nullptr;
+    }
+  }
+
+  Node* first = merge_list.at(pow2size-1);
+  Node* new_ctrl = first->in(MemNode::Control);
+  Node* new_mem  = first->in(MemNode::Memory);
+  Node* new_adr  = first->in(MemNode::Address);
+  const TypePtr* atp = TypeRawPtr::BOTTOM;
+  BasicType bt = T_ILLEGAL;
+  switch (new_memory_size) {
+    case 2: bt = T_SHORT; break;
+    case 4: bt = T_INT;   break;
+    case 8: bt = T_LONG;  break;
+  }
+
+  StoreNode* new_store = StoreNode::make(*phase, new_ctrl, new_mem, new_adr,
+                                         atp, new_value, bt, MemNode::unordered);
+  new_store->set_mismatched_access();
+
+#ifdef ASSERT
+  if (TraceMergeStores) {
+    tty->print_cr("[TraceMergeStores]: Replace");
+    for (int i = pow2size - 1; i >= 0; i--) {
+      merge_list.at(i)->dump();
+    }
+    tty->print_cr("[TraceMergeStores]: with");
+    new_store->dump();
+  }
+#endif
+
+  return new_store;
+}
+
+StoreNode* StoreNode::can_merge_with_use(PhaseGVN* phase, bool check_def) {
+  int opc = Opcode();
+  assert(opc == Op_StoreB || opc == Op_StoreC || opc == Op_StoreI, "precondition");
+
+  if (outcnt() != 1) {
+    return nullptr;
+  }
+
+  StoreNode* use = unique_out()->isa_Store();
+  if (use == nullptr || use->Opcode() != opc) {
+    return nullptr;
+  }
+
+  // Having checked "def -> use", we now check "use -> def".
+  if (check_def) {
+    StoreNode* use_def = use->can_merge_with_def(phase, false);
+    if (use_def == nullptr) {
+      return nullptr;
+    }
+    assert(use_def == this, "def of use is this");
+  }
+
+  return use;
+}
+
+StoreNode* StoreNode::can_merge_with_def(PhaseGVN* phase, bool check_use) {
+  int opc = Opcode();
+  assert(opc == Op_StoreB || opc == Op_StoreC || opc == Op_StoreI, "precondition");
+
+  StoreNode* def = in(MemNode::Memory)->isa_Store();
+  if (def == nullptr || def->Opcode() != opc) {
+    return nullptr;
+  }
+
+  StoreNode* s1 = this;
+  StoreNode* s2 = def->as_Store();
+  assert(s1->memory_size() == s2->memory_size(), "same size");
+
+  // Check ctrl compatibility
+  Node* ctrl_s1 = s1->in(MemNode::Control);
+  Node* ctrl_s2 = s2->in(MemNode::Control);
+  if (ctrl_s1 != ctrl_s2) {
+    return nullptr;
+  }
+
+  // Check value compatibility
+  Node* value_s1 = s1->in(MemNode::ValueIn);
+  Node* value_s2 = s2->in(MemNode::ValueIn);
+
+  if (value_s1->Opcode() == Op_ConI) {
+    if (value_s2->Opcode() != Op_ConI) {
+      return nullptr;
+    }
+    // both are int con
+  } else {
+    Node* base_s1;
+    jint shift_s1;
+    if (!is_con_RShift(value_s1, base_s1, shift_s1)) {
+      return nullptr;
+    }
+    Node* base_s2;
+    jint shift_s2;
+    if (value_s2 == base_s1) {
+      // This is the "shift by zero" case.
+      base_s2 = value_s2;
+      shift_s2 = 0;
+    } else if (!is_con_RShift(value_s2, base_s2, shift_s2)) {
+      return nullptr;
+    }
+    int bits_per_store = memory_size() * 8;
+    if (base_s1 != base_s2 ||
+        shift_s2 + bits_per_store != shift_s1 ||
+        shift_s1 % bits_per_store != 0) {
+      return nullptr;
+    }
+    // both load from same value with correct shift
+  }
+
+  // Check address compatibility
+  Node* adr_s1 = s1->in(MemNode::Address);
+  Node* adr_s2 = s2->in(MemNode::Address);
+
+  // Expect:
+  //   adr_s1 = AddP(x, c1)
+  //   adr_s1 = AddP(x, c2)
+  //   c2 + memory_size = c1
+  if (!adr_s1->is_AddP() ||
+      !adr_s2->is_AddP() ||
+      adr_s1->in(AddPNode::Address) != adr_s2->in(AddPNode::Address) ||
+      !adr_s1->in(AddPNode::Offset)->is_Con() ||
+      !adr_s2->in(AddPNode::Offset)->is_Con()) {
+    return nullptr;
+  }
+
+  const Type* c1_t = phase->type(adr_s1->in(AddPNode::Offset));
+  const Type* c2_t = phase->type(adr_s2->in(AddPNode::Offset));
+  assert(c1_t->isa_int() || c1_t->isa_long(), "int or long");
+  assert(c2_t->isa_int() || c2_t->isa_long(), "int or long");
+
+  jlong c1 = c1_t->isa_int() ? c1_t->is_int()->get_con() : c1_t->is_long()->get_con();
+  jlong c2 = c2_t->isa_int() ? c2_t->is_int()->get_con() : c2_t->is_long()->get_con();
+
+  if (c2 + s2->memory_size() != c1) {
+    return nullptr;
+  }
+
+  // Having checked "use -> def", we now check "def -> use".
+  if (check_use) {
+    StoreNode* def_use = s2->can_merge_with_use(phase, false);
+    if (def_use == nullptr) {
+      return nullptr;
+    }
+    assert(def_use == this, "use of def is this");
+  }
+
+  return s2;
 }
 
 //------------------------------Value-----------------------------------------
