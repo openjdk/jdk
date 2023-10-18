@@ -132,7 +132,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   GrowableArray<VMStorage> unfiltered_out_regs;
   int out_arg_bytes = ForeignGlobals::java_calling_convention(out_sig_bt, total_out_args, unfiltered_out_regs);
   int preserved_bytes = SharedRuntime::out_preserve_stack_slots() * VMRegImpl::stack_slot_size;
-  int stack_bytes = preserved_bytes + arg_shuffle.out_arg_bytes();
+  int stack_bytes = preserved_bytes + out_arg_bytes;
   int out_arg_area = align_up(stack_bytes , StackAlignmentInBytes);
 
   // out_arg_area (for stack arguments) doubles as shadow space for native calls.

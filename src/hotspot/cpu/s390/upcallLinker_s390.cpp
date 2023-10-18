@@ -133,7 +133,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   int out_arg_bytes = ForeignGlobals::java_calling_convention(out_sig_bt, total_out_args, unfiltered_out_regs);
 
   // The Java call uses the JIT ABI, but we also call C.
-  int out_arg_area = MAX2(frame::z_jit_out_preserve_size + arg_shuffle.out_arg_bytes(), (int)frame::z_abi_160_size);
+  int out_arg_area = MAX2(frame::z_jit_out_preserve_size + out_arg_bytes, (int)frame::z_abi_160_size);
 
   int reg_save_area_size = compute_reg_save_area_size(abi);
   RegSpiller arg_spiller(call_regs._arg_regs);
@@ -146,10 +146,10 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   int frame_bottom_offset   = frame_data_offset     + sizeof(UpcallStub::FrameData);
 
   StubLocations locs;
-
+  VMStorage shuffle_reg = abi._scratch1;
   GrowableArray<VMStorage> in_regs = ForeignGlobals::replace_place_holders(call_regs._arg_regs, locs);
   GrowableArray<VMStorage> filtered_out_regs = ForeignGlobals::upcall_filter_receiver_reg(unfiltered_out_regs);
-  ArgumentShuffle arg_shuffle(in_regs, filtered_out_regs, as_VMStorage(abi._scratch1));
+  ArgumentShuffle arg_shuffle(in_regs, filtered_out_regs, shuffle_reg);
 
 #ifndef PRODUCT
   LogTarget(Trace, foreign, upcall) lt;
@@ -209,7 +209,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   arg_spiller.generate_fill(_masm, arg_save_area_offset);
   __ block_comment("{ argument shuffle");
-  arg_shuffle.generate(_masm, abi._shadow_space_bytes, frame::z_jit_out_preserve_size);
+  arg_shuffle.generate(_masm, shuffle_reg, abi._shadow_space_bytes, frame::z_jit_out_preserve_size);
   __ block_comment("} argument shuffle");
 
   __ block_comment("{ receiver ");
