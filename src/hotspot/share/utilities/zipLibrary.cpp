@@ -106,7 +106,7 @@ class ZipLibraryLoaderLock : public StackObj {
   JavaThread* _jt;
  public:
    ZipLibraryLoaderLock() : _jt(nullptr) {
-    Thread* thread = Thread::current_or_null_safe();
+    Thread* thread = Thread::current_or_null();
     if (thread != nullptr && thread->is_Java_thread()) {
       JavaThread* const jt = JavaThread::cast(thread);
       if (jt->thread_state() != _thread_in_native) {
@@ -143,7 +143,7 @@ void** ZipLibrary::open(const char* name, char** pmsg) {
 }
 
 void ZipLibrary::close(jzfile* zip) {
-  initialize();
+  assert(is_loaded(), "invariant");
   assert(ZIP_Close != nullptr, "invariant");
   ZIP_Close(zip);
 }
