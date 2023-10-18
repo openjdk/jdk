@@ -22,13 +22,13 @@
  *
  */
 
-#ifndef SHARE_SERVICES_NMTDCMD_HPP
-#define SHARE_SERVICES_NMTDCMD_HPP
+#ifndef SHARE_NMT_NMTDCMD_HPP
+#define SHARE_NMT_NMTDCMD_HPP
 
+#include "nmt/mallocTracker.hpp"
+#include "nmt/memBaseline.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticFramework.hpp"
-#include "services/memBaseline.hpp"
-#include "services/mallocTracker.hpp"
 
 /**
  * Native memory tracking DCmd implementation
@@ -70,4 +70,4 @@ class NMTDCmd: public DCmdWithParser {
   bool check_detail_tracking_level(outputStream* out);
 };
 
-#endif // SHARE_SERVICES_NMTDCMD_HPP
+#endif // SHARE_NMT_NMTDCMD_HPP

@@ -23,13 +23,13 @@
  */
 #include "precompiled.hpp"
 #include "logging/log.hpp"
-#include "memory/metaspaceUtils.hpp"
 #include "memory/metaspaceStats.hpp"
+#include "memory/metaspaceUtils.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/threadStackTracker.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/threadCritical.hpp"
-#include "services/memTracker.hpp"
-#include "services/threadStackTracker.hpp"
-#include "services/virtualMemoryTracker.hpp"
 #include "utilities/ostream.hpp"
 
 size_t VirtualMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(VirtualMemorySnapshot, size_t)];

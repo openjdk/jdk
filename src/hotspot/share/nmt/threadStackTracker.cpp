@@ -24,11 +24,11 @@
 
 #include "precompiled.hpp"
 
+#include "nmt/mallocTracker.hpp"
 #include "runtime/threadCritical.hpp"
-#include "services/mallocTracker.hpp"
-#include "services/memTracker.hpp"
-#include "services/virtualMemoryTracker.hpp"
-#include "services/threadStackTracker.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/threadStackTracker.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 
 volatile size_t ThreadStackTracker::_thread_count = 0;
 SortedLinkedList<SimpleThreadStackSite, ThreadStackTracker::compare_thread_stack_base>* ThreadStackTracker::_simple_thread_stacks = nullptr;

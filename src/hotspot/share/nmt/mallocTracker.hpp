@@ -23,14 +23,14 @@
  *
  */
 
-#ifndef SHARE_SERVICES_MALLOCTRACKER_HPP
-#define SHARE_SERVICES_MALLOCTRACKER_HPP
+#ifndef SHARE_NMT_MALLOCTRACKER_HPP
+#define SHARE_NMT_MALLOCTRACKER_HPP
 
 #include "memory/allocation.hpp"
+#include "nmt/mallocHeader.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/threadCritical.hpp"
-#include "services/mallocHeader.hpp"
-#include "services/nmtCommon.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 class outputStream;
@@ -325,4 +325,4 @@ class MallocTracker : AllStatic {
   }
 };
 
-#endif // SHARE_SERVICES_MALLOCTRACKER_HPP
+#endif // SHARE_NMT_MALLOCTRACKER_HPP

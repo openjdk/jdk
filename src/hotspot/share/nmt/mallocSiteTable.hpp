@@ -22,14 +22,14 @@
  *
  */
 
-#ifndef SHARE_SERVICES_MALLOCSITETABLE_HPP
-#define SHARE_SERVICES_MALLOCSITETABLE_HPP
+#ifndef SHARE_NMT_MALLOCSITETABLE_HPP
+#define SHARE_NMT_MALLOCSITETABLE_HPP
 
 #include "memory/allocation.hpp"
+#include "nmt/allocationSite.hpp"
+#include "nmt/mallocTracker.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "runtime/atomic.hpp"
-#include "services/allocationSite.hpp"
-#include "services/mallocTracker.hpp"
-#include "services/nmtCommon.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
 
@@ -198,4 +198,4 @@ class MallocSiteTable : AllStatic {
   static const MallocSiteHashtableEntry*  _hash_entry_allocation_site;
 };
 
-#endif // SHARE_SERVICES_MALLOCSITETABLE_HPP
+#endif // SHARE_NMT_MALLOCSITETABLE_HPP

@@ -22,14 +22,14 @@
  *
  */
 
-#ifndef SHARE_SERVICES_THREADSTACKTRACKER_HPP
-#define SHARE_SERVICES_THREADSTACKTRACKER_HPP
+#ifndef SHARE_NMT_THREADSTACKTRACKER_HPP
+#define SHARE_NMT_THREADSTACKTRACKER_HPP
 
-#include "services/allocationSite.hpp"
-#include "services/mallocSiteTable.hpp"
-#include "services/nmtCommon.hpp"
-#include "utilities/nativeCallStack.hpp"
+#include "nmt/allocationSite.hpp"
+#include "nmt/mallocSiteTable.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "utilities/linkedlist.hpp"
+#include "utilities/nativeCallStack.hpp"
 
 class SimpleThreadStackSite : public AllocationSite {
   const address _base;
@@ -82,5 +82,5 @@ public:
   static bool walk_simple_thread_stack_site(MallocSiteWalker* walker);
 };
 
-#endif // SHARE_SERVICES_THREADSTACKTRACKER_HPP
+#endif // SHARE_NMT_THREADSTACKTRACKER_HPP
 

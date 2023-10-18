@@ -30,7 +30,7 @@
 #ifdef ASSERT
 #include "runtime/atomic.hpp"
 #endif
-#include "services/memTracker.hpp"
+#include "nmt/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"

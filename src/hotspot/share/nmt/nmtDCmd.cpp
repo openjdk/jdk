@@ -23,12 +23,12 @@
  */
 #include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
+#include "nmt/memReporter.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/nmtDCmd.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
-#include "services/nmtDCmd.hpp"
-#include "services/memReporter.hpp"
-#include "services/memTracker.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 NMTDCmd::NMTDCmd(outputStream* output,

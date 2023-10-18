@@ -22,7 +22,7 @@
  *
  */
 #include "precompiled.hpp"
-#include "services/nmtCommon.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 STATIC_ASSERT(NMT_off > NMT_unknown);

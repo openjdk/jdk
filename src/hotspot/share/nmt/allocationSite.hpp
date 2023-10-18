@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_SERVICES_ALLOCATIONSITE_HPP
-#define SHARE_SERVICES_ALLOCATIONSITE_HPP
+#ifndef SHARE_NMT_ALLOCATIONSITE_HPP
+#define SHARE_NMT_ALLOCATIONSITE_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/nativeCallStack.hpp"
@@ -52,4 +52,4 @@ class AllocationSite {
   MEMFLAGS flag() const { return _flag; }
 };
 
-#endif // SHARE_SERVICES_ALLOCATIONSITE_HPP
+#endif // SHARE_NMT_ALLOCATIONSITE_HPP

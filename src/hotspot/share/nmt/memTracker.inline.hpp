@@ -23,11 +23,11 @@
  *
  */
 
-#ifndef SHARE_SERVICES_MEMTRACKER_INLINE_HPP
-#define SHARE_SERVICES_MEMTRACKER_INLINE_HPP
+#ifndef SHARE_NMT_MEMTRACKER_INLINE_HPP
+#define SHARE_NMT_MEMTRACKER_INLINE_HPP
 
-#include "services/mallocTracker.inline.hpp"
-#include "services/memTracker.hpp"
+#include "nmt/mallocTracker.inline.hpp"
+#include "nmt/memTracker.hpp"
 
 inline bool MemTracker::check_exceeds_limit(size_t s, MEMFLAGS f) {
   if (!enabled()) {
@@ -36,4 +36,4 @@ inline bool MemTracker::check_exceeds_limit(size_t s, MEMFLAGS f) {
   return MallocTracker::check_exceeds_limit(s, f);
 }
 
-#endif // SHARE_SERVICES_MEMTRACKER_INLINE_HPP
+#endif // SHARE_NMT_MEMTRACKER_INLINE_HPP

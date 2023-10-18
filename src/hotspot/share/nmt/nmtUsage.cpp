@@ -23,12 +23,12 @@
  */
 
 #include "precompiled.hpp"
+#include "nmt/mallocTracker.hpp"
+#include "nmt/nmtCommon.hpp"
+#include "nmt/nmtUsage.hpp"
+#include "nmt/threadStackTracker.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/threadCritical.hpp"
-#include "services/nmtCommon.hpp"
-#include "services/nmtUsage.hpp"
-#include "services/mallocTracker.hpp"
-#include "services/threadStackTracker.hpp"
-#include "services/virtualMemoryTracker.hpp"
 
 // Enabled all options for snapshot.
 const NMTUsageOptions NMTUsage::OptionsAll = { true, true, true };

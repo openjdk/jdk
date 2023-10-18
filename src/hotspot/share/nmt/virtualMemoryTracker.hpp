@@ -28,12 +28,11 @@
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp" // For MetadataType
 #include "memory/metaspaceStats.hpp"
-#include "services/allocationSite.hpp"
-#include "services/nmtCommon.hpp"
+#include "nmt/allocationSite.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "utilities/linkedlist.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
-
 
 /*
  * Virtual memory counter

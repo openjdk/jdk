@@ -24,8 +24,8 @@
  *
  */
 
-#ifndef SHARE_SERVICES_NMTCOMMON_HPP
-#define SHARE_SERVICES_NMTCOMMON_HPP
+#ifndef SHARE_NMT_NMTCOMMON_HPP
+#define SHARE_NMT_NMTCOMMON_HPP
 
 #include "memory/allocation.hpp" // for MEMFLAGS only
 #include "utilities/align.hpp"
@@ -139,4 +139,4 @@ class NMTUtil : AllStatic {
 };
 
 
-#endif // SHARE_SERVICES_NMTCOMMON_HPP
+#endif // SHARE_NMT_NMTCOMMON_HPP

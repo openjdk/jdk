@@ -23,10 +23,10 @@
  *
  */
 
-#ifndef SHARE_SERVICES_MALLOCHEADER_INLINE_HPP
-#define SHARE_SERVICES_MALLOCHEADER_INLINE_HPP
+#ifndef SHARE_NMT_MALLOCHEADER_INLINE_HPP
+#define SHARE_NMT_MALLOCHEADER_INLINE_HPP
 
-#include "services/mallocHeader.hpp"
+#include "nmt/mallocHeader.hpp"
 
 #include "jvm_io.h"
 #include "utilities/debug.hpp"
@@ -163,4 +163,4 @@ inline bool MallocHeader::check_block_integrity(char* msg, size_t msglen, addres
   return true;
 }
 
-#endif // SHARE_SERVICES_MALLOCHEADER_INLINE_HPP
+#endif // SHARE_NMT_MALLOCHEADER_INLINE_HPP

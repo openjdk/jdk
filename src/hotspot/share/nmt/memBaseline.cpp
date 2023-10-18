@@ -28,8 +28,8 @@
 #include "memory/metaspaceUtils.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
-#include "services/memBaseline.hpp"
-#include "services/memTracker.hpp"
+#include "nmt/memBaseline.hpp"
+#include "nmt/memTracker.hpp"
 
 /*
  * Sizes are sorted in descenting order for reporting

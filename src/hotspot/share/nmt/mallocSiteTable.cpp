@@ -23,10 +23,9 @@
  */
 #include "precompiled.hpp"
 
-
 #include "memory/allocation.inline.hpp"
+#include "nmt/mallocSiteTable.hpp"
 #include "runtime/atomic.hpp"
-#include "services/mallocSiteTable.hpp"
 
 // Malloc site hashtable buckets
 MallocSiteHashtableEntry**  MallocSiteTable::_table = nullptr;
