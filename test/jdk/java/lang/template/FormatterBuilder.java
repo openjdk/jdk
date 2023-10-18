@@ -937,7 +937,7 @@ public class FormatterBuilder {
         test(String.format("%-10A", 12345.6), fmt."%-10A\{12345.6}");
 
         test("aaa%false", fmt."aaa%%%b\{false}");
-        test("aaa\nfalse", fmt."aaa%n%b\{false}");
+        test("aaa" + System.lineSeparator() + "false", fmt."aaa%n%b\{false}");
 
         assertThrows(
                 MissingFormatArgumentException.class,
