@@ -379,7 +379,7 @@
           "Don't compile methods larger than this if "                      \
           "+DontCompileHugeMethods")                                        \
                                                                             \
-  develop(bool, CaptureBailoutInformation, trueInDebug, DIAGNOSTIC,         \
+  product(bool, CaptureBailoutInformation, trueInDebug, DIAGNOSTIC,         \
           "Don't compile methods larger than this if "                      \
           "+DontCompileHugeMethods")                                        \
                                                                             \
