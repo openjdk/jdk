@@ -39,6 +39,7 @@ import jdk.test.lib.Asserts;
 import java.io.IOException;
 import java.io.File;
 import java.io.Serializable;
+import java.lang.ref.Reference;
 import java.rmi.ConnectIOException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -64,8 +65,12 @@ public class SSLSocketParametersTest implements Serializable {
         HelloImpl server = new HelloImpl();
         Hello stub = (Hello)UnicastRemoteObject.exportObject(server,
                 0, new SslRMIClientSocketFactory(), serverSocketFactory);
-        String msg = stub.sayHello();
-        Asserts.assertEquals("Hello World!", msg);
+        try {
+            String msg = stub.sayHello();
+            Asserts.assertEquals("Hello World!", msg);
+        } finally {
+            Reference.reachabilityFence(server);
+        }
     }
 
     private static void testSslServerSocketFactory(String[] cipherSuites, String[] protocol) throws Exception {
