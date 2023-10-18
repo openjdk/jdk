@@ -3045,7 +3045,7 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     } else if (_mode == _comp) {
       // -Xcomp may use excessive CPU for the test tiers. Also, -Xshare:dump runs a small and fixed set of
       // Java code, so there's not much benefit in running -Xcomp.
-      log_info(cds)("reduced -Xcomp to -Xmixed");
+      log_info(cds)("reduced -Xcomp to -Xmixed for static dumping");
       set_mode_flags(_mixed);
     }
 
