@@ -341,9 +341,6 @@
   product(bool, UseCMoveUnconditionally, false,                             \
           "Use CMove (scalar and vector) ignoring profitability test.")     \
                                                                             \
-  product(bool, DoReserveCopyInSuperWord, true,                             \
-          "Create reserve copy of graph in SuperWord.")                     \
-                                                                            \
   notproduct(bool, TraceSuperWord, false,                                   \
           "Trace superword transforms")                                     \
                                                                             \

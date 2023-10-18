@@ -448,6 +448,7 @@ InstanceKlass* LoaderConstraintTable::find_constrained_klass(Symbol* name,
 void LoaderConstraintTable::remove_failed_loaded_klass(InstanceKlass* klass,
                                                        ClassLoaderData* loader) {
 
+  MutexLocker ml(SystemDictionary_lock);
   Symbol* name = klass->name();
   LoaderConstraint *p = find_loader_constraint(name, loader);
   if (p != nullptr && p->klass() != nullptr && p->klass() == klass) {

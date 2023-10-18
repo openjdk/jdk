@@ -504,7 +504,7 @@ public abstract class HtmlDocletWriter {
      *
      * @return the {@code <header>} element
      */
-    protected HtmlTree getHeader(Navigation.PageMode pageMode) {
+    protected Content getHeader(Navigation.PageMode pageMode) {
         return getHeader(pageMode, null);
     }
 
@@ -517,10 +517,10 @@ public abstract class HtmlDocletWriter {
      *
      * @return the {@code <header>} element
      */
-    protected HtmlTree getHeader(Navigation.PageMode pageMode, Element element) {
+    protected Content getHeader(Navigation.PageMode pageMode, Element element) {
         return HtmlTree.HEADER()
-                .add(RawHtml.of(replaceDocRootDir(options.top())))
-                .add(getNavBar(pageMode, element).getContent());
+                        .add(RawHtml.of(replaceDocRootDir(options.top())))
+                        .add(getNavBar(pageMode, element).getContent());
     }
 
     /**
@@ -1470,13 +1470,13 @@ public abstract class HtmlDocletWriter {
             attrs.add("id=\"").add(htmlId.name()).add("\"");
         }
         // Generate index item
-        if (!headingContent.isEmpty() && configuration.mainIndex != null) {
+        if (!headingContent.isEmpty() && configuration.indexBuilder != null) {
             String tagText = headingContent.replaceAll("\\s+", " ");
             IndexItem item = IndexItem.of(element, node, tagText,
                     getTagletWriterInstance(context).getHolderName(element),
                     resources.getText("doclet.Section"),
                     new DocLink(path, id));
-            configuration.mainIndex.add(item);
+            configuration.indexBuilder.add(item);
         }
     }
 
@@ -2053,6 +2053,14 @@ public abstract class HtmlDocletWriter {
         }
     }
 
+    public void addRestrictedSummary(Element forWhat, Content target) {
+        if (utils.isRestrictedAPI(forWhat)) {
+            var div = HtmlTree.DIV(HtmlStyle.block);
+            div.add(HtmlTree.SPAN(HtmlStyle.restrictedLabel, contents.restrictedPhrase));
+            target.add(div);
+        }
+    }
+
     public void addPreviewInfo(Element forWhat, Content target) {
         if (utils.isPreviewAPI(forWhat)) {
             //in Java platform:
@@ -2201,6 +2209,26 @@ public abstract class HtmlDocletWriter {
             specURI = baseURI.resolve(specURI);
         }
         return specURI;
+    }
+
+    public void addRestrictedInfo(ExecutableElement forWhat, Content target) {
+        if (utils.isRestrictedAPI(forWhat)) {
+            //in Java platform:
+            var restrictedDiv = HtmlTree.DIV(HtmlStyle.restrictedBlock);
+            restrictedDiv.setId(htmlIds.forRestrictedSection(forWhat));
+            String name = forWhat.getSimpleName().toString();
+            var nameCode = HtmlTree.CODE(Text.of(name));
+            String leadingNoteKey = "doclet.RestrictedLeadingNote";
+            Content leadingNote =
+                    contents.getContent(leadingNoteKey, nameCode);
+            restrictedDiv.add(HtmlTree.SPAN(HtmlStyle.restrictedLabel,
+                    leadingNote));
+            Content note1 = contents.getContent("doclet.RestrictedTrailingNote1", nameCode);
+            restrictedDiv.add(HtmlTree.DIV(HtmlStyle.restrictedComment, note1));
+            Content note2 = contents.getContent("doclet.RestrictedTrailingNote2", nameCode);
+            restrictedDiv.add(HtmlTree.DIV(HtmlStyle.restrictedComment, note2));
+            target.add(restrictedDiv);
+        }
     }
 
 }

@@ -33,7 +33,6 @@ class os::Linux {
   friend class CgroupSubsystem;
   friend class os;
   friend class OSContainer;
-  friend class TestReserveMemorySpecial;
 
   static int (*_pthread_getcpuclockid)(pthread_t, clockid_t *);
   static int (*_pthread_setname_np)(pthread_t, const char*);
@@ -74,20 +73,6 @@ class os::Linux {
   static void rebuild_nindex_to_node_map();
   static GrowableArray<int>* cpu_to_node()    { return _cpu_to_node; }
   static GrowableArray<int>* nindex_to_node()  { return _nindex_to_node; }
-
-  static bool setup_large_page_type(size_t page_size);
-  static bool hugetlbfs_sanity_check(bool warn, size_t page_size);
-  static bool shm_hugetlbfs_sanity_check(bool warn, size_t page_size);
-
-  static int hugetlbfs_page_size_flag(size_t page_size);
-
-  static char* reserve_memory_special_shm(size_t bytes, size_t alignment, char* req_addr, bool exec);
-  static char* reserve_memory_special_huge_tlbfs(size_t bytes, size_t alignment, size_t page_size, char* req_addr, bool exec);
-  static bool commit_memory_special(size_t bytes, size_t page_size, char* req_addr, bool exec);
-
-  static bool release_memory_special_impl(char* base, size_t bytes);
-  static bool release_memory_special_shm(char* base, size_t bytes);
-  static bool release_memory_special_huge_tlbfs(char* base, size_t bytes);
 
   static void print_process_memory_info(outputStream* st);
   static void print_system_memory_info(outputStream* st);
