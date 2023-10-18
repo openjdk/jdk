@@ -270,11 +270,14 @@ class PredicateBlock : public StackObj {
   Node* _entry;
 
   static Node* skip_regular_predicates(Node* regular_predicate_proj, Deoptimization::DeoptReason deopt_reason);
+  DEBUG_ONLY(void verify_block();)
 
  public:
   PredicateBlock(Node* predicate_proj, Deoptimization::DeoptReason deopt_reason)
       : _parse_predicate(predicate_proj, deopt_reason),
-        _entry(skip_regular_predicates(_parse_predicate.entry(), deopt_reason)) {}
+        _entry(skip_regular_predicates(_parse_predicate.entry(), deopt_reason)) {
+    DEBUG_ONLY(verify_block();)
+  }
 
   // Returns the control input node into this Regular Predicate block. This is either:
   // - The control input to the first If node in the block representing a Runtime Predicate if there is at least one

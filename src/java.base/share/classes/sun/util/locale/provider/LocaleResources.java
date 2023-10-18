@@ -843,17 +843,32 @@ public class LocaleResources {
         String typeStr = type.toString().toLowerCase(Locale.ROOT);
         String styleStr = style.toString().toLowerCase(Locale.ROOT);
         String[] lpArray;
-        String cacheKey = LIST_PATTERN + typeStr;
+        String cacheKey = LIST_PATTERN + typeStr + styleStr;
 
         removeEmptyReferences();
         ResourceReference data = cache.get(cacheKey);
 
         if (data == null || ((lpArray = (String[]) data.get()) == null)) {
-            ResourceBundle rb = localeData.getDateFormatData(locale);
-            lpArray = rb.getStringArray("ListPatterns_" + typeStr + (style == ListFormat.Style.FULL ? "" : "-" + styleStr));
-            if (lpArray == null) {
-                cache.put(cacheKey, new ResourceReference(cacheKey, new String[5], referenceQueue));
+            var rbKey = "ListPatterns_" + typeStr + (style == ListFormat.Style.FULL ? "" : "-" + styleStr);
+            lpArray = localeData.getDateFormatData(locale).getStringArray(rbKey);
+
+            if (lpArray[0].isEmpty() || lpArray[1].isEmpty() || lpArray[2].isEmpty()) {
+                if (LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR)
+                        instanceof ResourceBundleBasedAdapter rbba) {
+                    var candList = rbba.getCandidateLocales("", locale);
+                    if (!candList.isEmpty()) {
+                        for (var p : candList.subList(1, candList.size())) {
+                            var parentPatterns = localeData.getDateFormatData(p).getStringArray(rbKey);
+                            for (int i = 0; i < 3; i++) { // exclude optional ones, ie, "two"/"three"
+                                if (lpArray[i].isEmpty()) {
+                                    lpArray[i] = parentPatterns[i];
+                                }
+                            }
+                        }
+                    }
+                }
             }
+            cache.put(cacheKey, new ResourceReference(cacheKey, lpArray, referenceQueue));
         }
 
         return lpArray;

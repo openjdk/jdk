@@ -26,7 +26,6 @@
 package java.lang.foreign;
 
 import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.ref.CleanerFactory;
 
 import java.lang.foreign.MemorySegment.Scope;
@@ -184,7 +183,7 @@ import java.lang.foreign.MemorySegment.Scope;
  * {@snippet lang = java:
  * try (Arena slicingArena = new SlicingArena(1000)) {
  *     for (int i = 0; i < 10; i++) {
- *         MemorySegment s = slicingArena.allocateArray(JAVA_INT, 1, 2, 3, 4, 5);
+ *         MemorySegment s = slicingArena.allocateFrom(JAVA_INT, 1, 2, 3, 4, 5);
  *         ...
  *     }
  * } // all memory allocated is released here
@@ -195,9 +194,8 @@ import java.lang.foreign.MemorySegment.Scope;
  *
  * @see MemorySegment
  *
- * @since 20
+ * @since 22
  */
-@PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 public interface Arena extends SegmentAllocator, AutoCloseable {
 
     /**
@@ -269,9 +267,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * other than the arena's owner thread.
      */
     @Override
-    default MemorySegment allocate(long byteSize, long byteAlignment) {
-        return ((MemorySessionImpl)scope()).allocate(byteSize, byteAlignment);
-    }
+    MemorySegment allocate(long byteSize, long byteAlignment);
 
     /**
      * {@return the arena scope}

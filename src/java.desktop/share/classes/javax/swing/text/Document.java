@@ -423,33 +423,39 @@ public interface Document {
 
     /**
      * Removes a portion of the content of the document.
-     * This will cause a DocumentEvent of type
-     * DocumentEvent.EventType.REMOVE to be sent to the
-     * registered DocumentListeners, unless an exception
+     * This will cause a {@code DocumentEvent} of type
+     * {@code DocumentEvent.EventType.REMOVE} to be sent to the
+     * registered {@code DocumentListener}s, unless an exception
      * is thrown.  The notification will be sent to the
-     * listeners by calling the removeUpdate method on the
-     * DocumentListeners.
+     * listeners by calling the {@code removeUpdate} method on the
+     * {@code DocumentListener}.
      * <p>
      * To ensure reasonable behavior in the face
      * of concurrency, the event is dispatched after the
      * mutation has occurred. This means that by the time a
      * notification of removal is dispatched, the document
      * has already been updated and any marks created by
-     * <code>createPosition</code> have already changed.
+     * {@code createPosition} have already changed.
      * For a removal, the end of the removal range is collapsed
      * down to the start of the range, and any marks in the removal
      * range are collapsed down to the start of the range.
-     * <p style="text-align:center"><img src="doc-files/Document-remove.gif"
+     * <p>
+     * For example, if the document contains the text
+     * <i>&lsquo;The quick brown fox&rsquo;</i>,
+     * calling {@code remove(4, 6)} will remove the word
+     * <i>&lsquo;quick&rsquo;</i> and the following space from the text,
+     * and all the marks in the range 4&ndash;10 will be collapsed to 4.
+     * <p style="text-align:center"><img src="doc-files/Document-remove.svg"
      *  alt="Diagram shows removal of 'quick' from 'The quick brown fox.'">
      * <p>
-     * If the Document structure changed as result of the removal,
-     * the details of what Elements were inserted and removed in
+     * If the document structure changed as result of the removal,
+     * the details of what {@code Element}s were inserted and removed in
      * response to the change will also be contained in the generated
-     * DocumentEvent. It is up to the implementation of a Document
+     * {@code DocumentEvent}. It is up to the implementation of a {@code Document}
      * to decide how the structure should change in response to a
      * remove.
      * <p>
-     * If the Document supports undo/redo, an UndoableEditEvent will
+     * If the {@code Document} supports undo/redo, an {@code UndoableEditEvent} will
      * also be generated.
      *
      * @param offs  the offset from the beginning &gt;= 0
