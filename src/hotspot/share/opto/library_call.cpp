@@ -5366,9 +5366,6 @@ void LibraryCallKit::create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_
 
 //------------------------------inline_array_partition-----------------------
 bool LibraryCallKit::inline_array_partition() {
-  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
-    return false;
-  }
 
   Node* elementType     = null_check(argument(0));
   Node* obj             = argument(1);
@@ -5381,7 +5378,7 @@ bool LibraryCallKit::inline_array_partition() {
   Node* pivotIndices = nullptr;
 
   // Set the original stack and the reexecute bit for the interpreter to reexecute
-  // the bytecode that invokes StringUTF16.toBytes() if deoptimization happens.
+  // the bytecode that invokes DualPivotQuicksort.partition() if deoptimization happens.
   { PreserveReexecuteState preexecs(this);
     jvms()->set_should_reexecute(true);
 
@@ -5419,27 +5416,9 @@ bool LibraryCallKit::inline_array_partition() {
                       obj_adr, elemType, fromIndex, toIndex, pivotIndices_adr,
                       indexPivot1, indexPivot2);
 
-    if (alloc != nullptr) {
-        if (alloc->maybe_set_complete(&_gvn)) {
-            // "You break it, you buy it."
-            InitializeNode* init = alloc->initialization();
-            assert(init->is_complete(), "we just did this");
-            init->set_complete_with_arraycopy();
-            assert(pivotIndices->is_CheckCastPP(), "sanity");
-            assert(pivotIndices->in(0)->in(0) == init, "dest pinned");
-        }
-        // Do not let stores that initialize this object be reordered with
-        // a subsequent store that would make this object accessible by
-        // other threads.
-        // Record what AllocateNode this StoreStore protects so that
-        // escape analysis can go from the MemBarStoreStoreNode to the
-        // AllocateNode and eliminate the MemBarStoreStoreNode if possible
-        // based on the escape status of the AllocateNode.
-        insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out_or_null(AllocateNode::RawAddress));
-    }
 
   } // original reexecute is set back here
-  //C->set_has_split_ifs(true); // Has chance for split-if optimization
+
   if (!stopped()) {
     set_result(pivotIndices);
   }
