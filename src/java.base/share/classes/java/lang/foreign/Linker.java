@@ -789,7 +789,7 @@ public sealed interface Linker permits AbstractLinker {
          * Using this linker option when linking non-critical functions is likely to have adverse effects,
          * such as loss of performance, or JVM crashes.
          * <p>
-         * Critical functions can optionally allow access to the Java heap. This allows a client to pass heap
+         * Critical functions can optionally allow access to the Java heap. This allows clients to pass heap
          * memory segments as addresses, where normally only off-heap memory segments would be allowed. The memory region
          * inside the Java heap is exposed through a temporary native address that is valid for the duration of the
          * function call. As such, these temporary addresses, or any addresses derived from them, should not be used
