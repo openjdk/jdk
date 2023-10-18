@@ -3414,7 +3414,7 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd) {
 }
 
 char* os::pd_reserve_memory(size_t bytes, bool exec) {
-  return pd_attempt_reserve_memory_at(nullptr /* addr */, bytes, exec);
+  return pd_attempt_reserve_memory_at(nullptr /* addr */, bytes, exec, nullptr);
 }
 
 // Reserve memory at an arbitrary address, only if that area is
