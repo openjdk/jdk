@@ -635,9 +635,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _directive(directive),
                   _log(ci_env->log()),
                   _failure_reason(nullptr),
-#ifndef PRODUCT
                   _first_failure_details(nullptr),
-#endif
                   _intrinsics        (comp_arena(), 0, 0, nullptr),
                   _macro_nodes       (comp_arena(), 8, 0, nullptr),
                   _parse_predicates  (comp_arena(), 8, 0, nullptr),
@@ -928,9 +926,7 @@ Compile::Compile( ciEnv* ci_env,
     _directive(directive),
     _log(ci_env->log()),
     _failure_reason(nullptr),
-#ifndef PRODUCT
     _first_failure_details(nullptr),
-#endif
     _congraph(nullptr),
     NOT_PRODUCT(_igv_printer(nullptr) COMMA)
     _unique(0),
@@ -995,7 +991,7 @@ Compile::Compile( ciEnv* ci_env,
 
 Compile::~Compile() {
   delete _print_inlining_stream;
-  NOT_PRODUCT(delete _first_failure_details;)
+  delete _first_failure_details;
 };
 
 //------------------------------Init-------------------------------------------

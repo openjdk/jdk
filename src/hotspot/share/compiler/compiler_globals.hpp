@@ -380,8 +380,8 @@
           "+DontCompileHugeMethods")                                        \
                                                                             \
   product(bool, CaptureBailoutInformation, trueInDebug, DIAGNOSTIC,         \
-          "Don't compile methods larger than this if "                      \
-          "+DontCompileHugeMethods")                                        \
+          "If compilation is stopped with an error, capture diagnostic "    \
+          "information at the bailout point")                               \
                                                                             \
 
 // end of COMPILER_FLAGS

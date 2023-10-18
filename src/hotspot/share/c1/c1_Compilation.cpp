@@ -585,9 +585,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _has_monitors(false)
 , _install_code(install_code)
 , _bailout_msg(nullptr)
-#ifndef PRODUCT
 , _first_failure_details(nullptr)
-#endif
 , _exception_info_list(nullptr)
 , _allocator(nullptr)
 , _code(buffer_blob)
@@ -629,7 +627,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 Compilation::~Compilation() {
   // simulate crash during compilation
   assert(CICrashAt < 0 || (uintx)_env->compile_id() != (uintx)CICrashAt, "just as planned");
-  NOT_PRODUCT(delete _first_failure_details;)
+  delete _first_failure_details;
   _env->set_compiler_data(nullptr);
 }
 
