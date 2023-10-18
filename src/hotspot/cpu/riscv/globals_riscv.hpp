@@ -76,8 +76,7 @@ define_pd_global(intx, InitArrayShortSize, BytesPerLong);
 
 define_pd_global(intx, InlineSmallCode,          1000);
 
-// Not implemented yet
-define_pd_global(uint, SecondarySuperMissBackoff, 0);
+define_pd_global(uint, SecondarySuperMissBackoff, 1000);
 
 #define ARCH_FLAGS(develop,                                                      \
                    product,                                                      \
