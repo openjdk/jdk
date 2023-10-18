@@ -116,10 +116,16 @@ public:
 
 class OopMap;
 
-struct RegPair {
-  const Register _lo, _hi;
+class RegPair {
+public:
+  Register _lo, _hi;
+  RegPair() : _lo(noreg), _hi(noreg) { }
   RegPair(Register r1, Register r2) : _lo(r1), _hi(r2) { }
   RegPair(const RegPair &pair) : _lo(pair._lo), _hi(pair._hi) { }
+  RegPair& operator=(const RegPair &other) {
+    _lo = other._lo, _hi = other._hi;
+    return *this;
+  };
 };
 
 struct RegTriple {
@@ -1727,6 +1733,12 @@ public:
   void poly1305_field_multiply(LambdaAccumulator &acc,
                          const RegPair u[], const Register s[], const Register r[],
                          Register RR2, RegSetIterator<Register> scratch);
+  void poly1305_field_multiply(const RegPair u[], const Register s[], const Register r[],
+                               Register RR2, RegSetIterator<Register> scratch) {
+    LambdaAccumulator acc;
+    poly1305_field_multiply(acc, u, s, r, RR2, scratch);
+    acc.gen();
+  }
 
   void poly1305_multiply_vec(LambdaAccumulator &acc,
                              const FloatRegister u[], const FloatRegister m[],

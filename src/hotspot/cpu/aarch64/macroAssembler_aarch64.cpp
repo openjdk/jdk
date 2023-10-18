@@ -6539,7 +6539,7 @@ void MacroAssembler::poly1305_multiply(LambdaAccumulator &acc,
   _ { wide_mul(u[2], s[0], r[2]); };
   _ { wide_madd(u[0], s[1], RR2); };
   {
-    Register RS2 = *++scratch;
+    Register RS2 = *scratch++;
     _ {
       // Compute (S2 << 26) * 5.
       lsl(RS2, s[2], 26);

@@ -27,6 +27,36 @@
 
 typedef AbstractRegSet<FloatRegister> vRegSet;
 
+class Regs {
+public:
+  Register _regs[5];
+  Regs(RegSetIterator<Register> &it, int n) {
+    for (int i = 0; i < n; i++) {
+      _regs[i] = *it++;
+    }
+  }
+  Regs(Register R0, Register R1, Register R2) {
+    _regs[0] = R0, _regs[1] = R1, _regs[2] = R2;
+  }
+
+  Register operator[](int n) { return _regs[n]; }
+  Register *operator *() { return _regs; }
+
+  operator Register*() { return _regs; }
+};
+
+class RegPairs {
+public:
+  RegPair _reg_pairs[3];
+  RegPairs(RegSetIterator<Register> &it, int n) {
+    for (int i = 0; i < n; i++) {
+      RegPair r(*it++, *it++);
+      _reg_pairs[i] = r;
+    }
+  }
+  operator RegPair*() { return _reg_pairs; }
+};
+
 // static constexpr bool use_vec = true;
 
 
@@ -41,58 +71,29 @@ address generate_poly1305_processBlocks2() {
   StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks2");
   address start = __ pc();
   Label here;
-  
+
   // __ set_last_Java_frame(sp, rfp, lr, rscratch1);
   __ enter();
   RegSet callee_saved = RegSet::range(r19, r28);
   __ push(callee_saved, sp);
 
-  RegSetIterator<Register> regs = (RegSet::range(c_rarg0, r28) - r18_tls - rscratch1 - rscratch2 + lr).begin();
+  auto regs = (RegSet::range(c_rarg0, r28) - r18_tls - rscratch1 - rscratch2 + lr).begin();
   auto vregs = (vRegSet::range(v0, v7) + vRegSet::range(v16, v31)).begin();
 
   // Arguments
-  const Register input_start = *regs, length = *++regs, acc_start = *++regs, r_start = *++regs;
-
-
-  // {
-  //   RegSetIterator<Register> ri = regs;
-  //   const Register R[] = { *++ri, *++ri, *++ri};
-  //   ++ri;
-  //   const RegPair D[] = {{*++ri, *++ri},
-  //                        {*++ri, *++ri},
-  //                        {*++ri, *++ri},};
-  //   const Register RR = *++ri;
-
-  //   __ mov(R[0], 0x3fffffffffffff);
-  //   __ mov(R[1], R[0]);
-  //   __ mov(R[2], 5);
-
-  //   __ poly1305_multiply(D, R, R, RR, ri);
-
-  //   poo = __ pc();
-  //   __ nop();
-
-  //   __ poly1305_reduce(D);
-  // }
-
+  const Register input_start = *regs++, length = *regs++, acc_start = *regs++, r_start = *regs++;
 
   // Rn is the key, packed into three registers
-  Register R[] = { *++regs, *++regs, *++regs,};
+  Regs R(regs, 3);
   __ pack_26(R[0], R[1], R[2], r_start);
 
   // Sn is to be the sum of Un and the next block of data
-  Register S0[] = { *++regs, *++regs, *++regs,};
-  Register S1[] = { *++regs, *++regs, *++regs,};
+  Regs S0(regs, 3), S1(regs, 3);
 
   // Un is the current checksum
-  const RegPair u0[] = {{*++regs, *++regs},
-                       {*++regs, *++regs},
-                       {*++regs, *++regs},};
-  const RegPair u1[] = {{*++regs, *++regs},
-                       {*++regs, *++regs},
-                       {*++regs, *++regs},};
+  RegPairs u0(regs, 3), u1(regs, 3);
 
-  Register RR2 = *++regs;
+  Register RR2 = *regs++;
   __ lsl(RR2, R[2], 26);
   __ add(RR2, RR2, RR2, __ LSL, 2);
 
@@ -106,12 +107,11 @@ address generate_poly1305_processBlocks2() {
 
   // We're going to use R**4
   {
-    Register u1_lo[] = {u1[0]._lo, u1[1]._lo, u1[2]._lo};
+    Regs u1_lo(u1[0]._lo, u1[1]._lo, u1[2]._lo);
 
     poo = __ pc();
 
-    __ poly1305_multiply(u1, R, R, RR2, regs);
-    __ poly1305_reduce(u1);
+    __ poly1305_field_multiply(u1, R, R, RR2, regs);
     __ copy_3_regs(R, u1_lo);
 
     __ lsl(RR2, R[2], 26);
@@ -244,28 +244,24 @@ address generate_poly1305_processBlocks2() {
 
     __ poly1305_load(S0, input_start);
     __ poly1305_add(S0, u0);
-    __ poly1305_multiply(u0, S0, R, RR2, regs);
-    __ poly1305_reduce(u0);
+    __ poly1305_field_multiply(u0, S0, R, RR2, regs);
 
     __ poly1305_load(S0, input_start);
     __ poly1305_add(S0, u0);
     __ poly1305_add(S0, u1);
-    __ poly1305_multiply(u0, S0, R, RR2, regs);
-    __ poly1305_reduce(u0);
+    __ poly1305_field_multiply(u0, S0, R, RR2, regs);
 
     __ poly1305_load(S0, input_start);
     __ poly1305_add(S0, u0);
     __ poly1305_transfer(u1, v_u0, 0, *vregs);
     __ poly1305_add(S0, u1);
-    __ poly1305_multiply(u0, S0, R, RR2, regs);
-    __ poly1305_reduce(u0);
+    __ poly1305_field_multiply(u0, S0, R, RR2, regs);
 
     __ poly1305_load(S0, input_start);
     __ poly1305_add(S0, u0);
     __ poly1305_transfer(u1, v_u0, 1, *vregs);
     __ poly1305_add(S0, u1);
-    __ poly1305_multiply(u0, S0, R, RR2, regs);
-    __ poly1305_reduce(u0);
+    __ poly1305_field_multiply(u0, S0, R, RR2, regs);
 
     __ subw(length, length, POLY1305_BLOCK_LENGTH * 4);
   }
