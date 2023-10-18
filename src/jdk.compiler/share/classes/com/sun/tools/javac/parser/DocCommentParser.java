@@ -1385,7 +1385,7 @@ public class DocCommentParser {
          * Thematic break: a line of + - _ interspersed with optional spaces and tabs
          * @see <a href="https://spec.commonmark.org/0.30/#thematic-breaks">Thematic Break</a>
          */
-        THEMATIC_BREAK(Pattern.compile("((\\+[ \t]*){3,})|((-[ \t]*){3,})|((_[ \t]*){3,})")),
+        THEMATIC_BREAK(Pattern.compile("((\\+[ \t]*+){3,})|((-[ \t]*+){3,})|((_[ \t]*+){3,})")),
 
         /**
          * Code fence: 3 or more back ticks or tildes; back tick fence cannot have back ticks
@@ -1393,7 +1393,7 @@ public class DocCommentParser {
          * Note potential conflict with strikeout for similar reasons if strikeout is supported.
          * @see <a href="https://spec.commonmark.org/0.30/#code-fence">Code Fence</a>
          */
-        CODE_FENCE(Pattern.compile("(`{3,}[^`]*)|(~{3,}.*)")),
+        CODE_FENCE(Pattern.compile("(`{3,}[^`]*+)|(~{3,}.*+)")),
 
         /**
          * Indented code blocks are defined by preceding lines and indentation,
