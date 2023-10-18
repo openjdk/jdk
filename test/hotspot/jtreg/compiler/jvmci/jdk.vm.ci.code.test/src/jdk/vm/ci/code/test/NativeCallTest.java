@@ -125,6 +125,26 @@ public class NativeCallTest extends CodeInstallationTest {
         test("I32SDILDS", getI32SDILDS(), float.class, argClazz, argValues);
     }
 
+    @Test
+    public void testI32I() {
+        int sCount = 32;
+        // Pairs of <Object>, <Class>
+        Object[] remainingArgs = new Object[]{
+                        12, int.class
+        };
+        Class<?>[] argClazz = new Class[sCount + remainingArgs.length / 2];
+        Object[] argValues = new Object[sCount + remainingArgs.length / 2];
+        for (int i = 0; i < sCount; i++) {
+            argValues[i] = i;
+            argClazz[i] = int.class;
+        }
+        for (int i = 0; i < remainingArgs.length; i += 2) {
+            argValues[sCount + i / 2] = remainingArgs[i + 0];
+            argClazz[sCount + i / 2] = (Class<?>) remainingArgs[i + 1];
+        }
+        test("I32I", getI32I(), int.class, argClazz, argValues);
+    }
+
     public void test(String name, long addr, Class<?> returnClazz, Class<?>[] types, Object[] values) {
         try {
             test(asm -> {
@@ -138,7 +158,13 @@ public class NativeCallTest extends CodeInstallationTest {
                 asm.emitCallPrologue(cc, values);
                 asm.emitCall(addr);
                 asm.emitCallEpilogue(cc);
-                asm.emitFloatRet(((RegisterValue) cc.getReturn()).getRegister());
+                if (returnClazz == float.class) {
+                    asm.emitFloatRet(((RegisterValue) cc.getReturn()).getRegister());
+                } else if (returnClazz == int.class) {
+                    asm.emitIntRet(((RegisterValue) cc.getReturn()).getRegister());
+                } else {
+                    assert false : "Unimplemented return type: " + returnClazz;
+                }
             }, getMethod(name, types), values);
         } catch (Throwable e) {
             e.printStackTrace();
@@ -243,5 +269,25 @@ public class NativeCallTest extends CodeInstallationTest {
                         l10, l11, l12, l13, l14, l15, l16, l17,
                         l18, l19, l1a, l1b, l1c, l1d, l1e, l1f,
                         a, b, c, d, e, f);
+    }
+
+    public static native long getI32I();
+
+    public static native int _I32I(int i00, int i01, int i02, int i03, int i04, int i05, int i06, int i07,
+                    int i08, int i09, int i0a, int i0b, int i0c, int i0d, int i0e, int i0f,
+                    int i10, int i11, int i12, int i13, int i14, int i15, int i16, int i17,
+                    int i18, int i19, int i1a, int i1b, int i1c, int i1d, int i1e, int i1f,
+                    int a);
+
+    public static int I32I(int i00, int i01, int i02, int i03, int i04, int i05, int i06, int i07,
+                    int i08, int i09, int i0a, int i0b, int i0c, int i0d, int i0e, int i0f,
+                    int i10, int i11, int i12, int i13, int i14, int i15, int i16, int i17,
+                    int i18, int i19, int i1a, int i1b, int i1c, int i1d, int i1e, int i1f,
+                    int a) {
+        return _I32I(i00, i01, i02, i03, i04, i05, i06, i07,
+                    i08, i09, i0a, i0b, i0c, i0d, i0e, i0f,
+                    i10, i11, i12, i13, i14, i15, i16, i17,
+                    i18, i19, i1a, i1b, i1c, i1d, i1e, i1f,
+                    a);
     }
 }
