@@ -379,6 +379,10 @@
           "Don't compile methods larger than this if "                      \
           "+DontCompileHugeMethods")                                        \
                                                                             \
+  develop(bool, CaptureBailoutInformation, trueInDebug, DIAGNOSTIC,         \
+          "Don't compile methods larger than this if "                      \
+          "+DontCompileHugeMethods")                                        \
+                                                                            \
 
 // end of COMPILER_FLAGS
 

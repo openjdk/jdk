@@ -1049,7 +1049,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     check_failing_cds_access(st, _siginfo);
     st->cr();
 
-#ifndef PRODUCT
+#if defined(COMPILER1) || defined(COMPILER2)
   STEP_IF("printing pending compilation failure",
          _verbose && _thread != nullptr && _thread->is_Compiler_thread())
     CompilationFailureInfo::print_pending_compilation_failure(st);

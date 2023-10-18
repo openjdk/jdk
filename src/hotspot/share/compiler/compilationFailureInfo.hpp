@@ -26,9 +26,8 @@
 #ifndef SHARE_COMPILER_COMPILATIONFAILUREINFO_HPP
 #define SHARE_COMPILER_COMPILATIONFAILUREINFO_HPP
 
-#ifndef PRODUCT
+#if defined(COMPILER1) || defined(COMPILER2)
 
-#include "compiler/compilerDefinitions.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/nativeCallStack.hpp"
@@ -46,12 +45,13 @@ public:
   ~CompilationFailureInfo();
   void print_on(outputStream* st) const;
 
-  // Convenience function to print current compile failure iff
-  // current thread is compiler thread and there is a pending failure.
+  // Convenience function to print, safely, current compile failure iff
+  // current thread is compiler thread and there is a ongoing compilation
+  // and a pending failure.
   // Otherwise prints nothing.
   static bool print_pending_compilation_failure(outputStream* st);
 };
 
-#endif // PRODUCT
+#endif // defined(COMPILER1) || defined(COMPILER2)
 
 #endif // SHARE_COMPILER_COMPILATIONFAILUREINFO_HPP

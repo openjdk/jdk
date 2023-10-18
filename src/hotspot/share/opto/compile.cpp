@@ -32,6 +32,7 @@
 #include "compiler/compilationFailureInfo.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -4351,7 +4352,9 @@ void Compile::record_failure(const char* reason) {
   if (_failure_reason == nullptr) {
     // Record the first failure reason.
     _failure_reason = reason;
-    NOT_PRODUCT(_first_failure_details = new CompilationFailureInfo(reason);)
+    if (CaptureBailoutInformation) {
+      _first_failure_details = new CompilationFailureInfo(reason);
+    }
   }
 
   if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {

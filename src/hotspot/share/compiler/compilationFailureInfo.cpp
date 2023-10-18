@@ -25,7 +25,7 @@
 
 #include "precompiled.hpp"
 
-#ifndef PRODUCT
+#if defined(COMPILER1) || defined(COMPILER2)
 
 #ifdef COMPILER1
 #include "c1/c1_Compilation.hpp"
@@ -61,7 +61,7 @@ void CompilationFailureInfo::print_on(outputStream* st) const {
   os::print_elapsed_time(st, _elapsed_seconds);
   st->print_cr("  Compile id: %d", _compile_id);
   st->print_cr("  Reason: '%s'", _failure_reason);
-  st->print("  Callstack:");
+  st->print_cr("  Callstack: ");
   _stack.print_on(st);
   st->cr();
 }
@@ -87,8 +87,6 @@ bool CompilationFailureInfo::print_pending_compilation_failure(outputStream* st)
   const CompileTask* const task = env->task();
   if (task == nullptr) return false;
 
-#if defined(COMPILER1) || defined(COMPILER2)
-
   const AbstractCompiler* const compiler = task->compiler();
   if (compiler == nullptr) return false;
 
@@ -109,8 +107,6 @@ bool CompilationFailureInfo::print_pending_compilation_failure(outputStream* st)
   }
 #endif
 
-#endif
-
   if (info != nullptr) {
     st->print_cr("Pending compilation failure details for thread " PTR_FORMAT ":", p2i(t));
     info->print_on(st);
@@ -119,4 +115,4 @@ bool CompilationFailureInfo::print_pending_compilation_failure(outputStream* st)
   return true;
 }
 
-#endif // PRODUCT
+#endif // defined(COMPILER1) || defined(COMPILER2)

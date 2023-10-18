@@ -86,9 +86,7 @@ class Compilation: public StackObj {
   bool               _has_monitors; // Fastpath monitors detection for Continuations
   bool               _install_code;
   const char*        _bailout_msg;
-#ifndef PRODUCT
   CompilationFailureInfo* _first_failure_details; // Details for the first failure happening during compilation
-#endif
   ExceptionInfoList* _exception_info_list;
   ExceptionHandlerTable _exception_handler_table;
   ImplicitExceptionTable _implicit_exception_table;
@@ -211,7 +209,7 @@ class Compilation: public StackObj {
   void bailout(const char* msg);
   bool bailed_out() const                        { return _bailout_msg != nullptr; }
   const char* bailout_msg() const                { return _bailout_msg; }
-  NOT_PRODUCT(const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; })
+  const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
   static int desired_max_code_buffer_size() {
     return (int)NMethodSizeLimit;  // default 64K

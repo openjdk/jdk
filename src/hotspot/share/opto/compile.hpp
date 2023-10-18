@@ -363,9 +363,7 @@ class Compile : public Phase {
   DirectiveSet*         _directive;             // Compiler directive
   CompileLog*           _log;                   // from CompilerThread
   const char*           _failure_reason;        // for record_failure/failing pattern
-#ifndef PRODUCT
   CompilationFailureInfo* _first_failure_details; // Details for the first failure happening during compilation
-#endif
   GrowableArray<CallGenerator*> _intrinsics;    // List of intrinsics.
   GrowableArray<Node*>  _macro_nodes;           // List of nodes which need to be expanded before matching.
   GrowableArray<ParsePredicateNode*> _parse_predicates; // List of Parse Predicates.
@@ -806,7 +804,7 @@ private:
   CompileLog* log() const            { return _log; }
   bool        failing() const        { return _env->failing() || _failure_reason != nullptr; }
   const char* failure_reason() const { return (_env->failing()) ? _env->failure_reason() : _failure_reason; }
-  NOT_PRODUCT(const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; })
+  const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
   bool failure_reason_is(const char* r) const {
     return (r == _failure_reason) || (r != nullptr && _failure_reason != nullptr && strcmp(r, _failure_reason) == 0);

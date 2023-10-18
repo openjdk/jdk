@@ -33,13 +33,12 @@
 #include "c1/c1_ValueMap.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "code/debugInfoRec.hpp"
-#ifndef PRODUCT
 #include "compiler/compilationFailureInfo.hpp"
-#endif
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/compileTask.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -656,9 +655,9 @@ void Compilation::bailout(const char* msg) {
     // keep first bailout message
     if (PrintCompilation || PrintBailouts) tty->print_cr("compilation bailout: %s", msg);
     _bailout_msg = msg;
-#ifndef PRODUCT
-    _first_failure_details = new CompilationFailureInfo(msg);
-#endif
+    if (CaptureBailoutInformation) {
+      _first_failure_details = new CompilationFailureInfo(msg);
+    }
   }
 }
 
