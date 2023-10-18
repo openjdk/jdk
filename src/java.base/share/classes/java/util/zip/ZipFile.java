@@ -1410,8 +1410,8 @@ public class ZipFile implements ZipConstants, Closeable {
                 long t = utf8 ? 0 : Long.MAX_VALUE;
                 /*
                  * The lastModifiedTime attribute is used to detect cases where
-                 * an existing file is updated. The other hash code properties
-                 * by themselves won't detect such a change.
+                 * the same file is opened more than once and where it has been
+                 * modified in the mean-time
                  */
                 t += attrs.lastModifiedTime().toMillis();
                 Object fk = attrs.fileKey();
@@ -1426,7 +1426,8 @@ public class ZipFile implements ZipConstants, Closeable {
                     }
                     /*
                      * The lastModifiedTime attribute is used to detect cases where
-                     * an existing file is updated.
+                     * the same file is opened more than once and where it has been
+                     * modified in the mean-time
                      */
                     if (!attrs.lastModifiedTime().equals(key.attrs.lastModifiedTime())) {
                         return false;
