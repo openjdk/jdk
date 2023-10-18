@@ -243,7 +243,7 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxies(JNIEnv *env,
     if (use_auto_proxy) {
         WCHAR url[MAX_STR_LEN];
         /* Create url for WinHttpGetProxyForUrl */
-        _snwprintf(url, sizeof(url) - 1, L"%s://%s", lpProto, lpHost);
+        swprintf(url, MAX_STR_LEN, L"%s://%s", lpProto, lpHost);
         /* Get proxy for URL from Windows */
         use_auto_proxy = WinHttpGetProxyForUrl(session, &url[0], &auto_proxy_options, &proxy_info);
         if (use_auto_proxy) {

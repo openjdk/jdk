@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package sun.security.ec.ed;
 
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.KeyRep;
@@ -39,6 +42,7 @@ import sun.security.x509.X509Key;
 
 public final class EdDSAPublicKeyImpl extends X509Key implements EdECPublicKey {
 
+    @java.io.Serial
     private static final long serialVersionUID = 1L;
 
     private final EdECPoint point;
@@ -106,7 +110,8 @@ public final class EdDSAPublicKeyImpl extends X509Key implements EdECPublicKey {
         return "EdDSA";
     }
 
-    protected Object writeReplace() throws java.io.ObjectStreamException {
+    @java.io.Serial
+    private Object writeReplace() throws java.io.ObjectStreamException {
         return new KeyRep(KeyRep.Type.PUBLIC, getAlgorithm(), getFormat(),
                 getEncoded());
     }
@@ -126,5 +131,21 @@ public final class EdDSAPublicKeyImpl extends X509Key implements EdECPublicKey {
             i++;
             j--;
         }
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * Deserialization of this object is not supported.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException(
+                "EdDSAPublicKeyImpl keys are not directly deserializable");
     }
 }

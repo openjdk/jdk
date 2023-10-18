@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -419,11 +419,28 @@ class Token implements Serializable {
     private static final List<Reference<Token>> serializedTokens =
         new ArrayList<Reference<Token>>();
 
+    @java.io.Serial
     private Object writeReplace() throws ObjectStreamException {
         if (isValid() == false) {
-            throw new NotSerializableException("Token has been removed");
+            throw new InvalidObjectException("Token has been removed");
         }
         return new TokenRep(this);
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * Deserialization of this object is not supported.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException(
+                "Tokens are not directly deserializable");
     }
 
     // serialized representation of a token
@@ -439,6 +456,7 @@ class Token implements Serializable {
             tokenId = token.getTokenId();
         }
 
+        @java.io.Serial
         private Object readResolve() throws ObjectStreamException {
             for (Reference<Token> tokenRef : serializedTokens) {
                 Token token = tokenRef.get();
@@ -448,7 +466,7 @@ class Token implements Serializable {
                     }
                 }
             }
-            throw new NotSerializableException("Could not find token");
+            throw new InvalidObjectException("Could not find token");
         }
     }
 
