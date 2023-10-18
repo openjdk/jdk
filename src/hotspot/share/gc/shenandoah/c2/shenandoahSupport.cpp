@@ -63,6 +63,7 @@ bool ShenandoahBarrierC2Support::expand(Compile* C, PhaseIterGVN& igvn) {
       C->clear_major_progress();
 
       C->process_for_post_loop_opts_igvn(igvn);
+      if (C->failing()) return false;
     }
     C->set_post_loop_opts_phase(); // now for real!
   }
