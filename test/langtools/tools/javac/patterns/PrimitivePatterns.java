@@ -89,6 +89,14 @@ public class PrimitivePatterns {
         assertEquals(-1, switchRedirectedExactnessMethods2('\uFFFF'));
         assertEquals(1, switchLongAndUnconditional(32778L));
         assertEquals(2, switchLongAndUnconditional(42L));
+        assertEquals(1, switchByte((byte) 128));
+        assertEquals(2, switchByte((byte) 42));
+        assertEquals(1, switchShort((short) 32778));
+        assertEquals(2, switchShort((short) 42));
+        assertEquals(1, switchInt(32778));
+        assertEquals(2, switchInt(42));
+        assertEquals(1, switchChar( '\u0010'));
+        assertEquals(2, switchChar('a'));
     }
 
     public static int primitivePattern() {
@@ -446,6 +454,34 @@ public class PrimitivePatterns {
         return switch (l) {
             case 32778L -> 1;
             case long c -> 2;
+        };
+    }
+
+    public static int switchByte(byte b) {
+        return switch (b) {
+            case (byte)128 -> 1;
+            case byte c -> 2;
+        };
+    }
+
+    public static int switchShort(short s) {
+        return switch (s) {
+            case (short)32778 -> 1;
+            case short c -> 2;
+        };
+    }
+
+    public static int switchInt(int i) {
+        return switch (i) {
+            case 32778 -> 1;
+            case int c -> 2;
+        };
+    }
+
+    public static int switchChar(char c) {
+        return switch (c) {
+            case '\u0010' -> 1;
+            case char cc -> 2;
         };
     }
 

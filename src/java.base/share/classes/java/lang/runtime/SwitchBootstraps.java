@@ -259,7 +259,8 @@ public class SwitchBootstraps {
                         testLabel = ii.intValue() == 1;
                         currentTest = BOOLEAN_EQ_CHECK;
                     } else {
-                        currentTest = INTEGER_EQ_CHECK;
+                        currentTest = MethodHandles.explicitCastArguments(INTEGER_EQ_CHECK,
+                                MethodType.methodType(boolean.class, selectorType, Integer.class));
                     }
                 }
                 else if (selectorType.isPrimitive() && currentLabel instanceof Long) {
