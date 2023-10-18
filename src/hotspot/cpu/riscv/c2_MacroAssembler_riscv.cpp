@@ -1656,11 +1656,9 @@ void C2_MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, 
 // According to Java SE specification, for floating-point signum operations, if
 // on input we have NaN or +/-0.0 value we should return it,
 // otherwise return +/- 1.0 using sign of input.
-// tmp1 - alias for t0 register,
 // one - gives us a floating-point 1.0 (got from matching rule)
 // bool is_double - specififes single or double precision operations will be used.
 void C2_MacroAssembler::signum_fp(FloatRegister dst, FloatRegister src, FloatRegister one, bool is_double) {
-  assert_different_registers(dst, src, one);
   Register tmp1 = t0;
 
   Label done, special_val;

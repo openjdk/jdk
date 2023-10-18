@@ -7534,7 +7534,6 @@ instruct copySignF_reg(fRegF dst, fRegF src1, fRegF src2) %{
 
 instruct signumD_reg(fRegD dst, fRegD src, immD zero, fRegD one) %{
   match(Set dst (SignumD src (Binary zero one)));
-  effect(TEMP_DEF dst, USE src, USE one);
   format %{ "signumD  $dst, $src" %}
   ins_encode %{
     __ signum_fp(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
@@ -7545,7 +7544,6 @@ instruct signumD_reg(fRegD dst, fRegD src, immD zero, fRegD one) %{
 
 instruct signumF_reg(fRegF dst, fRegF src, immF zero, fRegF one) %{
   match(Set dst (SignumF src (Binary zero one)));
-  effect(TEMP_DEF dst, USE src, USE one);
   format %{ "signumF  $dst, $src" %}
   ins_encode %{
     __ signum_fp(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
