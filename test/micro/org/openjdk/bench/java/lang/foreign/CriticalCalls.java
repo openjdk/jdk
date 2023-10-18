@@ -98,16 +98,14 @@ public class CriticalCalls {
     @Benchmark
     public int callNotPinned() throws Throwable {
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment nativeArr = arena.allocate(JAVA_INT, arr.length);
-            MemorySegment.copy(arr, 0, nativeArr, JAVA_INT, 0, arr.length);
+            MemorySegment nativeArr = arena.allocateFrom(JAVA_INT, arr);
             return (int) NOT_PINNED.invokeExact(nativeArr, arr.length);
         }
     }
 
     @Benchmark
     public int callRecycled() throws Throwable {
-        MemorySegment nativeArr = recycler.allocate(JAVA_INT, arr.length);
-        MemorySegment.copy(arr, 0, nativeArr, JAVA_INT, 0, arr.length);
+        MemorySegment nativeArr = recycler.allocateFrom(JAVA_INT, arr);
         return (int) NOT_PINNED.invokeExact(nativeArr, arr.length);
     }
 }
