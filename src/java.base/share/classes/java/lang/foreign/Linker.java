@@ -792,8 +792,7 @@ public sealed interface Linker permits AbstractLinker {
          * Critical functions can optionally allow access to the Java heap. This allows clients to pass heap
          * memory segments as addresses, where normally only off-heap memory segments would be allowed. The memory region
          * inside the Java heap is exposed through a temporary native address that is valid for the duration of the
-         * function call. As such, these temporary addresses, or any addresses derived from them, should not be used
-         * after the function returns. Use of this mechanism is therefore only recommend when a function needs to do
+         * function call. Use of this mechanism is therefore only recommend when a function needs to do
          * short-lived access to Java heap memory, and copying the relevant data to an off-heap memory segment would be
          * prohibitive in terms of performance.
          *
