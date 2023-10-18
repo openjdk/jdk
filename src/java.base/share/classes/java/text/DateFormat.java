@@ -767,7 +767,11 @@ public abstract class DateFormat extends Format {
     }
 
     /**
-     * Overrides hashCode
+     * {@return the hash code for this {@code DateFormat}}
+     *
+     * @implSpec This method calculates the hash code value using the value returned by
+     * {@link #getNumberFormat()}.
+     * @see Object#hashCode()
      */
     public int hashCode() {
         return numberFormat.hashCode();
@@ -775,7 +779,17 @@ public abstract class DateFormat extends Format {
     }
 
     /**
-     * Overrides equals
+     * Compares the specified object with this {@code DateFormat} for equality.
+     * Returns true if the object is also a {@code DateFormat} and the
+     * two formats would format any value the same.
+     *
+     * @implSpec This method performs an equality check with a notion of class
+     * identity based on {@code getClass()}, rather than {@code instanceof}.
+     * Therefore, in the equals methods in subclasses, no instance of this class
+     * should compare as equal to an instance of a subclass.
+     * @param  obj object to be compared for equality
+     * @return {@code true} if the specified object is equal to this {@code DateFormat}
+     * @see Object#equals(Object)
      */
     public boolean equals(Object obj) {
         if (this == obj) return true;

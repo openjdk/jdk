@@ -25,7 +25,7 @@
 
 package com.sun.crypto.provider;
 
-import java.io.ObjectStreamException;
+import java.io.*;
 import java.lang.ref.Reference;
 import java.lang.ref.Cleaner;
 import java.nio.ByteBuffer;
@@ -58,16 +58,16 @@ import jdk.internal.ref.CleanerFactory;
 final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
 
     @java.io.Serial
-    static final long serialVersionUID = -2234868909660948157L;
+    private static final long serialVersionUID = -2234868909660948157L;
 
-    private char[] passwd;
-    private byte[] salt;
-    private int iterCount;
+    private final char[] passwd;
+    private final byte[] salt;
+    private final int iterCount;
     private byte[] key;
 
     // The following fields are not Serializable. See writeReplace method.
-    private transient Mac prf;
-    private transient Cleaner.Cleanable cleaner;
+    private final transient Mac prf;
+    private final transient Cleaner.Cleanable cleaner;
 
     private static byte[] getPasswordBytes(char[] passwd) {
         CharBuffer cb = CharBuffer.wrap(passwd);
@@ -141,13 +141,14 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
             int intR = keyLength - (intL - 1)*hlen; // residue
             byte[] ui = new byte[hlen];
             byte[] ti = new byte[hlen];
+            String algName = prf.getAlgorithm();
             // SecretKeySpec cannot be used, since password can be empty here.
             SecretKey macKey = new SecretKey() {
                 @java.io.Serial
                 private static final long serialVersionUID = 7874493593505141603L;
                 @Override
                 public String getAlgorithm() {
-                    return prf.getAlgorithm();
+                    return algName;
                 }
                 @Override
                 public String getFormat() {
@@ -160,18 +161,27 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
                 @Override
                 public int hashCode() {
                     return Arrays.hashCode(password) * 41 +
-                      prf.getAlgorithm().toLowerCase(Locale.ENGLISH).hashCode();
+                      algName.toLowerCase(Locale.ENGLISH).hashCode();
                 }
                 @Override
                 public boolean equals(Object obj) {
                     if (this == obj) return true;
                     if (obj == null || this.getClass() != obj.getClass()) return false;
                     SecretKey sk = (SecretKey)obj;
-                    return prf.getAlgorithm().equalsIgnoreCase(
+                    return algName.equalsIgnoreCase(
                         sk.getAlgorithm()) &&
                         MessageDigest.isEqual(password, sk.getEncoded());
                 }
+                // This derived key can't be deserialized.
+                @java.io.Serial
+                private void readObject(ObjectInputStream stream)
+                        throws IOException, ClassNotFoundException {
+                    throw new InvalidObjectException(
+                            "PBKDF2KeyImpl SecretKeys are not " +
+                            "directly deserializable");
+                }
             };
+
             prf.init(macKey);
 
             byte[] ibytes = new byte[4];
@@ -302,5 +312,21 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
             // prevent this from being cleaned for the above block
             Reference.reachabilityFence(this);
         }
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * Deserialization of this class is not supported.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException(
+                "PBKDF2KeyImpl keys are not directly deserializable");
     }
 }

@@ -40,8 +40,6 @@ import sun.security.util.*;
  * algorithm.
  *
  * @author Jan Luehe
- *
- *
  * @see DHPublicKey
  * @see javax.crypto.KeyAgreement
  */
@@ -49,7 +47,7 @@ final class DHPrivateKey implements PrivateKey,
         javax.crypto.interfaces.DHPrivateKey, Serializable {
 
     @java.io.Serial
-    static final long serialVersionUID = 7565477590005668886L;
+    private static final long serialVersionUID = 7565477590005668886L;
 
     // only supported version of PKCS#8 PrivateKeyInfo
     private static final BigInteger PKCS8_VERSION = BigInteger.ZERO;
@@ -64,10 +62,10 @@ final class DHPrivateKey implements PrivateKey,
     private byte[] encodedKey;
 
     // the prime modulus
-    private BigInteger p;
+    private final BigInteger p;
 
     // the base generator
-    private BigInteger g;
+    private final BigInteger g;
 
     // the private-value length (optional)
     private int l;
@@ -320,5 +318,29 @@ final class DHPrivateKey implements PrivateKey,
                 getAlgorithm(),
                 getFormat(),
                 encodedKey);
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * JDK 1.5+ objects use <code>KeyRep</code>s instead.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+        if ((key == null) || (key.length == 0)) {
+            throw new InvalidObjectException("key not deserializable");
+        }
+        this.key = key.clone();
+        if ((encodedKey == null) || (encodedKey.length == 0)) {
+            throw new InvalidObjectException(
+                    "encoded key not deserializable");
+        }
+        this.encodedKey = encodedKey.clone();
     }
 }

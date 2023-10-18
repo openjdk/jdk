@@ -29,7 +29,6 @@ package jdk.internal.foreign;
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
@@ -47,7 +46,6 @@ import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.invoke.util.Wrapper;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static sun.security.action.GetPropertyAction.privilegedGetProperty;
 
 /**
@@ -98,7 +96,19 @@ public final class Utils {
                 VarHandle prev = HANDLE_MAP.putIfAbsent(layout, handle);
                 return prev != null ? prev : handle;
             }
+
+            static VarHandle get(ValueLayout layout) {
+                return HANDLE_MAP.get(layout);
+            }
         }
+        layout = layout.withoutName(); // name doesn't matter
+        // keep the addressee layout as it's used below
+
+        VarHandle handle = VarHandleCache.get(layout);
+        if (handle != null) {
+            return handle;
+        }
+
         Class<?> baseCarrier = layout.carrier();
         if (layout.carrier() == MemorySegment.class) {
             baseCarrier = switch ((int) ValueLayout.ADDRESS.byteSize()) {
@@ -110,7 +120,7 @@ public final class Utils {
             baseCarrier = byte.class;
         }
 
-        VarHandle handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
+        handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
                 layout.byteAlignment() - 1, layout.order());
 
         if (layout.carrier() == boolean.class) {
@@ -136,29 +146,17 @@ public final class Utils {
     @ForceInline
     public static MemorySegment longToAddress(long addr, long size, long align) {
         if (!isAligned(addr, align)) {
-            throw new IllegalArgumentException("Invalid alignment constraint for address: " + addr);
+            throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
         }
-        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, size);
+        return SegmentFactories.makeNativeSegmentUnchecked(addr, size);
     }
 
     @ForceInline
     public static MemorySegment longToAddress(long addr, long size, long align, MemorySessionImpl scope) {
         if (!isAligned(addr, align)) {
-            throw new IllegalArgumentException("Invalid alignment constraint for address: " + addr);
+            throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
         }
-        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, size, scope);
-    }
-
-    public static void copy(MemorySegment addr, byte[] bytes) {
-        var heapSegment = MemorySegment.ofArray(bytes);
-        addr.copyFrom(heapSegment);
-        addr.set(JAVA_BYTE, bytes.length, (byte)0);
-    }
-
-    public static MemorySegment toCString(byte[] bytes, SegmentAllocator allocator) {
-        MemorySegment addr = allocator.allocate(bytes.length + 1);
-        copy(addr, bytes);
-        return addr;
+        return SegmentFactories.makeNativeSegmentUnchecked(addr, size, scope);
     }
 
     @ForceInline

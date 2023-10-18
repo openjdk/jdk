@@ -26,7 +26,7 @@
 #define SHARE_GC_SERIAL_TENUREDGENERATION_HPP
 
 #include "gc/serial/cSpaceCounters.hpp"
-#include "gc/shared/generation.hpp"
+#include "gc/serial/generation.hpp"
 #include "gc/shared/gcStats.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "utilities/macros.hpp"
