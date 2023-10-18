@@ -751,7 +751,7 @@ public abstract sealed class AbstractMemorySegmentImpl
             throw new IllegalArgumentException("Not a supported array class: " + arrayType.getSimpleName());
         }
     }
-    
+
     // accessors
 
     @ForceInline
