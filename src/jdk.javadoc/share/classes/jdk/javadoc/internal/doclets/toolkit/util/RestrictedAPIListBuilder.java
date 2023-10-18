@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,14 +23,25 @@
  * questions.
  */
 
-#include <jlong.h>
-#include <jni.h>
-#include <stdlib.h>
-#include <string.h>
+package jdk.javadoc.internal.doclets.toolkit.util;
 
-JNIEXPORT jlong JNICALL Java_org_openjdk_bench_java_lang_foreign_ToCStringTest_writeString(JNIEnv *const env, const jclass cls, const jstring text) {
-    const char *str = (*env)->GetStringUTFChars(env, text, NULL);
-    jlong addr = ptr_to_jlong(str);
-    (*env)->ReleaseStringUTFChars(env, text, str);
-    return addr;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
+
+import javax.lang.model.element.Element;
+
+/**
+ * Build list of all the restricted methods.
+ */
+public class RestrictedAPIListBuilder extends SummaryAPIListBuilder {
+
+
+    /**
+     * Constructor.
+     *
+     * @param configuration the current configuration of the doclet
+     */
+    public RestrictedAPIListBuilder(BaseConfiguration configuration) {
+        super(configuration, configuration.utils::isRestrictedAPI);
+        buildSummaryAPIInfo();
+    }
 }
