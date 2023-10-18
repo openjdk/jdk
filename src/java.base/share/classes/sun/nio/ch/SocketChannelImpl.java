@@ -1532,8 +1532,9 @@ class SocketChannelImpl
      * @apiNote This method is for use by the socket adaptor.
      */
     void blockingWriteFully(byte[] b, int off, int len) throws IOException {
-        if (! SocketWriteEvent.enabled()) {
+        if (!SocketWriteEvent.enabled()) {
             implBlockingWriteFully(b, off, len);
+            return;
         }
         long start = SocketWriteEvent.timestamp();
         implBlockingWriteFully(b, off, len);
