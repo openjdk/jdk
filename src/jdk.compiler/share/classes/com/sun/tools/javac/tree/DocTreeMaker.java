@@ -787,7 +787,7 @@ public class DocTreeMaker implements DocTreeFactory {
         }
 
         // end of paragraph is newline, followed by a blank line or the beginning of the next block
-        private static Pattern endPara = Pattern.compile("\n(([ \t]*\n)|( {0,3}[-+*#=]))");
+        private static final Pattern endPara = Pattern.compile("\n(([ \t]*\n)|( {0,3}[-+*#=]))");
 
         private static int endParaPos(String s) {
             Matcher m = endPara.matcher(s);
