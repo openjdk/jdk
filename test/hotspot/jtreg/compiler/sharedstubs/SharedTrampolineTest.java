@@ -28,11 +28,12 @@
  * @bug 8280152
  * @library /test/lib
  *
+ * @requires vm.compiler2.enabled
  * @requires vm.opt.TieredCompilation == null
  * @requires os.arch=="aarch64" | os.arch=="riscv64"
  * @requires vm.debug
  *
- * @run driver compiler.sharedstubs.SharedTrampolineTest -XX:-TieredCompilation
+ * @run driver compiler.sharedstubs.SharedTrampolineTest
  */
 
 package compiler.sharedstubs;
@@ -49,6 +50,7 @@ public class SharedTrampolineTest {
     private static void runTest(String test) throws Exception {
         String testClassName = SharedTrampolineTest.class.getName() + "$" + test;
         ArrayList<String> command = new ArrayList<String>();
+        command.add("-XX:-TieredCompilation");  // C2-compiler only
         command.add("-XX:+UnlockDiagnosticVMOptions");
         command.add("-Xbatch");
         command.add("-XX:+PrintRelocations");
