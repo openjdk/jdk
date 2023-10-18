@@ -23,18 +23,25 @@
 
 /*
  * @test
- * @bug 8164879
+ * @bug 8164879 8300285
  * @library ../../
  *          /test/lib
  *          /javax/net/ssl/templates
- * @summary Verify AES/GCM's limits set in the jdk.tls.keyLimits property
+ * @summary Verify AEAD TLS cipher suite limits set in the jdk.tls.keyLimits
+ * property
  * start a new handshake sequence to renegotiate the symmetric key with an
  * SSLSocket connection.  This test verifies the handshake method was called
  * via debugging info.  It does not verify the renegotiation was successful
  * as that is very hard.
  *
- * @run main SSLEngineKeyLimit 0 server AES/GCM/NoPadding keyupdate 1050000
- * @run main SSLEngineKeyLimit 1 client AES/GCM/NoPadding keyupdate 2^22
+ * @run main SSLEngineKeyLimit 0 server TLS_AES_256_GCM_SHA384
+ *      AES/GCM/NoPadding keyupdate 1050000
+ * @run main SSLEngineKeyLimit 1 client TLS_AES_256_GCM_SHA384
+ *      AES/GCM/NoPadding keyupdate 2^22
+ * @run main SSLEngineKeyLimit 0 server TLS_CHACHA20_POLY1305_SHA256
+ *      AES/GCM/NoPadding keyupdate 1050000, ChaCha20-Poly1305 KeyUpdate 1050000
+ * @run main SSLEngineKeyLimit 1 client TLS_CHACHA20_POLY1305_SHA256
+ *      AES/GCM/NoPadding keyupdate 2^22, ChaCha20-Poly1305 KeyUpdate 2^22
  */
 
 /*
@@ -78,7 +85,7 @@ public class SSLEngineKeyLimit extends SSLContextTemplate {
     }
 
     /**
-     * args should have two values:  server|client, <limit size>
+     * args should have two values:  server|client, cipher suite, <limit size>
      * Prepending 'p' is for internal use only.
      */
     public static void main(String args[]) throws Exception {
@@ -97,7 +104,7 @@ public class SSLEngineKeyLimit extends SSLContextTemplate {
             File f = new File("keyusage."+ System.nanoTime());
             PrintWriter p = new PrintWriter(f);
             p.write("jdk.tls.keyLimits=");
-            for (int i = 2; i < args.length; i++) {
+            for (int i = 3; i < args.length; i++) {
                 p.write(" "+ args[i]);
             }
             p.close();
@@ -112,10 +119,13 @@ public class SSLEngineKeyLimit extends SSLContextTemplate {
                     System.getProperty("test.java.opts"));
 
             ProcessBuilder pb = ProcessTools.createTestJvm(
-                    Utils.addTestJavaOpts("SSLEngineKeyLimit", "p", args[1]));
+                    Utils.addTestJavaOpts("SSLEngineKeyLimit", "p", args[1],
+                            args[2]));
 
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             try {
+                output.shouldContain(String.format(
+                        "\"cipher suite\"        : \"%s", args[2]));
                 if (expectedFail) {
                     output.shouldNotContain("KeyUpdate: write key updated");
                     output.shouldNotContain("KeyUpdate: read key updated");
@@ -156,9 +166,10 @@ public class SSLEngineKeyLimit extends SSLContextTemplate {
         cTos.clear();
         sToc.clear();
 
-        Thread ts = new Thread(serverwrite ? new Client() : new Server());
+        Thread ts = new Thread(serverwrite ? new Client() :
+                new Server(args[2]));
         ts.start();
-        (serverwrite ? new Server() : new Client()).run();
+        (serverwrite ? new Server(args[2]) : new Client()).run();
         ts.interrupt();
         ts.join();
     }
@@ -395,11 +406,14 @@ public class SSLEngineKeyLimit extends SSLContextTemplate {
     }
 
     static class Server extends SSLEngineKeyLimit implements Runnable {
-        Server() throws Exception {
+        Server(String cipherSuite) throws Exception {
             super();
             eng = initContext().createSSLEngine();
             eng.setUseClientMode(false);
             eng.setNeedClientAuth(true);
+            if (cipherSuite != null && cipherSuite.length() > 0) {
+                eng.setEnabledCipherSuites(new String[] { cipherSuite });
+            }
         }
 
         public void run() {

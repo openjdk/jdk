@@ -45,8 +45,9 @@ ifeq ($(call isTargetOs, windows), true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBSSPI_BRIDGE, \
       NAME := sspi_bridge, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) \
-          -I$(TOPDIR)/src/java.security.jgss/share/native/libj2gss, \
+      EXTRA_HEADER_DIRS := libj2gss, \
+      CFLAGS := $(CFLAGS_JDKLIB), \
+      CXXFLAGS := $(CXXFLAGS_JDKLIB), \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := Secur32.lib, \

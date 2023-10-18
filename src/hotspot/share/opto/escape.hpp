@@ -361,7 +361,7 @@ private:
 
   // Add nodes to ConnectionGraph.
   void add_local_var(Node* n, PointsToNode::EscapeState es);
-  void add_java_object(Node* n, PointsToNode::EscapeState es);
+  PointsToNode* add_java_object(Node* n, PointsToNode::EscapeState es);
   void add_field(Node* n, PointsToNode::EscapeState es, int offset);
   void add_arraycopy(Node* n, PointsToNode::EscapeState es, PointsToNode* src, PointsToNode* dst);
 
@@ -442,6 +442,10 @@ private:
         NOT_PRODUCT(trace_es_update_helper(ptn, esc, true, reason));
         ptn->set_fields_escape_state(esc);
       }
+
+      if (esc != PointsToNode::NoEscape) {
+        ptn->set_scalar_replaceable(false);
+      }
     }
   }
   void set_fields_escape_state(PointsToNode* ptn, PointsToNode::EscapeState esc
@@ -452,6 +456,10 @@ private:
         NOT_PRODUCT(trace_es_update_helper(ptn, esc, true, reason));
         ptn->set_fields_escape_state(esc);
       }
+
+      if (esc != PointsToNode::NoEscape) {
+        ptn->set_scalar_replaceable(false);
+      }
     }
   }
 
@@ -461,7 +469,7 @@ private:
                                 GrowableArray<JavaObjectNode*>& non_escaped_worklist);
 
   // Adjust scalar_replaceable state after Connection Graph is built.
-  void adjust_scalar_replaceable_state(JavaObjectNode* jobj);
+  void adjust_scalar_replaceable_state(JavaObjectNode* jobj, Unique_Node_List &reducible_merges);
 
   // Propagate NSR (Not scalar replaceable) state.
   void find_scalar_replaceable_allocs(GrowableArray<JavaObjectNode*>& jobj_worklist);
@@ -473,7 +481,7 @@ private:
   const TypeInt* optimize_ptr_compare(Node* n);
 
   // Returns unique corresponding java object or null.
-  JavaObjectNode* unique_java_object(Node *n);
+  JavaObjectNode* unique_java_object(Node *n) const;
 
   // Add an edge of the specified type pointing to the specified target.
   bool add_edge(PointsToNode* from, PointsToNode* to) {
@@ -533,7 +541,8 @@ private:
   // Propagate unique types created for non-escaped allocated objects through the graph
   void split_unique_types(GrowableArray<Node *>  &alloc_worklist,
                           GrowableArray<ArrayCopyNode*> &arraycopy_worklist,
-                          GrowableArray<MergeMemNode*> &mergemem_worklist);
+                          GrowableArray<MergeMemNode*> &mergemem_worklist,
+                          Unique_Node_List &reducible_merges);
 
   // Helper methods for unique types split.
   bool split_AddP(Node *addp, Node *base);
@@ -578,6 +587,17 @@ private:
   // Compute the escape information
   bool compute_escape();
 
+  // -------------------------------------------
+  // Methods related to Reduce Allocation Merges
+
+  bool can_reduce_phi(PhiNode* ophi) const;
+  bool can_reduce_phi_check_users(PhiNode* ophi) const;
+  bool can_reduce_phi_check_inputs(PhiNode* ophi) const;
+
+  void reduce_phi_on_field_access(PhiNode* ophi, GrowableArray<Node *>  &alloc_worklist);
+  void reduce_phi_on_safepoints(PhiNode* ophi, Unique_Node_List* safepoints);
+  void reduce_phi(PhiNode* ophi);
+
   void set_not_scalar_replaceable(PointsToNode* ptn NOT_PRODUCT(COMMA const char* reason)) const {
 #ifndef PRODUCT
     if (_compile->directive()->TraceEscapeAnalysisOption) {
@@ -598,6 +618,9 @@ private:
 
 public:
   ConnectionGraph(Compile *C, PhaseIterGVN *igvn, int iteration);
+
+  // Verify that SafePointScalarMerge nodes are correctly connected
+  static void verify_ram_nodes(Compile* C, Node* root);
 
   // Check for non-escaping candidates
   static bool has_candidates(Compile *C);

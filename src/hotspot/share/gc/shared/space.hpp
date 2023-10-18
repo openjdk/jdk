@@ -86,13 +86,13 @@ class Space: public CHeapObj<mtGC> {
   virtual void set_bottom(HeapWord* value) { _bottom = value; }
   virtual void set_end(HeapWord* value)    { _end = value; }
 
-  virtual HeapWord* saved_mark_word() const  { return _saved_mark_word; }
+  HeapWord* saved_mark_word() const  { return _saved_mark_word; }
 
   void set_saved_mark_word(HeapWord* p) { _saved_mark_word = p; }
 
   // Returns true if this object has been allocated since a
   // generation's "save_marks" call.
-  virtual bool obj_allocated_since_save_marks(const oop obj) const {
+  bool obj_allocated_since_save_marks(const oop obj) const {
     return cast_from_oop<HeapWord*>(obj) >= saved_mark_word();
   }
 
@@ -163,11 +163,6 @@ class Space: public CHeapObj<mtGC> {
   virtual size_t used() const = 0;
   virtual size_t free() const = 0;
 
-  // Iterate over all the ref-containing fields of all objects in the
-  // space, calling "cl.do_oop" on each.  Fields in objects allocated by
-  // applications of the closure are not included in the iteration.
-  virtual void oop_iterate(OopIterateClosure* cl);
-
   // Iterate over all objects in the space, calling "cl.do_object" on
   // each.  Objects allocated by applications of the closure are not
   // included in the iteration.
@@ -183,7 +178,7 @@ class Space: public CHeapObj<mtGC> {
   // structure supporting these calls, possibly speeding up future calls.
   // The default implementation, however, is simply to call the const
   // version.
-  virtual HeapWord* block_start(const void* p);
+  HeapWord* block_start(const void* p);
 
   // Requires "addr" to be the start of a chunk, and returns its size.
   // "addr + size" is required to be the start of a new chunk, or the end
@@ -196,7 +191,7 @@ class Space: public CHeapObj<mtGC> {
 
   // Requires "addr" to be the start of a block, and returns "TRUE" iff
   // the block is an object and the object is alive.
-  virtual bool obj_is_alive(const HeapWord* addr) const;
+  bool obj_is_alive(const HeapWord* addr) const;
 
   // Allocation (return null if full).  Assumes the caller has established
   // mutually exclusive access to the space.
@@ -211,78 +206,13 @@ class Space: public CHeapObj<mtGC> {
   virtual void adjust_pointers() = 0;
 #endif
 
-  virtual void print() const;
+  void print() const;
   virtual void print_on(outputStream* st) const;
-  virtual void print_short() const;
-  virtual void print_short_on(outputStream* st) const;
-
-
-  // IF "this" is a ContiguousSpace, return it, else return null.
-  virtual ContiguousSpace* toContiguousSpace() {
-    return nullptr;
-  }
+  void print_short() const;
+  void print_short_on(outputStream* st) const;
 
   // Debugging
   virtual void verify() const = 0;
-};
-
-// A dirty card to oop closure for contiguous spaces (ContiguousSpace and
-// sub-classes). It knows how to filter out objects that are outside of the
-// _boundary.
-// (Note that because of the imprecise nature of the write barrier, this may
-// iterate over oops beyond the region.)
-//
-// Assumptions:
-// 1. That the actual top of any area in a memory region
-//    contained by the space is bounded by the end of the contiguous
-//    region of the space.
-// 2. That the space is really made up of objects and not just
-//    blocks.
-
-class DirtyCardToOopClosure: public MemRegionClosure {
-protected:
-  OopIterateClosure* _cl;
-  Space* _sp;
-  HeapWord* _min_done;          // Need a downwards traversal to compensate
-                                // imprecise write barrier; this is the
-                                // lowest location already done (or,
-                                // alternatively, the lowest address that
-                                // shouldn't be done again.  null means infinity.)
-  NOT_PRODUCT(HeapWord* _last_bottom;)
-
-  // Get the actual top of the area on which the closure will
-  // operate, given where the top is assumed to be (the end of the
-  // memory region passed to do_MemRegion) and where the object
-  // at the top is assumed to start. For example, an object may
-  // start at the top but actually extend past the assumed top,
-  // in which case the top becomes the end of the object.
-  HeapWord* get_actual_top(HeapWord* top, HeapWord* top_obj);
-
-  // Walk the given memory region from bottom to (actual) top
-  // looking for objects and applying the oop closure (_cl) to
-  // them. The base implementation of this treats the area as
-  // blocks, where a block may or may not be an object. Sub-
-  // classes should override this to provide more accurate
-  // or possibly more efficient walking.
-  void walk_mem_region(MemRegion mr, HeapWord* bottom, HeapWord* top);
-
-  // Walk the given memory region, from bottom to top, applying
-  // the given oop closure to (possibly) all objects found. The
-  // given oop closure may or may not be the same as the oop
-  // closure with which this closure was created, as it may
-  // be a filtering closure which makes use of the _boundary.
-  // We offer two signatures, so the FilteringClosure static type is
-  // apparent.
-  void walk_mem_region_with_cl(MemRegion mr,
-                               HeapWord* bottom, HeapWord* top,
-                               OopIterateClosure* cl);
-public:
-  DirtyCardToOopClosure(Space* sp, OopIterateClosure* cl) :
-    _cl(cl), _sp(sp), _min_done(nullptr) {
-    NOT_PRODUCT(_last_bottom = nullptr);
-  }
-
-  void do_MemRegion(MemRegion mr) override;
 };
 
 // A structure to represent a point at which objects are being copied
@@ -444,7 +374,6 @@ private:
   HeapWord* par_allocate(size_t word_size) override;
 
   // Iteration
-  void oop_iterate(OopIterateClosure* cl) override;
   void object_iterate(ObjectClosure* blk) override;
 
   // Compaction support
@@ -479,11 +408,6 @@ private:
   HeapWord** end_addr() { return &_end; }
 
   void print_on(outputStream* st) const override;
-
-  // Checked dynamic downcasts.
-  ContiguousSpace* toContiguousSpace() override {
-    return this;
-  }
 
   // Debugging
   void verify() const override;

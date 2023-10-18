@@ -70,7 +70,7 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _reserve_regions(0),
   _young_gen_sizer(),
   _free_regions_at_end_of_collection(0),
-  _rs_length(0),
+  _card_rs_length(0),
   _pending_cards_at_gc_start(0),
   _concurrent_start_to_mixed(),
   _collection_set(nullptr),
@@ -189,19 +189,20 @@ void G1Policy::update_young_length_bounds() {
   assert(!Universe::is_fully_initialized() || SafepointSynchronize::is_at_safepoint(), "must be");
   bool for_young_only_phase = collector_state()->in_young_only_phase();
   update_young_length_bounds(_analytics->predict_pending_cards(for_young_only_phase),
-                             _analytics->predict_rs_length(for_young_only_phase));
+                             _analytics->predict_card_rs_length(for_young_only_phase),
+                             _analytics->predict_code_root_rs_length(for_young_only_phase));
 }
 
-void G1Policy::update_young_length_bounds(size_t pending_cards, size_t rs_length) {
+void G1Policy::update_young_length_bounds(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length) {
   uint old_young_list_target_length = young_list_target_length();
 
-  uint new_young_list_desired_length = calculate_young_desired_length(pending_cards, rs_length);
+  uint new_young_list_desired_length = calculate_young_desired_length(pending_cards, card_rs_length, code_root_rs_length);
   uint new_young_list_target_length = calculate_young_target_length(new_young_list_desired_length);
   uint new_young_list_max_length = calculate_young_max_length(new_young_list_target_length);
 
-  log_trace(gc, ergo, heap)("Young list length update: pending cards %zu rs_length %zu old target %u desired: %u target: %u max: %u",
+  log_trace(gc, ergo, heap)("Young list length update: pending cards %zu card_rs_length %zu old target %u desired: %u target: %u max: %u",
                             pending_cards,
-                            rs_length,
+                            card_rs_length,
                             old_young_list_target_length,
                             new_young_list_desired_length,
                             new_young_list_target_length,
@@ -234,7 +235,9 @@ void G1Policy::update_young_length_bounds(size_t pending_cards, size_t rs_length
 // value smaller than what is already allocated or what can actually be allocated.
 // This return value is only an expectation.
 //
-uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_length) const {
+uint G1Policy::calculate_young_desired_length(size_t pending_cards,
+                                              size_t card_rs_length,
+                                              size_t code_root_rs_length) const {
   uint min_young_length_by_sizer = _young_gen_sizer.min_desired_young_length();
   uint max_young_length_by_sizer = _young_gen_sizer.max_desired_young_length();
 
@@ -267,10 +270,15 @@ uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_le
   if (use_adaptive_young_list_length()) {
     desired_eden_length_by_mmu = calculate_desired_eden_length_by_mmu();
 
-    double base_time_ms = predict_base_time_ms(pending_cards, rs_length);
+    double base_time_ms = predict_base_time_ms(pending_cards, card_rs_length, code_root_rs_length);
+    double retained_time_ms = predict_retained_regions_evac_time();
+    double total_time_ms = base_time_ms + retained_time_ms;
+
+    log_trace(gc, ergo, heap)("Predicted total base time: total %f base_time %f retained_time %f",
+                              total_time_ms, base_time_ms, retained_time_ms);
 
     desired_eden_length_by_pause =
-      calculate_desired_eden_length_by_pause(base_time_ms,
+      calculate_desired_eden_length_by_pause(total_time_ms,
                                              absolute_min_young_length - survivor_length,
                                              absolute_max_young_length - survivor_length);
 
@@ -513,6 +521,29 @@ double G1Policy::predict_survivor_regions_evac_time() const {
   return survivor_regions_evac_time;
 }
 
+double G1Policy::predict_retained_regions_evac_time() const {
+  uint num_regions = 0;
+  double result = 0.0;
+
+  G1CollectionCandidateList& list = candidates()->retained_regions();
+  uint min_regions_left = MIN2(min_retained_old_cset_length(),
+                               list.length());
+
+  for (HeapRegion* r : list) {
+    if (min_regions_left == 0) {
+      // Minimum amount of regions considered. Exit.
+      break;
+    }
+    min_regions_left--;
+    result += predict_region_total_time_ms(r, collector_state()->in_young_only_phase());
+    num_regions++;
+  }
+
+  log_trace(gc, ergo, heap)("Selected %u of %u retained candidates taking %1.3fms additional time",
+                            num_regions, list.length(), result);
+  return result;
+}
+
 G1GCPhaseTimes* G1Policy::phase_times() const {
   // Lazy allocation because it must follow initialization of all the
   // OopStorage objects by various other subsystems.
@@ -522,13 +553,13 @@ G1GCPhaseTimes* G1Policy::phase_times() const {
   return _phase_times;
 }
 
-void G1Policy::revise_young_list_target_length(size_t rs_length) {
+void G1Policy::revise_young_list_target_length(size_t card_rs_length, size_t code_root_rs_length) {
   guarantee(use_adaptive_young_list_length(), "should not call this otherwise" );
 
   size_t thread_buffer_cards = _analytics->predict_dirtied_cards_in_thread_buffers();
   G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
   size_t pending_cards = dcqs.num_cards() + thread_buffer_cards;
-  update_young_length_bounds(pending_cards, rs_length);
+  update_young_length_bounds(pending_cards, card_rs_length, code_root_rs_length);
 }
 
 void G1Policy::record_full_collection_start() {
@@ -621,6 +652,17 @@ void G1Policy::record_concurrent_refinement_stats(size_t pending_cards,
     _analytics->report_dirtied_cards_rate_ms(dirtied_rate);
     log_debug(gc, refine, stats)("Generate dirty cards rate: %.2f cards/ms", dirtied_rate);
   }
+}
+
+bool G1Policy::should_retain_evac_failed_region(uint index) const {
+  size_t live_bytes= _g1h->region_at(index)->live_bytes();
+
+  assert(live_bytes != 0,
+         "live bytes not set for %u used %zu garbage %zu cm-live %zu",
+         index, _g1h->region_at(index)->used(), _g1h->region_at(index)->garbage_bytes(), live_bytes);
+
+  size_t threshold = G1RetainRegionLiveThresholdPercent * HeapRegion::GrainBytes / 100;
+  return live_bytes < threshold;
 }
 
 void G1Policy::record_young_collection_start() {
@@ -851,6 +893,17 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     }
     _analytics->report_card_scan_to_merge_ratio(scan_to_merge_ratio, is_young_only_pause);
 
+    // Update prediction for code root scan
+    size_t const total_code_roots_scanned = p->sum_thread_work_items(G1GCPhaseTimes::CodeRoots, G1GCPhaseTimes::CodeRootsScannedNMethods) +
+                                            p->sum_thread_work_items(G1GCPhaseTimes::OptCodeRoots, G1GCPhaseTimes::CodeRootsScannedNMethods);
+
+    if (total_code_roots_scanned >= G1NumCodeRootsCostSampleThreshold) {
+      double avg_time_code_root_scan = average_time_ms(G1GCPhaseTimes::CodeRoots) +
+                                       average_time_ms(G1GCPhaseTimes::OptCodeRoots);
+
+      _analytics->report_cost_per_code_root_scan_ms(avg_time_code_root_scan / total_code_roots_scanned, is_young_only_pause);
+    }
+
     // Update prediction for copy cost per byte
     size_t copied_bytes = p->sum_thread_work_items(G1GCPhaseTimes::MergePSS, G1GCPhaseTimes::MergePSSCopiedBytes);
 
@@ -872,7 +925,8 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     _analytics->report_constant_other_time_ms(constant_other_time_ms(pause_time_ms));
 
     _analytics->report_pending_cards((double)pending_cards_at_gc_start(), is_young_only_pause);
-    _analytics->report_rs_length((double)_rs_length, is_young_only_pause);
+    _analytics->report_card_rs_length((double)_card_rs_length, is_young_only_pause);
+    _analytics->report_code_root_rs_length((double)total_code_roots_scanned, is_young_only_pause);
   }
 
   assert(!(G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause) && collector_state()->mark_or_rebuild_in_progress()),
@@ -994,32 +1048,37 @@ void G1Policy::record_young_gc_pause_end(bool evacuation_failed) {
 }
 
 double G1Policy::predict_base_time_ms(size_t pending_cards,
-                                      size_t rs_length) const {
+                                      size_t card_rs_length,
+                                      size_t code_root_rs_length) const {
   bool in_young_only_phase = collector_state()->in_young_only_phase();
 
-  size_t unique_cards_from_rs = _analytics->predict_scan_card_num(rs_length, in_young_only_phase);
+  size_t unique_cards_from_rs = _analytics->predict_scan_card_num(card_rs_length, in_young_only_phase);
   // Assume that all cards from the log buffers will be scanned, i.e. there are no
   // duplicates in that set.
   size_t effective_scanned_cards = unique_cards_from_rs + pending_cards;
 
-  double card_merge_time = _analytics->predict_card_merge_time_ms(pending_cards + rs_length, in_young_only_phase);
+  double card_merge_time = _analytics->predict_card_merge_time_ms(pending_cards + card_rs_length, in_young_only_phase);
   double card_scan_time = _analytics->predict_card_scan_time_ms(effective_scanned_cards, in_young_only_phase);
+  double code_root_scan_time = _analytics->predict_code_root_scan_time_ms(code_root_rs_length, in_young_only_phase);
   double constant_other_time = _analytics->predict_constant_other_time_ms();
   double survivor_evac_time = predict_survivor_regions_evac_time();
 
-  double total_time = card_merge_time + card_scan_time + constant_other_time + survivor_evac_time;
+  double total_time = card_merge_time + card_scan_time + code_root_scan_time + constant_other_time + survivor_evac_time;
 
-  log_trace(gc, ergo, heap)("Predicted base time: total %f lb_cards %zu rs_length %zu effective_scanned_cards %zu "
-                            "card_merge_time %f card_scan_time %f constant_other_time %f survivor_evac_time %f",
-                            total_time, pending_cards, rs_length, effective_scanned_cards,
-                            card_merge_time, card_scan_time, constant_other_time, survivor_evac_time);
+  log_trace(gc, ergo, heap)("Predicted base time: total %f lb_cards %zu card_rs_length %zu effective_scanned_cards %zu "
+                            "card_merge_time %f card_scan_time %f code_root_rs_length %zu code_root_scan_time %f "
+                            "constant_other_time %f survivor_evac_time %f",
+                            total_time, pending_cards, card_rs_length, effective_scanned_cards,
+                            card_merge_time, card_scan_time, code_root_rs_length, code_root_scan_time,
+                            constant_other_time, survivor_evac_time);
   return total_time;
 }
 
 double G1Policy::predict_base_time_ms(size_t pending_cards) const {
   bool for_young_only_phase = collector_state()->in_young_only_phase();
-  size_t rs_length = _analytics->predict_rs_length(for_young_only_phase);
-  return predict_base_time_ms(pending_cards, rs_length);
+  size_t card_rs_length = _analytics->predict_card_rs_length(for_young_only_phase);
+  size_t code_root_rs_length = _analytics->predict_code_root_rs_length(for_young_only_phase);
+  return predict_base_time_ms(pending_cards, card_rs_length, code_root_rs_length);
 }
 
 size_t G1Policy::predict_bytes_to_copy(HeapRegion* hr) const {
@@ -1053,18 +1112,26 @@ double G1Policy::predict_region_copy_time_ms(HeapRegion* hr, bool for_young_only
 }
 
 double G1Policy::predict_region_merge_scan_time(HeapRegion* hr, bool for_young_only_phase) const {
-  size_t rs_length = hr->rem_set()->occupied();
-  size_t scan_card_num = _analytics->predict_scan_card_num(rs_length, for_young_only_phase);
+  size_t card_rs_length = hr->rem_set()->occupied();
+  size_t scan_card_num = _analytics->predict_scan_card_num(card_rs_length, for_young_only_phase);
 
   return
-    _analytics->predict_card_merge_time_ms(rs_length, for_young_only_phase) +
+    _analytics->predict_card_merge_time_ms(card_rs_length, for_young_only_phase) +
     _analytics->predict_card_scan_time_ms(scan_card_num, for_young_only_phase);
+}
+
+double G1Policy::predict_region_code_root_scan_time(HeapRegion* hr, bool for_young_only_phase) const {
+  size_t code_root_length = hr->rem_set()->code_roots_list_length();
+
+  return
+    _analytics->predict_code_root_scan_time_ms(code_root_length, for_young_only_phase);
 }
 
 double G1Policy::predict_region_non_copy_time_ms(HeapRegion* hr,
                                                  bool for_young_only_phase) const {
 
-  double region_elapsed_time_ms = predict_region_merge_scan_time(hr, for_young_only_phase);
+  double region_elapsed_time_ms = predict_region_merge_scan_time(hr, for_young_only_phase) +
+                                  predict_region_code_root_scan_time(hr, for_young_only_phase);
   // The prediction of the "other" time for this region is based
   // upon the region type and NOT the GC type.
   if (hr->is_young()) {
@@ -1278,7 +1345,7 @@ void G1Policy::abandon_collection_set_candidates() {
   // Clear remembered sets of remaining candidate regions and the actual candidate
   // set.
   for (HeapRegion* r : *candidates()) {
-    r->rem_set()->clear_locked(true /* only_cardset */);
+    r->rem_set()->clear(true /* only_cardset */);
   }
   _collection_set->abandon_all_candidates();
 }
@@ -1369,6 +1436,12 @@ bool G1Policy::next_gc_should_be_mixed() const {
 
 size_t G1Policy::allowed_waste_in_collection_set() const {
   return G1HeapWastePercent * _g1h->capacity() / 100;
+}
+
+uint G1Policy::min_retained_old_cset_length() const {
+  // Guarantee some progress with retained regions regardless of available time by
+  // taking at least one region.
+  return 1;
 }
 
 uint G1Policy::calc_min_old_cset_length(uint num_candidate_regions) const {
@@ -1486,6 +1559,72 @@ double G1Policy::select_candidates_from_marking(G1CollectionCandidateList* marki
   assert(initial_old_regions->length() == num_initial_regions_selected, "must be");
   assert(optional_old_regions->length() == num_optional_regions_selected, "must be");
   return time_remaining_ms;
+}
+
+void G1Policy::select_candidates_from_retained(G1CollectionCandidateList* retained_list,
+                                               double time_remaining_ms,
+                                               G1CollectionCandidateRegionList* initial_old_regions,
+                                               G1CollectionCandidateRegionList* optional_old_regions) {
+
+  uint const min_regions = min_retained_old_cset_length();
+
+  uint num_initial_regions_selected = 0;
+  uint num_optional_regions_selected = 0;
+  uint num_expensive_regions_selected = 0;
+
+  double predicted_initial_time_ms = 0.0;
+  double predicted_optional_time_ms = 0.0;
+
+  // We want to make sure that on the one hand we process the retained regions asap,
+  // but on the other hand do not take too many of them as optional regions.
+  // So we split the time budget into budget we will unconditionally take into the
+  // initial old regions, and budget for taking optional regions from the retained
+  // list.
+  double optional_time_remaining_ms = max_time_for_retaining();
+  time_remaining_ms = MIN2(time_remaining_ms, optional_time_remaining_ms);
+
+  log_debug(gc, ergo, cset)("Start adding retained candidates to collection set. "
+                            "Min %u regions, "
+                            "time remaining %1.2fms, optional remaining %1.2fms",
+                            min_regions, time_remaining_ms, optional_time_remaining_ms);
+
+  for (HeapRegion* r : *retained_list) {
+    double predicted_time_ms = predict_region_total_time_ms(r, collector_state()->in_young_only_phase());
+    bool fits_in_remaining_time = predicted_time_ms <= time_remaining_ms;
+
+    if (fits_in_remaining_time || (num_expensive_regions_selected < min_regions)) {
+      predicted_initial_time_ms += predicted_time_ms;
+      if (!fits_in_remaining_time) {
+        num_expensive_regions_selected++;
+      }
+      initial_old_regions->append(r);
+      num_initial_regions_selected++;
+    } else if (predicted_time_ms <= optional_time_remaining_ms) {
+      predicted_optional_time_ms += predicted_time_ms;
+      optional_old_regions->append(r);
+      num_optional_regions_selected++;
+    } else {
+      // Fits neither initial nor optional time limit. Exit.
+      break;
+    }
+    time_remaining_ms = MAX2(0.0, time_remaining_ms - predicted_time_ms);
+    optional_time_remaining_ms = MAX2(0.0, optional_time_remaining_ms - predicted_time_ms);
+  }
+
+  uint num_regions_selected = num_initial_regions_selected + num_optional_regions_selected;
+  if (num_regions_selected == retained_list->length()) {
+    log_debug(gc, ergo, cset)("Retained candidates exhausted.");
+  }
+  if (num_expensive_regions_selected > 0) {
+    log_debug(gc, ergo, cset)("Added %u retained candidates to collection set although the predicted time was too high.",
+                              num_expensive_regions_selected);
+  }
+
+  log_debug(gc, ergo, cset)("Finish adding retained candidates to collection set. Initial: %u, optional: %u, "
+                            "predicted initial time: %1.2fms, predicted optional time: %1.2fms, "
+                            "time remaining: %1.2fms optional time remaining %1.2fms",
+                            num_initial_regions_selected, num_optional_regions_selected,
+                            predicted_initial_time_ms, predicted_optional_time_ms, time_remaining_ms, optional_time_remaining_ms);
 }
 
 void G1Policy::calculate_optional_collection_set_regions(G1CollectionCandidateRegionList* optional_regions,

@@ -21,12 +21,16 @@
  * questions.
  */
 
+/* @test
+ * @summary Circle is rendered in C shape
+ * @bug 6829659 8311666
+ */
+
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import javax.imageio.ImageIO;
-
 
 public class ScaleTest {
   public static void main(String[] args) throws Exception {

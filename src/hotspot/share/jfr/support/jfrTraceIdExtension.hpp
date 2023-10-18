@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -46,34 +46,34 @@
 
 class JfrTraceFlag {
  private:
-  mutable jshort _flags;
+  mutable uint16_t _flags;
  public:
   JfrTraceFlag() : _flags(0) {}
-  bool is_set(jshort flag) const {
+  bool is_set(uint16_t flag) const {
     return (_flags & flag) != 0;
   }
 
-  jshort flags() const {
+  uint16_t flags() const {
     return _flags;
   }
 
-  void set_flags(jshort flags) const {
+  void set_flags(uint16_t flags) const {
     _flags = flags;
   }
 
-  jbyte* flags_addr() const {
+  uint8_t* flags_addr() const {
 #ifdef VM_LITTLE_ENDIAN
-    return (jbyte*)&_flags;
+    return reinterpret_cast<uint8_t*>(&_flags);
 #else
-    return ((jbyte*)&_flags) + 1;
+    return reinterpret_cast<uint8_t*>(&_flags) + 1;
 #endif
   }
 
-  jbyte* meta_addr() const {
+  uint8_t* meta_addr() const {
 #ifdef VM_LITTLE_ENDIAN
-    return ((jbyte*)&_flags) + 1;
+    return reinterpret_cast<uint8_t*>(&_flags) + 1;
 #else
-    return (jbyte*)&_flags;
+    return reinterpret_cast<uint8_t*>(&_flags);
 #endif
   }
 };
@@ -81,19 +81,19 @@ class JfrTraceFlag {
 #define DEFINE_TRACE_FLAG mutable JfrTraceFlag _trace_flags
 
 #define DEFINE_TRACE_FLAG_ACCESSOR                 \
-  bool is_trace_flag_set(jshort flag) const {      \
+  bool is_trace_flag_set(uint16_t flag) const {    \
     return _trace_flags.is_set(flag);              \
   }                                                \
-  jshort trace_flags() const {                     \
+  uint16_t trace_flags() const {                   \
     return _trace_flags.flags();                   \
   }                                                \
-  void set_trace_flags(jshort flags) const {       \
+  void set_trace_flags(uint16_t flags) const {     \
     _trace_flags.set_flags(flags);                 \
   }                                                \
-  jbyte* trace_flags_addr() const {                \
+  uint8_t* trace_flags_addr() const {              \
     return _trace_flags.flags_addr();              \
   }                                                \
-  jbyte* trace_meta_addr() const {                 \
+  uint8_t* trace_meta_addr() const {               \
     return _trace_flags.meta_addr();               \
   }
 

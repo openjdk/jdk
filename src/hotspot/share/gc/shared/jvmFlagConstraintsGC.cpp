@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,20 +52,6 @@
 // value(s) of the flag(s) on the command line.  In the constraint
 // checking functions,  FLAG_IS_CMDLINE() is used to check if
 // the flag has been set by the user and so should be checked.
-
-// As ParallelGCThreads differs among GC modes, we need constraint function.
-JVMFlag::Error ParallelGCThreadsConstraintFunc(uint value, bool verbose) {
-  JVMFlag::Error status = JVMFlag::SUCCESS;
-
-#if INCLUDE_PARALLELGC
-  status = ParallelGCThreadsConstraintFuncParallel(value, verbose);
-  if (status != JVMFlag::SUCCESS) {
-    return status;
-  }
-#endif
-
-  return status;
-}
 
 static JVMFlag::Error MinPLABSizeBounds(const char* name, size_t value, bool verbose) {
   if ((GCConfig::is_gc_selected(CollectedHeap::G1) || GCConfig::is_gc_selected(CollectedHeap::Parallel)) &&
@@ -170,11 +156,11 @@ JVMFlag::Error MarkStackSizeConstraintFunc(size_t value, bool verbose) {
   }
 }
 
-JVMFlag::Error MinMetaspaceFreeRatioConstraintFunc(uintx value, bool verbose) {
+JVMFlag::Error MinMetaspaceFreeRatioConstraintFunc(uint value, bool verbose) {
   if (value > MaxMetaspaceFreeRatio) {
     JVMFlag::printError(verbose,
-                        "MinMetaspaceFreeRatio (" UINTX_FORMAT ") must be "
-                        "less than or equal to MaxMetaspaceFreeRatio (" UINTX_FORMAT ")\n",
+                        "MinMetaspaceFreeRatio (%u) must be "
+                        "less than or equal to MaxMetaspaceFreeRatio (%u)\n",
                         value, MaxMetaspaceFreeRatio);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
@@ -182,11 +168,11 @@ JVMFlag::Error MinMetaspaceFreeRatioConstraintFunc(uintx value, bool verbose) {
   }
 }
 
-JVMFlag::Error MaxMetaspaceFreeRatioConstraintFunc(uintx value, bool verbose) {
+JVMFlag::Error MaxMetaspaceFreeRatioConstraintFunc(uint value, bool verbose) {
   if (value < MinMetaspaceFreeRatio) {
     JVMFlag::printError(verbose,
-                        "MaxMetaspaceFreeRatio (" UINTX_FORMAT ") must be "
-                        "greater than or equal to MinMetaspaceFreeRatio (" UINTX_FORMAT ")\n",
+                        "MaxMetaspaceFreeRatio (%u) must be "
+                        "greater than or equal to MinMetaspaceFreeRatio (%u)\n",
                         value, MinMetaspaceFreeRatio);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
@@ -435,4 +421,3 @@ JVMFlag::Error GCCardSizeInBytesConstraintFunc(uint value, bool verbose) {
     return JVMFlag::SUCCESS;
   }
 }
-

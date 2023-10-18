@@ -28,7 +28,12 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.ToolBox toolbox.JavapTask
  * @run compile -g AnonymousClassTest.java
@@ -37,31 +42,15 @@
 
 import static java.util.stream.Collectors.toSet;
 
-import com.sun.tools.classfile.Annotation;
-import com.sun.tools.classfile.Annotation.Annotation_element_value;
-import com.sun.tools.classfile.Annotation.Array_element_value;
-import com.sun.tools.classfile.Annotation.Class_element_value;
-import com.sun.tools.classfile.Annotation.Enum_element_value;
-import com.sun.tools.classfile.Annotation.Primitive_element_value;
-import com.sun.tools.classfile.Annotation.element_value;
-import com.sun.tools.classfile.Annotation.element_value.Visitor;
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Integer_info;
-import com.sun.tools.classfile.ConstantPool.InvalidIndex;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Method;
-import com.sun.tools.classfile.RuntimeVisibleTypeAnnotations_attribute;
-import com.sun.tools.classfile.TypeAnnotation;
-import com.sun.tools.classfile.TypeAnnotation.Position;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.CodeAttribute;
+import jdk.internal.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import toolbox.ToolBox;
 
@@ -113,108 +102,108 @@ public class AnonymousClassTest {
     }
 
     static void testAnonymousClassDeclaration() throws Exception {
-        ClassFile cf = ClassFile.read(Paths.get(ToolBox.testClasses, "AnonymousClassTest$1.class"));
-        RuntimeVisibleTypeAnnotations_attribute rvta =
-                (RuntimeVisibleTypeAnnotations_attribute)
-                        cf.attributes.get(Attribute.RuntimeVisibleTypeAnnotations);
+        ClassModel cm = Classfile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest$1.class"));
+        RuntimeVisibleTypeAnnotationsAttribute rvta =
+                cm.findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS).orElse(null);
+        assert rvta != null;
         assertEquals(
                 Set.of(
                         "@LAnonymousClassTest$TA;(1) CLASS_EXTENDS, offset=-1, location=[TYPE_ARGUMENT(0)]",
                         "@LAnonymousClassTest$TA;(0) CLASS_EXTENDS, offset=-1, location=[]"),
-                Arrays.stream(rvta.annotations)
-                        .map(a -> annotationDebugString(cf, a))
+                rvta.annotations().stream()
+                        .map(a -> annotationDebugString(cm, null, a))
                         .collect(toSet()));
     }
 
     static void testTopLevelMethod() throws Exception {
-        ClassFile cf = ClassFile.read(Paths.get(ToolBox.testClasses, "AnonymousClassTest.class"));
-        Method method = findMethod(cf, "f");
+        ClassModel cm = Classfile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest.class"));
+        MethodModel method = findMethod(cm, "f");
         Set<TypeAnnotation> annotations = getRuntimeVisibleTypeAnnotations(method);
+        CodeAttribute cAttr = method.findAttribute(Attributes.CODE).orElse(null);
         assertEquals(
                 Set.of("@LAnonymousClassTest$TA;(0) NEW, offset=0, location=[INNER_TYPE]"),
-                annotations.stream().map(a -> annotationDebugString(cf, a)).collect(toSet()));
+                annotations.stream().map(a -> annotationDebugString(cm, cAttr, a)).collect(toSet()));
     }
 
     static void testInnerClassMethod() throws Exception {
-        ClassFile cf =
-                ClassFile.read(Paths.get(ToolBox.testClasses, "AnonymousClassTest$Inner.class"));
-        Method method = findMethod(cf, "g");
+        ClassModel cm =
+                Classfile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest$Inner.class"));
+        MethodModel method = findMethod(cm, "g");
         Set<TypeAnnotation> annotations = getRuntimeVisibleTypeAnnotations(method);
+        CodeAttribute cAttr = method.findAttribute(Attributes.CODE).orElse(null);
         // The annotation needs two INNER_TYPE type path entries to apply to
         // AnonymousClassTest$Inner$1.
         assertEquals(
                 Set.of(
                         "@LAnonymousClassTest$TA;(2) NEW, offset=0, location=[INNER_TYPE, INNER_TYPE]"),
-                annotations.stream().map(a -> annotationDebugString(cf, a)).collect(toSet()));
+                annotations.stream().map(a -> annotationDebugString(cm, cAttr, a)).collect(toSet()));
     }
 
     static void testQualifiedSuperType() throws Exception {
         {
-            ClassFile cf =
-                    ClassFile.read(Paths.get(ToolBox.testClasses, "AnonymousClassTest.class"));
-            Method method = findMethod(cf, "g");
+            ClassModel cm =
+                    Classfile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest.class"));
+            MethodModel method = findMethod(cm, "g");
             Set<TypeAnnotation> annotations = getRuntimeVisibleTypeAnnotations(method);
+            CodeAttribute cAttr = method.findAttribute(Attributes.CODE).orElse(null);
             // Only @TA(4) is propagated to the anonymous class declaration.
             assertEquals(
                     Set.of("@LAnonymousClassTest$TA;(4) NEW, offset=0, location=[INNER_TYPE]"),
-                    annotations.stream().map(a -> annotationDebugString(cf, a)).collect(toSet()));
+                    annotations.stream().map(a -> annotationDebugString(cm, cAttr, a)).collect(toSet()));
         }
 
         {
-            ClassFile cf =
-                    ClassFile.read(Paths.get(ToolBox.testClasses, "AnonymousClassTest$2.class"));
-            RuntimeVisibleTypeAnnotations_attribute rvta =
-                    (RuntimeVisibleTypeAnnotations_attribute)
-                            cf.attributes.get(Attribute.RuntimeVisibleTypeAnnotations);
+            ClassModel cm =
+                    Classfile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest$2.class"));
+            RuntimeVisibleTypeAnnotationsAttribute rvta =
+                    cm.findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS).orElse(null);
+            assert rvta != null;
             assertEquals(
                     Set.of(
                             "@LAnonymousClassTest$TA;(3) CLASS_EXTENDS, offset=-1, location=[]",
                             "@LAnonymousClassTest$TA;(4) CLASS_EXTENDS, offset=-1, location=[INNER_TYPE]"),
-                    Arrays.stream(rvta.annotations)
-                            .map(a -> annotationDebugString(cf, a))
+                    rvta.annotations().stream()
+                            .map(a -> annotationDebugString(cm, null, a))
                             .collect(toSet()));
         }
     }
 
     static void testInstanceAndClassInit() throws Exception {
-        ClassFile cf = ClassFile.read(Paths.get(ToolBox.testClasses, "AnonymousClassTest.class"));
-        Method method = findMethod(cf, "<init>");
+        ClassModel cm = Classfile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest.class"));
+        MethodModel method = findMethod(cm, "<init>");
         Set<TypeAnnotation> annotations = getRuntimeVisibleTypeAnnotations(method);
+        CodeAttribute cAttr1 = method.findAttribute(Attributes.CODE).orElse(null);
         assertEquals(
                 Set.of("@LAnonymousClassTest$TA;(5) NEW, offset=4, location=[INNER_TYPE]"),
-                annotations.stream().map(a -> annotationDebugString(cf, a)).collect(toSet()) );
+                annotations.stream().map(a -> annotationDebugString(cm, cAttr1, a)).collect(toSet()) );
 
-        method = findMethod(cf, "<clinit>");
+        method = findMethod(cm, "<clinit>");
         annotations = getRuntimeVisibleTypeAnnotations(method);
+        CodeAttribute cAttr2 = method.findAttribute(Attributes.CODE).orElse(null);
         assertEquals(
-                Set.of("@LAnonymousClassTest$TA;(6) NEW, offset=0, location=[INNER_TYPE]"),
-                annotations.stream().map(a -> annotationDebugString(cf, a)).collect(toSet()) );
+                Set.of("@LAnonymousClassTest$TA;(6) NEW, offset=16, location=[INNER_TYPE]"),
+                annotations.stream().map(a -> annotationDebugString(cm, cAttr2, a)).collect(toSet()) );
     }
 
     // Returns the Method's RuntimeVisibleTypeAnnotations, and asserts that there are no RVTIs
     // erroneously associated with the Method instead of its Code attribute.
-    private static Set<TypeAnnotation> getRuntimeVisibleTypeAnnotations(Method method) {
-        if (method.attributes.get(Attribute.RuntimeVisibleTypeAnnotations) != null) {
+    private static Set<TypeAnnotation> getRuntimeVisibleTypeAnnotations(MethodModel method) {
+        if (method.findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS).orElse(null) != null) {
             throw new AssertionError(
                     "expected no RuntimeVisibleTypeAnnotations attribute on enclosing method");
         }
-        Code_attribute code = (Code_attribute) method.attributes.get(Attribute.Code);
-        RuntimeVisibleTypeAnnotations_attribute rvta =
-                (RuntimeVisibleTypeAnnotations_attribute)
-                        code.attributes.get(Attribute.RuntimeVisibleTypeAnnotations);
-        return Set.of(rvta.annotations);
+        CodeAttribute code = method.findAttribute(Attributes.CODE).orElse(null);
+        assert code != null;
+        RuntimeVisibleTypeAnnotationsAttribute rvta =
+                code.findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS).orElse(null);
+        assert rvta != null;
+        return new HashSet<>(rvta.annotations());
     }
 
-    private static Method findMethod(ClassFile cf, String name) {
-        return Arrays.stream(cf.methods)
+    private static MethodModel findMethod(ClassModel cm, String name) {
+        return cm.methods().stream()
                 .filter(
-                        m -> {
-                            try {
-                                return m.getName(cf.constant_pool).contentEquals(name);
-                            } catch (ConstantPoolException e) {
-                                throw new AssertionError(e);
-                            }
-                        })
+                        m -> m.methodName().stringValue().contentEquals(name))
                 .findFirst()
                 .get();
     }
@@ -225,73 +214,45 @@ public class AnonymousClassTest {
         }
     }
 
-    private static String annotationDebugString(ClassFile cf, TypeAnnotation annotation) {
-        Position pos = annotation.position;
+    private static String annotationDebugString(ClassModel cm, CodeAttribute cAttr, TypeAnnotation annotation) {
+        TypeAnnotation.TargetInfo info = annotation.targetInfo();
+        int offset = info instanceof TypeAnnotation.OffsetTarget offsetInfo? cAttr.labelToBci(offsetInfo.target()): -1;
         String name;
         try {
-            name = cf.constant_pool.getUTF8Info(annotation.annotation.type_index).value;
+            name = annotation.classSymbol().descriptorString();
         } catch (Exception e) {
             throw new AssertionError(e);
+        }
+        List<String> location = new ArrayList<>();
+        for (TypeAnnotation.TypePathComponent path: annotation.targetPath()) {
+            if (path.typePathKind() == TypeAnnotation.TypePathComponent.Kind.INNER_TYPE)location.add(path.typePathKind().name());
+            else location.add(path.typePathKind() + "(" + path.typeArgumentIndex() + ")");
         }
         return String.format(
                 "@%s(%s) %s, offset=%d, location=%s",
                 name,
-                annotationValueoDebugString(cf, annotation.annotation),
-                pos.type,
-                pos.offset,
-                pos.location);
+                annotationValueDebugString(cm, annotation),
+                info.targetType(),
+                offset,
+                location);
     }
 
-    private static String annotationValueoDebugString(ClassFile cf, Annotation annotation) {
-        if (annotation.element_value_pairs.length != 1) {
+    private static String annotationValueDebugString(ClassModel cm, Annotation annotation) {
+        if (annotation.elements().size() != 1) {
             throw new UnsupportedOperationException();
         }
         try {
-            return elementValueDebugString(cf, annotation.element_value_pairs[0].value);
+            return elementValueDebugString(annotation.elements().get(0).value());
         } catch (Exception e) {
             throw new AssertionError(e);
         }
     }
 
-    private static String elementValueDebugString(ClassFile cf, element_value value) {
-        class Viz implements Visitor<String, Void> {
-            @Override
-            public String visitPrimitive(Primitive_element_value ev, Void aVoid) {
-                try {
-                    switch (ev.tag) {
-                        case 'I':
-                            return Integer.toString(
-                                    ((CONSTANT_Integer_info)
-                                                    cf.constant_pool.get(ev.const_value_index))
-                                            .value);
-                        default:
-                            throw new UnsupportedOperationException(String.format("%c", ev.tag));
-                    }
-                } catch (InvalidIndex e) {
-                    throw new AssertionError(e);
-                }
-            }
-
-            @Override
-            public String visitEnum(Enum_element_value ev, Void aVoid) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public String visitClass(Class_element_value ev, Void aVoid) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public String visitAnnotation(Annotation_element_value ev, Void aVoid) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public String visitArray(Array_element_value ev, Void aVoid) {
-                throw new UnsupportedOperationException();
-            }
+    private static String elementValueDebugString(AnnotationValue value) {
+        if (value.tag() == 'I') {
+            return Integer.toString(((AnnotationValue.OfInteger) value).intValue());
+        } else {
+            throw new UnsupportedOperationException(String.format("%c", value.tag()));
         }
-        return value.accept(new Viz(), null);
     }
 }

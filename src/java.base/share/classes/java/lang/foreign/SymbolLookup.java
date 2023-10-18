@@ -29,7 +29,7 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.Utils;
-import jdk.internal.javac.PreviewFeature;
+import jdk.internal.javac.Restricted;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.NativeLibrary;
 import jdk.internal.loader.RawNativeLibraries;
@@ -119,9 +119,8 @@ import java.util.function.BiFunction;
  * MemorySegment malloc = stdlib.find("malloc").orElseThrow();
  *}
  *
- * @since 19
+ * @since 22
  */
-@PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 @FunctionalInterface
 public interface SymbolLookup {
 
@@ -215,8 +214,7 @@ public interface SymbolLookup {
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
+     * the JVM or, worse, silently result in memory corruption.
      *
      * @implNote The process of resolving a library name is OS-specific. For instance, in a POSIX-compliant OS,
      * the library name is resolved according to the specification of the {@code dlopen} function for that OS.
@@ -232,6 +230,7 @@ public interface SymbolLookup {
      * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
     @CallerSensitive
+    @Restricted
     static SymbolLookup libraryLookup(String name, Arena arena) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass(), SymbolLookup.class, "libraryLookup");
         if (Utils.containsNullChars(name)) {
@@ -249,8 +248,7 @@ public interface SymbolLookup {
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
+     * the JVM or, worse, silently result in memory corruption.
      *
      * @implNote On Linux, the functionalities provided by this factory method and the returned symbol lookup are
      * implemented using the {@code dlopen}, {@code dlsym} and {@code dlclose} functions.
@@ -264,6 +262,7 @@ public interface SymbolLookup {
      * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
     @CallerSensitive
+    @Restricted
     static SymbolLookup libraryLookup(Path path, Arena arena) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass(), SymbolLookup.class, "libraryLookup");
         return libraryLookup(path, RawNativeLibraries::load, arena);

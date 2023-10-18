@@ -202,6 +202,14 @@ bool DirectiveSet::is_c2(CompilerDirectives* directive) const {
   return this == directive->_c2_store;
 }
 
+bool DirectiveSet::should_collect_memstat() const {
+  return MemStatOption > 0;
+}
+
+bool DirectiveSet::should_print_memstat() const {
+  return MemStatOption == (uintx)MemStatAction::print;
+}
+
 // In the list of Control/disabled intrinsics, the ID of the control intrinsics can separated:
 // - by ',' (if -XX:Control/DisableIntrinsic is used once when invoking the VM) or
 // - by '\n' (if -XX:Control/DisableIntrinsic is used multiple times when invoking the VM) or
