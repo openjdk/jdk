@@ -55,6 +55,8 @@ class MemoryCounter {
  public:
   MemoryCounter() : _count(0), _size(0), _peak_count(0), _peak_size(0) {}
 
+  inline void set_size_and_count(size_t size, size_t count) { _size = size; _count = count; }
+
   inline void allocate(size_t sz) {
     size_t cnt = Atomic::add(&_count, size_t(1), memory_order_relaxed);
     if (sz > 0) {
@@ -181,16 +183,7 @@ class MallocMemorySnapshot : public ResourceObj {
     return s->by_type(mtThreadStack)->malloc_count();
   }
 
-  void copy_to(MallocMemorySnapshot* s) {
-     // Need to make sure that mtChunks don't get deallocated while the
-     // copy is going on, because their size is adjusted using this
-     // buffer in make_adjustment().
-     ThreadCritical tc;
-     s->_all_mallocs = _all_mallocs;
-     for (int index = 0; index < mt_number_of_types; index ++) {
-       s->_malloc[index] = _malloc[index];
-     }
-   }
+  void copy_to(MallocMemorySnapshot* s);
 
   // Make adjustment by subtracting chunks used by arenas
   // from total chunks to get total free chunk size

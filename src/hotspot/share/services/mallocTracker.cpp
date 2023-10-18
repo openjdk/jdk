@@ -59,6 +59,26 @@ void MemoryCounter::update_peak(size_t size, size_t cnt) {
   }
 }
 
+void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
+  // Need to make sure that mtChunks don't get deallocated while the
+  // copy is going on, because their size is adjusted using this
+  // buffer in make_adjustment().
+  ThreadCritical tc;
+  s->_all_mallocs = _all_mallocs;
+  size_t total_size = 0;
+  size_t total_count = 0;
+  for (int index = 0; index < mt_number_of_types; index ++) {
+    s->_malloc[index] = _malloc[index];
+    total_size += s->_malloc[index].malloc_size();
+    total_count += s->_malloc[index].malloc_count();
+  }
+  // ThreadCritical is used only for Virtual Memory de-/allocations.
+  // So, it is possible that concurrent malloc/free happened during the copy to snapshot.
+  if (s->_all_mallocs.size() != total_size || s->_all_mallocs.count() != total_count) {
+    s->_all_mallocs.set_size_and_count(total_size, total_count);
+  }
+}
+
 // Total malloc'd memory used by arenas
 size_t MallocMemorySnapshot::total_arena() const {
   size_t amount = 0;
