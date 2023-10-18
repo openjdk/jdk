@@ -179,6 +179,19 @@ final class CapturingFactoriesTest {
         var sFunction2 = Function.of(function);                      // Function<Object, String>
     }
 
+    @Test
+    void compatibility() {
+        // Works because the type is explicitly declared
+        Function<String, String> f0 = String::toLowerCase;
+        // Works because the type is explicitly declared
+        Function<String, String> f1 = Function.of(String::toLowerCase);
+        // Works because an override is explicitly picked by the lambda
+        var f2 = Function.of((String s) -> s.toLowerCase());
+        // Does NOT work as toLowerCase cannot be resolved
+        // var f3 = Function.of(String::toLowerCase);
+    }
+
+
     // Methods
 
     static boolean not(boolean original) {

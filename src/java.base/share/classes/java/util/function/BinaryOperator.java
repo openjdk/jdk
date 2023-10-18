@@ -90,6 +90,21 @@ public interface BinaryOperator<T> extends BiFunction<T,T,T> {
      * var composed = BinaryOperator.of(Integer::sum)     // BinaryOperator<Integer>
      *                    .andThen(Integer::toHexString); // BiFunction<Integer, Integer, String>
      * }
+     * <p>
+     * Note: While this method is useful in conjunction with method references,
+     * care should be taken as code may become incompatible if an overload is
+     * later added to the method reference. Here is an example for Function
+     * showing the general problem (String::toLower has several overloads):
+     * {@snippet :
+     * // Works because the type is explicitly declared
+     * Function<String, String> f0 = String::toLowerCase;
+     * // Works because the type is explicitly declared
+     * Function<String, String> f1 = Function.of(String::toLowerCase);
+     * // Works because an override is explicitly picked by the lambda
+     * var f2 = Function.of((String s) -> s.toLowerCase());
+     * // Does NOT work as toLowerCase cannot be resolved
+     * // var f3 = Function.of(String::toLowerCase);
+     * }
      *
      * @param source to convert
      * @param <T> the type of the operands and result of the operator
