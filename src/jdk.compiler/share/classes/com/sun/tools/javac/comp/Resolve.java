@@ -1570,7 +1570,7 @@ public class Resolve {
                       boolean allowBoxing,
                       boolean useVarargs) {
         if (sym.kind == ERR ||
-                (currentResolutionContext.lookupHelper.isInheritedIn(site, sym)) ||
+                (site.tsym != sym.owner && !sym.isInheritedIn(site.tsym, types)) ||
                 !notOverriddenIn(site, sym)) {
             return bestSoFar;
         } else if (useVarargs && (sym.flags() & VARARGS) == 0) {
@@ -3460,10 +3460,6 @@ public class Resolve {
          * Validate the result of the lookup
          */
         abstract Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym);
-
-        boolean isInheritedIn(Type site, Symbol sym) {
-            return site.tsym != sym.owner && !sym.isInheritedIn(site.tsym, types);
-        }
     }
 
     abstract class BasicLookupHelper extends LookupHelper {
@@ -3611,10 +3607,15 @@ public class Resolve {
         }
 
         @Override
-        boolean isInheritedIn(Type site, Symbol sym) {
-            return (types.skipTypeVars(originalSite, true) == site) ?
-                originalSite.tsym != sym.owner && !sym.isInheritedIn(originalSite.tsym, types) :
-                site.tsym != sym.owner && !sym.isInheritedIn(site.tsym, types);
+        Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
+            if (originalSite.hasTag(TYPEVAR) && sym.kind == MTH) {
+                sym = (sym.flags() & Flags.PRIVATE) != 0 ?
+                        new AccessError(env, site, sym) :
+                        sym;
+                return accessBase(sym, pos, location, originalSite, name, true);
+            } else {
+                return super.access(env, pos, location, sym);
+            }
         }
     }
 
@@ -3731,7 +3732,6 @@ public class Resolve {
         try {
             Symbol bestSoFar = methodNotFound;
             currentResolutionContext = resolveContext;
-            currentResolutionContext.lookupHelper = lookupHelper;
             for (MethodResolutionPhase phase : methodResolutionSteps) {
                 if (lookupHelper.shouldStop(bestSoFar, phase))
                     break;
@@ -5011,8 +5011,6 @@ public class Resolve {
         MethodResolutionPhase step = null;
 
         MethodCheck methodCheck = resolveMethodCheck;
-
-        LookupHelper lookupHelper;
 
         private boolean internalResolution = false;
         private DeferredAttr.AttrMode attrMode = DeferredAttr.AttrMode.SPECULATIVE;
