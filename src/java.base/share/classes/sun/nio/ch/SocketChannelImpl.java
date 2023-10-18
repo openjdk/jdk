@@ -1459,7 +1459,10 @@ class SocketChannelImpl
         }
         long start = SocketReadEvent.timestamp();
         int nbytes = implBlockingRead(b, off, len, nanos);
-        SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
+        long duration = SocketReadEvent.timestamp() - start;
+        if (SocketReadEvent.shouldCommit(duration)) {
+            SocketReadEvent.emit(start, duration, nbytes, remoteAddress(), 0);
+        }
         return nbytes;
     }
 
@@ -1534,7 +1537,10 @@ class SocketChannelImpl
         }
         long start = SocketWriteEvent.timestamp();
         implBlockingWriteFully(b, off, len);
-        SocketWriteEvent.offer(start, len, remoteAddress());
+        long duration = SocketWriteEvent.timestamp() - start;
+        if (SocketWriteEvent.shouldCommit(duration)) {
+            SocketWriteEvent.emit(start, duration, len, remoteAddress());
+        }
     }
 
     /**
