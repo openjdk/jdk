@@ -724,12 +724,12 @@ public final class StringConcatFactory {
 
     private static MethodHandle noConstantPrepender(Class<?> cl) {
         int idx = classIndex(cl);
-        MethodHandle prepend = NULL_PREPENDERS[idx];
+        MethodHandle prepend = NO_PREFIX_PREPENDERS[idx];
         if (prepend == null) {
             if (idx == STRING_CONCAT_ITEM) {
                 cl = FormatConcatItem.class;
             }
-            NULL_PREPENDERS[idx] = prepend = JLA.stringConcatHelper("prepend",
+            NO_PREFIX_PREPENDERS[idx] = prepend = JLA.stringConcatHelper("prepend",
                     methodType(long.class, long.class, byte[].class,
                             Wrapper.asPrimitiveType(cl))).rebind();
         }
@@ -1002,7 +1002,7 @@ public final class StringConcatFactory {
         }
     }
 
-    private static final @Stable MethodHandle[] NULL_PREPENDERS = new MethodHandle[TYPE_COUNT];
+    private static final @Stable MethodHandle[] NO_PREFIX_PREPENDERS = new MethodHandle[TYPE_COUNT];
     private static final @Stable MethodHandle[] PREPENDERS      = new MethodHandle[TYPE_COUNT];
     private static final @Stable MethodHandle[] MIXERS          = new MethodHandle[TYPE_COUNT];
     private static final long INITIAL_CODER = JLA.stringConcatInitialCoder();
