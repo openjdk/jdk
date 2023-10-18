@@ -130,7 +130,6 @@ public class JdwpOnThrowTest {
     }
 
     private static Connector getConnector(String name) {
-        List<Connector> connectors = Bootstrap.virtualMachineManager().allConnectors();
         for (Connector connector : Bootstrap.virtualMachineManager().allConnectors()) {
             if (connector.name().equalsIgnoreCase(name)) {
                 return connector;
