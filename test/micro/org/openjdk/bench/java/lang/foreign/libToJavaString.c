@@ -23,7 +23,7 @@
  * questions.
  */
 
-#include <jlong_md.h>
+#include <jlong.h>
 #include <jni.h>
 #include <stdlib.h>
 #include <string.h>
