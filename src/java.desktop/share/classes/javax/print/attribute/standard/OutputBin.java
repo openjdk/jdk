@@ -42,9 +42,13 @@ import javax.print.attribute.PrintRequestAttribute;
  * Implementation- or site-defined names for an output bin kind attribute may also be
  * created by defining a subclass of class {@code OutputBin}.
  * <p>
- * <b>IPP Compatibility:</b> The category name returned by {@code getName()} is
- * the IPP attribute name. The {@code toString()} method returns the IPP
- * string representation of the attribute value.
+ * <b>IPP Compatibility:</b> This attribute is not an IPP 1.1 attribute; it is
+ * an attribute in the "output-bin" attribute extension
+ * (<a href="https://ftp.pwg.org/pub/pwg/candidates/cs-ippoutputbin10-20010207-5100.2.pdf">
+ * PDF</a>) of IPP 1.1. The category name returned by {@code getName()} is the
+ * IPP attribute name. The enumeration's integer value is the IPP enum value.
+ * The {@code toString()} method returns the IPP string representation of the
+ * attribute value.
  */
 public class OutputBin extends EnumSyntax
         implements DocAttribute, PrintRequestAttribute, PrintJobAttribute {
