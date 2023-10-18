@@ -119,8 +119,8 @@ class CompileQueue : public CHeapObj<mtCompiler> {
   int          size()     const                  { return _size;          }
 
   int         get_peak_size()     const          { return _peak_size; }
-  int         get_total_added()   const          { return _total_added; }
-  int         get_total_removed() const          { return _total_removed; }
+  uint        get_total_added()   const          { return _total_added; }
+  uint        get_total_removed() const          { return _total_removed; }
 
   // Redefine Classes support
   void mark_on_stack();

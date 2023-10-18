@@ -63,7 +63,7 @@ void JfrCompilerQueueUtilization::send_events() {
   const JfrTickspan interval = cur_time - last_sample_instant;
   for (int i = 0; i < num_compiler_queues; i ++) {
     CompilerQueueEntry* entry = &compilerQueueEntries[i];
-    if (entry->compilerQueue != NULL) {
+    if (entry->compilerQueue != nullptr) {
       const uint64_t current_added = entry->compilerQueue->get_total_added();
       const uint64_t current_removed = entry->compilerQueue->get_total_removed();
       const uint64_t ingress = rate_per_second(current_added, entry->added, interval);
