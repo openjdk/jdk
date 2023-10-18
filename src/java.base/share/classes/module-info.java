@@ -149,7 +149,7 @@ module java.base {
     exports jdk.internal.javac to
         java.compiler,
         jdk.compiler,
-        jdk.incubator.vector, // participates in preview features
+        jdk.incubator.vector,
         jdk.jshell;
     exports jdk.internal.access to
         java.desktop,

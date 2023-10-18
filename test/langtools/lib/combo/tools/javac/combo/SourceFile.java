@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @enablePreview
- *
- * @run testng/othervm -Djdk.internal.foreign.CABI=UNSUPPORTED --enable-native-access=ALL-UNNAMED TestUnsupportedLinker
- */
+package tools.javac.combo;
 
-import java.lang.foreign.Linker;
-
-import org.testng.annotations.Test;
-
-public class TestUnsupportedLinker {
-
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testLinker() {
-        Linker.nativeLinker();
-    }
-}
+public record SourceFile(String name, String template) {}

@@ -26,15 +26,16 @@
 package java.lang.foreign;
 
 import java.io.UncheckedIOException;
-import java.lang.foreign.Linker.Option;
+import java.lang.foreign.ValueLayout.OfInt;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.channels.FileChannel.*;
+import java.nio.channels.FileChannel.MapMode;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
@@ -43,13 +44,10 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.HeapMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.foreign.NativeMemorySegmentImpl;
+import jdk.internal.foreign.SegmentFactories;
+import jdk.internal.foreign.StringSupport;
 import jdk.internal.foreign.Utils;
-import jdk.internal.foreign.abi.SharedUtils;
-import jdk.internal.foreign.layout.ValueLayouts;
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.javac.Restricted;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.vm.annotation.ForceInline;
@@ -124,36 +122,42 @@ import jdk.internal.vm.annotation.ForceInline;
  * If the value to be read is stored in memory using {@linkplain ByteOrder#BIG_ENDIAN big-endian} encoding, the access operation
  * can be expressed as follows:
  * {@snippet lang=java :
- * MemorySegment segment = ...
  * int value = segment.get(ValueLayout.JAVA_INT.withOrder(BIG_ENDIAN), 0);
  * }
  *
- * For more complex access operations (e.g. structured memory access), clients can obtain a
- * {@linkplain MethodHandles#memorySegmentViewVarHandle(ValueLayout) var handle}
- * that accepts a segment and a {@code long} offset. More complex var handles
- * can be obtained by adapting a segment var handle view using the var handle combinator functions defined in the
- * {@link java.lang.invoke.MethodHandles} class:
+ * Access operations on memory segments are implemented using var handles. The {@link ValueLayout#varHandle()}
+ * method can be used to obtain a var handle that can be used to get/set values represented by the given value layout
+ * on a memory segment at the given offset:
  *
- * {@snippet lang=java :
- * MemorySegment segment = ...
- * VarHandle intHandle = MethodHandles.memorySegmentViewVarHandle(ValueLayout.JAVA_INT);
- * MethodHandle multiplyExact = MethodHandles.lookup()
- *                                           .findStatic(Math.class, "multiplyExact",
- *                                                                   MethodType.methodType(long.class, long.class, long.class));
- * intHandle = MethodHandles.filterCoordinates(intHandle, 1,
- *                                             MethodHandles.insertArguments(multiplyExact, 0, ValueLayout.JAVA_INT.byteSize()));
- * int value = (int) intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
+ * {@snippet lang=java:
+ * VarHandle intAtOffsetHandle = ValueLayout.JAVA_INT.varHandle(); // (MemorySegment, long)
+ * int value = (int) intAtOffsetHandle.get(segment, 10L);          // segment.get(ValueLayout.JAVA_INT, 10L)
  * }
  *
- * Alternatively, complex var handles can can be obtained
- * from {@linkplain MemoryLayout#varHandle(MemoryLayout.PathElement...) memory layouts}
- * by providing a so called <a href="MemoryLayout.html#layout-paths"><em>layout path</em></a>:
+ * The var handle returned by {@link ValueLayout#varHandle()} features a <em>base offset</em> parameter. This parameter
+ * allows clients to express complex access operations, by injecting additional offset computation into the var handle.
+ * For instance, a var handle that can be used to access an element of an {@code int} array at a given logical
+ * index can be created as follows:
  *
- * {@snippet lang=java :
- * MemorySegment segment = ...
- * VarHandle intHandle = ValueLayout.JAVA_INT.arrayElementVarHandle();
- * int value = (int) intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
+ * {@snippet lang=java:
+ * MethodHandle scale = ValueLayout.JAVA_INT.scaleHandle();              // (long, long)long
+ * VarHandle intAtOffsetAndIndexHandle =
+ *         MethodHandles.collectCoordinates(intAtOffsetHandle, 1, scale); // (MemorySegment, long, long)
+ * int value = (int) intAtOffsetAndIndexHandle.get(segment, 2L, 3L);     // segment.get(ValueLayout.JAVA_INT, 2L + (3L * 4L))
  * }
+ *
+ * <p>
+ * Clients can also drop the base offset parameter, in order to make the access expression simpler. This can be used to
+ * implement access operation such as {@link #getAtIndex(OfInt, long)}:
+ *
+ * {@snippet lang=java:
+ * VarHandle intAtIndexHandle =
+ *         MethodHandles.insertCoordinates(intAtOffsetAndIndexHandle, 1, 0L); // (MemorySegment, long)
+ * int value = (int) intAtIndexHandle.get(segment, 3L);                       // segment.getAtIndex(ValueLayout.JAVA_INT, 3L);
+ * }
+ *
+ * Var handles for more complex access expressions (e.g. struct field access, pointer dereference) can be created directly
+ * from memory layouts, using <a href="MemoryLayout.html#layout-paths"><em>layout paths</em></a>.
  *
  * <h2 id="slicing">Slicing memory segments</h2>
  *
@@ -434,9 +438,8 @@ import jdk.internal.vm.annotation.ForceInline;
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  *
- * @since 19
+ * @since 22
  */
-@PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
@@ -597,8 +600,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
+     * the JVM or, worse, silently result in memory corruption.
      *
      * @param newSize the size of the returned segment.
      * @return a new memory segment that has the same address and scope as this segment, but the new
@@ -631,8 +633,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
+     * the JVM or, worse, silently result in memory corruption.
      *
      * @apiNote The cleanup action (if present) should take care not to leak the received segment to external
      * clients which might access the segment after its backing region of memory is no longer available. Furthermore,
@@ -671,8 +672,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
+     * the JVM or, worse, silently result in memory corruption.
      *
      * @apiNote The cleanup action (if present) should take care not to leak the received segment to external
      * clients which might access the segment after its backing region of memory is no longer available. Furthermore,
@@ -740,30 +740,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     Optional<MemorySegment> asOverlappingSlice(MemorySegment other);
 
     /**
-     * Returns the offset, in bytes, of the provided segment, relative to this
-     * segment.
-     *
-     * <p>The offset is relative to the address of this segment and can be
-     * a negative or positive value. For instance, if both segments are native
-     * segments, or heap segments backed by the same array, the resulting offset
-     * can be computed as follows:
-     *
-     * {@snippet lang=java :
-     * other.address() - address()
-     * }
-     *
-     * If the segments share the same address, {@code 0} is returned. If
-     * {@code other} is a slice of this segment, the offset is always
-     * {@code 0 <= x < this.byteSize()}.
-     *
-     * @param other the segment to retrieve an offset to.
-     * @throws UnsupportedOperationException if the two segments cannot be compared, e.g. because they are of
-     * different kinds, or because they are backed by different Java arrays.
-     * @return the relative offset, in bytes, of the provided segment.
-     */
-    long segmentOffset(MemorySegment other);
-
-    /**
      * Fills the contents of this memory segment with the given value.
      * <p>
      * More specifically, the given value is written into each address of this
@@ -771,7 +747,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *
      * {@snippet lang=java :
      * for (long offset = 0; offset < segment.byteSize(); offset++) {
-     *     byteHandle.set(ValueLayout.JAVA_BYTE, offset, value);
+     *     segment.set(ValueLayout.JAVA_BYTE, offset, value);
      * }
      * }
      *
@@ -1072,29 +1048,89 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     double[] toArray(ValueLayout.OfDouble elementLayout);
 
     /**
-     * Reads a UTF-8 encoded, null-terminated string from this segment at the given offset.
+     * Reads a null-terminated string from this segment at the given offset, using the
+     * {@linkplain StandardCharsets#UTF_8 UTF-8} charset.
      * <p>
-     * This method always replaces malformed-input and unmappable-character
-     * sequences with this charset's default replacement string.  The {@link
-     * java.nio.charset.CharsetDecoder} class should be used when more control
-     * over the decoding process is required.
+     * Calling this method is equivalent to the following code:
+     * {@snippet lang = java:
+     * getString(offset, StandardCharsets.UTF_8);
+     *}
+     *
      * @param offset offset in bytes (relative to this segment address) at which this access operation will occur.
      * @return a Java string constructed from the bytes read from the given starting address up to (but not including)
      * the first {@code '\0'} terminator character (assuming one is found).
-     * @throws IllegalArgumentException if the size of the UTF-8 string is greater than the largest string supported by the platform.
-     * @throws IndexOutOfBoundsException if {@code offset < 0} or {@code offset > byteSize() - S}, where {@code S} is the size of the UTF-8
-     * string (including the terminator character).
+     * @throws IllegalArgumentException if the size of the string is greater than the largest string supported by the platform.
+     * @throws IndexOutOfBoundsException     if {@code offset < 0}.
+     * @throws IndexOutOfBoundsException     if {@code offset > byteSize() - (B + 1)}, where {@code B} is the size,
+     * in bytes, of the string encoded using UTF-8 charset {@code str.getBytes(StandardCharsets.UTF_8).length}).
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with this segment is not
      * {@linkplain Scope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      */
-    default String getUtf8String(long offset) {
-        return SharedUtils.toJavaStringInternal(this, offset);
+    default String getString(long offset) {
+        return getString(offset, sun.nio.cs.UTF_8.INSTANCE);
     }
 
     /**
-     * Writes the given string into this segment at the given offset, converting it to a null-terminated byte sequence using UTF-8 encoding.
+     * Reads a null-terminated string from this segment at the given offset, using the provided charset.
+     * <p>
+     * This method always replaces malformed-input and unmappable-character
+     * sequences with this charset's default replacement string.  The {@link
+     * java.nio.charset.CharsetDecoder} class should be used when more control
+     * over the decoding process is required.
+     *
+     * @param offset  offset in bytes (relative to this segment address) at which this access operation will occur.
+     * @param charset the charset used to {@linkplain Charset#newDecoder() decode} the string bytes.
+     * @return a Java string constructed from the bytes read from the given starting address up to (but not including)
+     * the first {@code '\0'} terminator character (assuming one is found).
+     * @throws IllegalArgumentException      if the size of the string is greater than the largest string supported by the platform.
+     * @throws IndexOutOfBoundsException     if {@code offset < 0}.
+     * @throws IndexOutOfBoundsException     if {@code offset > byteSize() - (B + N)}, where:
+     * <ul>
+     *     <li>{@code B} is the size, in bytes, of the string encoded using the provided charset
+     *     (e.g. {@code str.getBytes(charset).length});</li>
+     *     <li>{@code N} is the size (in bytes) of the terminator char according to the provided charset. For instance,
+     *     this is 1 for {@link StandardCharsets#US_ASCII} and 2 for {@link StandardCharsets#UTF_16}.</li>
+     * </ul>
+     * @throws IllegalStateException    if the {@linkplain #scope() scope} associated with this segment is not
+     *                                  {@linkplain Scope#isAlive() alive}.
+     * @throws WrongThreadException     if this method is called from a thread {@code T},
+     *                                  such that {@code isAccessibleBy(T) == false}.
+     * @throws IllegalArgumentException if {@code charset} is not a {@linkplain StandardCharsets standard charset}.
+     */
+    default String getString(long offset, Charset charset) {
+        Objects.requireNonNull(charset);
+        return StringSupport.read(this, offset, charset);
+    }
+
+    /**
+     * Writes the given string into this segment at the given offset, converting it to a null-terminated byte sequence
+     * using the {@linkplain StandardCharsets#UTF_8 UTF-8} charset.
+     * <p>
+     * Calling this method is equivalent to the following code:
+     * {@snippet lang = java:
+     * setString(offset, str, StandardCharsets.UTF_8);
+     *}
+     * @param offset offset in bytes (relative to this segment address) at which this access operation will occur.
+     *               the final address of this write operation can be expressed as {@code address() + offset}.
+     * @param str the Java string to be written into this segment.
+     * @throws IndexOutOfBoundsException     if {@code offset < 0}.
+     * @throws IndexOutOfBoundsException     if {@code offset > byteSize() - (B + 1)}, where {@code B} is the size,
+     * in bytes, of the string encoded using UTF-8 charset {@code str.getBytes(StandardCharsets.UTF_8).length}).
+     * @throws IllegalStateException if the {@linkplain #scope() scope} associated with this segment is not
+     * {@linkplain Scope#isAlive() alive}.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code isAccessibleBy(T) == false}.
+     */
+    default void setString(long offset, String str) {
+        Objects.requireNonNull(str);
+        setString(offset, str, sun.nio.cs.UTF_8.INSTANCE);
+    }
+
+    /**
+     * Writes the given string into this segment at the given offset, converting it to a null-terminated byte sequence
+     * using the provided charset.
      * <p>
      * This method always replaces malformed-input and unmappable-character
      * sequences with this charset's default replacement string.  The {@link
@@ -1103,21 +1139,32 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * If the given string contains any {@code '\0'} characters, they will be
      * copied as well. This means that, depending on the method used to read
-     * the string, such as {@link MemorySegment#getUtf8String(long)}, the string
+     * the string, such as {@link MemorySegment#getString(long)}, the string
      * will appear truncated when read again.
-     * @param offset offset in bytes (relative to this segment address) at which this access operation will occur.
-     *               the final address of this write operation can be expressed as {@code address() + offset}.
-     * @param str the Java string to be written into this segment.
-     * @throws IndexOutOfBoundsException if {@code offset < 0} or {@code offset > byteSize() - str.getBytes().length() + 1}.
-     * @throws IllegalStateException if the {@linkplain #scope() scope} associated with this segment is not
-     * {@linkplain Scope#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code isAccessibleBy(T) == false}.
+     *
+     * @param offset  offset in bytes (relative to this segment address) at which this access operation will occur.
+     *                the final address of this write operation can be expressed as {@code address() + offset}.
+     * @param str     the Java string to be written into this segment.
+     * @param charset the charset used to {@linkplain Charset#newEncoder() encode} the string bytes.
+     * @throws IndexOutOfBoundsException     if {@code offset < 0}.
+     * @throws IndexOutOfBoundsException     if {@code offset > byteSize() - (B + N)}, where:
+     * <ul>
+     *     <li>{@code B} is the size, in bytes, of the string encoded using the provided charset
+     *     (e.g. {@code str.getBytes(charset).length});</li>
+     *     <li>{@code N} is the size (in bytes) of the terminator char according to the provided charset. For instance,
+     *     this is 1 for {@link StandardCharsets#US_ASCII} and 2 for {@link StandardCharsets#UTF_16}.</li>
+     * </ul>
+     * @throws IllegalStateException    if the {@linkplain #scope() scope} associated with this segment is not
+     *                                  {@linkplain Scope#isAlive() alive}.
+     * @throws WrongThreadException     if this method is called from a thread {@code T},
+     *                                  such that {@code isAccessibleBy(T) == false}.
+     * @throws IllegalArgumentException if {@code charset} is not a {@linkplain StandardCharsets standard charset}.
      */
-    default void setUtf8String(long offset, String str) {
-        Utils.toCString(str.getBytes(StandardCharsets.UTF_8), SegmentAllocator.prefixAllocator(asSlice(offset)));
+    default void setString(long offset, String str, Charset charset) {
+        Objects.requireNonNull(charset);
+        Objects.requireNonNull(str);
+        StringSupport.write(this, offset, charset, str);
     }
-
 
     /**
      * Creates a memory segment that is backed by the same region of memory that backs the given {@link Buffer} instance.
@@ -1155,7 +1202,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by a byte array.
      */
     static MemorySegment ofArray(byte[] byteArray) {
-        return HeapMemorySegmentImpl.OfByte.fromArray(byteArray);
+        return SegmentFactories.fromArray(byteArray);
     }
 
     /**
@@ -1167,7 +1214,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by a char array.
      */
     static MemorySegment ofArray(char[] charArray) {
-        return HeapMemorySegmentImpl.OfChar.fromArray(charArray);
+        return SegmentFactories.fromArray(charArray);
     }
 
     /**
@@ -1179,7 +1226,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by a short array.
      */
     static MemorySegment ofArray(short[] shortArray) {
-        return HeapMemorySegmentImpl.OfShort.fromArray(shortArray);
+        return SegmentFactories.fromArray(shortArray);
     }
 
     /**
@@ -1191,7 +1238,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by an int array.
      */
     static MemorySegment ofArray(int[] intArray) {
-        return HeapMemorySegmentImpl.OfInt.fromArray(intArray);
+        return SegmentFactories.fromArray(intArray);
     }
 
     /**
@@ -1203,7 +1250,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by a float array.
      */
     static MemorySegment ofArray(float[] floatArray) {
-        return HeapMemorySegmentImpl.OfFloat.fromArray(floatArray);
+        return SegmentFactories.fromArray(floatArray);
     }
 
     /**
@@ -1215,7 +1262,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by a long array.
      */
     static MemorySegment ofArray(long[] longArray) {
-        return HeapMemorySegmentImpl.OfLong.fromArray(longArray);
+        return SegmentFactories.fromArray(longArray);
     }
 
     /**
@@ -1227,13 +1274,13 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a heap memory segment backed by a double array.
      */
     static MemorySegment ofArray(double[] doubleArray) {
-        return HeapMemorySegmentImpl.OfDouble.fromArray(doubleArray);
+        return SegmentFactories.fromArray(doubleArray);
     }
 
     /**
-     * A zero-length native segment modelling the {@code NULL} address.
+     * A zero-length native segment modelling the {@code NULL} address. Equivalent to {@code MemorySegment.ofAddress(0L)}.
      */
-    MemorySegment NULL = new NativeMemorySegmentImpl();
+    MemorySegment NULL = MemorySegment.ofAddress(0L);
 
     /**
      * Creates a zero-length native segment from the given {@linkplain #address() address value}.
@@ -1247,7 +1294,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a zero-length native segment with the given address.
      */
     static MemorySegment ofAddress(long address) {
-        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(address, 0);
+        return SegmentFactories.makeNativeSegmentUnchecked(address, 0);
     }
 
     /**
@@ -1281,8 +1328,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@linkplain Scope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code dstSegment.isAccessibleBy(T) == false}.
-     * @throws IndexOutOfBoundsException if {@code srcOffset > srcSegment.byteSize() - bytes} or if
-     * {@code dstOffset > dstSegment.byteSize() - bytes}, or if either {@code srcOffset}, {@code dstOffset}
+     * @throws IndexOutOfBoundsException if {@code srcOffset > srcSegment.byteSize() - bytes}.
+     * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - bytes}.
+     * @throws IndexOutOfBoundsException if either {@code srcOffset}, {@code dstOffset}
      * or {@code bytes} are {@code < 0}.
      * @throws UnsupportedOperationException if {@code dstSegment} is {@linkplain #isReadOnly() read-only}.
      */
@@ -1320,17 +1368,21 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param elementCount the number of elements to be copied.
      * @throws IllegalArgumentException if the element layouts have different sizes, if the source (resp. destination) segment/offset are
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the source
-     * (resp. destination) element layout, or if the source (resp. destination) element layout alignment is greater than its size.
+     * (resp. destination) element layout.
+     * @throws IllegalArgumentException if {@code srcElementLayout.byteAlignment() > srcElementLayout.byteSize()}.
+     * @throws IllegalArgumentException if {@code dstElementLayout.byteAlignment() > dstElementLayout.byteSize()}.
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with {@code srcSegment} is not
      * {@linkplain Scope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code srcSegment().isAccessibleBy(T) == false}.
+     * such that {@code srcSegment.isAccessibleBy(T) == false}.
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with {@code dstSegment} is not
      * {@linkplain Scope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code dstSegment().isAccessibleBy(T) == false}.
+     * such that {@code dstSegment.isAccessibleBy(T) == false}.
      * @throws UnsupportedOperationException if {@code dstSegment} is {@linkplain #isReadOnly() read-only}.
-     * @throws IndexOutOfBoundsException if {@code elementCount * srcLayout.byteSize()} or {@code elementCount * dtsLayout.byteSize()} overflows.
+     * @throws IndexOutOfBoundsException if {@code elementCount * srcLayout.byteSize()} overflows.
+     * @throws IndexOutOfBoundsException if {@code elementCount * dtsLayout.byteSize()} overflows.
+     * @throws IndexOutOfBoundsException if {@code srcOffset > srcSegment.byteSize() - (elementCount * srcLayout.byteSize())}.
      * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - (elementCount * dstLayout.byteSize())}.
      * @throws IndexOutOfBoundsException if either {@code srcOffset}, {@code dstOffset} or {@code elementCount} are {@code < 0}.
      */
@@ -1361,7 +1413,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     @ForceInline
     default byte get(ValueLayout.OfByte layout, long offset) {
-        return (byte) ((ValueLayouts.OfByteImpl) layout).accessHandle().get(this, offset);
+        return (byte) layout.varHandle().get(this, offset);
     }
 
     /**
@@ -1381,7 +1433,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     @ForceInline
     default void set(ValueLayout.OfByte layout, long offset, byte value) {
-        ((ValueLayouts.OfByteImpl) layout).accessHandle().set(this, offset, value);
+        layout.varHandle().set(this, offset, value);
     }
 
     /**
@@ -1400,7 +1452,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     @ForceInline
     default boolean get(ValueLayout.OfBoolean layout, long offset) {
-        return (boolean) ((ValueLayouts.OfBooleanImpl) layout).accessHandle().get(this, offset);
+        return (boolean) layout.varHandle().get(this, offset);
     }
 
     /**
@@ -1420,7 +1472,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     @ForceInline
     default void set(ValueLayout.OfBoolean layout, long offset, boolean value) {
-        ((ValueLayouts.OfBooleanImpl) layout).accessHandle().set(this, offset, value);
+        layout.varHandle().set(this, offset, value);
     }
 
     /**
@@ -1439,7 +1491,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     @ForceInline
     default char get(ValueLayout.OfChar layout, long offset) {
-        return (char) ((ValueLayouts.OfCharImpl) layout).accessHandle().get(this, offset);
+        return (char) layout.varHandle().get(this, offset);
     }
 
     /**
@@ -1459,7 +1511,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     @ForceInline
     default void set(ValueLayout.OfChar layout, long offset, char value) {
-        ((ValueLayouts.OfCharImpl) layout).accessHandle().set(this, offset, value);
+        layout.varHandle().set(this, offset, value);
     }
 
     /**
@@ -1478,7 +1530,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     @ForceInline
     default short get(ValueLayout.OfShort layout, long offset) {
-        return (short) ((ValueLayouts.OfShortImpl) layout).accessHandle().get(this, offset);
+        return (short) layout.varHandle().get(this, offset);
     }
 
     /**
@@ -1498,7 +1550,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     @ForceInline
     default void set(ValueLayout.OfShort layout, long offset, short value) {
-        ((ValueLayouts.OfShortImpl) layout).accessHandle().set(this, offset, value);
+        layout.varHandle().set(this, offset, value);
     }
 
     /**
@@ -1517,7 +1569,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     @ForceInline
     default int get(ValueLayout.OfInt layout, long offset) {
-        return (int) ((ValueLayouts.OfIntImpl) layout).accessHandle().get(this, offset);
+        return (int) layout.varHandle().get(this, offset);
     }
 
     /**
@@ -1537,7 +1589,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     @ForceInline
     default void set(ValueLayout.OfInt layout, long offset, int value) {
-        ((ValueLayouts.OfIntImpl) layout).accessHandle().set(this, offset, value);
+        layout.varHandle().set(this, offset, value);
     }
 
     /**
@@ -1556,7 +1608,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     @ForceInline
     default float get(ValueLayout.OfFloat layout, long offset) {
-        return (float)((ValueLayouts.OfFloatImpl) layout).accessHandle().get(this, offset);
+        return (float)layout.varHandle().get(this, offset);
     }
 
     /**
@@ -1576,7 +1628,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     @ForceInline
     default void set(ValueLayout.OfFloat layout, long offset, float value) {
-        ((ValueLayouts.OfFloatImpl) layout).accessHandle().set(this, offset, value);
+        layout.varHandle().set(this, offset, value);
     }
 
     /**
@@ -1595,7 +1647,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     @ForceInline
     default long get(ValueLayout.OfLong layout, long offset) {
-        return (long) ((ValueLayouts.OfLongImpl) layout).accessHandle().get(this, offset);
+        return (long) layout.varHandle().get(this, offset);
     }
 
     /**
@@ -1615,7 +1667,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     @ForceInline
     default void set(ValueLayout.OfLong layout, long offset, long value) {
-        ((ValueLayouts.OfLongImpl) layout).accessHandle().set(this, offset, value);
+        layout.varHandle().set(this, offset, value);
     }
 
     /**
@@ -1634,7 +1686,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     @ForceInline
     default double get(ValueLayout.OfDouble layout, long offset) {
-        return (double) ((ValueLayouts.OfDoubleImpl) layout).accessHandle().get(this, offset);
+        return (double) layout.varHandle().get(this, offset);
     }
 
     /**
@@ -1654,7 +1706,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     @ForceInline
     default void set(ValueLayout.OfDouble layout, long offset, double value) {
-        ((ValueLayouts.OfDoubleImpl) layout).accessHandle().set(this, offset, value);
+        layout.varHandle().set(this, offset, value);
     }
 
     /**
@@ -1679,7 +1731,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     @ForceInline
     default MemorySegment get(AddressLayout layout, long offset) {
-        return (MemorySegment) ((ValueLayouts.OfAddressImpl) layout).accessHandle().get(this, offset);
+        return (MemorySegment) layout.varHandle().get(this, offset);
     }
 
     /**
@@ -1700,7 +1752,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     @ForceInline
     default void set(AddressLayout layout, long offset, MemorySegment value) {
-        ((ValueLayouts.OfAddressImpl) layout).accessHandle().set(this, offset, value);
+        layout.varHandle().set(this, offset, value);
     }
 
     /**
@@ -1715,8 +1767,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
-     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
-     * or if the layout alignment is greater than its size.
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
+     * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}.
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      */
@@ -1724,7 +1776,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     default byte getAtIndex(ValueLayout.OfByte layout, long index) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        return (byte) ((ValueLayouts.OfByteImpl) layout).accessHandle().get(this, index * layout.byteSize());
+        return (byte) layout.varHandle().get(this, index * layout.byteSize());
     }
 
     /**
@@ -1739,8 +1791,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
-     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
-     * or if the layout alignment is greater than its size.
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
+     * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}.
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      */
@@ -1748,7 +1800,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     default boolean getAtIndex(ValueLayout.OfBoolean layout, long index) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        return (boolean) ((ValueLayouts.OfBooleanImpl) layout).accessHandle().get(this, index * layout.byteSize());
+        return (boolean) layout.varHandle().get(this, index * layout.byteSize());
     }
 
     /**
@@ -1763,8 +1815,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
-     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
-     * or if the layout alignment is greater than its size.
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
+     * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}.
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      */
@@ -1772,7 +1824,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     default char getAtIndex(ValueLayout.OfChar layout, long index) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        return (char) ((ValueLayouts.OfCharImpl) layout).accessHandle().get(this, index * layout.byteSize());
+        return (char) layout.varHandle().get(this, index * layout.byteSize());
     }
 
     /**
@@ -1787,8 +1839,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
-     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
-     * or if the layout alignment is greater than its size.
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
+     * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}.
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
@@ -1797,7 +1849,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     default void setAtIndex(ValueLayout.OfChar layout, long index, char value) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        ((ValueLayouts.OfCharImpl) layout).accessHandle().set(this, index * layout.byteSize(), value);
+        layout.varHandle().set(this, index * layout.byteSize(), value);
     }
 
     /**
@@ -1812,8 +1864,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
-     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
-     * or if the layout alignment is greater than its size.
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
+     * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}.
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      */
@@ -1821,7 +1873,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     default short getAtIndex(ValueLayout.OfShort layout, long index) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        return (short) ((ValueLayouts.OfShortImpl) layout).accessHandle().get(this, index * layout.byteSize());
+        return (short) layout.varHandle().get(this, index * layout.byteSize());
     }
 
     /**
@@ -1836,8 +1888,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
-     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
-     * or if the layout alignment is greater than its size.
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
+     * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}.
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
@@ -1846,7 +1898,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     default void setAtIndex(ValueLayout.OfByte layout, long index, byte value) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        ((ValueLayouts.OfByteImpl) layout).accessHandle().set(this, index * layout.byteSize(), value);
+        layout.varHandle().set(this, index * layout.byteSize(), value);
 
     }
 
@@ -1862,8 +1914,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
-     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
-     * or if the layout alignment is greater than its size.
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
+     * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}.
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
@@ -1872,7 +1924,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     default void setAtIndex(ValueLayout.OfBoolean layout, long index, boolean value) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        ((ValueLayouts.OfBooleanImpl) layout).accessHandle().set(this, index * layout.byteSize(), value);
+        layout.varHandle().set(this, index * layout.byteSize(), value);
     }
 
     /**
@@ -1887,8 +1939,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
-     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
-     * or if the layout alignment is greater than its size.
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
+     * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}.
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
@@ -1897,7 +1949,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     default void setAtIndex(ValueLayout.OfShort layout, long index, short value) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        ((ValueLayouts.OfShortImpl) layout).accessHandle().set(this, index * layout.byteSize(), value);
+        layout.varHandle().set(this, index * layout.byteSize(), value);
     }
 
     /**
@@ -1912,8 +1964,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
-     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
-     * or if the layout alignment is greater than its size.
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
+     * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}.
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      */
@@ -1921,7 +1973,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     default int getAtIndex(ValueLayout.OfInt layout, long index) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        return (int) ((ValueLayouts.OfIntImpl) layout).accessHandle().get(this, index * layout.byteSize());
+        return (int) layout.varHandle().get(this, index * layout.byteSize());
     }
 
     /**
@@ -1936,8 +1988,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
-     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
-     * or if the layout alignment is greater than its size.
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
+     * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}.
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
@@ -1946,7 +1998,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     default void setAtIndex(ValueLayout.OfInt layout, long index, int value) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        ((ValueLayouts.OfIntImpl) layout).accessHandle().set(this, index * layout.byteSize(), value);
+        layout.varHandle().set(this, index * layout.byteSize(), value);
     }
 
     /**
@@ -1961,8 +2013,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
-     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
-     * or if the layout alignment is greater than its size.
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
+     * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}.
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      */
@@ -1970,7 +2022,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     default float getAtIndex(ValueLayout.OfFloat layout, long index) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        return (float) ((ValueLayouts.OfFloatImpl) layout).accessHandle().get(this, index * layout.byteSize());
+        return (float) layout.varHandle().get(this, index * layout.byteSize());
     }
 
     /**
@@ -1985,8 +2037,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
-     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
-     * or if the layout alignment is greater than its size.
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
+     * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}.
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
@@ -1995,7 +2047,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     default void setAtIndex(ValueLayout.OfFloat layout, long index, float value) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        ((ValueLayouts.OfFloatImpl) layout).accessHandle().set(this, index * layout.byteSize(), value);
+        layout.varHandle().set(this, index * layout.byteSize(), value);
     }
 
     /**
@@ -2010,8 +2062,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
-     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
-     * or if the layout alignment is greater than its size.
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
+     * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}.
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      */
@@ -2019,7 +2071,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     default long getAtIndex(ValueLayout.OfLong layout, long index) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        return (long) ((ValueLayouts.OfLongImpl) layout).accessHandle().get(this, index * layout.byteSize());
+        return (long) layout.varHandle().get(this, index * layout.byteSize());
     }
 
     /**
@@ -2034,8 +2086,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
-     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
-     * or if the layout alignment is greater than its size.
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
+     * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}.
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
@@ -2044,7 +2096,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     default void setAtIndex(ValueLayout.OfLong layout, long index, long value) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        ((ValueLayouts.OfLongImpl) layout).accessHandle().set(this, index * layout.byteSize(), value);
+        layout.varHandle().set(this, index * layout.byteSize(), value);
     }
 
     /**
@@ -2059,8 +2111,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
-     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
-     * or if the layout alignment is greater than its size.
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
+     * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}.
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      */
@@ -2068,7 +2120,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     default double getAtIndex(ValueLayout.OfDouble layout, long index) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        return (double) ((ValueLayouts.OfDoubleImpl) layout).accessHandle().get(this, index * layout.byteSize());
+        return (double) layout.varHandle().get(this, index * layout.byteSize());
     }
 
     /**
@@ -2083,8 +2135,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
-     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
-     * or if the layout alignment is greater than its size.
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
+     * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}.
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
@@ -2093,7 +2145,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     default void setAtIndex(ValueLayout.OfDouble layout, long index, double value) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        ((ValueLayouts.OfDoubleImpl) layout).accessHandle().set(this, index * layout.byteSize(), value);
+        layout.varHandle().set(this, index * layout.byteSize(), value);
     }
 
     /**
@@ -2111,8 +2163,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
-     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
-     * or if the layout alignment is greater than its size.
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
+     * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}.
      * @throws IllegalArgumentException if provided address layout has a {@linkplain AddressLayout#targetLayout() target layout}
      * {@code T}, and the address of the returned segment
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in {@code T}.
@@ -2123,7 +2175,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     default MemorySegment getAtIndex(AddressLayout layout, long index) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        return (MemorySegment) ((ValueLayouts.OfAddressImpl) layout).accessHandle().get(this, index * layout.byteSize());
+        return (MemorySegment) layout.varHandle().get(this, index * layout.byteSize());
     }
 
     /**
@@ -2138,8 +2190,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code isAccessibleBy(T) == false}.
      * @throws IllegalArgumentException if the access operation is
-     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
-     * or if the layout alignment is greater than its size.
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout.
+     * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}.
      * @throws IndexOutOfBoundsException if {@code index * byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code index * byteSize() > byteSize() - layout.byteSize()}.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
@@ -2149,7 +2201,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     default void setAtIndex(AddressLayout layout, long index, MemorySegment value) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
-        ((ValueLayouts.OfAddressImpl) layout).accessHandle().set(this, index * layout.byteSize(), value);
+        layout.varHandle().set(this, index * layout.byteSize(), value);
     }
 
     /**
@@ -2198,7 +2250,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with {@code srcSegment} is not
      * {@linkplain Scope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code srcSegment().isAccessibleBy(T) == false}.
+     * such that {@code srcSegment.isAccessibleBy(T) == false}.
      * @throws  IllegalArgumentException if {@code dstArray} is not an array, or if it is an array but whose type is not supported.
      * @throws IllegalArgumentException if the destination array component type does not match {@code srcLayout.carrier()}.
      * @throws IllegalArgumentException if {@code offset} is <a href="MemorySegment.html#segment-alignment">incompatible
@@ -2237,7 +2289,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with {@code dstSegment} is not
      * {@linkplain Scope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code dstSegment().isAccessibleBy(T) == false}.
+     * such that {@code dstSegment.isAccessibleBy(T) == false}.
      * @throws  IllegalArgumentException if {@code srcArray} is not an array, or if it is an array but whose type is not supported.
      * @throws IllegalArgumentException if the source array component type does not match {@code srcLayout.carrier()}.
      * @throws IllegalArgumentException if {@code offset} is <a href="MemorySegment.html#segment-alignment">incompatible
@@ -2312,7 +2364,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Scope instances can be compared for equality. That is, two scopes
      * are considered {@linkplain #equals(Object)} if they denote the same lifetime.
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     sealed interface Scope permits MemorySessionImpl {
         /**
          * {@return {@code true}, if the regions of memory backing the memory segments associated with this scope are

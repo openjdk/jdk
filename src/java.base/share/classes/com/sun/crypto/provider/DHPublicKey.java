@@ -39,8 +39,6 @@ import sun.security.util.*;
  * A public key in X.509 format for the Diffie-Hellman key agreement algorithm.
  *
  * @author Jan Luehe
- *
- *
  * @see DHPrivateKey
  * @see javax.crypto.KeyAgreement
  */
@@ -307,5 +305,29 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
                         getAlgorithm(),
                         getFormat(),
                         getEncoded());
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * JDK 1.5+ objects use <code>KeyRep</code>s instead.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+        if ((key == null) || (key.length == 0)) {
+            throw new InvalidObjectException("key not deserializable");
+        }
+        this.key = key.clone();
+        if ((encodedKey == null) || (encodedKey.length == 0)) {
+            throw new InvalidObjectException(
+                    "encoded key not deserializable");
+        }
+        this.encodedKey = encodedKey.clone();
     }
 }
