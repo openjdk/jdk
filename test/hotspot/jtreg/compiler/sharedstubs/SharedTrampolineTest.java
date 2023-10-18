@@ -28,6 +28,7 @@
  * @bug 8280152
  * @library /test/lib
  *
+ * @requires vm.compiler2.enabled
  * @requires vm.opt.TieredCompilation == null
  * @requires os.arch=="aarch64" | os.arch=="riscv64"
  * @requires vm.debug
