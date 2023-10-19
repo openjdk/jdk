@@ -1296,6 +1296,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
          * @param o the other object to compare with
          * @return true if equal, false otherwise
          */
+        @Override
         public boolean equals(Object o) {
             if (o == this) {
                 return true;
@@ -1310,16 +1311,13 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
         }
 
         /**
-         * Returns a hash code value for this X509IssuerSerial.
-         *
-         * @return the hash code value
+         * {@return a hash code value for this X509IssuerSerial}
          */
+        @Override
         public int hashCode() {
             int h = hashcode;
             if (h == 0) {
-                h = 17;
-                h = 37*h + issuer.hashCode();
-                h = 37*h + serial.hashCode();
+                h = Objects.hash(issuer, serial);
                 if (h != 0) {
                     hashcode = h;
                 }

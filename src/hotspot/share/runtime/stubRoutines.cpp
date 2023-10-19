@@ -176,6 +176,9 @@ address StubRoutines::_hf2f = nullptr;
 address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{nullptr}, {nullptr}};
 address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{nullptr}, {nullptr}};
 
+address StubRoutines::_array_sort = nullptr;
+address StubRoutines::_array_partition  = nullptr;
+
 address StubRoutines::_cont_thaw          = nullptr;
 address StubRoutines::_cont_returnBarrier = nullptr;
 address StubRoutines::_cont_returnBarrierExc = nullptr;

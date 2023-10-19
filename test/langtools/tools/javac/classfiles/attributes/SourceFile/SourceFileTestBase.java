@@ -21,9 +21,9 @@
  * questions.
  */
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.SourceFile_attribute;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.SourceFileAttribute;
+import jdk.internal.classfile.impl.BoundAttribute;
 
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -50,7 +50,7 @@ public class SourceFileTestBase extends TestBase {
      * @param fileName    expected name of the file from which the test file is compiled.
      */
     protected void test(Class<?> classToTest, String fileName) throws Exception {
-        assertAttributePresent(ClassFile.read(getClassFile(classToTest)), fileName);
+        assertAttributePresent(Classfile.of().parse(getClassFile(classToTest).toPath()), fileName);
     }
 
     /**
@@ -60,7 +60,7 @@ public class SourceFileTestBase extends TestBase {
      * @param fileName    expected name of the file from which the test file is compiled.
      */
     protected void test(String classToTest, String fileName) throws Exception {
-        assertAttributePresent(ClassFile.read(getClassFile(classToTest + ".class")), fileName);
+        assertAttributePresent(Classfile.of().parse(getClassFile(classToTest + ".class").toPath()), fileName);
     }
 
     /**
@@ -70,7 +70,7 @@ public class SourceFileTestBase extends TestBase {
      * @param fileName    expected name of the file from which the test file is compiled.
      */
     protected void test(Path classToTest, String fileName) throws Exception {
-        assertAttributePresent(ClassFile.read(classToTest), fileName);
+        assertAttributePresent(Classfile.of().parse(classToTest), fileName);
     }
 
     /**
@@ -85,33 +85,32 @@ public class SourceFileTestBase extends TestBase {
         Map<String, ? extends JavaFileObject> classes = compile(sourceCode).getClasses();
         String fileName = ToolBox.getJavaFileNameFromSource(sourceCode);
         for (String className : classesToTest) {
-            ClassFile classFile;
+            ClassModel classFile;
             try (InputStream input = classes.get(className).openInputStream()) {
-                classFile = ClassFile.read(input);
+                classFile = Classfile.of().parse(input.readAllBytes());
             }
             assertAttributePresent(classFile, fileName);
         }
     }
 
-    private void assertAttributePresent(ClassFile classFile, String fileName) throws Exception {
+    private void assertAttributePresent(ClassModel classFile, String fileName) throws Exception {
 
         //We need to count attributes with the same names because there is no appropriate API in the ClassFile.
 
-        List<SourceFile_attribute> sourceFileAttributes = new ArrayList<>();
-        for (Attribute a : classFile.attributes.attrs) {
-            if (Attribute.SourceFile.equals(a.getName(classFile.constant_pool))) {
-                sourceFileAttributes.add((SourceFile_attribute) a);
+        List<SourceFileAttribute> sourceFileAttributes = new ArrayList<>();
+        for (Attribute<?> a : classFile.attributes()) {
+            if (a instanceof SourceFileAttribute) {
+                sourceFileAttributes.add((SourceFileAttribute) a);
             }
         }
 
         assertEquals(sourceFileAttributes.size(), 1, "Should be the only SourceFile attribute");
 
-        SourceFile_attribute attribute = sourceFileAttributes.get(0);
+        SourceFileAttribute attribute = sourceFileAttributes.get(0);
 
-        assertEquals(classFile.constant_pool.getUTF8Info(attribute.attribute_name_index).value,
-                Attribute.SourceFile, "Incorrect attribute name");
-        assertEquals(classFile.constant_pool.getUTF8Info(attribute.sourcefile_index).value, fileName,
+        assertEquals(attribute.attributeName(), Attributes.SOURCE_FILE.name(), "Incorrect attribute name");
+        assertEquals(attribute.sourceFile().stringValue(), fileName,
                 "Incorrect source file name");
-        assertEquals(attribute.attribute_length, 2, "Incorrect attribute length");
+        assertEquals(((BoundAttribute<?>)attribute).payloadLen(), 2, "Incorrect attribute length");
     }
 }

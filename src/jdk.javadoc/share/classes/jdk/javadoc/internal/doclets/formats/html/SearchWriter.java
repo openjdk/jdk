@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,8 @@ public class SearchWriter extends HtmlDocletWriter {
                                 .setId(HtmlId.of("page-search-link")))
                         .add(new HtmlTree(TagName.BUTTON)
                                 .add(new HtmlTree(TagName.IMG)
-                                        .put(HtmlAttr.SRC, pathToRoot.resolve(DocPaths.CLIPBOARD_SVG).getPath())
+                                        .put(HtmlAttr.SRC, pathToRoot.resolve(DocPaths.RESOURCE_FILES)
+                                                                     .resolve(DocPaths.CLIPBOARD_SVG).getPath())
                                         .put(HtmlAttr.ALT, copyUrlText))
                                 .add(HtmlTree.SPAN(Text.of(copyText))
                                         .put(HtmlAttr.DATA_COPIED, copiedText))
@@ -114,6 +115,7 @@ public class SearchWriter extends HtmlDocletWriter {
                                 .addUnchecked(Text.EMPTY))
                         .setId(HtmlId.of("result-section"))
                         .put(HtmlAttr.STYLE, "display: none;")
-                        .add(HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.SEARCH_PAGE_JS).getPath())));
+                        .add(HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.SCRIPT_FILES)
+                                                       .resolve(DocPaths.SEARCH_PAGE_JS).getPath())));
     }
 }

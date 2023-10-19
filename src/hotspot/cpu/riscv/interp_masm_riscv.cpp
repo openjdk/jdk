@@ -351,9 +351,6 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
 
   // Do the check.
   check_klass_subtype(Rsub_klass, x10, x12, ok_is_subtype); // blows x12
-
-  // Profile the failure of the check.
-  profile_typecheck_failed(x12); // blows x12
 }
 
 // Java Expression Stack
@@ -491,7 +488,9 @@ void InterpreterMacroAssembler::prepare_to_jump_from_interpreted() {
   // set sender sp
   mv(x19_sender_sp, sp);
   // record last_sp
-  sd(esp, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
+  sub(t0, esp, fp);
+  srai(t0, t0, Interpreter::logStackElementSize);
+  sd(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
 }
 
 // Jump to from_interpreted entry of a call unless single stepping is possible
@@ -692,7 +691,7 @@ void InterpreterMacroAssembler::remove_activation(
   // Check that all monitors are unlocked
   {
     Label loop, exception, entry, restart;
-    const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+    const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
     const Address monitor_block_top(
       fp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
     const Address monitor_block_bot(
@@ -701,8 +700,10 @@ void InterpreterMacroAssembler::remove_activation(
     bind(restart);
     // We use c_rarg1 so that if we go slow path it will be the correct
     // register for unlock_object to pass to VM directly
-    ld(c_rarg1, monitor_block_top); // points to current entry, starting
-                                     // with top-most entry
+    ld(c_rarg1, monitor_block_top); // derelativize pointer
+    shadd(c_rarg1, c_rarg1, fp, c_rarg1, LogBytesPerWord);
+    // c_rarg1 points to current entry, starting with top-most entry
+
     la(x9, monitor_block_bot);  // points to word before bottom of
                                   // monitor block
 
@@ -837,7 +838,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
     if (LockingMode == LM_LIGHTWEIGHT) {
       ld(tmp, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      fast_lock(obj_reg, tmp, t0, t1, slow_case);
+      lightweight_lock(obj_reg, tmp, t0, t1, slow_case);
       j(count);
     } else if (LockingMode == LM_LEGACY) {
       // Load (object->mark() | 1) into swap_reg
@@ -950,7 +951,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
       ld(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       test_bit(t0, header_reg, exact_log2(markWord::monitor_value));
       bnez(t0, slow_case);
-      fast_unlock(obj_reg, header_reg, swap_reg, t0, slow_case);
+      lightweight_unlock(obj_reg, header_reg, swap_reg, t0, slow_case);
       j(count);
 
       bind(slow_case);
@@ -1264,7 +1265,7 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
     }
 
     // Record the receiver type.
-    record_klass_in_profile(receiver, mdp, reg2, true);
+    record_klass_in_profile(receiver, mdp, reg2);
     bind(skip_receiver_profile);
 
     // The method data pointer needs to be updated to reflect the new target.
@@ -1289,27 +1290,18 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
 // See below for example code.
 void InterpreterMacroAssembler::record_klass_in_profile_helper(
                                 Register receiver, Register mdp,
-                                Register reg2,
-                                Label& done, bool is_virtual_call) {
+                                Register reg2, Label& done) {
   if (TypeProfileWidth == 0) {
-    if (is_virtual_call) {
-      increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
-    }
-
+    increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
   } else {
-    int non_profiled_offset = -1;
-    if (is_virtual_call) {
-      non_profiled_offset = in_bytes(CounterData::count_offset());
-    }
-
     record_item_in_profile_helper(receiver, mdp, reg2, 0, done, TypeProfileWidth,
-      &VirtualCallData::receiver_offset, &VirtualCallData::receiver_count_offset, non_profiled_offset);
+        &VirtualCallData::receiver_offset, &VirtualCallData::receiver_count_offset);
   }
 }
 
-void InterpreterMacroAssembler::record_item_in_profile_helper(
-  Register item, Register mdp, Register reg2, int start_row, Label& done, int total_rows,
-  OffsetFunction item_offset_fn, OffsetFunction item_count_offset_fn, int non_profiled_offset) {
+void InterpreterMacroAssembler::record_item_in_profile_helper(Register item, Register mdp,
+                                        Register reg2, int start_row, Label& done, int total_rows,
+                                        OffsetFunction item_offset_fn, OffsetFunction item_count_offset_fn) {
   int last_row = total_rows - 1;
   assert(start_row <= last_row, "must be work left to do");
   // Test this row for both the item and for null.
@@ -1340,16 +1332,12 @@ void InterpreterMacroAssembler::record_item_in_profile_helper(
       // Failed the equality check on item[n]...  Test for null.
       if (start_row == last_row) {
         // The only thing left to do is handle the null case.
-        if (non_profiled_offset >= 0) {
-          beqz(reg2, found_null);
-          // Item did not match any saved item and there is no empty row for it.
-          // Increment total counter to indicate polymorphic case.
-          increment_mdp_data_at(mdp, non_profiled_offset);
-          j(done);
-          bind(found_null);
-        } else {
-          bnez(reg2, done);
-        }
+        beqz(reg2, found_null);
+        // Item did not match any saved item and there is no empty row for it.
+        // Increment total counter to indicate polymorphic case.
+        increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
+        j(done);
+        bind(found_null);
         break;
       }
       // Since null is rare, make it be the branch-taken case.
@@ -1357,7 +1345,7 @@ void InterpreterMacroAssembler::record_item_in_profile_helper(
 
       // Put all the "Case 3" tests here.
       record_item_in_profile_helper(item, mdp, reg2, start_row + 1, done, total_rows,
-        item_offset_fn, item_count_offset_fn, non_profiled_offset);
+          item_offset_fn, item_count_offset_fn);
 
       // Found a null.  Keep searching for a matching item,
       // but remember that this is an empty (unused) slot.
@@ -1427,12 +1415,11 @@ void InterpreterMacroAssembler::record_item_in_profile_helper(
 //   done:
 
 void InterpreterMacroAssembler::record_klass_in_profile(Register receiver,
-                                                        Register mdp, Register reg2,
-                                                        bool is_virtual_call) {
+                                                        Register mdp, Register reg2) {
   assert(ProfileInterpreter, "must be profiling");
   Label done;
 
-  record_klass_in_profile_helper(receiver, mdp, reg2, done, is_virtual_call);
+  record_klass_in_profile_helper(receiver, mdp, reg2, done);
 
   bind(done);
 }
@@ -1492,24 +1479,6 @@ void InterpreterMacroAssembler::profile_null_seen(Register mdp) {
   }
 }
 
-void InterpreterMacroAssembler::profile_typecheck_failed(Register mdp) {
-    if (ProfileInterpreter && TypeProfileCasts) {
-    Label profile_continue;
-
-    // If no method data exists, go to profile_continue.
-    test_method_data_pointer(mdp, profile_continue);
-
-    int count_offset = in_bytes(CounterData::count_offset());
-    // Back up the address, since we have already bumped the mdp.
-    count_offset -= in_bytes(VirtualCallData::virtual_call_data_size());
-
-    // *Decrement* the counter.  We expect to see zero or small negatives.
-    increment_mdp_data_at(mdp, count_offset, true);
-
-    bind (profile_continue);
-  }
-}
-
 void InterpreterMacroAssembler::profile_typecheck(Register mdp, Register klass, Register reg2) {
   if (ProfileInterpreter) {
     Label profile_continue;
@@ -1523,7 +1492,7 @@ void InterpreterMacroAssembler::profile_typecheck(Register mdp, Register klass, 
       mdp_delta = in_bytes(VirtualCallData::virtual_call_data_size());
 
       // Record the object type.
-      record_klass_in_profile(klass, mdp, reg2, false);
+      record_klass_in_profile(klass, mdp, reg2);
     }
     update_mdp_by_constant(mdp, mdp_delta);
 
@@ -2041,6 +2010,7 @@ void InterpreterMacroAssembler::verify_frame_setup() {
   Label L;
   const Address monitor_block_top(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
   ld(t0, monitor_block_top);
+  shadd(t0, t0, fp, t0, LogBytesPerWord);
   beq(esp, t0, L);
   stop("broken stack frame setup in interpreter");
   bind(L);

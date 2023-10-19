@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,11 @@ public class AppImagePackageTest {
             if (TKit.isOSX()) {
                 cmd.addArguments("--mac-package-identifier", name);
             }
-        }).run(Action.CREATE, Action.UNPACK);
+        })
+        // On macOS we always signing app image and signing will fail, since
+        // test produces invalid app bundle.
+        .setExpectedExitCode(TKit.isOSX() ? 1 : 0)
+        .run(Action.CREATE, Action.UNPACK);
         // default: {CREATE, UNPACK, VERIFY}, but we can't verify foreign image
     }
 
