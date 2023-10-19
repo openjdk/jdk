@@ -165,12 +165,16 @@ public class WheelModifier {
             throw new RuntimeException("Mouse is not released");
         }
         System.out.println("# Released!");
+
+        if (f != null) {
+            f.dispose();
+        }
     }
 
     public static void main(String[] args) throws Exception {
         WheelModifier test = new WheelModifier();
 
-        SwingUtilities.invokeAndWait(() -> test.createGui());
+        SwingUtilities.invokeAndWait(test::createGui);
         test.run();
 
         System.out.println("Done.");
