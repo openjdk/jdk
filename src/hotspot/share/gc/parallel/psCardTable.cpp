@@ -183,11 +183,13 @@ void PSCardTable::process_range(Func&& object_start,
       HeapWord* const obj_end_addr = obj_addr + obj->size();
 
       if (is_obj_array) {
-        // precise-marked
+        // Always scan obj arrays precisely (they are always marked precisely)
+        // to avoid unnecessary work.
         scan_obj_with_limit(pm, obj, addr_l, addr_r);
       } else {
         if (obj_addr < i_addr && i_addr > start) {
-          // already-scanned
+          // Already scanned this object. Has been one that spans multiple dirty chunks.
+          // The second condition makes sure objects reaching in the stripe are scanned once.
         } else {
           scan_obj_with_limit(pm, obj, addr_l, end);
         }
@@ -207,7 +209,8 @@ void PSCardTable::process_range(Func&& object_start,
   }
 }
 
-// Propagate imprecise card marks from object start to the stripes an object extends to.
+// Propagate imprecise card marks from object start to all stripes an object extends to
+// this thread is assigned to.
 template <typename Func>
 void PSCardTable::preprocess_card_table_parallel(Func&& object_start,
                                                  HeapWord* old_gen_bottom,
