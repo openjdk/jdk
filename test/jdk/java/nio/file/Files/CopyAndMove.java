@@ -45,9 +45,22 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.RandomFactory;
 
 public class CopyAndMove {
+    private static final String FAT32_TYPE;
+    static {
+        if (Platform.isLinux())
+            FAT32_TYPE = "vfat";
+        else if (Platform.isOSX())
+            FAT32_TYPE = "msdos";
+        else if (Platform.isWindows())
+            FAT32_TYPE = "FAT32";
+        else
+            FAT32_TYPE = "unknown";
+    }
+
     static final Random rand = RandomFactory.getRandom();
     static boolean heads() { return rand.nextBoolean(); }
     private static boolean testPosixAttributes = false;
+    private static boolean targetVolumeIsFAT32 = false;
 
     public static void main(String[] args) throws Exception {
         Path dir1 = TestUtil.createTemporaryDirectory();
@@ -65,6 +78,8 @@ public class CopyAndMove {
             String testDir = System.getProperty("test.dir", ".");
             Path dir2 = TestUtil.createTemporaryDirectory(testDir);
             FileStore fileStore2 = getFileStore(dir2);
+            targetVolumeIsFAT32 = fileStore2.type().equals(FAT32_TYPE);
+
             printDirInfo("dir2", dir2, fileStore2);
 
             // If different type (format) from dir1, re-do same directory tests
@@ -98,6 +113,7 @@ public class CopyAndMove {
             // Target is location associated with custom provider
             Path dir3 = PassThroughFileSystem.create().getPath(dir1.toString());
             FileStore fileStore3 = getFileStore(dir3);
+            targetVolumeIsFAT32 = false;
             printDirInfo("dir3", dir3, fileStore3);
             testPosixAttributes = fileStore1.supportsFileAttributeView("posix") &&
                                   fileStore3.supportsFileAttributeView("posix");
@@ -131,10 +147,15 @@ public class CopyAndMove {
         if (!attrs1.isSymbolicLink()) {
             long time1 = attrs1.lastModifiedTime().to(TimeUnit.SECONDS);
             long time2 = attrs2.lastModifiedTime().to(TimeUnit.SECONDS);
+            long delta = Math.abs(Math.subtractExact(time1, time2));
 
-            if (time1 != time2) {
-                System.err.format("File time for %s is %s\n", attrs1.fileKey(), attrs1.lastModifiedTime());
-                System.err.format("File time for %s is %s\n", attrs2.fileKey(), attrs2.lastModifiedTime());
+            // FAT32 volumes have a time stamp resolution of 2 seconds for
+            // last modified time (write time)
+            if ((delta != 0 && !targetVolumeIsFAT32) || delta > 2) {
+                System.err.format("File time for %s is %s\n",
+                                  attrs1.fileKey(), attrs1.lastModifiedTime());
+                System.err.format("File time for %s is %s\n",
+                                  attrs2.fileKey(), attrs2.lastModifiedTime());
                 assertTrue(false);
             }
         }

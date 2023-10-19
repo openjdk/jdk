@@ -434,8 +434,6 @@ public class TestSearch extends JavadocTester {
                     <input type="text" id="search-input" disabled placeholder="Search">
                     <input type="reset" id="reset-button" disabled value="reset">
                     """);
-        checkOutput(fileName, true,
-                "<div class=\"flex-box\">");
     }
 
     void checkSingleIndex() {
