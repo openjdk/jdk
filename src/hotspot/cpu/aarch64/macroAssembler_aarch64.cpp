@@ -6900,3 +6900,18 @@ void MacroAssembler::poly1305_add(LambdaAccumulator &acc,
                                   const Register dest[], const RegPair src[]) {
   _ { poly1305_add(dest, src); };
 }
+
+void MacroAssembler::copy_3_regs(const RegPair d[],
+                                 const FloatRegister s[], int index) {
+  umov(d[0]._lo, s[0], D, index);
+  umov(d[1]._lo, s[1], D, index);
+  umov(d[2]._lo, s[2], D, index);
+}
+
+void MacroAssembler::copy_3_regs(const FloatRegister d[],
+                                 const RegPair s[], int index) {
+  mov(d[0], D, index, s[0]._lo);
+  mov(d[1], D, index, s[1]._lo);
+  mov(d[2], D, index, s[2]._lo);
+}
+

@@ -57,8 +57,36 @@ public:
   operator RegPair*() { return _reg_pairs; }
 };
 
-// static constexpr bool use_vec = true;
+void flooby(const int COLS, LambdaAccumulator gen[]) {
+  LambdaAccumulator::Iterator it[COLS];
+  int len[COLS];
+  int l_max = INT_MIN;
 
+  for (int col = 0; col < COLS; col++) {
+    it[col] = gen[col].iterator();
+    len[col] = gen[col].length();
+    l_max = MAX2(l_max, len[col]);
+  }
+
+  int err[COLS];
+  for (int col = 0; col < COLS; col++) {
+    err[col] = 0;
+  }
+
+  for (int i = 0; i < l_max; i++) {
+    for (int col = 0; col < COLS; col++) {
+      err[col] -= len[col];
+      if (err[col] < 0) {
+        err[col] += l_max;
+        (it[col]++)();
+      }
+    }
+  }
+
+  for (int col = 0; col < COLS; col++) {
+    assert(*(it[col]) == nullptr, "Make sure all generators are exhausted");
+  }
+}
 
 address generate_poly1305_processBlocks2() {
   static constexpr int POLY1305_BLOCK_LENGTH = 16;
@@ -78,6 +106,7 @@ address generate_poly1305_processBlocks2() {
   __ push(callee_saved, sp);
 
   auto regs = (RegSet::range(c_rarg0, r28) - r18_tls - rscratch1 - rscratch2 + lr).begin();
+  auto vregs = (vRegSet::range(v0, v7) + vRegSet::range(v16, v31)).begin();
 
   // Arguments
   const Register input_start = *regs++, length = *regs++, acc_start = *regs++, r_start = *regs++;
@@ -104,7 +133,7 @@ address generate_poly1305_processBlocks2() {
   __ subs(zr, length, POLY1305_BLOCK_LENGTH * 8);
   __ br(__ LE, SMALL);
 
-  // We're going to use R**2
+  // We're going to use R**4
   {
     Regs u1_lo(u1[0]._lo, u1[1]._lo, u1[2]._lo);
 
@@ -115,12 +144,22 @@ address generate_poly1305_processBlocks2() {
 
     __ lsl(RR2, R[2], 26);
     __ add(RR2, RR2, RR2, __ LSL, 2);
+
+    __ poly1305_field_multiply(u1, R, R, RR2, regs);
+    __ copy_3_regs(R, u1_lo);
+
+    __ lsl(RR2, R[2], 26);
+    __ add(RR2, RR2, RR2, __ LSL, 2);
   }
 
   // u0 contains the initial state. Clear the others.
+  const FloatRegister u_tmp0[] =  {*vregs++, *vregs++, *vregs++};
+  const FloatRegister u_tmp1[] =  {*vregs++, *vregs++, *vregs++};
   for (int i = 0; i < 3; i++) {
     __ mov(u0[i]._hi, 0);
     __ mov(u1[i]._lo, 0); __ mov(u1[i]._hi, 0);
+    __ movi(u_tmp0[i], __ T16B, 0);
+    __ movi(u_tmp1[i], __ T16B, 0);
   }
 
   __ m_print52(u0[2]._lo, u0[1]._lo, u0[0]._lo, "\n\nBefore\n  u0");
@@ -144,53 +183,26 @@ address generate_poly1305_processBlocks2() {
       __ poly1305_step(gen[1], S1, u1, input_start);
       __ poly1305_field_multiply(gen[1], u1, S1, R, RR2, regs);
 
-      LambdaAccumulator::Iterator it[COLS];
-      int len[COLS];
+      flooby(2, gen);
+      __ copy_3_regs(u_tmp0, u0, 0);  // Save U in GP regs to float
+      __ copy_3_regs(u_tmp0, u1, 1);
+      __ copy_3_regs(u0, u_tmp1, 0);
+      __ copy_3_regs(u1, u_tmp1, 1);
 
-      int l_max = INT_MIN;
-      for (int col = 0; col < COLS; col++) {
-        it[col] = gen[col].iterator();
-        len[col] = gen[col].length();
-        l_max = MAX2(l_max, len[col]);
-      }
+      flooby(2, gen);
+      __ copy_3_regs(u_tmp1, u0, 0);
+      __ copy_3_regs(u_tmp1, u1, 1);
+      __ copy_3_regs(u0, u_tmp0, 0);
+      __ copy_3_regs(u1, u_tmp0, 1);
 
-      int err[COLS];
-      for (int col = 0; col < COLS; col++) {
-        err[col] = 0;
-      }
-
-      for (int i = 0; i < l_max; i++) {
-        for (int col = 0; col < COLS; col++) {
-          err[col] -= len[col];
-          if (err[col] < 0) {
-            err[col] += l_max;
-            (it[col]++)();
-          }
-        }
-      }
-
-      // for (int col = 0; col < COLS; col++) {
-      //   for (int i = 0; i < len[col]; i++) {
-      //     (it[col]++)();
-      //   }
-      // }
-
-      __ m_print52(u0[2]._lo, u0[1]._lo, u0[0]._lo, "  u0");
-      __ m_print52(u1[2]._lo, u1[1]._lo, u1[0]._lo, "  u1");
-
-      for (int col = 0; col < COLS; col++) {
-        assert(*(it[col]) == nullptr, "Make sure all generators are exhausted");
-      }
+      __ subw(length, length, POLY1305_BLOCK_LENGTH * 4);
+      __ subsw(rscratch1, length, POLY1305_BLOCK_LENGTH * 8);
+      __ br(Assembler::GE, LOOP);
     }
-
-    __ subw(length, length, POLY1305_BLOCK_LENGTH * 2);
-    __ subsw(rscratch1, length, POLY1305_BLOCK_LENGTH * 4);
-    __ br(Assembler::GE, LOOP);
-
     __ bind(DONE);
   }
 
-  // Last two parallel blocks
+  // Last four parallel blocks
   {
     // Load R**1
     __ pack_26(R[0], R[1], R[2], r_start);
@@ -206,7 +218,19 @@ address generate_poly1305_processBlocks2() {
     __ poly1305_add(S0, u1);
     __ poly1305_field_multiply(u0, S0, R, RR2, regs);
 
-    __ subw(length, length, POLY1305_BLOCK_LENGTH * 2);
+    __ poly1305_load(S0, input_start);
+    __ poly1305_add(S0, u0);
+    __ copy_3_regs(u1, u_tmp1, 0);
+    __ poly1305_add(S0, u1);
+    __ poly1305_field_multiply(u0, S0, R, RR2, regs);
+
+    __ poly1305_load(S0, input_start);
+    __ poly1305_add(S0, u0);
+    __ copy_3_regs(u1, u_tmp1, 1);
+    __ poly1305_add(S0, u1);
+    __ poly1305_field_multiply(u0, S0, R, RR2, regs);
+
+    __ subw(length, length, POLY1305_BLOCK_LENGTH * 4);
   }
 
   // Maybe some last blocks
