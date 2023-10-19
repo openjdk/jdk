@@ -100,6 +100,14 @@ class PSCardTable: public CardTable {
     return *card == clean_card_val();
   }
 
+  // Propagate imprecise card marks from object start to the stripes an object extends to.
+  template <typename Func>
+  void preprocess_card_table_parallel(Func&& object_start,
+                                      HeapWord* old_gen_bottom,
+                                      HeapWord* old_gen_top,
+                                      uint stripe_index,
+                                      uint n_stripes);
+
   template <typename Func>
   void process_range(Func&& object_start,
                      PSPromotionManager* pm,
@@ -128,14 +136,6 @@ class PSCardTable: public CardTable {
   void pre_scavenge(HeapWord* old_gen_bottom, uint active_workers);
 
   // Scavenge support
-
-  // Propagate imprecise card marks from object start to the stripes an object extends to.
-  template <typename Func>
-  void preprocess_card_table_parallel(Func&& object_start,
-                                      HeapWord* old_gen_bottom,
-                                      HeapWord* old_gen_top,
-                                      uint stripe_index,
-                                      uint n_stripes);
 
   void scavenge_contents_parallel(ObjectStartArray* start_array,
                                   HeapWord* old_gen_bottom,
