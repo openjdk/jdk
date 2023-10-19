@@ -5416,7 +5416,6 @@ bool LibraryCallKit::inline_array_partition() {
                       obj_adr, elemType, fromIndex, toIndex, pivotIndices_adr,
                       indexPivot1, indexPivot2);
 
-
   } // original reexecute is set back here
 
   if (!stopped()) {
