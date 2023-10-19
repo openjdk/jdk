@@ -1036,7 +1036,8 @@ const juint    badHeapWordVal   = 0xBAADBABE;               // value used to zap
 const juint    badMetaWordVal   = 0xBAADFADE;               // value used to zap metadata heap after GC
 const int      badCodeHeapNewVal= 0xCC;                     // value used to zap Code heap at allocation
 const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap Code heap at deallocation
-
+const intptr_t badDispHeaderDeopt = 0xDE0BD000;             // value to fill unused displaced header during deoptimization
+const intptr_t badDispHeaderOSR   = 0xDEAD05A0;             // value to fill unused displaced header during OSR
 
 // (These must be implemented as #defines because C++ compilers are
 // not obligated to inline non-integral constants!)
@@ -1044,7 +1045,7 @@ const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap
 #define       badHeapWord       (::badHeapWordVal)
 
 // Default TaskQueue size is 16K (32-bit) or 128K (64-bit)
-const size_t TASKQUEUE_SIZE = (NOT_LP64(1<<14) LP64_ONLY(1<<17));
+const uint TASKQUEUE_SIZE = (NOT_LP64(1<<14) LP64_ONLY(1<<17));
 
 //----------------------------------------------------------------------------------------------------
 // Utility functions for bitfield manipulations
@@ -1138,8 +1139,8 @@ static inline julong uabs(jlong n) { return uabs((julong)n); }
 static inline unsigned int uabs(int n) { return uabs((unsigned int)n); }
 
 // "to" should be greater than "from."
-inline intx byte_size(void* from, void* to) {
-  return (address)to - (address)from;
+inline size_t byte_size(void* from, void* to) {
+  return pointer_delta(to, from, sizeof(char));
 }
 
 // Pack and extract shorts to/from ints:

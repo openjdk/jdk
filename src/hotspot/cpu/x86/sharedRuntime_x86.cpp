@@ -84,52 +84,18 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
 }
 #endif //COMPILER1
 
-#if defined(TARGET_COMPILER_gcc) && !defined(_WIN64)
 JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
-  jfloat retval;
-  const bool is_LP64 = LP64_ONLY(true) NOT_LP64(false);
-  if (!is_LP64 || UseAVX < 1 || !UseFMA) {
-  asm ("\
-1:               \n\
-fprem            \n\
-fnstsw %%ax      \n\
-test   $0x4,%%ah \n\
-jne    1b        \n\
-"
-    :"=t"(retval)
-    :"0"(x), "u"(y)
-    :"cc", "ax");
-  } else {
-    assert(StubRoutines::fmod() != nullptr, "");
-    jdouble (*addr)(jdouble, jdouble) = (double (*)(double, double))StubRoutines::fmod();
-    jdouble dx = (jdouble) x;
-    jdouble dy = (jdouble) y;
+  assert(StubRoutines::fmod() != nullptr, "");
+  jdouble (*addr)(jdouble, jdouble) = (double (*)(double, double))StubRoutines::fmod();
+  jdouble dx = (jdouble) x;
+  jdouble dy = (jdouble) y;
 
-    retval = (jfloat) (*addr)(dx, dy);
-  }
-  return retval;
+  return (jfloat) (*addr)(dx, dy);
 JRT_END
 
 JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
-  jdouble retval;
-  const bool is_LP64 = LP64_ONLY(true) NOT_LP64(false);
-  if (!is_LP64 || UseAVX < 1 || !UseFMA) {
-  asm ("\
-1:               \n\
-fprem            \n\
-fnstsw %%ax      \n\
-test   $0x4,%%ah \n\
-jne    1b        \n\
-"
-    :"=t"(retval)
-    :"0"(x), "u"(y)
-    :"cc", "ax");
-  } else {
-    assert(StubRoutines::fmod() != nullptr, "");
-    jdouble (*addr)(jdouble, jdouble) = (double (*)(double, double))StubRoutines::fmod();
+  assert(StubRoutines::fmod() != nullptr, "");
+  jdouble (*addr)(jdouble, jdouble) = (double (*)(double, double))StubRoutines::fmod();
 
-    retval = (*addr)(x, y);
-  }
-  return retval;
+  return (*addr)(x, y);
 JRT_END
-#endif // TARGET_COMPILER_gcc && !_WIN64

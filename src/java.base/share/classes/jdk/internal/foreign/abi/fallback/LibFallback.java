@@ -36,14 +36,20 @@ final class LibFallback {
 
     static final boolean SUPPORTED = tryLoadLibrary();
 
+    @SuppressWarnings("removal")
     private static boolean tryLoadLibrary() {
-        try {
-            System.loadLibrary("fallbackLinker");
-        } catch (UnsatisfiedLinkError ule) {
-            return false;
-        }
-        init();
-        return true;
+        return java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedAction<>() {
+                    public Boolean run() {
+                        try {
+                            System.loadLibrary("fallbackLinker");
+                            init();
+                            return true;
+                        } catch (UnsatisfiedLinkError ule) {
+                            return false;
+                        }
+                    }
+                });
     }
 
     static int defaultABI() { return NativeConstants.DEFAULT_ABI; }
@@ -58,6 +64,12 @@ final class LibFallback {
     static MemorySegment doubleType() { return NativeConstants.DOUBLE_TYPE; }
     static MemorySegment pointerType() { return NativeConstants.POINTER_TYPE; }
     static MemorySegment voidType() { return NativeConstants.VOID_TYPE; }
+
+    // platform-dependent types
+    static int shortSize() { return NativeConstants.SIZEOF_SHORT; }
+    static int intSize() { return NativeConstants.SIZEOF_INT; }
+    static int longSize() {return NativeConstants.SIZEOF_LONG; }
+    static int wcharSize() {return NativeConstants.SIZEOF_WCHAR; }
 
     static short structTag() { return NativeConstants.STRUCT_TAG; }
 
@@ -216,6 +228,10 @@ final class LibFallback {
     private static native long ffi_type_float();
     private static native long ffi_type_double();
     private static native long ffi_type_pointer();
+    private static native int ffi_sizeof_short();
+    private static native int ffi_sizeof_int();
+    private static native int ffi_sizeof_long();
+    private static native int ffi_sizeof_wchar();
 
     // put these in a separate class to avoid an UnsatisfiedLinkError
     // when LibFallback is initialized but the library is not present
@@ -233,6 +249,11 @@ final class LibFallback {
         static final MemorySegment FLOAT_TYPE = MemorySegment.ofAddress(ffi_type_float());
         static final MemorySegment DOUBLE_TYPE = MemorySegment.ofAddress(ffi_type_double());
         static final MemorySegment POINTER_TYPE = MemorySegment.ofAddress(ffi_type_pointer());
+        static final int SIZEOF_SHORT = ffi_sizeof_short();
+        static final int SIZEOF_INT = ffi_sizeof_int();
+        static final int SIZEOF_LONG = ffi_sizeof_long();
+        static final int SIZEOF_WCHAR = ffi_sizeof_wchar();
+
 
         static final MemorySegment VOID_TYPE = MemorySegment.ofAddress(ffi_type_void());
         static final short STRUCT_TAG = ffi_type_struct();
