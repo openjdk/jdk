@@ -46,6 +46,15 @@ public class TestLargeStub extends NativeTestHelper {
     }
 
     @Test
+    public void testDowncallAllowHeap() {
+        // Link a handle with a large number of address arguments, to try and overflow the code buffer
+        Linker.nativeLinker().downcallHandle(
+                FunctionDescriptor.of(C_LONG_LONG,
+                        Stream.generate(() -> C_POINTER).limit(50).toArray(MemoryLayout[]::new)),
+                Linker.Option.critical(true));
+    }
+
+    @Test
     public void testUpcall() {
         // Link a handle with a large number of arguments, to try and overflow the code buffer
         Linker.nativeLinker().downcallHandle(
