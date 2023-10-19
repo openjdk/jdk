@@ -128,13 +128,80 @@ void PSCardTable::scan_obj_with_limit(PSPromotionManager* pm,
                                       oop obj,
                                       HeapWord* start,
                                       HeapWord* end) {
-  prefetch_write(start);
-  pm->push_contents_bounded(obj, start, end);
+  if (!obj->is_typeArray()) {
+    prefetch_write(start);
+    pm->push_contents_bounded(obj, start, end);
+  }
 }
 
 void PSCardTable::pre_scavenge(HeapWord* old_gen_bottom, uint active_workers) {
   _preprocessing_active_workers = active_workers;
 }
+
+class StripeShadowCardTable {
+  typedef CardTable::CardValue CardValue;
+
+  const uint _card_shift;
+  const uint _card_size;
+  CardValue _table[PSCardTable::num_cards_in_stripe];
+  const CardValue* _table_base;
+
+public:
+  StripeShadowCardTable(PSCardTable* pst, HeapWord* const start, HeapWord* const end) :
+    _card_shift(CardTable::card_shift()),
+    _card_size(CardTable::card_size()),
+    _table_base(_table - (uintptr_t(start) >> _card_shift)) {
+    // The end of the last stripe may not be card aligned as it is equal to old
+    // gen top at scavenge start. We must not clear the card containing old gen
+    // top if it is not card aligned because then there are likely promoted
+    // objects on the same card and it could be marked dirty because of
+    // them. That's why clear_length is aligned down.
+    size_t stripe_byte_size = pointer_delta(end, start) * HeapWordSize;
+    size_t copy_length = align_up(stripe_byte_size, _card_size) >> _card_shift;
+    size_t clear_length = align_down(stripe_byte_size, _card_size) >> _card_shift;
+    CardValue* stripe_start_card = pst->byte_for(start);
+    memcpy(_table, stripe_start_card, copy_length);
+    memset(stripe_start_card, CardTable::clean_card_val(), clear_length);
+  }
+
+  HeapWord* addr_for(const CardValue* const card) {
+    assert(card >= _table && card <=  &_table[PSCardTable::num_cards_in_stripe], "out of bounds");
+    return (HeapWord*) ((card - _table_base) << _card_shift);
+  }
+
+  const CardValue* card_for(HeapWord* addr) {
+    return &_table_base[uintptr_t(addr) >> _card_shift];
+  }
+
+  bool is_dirty(const CardValue* const card) {
+    return !is_clean(card);
+  }
+
+  bool is_clean(const CardValue* const card) {
+    assert(card >= _table && card <  &_table[PSCardTable::num_cards_in_stripe], "out of bounds");
+    return *card == PSCardTable::clean_card_val();
+  }
+
+  const CardValue* find_first_dirty_card(const CardValue* const start,
+                                         const CardValue* const end) {
+    for (const CardValue* i = start; i < end; ++i) {
+      if (is_dirty(i)) {
+        return i;
+      }
+    }
+    return end;
+  }
+
+  const CardValue* find_first_clean_card(const CardValue* const start,
+                                         const CardValue* const end) {
+    for (const CardValue* i = start; i < end; ++i) {
+      if (is_clean(i)) {
+        return i;
+      }
+    }
+    return end;
+  }
+};
 
 // Scavenge objects on dirty cards of the given stripe [start, end). Accesses to
 // the card table and scavenging is strictly limited to the stripe. The work on
@@ -152,7 +219,7 @@ void PSCardTable::process_range(Func&& object_start,
   assert(start < end, "precondition");
   assert(is_card_aligned(start), "precondition");
 
-  StripeShadowTable sct(this, MemRegion(start, end));
+  StripeShadowCardTable sct(this, start, end);
 
   // end might not be card-aligned.
   const CardValue* end_card = sct.card_for(end - 1) + 1;
@@ -223,24 +290,24 @@ void PSCardTable::preprocess_card_table_parallel(Func&& object_start,
 
   for ( /* empty */ ; cur_card < end_card; cur_card += num_cards_in_slice) {
     HeapWord* stripe_addr = addr_for(cur_card);
-    if (!is_dirty(cur_card)) {
-      HeapWord* first_obj_addr = object_start(stripe_addr);
-      if (first_obj_addr < stripe_addr) {
-        oop first_obj = cast_to_oop(first_obj_addr);
-        if (!first_obj->is_array() && is_dirty(byte_for(first_obj_addr))) {
-          // Potentially imprecisely marked dirty.
-          // Mark first card of stripe dirty too.
-          *cur_card = dirty_card_val();
-        }
-      }
+    if (is_dirty(cur_card)) {
+      // The first card of this stripe is already dirty, no need to see if the
+      // reaching-in object is a potentially imprecisely marked non-array
+      // object.
+      continue;
     }
-  }
-
-  // Sync with other workers
-  Atomic::dec(&_preprocessing_active_workers);
-  SpinYield spin_yield;
-  while (Atomic::load_acquire(&_preprocessing_active_workers) > 0) {
-    spin_yield.wait();
+    HeapWord* first_obj_addr = object_start(stripe_addr);
+    if (first_obj_addr == stripe_addr) {
+      // No object reaching into this stripe.
+      continue;
+    }
+    oop first_obj = cast_to_oop(first_obj_addr);
+    if (!first_obj->is_array() && is_dirty(byte_for(first_obj_addr))) {
+      // Found a non-array object reaching into the stripe that has
+      // potentially been marked imprecisely.  Mark first card of the stripe
+      // dirty so it will be processed later.
+      *cur_card = dirty_card_val();
+    }
   }
 }
 
@@ -306,16 +373,20 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
     return result;
   };
 
-  const size_t stripe_size_in_words = num_cards_in_stripe * _card_size_in_words;
-  const size_t slice_size_in_words = stripe_size_in_words * n_stripes;
-
   // Prepare scavenge.
   preprocess_card_table_parallel(object_start, old_gen_bottom, old_gen_top, stripe_index, n_stripes);
 
-  // Reset cached object
-  cached_obj = {nullptr, old_gen_bottom};
+  // Sync with other workers
+  Atomic::dec(&_preprocessing_active_workers);
+  SpinYield spin_yield;
+  while (Atomic::load_acquire(&_preprocessing_active_workers) > 0) {
+    spin_yield.wait();
+  }
 
   // Scavenge
+  cached_obj = {nullptr, old_gen_bottom};
+  const size_t stripe_size_in_words = num_cards_in_stripe * _card_size_in_words;
+  const size_t slice_size_in_words = stripe_size_in_words * n_stripes;
   HeapWord* cur_addr = old_gen_bottom + stripe_index * stripe_size_in_words;
   for (/* empty */; cur_addr < old_gen_top; cur_addr += slice_size_in_words) {
     HeapWord* const stripe_l = cur_addr;

@@ -33,61 +33,9 @@ class ObjectStartArray;
 class PSPromotionManager;
 
 class PSCardTable: public CardTable {
+  friend class StripeShadowCardTable;
   static constexpr size_t num_cards_in_stripe = 128;
   static_assert(num_cards_in_stripe >= 1, "progress");
-
-  class StripeShadowTable {
-    CardValue _table[num_cards_in_stripe];
-    const CardValue* _table_base;
-
-  public:
-    StripeShadowTable(PSCardTable* pst, MemRegion stripe) :
-      _table_base(_table - (uintptr_t(stripe.start()) >> _card_shift)) {
-      // Old gen top may not be card aligned.
-      size_t copy_length = align_up(stripe.byte_size(), _card_size) >> _card_shift;
-      size_t clear_length = align_down(stripe.byte_size(), _card_size) >> _card_shift;
-      memcpy(_table, pst->byte_for(stripe.start()), copy_length);
-      memset(pst->byte_for(stripe.start()), clean_card_val(), clear_length);
-    }
-
-    HeapWord* addr_for(const CardValue* const card) {
-      assert(card >= _table && card <=  &_table[num_cards_in_stripe], "out of bounds");
-      return (HeapWord*) ((card - _table_base) << _card_shift);
-    }
-
-    const CardValue* card_for(HeapWord* addr) {
-      return &_table_base[uintptr_t(addr) >> _card_shift];
-    }
-
-    bool is_dirty(const CardValue* const card) {
-      return !is_clean(card);
-    }
-
-    bool is_clean(const CardValue* const card) {
-      assert(card >= _table && card <  &_table[num_cards_in_stripe], "out of bounds");
-      return *card == PSCardTable::clean_card_val();
-    }
-
-    const CardValue* find_first_dirty_card(const CardValue* const start,
-                                           const CardValue* const end) {
-      for (const CardValue* i = start; i < end; ++i) {
-        if (is_dirty(i)) {
-          return i;
-        }
-      }
-      return end;
-    }
-
-    const CardValue* find_first_clean_card(const CardValue* const start,
-                                           const CardValue* const end) {
-      for (const CardValue* i = start; i < end; ++i) {
-        if (is_clean(i)) {
-          return i;
-        }
-      }
-      return end;
-    }
-  };
 
   volatile int _preprocessing_active_workers;
 

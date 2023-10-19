@@ -132,10 +132,8 @@ inline void PSPromotionManager::push_contents(oop obj) {
 }
 
 inline void PSPromotionManager::push_contents_bounded(oop obj, HeapWord* left, HeapWord* right) {
-  if (!obj->klass()->is_typeArray_klass()) {
-    PSPushContentsClosure pcc(this);
-    obj->oop_iterate(&pcc, MemRegion(left, right));
-  }
+  PSPushContentsClosure pcc(this);
+  obj->oop_iterate(&pcc, MemRegion(left, right));
 }
 
 template<bool promote_immediately>
