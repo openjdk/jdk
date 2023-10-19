@@ -154,7 +154,7 @@ void PSCardTable::process_range(Func&& object_start,
 
   StripeShadowTable sct(this, MemRegion(start, end));
 
-  // end might not be card-aligned
+  // end might not be card-aligned.
   const CardValue* end_card = sct.card_for(end - 1) + 1;
 
   for (HeapWord* i_addr = start; i_addr < end; /* empty */) {
@@ -168,11 +168,11 @@ void PSCardTable::process_range(Func&& object_start,
       break;
     }
 
-    // Located a non-empty dirty chunk [dirty_l, dirty_r)
+    // Located a non-empty dirty chunk [dirty_l, dirty_r).
     HeapWord* addr_l = sct.addr_for(dirty_l);
     HeapWord* addr_r = MIN2(sct.addr_for(dirty_r), end);
 
-    // Scan objects overlapping [addr_l, addr_r) limited to [start, end)
+    // Scan objects overlapping [addr_l, addr_r) limited to [start, end).
     HeapWord* obj_addr = object_start(addr_l);
 
     while (true) {
@@ -198,11 +198,11 @@ void PSCardTable::process_range(Func&& object_start,
         break;
       }
 
-      // move to next obj inside this dirty chunk
+      // Move to next obj inside this dirty chunk.
       obj_addr = obj_end_addr;
     }
 
-    // Finished a dirty chunk
+    // Finished a dirty chunk.
     pm->drain_stacks_cond_depth();
   }
 }
@@ -214,11 +214,9 @@ void PSCardTable::preprocess_card_table_parallel(Func&& object_start,
                                                  HeapWord* old_gen_top,
                                                  uint stripe_index,
                                                  uint n_stripes) {
-  const uint active_workers = n_stripes;
   const size_t num_cards_in_slice = num_cards_in_stripe * n_stripes;
   CardValue* cur_card = byte_for(old_gen_bottom) + stripe_index * num_cards_in_stripe;
   CardValue* const end_card = byte_for(old_gen_top - 1) + 1;
-  HeapWord* signaled_goal = nullptr;
 
   for ( /* empty */ ; cur_card < end_card; cur_card += num_cards_in_slice) {
     HeapWord* stripe_addr = addr_for(cur_card);
@@ -308,7 +306,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
   const size_t stripe_size_in_words = num_cards_in_stripe * _card_size_in_words;
   const size_t slice_size_in_words = stripe_size_in_words * n_stripes;
 
-  // Prepare scavenge
+  // Prepare scavenge.
   preprocess_card_table_parallel(object_start, old_gen_bottom, old_gen_top, stripe_index, n_stripes);
 
   // Reset cached object

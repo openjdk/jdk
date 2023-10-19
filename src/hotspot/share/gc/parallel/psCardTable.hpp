@@ -33,7 +33,6 @@ class ObjectStartArray;
 class PSPromotionManager;
 
 class PSCardTable: public CardTable {
- private:
   static constexpr size_t num_cards_in_stripe = 128;
   static_assert(num_cards_in_stripe >= 1, "progress");
 
@@ -41,10 +40,10 @@ class PSCardTable: public CardTable {
     CardValue _table[num_cards_in_stripe];
     const CardValue* _table_base;
 
-   public:
+  public:
     StripeShadowTable(PSCardTable* pst, MemRegion stripe) :
       _table_base(_table - (uintptr_t(stripe.start()) >> _card_shift)) {
-      // Old gen top is not card aligned.
+      // Old gen top may not be card aligned.
       size_t copy_length = align_up(stripe.byte_size(), _card_size) >> _card_shift;
       size_t clear_length = align_down(stripe.byte_size(), _card_size) >> _card_shift;
       memcpy(_table, pst->byte_for(stripe.start()), copy_length);
