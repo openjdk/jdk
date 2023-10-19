@@ -706,7 +706,7 @@ public final class String
      *         {@code false} if the byte array can be exclusively used to construct
      *         the string and is not modified or used for any other purpose.
      */
-    static String newStringUTF8NoRepl(byte[] bytes, int offset, int length, boolean noShare) {
+    static String newStringUTF8FailFast(byte[] bytes, int offset, int length, boolean noShare) {
         checkBoundsOffCount(offset, length, bytes.length);
         if (length == 0) {
             return "";
@@ -789,7 +789,7 @@ public final class String
             return "";
         }
         if (cs == UTF_8.INSTANCE) {
-            return newStringUTF8NoRepl(src, 0, src.length, false);
+            return newStringUTF8FailFast(src, 0, src.length, false);
         }
         if (cs == ISO_8859_1.INSTANCE) {
             if (COMPACT_STRINGS)
@@ -933,7 +933,7 @@ public final class String
     /*
      * Throws iae, instead of replacing, if unmappable.
      */
-    static byte[] getBytesUTF8NoRepl(String s) {
+    static byte[] getBytesUTF8FailFast(String s) {
         return encodeUTF8(s.coder(), s.value(), false);
     }
 

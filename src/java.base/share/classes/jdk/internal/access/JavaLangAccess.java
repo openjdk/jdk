@@ -342,7 +342,7 @@ public interface JavaLangAccess {
      * @return the newly created string
      * @throws IllegalArgumentException for malformed or unmappable bytes.
      */
-    String newStringUTF8NoRepl(byte[] bytes, int off, int len);
+    String newStringUTF8FailFast(byte[] bytes, int off, int len);
 
     /**
      * Get the char at index in a byte[] in internal UTF-16 representation,
@@ -361,7 +361,7 @@ public interface JavaLangAccess {
      * @return the encoded bytes in utf8
      * @throws IllegalArgumentException for malformed surrogates
      */
-    byte[] getBytesUTF8NoRepl(String s);
+    byte[] getBytesUTF8FailFast(String s);
 
     /**
      * Inflated copy from byte[] to char[], as defined by StringLatin1.inflate

@@ -2483,12 +2483,12 @@ public final class System {
                 return String.getBytesNoRepl(s, cs);
             }
 
-            public String newStringUTF8NoRepl(byte[] bytes, int off, int len) {
-                return String.newStringUTF8NoRepl(bytes, off, len, true);
+            public String newStringUTF8FailFast(byte[] bytes, int off, int len) {
+                return String.newStringUTF8FailFast(bytes, off, len, true);
             }
 
-            public byte[] getBytesUTF8NoRepl(String s) {
-                return String.getBytesUTF8NoRepl(s);
+            public byte[] getBytesUTF8FailFast(String s) {
+                return String.getBytesUTF8FailFast(s);
             }
 
             public void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
