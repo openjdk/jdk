@@ -27,8 +27,6 @@ package java.lang.foreign;
 
 import java.io.UncheckedIOException;
 import java.lang.foreign.ValueLayout.OfInt;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.VarHandle;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -46,8 +44,6 @@ import java.util.stream.Stream;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.SegmentFactories;
-import jdk.internal.foreign.StringSupport;
-import jdk.internal.foreign.Utils;
 import jdk.internal.javac.Restricted;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.vm.annotation.ForceInline;
@@ -134,21 +130,19 @@ import jdk.internal.vm.annotation.ForceInline;
  * int value = (int) intAtOffsetHandle.get(segment, 10L);          // segment.get(ValueLayout.JAVA_INT, 10L)
  * }
  *
- * The var handle returned by {@link ValueLayout#varHandle()} features a <em>base offset</em> parameter. This parameter
- * allows clients to express complex access operations, by injecting additional offset computation into the var handle.
- * For instance, a var handle that can be used to access an element of an {@code int} array at a given logical
+ * Alternatively, a var handle that can be used to access an element of an {@code int} array at a given logical
  * index can be created as follows:
  *
  * {@snippet lang=java:
- * MethodHandle scale = ValueLayout.JAVA_INT.scaleHandle();              // (long, long)long
+ * MethodHandle scale = ValueLayout.JAVA_INT.scaleHandle();
  * VarHandle intAtOffsetAndIndexHandle =
- *         MethodHandles.collectCoordinates(intAtOffsetHandle, 1, scale); // (MemorySegment, long, long)
- * int value = (int) intAtOffsetAndIndexHandle.get(segment, 2L, 3L);     // segment.get(ValueLayout.JAVA_INT, 2L + (3L * 4L))
+ *         ValueLayout.JAVA_INT.arrayElementVarHandle();             // (MemorySegment, long, long)
+ * int value = (int) intAtOffsetAndIndexHandle.get(segment, 2L, 3L); // segment.get(ValueLayout.JAVA_INT, 2L + (3L * 4L))
  * }
  *
  * <p>
  * Clients can also drop the base offset parameter, in order to make the access expression simpler. This can be used to
- * implement access operation such as {@link #getAtIndex(OfInt, long)}:
+ * implement access operations such as {@link #getAtIndex(OfInt, long)}:
  *
  * {@snippet lang=java:
  * VarHandle intAtIndexHandle =
