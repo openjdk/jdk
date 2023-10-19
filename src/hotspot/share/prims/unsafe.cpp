@@ -335,7 +335,7 @@ UNSAFE_ENTRY(jobject, Unsafe_AllocateInstance(JNIEnv *env, jobject unsafe, jclas
   return JNIHandles::make_local(THREAD, i);
 } UNSAFE_END
 
-UNSAFE_ENTRY(jlong, Unsafe_AllocateMemory0(JNIEnv *env, jobject unsafe, jlong size)) {
+UNSAFE_LEAF(jlong, Unsafe_AllocateMemory0(JNIEnv *env, jobject unsafe, jlong size)) {
   size_t sz = (size_t)size;
 
   assert(is_aligned(sz, HeapWordSize), "sz not aligned");
@@ -345,7 +345,7 @@ UNSAFE_ENTRY(jlong, Unsafe_AllocateMemory0(JNIEnv *env, jobject unsafe, jlong si
   return addr_to_java(x);
 } UNSAFE_END
 
-UNSAFE_ENTRY(jlong, Unsafe_ReallocateMemory0(JNIEnv *env, jobject unsafe, jlong addr, jlong size)) {
+UNSAFE_LEAF(jlong, Unsafe_ReallocateMemory0(JNIEnv *env, jobject unsafe, jlong addr, jlong size)) {
   void* p = addr_from_java(addr);
   size_t sz = (size_t)size;
 
@@ -356,7 +356,7 @@ UNSAFE_ENTRY(jlong, Unsafe_ReallocateMemory0(JNIEnv *env, jobject unsafe, jlong 
   return addr_to_java(x);
 } UNSAFE_END
 
-UNSAFE_ENTRY(void, Unsafe_FreeMemory0(JNIEnv *env, jobject unsafe, jlong addr)) {
+UNSAFE_LEAF(void, Unsafe_FreeMemory0(JNIEnv *env, jobject unsafe, jlong addr)) {
   void* p = addr_from_java(addr);
 
   os::free(p);

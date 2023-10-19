@@ -933,7 +933,8 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   //   the residual iterations are more than 10% of the trip count
   //   and rounds of "unroll,optimize" are not making significant progress
   //   Progress defined as current size less than 20% larger than previous size.
-  if (UseSuperWord && cl->node_count_before_unroll() > 0 &&
+  if (phase->C->do_superword() &&
+      cl->node_count_before_unroll() > 0 &&
       future_unroll_cnt > LoopUnrollMin &&
       is_residual_iters_large(future_unroll_cnt, cl) &&
       1.2 * cl->node_count_before_unroll() < (double)_body.size()) {
@@ -1038,7 +1039,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
     } // switch
   }
 
-  if (UseSuperWord) {
+  if (phase->C->do_superword()) {
     // Only attempt slp analysis when user controls do not prohibit it
     if (!range_checks_present() && (LoopMaxUnroll > _local_loop_unroll_factor)) {
       // Once policy_slp_analysis succeeds, mark the loop with the
@@ -1918,6 +1919,9 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   post_head->set_normal_loop();
   post_head->set_post_loop(main_head);
 
+  // clone_loop() above changes the exit projection
+  main_exit = outer_main_end->proj_out(false);
+
   // Reduce the post-loop trip count.
   CountedLoopEndNode* post_end = old_new[main_end->_idx]->as_CountedLoopEnd();
   post_end->_prob = PROB_FAIR;
@@ -2282,6 +2286,8 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     // can edit it's inputs directly.  Hammer in the new limit for the
     // minimum-trip guard.
     assert(opaq->outcnt() == 1, "");
+    // Notify limit -> opaq -> CmpI, it may constant fold.
+    _igvn.add_users_to_worklist(opaq->in(1));
     _igvn.replace_input_of(opaq, 1, new_limit);
   }
 
@@ -2962,6 +2968,8 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
         continue;  // Don't rce this check but continue looking for other candidates.
       }
 
+      assert(is_dominator(compute_early_ctrl(limit, limit_c), pre_end), "node pinned on loop exit test?");
+
       // Check for scaled induction variable plus an offset
       Node *offset = nullptr;
 
@@ -2980,6 +2988,8 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
       if (is_dominator(ctrl, offset_c)) {
         continue; // Don't rce this check but continue looking for other candidates.
       }
+
+      assert(is_dominator(compute_early_ctrl(offset, offset_c), pre_end), "node pinned on loop exit test?");
 #ifdef ASSERT
       if (TraceRangeLimitCheck) {
         tty->print_cr("RC bool node%s", flip ? " flipped:" : ":");
@@ -3526,7 +3536,7 @@ void IdealLoopTree::enqueue_data_nodes(PhaseIdealLoop* phase, Unique_Node_List& 
 void IdealLoopTree::collect_loop_core_nodes(PhaseIdealLoop* phase, Unique_Node_List& wq) const {
   uint before = wq.size();
   wq.push(_head->in(LoopNode::LoopBackControl));
-  for (uint i = 0; i < wq.size(); ++i) {
+  for (uint i = before; i < wq.size(); ++i) {
     Node* n = wq.at(i);
     for (uint j = 0; j < n->req(); ++j) {
       Node* in = n->in(j);

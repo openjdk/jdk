@@ -86,44 +86,63 @@ public class NativeTestHelper {
         return layout instanceof ValueLayout valueLayout && valueLayout.carrier() == MemorySegment.class;
     }
 
+    public static final Linker LINKER = Linker.nativeLinker();
+
     // the constants below are useful aliases for C types. The type/carrier association is only valid for 64-bit platforms.
 
     /**
      * The layout for the {@code bool} C type
      */
-    public static final ValueLayout.OfBoolean C_BOOL = ValueLayout.JAVA_BOOLEAN;
+    public static final ValueLayout.OfBoolean C_BOOL = (ValueLayout.OfBoolean) LINKER.canonicalLayouts().get("bool");
     /**
      * The layout for the {@code char} C type
      */
-    public static final ValueLayout.OfByte C_CHAR = ValueLayout.JAVA_BYTE;
+    public static final ValueLayout.OfByte C_CHAR = (ValueLayout.OfByte) LINKER.canonicalLayouts().get("char");
     /**
      * The layout for the {@code short} C type
      */
-    public static final ValueLayout.OfShort C_SHORT = ValueLayout.JAVA_SHORT;
+    public static final ValueLayout.OfShort C_SHORT = (ValueLayout.OfShort) LINKER.canonicalLayouts().get("short");
     /**
      * The layout for the {@code int} C type
      */
-    public static final ValueLayout.OfInt C_INT = ValueLayout.JAVA_INT;
+    public static final ValueLayout.OfInt C_INT = (ValueLayout.OfInt) LINKER.canonicalLayouts().get("int");
 
     /**
      * The layout for the {@code long long} C type.
      */
-    public static final ValueLayout.OfLong C_LONG_LONG = ValueLayout.JAVA_LONG;
+    public static final ValueLayout.OfLong C_LONG_LONG = (ValueLayout.OfLong) LINKER.canonicalLayouts().get("long long");
     /**
      * The layout for the {@code float} C type
      */
-    public static final ValueLayout.OfFloat C_FLOAT = ValueLayout.JAVA_FLOAT;
+    public static final ValueLayout.OfFloat C_FLOAT = (ValueLayout.OfFloat) LINKER.canonicalLayouts().get("float");
     /**
      * The layout for the {@code double} C type
      */
-    public static final ValueLayout.OfDouble C_DOUBLE = ValueLayout.JAVA_DOUBLE;
+    public static final ValueLayout.OfDouble C_DOUBLE = (ValueLayout.OfDouble) LINKER.canonicalLayouts().get("double");
     /**
      * The {@code T*} native type.
      */
-    public static final AddressLayout C_POINTER = ValueLayout.ADDRESS
-            .withTargetLayout(MemoryLayout.sequenceLayout(C_CHAR));
+    public static final AddressLayout C_POINTER = ((AddressLayout) LINKER.canonicalLayouts().get("void*"))
+            .withTargetLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, C_CHAR));
+    /**
+     * The layout for the {@code size_t} C type
+     */
+    public static final ValueLayout C_SIZE_T = (ValueLayout) LINKER.canonicalLayouts().get("size_t");
 
-    public static final Linker LINKER = Linker.nativeLinker();
+    // Common layout shared by some tests
+    // struct S_PDI { void* p0; double p1; int p2; };
+    public static final MemoryLayout S_PDI_LAYOUT = switch ((int) ValueLayout.ADDRESS.byteSize()) {
+        case 8 -> MemoryLayout.structLayout(
+            C_POINTER.withName("p0"),
+            C_DOUBLE.withName("p1"),
+            C_INT.withName("p2"),
+            MemoryLayout.paddingLayout(4));
+        case 4 -> MemoryLayout.structLayout(
+            C_POINTER.withName("p0"),
+            C_DOUBLE.withName("p1"),
+            C_INT.withName("p2"));
+        default -> throw new UnsupportedOperationException("Unsupported address size");
+    };
 
     private static final MethodHandle FREE = LINKER.downcallHandle(
             LINKER.defaultLookup().find("free").get(), FunctionDescriptor.ofVoid(C_POINTER));
@@ -248,8 +267,8 @@ public class NativeTestHelper {
         } else {
             VarHandle accessor = containerLayout.varHandle(fieldPath);
             //set value
-            accessor.set(container, fieldValue.value());
-            return actual -> fieldCheck.accept(accessor.get((MemorySegment) actual));
+            accessor.set(container, 0L, fieldValue.value());
+            return actual -> fieldCheck.accept(accessor.get((MemorySegment) actual, 0L));
         }
     }
 
@@ -257,7 +276,7 @@ public class NativeTestHelper {
         MethodHandle slicer = containerLayout.sliceHandle(fieldPath);
         return container -> {
               try {
-                return (MemorySegment) slicer.invokeExact(container);
+                return (MemorySegment) slicer.invokeExact(container, 0L);
             } catch (Throwable e) {
                 throw new IllegalStateException(e);
             }

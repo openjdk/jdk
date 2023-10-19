@@ -176,7 +176,7 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
   return s;
 }
 
-void os::current_stack_base_and_size(address* base, size_t* size)
+void os::current_stack_base_and_size(address* base, size_t* size) {
   address bottom;
 
 #ifdef __APPLE__

@@ -1245,12 +1245,18 @@ private:
   void divss(XMMRegister dst, XMMRegister src);
 
 
-#ifndef _LP64
+  void fnstsw_ax();
+  void fprem();
+  void fld_d(Address adr);
+  void fstp_d(Address adr);
+  void fstp_d(int index);
+
  private:
 
   void emit_farith(int b1, int b2, int i);
 
  public:
+#ifndef _LP64
   void emms();
 
   void fabs();
@@ -1309,7 +1315,6 @@ private:
 
   void fld1();
 
-  void fld_d(Address adr);
   void fld_s(Address adr);
   void fld_s(int index);
 
@@ -1338,10 +1343,6 @@ private:
   void fnsave(Address dst);
 
   void fnstcw(Address src);
-
-  void fnstsw_ax();
-
-  void fprem();
   void fprem1();
 
   void frstor(Address src);
@@ -1353,8 +1354,6 @@ private:
   void fst_d(Address adr);
   void fst_s(Address adr);
 
-  void fstp_d(Address adr);
-  void fstp_d(int index);
   void fstp_s(Address adr);
 
   void fsub(int i);
@@ -2184,7 +2183,7 @@ private:
   void subss(XMMRegister dst, XMMRegister src);
 
   void testb(Address dst, int imm8);
-  void testb(Register dst, int imm8);
+  void testb(Register dst, int imm8, bool use_ral = true);
 
   void testl(Address dst, int32_t imm32);
   void testl(Register dst, int32_t imm32);

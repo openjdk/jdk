@@ -1627,7 +1627,7 @@ int os::numa_get_group_id() {
   return 0;
 }
 
-size_t os::numa_get_leaf_groups(int *ids, size_t size) {
+size_t os::numa_get_leaf_groups(uint *ids, size_t size) {
   if (size > 0) {
     ids[0] = 0;
     return 1;
@@ -1820,6 +1820,17 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   }
 
   return nullptr;
+}
+
+size_t os::vm_min_address() {
+#ifdef __APPLE__
+  // On MacOS, the lowest 4G are denied to the application (see "PAGEZERO" resp.
+  // -pagezero_size linker option).
+  return 4 * G;
+#else
+  assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
+  return _vm_min_address_default;
+#endif
 }
 
 // Used to convert frequent JVM_Yield() to nops
