@@ -58,13 +58,12 @@ public class CompressedClassPointersEncodingScheme {
 
         output.reportDiagnosticSummary();
 
-        output.shouldHaveExitValue(0);
-
         // We ignore cases where we were not able to map at the force address
         if (output.contains("reserving class space failed")) {
             throw new SkippedException("Skipping because we cannot force ccs to " + forceAddressString);
         }
 
+        output.shouldHaveExitValue(0);
         output.shouldContain("Narrow klass base: " + expectedEncodingBaseString + ", Narrow klass shift: " + expectedEncodingShift);
     }
 
