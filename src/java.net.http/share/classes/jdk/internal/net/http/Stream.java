@@ -178,9 +178,9 @@ class Stream<T> extends ExchangeImpl<T> {
         HttpResponse.BodySubscriber<T> subscriber = responseSubscriber;
         try {
             if (subscriber == null) {
-                subscriber = responseSubscriber = pendingResponseSubscriber;
                 // pendingResponseSubscriber will be null until response headers have been received and
                 // readBodyAsync is called.
+                subscriber = responseSubscriber = pendingResponseSubscriber;
                 if (subscriber == null) {
                     // can't process anything yet
                     return;
@@ -192,9 +192,9 @@ class Stream<T> extends ExchangeImpl<T> {
                 Http2Frame frame = inputQ.peek();
                 if (frame instanceof ResetFrame rf) {
                     inputQ.remove();
-                    if (endStreamReceived()) {
-                        // If END_STREAM is already received, we should not receive any new RST_STREAM frames and
-                        // close the connection gracefully by processing all remaining frames in the inputQ.
+                    if (endStreamReceived() && rf.getErrorCode() ==  ResetFrame.NO_ERROR) {
+                        // If END_STREAM is already received, complete the requestBodyCF successfully
+                        // and stop sending any request data.
                         requestBodyCF.complete(null);
                     } else {
                         handleReset(rf, subscriber);
@@ -583,7 +583,8 @@ class Stream<T> extends ExchangeImpl<T> {
     // closing or done sending, response received or waiting for expect continue, receiving reset on active stream...
     void incoming_reset(ResetFrame frame) {
         Log.logTrace("Received RST_STREAM on stream {0}", streamid);
-        Flow.Subscriber<?> subscriber = responseSubscriber == null ? pendingResponseSubscriber : responseSubscriber;
+        Flow.Subscriber<?> subscriber = responseSubscriber;
+        if (subscriber == null) subscriber = pendingResponseSubscriber;
         if (endStreamReceived() && requestBodyCF.isDone()) {
             // END_STREAM flag may have been seen in the queue before processing this ResetFrame
             Log.logTrace("Ignoring RST_STREAM frame received on remotely closed stream {0}", streamid);

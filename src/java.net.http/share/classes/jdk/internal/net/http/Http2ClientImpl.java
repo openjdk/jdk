@@ -228,10 +228,7 @@ class Http2ClientImpl {
             connectionPoolLock.unlock();
         }
         do {
-            for (var entry : connections.entrySet()) {
-                connections.values().forEach(this::close);
-                connections.remove(entry.getKey(), entry.getValue());
-            }
+            connections.values().forEach(this::close);
         } while (!connections.isEmpty());
     }
 
