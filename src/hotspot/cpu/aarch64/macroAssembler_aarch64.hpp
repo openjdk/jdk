@@ -1805,8 +1805,6 @@ public:
   void poly1305_transfer(const RegPair d[], const FloatRegister s[],
                          int lane, FloatRegister vscratch);
   void copy_3_regs(const Register dest[], const Register src[]);
-  void copy_3_regs(const RegPair dest[], const FloatRegister src[], int index);
-  void copy_3_regs(const FloatRegister dest[], const RegPair src[], int index);
   void add_3_reg_pairs(const RegPair dest[], const RegPair src[]);
 
  private:
