@@ -331,7 +331,7 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  * }
  * }
  *
- * Here, the coordinate {@code x} of subsequent point in the array are accessed using the {@code POINT_ARR_X} var
+ * Here, the coordinate {@code x} of subsequent point in the array is accessed using the {@code POINT_ARR_X} var
  * handle, which is obtained using the {@link #arrayElementVarHandle(PathElement...)} method. This var handle
  * features two {@code long} coordinates: the first is a base offset (set to {@code 0L}), while the
  * second is a logical index that can be used to stride over all the elements of the point array.

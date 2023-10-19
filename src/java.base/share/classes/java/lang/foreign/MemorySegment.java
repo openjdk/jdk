@@ -134,7 +134,6 @@ import jdk.internal.vm.annotation.ForceInline;
  * index can be created as follows:
  *
  * {@snippet lang=java:
- * MethodHandle scale = ValueLayout.JAVA_INT.scaleHandle();
  * VarHandle intAtOffsetAndIndexHandle =
  *         ValueLayout.JAVA_INT.arrayElementVarHandle();             // (MemorySegment, long, long)
  * int value = (int) intAtOffsetAndIndexHandle.get(segment, 2L, 3L); // segment.get(ValueLayout.JAVA_INT, 2L + (3L * 4L))
