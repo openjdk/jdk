@@ -46,7 +46,7 @@ public class Setup {
         String workDir = args[0];
         String premainClass = args[1];
         boolean isCygwin = false;
-        if (args.length==3 && args[2].equals("CYGWIN")) {
+        if (args.length == 3 && args[2].equals("CYGWIN")) {
             isCygwin = true;
         }
 
