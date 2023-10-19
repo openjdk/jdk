@@ -77,6 +77,17 @@ public class TestMergeStores {
                  //"test1b",
                  "test1b"})
     public void runTests() {
+        // Write random values to inputs
+        set_random(aB);
+        set_random(bB);
+        set_random(aS);
+        set_random(bS);
+        set_random(aI);
+        set_random(bI);
+        set_random(aL);
+        set_random(bL);
+
+        // Run all tests
         for (Map.Entry<String, Map<String,TestFunction>> group_entry : test_groups.entrySet()) {
             String group_name = group_entry.getKey();
             Map<String, TestFunction> group = group_entry.getValue();
@@ -175,6 +186,30 @@ public class TestMergeStores {
         }
     }
 
+    static void set_random(byte[] a) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] = (byte)RANDOM.nextInt();
+        }
+    }
+
+    static void set_random(short[] a) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] = (short)RANDOM.nextInt();
+        }
+    }
+
+    static void set_random(int[] a) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] = RANDOM.nextInt();
+        }
+    }
+
+    static void set_random(long[] a) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] = RANDOM.nextLong();
+        }
+    }
+
     @DontCompile
     static Object[] test1R(byte[] a) {
         a[0] = (byte)0xbe;
@@ -189,8 +224,7 @@ public class TestMergeStores {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_L_OF_CLASS, "TestMergeStores", "1"})
-    @IR(counts = {IRNode.STORE_L, "1"})
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
     static Object[] test1a(byte[] a) {
         a[0] = (byte)0xbe;
         a[1] = (byte)0xba;
@@ -204,8 +238,7 @@ public class TestMergeStores {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_L_OF_CLASS, "TestMergeStores", "1"})
-    @IR(counts = {IRNode.STORE_L, "1"})
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
     static Object[] test1b(byte[] a) {
         UNSAFE.putLongUnaligned(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET, 0xdeadbeefbaadbabeL);
         return new Object[]{ a };
