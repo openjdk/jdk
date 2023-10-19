@@ -426,16 +426,6 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     }
 
     /**
-     * Returns a shallow copy of this {@code AbstractMap} instance: the keys
-     * and values themselves are not cloned.
-     *
-     * @return a shallow copy of this map
-     */
-    protected Object clone() throws CloneNotSupportedException {
-        return super.clone();
-    }
-
-    /**
      * Returns a string representation of this map.  The string representation
      * consists of a list of key-value mappings in the order returned by the
      * map's {@code entrySet} view's iterator, enclosed in braces
@@ -465,6 +455,16 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
                 return sb.append('}').toString();
             sb.append(',').append(' ');
         }
+    }
+
+    /**
+     * Returns a shallow copy of this {@code AbstractMap} instance: the keys
+     * and values themselves are not cloned.
+     *
+     * @return a shallow copy of this map
+     */
+    protected Object clone() throws CloneNotSupportedException {
+        return super.clone();
     }
 
     /**
