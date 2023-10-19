@@ -506,24 +506,11 @@ static const Type* sub_sub(const Type* t1, const Type* t2) {
     uhi = std::numeric_limits<U>::max();
   }
 
-  U zeros = 0;
-  U ones = 0;
-  bool carry = false;
-  bool no_carry = true;
-  for (juint i = 0; i < W; i++) {
-    U mask = U(1) << i;
-    jint min = ((i1->_ones & mask) != 0) - ((i2->_zeros & mask) == 0) - !no_carry;
-    jint max = ((i1->_zeros & mask) == 0) - ((i2->_ones & mask) != 0) - carry;
-    no_carry = min >= 0;
-    carry = max < 0;
-    if (min == max) {
-      if ((min & 1) == 0) {
-        zeros |= mask;
-      } else {
-        ones |= mask;
-      }
-    }
-  }
+  U min = i1->_ones - ~i2->_zeros;
+  U max = ~i1->_zeros - i2->_ones;
+  U known = (min ^~ max) & (i1->_zeros | i1->_ones) & (i2->_zeros | i2->_ones);
+  U zeros = known &~ min;
+  U ones = known & min;
 
   return CT::make(lo, hi, ulo, uhi, zeros, ones, MAX2(i1->_widen, i2->_widen));
 }
