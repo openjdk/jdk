@@ -87,7 +87,7 @@ public abstract class DocTrees extends Trees {
 
     /**
      * The style of a documentation comment.
-     * 
+     *
      * @since 22
      */
     public enum CommentKind {
@@ -101,8 +101,8 @@ public abstract class DocTrees extends Trees {
      * {@return the style of the documentation comment associated with a tree node.}
      *
      * @param path the path for the tree node
-     *    
-     * @see Trees#getPath(Element) 
+     *
+     * @see Trees#getPath(Element)
      * @since 22
      */
     public abstract CommentKind getDocCommentKind(TreePath path);

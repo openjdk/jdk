@@ -202,7 +202,7 @@ public class MDPrinter {
         private final PrintStream out;
 
         int depth = 0;
-        
+
         protected void defaultAction(Node node) {
             out.print("    ".repeat(depth));
             out.print(node.getClass().getSimpleName());
@@ -261,5 +261,5 @@ public class MDPrinter {
     public static void show(Node node, String source, PrintStream out) {
         new MDVisitor(source, out).visit(node);
     }
-    
+
 }

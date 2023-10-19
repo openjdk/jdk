@@ -530,7 +530,7 @@ public class TestMarkdown extends JavadocTester {
         tb.writeFile(src.resolve("p").resolve("doc-files").resolve("markdown.md"),
                 """
                 # This is a _Markdown_ heading
-                
+
                 Lorem ipsum""");
 
         javadoc("-d", base.resolve("api").toString(),
