@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import static java.nio.file.StandardOpenOption.*;
 
 /*
  * @test
- * @enablePreview
  * @bug 8286637
  * @summary Ensure that memory mapping beyond 32-bit range does not cause an
  *          EXCEPTION_ACCESS_VIOLATION.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,14 @@
  * questions.
  */
 
-#include "jni.h"
-#include "testlib_threads.h"
+#include <jlong.h>
+#include <jni.h>
+#include <stdlib.h>
+#include <string.h>
 
-void call(void* ctxt) {
-    JavaVM* jvm = (JavaVM*) ctxt;
-    JNIEnv* env;
-    jvm->AttachCurrentThread((void**)&env, NULL);
-    jclass linkerClass = env->FindClass("java/lang/foreign/Linker");
-    jmethodID nativeLinkerMethod = env->GetStaticMethodID(linkerClass, "nativeLinker", "()Ljava/lang/foreign/Linker;");
-    env->CallStaticVoidMethod(linkerClass, nativeLinkerMethod);
-    jvm->DetachCurrentThread();
-}
-
-extern "C" {
-    JNIEXPORT void JNICALL
-    Java_org_openjdk_foreigntest_PanamaMainUnnamedModule_nativeLinker0(JNIEnv *env, jclass cls) {
-        JavaVM* jvm;
-        env->GetJavaVM(&jvm);
-        run_in_new_thread_and_join(call, jvm);
-    }
+JNIEXPORT jlong JNICALL Java_org_openjdk_bench_java_lang_foreign_ToCStringTest_writeString(JNIEnv *const env, const jclass cls, const jstring text) {
+    const char *str = (*env)->GetStringUTFChars(env, text, NULL);
+    jlong addr = ptr_to_jlong(str);
+    (*env)->ReleaseStringUTFChars(env, text, str);
+    return addr;
 }
