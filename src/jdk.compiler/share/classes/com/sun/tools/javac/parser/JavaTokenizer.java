@@ -1636,19 +1636,22 @@ public class JavaTokenizer extends UnicodeReader {
                     UnicodeReader line = lineReader();
                     line = isMarkdown ? trimMarkdownComment(line, indent) : trimJavadocComment(line);
 
-                    // If standalone @deprecated tag
-                    int pos = line.position();
-                    line.skipWhitespace();
+                    if (cs == CommentStyle.JAVADOC_BLOCK) {
+                        // If standalone @deprecated tag
+                        int pos = line.position();
+                        line.skipWhitespace();
 
-                    if (line.accept("@deprecated") &&
-                            (!line.isAvailable() ||
-                                    line.isWhitespace() ||
-                                    line.isEOLN() ||
-                                    line.get() == EOI)) {
-                        deprecatedFlag = true;
+                        if (line.accept("@deprecated") &&
+                                (!line.isAvailable() ||
+                                        line.isWhitespace() ||
+                                        line.isEOLN() ||
+                                        line.get() == EOI)) {
+                            deprecatedFlag = true;
+                        }
+
+                        line.reset(pos);
                     }
 
-                    line.reset(pos);
                     putLine(line);
                 }
             }
