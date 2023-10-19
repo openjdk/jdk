@@ -125,7 +125,6 @@ public class WheelModifier {
 
         Robot r = new Robot();
         r.waitForIdle();
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
 
         SwingUtilities.invokeAndWait(() -> {
             sLoc = fb.getLocationOnScreen();
