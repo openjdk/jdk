@@ -59,10 +59,10 @@ static inline bool not_loaded() {
   return !is_loaded();
 }
 
-static void* dll_lookup(const char* name, const char* path) {
+static void* dll_lookup(const char* name, const char* path, bool vm_exit_on_failure) {
   assert(_zip_handle != nullptr, "invariant");
   void* func = os::dll_lookup(_zip_handle, name);
-  if (func == nullptr) {
+  if (func == nullptr && vm_exit_on_failure) {
     char msg[256] = "";
     jio_snprintf(&msg[0], sizeof msg, "Could not resolve \"%s\"", name);
     vm_exit_during_initialization(&msg[0], path);
@@ -70,18 +70,18 @@ static void* dll_lookup(const char* name, const char* path) {
   return func;
 }
 
-static void store_function_pointers(const char* path) {
+static void store_function_pointers(const char* path, bool vm_exit_on_failure) {
   assert(_zip_handle != nullptr, "invariant");
-  ZIP_Open = CAST_TO_FN_PTR(ZIP_Open_t, dll_lookup("ZIP_Open", path));
-  ZIP_Close = CAST_TO_FN_PTR(ZIP_Close_t, dll_lookup("ZIP_Close", path));
-  ZIP_FindEntry = CAST_TO_FN_PTR(ZIP_FindEntry_t, dll_lookup("ZIP_FindEntry", path));
-  ZIP_ReadEntry = CAST_TO_FN_PTR(ZIP_ReadEntry_t, dll_lookup("ZIP_ReadEntry", path));
-  ZIP_CRC32 = CAST_TO_FN_PTR(ZIP_CRC32_t, dll_lookup("ZIP_CRC32", path));
-  ZIP_GZip_InitParams = CAST_TO_FN_PTR(ZIP_GZip_InitParams_t, dll_lookup("ZIP_GZip_InitParams", path));
-  ZIP_GZip_Fully = CAST_TO_FN_PTR(ZIP_GZip_Fully_t, dll_lookup("ZIP_GZip_Fully", path));
+  ZIP_Open = CAST_TO_FN_PTR(ZIP_Open_t, dll_lookup("ZIP_Open", path, vm_exit_on_failure));
+  ZIP_Close = CAST_TO_FN_PTR(ZIP_Close_t, dll_lookup("ZIP_Close", path, vm_exit_on_failure));
+  ZIP_FindEntry = CAST_TO_FN_PTR(ZIP_FindEntry_t, dll_lookup("ZIP_FindEntry", path, vm_exit_on_failure));
+  ZIP_ReadEntry = CAST_TO_FN_PTR(ZIP_ReadEntry_t, dll_lookup("ZIP_ReadEntry", path, vm_exit_on_failure));
+  ZIP_CRC32 = CAST_TO_FN_PTR(ZIP_CRC32_t, dll_lookup("ZIP_CRC32", path, vm_exit_on_failure));
+  ZIP_GZip_InitParams = CAST_TO_FN_PTR(ZIP_GZip_InitParams_t, dll_lookup("ZIP_GZip_InitParams", path, vm_exit_on_failure));
+  ZIP_GZip_Fully = CAST_TO_FN_PTR(ZIP_GZip_Fully_t, dll_lookup("ZIP_GZip_Fully", path, vm_exit_on_failure));
 }
 
-static void load_zip_library() {
+static void load_zip_library(bool vm_exit_on_failure) {
   assert(!is_loaded(), "should not load zip library twice");
   char path[JVM_MAXPATHLEN];
   if (os::dll_locate_lib(&path[0], sizeof path, Arguments::get_dll_dir(), "zip")) {
@@ -89,9 +89,12 @@ static void load_zip_library() {
     _zip_handle = os::dll_load(&path[0], &ebuf[0], sizeof ebuf);
   }
   if (_zip_handle == nullptr) {
-    vm_exit_during_initialization("Unable to load zip library", &path[0]);
+    if (vm_exit_on_failure) {
+      vm_exit_during_initialization("Unable to load zip library", &path[0]);
+    }
+    return;
   }
-  store_function_pointers(&path[0]);
+  store_function_pointers(&path[0], vm_exit_on_failure);
   Atomic::release_store(&_loaded, true);
   assert(is_loaded(), "invariant");
 }
@@ -126,13 +129,13 @@ class ZipLibraryLoaderLock : public StackObj {
 
 Semaphore ZipLibraryLoaderLock::_lock(1);
 
-static void initialize() {
+static void initialize(bool vm_exit_on_failure = true) {
   if (is_loaded()) {
     return;
   }
   ZipLibraryLoaderLock lock;
   if (not_loaded()) {
-    load_zip_library();
+    load_zip_library(vm_exit_on_failure);
   }
 }
 
@@ -167,14 +170,19 @@ jint ZipLibrary::crc32(jint crc, const jbyte* buf, jint len) {
 }
 
 const char* ZipLibrary::init_params(size_t block_size, size_t* needed_out_size, size_t* needed_tmp_size, int level) {
-  initialize();
-  assert(ZIP_GZip_InitParams != nullptr, "invariant");
+  initialize(false);
+  if (ZIP_GZip_InitParams == nullptr) {
+    return "Cannot get ZIP_GZip_InitParams function";
+  }
   return ZIP_GZip_InitParams(block_size, needed_out_size, needed_tmp_size, level);
 }
 
 size_t ZipLibrary::compress(char* in, size_t in_size, char* out, size_t out_size, char* tmp, size_t tmp_size, int level, char* buf, const char** pmsg) {
-  initialize();
-  assert(ZIP_GZip_Fully != nullptr, "invariant");
+  initialize(false);
+  if (ZIP_GZip_Fully == nullptr) {
+    *pmsg = "Cannot get ZIP_GZip_Fully function";
+    return 0;
+  }
   return ZIP_GZip_Fully(in, in_size, out, out_size, tmp, tmp_size, level, buf, pmsg);
 }
 
