@@ -53,9 +53,11 @@
 #include <inttypes.h>
 #include <string.h>
 
+#ifndef SYSTEM_BINUTILS
 /* defines for bfd.h */
 #define PACKAGE "hsdis"
 #define PACKAGE_VERSION 1
+#endif
 
 #include <bfd.h>
 #include <dis-asm.h>
