@@ -90,8 +90,7 @@ class PSCardTable: public CardTable {
     }
   };
 
-  // Pre-scavenge support.
-  volatile int _pre_scavenge_active_workers;
+  volatile int _preprocessing_active_workers;
 
   bool is_dirty(CardValue* card) {
     return !is_clean(card);
@@ -121,7 +120,7 @@ class PSCardTable: public CardTable {
 
  public:
   PSCardTable(MemRegion whole_heap) : CardTable(whole_heap),
-                                      _pre_scavenge_active_workers(0) {}
+                                      _preprocessing_active_workers(0) {}
 
   static CardValue youngergen_card_val() { return youngergen_card; }
   static CardValue verify_card_val()     { return verify_card; }

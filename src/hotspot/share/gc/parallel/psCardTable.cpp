@@ -133,7 +133,7 @@ void PSCardTable::scan_obj_with_limit(PSPromotionManager* pm,
 }
 
 void PSCardTable::pre_scavenge(HeapWord* old_gen_bottom, uint active_workers) {
-  _pre_scavenge_active_workers = active_workers;
+  _preprocessing_active_workers = active_workers;
 }
 
 // Scavenge objects on dirty cards of the given stripe [start, end). Accesses to
@@ -236,9 +236,9 @@ void PSCardTable::preprocess_card_table_parallel(Func&& object_start,
   }
 
   // Sync with other workers
-  Atomic::dec(&_pre_scavenge_active_workers);
+  Atomic::dec(&_preprocessing_active_workers);
   SpinYield spin_yield;
-  while (Atomic::load_acquire(&_pre_scavenge_active_workers) > 0) {
+  while (Atomic::load_acquire(&_preprocessing_active_workers) > 0) {
     spin_yield.wait();
   }
 }
