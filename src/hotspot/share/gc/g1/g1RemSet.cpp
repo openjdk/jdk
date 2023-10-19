@@ -1193,11 +1193,9 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // implicitly rebuild anything else during eager reclaim. Note that at the moment
       // (and probably never) we do not enter this path if there are other kind of
       // remembered sets for this region.
-      r->rem_set()->clear(true /* only_cardset */);
-      // Clear_locked() above sets the state to Empty. However we want to continue
-      // collecting remembered set entries for humongous regions that were not
-      // reclaimed.
-      r->rem_set()->set_state_complete();
+      // We want to continue collecting remembered set entries for humongous regions
+      // that were not reclaimed.
+      r->rem_set()->clear(true /* only_cardset */, true /* keep_tracked */);
 #ifdef ASSERT
       G1HeapRegionAttr region_attr = g1h->region_attr(region_index);
       assert(region_attr.remset_is_tracked(), "must be");
