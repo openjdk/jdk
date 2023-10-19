@@ -37,13 +37,11 @@ import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.function.IntFunction;
 
 import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
 import static java.lang.foreign.MemoryLayout.PathElement.sequenceElement;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import static org.testng.Assert.*;
 
