@@ -146,17 +146,17 @@ public final class Utils {
     @ForceInline
     public static MemorySegment longToAddress(long addr, long size, long align) {
         if (!isAligned(addr, align)) {
-            throw new IllegalArgumentException("Invalid alignment constraint for address: " + addr);
+            throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
         }
-        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, size);
+        return SegmentFactories.makeNativeSegmentUnchecked(addr, size);
     }
 
     @ForceInline
     public static MemorySegment longToAddress(long addr, long size, long align, MemorySessionImpl scope) {
         if (!isAligned(addr, align)) {
-            throw new IllegalArgumentException("Invalid alignment constraint for address: " + addr);
+            throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
         }
-        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, size, scope);
+        return SegmentFactories.makeNativeSegmentUnchecked(addr, size, scope);
     }
 
     @ForceInline
