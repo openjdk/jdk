@@ -33,7 +33,7 @@ import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
-import java.util.HexFormat;
+import java.util.Formatter;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -122,12 +122,20 @@ public class GregorianCalAndDurSerDataUtil {
 
     private static String generatePseudoCode(StringBuilder sb, byte [] bytes) {
         final int linelen = 8;
-        HexFormat hex = HexFormat.of().withPrefix(" (byte) 0x").withSuffix(",");
-        for (int i = 0; i < bytes.length; i += linelen) {
-            sb.append("\n");
-            sb.append(hex.formatHex(bytes, i, Math.min(i + linelen, bytes.length)));
+//        HexFormat hex = HexFormat.of().withPrefix(" (byte) 0x").withSuffix(",");
+//        for (int i = 0; i < bytes.length; i += linelen) {
+//            sb.append("\n");
+//            sb.append(hex.formatHex(bytes, i, Math.min(i + linelen, bytes.length)));
+//        }
+//        sb.append("};");
+        Formatter fmt = new Formatter(sb);
+        for (int i = 0; i <bytes.length; i++) {
+            if (i % linelen == 0) {
+                fmt.format("%n           ");
+            }
+            fmt.format(" (byte) 0x%x,", bytes[i] & 0xff);
         }
-        sb.append("};");
+        fmt.format("%n    };%n");
         return sb.toString();
     }
 }
