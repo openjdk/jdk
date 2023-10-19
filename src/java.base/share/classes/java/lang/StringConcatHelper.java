@@ -585,7 +585,6 @@ final class StringConcatHelper {
     static MethodHandle lookupStatic(String name, MethodType methodType) {
         try {
             return MethodHandles.lookup()
-                    .dropLookupMode(MethodHandles.Lookup.PRIVATE)
                     .findStatic(StringConcatHelper.class, name, methodType);
         } catch (NoSuchMethodException|IllegalAccessException e) {
             throw new AssertionError(e);
