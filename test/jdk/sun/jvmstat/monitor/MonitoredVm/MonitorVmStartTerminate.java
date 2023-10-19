@@ -184,7 +184,7 @@ public final class MonitorVmStartTerminate {
                 try {
                     VmIdentifier vmid = new VmIdentifier("//" + id.intValue());
                     MonitoredVm target = host.getMonitoredVm(vmid);
-                        String monitoredArgs = MonitoredVmUtil.mainArgs(target);
+                    String monitoredArgs = MonitoredVmUtil.mainArgs(target);
                     if (monitoredArgs != null && monitoredArgs.contains(args)) {
                         System.out.println("hasMainArgs(" + id + "): yes");
                         return true;
@@ -192,7 +192,7 @@ public final class MonitorVmStartTerminate {
                         return false;
                     }
                 } catch (URISyntaxException | MonitorException e) {
-                    // Pocess probably not running or not ours, e.g.
+                    // Process probably not running or not ours, e.g.
                     // sun.jvmstat.monitor.MonitorException: Could not attach to PID
                     System.out.println("hasMainArgs(" + id + "): " + e);
                 }
