@@ -49,15 +49,14 @@
    HotSpot PrintAssembly option.
 */
 
-#ifndef SYSTEM_BINUTILS
-#include <config.h> /* required by bfd.h */
-#endif
-
 #include <errno.h>
 #include <inttypes.h>
 #include <string.h>
 
-#include <libiberty.h>
+/* defines for bfd.h */
+#define PACKAGE "hsdis"
+#define PACKAGE_VERSION 1
+
 #include <bfd.h>
 #include <dis-asm.h>
 
