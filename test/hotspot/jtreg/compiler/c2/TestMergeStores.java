@@ -55,6 +55,17 @@ public class TestMergeStores {
     long[] aL = new long[RANGE];
     long[] bL = new long[RANGE];
 
+    int offset1;
+    int offset2;
+    byte vB1;
+    byte vB2;
+    short vS1;
+    short vS2;
+    int vI1;
+    int vI2;
+    long vL1;
+    long vL2;
+
     interface TestFunction {
         Object[] run();
     }
@@ -71,11 +82,29 @@ public class TestMergeStores {
         test_groups.get("test1").put("test1R", () -> { return test1R(aB.clone()); });
         test_groups.get("test1").put("test1a", () -> { return test1a(aB.clone()); });
         test_groups.get("test1").put("test1b", () -> { return test1b(aB.clone()); });
+        test_groups.get("test1").put("test1c", () -> { return test1c(aB.clone()); });
+        test_groups.get("test1").put("test1d", () -> { return test1d(aB.clone()); });
+        test_groups.get("test1").put("test1e", () -> { return test1d(aB.clone()); });
+
+        test_groups.put("test2", new HashMap<String,TestFunction>());
+        test_groups.get("test2").put("test2R", () -> { return test2R(aB.clone(), offset1, vL1); });
+        test_groups.get("test2").put("test2a", () -> { return test2a(aB.clone(), offset1, vL1); });
+        test_groups.get("test2").put("test2b", () -> { return test2b(aB.clone(), offset1, vL1); });
+        test_groups.get("test2").put("test2c", () -> { return test2c(aB.clone(), offset1, vL1); });
+        test_groups.get("test2").put("test2d", () -> { return test2d(aB.clone(), offset1, vL1); });
+        test_groups.get("test2").put("test2e", () -> { return test2d(aB.clone(), offset1, vL1); });
     }
 
     @Run(test = {"test1a",
-                 //"test1b",
-                 "test1b"})
+                 "test1b",
+                 "test1c",
+                 "test1d",
+                 "test1e",
+                 "test2a",
+                 "test2b",
+                 "test2c",
+                 "test2d",
+                 "test2e"})
     public void runTests() {
         // Write random values to inputs
         set_random(aB);
@@ -86,6 +115,17 @@ public class TestMergeStores {
         set_random(bI);
         set_random(aL);
         set_random(bL);
+
+        offset1 = Math.abs(RANDOM.nextInt()) % 100;
+        offset2 = Math.abs(RANDOM.nextInt()) % 100;
+        vB1 = (byte)RANDOM.nextInt();
+        vB2 = (byte)RANDOM.nextInt();
+        vS1 = (short)RANDOM.nextInt();
+        vS2 = (short)RANDOM.nextInt();
+        vI1 = RANDOM.nextInt();
+        vI2 = RANDOM.nextInt();
+        vL1 = RANDOM.nextLong();
+        vL2 = RANDOM.nextLong();
 
         // Run all tests
         for (Map.Entry<String, Map<String,TestFunction>> group_entry : test_groups.entrySet()) {
@@ -151,7 +191,9 @@ public class TestMergeStores {
             if (g[j] != r[j]) {
                 throw new RuntimeException("verify " + name + ": arrays must have same content:" +
                                            " gold[" + i + "][" + j + "] = " + g[j] +
-                                           " result[" + i + "][" + j + "] = " + r[j]);
+                                           " = " + String.format("%02X", g[j] & 0xFF) +
+                                           " result[" + i + "][" + j + "] = " + r[j] +
+                                           " = " + String.format("%02X", r[j] & 0xFF));
             }
         }
     }
@@ -210,6 +252,70 @@ public class TestMergeStores {
         }
     }
 
+    // -------------------------------------------
+    // -------     Little-Endian API    ----------
+    // -------------------------------------------
+    // Note: I had to add @ForceInline because otherwise it would sometimes
+    //       not inline nested method calls.
+
+    // Store a short LE into an array using store bytes in an array
+    @ForceInline
+    static void storeShortLE(byte[] bytes, int offset, short value) {
+        storeBytes(bytes, offset, (byte)value, (byte)(value >> 8));
+    }
+
+    // Store an int LE into an array using store bytes in an array
+    @ForceInline
+    static void storeIntLE(byte[] bytes, int offset, int value) {
+        storeBytes(bytes, offset, (byte)value,
+                (byte)(value >> 8),
+                (byte)(value >> 16),
+                (byte)(value >> 24));
+    }
+
+    // Store an int LE into an array using store bytes in an array
+    @ForceInline
+    static void storeLongLE(byte[] bytes, int offset, long value) {
+        storeBytes(bytes, offset, (byte)value,
+                (byte)(value >> 8),
+                (byte)(value >> 16),
+                (byte)(value >> 24),
+                (byte)(value >> 32),
+                (byte)(value >> 40),
+                (byte)(value >> 48),
+                (byte)(value >> 56));
+    }
+
+    // Store 2 bytes into an array
+    @ForceInline
+    static void storeBytes(byte[] bytes, int offset, byte b0, byte b1) {
+        bytes[offset] = b0;
+        bytes[offset + 1] = b1;
+    }
+
+    // Store 4 bytes into an array
+    @ForceInline
+    static void storeBytes(byte[] bytes, int offset, byte b0, byte b1, byte b2, byte b3) {
+        bytes[offset] = b0;
+        bytes[offset + 1] = b1;
+        bytes[offset + 2] = b2;
+        bytes[offset + 3] = b3;
+    }
+
+    // Store 8 bytes into an array
+    @ForceInline
+    static void storeBytes(byte[] bytes, int offset, byte b0, byte b1, byte b2, byte b3,
+                                                     byte b4, byte b5, byte b6, byte b7) {
+        bytes[offset] = b0;
+        bytes[offset + 1] = b1;
+        bytes[offset + 2] = b2;
+        bytes[offset + 3] = b3;
+        bytes[offset + 4] = b4;
+        bytes[offset + 5] = b5;
+        bytes[offset + 6] = b6;
+        bytes[offset + 7] = b7;
+    }
+
     @DontCompile
     static Object[] test1R(byte[] a) {
         a[0] = (byte)0xbe;
@@ -243,4 +349,90 @@ public class TestMergeStores {
         UNSAFE.putLongUnaligned(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET, 0xdeadbeefbaadbabeL);
         return new Object[]{ a };
     }
+
+    @Test
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    static Object[] test1c(byte[] a) {
+        storeLongLE(a, 0, 0xdeadbeefbaadbabeL);
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    static Object[] test1d(byte[] a) {
+        storeIntLE(a, 0, 0xbaadbabe);
+        storeIntLE(a, 4, 0xdeadbeef);
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    static Object[] test1e(byte[] a) {
+        storeShortLE(a, 0, (short)0xbabe);
+        storeShortLE(a, 2, (short)0xbaad);
+        storeShortLE(a, 4, (short)0xbeef);
+        storeShortLE(a, 6, (short)0xdead);
+        return new Object[]{ a };
+    }
+
+    @DontCompile
+    static Object[] test2R(byte[] a, int offset, long v) {
+        a[offset + 0] = (byte)(v >> 0);
+        a[offset + 1] = (byte)(v >> 8);
+        a[offset + 2] = (byte)(v >> 16);
+        a[offset + 3] = (byte)(v >> 24);
+        a[offset + 4] = (byte)(v >> 32);
+        a[offset + 5] = (byte)(v >> 40);
+        a[offset + 6] = (byte)(v >> 48);
+        a[offset + 7] = (byte)(v >> 56);
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    static Object[] test2a(byte[] a, int offset, long v) {
+        a[offset + 0] = (byte)(v >> 0);
+        a[offset + 1] = (byte)(v >> 8);
+        a[offset + 2] = (byte)(v >> 16);
+        a[offset + 3] = (byte)(v >> 24);
+        a[offset + 4] = (byte)(v >> 32);
+        a[offset + 5] = (byte)(v >> 40);
+        a[offset + 6] = (byte)(v >> 48);
+        a[offset + 7] = (byte)(v >> 56);
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    static Object[] test2b(byte[] a, int offset, long v) {
+        UNSAFE.putLongUnaligned(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset, v);
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    static Object[] test2c(byte[] a, int offset, long v) {
+        storeLongLE(a, offset, v);
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    static Object[] test2d(byte[] a, int offset, long v) {
+        storeIntLE(a, offset + 0, (int)(v >> 0));
+        storeIntLE(a, offset + 4, (int)(v >> 32));
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    static Object[] test2e(byte[] a, int offset, long v) {
+        storeShortLE(a, offset + 0, (short)(v >> 0));
+        storeShortLE(a, offset + 2, (short)(v >> 16));
+        storeShortLE(a, offset + 4, (short)(v >> 32));
+        storeShortLE(a, offset + 6, (short)(v >> 48));
+        return new Object[]{ a };
+    }
+
+
 }

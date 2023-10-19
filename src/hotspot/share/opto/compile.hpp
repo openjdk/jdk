@@ -317,6 +317,8 @@ class Compile : public Phase {
 
   bool                  _post_loop_opts_phase;  // Loop opts are finished.
 
+  bool                  _merge_stores_phase;    // True during merge stores phase
+
   int                   _major_progress;        // Count of something big happening
   bool                  _inlining_progress;     // progress doing incremental inlining?
   bool                  _inlining_incrementally;// Are we doing incremental inlining (post parse)
@@ -776,6 +778,9 @@ private:
   void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
   void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
 
+  bool merge_stores_phase() { return _merge_stores_phase;  }
+  void set_merge_stores_phase(bool b) { _merge_stores_phase = b;  }
+
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);
   void process_for_post_loop_opts_igvn(PhaseIterGVN& igvn);
@@ -1194,6 +1199,8 @@ private:
   uint eval_macro_logic_op(uint func, uint op1, uint op2, uint op3);
   Node* xform_to_MacroLogicV(PhaseIterGVN &igvn, const TypeVect* vt, Unique_Node_List& partitions, Unique_Node_List& inputs);
   void check_no_dead_use() const NOT_DEBUG_RETURN;
+
+  void gather_nodes_for_merge_stores(PhaseIterGVN &igvn);
 
  public:
 

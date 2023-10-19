@@ -2744,8 +2744,10 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  Node* progress = Ideal_merge_stores(phase);
-  if(progress != nullptr) { return progress; }
+  if (phase->C->merge_stores_phase()) {
+    Node* progress = Ideal_merge_stores(phase);
+    if(progress != nullptr) { return progress; }
+  }
 
   return nullptr;                  // No further progress
 }
@@ -2788,6 +2790,9 @@ Node* StoreNode::Ideal_merge_stores(PhaseGVN* phase) {
 
   int pow2size = round_down_power_of_2(merge_list.size());
   assert(pow2size >= 2, "must be merging at least 2 stores");
+
+  tty->print_cr("merge_list");
+  merge_list.dump();
 
   // Create / find new value:
   Node* new_value = nullptr;
@@ -2883,12 +2888,19 @@ StoreNode* StoreNode::can_merge_with_def(PhaseGVN* phase, bool check_use) {
 
   StoreNode* s1 = this;
   StoreNode* s2 = def->as_Store();
+  tty->print_cr("try");
+  s1->dump();
+  s2->dump();
   assert(s1->memory_size() == s2->memory_size(), "same size");
 
   // Check ctrl compatibility
   Node* ctrl_s1 = s1->in(MemNode::Control);
   Node* ctrl_s2 = s2->in(MemNode::Control);
   if (ctrl_s1 != ctrl_s2) {
+    tty->print_cr("fail on ctrl");
+    s1->dump_bfs(5,0,"#c$");
+    tty->print_cr("with");
+    s2->dump_bfs(5,0,"#c$");
     return nullptr;
   }
 
@@ -2938,6 +2950,10 @@ StoreNode* StoreNode::can_merge_with_def(PhaseGVN* phase, bool check_use) {
       adr_s1->in(AddPNode::Address) != adr_s2->in(AddPNode::Address) ||
       !adr_s1->in(AddPNode::Offset)->is_Con() ||
       !adr_s2->in(AddPNode::Offset)->is_Con()) {
+    tty->print_cr("fail on adr");
+    s1->dump_bfs(10,0,"#d$");
+    tty->print_cr("with");
+    s2->dump_bfs(10,0,"#d$");
     return nullptr;
   }
 

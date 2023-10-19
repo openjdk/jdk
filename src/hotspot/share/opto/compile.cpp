@@ -2439,6 +2439,13 @@ void Compile::Optimize() {
     igvn.optimize();
   }
 
+  if (true) {
+    C->gather_nodes_for_merge_stores(igvn);
+    C->set_merge_stores_phase(true);
+    igvn.optimize();
+    C->set_merge_stores_phase(false);
+  }
+
   DEBUG_ONLY( _modified_nodes = nullptr; )
 
   assert(igvn._worklist.size() == 0, "not empty");
@@ -2879,6 +2886,24 @@ void Compile::optimize_logic_cones(PhaseIterGVN &igvn) {
       if (supported) {
         VectorSet visited(comp_arena());
         process_logic_cone_root(igvn, n, visited);
+      }
+    }
+  }
+}
+
+void Compile::gather_nodes_for_merge_stores(PhaseIterGVN &igvn) {
+  ResourceMark rm;
+  Unique_Node_List worklist;
+  worklist.push(root());
+  for (uint i = 0; i < worklist.size(); i++) {
+    Node* n = worklist[i];
+    int opc = n->Opcode();
+    if (opc == Op_StoreB || opc == Op_StoreC || opc == Op_StoreI) {
+      igvn._worklist.push(n);
+    }
+    for (uint i = 0; i < n->len(); i++) {
+      if (n->in(i) != nullptr) {
+        worklist.push(n->in(i));
       }
     }
   }
