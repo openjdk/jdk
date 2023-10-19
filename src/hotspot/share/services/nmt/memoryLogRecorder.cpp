@@ -41,8 +41,11 @@
 #ifdef ASSERT
 
 constexpr size_t _horizontal_space = 100;
-constexpr int _buckets_max = 2048;
-constexpr int _threads_max = 64;
+
+size_t* NMT_MemoryLogRecorder::malloc_buckets = nullptr;
+size_t NMT_MemoryLogRecorder::malloc_buckets_count = 0;
+size_t* NMT_MemoryLogRecorder::good_sizes_counts = nullptr;
+size_t* NMT_MemoryLogRecorder::good_sizes_totals = nullptr;
 
 int compare(const void* ptr_a, const void* ptr_b) {
   size_t a = * ( (size_t*) ptr_a );
@@ -62,7 +65,7 @@ static inline double ratio(double smaller, double bigger) {
 
 // on macOS malloc currently (macOS 13) returns the same value for same sizes
 // on Linux malloc can return different values for the same sizes
-static inline size_t _malloc_good_size_impl(size_t size) {
+static inline size_t _malloc_good_size_native(size_t size) {
   void *ptr = malloc(size);
   assert(ptr != nullptr, "must be, size=%zu", size);
   size_t actual = 0;
@@ -77,46 +80,37 @@ static inline size_t _malloc_good_size_impl(size_t size) {
   return actual;
 }
 
-static size_t good_sizes_counts[_buckets_max] = { 0 };
-static size_t good_sizes_totals[_buckets_max] = { 0 };
-static size_t good_sizes_requested[_buckets_max] = { 0 };
-static inline size_t _malloc_good_size_stats(size_t size) {
-  for (size_t i=0; i<_buckets_max; i++) {
-    if (good_sizes_requested[i] == size) {
+size_t NMT_MemoryLogRecorder::_malloc_good_size_stats(size_t size) {
+  assert(good_sizes_counts != nullptr, "good_sizes_counts != nullptr");
+  assert(good_sizes_totals != nullptr, "good_sizes_counts != nullptr");
+  for (size_t i=0; i<malloc_buckets_count; i++) {
+    if (malloc_buckets[i] == size) {
       // return average actual size
       return good_sizes_totals[i]/good_sizes_counts[i];
     }
   }
   // don't have this size in our stats, so estimate it
-  return _malloc_good_size_impl(size);
+  return _malloc_good_size_native(size);
 }
 
-static inline size_t _malloc_good_size(size_t size) {
+size_t NMT_MemoryLogRecorder::_malloc_good_size(size_t size) {
   return _malloc_good_size_stats(size);
 }
 
 void NMT_MemoryLogRecorder::calculate_good_sizes(Entry* entries, size_t count) {
-  for (size_t c=0; c<count; c++) {
-    Entry* e = &entries[c];
-    if (NMT_MemoryLogRecorder::is_alloc(e)) {
-      for (int i=0; i<_buckets_max; i++) {
-        if (good_sizes_requested[i] == 0) {
-          good_sizes_requested[i] = e->requested;
-          break;
-        }
-        else if (good_sizes_requested[i] == e->requested) {
-          break;
-        }
-      }
-    }
-  }
-  qsort(good_sizes_requested, _buckets_max, sizeof(size_t), compare);
+  find_malloc_buckets_sizes(entries, count);
+  assert(good_sizes_counts == nullptr, "good_sizes_counts == nullptr");
+  assert(good_sizes_totals == nullptr, "good_sizes_counts == nullptr");
+  good_sizes_counts = (size_t*)calloc(malloc_buckets_count, sizeof(size_t));
+  good_sizes_totals = (size_t*)calloc(malloc_buckets_count, sizeof(size_t));
+  assert(good_sizes_counts != nullptr, "good_sizes_counts != nullptr");
+  assert(good_sizes_totals != nullptr, "good_sizes_counts != nullptr");
 
   for (size_t c=0; c<count; c++) {
     Entry* e = &entries[c];
     if (NMT_MemoryLogRecorder::is_alloc(e)) {
-      for (int i=0; i<_buckets_max; i++) {
-        if (good_sizes_requested[i] == e->requested) {
+      for (size_t i=0; i<malloc_buckets_count; i++) {
+        if (malloc_buckets[i] == e->requested) {
           good_sizes_counts[i] += 1;
           good_sizes_totals[i] += e->actual;
           break;
@@ -128,22 +122,74 @@ void NMT_MemoryLogRecorder::calculate_good_sizes(Entry* entries, size_t count) {
 #if 0
   fprintf(stderr, "\n");
   size_t b = 0;
-  for (size_t i=0; i<_buckets_max; i++) {
-    if (good_sizes_requested[i] > 0) {
-      fprintf(stderr, "%3ld %8ld %8ld %12ld [%12ld][%.3f]\n",
-      b++, good_sizes_requested[i], good_sizes_counts[i], good_sizes_totals[i],
-      good_sizes_totals[i]/good_sizes_counts[i], (double)good_sizes_totals[i]/(double)good_sizes_counts[i]);
+  for (size_t i=0; i<malloc_buckets_count; i++) {
+    if (malloc_buckets[i] > 0) {
+      fprintf(stderr, "%3ld %8ld %8ld %12ld",
+              b++, malloc_buckets[i], good_sizes_counts[i], good_sizes_totals[i]);
+      if (good_sizes_counts[i] > 0) {
+        fprintf(stderr, " [%12ld][%.3f]\n",
+                good_sizes_totals[i]/good_sizes_counts[i], (double)good_sizes_totals[i]/(double)good_sizes_counts[i]);
+      } else {
+        fprintf(stderr, " [%12ld][%.3f]\n", 0L, 0.0);
+      }
     }
   }
   fprintf(stderr, "\n");
 #endif
 }
 
-bool NMT_MemoryLogRecorder::print_histogram(Entry* entries, size_t count) {
-  static size_t histogram_counts[_buckets_max] = { 0 };
-  static size_t histogram_actual_sizes[_buckets_max] = { 0 };
-  static size_t histogram_requested_sizes[_buckets_max] = { 0 };
+void NMT_MemoryLogRecorder::find_malloc_buckets_sizes(Entry* entries, size_t count) {
+  if (malloc_buckets == nullptr) {
+    assert(malloc_buckets_count == 0, "malloc_buckets_count == 0");
+    size_t buckets_max = 4;
+    malloc_buckets = (size_t*)calloc(buckets_max, sizeof(size_t));
+    assert(malloc_buckets != nullptr, "malloc_buckets != nullptr");
+    for (size_t c=0; c<count; c++) {
+      Entry* e = &entries[c];
+      bool found = false;
+      while (!found) {
+        for (size_t i=0; i<buckets_max; i++) {
+          if ((malloc_buckets[i] == 0) || (malloc_buckets[i] == e->requested)) {
+            found = true;
+            malloc_buckets[i] = e->requested;
+            malloc_buckets_count = MAX(malloc_buckets_count, i);
+            break;
+          }
+        }
+        if (!found) {
+          buckets_max *= 2;
+          malloc_buckets = (size_t*)realloc(malloc_buckets, buckets_max*sizeof(size_t));
+          assert(malloc_buckets != nullptr, "malloc_buckets != nullptr");
+          memset(&malloc_buckets[buckets_max/2], 0, buckets_max*sizeof(size_t)/2);
+        }
+      }
+    }
+    assert(malloc_buckets_count > 0, "malloc_buckets_count > 0");
+    assert(malloc_buckets != nullptr, "malloc_buckets != nullptr");
+    qsort(malloc_buckets, malloc_buckets_count, sizeof(size_t), compare);
+  }
+
+#if 0
+  fprintf(stderr, "\n");
+  fprintf(stderr, "malloc_buckets_count: %zu\n", malloc_buckets_count);
+  size_t b = 0;
+  for (size_t i=0; i<malloc_buckets_count; i++) {
+    if (malloc_buckets[i] > 0) {
+      fprintf(stderr, "malloc_buckets[%zu]: %zu\n", i, malloc_buckets[i]);
+    }
+  }
+  fprintf(stderr, "\n");
+#endif
+}
   
+void NMT_MemoryLogRecorder::print_histogram(Entry* entries, size_t count) {
+  find_malloc_buckets_sizes(entries, count);
+
+  size_t* histogram_counts = (size_t*)calloc(malloc_buckets_count, sizeof(size_t));
+  size_t* histogram_actual_sizes = (size_t*)calloc(malloc_buckets_count, sizeof(size_t));
+  assert(histogram_counts != nullptr, "histogram_counts != nullptr");
+  assert(histogram_actual_sizes != nullptr, "histogram_actual_sizes != nullptr");
+
   size_t total_requested = 0;
   size_t total_actual = 0;
   for (size_t c=0; c<count; c++) {
@@ -154,28 +200,13 @@ bool NMT_MemoryLogRecorder::print_histogram(Entry* entries, size_t count) {
     }
   }
   size_t alloc_overhead = (total_actual - total_requested);
-  
-  // find unique alloc requests
-  for (size_t c=0; c<count; c++) {
-    Entry* e = &entries[c];
-    if (NMT_MemoryLogRecorder::is_alloc(e)) {
-      for (int i=0; i<_buckets_max; i++) {
-        if (histogram_requested_sizes[i] == e->requested) {
-          break;
-        } else if (histogram_requested_sizes[i] == 0) {
-          histogram_requested_sizes[i] = e->requested;
-          break;
-        }
-      }
-    }
-  }
-  qsort(histogram_requested_sizes, _buckets_max, sizeof(size_t), compare);
+  fprintf(stderr, "\nalloc_overhead: %zu\n", alloc_overhead);
 
   // find total_actual sizes for alloc requests and count how many of them there are
-  for (int i=0; i<_buckets_max; i++) {
+  for (size_t i=0; i<malloc_buckets_count; i++) {
     for (size_t c=0; c<count; c++) {
       Entry* e = &entries[c];
-      if (histogram_requested_sizes[i] == e->requested) {
+      if (malloc_buckets[i] == e->requested) {
         if (histogram_actual_sizes[i] > 0) {
           // just double checking
           assert(histogram_actual_sizes[i] = e->actual, "histogram_actual_sizes[] = e->total_actual");
@@ -185,55 +216,55 @@ bool NMT_MemoryLogRecorder::print_histogram(Entry* entries, size_t count) {
       }
     }
   }
-  
-  size_t max_bucket_count = 0;
-  for (int c=0; c<_buckets_max; c++) {
-    if (histogram_counts[c] > max_bucket_count) {
-      max_bucket_count = histogram_counts[c];
-    }
-  }
-  
+
   size_t r_total = 0;
   size_t a_total = 0;
   size_t o_total = 0;
-  size_t c_total = 0;
-  size_t malloc_buckets_count = 0;
+  size_t buckets_count = 0;
   fprintf(stderr, "\n\n");
-  fprintf(stderr, "Histogram of memory size allocations (uses nonlinear scale)\n");
+  fprintf(stderr, "Histogram of memory overhead (quadratic scale)\n");
   fprintf(stderr, "----------------------------------------------\n");
-  fprintf(stderr, "requested:    actual: overhead: ratio:  count:\n");
-  for (int i=0; i<_buckets_max; i++) {
-    if (histogram_requested_sizes[i] > 0) {
-      malloc_buckets_count++;
-      
-      double bar = _horizontal_space * (double)histogram_counts[i] / (double)max_bucket_count;
-      size_t mark = (size_t)MAX(MIN(sqrt(_horizontal_space*bar), _horizontal_space), 0.0);
-      char flag = (histogram_requested_sizes[i] == histogram_actual_sizes[i]) ? '=' : ' ';
-      size_t o = histogram_counts[i] * (histogram_actual_sizes[i] - histogram_requested_sizes[i]);
-      double o_ratio = ratio(o, alloc_overhead);
-      
-      r_total += histogram_counts[i] * histogram_requested_sizes[i];
+  fprintf(stderr, "requested:    actual: overhead:  count: ratio:\n");
+  for (size_t i=0; i<malloc_buckets_count; i++) {
+    if (malloc_buckets[i] > 0) {
+      buckets_count++;
+
+      char flag = (malloc_buckets[i] == histogram_actual_sizes[i]) ? '=' : ' ';
+      size_t overhead = histogram_counts[i] * (histogram_actual_sizes[i] - malloc_buckets[i]);
+      double overhead_ratio = ratio(overhead, alloc_overhead);
+      // quadratic function which goes through 3 points: (0,0) (25,50) (100,100)
+      // https://www.mathepower.com/en/quadraticfunctions.php
+      size_t mark = MIN((size_t)round(-(1.0/(double)_horizontal_space)*overhead_ratio*overhead_ratio + 2.0*overhead_ratio), 100);
+
+      r_total += histogram_counts[i] * malloc_buckets[i];
       a_total += histogram_counts[i] * histogram_actual_sizes[i];
-      o_total += o;
-      c_total += histogram_counts[i];
-      
-      fprintf(stderr, "%9zu%c %9zu %9zu   %02.3f  %6zu ",
-              histogram_requested_sizes[i], flag, histogram_actual_sizes[i], o, o_ratio, histogram_counts[i]);
+      o_total += overhead;
+
+      if (overhead_ratio < 10.0) {
+        fprintf(stderr, "%9zu%c %9zu %9zu   %6zu  %02.3f ",
+                malloc_buckets[i], flag, histogram_actual_sizes[i], overhead, histogram_counts[i], overhead_ratio);
+      } else {
+        fprintf(stderr, "%9zu%c %9zu %9zu   %6zu  %02.2f ",
+                malloc_buckets[i], flag, histogram_actual_sizes[i], overhead, histogram_counts[i], overhead_ratio);
+      }
       for (size_t j=0; j<mark; j++) {
-        fprintf(stderr, "*");
+        fprintf(stderr, "#");
+      }
+      for (size_t j=mark; j<=_horizontal_space; j++) {
+        fprintf(stderr, ".");
       }
       fprintf(stderr, "\n");
     }
   }
-  fprintf(stderr, "\nnative malloc used %zu buckets\n\n", malloc_buckets_count);
+  fprintf(stderr, "\nnative malloc used %zu distinct allocation sizes\n\n", buckets_count);
 
-//  assert((count_mallocs+count_reallocs) == c_total, "(count_mallocs+count_reallocs):%zu == ctotal:%zu", (count_mallocs+count_reallocs), c_total);
   assert(r_total == total_requested, "r_total:%zu == total_requested:%zu", r_total, total_requested);
   assert(a_total == total_actual, "a_total:%zu == total_actual:%zu", a_total, total_actual);
   assert(a_total-r_total == o_total, "a_total-r_total:%zu == o_total:%zu", a_total-r_total, o_total);
   assert(alloc_overhead == o_total, "alloc_overhead:%zu == total_requested:%zu", alloc_overhead, o_total);
 
-  return (malloc_buckets_count >= _buckets_max-1);
+  free(histogram_actual_sizes);
+  free(histogram_counts);
 }
 
 void NMT_MemoryLogRecorder::print_entry(Entry* e) {
@@ -252,83 +283,95 @@ void NMT_MemoryLogRecorder::print_records(Entry* entries, size_t count) {
   }
 }
 
-bool NMT_MemoryLogRecorder::print_by_thread(Entry* entries, size_t count) {
-  void* threads[_threads_max] = { nullptr };
-  static size_t threads_counters_malloc_count[_threads_max] = { 0 };
-  static size_t threads_counters_realloc_count[_threads_max] = { 0 };
-  static size_t threads_counters_free_count[_threads_max] = { 0 };
-
-  bool threads_limit_reached = false;
-  size_t count_mallocs = 0;
-  size_t count_reallocs = 0;
-  size_t count_frees = 0;
-
+void NMT_MemoryLogRecorder::print_by_thread(Entry* entries, size_t count) {
+  size_t threads_max = 4;
+  size_t thread_count = 0;
+  address* threads = (address*)calloc(threads_max, sizeof(address));
+  assert(threads != nullptr, "threads != nullptr");
   for (size_t c=0; c<count; c++) {
     Entry* e = &entries[c];
-    
-    // intialize the array with threads' pointers
-    for (int i=0; i<_threads_max; i++) {
-      if (i == (_threads_max-1)) {
-        threads_limit_reached = true;
+    bool found = false;
+    while (!found) {
+      for (size_t i=0; i<threads_max; i++) {
+        if ((threads[i] == nullptr) || (threads[i] == e->thread)) {
+          found = true;
+          threads[i] = e->thread;
+          thread_count = MAX(thread_count, i);
+          break;
+        }
       }
-      if (threads[i] == e->thread) {
-        break;
-      } else if (threads[i] == nullptr) {
-        threads[i] = e->thread;
-        break;
+      if (!found) {
+        threads_max *= 2;
+        threads = (address*)realloc(threads, threads_max*sizeof(address));
+        assert(threads != nullptr, "threads != nullptr");
+        memset(&threads[threads_max/2], 0, threads_max*sizeof(size_t)/2);
       }
     }
+  }
+  fprintf(stderr, "Found %zu threads\n", thread_count);
+#if 0
+  for (size_t i=0; i<threads_max; i++) {
+    if (threads[i] != nullptr) {
+      fprintf(stderr, " threads[%zu]: %p\n", i, threads[i]);
+    }
+  }
+#endif
 
+  size_t* counter_malloc = (size_t*)calloc(thread_count, sizeof(size_t));
+  size_t* counter_realloc = (size_t*)calloc(thread_count, sizeof(size_t));
+  size_t* counter_free = (size_t*)calloc(thread_count, sizeof(size_t));
+  size_t* sizes_requested = (size_t*)calloc(thread_count, sizeof(size_t));
+  size_t* sizes_actual = (size_t*)calloc(thread_count, sizeof(size_t));
+  size_t* sizes_freed = (size_t*)calloc(thread_count, sizeof(size_t));
+  assert(counter_malloc != nullptr, "counter_malloc != nullptr");
+  assert(counter_realloc != nullptr, "counter_realloc != nullptr");
+  assert(counter_free != nullptr, "counter_free != nullptr");
+  assert(sizes_requested != nullptr, "sizes_requested != nullptr");
+  assert(sizes_actual != nullptr, "sizes_actual != nullptr");
+  assert(sizes_freed != nullptr, "sizes_freed != nullptr");
+
+  size_t total_count_mallocs = 0;
+  size_t total_count_reallocs = 0;
+  size_t total_count_frees = 0;
+  size_t total_size_requested = 0;
+  size_t total_size_actual = 0;
+  size_t total_size_freed = 0;
+  for (size_t c=0; c<count; c++) {
+    Entry* e = &entries[c];
     // count the instances of malloc, realloc and free
-    for (int i=0; i<_threads_max; i++) {
+    for (size_t i=0; i<thread_count; i++) {
       if (threads[i] == e->thread) {
         if (is_malloc(e)) {
-          threads_counters_malloc_count[i]++;
-          count_mallocs++;
+          counter_malloc[i]++;
+          total_count_mallocs++;
         } else if (is_realloc(e)) {
-          threads_counters_realloc_count[i]++;
-          count_reallocs++;
+          counter_realloc[i]++;
+          total_count_reallocs++;
         } else if (is_free(e)) {
-          threads_counters_free_count[i]++;
-          count_frees++;
+          counter_free[i]++;
+          total_count_frees++;
         }
-        break;
-      }
-    }
-  }
-
-  static size_t threads_counters_requested_alloced[_threads_max] = { 0 };
-  static size_t threads_counters_actual_alloced[_threads_max] = { 0 };
-  static size_t threads_counters_actual_freed[_threads_max] = { 0 };
-  size_t lifetime_requested = 0;
-  size_t lifetime_actual = 0;
-  size_t lifetime_freed = 0;
-
-  // count the total_actual bytes that were allocated/freed by the OS
-  for (size_t c=0; c<count; c++) {
-    Entry* e = &entries[c];
-    for (int i=0; i<_threads_max; i++) {
-      if (threads[i] == e->thread) {
         if (NMT_MemoryLogRecorder::is_alloc(e)) {
-          lifetime_requested += e->requested;
-          threads_counters_requested_alloced[i] += e->requested;
-          lifetime_actual += e->actual;
-          threads_counters_actual_alloced[i] += e->actual;
+          total_size_requested += e->requested;
+          sizes_requested[i] += e->requested;
+          total_size_actual += e->actual;
+          sizes_actual[i] += e->actual;
         } else { // free
-          lifetime_freed += e->actual;
-          threads_counters_actual_freed[i] += e->actual;
+          total_size_freed += e->actual;
+          sizes_freed[i] += e->actual;
         }
         break;
       }
     }
   }
+
 
   fprintf(stderr, "\n");
   fprintf(stderr, "------------------------------------------------------------------------------------------------------\n");
   fprintf(stderr, "                      thread name:  mallocs: reallocs:     free:   requested:   allocated:      freed:\n");
   fprintf(stderr, "                                     (count)   (count)   (count)      (bytes)      (bytes)     (bytes)\n");
   fprintf(stderr, "------------------------------------------------------------------------------------------------------\n");
-  for (int i=0; i<_threads_max; i++) {
+  for (size_t i=0; i<thread_count; i++) {
     if (threads[i] != nullptr) {
       char buf[32] = { 0 };
 #if defined(LINUX) || defined(__APPLE__)
@@ -343,19 +386,26 @@ bool NMT_MemoryLogRecorder::print_by_thread(Entry* entries, size_t count) {
           strcpy(&buf[0], "???");
         }
       }
-      fprintf(stderr, "%33s:%9ld:%9ld:%9ld:%12ld:%12ld:%12ld\n", buf,
-              threads_counters_malloc_count[i], threads_counters_realloc_count[i], threads_counters_free_count[i],
-              threads_counters_requested_alloced[i], threads_counters_actual_alloced[i], threads_counters_actual_freed[i]);
+      fprintf(stderr, "%33s %9ld %9ld %9ld %12ld %12ld %12ld\n", buf,
+              counter_malloc[i], counter_realloc[i], counter_free[i],
+              sizes_requested[i], sizes_actual[i], sizes_freed[i]);
     } else {
       break;
     }
   }
 
   fprintf(stderr, "------------------------------------------------------------------------------------------------------\n");
-  fprintf(stderr, "                TOTALS (lifetime):%9ld:%9ld:%9ld:%12ld:%12ld:%12ld\n",
-          count_mallocs, count_reallocs, count_frees, lifetime_requested, lifetime_actual, lifetime_freed);
+  fprintf(stderr, "               TOTALS (lifetime): %9ld %9ld %9ld %12ld %12ld %12ld\n",
+          total_count_mallocs, total_count_reallocs, total_count_frees,
+          total_size_requested, total_size_actual, total_size_freed);
 
-  return threads_limit_reached;
+  free(sizes_freed);
+  free(sizes_actual);
+  free(sizes_requested);
+  free(counter_free);
+  free(counter_realloc);
+  free(counter_malloc);
+  free(threads);
 }
 
 NMT_MemoryLogRecorder::Entry* NMT_MemoryLogRecorder::find_free_entry(Entry* entries, size_t count) {
@@ -374,6 +424,7 @@ NMT_MemoryLogRecorder::Entry* NMT_MemoryLogRecorder::find_realloc_entry(Entry* e
   for (size_t b=count-1; b>0; b--) {
     Entry* found = &entries[b];
     if (found->ptr == e->old) {
+      print_entry(found);
       return found;
     }
   }
@@ -418,9 +469,11 @@ void NMT_MemoryLogRecorder::print_summary(Entry* entries, size_t count) {
         if (found != nullptr) {
           assert(found->flags == e->flags, "found->flags == e->flags");
           assert(NMT_MemoryLogRecorder::is_alloc(found), "NMT_MemoryLogRecorder::is_alloc(found)");
-//          fprintf(stderr, "\nREALLOC:\n");
-//          print_entry(found);
-//          print_entry(e);
+#if 0
+          fprintf(stderr, "\nREALLOC:\n");
+          print_entry(found);
+          print_entry(e);
+#endif
           if (is_nmt(e)) {
             total_NMTObjects += e->actual;
             total_requested += e->requested;
@@ -447,9 +500,11 @@ void NMT_MemoryLogRecorder::print_summary(Entry* entries, size_t count) {
       if (found != nullptr) {
         assert(found->actual == e->actual, "found->actual == e->actual");
         assert(NMT_MemoryLogRecorder::is_alloc(found), "NMT_MemoryLogRecorder::is_alloc(found)");
-//        fprintf(stderr, "FREE:\n");
-//        print_entry(found);
-//        print_entry(e);
+#if 0
+        fprintf(stderr, "FREE:\n");
+        print_entry(found);
+        print_entry(e);
+#endif
         count_Objects--;
         count_frees++;
         total_requested -= found->requested;
@@ -535,68 +590,8 @@ void NMT_MemoryLogRecorder::print_summary(Entry* entries, size_t count) {
           (count_mallocs + count_reallocs + count_frees));
 #endif
 }
-/*
- HelloWorld:
- 
- // Real     Priv     Shared  Memory
- // 74.7 MB  48.6 MB  3.1 MB  55.6 MB
- 
-                                        Current requested:     25326747 bytes,   24 Mb
-                                           Current actual:     25475952 bytes,   24 Mb
-                       Overhead due to malloc rounding up:       149205 bytes,    0 Mb : 0.589%, 0.586% [#24882]
-
- 
- // Real     Priv     Shared  Memory
- // 75.4 MB  48.6 MB  3.1 MB  56.3 MB
-
-                                        Current requested:     25938937 bytes,   24 Mb
-                                           Current actual:     27142320 bytes,   25 Mb
-                       Overhead due to malloc rounding up:      1203383 bytes,    1 Mb : 4.639%, 4.434% [#27662]
-                              Overhead due to NMT headers:       497916 bytes,    0 Mb : 1.920%, 1.834% [#27662]
-                              Overhead due to NMT objects:       313344 bytes,    0 Mb : 1.208%, 1.154% [#2784]
-
-
-                               Current requested (no NMT):     25194949 bytes,   24 Mb
-                                  Current actual (no NMT):     25343632 bytes,   24 Mb
-              Overhead due to malloc rounding up (no NMT):       148683 bytes,    0 Mb : 0.590%, 0.587% [#24878]
-
-           NMT overhead (current actual memory allocated):        7.097%
-
-
-J2Ddemo:
- 
- // Real      Priv      Shared   Memory
- // 373.1 MB  272.8 MB  58.4 MB  293.9 MB
-
-                                        Current requested:     45959424 bytes,   43 Mb
-                                           Current actual:     46737360 bytes,   44 Mb
-                       Overhead due to malloc rounding up:       777936 bytes,    0 Mb : 1.693%, 1.664% [#180316]
-
-
- 
- // Real      Priv      Shared   Memory
- // 404.8 MB  292.6 MB  58.8 MB  310.6 MB
- 
- diff:
-    11.5      2.3       0.4      0.6
- 
-                                      Current requested:     53854696 bytes,   51 Mb
-    Current actual:     56798576 bytes,   54 Mb
-Overhead due to malloc rounding up:      2943880 bytes,    2 Mb : 5.466%, 5.183% [#185961]
-Overhead due to NMT headers:      3347298 bytes,    3 Mb : 6.215%, 5.893% [#185961]
-Overhead due to NMT objects:       428272 bytes,    0 Mb : 0.795%, 0.754% [#3805]
-
-
-Current requested (no NMT):     50171366 bytes,   47 Mb
-Current actual (no NMT):     50953408 bytes,   48 Mb
-Overhead due to malloc rounding up (no NMT):       782042 bytes,    0 Mb : 1.559%, 1.535% [#182156]
-
-NMT overhead (current actual memory allocated):       11.472%
-
-*/
 
 void NMT_MemoryLogRecorder::dump(Entry* entries, size_t count) {
-  
   fprintf(stderr, "\nProcessing recorded NMT entries ...\n");
 
 #if 0
@@ -609,36 +604,33 @@ void NMT_MemoryLogRecorder::dump(Entry* entries, size_t count) {
   fprintf(stderr, "\n\n");
 #endif
 
-  bool buckets_limit_reached = false;
-  bool threads_limit_reached = false;
-
   if (PrintRecordedNMTEntries) {
     print_records(entries, count);
   }
-  
+
 #if 0
   fprintf(stderr, "\nProcessing histograms ...\n");
-  buckets_limit_reached = print_histogram(entries, count);
+  print_histogram(entries, count);
 #endif
 
   fprintf(stderr, "\nProcessing memory usage by thread ...\n");
-  threads_limit_reached = print_by_thread(entries, count);
+  print_by_thread(entries, count);
 
   fprintf(stderr, "\nProcessing memory summary ...\n");
   print_summary(entries, count);
 
   fprintf(stderr, "\n\n");
-  if (buckets_limit_reached) {
-    fprintf(stderr, "WARNING: reached _buckets_max limit: %d\n", _buckets_max);
-  }
-  if (threads_limit_reached) {
-    fprintf(stderr, "WARNING: reached _threads_max limit: %d\n", _threads_max);
-  }
   if (count == (size_t)RecordNMTEntries) {
     fprintf(stderr, "WARNING: reached RecordNMTEntries limit: %ld\n", count);
   }
   fprintf(stderr, "\nDONE!\n\n");
-  //fprintf(stderr, "MemTracker::overhead_per_malloc(): %zu\n", MemTracker::overhead_per_malloc());
+
+  assert(good_sizes_totals != nullptr, "good_sizes_totals != nullptr");
+  assert(good_sizes_counts != nullptr, "good_sizes_counts != nullptr");
+  assert(malloc_buckets != nullptr, "malloc_buckets != nullptr");
+  free(good_sizes_totals);
+  free(good_sizes_counts);
+  free(malloc_buckets);
 }
 
 void NMT_MemoryLogRecorder::log(MEMFLAGS flags, size_t requested, address ptr, address old, const NativeCallStack *stack) {
@@ -698,18 +690,18 @@ void NMT_MemoryLogRecorder::log(MEMFLAGS flags, size_t requested, address ptr, a
     }
     if (_entry->requested > 0) {
 //#if defined(LINUX)
-//     size_t good_size = _malloc_good_size_impl(_entry->requested);
+//     size_t good_size = _malloc_good_size_native(_entry->requested);
 //     if (_entry->actual != good_size) {
 //       fprintf(stderr, ">>> %zu != %zu:%zu\n", _entry->actual, good_size, _entry->requested);
 //     }
-//     // assert(_entry->actual == good_size, "%zu != _malloc_good_size_impl(%zu):%zu",
+//     // assert(_entry->actual == good_size, "%zu != _malloc_good_size_native(%zu):%zu",
 //     //        _entry->actual, _entry->requested, good_size);
 //#endif
 #if defined(WINDOWS)
       //???
 #endif
 #if defined(__APPLE__)
-      size_t good_size = malloc_good_size(_entry->requested);
+      size_t good_size = _malloc_good_size_native(_entry->requested);
       assert(_entry->actual == good_size, "%zu != malloc_good_size(%zu):%zu",
              _entry->actual, _entry->requested, good_size);
 #endif

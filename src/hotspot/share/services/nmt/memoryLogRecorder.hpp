@@ -46,11 +46,18 @@ private:
   static Entry* find_realloc_entry(Entry* entries, size_t count);
   static void print_entry(Entry* entries);
   static void calculate_good_sizes(Entry* entries, size_t count);
-  static bool print_histogram(Entry* entries, size_t count);
+  static void print_histogram(Entry* entries, size_t count);
   static void print_records(Entry* entries, size_t count);
-  static bool print_by_thread(Entry* entries, size_t count);
+  static void print_by_thread(Entry* entries, size_t count);
   static void print_summary(Entry* entries, size_t count);
   static void dump(Entry* entries, size_t count);
+  static size_t _malloc_good_size_stats(size_t size);
+  static size_t _malloc_good_size(size_t size);
+  static void find_malloc_buckets_sizes(Entry* entries, size_t count);
+  static size_t* malloc_buckets;
+  static size_t malloc_buckets_count;
+  static size_t* good_sizes_counts;
+  static size_t* good_sizes_totals;
 
 public:
   static bool is_nmt(Entry* e)     { return (e->flags == MEMFLAGS::mtNMT); };
