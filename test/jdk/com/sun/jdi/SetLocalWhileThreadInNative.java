@@ -174,7 +174,7 @@ public class SetLocalWhileThreadInNative extends TestScaffold {
                 }
             }
         }
-        boolean isVirtualThread = "Virtual".equals(System.getProperty("main.wrapper"));
+        boolean isVirtualThread = DebuggeeWrapper.isVirtual();
         Asserts.assertTrue(caughtOFE == isVirtualThread);
         Asserts.assertTrue(changedLocal == !isVirtualThread);
 

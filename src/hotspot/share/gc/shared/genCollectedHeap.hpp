@@ -25,19 +25,15 @@
 #ifndef SHARE_GC_SHARED_GENCOLLECTEDHEAP_HPP
 #define SHARE_GC_SHARED_GENCOLLECTEDHEAP_HPP
 
+#include "gc/serial/generation.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/generation.hpp"
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/preGCValues.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 
-class AdaptiveSizePolicy;
 class CardTableRS;
 class GCPolicyCounters;
 class GenerationSpec;
-class StrongRootsScope;
-class SubTasksDone;
-class WorkerThreads;
 
 // A "GenCollectedHeap" is a CollectedHeap that uses generational
 // collection.  It has two generations, young and old.
