@@ -133,7 +133,7 @@ public class JCmdTestDynamicDump extends JCmdTestDumpBase {
     private static void dumpStaticArchive(String archiveFile) throws Exception {
         String javapath = JDKToolFinder.getJDKTool("java");
         String cmd[] = {javapath, "-Xshare:dump",  "-XX:SharedArchiveFile=" + archiveFile};
-        // Do not use ProcessTools.createTestJvm(cmd) here, it copies jtreg env.
+        // Do not use ProcessTools.createJavaTestProcessBuilder(cmd) here, it copies jtreg env.
         ProcessBuilder pb = new ProcessBuilder(cmd);
         CDSTestUtils.executeAndLog(pb, "dump")
             .shouldHaveExitValue(0);

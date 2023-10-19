@@ -43,7 +43,7 @@ public class FreeTypeScalerJNICheck {
         if (args.length > 0 && args[0].equals("runtest")) {
             runTest();
         } else {
-            ProcessBuilder pb = ProcessTools.createTestJvm("-Xcheck:jni", FreeTypeScalerJNICheck.class.getName(), "runtest");
+            ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder("-Xcheck:jni", FreeTypeScalerJNICheck.class.getName(), "runtest");
             OutputAnalyzer oa = ProcessTools.executeProcess(pb);
             oa.shouldContain("Done").shouldNotContain("WARNING").shouldHaveExitValue(0);
         }

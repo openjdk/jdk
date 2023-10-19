@@ -69,7 +69,7 @@ public class AvailableProcessors {
             // Get the java command we want to execute
             // Enable logging for easier failure diagnosis
             ProcessBuilder master =
-                    ProcessTools.createJavaProcessBuilder("-Xlog:os=trace",
+                    ProcessTools.createLimitedJavaTestProcessBuilder("-Xlog:os=trace",
                                                           "AvailableProcessors");
 
             int[] expected = new int[] { 1, available/2, available-1, available };

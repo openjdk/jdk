@@ -42,7 +42,7 @@ public class TestUseCpuAllocPath {
 
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb =
-            ProcessTools.createJavaProcessBuilder("-Xlog:os=trace",
+            ProcessTools.createLimitedJavaTestProcessBuilder("-Xlog:os=trace",
                                                   "-XX:+UnlockDiagnosticVMOptions",
                                                   "-XX:+UseCpuAllocPath",
                                                   "-version");

@@ -64,7 +64,7 @@ public class PatchModuleClassList {
         String moduleJar = BasicJarBuilder.getTestJar("javanaming.jar");
 
         String classList = "javanaming.list";
-        ProcessBuilder pb = ProcessTools.createTestJvm(
+        ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder(
             "-XX:DumpLoadedClassList=" + classList,
             "--patch-module=java.naming=" + moduleJar,
             "PatchModuleMain", BOOT_CLASS.replace('/', '.'));
@@ -98,7 +98,7 @@ public class PatchModuleClassList {
         moduleJar = BasicJarBuilder.getTestJar("javasql.jar");
 
         classList = "javasql.list";
-        pb = ProcessTools.createTestJvm(
+        pb = ProcessTools.createJavaTestProcessBuilder(
             "-XX:DumpLoadedClassList=" + classList,
             "--patch-module=java.sql=" + moduleJar,
             "PatchModuleMain", PLATFORM_CLASS.replace('/', '.'));
@@ -130,7 +130,7 @@ public class PatchModuleClassList {
         moduleJar = BasicJarBuilder.getTestJar("hello.jar");
 
         classList = "hello.list";
-        pb = ProcessTools.createTestJvm(
+        pb = ProcessTools.createJavaTestProcessBuilder(
             "-XX:DumpLoadedClassList=" + classList,
             "-Xbootclasspath/a:" + moduleJar,
             "Hello");

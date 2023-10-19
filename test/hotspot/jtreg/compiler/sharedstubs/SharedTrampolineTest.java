@@ -58,7 +58,7 @@ public class SharedTrampolineTest {
         command.add(testClassName);
         command.add("a");
 
-        ProcessBuilder pb = ProcessTools.createTestJvm(command);
+        ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder(command);
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 

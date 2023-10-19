@@ -45,7 +45,7 @@ public class TestOnSpinWaitC1 {
     public static void main(String[] args) throws Exception {
 
         // Test C1 compiler
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(
           "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
           "-XX:+TieredCompilation", "-XX:TieredStopAtLevel=1", "-Xbatch",
           "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions",

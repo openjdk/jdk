@@ -42,7 +42,7 @@ public class ResolvedReferencesNotNullTest {
         String appJar = TestCommon.getTestJar(SharedStringsUtils.TEST_JAR_NAME_FULL);
         String whiteboxParam = SharedStringsUtils.getWbParam();
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-cp",
+        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder("-cp",
                                                                   appJar,
                                                                   whiteboxParam,
                                                                   "-XX:+UnlockDiagnosticVMOptions",

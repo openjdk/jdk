@@ -60,7 +60,7 @@ public class TestAllocateHeapAtMultiple {
                                               "-Xlog:gc+heap=info",
                                               "-version"});
 
-      ProcessBuilder pb = ProcessTools.createTestJvm(flags);
+      ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder(flags);
       OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
       System.out.println("Output:\n" + output.getOutput());

@@ -37,7 +37,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class PrintNMTStatisticsWithNMTDisabled {
 
   public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(
       "-XX:+UnlockDiagnosticVMOptions",
       "-XX:+PrintNMTStatistics", "-XX:NativeMemoryTracking=off",
       "-version");

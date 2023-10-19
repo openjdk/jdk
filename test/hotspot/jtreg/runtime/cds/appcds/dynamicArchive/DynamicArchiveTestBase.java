@@ -261,7 +261,7 @@ class DynamicArchiveTestBase {
         if (!executedIn_run) {
             throw new Exception("Test error: dynamic archive tests must be executed via DynamicArchiveTestBase.run()");
         }
-        ProcessBuilder pb = ProcessTools.createTestJvm(cmdLine);
+        ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder(cmdLine);
         if (jarDir != null) {
             pb.directory(new File(jarDir));
         }

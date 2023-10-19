@@ -127,7 +127,7 @@ public class TestChaCha20 {
             for (String className : classNames) {
                 // Start a new job
                 {
-                    ProcessBuilder pb = ProcessTools.createTestJvm(
+                    ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder(
                             mix(c, "-Xmx256m", className));
                     Process p = pb.start();
                     OutputAnalyzer oa = new OutputAnalyzer(p);

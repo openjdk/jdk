@@ -110,7 +110,7 @@ public class Debuggee implements Closeable {
                     + ",server=y,suspend=" + (suspended ? "y" : "n"));
             debuggeeArgs.addAll(options);
             debuggeeArgs.add(mainClass);
-            return ProcessTools.createTestJvm(debuggeeArgs);
+            return ProcessTools.createJavaTestProcessBuilder(debuggeeArgs);
         }
 
         public Debuggee launch(String name) {

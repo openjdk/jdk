@@ -459,8 +459,8 @@ public final class ProcessTools {
      * @param command Arguments to pass to the java command.
      * @return The ProcessBuilder instance representing the java command.
      */
-    public static ProcessBuilder createJavaProcessBuilder(List<String> command) {
-        return createJavaProcessBuilder(command.toArray(String[]::new));
+    public static ProcessBuilder createLimitedJavaTestProcessBuilder(List<String> command) {
+        return createLimitedJavaTestProcessBuilder(command.toArray(String[]::new));
     }
 
    /**
@@ -481,7 +481,7 @@ public final class ProcessTools {
      * @param command Arguments to pass to the java command.
      * @return The ProcessBuilder instance representing the java command.
      */
-    public static ProcessBuilder createJavaProcessBuilder(String... command) {
+    public static ProcessBuilder createLimitedJavaTestProcessBuilder(String... command) {
         String javapath = JDKToolFinder.getJDKTool("java");
 
         ArrayList<String> args = new ArrayList<>();
@@ -536,8 +536,8 @@ public final class ProcessTools {
      * @param command Arguments to pass to the java command.
      * @return The ProcessBuilder instance representing the java command.
      */
-    public static ProcessBuilder createTestJvm(List<String> command) {
-        return createTestJvm(command.toArray(String[]::new));
+    public static ProcessBuilder createJavaTestProcessBuilder(List<String> command) {
+        return createJavaTestProcessBuilder(command.toArray(String[]::new));
     }
 
     /**
@@ -551,8 +551,8 @@ public final class ProcessTools {
      * @param command Arguments to pass to the java command.
      * @return The ProcessBuilder instance representing the java command.
      */
-    public static ProcessBuilder createTestJvm(String... command) {
-        return createJavaProcessBuilder(Utils.prependTestJavaOpts(command));
+    public static ProcessBuilder createJavaTestProcessBuilder(String... command) {
+        return createLimitedJavaTestProcessBuilder(Utils.prependTestJavaOpts(command));
     }
 
     /**
@@ -586,7 +586,7 @@ public final class ProcessTools {
      * @return The output from the process.
      */
     public static OutputAnalyzer executeTestJvm(String... cmds) throws Exception {
-        ProcessBuilder pb = createTestJvm(cmds);
+        ProcessBuilder pb = createJavaTestProcessBuilder(cmds);
         return executeProcess(pb);
     }
 

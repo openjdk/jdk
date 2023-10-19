@@ -38,7 +38,7 @@ public class ShutdownInterruptedMain {
 
     public static void main(String[] args) throws Exception {
         if (args.length > 0) {
-            ProcessBuilder pb = createTestJvm("ShutdownInterruptedMain");
+            ProcessBuilder pb = createJavaTestProcessBuilder("ShutdownInterruptedMain");
             OutputAnalyzer output = executeProcess(pb);
             output.shouldContain("Shutdown Hook");
             output.shouldHaveExitValue(0);

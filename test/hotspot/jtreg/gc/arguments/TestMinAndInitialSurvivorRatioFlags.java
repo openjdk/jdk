@@ -102,7 +102,7 @@ public class TestMinAndInitialSurvivorRatioFlags {
                 Boolean.toString(useAdaptiveSizePolicy)
         );
         vmOptions.removeIf((String p) -> p.isEmpty());
-        ProcessBuilder procBuilder = GCArguments.createJavaProcessBuilder(vmOptions);
+        ProcessBuilder procBuilder = GCArguments.createLimitedJavaTestProcessBuilder(vmOptions);
         OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
         analyzer.shouldHaveExitValue(0);
     }

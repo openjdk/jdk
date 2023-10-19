@@ -104,7 +104,7 @@ public class TestRetransformUsingLog {
         }
         System.out.println();
         System.out.println();
-        ProcessBuilder pb = ProcessTools.createTestJvm(args);
+        ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder(args);
         OutputAnalyzer out = ProcessTools.executeProcess(pb);
         System.out.println(out.getOutput());
         verifier.accept(out);

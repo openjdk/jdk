@@ -66,7 +66,7 @@ public class SharedStubToInterpTest {
         command.add("-XX:CompileCommand=dontinline," + testClassName + "::" + "log02");
         command.add(testClassName);
 
-        ProcessBuilder pb = ProcessTools.createTestJvm(command);
+        ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder(command);
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 

@@ -40,7 +40,7 @@ import jdk.internal.misc.Unsafe;
 public class RangeCheck {
 
     public static void main(String args[]) throws Exception {
-        ProcessBuilder pb = ProcessTools.createTestJvm(
+        ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder(
                 "-Xmx128m",
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-XX:-CreateCoredumpOnCrash",

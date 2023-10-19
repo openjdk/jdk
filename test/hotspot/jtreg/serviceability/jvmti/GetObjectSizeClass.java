@@ -51,7 +51,7 @@ public class GetObjectSizeClass {
         pb.command(new String[] { JDKToolFinder.getJDKTool("jar"), "cmf", "MANIFEST.MF", "agent.jar", "GetObjectSizeClassAgent.class"});
         pb.start().waitFor();
 
-        ProcessBuilder pt = ProcessTools.createTestJvm("-javaagent:agent.jar",  "GetObjectSizeClassAgent");
+        ProcessBuilder pt = ProcessTools.createJavaTestProcessBuilder("-javaagent:agent.jar",  "GetObjectSizeClassAgent");
         OutputAnalyzer output = new OutputAnalyzer(pt.start());
         output.shouldHaveExitValue(0);
 

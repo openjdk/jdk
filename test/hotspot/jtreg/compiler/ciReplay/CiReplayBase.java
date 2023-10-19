@@ -177,11 +177,11 @@ public abstract class CiReplayBase {
                 options.add("'" + getTestClass() + "'");
                 crashOut = ProcessTools.executeProcess(
                         CoreUtils.addCoreUlimitCommand(
-                                ProcessTools.createTestJvm(options.toArray(new String[0]))));
+                                ProcessTools.createJavaTestProcessBuilder(options.toArray(new String[0]))));
             } else {
                 options.add("-XX:CompileOnly=" + getTestClass() + "::" + getTestMethod());
                 options.add(getTestClass());
-                crashOut = ProcessTools.executeProcess(ProcessTools.createTestJvm(options));
+                crashOut = ProcessTools.executeProcess(ProcessTools.createJavaTestProcessBuilder(options));
             }
             crashOutputString = crashOut.getOutput();
             Asserts.assertNotEquals(crashOut.getExitValue(), 0, "Crash JVM exits gracefully");
@@ -288,7 +288,7 @@ public abstract class CiReplayBase {
 
     private String[] getTestJvmCommandlineWithPrefix(String prefix, String... args) {
         try {
-            String cmd = ProcessTools.getCommandLine(ProcessTools.createTestJvm(args));
+            String cmd = ProcessTools.getCommandLine(ProcessTools.createJavaTestProcessBuilder(args));
             return new String[]{"sh", "-c", prefix
                 + (Platform.isWindows() ? cmd.replace('\\', '/').replace(";", "\\;").replace("|", "\\|") : cmd)};
         } catch(Throwable t) {

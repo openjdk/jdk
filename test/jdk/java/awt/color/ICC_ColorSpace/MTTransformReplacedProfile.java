@@ -49,7 +49,7 @@ public final class MTTransformReplacedProfile {
 
     public static void main(String[] args) throws Exception {
         if (args.length > 0 && args[0].equals("checkJNI")) {
-            ProcessBuilder pb = ProcessTools.createTestJvm(
+            ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder(
                     "-Xcheck:jni", MTTransformReplacedProfile.class.getName());
             OutputAnalyzer oa = ProcessTools.executeProcess(pb);
             oa.stderrShouldBeEmpty();

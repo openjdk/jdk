@@ -57,7 +57,7 @@ import java.util.Arrays;
 
 public class TestDriver {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createTestJvm(
+        ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder(
                 "-agentlib:SetNativeMethodPrefix001=trace=all",
                 "-agentlib:SetNativeMethodPrefix002-01=trace=all prefix=wa_",
                 "-agentlib:SetNativeMethodPrefix002-02=trace=all prefix=wb_",

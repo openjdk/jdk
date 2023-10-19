@@ -93,7 +93,7 @@ public class MemOptionsTest {
         var cmd = new ArrayList<String>();
         Collections.addAll(cmd, opts);
         cmd.add(MemStat.class.getName());
-        var pb = ProcessTools.createTestJvm(cmd);
+        var pb = ProcessTools.createJavaTestProcessBuilder(cmd);
         var output = new OutputAnalyzer(pb.start());
         if (output.getExitValue() != 0) {
             output.reportDiagnosticSummary();
@@ -106,7 +106,7 @@ public class MemOptionsTest {
         var cmd = new ArrayList<String>();
         Collections.addAll(cmd, opts);
         cmd.add(MemStat.class.getName());
-        var pb = ProcessTools.createTestJvm(cmd);
+        var pb = ProcessTools.createJavaTestProcessBuilder(cmd);
         var output = new OutputAnalyzer(pb.start());
         if (output.getExitValue() == 0) {
             output.reportDiagnosticSummary();

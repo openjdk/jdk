@@ -55,7 +55,7 @@ public class MacJNUEncoding {
         var cmds = (args.length == 4)
                 ? List.of("-Dfile.encoding=" + args[3], ExpectedEncoding.class.getName(), args[0], args[1])
                 : List.of(ExpectedEncoding.class.getName(), args[0], args[1]);
-        ProcessBuilder pb = ProcessTools.createTestJvm(cmds);
+        ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder(cmds);
         Map<String, String> env = pb.environment();
         env.put("LANG", locale);
         env.put("LC_ALL", locale);

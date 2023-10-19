@@ -36,7 +36,7 @@ public class ShutdownHook {
 
     public static void main(String[] args) throws Exception {
         if (args.length > 0) {
-            ProcessBuilder pb = createTestJvm("ShutdownHook");
+            ProcessBuilder pb = createJavaTestProcessBuilder("ShutdownHook");
             OutputAnalyzer output = executeProcess(pb);
             output.shouldContain("Shutdown Hook");
             output.shouldHaveExitValue(0);
