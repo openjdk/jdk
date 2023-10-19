@@ -148,6 +148,7 @@ public class VM {
     // User-controllable flag that determines if direct buffers should be page
     // aligned. The "-XX:+PageAlignDirectMemory" option can be used to force
     // buffers, allocated by ByteBuffer.allocateDirect, to be page aligned.
+    @Stable
     private static boolean pageAlignDirectMemory;
 
     // Returns {@code true} if the direct buffers should be page aligned. This
