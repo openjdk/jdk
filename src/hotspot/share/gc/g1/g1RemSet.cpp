@@ -1196,11 +1196,6 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // We want to continue collecting remembered set entries for humongous regions
       // that were not reclaimed.
       r->rem_set()->clear(true /* only_cardset */, true /* keep_tracked */);
-#ifdef ASSERT
-      G1HeapRegionAttr region_attr = g1h->region_attr(region_index);
-      assert(region_attr.remset_is_tracked(), "must be");
-#endif
-      assert(r->rem_set()->is_empty(), "At this point any humongous candidate remembered set must be empty.");
 
       return false;
     }
