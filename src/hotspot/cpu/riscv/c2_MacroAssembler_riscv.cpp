@@ -1657,7 +1657,7 @@ void C2_MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, 
 // on input we have NaN or +/-0.0 value we should return it,
 // otherwise return +/- 1.0 using sign of input.
 // one - gives us a floating-point 1.0 (got from matching rule)
-// bool is_double - specififes single or double precision operations will be used.
+// bool is_double - specifies single or double precision operations will be used.
 void C2_MacroAssembler::signum_fp(FloatRegister dst, FloatRegister src, FloatRegister one, bool is_double) {
   Register tmp1 = t0;
 
