@@ -1600,12 +1600,12 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
     // ConstraintCast+ -> Phi
     // ConstraintCast+ -> Xor
     if (use->is_ConstraintCast()) {
-      auto push_phi_or_sub_uses_to_worklist = [&](Node* n){
+      auto push_the_uses_to_worklist = [&](Node* n){
         if (n->is_Phi() || n->is_Sub() || n->Opcode() == Op_XorI || n->Opcode() == Op_XorL) {
           _worklist.push(n);
         }
       };
-      ConstraintCastNode::visit_uncasted_uses(use, push_phi_or_sub_uses_to_worklist);
+      ConstraintCastNode::visit_uncasted_uses(use, push_the_uses_to_worklist);
     }
     // If changed LShift inputs, check RShift users for useless sign-ext
     if( use_op == Op_LShiftI ) {

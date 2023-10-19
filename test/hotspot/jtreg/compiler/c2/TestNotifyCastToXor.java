@@ -25,7 +25,8 @@
  * @test
  * @bug 8318049
  * @summary Test that xor nodes are properly notified when constraint casts change.
- * @run main/othervm -Xbatch -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler.c2.TestNotifyCastToXor::test -XX:VerifyIterativeGVN=10 compiler.c2.TestNotifyCastToXor
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler.c2.TestNotifyCastToXor::test
+                     -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=10 compiler.c2.TestNotifyCastToXor
  */
 
 package compiler.c2;
