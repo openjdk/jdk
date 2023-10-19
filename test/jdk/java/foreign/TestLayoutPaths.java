@@ -37,6 +37,7 @@ import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.IntFunction;
 
 import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
@@ -139,8 +140,8 @@ public class TestLayoutPaths {
     @Test
     public void testBadAlignmentOfRoot() {
         MemoryLayout struct = MemoryLayout.structLayout(
-            JAVA_INT,
-            JAVA_SHORT.withName("x"));
+            JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN),
+            JAVA_SHORT.withOrder(ByteOrder.LITTLE_ENDIAN).withName("x"));
         assertEquals(struct.byteAlignment(), 4);
 
         try (Arena arena = Arena.ofConfined()) {
