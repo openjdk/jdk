@@ -246,7 +246,6 @@ public final class StreamEncoder extends Writer {
     private ByteBuffer bb;
     private final int maxBufferCapacity;
 
-    // This must be non-null
     private final OutputStream out;
 
     // Leftover first char in a surrogate pair
@@ -390,9 +389,7 @@ public final class StreamEncoder extends Writer {
 
     void implFlush() throws IOException {
         implFlushBuffer();
-        if (out != null) {
-            out.flush();
-        }
+        out.flush();
     }
 
     void implClose() throws IOException {
@@ -412,8 +409,7 @@ public final class StreamEncoder extends Writer {
 
             if (bb.position() > 0)
                 writeBytes();
-            if (out != null)
-                out.flush();
+            out.flush();
         } catch (IOException x) {
             encoder.reset();
             throw x;
