@@ -323,6 +323,28 @@ public final class ListFormat extends Format {
     }
 
     /**
+     * {@return the {@code Locale} of this instance}
+     *
+     * {@code locale} is either the one specified in the {@link #getInstance(Locale, Type, Style)},
+     * or the invariant locale, i.e., {@link java.util.Locale#ROOT} if the instance is
+     * created with {@link #getInstance(String[])}.
+     */
+    public Locale getLocale() {
+        return locale;
+    }
+
+    /**
+     * {@return the patterns array used in this instance}
+     *
+     * {@code patterns} is either the one specified in the {@link #getInstance(String[])},
+     * or derived from {@code Locale}, {@code #Type}, and {@code #Style} specified in
+     * {@link #getInstance(Locale, Type, Style)}.
+     */
+    public String[] getPatterns() {
+        return Arrays.copyOf(patterns, patterns.length);
+    }
+
+    /**
      * {@return the string that consists of the input strings, concatenated with the
      * patterns of this {@code ListFormat}}
      * @apiNote Formatting the string from an excessively long list may exceed memory
