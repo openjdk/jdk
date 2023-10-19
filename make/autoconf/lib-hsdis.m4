@@ -241,6 +241,8 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
   binutils_system_error=""
   HSDIS_LDFLAGS=""
   HSDIS_LIBS=""
+  disasm_header="<dis-asm.h>"
+
   if test "x$BINUTILS_INSTALL_DIR" = xsystem; then
     AC_CHECK_LIB(bfd, bfd_openr, [ HSDIS_LIBS="-lbfd" ], [ binutils_system_error="libbfd not found" ])
     AC_CHECK_LIB(opcodes, disassembler, [ HSDIS_LIBS="$HSDIS_LIBS -lopcodes" ], [ binutils_system_error="libopcodes not found" ])
@@ -250,6 +252,7 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
     AC_CHECK_LIB(sframe, frame, [ HSDIS_LIBS="$HSDIS_LIBS -lsframe" ], )
     HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
   elif test "x$BINUTILS_INSTALL_DIR" != x; then
+    disasm_header="\"$BINUTILS_INSTALL_DIR/include/dis-asm.h\""
     if test -e $BINUTILS_INSTALL_DIR/lib/libbfd.a && \
        test -e $BINUTILS_INSTALL_DIR/lib/libopcodes.a && \
        test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a; then
@@ -266,7 +269,7 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
   fi
 
   AC_MSG_CHECKING([Checking binutils API])
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include "$BINUTILS_INSTALL_DIR/include/dis-asm.h"],[[void foo() {init_disassemble_info(0, 0, 0, 0);}]])],
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include $disasm_header],[[void foo() {init_disassemble_info(0, 0, 0, 0);}]])],
     [
       AC_MSG_RESULT([New API])
       HSDIS_CFLAGS="$HSDIS_CFLAGS -DBINUTILS_NEW_API"
