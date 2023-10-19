@@ -41,6 +41,7 @@ public class GetPeerHost {
         String testRoot = System.getProperty("test.src", ".");
         System.setProperty("javax.net.ssl.trustStore", testRoot
                             + "/../../../../javax/net/ssl/etc/truststore");
+        System.setProperty("javax.net.ssl.trustStoreType", "PKCS12");
         GetPeerHostServer server = new GetPeerHostServer();
         server.start();
         GetPeerHostClient client =
