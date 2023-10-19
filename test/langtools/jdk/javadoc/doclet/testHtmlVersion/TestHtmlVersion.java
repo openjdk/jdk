@@ -81,7 +81,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <div class="caption"><span>Packages</span></div>
                     <div class="summary-table two-column-summary">""",
                 """
-                    <header role="banner" class="flex-header">
+                    <header role="banner">
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
@@ -99,7 +99,7 @@ public class TestHtmlVersion extends JavadocTester {
                 """
                     <div class="summary-table two-column-summary" aria-labelledby="class-summary-tab0">""",
                 """
-                    <header role="banner" class="flex-header">
+                    <header role="banner">
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
@@ -131,7 +131,7 @@ public class TestHtmlVersion extends JavadocTester {
                     """,
                 "<li class=\"circle\">",
                 """
-                    <header role="banner" class="flex-header">
+                    <header role="banner">
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
@@ -164,7 +164,7 @@ public class TestHtmlVersion extends JavadocTester {
                 """
                     <div class="summary-table two-column-summary">""",
                 """
-                    <header role="banner" class="flex-header">
+                    <header role="banner">
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
@@ -185,7 +185,7 @@ public class TestHtmlVersion extends JavadocTester {
                 """
                     <div class="summary-table three-column-summary">""",
                 """
-                    <header role="banner" class="flex-header">
+                    <header role="banner">
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
@@ -214,7 +214,7 @@ public class TestHtmlVersion extends JavadocTester {
                 """
                     <div class="summary-table two-column-summary">""",
                 """
-                    <header role="banner" class="flex-header">
+                    <header role="banner">
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
@@ -233,7 +233,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <header role="banner" class="flex-header">
+                    <header role="banner">
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
@@ -257,7 +257,7 @@ public class TestHtmlVersion extends JavadocTester {
                     """,
                 "<li class=\"circle\">",
                 """
-                    <header role="banner" class="flex-header">
+                    <header role="banner">
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
@@ -292,12 +292,11 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <header role="banner" class="flex-header">
+                    <header role="banner">
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
                     </header>
-                    <div class="flex-content">
                     <main role="main">""",
                 """
                     <footer role="contentinfo">""",
@@ -319,7 +318,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <header role="banner" class="flex-header">
+                    <header role="banner">
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
@@ -350,7 +349,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <header role="banner" class="flex-header">
+                    <header role="banner">
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
@@ -400,7 +399,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <header role="banner" class="flex-header">
+                    <header role="banner">
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
@@ -441,7 +440,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <header role="banner" class="flex-header">
+                    <header role="banner">
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
@@ -473,7 +472,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <header role="banner" class="flex-header">
+                    <header role="banner">
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
@@ -500,7 +499,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <header role="banner" class="flex-header">
+                    <header role="banner">
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
@@ -527,7 +526,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <header role="banner" class="flex-header">
+                    <header role="banner">
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
@@ -565,7 +564,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <header role="banner" class="flex-header">
+                    <header role="banner">
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """

@@ -31,6 +31,7 @@ class CollectedHeap;
 class ZSharedArguments : public GCArguments {
 private:
   virtual void initialize_alignments();
+  virtual void initialize_heap_flags_and_sizes();
 
   virtual void initialize();
   virtual size_t conservative_max_heap_alignment();

@@ -2928,7 +2928,17 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Overrides equals
+     * Compares the specified object with this {@code DecimalFormat} for equality.
+     * Returns true if the object is also a {@code DecimalFormat} and the
+     * two formats would format any value the same.
+     *
+     * @implSpec This method performs an equality check with a notion of class
+     * identity based on {@code getClass()}, rather than {@code instanceof}.
+     * Therefore, in the equals methods in subclasses, no instance of this class
+     * should compare as equal to an instance of a subclass.
+     * @param  obj object to be compared for equality
+     * @return {@code true} if the specified object is equal to this {@code DecimalFormat}
+     * @see Object#equals(Object)
      */
     @Override
     public boolean equals(Object obj)
@@ -2973,7 +2983,12 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Overrides hashCode
+     * {@return the hash code for this {@code DecimalFormat}}
+     *
+     * @implSpec This method calculates the hash code value using the values returned from
+     * {@link #getPositivePrefix()} and {@link NumberFormat#hashCode()}.
+     * @see Object#hashCode()
+     * @see NumberFormat#hashCode()
      */
     @Override
     public int hashCode() {

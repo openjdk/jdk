@@ -84,6 +84,9 @@ iframe {
     overflow-y:scroll;
     border:none;
 }
+:not(input)[id] {
+    scroll-margin-top: 78px;
+}
 a:link, a:visited {
     text-decoration:none;
     color:var(--link-color);
@@ -172,19 +175,11 @@ button {
  * Styles for navigation bar.
  */
 @media screen {
-    div.flex-box {
-        position:fixed;
-        display:flex;
-        flex-direction:column;
-        height: 100%;
-        width: 100%;
-    }
-    header.flex-header {
-        flex: 0 0 auto;
-    }
-    div.flex-content {
-        flex: 1 1 auto;
-        overflow-y: auto;
+    header {
+        position:sticky;
+        top:0;
+        z-index:1;
+        background: var(--body-background-color);
     }
 }
 .top-nav {
@@ -305,12 +300,12 @@ body.module-declaration-page .block-list h2 {
     margin:15px 0;
 }
 body.class-declaration-page .summary h3,
-body.class-declaration-page .details h3,
-body.class-declaration-page .summary .inherited-list h2 {
+body.class-declaration-page .details h3 {
     background-color:var(--subnav-background-color);
     border:1px solid var(--border-color);
     margin:0 0 6px -8px;
     padding:7px 5px;
+    overflow-x:auto;
 }
 /*
  * Styles for page layout containers.
@@ -319,6 +314,10 @@ main {
     clear:both;
     padding:10px 20px;
     position:relative;
+}
+section[id$=-description] :is(dl, ol, ul, p, div, blockquote, pre):last-child,
+section[id$=-description] :is(dl, ol, ul):last-child > :is(li, dd):last-child {
+    margin-bottom:4px;
 }
 dl.notes > dt {
     font-family: var(--body-font-family);
@@ -443,8 +442,8 @@ ul.preview-feature-list {
     height:16px;
 }
 div.table-tabs {
-    padding:10px 0 0 1px;
-    margin:10px 0 0 0;
+    padding: 10px 0 0 1px;
+    margin: 0;
 }
 div.table-tabs > button {
     border: none;
@@ -527,7 +526,7 @@ div.checkboxes > label > input {
 .summary-table > div, .details-table > div {
     text-align:left;
     padding: 8px 3px 3px 7px;
-    overflow-x: auto;
+    overflow: auto hidden;
     scrollbar-width: thin;
 }
 .col-first, .col-second, .col-last, .col-constructor-name, .col-summary-item-name {
@@ -615,7 +614,7 @@ div.block {
 .member-signature {
     font-family:var(--code-font-family);
     font-size:1em;
-    margin:14px 0;
+    margin:8px 0 14px 0;
     white-space: pre-wrap;
 }
 .module-signature,
@@ -648,24 +647,13 @@ div.block {
 }
 .deprecated-label, .description-from-type-label, .implementation-label, .member-name-link,
 .module-label-in-package, .module-label-in-type, .package-label-in-type,
-.package-hierarchy-label, .type-name-label, .type-name-link, .search-tag-link, .preview-label {
+.package-hierarchy-label, .type-name-label, .type-name-link, .search-tag-link, .preview-label, .restricted-label {
     font-weight:bold;
 }
-.deprecation-comment, .help-footnote, .preview-comment {
+.deprecation-comment, .help-footnote, .preview-comment, .restricted-comment {
     font-style:italic;
 }
-.deprecation-block {
-    font-size:1em;
-    font-family:var(--block-font-family);
-    border-style:solid;
-    border-width:thin;
-    border-radius:10px;
-    padding:10px;
-    margin-bottom:10px;
-    margin-right:10px;
-    display:inline-block;
-}
-.preview-block {
+.deprecation-block, .preview-block, .restricted-block {
     font-size:1em;
     font-family:var(--block-font-family);
     border-style:solid;
@@ -697,6 +685,9 @@ details summary {
  */
 main, nav, header, footer, section {
     display:block;
+}
+nav {
+    overflow:hidden;
 }
 /*
  * Styles for javadoc search.
@@ -853,6 +844,9 @@ span#page-search-link {
 }
 .inherited-list {
     margin: 10px 0 10px 0;
+}
+.horizontal-scroll {
+    overflow: auto hidden;
 }
 section.class-description {
     line-height: 1.4;
@@ -1098,7 +1092,7 @@ table.striped > tbody > tr > th {
  * Tweak style for small screens.
  */
 @media screen and (max-width: 920px) {
-    header.flex-header {
+    header {
         max-height: 100vh;
         overflow-y: auto;
     }

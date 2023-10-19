@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @enablePreview
  * @requires sun.arch.data.model == "64"
  * @bug 8292851
  * @run testng/othervm -Xmx4G TestLargeSegmentCopy

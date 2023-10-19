@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8035668
+ * @requires vm.flagless
  * @library /test/lib
  * @summary Test checks case when target application finishes execution and jstat didn't complete work.
             jstat is started with interval = 100 (jstat -compiler 100) and monitored application finishes
@@ -60,9 +61,7 @@ public class JStatInterval {
         }
     }
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-cp",
-            System.getProperty("test.class.path"),
+        ProcessBuilder pb = ProcessTools.createTestJvm(
             "-XX:+UsePerfData",
             Application.class.getName()
         );
