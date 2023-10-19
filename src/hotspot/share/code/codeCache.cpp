@@ -702,14 +702,6 @@ void CodeCache::metadata_do(MetadataClosure* f) {
   }
 }
 
-int CodeCache::alignment_unit() {
-  return (int)_heaps->first()->alignment_unit();
-}
-
-int CodeCache::alignment_offset() {
-  return (int)_heaps->first()->alignment_offset();
-}
-
 // Calculate the number of GCs after which an nmethod is expected to have been
 // used in order to not be classed as cold.
 void CodeCache::update_cold_gc_count() {
