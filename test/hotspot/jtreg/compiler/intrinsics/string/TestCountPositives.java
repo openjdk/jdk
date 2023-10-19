@@ -25,7 +25,7 @@ package compiler.intrinsics.string;
 
 /*
  * @test
- * @bug 8999999
+ * @bug 8281146
  * @summary Validates StringCoding.countPositives intrinsic with a small range of tests.
  * @library /compiler/patches
  *
@@ -33,6 +33,18 @@ package compiler.intrinsics.string;
  * @run main compiler.intrinsics.string.TestCountPositives
  */
 
+/*
+ * @test
+ * @bug 8281146 8318509
+ * @summary Validates StringCoding.countPositives intrinsic for AVX3 works with and without
+ *          AVX3Threshold=0
+ * @library /compiler/patches
+ *
+ * @build java.base/java.lang.Helper
+ * @requires vm.cpu.features ~= ".*avx512.*"
+ * @run main/othervm/timeout=1200 -XX:UseAVX=3 compiler.intrinsics.string.TestCountPositives
+ * @run main/othervm/timeout=1200 -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:AVX3Threshold=0 compiler.intrinsics.string.TestCountPositives
+ */
 public class TestCountPositives {
 
     private static byte[] tBa = new byte[4096 + 16];
