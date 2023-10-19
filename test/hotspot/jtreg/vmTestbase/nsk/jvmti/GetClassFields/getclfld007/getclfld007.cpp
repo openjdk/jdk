@@ -112,24 +112,25 @@ Java_nsk_jvmti_GetClassFields_getclfld007_check(JNIEnv *env, jclass cls, jclass 
         if (fields[j] == NULL) {
             printf("(%d) fieldID = null\n", j);
             result = STATUS_FAILED;
-        } else {
-            err = jvmti->GetFieldName(clazz, fields[j], &name, &sig, NULL);
-            if (err != JVMTI_ERROR_NONE) {
-                printf("(GetFieldName#%d) unexpected error: %s (%d)\n",
-                       j, TranslateError(err), err);
-            } else {
-                printf(">>>   [%d]: %s, sig = \"%s\"\n", j, name, sig);
-                if ((j < field_count) &&
-                       (name == NULL || sig == NULL ||
-                        !equals_str(env, name, fieldArr, j * 2) ||
-                        !equals_str(env, sig, fieldArr, j * 2 + 1))) {
-                    printf("(%d) wrong field: \"%s%s\"", j, name, sig);
-                    result = STATUS_FAILED;
-                }
-                jvmti->Deallocate((unsigned char *)name);
-                jvmti->Deallocate((unsigned char *)sig);
-            }
+            continue;
         }
+        err = jvmti->GetFieldName(clazz, fields[j], &name, &sig, NULL);
+        if (err != JVMTI_ERROR_NONE) {
+            printf("(GetFieldName#%d) unexpected error: %s (%d)\n",
+                   j, TranslateError(err), err);
+            result = STATUS_FAILED;
+            continue;
+        }
+        printf(">>>   [%d]: %s, sig = \"%s\"\n", j, name, sig);
+        if ((j < field_count) &&
+               (name == NULL || sig == NULL ||
+                !equals_str(env, name, fieldArr, j * 2) ||
+                !equals_str(env, sig, fieldArr, j * 2 + 1))) {
+            printf("(%d) wrong field: \"%s%s\"", j, name, sig);
+            result = STATUS_FAILED;
+        }
+        jvmti->Deallocate((unsigned char *)name);
+        jvmti->Deallocate((unsigned char *)sig);
     }
     fflush(0);
 }

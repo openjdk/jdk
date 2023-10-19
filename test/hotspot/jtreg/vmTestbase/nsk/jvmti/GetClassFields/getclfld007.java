@@ -79,14 +79,15 @@ public class getclfld007 {
 
 
     static void check(Class cls) throws Exception {
-        List<String> fields = FieldExplorer.get(cls);
+        FieldExplorer explorer = new FieldExplorer(cls);
+        List<String> fields = explorer.get();
         check(cls, fields.toArray(new String[0]));
     }
 
-    // helper class to get list of the class field
+    // helper class to get list of the class fields
     // in the order they appear in the class file
     static class FieldExplorer extends ClassVisitor {
-        private Class cls;
+        private final Class cls;
         private List<String> fieldNameAndSig = new ArrayList<>();
         private FieldExplorer(Class cls) {
             super(Opcodes.ASM7);
@@ -101,21 +102,20 @@ public class getclfld007 {
             return super.visitField(access, name, descriptor, signature, value);
         }
 
-        InputStream getClassBytes() throws Exception {
+        private InputStream getClassBytes() throws Exception {
             String clsName = cls.getName();
             String clsPath = clsName.replace('.', '/') + ".class";
             return cls.getClassLoader().getResourceAsStream(clsPath);
         }
 
         // each field is represented by 2 Strings in the list: name and type descriptor
-        static List<String> get(Class cls) throws Exception {
+        public List<String> get() throws Exception {
             System.out.println("Class " + cls.getName());
-            FieldExplorer explorer = new FieldExplorer(cls);
-            try (InputStream classBytes = explorer.getClassBytes()) {
+            try (InputStream classBytes = getClassBytes()) {
                 ClassReader classReader = new ClassReader(classBytes);
-                classReader.accept(explorer, 0);
+                classReader.accept(this, 0);
             }
-            return explorer.fieldNameAndSig;
+            return fieldNameAndSig;
         }
     }
 
