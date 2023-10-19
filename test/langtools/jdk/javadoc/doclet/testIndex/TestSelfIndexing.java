@@ -71,7 +71,7 @@ public class TestSelfIndexing extends JavadocTester {
             for (var t : List.of("<h2>%s</h2>", "{@index %s}", "{@systemProperty %s}")) {
                 tb.writeJavaFiles(src, """
                         package pkg;
-                                        
+
                         /** @deprecated %s */
                         public class Hello { }
                         """.formatted(t.formatted(l)));
