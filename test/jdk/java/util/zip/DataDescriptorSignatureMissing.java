@@ -37,7 +37,7 @@
  * No way to adapt the technique in this test to get a ZIP64 zip file
  * without data descriptors was found.
  *
- * @ignore This test has brittle dependencies on an external working python.
+ * @ignore 8303920 This test has brittle dependencies on an external working python.
  */
 
 import java.io.*;

@@ -569,12 +569,6 @@ void Metaspace::initialize_class_space(ReservedSpace rs) {
          "wrong alignment");
 
   MetaspaceContext::initialize_class_space_context(rs);
-
-  // This does currently not work because rs may be the result of a split
-  // operation and NMT seems not to be able to handle splits.
-  // Will be fixed with JDK-8243535.
-  // MemTracker::record_virtual_memory_type((address)rs.base(), mtClass);
-
 }
 
 // Returns true if class space has been setup (initialize_class_space).
@@ -793,6 +787,7 @@ void Metaspace::global_initialize() {
 
     // ...failing that, reserve anywhere, but let platform do optimized placement:
     if (!rs.is_reserved()) {
+      log_info(metaspace)("Reserving compressed class space anywhere");
       rs = Metaspace::reserve_address_space_for_compressed_classes(size, true);
     }
 
@@ -802,6 +797,9 @@ void Metaspace::global_initialize() {
           err_msg("Could not allocate compressed class space: " SIZE_FORMAT " bytes",
                    CompressedClassSpaceSize));
     }
+
+    // Mark class space as such
+    MemTracker::record_virtual_memory_type((address)rs.base(), mtClass);
 
     // Initialize space
     Metaspace::initialize_class_space(rs);

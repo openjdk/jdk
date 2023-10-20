@@ -353,8 +353,8 @@ public final class ListFormat extends Format {
      * @return       the string buffer passed in as {@code toAppendTo},
      *               with formatted text appended
      * @throws    NullPointerException if {@code obj} or {@code toAppendTo} is null
-     * @throws    IllegalArgumentException if the given object cannot
-     *               be formatted
+     * @throws    IllegalArgumentException if {@code obj} is neither a {@code List}
+     *               nor an array of {@code Object}s, or its length is zero.
      */
     @Override
     public StringBuffer format(Object obj, StringBuffer toAppendTo, FieldPosition pos) {
@@ -416,6 +416,8 @@ public final class ListFormat extends Format {
      * @return A list of string parsed from the {@code source}.
      *            In case of error, returns null.
      * @throws NullPointerException if {@code source} or {@code parsePos} is null.
+     * @throws IndexOutOfBoundsException if the starting index given by
+     *            {@code parsePos} is outside {@code source}.
      */
     @Override
     public Object parseObject(String source, ParsePosition parsePos) {
