@@ -151,8 +151,6 @@ class CodeCache : AllStatic {
   // Allocation/administration
   static CodeBlob* allocate(int size, CodeBlobType code_blob_type, bool handle_alloc_failure = true, CodeBlobType orig_code_blob_type = CodeBlobType::All); // allocates a new CodeBlob
   static void commit(CodeBlob* cb);                        // called when the allocated CodeBlob has been filled
-  static int  alignment_unit();                            // guaranteed alignment of all CodeBlobs
-  static int  alignment_offset();                          // guaranteed offset of first CodeBlob byte within alignment unit (i.e., allocation header)
   static void free(CodeBlob* cb);                          // frees a CodeBlob
   static void free_unused_tail(CodeBlob* cb, size_t used); // frees the unused tail of a CodeBlob (only used by TemplateInterpreter::initialize())
   static bool contains(void *p);                           // returns whether p is included
@@ -179,10 +177,7 @@ class CodeCache : AllStatic {
 
   // GC support
   static void verify_oops();
-  // If any oops are not marked this method unloads (i.e., breaks root links
-  // to) any unmarked codeBlobs in the cache.  Sets "marked_for_unloading"
-  // to "true" iff some code got unloaded.
-  // "unloading_occurred" controls whether metadata should be cleaned because of class unloading.
+  // Scope object managing code cache unloading behavior.
   class UnloadingScope: StackObj {
     ClosureIsUnloadingBehaviour _is_unloading_behaviour;
     IsUnloadingBehaviour*       _saved_behaviour;
