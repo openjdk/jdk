@@ -1163,18 +1163,24 @@ void ShenandoahHeap::retire_plab(PLAB* plab) {
 void ShenandoahHeap::cancel_old_gc() {
   shenandoah_assert_safepoint();
   assert(_old_generation != nullptr, "Should only have mixed collections in generation mode.");
-  log_info(gc)("Terminating old gc cycle.");
-
-  // Stop marking
-  old_generation()->cancel_marking();
-  // Stop coalescing undead objects
-  set_prepare_for_old_mark_in_progress(false);
-  // Stop tracking old regions
-  old_heuristics()->abandon_collection_candidates();
-  // Remove old generation access to young generation mark queues
-  young_generation()->set_old_gen_task_queues(nullptr);
-  // Transition to IDLE now.
-  _old_generation->transition_to(ShenandoahOldGeneration::IDLE);
+  if (_old_generation->state() == ShenandoahOldGeneration::IDLE) {
+    assert(!old_generation()->is_concurrent_mark_in_progress(), "Cannot be marking in IDLE");
+    assert(!old_heuristics()->has_coalesce_and_fill_candidates(), "Cannot have coalesce and fill candidates in IDLE");
+    assert(!old_heuristics()->unprocessed_old_collection_candidates(), "Cannot have mixed collection candidates in IDLE");
+    assert(!young_generation()->is_bootstrap_cycle(), "Cannot have old mark queues if IDLE");
+  } else {
+    log_info(gc)("Terminating old gc cycle.");
+    // Stop marking
+    old_generation()->cancel_marking();
+    // Stop coalescing undead objects
+    set_prepare_for_old_mark_in_progress(false);
+    // Stop tracking old regions
+    old_heuristics()->abandon_collection_candidates();
+    // Remove old generation access to young generation mark queues
+    young_generation()->set_old_gen_task_queues(nullptr);
+    // Transition to IDLE now.
+    _old_generation->transition_to(ShenandoahOldGeneration::IDLE);
+  }
 }
 
 // xfer_limit is the maximum we're able to transfer from young to old

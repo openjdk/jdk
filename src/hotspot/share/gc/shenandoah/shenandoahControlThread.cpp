@@ -852,8 +852,9 @@ bool ShenandoahControlThread::is_explicit_gc(GCCause::Cause cause) const {
 }
 
 bool ShenandoahControlThread::is_implicit_gc(GCCause::Cause cause) const {
-  return !is_explicit_gc(cause) &&
-          (cause != GCCause::_shenandoah_concurrent_gc);
+  return !is_explicit_gc(cause)
+      && cause != GCCause::_shenandoah_concurrent_gc
+      && cause != GCCause::_no_gc;
 }
 
 void ShenandoahControlThread::request_gc(GCCause::Cause cause) {

@@ -1302,7 +1302,7 @@ void ShenandoahFreeSet::log_status() {
 
 #ifdef ASSERT
   // Dump of the FreeSet details is only enabled if assertions are enabled
-  {
+  if (LogTarget(Debug, gc, free)::is_enabled()) {
 #define BUFFER_SIZE 80
     size_t retired_old = 0;
     size_t retired_old_humongous = 0;
@@ -1324,10 +1324,10 @@ void ShenandoahFreeSet::log_status() {
     for (uint i = 0; i < BUFFER_SIZE; i++) {
       buffer[i] = '\0';
     }
-    log_info(gc, free)("FreeSet map legend:"
+    log_debug(gc, free)("FreeSet map legend:"
                        " M:mutator_free C:collector_free O:old_collector_free"
                        " H:humongous ~:retired old _:retired young");
-    log_info(gc, free)(" mutator free range [" SIZE_FORMAT ".." SIZE_FORMAT "], "
+    log_debug(gc, free)(" mutator free range [" SIZE_FORMAT ".." SIZE_FORMAT "], "
                        " collector free range [" SIZE_FORMAT ".." SIZE_FORMAT "], "
                        "old collector free range [" SIZE_FORMAT ".." SIZE_FORMAT "] allocates from %s",
                        _free_sets.leftmost(Mutator), _free_sets.rightmost(Mutator),
@@ -1339,7 +1339,7 @@ void ShenandoahFreeSet::log_status() {
       ShenandoahHeapRegion *r = _heap->get_region(i);
       uint idx = i % 64;
       if ((i != 0) && (idx == 0)) {
-        log_info(gc, free)(" %6u: %s", i-64, buffer);
+        log_debug(gc, free)(" %6u: %s", i-64, buffer);
       }
       if (_free_sets.in_free_set(i, Mutator)) {
         assert(!r->is_old(), "Old regions should not be in mutator_free set");
@@ -1384,7 +1384,7 @@ void ShenandoahFreeSet::log_status() {
     } else {
       remnant = 64;
     }
-    log_info(gc, free)(" %6u: %s", (uint) (_heap->num_regions() - remnant), buffer);
+    log_debug(gc, free)(" %6u: %s", (uint) (_heap->num_regions() - remnant), buffer);
     size_t total_young = retired_young + retired_young_humongous;
     size_t total_old = retired_old + retired_old_humongous;
   }

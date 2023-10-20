@@ -76,10 +76,12 @@ void ShenandoahRegulatorThread::regulate_concurrent_cycles() {
           log_info(gc)("Heuristics request for global (unload classes) accepted.");
         }
       } else {
-        if (start_old_cycle()) {
-          log_info(gc)("Heuristics request for old collection accepted");
-        } else if (start_young_cycle()) {
-          log_info(gc)("Heuristics request for young collection accepted");
+        if (_young_heuristics->should_start_gc()) {
+          if (start_old_cycle()) {
+            log_info(gc)("Heuristics request for old collection accepted");
+          } else if (request_concurrent_gc(YOUNG)) {
+            log_info(gc)("Heuristics request for young collection accepted");
+          }
         }
       }
     } else if (mode == ShenandoahControlThread::servicing_old) {

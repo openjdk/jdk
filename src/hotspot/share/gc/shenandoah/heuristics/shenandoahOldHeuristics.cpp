@@ -192,7 +192,11 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
     // We have added the last of our collection candidates to a mixed collection.
     // Any triggers that occurred during mixed evacuations may no longer be valid.  They can retrigger if appropriate.
     clear_triggers();
-    _old_generation->transition_to(ShenandoahOldGeneration::IDLE);
+    if (has_coalesce_and_fill_candidates()) {
+      _old_generation->transition_to(ShenandoahOldGeneration::WAITING_FOR_FILL);
+    } else {
+      _old_generation->transition_to(ShenandoahOldGeneration::IDLE);
+    }
   } else if (included_old_regions == 0) {
     // We have candidates, but none were included for evacuation - are they all pinned?
     // or did we just not have enough room for any of them in this collection set?
