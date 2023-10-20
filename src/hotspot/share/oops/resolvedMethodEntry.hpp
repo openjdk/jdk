@@ -35,7 +35,7 @@
 // NOT invokedynamic (see resolvedIndyEntry.hpp). A member of this class can be initialized
 // with the constant pool index associated with the bytecode before any resolution is done,
 // where "resolution" refers to populating the bytecode1 and bytecode2 fields and other
-// relevant information.These entries are contained within the ConstantPoolCache and are
+// relevant information. These entries are contained within the ConstantPoolCache and are
 // accessed with indices added to the bytecode after rewriting.
 
 // Invoke bytecodes start with a constant pool index as their operand, which is then
@@ -65,31 +65,29 @@
 class ResolvedMethodEntry {
   friend class VMStructs;
 
-  InstanceKlass* _interface_klass; // for interface and static
-  Method* _method;                 // Method for non virtual calls, adapter method for invokevirtual, final method for virtual
-  u2 _cpool_index;                 // Constant pool index
-  u2 _resolved_references_index;   // Index of resolved references array that holds the appendix oop for invokehandle
-  u2 _table_index;                 // vtable/itable index for virtual and interface calls
-  u2 _number_of_parameters;        // Number of arguments for method
-  u1 _tos_state;                   // TOS state
-  u1 _flags;                       // Flags: [000|has_local_signature|has_appendix|forced_virtual|final|virtual_final]
-  u1 _bytecode1, _bytecode2;       // Bytecodes for f1 and f2
+  Method* _method;                   // Method for non virtual calls, adapter method for invokevirtual, final method for virtual
+  union {                            // These fields are mutually exclusive and are only used by some invoke codes
+    InstanceKlass* _interface_klass; // for interface and static
+    u2 _resolved_references_index;   // Index of resolved references array that holds the appendix oop for invokehandle
+    u2 _table_index;                 // vtable/itable index for virtual and interface calls
+  } _entry_specific;
+
+  u2 _cpool_index;                   // Constant pool index
+  u2 _number_of_parameters;          // Number of arguments for method
+  u1 _tos_state;                     // TOS state
+  u1 _flags;                         // Flags: [000|has_local_signature|has_appendix|forced_virtual|final|virtual_final]
+  u1 _bytecode1, _bytecode2;         // Bytecodes for f1 and f2
 
   // Constructors
   public:
-    ResolvedMethodEntry(u2 cpi, u2 resolved_references_index) :
-      _interface_klass(nullptr),
+    ResolvedMethodEntry(u2 cpi) :
       _method(nullptr),
       _cpool_index(cpi),
-      _resolved_references_index(resolved_references_index),
-      _table_index(0),
       _number_of_parameters(0),
       _tos_state(0),
       _flags(0),
       _bytecode1(0),
       _bytecode2(0) {}
-    ResolvedMethodEntry(u2 cpi) :
-      ResolvedMethodEntry(cpi, 0) {}
     ResolvedMethodEntry() :
       ResolvedMethodEntry(0) {}
 
@@ -103,11 +101,11 @@ class ResolvedMethodEntry {
   };
 
   // Getters
-  InstanceKlass* interface_klass() const { return _interface_klass; }
   Method* method() const { return Atomic::load_acquire(&_method); }
+  InstanceKlass* interface_klass() const { return _entry_specific._interface_klass; }
+  u2 resolved_references_index() const { return _entry_specific._resolved_references_index; }
+  u2 table_index() const { return _entry_specific._table_index; }
   u2 constant_pool_index() const { return _cpool_index; }
-  u2 resolved_references_index() const { return _resolved_references_index; }
-  u2 table_index() const { return _table_index; }
   u1 tos_state() const { return _tos_state; }
   u2 number_of_parameters() const { return _number_of_parameters; }
   u1 bytecode1() const { return Atomic::load_acquire(&_bytecode1); }
@@ -169,15 +167,15 @@ class ResolvedMethodEntry {
   }
 
   void set_klass(InstanceKlass* klass) {
-    _interface_klass = klass;
+    _entry_specific._interface_klass = klass;
   }
 
   void set_resolved_references_index(u2 ref_index) {
-    _resolved_references_index = ref_index;
+    _entry_specific._resolved_references_index = ref_index;
   }
 
   void set_table_index(u2 table_index) {
-    _table_index = table_index;
+    _entry_specific._table_index = table_index;
   }
 
   void set_num_parameters(u2 num_params) {
@@ -195,10 +193,10 @@ class ResolvedMethodEntry {
   void remove_unshareable_info();
 
   // Offsets
-  static ByteSize klass_offset()                     { return byte_offset_of(ResolvedMethodEntry, _interface_klass); }
+  static ByteSize klass_offset()                     { return byte_offset_of(ResolvedMethodEntry, _entry_specific._interface_klass); }
   static ByteSize method_offset()                    { return byte_offset_of(ResolvedMethodEntry, _method);       }
-  static ByteSize resolved_references_index_offset() { return byte_offset_of(ResolvedMethodEntry, _resolved_references_index); }
-  static ByteSize table_index_offset()               { return byte_offset_of(ResolvedMethodEntry, _table_index);       }
+  static ByteSize resolved_references_index_offset() { return byte_offset_of(ResolvedMethodEntry, _entry_specific._resolved_references_index); }
+  static ByteSize table_index_offset()               { return byte_offset_of(ResolvedMethodEntry, _entry_specific._table_index);       }
   static ByteSize num_parameters_offset()            { return byte_offset_of(ResolvedMethodEntry, _number_of_parameters);      }
   static ByteSize type_offset()                      { return byte_offset_of(ResolvedMethodEntry, _tos_state); }
   static ByteSize flags_offset()                     { return byte_offset_of(ResolvedMethodEntry, _flags);        }

@@ -341,7 +341,7 @@ ResolvedMethodEntry* ConstantPoolCache::set_method_handle(int method_index, cons
   MutexLocker ml(constant_pool()->pool_holder()->init_monitor());
   ResolvedMethodEntry* method_entry = resolved_method_entry_at(method_index);
 
-  if (method_entry->is_resolved(invoke_code)) { //method_entry->method() != nullptr &&
+  if (method_entry->is_resolved(invoke_code)) {
     return method_entry;
   }
 
@@ -360,7 +360,7 @@ ResolvedMethodEntry* ConstantPoolCache::set_method_handle(int method_index, cons
   // refs[appendix_index], if not null, contains a value passed as a trailing argument to the adapter.
   // In the general case, this could be the call site's MethodType,
   // for use with java.lang.Invokers.checkExactType, or else a CallSite object.
-  // f1 contains the adapter method which manages the actual call.
+  // method_entry->method() contains the adapter method which manages the actual call.
   // In the general case, this is a compiled LambdaForm.
   // (The Java code is free to optimize these calls by binding other
   // sorts of methods and appendices to call sites.)
@@ -369,7 +369,7 @@ ResolvedMethodEntry* ConstantPoolCache::set_method_handle(int method_index, cons
   // Even with the appendix, the method will never take more than 255 parameter slots.
   //
   // This means that given a call site like (List)mh.invoke("foo"),
-  // the f1 method has signature '(Ljl/Object;Ljl/invoke/MethodType;)Ljl/Object;',
+  // the method has signature '(Ljl/Object;Ljl/invoke/MethodType;)Ljl/Object;',
   // not '(Ljava/lang/String;)Ljava/util/List;'.
   // The fact that String and List are involved is encoded in the MethodType in refs[appendix_index].
   // This allows us to create fewer Methods, while keeping type safety.

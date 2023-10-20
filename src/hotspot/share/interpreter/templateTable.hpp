@@ -262,10 +262,6 @@ class TemplateTable: AllStatic {
 
   static void _return(TosState state);
 
-  static void resolve_cache_and_index(int byte_no,       // one of 1,2,11
-                                      Register cache,    // output for CP cache
-                                      Register index,    // output for CP index
-                                      size_t index_size); // one of 1,2,4
   static void resolve_cache_and_index_for_field(int byte_no,
                                                 Register cache,
                                                 Register index);

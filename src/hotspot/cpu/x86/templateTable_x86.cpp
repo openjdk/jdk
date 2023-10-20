@@ -3796,7 +3796,7 @@ void TemplateTable::invokespecial(int byte_no) {
 
   load_resolved_method_entry_special_or_static(rcx, // ResolvedMethodEntry*
                                                rbx, // Method*
-                                               rdx // flags
+                                               rdx  // flags
                                                );
   prepare_invoke(rcx,
                  rcx,  // get receiver also for null check
@@ -3816,7 +3816,7 @@ void TemplateTable::invokestatic(int byte_no) {
 
   load_resolved_method_entry_special_or_static(rcx, // ResolvedMethodEntry*
                                                rbx, // Method*
-                                               rdx // flags
+                                               rdx  // flags
                                                );
   prepare_invoke(rcx, rcx, rdx);  // cache and flags
 
@@ -3838,9 +3838,9 @@ void TemplateTable::invokeinterface(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
 
-  load_resolved_method_entry_interface(rcx, // ResolvedMethodEntry*
-                                       rax, // Klass*
-                                       rbx, // Method* or itable/vtable index
+  load_resolved_method_entry_interface(rcx,  // ResolvedMethodEntry*
+                                       rax,  // Klass*
+                                       rbx,  // Method* or itable/vtable index
                                        rdx); // flags
   prepare_invoke(rcx, rcx, rdx); // receiver, flags
 

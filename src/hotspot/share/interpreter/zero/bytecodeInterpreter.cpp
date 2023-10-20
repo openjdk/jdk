@@ -2311,7 +2311,6 @@ run:
         if (!entry->is_resolved((Bytecodes::Code)opcode)) {
           CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                   handle_exception);
-          entry = cp->resolved_method_entry_at(index);
         }
 
         istate->set_msg(call_method);

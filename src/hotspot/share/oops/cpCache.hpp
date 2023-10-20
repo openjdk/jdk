@@ -44,7 +44,7 @@ class ResolvedIndyEntry;
 class ResolvedMethodEntry;
 
 // A constant pool cache is a runtime data structure set aside to a constant pool. The cache
-// holds interpreter runtime information for all field access and invoke bytecodes. The cache
+// holds runtime information for all field access and invoke bytecodes. The cache
 // is created and initialized before a class is actively used (i.e., initialized), the indivi-
 // dual cache entries are filled at resolution (i.e., "link") time (see also: rewriter.*).
 

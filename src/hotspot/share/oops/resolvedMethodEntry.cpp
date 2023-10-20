@@ -37,11 +37,17 @@ bool ResolvedMethodEntry::check_no_old_or_obsolete_entry() {
 }
 
 void ResolvedMethodEntry::reset_entry() {
-  u2 saved_resolved_references_index = _resolved_references_index;
-  u2 saved_cpool_index = _cpool_index;
-  memset(this, 0, sizeof(*this));
-  _resolved_references_index = saved_resolved_references_index;
-  _cpool_index = saved_cpool_index;
+  if (_bytecode1 == Bytecodes::_invokehandle) {
+    u2 saved_resolved_references_index = _entry_specific._resolved_references_index;
+    u2 saved_cpool_index = _cpool_index;
+    memset(this, 0, sizeof(*this));
+    _entry_specific._resolved_references_index = saved_resolved_references_index;
+    _cpool_index = saved_cpool_index;
+  } else {
+    u2 saved_cpool_index = _cpool_index;
+    memset(this, 0, sizeof(*this));
+    _cpool_index = saved_cpool_index;
+  }
 }
 
 void ResolvedMethodEntry::remove_unshareable_info() {
