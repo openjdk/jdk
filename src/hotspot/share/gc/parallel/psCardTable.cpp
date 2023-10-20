@@ -138,6 +138,9 @@ void PSCardTable::pre_scavenge(HeapWord* old_gen_bottom, uint active_workers) {
   _preprocessing_active_workers = active_workers;
 }
 
+// The "shadow" table is a copy of the card table entries of the current stripe.
+// It is used to separate card reading, clearing and redirtying which reduces
+// complexity significantly.
 class PSStripeShadowCardTable {
   typedef CardTable::CardValue CardValue;
 
@@ -211,9 +214,6 @@ void PSCardTable::process_range(Func&& object_start,
   assert(start < end, "precondition");
   assert(is_card_aligned(start), "precondition");
 
-  // The "shadow" table is a copy of the card table entries of the current stripe.
-  // It is used to separate card reading, clearing and redirtying which reduces
-  // complexity significantly.
   PSStripeShadowCardTable sct(this, start, end);
 
   // end might not be card-aligned.
