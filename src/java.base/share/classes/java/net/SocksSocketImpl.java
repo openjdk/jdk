@@ -299,9 +299,7 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
             URI uri;
             // Use getHostString() to avoid reverse lookups
             String host = epoint.getHostString();
-            if (epoint.getAddress() instanceof Inet6Address &&
-                    (host.indexOf(':') >= 0) &&
-                    isIPv6LiteralAddress(host)) {
+            if (isIPv6LiteralAddress(host)) {
                 host = "[" + host + "]";
             } else {
                 host = ParseUtil.encodePath(host);
