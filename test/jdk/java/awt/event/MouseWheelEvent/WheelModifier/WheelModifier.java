@@ -39,8 +39,6 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
-import sun.awt.SunToolkit;
-
 /*
  * @test
  * @key headful
@@ -52,10 +50,10 @@ public class WheelModifier {
     JFrame f;
     JButton fb;
 
-    CountDownLatch focusSema = new CountDownLatch(1);
-    CountDownLatch pressSema = new CountDownLatch(1);
-    CountDownLatch exitSema = new CountDownLatch(1);
-    CountDownLatch releaseSema = new CountDownLatch(1);
+    final CountDownLatch focusSema = new CountDownLatch(1);
+    final CountDownLatch pressSema = new CountDownLatch(1);
+    final CountDownLatch exitSema = new CountDownLatch(1);
+    final CountDownLatch releaseSema = new CountDownLatch(1);
     volatile CountDownLatch wheelSema;
 
     private volatile Point sLoc;
@@ -133,7 +131,6 @@ public class WheelModifier {
 
         r.mouseMove(sLoc.x + bSize.width / 2, sLoc.y + bSize.height / 2);
         r.mousePress(MouseEvent.BUTTON1_DOWN_MASK);
-
         if (!pressSema.await(2, TimeUnit.SECONDS)) {
             throw new RuntimeException("Mouse is not pressed");
         }
