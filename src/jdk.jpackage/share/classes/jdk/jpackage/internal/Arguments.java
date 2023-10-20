@@ -596,8 +596,6 @@ public class Arguments {
                 throw new PackagerException("ERR_UnsupportedOption",
                         option.getIdWithPrefix());
             }
-            // Throws PackagerException on error
-            ValidOptions.checkIfRequired(option, allOptions);
             if ((imageOnly && !isMac) || (imageOnly && !hasAppImage && isMac)) {
                 if (!ValidOptions.checkIfImageSupported(option)) {
                     throw new PackagerException("ERR_InvalidTypeOption",

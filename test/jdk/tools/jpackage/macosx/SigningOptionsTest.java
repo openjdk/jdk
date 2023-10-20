@@ -60,26 +60,6 @@ public final class SigningOptionsTest {
     @Parameters
     public static Collection input() {
         return List.of(new Object[][]{
-            // --mac-sign requires
-            {"Hello",
-                    new String[]{"--mac-sign"},
-                    null,
-                    "--mac-sign argument requires at least one of"},
-            // --mac-signing-key-user-name requires
-            {"Hello",
-                    new String[]{"--mac-signing-key-user-name"},
-                    null,
-                    "--mac-signing-key-user-name argument requires at least one of"},
-            // --mac-app-image-sign-identity requires
-            {"Hello",
-                    new String[]{"--mac-app-image-sign-identity"},
-                    null,
-                    "--mac-app-image-sign-identity argument requires at least one of"},
-            // --mac-installer-sign-identity requires
-            {"Hello",
-                    new String[]{"--mac-installer-sign-identity"},
-                    null,
-                    "--mac-installer-sign-identity argument requires at least one of"},
             // --mac-signing-key-user-name and --mac-app-image-sign-identity
             {"Hello",
                     new String[]{"--mac-sign",

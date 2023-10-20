@@ -57,6 +57,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.INSTALLER_SIGN_IDENTITY;
+import static jdk.jpackage.internal.MacAppBundler.APP_IMAGE_SIGN_IDENTITY;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
 import static jdk.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
 import static jdk.jpackage.internal.OverridableResource.createResource;
@@ -609,14 +610,18 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                 }
 
                 String signingIdentity = null;
-                // --mac-signing-key-user-name
-                if (!SIGNING_KEY_USER.getIsDefaultValue(params)) {
-                    signingIdentity = DEVELOPER_ID_INSTALLER_SIGNING_KEY.fetchFrom(params);
-                }
                 // --mac-installer-sign-identity
                 if (!INSTALLER_SIGN_IDENTITY.getIsDefaultValue(params)) {
                     signingIdentity = INSTALLER_SIGN_IDENTITY.fetchFrom(params);
+                } else {
+                    // Use --mac-signing-key-user-name if user did not request
+                    // to sign just app image using --mac-app-image-sign-identity
+                    if (APP_IMAGE_SIGN_IDENTITY.getIsDefaultValue(params)) {
+                        // --mac-signing-key-user-name
+                        signingIdentity = DEVELOPER_ID_INSTALLER_SIGNING_KEY.fetchFrom(params);
+                    }
                 }
+
                 if (signingIdentity != null) {
                     commandLine.add("--sign");
                     commandLine.add(signingIdentity);

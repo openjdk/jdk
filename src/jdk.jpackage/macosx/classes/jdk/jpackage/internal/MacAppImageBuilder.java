@@ -58,6 +58,7 @@ import static jdk.jpackage.internal.MacAppBundler.DEVELOPER_ID_APP_SIGNING_KEY;
 import static jdk.jpackage.internal.MacAppBundler.APP_IMAGE_SIGN_IDENTITY;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
+import static jdk.jpackage.internal.MacBaseInstallerBundler.INSTALLER_SIGN_IDENTITY;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
@@ -400,13 +401,16 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 Log.error(e.getMessage());
             }
             String signingIdentity = null;
-            // --mac-signing-key-user-name
-            if (!SIGNING_KEY_USER.getIsDefaultValue(params)) {
-                signingIdentity = DEVELOPER_ID_APP_SIGNING_KEY.fetchFrom(params);
-            }
-            // --mac-app-image-sign-identity
+            // Try --mac-app-image-sign-identity first if set
             if (!APP_IMAGE_SIGN_IDENTITY.getIsDefaultValue(params)) {
                 signingIdentity = APP_IMAGE_SIGN_IDENTITY.fetchFrom(params);
+            } else {
+                // Check if INSTALLER_SIGN_IDENTITY is set and if it is set
+                // then do not sign app image, otherwise use --mac-signing-key-user-name
+                if (INSTALLER_SIGN_IDENTITY.getIsDefaultValue(params)) {
+                    // --mac-sign and/or --mac-signing-key-user-name case
+                    signingIdentity = DEVELOPER_ID_APP_SIGNING_KEY.fetchFrom(params);
+                }
             }
             if (signingIdentity != null) {
                 signAppBundle(params, root, signingIdentity,

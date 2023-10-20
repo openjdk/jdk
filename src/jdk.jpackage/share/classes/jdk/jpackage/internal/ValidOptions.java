@@ -25,11 +25,8 @@
 
 package jdk.jpackage.internal;
 
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.Arguments.CLIOptions;
@@ -65,9 +62,6 @@ class ValidOptions {
     }
 
     private static final HashMap<String, EnumSet<USE>> options = new HashMap<>();
-    // HashMap of required options
-    private static final HashMap<CLIOptions, List<CLIOptions>> required = new HashMap<>();
-
 
     // initializing list of mandatory arguments
     static {
@@ -147,19 +141,6 @@ class ValidOptions {
             put(CLIOptions.MAC_ENTITLEMENTS.getId(),
                     EnumSet.of(USE.ALL, USE.SIGN));
             put(CLIOptions.DMG_CONTENT.getId(), USE.INSTALL);
-
-            // Add requirements
-            // --mac-sign requires --mac-signing-key-user-name or
-            // --mac-app-image-sign-identity or --mac-installer-sign-identity.
-            putRequired(CLIOptions.MAC_SIGN, List.of(
-                CLIOptions.MAC_SIGNING_KEY_NAME,
-                CLIOptions.MAC_APP_IMAGE_SIGN_IDENTITY,
-                CLIOptions.MAC_INSTALLER_SIGN_IDENTITY));
-            // --mac-signing-key-user-name or --mac-app-image-sign-identity or
-            // --mac-installer-sign-identity requires --mac-sign.
-            putRequired(CLIOptions.MAC_SIGNING_KEY_NAME, CLIOptions.MAC_SIGN);
-            putRequired(CLIOptions.MAC_APP_IMAGE_SIGN_IDENTITY, CLIOptions.MAC_SIGN);
-            putRequired(CLIOptions.MAC_INSTALLER_SIGN_IDENTITY, CLIOptions.MAC_SIGN);
         }
 
         if (OperatingSystem.isLinux()) {
@@ -177,20 +158,6 @@ class ValidOptions {
 
     static boolean checkIfSupported(CLIOptions arg) {
         return options.containsKey(arg.getId());
-    }
-
-    static void checkIfRequired(CLIOptions arg, List<CLIOptions> allOptions)
-                                                      throws PackagerException {
-        List<CLIOptions> values = required.get(arg);
-        if (values != null && !values.isEmpty()) {
-            // disjoint() returns true if no elements in common
-            if (Collections.disjoint(allOptions, values)) {
-                List<String> stringValues = values.stream()
-                    .map(p -> p.getIdWithPrefix()).collect(Collectors.toList());
-                throw new PackagerException("ERR_MissingRequiredArgument",
-                            arg.getIdWithPrefix(), String.join(",", stringValues));
-            }
-        }
     }
 
     static boolean checkIfImageSupported(CLIOptions arg) {
@@ -216,15 +183,5 @@ class ValidOptions {
 
     private static EnumSet<USE> put(String key, EnumSet<USE> value) {
         return options.put(key, value);
-    }
-
-    private static List<CLIOptions> putRequired(CLIOptions key,
-                                                CLIOptions value) {
-        return required.put(key, List.of(value));
-    }
-
-    private static List<CLIOptions> putRequired(CLIOptions key,
-                                                List<CLIOptions> value) {
-        return required.put(key, value);
     }
 }

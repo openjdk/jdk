@@ -73,7 +73,7 @@ public class SigningPackageTwoStepTest {
         }
 
         Path outputBundle = cmd.outputBundle();
-        SigningBase.verifyPkgutil(outputBundle, SigningBase.DEFAULT_INDEX);
+        SigningBase.verifyPkgutil(outputBundle, true, SigningBase.DEFAULT_INDEX);
         SigningBase.verifySpctl(outputBundle, "install", SigningBase.DEFAULT_INDEX);
     }
 
