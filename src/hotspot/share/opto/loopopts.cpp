@@ -3685,6 +3685,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
           // and not a CMove (Matcher expects only bool->cmove).
           if (n->in(0) == nullptr && !n->is_Load() && !n->is_CMove()) {
             int new_clones = clone_for_use_outside_loop(loop, n, worklist);
+            if (C->failing()) return false;
             if (new_clones == -1) {
               too_many_clones = true;
               break;
