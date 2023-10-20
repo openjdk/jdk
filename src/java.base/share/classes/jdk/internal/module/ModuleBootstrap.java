@@ -469,7 +469,7 @@ public final class ModuleBootstrap {
         }
 
         // If -Xshare:dump and mainModule are specified, check if the mainModule
-        // is in the runtime image and not in the upgrade module path. If so,
+        // is in the runtime image and not on the upgrade module path. If so,
         // set canArchive to true so that the module graph can be archived.
         if (CDS.isDumpingStaticArchive() && mainModule != null) {
             ModuleReference mainModuleRef = systemModuleFinder.find(mainModule).orElse(null);
