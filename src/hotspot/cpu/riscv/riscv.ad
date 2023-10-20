@@ -8600,7 +8600,7 @@ instruct cmpUL3_reg_reg(iRegINoSp dst, iRegL op1, iRegL op2)
   match(Set dst (CmpUL3 op1 op2));
 
   ins_cost(ALU_COST * 3 + BRANCH_COST);
-  format %{ "sltu   $dst, $op2, $op1\t#@cmpUL3_reg_reg\n\t"
+  format %{ "sltu  $dst, $op2, $op1\t#@cmpUL3_reg_reg\n\t"
             "bnez  $dst, done\n\t"
             "sltu  $dst, $op1, $op2\n\t"
             "neg   $dst, $dst\t#@cmpUL3_reg_reg"
@@ -8618,7 +8618,7 @@ instruct cmpU3_reg_reg(iRegINoSp dst, iRegI op1, iRegI op2)
   match(Set dst (CmpU3 op1 op2));
 
   ins_cost(ALU_COST * 3 + BRANCH_COST);
-  format %{ "sltu   $dst, $op2, $op1\t#@cmpU3_reg_reg\n\t"
+  format %{ "sltu  $dst, $op2, $op1\t#@cmpU3_reg_reg\n\t"
             "bnez  $dst, done\n\t"
             "sltu  $dst, $op1, $op2\n\t"
             "neg   $dst, $dst\t#@cmpU3_reg_reg"
