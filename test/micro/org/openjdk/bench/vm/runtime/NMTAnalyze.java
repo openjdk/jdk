@@ -134,18 +134,18 @@ class NMTAnalyze {
     }
     fileName = args[0];
     System.out.println(args[0]);
-		try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+    try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
       System.out.println("file name " + fileName);
 
       skipUntilReport(reader);
       readRecords(reader);
       analyzeRecords(reader);
 
-			reader.close();
-		} catch (IOException ioe) {
+      reader.close();
+    } catch (IOException ioe) {
       ioe.printStackTrace();
       System.out.println(ioe.getMessage());
-		} finally {
+    } finally {
     }
 
   }
