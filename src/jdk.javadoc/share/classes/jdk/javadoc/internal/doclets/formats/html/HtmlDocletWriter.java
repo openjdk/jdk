@@ -412,6 +412,20 @@ public abstract class HtmlDocletWriter {
     }
 
     /**
+     * {@return true if the page written by this writer should be indexed,
+     * false otherwise}
+     *
+     * Some pages merely aggregate filtered information available on other pages
+     * and, thus, have no indexing value. In fact, if indexed, they would
+     * clutter the index and mislead the reader.
+     *
+     * @implSpec The default implementation returns {@code false}.
+     */
+    public boolean isIndexable() {
+        return false;
+    }
+
+    /**
      * Generates the HTML document tree and prints it out.
      *
      * @param metakeywords Array of String keywords for META tag. Each element
@@ -1370,8 +1384,7 @@ public abstract class HtmlDocletWriter {
                 public Boolean visitStartElement(StartElementTree node, Content content) {
                     Content attrs = new ContentBuilder();
                     if (node.getName().toString().matches("(?i)h[1-6]")
-                            && !(HtmlDocletWriter.this instanceof IndexWriter)
-                            && !(HtmlDocletWriter.this instanceof SummaryListWriter<?>)) {
+                            && isIndexable()) {
                         createSectionIdAndIndex(node, trees, attrs, element, context);
                     }
                     for (DocTree dt : node.getAttributes()) {

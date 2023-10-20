@@ -372,10 +372,8 @@ public class TagletWriter {
     @SuppressWarnings("preview")
     Content createAnchorAndSearchIndex(Element element, String tagText, Content tagContent, String desc, DocTree tree) {
         Content result;
-        if (context.isFirstSentence && context.inSummary
-                || context.inTags.contains(DocTree.Kind.INDEX)
-                || htmlWriter instanceof IndexWriter
-                || htmlWriter instanceof SummaryListWriter<?>) {
+        if (context.isFirstSentence && context.inSummary || context.inTags.contains(DocTree.Kind.INDEX)
+                || !htmlWriter.isIndexable()) {
             result = tagContent;
         } else {
             HtmlId id = HtmlIds.forText(tagText, htmlWriter.indexAnchorTable);

@@ -146,19 +146,18 @@ public class TestSelfIndexing extends JavadocTester {
         return URL.matcher(content).results()
                 .filter(r -> {
                     String f = r.group("file");
-                    switch (f) {
-                        case "index-all.html", "deprecated-list.html", "overview-tree.html",
-                                "package-use.html", "package-tree.html", "preview-list.html",
-                                "new-list.html", "allclasses-index.html", "allpackages-index.html",
-                                "constant-values.html", "system-properties.html", "serialized-form.html"
-                                -> { /* nothing to do */}
+                    if (!f.contains("-"))
+                        return false;
+                    return switch (f) {
+                        case "package-summary.html",
+                                "module-summary.html",
+                                "overview-summary.html",
+                                "help-doc.html" -> false;
                         default -> {
-                            if (!f.matches("index-\\d+.html"))
-                                return false;
+                            String p = r.group("path");
+                            yield !p.contains("/doc-files/") && !p.startsWith("doc-files/");
                         }
-                    }
-                    String p = r.group("path");
-                    return !p.contains("/doc-files/") && !p.startsWith("doc-files/");
+                    };
                 })
                 .map(r -> r.group(0));
     }
