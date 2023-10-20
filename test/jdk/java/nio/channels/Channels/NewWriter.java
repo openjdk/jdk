@@ -23,6 +23,7 @@
 
 import java.io.IOException;
 import java.io.Writer;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.StandardSocketOptions;
@@ -50,11 +51,11 @@ public class NewWriter {
     private int actual = 0;
 
     @Test
-    public void OneByteChannel() throws IOException {
+    public void oneByteChannel() throws IOException {
         try (Writer writer = Channels.newWriter(new WritableByteChannel() {
             @Override
             public int write(ByteBuffer src) {
-                System.out.println((char) src.get());
+                System.out.print((char) src.get());
                 actual++;
                 return 1;
             }
@@ -69,30 +70,35 @@ public class NewWriter {
             }
         }, StandardCharsets.UTF_8)) {
             for (int i = 1; i <= COUNT; i++) {
-                writer.write(STRING + i);
+                writer.write(STRING);
                 writer.flush();
+                System.out.println(i);
+                actual++;
             }
         }
         assertEquals(EXPECTED, actual);
     }
 
     @Test
-    public void SocketChannel() throws IOException {
+    public void socketChannel() throws IOException {
         Throwable thrown = assertThrows(IllegalBlockingModeException.class,
-            () -> {
-                try (ServerSocket ss = new ServerSocket(0);
-                     SocketChannel cs = SocketChannel.open(new InetSocketAddress(ss.getLocalPort()))) {
-                    cs.configureBlocking(false);
-                    cs.setOption(StandardSocketOptions.SO_SNDBUF, 8192);
-                    try (
-                         Writer writer = Channels.newWriter(cs,
-                            StandardCharsets.UTF_8)) {
-                        for (int i = 1; i < Integer.MAX_VALUE; i++) {
-                            writer.write("test" + i);
+        () ->
+        {
+                InetAddress loopback = InetAddress.getLoopbackAddress();
+                try (ServerSocket ss = new ServerSocket(0)) {
+                    InetSocketAddress addr = new InetSocketAddress(loopback,
+                        ss.getLocalPort());
+                    try (SocketChannel cs = SocketChannel.open(addr)) {
+                         cs.configureBlocking(false);
+                         cs.setOption(StandardSocketOptions.SO_SNDBUF, 8192);
+                        try (Writer writer = Channels.newWriter(cs,
+                                StandardCharsets.UTF_8)) {
+                            for (int i = 1; i < Integer.MAX_VALUE; i++) {
+                                writer.write("test" + i);
+                            }
                         }
                     }
                 }
-            }
-        );
+        });
     }
 }
