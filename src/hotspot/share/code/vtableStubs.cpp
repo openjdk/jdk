@@ -95,8 +95,7 @@ void VtableStub::print() const { print_on(tty); }
 // hash value). Each list is anchored in a little hash _table, indexed
 // by that hash value.
 
-VtableStub* VtableStubs::_table[VtableStubs::N];
-int VtableStubs::_number_of_vtable_stubs = 0;
+VtableStub* volatile VtableStubs::_table[VtableStubs::N];
 int VtableStubs::_vtab_stub_size = 0;
 int VtableStubs::_itab_stub_size = 0;
 
@@ -126,13 +125,13 @@ int VtableStubs::_itab_stub_size = 0;
 
 
 void VtableStubs::initialize() {
+  assert(VtableStub::_receiver_location == VMRegImpl::Bad(), "initialized multiple times?");
+
   VtableStub::_receiver_location = SharedRuntime::name_for_receiver();
   {
     MutexLocker ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
-    assert(_number_of_vtable_stubs == 0, "potential performance bug: VtableStubs initialized more than once");
-    assert(is_power_of_2(int(N)), "N must be a power of 2");
     for (int i = 0; i < N; i++) {
-      _table[i] = nullptr;
+      Atomic::store(&_table[i], (VtableStub*)nullptr);
     }
   }
 }
@@ -259,7 +258,7 @@ inline uint VtableStubs::hash(bool is_vtable_stub, int vtable_index){
 VtableStub* VtableStubs::lookup(bool is_vtable_stub, int vtable_index) {
   assert_lock_strong(VtableStubs_lock);
   unsigned hash = VtableStubs::hash(is_vtable_stub, vtable_index);
-  VtableStub* s = _table[hash];
+  VtableStub* s = Atomic::load(&_table[hash]);
   while( s && !s->matches(is_vtable_stub, vtable_index)) s = s->next();
   return s;
 }
@@ -269,10 +268,10 @@ void VtableStubs::enter(bool is_vtable_stub, int vtable_index, VtableStub* s) {
   assert_lock_strong(VtableStubs_lock);
   assert(s->matches(is_vtable_stub, vtable_index), "bad vtable stub");
   unsigned int h = VtableStubs::hash(is_vtable_stub, vtable_index);
-  // enter s at the beginning of the corresponding list
-  s->set_next(_table[h]);
-  _table[h] = s;
-  _number_of_vtable_stubs++;
+  // Insert s at the beginning of the corresponding list.
+  s->set_next(Atomic::load(&_table[h]));
+  // Make sure that concurrent readers not taking the mutex observe the writing of "next".
+  Atomic::release_store(&_table[h], s);
 }
 
 VtableStub* VtableStubs::entry_point(address pc) {
@@ -280,7 +279,7 @@ VtableStub* VtableStubs::entry_point(address pc) {
   VtableStub* stub = (VtableStub*)(pc - VtableStub::entry_offset());
   uint hash = VtableStubs::hash(stub->is_vtable_stub(), stub->index());
   VtableStub* s;
-  for (s = _table[hash]; s != nullptr && s != stub; s = s->next()) {}
+  for (s = Atomic::load(&_table[hash]); s != nullptr && s != stub; s = s->next()) {}
   return (s == stub) ? s : nullptr;
 }
 
@@ -299,11 +298,8 @@ bool VtableStubs::contains(address pc) {
 
 
 VtableStub* VtableStubs::stub_containing(address pc) {
-  // Note: No locking needed since any change to the data structure
-  //       happens with an atomic store into it (we don't care about
-  //       consistency with the _number_of_vtable_stubs counter).
   for (int i = 0; i < N; i++) {
-    for (VtableStub* s = _table[i]; s != nullptr; s = s->next()) {
+    for (VtableStub* s = Atomic::load_acquire(&_table[i]); s != nullptr; s = s->next()) {
       if (s->contains(pc)) return s;
     }
   }
@@ -315,11 +311,11 @@ void vtableStubs_init() {
 }
 
 void VtableStubs::vtable_stub_do(void f(VtableStub*)) {
-    for (int i = 0; i < N; i++) {
-        for (VtableStub* s = _table[i]; s != nullptr; s = s->next()) {
-            f(s);
-        }
+  for (int i = 0; i < N; i++) {
+    for (VtableStub* s = Atomic::load_acquire(&_table[i]); s != nullptr; s = s->next()) {
+      f(s);
     }
+  }
 }
 
 

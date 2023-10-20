@@ -86,13 +86,13 @@ class Space: public CHeapObj<mtGC> {
   virtual void set_bottom(HeapWord* value) { _bottom = value; }
   virtual void set_end(HeapWord* value)    { _end = value; }
 
-  virtual HeapWord* saved_mark_word() const  { return _saved_mark_word; }
+  HeapWord* saved_mark_word() const  { return _saved_mark_word; }
 
   void set_saved_mark_word(HeapWord* p) { _saved_mark_word = p; }
 
   // Returns true if this object has been allocated since a
   // generation's "save_marks" call.
-  virtual bool obj_allocated_since_save_marks(const oop obj) const {
+  bool obj_allocated_since_save_marks(const oop obj) const {
     return cast_from_oop<HeapWord*>(obj) >= saved_mark_word();
   }
 
@@ -178,7 +178,7 @@ class Space: public CHeapObj<mtGC> {
   // structure supporting these calls, possibly speeding up future calls.
   // The default implementation, however, is simply to call the const
   // version.
-  virtual HeapWord* block_start(const void* p);
+  HeapWord* block_start(const void* p);
 
   // Requires "addr" to be the start of a chunk, and returns its size.
   // "addr + size" is required to be the start of a new chunk, or the end
@@ -191,7 +191,7 @@ class Space: public CHeapObj<mtGC> {
 
   // Requires "addr" to be the start of a block, and returns "TRUE" iff
   // the block is an object and the object is alive.
-  virtual bool obj_is_alive(const HeapWord* addr) const;
+  bool obj_is_alive(const HeapWord* addr) const;
 
   // Allocation (return null if full).  Assumes the caller has established
   // mutually exclusive access to the space.
@@ -206,10 +206,10 @@ class Space: public CHeapObj<mtGC> {
   virtual void adjust_pointers() = 0;
 #endif
 
-  virtual void print() const;
+  void print() const;
   virtual void print_on(outputStream* st) const;
-  virtual void print_short() const;
-  virtual void print_short_on(outputStream* st) const;
+  void print_short() const;
+  void print_short_on(outputStream* st) const;
 
   // Debugging
   virtual void verify() const = 0;

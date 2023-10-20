@@ -34,8 +34,19 @@ import java.util.concurrent.TimeUnit;
 import static org.testng.Assert.*;
 
 /*
- * @test
- * @run testng/othervm --enable-native-access=ALL-UNNAMED LibraryLookupTest
+ * @test id=specialized
+ * @run testng/othervm
+ *  -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
+ *  --enable-native-access=ALL-UNNAMED
+ *  LibraryLookupTest
+ */
+
+/*
+ * @test id=interpreted
+ * @run testng/othervm
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
+ *   --enable-native-access=ALL-UNNAMED
+ *   LibraryLookupTest
  */
 public class LibraryLookupTest {
 

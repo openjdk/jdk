@@ -50,7 +50,7 @@ public class BindingInterpreter {
 
     @FunctionalInterface
     public interface StoreFunc {
-        void store(VMStorage storage, Class<?> type, Object o);
+        void store(VMStorage storage, Object o);
     }
 
     @FunctionalInterface

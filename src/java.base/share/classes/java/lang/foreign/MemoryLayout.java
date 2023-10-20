@@ -26,14 +26,9 @@
 package java.lang.foreign;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
-import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import jdk.internal.foreign.LayoutPath;
@@ -44,7 +39,6 @@ import jdk.internal.foreign.layout.PaddingLayoutImpl;
 import jdk.internal.foreign.layout.SequenceLayoutImpl;
 import jdk.internal.foreign.layout.StructLayoutImpl;
 import jdk.internal.foreign.layout.UnionLayoutImpl;
-import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * A memory layout describes the contents of a memory segment.
@@ -77,7 +71,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * The above declaration can be modelled using a layout object, as follows:
  *
  * {@snippet lang=java :
- * SequenceLayout taggedValues = MemoryLayout.sequenceLayout(5,
+ * SequenceLayout TAGGED_VALUES = MemoryLayout.sequenceLayout(5,
  *     MemoryLayout.structLayout(
  *         ValueLayout.JAVA_BYTE.withName("kind"),
  *         MemoryLayout.paddingLayout(3),
@@ -132,13 +126,13 @@ import jdk.internal.vm.annotation.ForceInline;
  * For instance, given the {@code taggedValues} sequence layout constructed above, we can obtain the offset,
  * in bytes, of the member layout named <code>value</code> in the <em>first</em> sequence element, as follows:
  * {@snippet lang=java :
- * long valueOffset = taggedValues.byteOffset(PathElement.sequenceElement(0),
+ * long valueOffset = TAGGED_VALUES.byteOffset(PathElement.sequenceElement(0),
  *                                           PathElement.groupElement("value")); // yields 4
  * }
  *
  * Similarly, we can select the member layout named {@code value}, as follows:
  * {@snippet lang=java :
- * MemoryLayout value = taggedValues.select(PathElement.sequenceElement(),
+ * MemoryLayout value = TAGGED_VALUES.select(PathElement.sequenceElement(),
  *                                          PathElement.groupElement("value"));
  * }
  *
@@ -151,10 +145,13 @@ import jdk.internal.vm.annotation.ForceInline;
  * the open elements in the path:
  *
  * {@snippet lang=java :
- * VarHandle valueHandle = taggedValues.varHandle(PathElement.sequenceElement(),
+ * VarHandle valueHandle = TAGGED_VALUES.varHandle(PathElement.sequenceElement(),
  *                                                PathElement.groupElement("value"));
- * MemorySegment valuesSegment = ...
- * int val = (int) valueHandle.get(valuesSegment, 2); // reads the "value" field of the third struct in the array
+ * MemorySegment taggedValues = ...
+ * // reads the "value" field of the third struct in the array (taggedValues[2].value)
+ * int val = (int) valueHandle.get(taggedValues,
+ *         0L,  // base offset
+ *         2L); // sequence index
  * }
  *
  * <p>
@@ -164,10 +161,10 @@ import jdk.internal.vm.annotation.ForceInline;
  * of the sequence element whose offset is to be computed:
  *
  * {@snippet lang=java :
- * MethodHandle offsetHandle = taggedValues.byteOffsetHandle(PathElement.sequenceElement(),
+ * MethodHandle offsetHandle = TAGGED_VALUES.byteOffsetHandle(PathElement.sequenceElement(),
  *                                                           PathElement.groupElement("kind"));
- * long offset1 = (long) offsetHandle.invokeExact(1L); // 8
- * long offset2 = (long) offsetHandle.invokeExact(2L); // 16
+ * long offset1 = (long) offsetHandle.invokeExact(0L, 1L); // 0 + (1 * 8) = 8
+ * long offset2 = (long) offsetHandle.invokeExact(0L, 2L); // 0 + (2 * 8) = 16
  * }
  *
  * <h3 id="deref-path-elements">Dereference path elements</h3>
@@ -205,7 +202,10 @@ import jdk.internal.vm.annotation.ForceInline;
  * );
  *
  * MemorySegment rect = ...
- * int rect_y_4 = (int) rectPointYs.get(rect, 2); // rect.points[2]->y
+ * // dereferences the third point struct in the "points" array, and reads its "y" coordinate (rect.points[2]->y)
+ * int rect_y_2 = (int) rectPointYs.get(rect,
+ *     0L,  // base offset
+ *     2L); // sequence index
  * }
  *
  * <h3 id="well-formedness">Layout path well-formedness</h3>
@@ -268,6 +268,67 @@ import jdk.internal.vm.annotation.ForceInline;
  * access size {@code S}, that is, if {@code A < S}. An unaligned var handle only supports the {@code get} and {@code set}
  * access modes. All other access modes will result in {@link UnsupportedOperationException} being thrown. Moreover,
  * while supported, access modes {@code get} and {@code set} might lead to word tearing.
+ *
+ * <h2 id="variable-length">Working with variable-length structs</h2>
+ *
+ * Memory layouts allow clients to describe the contents of a region of memory whose size is known <em>statically</em>.
+ * There are, however, cases, where the size of a region of memory is only known <em>dynamically</em>, as it depends
+ * on the value of one or more struct fields. Consider the following struct declaration in C:
+ *
+ * {@snippet lang=c :
+ * typedef struct {
+ *     int size;
+ *     struct {
+ *         int x;
+ *         int y;
+ *     } points[];
+ * } Polygon;
+ * }
+ *
+ * In the above code, a polygon is modelled as a size (the number of edges in the polygon) and an array of points
+ * (one for each vertex in the polygon). The number of vertices depends on the number of edges in the polygon. As such,
+ * the size of the {@code points} array is left <em>unspecified</em> in the C declaration, using a <em>Flexible Array Member</em>
+ * (a feature standardized in C99).
+ * <p>
+ * Memory layouts do not support sequence layouts whose size is unknown. As such, it is not possible to model
+ * the above struct directly. That said, clients can still enjoy structured access provided by memory layouts, as
+ * demonstrated below:
+ *
+ * {@snippet lang=java :
+ * StructLayout POINT = MemoryLayout.structLayout(
+ *             ValueLayout.JAVA_INT.withName("x"),
+ *             ValueLayout.JAVA_INT.withName("y")
+ * );
+ *
+ * StructLayout POLYGON = MemoryLayout.structLayout(
+ *             ValueLayout.JAVA_INT.withName("size"),
+ *             MemoryLayout.sequenceLayout(0, POINT).withName("points")
+ * );
+ *
+ * VarHandle POLYGON_SIZE = POLYGON.varHandle(0, PathElement.groupElement("size"));
+ * VarHandle POINT_X = POINT.varHandle(PathElement.groupElement("x"));
+ * long POINTS_OFFSET = POLYGON.byteOffset(PathElement.groupElement("points"));
+ * }
+ *
+ * Note how we have split the polygon struct in two. The {@code POLYGON} layout contains a sequence layout
+ * of size <em>zero</em>. The element layout of the sequence layout is the {@code POINT} layout, which defines
+ * the {@code x} and {@code y} coordinates, accordingly. The first layout is used to obtain a var handle
+ * that provides access to the polygon size; the second layout is used to obtain a var handle that provides
+ * access to the {@code x} coordinate of a point struct. Finally, an offset to the start of the variable-length
+ * {@code points} array is also obtained.
+ * <p>
+ * The {@code x} coordinates of all the points in a polygon can then be accessed as follows:
+ * {@snippet lang=java :
+ * MemorySegment polygon = ...
+ * int size = POLYGON_SIZE.get(polygon, 0L);
+ * for (int i = 0 ; i < size ; i++) {
+ *     int x = POINT_X.get(polygon, POINT.scaleOffset(POINTS_OFFSET, i));
+ * }
+ *  }
+ * Here, we first obtain the polygon size, using the {@code POLYGON_SIZE} var handle. Then, in a loop, we read
+ * the {@code x} coordinates of all the points in the polygon. This is done by providing a custom base offset to
+ * the {@code POINT_X} var handle. The custom offset is computed as {@code POINTS_OFFSET + (i * POINT.byteSize())}, where
+ * {@code i} is the loop induction variable.
  *
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
@@ -337,35 +398,12 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @throws IllegalArgumentException if {@code offset} or {@code index} is negative
      * @throws ArithmeticException if either the addition or multiplication overflows
      */
-    @ForceInline
-    default long scale(long offset, long index) {
-        if (offset < 0) {
-            throw new IllegalArgumentException("Negative offset: " + offset);
-        }
-        if (index < 0) {
-            throw new IllegalArgumentException("Negative index: " + index);
-        }
-
-        return Math.addExact(offset, Math.multiplyExact(byteSize(), index));
-    }
+    long scale(long offset, long index);
 
     /**
      *{@return a method handle that can be used to invoke {@link #scale(long, long)} on this layout}
      */
-    default MethodHandle scaleHandle() {
-        class Holder {
-            static final MethodHandle MH_SCALE;
-            static {
-                try {
-                    MH_SCALE = MethodHandles.lookup().findVirtual(MemoryLayout.class, "scale",
-                            MethodType.methodType(long.class, long.class, long.class));
-                } catch (ReflectiveOperationException e) {
-                    throw new ExceptionInInitializerError(e);
-                }
-            }
-        }
-        return Holder.MH_SCALE.bindTo(this);
-    }
+    MethodHandle scaleHandle();
 
     /**
      * Computes the offset, in bytes, of the layout selected by the given layout path, where the initial layout in the
@@ -377,10 +415,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @throws IllegalArgumentException if the layout path contains one or more <a href=#open-path-elements>open path elements</a>.
      * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
      */
-    default long byteOffset(PathElement... elements) {
-        return computePathOp(LayoutPath.rootPath(this), LayoutPath::offset,
-                EnumSet.of(PathKind.SEQUENCE_ELEMENT, PathKind.SEQUENCE_RANGE, PathKind.DEREF_ELEMENT), elements);
-    }
+    long byteOffset(PathElement... elements);
 
     /**
      * Creates a method handle that computes the offset, in bytes, of the layout selected
@@ -415,10 +450,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
      * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
      */
-    default MethodHandle byteOffsetHandle(PathElement... elements) {
-        return computePathOp(LayoutPath.rootPath(this), LayoutPath::offsetHandle,
-                EnumSet.of(PathKind.DEREF_ELEMENT), elements);
-    }
+    MethodHandle byteOffsetHandle(PathElement... elements);
 
     /**
      * Creates a var handle that accesses a memory segment at the offset selected by the given layout path,
@@ -510,14 +542,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
      * @throws IllegalArgumentException if the layout selected by the provided path is not a {@linkplain ValueLayout value layout}.
      */
-    default VarHandle varHandle(PathElement... elements) {
-        Objects.requireNonNull(elements);
-        if (this instanceof ValueLayout vl && elements.length == 0) {
-            return vl.varHandle(); // fast path
-        }
-        return computePathOp(LayoutPath.rootPath(this), LayoutPath::dereferenceHandle,
-                Set.of(), elements);
-    }
+    VarHandle varHandle(PathElement... elements);
 
     /**
      * Creates a method handle which, given a memory segment, returns a {@linkplain MemorySegment#asSlice(long,long) slice}
@@ -556,10 +581,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
      * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
      */
-    default MethodHandle sliceHandle(PathElement... elements) {
-        return computePathOp(LayoutPath.rootPath(this), LayoutPath::sliceHandle,
-                Set.of(PathKind.DEREF_ELEMENT), elements);
-    }
+    MethodHandle sliceHandle(PathElement... elements);
 
     /**
      * Returns the layout selected from the provided path, where the initial layout in the path is this layout.
@@ -571,23 +593,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @throws IllegalArgumentException if the layout path contains one or more path elements that select one or more
      * sequence element indices, such as {@link PathElement#sequenceElement(long)} and {@link PathElement#sequenceElement(long, long)}).
      */
-    default MemoryLayout select(PathElement... elements) {
-        return computePathOp(LayoutPath.rootPath(this), LayoutPath::layout,
-                EnumSet.of(PathKind.SEQUENCE_ELEMENT_INDEX, PathKind.SEQUENCE_RANGE, PathKind.DEREF_ELEMENT), elements);
-    }
-
-    private static <Z> Z computePathOp(LayoutPath path, Function<LayoutPath, Z> finalizer,
-                                       Set<PathKind> badKinds, PathElement... elements) {
-        Objects.requireNonNull(elements);
-        for (PathElement e : elements) {
-            LayoutPath.PathElementImpl pathElem = (LayoutPath.PathElementImpl)Objects.requireNonNull(e);
-            if (badKinds.contains(pathElem.kind())) {
-                throw new IllegalArgumentException(String.format("Invalid %s selection in layout path", pathElem.kind().description()));
-            }
-            path = pathElem.apply(path);
-        }
-        return finalizer.apply(path);
-    }
+    MemoryLayout select(PathElement... elements);
 
     /**
      * An element in a <a href="MemoryLayout.html#layout-paths"><em>layout path</em></a>. There
