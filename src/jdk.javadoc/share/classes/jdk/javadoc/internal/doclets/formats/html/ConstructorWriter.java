@@ -106,13 +106,13 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
             for (Element constructor : constructors) {
                 currentConstructor = (ExecutableElement)constructor;
                 Content constructorContent = getConstructorHeaderContent(currentConstructor);
-
-                buildSignature(constructorContent);
-                buildDeprecationInfo(constructorContent);
-                buildPreviewInfo(constructorContent);
-                buildConstructorComments(constructorContent);
-                buildTagInfo(constructorContent);
-
+                Content div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+                buildSignature(div);
+                buildDeprecationInfo(div);
+                buildPreviewInfo(div);
+                buildConstructorComments(div);
+                buildTagInfo(div);
+                constructorContent.add(div);
                 memberList.add(getMemberListItem(constructorContent));
             }
             Content constructorDetails = getConstructorDetails(constructorDetailsHeader, memberList);

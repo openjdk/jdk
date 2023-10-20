@@ -138,7 +138,7 @@ public class TestStylesheet extends JavadocTester {
                     .summary-table > div, .details-table > div {
                         text-align:left;
                         padding: 8px 3px 3px 7px;
-                        overflow-x: auto;
+                        overflow: auto hidden;
                         scrollbar-width: thin;
                     }""",
                 "@import url('fonts/dejavu.css');",
@@ -161,7 +161,7 @@ public class TestStylesheet extends JavadocTester {
                         font-weight:bold;
                     }""",
                 """
-                    .deprecation-block {
+                    .deprecation-block, .preview-block, .restricted-block {
                         font-size:1em;
                         font-family:var(--block-font-family);
                         border-style:solid;

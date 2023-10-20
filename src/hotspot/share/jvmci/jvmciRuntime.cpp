@@ -744,9 +744,10 @@ JRT_ENTRY(jint, JVMCIRuntime::test_deoptimize_call_int(JavaThread* current, int 
 JRT_END
 
 
-// private static JVMCIRuntime JVMCI.initializeRuntime()
-JVM_ENTRY_NO_ENV(jobject, JVM_GetJVMCIRuntime(JNIEnv *env, jclass c))
-  JNI_JVMCIENV(thread, env);
+// Implementation of JVMCI.initializeRuntime()
+// When called from libjvmci, `libjvmciOrHotspotEnv` is a libjvmci env so use JVM_ENTRY_NO_ENV.
+JVM_ENTRY_NO_ENV(jobject, JVM_GetJVMCIRuntime(JNIEnv *libjvmciOrHotspotEnv, jclass c))
+  JVMCIENV_FROM_JNI(thread, libjvmciOrHotspotEnv);
   if (!EnableJVMCI) {
     JVMCI_THROW_MSG_NULL(InternalError, "JVMCI is not enabled");
   }
@@ -755,9 +756,10 @@ JVM_ENTRY_NO_ENV(jobject, JVM_GetJVMCIRuntime(JNIEnv *env, jclass c))
   return JVMCIENV->get_jobject(runtime);
 JVM_END
 
-// private static long Services.readSystemPropertiesInfo(int[] offsets)
+// Implementation of Services.readSystemPropertiesInfo(int[] offsets)
+// When called from libjvmci, `env` is a libjvmci env so use JVM_ENTRY_NO_ENV.
 JVM_ENTRY_NO_ENV(jlong, JVM_ReadSystemPropertiesInfo(JNIEnv *env, jclass c, jintArray offsets_handle))
-  JNI_JVMCIENV(thread, env);
+  JVMCIENV_FROM_JNI(thread, env);
   if (!EnableJVMCI) {
     JVMCI_THROW_MSG_0(InternalError, "JVMCI is not enabled");
   }
@@ -771,7 +773,8 @@ JVM_END
 
 
 void JVMCIRuntime::call_getCompiler(TRAPS) {
-  THREAD_JVMCIENV(JavaThread::current());
+  JVMCIENV_FROM_THREAD(THREAD);
+  JVMCIENV->check_init(CHECK);
   JVMCIObject jvmciRuntime = JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_CHECK);
   initialize(JVMCI_CHECK);
   JVMCIENV->call_HotSpotJVMCIRuntime_getCompiler(jvmciRuntime, JVMCI_CHECK);
@@ -884,6 +887,13 @@ jlong JVMCIRuntime::make_oop_handle(const Handle& obj) {
   return reinterpret_cast<jlong>(ptr);
 }
 
+#ifdef ASSERT
+bool JVMCIRuntime::is_oop_handle(jlong handle) {
+  const oop* ptr = (oop*) handle;
+  return object_handles()->allocation_status(ptr) == OopStorage::ALLOCATED_ENTRY;
+}
+#endif
+
 int JVMCIRuntime::release_and_clear_oop_handles() {
   guarantee(_num_attached_threads == cannot_be_attached, "only call during JVMCI runtime shutdown");
   int released = release_cleared_oop_handles();
@@ -972,7 +982,7 @@ int JVMCIRuntime::release_cleared_oop_handles() {
       object_handles()->release(_oop_handles.adr_at(num_alive), to_release);
 
       // Truncate oop handles to only those with a non-null referent
-      JVMCI_event_1("compacted oop handles in JVMCI runtime %d from %d to %d", _id, _oop_handles.length(), num_alive);
+      JVMCI_event_2("compacted oop handles in JVMCI runtime %d from %d to %d", _id, _oop_handles.length(), num_alive);
       _oop_handles.trunc_to(num_alive);
       // Example: HHH
 
@@ -1525,9 +1535,10 @@ JVMCIObject JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_TRAPS) {
   return _HotSpotJVMCIRuntime_instance;
 }
 
-// private static void CompilerToVM.registerNatives()
-JVM_ENTRY_NO_ENV(void, JVM_RegisterJVMCINatives(JNIEnv *env, jclass c2vmClass))
-  JNI_JVMCIENV(thread, env);
+// Implementation of CompilerToVM.registerNatives()
+// When called from libjvmci, `libjvmciOrHotspotEnv` is a libjvmci env so use JVM_ENTRY_NO_ENV.
+JVM_ENTRY_NO_ENV(void, JVM_RegisterJVMCINatives(JNIEnv *libjvmciOrHotspotEnv, jclass c2vmClass))
+  JVMCIENV_FROM_JNI(thread, libjvmciOrHotspotEnv);
 
   if (!EnableJVMCI) {
     JVMCI_THROW_MSG(InternalError, "JVMCI is not enabled");
@@ -1542,7 +1553,7 @@ JVM_ENTRY_NO_ENV(void, JVM_RegisterJVMCINatives(JNIEnv *env, jclass c2vmClass))
 
     // Ensure _non_oop_bits is initialized
     Universe::non_oop_word();
-
+    JNIEnv *env = libjvmciOrHotspotEnv;
     if (JNI_OK != env->RegisterNatives(c2vmClass, CompilerToVM::methods, CompilerToVM::methods_count())) {
       if (!env->ExceptionCheck()) {
         for (int i = 0; i < CompilerToVM::methods_count(); i++) {
@@ -1562,11 +1573,14 @@ JVM_END
 
 void JVMCIRuntime::shutdown() {
   if (_HotSpotJVMCIRuntime_instance.is_non_null()) {
-    bool jni_enomem_is_fatal = true;
     JVMCI_event_1("shutting down HotSpotJVMCIRuntime for JVMCI runtime %d", _id);
-    JVMCIEnv __stack_jvmci_env__(JavaThread::current(), _HotSpotJVMCIRuntime_instance.is_hotspot(), jni_enomem_is_fatal, __FILE__, __LINE__);
+    JVMCIEnv __stack_jvmci_env__(JavaThread::current(), _HotSpotJVMCIRuntime_instance.is_hotspot(),__FILE__, __LINE__);
     JVMCIEnv* JVMCIENV = &__stack_jvmci_env__;
-    JVMCIENV->call_HotSpotJVMCIRuntime_shutdown(_HotSpotJVMCIRuntime_instance);
+    if (JVMCIENV->init_error() == JNI_OK) {
+      JVMCIENV->call_HotSpotJVMCIRuntime_shutdown(_HotSpotJVMCIRuntime_instance);
+    } else {
+      JVMCI_event_1("Error in JVMCIEnv for shutdown (err: %d)", JVMCIENV->init_error());
+    }
     if (_num_attached_threads == cannot_be_attached) {
       // Only when no other threads are attached to this runtime
       // is it safe to reset these fields.
@@ -1611,7 +1625,8 @@ bool JVMCIRuntime::destroy_shared_library_javavm() {
 
 void JVMCIRuntime::bootstrap_finished(TRAPS) {
   if (_HotSpotJVMCIRuntime_instance.is_non_null()) {
-    THREAD_JVMCIENV(JavaThread::current());
+    JVMCIENV_FROM_THREAD(THREAD);
+    JVMCIENV->check_init(CHECK);
     JVMCIENV->call_HotSpotJVMCIRuntime_bootstrapFinished(_HotSpotJVMCIRuntime_instance, JVMCIENV);
   }
 }

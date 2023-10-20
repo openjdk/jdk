@@ -490,6 +490,17 @@ public class HtmlIds {
     }
 
     /**
+     * Returns an id for the "restricted" section for an executable element.
+     *
+     * @param el the executable element
+     *
+     * @return the id
+     */
+    public HtmlId forRestrictedSection(ExecutableElement el) {
+        return HtmlId.of("restricted-" + forMember(el).name());
+    }
+
+    /**
      * Returns an id for the entry on the HELP page for a kind of generated page.
      *
      * @param page the kind of page

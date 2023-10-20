@@ -74,6 +74,7 @@
 #include "services/runtimeService.hpp"
 #include "signals_posix.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
@@ -768,7 +769,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // Init thread attributes.
   pthread_attr_t attr;
-  pthread_attr_init(&attr);
+  int rslt = pthread_attr_init(&attr);
+  guarantee(rslt == 0, "pthread_attr_init has to return 0");
   guarantee(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) == 0, "???");
 
   // Make sure we run in 1:1 kernel-user-thread mode.
@@ -802,6 +804,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
                             stack_size / K);
     thread->set_osthread(nullptr);
     delete osthread;
+    pthread_attr_destroy(&attr);
     return false;
   }
 
@@ -1589,10 +1592,13 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   }
 
   // Now attach the shared segment.
-  // Note that I attach with SHM_RND - which means that the requested address is rounded down, if
-  // needed, to the next lowest segment boundary. Otherwise the attach would fail if the address
-  // were not a segment boundary.
-  char* const addr = (char*) shmat(shmid, requested_addr, SHM_RND);
+  // Note that we deliberately *don't* pass SHM_RND. The contract of os::attempt_reserve_memory_at() -
+  // which invokes this function with a request address != NULL - is to map at the specified address
+  // excactly, or to fail. If the caller passed us an address that is not usable (aka not a valid segment
+  // boundary), shmat should not round down the address, or think up a completely new one.
+  // (In places where this matters, e.g. when reserving the heap, we take care of passing segment-aligned
+  // addresses on Aix. See, e.g., ReservedHeapSpace.
+  char* const addr = (char*) shmat(shmid, requested_addr, 0);
   const int errno_shmat = errno;
 
   // (A) Right after shmat and before handing shmat errors delete the shm segment.
@@ -1907,7 +1913,7 @@ int os::numa_get_group_id() {
   return 0;
 }
 
-size_t os::numa_get_leaf_groups(int *ids, size_t size) {
+size_t os::numa_get_leaf_groups(uint *ids, size_t size) {
   if (size > 0) {
     ids[0] = 0;
     return 1;
@@ -2163,6 +2169,15 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   }
 
   return addr;
+}
+
+size_t os::vm_min_address() {
+  // On AIX, we need to make sure we don't block the sbrk. However, this is
+  // done at actual reservation time, where we honor a "no-mmap" area following
+  // the break. See MaxExpectedDataSegmentSize. So we can return a very low
+  // address here.
+  assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
+  return _vm_min_address_default;
 }
 
 // Used to convert frequent JVM_Yield() to nops
@@ -2947,29 +2962,22 @@ void os::Aix::initialize_libperfstat() {
 /////////////////////////////////////////////////////////////////////////////
 // thread stack
 
-// Get the current stack base from the OS (actually, the pthread library).
-// Note: usually not page aligned.
-address os::current_stack_base() {
-  AixMisc::stackbounds_t bounds;
-  bool rc = AixMisc::query_stack_bounds_for_current_thread(&bounds);
-  guarantee(rc, "Unable to retrieve stack bounds.");
-  return bounds.base;
-}
-
-// Get the current stack size from the OS (actually, the pthread library).
+// Get the current stack base and size from the OS (actually, the pthread library).
+// Note: base usually not page aligned.
 // Returned size is such that (base - size) is always aligned to page size.
-size_t os::current_stack_size() {
+void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
   AixMisc::stackbounds_t bounds;
   bool rc = AixMisc::query_stack_bounds_for_current_thread(&bounds);
   guarantee(rc, "Unable to retrieve stack bounds.");
-  // Align the returned stack size such that the stack low address
+  *stack_base = bounds.base;
+
+  // Align the reported stack size such that the stack low address
   // is aligned to page size (Note: base is usually not and we do not care).
   // We need to do this because caller code will assume stack low address is
   // page aligned and will place guard pages without checking.
   address low = bounds.base - bounds.size;
   address low_aligned = (address)align_up(low, os::vm_page_size());
-  size_t s = bounds.base - low_aligned;
-  return s;
+  *stack_size = bounds.base - low_aligned;
 }
 
 // Get the default path to the core file
@@ -3037,3 +3045,32 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
 void os::jfr_report_memory_info() {}
 
 #endif // INCLUDE_JFR
+
+// Simulate the library search algorithm of dlopen() (in os::dll_load)
+int os::Aix::stat64x_via_LIBPATH(const char* path, struct stat64x* stat) {
+  if (path[0] == '/' ||
+      (path[0] == '.' && (path[1] == '/' ||
+                          (path[1] == '.' && path[2] == '/')))) {
+    return stat64x(path, stat);
+  }
+
+  const char* env = getenv("LIBPATH");
+  if (env == nullptr || *env == 0)
+    return -1;
+
+  int ret = -1;
+  size_t libpathlen = strlen(env);
+  char* libpath = NEW_C_HEAP_ARRAY(char, libpathlen + 1, mtServiceability);
+  char* combined = NEW_C_HEAP_ARRAY(char, libpathlen + strlen(path) + 1, mtServiceability);
+  char *saveptr, *token;
+  strcpy(libpath, env);
+  for (token = strtok_r(libpath, ":", &saveptr); token != nullptr; token = strtok_r(nullptr, ":", &saveptr)) {
+    sprintf(combined, "%s/%s", token, path);
+    if (0 == (ret = stat64x(combined, stat)))
+      break;
+  }
+
+  FREE_C_HEAP_ARRAY(char*, combined);
+  FREE_C_HEAP_ARRAY(char*, libpath);
+  return ret;
+}

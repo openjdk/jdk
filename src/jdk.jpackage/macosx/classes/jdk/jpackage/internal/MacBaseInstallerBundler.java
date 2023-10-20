@@ -207,47 +207,5 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
         return "INSTALLER";
     }
 
-    public static String findKey(String keyPrefix, String teamName, String keychainName) {
-
-        boolean useAsIs = teamName.startsWith(keyPrefix)
-                || teamName.startsWith("Developer ID")
-                || teamName.startsWith("3rd Party Mac");
-
-        String key = (useAsIs) ? teamName : (keyPrefix + teamName);
-
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                PrintStream ps = new PrintStream(baos)) {
-            List<String> searchOptions = new ArrayList<>();
-            searchOptions.add("/usr/bin/security");
-            searchOptions.add("find-certificate");
-            searchOptions.add("-c");
-            searchOptions.add(key);
-            searchOptions.add("-a");
-            if (keychainName != null && !keychainName.isEmpty()) {
-                searchOptions.add(keychainName);
-            }
-
-            ProcessBuilder pb = new ProcessBuilder(searchOptions);
-
-            IOUtils.exec(pb, false, ps);
-            Pattern p = Pattern.compile("\"alis\"<blob>=\"([^\"]+)\"");
-            Matcher m = p.matcher(baos.toString());
-            if (!m.find()) {
-                Log.error(MessageFormat.format(I18N.getString(
-                        "error.cert.not.found"), key, keychainName));
-                return null;
-            }
-            String matchedKey = m.group(1);
-            if (m.find()) {
-                Log.error(MessageFormat.format(I18N.getString(
-                        "error.multiple.certs.found"), key, keychainName));
-            }
-            return matchedKey;
-        } catch (IOException ioe) {
-            Log.verbose(ioe);
-            return null;
-        }
-    }
-
     private final Bundler appImageBundler;
 }

@@ -358,7 +358,7 @@ public class Tokens {
          * Preserve classic semantics - if multiple javadocs are found on the token
          * the last one is returned
          */
-        public Comment comment(Comment.CommentStyle style) {
+        public Comment docComment() {
             List<Comment> comments = getComments(Comment.CommentStyle.JAVADOC);
             return comments.isEmpty() ?
                     null :
