@@ -42,7 +42,6 @@ import java.util.function.IntFunction;
 import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
 import static java.lang.foreign.MemoryLayout.PathElement.sequenceElement;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import static org.testng.Assert.*;
 
@@ -139,8 +138,8 @@ public class TestLayoutPaths {
     @Test
     public void testBadAlignmentOfRoot() {
         MemoryLayout struct = MemoryLayout.structLayout(
-            JAVA_INT,
-            JAVA_SHORT.withName("x"));
+            JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN),
+            JAVA_SHORT.withOrder(ByteOrder.LITTLE_ENDIAN).withName("x"));
         assertEquals(struct.byteAlignment(), 4);
 
         try (Arena arena = Arena.ofConfined()) {
