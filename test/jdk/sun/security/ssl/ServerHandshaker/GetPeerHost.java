@@ -29,7 +29,7 @@
 /**
  * @test
  * @bug 4302026
- * @run main/othervm GetPeerHost
+ * @run main/othervm -Djavax.net.debug=all -Djavatest.maxOutputSize=500000 GetPeerHost
  * @summary make sure the server side doesn't do DNS lookup.
  */
 import javax.net.*;
