@@ -203,14 +203,6 @@ public:
   }
 };
 
-// Scavenge objects on dirty cards of the given stripe [start, end). Accesses to
-// the card table and scavenging is strictly limited to the stripe. The work on
-// objects covering multiple stripes is shared among the worker threads owning the
-// stripes.  To support this the card table is preprocessed before
-// scavenge. Imprecise dirty marks of non-objArrays are copied from start stripes
-// to all stripes (if any) they extend to.
-// A copy of card table entries corresponding to the stripe called "shadow" table
-// is used to separate card reading, clearing and redirtying.
 template <typename Func>
 void PSCardTable::process_range(Func&& object_start,
                                 PSPromotionManager* pm,
@@ -219,6 +211,9 @@ void PSCardTable::process_range(Func&& object_start,
   assert(start < end, "precondition");
   assert(is_card_aligned(start), "precondition");
 
+  // The "shadow" table is a copy of the card table entries of the current stripe.
+  // It is used to separate card reading, clearing and redirtying which reduces
+  // complexity significantly.
   StripeShadowCardTable sct(this, start, end);
 
   // end might not be card-aligned.
@@ -276,8 +271,6 @@ void PSCardTable::process_range(Func&& object_start,
   }
 }
 
-// Propagate imprecise card marks from object start to all stripes an object extends to
-// this thread is assigned to.
 template <typename Func>
 void PSCardTable::preprocess_card_table_parallel(Func&& object_start,
                                                  HeapWord* old_gen_bottom,
@@ -304,7 +297,7 @@ void PSCardTable::preprocess_card_table_parallel(Func&& object_start,
     oop first_obj = cast_to_oop(first_obj_addr);
     if (!first_obj->is_array() && is_dirty(byte_for(first_obj_addr))) {
       // Found a non-array object reaching into the stripe that has
-      // potentially been marked imprecisely.  Mark first card of the stripe
+      // potentially been marked imprecisely. Mark first card of the stripe
       // dirty so it will be processed later.
       *cur_card = dirty_card_val();
     }
@@ -349,17 +342,27 @@ void PSCardTable::preprocess_card_table_parallel(Func&& object_start,
 // slice_size_in_words to the start of stripe 0 in slice 0 to get to the start
 // of stripe 0 in slice 1.
 
+// Scavenging and accesses to the card table are strictly limited to the stripe.
+// In particular scavenging of an object crossing stripe boundaries is shared
+// among the threads assigned to the stripes it resides on. This reduces
+// complexity and enables shared scanning of large objects.
+// It requires preprocessing of the card table though where imprecise card marks of
+// objects crossing stripe boundaries are propagated to the first card of
+// each stripe covered by the individual object.
+
 void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
                                              HeapWord* old_gen_bottom,
                                              HeapWord* old_gen_top,
                                              PSPromotionManager* pm,
                                              uint stripe_index,
                                              uint n_stripes) {
+  // ObjectStartArray queries can be expensive for large objects. We cache known objects.
   struct {
     HeapWord* start_addr;
     HeapWord* end_addr;
   } cached_obj {nullptr, old_gen_bottom};
 
+  // Queries must be monotonic because we don't check addr >= cached_obj.start_addr.
   auto object_start = [&] (HeapWord* addr) {
     if (addr < cached_obj.end_addr) {
       assert(cached_obj.start_addr != nullptr, "inv");

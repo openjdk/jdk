@@ -47,7 +47,8 @@ class PSCardTable: public CardTable {
     return *card == clean_card_val();
   }
 
-  // Propagate imprecise card marks from object start to the stripes an object extends to.
+  // Iterate the stripes with the given index and copy imprecise card marks of
+  // objects reaching into a stripe to its first card.
   template <typename Func>
   void preprocess_card_table_parallel(Func&& object_start,
                                       HeapWord* old_gen_bottom,
@@ -55,6 +56,7 @@ class PSCardTable: public CardTable {
                                       uint stripe_index,
                                       uint n_stripes);
 
+  // Scavenge contents on dirty cards of the given stripe [start, end).
   template <typename Func>
   void process_range(Func&& object_start,
                      PSPromotionManager* pm,
@@ -80,10 +82,9 @@ class PSCardTable: public CardTable {
   static CardValue youngergen_card_val() { return youngergen_card; }
   static CardValue verify_card_val()     { return verify_card; }
 
-  void pre_scavenge(HeapWord* old_gen_bottom, uint active_workers);
-
   // Scavenge support
-
+  void pre_scavenge(HeapWord* old_gen_bottom, uint active_workers);
+  // Scavenge contents of stripes with the given index.
   void scavenge_contents_parallel(ObjectStartArray* start_array,
                                   HeapWord* old_gen_bottom,
                                   HeapWord* old_gen_top,
