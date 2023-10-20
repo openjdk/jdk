@@ -96,8 +96,7 @@ void DowncallLinker::StubGenerator::pd_add_offset_to_oop(VMStorage reg_oop, VMSt
       assert(reg_offset.is_stack(), "expected");
       assert(reg_offset.stack_size() == 8, "expected long");
       Address offset_addr(callerSP, FP_BIAS + reg_offset.offset());
-      __ mem2reg_opt(r_tmp1, offset_addr, true);
-      __ z_agr(reg_oop_reg, r_tmp1);
+      __ z_ag(reg_oop_reg, offset_addr);
     }
   } else {
     assert(reg_oop.is_stack(), "expected");
@@ -106,10 +105,9 @@ void DowncallLinker::StubGenerator::pd_add_offset_to_oop(VMStorage reg_oop, VMSt
     assert(reg_offset.stack_size() == 8, "expected long");
     Address offset_addr(callerSP, FP_BIAS + reg_offset.offset());
     Address oop_addr(callerSP, FP_BIAS + reg_oop.offset());
-    __ mem2reg_opt(r_tmp1,offset_addr, true);
     __ mem2reg_opt(r_tmp2, oop_addr, true);
-    __ z_agr(r_tmp1, r_tmp2);
-    __ reg2mem_opt(r_tmp1, oop_addr, true);
+    __ z_ag(r_tmp2, offset_addr);
+    __ reg2mem_opt(r_tmp2, oop_addr, true);
   }
 }
 
