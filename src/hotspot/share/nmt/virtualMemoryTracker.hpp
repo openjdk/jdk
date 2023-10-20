@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_SERVICES_VIRTUALMEMORYTRACKER_HPP
-#define SHARE_SERVICES_VIRTUALMEMORYTRACKER_HPP
+#ifndef SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
+#define SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
 
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp" // For MetadataType
@@ -400,5 +400,5 @@ class VirtualMemoryTracker : AllStatic {
   static SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>* _reserved_regions;
 };
 
-#endif // SHARE_SERVICES_VIRTUALMEMORYTRACKER_HPP
+#endif // SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
 

@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef SHARE_SERVICES_MALLOCTRACKER_INLINE_HPP
-#define SHARE_SERVICES_MALLOCTRACKER_INLINE_HPP
+#ifndef SHARE_NMT_MALLOCTRACKER_INLINE_HPP
+#define SHARE_NMT_MALLOCTRACKER_INLINE_HPP
 
 #include "nmt/mallocTracker.hpp"
 #include "services/mallocLimit.hpp"
@@ -69,4 +69,4 @@ inline bool MallocTracker::check_exceeds_limit(size_t s, MEMFLAGS f) {
 }
 
 
-#endif // SHARE_SERVICES_MALLOCTRACKER_INLINE_HPP
+#endif // SHARE_NMT_MALLOCTRACKER_INLINE_HPP

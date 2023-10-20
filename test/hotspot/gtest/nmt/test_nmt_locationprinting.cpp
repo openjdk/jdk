@@ -23,16 +23,16 @@
  */
 
 #include "precompiled.hpp"
-
 #include "memory/allocation.hpp"
 #include "nmt/mallocHeader.inline.hpp"
-#include "runtime/os.hpp"
 #include "nmt/memTracker.hpp"
+#include "runtime/os.hpp"
+
+#include "testutils.hpp"
 #include "unittest.hpp"
 
 // Uncomment to get test output
 //#define LOG_PLEASE
-#include "testutils.hpp"
 
 using ::testing::HasSubstr;
 

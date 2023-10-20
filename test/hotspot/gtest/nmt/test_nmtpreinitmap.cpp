@@ -29,6 +29,7 @@
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
+
 #include "unittest.hpp"
 
 // This tests the NMTPreInitAllocationTable hash table used to store C-heap allocations before NMT initialization ran.

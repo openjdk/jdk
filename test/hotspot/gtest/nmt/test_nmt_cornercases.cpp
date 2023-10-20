@@ -23,12 +23,12 @@
  */
 
 #include "precompiled.hpp"
-
 #include "memory/allocation.hpp"
 #include "nmt/mallocHeader.inline.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "runtime/os.hpp"
 #include "nmt/memTracker.hpp"
+
 #include "testutils.hpp"
 #include "unittest.hpp"
 
