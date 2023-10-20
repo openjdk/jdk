@@ -3818,11 +3818,6 @@ class StubGenerator: public StubCodeGenerator {
     __ cmpl(rax, 1); // 1 means deoptimize
     __ jcc(Assembler::equal, deoptimize_label);
 
-    // In case a concurrent thread disarmed the nmethod, we need to ensure the new instructions
-    // are made visible using cpuid. Note that this is synchronous cross modifying code, where the
-    // existence of new instructions is communicated via data (the guard value).
-    __ cpuid();
-
     __ popa();
     __ pop(rbx);
 

@@ -2401,6 +2401,17 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ pc();
 
+    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+
+    if (bs_asm->nmethod_patching_type() == NMethodPatchingType::conc_instruction_and_data_patch) {
+      BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+      Address thread_epoch_addr(xthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()) + 4);
+      __ la(t1, ExternalAddress(bs_asm->patching_epoch_addr()));
+      __ lwu(t1, t1);
+      __ sw(t1, thread_epoch_addr);
+      __ membar(__ LoadLoad);
+    }
+
     __ set_last_Java_frame(sp, fp, ra, t0);
 
     __ enter();
@@ -2414,17 +2425,6 @@ class StubGenerator: public StubCodeGenerator {
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier), 1);
 
     __ reset_last_Java_frame(true);
-
-    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-
-    if (bs_asm->nmethod_patching_type() == NMethodPatchingType::conc_instruction_and_data_patch) {
-      BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-      Address thread_epoch_addr(xthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()) + 4);
-      __ la(t1, ExternalAddress(bs_asm->patching_epoch_addr()));
-      __ lwu(t1, t1);
-      __ sw(t1, thread_epoch_addr);
-      __ membar(__ LoadLoad);
-    }
 
     __ mv(t0, x10);
 

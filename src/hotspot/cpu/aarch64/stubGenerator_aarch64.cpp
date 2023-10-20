@@ -5479,6 +5479,20 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ pc();
 
+    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+
+    if (bs_asm->nmethod_patching_type() == NMethodPatchingType::conc_instruction_and_data_patch) {
+      BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+      // We can get here despite the nmethod being good, if we have not
+      // yet applied our cross modification fence (or data fence).
+      Address thread_epoch_addr(rthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()) + 4);
+      __ lea(rscratch2, ExternalAddress(bs_asm->patching_epoch_addr()));
+      __ ldrw(rscratch2, rscratch2);
+      __ strw(rscratch2, thread_epoch_addr);
+      __ isb();
+      __ membar(__ LoadLoad);
+    }
+
     __ set_last_Java_frame(sp, rfp, lr, rscratch1);
 
     __ enter();
@@ -5494,23 +5508,6 @@ class StubGenerator: public StubCodeGenerator {
           (address, BarrierSetNMethod::nmethod_stub_entry_barrier), 1);
 
     __ reset_last_Java_frame(true);
-
-    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-
-    // In case a concurrent thread disarmed the nmethod, we need to ensure the new instructions
-    // are made visible using isb. Note that this is synchronous cross modifying code, where the
-    // existence of new instructions is communicated via data (the guard value).
-    if (bs_asm->nmethod_patching_type() == NMethodPatchingType::conc_instruction_and_data_patch) {
-      BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-      // We can get here despite the nmethod being good, if we have not
-      // yet applied our cross modification fence (or data fence).
-      Address thread_epoch_addr(rthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()) + 4);
-      __ lea(rscratch2, ExternalAddress(bs_asm->patching_epoch_addr()));
-      __ ldrw(rscratch2, rscratch2);
-      __ strw(rscratch2, thread_epoch_addr);
-      __ isb();
-      __ membar(__ LoadLoad);
-    }
 
     __ mov(rscratch1, r0);
 
