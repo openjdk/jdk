@@ -305,44 +305,48 @@ public interface JavaLangAccess {
     int countPositives(byte[] ba, int off, int len);
 
     /**
-     * Constructs a new {@code String} by decoding the specified subarray of
-     * bytes using the specified {@linkplain java.nio.charset.Charset charset}.
-     *
-     * The caller of this method shall relinquish and transfer the ownership of
-     * the byte array to the callee since the later will not make a copy.
+     * Constructs a new String by decoding the specified sequence of
+     * bytes using the specified Charset.
+     * <p>
+     * This method throws CharacterCodingException instead of replacing when
+     * any malformed input or unmappable character is encountered.
+     * <p>
+     * The input byte array must not be accessible to user code or modified.
      *
      * @param bytes the byte array source
      * @param cs the Charset
      * @return the newly created string
      * @throws CharacterCodingException for malformed or unmappable bytes
      */
-    String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException;
+    String newStringReportError(byte[] bytes, Charset cs) throws CharacterCodingException;
 
     /**
      * Encode the given string into a sequence of bytes using the specified Charset.
-     *
-     * This method avoids copying the String's internal representation if the input
-     * is ASCII.
-     *
+     * <p>
      * This method throws CharacterCodingException instead of replacing when
-     * malformed input or unmappable characters are encountered.
+     * any malformed input or unmappable character is encountered.
+     * <p>
+     * The returned byte array must not be accessible to user code or modified.
      *
      * @param s the string to encode
      * @param cs the charset
      * @return the encoded bytes
      * @throws CharacterCodingException for malformed input or unmappable characters
      */
-    byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException;
+    byte[] getBytesReportError(String s, Charset cs) throws CharacterCodingException;
 
     /**
-     * Returns a new string by decoding from the given utf8 bytes array.
+     * Returns a new string by decoding from the given utf8 range in the bytes array.
+     * <p>
+     * This method throws CharacterCodingException instead of replacing when
+     * any malformed input or unmappable character is encountered.
      *
      * @param off the index of the first byte to decode
      * @param len the number of bytes to decode
      * @return the newly created string
      * @throws IllegalArgumentException for malformed or unmappable bytes.
      */
-    String newStringUTF8FailFast(byte[] bytes, int off, int len);
+    String newStringUTF8ReportError(byte[] bytes, int off, int len);
 
     /**
      * Get the char at index in a byte[] in internal UTF-16 representation,
@@ -355,13 +359,16 @@ public interface JavaLangAccess {
     char getUTF16Char(byte[] bytes, int index);
 
     /**
-     * Encode the given string into a sequence of bytes using utf8.
+     * Encode the given string into a sequence of bytes in utf8.
+     * <p>
+     * This method throws CharacterCodingException instead of replacing when
+     * any malformed input or unmappable character is encountered.
      *
      * @param s the string to encode
      * @return the encoded bytes in utf8
      * @throws IllegalArgumentException for malformed surrogates
      */
-    byte[] getBytesUTF8FailFast(String s);
+    byte[] getBytesUTF8ReportError(String s);
 
     /**
      * Inflated copy from byte[] to char[], as defined by StringLatin1.inflate

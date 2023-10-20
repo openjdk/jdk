@@ -500,7 +500,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
                 HexDigits.packDigits(((int) lsb) >> 8, (int) lsb));
 
         try {
-            return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+            return jla.newStringReportError(buf, StandardCharsets.ISO_8859_1);
         } catch (CharacterCodingException cce) {
             throw new AssertionError(cce);
         }

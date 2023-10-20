@@ -2473,22 +2473,22 @@ public final class System {
             public int countPositives(byte[] bytes, int offset, int length) {
                 return StringCoding.countPositives(bytes, offset, length);
             }
-            public String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
-                return String.newStringNoRepl(bytes, cs);
+            public String newStringReportError(byte[] bytes, Charset cs) throws CharacterCodingException  {
+                return String.newStringReportError(bytes, cs);
             }
             public char getUTF16Char(byte[] bytes, int index) {
                 return StringUTF16.getChar(bytes, index);
             }
-            public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
-                return String.getBytesNoRepl(s, cs);
+            public byte[] getBytesReportError(String s, Charset cs) throws CharacterCodingException {
+                return String.getBytesReportError(s, cs);
             }
 
-            public String newStringUTF8FailFast(byte[] bytes, int off, int len) {
-                return String.newStringUTF8FailFast(bytes, off, len, true);
+            public String newStringUTF8ReportError(byte[] bytes, int off, int len) {
+                return String.newStringUTF8ReportError(bytes, off, len, true);
             }
 
-            public byte[] getBytesUTF8FailFast(String s) {
-                return String.getBytesUTF8FailFast(s);
+            public byte[] getBytesUTF8ReportError(String s) {
+                return String.getBytesUTF8ReportError(s);
             }
 
             public void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {

@@ -706,7 +706,7 @@ public final class String
      *         {@code false} if the byte array can be exclusively used to construct
      *         the string and is not modified or used for any other purpose.
      */
-    static String newStringUTF8FailFast(byte[] bytes, int offset, int length, boolean noShare) {
+    static String newStringUTF8ReportError(byte[] bytes, int offset, int length, boolean noShare) {
         checkBoundsOffCount(offset, length, bytes.length);
         if (length == 0) {
             return "";
@@ -769,27 +769,23 @@ public final class String
         return new String(dst, UTF16);
     }
 
-    static String newStringNoRepl(byte[] src, Charset cs) throws CharacterCodingException {
+    static String newStringReportError(byte[] src, Charset cs) throws CharacterCodingException {
         try {
-            return newStringNoRepl1(src, cs);
+            return newStringReportErrorUnchecked(src, cs);
         } catch (IllegalArgumentException e) {
-            //newStringNoRepl1 throws IAE with MalformedInputException or CCE as the cause
-            Throwable cause = e.getCause();
-            if (cause instanceof MalformedInputException mie) {
-                throw mie;
-            }
-            throw (CharacterCodingException)cause;
+            //newStringReportErrorUnchecked throws IAE with MalformedInputException or CCE as the cause
+            throw (CharacterCodingException) e.getCause();
         }
     }
 
     @SuppressWarnings("removal")
-    private static String newStringNoRepl1(byte[] src, Charset cs) {
+    private static String newStringReportErrorUnchecked(byte[] src, Charset cs) {
         int len = src.length;
         if (len == 0) {
             return "";
         }
         if (cs == UTF_8.INSTANCE) {
-            return newStringUTF8FailFast(src, 0, src.length, false);
+            return newStringUTF8ReportError(src, 0, src.length, false);
         }
         if (cs == ISO_8859_1.INSTANCE) {
             if (COMPACT_STRINGS)
@@ -933,7 +929,7 @@ public final class String
     /*
      * Throws iae, instead of replacing, if unmappable.
      */
-    static byte[] getBytesUTF8FailFast(String s) {
+    static byte[] getBytesUTF8ReportError(String s) {
         return encodeUTF8(s.coder(), s.value(), false);
     }
 
@@ -944,20 +940,16 @@ public final class String
     /*
      * Throws CCE, instead of replacing, if unmappable.
      */
-    static byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
+    static byte[] getBytesReportError(String s, Charset cs) throws CharacterCodingException {
         try {
-            return getBytesNoRepl1(s, cs);
+            return getBytesReportErrorUnchecked(s, cs);
         } catch (IllegalArgumentException e) {
-            //getBytesNoRepl1 throws IAE with UnmappableCharacterException or CCE as the cause
-            Throwable cause = e.getCause();
-            if (cause instanceof UnmappableCharacterException) {
-                throw (UnmappableCharacterException)cause;
-            }
-            throw (CharacterCodingException)cause;
+            //getBytesReportErrorUnchecked throws IAE with UnmappableCharacterException or CCE as the cause
+            throw (CharacterCodingException) e.getCause();
         }
     }
 
-    private static byte[] getBytesNoRepl1(String s, Charset cs) {
+    private static byte[] getBytesReportErrorUnchecked(String s, Charset cs) {
         byte[] val = s.value();
         byte coder = s.coder();
         if (cs == UTF_8.INSTANCE) {

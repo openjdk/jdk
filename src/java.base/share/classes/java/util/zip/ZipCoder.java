@@ -267,12 +267,12 @@ class ZipCoder {
 
         @Override
         String toString(byte[] ba, int off, int length) {
-            return JLA.newStringUTF8FailFast(ba, off, length);
+            return JLA.newStringUTF8ReportError(ba, off, length);
         }
 
         @Override
         byte[] getBytes(String s) {
-            return JLA.getBytesUTF8FailFast(s);
+            return JLA.getBytesUTF8ReportError(s);
         }
 
         @Override
@@ -286,9 +286,9 @@ class ZipCoder {
                 // Non-ASCII, fall back to decoding a String
                 // We avoid using decoder() here since the UTF8ZipCoder is
                 // shared and that decoder is not thread safe.
-                // We use the JLA.newStringUTF8FailFast variant to throw
+                // We use the JLA.newStringUTF8ReportError variant to throw
                 // exceptions eagerly when opening ZipFiles
-                return hash(JLA.newStringUTF8FailFast(a, off, len));
+                return hash(JLA.newStringUTF8ReportError(a, off, len));
             }
             // T_BOOLEAN to treat the array as unsigned bytes, in line with StringLatin1.hashCode
             int h = ArraysSupport.vectorizedHashCode(a, off, len, 0, ArraysSupport.T_BOOLEAN);
@@ -306,7 +306,7 @@ class ZipCoder {
         @Override
         Comparison compare(String str, byte[] b, int off, int len, boolean matchDirectory) {
             try {
-                byte[] encoded = JLA.getBytesNoRepl(str, UTF_8.INSTANCE);
+                byte[] encoded = JLA.getBytesReportError(str, UTF_8.INSTANCE);
                 int mismatch = Arrays.mismatch(encoded, 0, encoded.length, b, off, off+len);
                 if (mismatch == -1) {
                     return Comparison.EXACT_MATCH;
