@@ -73,6 +73,7 @@
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
 #include "services/threadService.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/classpathStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
@@ -122,7 +123,6 @@ PerfCounter*    ClassLoader::_perf_class_verify_selftime = nullptr;
 PerfCounter*    ClassLoader::_perf_classes_linked = nullptr;
 PerfCounter*    ClassLoader::_perf_class_link_time = nullptr;
 PerfCounter*    ClassLoader::_perf_class_link_selftime = nullptr;
-PerfCounter*    ClassLoader::_perf_sys_class_lookup_time = nullptr;
 PerfCounter*    ClassLoader::_perf_shared_classload_time = nullptr;
 PerfCounter*    ClassLoader::_perf_sys_classload_time = nullptr;
 PerfCounter*    ClassLoader::_perf_app_classload_time = nullptr;
@@ -937,7 +937,7 @@ void ClassLoader::load_java_library() {
 }
 
 void ClassLoader::release_load_zip_library() {
-  MutexLocker locker(Zip_lock, Monitor::_no_safepoint_check_flag);
+  ConditionalMutexLocker locker(Zip_lock, Zip_lock != nullptr, Monitor::_no_safepoint_check_flag);
   if (_libzip_loaded == 0) {
     load_zip_library();
     Atomic::release_store(&_libzip_loaded, 1);
@@ -1376,7 +1376,6 @@ void ClassLoader::initialize(TRAPS) {
     NEWPERFEVENTCOUNTER(_perf_classes_linked, SUN_CLS, "linkedClasses");
     NEWPERFEVENTCOUNTER(_perf_classes_verified, SUN_CLS, "verifiedClasses");
 
-    NEWPERFTICKCOUNTER(_perf_sys_class_lookup_time, SUN_CLS, "lookupSysClassTime");
     NEWPERFTICKCOUNTER(_perf_shared_classload_time, SUN_CLS, "sharedClassLoadTime");
     NEWPERFTICKCOUNTER(_perf_sys_classload_time, SUN_CLS, "sysClassLoadTime");
     NEWPERFTICKCOUNTER(_perf_app_classload_time, SUN_CLS, "appClassLoadTime");

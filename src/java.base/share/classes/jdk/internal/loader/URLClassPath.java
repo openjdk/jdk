@@ -433,9 +433,7 @@ public class URLClassPath {
                 if (url == null)
                     return null;
             }
-            // Skip this URL if it already has a Loader. (Loader
-            // may be null in the case where URL has not been opened
-            // but is referenced by a JAR index.)
+            // Skip this URL if it already has a Loader.
             String urlNoFragString = URLUtil.urlNoFragString(url);
             if (lmap.containsKey(urlNoFragString)) {
                 continue;
@@ -489,12 +487,12 @@ public class URLClassPath {
                                     // extract the nested URL
                                     @SuppressWarnings("deprecation")
                                     URL nestedUrl = new URL(file.substring(0, file.length() - 2));
-                                    return new JarLoader(nestedUrl, jarHandler, lmap, acc);
+                                    return new JarLoader(nestedUrl, jarHandler, acc);
                                 } else {
                                     return new Loader(url);
                                 }
                             } else {
-                                return new JarLoader(url, jarHandler, lmap, acc);
+                                return new JarLoader(url, jarHandler, acc);
                             }
                         }
                     }, acc);
@@ -708,8 +706,6 @@ public class URLClassPath {
     private static class JarLoader extends Loader {
         private JarFile jar;
         private final URL csu;
-        private URLStreamHandler handler;
-        private final HashMap<String, Loader> lmap;
         @SuppressWarnings("removal")
         private final AccessControlContext acc;
         private boolean closed = false;
@@ -721,14 +717,11 @@ public class URLClassPath {
          * a JAR file.
          */
         private JarLoader(URL url, URLStreamHandler jarHandler,
-                          HashMap<String, Loader> loaderMap,
                           @SuppressWarnings("removal") AccessControlContext acc)
             throws IOException
         {
             super(newURL("jar", "", -1, url + "!/", jarHandler));
             csu = url;
-            handler = jarHandler;
-            lmap = loaderMap;
             this.acc = acc;
 
             ensureOpen();
@@ -750,10 +743,6 @@ public class URLClassPath {
                 ensureOpen();
                 jar.close();
             }
-        }
-
-        JarFile getJarFile () {
-            return jar;
         }
 
         private boolean isOptimizable(URL url) {
@@ -869,33 +858,6 @@ public class URLClassPath {
                     return bytes;
                 }
             };
-        }
-
-
-        /*
-         * Returns true iff at least one resource in the jar file has the same
-         * package name as that of the specified resource name.
-         */
-        boolean validIndex(final String name) {
-            String packageName = name;
-            int pos;
-            if ((pos = name.lastIndexOf('/')) != -1) {
-                packageName = name.substring(0, pos);
-            }
-
-            String entryName;
-            ZipEntry entry;
-            Enumeration<JarEntry> enum_ = jar.entries();
-            while (enum_.hasMoreElements()) {
-                entry = enum_.nextElement();
-                entryName = entry.getName();
-                if ((pos = entryName.lastIndexOf('/')) != -1)
-                    entryName = entryName.substring(0, pos);
-                if (entryName.equals(packageName)) {
-                    return true;
-                }
-            }
-            return false;
         }
 
         /*

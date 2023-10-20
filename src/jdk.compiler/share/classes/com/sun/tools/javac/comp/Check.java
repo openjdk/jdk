@@ -283,6 +283,15 @@ public class Check {
             preview.reportPreviewWarning(pos, Warnings.DeclaredUsingPreview(kindName(sym), sym));
     }
 
+    /** Log a preview warning.
+     *  @param pos        Position to be used for error reporting.
+     *  @param msg        A Warning describing the problem.
+     */
+    public void warnRestrictedAPI(DiagnosticPosition pos, Symbol sym) {
+        if (lint.isEnabled(LintCategory.RESTRICTED))
+            log.warning(LintCategory.RESTRICTED, pos, Warnings.RestrictedMethod(sym.enclClass(), sym));
+    }
+
     /** Warn about unchecked operation.
      *  @param pos        Position to be used for error reporting.
      *  @param msg        A string describing the problem.
@@ -3850,6 +3859,12 @@ public class Check {
         }
     }
 
+    void checkRestricted(DiagnosticPosition pos, Symbol s) {
+        if (s.kind == MTH && (s.flags() & RESTRICTED) != 0) {
+            deferredLintHandler.report(() -> warnRestrictedAPI(pos, s));
+        }
+    }
+
 /* *************************************************************************
  * Check for recursive annotation elements.
  **************************************************************************/
@@ -4609,6 +4624,19 @@ public class Check {
                 if (!allUnderscore) {
                     log.error(c.labels.tail.head.pos(), Errors.FlowsThroughFromPattern);
                 }
+
+                boolean allPatternCaseLabels = c.labels.stream().allMatch(p -> p instanceof JCPatternCaseLabel);
+
+                if (allPatternCaseLabels) {
+                    preview.checkSourceLevel(c.labels.tail.head.pos(), Feature.UNNAMED_VARIABLES);
+                }
+
+                for (JCCaseLabel label : c.labels.tail) {
+                    if (label instanceof JCConstantCaseLabel) {
+                        log.error(label.pos(), Errors.InvalidCaseLabelCombination);
+                        break;
+                    }
+                }
             }
         }
 
@@ -4622,11 +4650,11 @@ public class Check {
                 if (previousCompletessNormally &&
                     c.stats.nonEmpty() &&
                     c.labels.head instanceof JCPatternCaseLabel patternLabel &&
-                    hasBindings(patternLabel.pat)) {
+                    (hasBindings(patternLabel.pat) || hasBindings(c.guard))) {
                     log.error(c.labels.head.pos(), Errors.FlowsThroughToPattern);
                 } else if (c.stats.isEmpty() &&
                            c.labels.head instanceof JCPatternCaseLabel patternLabel &&
-                           hasBindings(patternLabel.pat) &&
+                           (hasBindings(patternLabel.pat) || hasBindings(c.guard)) &&
                            hasStatements(l.tail)) {
                     log.error(c.labels.head.pos(), Errors.FlowsThroughFromPattern);
                 }
@@ -4635,7 +4663,7 @@ public class Check {
         }
     }
 
-    boolean hasBindings(JCPattern p) {
+    boolean hasBindings(JCTree p) {
         boolean[] bindings = new boolean[1];
 
         new TreeScanner() {
@@ -4699,7 +4727,7 @@ public class Check {
                                          TreeInfo.unguardedCase(testCase);
                         } else if (label instanceof JCPatternCaseLabel patternCL &&
                                    testCaseLabel instanceof JCPatternCaseLabel testPatternCaseLabel &&
-                                   TreeInfo.unguardedCase(testCase)) {
+                                   (testCase.equals(c) || TreeInfo.unguardedCase(testCase))) {
                             dominated = patternDominated(testPatternCaseLabel.pat,
                                                          patternCL.pat);
                         }

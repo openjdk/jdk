@@ -30,6 +30,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
+#include "utilities/checkedCast.hpp"
 
 class CmpNode;
 class BaseCountedLoopEndNode;
@@ -41,7 +42,6 @@ class OuterStripMinedLoopEndNode;
 class PredicateBlock;
 class PathFrequency;
 class PhaseIdealLoop;
-class CountedLoopReserveKit;
 class VectorSet;
 class Invariance;
 struct small_cache;
@@ -231,14 +231,14 @@ class CountedLoopNode : public BaseCountedLoopNode {
   // vector mapped unroll factor here
   int _slp_maximum_unroll_factor;
 
-  // The eventual count of vectorizable packs in slp
-  int _slp_vector_pack_count;
+  // Cached CountedLoopEndNode of pre loop for main loops
+  CountedLoopEndNode* _pre_loop_end;
 
 public:
   CountedLoopNode(Node *entry, Node *backedge)
     : BaseCountedLoopNode(entry, backedge), _main_idx(0), _trip_count(max_juint),
       _unrolled_count_log2(0), _node_count_before_unroll(0),
-      _slp_maximum_unroll_factor(0), _slp_vector_pack_count(0) {
+      _slp_maximum_unroll_factor(0), _pre_loop_end(nullptr) {
     init_class_id(Class_CountedLoop);
     // Initialize _trip_count to the largest possible value.
     // Will be reset (lower) if the loop's trip count is known.
@@ -329,6 +329,10 @@ public:
   }
 
   Node* is_canonical_loop_entry();
+  CountedLoopEndNode* find_pre_loop_end();
+  CountedLoopNode* pre_loop_head() const;
+  CountedLoopEndNode* pre_loop_end();
+  void set_pre_loop_end(CountedLoopEndNode* pre_loop_end);
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
@@ -645,6 +649,7 @@ public:
   // Perform optimization to use the loop predicates for null checks and range checks.
   // Applies to any loop level (not just the innermost one)
   bool loop_predication( PhaseIdealLoop *phase);
+  bool can_apply_loop_predication();
 
   // Perform iteration-splitting on inner loops.  Split iterations to
   // avoid range checks or one-shot null checks.  Returns false if the
@@ -812,7 +817,6 @@ public:
 class PhaseIdealLoop : public PhaseTransform {
   friend class IdealLoopTree;
   friend class SuperWord;
-  friend class CountedLoopReserveKit;
   friend class ShenandoahBarrierC2Support;
   friend class AutoNodeBudget;
 
@@ -1190,7 +1194,7 @@ public:
     if (!C->failing()) {
       // Cleanup any modified bits
       igvn.optimize();
-
+      if (C->failing()) { return; }
       v.log_loop_tree();
     }
   }
@@ -1329,8 +1333,9 @@ public:
                                       bool* p_short_scale, int depth);
 
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
-  IfProjNode* create_new_if_for_predicate(IfProjNode* cont_proj, Node* new_entry, Deoptimization::DeoptReason reason,
-                                          int opcode, bool rewire_uncommon_proj_phi_inputs = false);
+  IfProjNode* create_new_if_for_predicate(ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
+                                          Deoptimization::DeoptReason reason, int opcode,
+                                          bool rewire_uncommon_proj_phi_inputs = false);
 
  private:
   // Helper functions for create_new_if_for_predicate()
@@ -1361,15 +1366,27 @@ public:
   void loop_predication_follow_branches(Node *c, IdealLoopTree *loop, float loop_trip_cnt,
                                         PathFrequency& pf, Node_Stack& stack, VectorSet& seen,
                                         Node_List& if_proj_list);
-  IfProjNode* add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj, IfProjNode* predicate_proj,
+  IfProjNode* add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj,
+                                               ParsePredicateSuccessProj* parse_predicate_proj,
                                                IfProjNode* upper_bound_proj, int scale, Node* offset, Node* init, Node* limit,
                                                jint stride, Node* rng, bool& overflow, Deoptimization::DeoptReason reason);
   Node* add_range_check_elimination_assertion_predicate(IdealLoopTree* loop, Node* predicate_proj, int scale_con,
                                                         Node* offset, Node* limit, jint stride_con, Node* value);
 
   // Helper function to collect predicate for eliminating the useless ones
-  void collect_potentially_useful_predicates(IdealLoopTree *loop, Unique_Node_List &predicate_opaque1);
   void eliminate_useless_predicates();
+
+  void eliminate_useless_parse_predicates();
+  void mark_all_parse_predicates_useless() const;
+  void mark_loop_associated_parse_predicates_useful();
+  static void mark_useful_parse_predicates_for_loop(IdealLoopTree* loop);
+  void add_useless_parse_predicates_to_igvn_worklist();
+
+  void eliminate_useless_template_assertion_predicates();
+  void collect_useful_template_assertion_predicates(Unique_Node_List& useful_predicates);
+  static void collect_useful_template_assertion_predicates_for_loop(IdealLoopTree* loop, Unique_Node_List& useful_predicates);
+  void eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates);
+
   void eliminate_useless_zero_trip_guard();
 
   bool has_control_dependencies_from_predicates(LoopNode* head) const;
@@ -1396,16 +1413,6 @@ public:
                                         IfNode* unswitch_iff,
                                         CloneLoopMode mode);
 
-  // Clone a loop and return the clone head (clone_loop_head).
-  // Added nodes include int(1), int(0) - disconnected, If, IfTrue, IfFalse,
-  // This routine was created for usage in CountedLoopReserveKit.
-  //
-  //    int(1) -> If -> IfTrue -> original_loop_head
-  //              |
-  //              V
-  //           IfFalse -> clone_loop_head (returned by function pointer)
-  //
-  LoopNode* create_reserve_version_of_loop(IdealLoopTree *loop, CountedLoopReserveKit* lk);
   // Clone loop with an invariant test (that does not exit) and
   // insert a clone of the test that selects which version to
   // execute.
@@ -1528,7 +1535,7 @@ private:
   Node *find_use_block( Node *use, Node *def, Node *old_false, Node *new_false, Node *old_true, Node *new_true );
   void handle_use( Node *use, Node *def, small_cache *cache, Node *region_dom, Node *new_false, Node *new_true, Node *old_false, Node *old_true );
   bool split_up( Node *n, Node *blk1, Node *blk2 );
-  void sink_use( Node *use, Node *post_loop );
+
   Node* place_outside_loop(Node* useblock, IdealLoopTree* loop) const;
   Node* try_move_store_before_loop(Node* n, Node *n_ctrl);
   void try_move_store_after_loop(Node* n);
@@ -1620,14 +1627,15 @@ private:
                                                             IfProjNode*& ifslow_pred);
   void clone_parse_predicate_to_unswitched_loops(const PredicateBlock* predicate_block, Deoptimization::DeoptReason reason,
                                                  IfProjNode*& iffast_pred, IfProjNode*& ifslow_pred);
-  IfProjNode* clone_parse_predicate_to_unswitched_loop(ParsePredicateSuccessProj* predicate_proj, Node* new_entry,
+  IfProjNode* clone_parse_predicate_to_unswitched_loop(ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
                                                        Deoptimization::DeoptReason reason, bool slow_loop);
   void clone_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
                                                      Deoptimization::DeoptReason reason, IfProjNode* old_predicate_proj,
-                                                     IfProjNode* iffast_pred, IfProjNode* ifslow_pred);
+                                                     ParsePredicateSuccessProj* fast_loop_parse_predicate_proj,
+                                                     ParsePredicateSuccessProj* slow_loop_parse_predicate_proj);
   IfProjNode* clone_assertion_predicate_for_unswitched_loops(Node* iff, IfProjNode* predicate,
                                                              Deoptimization::DeoptReason reason,
-                                                             IfProjNode* output_proj);
+                                                             ParsePredicateSuccessProj* parse_predicate_proj);
   static void check_cloned_parse_predicate_for_unswitching(const Node* new_entry, bool is_fast_loop) PRODUCT_RETURN;
 
   bool _created_loop_node;
@@ -1722,6 +1730,11 @@ public:
   bool clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2);
 
   bool at_relevant_ctrl(Node* n, const Node* blk1, const Node* blk2);
+
+
+  Node* similar_subtype_check(const Node* x, Node* r_in);
+
+  void update_addp_chain_base(Node* x, Node* old_base, Node* new_base);
 };
 
 
@@ -1768,69 +1781,6 @@ private:
   bool _check_at_final;
   uint _nodes_at_begin;
 };
-
-
-// This kit may be used for making of a reserved copy of a loop before this loop
-//  goes under non-reversible changes.
-//
-// Function create_reserve() creates a reserved copy (clone) of the loop.
-// The reserved copy is created by calling
-// PhaseIdealLoop::create_reserve_version_of_loop - see there how
-// the original and reserved loops are connected in the outer graph.
-// If create_reserve succeeded, it returns 'true' and _has_reserved is set to 'true'.
-//
-// By default the reserved copy (clone) of the loop is created as dead code - it is
-// dominated in the outer loop by this node chain:
-//   intcon(1)->If->IfFalse->reserved_copy.
-// The original loop is dominated by the same node chain but IfTrue projection:
-//   intcon(0)->If->IfTrue->original_loop.
-//
-// In this implementation of CountedLoopReserveKit the ctor includes create_reserve()
-// and the dtor, checks _use_new value.
-// If _use_new == false, it "switches" control to reserved copy of the loop
-// by simple replacing of node intcon(1) with node intcon(0).
-//
-// Here is a proposed example of usage (see also SuperWord::output in superword.cpp).
-//
-// void CountedLoopReserveKit_example()
-// {
-//    CountedLoopReserveKit lrk((phase, lpt, DoReserveCopy = true); // create local object
-//    if (DoReserveCopy && !lrk.has_reserved()) {
-//      return; //failed to create reserved loop copy
-//    }
-//    ...
-//    //something is wrong, switch to original loop
-///   if(something_is_wrong) return; // ~CountedLoopReserveKit makes the switch
-//    ...
-//    //everything worked ok, return with the newly modified loop
-//    lrk.use_new();
-//    return; // ~CountedLoopReserveKit does nothing once use_new() was called
-//  }
-//
-// Keep in mind, that by default if create_reserve() is not followed by use_new()
-// the dtor will "switch to the original" loop.
-// NOTE. You you modify outside of the original loop this class is no help.
-//
-class CountedLoopReserveKit {
-  private:
-    PhaseIdealLoop* _phase;
-    IdealLoopTree*  _lpt;
-    LoopNode*       _lp;
-    IfNode*         _iff;
-    LoopNode*       _lp_reserved;
-    bool            _has_reserved;
-    bool            _use_new;
-    const bool      _active; //may be set to false in ctor, then the object is dummy
-
-  public:
-    CountedLoopReserveKit(PhaseIdealLoop* phase, IdealLoopTree *loop, bool active);
-    ~CountedLoopReserveKit();
-    void use_new()                {_use_new = true;}
-    void set_iff(IfNode* x)       {_iff = x;}
-    bool has_reserved()     const { return _active && _has_reserved;}
-  private:
-    bool create_reserve();
-};// class CountedLoopReserveKit
 
 inline Node* IdealLoopTree::tail() {
   // Handle lazy update of _tail field.

@@ -65,11 +65,6 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * and those seven fields omit much of the information in Method.
  * @author jrose
  */
-/*non-public*/
-final class ResolvedMethodName {
-    //@Injected JVM_Method* vmtarget;
-    //@Injected Class<?>    vmholder;
-}
 
 /*non-public*/
 final class MemberName implements Member, Cloneable {

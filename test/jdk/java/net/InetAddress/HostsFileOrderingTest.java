@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.test.lib.net.IPSupport;
+
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.testng.Assert;
@@ -39,6 +41,8 @@ import org.testng.Assert;
 
 /* @test
  * @bug 8244958
+ * @library /test/lib
+ * @build jdk.test.lib.Platform jdk.test.lib.net.IPSupport
  * @summary Test that "jdk.net.hosts.file" NameService implementation returns addresses
  *          with respect to "java.net.preferIPv4Stack" and "java.net.preferIPv6Addresses" system
  *          property values
@@ -104,6 +108,9 @@ public class HostsFileOrderingTest {
     static ExpectedOrder getExpectedOrderFromSystemProperties() {
         if (PREFER_IPV4_STACK_VALUE != null &&
             PREFER_IPV4_STACK_VALUE.equalsIgnoreCase("true")) {
+            return ExpectedOrder.IPV4_ONLY;
+        }
+        if (!IPSupport.hasIPv6()) {
             return ExpectedOrder.IPV4_ONLY;
         }
 

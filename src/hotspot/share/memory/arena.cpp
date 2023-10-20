@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"
@@ -209,7 +210,7 @@ void Chunk::next_chop(Chunk* k) {
   k->_next = nullptr;
 }
 
-Arena::Arena(MEMFLAGS flag, size_t init_size) : _flags(flag), _size_in_bytes(0)  {
+Arena::Arena(MEMFLAGS flag, Tag tag, size_t init_size) : _flags(flag), _tag(tag), _size_in_bytes(0)  {
   init_size = ARENA_ALIGN(init_size);
   _chunk = ChunkPool::allocate_chunk(init_size, AllocFailStrategy::EXIT_OOM);
   _first = _chunk;
@@ -219,7 +220,7 @@ Arena::Arena(MEMFLAGS flag, size_t init_size) : _flags(flag), _size_in_bytes(0) 
   set_size_in_bytes(init_size);
 }
 
-Arena::Arena(MEMFLAGS flag) : _flags(flag), _size_in_bytes(0) {
+Arena::Arena(MEMFLAGS flag, Tag tag) : _flags(flag), _tag(tag), _size_in_bytes(0) {
   _chunk = ChunkPool::allocate_chunk(Chunk::init_size, AllocFailStrategy::EXIT_OOM);
   _first = _chunk;
   _hwm = _chunk->bottom();      // Save the cached hwm, max
@@ -251,6 +252,12 @@ void Arena::set_size_in_bytes(size_t size) {
     ssize_t delta = size - size_in_bytes();
     _size_in_bytes = size;
     MemTracker::record_arena_size_change(delta, _flags);
+    if (CompilationMemoryStatistic::enabled() && _flags == mtCompiler) {
+      Thread* const t = Thread::current();
+      if (t != nullptr && t->is_Compiler_thread()) {
+        CompilationMemoryStatistic::on_arena_change(delta, this);
+      }
+    }
   }
 }
 
