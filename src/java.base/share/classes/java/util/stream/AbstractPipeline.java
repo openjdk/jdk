@@ -262,8 +262,9 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      * @throws IllegalStateException if this pipeline stage is not the source
      *         stage.
      */
-    @SuppressWarnings("unchecked")
+
     final Spliterator<E_OUT> sourceStageSpliterator() {
+        // Ensures that this method is only ever called on the sourceStage
         if (this != sourceStage)
             throw new IllegalStateException();
 
@@ -271,16 +272,16 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
             throw new IllegalStateException(MSG_STREAM_LINKED);
         linkedOrConsumed = true;
 
-        if (sourceStage.sourceSpliterator != null) {
+        if (sourceSpliterator != null) {
             @SuppressWarnings("unchecked")
-            Spliterator<E_OUT> s = sourceStage.sourceSpliterator;
-            sourceStage.sourceSpliterator = null;
+            Spliterator<E_OUT> s = (Spliterator<E_OUT>)sourceSpliterator;
+            sourceSpliterator = null;
             return s;
         }
-        else if (sourceStage.sourceSupplier != null) {
+        else if (sourceSupplier != null) {
             @SuppressWarnings("unchecked")
-            Spliterator<E_OUT> s = (Spliterator<E_OUT>) sourceStage.sourceSupplier.get();
-            sourceStage.sourceSupplier = null;
+            Spliterator<E_OUT> s = (Spliterator<E_OUT>)sourceSupplier.get();
+            sourceSupplier = null;
             return s;
         }
         else {
@@ -309,8 +310,8 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
         linkedOrConsumed = true;
         sourceSupplier = null;
         sourceSpliterator = null;
-        if (sourceStage.sourceCloseAction != null) {
-            Runnable closeAction = sourceStage.sourceCloseAction;
+        Runnable closeAction = sourceStage.sourceCloseAction;
+        if (closeAction != null) {
             sourceStage.sourceCloseAction = null;
             closeAction.run();
         }
