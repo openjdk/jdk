@@ -72,26 +72,7 @@ public class JdwpOnThrowTest {
                     while(eventIterator.hasNext() && start + TIMEOUT > System.currentTimeMillis()) {
                         Event event = eventIterator.next();
                         if (event instanceof ExceptionEvent ex) {
-                            if (ex.exception() == null) {
-                                throw new RuntimeException("Exception is null");
-                            }
-                            if (ex.exception().type() == null) {
-                                throw new RuntimeException("Exception type is null");
-                            }
-                            if (ex.exception().referenceType() == null) {
-                                throw new RuntimeException("Exception reference type is null");
-                            }
-                            if (ex.catchLocation() == null) {
-                                throw new RuntimeException("Exception catch location is null");
-                            }
-                            if (!ex.location().equals(ex.thread().frame(0).location())) {
-                                throw new RuntimeException(
-                                    String.format("Throw location %s and location of first frame %s are not equal",
-                                                  ex.location(), ex.thread().frame(0).location()));
-                            }
-                            if (!ex.exception().type().name().equals("Ex")) {
-                                throw new RuntimeException("Exception has wrong type: " + ex.exception().type().name());
-                            }
+                            verifyExceptionEvent(ex);
                             log("Received exception event: " + event);
                             vm.dispose();
                             return;
@@ -103,6 +84,29 @@ public class JdwpOnThrowTest {
             } catch (IOException ex) {
                 throw new RuntimeException("ERROR: failed to attach", ex);
             }
+        }
+    }
+
+    private static void verifyExceptionEvent(ExceptionEvent ex) throws Exception {
+        if (ex.exception() == null) {
+            throw new RuntimeException("Exception is null");
+        }
+        if (ex.exception().type() == null) {
+            throw new RuntimeException("Exception type is null");
+        }
+        if (ex.exception().referenceType() == null) {
+            throw new RuntimeException("Exception reference type is null");
+        }
+        if (ex.catchLocation() == null) {
+            throw new RuntimeException("Exception catch location is null");
+        }
+        if (!ex.location().equals(ex.thread().frame(0).location())) {
+            throw new RuntimeException(
+                String.format("Throw location %s and location of first frame %s are not equal",
+                                ex.location(), ex.thread().frame(0).location()));
+        }
+        if (!ex.exception().type().name().equals("Ex")) {
+            throw new RuntimeException("Exception has wrong type: " + ex.exception().type().name());
         }
     }
 
