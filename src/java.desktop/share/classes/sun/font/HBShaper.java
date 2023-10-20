@@ -107,10 +107,7 @@ public class HBShaper {
     ).withName("hb_glyph_info_t");
 
     private static VarHandle getVarHandle(StructLayout struct, String name) {
-        VarHandle h = struct.varHandle(PathElement.groupElement(name));
-        /* return a new VarHandle where the offset calculated from the index
-         * supplied when using it scales the index by the size of the struct. */
-        h = MethodHandles.collectCoordinates(h, 1, struct.scaleHandle());
+        VarHandle h = struct.arrayElementVarHandle(PathElement.groupElement(name));
         /* insert 0 offset so don't need to pass arg every time */
         return MethodHandles.insertCoordinates(h, 1, 0L).withInvokeExactBehavior();
     }
