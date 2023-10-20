@@ -323,22 +323,20 @@ public final class ListFormat extends Format {
     }
 
     /**
-     * {@return the {@code Locale} of this instance}
+     * {@return the {@code Locale} of this ListFormat}
      *
-     * {@code locale} is either the one specified in the {@link #getInstance(Locale, Type, Style)},
-     * or the invariant locale, i.e., {@link java.util.Locale#ROOT} if the instance is
-     * created with {@link #getInstance(String[])}.
+     * The {@code locale} is defined by {@link #getInstance(Locale, Type, Style)} or
+     * {@link #getInstance(String[])}.
      */
     public Locale getLocale() {
         return locale;
     }
 
     /**
-     * {@return the patterns array used in this instance}
+     * {@return the patterns used in this ListFormat}
      *
-     * {@code patterns} is either the one specified in the {@link #getInstance(String[])},
-     * or derived from {@code Locale}, {@code #Type}, and {@code #Style} specified in
-     * {@link #getInstance(Locale, Type, Style)}.
+     * The {@code patterns} are defined by {@link #getInstance(Locale, Type, Style)} or
+     * {@link #getInstance(String[])}.
      */
     public String[] getPatterns() {
         return Arrays.copyOf(patterns, patterns.length);
