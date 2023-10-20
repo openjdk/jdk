@@ -281,7 +281,7 @@ void PSCardTable::preprocess_card_table_parallel(Func&& object_start,
   CardValue* cur_card = byte_for(old_gen_bottom) + stripe_index * num_cards_in_stripe;
   CardValue* const end_card = byte_for(old_gen_top - 1) + 1;
 
-  for ( /* empty */ ; cur_card < end_card; cur_card += num_cards_in_slice) {
+  for (/* empty */; cur_card < end_card; cur_card += num_cards_in_slice) {
     HeapWord* stripe_addr = addr_for(cur_card);
     if (is_dirty(cur_card)) {
       // The first card of this stripe is already dirty, no need to see if the
@@ -379,7 +379,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
   // Prepare scavenge.
   preprocess_card_table_parallel(object_start, old_gen_bottom, old_gen_top, stripe_index, n_stripes);
 
-  // Sync with other workers
+  // Sync with other workers.
   Atomic::dec(&_preprocessing_active_workers);
   SpinYield spin_yield;
   while (Atomic::load_acquire(&_preprocessing_active_workers) > 0) {
