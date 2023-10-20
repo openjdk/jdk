@@ -82,23 +82,22 @@ public class NewWriter {
     @Test
     public void socketChannel() throws IOException {
         Throwable thrown = assertThrows(IllegalBlockingModeException.class,
-        () ->
-        {
-                InetAddress loopback = InetAddress.getLoopbackAddress();
-                try (ServerSocket ss = new ServerSocket(0)) {
-                    InetSocketAddress addr = new InetSocketAddress(loopback,
-                        ss.getLocalPort());
-                    try (SocketChannel cs = SocketChannel.open(addr)) {
-                         cs.configureBlocking(false);
-                         cs.setOption(StandardSocketOptions.SO_SNDBUF, 8192);
-                        try (Writer writer = Channels.newWriter(cs,
-                                StandardCharsets.UTF_8)) {
-                            for (int i = 1; i < Integer.MAX_VALUE; i++) {
-                                writer.write("test" + i);
-                            }
-                        }
+        () -> {
+            try (ServerSocket ss = new ServerSocket();
+                 SocketChannel sc = SocketChannel.open()) {
+
+                InetAddress lb = InetAddress.getLoopbackAddress();
+                ss.bind(new InetSocketAddress(lb, 0));
+                sc.connect(ss.getLocalSocketAddress());
+                sc.configureBlocking(false);
+                sc.setOption(StandardSocketOptions.SO_SNDBUF, 8192);
+                try (Writer writer = Channels.newWriter(sc,
+                    StandardCharsets.UTF_8)) {
+                    for (int i = 1; i < Integer.MAX_VALUE; i++) {
+                        writer.write("test" + i);
                     }
                 }
+            }
         });
     }
 }
