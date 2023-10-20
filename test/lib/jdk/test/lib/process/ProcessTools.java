@@ -442,46 +442,12 @@ public final class ProcessTools {
     }
 
     /**
-     * Create ProcessBuilder using the java launcher from the jdk to
-     * be tested.
-     *
-     * <p><b>Please observe that you likely should use
-     * createJavaTestProcessBuilder() instead of this method because
-     * createJavaTestProcessBuilder() will add JVM options from
-     * "test.vm.opts" and "test.java.opts"</b> and this method will
-     * not do that.
-     *
-     * <p>If you still chose to use
-     * createLimitedJavaTestProcessBuilder() you should probably use
-     * it in combination with <b>@requires vm.flagless</b> JTREG
-     * anotation as to not waste energy and test resources.
+     * Create ProcessBuilder using the java launcher from the jdk to be tested.
      *
      * @param command Arguments to pass to the java command.
      * @return The ProcessBuilder instance representing the java command.
      */
-    public static ProcessBuilder createLimitedJavaTestProcessBuilder(List<String> command) {
-        return createLimitedJavaTestProcessBuilder(command.toArray(String[]::new));
-    }
-
-   /**
-     * Create ProcessBuilder using the java launcher from the jdk to
-     * be tested.
-     *
-     * <p><b>Please observe that you likely should use
-     * createJavaTestProcessBuilder() instead of this method because
-     * createJavaTestProcessBuilder() will add JVM options from
-     * "test.vm.opts" and "test.java.opts"</b> and this method will
-     * not do that.
-     *
-     * <p>If you still chose to use
-     * createLimitedJavaTestProcessBuilder() you should probably use
-     * it in combination with <b>@requires vm.flagless</b> JTREG
-     * anotation as to not waste energy and test resources.
-     *
-     * @param command Arguments to pass to the java command.
-     * @return The ProcessBuilder instance representing the java command.
-     */
-    public static ProcessBuilder createLimitedJavaTestProcessBuilder(String... command) {
+    private static ProcessBuilder createJavaProcessBuilder(String... command) {
         String javapath = JDKToolFinder.getJDKTool("java");
 
         ArrayList<String> args = new ArrayList<>();
@@ -536,8 +502,8 @@ public final class ProcessTools {
      * @param command Arguments to pass to the java command.
      * @return The ProcessBuilder instance representing the java command.
      */
-    public static ProcessBuilder createJavaTestProcessBuilder(List<String> command) {
-        return createJavaTestProcessBuilder(command.toArray(String[]::new));
+    public static ProcessBuilder createTestJavaProcessBuilder(List<String> command) {
+        return createTestJavaProcessBuilder(command.toArray(String[]::new));
     }
 
     /**
@@ -551,8 +517,52 @@ public final class ProcessTools {
      * @param command Arguments to pass to the java command.
      * @return The ProcessBuilder instance representing the java command.
      */
-    public static ProcessBuilder createJavaTestProcessBuilder(String... command) {
-        return createLimitedJavaTestProcessBuilder(Utils.prependTestJavaOpts(command));
+    public static ProcessBuilder createTestJavaProcessBuilder(String... command) {
+        return createJavaProcessBuilder(Utils.prependTestJavaOpts(command));
+    }
+
+    /**
+     * Create ProcessBuilder using the java launcher from the jdk to
+     * be tested.
+     *
+     * <p><b>Please observe that you likely should use
+     * createJavaTestProcessBuilder() instead of this method because
+     * createJavaTestProcessBuilder() will add JVM options from
+     * "test.vm.opts" and "test.java.opts"</b> and this method will
+     * not do that.
+     *
+     * <p>If you still chose to use
+     * createLimitedJavaTestProcessBuilder() you should probably use
+     * it in combination with <b>@requires vm.flagless</b> JTREG
+     * anotation as to not waste energy and test resources.
+     *
+     * @param command Arguments to pass to the java command.
+     * @return The ProcessBuilder instance representing the java command.
+     */
+    public static ProcessBuilder createLimitedTestJavaProcessBuilder(List<String> command) {
+        return createLimitedTestJavaProcessBuilder(command.toArray(String[]::new));
+    }
+
+   /**
+     * Create ProcessBuilder using the java launcher from the jdk to
+     * be tested.
+     *
+     * <p><b>Please observe that you likely should use
+     * createJavaTestProcessBuilder() instead of this method because
+     * createJavaTestProcessBuilder() will add JVM options from
+     * "test.vm.opts" and "test.java.opts"</b> and this method will
+     * not do that.
+     *
+     * <p>If you still chose to use
+     * createLimitedJavaTestProcessBuilder() you should probably use
+     * it in combination with <b>@requires vm.flagless</b> JTREG
+     * anotation as to not waste energy and test resources.
+     *
+     * @param command Arguments to pass to the java command.
+     * @return The ProcessBuilder instance representing the java command.
+     */
+    public static ProcessBuilder createLimitedTestJavaProcessBuilder(String... command) {
+        return createJavaProcessBuilder(command);
     }
 
     /**
@@ -586,7 +596,7 @@ public final class ProcessTools {
      * @return The output from the process.
      */
     public static OutputAnalyzer executeTestJvm(String... cmds) throws Exception {
-        ProcessBuilder pb = createJavaTestProcessBuilder(cmds);
+        ProcessBuilder pb = createTestJavaProcessBuilder(cmds);
         return executeProcess(pb);
     }
 
