@@ -524,15 +524,15 @@ bool ShenandoahOldHeuristics::should_start_gc() {
     size_t trigger_threshold = _old_generation->usage_trigger_threshold();
     size_t heap_size = heap->capacity();
     size_t consecutive_young_cycles;
-    if ((current_usage < ShenandoahIgnoreOldGrowthBelowPercentage * heap_size / 100) &&
+    size_t ignore_threshold = (ShenandoahIgnoreOldGrowthBelowPercentage * heap_size) / 100;
+    if ((current_usage < ignore_threshold) &&
         ((consecutive_young_cycles = heap->shenandoah_policy()->consecutive_young_gc_count())
          < ShenandoahDoNotIgnoreGrowthAfterYoungCycles)) {
-      log_info(gc)("Ignoring Trigger (OLD): Old has overgrown: usage (" SIZE_FORMAT "%s) is below threshold (" SIZE_FORMAT
-                   "%s) after " SIZE_FORMAT " consecutive completed young GCs",
-                   byte_size_in_proper_unit(current_usage), proper_unit_for_byte_size(current_usage),
-                   byte_size_in_proper_unit(ShenandoahDoNotIgnoreGrowthAfterYoungCycles),
-                   proper_unit_for_byte_size(ShenandoahDoNotIgnoreGrowthAfterYoungCycles),
-                   consecutive_young_cycles);
+      log_debug(gc)("Ignoring Trigger (OLD): Old has overgrown: usage (" SIZE_FORMAT "%s) is below threshold ("
+                    SIZE_FORMAT "%s) after " SIZE_FORMAT " consecutive completed young GCs",
+                    byte_size_in_proper_unit(current_usage), proper_unit_for_byte_size(current_usage),
+                    byte_size_in_proper_unit(ignore_threshold), proper_unit_for_byte_size(ignore_threshold),
+                    consecutive_young_cycles);
       _growth_trigger = false;
     } else if (current_usage > trigger_threshold) {
       size_t live_at_previous_old = _old_generation->get_live_bytes_after_last_mark();

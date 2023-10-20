@@ -336,9 +336,9 @@
           "evacuate more live objects on every cycle, while leaving "       \
           "less headroom for application to allocate while GC is "          \
           "evacuating and updating references. This parameter is "          \
-          "consulted at the of marking, before selecting the collection "   \
-          "set.  If available memory at this time is smaller than the "     \
-          "indicated reserve, the bound on collection set size is "         \
+          "consulted at the end of marking, before selecting the "          \
+          "collection set.  If available memory at this time is smaller "   \
+          "than the indicated reserve, the bound on collection set size is "\
           "adjusted downward.  The size of a generational mixed "           \
           "evacuation collection set (comprised of both young and old "     \
           "regions) is also bounded by this parameter.  In percents of "    \
