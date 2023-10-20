@@ -468,9 +468,9 @@ void RangeCheckEliminator::in_block_motion(BlockBegin *block, AccessIndexedList 
           }
         }
       } else {
-        int last_integer = 0;
+        jint last_integer = 0;
         Instruction *last_instruction = index;
-        int base = 0;
+        jint base = 0;
         ArithmeticOp *ao = index->as_ArithmeticOp();
 
         while (ao != nullptr && (ao->x()->as_Constant() || ao->y()->as_Constant()) && (ao->op() == Bytecodes::_iadd || ao->op() == Bytecodes::_isub)) {
@@ -482,7 +482,7 @@ void RangeCheckEliminator::in_block_motion(BlockBegin *block, AccessIndexedList 
           }
 
           if (c) {
-            int value = c->type()->as_IntConstant()->value();
+            jint value = c->type()->as_IntConstant()->value();
             if (value != min_jint) {
               if (ao->op() == Bytecodes::_isub) {
                 value = -value;
