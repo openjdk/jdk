@@ -41,7 +41,7 @@ public class ClassInitializationTest {
     public static void main(String... args) throws Exception {
 
         // (1)
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder("-Xlog:class+init=info",
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:class+init=info",
                                                                   "-Xverify:all",
                                                                   "-Xmx128m",
                                                                   "BadMap50");
@@ -54,7 +54,7 @@ public class ClassInitializationTest {
         out.shouldContain("Fail over class verification to old verifier for: BadMap50");
 
         // (2) class+init should turn off.
-        pb = ProcessTools.createLimitedJavaTestProcessBuilder("-Xlog:class+init=off",
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:class+init=off",
                                                    "-Xverify:all",
                                                    "-Xmx128m",
                                                    "BadMap50");

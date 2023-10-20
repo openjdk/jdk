@@ -136,7 +136,7 @@ public class TestLargePagesFlags {
     args.add("-Xlog:pagesize");
     args.add("-version");
 
-    ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(args);
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
 

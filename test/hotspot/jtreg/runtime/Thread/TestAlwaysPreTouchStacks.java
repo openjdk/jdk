@@ -90,7 +90,7 @@ public class TestAlwaysPreTouchStacks {
 
         } else {
 
-            ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-Xmx100M",
                     "-XX:+AlwaysPreTouchStacks",

@@ -39,7 +39,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestIterativeEA {
 
   public static void main(String[] args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-server", "-XX:-TieredCompilation", "-Xbatch", "-XX:+PrintEliminateAllocations",
                  Launcher.class.getName());
 

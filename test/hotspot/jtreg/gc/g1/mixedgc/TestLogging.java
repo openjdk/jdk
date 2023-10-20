@@ -90,7 +90,7 @@ public class TestLogging {
         Collections.addAll(testOpts, extraFlags);
         testOpts.add(RunMixedGC.class.getName());
         System.out.println(testOpts);
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(testOpts);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(testOpts);
         return new OutputAnalyzer(pb.start());
     }
 }

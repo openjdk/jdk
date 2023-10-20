@@ -94,7 +94,7 @@ public class TestMetaSpaceLog {
 
   private static void testMetaSpaceUpdate() throws Exception {
     ProcessBuilder pb =
-      ProcessTools.createJavaTestProcessBuilder(
+      ProcessTools.createTestJavaProcessBuilder(
           "-Xlog:gc*",
           "-Xbootclasspath/a:.",
           "-XX:+UnlockDiagnosticVMOptions",

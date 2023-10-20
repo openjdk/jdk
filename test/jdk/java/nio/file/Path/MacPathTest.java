@@ -49,9 +49,9 @@ public class MacPathTest {
         ProcessBuilder pb;
         if (NORMALIZE_FILE_PATHS) {
             String option = "-D" + PROPERTY_NORMALIZE_FILE_PATHS + "=true";
-            pb = ProcessTools.createJavaTestProcessBuilder(option, MacPath.class.getName());
+            pb = ProcessTools.createTestJavaProcessBuilder(option, MacPath.class.getName());
         } else {
-            pb = ProcessTools.createJavaTestProcessBuilder(MacPath.class.getName());
+            pb = ProcessTools.createTestJavaProcessBuilder(MacPath.class.getName());
         }
         pb.environment().put("LC_ALL", "en_US.UTF-8");
         ProcessTools.executeProcess(pb)

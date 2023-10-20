@@ -46,7 +46,7 @@ public class Testjsig {
         String libpath = System.getProperty("java.library.path");
 
         // Create a new java process for the TestJNI Java/JNI test
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-Djava.library.path=" + libpath + ":.",
             "TestJNI",
             "100");

@@ -63,7 +63,7 @@ public class GetFlagValueTest {
         ProcessBuilder pb;
         OutputAnalyzer out;
 
-        pb = ProcessTools.createLimitedJavaTestProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+EnableJVMCI",
             "-XX:+PrintFlagsFinal",

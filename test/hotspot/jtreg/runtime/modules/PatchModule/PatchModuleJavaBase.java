@@ -51,7 +51,7 @@ public class PatchModuleJavaBase {
              InMemoryJavaCompiler.compile("java.lang.NewClass", source, "--patch-module=java.base"),
              "mods/java.base");
 
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder("--patch-module=java.base=mods/java.base",
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("--patch-module=java.base=mods/java.base",
              "PatchModuleMain", "java.lang.NewClass");
 
         new OutputAnalyzer(pb.start())

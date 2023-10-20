@@ -37,7 +37,7 @@ public class PatchModuleDupJavaBase {
   // The VM should exit initialization if java.base is specified
   // more than once to --patch-module.
   public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
       "--patch-module=java.base=javabase_dir",
       "--patch-module=java.base=javabase_dir",
       "-version");

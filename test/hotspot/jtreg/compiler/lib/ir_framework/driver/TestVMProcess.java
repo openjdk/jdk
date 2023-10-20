@@ -146,7 +146,7 @@ public class TestVMProcess {
     }
 
     private void start() {
-        ProcessBuilder process = ProcessTools.createLimitedJavaTestProcessBuilder(cmds);
+        ProcessBuilder process = ProcessTools.createLimitedTestJavaProcessBuilder(cmds);
         try {
             // Calls 'main' of TestVM to run all specified tests with commands 'cmds'.
             // Use executeProcess instead of executeTestJvm as we have already added the JTreg VM and

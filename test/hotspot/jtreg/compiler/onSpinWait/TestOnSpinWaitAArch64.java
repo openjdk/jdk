@@ -71,7 +71,7 @@ public class TestOnSpinWaitAArch64 {
         command.add("-XX:CompileCommand=compileonly," + Launcher.class.getName() + "::" + "test");
         command.add(Launcher.class.getName());
 
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(command);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(command);
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 

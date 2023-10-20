@@ -102,7 +102,7 @@ public class Application {
         args[2] = Application.class.getName();
         args[3] = lockFile.toString();
         args[4] = message;
-        ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder(args);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(args);
         touch(lockFile);
         process = pb.start();
         // For debugging

@@ -38,7 +38,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestThreadCountsOverride {
     public static void main(String[] args) throws Exception {
         {
-            ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Xmx128m",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+UnlockExperimentalVMOptions",
@@ -53,7 +53,7 @@ public class TestThreadCountsOverride {
         }
 
         {
-            ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Xmx128m",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+UnlockExperimentalVMOptions",

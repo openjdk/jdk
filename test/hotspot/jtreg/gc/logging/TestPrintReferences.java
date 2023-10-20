@@ -67,7 +67,7 @@ public class TestPrintReferences {
     }
 
     public static void testRefs() throws Exception {
-        ProcessBuilder pb_enabled = ProcessTools.createLimitedJavaTestProcessBuilder("-Xlog:gc+ref+phases=debug",
+        ProcessBuilder pb_enabled = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:gc+ref+phases=debug",
                                                                           "-XX:+UseG1GC",
                                                                           "-Xmx32M",
                                                                           GCTest.class.getName());
@@ -95,7 +95,7 @@ public class TestPrintReferences {
     }
 
     public static void testPhases(boolean parallelRefProcEnabled) throws Exception {
-        ProcessBuilder pb_enabled = ProcessTools.createLimitedJavaTestProcessBuilder("-Xlog:gc+phases+ref=debug",
+        ProcessBuilder pb_enabled = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:gc+phases+ref=debug",
                                                                           "-XX:+UseG1GC",
                                                                           "-Xmx32M",
                                                                           "-XX:" + (parallelRefProcEnabled ? "+" : "-") + "ParallelRefProcEnabled",

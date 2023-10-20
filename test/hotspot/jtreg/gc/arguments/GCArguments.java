@@ -66,19 +66,19 @@ public final class GCArguments {
         return augmented.toArray(new String[augmented.size()]);
     }
 
-    static public ProcessBuilder createLimitedJavaTestProcessBuilder(List<String> arguments) {
-        return createLimitedJavaTestProcessBuilder(arguments.toArray(String[]::new));
+    static public ProcessBuilder createLimitedTestJavaProcessBuilder(List<String> arguments) {
+        return createLimitedTestJavaProcessBuilder(arguments.toArray(String[]::new));
     }
 
-    static public ProcessBuilder createLimitedJavaTestProcessBuilder(String... arguments) {
-        return ProcessTools.createLimitedJavaTestProcessBuilder(withDefaults(arguments));
+    static public ProcessBuilder createLimitedTestJavaProcessBuilder(String... arguments) {
+        return ProcessTools.createLimitedTestJavaProcessBuilder(withDefaults(arguments));
     }
 
-    static public ProcessBuilder createJavaTestProcessBuilder(List<String> arguments) {
-        return createJavaTestProcessBuilder(arguments.toArray(String[]::new));
+    static public ProcessBuilder createTestJavaProcessBuilder(List<String> arguments) {
+        return createTestJavaProcessBuilder(arguments.toArray(String[]::new));
     }
 
-    static public ProcessBuilder createJavaTestProcessBuilder(String... arguments) {
-        return ProcessTools.createJavaTestProcessBuilder(withDefaults(arguments));
+    static public ProcessBuilder createTestJavaProcessBuilder(String... arguments) {
+        return ProcessTools.createTestJavaProcessBuilder(withDefaults(arguments));
     }
 }

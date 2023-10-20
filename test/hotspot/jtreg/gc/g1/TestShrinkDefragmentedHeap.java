@@ -61,7 +61,7 @@ public class TestShrinkDefragmentedHeap {
     private static final int REGION_SIZE        = 1 * 1024 * 1024;
 
     public static void main(String[] args) throws Exception, Throwable {
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:InitialHeapSize=" + INITIAL_HEAP_SIZE,
                 "-Xmn" + MINIMAL_YOUNG_SIZE,
                 "-Xmx" + MAXIMUM_HEAP_SIZE,

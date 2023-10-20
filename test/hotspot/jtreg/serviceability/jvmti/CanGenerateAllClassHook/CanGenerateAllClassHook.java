@@ -125,7 +125,7 @@ public class CanGenerateAllClassHook {
     }
 
     private static OutputAnalyzer execJava(String... args) throws IOException {
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(args);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 

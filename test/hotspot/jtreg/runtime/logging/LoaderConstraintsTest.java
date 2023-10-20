@@ -66,7 +66,7 @@ public class LoaderConstraintsTest {
         Collections.addAll(argsList, "-XX:+UnlockDiagnosticVMOptions");
         Collections.addAll(argsList, "-XX:+WhiteBoxAPI");
         Collections.addAll(argsList, ClassUnloadTestMain.class.getName());
-        return ProcessTools.createLimitedJavaTestProcessBuilder(argsList);
+        return ProcessTools.createLimitedTestJavaProcessBuilder(argsList);
     }
 
     public static void main(String... args) throws Exception {

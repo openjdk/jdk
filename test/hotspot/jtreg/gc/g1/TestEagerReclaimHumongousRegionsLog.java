@@ -54,7 +54,7 @@ public class TestEagerReclaimHumongousRegionsLog {
     }
 
     public static void runTest() throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-Xbootclasspath/a:.",
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+UnlockDiagnosticVMOptions",

@@ -103,7 +103,7 @@ public abstract class CtwTest {
                 }
             }
         }
-        ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder(cmd);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmd);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         dump(output, "compile");
         output.shouldHaveExitValue(0);

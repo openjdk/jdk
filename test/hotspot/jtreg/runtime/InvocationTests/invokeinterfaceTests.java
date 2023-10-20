@@ -73,7 +73,7 @@ public class invokeinterfaceTests {
     public static void runTest(String classFileVersion, String option) throws Throwable {
         System.out.println("\ninvokeinterface invocation tests, option: " + option +
                            ", class file version: " + classFileVersion);
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder("-Xmx128M", option,
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xmx128M", option,
             "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
             "invokeinterface.Generator", "--classfile_version=" + classFileVersion);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());

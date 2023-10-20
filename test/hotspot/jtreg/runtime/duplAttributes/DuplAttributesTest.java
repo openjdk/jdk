@@ -41,7 +41,7 @@ public class DuplAttributesTest {
     static final String testsrc = System.getProperty("test.src");
 
     public static void runTest(String test, String result) throws Throwable {
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(test);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(test);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("java.lang.ClassFormatError: Multiple " + result);
         output.shouldNotHaveExitValue(0);

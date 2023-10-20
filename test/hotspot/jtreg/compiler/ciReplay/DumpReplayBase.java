@@ -79,7 +79,7 @@ public abstract class DumpReplayBase extends CiReplayBase {
             options.add("-XX:CompileCommand=compileonly," + getTestClass() + "::" + getTestMethod());
             options.add("-Xbatch");
             options.add(getTestClass());
-            oa = ProcessTools.executeProcess(ProcessTools.createJavaTestProcessBuilder(options));
+            oa = ProcessTools.executeProcess(ProcessTools.createTestJavaProcessBuilder(options));
             Asserts.assertEquals(oa.getExitValue(), 0, "Crash JVM exits gracefully");
             replayFiles = Files.list(Paths.get("."))
                                     .map(Path::toFile)

@@ -56,7 +56,7 @@ public class TestParallelGCThreads {
   private static final String printFlagsFinalPattern = " *uint *" + flagName + " *:?= *(\\d+) *\\{product\\} *";
 
   public static void testDefaultValue()  throws Exception {
-    ProcessBuilder pb = GCArguments.createLimitedJavaTestProcessBuilder(
+    ProcessBuilder pb = GCArguments.createLimitedTestJavaProcessBuilder(
       "-XX:+UnlockExperimentalVMOptions", "-XX:+PrintFlagsFinal", "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -94,7 +94,7 @@ public class TestParallelGCThreads {
 
     for (String gc : supportedGC) {
       // Make sure the VM does not allow ParallelGCThreads set to 0
-      ProcessBuilder pb = GCArguments.createLimitedJavaTestProcessBuilder(
+      ProcessBuilder pb = GCArguments.createLimitedTestJavaProcessBuilder(
           "-XX:+Use" + gc + "GC",
           "-XX:ParallelGCThreads=0",
           "-XX:+PrintFlagsFinal",
@@ -124,7 +124,7 @@ public class TestParallelGCThreads {
   }
 
   public static long getParallelGCThreadCount(String... flags) throws Exception {
-    ProcessBuilder pb = GCArguments.createLimitedJavaTestProcessBuilder(flags);
+    ProcessBuilder pb = GCArguments.createLimitedTestJavaProcessBuilder(flags);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
     String stdout = output.getStdout();

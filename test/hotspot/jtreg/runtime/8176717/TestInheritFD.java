@@ -28,7 +28,7 @@ import static java.nio.file.Files.readAllBytes;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
-import static jdk.test.lib.process.ProcessTools.createLimitedJavaTestProcessBuilder;
+import static jdk.test.lib.process.ProcessTools.createLimitedTestJavaProcessBuilder;
 import static jdk.test.lib.Platform.isWindows;
 import jdk.test.lib.Utils;
 import jdk.test.lib.Platform;
@@ -229,7 +229,7 @@ public class TestInheritFD {
             throw new SkippedException("Could not find lsof like command");
         }
 
-        ProcessBuilder pb = createLimitedJavaTestProcessBuilder(
+        ProcessBuilder pb = createLimitedTestJavaProcessBuilder(
             "-Xlog:gc:\"" + logPath + "\"",
             "-Dtest.jdk=" + getProperty("test.jdk"),
             VMStartedWithLogging.class.getName(),
@@ -250,7 +250,7 @@ public class TestInheritFD {
         // second VM
         public static void main(String[] args) throws IOException, InterruptedException {
             System.out.println(SECOND_VM_PID_PREFIX + ProcessHandle.current().pid());
-            ProcessBuilder pb = createLimitedJavaTestProcessBuilder(
+            ProcessBuilder pb = createLimitedTestJavaProcessBuilder(
                 "-Dtest.jdk=" + getProperty("test.jdk"),
                 VMShouldNotInheritFileDescriptors.class.getName(),
                 args[0],

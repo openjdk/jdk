@@ -526,13 +526,13 @@ public final class ProcessTools {
      * be tested.
      *
      * <p><b>Please observe that you likely should use
-     * createJavaTestProcessBuilder() instead of this method because
-     * createJavaTestProcessBuilder() will add JVM options from
+     * createTestJavaProcessBuilder() instead of this method because
+     * createTestJavaProcessBuilder() will add JVM options from
      * "test.vm.opts" and "test.java.opts"</b> and this method will
      * not do that.
      *
      * <p>If you still chose to use
-     * createLimitedJavaTestProcessBuilder() you should probably use
+     * createLimitedTestJavaProcessBuilder() you should probably use
      * it in combination with <b>@requires vm.flagless</b> JTREG
      * anotation as to not waste energy and test resources.
      *
@@ -548,13 +548,13 @@ public final class ProcessTools {
      * be tested.
      *
      * <p><b>Please observe that you likely should use
-     * createJavaTestProcessBuilder() instead of this method because
-     * createJavaTestProcessBuilder() will add JVM options from
+     * createTestJavaProcessBuilder() instead of this method because
+     * createTestJavaProcessBuilder() will add JVM options from
      * "test.vm.opts" and "test.java.opts"</b> and this method will
      * not do that.
      *
      * <p>If you still chose to use
-     * createLimitedJavaTestProcessBuilder() you should probably use
+     * createLimitedTestJavaProcessBuilder() you should probably use
      * it in combination with <b>@requires vm.flagless</b> JTREG
      * anotation as to not waste energy and test resources.
      *

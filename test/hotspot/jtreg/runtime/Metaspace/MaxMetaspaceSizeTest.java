@@ -35,7 +35,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class MaxMetaspaceSizeTest {
     public static void main(String... args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-Xmx1g",
             "-XX:MaxMetaspaceSize=4K",
             "-XX:+UseCompressedClassPointers",

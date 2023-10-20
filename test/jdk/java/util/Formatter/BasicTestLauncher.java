@@ -82,7 +82,7 @@ public class BasicTestLauncher {
      */
     private static OutputAnalyzer RunTest(String timeZone) throws IOException{
         // Build and run Basic class with correct configuration
-        ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder(JAVA_OPTS, TEST_CLASS);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(JAVA_OPTS, TEST_CLASS);
         pb.environment().put("TZ", timeZone);
         Process process = pb.start();
         return new OutputAnalyzer(process);

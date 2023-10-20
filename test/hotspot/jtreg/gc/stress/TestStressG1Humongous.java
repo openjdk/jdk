@@ -101,7 +101,7 @@ public class TestStressG1Humongous{
                 "-Dregionsize=" + regionSize,
                 TestStressG1HumongousImpl.class.getName()
         );
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(options);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(options);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
     }

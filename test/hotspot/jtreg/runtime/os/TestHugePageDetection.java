@@ -48,7 +48,7 @@ public class TestHugePageDetection {
         finalargs.addAll(Arrays.asList(defaultArgs));
         finalargs.add("-version");
 
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 new String[] {"-Xlog:pagesize", "-Xmx64M", "-version"});
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());

@@ -132,7 +132,7 @@ public class TestVolatiles {
 
 
     public void runtest(String classname, String testType, boolean useCompressedOops, String[] procArgs) throws Throwable {
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(procArgs);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         output.stderrShouldBeEmptyIgnoreVMWarnings();

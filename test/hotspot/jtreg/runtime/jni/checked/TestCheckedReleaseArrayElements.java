@@ -48,7 +48,7 @@ public class TestCheckedReleaseArrayElements {
             // Uses executeProcess() instead of executeTestJvm() to avoid passing options
             // that might generate output on stderr (which should be empty for this test).
             ProcessBuilder pb =
-                ProcessTools.createLimitedJavaTestProcessBuilder("-Xcheck:jni",
+                ProcessTools.createLimitedTestJavaProcessBuilder("-Xcheck:jni",
                                                       "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
                                                       "TestCheckedReleaseArrayElements");
             OutputAnalyzer output = ProcessTools.executeProcess(pb);

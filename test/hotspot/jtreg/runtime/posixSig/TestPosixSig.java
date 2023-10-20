@@ -44,7 +44,7 @@ public class TestPosixSig {
         if (args.length == 0) {
 
             // Create a new java process for the TestPsig Java/JNI test.
-            ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+CheckJNICalls",
                 "-Djava.library.path=" + libpath + ":.",
                 "TestPosixSig", "dummy");

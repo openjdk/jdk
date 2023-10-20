@@ -127,7 +127,7 @@ public class TestCrossProcessStreaming {
 
         static Process start() throws Exception {
             String[] args = {"-XX:StartFlightRecording", EventProducer.class.getName()};
-            ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(args);
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
             return ProcessTools.startProcess("Event-Producer", pb,
                                              line -> line.contains(MAIN_STARTED),
                                              0, TimeUnit.SECONDS);

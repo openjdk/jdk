@@ -54,7 +54,7 @@ public class SystemMembarHandshakeTransitionTest {
         commands.add("-XX:+UseSystemMemoryBarrier");
         commands.addAll(Arrays.asList(args));
         commands.add("HandshakeTransitionTest$Test");
-        ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder(commands);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(commands);
 
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
         output.reportDiagnosticSummary();

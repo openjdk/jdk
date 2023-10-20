@@ -89,7 +89,7 @@ public class TestDumpReason {
 
     private static long runProcess(Class<?> crasher) throws Exception {
         System.out.println("Test case for " + crasher.getName());
-        Process p = ProcessTools.createJavaTestProcessBuilder(
+        Process p = ProcessTools.createTestJavaProcessBuilder(
                 "-Xmx64m",
                 "-XX:-CreateCoredumpOnCrash",
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",

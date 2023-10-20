@@ -72,7 +72,7 @@ public class AppExecutorHelper {
             Collections.addAll(arguments, classArguments);
         }
 
-        ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder(arguments);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(arguments);
         return ProcessTools.executeProcess(pb);
     }
 }

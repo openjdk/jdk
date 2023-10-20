@@ -134,7 +134,7 @@ public class SSLSocketKeyLimit {
             System.out.println("test.java.opts: " +
                     System.getProperty("test.java.opts"));
 
-            ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                     Utils.addTestJavaOpts("SSLSocketKeyLimit", "p", args[1],
                             args[2]));
 

@@ -52,14 +52,14 @@ public class OsCpuLoggingTest {
 
     public static void main(String[] args) throws Exception {
 
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder("-Xlog:os+cpu", "-version");
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:os+cpu", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         analyzeOutputForOsCpuLog(output);
 
         // PPC64 only uses polling pages when UseSIGTRAP is off.
         pb = (Platform.isPPC() && Platform.is64bit())
-             ? ProcessTools.createLimitedJavaTestProcessBuilder("-Xlog:os", "-XX:-UseSIGTRAP", "-version")
-             : ProcessTools.createLimitedJavaTestProcessBuilder("-Xlog:os", "-version");
+             ? ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:os", "-XX:-UseSIGTRAP", "-version")
+             : ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:os", "-version");
         output = new OutputAnalyzer(pb.start());
         analyzeOutputForOsLog(output);
     }

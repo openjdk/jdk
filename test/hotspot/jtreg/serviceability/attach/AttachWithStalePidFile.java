@@ -59,7 +59,7 @@ public class AttachWithStalePidFile {
   }
 
   public static boolean runTest() throws Exception {
-    ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
       "-XX:+UnlockDiagnosticVMOptions", "-XX:+PauseAtStartup", "AttachWithStalePidFileTarget");
     Process target = pb.start();
     Path pidFile = null;

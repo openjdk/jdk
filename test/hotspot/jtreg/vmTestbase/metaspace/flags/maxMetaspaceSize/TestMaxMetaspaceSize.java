@@ -40,7 +40,7 @@ import jdk.test.lib.process.ProcessTools;
 public class TestMaxMetaspaceSize {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb =
-            ProcessTools.createJavaTestProcessBuilder("-XX:MaxMetaspaceSize=100m",
+            ProcessTools.createTestJavaProcessBuilder("-XX:MaxMetaspaceSize=100m",
                                        maxMetaspaceSize.class.getName());
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
 

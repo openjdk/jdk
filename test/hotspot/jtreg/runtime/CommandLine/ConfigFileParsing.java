@@ -51,7 +51,7 @@ public class ConfigFileParsing {
     pw.close();
 
     // start VM
-    ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         "-XX:+IgnoreUnrecognizedVMOptions", "-XX:Flags=.hotspotrc", "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());

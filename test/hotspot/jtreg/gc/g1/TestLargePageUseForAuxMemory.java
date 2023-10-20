@@ -123,7 +123,7 @@ public class TestLargePageUseForAuxMemory {
         ProcessBuilder pb;
 
         // Test with large page enabled.
-        pb = ProcessTools.createLimitedJavaTestProcessBuilder(getOpts(heapsize, true));
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(getOpts(heapsize, true));
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
@@ -138,7 +138,7 @@ public class TestLargePageUseForAuxMemory {
         output.shouldHaveExitValue(0);
 
         // Test with large page disabled.
-        pb = ProcessTools.createLimitedJavaTestProcessBuilder(getOpts(heapsize, false));
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(getOpts(heapsize, false));
 
         output = new OutputAnalyzer(pb.start());
         checkSmallTables(output, smallPageSize);

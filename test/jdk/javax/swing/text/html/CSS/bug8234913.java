@@ -52,7 +52,7 @@ public class bug8234913 {
         Collections.addAll(argsList, "-Xmn8m");
         Collections.addAll(argsList, "-Dtest.class.path=" + System.getProperty("test.class.path", "."));
         Collections.addAll(argsList, FontSizePercentTest.class.getName());
-        return ProcessTools.createLimitedJavaTestProcessBuilder(argsList.toArray(new String[argsList.size()]));
+        return ProcessTools.createLimitedTestJavaProcessBuilder(argsList.toArray(new String[argsList.size()]));
     }
 
     static void checkFor(String... outputStrings) throws Exception {

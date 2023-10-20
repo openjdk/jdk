@@ -61,7 +61,7 @@ public class TestReclaimStringsLeaksMemory {
                                                                    "-XX:+PrintNMTStatistics" ));
         baseargs.addAll(Arrays.asList(args));
         baseargs.add(GCTest.class.getName());
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(baseargs);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(baseargs);
         verifySymbolMemoryUsageNotTooHigh(new OutputAnalyzer(pb.start()));
     }
 

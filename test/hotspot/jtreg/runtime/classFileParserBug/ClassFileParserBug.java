@@ -41,7 +41,7 @@ public class ClassFileParserBug {
     public static void main(String args[]) throws Throwable {
 
         System.out.println("Regression test for bug 8040018");
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder("LambdaMath");
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("LambdaMath");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("java.lang.ClassFormatError: Bad length on BootstrapMethods");
         output.shouldHaveExitValue(1);

@@ -90,7 +90,7 @@ public class ClhsdbCDSCore {
             try {
                List<String> options = new ArrayList<>();
                options.addAll(Arrays.asList(jArgs));
-               ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder(options);
+               ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(options);
                // Add "ulimit -c unlimited" if we can since we are generating a core file.
                pb = CoreUtils.addCoreUlimitCommand(pb);
                crashOutput = ProcessTools.executeProcess(pb);

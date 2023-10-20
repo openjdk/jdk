@@ -73,7 +73,7 @@ public class FileEncodingTest {
         var cmds = fileEncoding.isEmpty()
                 ? List.of(FileEncodingTest.class.getName(), expected)
                 : List.of("-Dfile.encoding=" + fileEncoding, FileEncodingTest.class.getName(), expected);
-        var pb = ProcessTools.createJavaTestProcessBuilder(cmds);
+        var pb = ProcessTools.createTestJavaProcessBuilder(cmds);
         var env = pb.environment();
         env.put("LANG", "C");
         env.put("LC_ALL", "C");

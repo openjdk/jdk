@@ -40,7 +40,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestDisableDefaultGC {
     public static void main(String[] args) throws Exception {
         // Start VM, disabling all possible default GCs
-        ProcessBuilder pb = GCArguments.createJavaTestProcessBuilder("-XX:-UseSerialGC",
+        ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder("-XX:-UseSerialGC",
                                                       "-XX:-UseParallelGC",
                                                       "-XX:-UseG1GC",
                                                       "-XX:-UseZGC",

@@ -74,7 +74,7 @@ public class ObjectAlignment {
     }
 
     private static OutputAnalyzer testObjectAlignment(int alignment) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder("-XX:ObjectAlignmentInBytes=" + alignment,
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:ObjectAlignmentInBytes=" + alignment,
                                                                   "-version");
         return new OutputAnalyzer(pb.start());
     }

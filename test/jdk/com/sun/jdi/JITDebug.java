@@ -104,7 +104,7 @@ public class JITDebug {
     }
 
     void testLaunch() {
-        ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder();
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder();
         List largs = pb.command();
         largs.add("-classpath");
         largs.add(Utils.TEST_CLASSES);

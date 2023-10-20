@@ -80,7 +80,7 @@ public class i18nEnvArg {
                         "i18nEnvArg$Verify",
                         EUC_JP_TEXT));
         }
-        pb = ProcessTools.createJavaTestProcessBuilder(cmds);
+        pb = ProcessTools.createTestJavaProcessBuilder(cmds);
         Map<String, String> environ = pb.environment();
         environ.clear();
         environ.put("LANG", "ja_JP.eucjp");

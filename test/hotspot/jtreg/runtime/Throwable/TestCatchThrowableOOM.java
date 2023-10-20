@@ -43,7 +43,7 @@ public class TestCatchThrowableOOM {
     };
 
     public static void main(String[] args) throws Throwable {
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder("-Xmx64m",
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xmx64m",
                                                                   "-Xlog:exceptions=trace",
 
                                                                   "TestCatchThrowableOOM$OOM");

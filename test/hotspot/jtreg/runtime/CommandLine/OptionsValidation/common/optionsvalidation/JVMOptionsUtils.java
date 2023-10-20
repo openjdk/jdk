@@ -469,7 +469,7 @@ public class JVMOptionsUtils {
         runJava.add(PRINT_FLAGS_RANGES);
         runJava.add("-version");
 
-        p = ProcessTools.createLimitedJavaTestProcessBuilder(runJava).start();
+        p = ProcessTools.createLimitedTestJavaProcessBuilder(runJava).start();
 
         result = getJVMOptions(new InputStreamReader(p.getInputStream()), withRanges, acceptOrigin);
 

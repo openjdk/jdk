@@ -73,7 +73,7 @@ public class TestStartupMessage {
         List<String> commands = new ArrayList<>(Arrays.asList(args));
         commands.add("-XX:StartFlightRecording");
         commands.add(TestMessage.class.getName());
-        ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder(commands);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(commands);
         OutputAnalyzer out = ProcessTools.executeProcess(pb);
         out.shouldHaveExitValue(0);
         return out;

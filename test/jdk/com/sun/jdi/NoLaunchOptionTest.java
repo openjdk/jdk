@@ -45,7 +45,7 @@ public class NoLaunchOptionTest extends Object {
                 "onthrow=java.lang.ClassNotFoundException,suspend=n",
                 "NotAClass" });
 
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(cmd);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(cmd);
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
         System.out.println(output.getOutput());
 

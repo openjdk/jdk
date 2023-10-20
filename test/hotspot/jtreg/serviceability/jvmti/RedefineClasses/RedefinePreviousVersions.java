@@ -84,7 +84,7 @@ public class RedefinePreviousVersions {
         if (args.length > 0) {
 
             // java -javaagent:redefineagent.jar -Xlog:stuff RedefinePreviousVersions
-            ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder( "-javaagent:redefineagent.jar",
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder( "-javaagent:redefineagent.jar",
                "-Xlog:redefine+class+iklass+add=trace,redefine+class+iklass+purge=trace",
                "RedefinePreviousVersions");
             new OutputAnalyzer(pb.start())

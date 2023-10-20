@@ -39,7 +39,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestUseNUMAInterleaving {
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = GCArguments.createJavaTestProcessBuilder(
+        ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(
             "-XX:+UseNUMA",
             "-XX:+PrintFlagsFinal",
             "-version");

@@ -109,7 +109,7 @@ public class TestMixedGCLiveThreshold {
 
         basicOpts.add(GCTest.class.getName());
 
-        ProcessBuilder procBuilder =  ProcessTools.createLimitedJavaTestProcessBuilder(basicOpts);
+        ProcessBuilder procBuilder =  ProcessTools.createLimitedTestJavaProcessBuilder(basicOpts);
         OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
         return analyzer;
     }

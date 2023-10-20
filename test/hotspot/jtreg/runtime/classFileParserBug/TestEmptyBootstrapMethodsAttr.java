@@ -50,7 +50,7 @@ public class TestEmptyBootstrapMethodsAttr {
         // ======= execute test case #1
         // Expect a lack of main method, this implies that the class loaded correctly
         // with an empty bootstrap_methods and did not generate a ClassFormatError.
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Duser.language=en", "-Duser.country=US", className);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("java.lang.ClassFormatError");
@@ -65,7 +65,7 @@ public class TestEmptyBootstrapMethodsAttr {
         // ======= execute test case #2
         // Expect a lack of main method, this implies that the class loaded correctly
         // with an empty bootstrap_methods and did not generate ClassFormatError.
-        pb = ProcessTools.createLimitedJavaTestProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Duser.language=en", "-Duser.country=US", className);
         output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("java.lang.ClassFormatError");

@@ -41,7 +41,7 @@ public class RestoreMXCSR {
         ProcessBuilder pb;
         OutputAnalyzer out;
 
-        pb = ProcessTools.createLimitedJavaTestProcessBuilder("-XX:+RestoreMXCSROnJNICalls", "-version");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+RestoreMXCSROnJNICalls", "-version");
         out = new OutputAnalyzer(pb.start());
         out.shouldHaveExitValue(0);
     }

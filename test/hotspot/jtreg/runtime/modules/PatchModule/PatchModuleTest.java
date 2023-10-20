@@ -51,7 +51,7 @@ public class PatchModuleTest {
              InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager", source, "--patch-module=java.naming"),
              "mods/java.naming");
 
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder("--patch-module=java.naming=mods/java.naming",
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("--patch-module=java.naming=mods/java.naming",
              "PatchModuleMain", "javax.naming.spi.NamingManager");
 
         new OutputAnalyzer(pb.start())

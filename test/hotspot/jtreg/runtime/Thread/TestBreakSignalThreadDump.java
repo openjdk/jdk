@@ -67,7 +67,7 @@ public class TestBreakSignalThreadDump {
 
     public static void main(String[] argv) throws Exception {
         String main = "TestBreakSignalThreadDump$TestProcess";
-        ProcessBuilder pb = ProcessTools.createJavaTestProcessBuilder("-Djava.library.path=" + Utils.TEST_NATIVE_PATH, main);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-Djava.library.path=" + Utils.TEST_NATIVE_PATH, main);
 
         if (argv.length > 0 && argv[0].equals("load_libjsig")) {
             prepend_jsig_lib(pb.environment());

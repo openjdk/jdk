@@ -42,7 +42,7 @@ import jdk.test.whitebox.WhiteBox;
 public class HandshakeTimeoutTest {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb =
-            ProcessTools.createJavaTestProcessBuilder(
+            ProcessTools.createTestJavaProcessBuilder(
                     "-Xbootclasspath/a:.",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+WhiteBoxAPI",

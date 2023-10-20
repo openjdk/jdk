@@ -71,7 +71,7 @@ public class SABase extends CiReplayBase {
         }
         ProcessBuilder pb;
         try {
-            pb = ProcessTools.createJavaTestProcessBuilder("--add-modules", "jdk.hotspot.agent",
+            pb = ProcessTools.createTestJavaProcessBuilder("--add-modules", "jdk.hotspot.agent",
                    "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
                     "sun.jvm.hotspot.CLHSDB", JDKToolFinder.getTestJDKTool("java"),
                     TEST_CORE_FILE_NAME);

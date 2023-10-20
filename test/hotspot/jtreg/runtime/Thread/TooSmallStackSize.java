@@ -94,14 +94,14 @@ public class TooSmallStackSize {
 
     static ProcessBuilder createProcessWithOptions(String stackOption, String stackSize) throws Exception {
         if (testShadowSize == null) {
-            return ProcessTools.createLimitedJavaTestProcessBuilder(
+            return ProcessTools.createLimitedTestJavaProcessBuilder(
                 stackOption + stackSize,
                 // Uncomment the following to get log output
                 // that shows actual thread creation sizes.
                 // "-Xlog:os+thread",
                 "-version");
         } else {
-            return ProcessTools.createLimitedJavaTestProcessBuilder(
+            return ProcessTools.createLimitedTestJavaProcessBuilder(
                 stackOption + stackSize,
                 // Uncomment the following to get log output
                 // that shows actual thread creation sizes.

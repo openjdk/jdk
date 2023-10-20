@@ -53,7 +53,7 @@ public class RunnerUtil {
             "-Dattach.test=true", "-classpath", classpath, "Application"
         });
         String[] args = Utils.addTestJavaOpts(myArgs);
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(args);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
         ProcessThread pt = new ProcessThread("runApplication", (line) -> line.equals(Application.READY_MSG), pb);
         pt.start();
         return pt;

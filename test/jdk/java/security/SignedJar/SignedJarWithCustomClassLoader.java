@@ -72,7 +72,7 @@ public class SignedJarWithCustomClassLoader {
                      .shouldHaveExitValue(0);
 
         // run app with system class loader set to custom classloader
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-cp", "signed.jar",
             "-Djava.system.class.loader=CustomClassLoader", "Main");
         ProcessTools.executeProcess(pb)
@@ -85,7 +85,7 @@ public class SignedJarWithCustomClassLoader {
                      .shouldHaveExitValue(0);
 
         // run app again, should still succeed even though SHA-1 is disabled
-        pb = ProcessTools.createLimitedJavaTestProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-cp", "signed.jar",
             "-Djava.system.class.loader=CustomClassLoader", "Main");
         ProcessTools.executeProcess(pb)

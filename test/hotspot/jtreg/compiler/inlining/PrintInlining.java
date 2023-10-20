@@ -40,7 +40,7 @@ import jdk.test.lib.process.ProcessTools;
 public class PrintInlining {
 
     static void test(String option) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
                 "-server", "-XX:-TieredCompilation", "-Xbatch", "-XX:-UseOnStackReplacement",
                 "-XX:CompileCommand=dontinline,*::bar",

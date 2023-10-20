@@ -67,7 +67,7 @@ public class PlainRead {
 
     public static void main(String[] args) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
-        ProcessBuilder pb = ProcessTools.createLimitedJavaTestProcessBuilder("-Xlog:os+container=trace", "-version");
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:os+container=trace", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         if (wb.isContainerized()) {

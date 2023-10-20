@@ -80,7 +80,7 @@ public class alloc001 {
     private static final int STATUS_NO_OOM = 3 + STATUS_BASE;
 
     public static void main(String[] args) throws Throwable {
-        String cmd = ProcessTools.getCommandLine(ProcessTools.createJavaTestProcessBuilder(
+        String cmd = ProcessTools.getCommandLine(ProcessTools.createTestJavaProcessBuilder(
                 "-XX:MaxHeapSize=" + (Platform.is32bit() ? "256m" : "512m"),
                 "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
                 "-agentpath:" + Utils.TEST_NATIVE_PATH + File.separator + System.mapLibraryName("alloc001"),
