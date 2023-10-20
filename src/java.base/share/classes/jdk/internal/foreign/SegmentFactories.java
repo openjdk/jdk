@@ -77,7 +77,7 @@ public class SegmentFactories {
     @ForceInline
     public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize) {
         ensureInitialized();
-        return new NativeMemorySegmentImpl(min, byteSize, false, new GlobalSession(null));
+        return new NativeMemorySegmentImpl(min, byteSize, false, MemorySessionImpl.GLOBAL_SESSION);
     }
 
     public static MemorySegment fromArray(byte[] arr) {
@@ -85,7 +85,7 @@ public class SegmentFactories {
         Objects.requireNonNull(arr);
         long byteSize = (long)arr.length * Unsafe.ARRAY_BYTE_INDEX_SCALE;
         return new OfByte(Unsafe.ARRAY_BYTE_BASE_OFFSET, arr, byteSize, false,
-                MemorySessionImpl.heapSession(arr));
+                MemorySessionImpl.createHeap(arr));
     }
 
     public static MemorySegment fromArray(short[] arr) {
@@ -93,7 +93,7 @@ public class SegmentFactories {
         Objects.requireNonNull(arr);
         long byteSize = (long)arr.length * Unsafe.ARRAY_SHORT_INDEX_SCALE;
         return new OfShort(Unsafe.ARRAY_SHORT_BASE_OFFSET, arr, byteSize, false,
-                MemorySessionImpl.heapSession(arr));
+                MemorySessionImpl.createHeap(arr));
     }
 
     public static MemorySegment fromArray(int[] arr) {
@@ -101,7 +101,7 @@ public class SegmentFactories {
         Objects.requireNonNull(arr);
         long byteSize = (long)arr.length * Unsafe.ARRAY_INT_INDEX_SCALE;
         return new OfInt(Unsafe.ARRAY_INT_BASE_OFFSET, arr, byteSize, false,
-                MemorySessionImpl.heapSession(arr));
+                MemorySessionImpl.createHeap(arr));
     }
 
     public static MemorySegment fromArray(char[] arr) {
@@ -109,7 +109,7 @@ public class SegmentFactories {
         Objects.requireNonNull(arr);
         long byteSize = (long)arr.length * Unsafe.ARRAY_CHAR_INDEX_SCALE;
         return new OfChar(Unsafe.ARRAY_CHAR_BASE_OFFSET, arr, byteSize, false,
-                MemorySessionImpl.heapSession(arr));
+                MemorySessionImpl.createHeap(arr));
     }
 
     public static MemorySegment fromArray(float[] arr) {
@@ -117,7 +117,7 @@ public class SegmentFactories {
         Objects.requireNonNull(arr);
         long byteSize = (long)arr.length * Unsafe.ARRAY_FLOAT_INDEX_SCALE;
         return new OfFloat(Unsafe.ARRAY_FLOAT_BASE_OFFSET, arr, byteSize, false,
-                MemorySessionImpl.heapSession(arr));
+                MemorySessionImpl.createHeap(arr));
     }
 
     public static MemorySegment fromArray(double[] arr) {
@@ -125,7 +125,7 @@ public class SegmentFactories {
         Objects.requireNonNull(arr);
         long byteSize = (long)arr.length * Unsafe.ARRAY_DOUBLE_INDEX_SCALE;
         return new OfDouble(Unsafe.ARRAY_DOUBLE_BASE_OFFSET, arr, byteSize, false,
-                MemorySessionImpl.heapSession(arr));
+                MemorySessionImpl.createHeap(arr));
     }
 
     public static MemorySegment fromArray(long[] arr) {
@@ -133,7 +133,7 @@ public class SegmentFactories {
         Objects.requireNonNull(arr);
         long byteSize = (long)arr.length * Unsafe.ARRAY_LONG_INDEX_SCALE;
         return new OfLong(Unsafe.ARRAY_LONG_BASE_OFFSET, arr, byteSize, false,
-                MemorySessionImpl.heapSession(arr));
+                MemorySessionImpl.createHeap(arr));
     }
 
     public static MemorySegment allocateSegment(long byteSize, long byteAlignment, MemorySessionImpl sessionImpl,

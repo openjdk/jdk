@@ -196,6 +196,10 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
                 Set.of(), elements);
     }
 
+    public VarHandle arrayElementVarHandle(PathElement... elements) {
+        return MethodHandles.collectCoordinates(varHandle(elements), 1, scaleHandle());
+    }
+
     public MethodHandle sliceHandle(PathElement... elements) {
         return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::sliceHandle,
                 Set.of(PathKind.DEREF_ELEMENT), elements);

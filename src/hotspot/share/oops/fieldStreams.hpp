@@ -37,6 +37,7 @@
 // iterates over fields that have been injected by the JVM.
 // AllFieldStream exposes all fields and should only be used in rare
 // cases.
+// HierarchicalFieldStream allows to also iterate over fields of supertypes.
 class FieldStreamBase : public StackObj {
  protected:
   const Array<u1>*    _fieldinfo_stream;
@@ -135,7 +136,7 @@ class FieldStreamBase : public StackObj {
   }
 };
 
-// Iterate over only the internal fields
+// Iterate over only the Java fields
 class JavaFieldStream : public FieldStreamBase {
  public:
   JavaFieldStream(const InstanceKlass* k): FieldStreamBase(k->fieldinfo_stream(), k->constants(), 0, k->java_fields_count()) {}
@@ -177,6 +178,106 @@ class AllFieldStream : public FieldStreamBase {
  public:
   AllFieldStream(Array<u1>* fieldinfo, ConstantPool* constants): FieldStreamBase(fieldinfo, constants) {}
   AllFieldStream(const InstanceKlass* k):      FieldStreamBase(k->fieldinfo_stream(), k->constants()) {}
+};
+
+// Iterate over fields including the ones declared in supertypes
+template<typename FieldStreamType>
+class HierarchicalFieldStream : public StackObj  {
+ private:
+  const Array<InstanceKlass*>* _interfaces;
+  InstanceKlass* _next_klass; // null indicates no more type to visit
+  FieldStreamType _current_stream;
+  int _interface_index;
+
+  void prepare() {
+    _next_klass = next_klass_with_fields();
+    // special case: the initial klass has no fields. If any supertype has any fields, use that directly.
+    // if no such supertype exists, done() will return false already.
+    next_stream_if_done();
+  }
+
+  InstanceKlass* next_klass_with_fields() {
+    assert(_next_klass != nullptr, "reached end of types already");
+    InstanceKlass* result = _next_klass;
+    do  {
+      if (!result->is_interface() && result->super() != nullptr) {
+        result = result->java_super();
+      } else if (_interface_index > 0) {
+        result = _interfaces->at(--_interface_index);
+      } else {
+        return nullptr; // we did not find any more supertypes with fields
+      }
+    } while (FieldStreamType(result).done());
+    return result;
+  }
+
+  // sets _current_stream to the next if the current is done and any more is available
+  void next_stream_if_done() {
+    if (_next_klass != nullptr && _current_stream.done()) {
+      _current_stream = FieldStreamType(_next_klass);
+      assert(!_current_stream.done(), "created empty stream");
+      _next_klass = next_klass_with_fields();
+    }
+  }
+
+ public:
+  HierarchicalFieldStream(InstanceKlass* klass) :
+    _interfaces(klass->transitive_interfaces()),
+    _next_klass(klass),
+    _current_stream(FieldStreamType(klass)),
+    _interface_index(_interfaces->length()) {
+      prepare();
+  }
+
+  void next() {
+    _current_stream.next();
+    next_stream_if_done();
+  }
+
+  bool done() const { return _next_klass == nullptr && _current_stream.done(); }
+
+  // bridge functions from FieldStreamBase
+
+  AccessFlags access_flags() const {
+    return _current_stream.access_flags();
+  }
+
+  FieldInfo::FieldFlags field_flags() const {
+    return _current_stream.field_flags();
+  }
+
+  Symbol* name() const {
+    return _current_stream.name();
+  }
+
+  Symbol* signature() const {
+    return _current_stream.signature();
+  }
+
+  Symbol* generic_signature() const {
+    return _current_stream.generic_signature();
+  }
+
+  int offset() const {
+    return _current_stream.offset();
+  }
+
+  bool is_contended() const {
+    return _current_stream.is_contended();
+  }
+
+  int contended_group() const {
+    return _current_stream.contended_group();
+  }
+
+  FieldInfo to_FieldInfo() {
+    return _current_stream.to_FieldInfo();
+  }
+
+  fieldDescriptor& field_descriptor() const {
+    return _current_stream.field_descriptor();
+  }
+
 };
 
 #endif // SHARE_OOPS_FIELDSTREAMS_HPP
