@@ -47,11 +47,6 @@
 // Forward decls.
 class Space;
 class ContiguousSpace;
-#if INCLUDE_SERIALGC
-class BlockOffsetArray;
-class BlockOffsetArrayContigSpace;
-class BlockOffsetTable;
-#endif
 class Generation;
 class ContiguousSpace;
 class CardTableRS;
@@ -241,7 +236,7 @@ private:
 
   // This the function to invoke when an allocation of an object covering
   // "start" to "end" occurs to update other internal data structures.
-  virtual void alloc_block(HeapWord* start, HeapWord* the_end) { }
+  virtual void update_for_block(HeapWord* start, HeapWord* the_end) { }
 
   GenSpaceMangler* mangler() { return _mangler; }
 
@@ -308,11 +303,6 @@ private:
   // live part of a compacted space ("deadwood" support.)
   virtual size_t allowed_dead_ratio() const { return 0; };
 
-  // Some contiguous spaces may maintain some data structures that should
-  // be updated whenever an allocation crosses a boundary.  This function
-  // initializes these data structures for further updates.
-  virtual void initialize_threshold() { }
-
   // "q" is an object of the given "size" that should be forwarded;
   // "cp" names the generation ("gen") and containing "this" (which must
   // also equal "cp->space").  "compact_top" is where in "this" the
@@ -322,7 +312,7 @@ private:
   // be one, since compaction must succeed -- we go to the first space of
   // the previous generation if necessary, updating "cp"), reset compact_top
   // and then forward.  In either case, returns the new value of "compact_top".
-  // Invokes the "alloc_block" function of the then-current compaction
+  // Invokes the "update_for_block" function of the then-current compaction
   // space.
   virtual HeapWord* forward(oop q, size_t size, CompactPoint* cp,
                     HeapWord* compact_top);
@@ -412,14 +402,12 @@ private:
 #if INCLUDE_SERIALGC
 
 // Class TenuredSpace is used by TenuredGeneration; it supports an efficient
-// "block_start" operation via a BlockOffsetArray (whose BlockOffsetSharedArray
-// may be shared with other spaces.)
+// "block_start" operation via a BlockOffsetTable.
 
 class TenuredSpace: public ContiguousSpace {
   friend class VMStructs;
  protected:
-  BlockOffsetArrayContigSpace _offsets;
-  Mutex _par_alloc_lock;
+  BlockOffsetTable _offsets;
 
   // Mark sweep support
   size_t allowed_dead_ratio() const override;
@@ -428,20 +416,14 @@ class TenuredSpace: public ContiguousSpace {
   TenuredSpace(BlockOffsetSharedArray* sharedOffsetArray,
                MemRegion mr);
 
-  void set_bottom(HeapWord* value) override;
-  void set_end(HeapWord* value) override;
-
-  void clear(bool mangle_space) override;
-
-  inline HeapWord* block_start_const(const void* p) const override;
+  HeapWord* block_start_const(const void* addr) const override;
 
   // Add offset table update.
   inline HeapWord* allocate(size_t word_size) override;
   inline HeapWord* par_allocate(size_t word_size) override;
 
   // MarkSweep support phase3
-  void initialize_threshold() override;
-  void alloc_block(HeapWord* start, HeapWord* end) override;
+  void update_for_block(HeapWord* start, HeapWord* end) override;
 
   void print_on(outputStream* st) const override;
 

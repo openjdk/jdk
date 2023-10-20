@@ -47,20 +47,13 @@
   nonstatic_field(DefNewGeneration,            _from_space,            ContiguousSpace*)        \
   nonstatic_field(DefNewGeneration,            _to_space,              ContiguousSpace*)        \
                                                                                                 \
-  nonstatic_field(BlockOffsetTable,            _bottom,                HeapWord*)               \
-  nonstatic_field(BlockOffsetTable,            _end,                   HeapWord*)               \
+  nonstatic_field(BlockOffsetTable,            _array,                 BlockOffsetSharedArray*) \
                                                                                                 \
   nonstatic_field(BlockOffsetSharedArray,      _reserved,              MemRegion)               \
-  nonstatic_field(BlockOffsetSharedArray,      _end,                   HeapWord*)               \
   nonstatic_field(BlockOffsetSharedArray,      _vs,                    VirtualSpace)            \
   nonstatic_field(BlockOffsetSharedArray,      _offset_array,          u_char*)                 \
                                                                                                 \
-  nonstatic_field(BlockOffsetArray,            _array,                 BlockOffsetSharedArray*) \
-  nonstatic_field(BlockOffsetArray,            _sp,                    Space*)                  \
-  nonstatic_field(BlockOffsetArrayContigSpace, _next_offset_threshold, HeapWord*)               \
-  nonstatic_field(BlockOffsetArrayContigSpace, _next_offset_index,     size_t)                  \
-                                                                                                \
-  nonstatic_field(TenuredSpace,                _offsets,               BlockOffsetArray)
+  nonstatic_field(TenuredSpace,                _offsets,               BlockOffsetTable)
 
 #define VM_TYPES_SERIALGC(declare_type,                                       \
                           declare_toplevel_type,                              \
@@ -75,8 +68,6 @@
   declare_toplevel_type(TenuredGeneration*)                                   \
   declare_toplevel_type(BlockOffsetSharedArray)                               \
   declare_toplevel_type(BlockOffsetTable)                                     \
-           declare_type(BlockOffsetArray,             BlockOffsetTable)       \
-           declare_type(BlockOffsetArrayContigSpace,  BlockOffsetArray)       \
   declare_toplevel_type(BlockOffsetSharedArray*)
 
 #define VM_INT_CONSTANTS_SERIALGC(declare_constant,                           \

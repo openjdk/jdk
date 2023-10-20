@@ -31,17 +31,6 @@
 #include "runtime/safepoint.hpp"
 
 //////////////////////////////////////////////////////////////////////////
-// BlockOffsetTable inlines
-//////////////////////////////////////////////////////////////////////////
-inline HeapWord* BlockOffsetTable::block_start(const void* addr) const {
-  if (addr >= _bottom && addr < _end) {
-    return block_start_unsafe(addr);
-  } else {
-    return nullptr;
-  }
-}
-
-//////////////////////////////////////////////////////////////////////////
 // BlockOffsetSharedArray inlines
 //////////////////////////////////////////////////////////////////////////
 inline size_t BlockOffsetSharedArray::index_for(const void* p) const {
@@ -61,12 +50,6 @@ inline HeapWord* BlockOffsetSharedArray::address_for_index(size_t index) const {
   assert(result >= _reserved.start() && result < _reserved.end(),
          "bad address from index");
   return result;
-}
-
-inline void BlockOffsetSharedArray::check_reducing_assertion(bool reducing) {
-    assert(reducing || !SafepointSynchronize::is_at_safepoint() || init_to_zero() ||
-           Thread::current()->is_VM_thread() ||
-           Thread::current()->is_ConcurrentGC_thread(), "Crack");
 }
 
 #endif // SHARE_GC_SERIAL_SERIALBLOCKOFFSETTABLE_INLINE_HPP
