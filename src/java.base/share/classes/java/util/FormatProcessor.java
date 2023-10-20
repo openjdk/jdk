@@ -237,15 +237,15 @@ public final class FormatProcessor implements Processor<String, RuntimeException
             }
             int off = new Formatter.FormatSpecifierParser(null, c, i, fragment, max)
                     .parse();
-            if (off > 0) {
-                if (i + off == max && needed) {
-                    return true;
-                }
-                String group = fragment.substring(i - 1, i + off);
-                throw new MissingFormatArgumentException(group + " is not immediately followed by an embedded expression");
-            } else {
-                throw new UnknownFormatConversionException(String.valueOf(c));
+            if (off == 0) {
+                return false;
             }
+            if (i + off == max && needed) {
+                return true;
+            }
+            throw new MissingFormatArgumentException(
+                    fragment.substring(i - 1, i + off)
+                    + " is not immediately followed by an embedded expression");
         }
         return false;
     }
