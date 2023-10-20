@@ -22,8 +22,19 @@
  */
 
 /*
- * @test
- * @run testng/othervm --enable-native-access=ALL-UNNAMED SafeFunctionAccessTest
+ * @test id=specialized
+ * @run testng/othervm
+ *  -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
+ *  --enable-native-access=ALL-UNNAMED
+ *  SafeFunctionAccessTest
+ */
+
+/*
+ * @test id=interpreted
+ * @run testng/othervm
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
+ *   --enable-native-access=ALL-UNNAMED
+ *   SafeFunctionAccessTest
  */
 
 import java.lang.foreign.Arena;
