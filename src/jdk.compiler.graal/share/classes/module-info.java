@@ -33,7 +33,7 @@
   * module descriptor.
   *
   * @moduleGraph
-  * @since 9
+  * @since 22
   */
 
 module jdk.compiler.graal {

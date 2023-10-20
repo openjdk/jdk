@@ -33,7 +33,7 @@
  * module descriptor.
  *
  * @moduleGraph
- * @since 10
+ * @since 22
  */
 module jdk.compiler.graal.management {
     requires jdk.internal.vm.ci;
