@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8318306
- * @run main/othervm -Xcomp -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation SortingDeoptimizationTest 1e-2 25 50
- * @summary Exercise Arrays.parallelSort
+ * @run main/othervm/timeout=200 -XX:+IgnoreUnrecognizedVMOptions -Xcomp -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -XX:+DeoptimizeALot SortingDeoptimizationTest 1e-2 100 50
+ * @summary Exercise Arrays.parallelSort when -XX:+DeoptimizeALot is enabled
  *
  */
 
