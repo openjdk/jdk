@@ -2079,6 +2079,10 @@ public class JFileChooser extends JComponent implements Accessible {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * @param enabled {@inheritDoc}
+     */
     @Override
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
