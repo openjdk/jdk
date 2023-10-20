@@ -33,7 +33,7 @@ class ObjectStartArray;
 class PSPromotionManager;
 
 class PSCardTable: public CardTable {
-  friend class StripeShadowCardTable;
+  friend class PSStripeShadowCardTable;
   static constexpr size_t num_cards_in_stripe = 128;
   static_assert(num_cards_in_stripe >= 1, "progress");
 

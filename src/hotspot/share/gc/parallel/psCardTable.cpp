@@ -138,7 +138,7 @@ void PSCardTable::pre_scavenge(HeapWord* old_gen_bottom, uint active_workers) {
   _preprocessing_active_workers = active_workers;
 }
 
-class StripeShadowCardTable {
+class PSStripeShadowCardTable {
   typedef CardTable::CardValue CardValue;
 
   const uint _card_shift;
@@ -147,17 +147,17 @@ class StripeShadowCardTable {
   const CardValue* _table_base;
 
 public:
-  StripeShadowCardTable(PSCardTable* pst, HeapWord* const start, HeapWord* const end) :
+  PSStripeShadowCardTable(PSCardTable* pst, HeapWord* const start, HeapWord* const end) :
     _card_shift(CardTable::card_shift()),
     _card_size(CardTable::card_size()),
     _table_base(_table - (uintptr_t(start) >> _card_shift)) {
-    // The end of the last stripe may not be card aligned as it is equal to old
-    // gen top at scavenge start. We must not clear the card containing old gen
-    // top if it is not card aligned because then there are likely promoted
-    // objects on the same card and it could be marked dirty because of
-    // them. That's why clear_length is aligned down.
     size_t stripe_byte_size = pointer_delta(end, start) * HeapWordSize;
     size_t copy_length = align_up(stripe_byte_size, _card_size) >> _card_shift;
+    // The end of the last stripe may not be card aligned as it is equal to old
+    // gen top at scavenge start. We should not clear the card containing old gen
+    // top if not card aligned because there can be promoted objects on that
+    // same card. If it was marked dirty because of the promoted objects and we
+    // cleared it, we would loose a card mark.
     size_t clear_length = align_down(stripe_byte_size, _card_size) >> _card_shift;
     CardValue* stripe_start_card = pst->byte_for(start);
     memcpy(_table, stripe_start_card, copy_length);
@@ -214,7 +214,7 @@ void PSCardTable::process_range(Func&& object_start,
   // The "shadow" table is a copy of the card table entries of the current stripe.
   // It is used to separate card reading, clearing and redirtying which reduces
   // complexity significantly.
-  StripeShadowCardTable sct(this, start, end);
+  PSStripeShadowCardTable sct(this, start, end);
 
   // end might not be card-aligned.
   const CardValue* end_card = sct.card_for(end - 1) + 1;
