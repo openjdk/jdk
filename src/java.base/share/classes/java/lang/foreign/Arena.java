@@ -43,9 +43,10 @@ import java.lang.foreign.MemorySegment.Scope;
  * to obtain native segments.
  * <p>
  * The simplest arena is the {@linkplain Arena#global() global arena}. The global arena
- * features an <em>unbounded lifetime</em>. As such, native segments allocated with the global arena are always
- * accessible and their backing regions of memory are never deallocated. Moreover, memory segments allocated with the
- * global arena can be {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} from any thread.
+ * features an <em>unbounded lifetime</em>. The scope of the global arena is the global scope.
+ * As such, native segments allocated with the global arena are always accessible and their backing regions
+ * of memory are never deallocated.
+ * Moreover, memory segments allocated with the global arena can be {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} from any thread.
  * {@snippet lang = java:
  * MemorySegment segment = Arena.global().allocate(100, 1); // @highlight regex='global()'
  * ...
@@ -53,7 +54,8 @@ import java.lang.foreign.MemorySegment.Scope;
  *}
  * <p>
  * Alternatively, clients can obtain an {@linkplain Arena#ofAuto() automatic arena}, that is an arena
- * which features a <em>bounded lifetime</em> that is managed, automatically, by the garbage collector. As such, the regions
+ * which features a <em>bounded lifetime</em> that is managed, automatically, by the garbage collector. The scope
+ * of an automatic arena is an automatic scope. As such, the regions
  * of memory backing memory segments allocated with the automatic arena are deallocated at some unspecified time
  * <em>after</em> the automatic arena (and all the segments allocated by it) becomes
  * <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>, as shown below:
@@ -67,11 +69,9 @@ import java.lang.foreign.MemorySegment.Scope;
  * Rather than leaving deallocation in the hands of the Java runtime, clients will often wish to exercise control over
  * the timing of deallocation for regions of memory that back memory segments. Two kinds of arenas support this,
  * namely {@linkplain #ofConfined() confined} and {@linkplain #ofShared() shared} arenas. They both feature
- * bounded lifetimes that are managed manually. For instance, the lifetime of a confined arena starts when the confined
- * arena is created, and ends when the confined arena is {@linkplain #close() closed}. As a result, the regions of memory
- * backing memory segments allocated with a confined arena are deallocated when the confined arena is closed.
- * When this happens, all the segments allocated with the confined arena are invalidated, and subsequent access
- * operations on these segments will fail {@link IllegalStateException}:
+ * bounded lifetimes that are managed manually. For instance, when a confined arena is {@linkplain #close() closed}
+ * successfully, its scope is {@linkplain Scope#isAlive() invalidated}. As a result, all the memory segments allocated
+ * by the arena can no longer be accessed, and their regions of memory are deallocated:
  *
  * {@snippet lang = java:
  * MemorySegment segment = null;
@@ -219,7 +219,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      */
     static Arena global() {
         class Holder {
-            static final Arena GLOBAL = MemorySessionImpl.GLOBAL.asArena();
+            static final Arena GLOBAL = MemorySessionImpl.GLOBAL_SESSION.asArena();
         }
         return Holder.GLOBAL;
     }
