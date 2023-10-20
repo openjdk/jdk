@@ -519,7 +519,7 @@ public class SocketConnection extends BasicSocketConnection {
         } catch (EOFException e) {
             e.printStackTrace(logger.getOutStream());
             throw new Failure("Caught EOFException while reading an object from " + name + " connection."
-                    + " Check if debugee process is exited (crashed, killed) before responded.\n\t");
+                    + " Check if debuggee process exited prematurely (crashed or killed).\n\t");
         } catch (Exception e) {
             e.printStackTrace(logger.getOutStream());
             throw new Failure("Caught Exception while reading an object from " + name + " connection:\n\t" + e);
