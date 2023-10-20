@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class NewWriter {
     private static final String STRING = "test";
     private static final int COUNT = 5;
-    private static final int EXPECTED = (STRING.length() + 1)*COUNT;
+    private static final int EXPECTED = COUNT*STRING.length();
     private int actual = 0;
 
     @Test
@@ -73,7 +73,6 @@ public class NewWriter {
                 writer.write(STRING);
                 writer.flush();
                 System.out.println(i);
-                actual++;
             }
         }
         assertEquals(EXPECTED, actual);
