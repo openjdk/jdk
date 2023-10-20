@@ -112,7 +112,7 @@ public class HtmlConfiguration extends BaseConfiguration {
      * 2. items for elements are added in bulk before generating the index files
      * 3. additional items are added as needed
      */
-    public HtmlIndexBuilder mainIndex;
+    public HtmlIndexBuilder indexBuilder;
 
     /**
      * The collection of deprecated items, if any, to be displayed on the deprecated-list page,
@@ -307,7 +307,7 @@ public class HtmlConfiguration extends BaseConfiguration {
             }
         }
         if (options.createIndex()) {
-            mainIndex = new HtmlIndexBuilder(this);
+            indexBuilder = new HtmlIndexBuilder(this);
         }
         docPaths = new DocPaths(utils);
         setCreateOverview();

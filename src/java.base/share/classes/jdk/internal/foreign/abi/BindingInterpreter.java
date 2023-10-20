@@ -49,12 +49,12 @@ public class BindingInterpreter {
     }
 
     @FunctionalInterface
-    interface StoreFunc {
+    public interface StoreFunc {
         void store(VMStorage storage, Class<?> type, Object o);
     }
 
     @FunctionalInterface
-    interface LoadFunc {
+    public interface LoadFunc {
         Object load(VMStorage storage, Class<?> type);
     }
 }

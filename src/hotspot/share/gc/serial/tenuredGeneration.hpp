@@ -26,7 +26,7 @@
 #define SHARE_GC_SERIAL_TENUREDGENERATION_HPP
 
 #include "gc/serial/cSpaceCounters.hpp"
-#include "gc/shared/generation.hpp"
+#include "gc/serial/generation.hpp"
 #include "gc/shared/gcStats.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "utilities/macros.hpp"
@@ -84,8 +84,6 @@ class TenuredGeneration: public Generation {
   void compute_new_size_inner();
  public:
   virtual void compute_new_size();
-
-  virtual void invalidate_remembered_set();
 
   // Grow generation with specified size (returns false if unable to grow)
   bool grow_by(size_t bytes);

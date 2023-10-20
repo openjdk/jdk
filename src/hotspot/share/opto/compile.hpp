@@ -180,12 +180,16 @@ class Options {
   const bool _do_reduce_allocation_merges;  // Do try to reduce allocation merges.
   const bool _eliminate_boxing;      // Do boxing elimination.
   const bool _do_locks_coarsening;   // Do locks coarsening
+  const bool _do_superword;          // Do SuperWord
   const bool _install_code;          // Install the code that was compiled
  public:
-  Options(bool subsume_loads, bool do_escape_analysis,
+  Options(bool subsume_loads,
+          bool do_escape_analysis,
           bool do_iterative_escape_analysis,
           bool do_reduce_allocation_merges,
-          bool eliminate_boxing, bool do_locks_coarsening,
+          bool eliminate_boxing,
+          bool do_locks_coarsening,
+          bool do_superword,
           bool install_code) :
           _subsume_loads(subsume_loads),
           _do_escape_analysis(do_escape_analysis),
@@ -193,6 +197,7 @@ class Options {
           _do_reduce_allocation_merges(do_reduce_allocation_merges),
           _eliminate_boxing(eliminate_boxing),
           _do_locks_coarsening(do_locks_coarsening),
+          _do_superword(do_superword),
           _install_code(install_code) {
   }
 
@@ -204,6 +209,7 @@ class Options {
        /* do_reduce_allocation_merges = */ false,
        /* eliminate_boxing = */ false,
        /* do_lock_coarsening = */ false,
+       /* do_superword = */ true,
        /* install_code = */ true
     );
   }
@@ -512,9 +518,9 @@ private:
   void print_inlining_assert_ready();
   void print_inlining_reset();
 
-  void print_inlining(ciMethod* method, int inline_level, int bci, const char* msg = nullptr) {
+  void print_inlining(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr) {
     stringStream ss;
-    CompileTask::print_inlining_inner(&ss, method, inline_level, bci, msg);
+    CompileTask::print_inlining_inner(&ss, method, inline_level, bci, result, msg);
     print_inlining_stream()->print("%s", ss.freeze());
   }
 
@@ -578,6 +584,7 @@ private:
   bool              should_install_code() const { return _options._install_code; }
   /** Do locks coarsening. */
   bool              do_locks_coarsening() const { return _options._do_locks_coarsening; }
+  bool              do_superword() const        { return _options._do_superword; }
 
   // Other fixed compilation parameters.
   ciMethod*         method() const              { return _method; }

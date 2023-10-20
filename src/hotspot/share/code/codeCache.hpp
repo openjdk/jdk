@@ -117,7 +117,7 @@ class CodeCache : AllStatic {
   // Creates a new heap with the given name and size, containing CodeBlobs of the given type
   static void add_heap(ReservedSpace rs, const char* name, CodeBlobType code_blob_type);
   static CodeHeap* get_code_heap_containing(void* p);         // Returns the CodeHeap containing the given pointer, or nullptr
-  static CodeHeap* get_code_heap(const CodeBlob* cb);         // Returns the CodeHeap for the given CodeBlob
+  static CodeHeap* get_code_heap(const void* cb);             // Returns the CodeHeap for the given CodeBlob
   static CodeHeap* get_code_heap(CodeBlobType code_blob_type);         // Returns the CodeHeap for the given CodeBlobType
   // Returns the name of the VM option to set the size of the corresponding CodeHeap
   static const char* get_code_heap_flag_name(CodeBlobType code_blob_type);
@@ -397,10 +397,10 @@ template <class T, class Filter, bool is_relaxed> class CodeBlobIterator : publi
     // If set to nullptr, initialized by first call to next()
     _code_blob = nm;
     if (nm != nullptr) {
-      while(!(*_heap)->contains_blob(_code_blob)) {
+      while(!(*_heap)->contains(_code_blob)) {
         ++_heap;
       }
-      assert((*_heap)->contains_blob(_code_blob), "match not found");
+      assert((*_heap)->contains(_code_blob), "match not found");
     }
   }
 

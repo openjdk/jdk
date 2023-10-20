@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import java.util.TimeZone;
 /*
  * @test
  * @summary Tests that the Properties.store() APIs generate output that is reproducible
- * @bug 8231640 8282023
+ * @bug 8231640 8282023 8316540
  * @library /test/lib
  * @run driver StoreReproducibilityTest
  */
@@ -92,7 +92,7 @@ public class StoreReproducibilityTest {
         for (int i = 0; i < 5; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
-            final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+            final ProcessBuilder processBuilder = ProcessTools.createTestJvm(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
@@ -134,10 +134,10 @@ public class StoreReproducibilityTest {
         for (int i = 0; i < 5; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
-            final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+            final ProcessBuilder processBuilder = ProcessTools.createTestJvm(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                     "-Djava.security.manager",
-                    "-Djava.security.policy=" + policyFile.toString(),
+                    "-Djava.security.policy=" + policyFile,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -178,10 +178,10 @@ public class StoreReproducibilityTest {
         for (int i = 0; i < 5; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
-            final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+            final ProcessBuilder processBuilder = ProcessTools.createTestJvm(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                     "-Djava.security.manager",
-                    "-Djava.security.policy=" + policyFile.toString(),
+                    "-Djava.security.policy=" + policyFile,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -208,7 +208,7 @@ public class StoreReproducibilityTest {
         for (int i = 0; i < 2; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
-            final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+            final ProcessBuilder processBuilder = ProcessTools.createTestJvm(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
@@ -240,8 +240,9 @@ public class StoreReproducibilityTest {
     private static void testEmptySysPropValue() throws Exception {
         for (int i = 0; i < 2; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
-            final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
-                    "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + "",
+            final ProcessBuilder processBuilder = ProcessTools.createTestJvm(
+                    "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=",
+                    "-Duser.timezone=UTC",
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -271,7 +272,7 @@ public class StoreReproducibilityTest {
         for (int i = 0; i < 2; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
-            final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+            final ProcessBuilder processBuilder = ProcessTools.createTestJvm(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
@@ -300,7 +301,7 @@ public class StoreReproducibilityTest {
             for (int i = 0; i < 2; i++) {
                 final Path tmpFile = Files.createTempFile("8231640", ".props");
                 storedFiles.add(tmpFile);
-                final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+                final ProcessBuilder processBuilder = ProcessTools.createTestJvm(
                         "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                         StoreTest.class.getName(),
                         tmpFile.toString(),
@@ -342,7 +343,7 @@ public class StoreReproducibilityTest {
             for (int i = 0; i < 2; i++) {
                 final Path tmpFile = Files.createTempFile("8231640", ".props");
                 storedFiles.add(tmpFile);
-                final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+                final ProcessBuilder processBuilder = ProcessTools.createTestJvm(
                         "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                         StoreTest.class.getName(),
                         tmpFile.toString(),
@@ -416,6 +417,9 @@ public class StoreReproducibilityTest {
      * Verifies that the date comment in the {@code destFile} can be parsed using the
      * "EEE MMM dd HH:mm:ss zzz uuuu" format and the time represented by it is {@link Date#after(Date) after}
      * the passed {@code date}
+     * The JVM runtime to invoke this method should set the time zone to UTC, i.e, specify
+     * "-Duser.timezone=UTC" at the command line. Otherwise, it will fail with some time
+     * zones that have ambiguous short names, such as "IST"
      */
     private static void assertCurrentDate(final Path destFile, final Date date) throws Exception {
         final String dateComment = findNthComment(destFile, 2);
@@ -440,7 +444,7 @@ public class StoreReproducibilityTest {
     private static String findNthComment(Path file, int commentIndex) throws IOException {
         List<String> comments = new ArrayList<>();
         try (final BufferedReader reader = Files.newBufferedReader(file)) {
-            String line = null;
+            String line;
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("#")) {
                     comments.add(line.substring(1));

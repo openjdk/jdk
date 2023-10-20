@@ -23,23 +23,22 @@
  */
 
 /**
- * @test SharedTrampolineTest
+ * @test SharedTrampolineTest id=C2
  * @summary Checks that trampolines can be shared for static method.
  * @bug 8280152
  * @library /test/lib
  *
+ * @requires vm.opt.TieredCompilation == null
  * @requires os.arch=="aarch64" | os.arch=="riscv64"
  * @requires vm.debug
  *
- * @run driver compiler.sharedstubs.SharedTrampolineTest
+ * @run driver compiler.sharedstubs.SharedTrampolineTest -XX:-TieredCompilation
  */
 
 package compiler.sharedstubs;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.regex.Pattern;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -47,10 +46,9 @@ import jdk.test.lib.process.ProcessTools;
 public class SharedTrampolineTest {
     private final static int ITERATIONS_TO_HEAT_LOOP = 20_000;
 
-    private static void runTest(String compiler, String test) throws Exception {
+    private static void runTest(String test) throws Exception {
         String testClassName = SharedTrampolineTest.class.getName() + "$" + test;
         ArrayList<String> command = new ArrayList<String>();
-        command.add(compiler);
         command.add("-XX:+UnlockDiagnosticVMOptions");
         command.add("-Xbatch");
         command.add("-XX:+PrintRelocations");
@@ -60,7 +58,7 @@ public class SharedTrampolineTest {
         command.add(testClassName);
         command.add("a");
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(command);
+        ProcessBuilder pb = ProcessTools.createTestJvm(command);
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 
@@ -72,12 +70,9 @@ public class SharedTrampolineTest {
     }
 
     public static void main(String[] args) throws Exception {
-        List<String> compilers = List.of("-XX:-TieredCompilation" /* C2 */);
-        List<String> tests = List.of("StaticMethodTest");
-        for (String compiler : compilers) {
-            for (String test : tests) {
-                runTest(compiler, test);
-            }
+        String[] tests = new String[] {"StaticMethodTest"};
+        for (String test : tests) {
+            runTest(test);
         }
     }
 
