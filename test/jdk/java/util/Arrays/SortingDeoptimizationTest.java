@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @build SortingDeoptimizationTest
+ * @bug 8318306
  * @run main/othervm -Xcomp -ea -esa -XX:CompileThreshold=25 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -XX:+DeoptimizeALot SortingDeoptimizationTest 1e-2 100 50
  * @summary Exercise Arrays.parallelSort
  *
