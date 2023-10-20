@@ -1134,6 +1134,7 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
   }
 
   double t = os::elapsedTime();
+  st->print(" elapsed time: ");
   print_elapsed_time(st, t);
   st->cr();
 }
