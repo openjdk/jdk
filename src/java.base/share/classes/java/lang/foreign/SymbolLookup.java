@@ -211,10 +211,6 @@ public interface SymbolLookup {
      * For instance, if the provided arena is a confined arena, the library
      * associated with the returned lookup will be unloaded when the provided confined arena is
      * {@linkplain Arena#close() closed}.
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption.
      *
      * @implNote The process of resolving a library name is OS-specific. For instance, in a POSIX-compliant OS,
      * the library name is resolved according to the specification of the {@code dlopen} function for that OS.
@@ -245,10 +241,6 @@ public interface SymbolLookup {
      * For instance, if the provided arena is a confined arena, the library
      * associated with the returned lookup will be unloaded when the provided confined arena is
      * {@linkplain Arena#close() closed}.
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption.
      *
      * @implNote On Linux, the functionalities provided by this factory method and the returned symbol lookup are
      * implemented using the {@code dlopen}, {@code dlsym} and {@code dlclose} functions.
