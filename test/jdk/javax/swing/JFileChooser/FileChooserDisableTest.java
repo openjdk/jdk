@@ -44,7 +44,7 @@ import java.util.function.Predicate;
  * @test
  * @bug 4365952
  * @key headful
- * @summary Test to check is JFilechooser can be Disabled
+ * @summary Test to check if JFileChooser can be disabled
  * @run main FileChooserDisableTest
  */
 
