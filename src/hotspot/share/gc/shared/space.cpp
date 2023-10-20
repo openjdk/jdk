@@ -46,24 +46,6 @@
 #include "gc/serial/defNewGeneration.hpp"
 #endif
 
-void Space::initialize(MemRegion mr,
-                       bool clear_space,
-                       bool mangle_space) {
-  HeapWord* bottom = mr.start();
-  HeapWord* end    = mr.end();
-  assert(Universe::on_page_boundary(bottom) && Universe::on_page_boundary(end),
-         "invalid space boundaries");
-  set_bottom(bottom);
-  set_end(end);
-  if (clear_space) clear(mangle_space);
-}
-
-void Space::clear(bool mangle_space) {
-  if (ZapUnusedHeapArea && mangle_space) {
-    mangle_unused_area();
-  }
-}
-
 ContiguousSpace::ContiguousSpace(): Space(),
   _compaction_top(nullptr),
   _next_compaction_space(nullptr),
@@ -79,15 +61,25 @@ void ContiguousSpace::initialize(MemRegion mr,
                                  bool clear_space,
                                  bool mangle_space)
 {
-  Space::initialize(mr, clear_space, mangle_space);
-  set_compaction_top(bottom());
+  HeapWord* bottom = mr.start();
+  HeapWord* end    = mr.end();
+  assert(Universe::on_page_boundary(bottom) && Universe::on_page_boundary(end),
+         "invalid space boundaries");
+  set_bottom(bottom);
+  set_end(end);
+  if (clear_space) {
+    clear(mangle_space);
+  }
+  set_compaction_top(bottom);
   _next_compaction_space = nullptr;
 }
 
 void ContiguousSpace::clear(bool mangle_space) {
   set_top(bottom());
   set_saved_mark();
-  Space::clear(mangle_space);
+  if (ZapUnusedHeapArea && mangle_space) {
+    mangle_unused_area();
+  }
   _compaction_top = bottom();
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ package gc.arguments;
 /*
  * @test TestInitialTenuringThreshold
  * @bug 8014765
- * @requires vm.gc.Parallel
+ * @requires vm.gc.Parallel & vm.opt.InitialTenuringThreshold == null & vm.opt.MaxTenuringThreshold == null
  * @summary Tests argument processing for initial tenuring threshold
  * @library /test/lib
  * @library /
@@ -41,7 +41,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestInitialTenuringThreshold {
 
   public static void runWithThresholds(int initial, int max, boolean shouldfail) throws Exception {
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(
+    ProcessBuilder pb = GCArguments.createTestJvm(
       "-XX:+UseParallelGC",
       "-XX:InitialTenuringThreshold=" + String.valueOf(initial),
       "-XX:MaxTenuringThreshold=" + String.valueOf(max),
@@ -58,8 +58,9 @@ public class TestInitialTenuringThreshold {
 
 
   public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(
+    ProcessBuilder pb = GCArguments.createTestJvm(
       // some value below the default value of InitialTenuringThreshold of 7
+      "-XX:+UseParallelGC",
       "-XX:MaxTenuringThreshold=1",
       "-version"
       );

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,15 @@
 package nsk.jvmti.GetClassFields;
 
 import java.io.PrintStream;
+import java.io.InputStream;
+import java.util.List;
+import java.util.ArrayList;
+
+import jdk.internal.org.objectweb.asm.ClassReader;
+import jdk.internal.org.objectweb.asm.ClassVisitor;
+import jdk.internal.org.objectweb.asm.FieldVisitor;
+import jdk.internal.org.objectweb.asm.Opcodes;
+
 
 public class getclfld007 {
 
@@ -40,7 +49,7 @@ public class getclfld007 {
         }
     }
 
-    native static void check(int i, Class cls);
+    native static void check(Class cls, String[] expectedFields);
     native static int getRes();
 
     public static void main(String args[]) {
@@ -52,20 +61,62 @@ public class getclfld007 {
 
     public static int run(String args[], PrintStream out) {
         try {
-            check(0, Class.forName(InnerClass1.class.getName()));
-            check(1, Class.forName(InnerInterface.class.getName()));
-            check(2, Class.forName(InnerClass2.class.getName()));
-            check(3, Class.forName(OuterClass1.class.getName()));
-            check(4, Class.forName(OuterClass2.class.getName()));
-            check(5, Class.forName(OuterClass3.class.getName()));
-            check(6, Class.forName(OuterInterface1.class.getName()));
-            check(7, Class.forName(OuterInterface2.class.getName()));
-            check(8, Class.forName(OuterClass4.class.getName()));
-            check(9, Class.forName(OuterClass5.class.getName()));
-        } catch (ClassNotFoundException e) {
+            check(Class.forName(InnerClass1.class.getName()));
+            check(Class.forName(InnerInterface.class.getName()));
+            check(Class.forName(InnerClass2.class.getName()));
+            check(Class.forName(OuterClass1.class.getName()));
+            check(Class.forName(OuterClass2.class.getName()));
+            check(Class.forName(OuterClass3.class.getName()));
+            check(Class.forName(OuterInterface1.class.getName()));
+            check(Class.forName(OuterInterface2.class.getName()));
+            check(Class.forName(OuterClass4.class.getName()));
+            check(Class.forName(OuterClass5.class.getName()));
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
         return getRes();
+    }
+
+
+    static void check(Class cls) throws Exception {
+        FieldExplorer explorer = new FieldExplorer(cls);
+        List<String> fields = explorer.get();
+        check(cls, fields.toArray(new String[0]));
+    }
+
+    // helper class to get list of the class fields
+    // in the order they appear in the class file
+    static class FieldExplorer extends ClassVisitor {
+        private final Class cls;
+        private List<String> fieldNameAndSig = new ArrayList<>();
+        private FieldExplorer(Class cls) {
+            super(Opcodes.ASM7);
+            this.cls = cls;
+        }
+
+        @Override
+        public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
+            System.out.println("  field '" + name + "', type = " + descriptor);
+            fieldNameAndSig.add(name);
+            fieldNameAndSig.add(descriptor);
+            return super.visitField(access, name, descriptor, signature, value);
+        }
+
+        private InputStream getClassBytes() throws Exception {
+            String clsName = cls.getName();
+            String clsPath = clsName.replace('.', '/') + ".class";
+            return cls.getClassLoader().getResourceAsStream(clsPath);
+        }
+
+        // each field is represented by 2 Strings in the list: name and type descriptor
+        public List<String> get() throws Exception {
+            System.out.println("Class " + cls.getName());
+            try (InputStream classBytes = getClassBytes()) {
+                ClassReader classReader = new ClassReader(classBytes);
+                classReader.accept(this, 0);
+            }
+            return fieldNameAndSig;
+        }
     }
 
     static class InnerClass1 {
@@ -119,8 +170,13 @@ abstract class OuterClass4 extends OuterClass3 implements OuterInterface2 {
     }
 }
 
+// class with multiple fields to verify correctness of the field order
 class OuterClass5 extends OuterClass4 {
     int fld_i1 = 1;
+    String fld_s1 = "str";
+    int fld_i2 = 2;
+    String fld_s2 = "str2";
+
     public int meth_i1() {
         return 1;
     }
