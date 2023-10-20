@@ -179,14 +179,17 @@ class CodeCache : AllStatic {
 
   // GC support
   static void verify_oops();
-  // Scope object managing code cache unloading behavior.
-  class UnloadingScope: StackObj {
+
+  // Helper scope object managing code cache unlinking behavior, i.e. sets and
+  // restores the closure that determines which nmethods are going to be removed
+  // during the unlinking part of code cache unloading.
+  class UnlinkingScope : StackObj {
     ClosureIsUnloadingBehaviour _is_unloading_behaviour;
     IsUnloadingBehaviour*       _saved_behaviour;
 
   public:
-    UnloadingScope(BoolObjectClosure* is_alive);
-    ~UnloadingScope();
+    UnlinkingScope(BoolObjectClosure* is_alive);
+    ~UnlinkingScope();
   };
 
   // Code cache unloading heuristics
