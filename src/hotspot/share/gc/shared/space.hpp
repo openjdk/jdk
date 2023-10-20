@@ -112,17 +112,6 @@ class Space: public CHeapObj<mtGC> {
     return MemRegion(bottom(), saved_mark_word());
   }
 
-  // Initialization.
-  // "initialize" should be called once on a space, before it is used for
-  // any purpose.  The "mr" arguments gives the bounds of the space, and
-  // the "clear_space" argument should be true unless the memory in "mr" is
-  // known to be zeroed.
-  virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
-
-  // The "clear" method must be called on a region that may have
-  // had allocation performed in it, but is now to be considered empty.
-  virtual void clear(bool mangle_space);
-
   // For detecting GC bugs.  Should only be called at GC boundaries, since
   // some unused space may be used as scratch space during GC's.
   // We also call this when expanding a space to satisfy an allocation
@@ -264,9 +253,16 @@ private:
   ContiguousSpace();
   ~ContiguousSpace();
 
-  void initialize(MemRegion mr, bool clear_space, bool mangle_space) override;
+  // Initialization.
+  // "initialize" should be called once on a space, before it is used for
+  // any purpose.  The "mr" arguments gives the bounds of the space, and
+  // the "clear_space" argument should be true unless the memory in "mr" is
+  // known to be zeroed.
+  void initialize(MemRegion mr, bool clear_space, bool mangle_space);
 
-  void clear(bool mangle_space) override;
+  // The "clear" method must be called on a region that may have
+  // had allocation performed in it, but is now to be considered empty.
+  virtual void clear(bool mangle_space);
 
   // Used temporarily during a compaction phase to hold the value
   // top should have when compaction is complete.

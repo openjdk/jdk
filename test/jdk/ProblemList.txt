@@ -442,7 +442,7 @@ java/awt/event/MouseEvent/ClickDuringKeypress/ClickDuringKeypress.java 8233568 m
 java/awt/event/KeyEvent/DeadKey/DeadKeyMacOSXInputText.java 8233568 macosx-all
 java/awt/event/KeyEvent/DeadKey/deadKeyMacOSX.java 8233568 macosx-all
 java/awt/TrayIcon/RightClickWhenBalloonDisplayed/RightClickWhenBalloonDisplayed.java 8238720 windows-all
-java/awt/PopupMenu/PopupMenuLocation.java 8238720,8315878 windows-all,macosx-aarch64
+java/awt/PopupMenu/PopupMenuLocation.java 8259913,8315878 windows-all,macosx-aarch64
 java/awt/GridLayout/ComponentPreferredSize/ComponentPreferredSize.java 8238720 windows-all
 java/awt/GridLayout/ChangeGridSize/ChangeGridSize.java   8238720 windows-all
 java/awt/event/MouseEvent/FrameMouseEventAbsoluteCoordsTest/FrameMouseEventAbsoluteCoordsTest.java 8238720 windows-all
@@ -724,8 +724,6 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 
 # jdk_util
 
-java/util/Locale/LocaleProvidersRun.java                        8268379 macosx-x64
-sun/util/locale/provider/CalendarDataRegression.java            8268379 macosx-x64
 java/util/concurrent/forkjoin/AsyncShutdownNow.java             8286352 linux-all,windows-x64
 java/util/concurrent/ExecutorService/CloseTest.java             8288899 macosx-aarch64
 
