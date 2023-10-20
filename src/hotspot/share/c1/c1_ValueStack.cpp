@@ -306,9 +306,7 @@ void ValueStack::verify() {
   int i;
   for (i = 0; i < stack_size(); i++) {
     Value v = _stack.at(i);
-    if (kind() == ExceptionState || kind() == EmptyExceptionState ||
-        kind() == CallerEmptyExceptionState)
-    {
+    if (kind() == empty_exception_kind(true /* caller */)) {
       assert(v == nullptr, "should be empty");
     } else if (v == nullptr) {
       assert(_stack.at(i - 1)->type()->is_double_word(), "only hi-words are null on stack");
