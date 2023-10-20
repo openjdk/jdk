@@ -2886,13 +2886,33 @@ public final class Formatter implements Closeable, Flushable {
             widthSize = 0;
         }
 
+        /**
+         * If a valid format specifier is found, construct a FormatString and add it to {@link #al}.
+         * The format specifiers for general, character, and numeric types have
+         * the following syntax:
+         *
+         * <blockquote><pre>
+         *   %[argument_index$][flags][width][.precision]conversion
+         * </pre></blockquote>
+         *
+         * As described by the following regular expression:
+         *
+         * <blockquote><pre>
+         *    %(\d+\$)?([-#+ 0,(\<]*)?(\d+)?(\.\d+)?([tT])?([a-zA-Z%])
+         * </pre></blockquote>
+         *
+         * @return the length of the format specifier. If no valid format specifier is found, 0 is returned.
+         */
         int parse() {
-            // %[argument_index$][flags][width][.precision][t]conversion
-            // %(\d+\$)?([-#+ 0,(\<]*)?(\d+)?(\.\d+)?([tT])?([a-zA-Z%])
             int precisionSize = 0;
 
+            // (\d+\$)?
             parseArgument();
+
+            // ([-#+ 0,(\<]*)?
             parseFlag();
+
+            // (\d+)?
             parseWidth();
 
             if (c == '.') {
