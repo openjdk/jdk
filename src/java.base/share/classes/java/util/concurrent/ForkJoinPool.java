@@ -613,18 +613,18 @@ public class ForkJoinPool extends AbstractExecutorService {
      * that not finding tasks doesn't mean that there won't soon be
      * some. Further, a scan may give up under contention, returning
      * even without knowing whether any tasks are still present, which
-     * is OK, given the above signalling rules that will eventually
-     * maintain progress.  Blocking and unblocking via park/unpark can
-     * cause serious slowdowns when tasks are rapidly but irregularly
-     * generated (which is often due to garbage collectors and other
-     * activities). One way to ameliorate is for workers to rescan
-     * multiple times, even when there are unlikely to be tasks. But
-     * this causes enough memory traffic and CAS contention to prefer
-     * using quieter short spinwaits in awaitWork and elsewhere.
-     * Those in awaitWork are set to small values that only cover
-     * near-miss scenarios for inactivate/activate races.  Because idle
-     * workers are often not yet blocked (parked), we use the
-     * WorkQueue parker field to advertise that a waiter actually
+     * is OK given, a secondary check (in awaitWork) needed to cover
+     * deactivation/signal races. Blocking and unblocking via
+     * park/unpark can cause serious slowdowns when tasks are rapidly
+     * but irregularly generated (which is often due to garbage
+     * collectors and other activities). One way to ameliorate is for
+     * workers to rescan multiple times, even when there are unlikely
+     * to be tasks. But this causes enough memory traffic and CAS
+     * contention to prefer using quieter short spinwaits in awaitWork
+     * and elsewhere.  Those in awaitWork are set to small values that
+     * only cover near-miss scenarios for inactivate/activate races.
+     * Because idle workers are often not yet blocked (parked), we use
+     * the WorkQueue parker field to advertise that a waiter actually
      * needs unparking upon signal.
      *
      * Quiescence. Workers scan looking for work, giving up when they
@@ -2024,23 +2024,13 @@ public class ForkJoinPool extends AbstractExecutorService {
         if (w != null) {
             int phase = w.phase, r = w.stackPred; // seed from registerWorker
             for (long window = NO_HISTORY | (r >>> 16);;) {
-                r ^= r << 13; r ^= r >>> 17; r ^= r << 5;  // xorshift
-                if ((runState & STOP) != 0)                // terminating
+                r ^= r << 13; r ^= r >>> 17; r ^= r << 5;   // xorshift
+                if ((runState & STOP) != 0)                 // terminating
                     break;
-                if (window == (window = scan(w, window & WMASK, r)) &&
-                    window >= 0L) {                        // empty scan
-                    long c = ctl;                          // try to inactivate
-                    int idlePhase = phase + IDLE;
-                    long qc = (((phase + (IDLE << 1)) & LMASK) |
-                               ((c - RC_UNIT) & UMASK));
-                    w.stackPred = (int)c;                  // set ctl stack link
-                    w.phase = idlePhase;
-                    if (!compareAndSetCtl(c, qc))
-                        w.phase = phase;                   // contended; back out
-                    else if ((phase = awaitWork(w, qc, idlePhase)) == idlePhase)
-                        break;                             // worker exit
-                    else                                   // clear history
-                        window = NO_HISTORY | (window & SMASK);
+                if ((window = scan(w, window & WMASK, r)) >= 0L) {
+                    if (((phase = awaitWork(w, phase)) & IDLE) != 0)
+                        break;                              // worker exit
+                    window = NO_HISTORY | (window & SMASK); // clear history
                 }
             }
         }
@@ -2084,7 +2074,6 @@ public class ForkJoinPool extends AbstractExecutorService {
                             window = nw | RESCAN;
                             if ((nw != pw || (short)(nw >>> 32) != j) &&
                                 a[nk] != null)
-                            if (nw != pw && a[nk] != null)
                                 signalWork();     // limit propagation
                             if (w != null)        // always true
                                 w.topLevelExec(t, q, j);
@@ -2101,46 +2090,72 @@ public class ForkJoinPool extends AbstractExecutorService {
     }
 
     /**
-     * Awaits signal or termination.
+     * Tries to inactivate, and if successful, awaits signal or termination.
      *
-     * @param queuedCtl ctl at point of inactivation
-     * @param idlePhase w's phase while idle
-     * @return current phase, same as idlePhase for exit
+     * @param w the worker (may be null if already terminated)
+     * @param p current phase
+     * @return current phase, with IDLE set if worker should exit
      */
-    private int awaitWork(WorkQueue w, long queuedCtl, int idlePhase) {
-        int p = idlePhase;
-        int spins = ((((int)(queuedCtl >>> TC_SHIFT)) & SMASK) << 1) | 0x2f;
-        boolean quiescent = (queuedCtl & RC_MASK) <= 0L && quiescent();
-        if (w != null && (runState & STOP) == 0) {
-            while ((p = w.phase) == idlePhase && --spins > 0)
-                Thread.onSpinWait(); // spin for approx #accesses to scan+signal
-            if (p == idlePhase) {               // emulate LockSupport.park
-                long deadline = (quiescent ?    // timeout for trim
-                                 keepAlive + System.currentTimeMillis() : 0L);
-                LockSupport.setCurrentBlocker(this);
-                w.parker = Thread.currentThread();
-                for (;;) {
-                    if ((runState & STOP) != 0 || (p = w.phase) != idlePhase)
-                        break;
-                    U.park(quiescent, deadline);
-                    if ((p = w.phase) != idlePhase || (runState & STOP) != 0)
-                        break;
-                    Thread.interrupted();       // clear status for next park
-                    if (quiescent &&            // trim on timeout
-                        deadline - System.currentTimeMillis() < TIMEOUT_SLOP) {
-                        int id = idlePhase & SMASK;
-                        long sp = w.stackPred & LMASK;
-                        long c = ctl, nc = sp | (UMASK & (c - TC_UNIT));
-                        if (((int)c & SMASK) == id && compareAndSetCtl(c, nc)) {
-                            w.source = DEREGISTERED; // deregisterWorker sentinel
-                            w.phase = idlePhase + IDLE;
-                            break;
+    private int awaitWork(WorkQueue w, int p) {
+        long pc = ctl;
+        int idlePhase = p + IDLE, nextPhase = p + (IDLE << 1);
+        long qc = (nextPhase & LMASK) | ((pc - RC_UNIT) & UMASK);
+        if (w != null) {                            // try to inactivate
+            w.stackPred = (int)pc;                  // set ctl stack link
+            w.phase = idlePhase;
+            if (!compareAndSetCtl(pc, qc))          // contended enque
+                w.phase = nextPhase;                // don't wait
+            else {
+                boolean quiescent = (qc & RC_MASK) <= 0L && quiescent();
+                if ((p = w.phase) != nextPhase && (runState & STOP) == 0) {
+                    WorkQueue[] qs = queues;
+                    int n = (qs == null) ? 0 : qs.length, k = n | 0x1f;
+                    while ((p = w.phase) != nextPhase && --k > 0)
+                        Thread.onSpinWait(); // spin approx #accesses to signal
+                    if (p != nextPhase) {           // recheck queues
+                        for (int i = 0; i < n; ++i) {
+                            WorkQueue q; ForkJoinTask<?>[] a; int cap;
+                            if ((q = qs[i]) != null && (a = q.array) != null &&
+                                (cap = a.length) > 0 &&
+                                a[q.base & (cap - 1)] != null) {
+                                if (ctl == qc && compareAndSetCtl(qc, pc))
+                                    w.phase = p = nextPhase; // release
+                                break;
+                            }
                         }
-                        deadline += keepAlive;  // not at head; restart timer
+                    }
+                    if (p != nextPhase && (p = w.phase) != nextPhase) {
+                        long deadline = (!quiescent ? 0L : // timeout for trim
+                                         keepAlive + System.currentTimeMillis());
+                        LockSupport.setCurrentBlocker(this);
+                        w.parker = Thread.currentThread();
+                        for (;;) {                  // emulate LockSupport.park
+                            if ((runState & STOP) != 0 ||
+                                (p = w.phase) == nextPhase)
+                                break;
+                            U.park(quiescent, deadline);
+                            if ((p = w.phase) == nextPhase ||
+                                (runState & STOP) != 0)
+                                break;
+                            Thread.interrupted();   // clear status for next park
+                            if (quiescent && TIMEOUT_SLOP >
+                                deadline - System.currentTimeMillis()) {
+                                int id = idlePhase & SMASK;
+                                long sp = w.stackPred & LMASK;
+                                long c = ctl, nc = sp | (UMASK & (c - TC_UNIT));
+                                if (((int)c & SMASK) == id &&
+                                    compareAndSetCtl(c, nc)) {
+                                    w.source = DEREGISTERED; // sentinel
+                                    w.phase = nextPhase;
+                                    break;          // trim on timeout
+                                }
+                                deadline += keepAlive; // not head; restart timer
+                            }
+                        }
+                        w.parker = null;
+                        LockSupport.setCurrentBlocker(null);
                     }
                 }
-                w.parker = null;
-                LockSupport.setCurrentBlocker(null);
             }
         }
         return p;
