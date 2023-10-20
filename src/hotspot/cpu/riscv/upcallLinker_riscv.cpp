@@ -114,7 +114,7 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
   __ block_comment("} restore_callee_saved_regs ");
 }
 
-static const int upcall_stub_code_base_size = 2048;
+static const int upcall_stub_code_base_size = 1024;
 static const int upcall_stub_size_per_arg = 16;
 
 address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
@@ -256,7 +256,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   __ block_comment("{ receiver ");
   __ movptr(shuffle_reg, (intptr_t) receiver);
-  __ resolve_jobject(shuffle_reg, t0, t1);
+  __ resolve_global_jobject(shuffle_reg, t0, t1);
   __ mv(j_rarg0, shuffle_reg);
   __ block_comment("} receiver ");
 
