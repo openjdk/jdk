@@ -7517,7 +7517,7 @@ instruct copySignD_reg(fRegD dst, fRegD src1, fRegD src2, immD zero) %{
                   src2 = as_FloatRegister($src2$$reg);
     __ fsgnj_d(dst, src1, src2);
   %}
-  ins_pipe(fp_uop_d);
+  ins_pipe(fp_dop_reg_reg_d);
 %}
 
 instruct copySignF_reg(fRegF dst, fRegF src1, fRegF src2) %{
@@ -7529,7 +7529,7 @@ instruct copySignF_reg(fRegF dst, fRegF src1, fRegF src2) %{
                   src2 = as_FloatRegister($src2$$reg);
     __ fsgnj_s(dst, src1, src2);
   %}
-  ins_pipe(fp_uop_d);
+  ins_pipe(fp_dop_reg_reg_s);
 %}
 
 instruct signumD_reg(fRegD dst, fRegD src, immD zero, fRegD one) %{
