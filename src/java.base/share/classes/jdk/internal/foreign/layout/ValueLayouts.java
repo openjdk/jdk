@@ -59,7 +59,7 @@ public final class ValueLayouts {
     // Suppresses default constructor, ensuring non-instantiability.
     private ValueLayouts() {}
 
-    abstract sealed static class AbstractValueLayout<V extends AbstractValueLayout<V> & ValueLayout> extends AbstractLayout<V> {
+    abstract static sealed class AbstractValueLayout<V extends AbstractValueLayout<V> & ValueLayout> extends AbstractLayout<V> {
 
         static final int ADDRESS_SIZE_BYTES = Unsafe.ADDRESS_SIZE;
 
@@ -372,7 +372,7 @@ public final class ValueLayouts {
      *     <li>{@link ValueLayout.OfFloat}, for {@code float.class}</li>
      *     <li>{@link ValueLayout.OfLong}, for {@code long.class}</li>
      *     <li>{@link ValueLayout.OfDouble}, for {@code double.class}</li>
-     *     <li>{@link ValueLayout.OfAddress}, for {@code MemorySegment.class}</li>
+     *     <li>{@link AddressLayout}, for {@code MemorySegment.class}</li>
      * </ul>
      * @param carrier the value layout carrier.
      * @param order the value layout's byte order.
