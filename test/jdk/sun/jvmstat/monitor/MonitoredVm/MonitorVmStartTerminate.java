@@ -175,28 +175,37 @@ public final class MonitorVmStartTerminate {
             }
         }
 
-        private static final int ARGS_ATTEMPTS = 5;
+        private static final int ARGS_ATTEMPTS = 3;
 
         private boolean hasMainArgs(Integer id, String args) {
-            // As we have seen test timeouts due to missing a notification,
-            // we should retry this attempt to check arguments for a match.
+            VmIdentifier vmid = null;
+            try {
+                vmid = new VmIdentifier("//" + id.intValue());
+            } catch (URISyntaxException e) {
+                System.out.println("hasMainArgs(" + id + "): " + e);
+                return false;
+            }
+            // Retry a failing attempt to check arguments for a match,
+            // as not recognizing a test process will cause timeout and failure.
             for (int i = 0; i < ARGS_ATTEMPTS; i++) {
                 try {
-                    VmIdentifier vmid = new VmIdentifier("//" + id.intValue());
                     MonitoredVm target = host.getMonitoredVm(vmid);
                     String monitoredArgs = MonitoredVmUtil.mainArgs(target);
-                    if (monitoredArgs != null && monitoredArgs.contains(args)) {
-                        System.out.println("hasMainArgs(" + id + "): yes");
+                    System.out.println("hasMainArgs(" + id + "): has main args: '" + monitoredArgs + "'");
+                    if (monitoredArgs == null || monitoredArgs.equals("Unknown")) {
+                        System.out.println("hasMainArgs(" + id + "): retry" );
+                        takeNap();
+                        continue;
+                    } else if (monitoredArgs.contains(args)) {
                         return true;
                     } else {
                         return false;
                     }
-                } catch (URISyntaxException | MonitorException e) {
+                } catch (MonitorException e) {
                     // Process probably not running or not ours, e.g.
                     // sun.jvmstat.monitor.MonitorException: Could not attach to PID
                     System.out.println("hasMainArgs(" + id + "): " + e);
                 }
-                takeNap();
             }
             return false;
         }
@@ -331,7 +340,7 @@ public final class MonitorVmStartTerminate {
 
     public static void takeNap() {
         try {
-            Thread.sleep(100);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             // ignore
         }
