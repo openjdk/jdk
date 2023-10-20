@@ -150,13 +150,6 @@ class ConstantPoolCache: public MetaspaceObj {
     int itable_index                             // index into itable for the method
   );
 
-  void set_method_handle(
-    int method_index,
-    const CallInfo &call_info                    // Call link information
-  );
-
-  // Common code for invokedynamic and MH invocations.
-
   // The "appendix" is an optional call-site-specific parameter which is
   // pushed by the JVM at the end of the argument list.  This argument may
   // be a MethodType for the MH.invokes and a CallSite for an invokedynamic
@@ -170,9 +163,8 @@ class ConstantPoolCache: public MetaspaceObj {
   // the Method* bound to the site.  This means that static and dynamic
   // resolution logic needs to make slightly different assessments about the
   // number and types of arguments.
-  void set_method_handle_common(
+  ResolvedMethodEntry* set_method_handle(
     int method_index,
-    Bytecodes::Code invoke_code,                 // _invokehandle or _invokedynamic
     const CallInfo &call_info                    // Call link information
   );
 
@@ -246,6 +238,7 @@ class ConstantPoolCache: public MetaspaceObj {
   bool save_and_throw_indy_exc(const constantPoolHandle& cpool, int cpool_index, int index, constantTag tag, TRAPS);
   oop set_dynamic_call(const CallInfo &call_info, int index);
   oop appendix_if_resolved(int method_index) const;
+  oop appendix_if_resolved(ResolvedMethodEntry* method_entry) const;
 
   // Printing
   void print_on(outputStream* st) const;

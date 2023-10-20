@@ -428,10 +428,8 @@ class CompileReplay : public StackObj {
         Symbol* name = cp->name_ref_at(index, bytecode.code());
         assert(MethodHandles::is_signature_polymorphic_name(holder, name), "");
 #endif
-        ResolvedMethodEntry* method_entry = cp->cache()->resolved_method_entry_at(index);
-        cp->cache()->set_method_handle(index, callInfo);
-
-        appendix = cp->cache()->appendix_if_resolved(index);
+        ResolvedMethodEntry* method_entry = cp->cache()->set_method_handle(index, callInfo);
+        appendix = cp->cache()->appendix_if_resolved(method_entry);
         adapter_method = method_entry->method();
         pool_index = method_entry->constant_pool_index();
       } else {

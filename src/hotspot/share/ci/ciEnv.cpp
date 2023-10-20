@@ -1539,7 +1539,7 @@ void ciEnv::process_invokehandle(const constantPoolHandle &cp, int index, JavaTh
     if (method_entry->is_resolved(Bytecodes::_invokehandle)) {
       // process the adapter
       Method* adapter = method_entry->method();
-      oop appendix = cp->cache()->appendix_if_resolved(index);
+      oop appendix = cp->cache()->appendix_if_resolved(method_entry);
       record_call_site_method(thread, adapter);
       // process the appendix
       {

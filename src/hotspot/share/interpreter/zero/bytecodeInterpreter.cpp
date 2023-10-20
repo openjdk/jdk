@@ -2289,7 +2289,7 @@ run:
 
         if (entry->has_appendix()) {
           constantPoolHandle cp(THREAD, METHOD->constants());
-          SET_STACK_OBJECT(cp->cache()->appendix_if_resolved(index), 0);
+          SET_STACK_OBJECT(cp->cache()->appendix_if_resolved(entry), 0);
           MORE_STACK(1);
         }
 

@@ -835,6 +835,7 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
   // resolve method
   CallInfo info;
   constantPoolHandle pool(current, last_frame.method()->constants());
+  ConstantPoolCache* cache = pool->cache();
 
   methodHandle resolved_method;
 
@@ -864,7 +865,7 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
   } // end JvmtiHideSingleStepping
 
   // check if link resolution caused cpCache to be updated
-  if (pool->cache()->resolved_method_entry_at(method_index)->is_resolved(bytecode)) return;
+  if (cache->resolved_method_entry_at(method_index)->is_resolved(bytecode)) return;
 
 #ifdef ASSERT
   if (bytecode == Bytecodes::_invokeinterface) {
@@ -898,13 +899,13 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
 
   switch (info.call_kind()) {
   case CallInfo::direct_call:
-    pool->cache()->set_direct_call(bytecode, method_index, resolved_method, sender->is_interface());
+    cache->set_direct_call(bytecode, method_index, resolved_method, sender->is_interface());
     break;
   case CallInfo::vtable_call:
-    pool->cache()->set_vtable_call(bytecode, method_index, resolved_method, info.vtable_index());
+    cache->set_vtable_call(bytecode, method_index, resolved_method, info.vtable_index());
     break;
   case CallInfo::itable_call:
-    pool->cache()->set_itable_call(
+    cache->set_itable_call(
       bytecode,
       method_index,
       info.resolved_klass(),

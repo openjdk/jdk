@@ -84,8 +84,8 @@ void Rewriter::compute_index_maps() {
   // Record limits of resolved reference map for constant pool cache indices
   record_map_limits();
 
-  guarantee((int) _cp_cache_map.length() - 1 <= (int) ((u2)-1),
-            "all cp cache indexes fit in a u2");
+  guarantee(_initialized_field_entries.length() - 1 <= (int)((u2)-1), "All resolved field indices fit in a u2");
+  guarantee(_initialized_method_entries.length() - 1 <= (int)((u2)-1), "All resolved method indices fit in a u2");
 
   if (saw_mh_symbol) {
     _method_handle_invokers.at_grow(length, 0);
@@ -225,11 +225,15 @@ void Rewriter::rewrite_invokespecial(address bcp, int offset, bool reverse, bool
   address p = bcp + offset;
   if (!reverse) {
     int cp_index = Bytes::get_Java_u2(p);
-    _initialized_method_entries.push(ResolvedMethodEntry((u2)cp_index));
-    Bytes::put_native_u2(p, (u2)_method_entry_index);
-    _method_entry_index++;
-    if (_method_entry_index != (int)(u2)_method_entry_index) {
-      *invokespecial_error = true;
+    if (_pool->tag_at(cp_index).is_interface_method()) {
+      _initialized_method_entries.push(ResolvedMethodEntry((u2)cp_index));
+      Bytes::put_native_u2(p, (u2)_method_entry_index);
+      _method_entry_index++;
+      if (_method_entry_index != (int)(u2)_method_entry_index) {
+        *invokespecial_error = true;
+      }
+    } else {
+      rewrite_method_reference(bcp, offset, reverse);
     }
   } else {
     rewrite_method_reference(bcp, offset, reverse);
@@ -241,7 +245,8 @@ void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_i
   if (!reverse) {
     if ((*opc) == (u1)Bytecodes::_invokevirtual ||
         // allow invokespecial as an alias, although it would be very odd:
-        ((*opc) == (u1)Bytecodes::_invokespecial && _pool->tag_at(cp_index).is_method())) {
+        ((*opc) == (u1)Bytecodes::_invokespecial)) {
+          assert(_pool->tag_at(cp_index).is_method(), "wrong index");
       // Determine whether this is a signature-polymorphic method.
       if (cp_index >= _method_handle_invokers.length())  return;
       int status = _method_handle_invokers.at(cp_index);
@@ -579,7 +584,6 @@ Rewriter::Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<
     _pool(cpool),
     _methods(methods),
     _cp_map(cpool->length()),
-    _cp_cache_map(cpool->length() / 2),
     _reference_map(cpool->length()),
     _resolved_references_map(cpool->length() / 2),
     _invokedynamic_references_map(cpool->length() / 2),

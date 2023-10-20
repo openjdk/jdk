@@ -327,14 +327,7 @@ void ConstantPoolCache::set_itable_call(Bytecodes::Code invoke_code,
   method_entry->set_bytecode1(Bytecodes::_invokeinterface);
 }
 
-
-void ConstantPoolCache::set_method_handle(int method_index, const CallInfo &call_info) {
-  set_method_handle_common(method_index, Bytecodes::_invokehandle, call_info);
-}
-
-void ConstantPoolCache::set_method_handle_common(int method_index,
-                                                 Bytecodes::Code invoke_code,
-                                                 const CallInfo &call_info) {
+ResolvedMethodEntry* ConstantPoolCache::set_method_handle(int method_index, const CallInfo &call_info) {
   // NOTE: This method entry can be the subject of data races.
   // There are three words to update: flags, refs[appendix_index], method (in that order).
   // Writers must store all other values before method.
@@ -344,11 +337,12 @@ void ConstantPoolCache::set_method_handle_common(int method_index,
   // the lock, so that when the losing writer returns, he can use the linked
   // cache entry.
   // Lock fields to write
+  Bytecodes::Code invoke_code = Bytecodes::_invokehandle;
   MutexLocker ml(constant_pool()->pool_holder()->init_monitor());
   ResolvedMethodEntry* method_entry = resolved_method_entry_at(method_index);
 
   if (method_entry->is_resolved(invoke_code)) { //method_entry->method() != nullptr &&
-    return;
+    return method_entry;
   }
 
   Method* adapter            = call_info.resolved_method();
@@ -398,6 +392,7 @@ void ConstantPoolCache::set_method_handle_common(int method_index,
 
   assert(has_appendix == method_entry->has_appendix(), "proper storage of appendix flag");
   assert(method_entry->has_local_signature(), "proper storage of signature flag");
+  return method_entry;
 }
 
 Method* ConstantPoolCache::method_if_resolved(int method_index) const {
@@ -640,6 +635,10 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
 
 oop ConstantPoolCache::appendix_if_resolved(int method_index) const {
   ResolvedMethodEntry* method_entry = resolved_method_entry_at(method_index);
+  return appendix_if_resolved(method_entry);
+}
+
+oop ConstantPoolCache::appendix_if_resolved(ResolvedMethodEntry* method_entry) const {
   if (!method_entry->has_appendix())
     return nullptr;
   const int ref_index = method_entry->resolved_references_index();

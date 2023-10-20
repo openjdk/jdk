@@ -1703,7 +1703,7 @@ bool LinkResolver::resolve_previously_linked_invokehandle(CallInfo& result, cons
   if (method_entry->method() != nullptr) {
     Klass* resolved_klass = link_info.resolved_klass();
     methodHandle method(THREAD, method_entry->method());
-    Handle     appendix(THREAD, pool->cache()->appendix_if_resolved(index));
+    Handle     appendix(THREAD, pool->cache()->appendix_if_resolved(method_entry));
     result.set_handle(resolved_klass, method, appendix, CHECK_false);
     JFR_ONLY(Jfr::on_resolution(result, CHECK_false);)
     return true;
