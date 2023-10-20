@@ -403,8 +403,20 @@ CodeEmitInfo* LIRGenerator::state_for(Instruction* x, ValueStack* state, bool ig
 
   ValueStack* s = state;
   for_each_state(s) {
-    if (s->kind() == ValueStack::EmptyExceptionState) {
-      assert(s->stack_size() == 0 && s->locals_size() == 0 && (s->locks_size() == 0 || s->locks_size() == 1), "state must be empty");
+    if (s->kind() == ValueStack::EmptyExceptionState ||
+        s->kind() == ValueStack::CallerEmptyExceptionState)
+    {
+#ifdef ASSERT
+      int index;
+      Value value;
+      for_each_stack_value(s, index, value) {
+        fatal("state must be empty");
+      }
+      for_each_local_value(s, index, value) {
+        fatal("state must be empty");
+      }
+#endif
+      assert(s->locks_size() == 0 || s->locks_size() == 1, "state must be empty");
       continue;
     }
 

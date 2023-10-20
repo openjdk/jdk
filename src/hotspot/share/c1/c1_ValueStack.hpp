@@ -36,6 +36,8 @@ class ValueStack: public CompilationResourceObj {
     StateAfter,          // After execution of instruction
     ExceptionState,      // Exception handling of instruction
     EmptyExceptionState, // Exception handling of instructions not covered by an xhandler
+    CallerExceptionState,
+    CallerEmptyExceptionState,
     BlockBeginState      // State of BlockBegin instruction with phi functions of this block
   };
 
@@ -75,10 +77,16 @@ class ValueStack: public CompilationResourceObj {
   ValueStack* copy(Kind new_kind, int new_bci)   { return new ValueStack(this, new_kind, new_bci); }
   ValueStack* copy_for_parsing()                 { return new ValueStack(this, Parsing, -99); }
 
+  // Used when no exception handler is found
+  static Kind empty_exception_kind(bool caller = false) {
+    return Compilation::current()->env()->should_retain_local_variables() ?
+      (caller ? CallerExceptionState : ExceptionState) : // retain locals
+      (caller ? CallerEmptyExceptionState : EmptyExceptionState);   // clear locals
+  }
+
   void set_caller_state(ValueStack* s)           {
-    assert(kind() == EmptyExceptionState ||
-           (Compilation::current()->env()->should_retain_local_variables() && kind() == ExceptionState),
-           "only EmptyExceptionStates can be modified");
+    assert(kind() == empty_exception_kind(false) || kind() == empty_exception_kind(true),
+           "only empty exception states can be modified");
     _caller_state = s;
   }
 
@@ -133,14 +141,14 @@ class ValueStack: public CompilationResourceObj {
   // stack access
   Value stack_at(int i) const {
     Value x = _stack.at(i);
-    assert(!x->type()->is_double_word() ||
+    assert(x == nullptr || !x->type()->is_double_word() ||
            _stack.at(i + 1) == nullptr, "hi-word of doubleword value must be null");
     return x;
   }
 
   Value stack_at_inc(int& i) const {
     Value x = stack_at(i);
-    i += x->type()->size();
+    i += ((x == nullptr) ? 1 : x->type()->size());
     return x;
   }
 
@@ -260,7 +268,8 @@ class ValueStack: public CompilationResourceObj {
   int temp_var = state->stack_size();                                                          \
   for (index = 0;                                                                              \
        index < temp_var && (value = state->stack_at(index), true);                             \
-       index += value->type()->size())
+       index += (value == nullptr ? 1 : value->type()->size()))                                \
+    if (value != nullptr)
 
 
 #define for_each_lock_value(state, index, value)                                               \
