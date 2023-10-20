@@ -25,16 +25,22 @@
  * @test SyntheticParameters
  * @summary Test generation of annotations on inner class parameters.
  * @library /lib/annotations/
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @run main SyntheticParameters
  */
 
 import annotations.classfile.ClassfileInspector;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.TypeAnnotation;
 
 import java.io.*;
 import java.lang.annotation.*;
 
-import com.sun.tools.classfile.*;
 
 public class SyntheticParameters extends ClassfileInspector {
 
@@ -72,8 +78,8 @@ public class SyntheticParameters extends ClassfileInspector {
 
     public static void main(String... args) throws Exception {
         new SyntheticParameters().run(
-            new ClassFile[] { getClassFile(Inner_class, Inner.class),
-                              getClassFile(Foo_class, Foo.class) },
+            new ClassModel[] { getClassFile(Inner_class, Inner.class),
+                               getClassFile(Foo_class, Foo.class) },
             new Expected[] { Inner_expected, Foo_expected });
     }
 

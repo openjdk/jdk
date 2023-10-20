@@ -167,7 +167,7 @@ time of writing.
 | Operating system  | Vendor/version used                |
 | ----------------- | ---------------------------------- |
 | Linux             | Oracle Enterprise Linux 6.4 / 7.6  |
-| macOS             | Mac OS X 10.13 (High Sierra)       |
+| macOS             | macOS 13 (Ventura)                 |
 | Windows           | Windows Server 2012 R2             |
 
 The double version numbers for Linux are due to the hybrid model
@@ -270,8 +270,8 @@ difficult for a project such as the JDK to keep pace with a continuously updated
 machine running macOS. See the section on [Apple Xcode](#apple-xcode) on some
 strategies to deal with this.
 
-It is recommended that you use at least Mac OS X 10.13 (High Sierra). At the time
-of writing, the JDK has been successfully compiled on macOS 10.12 (Sierra).
+It is recommended that you use at least macOS 13 (Ventura) and Xcode
+14, but earlier versions may also work.
 
 The standard macOS environment contains the basic tooling needed to build, but
 for external libraries a package manager is recommended. The JDK uses
@@ -337,7 +337,7 @@ issues.
 | Operating system   | Toolchain version                          |
 | ------------------ | ------------------------------------------ |
 | Linux              | gcc 11.2.0                                 |
-| macOS              | Apple Xcode 10.1 (using clang 10.0.0)      |
+| macOS              | Apple Xcode 14.3.1 (using clang 14.0.3)    |
 | Windows            | Microsoft Visual Studio 2022 update 17.1.0 |
 
 All compilers are expected to be able to compile to the C99 language standard,
@@ -884,11 +884,11 @@ Download the latest `.tar.gz` file, unpack it, and point `--with-jtreg` to the
 Building of Hotspot Gtest suite requires the source code of Google
 Test framework.  The top directory, which contains both `googletest`
 and `googlemock` directories, should be specified via `--with-gtest`.
-The minimum supported version of Google Test is 1.13.0, whose source
+The minimum supported version of Google Test is 1.14.0, whose source
 code can be obtained:
 
- * by downloading and unpacking the source bundle from [here](https://github.com/google/googletest/releases/tag/v1.13.0)
- * or by checking out `v1.13.0` tag of `googletest` project: `git clone -b v1.13.0 https://github.com/google/googletest`
+ * by downloading and unpacking the source bundle from [here](https://github.com/google/googletest/releases/tag/v1.14.0)
+ * or by checking out `v1.14.0` tag of `googletest` project: `git clone -b v1.14.0 https://github.com/google/googletest`
 
 To execute the most basic tests (tier 1), use:
 ```
@@ -2032,20 +2032,7 @@ First of all: Thank you! We gladly welcome your contribution.
 However, please bear in mind that the JDK is a massive project, and we must ask
 you to follow our rules and guidelines to be able to accept your contribution.
 
-The official place to start is the ['How to contribute' page](
-http://openjdk.org/contribute/). There is also an official (but somewhat
-outdated and skimpy on details) [Developer's Guide](
-http://openjdk.org/guide/).
-
-If this seems overwhelming to you, the Adoption Group is there to help you! A
-good place to start is their ['New Contributor' page](
-https://wiki.openjdk.org/display/Adoption/New+Contributor), or start
-reading the comprehensive [Getting Started Kit](
-https://adoptopenjdk.gitbooks.io/adoptopenjdk-getting-started-kit/en/). The
-Adoption Group will also happily answer any questions you have about
-contributing. Contact them by [mail](
-http://mail.openjdk.org/mailman/listinfo/adoption-discuss) or [IRC](
-http://openjdk.org/irc/).
+The official place to start is the [OpenJDK Developers’ Guide](https://openjdk.org/guide/).
 
 ## Editing this document
 

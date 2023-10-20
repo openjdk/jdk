@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -451,7 +451,7 @@ public class ThreadFlock implements AutoCloseable {
     }
 
     /**
-     * {@return a stream of the live threads in this flock}
+     * {@return a stream of the threads in this flock}
      * The elements of the stream are threads that were started in this flock
      * but have not terminated. The stream will reflect the set of threads in the
      * flock at some point at or since the creation of the stream. It may or may
@@ -459,7 +459,7 @@ public class ThreadFlock implements AutoCloseable {
      * stream.
      */
     public Stream<Thread> threads() {
-        return threads.stream().filter(Thread::isAlive);
+        return threads.stream();
     }
 
     /**

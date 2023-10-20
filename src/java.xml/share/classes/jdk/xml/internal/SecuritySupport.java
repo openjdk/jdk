@@ -212,7 +212,7 @@ public class SecuritySupport {
                     }
 
                     // load the custom configure on top of the default if any
-                    String configFile = SecuritySupport.getSystemProperty(JdkConstants.CONFIG_FILE);
+                    String configFile = SecuritySupport.getSystemProperty(JdkConstants.CONFIG_FILE_PROPNAME);
                     if (configFile != null) {
                         loadProperties(configFile);
                     }

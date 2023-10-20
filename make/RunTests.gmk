@@ -178,7 +178,8 @@ ifeq ($(TEST_JOBS), 0)
       c = c * $(TEST_JOBS_FACTOR_JDL); \
       c = c * $(TEST_JOBS_FACTOR_MACHINE); \
       if (c < 1) c = 1; \
-      printf "%.0f", c; \
+      c = c + 0.5; \
+      printf "%d", c; \
     }')
 endif
 
@@ -356,7 +357,7 @@ ExpandJtregPath = \
 # with test id: dir/Test.java#selection -> Test.java#selection -> .java#selection -> #selection
 #      without: dir/Test.java           -> Test.java           -> .java           -> <<empty string>>
 TestID = \
-    $(subst .sh,,$(subst .html,,$(subst .java,,$(suffix $(notdir $1)))))
+    $(subst .jasm,,$(subst .sh,,$(subst .html,,$(subst .java,,$(suffix $(notdir $1))))))
 
 # The test id starting with a hash (#testid) will be stripped by all
 # evals in ParseJtregTestSelectionInner and will be reinserted by calling
@@ -800,8 +801,10 @@ define SetupRunJtregTestBody
   $1_JTREG_BASIC_OPTIONS += -e:JIB_DATA_DIR
   # If running on Windows, propagate the _NT_SYMBOL_PATH to enable
   # symbol lookup in hserr files
+  # The minidumps are disabled by default on client Windows, so enable them
   ifeq ($$(call isTargetOs, windows), true)
     $1_JTREG_BASIC_OPTIONS += -e:_NT_SYMBOL_PATH
+    $1_JTREG_BASIC_OPTIONS += -vmoption:-XX:+CreateCoredumpOnCrash
   else ifeq ($$(call isTargetOs, linux), true)
       $1_JTREG_BASIC_OPTIONS += -e:_JVM_DWARF_PATH=$$(SYMBOLS_IMAGE_DIR)
   endif
@@ -860,11 +863,12 @@ define SetupRunJtregTestBody
 
   $$(eval $$(call SetupRunJtregTestCustom, $1))
 
-  clean-workdir-$1:
+  clean-outputdirs-$1:
 	$$(RM) -r $$($1_TEST_SUPPORT_DIR)
+	$$(RM) -r $$($1_TEST_RESULTS_DIR)
 
   $1_COMMAND_LINE := \
-      $$(JAVA) $$($1_JTREG_LAUNCHER_OPTIONS) \
+      $$(JTREG_JAVA) $$($1_JTREG_LAUNCHER_OPTIONS) \
           -Dprogram=jtreg -jar $$(JT_HOME)/lib/jtreg.jar \
           $$($1_JTREG_BASIC_OPTIONS) \
           -testjdk:$$(JDK_UNDER_TEST) \
@@ -907,7 +911,7 @@ define SetupRunJtregTestBody
         done
   endif
 
-  run-test-$1: pre-run-test clean-workdir-$1
+  run-test-$1: pre-run-test clean-outputdirs-$1
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR) \
@@ -944,9 +948,9 @@ define SetupRunJtregTestBody
 	  $$(eval $1_TOTAL := 1) \
 	)
 
-  $1: run-test-$1 parse-test-$1 clean-workdir-$1
+  $1: run-test-$1 parse-test-$1 clean-outputdirs-$1
 
-  TARGETS += $1 run-test-$1 parse-test-$1 clean-workdir-$1
+  TARGETS += $1 run-test-$1 parse-test-$1 clean-outputdirs-$1
   TEST_TARGETS += parse-test-$1
 
 endef

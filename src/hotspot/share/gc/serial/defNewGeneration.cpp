@@ -337,7 +337,7 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
 {
   MemRegion cmr((HeapWord*)_virtual_space.low(),
                 (HeapWord*)_virtual_space.high());
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  SerialHeap* gch = SerialHeap::heap();
 
   gch->rem_set()->resize_covered_region(cmr);
 
@@ -556,7 +556,7 @@ void DefNewGeneration::compute_new_size() {
     return;
   }
 
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  SerialHeap* gch = SerialHeap::heap();
 
   size_t old_size = gch->old_gen()->capacity();
   size_t new_size_before = _virtual_space.committed_size();
@@ -692,7 +692,7 @@ HeapWord* DefNewGeneration::allocate_from_space(size_t size) {
 
   log_trace(gc, alloc)("DefNewGeneration::allocate_from_space(" SIZE_FORMAT "):  will_fail: %s  heap_lock: %s  free: " SIZE_FORMAT "%s%s returns %s",
                         size,
-                        GenCollectedHeap::heap()->incremental_collection_will_fail(false /* don't consult_young */) ?
+                        SerialHeap::heap()->incremental_collection_will_fail(false /* don't consult_young */) ?
                           "true" : "false",
                         Heap_lock->is_locked() ? "locked" : "unlocked",
                         from()->free(),
@@ -716,7 +716,7 @@ void DefNewGeneration::adjust_desired_tenuring_threshold() {
   _tenuring_threshold = age_table()->compute_tenuring_threshold(desired_survivor_size);
 
   if (UsePerfData) {
-    GCPolicyCounters* gc_counters = GenCollectedHeap::heap()->counters();
+    GCPolicyCounters* gc_counters = SerialHeap::heap()->counters();
     gc_counters->tenuring_threshold()->set_value(_tenuring_threshold);
     gc_counters->desired_survivor_size()->set_value(desired_survivor_size * oopSize);
   }
@@ -846,8 +846,6 @@ void DefNewGeneration::collect(bool   full,
     from()->set_next_compaction_space(to());
     heap->set_incremental_collection_failed();
 
-    // Inform the next generation that a promotion failure occurred.
-    _old_gen->promotion_failure_occurred();
     _gc_tracer->report_promotion_failed(_promotion_failed_info);
 
     // Reset the PromotionFailureALot counters.
@@ -981,27 +979,18 @@ bool DefNewGeneration::no_allocs_since_save_marks() {
   return to()->saved_mark_at_top();
 }
 
-void DefNewGeneration::contribute_scratch(ScratchBlock*& list, Generation* requestor,
-                                         size_t max_alloc_words) {
-  if (requestor == this || _promotion_failed) {
+void DefNewGeneration::contribute_scratch(void*& scratch, size_t& num_words) {
+  if (_promotion_failed) {
     return;
   }
-  assert(GenCollectedHeap::heap()->is_old_gen(requestor), "We should not call our own generation");
 
-  /* $$$ Assert this?  "trace" is a "MarkSweep" function so that's not appropriate.
-  if (to_space->top() > to_space->bottom()) {
-    trace("to_space not empty when contribute_scratch called");
-  }
-  */
+  const size_t MinFreeScratchWords = 100;
 
   ContiguousSpace* to_space = to();
-  assert(to_space->end() >= to_space->top(), "pointers out of order");
-  size_t free_words = pointer_delta(to_space->end(), to_space->top());
+  const size_t free_words = pointer_delta(to_space->end(), to_space->top());
   if (free_words >= MinFreeScratchWords) {
-    ScratchBlock* sb = (ScratchBlock*)to_space->top();
-    sb->num_words = free_words;
-    sb->next = list;
-    list = sb;
+    scratch = to_space->top();
+    num_words = free_words;
   }
 }
 
@@ -1020,8 +1009,7 @@ bool DefNewGeneration::collection_attempt_is_safe() {
     return false;
   }
   if (_old_gen == nullptr) {
-    GenCollectedHeap* gch = GenCollectedHeap::heap();
-    _old_gen = gch->old_gen();
+    _old_gen = SerialHeap::heap()->old_gen();
   }
   return _old_gen->promotion_attempt_is_safe(used());
 }
@@ -1034,7 +1022,7 @@ void DefNewGeneration::gc_epilogue(bool full) {
   // been done.  Generally the young generation is empty at
   // a minimum at the end of a collection.  If it is not, then
   // the heap is approaching full.
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  SerialHeap* gch = SerialHeap::heap();
   if (full) {
     DEBUG_ONLY(seen_incremental_collection_failed = false;)
     if (!collection_attempt_is_safe() && !_eden_space->is_empty()) {

@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -128,8 +126,8 @@ class ClassHierarchyInfoTest {
 
     void transformAndVerifySingle(ClassHierarchyResolver res) throws Exception {
         Path path = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util/HashMap.class");
-        var classModel = Classfile.parse(path, Classfile.Option.classHierarchyResolver(res));
-        byte[] newBytes = classModel.transform(
+        var classModel = Classfile.of().parse(path);
+        byte[] newBytes = Classfile.of(Classfile.ClassHierarchyResolverOption.of(res)).transform(classModel,
                 (clb, cle) -> {
                     if (cle instanceof MethodModel mm) {
                         clb.transformMethod(mm, (mb, me) -> {
@@ -143,7 +141,7 @@ class ClassHierarchyInfoTest {
                     else
                         clb.with(cle);
                 });
-        var errors = Classfile.parse(newBytes).verify(null);
+        var errors = Classfile.of().parse(newBytes).verify(null);
         if (!errors.isEmpty()) {
             var itr = errors.iterator();
             var thrown = itr.next();

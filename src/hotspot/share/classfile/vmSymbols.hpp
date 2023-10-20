@@ -32,6 +32,8 @@
 #include "utilities/macros.hpp"
 #include "utilities/enumIterator.hpp"
 
+class SerializeClosure;
+
 // The class vmSymbols is a name space for fast lookup of
 // symbols commonly used in the VM.
 //
@@ -143,6 +145,7 @@
   template(java_util_Vector,                          "java/util/Vector")                         \
   template(java_util_AbstractList,                    "java/util/AbstractList")                   \
   template(java_util_Hashtable,                       "java/util/Hashtable")                      \
+  template(java_util_DualPivotQuicksort,              "java/util/DualPivotQuicksort")             \
   template(java_lang_Compiler,                        "java/lang/Compiler")                       \
   template(jdk_internal_misc_Signal,                  "jdk/internal/misc/Signal")                 \
   template(jdk_internal_util_Preconditions,           "jdk/internal/util/Preconditions")          \
@@ -376,6 +379,7 @@
   /* Support for JVMCI */                                                                         \
   JVMCI_VM_SYMBOLS_DO(template, do_alias)                                                         \
                                                                                                   \
+  template(java_lang_ClassFrameInfo,                  "java/lang/ClassFrameInfo")                 \
   template(java_lang_StackWalker,                     "java/lang/StackWalker")                    \
   template(java_lang_StackFrameInfo,                  "java/lang/StackFrameInfo")                 \
   template(java_lang_LiveStackFrameInfo,              "java/lang/LiveStackFrameInfo")             \
@@ -757,7 +761,7 @@
   template(decodeAndThrowThrowable_name,               "decodeAndThrowThrowable")                                 \
   template(encodeAnnotations_name,                     "encodeAnnotations")                                       \
   template(encodeAnnotations_signature,                "([BLjava/lang/Class;Ljdk/internal/reflect/ConstantPool;Z[Ljava/lang/Class;)[B")\
-  template(decodeAndThrowThrowable_signature,          "(JZ)V")                                                   \
+  template(decodeAndThrowThrowable_signature,          "(IJZ)V")                                                  \
   template(classRedefinedCount_name,                   "classRedefinedCount")                                     \
   template(classLoader_name,                           "classLoader")                                             \
   template(componentType_name,                         "componentType")                                           \

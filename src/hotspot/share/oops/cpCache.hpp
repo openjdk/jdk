@@ -128,6 +128,7 @@
 // source code.  The _indices field with the bytecode must be written last.
 
 class CallInfo;
+class ResolvedFieldEntry;
 class ResolvedIndyEntry;
 
 class ConstantPoolCacheEntry {
@@ -406,7 +407,8 @@ class ConstantPoolCache: public MetaspaceObj {
   // RedefineClasses support
   uint64_t             _gc_epoch;
 
-  Array<ResolvedIndyEntry>* _resolved_indy_entries;
+  Array<ResolvedIndyEntry>*  _resolved_indy_entries;
+  Array<ResolvedFieldEntry>* _resolved_field_entries;
 
   CDS_ONLY(Array<ConstantPoolCacheEntry>* _initial_entries;)
 
@@ -417,7 +419,8 @@ class ConstantPoolCache: public MetaspaceObj {
   ConstantPoolCache(int length,
                     const intStack& inverse_index_map,
                     const intStack& invokedynamic_references_map,
-                    Array<ResolvedIndyEntry>* indy_info);
+                    Array<ResolvedIndyEntry>* indy_info,
+                    Array<ResolvedFieldEntry>* field_entries);
 
   // Initialization
   void initialize(const intArray& inverse_index_map,
@@ -427,6 +430,7 @@ class ConstantPoolCache: public MetaspaceObj {
                                      const intStack& cp_cache_map,
                                      const intStack& invokedynamic_references_map,
                                      const GrowableArray<ResolvedIndyEntry> indy_entries,
+                                     const GrowableArray<ResolvedFieldEntry> field_entries,
                                      TRAPS);
 
   int length() const                      { return _length; }
@@ -442,14 +446,20 @@ class ConstantPoolCache: public MetaspaceObj {
   Array<u2>* reference_map() const        { return _reference_map; }
   void set_reference_map(Array<u2>* o)    { _reference_map = o; }
 
+  Array<ResolvedFieldEntry>* resolved_field_entries()          { return _resolved_field_entries; }
+  inline ResolvedFieldEntry* resolved_field_entry_at(int field_index) const;
+  inline int resolved_field_entries_length() const;
+  void print_resolved_field_entries(outputStream* st) const;
+
   Array<ResolvedIndyEntry>* resolved_indy_entries()          { return _resolved_indy_entries; }
   inline ResolvedIndyEntry* resolved_indy_entry_at(int index) const;
   inline int resolved_indy_entries_length() const;
   void print_resolved_indy_entries(outputStream* st)   const;
 
   // Assembly code support
-  static ByteSize resolved_references_offset()   { return byte_offset_of(ConstantPoolCache, _resolved_references); }
-  static ByteSize invokedynamic_entries_offset() { return byte_offset_of(ConstantPoolCache, _resolved_indy_entries); }
+  static ByteSize resolved_references_offset()     { return byte_offset_of(ConstantPoolCache, _resolved_references);    }
+  static ByteSize invokedynamic_entries_offset()   { return byte_offset_of(ConstantPoolCache, _resolved_indy_entries);  }
+  static ByteSize field_entries_offset()           { return byte_offset_of(ConstantPoolCache, _resolved_field_entries); }
 
 #if INCLUDE_CDS
   void remove_unshareable_info();

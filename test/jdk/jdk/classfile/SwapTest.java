@@ -47,7 +47,7 @@ class SwapTest {
         MethodType mt = MethodType.methodType(String.class, String.class, String.class);
         MethodTypeDesc mtd = mt.describeConstable().get();
 
-        byte[] bytes = Classfile.build(ClassDesc.of("C"), cb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.of("C"), cb -> {
             cb.withMethodBody("m", mtd, AccessFlags.ofMethod(PUBLIC, STATIC).flagsMask(), xb -> {
                         xb.aload(0); // 0
                         xb.aload(1); // 1, 0

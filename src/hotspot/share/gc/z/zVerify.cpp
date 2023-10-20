@@ -426,7 +426,7 @@ void ZVerify::objects(bool verify_weaks) {
   threads_start_processing();
 
   ZVerifyObjectClosure object_cl(verify_weaks);
-  ZHeap::heap()->object_and_field_iterate(&object_cl, &object_cl, verify_weaks);
+  ZHeap::heap()->object_and_field_iterate_for_verify(&object_cl, &object_cl, verify_weaks);
 }
 
 void ZVerify::before_zoperation() {
