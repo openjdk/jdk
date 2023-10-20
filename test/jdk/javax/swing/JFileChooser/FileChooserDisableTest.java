@@ -44,9 +44,10 @@ import java.util.function.Predicate;
  * @test
  * @bug 4365952
  * @key headful
- * @summary Test to check is File chooser can be Disabled
+ * @summary Test to check is JFilechooser can be Disabled
  * @run main FileChooserDisableTest
  */
+
 public class FileChooserDisableTest {
     static JFrame frame;
     static JFileChooser jfc;
@@ -68,7 +69,7 @@ public class FileChooserDisableTest {
                 buttonToolTip = "Open selected file";
             }
 
-            System.out.println("Testing LAF: " + laf.getClassName());
+            System.out.println("Testing LAF : " + laf.getClassName());
             SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
             try {
                 SwingUtilities.invokeAndWait(() -> {
