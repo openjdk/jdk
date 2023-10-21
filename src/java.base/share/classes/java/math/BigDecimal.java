@@ -279,7 +279,7 @@ import java.util.Objects;
  * operations indicated by {@linkplain RoundingMode rounding modes}
  * are a proper superset of the IEEE 754 rounding-direction
  * attributes.
-
+ *
  * <p>{@code BigDecimal} arithmetic will most resemble IEEE 754
  * decimal arithmetic if a {@code MathContext} corresponding to an
  * IEEE 754 decimal format, such as {@linkplain MathContext#DECIMAL64
@@ -303,7 +303,7 @@ import java.util.Objects;
  * values. In contrast, a {@code BigDecimal} value with a compact
  * representation like {@code new BigDecimal(1E-1000000000)} has a
  * {@link toPlainString} result with over one billion characters.
- * 
+ *
  * <p>Users of {@code BigDecimal} concerned with bounding the running
  * time of operations can screen out {@code BigDecimal} values with
  * unscaled values or scales above a chosen magnitude.
