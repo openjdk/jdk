@@ -887,6 +887,13 @@ jlong JVMCIRuntime::make_oop_handle(const Handle& obj) {
   return reinterpret_cast<jlong>(ptr);
 }
 
+#ifdef ASSERT
+bool JVMCIRuntime::is_oop_handle(jlong handle) {
+  const oop* ptr = (oop*) handle;
+  return object_handles()->allocation_status(ptr) == OopStorage::ALLOCATED_ENTRY;
+}
+#endif
+
 int JVMCIRuntime::release_and_clear_oop_handles() {
   guarantee(_num_attached_threads == cannot_be_attached, "only call during JVMCI runtime shutdown");
   int released = release_cleared_oop_handles();

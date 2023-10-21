@@ -86,13 +86,13 @@ class Space: public CHeapObj<mtGC> {
   virtual void set_bottom(HeapWord* value) { _bottom = value; }
   virtual void set_end(HeapWord* value)    { _end = value; }
 
-  virtual HeapWord* saved_mark_word() const  { return _saved_mark_word; }
+  HeapWord* saved_mark_word() const  { return _saved_mark_word; }
 
   void set_saved_mark_word(HeapWord* p) { _saved_mark_word = p; }
 
   // Returns true if this object has been allocated since a
   // generation's "save_marks" call.
-  virtual bool obj_allocated_since_save_marks(const oop obj) const {
+  bool obj_allocated_since_save_marks(const oop obj) const {
     return cast_from_oop<HeapWord*>(obj) >= saved_mark_word();
   }
 
@@ -111,17 +111,6 @@ class Space: public CHeapObj<mtGC> {
   MemRegion used_region_at_save_marks() const {
     return MemRegion(bottom(), saved_mark_word());
   }
-
-  // Initialization.
-  // "initialize" should be called once on a space, before it is used for
-  // any purpose.  The "mr" arguments gives the bounds of the space, and
-  // the "clear_space" argument should be true unless the memory in "mr" is
-  // known to be zeroed.
-  virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
-
-  // The "clear" method must be called on a region that may have
-  // had allocation performed in it, but is now to be considered empty.
-  virtual void clear(bool mangle_space);
 
   // For detecting GC bugs.  Should only be called at GC boundaries, since
   // some unused space may be used as scratch space during GC's.
@@ -178,7 +167,7 @@ class Space: public CHeapObj<mtGC> {
   // structure supporting these calls, possibly speeding up future calls.
   // The default implementation, however, is simply to call the const
   // version.
-  virtual HeapWord* block_start(const void* p);
+  HeapWord* block_start(const void* p);
 
   // Requires "addr" to be the start of a chunk, and returns its size.
   // "addr + size" is required to be the start of a new chunk, or the end
@@ -191,7 +180,7 @@ class Space: public CHeapObj<mtGC> {
 
   // Requires "addr" to be the start of a block, and returns "TRUE" iff
   // the block is an object and the object is alive.
-  virtual bool obj_is_alive(const HeapWord* addr) const;
+  bool obj_is_alive(const HeapWord* addr) const;
 
   // Allocation (return null if full).  Assumes the caller has established
   // mutually exclusive access to the space.
@@ -206,10 +195,10 @@ class Space: public CHeapObj<mtGC> {
   virtual void adjust_pointers() = 0;
 #endif
 
-  virtual void print() const;
+  void print() const;
   virtual void print_on(outputStream* st) const;
-  virtual void print_short() const;
-  virtual void print_short_on(outputStream* st) const;
+  void print_short() const;
+  void print_short_on(outputStream* st) const;
 
   // Debugging
   virtual void verify() const = 0;
@@ -264,9 +253,16 @@ private:
   ContiguousSpace();
   ~ContiguousSpace();
 
-  void initialize(MemRegion mr, bool clear_space, bool mangle_space) override;
+  // Initialization.
+  // "initialize" should be called once on a space, before it is used for
+  // any purpose.  The "mr" arguments gives the bounds of the space, and
+  // the "clear_space" argument should be true unless the memory in "mr" is
+  // known to be zeroed.
+  void initialize(MemRegion mr, bool clear_space, bool mangle_space);
 
-  void clear(bool mangle_space) override;
+  // The "clear" method must be called on a region that may have
+  // had allocation performed in it, but is now to be considered empty.
+  virtual void clear(bool mangle_space);
 
   // Used temporarily during a compaction phase to hold the value
   // top should have when compaction is complete.
