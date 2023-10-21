@@ -41,13 +41,13 @@ public class TestCreateStrokedShapeJoins {
 
     private final static int W = 200;
 
-    private final static int[] REF_COUNTS = new int[]{4561, 4790, 5499};
+    private final static int[] REF_COUNTS = new int[] {4561, 4790, 5499};
 
     public static void main(String[] args) throws Exception {
-        final int[] test = new int[]{
-            test(BasicStroke.JOIN_BEVEL),
-            test(BasicStroke.JOIN_ROUND),
-            test(BasicStroke.JOIN_MITER)
+        final int[] test = new int[] {
+                test(BasicStroke.JOIN_BEVEL),
+                test(BasicStroke.JOIN_ROUND),
+                test(BasicStroke.JOIN_MITER)
         };
 
         System.out.println("test: " + Arrays.toString(test));
