@@ -292,6 +292,22 @@ import java.util.Objects;
  * such as dividing by zero, throw an {@code ArithmeticException} in
  * {@code BigDecimal} arithmetic.
  *
+ * <h2><a id=algorithmicComplexity>Algorithmic Complexity</a></h2>
+ * Operations on {@code BigDecimal} values have a range of algorithmic
+ * complexities; in general, those complexities are a function of both
+ * the size of the unscaled value as well as the size of the
+ * scale. For example, an {@linkplain BigDecimal#multiply(BigDecimal)
+ * exact multiply} of two {@code BigDecimal} values is subject to the
+ * same {@linkplain BigInteger##algorithmicComplexity complexity
+ * constraints} as {@code BigInteger} multiply of the unscaled
+ * values. In contrast, a {@code BigDecimal} value with a compact
+ * representation like {@code new BigDecimal(1E-1000000000)} has a
+ * {@link toPlainString} result with over one billion characters.
+ * 
+ * <p>Users of {@code BigDecimal} concerned with bounding the running
+ * time of operations can screen out {@code BigDecimal} values with
+ * unscaled values or scales above a chosen magnitude.
+ *
  * @see     BigInteger
  * @see     MathContext
  * @see     RoundingMode
