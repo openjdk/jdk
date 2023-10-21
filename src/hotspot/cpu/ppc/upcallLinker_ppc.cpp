@@ -217,6 +217,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("{ on_entry");
   __ load_const_optimized(call_target_address, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::on_entry), R0);
   __ addi(R3_ARG1, R1_SP, frame_data_offset);
+  __ load_const_optimized(R4_ARG2, (intptr_t)receiver, R0);
   __ call_c(call_target_address);
   __ mr(R16_thread, R3_RET);
   __ block_comment("} on_entry");
@@ -232,8 +233,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("} argument shuffle");
 
   __ block_comment("{ receiver ");
-  __ load_const_optimized(R3_ARG1, (intptr_t)receiver, R0);
-  __ resolve_global_jobject(R3_ARG1, tmp, R31, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS); // kills R31
+  __ get_vm_result(R3_ARG1);
   __ block_comment("} receiver ");
 
   __ load_const_optimized(R19_method, (intptr_t)entry);

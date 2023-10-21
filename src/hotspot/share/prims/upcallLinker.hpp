@@ -35,7 +35,7 @@ private:
   static void handle_uncaught_exception(oop exception);
   static JavaThread* maybe_attach_and_get_thread();
 
-  static JavaThread* on_entry(UpcallStub::FrameData* context);
+  static JavaThread* on_entry(UpcallStub::FrameData* context, jobject receiver);
   static void on_exit(UpcallStub::FrameData* context);
 public:
   static address make_upcall_stub(jobject mh, Method* entry,

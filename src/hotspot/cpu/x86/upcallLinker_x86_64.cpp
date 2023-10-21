@@ -272,6 +272,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("{ on_entry");
   __ vzeroupper();
   __ lea(c_rarg0, Address(rsp, frame_data_offset));
+  __ movptr(c_rarg1, (intptr_t)receiver);
   // stack already aligned
   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, UpcallLinker::on_entry)));
   __ movptr(r15_thread, rax);
@@ -288,9 +289,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("} argument shuffle");
 
   __ block_comment("{ receiver ");
-  __ movptr(rscratch1, (intptr_t)receiver);
-  __ resolve_global_jobject(rscratch1, r15_thread, rscratch2);
-  __ movptr(j_rarg0, rscratch1);
+  __ get_vm_result(j_rarg0, r15_thread);
   __ block_comment("} receiver ");
 
   __ mov_metadata(rbx, entry);

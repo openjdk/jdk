@@ -217,6 +217,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   __ block_comment("{ on_entry");
   __ lea(c_rarg0, Address(sp, frame_data_offset));
+  __ movptr(c_rarg1, (intptr_t)receiver);
   __ movptr(rscratch1, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::on_entry));
   __ blr(rscratch1);
   __ mov(rthread, r0);
@@ -233,9 +234,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("} argument shuffle");
 
   __ block_comment("{ receiver ");
-  __ movptr(shuffle_reg, (intptr_t)receiver);
-  __ resolve_global_jobject(shuffle_reg, rscratch1, rscratch2);
-  __ mov(j_rarg0, shuffle_reg);
+  __ get_vm_result(j_rarg0, rthread);
   __ block_comment("} receiver ");
 
   __ mov_metadata(rmethod, entry);
