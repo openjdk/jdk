@@ -37,6 +37,7 @@ import sun.nio.cs.UTF_8;
 
 import static java.util.zip.ZipConstants64.*;
 import static java.util.zip.ZipUtils.*;
+import static java.util.zip.ZipUtils.isZip64ExtBlockSizeValid;
 
 /**
  * An input stream for reading compressed and uncompressed
@@ -662,11 +663,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
                     return false; // Invalid size
                 }
                 if (id == ZIP64_EXTID) {
-                    // Zip64 extra field of a LOC header has 1-3 longs
-                    if (!(size == 8 || size == 16 || size == 24)) {
-                        return false; // Invalid size
-                    }
-                    return true;
+                    return isZip64ExtBlockSizeValid(size);
                 }
                 i += fixedSize + size;
             }
