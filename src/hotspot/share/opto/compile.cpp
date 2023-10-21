@@ -1854,6 +1854,7 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
       igvn._worklist.push(n);
     }
     igvn.optimize();
+    if (failing()) return;
     assert(_for_post_loop_igvn.length() == 0, "no more delayed nodes allowed");
     assert(C->parse_predicate_count() == 0, "all parse predicates should have been removed now");
 
@@ -2069,6 +2070,7 @@ void Compile::inline_incrementally_cleanup(PhaseIterGVN& igvn) {
     TracePhase tp("incrementalInline_igvn", &timers[_t_incrInline_igvn]);
     igvn.reset_from_gvn(initial_gvn());
     igvn.optimize();
+    if (failing()) return;
   }
   print_method(PHASE_INCREMENTAL_INLINE_CLEANUP, 3);
 }
