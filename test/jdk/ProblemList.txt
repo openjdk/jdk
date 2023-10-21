@@ -622,6 +622,7 @@ sun/security/pkcs11/rsa/TestSignatures.java                     8295343 linux-al
 sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8295343 linux-all
 sun/security/pkcs11/rsa/TestKeyFactory.java                     8295343 linux-all
 sun/security/pkcs11/KeyStore/Basic.java                         8295343 linux-all
+sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183 linux-ppc64le
 
 ############################################################################
 

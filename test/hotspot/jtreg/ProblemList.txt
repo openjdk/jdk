@@ -92,7 +92,6 @@ gc/stress/TestStressG1Humongous.java 8286554 windows-x64
 # :hotspot_runtime
 
 
-runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
 runtime/handshake/HandshakeSuspendExitTest.java 8294313 generic-all
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#explicit-large-page-size 8267460 linux-aarch64
@@ -101,7 +100,6 @@ runtime/os/TestTracePageSizes.java#G1 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
-runtime/CompressedOops/CompressedClassPointers.java 8305765 generic-all
 runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/TestDwarf.java#checkDecoder 8305489 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
@@ -133,7 +131,8 @@ serviceability/sa/TestJmapCoreMetaspace.java 8267433 macosx-x64
 serviceability/sa/ClhsdbDumpclass.java 8316342 generic-all
 
 serviceability/attach/ConcAttachTest.java 8290043 linux-all
-serviceability/jvmti/RedefineClasses/RedefineLeakThrowable.java 8316658 generic-all
+
+serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStressTest.java 8315980 linux-all,windows-x64
 
 #############################################################################
 
@@ -156,9 +155,6 @@ vmTestbase/metaspace/gc/firstGC_99m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8208250 generic-all
 
 vmTestbase/nsk/jvmti/AttachOnDemand/attach045/TestDescription.java 8202971 generic-all
-vmTestbase/nsk/jvmti/scenarios/jni_interception/JI05/ji05t001/TestDescription.java 8219652 aix-ppc64
-vmTestbase/nsk/jvmti/scenarios/jni_interception/JI06/ji06t001/TestDescription.java 8219652 aix-ppc64
-vmTestbase/nsk/jvmti/SetJNIFunctionTable/setjniftab001/TestDescription.java 8219652 aix-ppc64
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8073470 linux-all
 vmTestbase/nsk/jvmti/InterruptThread/intrpthrd003/TestDescription.java 8288911 macosx-all
 
