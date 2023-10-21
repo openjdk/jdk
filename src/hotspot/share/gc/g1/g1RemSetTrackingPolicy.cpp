@@ -38,11 +38,8 @@ bool G1RemSetTrackingPolicy::needs_scan_for_rebuild(HeapRegion* r) const {
 }
 
 void G1RemSetTrackingPolicy::update_at_allocate(HeapRegion* r) {
-  if (r->is_young()) {
-    // Always collect remembered set for young regions.
-    r->rem_set()->set_state_complete();
-  } else if (r->is_humongous()) {
-    // Collect remembered sets for humongous regions by default to allow eager reclaim.
+  if (r->is_young() ||     // Always collect remembered set for young regions.
+      r->is_humongous()) { // Collect remembered sets for humongous regions by default to allow eager reclaim.
     r->rem_set()->set_state_complete();
   } else if (r->is_old()) {
     // By default, do not create remembered set for new old regions.
