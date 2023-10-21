@@ -3473,51 +3473,63 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @see #toEngineeringString()
      */
     public String toPlainString() {
-        if(scale==0) {
+        int scale = this.scale;
+        long intCompact = this.intCompact;
+
+        if (scale == 0)
             return unscaledString();
-        }
-        if(this.scale<0) { // No decimal point
-            if(signum()==0) {
+        // currency fast path
+        if (scale == 2 && intCompact != INFLATED)
+            return ConcatHelper.scale2(intCompact);
+
+        int signum = signum();
+        if (this.scale < 0) { // No decimal point
+            if (signum == 0)
                 return "0";
-            }
+
             int trailingZeros = checkScaleNonZero((-(long)scale));
             StringBuilder buf;
-            if(intCompact!=INFLATED) {
-                buf = new StringBuilder(20+trailingZeros);
-                buf.append(intCompact);
+            if (intCompact != INFLATED) {
+                buf = new StringBuilder(20 + trailingZeros)
+                        .append(intCompact);
             } else {
                 String str = intVal.toString();
-                buf = new StringBuilder(str.length()+trailingZeros);
-                buf.append(str);
+                buf = new StringBuilder(str.length() + trailingZeros)
+                        .append(str);
             }
-            for (int i = 0; i < trailingZeros; i++) {
-                buf.append('0');
-            }
-            return buf.toString();
+            return buf.repeat('0', trailingZeros)
+                    .toString();
         }
-        String str = unscaledAbsString();
-        return getValueString(signum(), str, scale);
+
+        return layoutCharsPlain(signum, unscaledAbsString(), scale);
     }
 
-    /* Returns a digit.digit string */
-    private String getValueString(int signum, String intString, int scale) {
+    /**
+     *
+     * @param signum
+     * @param coeff the significand as an absolute value
+     * @param scale
+     * @return
+     */
+    private static String layoutCharsPlain(int signum, String coeff, int scale) {
         /* Insert decimal point */
+        int coeffLen = coeff.length();
+        int insertionPoint = coeffLen - scale;
+        if (insertionPoint == 0)  /* Point goes right before intVal */
+            return (signum < 0 ? "-0." : "0.").concat(coeff);
+
         StringBuilder buf;
-        int insertionPoint = intString.length() - scale;
-        if (insertionPoint == 0) {  /* Point goes right before intVal */
-            return (signum<0 ? "-0." : "0.") + intString;
-        } else if (insertionPoint > 0) { /* Point goes inside intVal */
-            buf = new StringBuilder(intString);
-            buf.insert(insertionPoint, '.');
+        if (insertionPoint > 0) { /* Point goes inside intVal */
+            buf = new StringBuilder();
             if (signum < 0)
-                buf.insert(0, '-');
+                buf.append('-');
+            buf.append(coeff)
+               .insert(insertionPoint + (signum < 0 ? 1 : 0), '.');
         } else { /* We must insert zeros between point and intVal */
-            buf = new StringBuilder(3-insertionPoint + intString.length());
-            buf.append(signum<0 ? "-0." : "0.");
-            for (int i=0; i<-insertionPoint; i++) {
-                buf.append('0');
-            }
-            buf.append(intString);
+            buf = new StringBuilder(3 - insertionPoint + coeffLen)
+                    .append(signum < 0 ? "-0." : "0.")
+                    .repeat('0', -insertionPoint)
+                    .append(coeff);
         }
         return buf.toString();
     }
@@ -4141,25 +4153,28 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         return BigDecimal.valueOf(1, this.scale(), 1);
     }
 
-    static final class ConcatHelper {
-        private static final MethodHandle NEGATIVE_ZERO_CHAR_CHAR;
-        private static final MethodHandle LONG_DOT_CHAR_CHAR;
+    private static final class ConcatHelper {
+        static final MethodHandle NEGATIVE_ZERO_CHAR_CHAR;
+        static final MethodHandle LONG_DOT_CHAR_CHAR;
+        static final MethodHandle INT_DOT_CHAR_CHAR;
         static {
             try {
-                NEGATIVE_ZERO_CHAR_CHAR
-                        = StringConcatFactory.makeConcatWithConstants(
-                            MethodHandles.lookup(),
-                            "neg_zero_scale2",
-                            MethodType.methodType(String.class, char.class, char.class),
-                            "-0.\1\1"
-                        ).dynamicInvoker();
-                LONG_DOT_CHAR_CHAR
-                        = StringConcatFactory.makeConcatWithConstants(
-                        MethodHandles.lookup(),
+                MethodHandles.Lookup lookup = MethodHandles.lookup();
+                NEGATIVE_ZERO_CHAR_CHAR = StringConcatFactory.makeConcatWithConstants(
+                        lookup,
+                        "neg_zero_scale2",
+                        MethodType.methodType(String.class, char.class, char.class),
+                        "-0.\1\1").dynamicInvoker();
+                LONG_DOT_CHAR_CHAR = StringConcatFactory.makeConcatWithConstants(
+                        lookup,
                         "scale2",
                         MethodType.methodType(String.class, long.class, char.class, char.class),
-                        "\1.\1\1"
-                ).dynamicInvoker();
+                        "\1.\1\1").dynamicInvoker();
+                INT_DOT_CHAR_CHAR = StringConcatFactory.makeConcatWithConstants(
+                        lookup,
+                        "scale2",
+                        MethodType.methodType(String.class, int.class, char.class, char.class),
+                        "\1.\1\1").dynamicInvoker();
             } catch (Exception e) {
                 throw new Error("Bootstrap error", e);
             }
@@ -4171,9 +4186,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             char c0 = (char)(pair & 0xff);
             char c1 = (char)(pair >> 8);
             try {
-                if (highInt == 0 && intCompact < 0) {
+                if (highInt == 0 && intCompact < 0)
                     return (String) NEGATIVE_ZERO_CHAR_CHAR.invokeExact(c0, c1);
-                }
+
+                if (highInt >= Integer.MIN_VALUE && highInt <= Integer.MAX_VALUE)
+                    return (String) INT_DOT_CHAR_CHAR.invokeExact((int) highInt, c0, c1);
 
                 return (String) LONG_DOT_CHAR_CHAR.invokeExact(highInt, c0, c1);
             } catch (Throwable e) {
@@ -4196,10 +4213,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         long intCompact = this.intCompact;
         if (scale == 0)                      // zero scale is trivial
             return unscaledString();
-        if (scale == 2 && intCompact != INFLATED) {
-            // currency fast path
+        // currency fast path
+        if (scale == 2 && intCompact != INFLATED)
             return ConcatHelper.scale2(intCompact);
-        }
 
         // Get the significand as an absolute value
         String coeff = unscaledAbsString();
@@ -4211,20 +4227,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         int coeffLen = coeff.length();
         long adjusted = -(long)scale + (coeffLen -1);
         if ((scale >= 0) && (adjusted >= -6)) { // plain number
-            StringBuilder buf = new StringBuilder(32);
-            if (signum() < 0)             // prefix '-' if negative
-                buf.append('-');
-            int pad = scale - coeffLen;         // count of padding zeros
-            if (pad >= 0) {                     // 0.xxx form
-                buf.append("0.")
-                   .repeat('0', pad)
-                   .append(coeff, 0, coeffLen);
-            } else {                         // xx.xx form
-                buf.append(coeff, 0, -pad)
-                   .append('.')
-                   .append(coeff, -pad, coeffLen);
-            }
-            return buf.toString();
+            return layoutCharsPlain(signum(), coeff, scale);
         }
         // E-notation is needed
         return layoutCharsE(sci, coeff, coeffLen, adjusted);
@@ -4232,13 +4235,14 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
     private String layoutCharsE(boolean sci, String coeff, int coeffLen, long adjusted) {
         StringBuilder buf = new StringBuilder(32);
-        if (signum() < 0)             // prefix '-' if negative
+        int signum = signum();
+        if (signum < 0)                  // prefix '-' if negative
             buf.append('-');
         if (sci) {                       // Scientific notation
             buf.append(coeff.charAt(0)); // first character
             if (coeffLen > 1) {          // more to come
                 buf.append('.')
-                        .append(coeff, 1, coeffLen);
+                   .append(coeff, 1, coeffLen);
             }
         } else {                         // Engineering notation
             int sig = (int)(adjusted % 3);
@@ -4246,7 +4250,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 sig += 3;                // [adjusted was negative]
             adjusted -= sig;             // now a multiple of 3
             sig++;
-            if (signum() == 0) {
+            if (signum == 0) {
                 switch (sig) {
                     case 1:
                         buf.append('0'); // exponent is a multiple of three
@@ -4262,13 +4266,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     default:
                         throw new AssertionError("Unexpected sig value " + sig);
                 }
-            } else if (sig >= coeffLen) {   // significand all in integer
+            } else if (sig >= coeffLen) {// significand all in integer
                 buf.append(coeff, 0, coeffLen)
-                        .repeat('0', sig - coeffLen); // may need some zeros, too
+                   .repeat('0', sig - coeffLen); // may need some zeros, too
             } else {                     // xx.xxE form
                 buf.append(coeff, 0, sig)
-                        .append('.')
-                        .append(coeff, sig, coeffLen);
+                   .append('.')
+                   .append(coeff, sig, coeffLen);
             }
         }
         if (adjusted != 0) {             // [!sci could have made 0]
