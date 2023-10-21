@@ -105,9 +105,23 @@ public class LongDivMod {
     }
 
     @Benchmark
+    public void testDivideConstantBounded() {
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            quotients[i] = (int)dividends[i] / 7L;
+        }
+    }
+
+    @Benchmark
     public void testDivideUnsignedConstant() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             quotients[i] = Long.divideUnsigned(dividends[i], 7);
+        }
+    }
+
+    @Benchmark
+    public void testDivideUnsignedConstantBounded() {
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            quotients[i] = Long.divideUnsigned(Integer.toUnsignedLong((int)dividends[i]), 15);
         }
     }
 

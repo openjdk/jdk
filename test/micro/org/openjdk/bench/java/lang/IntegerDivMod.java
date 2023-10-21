@@ -112,9 +112,23 @@ public class IntegerDivMod {
     }
 
     @Benchmark
+    public void testDivideConstantBounded() {
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            quotients[i] = (short)dividends[i] / 7;
+        }
+    }
+
+    @Benchmark
     public void testDivideUnsignedConstant() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             quotients[i] = Integer.divideUnsigned(dividends[i], 7);
+        }
+    }
+
+    @Benchmark
+    public void testDivideUnsignedConstantBounded() {
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            quotients[i] = Integer.divideUnsigned((char)dividends[i], 15);
         }
     }
 

@@ -27,6 +27,9 @@
 #include <random>
 #include <type_traits>
 #include <vector>
+
+#undef assert
+
 #include "utilities/javaArithmetic.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "unittest.hpp"
