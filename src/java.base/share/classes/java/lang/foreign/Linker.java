@@ -519,10 +519,6 @@ public sealed interface Linker permits AbstractLinker {
      * {@snippet lang=java :
      * linker.downcallHandle(function).bindTo(symbol);
      * }
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption.
      *
      * @param address  the native memory segment whose {@linkplain MemorySegment#address() base address} is the
      *                 address of the target foreign function.
@@ -575,10 +571,6 @@ public sealed interface Linker permits AbstractLinker {
      * {@link MemorySegment#copy(MemorySegment, long, MemorySegment, long, long)} methods may be thrown.
      * The returned method handle will additionally throw {@link NullPointerException} if any argument
      * passed to it is {@code null}.
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption.
      *
      * @param function the function descriptor of the target foreign function.
      * @param options  the linker options associated with this linkage request.
@@ -612,10 +604,6 @@ public sealed interface Linker permits AbstractLinker {
      * try/catch block to catch any unexpected exceptions. This can be done using the
      * {@link java.lang.invoke.MethodHandles#catchException(MethodHandle, Class, MethodHandle)} method handle combinator,
      * and handle exceptions as desired in the corresponding catch block.
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption.
      *
      * @param target the target method handle.
      * @param function the upcall stub function descriptor.

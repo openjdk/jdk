@@ -178,7 +178,7 @@ public final class SharedUtils {
         if (dropReturn) { // no handling for return value, need to drop it
             target = dropReturn(target);
         } else {
-            // adjust return type so it matches the inferred type of the effective
+            // adjust return type so that it matches the inferred type of the effective
             // function descriptor
             target = target.asType(target.type().changeReturnType(MemorySegment.class));
         }
