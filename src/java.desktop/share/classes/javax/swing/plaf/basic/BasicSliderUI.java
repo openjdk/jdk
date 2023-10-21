@@ -1981,7 +1981,7 @@ public class BasicSliderUI extends SliderUI{
             currentMouseY = e.getY();
 
             if (slider.isRequestFocusEnabled()) {
-                slider.requestFocus();
+                slider.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
             }
 
             // Clicked in the Thumb area?

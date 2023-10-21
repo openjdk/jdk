@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public class B6529200 {
                 /* test will timeout otherwise */
             }
         } catch (SocketTimeoutException e) {
-            server.stop (2);
+            server.stop(0);
             executor.shutdown ();
             throw new RuntimeException ("Test failed in test1");
         }
@@ -92,20 +92,20 @@ public class B6529200 {
                 buf[i++] = (byte)c;
             }
         } catch (SocketTimeoutException e) {
-            server.stop (2);
+            server.stop(0);
             executor.shutdown ();
             throw new RuntimeException ("Test failed in test2");
         }
 
         String ss = new String (buf, "ISO-8859-1");
         if (ss.indexOf ("\r\n\r\nhello world") == -1) {
-            server.stop (2);
+            server.stop(0);
             executor.shutdown ();
             throw new RuntimeException ("Test failed in test2: wrong string");
         }
         System.out.println (ss);
         is.close ();
-        server.stop (2);
+        server.stop(0);
         executor.shutdown();
     }
 

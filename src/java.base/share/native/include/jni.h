@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1992,6 +1992,7 @@ JNI_OnUnload(JavaVM *vm, void *reserved);
 #define JNI_VERSION_10  0x000a0000
 #define JNI_VERSION_19  0x00130000
 #define JNI_VERSION_20  0x00140000
+#define JNI_VERSION_21  0x00150000
 
 #ifdef __cplusplus
 } /* extern "C" */

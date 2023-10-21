@@ -1,12 +1,12 @@
 #
 #
-# Amendments up until ISO 4217 AMENDMENT NUMBER 174
-#   (As of 2 November 2022)
+# Amendments up until ISO 4217 AMENDMENT NUMBER 175
+#   (As of 31 March 2023)
 #
 
 # Version
 FILEVERSION=3
-DATAVERSION=174
+DATAVERSION=175
 
 # ISO 4217 currency data
 AF	AFN	971	2

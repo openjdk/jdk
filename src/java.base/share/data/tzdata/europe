@@ -540,9 +540,7 @@ Zone	Europe/London	-0:01:15 -	LMT	1847 Dec  1
 # other form with a traditional approximation for Irish timestamps
 # after 1971-10-31 02:00 UTC; although this approximation has tm_isdst
 # flags that are reversed, its UTC offsets are correct and this often
-# suffices.  This source file currently uses only nonnegative SAVE
-# values, but this is intended to change and downstream code should
-# not rely on it.
+# suffices....
 #
 # The following is like GB-Eire and EU, except with standard time in
 # summer and negative daylight saving time in winter.  It is for when
@@ -1136,19 +1134,18 @@ Zone Atlantic/Faroe	-0:27:04 -	LMT	1908 Jan 11 # Tórshavn
 #
 # From Jürgen Appel (2022-11-25):
 # https://ina.gl/samlinger/oversigt-over-samlinger/samling/dagsordener/dagsorden.aspx?lang=da&day=24-11-2022
-# If I understand this correctly, from the next planned switch to
-# summer time, Greenland will permanently stay at that time, i.e. no
-# switch back to winter time in 2023 will occur.
 #
-# From Paul Eggert (2022-11-28):
-# The official document in Danish
-# https://naalakkersuisut.gl/-/media/naalakkersuisut/filer/kundgoerelser/2022/11/2511/31_da_inatsisartutlov-om-tidens-bestemmelse.pdf?la=da&hash=A33597D8A38CC7038465241119EF34F3
-# says standard time for Greenland is -02, that Naalakkersuisut can lay down
-# rules for DST and can require some areas to use a different time zone,
-# and that this all takes effect 2023-03-25 22:00.  The abovementioned
-# "bekymringer" URL says the intent is no transition March 25, that
-# Greenland will not go back to winter time in fall 2023, and that
-# only America/Nuuk is affected (though further changes may occur).
+# From Thomas M. Steenholdt (2022-12-02):
+# - The bill to move America/Nuuk from UTC-03 to UTC-02 passed.
+# - The bill to stop observing DST did not (Greenland will stop observing DST
+#   when EU does).
+# Details on the implementation are here (section 6):
+# https://ina.gl/dvd/EM%202022/pdf/media/2553529/pkt17_em2022_tidens_bestemmelse_bem_da.pdf
+# This is how the change will be implemented:
+# 1. The shift *to* DST in 2023 happens as normal.
+# 2. The shift *from* DST in 2023 happens as normal, but coincides with the
+#    shift to UTC-02 normaltime (people will not change their clocks here).
+# 3. After this, DST is still observed, but as -02/-01 instead of -03/-02.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Thule	1991	1992	-	Mar	lastSun	2:00	1:00	D
@@ -1172,8 +1169,8 @@ Zone America/Scoresbysund -1:27:52 -	LMT	1916 Jul 28 # Ittoqqortoormiit
 			-1:00	EU	-01/+00
 Zone America/Nuuk	-3:26:56 -	LMT	1916 Jul 28 # Godthåb
 			-3:00	-	-03	1980 Apr  6  2:00
-			-3:00	EU	-03/-02	2023 Mar 25 22:00
-			-2:00	-	-02
+			-3:00	EU	-03/-02	2023 Oct 29  1:00u
+			-2:00	EU	-02/-01
 Zone America/Thule	-4:35:08 -	LMT	1916 Jul 28 # Pituffik
 			-4:00	Thule	A%sT
 
@@ -1509,9 +1506,9 @@ Zone	Europe/Paris	0:09:21 -	LMT	1891 Mar 16
 Rule	Germany	1946	only	-	Apr	14	2:00s	1:00	S
 Rule	Germany	1946	only	-	Oct	 7	2:00s	0	-
 Rule	Germany	1947	1949	-	Oct	Sun>=1	2:00s	0	-
-# http://www.ptb.de/de/org/4/44/441/salt.htm says the following transition
-# occurred at 3:00 MEZ, not the 2:00 MEZ given in Shanks & Pottenger.
-# Go with the PTB.
+# https://www.ptb.de/cms/en/ptb/fachabteilungen/abt4/fb-44/ag-441/realisation-of-legal-time-in-germany/dst-and-midsummer-dst-in-germany-until-1979.html
+# says the following transition occurred at 3:00 MEZ, not the 2:00 MEZ
+# given in Shanks & Pottenger. Go with the PTB.
 Rule	Germany	1947	only	-	Apr	 6	3:00s	1:00	S
 Rule	Germany	1947	only	-	May	11	2:00s	2:00	M
 Rule	Germany	1947	only	-	Jun	29	3:00	1:00	S
@@ -2272,7 +2269,7 @@ Zone Europe/Bucharest	1:44:24 -	LMT	1891 Oct
 # the State Duma has approved ... the draft bill on returning to
 # winter time standard and return Russia 11 time zones.  The new
 # regulations will come into effect on October 26, 2014 at 02:00 ...
-# http://asozd2.duma.gov.ru/main.nsf/%28Spravka%29?OpenAgent&RN=431985-6&02
+# http://asozd2.duma.gov.ru/main.nsf/(Spravka)?OpenAgent&RN=431985-6&02
 # Here is a link where we put together table (based on approved Bill N
 # 431985-6) with proposed 11 Russian time zones and corresponding
 # areas/cities/administrative centers in the Russian Federation (in English):
@@ -2682,13 +2679,13 @@ Zone Europe/Volgograd	 2:57:40 -	LMT	1920 Jan  3
 			 3:00	-	+03	1930 Jun 21
 			 4:00	-	+04	1961 Nov 11
 			 4:00	Russia	+04/+05	1988 Mar 27  2:00s
-			 3:00	Russia	+03/+04	1991 Mar 31  2:00s
+			 3:00	Russia	MSK/MSD	1991 Mar 31  2:00s
 			 4:00	-	+04	1992 Mar 29  2:00s
-			 3:00	Russia	+03/+04	2011 Mar 27  2:00s
-			 4:00	-	+04	2014 Oct 26  2:00s
-			 3:00	-	+03	2018 Oct 28  2:00s
+			 3:00	Russia	MSK/MSD	2011 Mar 27  2:00s
+			 4:00	-	MSK	2014 Oct 26  2:00s
+			 3:00	-	MSK	2018 Oct 28  2:00s
 			 4:00	-	+04	2020 Dec 27  2:00s
-			 3:00	-	+03
+			 3:00	-	MSK
 
 # From Paul Eggert (2016-11-11):
 # Europe/Saratov covers:
@@ -2719,11 +2716,11 @@ Zone Europe/Saratov	 3:04:18 -	LMT	1919 Jul  1  0:00u
 Zone Europe/Kirov	 3:18:48 -	LMT	1919 Jul  1  0:00u
 			 3:00	-	+03	1930 Jun 21
 			 4:00	Russia	+04/+05	1989 Mar 26  2:00s
-			 3:00	Russia	+03/+04	1991 Mar 31  2:00s
+			 3:00	Russia	MSK/MSD	1991 Mar 31  2:00s
 			 4:00	-	+04	1992 Mar 29  2:00s
-			 3:00	Russia	+03/+04	2011 Mar 27  2:00s
-			 4:00	-	+04	2014 Oct 26  2:00s
-			 3:00	-	+03
+			 3:00	Russia	MSK/MSD	2011 Mar 27  2:00s
+			 4:00	-	MSK	2014 Oct 26  2:00s
+			 3:00	-	MSK
 
 # From Tim Parenti (2014-07-03), per Oscar van Vlijmen (2001-08-25):
 # Europe/Samara covers...

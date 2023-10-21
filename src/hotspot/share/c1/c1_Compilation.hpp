@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,14 +198,14 @@ class Compilation: public StackObj {
 #ifndef PRODUCT
   void maybe_print_current_instruction();
   CFGPrinterOutput* cfg_printer_output() {
-    guarantee(_cfg_printer_output != NULL, "CFG printer output not initialized");
+    guarantee(_cfg_printer_output != nullptr, "CFG printer output not initialized");
     return _cfg_printer_output;
   }
 #endif // PRODUCT
 
   // error handling
   void bailout(const char* msg);
-  bool bailed_out() const                        { return _bailout_msg != NULL; }
+  bool bailed_out() const                        { return _bailout_msg != nullptr; }
   const char* bailout_msg() const                { return _bailout_msg; }
 
   static int desired_max_code_buffer_size() {

@@ -344,6 +344,14 @@ Rule	Egypt	2007	only	-	Sep	Thu>=1	24:00	0	-
 # From Mina Samuel (2016-07-04):
 # Egyptian government took the decision to cancel the DST,
 
+# From Ahmad ElDardiry (2023-03-01):
+# Egypt officially announced today that daylight savings will be
+# applied from last Friday of April to last Thursday of October.
+# From Paul Eggert (2023-03-01):
+# Assume transitions are at 00:00 and 24:00 respectively.
+# From Amir Adib (2023-03-07):
+# https://www.facebook.com/EgyptianCabinet/posts/638829614954129/
+
 Rule	Egypt	2008	only	-	Aug	lastThu	24:00	0	-
 Rule	Egypt	2009	only	-	Aug	20	24:00	0	-
 Rule	Egypt	2010	only	-	Aug	10	24:00	0	-
@@ -353,6 +361,8 @@ Rule	Egypt	2014	only	-	May	15	24:00	1:00	S
 Rule	Egypt	2014	only	-	Jun	26	24:00	0	-
 Rule	Egypt	2014	only	-	Jul	31	24:00	1:00	S
 Rule	Egypt	2014	only	-	Sep	lastThu	24:00	0	-
+Rule	Egypt	2023	max	-	Apr	lastFri	 0:00	1:00	S
+Rule	Egypt	2023	max	-	Oct	lastThu	24:00	0	-
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 		#STDOFF	2:05:08.9
@@ -452,7 +462,7 @@ Zone	Africa/Nairobi	2:27:16	-	LMT	1908 May
 # President William R. Tolbert, Jr., July 23, 1971-July 31, 1972.
 # Monrovia: Executive Mansion.
 #
-# Use the abbreviation "MMT" before 1972, as the more-accurate numeric
+# Use the abbreviation "MMT" before 1972, as the more accurate numeric
 # abbreviation "-004430" would be one byte over the POSIX limit.
 #
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
@@ -589,8 +599,8 @@ Zone	Africa/Tripoli	0:52:44 -	LMT	1920
 # DST the coming summer...
 #
 # Some sources, in French:
-# http://www.defimedia.info/news/946/Rashid-Beebeejaun-:-%C2%AB-L%E2%80%99heure-d%E2%80%99%C3%A9t%C3%A9-ne-sera-pas-appliqu%C3%A9e-cette-ann%C3%A9e-%C2%BB
-# http://lexpress.mu/Story/3398~Beebeejaun---Les-objectifs-d-%C3%A9conomie-d-%C3%A9nergie-de-l-heure-d-%C3%A9t%C3%A9-ont-%C3%A9t%C3%A9-atteints-
+# http://www.defimedia.info/news/946/Rashid-Beebeejaun-:-«-L%E2%80%99heure-d%E2%80%99été-ne-sera-pas-appliquée-cette-année-»
+# http://lexpress.mu/Story/3398~Beebeejaun---Les-objectifs-d-économie-d-énergie-de-l-heure-d-été-ont-été-atteints-
 #
 # Our wrap-up:
 # https://www.timeanddate.com/news/time/mauritius-dst-will-not-repeat.html
@@ -721,7 +731,7 @@ Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
 # More articles in the press
 # https://www.yabiladi.com/articles/details/5058/secret-l-heure-d-ete-maroc-leve.html
 # http://www.lematin.ma/Actualite/Express/Article.asp?id=148923
-# http://www.lavieeco.com/actualite/Le-Maroc-passe-sur-GMT%2B1-a-partir-de-dim
+# http://www.lavieeco.com/actualite/Le-Maroc-passe-sur-GMT+1-a-partir-de-dim
 
 # From Petr Machata (2011-03-30):
 # They have it written in English here:
@@ -736,7 +746,7 @@ Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
 # According to Infomédiaire web site from Morocco (infomediaire.ma),
 # on March 9, 2012, (in French) Heure légale:
 # Le Maroc adopte officiellement l'heure d'été
-# http://www.infomediaire.ma/news/maroc/heure-l%C3%A9gale-le-maroc-adopte-officiellement-lheure-d%C3%A9t%C3%A9
+# http://www.infomediaire.ma/news/maroc/heure-légale-le-maroc-adopte-officiellement-lheure-dété
 # Governing Council adopted draft decree, that Morocco DST starts on
 # the last Sunday of March (March 25, 2012) and ends on
 # last Sunday of September (September 30, 2012)
@@ -860,19 +870,28 @@ Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
 # Friday or Saturday (and so the 2 days off are on a weekend), the next time
 # shift will be the next weekend.
 #
-# From Paul Eggert (2020-05-31):
+# From Milamber (2021-03-31, 2022-03-10):
+# https://www.mmsp.gov.ma/fr/actualites.aspx?id=2076
+# https://www.ecoactu.ma/horaires-administration-ramadan-gmtheure-gmt-a-partir-de-dimanche-27-mars/
+#
+# From Milamber (2023-03-14, 2023-03-15):
+# The return to legal GMT time will take place this Sunday, March 19 at 3 a.m.
+# ... the return to GMT+1 will be made on Sunday April 23, 2023 at 2 a.m.
+# https://www.mmsp.gov.ma/fr/actualites/passage-à-l%E2%80%99heure-gmt-à-partir-du-dimanche-19-mars-2023
+#
+# From Paul Eggert (2023-03-14):
 # For now, guess that in the future Morocco will fall back at 03:00
 # the last Sunday before Ramadan, and spring forward at 02:00 the
-# first Sunday after two days after Ramadan.  To implement this,
+# first Sunday after one day after Ramadan.  To implement this,
 # transition dates and times for 2019 through 2087 were determined by
-# running the following program under GNU Emacs 26.3.  (This algorithm
+# running the following program under GNU Emacs 28.2.  (This algorithm
 # also produces the correct transition dates for 2016 through 2018,
 # though the times differ due to Morocco's time zone change in 2018.)
 # (let ((islamic-year 1440))
 #   (require 'cal-islam)
 #   (while (< islamic-year 1511)
 #     (let ((a (calendar-islamic-to-absolute (list 9 1 islamic-year)))
-#           (b (+ 2 (calendar-islamic-to-absolute (list 10 1 islamic-year))))
+#           (b (+ 1 (calendar-islamic-to-absolute (list 10 1 islamic-year))))
 #           (sunday 0))
 #       (while (/= sunday (mod (setq a (1- a)) 7)))
 #       (while (/= sunday (mod b 7))
@@ -886,10 +905,6 @@ Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
 #         (car (cdr (cdr a))) (calendar-month-name (car a) t) (car (cdr a))
 #         (car (cdr (cdr b))) (calendar-month-name (car b) t) (car (cdr b)))))
 #     (setq islamic-year (+ 1 islamic-year))))
-#
-# From Milamber (2021-03-31, 2022-03-10), confirming these predictions:
-# https://www.mmsp.gov.ma/fr/actualites.aspx?id=2076
-# https://www.ecoactu.ma/horaires-administration-ramadan-gmtheure-gmt-a-partir-de-dimanche-27-mars/
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Morocco	1939	only	-	Sep	12	 0:00	1:00	-
@@ -942,7 +957,7 @@ Rule	Morocco	2021	only	-	May	16	 2:00	0	-
 Rule	Morocco	2022	only	-	Mar	27	 3:00	-1:00	-
 Rule	Morocco	2022	only	-	May	 8	 2:00	0	-
 Rule	Morocco	2023	only	-	Mar	19	 3:00	-1:00	-
-Rule	Morocco	2023	only	-	Apr	30	 2:00	0	-
+Rule	Morocco	2023	only	-	Apr	23	 2:00	0	-
 Rule	Morocco	2024	only	-	Mar	10	 3:00	-1:00	-
 Rule	Morocco	2024	only	-	Apr	14	 2:00	0	-
 Rule	Morocco	2025	only	-	Feb	23	 3:00	-1:00	-
@@ -958,7 +973,7 @@ Rule	Morocco	2029	only	-	Feb	18	 2:00	0	-
 Rule	Morocco	2029	only	-	Dec	30	 3:00	-1:00	-
 Rule	Morocco	2030	only	-	Feb	10	 2:00	0	-
 Rule	Morocco	2030	only	-	Dec	22	 3:00	-1:00	-
-Rule	Morocco	2031	only	-	Feb	 2	 2:00	0	-
+Rule	Morocco	2031	only	-	Jan	26	 2:00	0	-
 Rule	Morocco	2031	only	-	Dec	14	 3:00	-1:00	-
 Rule	Morocco	2032	only	-	Jan	18	 2:00	0	-
 Rule	Morocco	2032	only	-	Nov	28	 3:00	-1:00	-
@@ -974,7 +989,7 @@ Rule	Morocco	2036	only	-	Nov	23	 2:00	0	-
 Rule	Morocco	2037	only	-	Oct	 4	 3:00	-1:00	-
 Rule	Morocco	2037	only	-	Nov	15	 2:00	0	-
 Rule	Morocco	2038	only	-	Sep	26	 3:00	-1:00	-
-Rule	Morocco	2038	only	-	Nov	 7	 2:00	0	-
+Rule	Morocco	2038	only	-	Oct	31	 2:00	0	-
 Rule	Morocco	2039	only	-	Sep	18	 3:00	-1:00	-
 Rule	Morocco	2039	only	-	Oct	23	 2:00	0	-
 Rule	Morocco	2040	only	-	Sep	 2	 3:00	-1:00	-
@@ -990,7 +1005,7 @@ Rule	Morocco	2044	only	-	Aug	28	 2:00	0	-
 Rule	Morocco	2045	only	-	Jul	 9	 3:00	-1:00	-
 Rule	Morocco	2045	only	-	Aug	20	 2:00	0	-
 Rule	Morocco	2046	only	-	Jul	 1	 3:00	-1:00	-
-Rule	Morocco	2046	only	-	Aug	12	 2:00	0	-
+Rule	Morocco	2046	only	-	Aug	 5	 2:00	0	-
 Rule	Morocco	2047	only	-	Jun	23	 3:00	-1:00	-
 Rule	Morocco	2047	only	-	Jul	28	 2:00	0	-
 Rule	Morocco	2048	only	-	Jun	 7	 3:00	-1:00	-
@@ -1006,7 +1021,7 @@ Rule	Morocco	2052	only	-	Jun	 2	 2:00	0	-
 Rule	Morocco	2053	only	-	Apr	13	 3:00	-1:00	-
 Rule	Morocco	2053	only	-	May	25	 2:00	0	-
 Rule	Morocco	2054	only	-	Apr	 5	 3:00	-1:00	-
-Rule	Morocco	2054	only	-	May	17	 2:00	0	-
+Rule	Morocco	2054	only	-	May	10	 2:00	0	-
 Rule	Morocco	2055	only	-	Mar	28	 3:00	-1:00	-
 Rule	Morocco	2055	only	-	May	 2	 2:00	0	-
 Rule	Morocco	2056	only	-	Mar	12	 3:00	-1:00	-
@@ -1022,7 +1037,7 @@ Rule	Morocco	2060	only	-	Mar	 7	 2:00	0	-
 Rule	Morocco	2061	only	-	Jan	16	 3:00	-1:00	-
 Rule	Morocco	2061	only	-	Feb	27	 2:00	0	-
 Rule	Morocco	2062	only	-	Jan	 8	 3:00	-1:00	-
-Rule	Morocco	2062	only	-	Feb	19	 2:00	0	-
+Rule	Morocco	2062	only	-	Feb	12	 2:00	0	-
 Rule	Morocco	2062	only	-	Dec	31	 3:00	-1:00	-
 Rule	Morocco	2063	only	-	Feb	 4	 2:00	0	-
 Rule	Morocco	2063	only	-	Dec	16	 3:00	-1:00	-
@@ -1038,7 +1053,7 @@ Rule	Morocco	2067	only	-	Dec	11	 2:00	0	-
 Rule	Morocco	2068	only	-	Oct	21	 3:00	-1:00	-
 Rule	Morocco	2068	only	-	Dec	 2	 2:00	0	-
 Rule	Morocco	2069	only	-	Oct	13	 3:00	-1:00	-
-Rule	Morocco	2069	only	-	Nov	24	 2:00	0	-
+Rule	Morocco	2069	only	-	Nov	17	 2:00	0	-
 Rule	Morocco	2070	only	-	Oct	 5	 3:00	-1:00	-
 Rule	Morocco	2070	only	-	Nov	 9	 2:00	0	-
 Rule	Morocco	2071	only	-	Sep	20	 3:00	-1:00	-
@@ -1054,7 +1069,7 @@ Rule	Morocco	2075	only	-	Sep	15	 2:00	0	-
 Rule	Morocco	2076	only	-	Jul	26	 3:00	-1:00	-
 Rule	Morocco	2076	only	-	Sep	 6	 2:00	0	-
 Rule	Morocco	2077	only	-	Jul	18	 3:00	-1:00	-
-Rule	Morocco	2077	only	-	Aug	29	 2:00	0	-
+Rule	Morocco	2077	only	-	Aug	22	 2:00	0	-
 Rule	Morocco	2078	only	-	Jul	10	 3:00	-1:00	-
 Rule	Morocco	2078	only	-	Aug	14	 2:00	0	-
 Rule	Morocco	2079	only	-	Jun	25	 3:00	-1:00	-
@@ -1064,13 +1079,13 @@ Rule	Morocco	2080	only	-	Jul	21	 2:00	0	-
 Rule	Morocco	2081	only	-	Jun	 1	 3:00	-1:00	-
 Rule	Morocco	2081	only	-	Jul	13	 2:00	0	-
 Rule	Morocco	2082	only	-	May	24	 3:00	-1:00	-
-Rule	Morocco	2082	only	-	Jul	 5	 2:00	0	-
+Rule	Morocco	2082	only	-	Jun	28	 2:00	0	-
 Rule	Morocco	2083	only	-	May	16	 3:00	-1:00	-
 Rule	Morocco	2083	only	-	Jun	20	 2:00	0	-
 Rule	Morocco	2084	only	-	Apr	30	 3:00	-1:00	-
 Rule	Morocco	2084	only	-	Jun	11	 2:00	0	-
 Rule	Morocco	2085	only	-	Apr	22	 3:00	-1:00	-
-Rule	Morocco	2085	only	-	Jun	 3	 2:00	0	-
+Rule	Morocco	2085	only	-	May	27	 2:00	0	-
 Rule	Morocco	2086	only	-	Apr	14	 3:00	-1:00	-
 Rule	Morocco	2086	only	-	May	19	 2:00	0	-
 Rule	Morocco	2087	only	-	Mar	30	 3:00	-1:00	-
@@ -1213,15 +1228,15 @@ Zone	Africa/Windhoek	1:08:24 -	LMT	1892 Feb 8
 # From P Chan (2020-12-03):
 # GMT was adopted as the standard time of Lagos on 1905-07-01.
 # Lagos Weekly Record, 1905-06-24, p 3
-# http://ddsnext.crl.edu/titles/31558#?c=0&m=668&s=0&cv=2&r=0&xywh=1446%2C5221%2C1931%2C1235
+# http://ddsnext.crl.edu/titles/31558#?c=0&m=668&s=0&cv=2&r=0&xywh=1446,5221,1931,1235
 # says "It is officially notified that on and after the 1st of July 1905
-# Greenwich Mean Solar Time will be adopted thought the Colony and
+# Greenwich Mean Solar Time will be adopted throughout the Colony and
 # Protectorate, and that it will be necessary to put all clocks 13 minutes and
 # 35 seconds back, recording local mean time."
 #
 # It seemed that Lagos returned to LMT on 1908-07-01.
 # [The Lagos Standard], 1908-07-01, p 5
-# http://ddsnext.crl.edu/titles/31556#?c=0&m=78&s=0&cv=4&r=0&xywh=-92%2C3590%2C3944%2C2523
+# http://ddsnext.crl.edu/titles/31556#?c=0&m=78&s=0&cv=4&r=0&xywh=-92,3590,3944,2523
 # says "Scarcely have the people become accustomed to this new time, when
 # another official notice has now appeared announcing that from and after the
 # 1st July next, return will be made to local mean time."
@@ -1233,7 +1248,7 @@ Zone	Africa/Windhoek	1:08:24 -	LMT	1892 Feb 8
 # https://libsysdigi.library.illinois.edu/ilharvest/Africana/Books2011-05/3064634/3064634_1914/3064634_1914_opt.pdf#page=27
 # "On January 1st [1914], a universal standard time for Nigeria was adopted,
 # viz., half an hour fast on Greenwich mean time, corresponding to the meridian
-# 7 [degrees] 30' E. long."
+# 7° 30' E. long."
 # Lloyd's Register of Shipping (1915) says "Hitherto the time observed in Lagos
 # was the local mean time. On 1st January, 1914, standard time for the whole of
 # Nigeria was introduced ... Lagos time has been advanced about 16 minutes
@@ -1251,7 +1266,7 @@ Zone	Africa/Windhoek	1:08:24 -	LMT	1892 Feb 8
 # The Lagos Weekly Record, 1919-09-20, p 3 details discussion on the first
 # reading of this Bill by the Legislative Council of the Colony of Nigeria on
 # Thursday 1919-08-28:
-# http://ddsnext.crl.edu/titles/31558?terms&item_id=303484#?m=1118&c=1&s=0&cv=2&r=0&xywh=1261%2C3408%2C2994%2C1915
+# http://ddsnext.crl.edu/titles/31558?terms&item_id=303484#?m=1118&c=1&s=0&cv=2&r=0&xywh=1261,3408,2994,1915
 # "The proposal is that the Globe should be divided into twelve zones East and
 # West of Greenwich, of one hour each, Nigeria falling into the zone with a
 # standard of one hour fast on Greenwich Mean Time.  Nigeria standard time is

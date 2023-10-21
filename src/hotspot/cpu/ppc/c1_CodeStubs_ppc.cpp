@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,7 +42,7 @@ void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
   if (UseSIGTRAP) {
     DEBUG_ONLY( __ should_not_reach_here("C1SafepointPollStub::emit_code"); )
   } else {
-    assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
+    assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
            "polling page return stub not created yet");
     address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
 
@@ -336,12 +336,12 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 
   if (_id == load_klass_id) {
     // Produce a copy of the load klass instruction for use by the being initialized case.
-    AddressLiteral addrlit((address)NULL, metadata_Relocation::spec(_index));
+    AddressLiteral addrlit((address)nullptr, metadata_Relocation::spec(_index));
     __ load_const(_obj, addrlit, R0);
     DEBUG_ONLY( compare_with_patch_site(__ code_section()->start() + being_initialized_entry, _pc_start, _bytes_to_copy); )
   } else if (_id == load_mirror_id || _id == load_appendix_id) {
     // Produce a copy of the load mirror instruction for use by the being initialized case.
-    AddressLiteral addrlit((address)NULL, oop_Relocation::spec(_index));
+    AddressLiteral addrlit((address)nullptr, oop_Relocation::spec(_index));
     __ load_const(_obj, addrlit, R0);
     DEBUG_ONLY( compare_with_patch_site(__ code_section()->start() + being_initialized_entry, _pc_start, _bytes_to_copy); )
   } else {
@@ -400,7 +400,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 
   address entry = __ pc();
   NativeGeneralJump::insert_unconditional((address)_pc_start, entry);
-  address target = NULL;
+  address target = nullptr;
   relocInfo::relocType reloc_type = relocInfo::none;
   switch (_id) {
     case access_field_id:  target = Runtime1::entry_for(Runtime1::access_field_patching_id); break;

@@ -986,6 +986,8 @@ public class Properties extends Hashtable<Object,Object> {
      * @throws InvalidPropertiesFormatException Data on input stream does not
      *         constitute a valid XML document with the mandated document type.
      * @throws NullPointerException if {@code in} is null.
+     *
+     * @spec https://www.w3.org/TR/xml Extensible Markup Language (XML) 1.0 (Fifth Edition)
      * @see    #storeToXML(OutputStream, String, String)
      * @see    <a href="http://www.w3.org/TR/REC-xml/#charencoding">Character
      *         Encoding in Entities</a>
@@ -1064,6 +1066,8 @@ public class Properties extends Hashtable<Object,Object> {
      *         or if {@code encoding} is {@code null}.
      * @throws ClassCastException  if this {@code Properties} object
      *         contains any keys or values that are not {@code Strings}.
+     *
+     * @spec https://www.w3.org/TR/xml Extensible Markup Language (XML) 1.0 (Fifth Edition)
      * @see    #loadFromXML(InputStream)
      * @see    <a href="http://www.w3.org/TR/REC-xml/#charencoding">Character
      *         Encoding in Entities</a>
@@ -1113,6 +1117,8 @@ public class Properties extends Hashtable<Object,Object> {
      * @throws NullPointerException if {@code os} or {@code charset} is {@code null}.
      * @throws ClassCastException  if this {@code Properties} object
      *         contains any keys or values that are not {@code Strings}.
+     *
+     * @spec https://www.w3.org/TR/xml Extensible Markup Language (XML) 1.0 (Fifth Edition)
      * @see    #loadFromXML(InputStream)
      * @see    <a href="http://www.w3.org/TR/REC-xml/#charencoding">Character
      *         Encoding in Entities</a>

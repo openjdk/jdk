@@ -67,9 +67,9 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="btn" description="Bhutanese Ngultrum"/>
             <type name="buk" description="Burmese Kyat" since="1.9"/>
             <type name="bwp" description="Botswanan Pula"/>
-            <type name="byb" description="Belarusian New Ruble (1994-1999)" since="1.9"/>
+            <type name="byb" description="Belarusian Ruble (1994-1999)" since="1.9"/>
             <type name="byn" description="Belarusian Ruble" since="31"/>
-            <type name="byr" description="Belarusian Ruble (2000–2016)" since="1.9"/>
+            <type name="byr" description="Belarusian Ruble (2000-2016)" since="1.9"/>
             <type name="bzd" description="Belize Dollar"/>
             <type name="cad" description="Canadian Dollar"/>
             <type name="cdf" description="Congolese Franc"/>
@@ -112,7 +112,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="fjd" description="Fijian Dollar"/>
             <type name="fkp" description="Falkland Islands Pound"/>
             <type name="frf" description="French Franc"/>
-            <type name="gbp" description="British Pound Sterling"/>
+            <type name="gbp" description="British Pound"/>
             <type name="gek" description="Georgian Kupon Larit" since="1.9"/>
             <type name="gel" description="Georgian Lari" since="1.9"/>
             <type name="ghc" description="Ghanaian Cedi (1979-2007)"/>
@@ -136,8 +136,8 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="idr" description="Indonesian Rupiah"/>
             <type name="iep" description="Irish Pound"/>
             <type name="ilp" description="Israeli Pound"/>
-            <type name="ilr" description="Israeli Sheqel (1980-1985)" since="1.9"/>
-            <type name="ils" description="Israeli New Sheqel"/>
+            <type name="ilr" description="Israeli Shekel (1980-1985)" since="1.9"/>
+            <type name="ils" description="Israeli New Shekel"/>
             <type name="inr" description="Indian Rupee"/>
             <type name="iqd" description="Iraqi Dinar" since="1.9"/>
             <type name="irr" description="Iranian Rial" since="1.9"/>
@@ -181,7 +181,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="mkd" description="Macedonian Denar" since="1.9"/>
             <type name="mkn" description="Macedonian Denar (1992-1993)" since="1.9"/>
             <type name="mlf" description="Malian Franc" since="1.9"/>
-            <type name="mmk" description="Myanma Kyat"/>
+            <type name="mmk" description="Myanmar Kyat"/>
             <type name="mnt" description="Mongolian Tugrik"/>
             <type name="mop" description="Macanese Pataca"/>
             <type name="mro" description="Mauritanian Ouguiya (1973-2017)"/>
@@ -189,7 +189,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="mtl" description="Maltese Lira"/>
             <type name="mtp" description="Maltese Pound"/>
             <type name="mur" description="Mauritian Rupee"/>
-            <type name="mvp" description="Maldivian Rupee" since="1.9"/>
+            <type name="mvp" description="Maldivian Rupee (1947-1981)" since="1.9"/>
             <type name="mvr" description="Maldivian Rufiyaa" since="1.9"/>
             <type name="mwk" description="Malawian Kwacha" since="1.9"/>
             <type name="mxn" description="Mexican Peso" since="1.9"/>
@@ -210,7 +210,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="omr" description="Omani Rial" since="1.9"/>
             <type name="pab" description="Panamanian Balboa"/>
             <type name="pei" description="Peruvian Inti"/>
-            <type name="pen" description="Peruvian Nuevo Sol"/>
+            <type name="pen" description="Peruvian Sol"/>
             <type name="pes" description="Peruvian Sol (1863-1965)" since="1.9"/>
             <type name="pgk" description="Papua New Guinean Kina"/>
             <type name="php" description="Philippine Peso"/>
@@ -219,7 +219,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="plz" description="Polish Zloty (1950-1995)" since="1.9"/>
             <type name="pte" description="Portuguese Escudo"/>
             <type name="pyg" description="Paraguayan Guarani"/>
-            <type name="qar" description="Qatari Rial"/>
+            <type name="qar" description="Qatari Riyal"/>
             <type name="rhd" description="Rhodesian Dollar"/>
             <type name="rol" description="Romanian Leu (1952-2006)" since="1.9"/>
             <type name="ron" description="Romanian Leu"/>
@@ -235,11 +235,11 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="sdp" description="Sudanese Pound (1957-1998)" since="1.9"/>
             <type name="sek" description="Swedish Krona"/>
             <type name="sgd" description="Singapore Dollar"/>
-            <type name="shp" description="Saint Helena Pound"/>
+            <type name="shp" description="St. Helena Pound"/>
             <type name="sit" description="Slovenian Tolar" since="1.9"/>
             <type name="skk" description="Slovak Koruna"/>
-            <type name="sle" description="Sierra Leonean New Leone"/>
-            <type name="sll" description="Sierra Leonean Leone"/>
+            <type name="sle" description="Sierra Leonean Leone" since="41"/>
+            <type name="sll" description="Sierra Leonean Leone (1964—2022)"/>
             <type name="sos" description="Somali Shilling"/>
             <type name="srd" description="Surinamese Dollar"/>
             <type name="srg" description="Surinamese Guilder"/>
@@ -274,28 +274,28 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="uyp" description="Uruguayan Peso (1975-1993)" since="1.9"/>
             <type name="uyu" description="Uruguayan Peso"/>
             <type name="uyw" description="Uruguayan Nominal Wage Index Unit" since="34"/>
-            <type name="uzs" description="Uzbekistan Som" since="1.9"/>
+            <type name="uzs" description="Uzbekistani Som" since="1.9"/>
             <type name="veb" description="Venezuelan Bolívar (1871-2008)" since="1.9"/>
+            <type name="ved" description="Bolívar Soberano" since="41"/>
             <type name="vef" description="Venezuelan Bolívar (2008-2018)"/>
             <type name="ves" description="Venezuelan Bolívar" since="34"/>
-            <type name="ved" description="Bolívar Soberano" since="41"/>
             <type name="vnd" description="Vietnamese Dong"/>
             <type name="vnn" description="Vietnamese Dong (1978-1985)" since="1.9"/>
             <type name="vuv" description="Vanuatu Vatu"/>
             <type name="wst" description="Samoan Tala"/>
-            <type name="xaf" description="CFA Franc BEAC"/>
+            <type name="xaf" description="Central African CFA Franc"/>
             <type name="xag" description="Silver" since="1.9"/>
             <type name="xau" description="Gold" since="1.9"/>
             <type name="xba" description="European Composite Unit" since="1.9"/>
             <type name="xbb" description="European Monetary Unit" since="1.9"/>
-            <type name="xbc" description="European Unit of Account 9" since="1.9"/>
-            <type name="xbd" description="European Unit of Account 17" since="1.9"/>
+            <type name="xbc" description="European Unit of Account (XBC)" since="1.9"/>
+            <type name="xbd" description="European Unit of Account (XBD)" since="1.9"/>
             <type name="xcd" description="East Caribbean Dollar"/>
             <type name="xdr" description="Special Drawing Rights" since="1.9"/>
             <type name="xeu" description="European Currency Unit" since="1.9"/>
             <type name="xfo" description="French Gold Franc" since="1.9"/>
             <type name="xfu" description="French UIC-Franc" since="1.9"/>
-            <type name="xof" description="CFA Franc BCEAO"/>
+            <type name="xof" description="West African CFA Franc"/>
             <type name="xpd" description="Palladium" since="1.9"/>
             <type name="xpf" description="CFP Franc"/>
             <type name="xpt" description="Platinum" since="1.9"/>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"provider.class.not.found", "Provider \"%s\" nicht gefunden"},
         {"jarsigner.error.", "jarsigner-Fehler: "},
         {"Illegal.option.", "Unzul\u00E4ssige Option: "},
-        {"This.option.is.forremoval", "Diese Option ist veraltet und wird in einem zuk\u00FCnftigen Release entfernt: "},
         {".keystore.must.be.NONE.if.storetype.is.{0}",
                 "-keystore muss NONE sein, wenn -storetype {0} ist"},
         {".keypass.can.not.be.specified.if.storetype.is.{0}",
@@ -97,10 +96,6 @@ public class Resources_de extends java.util.ListResourceBundle {
                 "[-tsapolicyid <OID>]        TSAPolicyID f\u00FCr Zeitstempelautorit\u00E4t"},
         {".tsadigestalg.algorithm.of.digest.data.in.timestamping.request",
                 "[-tsadigestalg <Algorithmus>] Algorithmus der Digestdaten in Zeitstempelanforderung"},
-        {".altsigner.class.class.name.of.an.alternative.signing.mechanism",
-                "[-altsigner <Klasse>]        Klassenname eines alternativen Signiermechanismus\n                            (Diese Option ist veraltet und wird in einem zuk\u00FCnftigen Release entfernt.)"},
-        {".altsignerpath.pathlist.location.of.an.alternative.signing.mechanism",
-                "[-altsignerpath <Pfadliste>] Speicherort eines alternativen Signiermechanismus\n                            (Diese Option ist veraltet und wird in einem zuk\u00FCnftigen Release entfernt.)"},
         {".internalsf.include.the.SF.file.inside.the.signature.block",
                 "[-internalsf]               SF-Datei in Signaturblock aufnehmen"},
         {".sectionsonly.don.t.compute.hash.of.entire.manifest",
@@ -236,8 +231,6 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"or", "oder"},
         {"Certificate.not.found.for.alias.alias.must.reference.a.valid.KeyStore.entry.containing.an.X.509.public.key.certificate.for.the",
                 "Zertifikat nicht gefunden f\u00FCr: {0}. {1} muss einen g\u00FCltigen Keystore-Eintrag referenzieren, der ein X.509-Public-Key-Zertifikat f\u00FCr die Zeitstempelautorit\u00E4t enth\u00E4lt."},
-        {"using.an.alternative.signing.mechanism",
-                "Verwendung eines alternativen Signaturmechanismus"},
         {"entry.was.signed.on", "Eintrag wurde signiert am {0}"},
         {"Warning.", "Warnung: "},
         {"Error.", "Fehler: "},

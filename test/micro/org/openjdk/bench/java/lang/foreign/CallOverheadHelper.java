@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,8 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.Linker;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.SegmentScope;
-import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.*;
 
-import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 
@@ -41,10 +34,14 @@ public class CallOverheadHelper extends CLayouts {
     static final Linker abi = Linker.nativeLinker();
 
     static final MethodHandle func;
+    static final MethodHandle func_critical;
     static final MethodHandle func_v;
+    static final MethodHandle func_critical_v;
     static MemorySegment func_addr;
     static final MethodHandle identity;
+    static final MethodHandle identity_critical;
     static final MethodHandle identity_v;
+    static final MethodHandle identity_critical_v;
     static MemorySegment identity_addr;
     static final MethodHandle identity_struct;
     static final MethodHandle identity_struct_v;
@@ -81,14 +78,32 @@ public class CallOverheadHelper extends CLayouts {
             C_INT, C_INT
     );
 
-    static final MemorySegment sharedPoint = MemorySegment.allocateNative(POINT_LAYOUT, Arena.openShared().scope());
-    static final MemorySegment confinedPoint = MemorySegment.allocateNative(POINT_LAYOUT, Arena.openConfined().scope());
-
-    static final MemorySegment point = MemorySegment.allocateNative(POINT_LAYOUT, SegmentScope.auto());
-
-    static final SegmentAllocator recycling_allocator = SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(POINT_LAYOUT, SegmentScope.auto()));
+    static final MemorySegment sharedPoint;
 
     static {
+        Arena scope = Arena.ofShared();
+        sharedPoint = scope.allocate(POINT_LAYOUT);
+    }
+
+    static final MemorySegment confinedPoint;
+
+    static {
+        Arena scope = Arena.ofConfined();
+        confinedPoint = scope.allocate(POINT_LAYOUT);
+    }
+
+    static final MemorySegment point;
+
+    static {
+        Arena scope = Arena.ofAuto();
+        point = scope.allocate(POINT_LAYOUT);
+    }
+
+    static final SegmentAllocator recycling_allocator;
+
+    static {
+        Arena scope = Arena.ofAuto();
+        recycling_allocator = SegmentAllocator.prefixAllocator(scope.allocate(POINT_LAYOUT));
         System.loadLibrary("CallOverheadJNI");
 
         System.loadLibrary("CallOverhead");
@@ -98,13 +113,17 @@ public class CallOverheadHelper extends CLayouts {
             MethodType mt = MethodType.methodType(void.class);
             FunctionDescriptor fd = FunctionDescriptor.ofVoid();
             func_v = abi.downcallHandle(fd);
+            func_critical_v = abi.downcallHandle(fd, Linker.Option.critical());
             func = insertArguments(func_v, 0, func_addr);
+            func_critical = insertArguments(func_critical_v, 0, func_addr);
         }
         {
             identity_addr = loaderLibs.find("identity").orElseThrow();
             FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT);
             identity_v = abi.downcallHandle(fd);
+            identity_critical_v = abi.downcallHandle(fd, Linker.Option.critical());
             identity = insertArguments(identity_v, 0, identity_addr);
+            identity_critical = insertArguments(identity_critical_v, 0, identity_addr);
         }
         identity_struct_addr = loaderLibs.find("identity_struct").orElseThrow();
         identity_struct_v = abi.downcallHandle(

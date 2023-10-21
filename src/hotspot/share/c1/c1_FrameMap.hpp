@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,7 +226,7 @@ class FrameMap : public CompilationResourceObj {
     return location_for_sp_offset(sp_offset_for_monitor_object(monitor_index), Location::oop, loc);
   }
   bool locations_for_slot  (int index, Location::Type loc_type,
-                            Location* loc, Location* second = NULL) const;
+                            Location* loc, Location* second = nullptr) const;
 
   VMReg slot_regname(int index) const {
     return sp_offset2vmreg(sp_offset_for_slot(index));

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1225,6 +1225,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">ᱱ</month>
 							<month type="12">ᱫ</month>
 						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">ᱡᱟᱱᱣᱟᱨᱤ</month>
+							<month type="2">ᱯᱷᱟᱨᱣᱟᱨᱤ</month>
+							<month type="3">ᱢᱟᱨᱪ</month>
+							<month type="4">ᱟᱯᱨᱮᱞ</month>
+							<month type="5">ᱢᱮ</month>
+							<month type="6">ᱡᱩᱱ</month>
+							<month type="7">ᱡᱩᱞᱟᱭ</month>
+							<month type="8">ᱟᱜᱟᱥᱛ</month>
+							<month type="9">ᱥᱮᱯᱴᱮᱢᱵᱟᱨ</month>
+							<month type="10">ᱚᱠᱴᱚᱵᱟᱨ</month>
+							<month type="11">ᱱᱟᱣᱟᱢᱵᱟᱨ</month>
+							<month type="12">ᱫᱤᱥᱟᱢᱵᱟᱨ</month>
+						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
@@ -1246,6 +1260,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu">ᱥ</day>
 							<day type="fri">ᱡ</day>
 							<day type="sat">ᱧ</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun" draft="unconfirmed">ᱥᱤᱸ</day>
+							<day type="mon" draft="unconfirmed">ᱚᱛ</day>
+							<day type="tue" draft="unconfirmed">ᱵᱟ</day>
+							<day type="wed" draft="unconfirmed">ᱥᱟᱹ</day>
+							<day type="thu" draft="unconfirmed">ᱥᱟᱹᱨ</day>
+							<day type="fri" draft="unconfirmed">ᱡᱟᱹ</day>
+							<day type="sat" draft="unconfirmed">ᱧᱩ</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">ᱥᱤᱸᱜᱮ</day>
@@ -1276,6 +1299,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">ᱡ</day>
 							<day type="sat">ᱧ</day>
 						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun" draft="unconfirmed">ᱥᱤᱸ</day>
+							<day type="mon" draft="unconfirmed">ᱚᱛ</day>
+							<day type="tue" draft="unconfirmed">ᱵᱟ</day>
+							<day type="wed" draft="unconfirmed">ᱥᱟᱹ</day>
+							<day type="thu" draft="unconfirmed">ᱥᱟᱹᱨ</day>
+							<day type="fri" draft="unconfirmed">ᱡᱟᱹ</day>
+							<day type="sat" draft="unconfirmed">ᱧᱩ</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">ᱥᱤᱸᱜᱮ</day>
+							<day type="mon">ᱚᱛᱮ</day>
+							<day type="tue">ᱵᱟᱞᱮ</day>
+							<day type="wed">ᱥᱟᱹᱜᱩᱱ</day>
+							<day type="thu">ᱥᱟᱹᱨᱫᱤ</day>
+							<day type="fri">ᱡᱟᱹᱨᱩᱢ</day>
+							<day type="sat">ᱧᱩᱦᱩᱢ</day>
+						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
@@ -1300,6 +1341,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">᱑ᱟᱜ ᱯᱮ ᱪᱟᱸᱫᱚᱠᱤᱭᱟᱹ</quarter>
+							<quarter type="2">᱒ᱟᱜ ᱯᱮ ᱪᱟᱸᱫᱚᱠᱤᱭᱟᱹ</quarter>
+							<quarter type="3">᱓ᱭᱟᱜ ᱯᱮ ᱪᱟᱸᱫᱚᱠᱤᱭᱟᱹ</quarter>
+							<quarter type="4">᱔ᱟᱜ ᱯᱮ ᱪᱟᱸᱫᱚᱠᱤᱭᱟᱹ</quarter>
+						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1">᱑</quarter>
 							<quarter type="2">᱒</quarter>
@@ -1418,6 +1465,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<calendar type="indian">
 				<months>
 					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">ᱢᱟᱜᱽ</month>
+							<month type="2" draft="unconfirmed">ᱯᱷᱟ.ᱜᱩᱱ</month>
+							<month type="3" draft="unconfirmed">ᱪᱟ.ᱛ</month>
+							<month type="4" draft="unconfirmed">ᱵᱟ.ᱭᱥᱟ.ᱠ</month>
+							<month type="5" draft="unconfirmed">ᱡᱷᱮᱴ</month>
+							<month type="6" draft="unconfirmed">ᱟᱥᱟᱲ</month>
+							<month type="7" draft="unconfirmed">ᱥᱟᱱ</month>
+							<month type="8" draft="unconfirmed">ᱵᱷᱟᱫᱚᱨᱵ</month>
+							<month type="9" draft="unconfirmed">ᱫᱟᱥᱟᱸᱭ</month>
+							<month type="10" draft="unconfirmed">ᱥᱚᱦᱨᱟᱭ</month>
+							<month type="11" draft="unconfirmed">ᱟᱜᱷᱟᱲ</month>
+							<month type="12" draft="unconfirmed">ᱯᱩᱥ</month>
+						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="unconfirmed">᱑</month>
 							<month type="2" draft="unconfirmed">᱒</month>
@@ -1448,6 +1509,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">ᱢᱟᱜᱽ</month>
+							<month type="2" draft="unconfirmed">ᱯᱷᱟ.ᱜᱩᱱ</month>
+							<month type="3" draft="unconfirmed">ᱪᱟ.ᱛ</month>
+							<month type="4" draft="unconfirmed">ᱵᱟ.ᱭᱥᱟ.ᱠ</month>
+							<month type="5" draft="unconfirmed">ᱡᱷᱮᱴ</month>
+							<month type="6" draft="unconfirmed">ᱟᱥᱟᱲ</month>
+							<month type="7" draft="unconfirmed">ᱥᱟᱱ</month>
+							<month type="8" draft="unconfirmed">ᱵᱷᱟᱫᱚᱨᱵ</month>
+							<month type="9" draft="unconfirmed">ᱫᱟᱥᱟᱸᱭ</month>
+							<month type="10" draft="unconfirmed">ᱥᱚᱦᱨᱟᱭ</month>
+							<month type="11" draft="unconfirmed">ᱟᱜᱷᱟᱲ</month>
+							<month type="12" draft="unconfirmed">ᱯᱩᱥ</month>
+						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="unconfirmed">᱑</month>
 							<month type="2" draft="unconfirmed">᱒</month>
@@ -1461,6 +1536,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="10" draft="unconfirmed">᱑᱐</month>
 							<month type="11" draft="unconfirmed">᱑᱑</month>
 							<month type="12" draft="unconfirmed">᱑᱒</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">ᱢᱟᱜᱽ</month>
+							<month type="2" draft="unconfirmed">ᱯᱷᱟ.ᱜᱩᱱ</month>
+							<month type="3" draft="unconfirmed">ᱪᱟ.ᱛ</month>
+							<month type="4" draft="unconfirmed">ᱵᱟ.ᱭᱥᱟ.ᱠ</month>
+							<month type="5" draft="unconfirmed">ᱡᱷᱮᱴ</month>
+							<month type="6" draft="unconfirmed">ᱟᱥᱟᱲ</month>
+							<month type="7" draft="unconfirmed">ᱥᱟᱱ</month>
+							<month type="8" draft="unconfirmed">ᱵᱷᱟᱫᱚᱨᱵ</month>
+							<month type="9" draft="unconfirmed">ᱫᱟᱥᱟᱸᱭ</month>
+							<month type="10" draft="unconfirmed">ᱥᱚᱦᱨᱟᱭ</month>
+							<month type="11" draft="unconfirmed">ᱟᱜᱷᱟᱲ</month>
+							<month type="12" draft="unconfirmed">ᱯᱩᱥ</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -1494,6 +1583,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1" draft="unconfirmed">ᱦᱟᱹᱡᱩᱜ ᱠᱟᱱ ᱥᱮᱨᱢᱟ</relative>
 			</field>
 			<field type="year-narrow">
+				<displayName>ᱥᱮᱨᱢᱟ</displayName>
 				<relative type="-1" draft="unconfirmed">ᱢᱟᱲᱟᱝ ᱥᱮᱨᱢᱟ</relative>
 				<relative type="0" draft="unconfirmed">ᱱᱚᱶᱟ ᱥᱮᱨᱢᱟ</relative>
 				<relative type="1" draft="unconfirmed">ᱦᱟᱹᱡᱩᱜ ᱠᱟᱱ ᱥᱮᱨᱢᱟ</relative>
@@ -1563,9 +1653,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-short">
 				<displayName>ᱢᱟᱦᱟ</displayName>
+				<relative type="-1">ᱦᱚᱞᱟ</relative>
+				<relative type="0">ᱛᱮᱦᱮᱧ</relative>
+				<relative type="1">ᱜᱟᱯᱟ</relative>
 			</field>
 			<field type="day-narrow">
 				<displayName>ᱢᱟᱦᱟ</displayName>
+				<relative type="-1">ᱦᱚᱞᱟ</relative>
+				<relative type="0">ᱛᱮᱦᱮᱧ</relative>
+				<relative type="1">ᱜᱟᱯᱟ</relative>
 			</field>
 			<field type="dayOfYear">
 				<displayName>ᱥᱮᱨᱢᱟ ᱨᱮᱭᱟᱠ ᱢᱟᱦᱟ</displayName>
@@ -1579,7 +1675,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="weekday">
 				<displayName>ᱦᱟᱯᱛᱟ ᱨᱮᱭᱟᱜ ᱢᱟᱦᱟ</displayName>
 			</field>
+			<field type="weekday-short">
+				<displayName>ᱦᱟᱯᱛᱟ ᱨᱮᱭᱟᱜ ᱢᱟᱦᱟ</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>ᱦᱟᱯᱛᱟ ᱨᱮᱭᱟᱜ ᱢᱟᱦᱟ</displayName>
+			</field>
 			<field type="weekdayOfMonth">
+				<displayName>ᱪᱟᱸᱫᱚ ᱨᱮᱭᱟᱠ ᱢᱟᱦᱟ</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
 				<displayName>ᱪᱟᱸᱫᱚ ᱨᱮᱭᱟᱠ ᱢᱟᱦᱟ</displayName>
 			</field>
 			<field type="weekdayOfMonth-narrow">
@@ -1590,13 +1695,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ᱱᱤᱭᱟᱹ ᱥᱤᱸᱜᱮ</relative>
 				<relative type="1">ᱦᱟᱹᱡᱩᱜ ᱠᱟᱱ ᱥᱤᱸᱜᱮ</relative>
 			</field>
+			<field type="dayperiod-short">
+				<displayName>ᱥᱮᱛᱟᱜ/ᱟᱹᱭᱩᱵ</displayName>
+			</field>
 			<field type="dayperiod">
+				<displayName>ᱥᱮᱛᱟᱜ/ᱟᱹᱭᱩᱵ</displayName>
+			</field>
+			<field type="dayperiod-narrow">
 				<displayName>ᱥᱮᱛᱟᱜ/ᱟᱹᱭᱩᱵ</displayName>
 			</field>
 			<field type="hour">
 				<displayName>ᱴᱟᱲᱟᱝ</displayName>
 			</field>
+			<field type="hour-short">
+				<displayName>ᱴᱟᱲᱟᱝ</displayName>
+			</field>
+			<field type="hour-narrow">
+				<displayName>ᱴᱟᱲᱟᱝ</displayName>
+			</field>
 			<field type="minute">
+				<displayName>ᱴᱤᱯᱤᱡ</displayName>
+			</field>
+			<field type="minute-short">
+				<displayName>ᱴᱤᱯᱤᱡ</displayName>
+			</field>
+			<field type="minute-narrow">
 				<displayName>ᱴᱤᱯᱤᱡ</displayName>
 			</field>
 			<field type="second">
@@ -2115,6 +2238,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<minusSign>-</minusSign>
 		</symbols>
 		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="one">¤0 ᱜᱮᱞᱥᱟᱭ</pattern>
@@ -2128,6 +2256,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="100000" count="other">¤ 000 ᱜᱮᱞᱥᱟᱭ</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="two">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="BMD">
@@ -2144,6 +2275,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="CNY">
 				<displayName>ᱪᱤᱱᱤ ᱭᱩᱣᱟᱱ</displayName>
+				<displayName count="one">ᱪᱤᱱᱤ ᱭᱩᱣᱟᱱ</displayName>
+				<displayName count="two">ᱪᱤᱱᱤ ᱭᱩᱣᱟᱱ</displayName>
+				<displayName count="other">ᱪᱤᱱᱤ ᱭᱩᱣᱟᱱ</displayName>
 			</currency>
 			<currency type="EUR">
 				<displayName>ᱭᱩᱨᱚ</displayName>
@@ -2199,6 +2333,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<unitLength type="long">
 			<coordinateUnit>
 				<displayName draft="unconfirmed">ᱢᱩᱞ ᱟᱸᱫᱮ</displayName>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0}E</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0}N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0}S</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0}W</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
@@ -2214,6 +2352,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<coordinateUnit>
 				<displayName draft="unconfirmed">ᱟᱸᱫᱮ</displayName>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0}E</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0}N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0}S</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0}W</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<durationUnit type="hm">
@@ -2231,16 +2373,47 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="end" draft="unconfirmed">{0}, ᱟᱨᱵᱟᱝᱠᱷᱟᱱ {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} ᱟᱨᱵᱟᱝᱠᱷᱟᱱ {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0}, ᱟᱨᱵᱟᱝᱠᱷᱟᱱ {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ᱟᱨᱵᱟᱝᱠᱷᱟᱱ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0}, ᱟᱨᱵᱟᱝᱠᱷᱟᱱ {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ᱟᱨᱵᱟᱝᱠᱷᱟᱱ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} ᱟᱨ {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ᱟᱨ {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="standard-short">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0} ᱟᱨ {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} ᱟᱨ {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0}, ᱟᱨ {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} ᱟᱨ {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0}, {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-short">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0}, {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>
@@ -2362,5 +2535,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<personNames>
 		<nameOrderLocales order="givenFirst">und sat</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+		<sampleName item="foreignG">
+			<nameField type="given">ᱥᱤᱱᱵᱟᱫ</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="given">ᱟᱰᱟ ᱪᱚᱨᱱᱮᱞᱤᱟ</nameField>
+		</sampleName>
 	</personNames>
 </ldml>

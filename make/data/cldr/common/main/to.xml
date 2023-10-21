@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1496,6 +1496,247 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<era type="0" draft="unconfirmed">TP</era>
 					</eraNarrow>
 				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE d MMMM y G</pattern>
+							<datetimeSkeleton draft="unconfirmed">GyMMMMEEEEd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">d MMMM y G</pattern>
+							<datetimeSkeleton draft="unconfirmed">GyMMMMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">d MMM y G</pattern>
+							<datetimeSkeleton draft="unconfirmed">GyMMMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">d/M/yy GGGGG</pattern>
+							<datetimeSkeleton draft="unconfirmed">GGGGGyyMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="d" draft="unconfirmed">d</dateFormatItem>
+						<dateFormatItem id="E" draft="unconfirmed">ccc</dateFormatItem>
+						<dateFormatItem id="Ed" draft="unconfirmed">E d</dateFormatItem>
+						<dateFormatItem id="Gy" draft="unconfirmed">y G</dateFormatItem>
+						<dateFormatItem id="GyMd" draft="unconfirmed">dd MM y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMMM" draft="unconfirmed">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="unconfirmed">d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd" draft="unconfirmed">E d MMM y G</dateFormatItem>
+						<dateFormatItem id="M" draft="unconfirmed">L</dateFormatItem>
+						<dateFormatItem id="Md" draft="unconfirmed">d/M</dateFormatItem>
+						<dateFormatItem id="MEd" draft="unconfirmed">E d/M</dateFormatItem>
+						<dateFormatItem id="MMM" draft="unconfirmed">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd" draft="unconfirmed">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="unconfirmed">E d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd" draft="unconfirmed">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd" draft="unconfirmed">E d MMMM</dateFormatItem>
+						<dateFormatItem id="y" draft="unconfirmed">y G</dateFormatItem>
+						<dateFormatItem id="yM" draft="unconfirmed">M-y</dateFormatItem>
+						<dateFormatItem id="yMd" draft="unconfirmed">d-M-y</dateFormatItem>
+						<dateFormatItem id="yMEd" draft="unconfirmed">E d/M/y</dateFormatItem>
+						<dateFormatItem id="yMM" draft="unconfirmed">MM-y</dateFormatItem>
+						<dateFormatItem id="yMMM" draft="unconfirmed">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="unconfirmed">d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd" draft="unconfirmed">E d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMM" draft="unconfirmed">MMMM y</dateFormatItem>
+						<dateFormatItem id="yQQQ" draft="unconfirmed">y QQQ</dateFormatItem>
+						<dateFormatItem id="yQQQQ" draft="unconfirmed">y QQQQ</dateFormatItem>
+						<dateFormatItem id="yyyy" draft="unconfirmed">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM" draft="unconfirmed">y/MM GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd" draft="unconfirmed">dd/MM/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd" draft="unconfirmed">E dd-MM-y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMMM" draft="unconfirmed">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd" draft="unconfirmed">d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd" draft="unconfirmed">E d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM" draft="unconfirmed">G y MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ" draft="unconfirmed">y QQQ G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ" draft="unconfirmed">y QQQQ G</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback draft="unconfirmed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B" draft="unconfirmed">h B – h B</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h–h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B" draft="unconfirmed">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm B</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d" draft="unconfirmed">d – d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="unconfirmed">y G – y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="unconfirmed">M/y GGGGG – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">M/y – M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="unconfirmed">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">d/M/y GGGGG – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d/M/y – d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="unconfirmed">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">E d/M/y GGGGG – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E d/M/y – E d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="unconfirmed">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="unconfirmed">d – d MMM y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d MMM y – d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">E d MMM y G – E d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E d MMM y – E d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a" draft="unconfirmed">h a – h a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h–h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H" draft="unconfirmed">HH – HH</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a" draft="unconfirmed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H" draft="unconfirmed">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">HH:mm – HH:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a" draft="unconfirmed">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H" draft="unconfirmed">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">HH:mm – HH:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a" draft="unconfirmed">h a – h a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h–h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H" draft="unconfirmed">HH – HH v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M" draft="unconfirmed">M – M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d" draft="unconfirmed">d/M – d/M</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d/M – d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d" draft="unconfirmed">E d/M – E d/M</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E d/M – E d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M" draft="unconfirmed">LLL – LLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d" draft="unconfirmed">d – d MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E d MMM – E d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y" draft="unconfirmed">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M" draft="unconfirmed">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">M/y – M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d" draft="unconfirmed">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d/M/y – d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d" draft="unconfirmed">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E d/M/y – E d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d" draft="unconfirmed">d – d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d MMM y – d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E d MMM y – E d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M" draft="unconfirmed">MMMM – MMMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMMM y – MMMM y G</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
 			</calendar>
 			<calendar type="chinese">
 				<cyclicNameSets>
@@ -1620,9 +1861,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1630,9 +1877,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2142,9 +2395,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2152,9 +2411,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -5341,6 +5606,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
+		<symbols numberSystem="adlm">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
 		<symbols numberSystem="arab">
 			<decimal draft="unconfirmed">٫</decimal>
 			<group draft="unconfirmed">٬</group>
@@ -5374,6 +5654,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5388,6 +5669,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5402,6 +5684,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5416,6 +5699,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5430,6 +5714,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5444,6 +5729,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5458,6 +5744,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gong">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5472,6 +5774,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5486,6 +5789,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5500,6 +5804,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5514,6 +5819,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5523,9 +5829,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</symbols>
 		<symbols numberSystem="java">
 			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
 			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5540,6 +5849,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5554,6 +5864,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5568,6 +5879,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5582,6 +5894,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5596,6 +5909,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5610,11 +5924,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
 			<infinity draft="unconfirmed">∞</infinity>
 			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
 		</symbols>
 		<symbols numberSystem="latn">
 			<decimal>.</decimal>
@@ -5636,6 +5952,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5650,6 +5967,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5664,6 +5982,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5678,6 +5997,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5692,6 +6012,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5706,6 +6027,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5720,6 +6042,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5734,6 +6057,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
 			<infinity draft="unconfirmed">∞</infinity>
@@ -5741,6 +6066,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<timeSeparator draft="unconfirmed">:</timeSeparator>
 		</symbols>
 		<symbols numberSystem="olck">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
 			<timeSeparator draft="unconfirmed">:</timeSeparator>
 		</symbols>
 		<symbols numberSystem="orya">
@@ -5750,6 +6087,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5764,6 +6102,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="rohg">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5778,6 +6132,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5792,6 +6147,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5806,11 +6162,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
 			<infinity draft="unconfirmed">∞</infinity>
 			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
 		</symbols>
 		<symbols numberSystem="sund">
 			<decimal draft="unconfirmed">.</decimal>
@@ -5819,6 +6177,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5833,6 +6192,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5841,6 +6201,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<timeSeparator draft="unconfirmed">:</timeSeparator>
 		</symbols>
 		<symbols numberSystem="talu">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
 			<timeSeparator draft="unconfirmed">:</timeSeparator>
 		</symbols>
 		<symbols numberSystem="tamldec">
@@ -5850,11 +6222,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
 			<infinity draft="unconfirmed">∞</infinity>
 			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
 		</symbols>
 		<symbols numberSystem="telu">
 			<decimal draft="unconfirmed">.</decimal>
@@ -5863,6 +6237,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5877,6 +6252,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5891,6 +6267,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -5905,6 +6282,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign draft="unconfirmed">%</percentSign>
 			<plusSign draft="unconfirmed">+</plusSign>
 			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
 			<exponential draft="unconfirmed">E</exponential>
 			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
 			<perMille draft="unconfirmed">‰</perMille>
@@ -6847,6 +7225,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
+		<currencyFormats numberSystem="adlm">
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
 		<currencyFormats numberSystem="arab">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
@@ -7665,6 +8046,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="power3">
 				<compoundUnitPattern1 count="other">{0} kiupite</compoundUnitPattern1>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>k-mālohi</displayName>
 				<unitPattern count="other">k-mālohi ʻe {0}</unitPattern>
@@ -7956,6 +8340,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>kilouate-houa he kilomita ʻe 100</displayName>
+				<unitPattern count="other">{0} kWh/100km</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>kikahēti</displayName>
@@ -9213,17 +9598,95 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="10p-2">
 				<unitPrefixPattern>s{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>m{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>μ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>n{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>p{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>f{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>a{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>y{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="10p1">
 				<unitPrefixPattern>ta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>h{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>k{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>M{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>G{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>T{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>P{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>E{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>Z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>Y{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p1">
 				<unitPrefixPattern>ki{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="1024p3">
 				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>k-mā</displayName>
@@ -9327,6 +9790,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}‰</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
+				<displayName>‱</displayName>
 				<unitPattern count="other">{0}‱</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
@@ -9494,6 +9958,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kWh</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
+				<displayName>eV</displayName>
 				<unitPattern count="other">{0} eV</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
@@ -9509,7 +9974,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} pāmā</unitPattern>
 			</unit>
 			<unit type="force-newton">
+				<displayName>N</displayName>
 				<unitPattern count="other">{0} N</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100km</displayName>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
@@ -9560,6 +10029,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}t</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
+				<displayName>L⊕</displayName>
 				<unitPattern count="other">{0} L⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
@@ -9659,6 +10129,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ktl</displayName>
 				<unitPattern count="other">{0} ktl</unitPattern>
 			</unit>
+			<unit type="light-lumen">
+				<displayName>lm</displayName>
+				<unitPattern count="other">lm ʻe {0}</unitPattern>
+			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>H☉</displayName>
 				<unitPattern count="other">{0} H☉</unitPattern>
@@ -9724,6 +10198,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} M☉</unitPattern>
 			</unit>
 			<unit type="mass-grain">
+				<displayName>tenga</displayName>
 				<unitPattern count="other">{0} tenga</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
@@ -9775,6 +10250,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ʻati</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
+				<displayName>Pa</displayName>
 				<unitPattern count="other">{0} Pa</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
@@ -9782,9 +10258,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
+				<displayName>kPa</displayName>
 				<unitPattern count="other">{0} kPa</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
+				<displayName>MPa</displayName>
 				<unitPattern count="other">{0} MPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
@@ -9824,6 +10302,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} pā⋅ft</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
+				<displayName>N⋅m</displayName>
 				<unitPattern count="other">{0} N⋅m</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
@@ -9997,6 +10476,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, pē {1}</listPatternPart>
 			<listPatternPart type="2">{0} pē {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, pē {1}</listPatternPart>
+			<listPatternPart type="2">{0} pē {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, pē {1}</listPatternPart>
+			<listPatternPart type="2">{0} pē {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0} mo {1}</listPatternPart>
+			<listPatternPart type="middle">{0} mo {1}</listPatternPart>
+			<listPatternPart type="end">{0} mo {1}</listPatternPart>
+			<listPatternPart type="2">{0} mo {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start">{0} mo {1}</listPatternPart>
@@ -10203,13 +10700,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<nameOrderLocales order="givenFirst">und to</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ja ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
+			<namePattern draft="provisional">{given} {given2} {surname} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern draft="provisional">{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -10221,13 +10718,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
+			<namePattern draft="provisional">{given} {given2} {surname} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern draft="provisional">{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -10245,7 +10742,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{given-informal} {surname-initial}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern draft="provisional">{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -10257,13 +10754,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{surname}, {given} {given2} {suffix}</namePattern>
+			<namePattern draft="provisional">{surname}, {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern draft="provisional">{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -10275,13 +10772,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname}, {given} {given2} {suffix}</namePattern>
+			<namePattern draft="provisional">{surname}, {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern draft="provisional">{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -10299,7 +10796,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{surname}, {given-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern draft="provisional">{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -10311,13 +10808,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="formal">
-			<namePattern>{surname}, {given} {given2} {suffix}</namePattern>
+			<namePattern draft="provisional">{surname}, {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
 			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname}, {given} {given2} {suffix}</namePattern>
+			<namePattern draft="provisional">{surname}, {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname}, {given-informal}</namePattern>
@@ -10328,25 +10825,47 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<personName order="sorting" length="short" usage="referring" formality="informal">
 			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
-		<sampleName item="givenOnly">
-			<nameField type="given">Tēvita</nameField>
+		<sampleName item="nativeG">
+			<nameField type="given" draft="provisional">Tēvita</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
-			<nameField type="given">Mele</nameField>
-			<nameField type="surname">Moala</nameField>
+		<sampleName item="nativeGS">
+			<nameField type="given" draft="provisional">Mele</nameField>
+			<nameField type="surname" draft="provisional">Moala</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
-			<nameField type="given">ʻAna</nameField>
-			<nameField type="given2">Lātū</nameField>
-			<nameField type="surname">Tupou</nameField>
+		<sampleName item="nativeGGS">
+			<nameField type="given" draft="provisional">ʻAna</nameField>
+			<nameField type="given2" draft="provisional">Lātū</nameField>
+			<nameField type="surname" draft="provisional">Tupou</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">Tōketā</nameField>
-			<nameField type="given">Pua</nameField>
-			<nameField type="given-informal">Siana</nameField>
-			<nameField type="given2">Lātū</nameField>
-			<nameField type="surname-core">Fīnau</nameField>
-			<nameField type="suffix">O.T.K.</nameField>
+		<sampleName item="nativeFull">
+			<nameField type="title" draft="unconfirmed">Hon.</nameField>
+			<nameField type="given" draft="unconfirmed">Sione Paulo</nameField>
+			<nameField type="given-informal" draft="unconfirmed">Sione</nameField>
+			<nameField type="given2" draft="unconfirmed">Taniela Pita</nameField>
+			<nameField type="surname-core" draft="unconfirmed">Tonga</nameField>
+			<nameField type="generation" draft="unconfirmed">siʻʻi</nameField>
+			<nameField type="credentials" draft="unconfirmed">CBE</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given" draft="unconfirmed">Tinūviel</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given" draft="unconfirmed">Jan</nameField>
+			<nameField type="surname" draft="unconfirmed">Jurk</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given" draft="unconfirmed">Star</nameField>
+			<nameField type="given2" draft="unconfirmed">Light</nameField>
+			<nameField type="surname" draft="unconfirmed">Moonshine</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title" draft="provisional">Tōketā</nameField>
+			<nameField type="given" draft="provisional">Pua</nameField>
+			<nameField type="given-informal" draft="provisional">Siana</nameField>
+			<nameField type="given2" draft="provisional">Lātū</nameField>
+			<nameField type="surname-core" draft="provisional">Fīnau</nameField>
+			<nameField type="generation" draft="unconfirmed">Jr</nameField>
+			<nameField type="credentials" draft="provisional">O.T.K.</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

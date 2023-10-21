@@ -1,0 +1,1253 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="la"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="aa" draft="provisional">Afarica</language>
+			<language type="ab" draft="provisional">Abasca</language>
+			<language type="ae" draft="provisional">Avestana</language>
+			<language type="af" draft="provisional">Africana</language>
+			<language type="am" draft="provisional">Amharica</language>
+			<language type="an" draft="provisional">Aragonensis</language>
+			<language type="ar" draft="provisional">Arabica</language>
+			<language type="as" draft="provisional">Assamica</language>
+			<language type="ay" draft="provisional">Aymara</language>
+			<language type="az" draft="provisional">Atropatenica</language>
+			<language type="be" draft="provisional">Ruthenica Alba</language>
+			<language type="bg" draft="provisional">Bulgarica</language>
+			<language type="bh" draft="provisional">Bihari</language>
+			<language type="bn" draft="provisional">Bengalica</language>
+			<language type="bo" draft="provisional">Tibetana</language>
+			<language type="br" draft="provisional">Britonica</language>
+			<language type="bs" draft="provisional">Bosnica</language>
+			<language type="ca" draft="provisional">Catalana</language>
+			<language type="ch" draft="provisional">Chamoruana</language>
+			<language type="co" draft="provisional">Corsa</language>
+			<language type="cs" draft="provisional">Bohemica</language>
+			<language type="cu" draft="provisional">Slavonica antiqua</language>
+			<language type="cu" alt="variant" draft="provisional">Slavica Ecclesiastica</language>
+			<language type="cv" draft="provisional">Chuvassica</language>
+			<language type="cy" draft="provisional">Cambrica</language>
+			<language type="da" draft="provisional">Danica</language>
+			<language type="de" draft="provisional">Germanica</language>
+			<language type="dv" draft="provisional">Dhivehi</language>
+			<language type="dz" draft="provisional">Dzongkha</language>
+			<language type="el" draft="provisional">Graeca</language>
+			<language type="el" alt="variant" draft="provisional">Neograeca</language>
+			<language type="en" draft="provisional">Anglica</language>
+			<language type="eo" draft="provisional">Esperantica</language>
+			<language type="es" draft="provisional">Hispanica</language>
+			<language type="et" draft="provisional">Estonica</language>
+			<language type="eu" draft="provisional">Vasconica</language>
+			<language type="fa" draft="provisional">Persica</language>
+			<language type="fi" draft="provisional">Finnica</language>
+			<language type="fo" draft="provisional">Faroensis</language>
+			<language type="fr" draft="provisional">Francogallica</language>
+			<language type="ga" draft="provisional">Hibernica</language>
+			<language type="gd" draft="provisional">Scotica</language>
+			<language type="gl" draft="provisional">Gallaica</language>
+			<language type="gn" draft="provisional">Guaranica</language>
+			<language type="gu" draft="provisional">Gujaratensis</language>
+			<language type="gv" draft="provisional">Monensis</language>
+			<language type="hi" draft="provisional">Hindica</language>
+			<language type="hr" draft="provisional">Croatica</language>
+			<language type="ht" draft="provisional">Creolus Haitianus</language>
+			<language type="hu" draft="provisional">Hungarica</language>
+			<language type="hy" draft="provisional">Armenica</language>
+			<language type="ia" draft="provisional">Interlingua</language>
+			<language type="ie" draft="provisional">Interlingue</language>
+			<language type="ig" draft="provisional">Igbonica</language>
+			<language type="in" draft="provisional">Indonesia</language>
+			<language type="is" draft="provisional">Islandica</language>
+			<language type="it" draft="provisional">Italiana</language>
+			<language type="iw" draft="provisional">Hebraica</language>
+			<language type="ja" draft="provisional">Iaponica</language>
+			<language type="ji" draft="provisional">Iudaeogermanica</language>
+			<language type="jv" draft="provisional">Iavensis</language>
+			<language type="ka" draft="provisional">Georgiana</language>
+			<language type="kk" draft="provisional">Cazachica</language>
+			<language type="kl" draft="provisional">Groenlandica</language>
+			<language type="km" draft="provisional">Chmerica</language>
+			<language type="kn" draft="provisional">Cannadica</language>
+			<language type="ko" draft="provisional">Coreana</language>
+			<language type="ks" draft="provisional">Casmirica</language>
+			<language type="ku" draft="provisional">Curdica</language>
+			<language type="kw" draft="provisional">Cornubica</language>
+			<language type="ky" draft="provisional">Chirgisica</language>
+			<language type="la" draft="provisional">Latina</language>
+			<language type="lb" draft="provisional">Luxemburgica</language>
+			<language type="li" draft="provisional">Limburgica</language>
+			<language type="lt" draft="provisional">Lithuanica</language>
+			<language type="lv" draft="provisional">Lettonica</language>
+			<language type="mg" draft="provisional">Malagasiana</language>
+			<language type="mi" draft="provisional">Maoriana</language>
+			<language type="mk" draft="provisional">Macedonica</language>
+			<language type="ml" draft="provisional">Malabarica</language>
+			<language type="mn" draft="provisional">Mongolica</language>
+			<language type="mr" draft="provisional">Marathica</language>
+			<language type="ms" draft="provisional">Malayana</language>
+			<language type="mt" draft="provisional">Melitensis</language>
+			<language type="my" draft="provisional">Birmanica</language>
+			<language type="ne" draft="provisional">Nepalensis</language>
+			<language type="nl" draft="provisional">Batava</language>
+			<language type="no" draft="provisional">Norvegica</language>
+			<language type="oc" draft="provisional">Occitana</language>
+			<language type="oj" draft="provisional">Ojibwayensis</language>
+			<language type="or" draft="provisional">Orissensis</language>
+			<language type="os" draft="provisional">Ossetica</language>
+			<language type="pa" draft="provisional">Panjabica</language>
+			<language type="pi" draft="provisional">Palica</language>
+			<language type="pl" draft="provisional">Polonica</language>
+			<language type="ps" draft="provisional">Afganica</language>
+			<language type="pt" draft="provisional">Lusitana</language>
+			<language type="qu" draft="provisional">Quechuae</language>
+			<language type="rm" draft="provisional">Rhaetica</language>
+			<language type="ro" draft="provisional">Dacoromanica</language>
+			<language type="ru" draft="provisional">Russica</language>
+			<language type="sa" draft="provisional">Sanscrita</language>
+			<language type="sc" draft="provisional">Sarda</language>
+			<language type="sd" draft="provisional">Sindhuica</language>
+			<language type="se" draft="provisional">Samica septentrionalis</language>
+			<language type="si" draft="provisional">Singhalensis</language>
+			<language type="sk" draft="provisional">Slovaca</language>
+			<language type="sl" draft="provisional">Slovena</language>
+			<language type="sm" draft="provisional">Samoana</language>
+			<language type="so" draft="provisional">Somalica</language>
+			<language type="sq" draft="provisional">Albanica</language>
+			<language type="sr" draft="provisional">Serbica</language>
+			<language type="sv" draft="provisional">Suecica</language>
+			<language type="sw" draft="provisional">Suahili</language>
+			<language type="ta" draft="provisional">Tamulica</language>
+			<language type="te" draft="provisional">Telingana</language>
+			<language type="tg" draft="provisional">Tadzikica</language>
+			<language type="th" draft="provisional">Thai</language>
+			<language type="ti" draft="provisional">Tigrinya</language>
+			<language type="tk" draft="provisional">Turcomannica</language>
+			<language type="tl" draft="provisional">Tagalog</language>
+			<language type="to" draft="provisional">Tongana</language>
+			<language type="tr" draft="provisional">Turcica</language>
+			<language type="tt" draft="provisional">Tatarica</language>
+			<language type="uk" draft="provisional">Ucrainica</language>
+			<language type="ur" draft="provisional">Urdu</language>
+			<language type="uz" draft="provisional">Uzbecica</language>
+			<language type="vi" draft="provisional">Vietnamica</language>
+			<language type="zh" draft="provisional">Sinica</language>
+			<language type="zu" draft="provisional">Zuluana</language>
+		</languages>
+		<scripts>
+			<script type="Arab" draft="provisional">Alphabetum Arabicum</script>
+			<script type="Armn" draft="provisional">Alphabetum Armenium</script>
+			<script type="Brai" draft="provisional">Scriptura Braille</script>
+			<script type="Cyrl" draft="provisional">Alphabetum Cyrillicum</script>
+			<script type="Grek" draft="provisional">Alphabetum Graecum</script>
+			<script type="Hang" draft="provisional">Alphabetum Coreanum</script>
+			<script type="Hani" draft="provisional">Scriptura Sinica</script>
+			<script type="Hebr" draft="provisional">Alphabetum Hebraicum</script>
+			<script type="Latn" draft="provisional">Alphabetum Latinum</script>
+			<script type="Tibt" draft="provisional">Alphabetum Tibetanum</script>
+			<script type="Xsux" draft="provisional">Scriptura cuneiformis</script>
+		</scripts>
+		<territories>
+			<territory type="001" draft="provisional">Mundus</territory>
+			<territory type="002" draft="provisional">Africa</territory>
+			<territory type="003" draft="provisional">America Septentrionalis</territory>
+			<territory type="005" draft="provisional">America Australis</territory>
+			<territory type="009" draft="provisional">Oceania</territory>
+			<territory type="011" draft="provisional">Africa Occidentalis</territory>
+			<territory type="013" draft="provisional">America Centralis</territory>
+			<territory type="014" draft="provisional">Africa Orientalis</territory>
+			<territory type="015" draft="provisional">Africa Septentrionalis</territory>
+			<territory type="018" draft="provisional">Africa Australis (regio)</territory>
+			<territory type="019" draft="provisional">America</territory>
+			<territory type="029" draft="provisional">Caribaeum</territory>
+			<territory type="030" draft="provisional">Asia Orientalis</territory>
+			<territory type="035" draft="provisional">Asia Meridiorientalis</territory>
+			<territory type="039" draft="provisional">Europa Centralis</territory>
+			<territory type="053" draft="provisional">Australasia</territory>
+			<territory type="054" draft="provisional">Melanesia</territory>
+			<territory type="057" draft="provisional">Micronesia (regio)</territory>
+			<territory type="061" draft="provisional">Polynesia</territory>
+			<territory type="142" draft="provisional">Asia</territory>
+			<territory type="143" draft="provisional">Media Asia</territory>
+			<territory type="150" draft="provisional">Europa</territory>
+			<territory type="151" draft="provisional">Europa Orientalis</territory>
+			<territory type="154" draft="provisional">Europa Septentrionalis</territory>
+			<territory type="155" draft="provisional">Europa Occidentalis</territory>
+			<territory type="AD" draft="provisional">Andorra</territory>
+			<territory type="AE" draft="provisional">Phylarchiarum Arabicarum Confoederatio</territory>
+			<territory type="AF" draft="provisional">Afgania</territory>
+			<territory type="AG" draft="provisional">Antiqua et Barbuda</territory>
+			<territory type="AI" draft="provisional">Anguilla</territory>
+			<territory type="AL" draft="provisional">Albania</territory>
+			<territory type="AM" draft="provisional">Armenia</territory>
+			<territory type="AO" draft="provisional">Angolia</territory>
+			<territory type="AR" draft="provisional">Argentina</territory>
+			<territory type="AS" draft="provisional">Samoa Americana</territory>
+			<territory type="AT" draft="provisional">Austria</territory>
+			<territory type="AU" draft="provisional">Australia</territory>
+			<territory type="AW" draft="provisional">Aruba</territory>
+			<territory type="AX" draft="provisional">Alandia</territory>
+			<territory type="AZ" draft="provisional">Atropatene</territory>
+			<territory type="BA" draft="provisional">Bosnia et Herzegovina</territory>
+			<territory type="BB" draft="provisional">Barbata</territory>
+			<territory type="BD" draft="provisional">Bangladesha</territory>
+			<territory type="BE" draft="provisional">Belgica</territory>
+			<territory type="BF" draft="provisional">Burkina Faso</territory>
+			<territory type="BG" draft="provisional">Bulgaria</territory>
+			<territory type="BH" draft="provisional">Baharina</territory>
+			<territory type="BI" draft="provisional">Burundia</territory>
+			<territory type="BJ" draft="provisional">Beninum</territory>
+			<territory type="BL" draft="provisional">Insula Sancti Bartholomaei</territory>
+			<territory type="BM" draft="provisional">Bermuda</territory>
+			<territory type="BN" draft="provisional">Bruneium</territory>
+			<territory type="BO" draft="provisional">Bolivia</territory>
+			<territory type="BR" draft="provisional">Brasilia</territory>
+			<territory type="BS" draft="provisional">Insulae Bahamenses</territory>
+			<territory type="BT" draft="provisional">Butania</territory>
+			<territory type="BU" draft="provisional">Birmania</territory>
+			<territory type="BV" draft="provisional">Insula Bouvet</territory>
+			<territory type="BW" draft="provisional">Botswana</territory>
+			<territory type="BY" draft="provisional">Ruthenia Alba</territory>
+			<territory type="BZ" draft="provisional">Beliza</territory>
+			<territory type="CA" draft="provisional">Canada</territory>
+			<territory type="CC" draft="provisional">Insulae Cocos seu Keeling</territory>
+			<territory type="CD" draft="provisional">Res publica Democratica Congensis</territory>
+			<territory type="CF" draft="provisional">Res publica Africae Mediae</territory>
+			<territory type="CG" draft="provisional">Res publica Congoliae</territory>
+			<territory type="CH" draft="provisional">Helvetia</territory>
+			<territory type="CI" draft="provisional">Litus Eburneum</territory>
+			<territory type="CK" draft="provisional">Insulae Cook</territory>
+			<territory type="CL" draft="provisional">Chilia</territory>
+			<territory type="CM" draft="provisional">Cameronia</territory>
+			<territory type="CN" draft="provisional">Res publica popularis Sinarum</territory>
+			<territory type="CO" draft="provisional">Columbia</territory>
+			<territory type="CR" draft="provisional">Costarica</territory>
+			<territory type="CU" draft="provisional">Cuba</territory>
+			<territory type="CV" draft="provisional">Res publica Capitis Viridis</territory>
+			<territory type="CW" draft="provisional">Insula Curacensis</territory>
+			<territory type="CX" draft="provisional">Insula Christi Natalis</territory>
+			<territory type="CY" draft="provisional">Cyprus</territory>
+			<territory type="CZ" draft="provisional">Cechia</territory>
+			<territory type="DD" draft="provisional">Res publica Democratica Germanica</territory>
+			<territory type="DE" draft="provisional">Germania</territory>
+			<territory type="DJ" draft="provisional">Gibutum</territory>
+			<territory type="DK" draft="provisional">Dania</territory>
+			<territory type="DM" draft="provisional">Dominica</territory>
+			<territory type="DO" draft="provisional">Res publica Dominicana</territory>
+			<territory type="DZ" draft="provisional">Algerium</territory>
+			<territory type="EC" draft="provisional">Aequatoria</territory>
+			<territory type="EE" draft="provisional">Estonia</territory>
+			<territory type="EG" draft="provisional">Aegyptus</territory>
+			<territory type="EH" draft="provisional">Sahara Occidentalis</territory>
+			<territory type="ER" draft="provisional">Erythraea</territory>
+			<territory type="ES" draft="provisional">Hispania</territory>
+			<territory type="ET" draft="provisional">Aethiopia</territory>
+			<territory type="FI" draft="provisional">Finnia</territory>
+			<territory type="FJ" draft="provisional">Viti</territory>
+			<territory type="FK" draft="provisional">Insulae Malvinae</territory>
+			<territory type="FM" draft="provisional">Micronesia</territory>
+			<territory type="FO" draft="provisional">Faeroae insulae</territory>
+			<territory type="FR" draft="provisional">Francia</territory>
+			<territory type="GA" draft="provisional">Gabonia</territory>
+			<territory type="GB" draft="provisional">Britanniarum Regnum</territory>
+			<territory type="GD" draft="provisional">Granata</territory>
+			<territory type="GE" draft="provisional">Georgia</territory>
+			<territory type="GF" draft="provisional">Guiana Francica</territory>
+			<territory type="GG" draft="provisional">Lisia</territory>
+			<territory type="GH" draft="provisional">Gana</territory>
+			<territory type="GI" draft="provisional">Gibraltar</territory>
+			<territory type="GL" draft="provisional">Groenlandia</territory>
+			<territory type="GM" draft="provisional">Gambia</territory>
+			<territory type="GN" draft="provisional">Guinea</territory>
+			<territory type="GP" draft="provisional">Guadalupa</territory>
+			<territory type="GQ" draft="provisional">Guinea Aequatorensis</territory>
+			<territory type="GR" draft="provisional">Graecia</territory>
+			<territory type="GT" draft="provisional">Guatimalia</territory>
+			<territory type="GU" draft="provisional">Guama</territory>
+			<territory type="GW" draft="provisional">Guinea Bissaviensis</territory>
+			<territory type="GY" draft="provisional">Guiana</territory>
+			<territory type="HK" draft="provisional">Hongcongum</territory>
+			<territory type="HN" draft="provisional">Honduria</territory>
+			<territory type="HR" draft="provisional">Croatia</territory>
+			<territory type="HT" draft="provisional">Haitia</territory>
+			<territory type="HU" draft="provisional">Hungaria</territory>
+			<territory type="ID" draft="provisional">Indonesia</territory>
+			<territory type="IE" draft="provisional">Hibernia</territory>
+			<territory type="IL" draft="provisional">Israël</territory>
+			<territory type="IM" draft="provisional">Monapia</territory>
+			<territory type="IN" draft="provisional">India</territory>
+			<territory type="IQ" draft="provisional">Iracum</territory>
+			<territory type="IR" draft="provisional">Irania</territory>
+			<territory type="IS" draft="provisional">Islandia</territory>
+			<territory type="IT" draft="provisional">Italia</territory>
+			<territory type="JE" draft="provisional">Caesarea Insula</territory>
+			<territory type="JM" draft="provisional">Iamaica</territory>
+			<territory type="JO" draft="provisional">Iordania</territory>
+			<territory type="JP" draft="provisional">Iaponia</territory>
+			<territory type="KE" draft="provisional">Kenia</territory>
+			<territory type="KG" draft="provisional">Chirgisia</territory>
+			<territory type="KH" draft="provisional">Cambosia</territory>
+			<territory type="KI" draft="provisional">Kiribati</territory>
+			<territory type="KM" draft="provisional">Insulae Comorianae</territory>
+			<territory type="KN" draft="provisional">Sanctus Christophorus et Nevis</territory>
+			<territory type="KP" draft="provisional">Res publica Popularis Democratica Coreana</territory>
+			<territory type="KR" draft="provisional">Res publica Coreana</territory>
+			<territory type="KW" draft="provisional">Cuvaitum</territory>
+			<territory type="KY" draft="provisional">Insulae Caimanenses</territory>
+			<territory type="KZ" draft="provisional">Kazachstania</territory>
+			<territory type="LA" draft="provisional">Laotia</territory>
+			<territory type="LB" draft="provisional">Libanus</territory>
+			<territory type="LC" draft="provisional">Sancta Lucia</territory>
+			<territory type="LI" draft="provisional">Lichtenstenum</territory>
+			<territory type="LK" draft="provisional">Taprobane</territory>
+			<territory type="LR" draft="provisional">Liberia</territory>
+			<territory type="LS" draft="provisional">Lesothum</territory>
+			<territory type="LT" draft="provisional">Lituania</territory>
+			<territory type="LU" draft="provisional">Luxemburgum</territory>
+			<territory type="LV" draft="provisional">Lettonia</territory>
+			<territory type="LY" draft="provisional">Libya</territory>
+			<territory type="MA" draft="provisional">Marocum</territory>
+			<territory type="MC" draft="provisional">Monoecus</territory>
+			<territory type="MD" draft="provisional">Res publica Moldavica</territory>
+			<territory type="ME" draft="provisional">Mons Niger</territory>
+			<territory type="MG" draft="provisional">Madagascaria</territory>
+			<territory type="MH" draft="provisional">Insulae Marsalienses</territory>
+			<territory type="MK" draft="provisional">Res publica Macedonica</territory>
+			<territory type="ML" draft="provisional">Malium</territory>
+			<territory type="MN" draft="provisional">Mongolia</territory>
+			<territory type="MO" draft="provisional">Macaum</territory>
+			<territory type="MP" draft="provisional">Insulae Marianae Septentrionales</territory>
+			<territory type="MQ" draft="provisional">Martinica</territory>
+			<territory type="MR" draft="provisional">Mauritania</territory>
+			<territory type="MS" draft="provisional">Montserrat</territory>
+			<territory type="MT" draft="provisional">Melita</territory>
+			<territory type="MU" draft="provisional">Mauritia</territory>
+			<territory type="MV" draft="provisional">Insulae Maldivae</territory>
+			<territory type="MW" draft="provisional">Malavium</territory>
+			<territory type="MX" draft="provisional">Mexicum</territory>
+			<territory type="MY" draft="provisional">Malaesia</territory>
+			<territory type="MZ" draft="provisional">Mozambicum</territory>
+			<territory type="NA" draft="provisional">Namibia</territory>
+			<territory type="NC" draft="provisional">Nova Caledonia</territory>
+			<territory type="NE" draft="provisional">Res publica Nigritana</territory>
+			<territory type="NF" draft="provisional">Insula Norfolcia</territory>
+			<territory type="NG" draft="provisional">Nigeria</territory>
+			<territory type="NI" draft="provisional">Nicaragua</territory>
+			<territory type="NL" draft="provisional">Nederlandia</territory>
+			<territory type="NL" alt="variant" draft="provisional">Regnum Nederlandiae</territory>
+			<territory type="NO" draft="provisional">Norvegia</territory>
+			<territory type="NP" draft="provisional">Nepalia</territory>
+			<territory type="NR" draft="provisional">Nauru</territory>
+			<territory type="NU" draft="provisional">Niue</territory>
+			<territory type="NZ" draft="provisional">Nova Zelandia</territory>
+			<territory type="OM" draft="provisional">Omania</territory>
+			<territory type="PA" draft="provisional">Panama</territory>
+			<territory type="PE" draft="provisional">Peruvia</territory>
+			<territory type="PF" draft="provisional">Polynesia Francica</territory>
+			<territory type="PG" draft="provisional">Papua Nova Guinea</territory>
+			<territory type="PH" draft="provisional">Philippinae</territory>
+			<territory type="PK" draft="provisional">Pakistania</territory>
+			<territory type="PL" draft="provisional">Polonia</territory>
+			<territory type="PM" draft="provisional">Insulae Sancti Petri et Miquelonensis</territory>
+			<territory type="PN" draft="provisional">Insulae Pitcairn</territory>
+			<territory type="PR" draft="provisional">Portus Dives</territory>
+			<territory type="PS" draft="provisional">Territoria Palaestinensia</territory>
+			<territory type="PT" draft="provisional">Portugallia</territory>
+			<territory type="PW" draft="provisional">Belavia</territory>
+			<territory type="PY" draft="provisional">Paraquaria</territory>
+			<territory type="QA" draft="provisional">Quataria</territory>
+			<territory type="RE" draft="provisional">Reunio</territory>
+			<territory type="RO" draft="provisional">Romania</territory>
+			<territory type="RS" draft="provisional">Serbia</territory>
+			<territory type="RU" draft="provisional">Russia</territory>
+			<territory type="RW" draft="provisional">Ruanda</territory>
+			<territory type="SA" draft="provisional">Arabia Saudiana</territory>
+			<territory type="SB" draft="provisional">Insulae Salomonis</territory>
+			<territory type="SC" draft="provisional">Insulae Seisellenses</territory>
+			<territory type="SD" draft="provisional">Sudania</territory>
+			<territory type="SE" draft="provisional">Suecia</territory>
+			<territory type="SG" draft="provisional">Singapura</territory>
+			<territory type="SH" draft="provisional">Sancta Helena, Ascensio et Tristan da Cunha</territory>
+			<territory type="SI" draft="provisional">Slovenia</territory>
+			<territory type="SK" draft="provisional">Slovacia</territory>
+			<territory type="SL" draft="provisional">Mons Leoninus</territory>
+			<territory type="SM" draft="provisional">Res publica Sancti Marini</territory>
+			<territory type="SN" draft="provisional">Senegalia</territory>
+			<territory type="SO" draft="provisional">Somalia</territory>
+			<territory type="SR" draft="provisional">Surinamia</territory>
+			<territory type="SS" draft="provisional">Sudania Australis</territory>
+			<territory type="ST" draft="provisional">Insulae Sancti Thomae et Principis</territory>
+			<territory type="SV" draft="provisional">Salvatoria</territory>
+			<territory type="SY" draft="provisional">Syria</territory>
+			<territory type="SZ" draft="provisional">Swazia</territory>
+			<territory type="TC" draft="provisional">Insulae Turcenses et Caicenses</territory>
+			<territory type="TD" draft="provisional">Tzadia</territory>
+			<territory type="TG" draft="provisional">Togum</territory>
+			<territory type="TH" draft="provisional">Thailandia</territory>
+			<territory type="TJ" draft="provisional">Tadzikistania</territory>
+			<territory type="TK" draft="provisional">Tokelau</territory>
+			<territory type="TL" draft="provisional">Timoria Orientalis</territory>
+			<territory type="TM" draft="provisional">Turcomannia</territory>
+			<territory type="TN" draft="provisional">Tunesia</territory>
+			<territory type="TO" draft="provisional">Tonga</territory>
+			<territory type="TR" draft="provisional">Turcia</territory>
+			<territory type="TT" draft="provisional">Trinitas et Tabacum</territory>
+			<territory type="TV" draft="provisional">Tuvalu</territory>
+			<territory type="TW" draft="provisional">Res publica Sinarum</territory>
+			<territory type="TZ" draft="provisional">Tanzania</territory>
+			<territory type="UA" draft="provisional">Ucraina</territory>
+			<territory type="UG" draft="provisional">Uganda</territory>
+			<territory type="US" draft="provisional">Civitates Foederatae Americae</territory>
+			<territory type="UY" draft="provisional">Uraquaria</territory>
+			<territory type="UZ" draft="provisional">Uzbecia</territory>
+			<territory type="VA" draft="provisional">Civitas Vaticana</territory>
+			<territory type="VC" draft="provisional">Sanctus Vincentius et Granatinae</territory>
+			<territory type="VE" draft="provisional">Venetiola</territory>
+			<territory type="VG" draft="provisional">Virginis Insulae Britannicae</territory>
+			<territory type="VI" draft="provisional">Virginis Insulae Americanae</territory>
+			<territory type="VN" draft="provisional">Vietnamia</territory>
+			<territory type="VU" draft="provisional">Vanuatu</territory>
+			<territory type="WF" draft="provisional">Vallis et Futuna</territory>
+			<territory type="WS" draft="provisional">Samoa</territory>
+			<territory type="XK" draft="provisional">Kosovia</territory>
+			<territory type="YE" draft="provisional">Iemenia</territory>
+			<territory type="YT" draft="provisional">Maiotta</territory>
+			<territory type="YU" draft="provisional">Iugoslavia</territory>
+			<territory type="ZA" draft="provisional">Africa Australis</territory>
+			<territory type="ZM" draft="provisional">Zambia</territory>
+			<territory type="ZW" draft="provisional">Zimbabua</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters draft="provisional">[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="provisional">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters type="numbers" draft="provisional">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="provisional">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart draft="provisional">“</quotationStart>
+		<quotationEnd draft="provisional">”</quotationEnd>
+		<alternateQuotationStart draft="provisional">‘</alternateQuotationStart>
+		<alternateQuotationEnd draft="provisional">’</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="provisional">Ian</month>
+							<month type="2" draft="provisional">Feb</month>
+							<month type="3" draft="provisional">Mar</month>
+							<month type="4" draft="provisional">Apr</month>
+							<month type="5" draft="provisional">Mai</month>
+							<month type="6" draft="provisional">Iun</month>
+							<month type="7" draft="provisional">Iul</month>
+							<month type="8" draft="provisional">Aug</month>
+							<month type="9" draft="provisional">Sep</month>
+							<month type="10" draft="provisional">Oct</month>
+							<month type="11" draft="provisional">Nov</month>
+							<month type="12" draft="provisional">Dec</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="provisional">Ianuarii</month>
+							<month type="2" draft="provisional">Februarii</month>
+							<month type="3" draft="provisional">Martii</month>
+							<month type="4" draft="provisional">Aprilis</month>
+							<month type="5" draft="provisional">Maii</month>
+							<month type="6" draft="provisional">Iunii</month>
+							<month type="7" draft="provisional">Iulii</month>
+							<month type="8" draft="provisional">Augusti</month>
+							<month type="9" draft="provisional">Septembris</month>
+							<month type="10" draft="provisional">Octobris</month>
+							<month type="11" draft="provisional">Novembris</month>
+							<month type="12" draft="provisional">Decembris</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="provisional">Ian</month>
+							<month type="2" draft="provisional">Feb</month>
+							<month type="3" draft="provisional">Mar</month>
+							<month type="4" draft="provisional">Apr</month>
+							<month type="5" draft="provisional">Mai</month>
+							<month type="6" draft="provisional">Iun</month>
+							<month type="7" draft="provisional">Iul</month>
+							<month type="8" draft="provisional">Aug</month>
+							<month type="9" draft="provisional">Sep</month>
+							<month type="10" draft="provisional">Oct</month>
+							<month type="11" draft="provisional">Nov</month>
+							<month type="12" draft="provisional">Dec</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="provisional">Ianuarius</month>
+							<month type="2" draft="provisional">Februarius</month>
+							<month type="3" draft="provisional">Martius</month>
+							<month type="4" draft="provisional">Aprilis</month>
+							<month type="5" draft="provisional">Maius</month>
+							<month type="6" draft="provisional">Iunius</month>
+							<month type="7" draft="provisional">Iulius</month>
+							<month type="8" draft="provisional">Augustus</month>
+							<month type="9" draft="provisional">September</month>
+							<month type="10" draft="provisional">October</month>
+							<month type="11" draft="provisional">November</month>
+							<month type="12" draft="provisional">December</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="provisional">Sol</day>
+							<day type="sun" alt="variant" draft="provisional">Dom</day>
+							<day type="mon" draft="provisional">Lun</day>
+							<day type="tue" draft="provisional">Mar</day>
+							<day type="wed" draft="provisional">Mer</day>
+							<day type="thu" draft="provisional">Iov</day>
+							<day type="fri" draft="provisional">Ven</day>
+							<day type="sat" draft="provisional">Sat</day>
+							<day type="sat" alt="variant" draft="provisional">Sab</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="provisional">dies Solis</day>
+							<day type="sun" alt="variant" draft="provisional">Dominica</day>
+							<day type="mon" draft="provisional">dies Lunae</day>
+							<day type="tue" draft="provisional">dies Martis</day>
+							<day type="wed" draft="provisional">dies Mercurii</day>
+							<day type="thu" draft="provisional">dies Iovis</day>
+							<day type="fri" draft="provisional">dies Veneris</day>
+							<day type="sat" draft="provisional">dies Saturni</day>
+							<day type="sat" alt="variant" draft="provisional">dies Sabbati</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="provisional">Sol</day>
+							<day type="sun" alt="variant" draft="provisional">Dom</day>
+							<day type="mon" draft="provisional">Lun</day>
+							<day type="tue" draft="provisional">Mar</day>
+							<day type="wed" draft="provisional">Mer</day>
+							<day type="thu" draft="provisional">Iov</day>
+							<day type="fri" draft="provisional">Ven</day>
+							<day type="sat" draft="provisional">Sat</day>
+							<day type="sat" alt="variant" draft="provisional">Sab</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="provisional">dies Solis</day>
+							<day type="sun" alt="variant" draft="provisional">Dominica</day>
+							<day type="mon" draft="provisional">dies Lunae</day>
+							<day type="tue" draft="provisional">dies Martis</day>
+							<day type="wed" draft="provisional">dies Mercurii</day>
+							<day type="thu" draft="provisional">dies Iovis</day>
+							<day type="fri" draft="provisional">dies Veneris</day>
+							<day type="sat" draft="provisional">dies Saturni</day>
+							<day type="sat" alt="variant" draft="provisional">Sabbatum</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="provisional">Q1</quarter>
+							<quarter type="2" draft="provisional">Q2</quarter>
+							<quarter type="3" draft="provisional">Q3</quarter>
+							<quarter type="4" draft="provisional">Q4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="provisional">prima quarta</quarter>
+							<quarter type="2" draft="provisional">secunda quarta</quarter>
+							<quarter type="3" draft="provisional">tertia quarta</quarter>
+							<quarter type="4" draft="provisional">quarta quarta</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="provisional">Q1</quarter>
+							<quarter type="2" draft="provisional">Q2</quarter>
+							<quarter type="3" draft="provisional">Q3</quarter>
+							<quarter type="4" draft="provisional">Q4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="provisional">prima quarta</quarter>
+							<quarter type="2" draft="provisional">secunda quarta</quarter>
+							<quarter type="3" draft="provisional">tertia quarta</quarter>
+							<quarter type="4" draft="provisional">quarta quarta</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="provisional">a.m.</dayPeriod>
+							<dayPeriod type="pm" draft="provisional">p.m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="provisional">a.m.</dayPeriod>
+							<dayPeriod type="pm" draft="provisional">p.m.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0" draft="provisional">ante Christum natum</era>
+						<era type="1" draft="provisional">post Christum natum</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="provisional">a.C.n.</era>
+						<era type="1" draft="provisional">p.C.n.</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="provisional">EEEE, 'die' d MMMM y G</pattern>
+							<datetimeSkeleton draft="provisional">GyMMMMEEEEd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="provisional">'die' d MMMM y G</pattern>
+							<datetimeSkeleton draft="provisional">GyMMMMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="provisional">'die' d MMM y G</pattern>
+							<datetimeSkeleton draft="provisional">GyMMMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="provisional">d M y G</pattern>
+							<datetimeSkeleton draft="provisional">GyMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="provisional">HH:mm:ss zzzz</pattern>
+							<datetimeSkeleton draft="provisional">HHmmsszzzz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="provisional">HH:mm:ss z</pattern>
+							<datetimeSkeleton draft="provisional">HHmmssz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="provisional">HH:mm:ss</pattern>
+							<datetimeSkeleton draft="provisional">HHmmss</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="provisional">HH:mm</pattern>
+							<datetimeSkeleton draft="provisional">HHmm</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="provisional">{1} 'de' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="provisional">{1} 'de' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="provisional">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="provisional">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="era">
+				<displayName draft="provisional">eare</displayName>
+			</field>
+			<field type="year">
+				<displayName draft="provisional">anno</displayName>
+				<relative type="-1" draft="provisional">priore anno</relative>
+				<relative type="0" draft="provisional">hoc anno</relative>
+				<relative type="1" draft="provisional">postero anno</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} anno</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} annis</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} annum</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} annos</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-short">
+				<displayName draft="provisional">an.</displayName>
+				<relative type="-1" draft="provisional">priore an.</relative>
+				<relative type="0" draft="provisional">hoc an.</relative>
+				<relative type="1" draft="provisional">postero an.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} an.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} an.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} an.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} an.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter">
+				<displayName draft="provisional">quarter</displayName>
+				<relative type="-1" draft="provisional">priore quarta</relative>
+				<relative type="0" draft="provisional">hac quarta</relative>
+				<relative type="1" draft="provisional">postera quarta</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} quarta</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} quartis</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} quartam</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} quartas</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-short">
+				<displayName draft="provisional">qrt.</displayName>
+				<relative type="-1" draft="provisional">priore qrt.</relative>
+				<relative type="0" draft="provisional">hac qrt.</relative>
+				<relative type="1" draft="provisional">postera qrt.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} qrt.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} qrt.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} qrt.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} qrt.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month">
+				<displayName draft="provisional">mensis</displayName>
+				<relative type="-1" draft="provisional">priore mense</relative>
+				<relative type="0" draft="provisional">hac mense</relative>
+				<relative type="1" draft="provisional">postera mense</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} mense</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} mensibus</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} mensem</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} menses</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-short">
+				<displayName draft="provisional">men.</displayName>
+				<relative type="-1" draft="provisional">priore men.</relative>
+				<relative type="0" draft="provisional">hac men.</relative>
+				<relative type="1" draft="provisional">postera men.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} men.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} men.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} men.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} men.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="week">
+				<displayName draft="provisional">hebdomas</displayName>
+				<relative type="-1" draft="provisional">priore hebdomade</relative>
+				<relative type="0" draft="provisional">hac hebdomade</relative>
+				<relative type="1" draft="provisional">postera hebdomade</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} hebdomade</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} hebdomadibus</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} hebdomadem</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} hebdomades</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>the week of {0}</relativePeriod>
+			</field>
+			<field type="week-short">
+				<displayName draft="provisional">hebd.</displayName>
+				<relative type="-1" draft="provisional">priore hebd.</relative>
+				<relative type="0" draft="provisional">hac hebd.</relative>
+				<relative type="1" draft="provisional">postera hebd</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} hebd.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} hebd.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} hebd.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} hebd.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day">
+				<displayName draft="provisional">dies</displayName>
+				<relative type="-1" draft="provisional">pridie</relative>
+				<relative type="0" draft="provisional">hodie</relative>
+				<relative type="1" draft="provisional">cras</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} die</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} diebus</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} diem</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} dies</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-short">
+				<displayName draft="provisional">dies</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} die</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} diebus</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} diem</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} dies</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="weekday">
+				<displayName draft="provisional">day of the week</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1" draft="provisional">priore die Solis</relative>
+				<relative type="0" draft="provisional">hoc die Solis</relative>
+				<relative type="1" draft="provisional">postero die Solis</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} die Solis</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} diebus Solis</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} diem Solis</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} dies Solis</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-short">
+				<relative type="-1" draft="provisional">prior. die Sol.</relative>
+				<relative type="0" draft="provisional">hoc die Sol.</relative>
+				<relative type="1" draft="provisional">post. die Sol.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} die Sol.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} dieb. Sol.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} diem Sol.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} dies Sol.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon">
+				<relative type="-1" draft="provisional">priore die Lunae</relative>
+				<relative type="0" draft="provisional">hoc die Lunae</relative>
+				<relative type="1" draft="provisional">postero die Lunae</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} die Lunae</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} diebus Lunae</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} diem Lunae</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} dies Lunae</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-short">
+				<relative type="-1" draft="provisional">priore die Lun.</relative>
+				<relative type="0" draft="provisional">hoc die Lun.</relative>
+				<relative type="1" draft="provisional">postero die Lun.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} die Lun.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} diebus Lun.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} diem Lun.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} dies Lun.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue">
+				<relative type="-1" draft="provisional">priore die Martis</relative>
+				<relative type="0" draft="provisional">hoc die Martis</relative>
+				<relative type="1" draft="provisional">postero die Martis</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} die Martis</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} diebus Martis</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} diem Martis</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} dies Martis</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-short">
+				<relative type="-1" draft="provisional">priore die Mar.</relative>
+				<relative type="0" draft="provisional">hoc die Mar.</relative>
+				<relative type="1" draft="provisional">postero die Mar.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} die Mar.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} diebus Mar.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} diem Mar.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} dies Mar.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed">
+				<relative type="-1" draft="provisional">priore die Mercurii</relative>
+				<relative type="0" draft="provisional">hoc die Mercurii</relative>
+				<relative type="1" draft="provisional">postero die Mercurii</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} die Mercurii</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} diebus Mercurii</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} diem Mercurii</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} dies Mercurii</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-short">
+				<relative type="-1" draft="provisional">priore die Merc.</relative>
+				<relative type="0" draft="provisional">hoc die Merc.</relative>
+				<relative type="1" draft="provisional">postero die Merc.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} die Merc.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} diebus Merc.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} diem Merc.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} dies Merc.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu">
+				<relative type="-1" draft="provisional">priore die Iovis</relative>
+				<relative type="0" draft="provisional">hoc die Iovis</relative>
+				<relative type="1" draft="provisional">postero die Iovis</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} die Iovis</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} diebus Iovis</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} diem Iovis</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} dies Iovis</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-short">
+				<relative type="-1" draft="provisional">priore die Iov.</relative>
+				<relative type="0" draft="provisional">hoc die Iov.</relative>
+				<relative type="1" draft="provisional">postero die Iov.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} die Iov.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} diebus Iov.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} diem Iov.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} dies Iov.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri">
+				<relative type="-1" draft="provisional">priore die Veneris</relative>
+				<relative type="0" draft="provisional">hoc die Veneris</relative>
+				<relative type="1" draft="provisional">postero die Veneris</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} die Veneris</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} diebus Veneris</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} diem Veneris</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} dies Veneris</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-short">
+				<relative type="-1" draft="provisional">priore die Ven.</relative>
+				<relative type="0" draft="provisional">hoc die Ven.</relative>
+				<relative type="1" draft="provisional">postero die Ven.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} die Ven.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} diebus Ven.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} diem Ven.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} dies Ven.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat">
+				<relative type="-1" draft="provisional">priore die Saturni</relative>
+				<relative type="0" draft="provisional">hoc die Saturni</relative>
+				<relative type="1" draft="provisional">postero die Saturni</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} die Saturni</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} diebus Saturni</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} diem Saturni</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} dies Saturni</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-short">
+				<relative type="-1" draft="provisional">priore die Sat.</relative>
+				<relative type="0" draft="provisional">hoc die Sat.</relative>
+				<relative type="1" draft="provisional">postero die Sat.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} die Sat.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} diebus Sat.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} diem Sat.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} dies Sat.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour">
+				<displayName draft="provisional">hora</displayName>
+				<relative type="0" draft="provisional">hac hora</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} hora</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} horis</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} horam</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} horas</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-short">
+				<displayName draft="provisional">hr.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} hr.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} hr.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} hr.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} hr.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute">
+				<displayName draft="provisional">minuta</displayName>
+				<relative type="0">hac minuta</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} minuta</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} minutis</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} minutam</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} minutas</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-short">
+				<displayName draft="provisional">min.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} min.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} min.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} min.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} min.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second">
+				<displayName draft="provisional">secunda</displayName>
+				<relative type="0" draft="provisional">nunc</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} secunda</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} secundis</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} secundam</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} secundas</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-short">
+				<displayName draft="provisional">sec.</displayName>
+				<relative type="0" draft="provisional">nunc</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">in {0} sec.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">in {0} sec.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">abhinc {0} sec.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">abhinc {0} sec.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="zone">
+				<displayName draft="provisional">time zone</displayName>
+			</field>
+		</fields>
+	</dates>
+	<numbers>
+		<defaultNumberingSystem>latn</defaultNumberingSystem>
+		<otherNumberingSystems>
+			<native>latn</native>
+		</otherNumberingSystems>
+		<minimumGroupingDigits>1</minimumGroupingDigits>
+		<symbols numberSystem="latn">
+			<decimal draft="provisional">,</decimal>
+			<group draft="provisional"> </group>
+			<list draft="provisional">;</list>
+			<percentSign draft="provisional">%</percentSign>
+			<plusSign draft="provisional">+</plusSign>
+			<minusSign draft="provisional">-</minusSign>
+			<perMille draft="provisional">‰</perMille>
+			<infinity draft="provisional">∞</infinity>
+			<timeSeparator draft="provisional">:</timeSeparator>
+		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="provisional">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+			<decimalFormatLength type="long">
+				<decimalFormat>
+					<pattern type="1000" count="one" draft="provisional">0 mille</pattern>
+					<pattern type="1000" count="other" draft="provisional">0 millia</pattern>
+					<pattern type="10000" count="one" draft="provisional">00 millia</pattern>
+					<pattern type="10000" count="other" draft="provisional">00 millia</pattern>
+					<pattern type="100000" count="one" draft="provisional">000 millia</pattern>
+					<pattern type="100000" count="other" draft="provisional">000 millia</pattern>
+					<pattern type="1000000" count="one" draft="provisional">0 milio</pattern>
+					<pattern type="1000000" count="other" draft="provisional">0 miliones</pattern>
+					<pattern type="10000000" count="one" draft="provisional">00 miliones</pattern>
+					<pattern type="10000000" count="other" draft="provisional">00 miliones</pattern>
+					<pattern type="100000000" count="one" draft="provisional">000 miliones</pattern>
+					<pattern type="100000000" count="other" draft="provisional">000 miliones</pattern>
+					<pattern type="1000000000" count="one" draft="provisional">0 miliardum</pattern>
+					<pattern type="1000000000" count="other" draft="provisional">0 miliarda</pattern>
+					<pattern type="10000000000" count="one" draft="provisional">00 miliarda</pattern>
+					<pattern type="10000000000" count="other" draft="provisional">00 miliarda</pattern>
+					<pattern type="100000000000" count="one" draft="provisional">000 miliarda</pattern>
+					<pattern type="100000000000" count="other" draft="provisional">000 miliarda</pattern>
+					<pattern type="1000000000000" count="one" draft="provisional">0 milies miliardum</pattern>
+					<pattern type="1000000000000" count="other" draft="provisional">0 milies miliarda</pattern>
+					<pattern type="10000000000000" count="one" draft="provisional">00 milies miliarda</pattern>
+					<pattern type="10000000000000" count="other" draft="provisional">00 milies miliarda</pattern>
+					<pattern type="100000000000000" count="one" draft="provisional">000 milies miliarda</pattern>
+					<pattern type="100000000000000" count="other" draft="provisional">000 milies miliarda</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+			<decimalFormatLength type="short">
+				<decimalFormat>
+					<pattern type="1000" count="one" draft="provisional">0M</pattern>
+					<pattern type="1000" count="other" draft="provisional">0M</pattern>
+					<pattern type="10000" count="one" draft="provisional">00M</pattern>
+					<pattern type="10000" count="other" draft="provisional">00M</pattern>
+					<pattern type="100000" count="one" draft="provisional">000M</pattern>
+					<pattern type="100000" count="other" draft="provisional">000M</pattern>
+					<pattern type="1000000" count="one" draft="provisional">0 Mn</pattern>
+					<pattern type="1000000" count="other" draft="provisional">0 Mn</pattern>
+					<pattern type="10000000" count="one" draft="provisional">00 Mn</pattern>
+					<pattern type="10000000" count="other" draft="provisional">00 Mn</pattern>
+					<pattern type="100000000" count="one" draft="provisional">000 Mn</pattern>
+					<pattern type="100000000" count="other" draft="provisional">000 Mn</pattern>
+					<pattern type="1000000000" count="one" draft="provisional">0 Md</pattern>
+					<pattern type="1000000000" count="other" draft="provisional">0 Md</pattern>
+					<pattern type="10000000000" count="one" draft="provisional">00 Md</pattern>
+					<pattern type="10000000000" count="other" draft="provisional">00 Md</pattern>
+					<pattern type="100000000000" count="one" draft="provisional">000 Md</pattern>
+					<pattern type="100000000000" count="other" draft="provisional">000 Md</pattern>
+					<pattern type="1000000000000" count="one" draft="provisional">0 mil Md</pattern>
+					<pattern type="1000000000000" count="other" draft="provisional">0 mil Md</pattern>
+					<pattern type="10000000000000" count="one" draft="provisional">00 mil Md</pattern>
+					<pattern type="10000000000000" count="other" draft="provisional">00 mil Md</pattern>
+					<pattern type="100000000000000" count="one" draft="provisional">000 mil Md</pattern>
+					<pattern type="100000000000000" count="other" draft="provisional">000 mil Md</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<currencies>
+			<currency type="CHF">
+				<displayName draft="provisional">Francus Helveticus</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName draft="provisional">Euro</displayName>
+			</currency>
+			<currency type="FIM">
+				<displayName draft="provisional">Marca Finniae</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName draft="provisional">Libra sterlingorum</displayName>
+			</currency>
+			<currency type="GRD">
+				<displayName draft="provisional">Drachma</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName draft="provisional">Dollarium Hongkongense</displayName>
+			</currency>
+			<currency type="ITL">
+				<displayName draft="provisional">Lira Italiana</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName draft="provisional">Yen</displayName>
+			</currency>
+			<currency type="MXN">
+				<displayName draft="provisional">Pensum Mexicanum</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName draft="provisional">Corona Norvegiae</displayName>
+			</currency>
+			<currency type="PEN">
+				<displayName draft="provisional">Nuevo Sol</displayName>
+			</currency>
+			<currency type="RUR">
+				<displayName draft="provisional">Rubelus Russicus</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName draft="provisional">Dollarium Civitatum Foederatarum</displayName>
+			</currency>
+			<currency type="XAG">
+				<displayName draft="provisional">Argentum</displayName>
+			</currency>
+			<currency type="XAU">
+				<displayName draft="provisional">Aurum</displayName>
+			</currency>
+			<currency type="XPD">
+				<displayName draft="provisional">Palladium</displayName>
+			</currency>
+			<currency type="XPT">
+				<displayName draft="provisional">Platinum</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="start" draft="provisional">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="provisional">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="provisional">{0} et {1}</listPatternPart>
+			<listPatternPart type="2" draft="provisional">{0} et {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start" draft="provisional">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="provisional">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="provisional">{0} et {1}</listPatternPart>
+			<listPatternPart type="2" draft="provisional">{0} et {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit">
+			<listPatternPart type="start" draft="provisional">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="provisional">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="provisional">{0} et {1}</listPatternPart>
+			<listPatternPart type="2" draft="provisional">{0}, {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-short">
+			<listPatternPart type="start" draft="provisional">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="provisional">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="provisional">{0} et {1}</listPatternPart>
+			<listPatternPart type="2" draft="provisional">{0}, {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
+	<posix>
+		<messages>
+			<yesstr draft="provisional">ita:i</yesstr>
+			<nostr draft="provisional">non:n</nostr>
+		</messages>
+	</posix>
+</ldml>

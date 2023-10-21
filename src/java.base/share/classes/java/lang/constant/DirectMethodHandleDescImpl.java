@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,8 +152,8 @@ final class DirectMethodHandleDescImpl implements DirectMethodHandleDesc {
 
     public MethodHandle resolveConstantDesc(MethodHandles.Lookup lookup)
             throws ReflectiveOperationException {
-        Class<?> resolvedOwner = (Class<?>) owner.resolveConstantDesc(lookup);
-        MethodType invocationType = (MethodType) this.invocationType().resolveConstantDesc(lookup);
+        Class<?> resolvedOwner = owner.resolveConstantDesc(lookup);
+        MethodType invocationType = this.invocationType().resolveConstantDesc(lookup);
         return switch (kind) {
             case STATIC,
                  INTERFACE_STATIC           -> lookup.findStatic(resolvedOwner, name, invocationType);

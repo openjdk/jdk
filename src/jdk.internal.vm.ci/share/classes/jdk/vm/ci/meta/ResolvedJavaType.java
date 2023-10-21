@@ -31,7 +31,7 @@ import jdk.vm.ci.meta.Assumptions.AssumptionResult;
  * thereof. Types, like fields and methods, are resolved through {@link ConstantPool constant pools}
  * .
  */
-public interface ResolvedJavaType extends JavaType, ModifiersProvider, AnnotatedElement {
+public interface ResolvedJavaType extends JavaType, ModifiersProvider, AnnotatedElement, Annotated {
     /**
      * Checks whether this type has a finalizer method.
      *
@@ -137,8 +137,8 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     boolean isAssignableFrom(ResolvedJavaType other);
 
     /**
-     * Returns {@code null} since support for VM anonymous class was removed by JDK-8243287.
-     * This method is preserved for JVMCI backwards compatibility.
+     * Returns {@code null} since support for VM anonymous class was removed by JDK-8243287. This
+     * method is preserved for JVMCI backwards compatibility.
      */
     @Deprecated
     default ResolvedJavaType getHostClass() {

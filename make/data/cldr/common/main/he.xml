@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -153,6 +153,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="el">יוונית</language>
 			<language type="elx">עילמית</language>
 			<language type="en">אנגלית</language>
+			<language type="en_US" alt="short">אנגלית (ארה״ב)</language>
 			<language type="enm">אנגלית תיכונה</language>
 			<language type="eo">אספרנטו</language>
 			<language type="es">ספרדית</language>
@@ -1078,6 +1079,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">זימבבואה</territory>
 			<territory type="ZZ">אזור לא ידוע</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">אנגליה</subdivision>
+			<subdivision type="gbsct">סקוטלנד</subdivision>
+			<subdivision type="gbwls">וויילס</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">כתיב גרמני מסורתי</variant>
 			<variant type="1994" draft="contributed">כתיב רזיאני סטנדרטי</variant>
@@ -1385,7 +1391,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<exemplarCharacters type="auxiliary">[\u05BD\u05C4\u200E\u200F \u05B0 \u05B1 \u05B2 \u05B3 \u05B4 \u05B5 \u05B6 \u05B7 \u05B8 \u05B9 \u05BB \u05C2 \u05C1 \u05BC \u05BF ״]</exemplarCharacters>
 		<exemplarCharacters type="index">[א ב ג ד ה ו ז ח ט י כ ל מ נ ס ע פ צ ק ר ש ת]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\u200E \- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . ׳ ' &quot; ( ) \[ \] / ״ ־]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . ' ׳ &quot; ״ ( ) \[ \] / ־]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1433,8 +1439,204 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="0">BE</era>
 					</eraNarrow>
 				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="contributed">EEEE, d בMMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="contributed">d בMMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="contributed">d בMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="contributed">d.M.y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="d" draft="contributed">d</dateFormatItem>
+						<dateFormatItem id="E" draft="contributed">ccc</dateFormatItem>
+						<dateFormatItem id="Ed" draft="contributed">E ה-d</dateFormatItem>
+						<dateFormatItem id="Gy" draft="contributed">y G</dateFormatItem>
+						<dateFormatItem id="GyMd" draft="contributed">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMMM" draft="contributed">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="contributed">d בMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd" draft="contributed">E, d בMMM y G</dateFormatItem>
+						<dateFormatItem id="M" draft="contributed">L</dateFormatItem>
+						<dateFormatItem id="Md" draft="contributed">d.M</dateFormatItem>
+						<dateFormatItem id="MEd" draft="contributed">E, d/M</dateFormatItem>
+						<dateFormatItem id="MMM" draft="contributed">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd" draft="contributed">d בMMM</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="contributed">E, d בMMM</dateFormatItem>
+						<dateFormatItem id="MMMMd" draft="contributed">MMMM d</dateFormatItem>
+						<dateFormatItem id="y" draft="contributed">y G</dateFormatItem>
+						<dateFormatItem id="yyyy" draft="contributed">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM" draft="contributed">M.y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd" draft="contributed">d.M.y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd" draft="contributed">E, d/M/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMM" draft="contributed">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd" draft="contributed">d בMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd" draft="contributed">E, d בMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM" draft="contributed">G y MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ" draft="contributed">G y QQQ</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ" draft="contributed">G y QQQQ</dateFormatItem>
+					</availableFormats>
 					<intervalFormats>
+						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm B</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d" draft="contributed">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="contributed">y G – y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d.M.y – d.M.y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d.M.y – d.M.y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="contributed">E, d.M.y – E, d.M.y GGGGG</greatestDifference>
+							<greatestDifference id="G" draft="contributed">E, d.M.y GGGGG – E, d.M.y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, d.M.y – E, d.M.y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E, d.M.y – E, d.M.y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="contributed">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="contributed">d – d בMMM y G</greatestDifference>
+							<greatestDifference id="G" draft="contributed">d בMMM y G – d בMMM y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d בMMM – d בMMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d בMMM y – d בMMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="contributed">E, d בMMM – E, d בMMM y G</greatestDifference>
+							<greatestDifference id="G" draft="contributed">E, d בMMM y G – E, d בMMM y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, d בMMM – E, d בMMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E, d בMMM y – E, d בMMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H" draft="contributed">H–H</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H" draft="contributed">H:mm–H:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">H:mm–H:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H" draft="contributed">H:mm–H:mm v</greatestDifference>
+							<greatestDifference id="m" draft="contributed">H:mm–H:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H" draft="contributed">H–H v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d" draft="contributed">dd/MM – dd/MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">dd/MM – dd/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d" draft="contributed">EEEE dd/MM – EEEE dd/MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">EEEE dd/MM – EEEE dd/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M" draft="contributed">MMM–MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d" draft="contributed">d–d MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d MMM – d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d" draft="contributed">EEEE d MMM – EEEE d MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">EEEE d MMM – EEEE d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y" draft="contributed">y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M" draft="contributed">MM/y – MM/y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MM/y – MM/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d" draft="contributed">dd/MM/y – dd/MM/y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">dd/MM/y – dd/MM/y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">dd/MM/y – dd/MM/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d" draft="contributed">EEEE dd/MM/y – EEEE dd/MM/y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">EEEE dd/MM/y – EEEE dd/MM/y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">EEEE dd/MM/y – EEEE dd/MM/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M" draft="contributed">MMM–MMM y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMM y – MMM y</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d" draft="contributed">d–d בMMM y G</greatestDifference>
 							<greatestDifference id="M" draft="contributed">d בMMM – d בMMM y G</greatestDifference>
@@ -1442,7 +1644,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
 							<greatestDifference id="d" draft="contributed">E, d בMMM – E, d בMMM y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">EEEE d MMM – EEEE d MMM y</greatestDifference>
 							<greatestDifference id="y" draft="contributed">E, d, בMMM, y – E, d בMMM, y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M" draft="contributed">MMMM – MMMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMMM y–MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1558,6 +1765,224 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="1">ERA1</era>
 					</eraNarrow>
 				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="contributed">EEEE, d בMMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="contributed">d בMMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="contributed">d בMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="contributed">d.M.y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="d" draft="contributed">d</dateFormatItem>
+						<dateFormatItem id="E" draft="contributed">ccc</dateFormatItem>
+						<dateFormatItem id="Ed" draft="contributed">E ה-d</dateFormatItem>
+						<dateFormatItem id="Gy" draft="contributed">y G</dateFormatItem>
+						<dateFormatItem id="GyMd" draft="contributed">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMMM" draft="contributed">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="contributed">d בMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd" draft="contributed">E, d בMMM y G</dateFormatItem>
+						<dateFormatItem id="M" draft="contributed">L</dateFormatItem>
+						<dateFormatItem id="Md" draft="contributed">d.M</dateFormatItem>
+						<dateFormatItem id="MEd" draft="contributed">E, d/M</dateFormatItem>
+						<dateFormatItem id="MMM" draft="contributed">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd" draft="contributed">d בMMM</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="contributed">E, d בMMM</dateFormatItem>
+						<dateFormatItem id="MMMMd" draft="contributed">MMMM d</dateFormatItem>
+						<dateFormatItem id="y" draft="contributed">y G</dateFormatItem>
+						<dateFormatItem id="yyyy" draft="contributed">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM" draft="contributed">M.y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd" draft="contributed">d.M.y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd" draft="contributed">E, d/M/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMM" draft="contributed">MM/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMM" draft="contributed">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd" draft="contributed">d בMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd" draft="contributed">E, d בMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM" draft="contributed">G y MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ" draft="contributed">G y QQQ</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ" draft="contributed">G y QQQQ</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm B</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d" draft="contributed">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="contributed">y G – y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d.M.y – d.M.y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d.M.y – d.M.y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="contributed">E, d.M.y – E, d.M.y GGGGG</greatestDifference>
+							<greatestDifference id="G" draft="contributed">E, d.M.y GGGGG – E, d.M.y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, d.M.y – E, d.M.y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E, d.M.y – E, d.M.y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="contributed">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="contributed">d – d בMMM y G</greatestDifference>
+							<greatestDifference id="G" draft="contributed">d בMMM y G – d בMMM y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d בMMM – d בMMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d בMMM y – d בMMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="contributed">E, d בMMM – E, d בMMM y G</greatestDifference>
+							<greatestDifference id="G" draft="contributed">E, d בMMM y G – E, d בMMM y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, d בMMM – E, d בMMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E, d בMMM y – E, d בMMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H" draft="contributed">H–H</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H" draft="contributed">H:mm–H:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">H:mm–H:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H" draft="contributed">H:mm–H:mm v</greatestDifference>
+							<greatestDifference id="m" draft="contributed">H:mm–H:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H" draft="contributed">H–H v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d" draft="contributed">dd/MM – dd/MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">dd/MM – dd/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d" draft="contributed">EEEE dd/MM – EEEE dd/MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">EEEE dd/MM – EEEE dd/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M" draft="contributed">MMM–MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d" draft="contributed">d–d MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d MMM – d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d" draft="contributed">EEEE d MMM – EEEE d MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">EEEE d MMM – EEEE d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMM">
+							<greatestDifference id="M" draft="contributed">LLLL–LLLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y" draft="contributed">y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M" draft="contributed">MM/y – MM/y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MM/y – MM/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d" draft="contributed">dd/MM/y – dd/MM/y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">dd/MM/y – dd/MM/y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">dd/MM/y – dd/MM/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d" draft="contributed">EEEE dd/MM/y – EEEE dd/MM/y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">EEEE dd/MM/y – EEEE dd/MM/y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">EEEE dd/MM/y – EEEE dd/MM/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M" draft="contributed">MMM–MMM y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMM y – MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d" draft="contributed">d–d MMM y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d MMM – d MMM y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d MMM y – d MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d" draft="contributed">EEEE d MMM – EEEE d MMM y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">EEEE d MMM – EEEE d MMM y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">EEEE d MMM y – EEEE d MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M" draft="contributed">MMMM – MMMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMMM y–MMMM y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
 			</calendar>
 			<calendar type="ethiopic">
 				<months>
@@ -1671,6 +2096,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</eraNarrow>
 				</eras>
 			</calendar>
+			<calendar type="ethiopic-amete-alem">
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">ERA0</era>
+					</eraNames>
+					<eraNarrow>
+						<era type="0" draft="contributed">ERA0</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -1719,9 +2154,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2198,7 +2639,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0" draft="contributed">לפני</era>
+						<era type="0" alt="variant" draft="contributed">BCE</era>
 						<era type="1" draft="contributed">אחריי</era>
+						<era type="1" alt="variant">CE</era>
 					</eraNarrow>
 				</eras>
 				<dateFormats>
@@ -2274,9 +2717,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2648,8 +3097,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="d" draft="contributed">d</dateFormatItem>
+						<dateFormatItem id="E" draft="contributed">ccc</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd" draft="contributed">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d בMMMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d בMMMM y G</dateFormatItem>
@@ -2663,6 +3115,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMMEd">E, d בMMMM</dateFormatItem>
 						<dateFormatItem id="mmss" draft="provisional">mm:ss</dateFormatItem>
 						<dateFormatItem id="y" draft="contributed">y</dateFormatItem>
+						<dateFormatItem id="yyyy" draft="contributed">y G</dateFormatItem>
 						<dateFormatItem id="yyyyM" draft="contributed">MMMM y</dateFormatItem>
 						<dateFormatItem id="yyyyMd" draft="contributed">d בMMMM y</dateFormatItem>
 						<dateFormatItem id="yyyyMEd" draft="contributed">E, d בMMMM y</dateFormatItem>
@@ -2679,15 +3132,62 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="B" draft="contributed">h בB – h בB</greatestDifference>
 							<greatestDifference id="h" draft="contributed">h–h בB</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm B</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d" draft="contributed">d–d</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="contributed">y G – y G</greatestDifference>
 							<greatestDifference id="y" draft="contributed">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d.M.y – d.M.y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d.M.y – d.M.y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="contributed">E, d.M.y – E, d.M.y GGGGG</greatestDifference>
+							<greatestDifference id="G" draft="contributed">E, d.M.y GGGGG – E, d.M.y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, d.M.y – E, d.M.y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E, d.M.y – E, d.M.y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="contributed">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="contributed">d – d בMMM y G</greatestDifference>
+							<greatestDifference id="G" draft="contributed">d בMMM y G – d בMMM y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d בMMM – d בMMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d בMMM y – d בMMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="contributed">E, d בMMM – E, d בMMM y G</greatestDifference>
+							<greatestDifference id="G" draft="contributed">E, d בMMM y G – E, d בMMM y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, d בMMM – E, d בMMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E, d בMMM y – E, d בMMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
 							<greatestDifference id="h" draft="contributed">h – h a</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H" draft="contributed">H–H</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
 							<greatestDifference id="m" draft="contributed">h:mm – h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
@@ -2699,9 +3199,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="h" draft="contributed">h:mm – h:mm a v</greatestDifference>
 							<greatestDifference id="m" draft="contributed">h:mm – h:mm a v</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H" draft="contributed">H:mm–H:mm v</greatestDifference>
+							<greatestDifference id="m" draft="contributed">H:mm–H:mm v</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
 							<greatestDifference id="h" draft="contributed">h – h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H" draft="contributed">H–H v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M" draft="contributed">MMM – MMM</greatestDifference>
@@ -2725,6 +3232,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d" draft="contributed">E d בMMM – E d בMMM</greatestDifference>
 							<greatestDifference id="M" draft="contributed">E d בMMM – E d בMMM</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y" draft="contributed">y–y</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M" draft="contributed">MMM y – MMM y</greatestDifference>
 							<greatestDifference id="y" draft="contributed">MMM y – MMM y</greatestDifference>
@@ -2738,6 +3248,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d" draft="contributed">E d בMMM – E d בMMM y</greatestDifference>
 							<greatestDifference id="M" draft="contributed">E d בMMM – E d בMMM y</greatestDifference>
 							<greatestDifference id="y" draft="contributed">E d בMMM y – E d בMMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M" draft="contributed">MMM–MMM y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d" draft="contributed">d–d בMMM y</greatestDifference>
@@ -2990,6 +3504,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="E">ccc</dateFormatItem>
 						<dateFormatItem id="Ed">E ה-d</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d בMMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d בMMM y G</dateFormatItem>
@@ -3432,6 +3947,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="-1">אתמול</relative>
 				<relative type="0">היום</relative>
 				<relative type="1">מחר</relative>
+				<relative type="2" draft="contributed">מחרתיים</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">מחר</relativeTimePattern>
 					<relativeTimePattern count="two">בעוד יומיים</relativeTimePattern>
@@ -3856,6 +4372,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="hour-short">
 				<displayName>שעה</displayName>
+				<relative type="0" draft="contributed">בשעה זו</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">בעוד שעה</relativeTimePattern>
 					<relativeTimePattern count="two">בעוד שעתיים</relativeTimePattern>
@@ -3871,6 +4388,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="hour-narrow">
 				<displayName>שע׳</displayName>
+				<relative type="0" draft="contributed">בשעה זו</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">בעוד שעה</relativeTimePattern>
 					<relativeTimePattern count="two">בעוד שעתיים</relativeTimePattern>
@@ -3950,6 +4468,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="second-short">
 				<displayName>שנ׳</displayName>
+				<relative type="0" draft="contributed">עכשיו</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">בעוד שנ׳</relativeTimePattern>
 					<relativeTimePattern count="two">בעוד שתי שנ׳</relativeTimePattern>
@@ -3965,6 +4484,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="second-narrow">
 				<displayName>שנ׳</displayName>
+				<relative type="0" draft="contributed">עכשיו</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">בעוד שנ׳</relativeTimePattern>
 					<relativeTimePattern count="two">בעוד שתי שנ׳</relativeTimePattern>
@@ -4789,6 +5309,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>הרמוסיו</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>סיודד חוארס</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>מזטלן</exemplarCity>
@@ -6255,6 +6778,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<traditional>hebr</traditional>
 		</otherNumberingSystems>
 		<minimumGroupingDigits>1</minimumGroupingDigits>
+		<symbols numberSystem="adlm">
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
 		<symbols numberSystem="cakm">
 			<infinity draft="contributed">∞</infinity>
 		</symbols>
@@ -6409,6 +6935,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>‏#,##0.00 ‏¤;‏-#,##0.00 ‏¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -7325,6 +7852,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="LSL">
 				<displayName>לוטי לסותי</displayName>
+				<displayName count="one">לוטי לסותי</displayName>
+				<displayName count="two">לוטי לסותי</displayName>
+				<displayName count="many">לוטי לסותי</displayName>
+				<displayName count="other">לוטי לסותי</displayName>
 			</currency>
 			<currency type="LTL">
 				<displayName>ליטא ליטאי</displayName>
@@ -7968,10 +8499,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="USN">
 				<displayName>דולר אמריקאי (היום הבא)</displayName>
+				<displayName count="one" draft="contributed">דולר אמריקאי (היום הבא)</displayName>
+				<displayName count="two" draft="contributed">דולר אמריקאי (היום הבא)</displayName>
+				<displayName count="many" draft="contributed">דולר אמריקאי (היום הבא)</displayName>
+				<displayName count="other" draft="contributed">דולר אמריקאי (היום הבא)</displayName>
 				<symbol draft="contributed">USN</symbol>
 			</currency>
 			<currency type="USS">
 				<displayName>דולר אמריקאי (היום הזה)</displayName>
+				<displayName count="one" draft="contributed">דולר אמריקאי (היום הזה)</displayName>
+				<displayName count="two" draft="contributed">דולר אמריקאי (היום הזה)</displayName>
+				<displayName count="many" draft="contributed">דולר אמריקאי (היום הזה)</displayName>
+				<displayName count="other" draft="contributed">דולר אמריקאי (היום הזה)</displayName>
 			</currency>
 			<currency type="UYU">
 				<displayName>פסו אורוגוואי</displayName>
@@ -8254,6 +8793,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="two">{0} בריבוע</compoundUnitPattern1>
 				<compoundUnitPattern1 count="two" gender="feminine">{0} בריבוע</compoundUnitPattern1>
 				<compoundUnitPattern1 count="many">{0} בריבוע</compoundUnitPattern1>
+				<compoundUnitPattern1 count="many" gender="feminine">{0} בריבוע</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0} בריבוע</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="feminine">{0} בריבוע</compoundUnitPattern1>
 			</compoundUnit>
@@ -8263,8 +8803,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="two">{0} מעוקב</compoundUnitPattern1>
 				<compoundUnitPattern1 count="two" gender="feminine">{0} מעוקב</compoundUnitPattern1>
 				<compoundUnitPattern1 count="many">{0} מעוקב</compoundUnitPattern1>
+				<compoundUnitPattern1 count="many" gender="feminine">{0} מעוקב</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0} מעוקב</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="feminine">{0} מעוקב</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<gender>masculine</gender>
@@ -8622,6 +9166,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="two">{0} רבעונים</unitPattern>
 				<unitPattern count="many">{0} רבעונים</unitPattern>
 				<unitPattern count="other">{0} רבעונים</unitPattern>
+				<perUnitPattern>{0}/q</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<gender>masculine</gender>
@@ -8798,6 +9343,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="energy-therm-us">
 				<displayName>יחידה תרמית בארה״ב</displayName>
+				<unitPattern count="one">{0} US therm</unitPattern>
+				<unitPattern count="two">{0} US therm</unitPattern>
+				<unitPattern count="many">{0} US therm</unitPattern>
+				<unitPattern count="other">{0} US therm</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>ליברת-כוח</displayName>
@@ -9108,6 +9657,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>אנרגיה סולארית ביחידת זמן</displayName>
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="two">{0} L☉</unitPattern>
+				<unitPattern count="many">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
 				<gender>masculine</gender>
@@ -9747,6 +10300,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="two">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="many">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="two">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="many">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -9923,6 +10488,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0}‰</unitPattern>
 				<unitPattern count="other">{0}‰</unitPattern>
 			</unit>
+			<unit type="concentr-permyriad">
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="two">{0}‱</unitPattern>
+				<unitPattern count="many">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<unitPattern count="one">{0} mol</unitPattern>
+				<unitPattern count="two">{0} mol</unitPattern>
+				<unitPattern count="many">{0} mol</unitPattern>
+				<unitPattern count="other">{0} mol</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ליטרים/ק״מ</displayName>
 				<unitPattern count="one">{0} ל׳/ק״מ</unitPattern>
@@ -10052,6 +10629,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-quarter">
 				<displayName>רבעונים</displayName>
+				<unitPattern count="one">{0} q</unitPattern>
+				<unitPattern count="two">{0} q</unitPattern>
+				<unitPattern count="many">{0} q</unitPattern>
+				<unitPattern count="other">{0} q</unitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>חודשים</displayName>
@@ -10192,8 +10773,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} קוט״ש</unitPattern>
 				<unitPattern count="other">{0} קוט״ש</unitPattern>
 			</unit>
+			<unit type="energy-electronvolt">
+				<unitPattern count="one">{0} eV</unitPattern>
+				<unitPattern count="two">{0} eV</unitPattern>
+				<unitPattern count="many">{0} eV</unitPattern>
+				<unitPattern count="other">{0} eV</unitPattern>
+			</unit>
 			<unit type="energy-british-thermal-unit">
 				<displayName>BTU</displayName>
+				<unitPattern count="one">{0} Btu</unitPattern>
+				<unitPattern count="two">{0} Btu</unitPattern>
+				<unitPattern count="many">{0} Btu</unitPattern>
+				<unitPattern count="other">{0} Btu</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<unitPattern count="one">{0} US therm</unitPattern>
+				<unitPattern count="two">{0} US therm</unitPattern>
+				<unitPattern count="many">{0} US therm</unitPattern>
+				<unitPattern count="other">{0} US therm</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<unitPattern count="one">{0} lbf</unitPattern>
+				<unitPattern count="two">{0} lbf</unitPattern>
+				<unitPattern count="many">{0} lbf</unitPattern>
+				<unitPattern count="other">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<unitPattern count="one">{0} N</unitPattern>
+				<unitPattern count="two">{0} N</unitPattern>
+				<unitPattern count="many">{0} N</unitPattern>
+				<unitPattern count="other">{0} N</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>קוט״ש/100 ק״מ</displayName>
@@ -10261,12 +10870,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">‎{0} ppi‎</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
+				<displayName>ppcm</displayName>
 				<unitPattern count="one">‎{0} dpcm</unitPattern>
 				<unitPattern count="two">‎{0} dpcm</unitPattern>
 				<unitPattern count="many">‎{0} dpcm</unitPattern>
 				<unitPattern count="other">‎{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
+				<displayName>ppi</displayName>
 				<unitPattern count="one">‎{0} dpi‎</unitPattern>
 				<unitPattern count="two">‎{0} dpi‎</unitPattern>
 				<unitPattern count="many">‎{0} dpi‎</unitPattern>
@@ -10278,6 +10889,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="two">{0} נק′ קטנות</unitPattern>
 				<unitPattern count="many">{0} נק′ קטנות</unitPattern>
 				<unitPattern count="other">{0} נק′ קטנות</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="two">{0} R⊕</unitPattern>
+				<unitPattern count="many">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>ק״מ</displayName>
@@ -10389,6 +11006,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">‎{0} au</unitPattern>
 				<unitPattern count="other">‎{0} au</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<unitPattern count="one">{0} fur</unitPattern>
+				<unitPattern count="two">{0} fur</unitPattern>
+				<unitPattern count="many">{0} fur</unitPattern>
+				<unitPattern count="other">{0} fur</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="two">{0} fth</unitPattern>
+				<unitPattern count="many">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>מ״י</displayName>
 				<unitPattern count="one">מ״י אחד</unitPattern>
@@ -10422,6 +11051,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="two">{0} lx</unitPattern>
 				<unitPattern count="many">{0} lx</unitPattern>
 				<unitPattern count="other">{0} lx</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<unitPattern count="one">{0} cd</unitPattern>
+				<unitPattern count="two">{0} cd</unitPattern>
+				<unitPattern count="many">{0} cd</unitPattern>
+				<unitPattern count="other">{0} cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<unitPattern count="one">{0} lm</unitPattern>
+				<unitPattern count="two">{0} lm</unitPattern>
+				<unitPattern count="many">{0} lm</unitPattern>
+				<unitPattern count="other">{0} lm</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="two">{0} L☉</unitPattern>
+				<unitPattern count="many">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
 				<displayName>t</displayName>
@@ -10503,6 +11150,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="two">{0} CD</unitPattern>
 				<unitPattern count="many">{0} CD</unitPattern>
 				<unitPattern count="other">{0} CD</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<unitPattern count="one">{0} Da</unitPattern>
+				<unitPattern count="two">{0} Da</unitPattern>
+				<unitPattern count="many">{0} Da</unitPattern>
+				<unitPattern count="other">{0} Da</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<unitPattern count="one">{0} M⊕</unitPattern>
+				<unitPattern count="two">{0} M⊕</unitPattern>
+				<unitPattern count="many">{0} M⊕</unitPattern>
+				<unitPattern count="other">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<unitPattern count="one">{0} M☉</unitPattern>
+				<unitPattern count="two">{0} M☉</unitPattern>
+				<unitPattern count="many">{0} M☉</unitPattern>
+				<unitPattern count="other">{0} M☉</unitPattern>
 			</unit>
 			<unit type="mass-grain">
 				<displayName>גרעין</displayName>
@@ -10595,12 +11260,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} atm</unitPattern>
 				<unitPattern count="other">{0} atm</unitPattern>
 			</unit>
+			<unit type="pressure-pascal">
+				<unitPattern count="one">{0} Pa</unitPattern>
+				<unitPattern count="two">{0} Pa</unitPattern>
+				<unitPattern count="many">{0} Pa</unitPattern>
+				<unitPattern count="other">{0} Pa</unitPattern>
+			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>hPa</displayName>
 				<unitPattern count="one">{0} hPa</unitPattern>
 				<unitPattern count="two">{0} hPa</unitPattern>
 				<unitPattern count="many">{0} hPa</unitPattern>
 				<unitPattern count="other">{0} hPa</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<unitPattern count="one">{0} kPa</unitPattern>
+				<unitPattern count="two">{0} kPa</unitPattern>
+				<unitPattern count="many">{0} kPa</unitPattern>
+				<unitPattern count="other">{0} kPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<unitPattern count="one">{0} MPa</unitPattern>
+				<unitPattern count="two">{0} MPa</unitPattern>
+				<unitPattern count="many">{0} MPa</unitPattern>
+				<unitPattern count="other">{0} MPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>קמ״ש</displayName>
@@ -10657,6 +11340,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="two">{0} K</unitPattern>
 				<unitPattern count="many">{0} K</unitPattern>
 				<unitPattern count="other">{0} K</unitPattern>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="two">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="many">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<unitPattern count="one">{0} N⋅m</unitPattern>
+				<unitPattern count="two">{0} N⋅m</unitPattern>
+				<unitPattern count="many">{0} N⋅m</unitPattern>
+				<unitPattern count="other">{0} N⋅m</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>קמ״ק</displayName>
@@ -10773,6 +11468,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">‎{0} ac ft</unitPattern>
 				<unitPattern count="other">‎{0} ac ft</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<unitPattern count="one">{0} bu</unitPattern>
+				<unitPattern count="two">{0} bu</unitPattern>
+				<unitPattern count="many">{0} bu</unitPattern>
+				<unitPattern count="other">{0} bu</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>גלון</displayName>
 				<unitPattern count="one">{0} גל׳</unitPattern>
@@ -10843,6 +11544,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">‎{0} bbl</unitPattern>
 				<unitPattern count="other">‎{0} bbl</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<unitPattern count="one">{0} dstspn</unitPattern>
+				<unitPattern count="two">{0} dstspn</unitPattern>
+				<unitPattern count="many">{0} dstspn</unitPattern>
+				<unitPattern count="other">{0} dstspn</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<unitPattern count="one">{0} dstspn Imp</unitPattern>
+				<unitPattern count="two">{0} dstspn Imp</unitPattern>
+				<unitPattern count="many">{0} dstspn Imp</unitPattern>
+				<unitPattern count="other">{0} dstspn Imp</unitPattern>
+			</unit>
 			<unit type="volume-drop">
 				<displayName>טיפה</displayName>
 				<unitPattern count="one">טיפה</unitPattern>
@@ -10850,12 +11563,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} טיפות</unitPattern>
 				<unitPattern count="other">{0} טיפות</unitPattern>
 			</unit>
+			<unit type="volume-dram">
+				<unitPattern count="one">{0} dram fl</unitPattern>
+				<unitPattern count="two">{0} dram fl</unitPattern>
+				<unitPattern count="many">{0} dram fl</unitPattern>
+				<unitPattern count="other">{0} dram fl</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<unitPattern count="one">{0} jigger</unitPattern>
+				<unitPattern count="two">{0} jigger</unitPattern>
+				<unitPattern count="many">{0} jigger</unitPattern>
+				<unitPattern count="other">{0} jigger</unitPattern>
+			</unit>
 			<unit type="volume-pinch">
 				<displayName>פינץ׳</displayName>
 				<unitPattern count="one">{0} פינץ'</unitPattern>
 				<unitPattern count="two">{0} פינץ'</unitPattern>
 				<unitPattern count="many">{0} פינץ'</unitPattern>
 				<unitPattern count="other">{0} פינץ'</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<unitPattern count="one">{0} qt Imp.</unitPattern>
+				<unitPattern count="two">{0} qt Imp.</unitPattern>
+				<unitPattern count="many">{0} qt Imp.</unitPattern>
+				<unitPattern count="other">{0} qt Imp.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>כיוון</displayName>
@@ -10874,6 +11605,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p-3">
 				<unitPrefixPattern>מילי{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>μ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-9">
 				<unitPrefixPattern>ננו{0}</unitPrefixPattern>
@@ -10923,8 +11657,49 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>יוטא{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="two">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="many">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="two">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="many">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>כוח ג׳י</displayName>
@@ -10940,59 +11715,136 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} m/s²</unitPattern>
 				<unitPattern count="other">{0} m/s²</unitPattern>
 			</unit>
+			<unit type="angle-revolution">
+				<displayName>ס׳</displayName>
+				<unitPattern count="one">{0} ס׳</unitPattern>
+				<unitPattern count="two">{0} ס׳</unitPattern>
+				<unitPattern count="many">{0} ס׳</unitPattern>
+				<unitPattern count="other">{0} ס׳</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<displayName>רדיאנים</displayName>
+				<unitPattern count="one">{0} π</unitPattern>
+				<unitPattern count="two">{0} π</unitPattern>
+				<unitPattern count="many">{0} π</unitPattern>
+				<unitPattern count="other">{0} π</unitPattern>
+			</unit>
 			<unit type="angle-degree">
+				<displayName>מעלות</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="two">{0}°</unitPattern>
 				<unitPattern count="many">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
+				<displayName>דק׳ קשת</displayName>
 				<unitPattern count="one">דקה {0}</unitPattern>
 				<unitPattern count="two">{0} דקות</unitPattern>
 				<unitPattern count="many">{0} דקות</unitPattern>
 				<unitPattern count="other">{0} דקות</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
+				<displayName>שנ׳ קשת</displayName>
 				<unitPattern count="one">שנ׳ {0}</unitPattern>
 				<unitPattern count="two">{0} שנ׳</unitPattern>
 				<unitPattern count="many">{0} שנ׳</unitPattern>
 				<unitPattern count="other">{0} שנ׳</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<displayName>קמ״ר</displayName>
 				<unitPattern count="one">קמ״ר {0}</unitPattern>
 				<unitPattern count="two">{0} קמ״ר</unitPattern>
 				<unitPattern count="many">{0} קמ״ר</unitPattern>
 				<unitPattern count="other">{0} קמ״ר</unitPattern>
+				<perUnitPattern>{0}/קמ״ר</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
+				<displayName>הקטאר</displayName>
 				<unitPattern count="one">הקטאר {0}</unitPattern>
 				<unitPattern count="two">{0} הקטאר</unitPattern>
 				<unitPattern count="many">{0} הקטאר</unitPattern>
 				<unitPattern count="other">{0} הקטאר</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<displayName>מ״ר</displayName>
 				<unitPattern count="one">מ״ר {0}</unitPattern>
 				<unitPattern count="two">{0} מ״ר</unitPattern>
 				<unitPattern count="many">{0} מ״ר</unitPattern>
 				<unitPattern count="other">{0} מ״ר</unitPattern>
+				<perUnitPattern>{0}/מ״ר</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>סמ״ר</displayName>
+				<unitPattern count="one">{0} סמ״ר</unitPattern>
+				<unitPattern count="two">{0} סמ״ר</unitPattern>
+				<unitPattern count="many">{0} סמ״ר</unitPattern>
+				<unitPattern count="other">{0} סמ״ר</unitPattern>
+				<perUnitPattern>{0}/סמ״ר</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
+				<displayName>מייל רבוע</displayName>
 				<unitPattern count="one">מייל רבוע {0}</unitPattern>
 				<unitPattern count="two">{0} מייל רבוע</unitPattern>
 				<unitPattern count="many">{0} מייל רבוע</unitPattern>
 				<unitPattern count="other">{0} מייל רבוע</unitPattern>
+				<perUnitPattern>‎{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
+				<displayName>אקר</displayName>
 				<unitPattern count="one">אקר {0}</unitPattern>
 				<unitPattern count="two">{0} אקר</unitPattern>
 				<unitPattern count="many">{0} אקר</unitPattern>
 				<unitPattern count="other">{0} אקר</unitPattern>
 			</unit>
+			<unit type="area-square-yard">
+				<displayName>yards²</displayName>
+				<unitPattern count="one">‎{0} yd²</unitPattern>
+				<unitPattern count="two">‎{0} yd²</unitPattern>
+				<unitPattern count="many">‎{0} yd²</unitPattern>
+				<unitPattern count="other">‎{0} yd²</unitPattern>
+			</unit>
 			<unit type="area-square-foot">
+				<displayName>ft²</displayName>
 				<unitPattern count="one">רגל רבועה {0}</unitPattern>
 				<unitPattern count="two">{0} רגל רבועה</unitPattern>
 				<unitPattern count="many">{0} רגל רבועה</unitPattern>
 				<unitPattern count="other">{0} רגל רבועה</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>in²</displayName>
+				<unitPattern count="one">‎{0} in²</unitPattern>
+				<unitPattern count="two">‎{0} in²</unitPattern>
+				<unitPattern count="many">‎{0} in²</unitPattern>
+				<unitPattern count="other">‎{0} in²</unitPattern>
+				<perUnitPattern>‎{0}/in²</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>דונם</displayName>
+				<unitPattern count="one">{0} דונם</unitPattern>
+				<unitPattern count="two">{0} דונם</unitPattern>
+				<unitPattern count="many">{0} דונם</unitPattern>
+				<unitPattern count="other">{0} דונם</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>kt</displayName>
+				<unitPattern count="one">{0} kt</unitPattern>
+				<unitPattern count="two">{0} kt</unitPattern>
+				<unitPattern count="many">{0} kt</unitPattern>
+				<unitPattern count="other">{0} kt</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>mg/dL</displayName>
+				<unitPattern count="one">{0} mg/dL</unitPattern>
+				<unitPattern count="two">{0} mg/dL</unitPattern>
+				<unitPattern count="many">{0} mg/dL</unitPattern>
+				<unitPattern count="other">{0} mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmol/L</displayName>
+				<unitPattern count="one">{0} mmol/L</unitPattern>
+				<unitPattern count="two">{0} mmol/L</unitPattern>
+				<unitPattern count="many">{0} mmol/L</unitPattern>
+				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
 			<unit type="concentr-item">
 				<displayName>פריט</displayName>
@@ -11001,12 +11853,47 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} פר'</unitPattern>
 				<unitPattern count="other">{0} פר'</unitPattern>
 			</unit>
+			<unit type="concentr-permillion">
+				<displayName>ppm</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
+				<unitPattern count="two">{0} ppm</unitPattern>
+				<unitPattern count="many">{0} ppm</unitPattern>
+				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="two">{0}%</unitPattern>
 				<unitPattern count="many">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>‰</displayName>
+				<unitPattern count="one">{0}‰</unitPattern>
+				<unitPattern count="two">{0}‰</unitPattern>
+				<unitPattern count="many">{0}‰</unitPattern>
+				<unitPattern count="other">{0}‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>‱</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="two">{0}‱</unitPattern>
+				<unitPattern count="many">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>mol</displayName>
+				<unitPattern count="one">{0} mol</unitPattern>
+				<unitPattern count="two">{0} mol</unitPattern>
+				<unitPattern count="many">{0} mol</unitPattern>
+				<unitPattern count="other">{0} mol</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>ליטרים/ק״מ</displayName>
+				<unitPattern count="one">{0} ל׳/ק״מ</unitPattern>
+				<unitPattern count="two">{0} ל׳/ק״מ</unitPattern>
+				<unitPattern count="many">{0} ל׳/ק״מ</unitPattern>
+				<unitPattern count="other">{0} ל׳/ק״מ</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ל׳/100ק״מ</displayName>
@@ -11017,6 +11904,38 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>מייל/גלון</displayName>
+				<unitPattern count="one">{0} mpg</unitPattern>
+				<unitPattern count="two">{0} mpg</unitPattern>
+				<unitPattern count="many">{0} mpg</unitPattern>
+				<unitPattern count="other">{0} mpg</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>miles/gal Imp.</displayName>
+				<unitPattern count="one">{0} mpg Imp.</unitPattern>
+				<unitPattern count="two">{0} mpg Imp.</unitPattern>
+				<unitPattern count="many">{0} mpg Imp.</unitPattern>
+				<unitPattern count="other">{0} mpg Imp.</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>PB</displayName>
+				<unitPattern count="one">{0} PB</unitPattern>
+				<unitPattern count="two">{0} PB</unitPattern>
+				<unitPattern count="many">{0} PB</unitPattern>
+				<unitPattern count="other">{0} PB</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName>TB</displayName>
+				<unitPattern count="one">{0} TB</unitPattern>
+				<unitPattern count="two">{0} TB</unitPattern>
+				<unitPattern count="many">{0} TB</unitPattern>
+				<unitPattern count="other">{0} TB</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName>Tb</displayName>
+				<unitPattern count="one">{0} Tb</unitPattern>
+				<unitPattern count="two">{0} Tb</unitPattern>
+				<unitPattern count="many">{0} Tb</unitPattern>
+				<unitPattern count="other">{0} Tb</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
 				<displayName>ג״ב</displayName>
@@ -11025,11 +11944,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} ג״ב</unitPattern>
 				<unitPattern count="other">{0} ג״ב</unitPattern>
 			</unit>
+			<unit type="digital-gigabit">
+				<displayName>Gbit</displayName>
+				<unitPattern count="one">{0} Gb</unitPattern>
+				<unitPattern count="two">{0} Gb</unitPattern>
+				<unitPattern count="many">{0} Gb</unitPattern>
+				<unitPattern count="other">{0} Gb</unitPattern>
+			</unit>
 			<unit type="digital-megabyte">
+				<displayName>MB</displayName>
 				<unitPattern count="one">{0} מ״ב</unitPattern>
 				<unitPattern count="two">{0} מ״ב</unitPattern>
 				<unitPattern count="many">{0} מ״ב</unitPattern>
 				<unitPattern count="other">{0} מ״ב</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>Mbit</displayName>
+				<unitPattern count="one">{0} Mb</unitPattern>
+				<unitPattern count="two">{0} Mb</unitPattern>
+				<unitPattern count="many">{0} Mb</unitPattern>
+				<unitPattern count="other">{0} Mb</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
 				<displayName>ק״ב</displayName>
@@ -11038,7 +11972,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} ק״ב</unitPattern>
 				<unitPattern count="other">{0} ק״ב</unitPattern>
 			</unit>
+			<unit type="digital-kilobit">
+				<displayName>kb</displayName>
+				<unitPattern count="one">{0} kb</unitPattern>
+				<unitPattern count="two">{0} kb</unitPattern>
+				<unitPattern count="many">{0} kb</unitPattern>
+				<unitPattern count="other">{0} kb</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>בייט</displayName>
+				<unitPattern count="one">{0} בייט</unitPattern>
+				<unitPattern count="two">{0} בייט</unitPattern>
+				<unitPattern count="many">{0} בייט</unitPattern>
+				<unitPattern count="other">{0} בייט</unitPattern>
+			</unit>
 			<unit type="digital-bit">
+				<displayName>ביט</displayName>
 				<unitPattern count="one">{0} ביט</unitPattern>
 				<unitPattern count="two">{0} ביט</unitPattern>
 				<unitPattern count="many">{0} ביט</unitPattern>
@@ -11051,6 +12000,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} מאות</unitPattern>
 				<unitPattern count="other">{0} מאות</unitPattern>
 			</unit>
+			<unit type="duration-decade">
+				<displayName>עשור</displayName>
+				<unitPattern count="one">עשור {0}</unitPattern>
+				<unitPattern count="two">{0} עשורים</unitPattern>
+				<unitPattern count="many">{0} עשורים</unitPattern>
+				<unitPattern count="other">{0} עשורים</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>ש׳</displayName>
 				<unitPattern count="one">ש′ {0}</unitPattern>
@@ -11061,6 +12017,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-quarter">
 				<displayName>רבעונים</displayName>
+				<unitPattern count="one">{0} q</unitPattern>
+				<unitPattern count="two">{0} q</unitPattern>
+				<unitPattern count="many">{0} q</unitPattern>
+				<unitPattern count="other">{0} q</unitPattern>
+				<perUnitPattern>{0}/q</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>ח׳</displayName>
@@ -11125,10 +12086,116 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} μs</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
+				<displayName>ננו שניות</displayName>
 				<unitPattern count="one">{0} ns</unitPattern>
 				<unitPattern count="two">{0} ns</unitPattern>
 				<unitPattern count="many">{0} ns</unitPattern>
 				<unitPattern count="other">{0} ns</unitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName>amps</displayName>
+				<unitPattern count="one">{0} A</unitPattern>
+				<unitPattern count="two">{0} A</unitPattern>
+				<unitPattern count="many">{0} A</unitPattern>
+				<unitPattern count="other">{0} A</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>mA</displayName>
+				<unitPattern count="one">{0} mA</unitPattern>
+				<unitPattern count="two">{0} mA</unitPattern>
+				<unitPattern count="many">{0} mA</unitPattern>
+				<unitPattern count="other">{0} mA</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName draft="contributed">ohms</displayName>
+				<unitPattern count="one">{0} Ω</unitPattern>
+				<unitPattern count="two">{0} Ω</unitPattern>
+				<unitPattern count="many">{0} Ω</unitPattern>
+				<unitPattern count="other">{0} Ω</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>וולט</displayName>
+				<unitPattern count="one">{0} V</unitPattern>
+				<unitPattern count="two">{0} V</unitPattern>
+				<unitPattern count="many">{0} V</unitPattern>
+				<unitPattern count="other">{0} V</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName>kcal</displayName>
+				<unitPattern count="one">{0} kcal</unitPattern>
+				<unitPattern count="two">{0} kcal</unitPattern>
+				<unitPattern count="many">{0} kcal</unitPattern>
+				<unitPattern count="other">{0} kcal</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName>cal</displayName>
+				<unitPattern count="one">{0} cal</unitPattern>
+				<unitPattern count="two">{0} cal</unitPattern>
+				<unitPattern count="many">{0} cal</unitPattern>
+				<unitPattern count="other">{0} cal</unitPattern>
+			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName>Cal</displayName>
+				<unitPattern count="one">{0} Cal</unitPattern>
+				<unitPattern count="two">{0} Cal</unitPattern>
+				<unitPattern count="many">{0} Cal</unitPattern>
+				<unitPattern count="other">{0} Cal</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName>קילו ג׳אול</displayName>
+				<unitPattern count="one">{0} kJ</unitPattern>
+				<unitPattern count="two">{0} kJ</unitPattern>
+				<unitPattern count="many">{0} kJ</unitPattern>
+				<unitPattern count="other">{0} kJ</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>ג׳אול</displayName>
+				<unitPattern count="one">{0} J</unitPattern>
+				<unitPattern count="two">{0} J</unitPattern>
+				<unitPattern count="many">{0} J</unitPattern>
+				<unitPattern count="other">{0} J</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName>קוט״ש</displayName>
+				<unitPattern count="one">{0} קוט״ש</unitPattern>
+				<unitPattern count="two">{0} קוט״ש</unitPattern>
+				<unitPattern count="many">{0} קוט״ש</unitPattern>
+				<unitPattern count="other">{0} קוט״ש</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>eV</displayName>
+				<unitPattern count="one">{0} eV</unitPattern>
+				<unitPattern count="two">{0} eV</unitPattern>
+				<unitPattern count="many">{0} eV</unitPattern>
+				<unitPattern count="other">{0} eV</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>BTU</displayName>
+				<unitPattern count="one">{0} Btu</unitPattern>
+				<unitPattern count="two">{0} Btu</unitPattern>
+				<unitPattern count="many">{0} Btu</unitPattern>
+				<unitPattern count="other">{0} Btu</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>US therm</displayName>
+				<unitPattern count="one">{0} US therm</unitPattern>
+				<unitPattern count="two">{0} US therm</unitPattern>
+				<unitPattern count="many">{0} US therm</unitPattern>
+				<unitPattern count="other">{0} US therm</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>lbf</displayName>
+				<unitPattern count="one">{0} lbf</unitPattern>
+				<unitPattern count="two">{0} lbf</unitPattern>
+				<unitPattern count="many">{0} lbf</unitPattern>
+				<unitPattern count="other">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>N</displayName>
+				<unitPattern count="one">{0} N</unitPattern>
+				<unitPattern count="two">{0} N</unitPattern>
+				<unitPattern count="many">{0} N</unitPattern>
+				<unitPattern count="other">{0} N</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>kWh/100km</displayName>
@@ -11137,12 +12204,96 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} kWh/100km</unitPattern>
 				<unitPattern count="other">{0} kWh</unitPattern>
 			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName>GHz</displayName>
+				<unitPattern count="one">{0} GHz</unitPattern>
+				<unitPattern count="two">{0} GHz</unitPattern>
+				<unitPattern count="many">{0} GHz</unitPattern>
+				<unitPattern count="other">{0} GHz</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName>MHz</displayName>
+				<unitPattern count="one">{0} MHz</unitPattern>
+				<unitPattern count="two">{0} MHz</unitPattern>
+				<unitPattern count="many">{0} MHz</unitPattern>
+				<unitPattern count="other">{0} MHz</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName>kHz</displayName>
+				<unitPattern count="one">{0} kHz</unitPattern>
+				<unitPattern count="two">{0} kHz</unitPattern>
+				<unitPattern count="many">{0} kHz</unitPattern>
+				<unitPattern count="other">{0} kHz</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName>Hz</displayName>
+				<unitPattern count="one">{0} Hz</unitPattern>
+				<unitPattern count="two">{0} Hz</unitPattern>
+				<unitPattern count="many">{0} Hz</unitPattern>
+				<unitPattern count="other">{0} Hz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>em</displayName>
+				<unitPattern count="one">‎{0} em ‎</unitPattern>
+				<unitPattern count="two">‎{0} em ‎</unitPattern>
+				<unitPattern count="many">‎{0} em ‎</unitPattern>
+				<unitPattern count="other">‎{0} em ‎</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>px</displayName>
+				<unitPattern count="one">‎{0} px ‎</unitPattern>
+				<unitPattern count="two">‎{0} px ‎</unitPattern>
+				<unitPattern count="many">‎{0} px ‎</unitPattern>
+				<unitPattern count="other">‎{0} px ‎</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>MP</displayName>
+				<unitPattern count="one">‎{0} MP ‎</unitPattern>
+				<unitPattern count="two">‎{0} MP ‎</unitPattern>
+				<unitPattern count="many">‎{0} MP ‎</unitPattern>
+				<unitPattern count="other">‎{0} MP ‎</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="one">‎{0} ppcm‎</unitPattern>
+				<unitPattern count="two">‎{0} ppcm‎</unitPattern>
+				<unitPattern count="many">‎{0} ppcm‎</unitPattern>
+				<unitPattern count="other">‎{0} ppcm‎</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="one">‎{0} ppi‎</unitPattern>
+				<unitPattern count="two">‎{0} ppi‎</unitPattern>
+				<unitPattern count="many">‎{0} ppi‎</unitPattern>
+				<unitPattern count="other">‎{0} ppi‎</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="one">‎{0} dpcm</unitPattern>
+				<unitPattern count="two">‎{0} dpcm</unitPattern>
+				<unitPattern count="many">‎{0} dpcm</unitPattern>
+				<unitPattern count="other">‎{0} dpcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="one">‎{0} dpi‎</unitPattern>
+				<unitPattern count="two">‎{0} dpi‎</unitPattern>
+				<unitPattern count="many">‎{0} dpi‎</unitPattern>
+				<unitPattern count="other">‎{0} dpi‎</unitPattern>
+			</unit>
 			<unit type="graphics-dot">
 				<displayName>נק׳ קטנה</displayName>
 				<unitPattern count="one">{0} נק' ק'</unitPattern>
 				<unitPattern count="two">{0} נק' ק'</unitPattern>
 				<unitPattern count="many">{0} נק' ק'</unitPattern>
 				<unitPattern count="other">{0} נק' ק'</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="two">{0} R⊕</unitPattern>
+				<unitPattern count="many">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>ק״מ</displayName>
@@ -11254,6 +12405,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} au</unitPattern>
 				<unitPattern count="other">{0} au</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>fur</displayName>
+				<unitPattern count="one">{0} fur</unitPattern>
+				<unitPattern count="two">{0} fur</unitPattern>
+				<unitPattern count="many">{0} fur</unitPattern>
+				<unitPattern count="other">{0} fur</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fm</displayName>
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="two">{0} fth</unitPattern>
+				<unitPattern count="many">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>מ״י</displayName>
 				<unitPattern count="one">מ״י אחד</unitPattern>
@@ -11274,6 +12439,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="two">{0} נק׳</unitPattern>
 				<unitPattern count="many">{0} נק׳</unitPattern>
 				<unitPattern count="other">{0} נק'</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>R☉</displayName>
+				<unitPattern count="one">‎{0} R☉‎</unitPattern>
+				<unitPattern count="two">‎{0} R☉‎</unitPattern>
+				<unitPattern count="many">‎{0} R☉‎</unitPattern>
+				<unitPattern count="other">‎{0} R☉‎</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<displayName>lux</displayName>
+				<unitPattern count="one">{0} lx</unitPattern>
+				<unitPattern count="two">{0} lx</unitPattern>
+				<unitPattern count="many">{0} lx</unitPattern>
+				<unitPattern count="other">{0} lx</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>cd</displayName>
+				<unitPattern count="one">{0} cd</unitPattern>
+				<unitPattern count="two">{0} cd</unitPattern>
+				<unitPattern count="many">{0} cd</unitPattern>
+				<unitPattern count="other">{0} cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lm</displayName>
+				<unitPattern count="one">{0} lm</unitPattern>
+				<unitPattern count="two">{0} lm</unitPattern>
+				<unitPattern count="many">{0} lm</unitPattern>
+				<unitPattern count="other">{0} lm</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>L☉</displayName>
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="two">{0} L☉</unitPattern>
+				<unitPattern count="many">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
 				<displayName>t</displayName>
@@ -11319,12 +12519,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} ט׳</unitPattern>
 				<unitPattern count="other">{0} ט׳</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName>סטון</displayName>
+				<unitPattern count="one">סטון {0}</unitPattern>
+				<unitPattern count="two">{0} סטון</unitPattern>
+				<unitPattern count="many">{0} סטון</unitPattern>
+				<unitPattern count="other">{0} סטון</unitPattern>
+			</unit>
 			<unit type="mass-pound">
 				<displayName>פאונד</displayName>
+				<unitPattern count="one">{0} lb</unitPattern>
+				<unitPattern count="two">{0} lbs</unitPattern>
+				<unitPattern count="many">{0} lbs</unitPattern>
+				<unitPattern count="other">{0} lbs</unitPattern>
 				<perUnitPattern>{0}/lb</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
 				<displayName>oz</displayName>
+				<unitPattern count="one">{0} oz</unitPattern>
+				<unitPattern count="two">{0} oz</unitPattern>
+				<unitPattern count="many">{0} oz</unitPattern>
+				<unitPattern count="other">{0} oz</unitPattern>
 				<perUnitPattern>{0}/oz</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
@@ -11341,19 +12556,71 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} CD</unitPattern>
 				<unitPattern count="other">{0} CD</unitPattern>
 			</unit>
+			<unit type="mass-dalton">
+				<displayName>Da</displayName>
+				<unitPattern count="one">{0} Da</unitPattern>
+				<unitPattern count="two">{0} Da</unitPattern>
+				<unitPattern count="many">{0} Da</unitPattern>
+				<unitPattern count="other">{0} Da</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>M⊕</displayName>
+				<unitPattern count="one">{0} M⊕</unitPattern>
+				<unitPattern count="two">{0} M⊕</unitPattern>
+				<unitPattern count="many">{0} M⊕</unitPattern>
+				<unitPattern count="other">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>M☉</displayName>
+				<unitPattern count="one">{0} M☉</unitPattern>
+				<unitPattern count="two">{0} M☉</unitPattern>
+				<unitPattern count="many">{0} M☉</unitPattern>
+				<unitPattern count="other">{0} M☉</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>גרעין</displayName>
+				<unitPattern count="one">גרעין {0}</unitPattern>
+				<unitPattern count="two">{0} גרעינים</unitPattern>
+				<unitPattern count="many">{0} גרעינים</unitPattern>
+				<unitPattern count="other">{0} גרעינים</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName>GW</displayName>
+				<unitPattern count="one">{0} GW</unitPattern>
+				<unitPattern count="two">{0} GW</unitPattern>
+				<unitPattern count="many">{0} GW</unitPattern>
+				<unitPattern count="other">{0} GW</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName>MW</displayName>
+				<unitPattern count="one">{0} MW</unitPattern>
+				<unitPattern count="two">{0} MW</unitPattern>
+				<unitPattern count="many">{0} MW</unitPattern>
+				<unitPattern count="other">{0} MW</unitPattern>
+			</unit>
 			<unit type="power-kilowatt">
+				<displayName>kW</displayName>
 				<unitPattern count="one">{0} kW</unitPattern>
 				<unitPattern count="two">{0} kW</unitPattern>
 				<unitPattern count="many">{0} kW</unitPattern>
 				<unitPattern count="other">{0} kW</unitPattern>
 			</unit>
 			<unit type="power-watt">
+				<displayName>ואט</displayName>
 				<unitPattern count="one">{0} W</unitPattern>
 				<unitPattern count="two">{0} W</unitPattern>
 				<unitPattern count="many">{0} W</unitPattern>
 				<unitPattern count="other">{0} W</unitPattern>
 			</unit>
+			<unit type="power-milliwatt">
+				<displayName>mW</displayName>
+				<unitPattern count="one">{0} mW</unitPattern>
+				<unitPattern count="two">{0} mW</unitPattern>
+				<unitPattern count="many">{0} mW</unitPattern>
+				<unitPattern count="other">{0} mW</unitPattern>
+			</unit>
 			<unit type="power-horsepower">
+				<displayName>כ״ס</displayName>
 				<unitPattern count="one">כ״ס {0}</unitPattern>
 				<unitPattern count="two">{0} כ״ס</unitPattern>
 				<unitPattern count="many">{0} כ״ס</unitPattern>
@@ -11380,6 +12647,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>בר</displayName>
+				<unitPattern count="one">{0} בר</unitPattern>
+				<unitPattern count="two">{0} בר</unitPattern>
+				<unitPattern count="many">{0} בר</unitPattern>
+				<unitPattern count="other">{0} בר</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>מ״ב</displayName>
 				<unitPattern count="one">מיליבר {0}</unitPattern>
@@ -11387,12 +12661,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} מיליבר</unitPattern>
 				<unitPattern count="other">{0} מיליבר</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>atm</displayName>
+				<unitPattern count="one">{0} atm</unitPattern>
+				<unitPattern count="two">{0} atm</unitPattern>
+				<unitPattern count="many">{0} atm</unitPattern>
+				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>Pa</displayName>
+				<unitPattern count="one">{0} Pa</unitPattern>
+				<unitPattern count="two">{0} Pa</unitPattern>
+				<unitPattern count="many">{0} Pa</unitPattern>
+				<unitPattern count="other">{0} Pa</unitPattern>
+			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>hPa</displayName>
 				<unitPattern count="one">{0} hPa</unitPattern>
 				<unitPattern count="two">{0} hPa</unitPattern>
 				<unitPattern count="many">{0} hPa</unitPattern>
 				<unitPattern count="other">{0} hPa</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>kPa</displayName>
+				<unitPattern count="one">{0} kPa</unitPattern>
+				<unitPattern count="two">{0} kPa</unitPattern>
+				<unitPattern count="many">{0} kPa</unitPattern>
+				<unitPattern count="other">{0} kPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>MPa</displayName>
+				<unitPattern count="one">{0} MPa</unitPattern>
+				<unitPattern count="two">{0} MPa</unitPattern>
+				<unitPattern count="many">{0} MPa</unitPattern>
+				<unitPattern count="other">{0} MPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>קמ״ש</displayName>
@@ -11450,17 +12752,84 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} K</unitPattern>
 				<unitPattern count="other">{0} K</unitPattern>
 			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>lbf⋅ft</displayName>
+				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="two">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="many">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>N⋅m</displayName>
+				<unitPattern count="one">{0} N⋅m</unitPattern>
+				<unitPattern count="two">{0} N⋅m</unitPattern>
+				<unitPattern count="many">{0} N⋅m</unitPattern>
+				<unitPattern count="other">{0} N⋅m</unitPattern>
+			</unit>
 			<unit type="volume-cubic-kilometer">
+				<displayName>קמ״ק</displayName>
 				<unitPattern count="one">{0} קמ״ק</unitPattern>
 				<unitPattern count="two">{0} קמ״ק</unitPattern>
 				<unitPattern count="many">{0} קמ״ק</unitPattern>
 				<unitPattern count="other">{0} קמ״ק</unitPattern>
 			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>m³</displayName>
+				<unitPattern count="one">‎{0} m³</unitPattern>
+				<unitPattern count="two">‎{0} m³</unitPattern>
+				<unitPattern count="many">‎{0} m³</unitPattern>
+				<unitPattern count="other">‎{0} m³</unitPattern>
+				<perUnitPattern>{0}/m³</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>סמ״ק</displayName>
+				<unitPattern count="one">{0} סמ״ק</unitPattern>
+				<unitPattern count="two">{0} סמ״ק</unitPattern>
+				<unitPattern count="many">{0} סמ״ק</unitPattern>
+				<unitPattern count="other">{0} סמ״ק</unitPattern>
+				<perUnitPattern>{0}/סמ״ק</perUnitPattern>
+			</unit>
 			<unit type="volume-cubic-mile">
+				<displayName>mi³</displayName>
 				<unitPattern count="one">{0} mi³</unitPattern>
 				<unitPattern count="two">{0} mi³</unitPattern>
 				<unitPattern count="many">{0} mi³</unitPattern>
 				<unitPattern count="other">{0} mi³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>yd³</displayName>
+				<unitPattern count="one">‎{0} yd³</unitPattern>
+				<unitPattern count="two">‎{0} yd³</unitPattern>
+				<unitPattern count="many">‎{0} yd³</unitPattern>
+				<unitPattern count="other">‎{0} yd³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>feet³</displayName>
+				<unitPattern count="one">‎{0} ft³</unitPattern>
+				<unitPattern count="two">‎{0} ft³</unitPattern>
+				<unitPattern count="many">‎{0} ft³</unitPattern>
+				<unitPattern count="other">‎{0} ft³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>in³</displayName>
+				<unitPattern count="one">‎{0} in³</unitPattern>
+				<unitPattern count="two">‎{0} in³</unitPattern>
+				<unitPattern count="many">‎{0} in³</unitPattern>
+				<unitPattern count="other">‎{0} in³</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>ML</displayName>
+				<unitPattern count="one">‎{0} ML</unitPattern>
+				<unitPattern count="two">‎{0} ML</unitPattern>
+				<unitPattern count="many">‎{0} ML</unitPattern>
+				<unitPattern count="other">‎{0} ML</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>hL</displayName>
+				<unitPattern count="one">‎{0} hL</unitPattern>
+				<unitPattern count="two">‎{0} hL</unitPattern>
+				<unitPattern count="many">‎{0} hL</unitPattern>
+				<unitPattern count="other">‎{0} hL</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>ליטר</displayName>
@@ -11468,19 +12837,177 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="two">{0} ל׳</unitPattern>
 				<unitPattern count="many">{0} ל׳</unitPattern>
 				<unitPattern count="other">{0} ל׳</unitPattern>
+				<perUnitPattern>{0}/ל׳</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>דצ״ל</displayName>
+				<unitPattern count="one">{0} דצ״ל</unitPattern>
+				<unitPattern count="two">{0} דצ״ל</unitPattern>
+				<unitPattern count="many">{0} דצ״ל</unitPattern>
+				<unitPattern count="other">{0} דצ״ל</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>cL</displayName>
+				<unitPattern count="one">‎{0} cL</unitPattern>
+				<unitPattern count="two">‎{0} cL</unitPattern>
+				<unitPattern count="many">‎{0} cL</unitPattern>
+				<unitPattern count="other">‎{0} cL</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>מ״ל</displayName>
+				<unitPattern count="one">מ״ל {0}</unitPattern>
+				<unitPattern count="two">{0} מ״ל</unitPattern>
+				<unitPattern count="many">{0} מ״ל</unitPattern>
+				<unitPattern count="other">{0} מ״ל</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>mpt</displayName>
+				<unitPattern count="one">‎{0} mpt</unitPattern>
+				<unitPattern count="two">‎{0} mpt</unitPattern>
+				<unitPattern count="many">‎{0} mpt</unitPattern>
+				<unitPattern count="other">‎{0} mpt</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>mcup</displayName>
+				<unitPattern count="one">‎{0} mc</unitPattern>
+				<unitPattern count="two">‎{0} mc</unitPattern>
+				<unitPattern count="many">‎{0} mc</unitPattern>
+				<unitPattern count="other">‎{0} mc</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>ac ft</displayName>
+				<unitPattern count="one">‎{0} ac ft</unitPattern>
+				<unitPattern count="two">‎{0} ac ft</unitPattern>
+				<unitPattern count="many">‎{0} ac ft</unitPattern>
+				<unitPattern count="other">‎{0} ac ft</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>bu</displayName>
+				<unitPattern count="one">{0} bu</unitPattern>
+				<unitPattern count="two">{0} bu</unitPattern>
+				<unitPattern count="many">{0} bu</unitPattern>
+				<unitPattern count="other">{0} bu</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>גלון</displayName>
+				<unitPattern count="one">{0} גל׳</unitPattern>
+				<unitPattern count="two">{0} גל׳</unitPattern>
+				<unitPattern count="many">{0} גל׳</unitPattern>
+				<unitPattern count="other">{0} גל׳</unitPattern>
+				<perUnitPattern>{0}/גל׳</perUnitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
+				<displayName>גלון בריטי</displayName>
 				<unitPattern count="one">{0}/galIm</unitPattern>
 				<unitPattern count="two">{0}/galIm</unitPattern>
 				<unitPattern count="many">{0}/galIm</unitPattern>
 				<unitPattern count="other">{0}/galIm</unitPattern>
 				<perUnitPattern>{0}/galIm</perUnitPattern>
 			</unit>
+			<unit type="volume-quart">
+				<displayName>qts</displayName>
+				<unitPattern count="one">‎{0} qt</unitPattern>
+				<unitPattern count="two">‎{0} qt</unitPattern>
+				<unitPattern count="many">‎{0} qt</unitPattern>
+				<unitPattern count="other">‎{0} qt</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>פינט</displayName>
+				<unitPattern count="one">‎{0} pt</unitPattern>
+				<unitPattern count="two">‎{0} pt</unitPattern>
+				<unitPattern count="many">‎{0} pt</unitPattern>
+				<unitPattern count="other">‎{0} pt</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>כוסות</displayName>
+				<unitPattern count="one">כ׳ {0}</unitPattern>
+				<unitPattern count="two">{0} כ׳</unitPattern>
+				<unitPattern count="many">{0} כ׳</unitPattern>
+				<unitPattern count="other">{0} כ׳</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>fl oz</displayName>
+				<unitPattern count="one">‎{0} fl oz</unitPattern>
+				<unitPattern count="two">‎{0} fl oz</unitPattern>
+				<unitPattern count="many">‎{0} fl oz</unitPattern>
+				<unitPattern count="other">‎{0} fl oz</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp. fl oz</displayName>
+				<unitPattern count="one">‎{0} fl oz Imp.‎</unitPattern>
+				<unitPattern count="two">‎{0} fl oz Imp.‎</unitPattern>
+				<unitPattern count="many">‎{0} fl oz Imp.‎</unitPattern>
+				<unitPattern count="other">‎{0} fl oz Imp.‎</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>כפות</displayName>
+				<unitPattern count="one">{0} כפ׳</unitPattern>
+				<unitPattern count="two">{0} כפ׳</unitPattern>
+				<unitPattern count="many">{0} כפ׳</unitPattern>
+				<unitPattern count="other">{0} כפ׳</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>כפית</displayName>
+				<unitPattern count="one">{0} כפי׳</unitPattern>
+				<unitPattern count="two">{0} כפי׳</unitPattern>
+				<unitPattern count="many">{0} כפי׳</unitPattern>
+				<unitPattern count="other">{0} כפי׳</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName>bbl</displayName>
+				<unitPattern count="one">‎{0} bbl</unitPattern>
+				<unitPattern count="two">‎{0} bbl</unitPattern>
+				<unitPattern count="many">‎{0} bbl</unitPattern>
+				<unitPattern count="other">‎{0} bbl</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dstspn</displayName>
+				<unitPattern count="one">{0} dstspn</unitPattern>
+				<unitPattern count="two">{0} dstspn</unitPattern>
+				<unitPattern count="many">{0} dstspn</unitPattern>
+				<unitPattern count="other">{0} dstspn</unitPattern>
+			</unit>
 			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dstspn Imp</displayName>
 				<unitPattern count="one">{0}dsp-Imp</unitPattern>
 				<unitPattern count="two">{0}dsp-Imp</unitPattern>
 				<unitPattern count="many">{0} dstspn</unitPattern>
 				<unitPattern count="other">{0}dsp-Imp</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>טיפה</displayName>
+				<unitPattern count="one">טיפה</unitPattern>
+				<unitPattern count="two">{0} טיפות</unitPattern>
+				<unitPattern count="many">{0} טיפות</unitPattern>
+				<unitPattern count="other">{0} טיפות</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dram fluid</displayName>
+				<unitPattern count="one">{0} dram fl</unitPattern>
+				<unitPattern count="two">{0} dram fl</unitPattern>
+				<unitPattern count="many">{0} dram fl</unitPattern>
+				<unitPattern count="other">{0} dram fl</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>jigger</displayName>
+				<unitPattern count="one">{0} jigger</unitPattern>
+				<unitPattern count="two">{0} jigger</unitPattern>
+				<unitPattern count="many">{0} jigger</unitPattern>
+				<unitPattern count="other">{0} jigger</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>פינץ׳</displayName>
+				<unitPattern count="one">{0} פינץ'</unitPattern>
+				<unitPattern count="two">{0} פינץ'</unitPattern>
+				<unitPattern count="many">{0} פינץ'</unitPattern>
+				<unitPattern count="other">{0} פינץ'</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt Imp</displayName>
+				<unitPattern count="one">{0} qt Imp.</unitPattern>
+				<unitPattern count="two">{0} qt Imp.</unitPattern>
+				<unitPattern count="many">{0} qt Imp.</unitPattern>
+				<unitPattern count="other">{0} qt Imp.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>כיוון</displayName>
@@ -11514,10 +13041,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="2">{0} או {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} או {1}</listPatternPart>
+			<listPatternPart type="2">{0} או {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} או {1}</listPatternPart>
+			<listPatternPart type="2">{0} או {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} ו{1}</listPatternPart>
+			<listPatternPart type="2">{0} ו{1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
@@ -11731,55 +13270,74 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
-			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}״{surname-monogram-allCaps}</namePattern>
+			<namePattern>{given-monogram-allCaps}״{surname-monogram-allCaps}</namePattern>
+			<namePattern alt="1">{given-monogram-allCaps}{given2-monogram-allCaps}״{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}״{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
 		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}״{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}״{surname-monogram-allCaps}</namePattern>
+		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="formal">
-			<namePattern>{prefix} {given-initial} {surname}</namePattern>
+			<namePattern>{title} {given-initial} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname-initial}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
-			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}״{surname-monogram-allCaps}</namePattern>
+			<namePattern>{given-monogram-allCaps}״{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
-			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}״{surname-monogram-allCaps}</namePattern>
+			<namePattern>{given-monogram-allCaps}״{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
 		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname} {given} {given2-initial} {suffix}</namePattern>
+			<namePattern>{surname} {given} {given2-initial} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -11797,7 +13355,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{surname} {given-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{surname}, {prefix}</namePattern>
+			<namePattern>{surname}, {title}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -11807,6 +13365,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
 			<namePattern>{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
@@ -11820,27 +13381,51 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<personName order="sorting" length="short" usage="referring" formality="informal">
 			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
-		<sampleName item="givenOnly">
+		<sampleName item="nativeG">
 			<nameField type="given">יונתן</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
+		<sampleName item="nativeGS">
 			<nameField type="given">דנית</nameField>
 			<nameField type="surname">לוי</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
+		<sampleName item="nativeGGS">
 			<nameField type="given">יונתן</nameField>
 			<nameField type="given2">חיים</nameField>
 			<nameField type="surname">כהן</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">ד״ר</nameField>
+		<sampleName item="nativeFull">
+			<nameField type="title">מר</nameField>
+			<nameField type="given">בנימין</nameField>
+			<nameField type="given-informal">בני</nameField>
+			<nameField type="given2">משה</nameField>
+			<nameField type="surname-prefix">אבן</nameField>
+			<nameField type="surname-core">אבן-גבירול</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="generation">ג׳וניור</nameField>
+			<nameField type="credentials">ח״כ</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">ולדימיר</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">יוליה</nameField>
+			<nameField type="surname">שטרן</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">אמילי</nameField>
+			<nameField type="given2">אנט</nameField>
+			<nameField type="surname">פרידמן</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">פרופ׳</nameField>
 			<nameField type="given">רונית</nameField>
 			<nameField type="given-informal">רוני</nameField>
 			<nameField type="given2">חנה</nameField>
 			<nameField type="surname-prefix">בן</nameField>
 			<nameField type="surname-core">ארי</nameField>
 			<nameField type="surname2">מזרחי</nameField>
-			<nameField type="suffix">Ph.D.</nameField>
+			<nameField type="generation">ג׳וניור</nameField>
+			<nameField type="credentials">ד״ר</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

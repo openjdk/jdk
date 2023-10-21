@@ -94,13 +94,34 @@ class JvmtiVTMSTransitionDisabler {
   void VTMS_transition_enable_for_all();
 
  public:
+  static bool _VTMS_notify_jvmti_events;                 // enable notifications from VirtualThread about VTMS events
+  static bool VTMS_notify_jvmti_events()             { return _VTMS_notify_jvmti_events; }
+  static void set_VTMS_notify_jvmti_events(bool val) { _VTMS_notify_jvmti_events = val; }
+
+  static void set_VTMS_transition_count(bool val)    { _VTMS_transition_count = val; }
+
   // parameter is_SR: suspender or resumer
   JvmtiVTMSTransitionDisabler(bool is_SR = false);
   JvmtiVTMSTransitionDisabler(jthread thread);
   ~JvmtiVTMSTransitionDisabler();
 
+  // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
+  static void set_is_in_VTMS_transition(JavaThread* thread, jobject vthread, bool in_trans);
+
   static void start_VTMS_transition(jthread vthread, bool is_mount);
   static void finish_VTMS_transition(jthread vthread, bool is_mount);
+
+  static void VTMS_vthread_start(jobject vthread);
+  static void VTMS_vthread_end(jobject vthread);
+
+  static void VTMS_vthread_mount(jobject vthread, bool hide);
+  static void VTMS_vthread_unmount(jobject vthread, bool hide);
+
+  static void VTMS_mount_begin(jobject vthread);
+  static void VTMS_mount_end(jobject vthread);
+
+  static void VTMS_unmount_begin(jobject vthread, bool last_unmount);
+  static void VTMS_unmount_end(jobject vthread);
 };
 
 ///////////////////////////////////////////////////////////////
@@ -444,9 +465,12 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   // already holding JvmtiThreadState_lock - retrieve or create JvmtiThreadState
   // Can return null if JavaThread is exiting.
+  // Callers are responsible to call recompute_thread_filtered() to update event bits
+  // if thread-filtered events are enabled globally.
   static JvmtiThreadState *state_for_while_locked(JavaThread *thread, oop thread_oop = nullptr);
   // retrieve or create JvmtiThreadState
   // Can return null if JavaThread is exiting.
+  // Calls recompute_thread_filtered() to update event bits if thread-filtered events are enabled globally.
   static JvmtiThreadState *state_for(JavaThread *thread, Handle thread_handle = Handle());
 
   // JVMTI ForceEarlyReturn support

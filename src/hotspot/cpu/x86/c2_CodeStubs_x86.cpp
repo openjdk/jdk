@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/c2_CodeStubs.hpp"
+#include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -35,7 +36,7 @@ int C2SafepointPollStub::max_size() const {
 }
 
 void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
-  assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
+  assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
          "polling page return stub not created yet");
   address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
 
@@ -71,5 +72,27 @@ void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   __ call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
   __ jmp(continuation(), false /* maybe_short */);
 }
+
+#ifdef _LP64
+int C2HandleAnonOMOwnerStub::max_size() const {
+  // Max size of stub has been determined by testing with 0, in which case
+  // C2CodeStubList::emit() will throw an assertion and report the actual size that
+  // is needed.
+  return DEBUG_ONLY(36) NOT_DEBUG(21);
+}
+
+void C2HandleAnonOMOwnerStub::emit(C2_MacroAssembler& masm) {
+  __ bind(entry());
+  Register mon = monitor();
+  Register t = tmp();
+  __ movptr(Address(mon, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), r15_thread);
+  __ subl(Address(r15_thread, JavaThread::lock_stack_top_offset()), oopSize);
+#ifdef ASSERT
+  __ movl(t, Address(r15_thread, JavaThread::lock_stack_top_offset()));
+  __ movptr(Address(r15_thread, t), 0);
+#endif
+  __ jmp(continuation());
+}
+#endif
 
 #undef __

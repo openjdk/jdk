@@ -1,0 +1,3 @@
+NoTargetOnTypeParameterDeclaration.java:41:11: compiler.err.annotation.type.not.applicable.to.type: NoTargetOnTypeParameterDeclaration.A
+NoTargetOnTypeParameterDeclaration.java:42:6: compiler.err.annotation.type.not.applicable.to.type: NoTargetOnTypeParameterDeclaration.A
+2 errors

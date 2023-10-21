@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -32,8 +30,8 @@ import jdk.internal.classfile.*;
 import jdk.internal.classfile.attribute.*;
 import jdk.internal.classfile.constantpool.*;
 import jdk.internal.classfile.instruction.*;
-import jdk.internal.classfile.java.lang.constant.ModuleDesc;
-import jdk.internal.classfile.java.lang.constant.PackageDesc;
+import java.lang.constant.ModuleDesc;
+import java.lang.constant.PackageDesc;
 import jdk.internal.classfile.components.CodeStackTracker;
 
 class RebuildingTransformation {
@@ -41,7 +39,7 @@ class RebuildingTransformation {
     static private Random pathSwitch = new Random(1234);
 
     static byte[] transform(ClassModel clm) {
-        return Classfile.build(clm.thisClass().asSymbol(), List.of(Classfile.Option.generateStackmap(false)), clb -> {
+        return Classfile.of(Classfile.StackMapsOption.DROP_STACK_MAPS).build(clm.thisClass().asSymbol(), clb -> {
             for (var cle : clm) {
                 switch (cle) {
                     case AccessFlags af -> clb.withFlags(af.flagsMask());
@@ -200,6 +198,10 @@ class RebuildingTransformation {
                                                         default -> throw new AssertionError("Should not reach here");
                                                     }
                                                 }
+                                                case DiscontinuedInstruction.JsrInstruction i ->
+                                                    cob.with(DiscontinuedInstruction.JsrInstruction.of(i.opcode(), labels.computeIfAbsent(i.target(), l -> cob.newLabel())));
+                                                case DiscontinuedInstruction.RetInstruction i ->
+                                                    cob.with(DiscontinuedInstruction.RetInstruction.of(i.opcode(), i.slot()));
                                                 case FieldInstruction i -> {
                                                     if (pathSwitch.nextBoolean()) {
                                                         switch (i.opcode()) {

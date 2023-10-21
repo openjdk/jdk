@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class MethodTypeDescriptorAccessTest {
 
     private void checkValidAccess(MethodTypeDesc mtd, Lookup lookup) {
         try {
-            MethodType mt = (MethodType)mtd.resolveConstantDesc(lookup);
+            MethodType mt = mtd.resolveConstantDesc(lookup);
         } catch (ReflectiveOperationException unexpected) {
             throw new Error("resolveConstantDesc() threw ReflectiveOperationException unexpectedly with cause " +
                     unexpected.getCause() + " for " + mtd);
@@ -75,7 +75,7 @@ public class MethodTypeDescriptorAccessTest {
 
     private void checkInvalidAccess(MethodTypeDesc mtd, Lookup lookup) {
         try {
-            MethodType mt = (MethodType)mtd.resolveConstantDesc(lookup);
+            MethodType mt = mtd.resolveConstantDesc(lookup);
             throw new Error("resolveConstantDesc() succeeded unexpectedly " + mtd);
         } catch (ReflectiveOperationException expected) {
             if (expected.getClass() != IllegalAccessException.class) {

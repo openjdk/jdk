@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -143,6 +143,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="el">gregu</language>
 			<language type="elx">eramĩte</language>
 			<language type="en">ĩnhgrej</language>
+			<language type="en_US" alt="short">ĩnhgrej (EUA)</language>
 			<language type="enm">ĩnhgrej kuju</language>
 			<language type="eo">enhperỹtu</language>
 			<language type="es">enhpỹjór</language>
@@ -998,6 +999,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Jĩmamuje</territory>
 			<territory type="ZZ">Reji’ỹv Veja tũ</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Ĩgratéra</subdivision>
+			<subdivision type="gbsct">Enhkósija</subdivision>
+			<subdivision type="gbwls">Vares</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">arimỹv vẽnhrá si-pẽ</variant>
 			<variant type="1994">resijỹnỹ vẽnhrá hár-pẽ</variant>
@@ -6990,6 +6996,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} por {1}</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>tar g</displayName>
 				<unitPattern count="one">tar g {0}</unitPattern>
@@ -7077,6 +7086,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="area-dunam">
 				<displayName>dunam ag</displayName>
+				<unitPattern count="one">{0} dunam</unitPattern>
 				<unitPattern count="other">dunam {0}</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
@@ -7110,11 +7120,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} mil ki</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
+				<displayName>pãntu mase</displayName>
 				<unitPattern count="one">{0} pãntu mase</unitPattern>
 				<unitPattern count="other">{0} pãntu mase ag</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<displayName>mol ag</displayName>
+				<unitPattern count="one">{0} mol</unitPattern>
 				<unitPattern count="other">{0} mol</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
@@ -7184,10 +7196,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="digital-byte">
 				<displayName>byte ag</displayName>
+				<unitPattern count="one">{0} byte</unitPattern>
 				<unitPattern count="other">{0} byte</unitPattern>
 			</unit>
 			<unit type="digital-bit">
 				<displayName>bit ag</displayName>
+				<unitPattern count="one">{0} bit</unitPattern>
 				<unitPattern count="other">{0} bit ag</unitPattern>
 			</unit>
 			<unit type="duration-century">
@@ -7354,6 +7368,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-em">
 				<displayName>tipografiko em</displayName>
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>pixel ag</displayName>
@@ -7626,6 +7642,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-bar">
 				<displayName>bar ag</displayName>
+				<unitPattern count="one">{0} bar</unitPattern>
 				<unitPattern count="other">{0} bar ag</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
@@ -7677,6 +7694,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>kagje ag</displayName>
 				<unitPattern count="one">{0} kagje</unitPattern>
 				<unitPattern count="other">{0} kagje ag</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>°</displayName>
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>grav Celsius ag</displayName>
@@ -7849,15 +7871,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<unitLength type="short">
 			<unit type="acceleration-g-force">
 				<displayName>tar g</displayName>
+				<unitPattern count="one">{0} G</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>mẽturo/seg²</displayName>
+				<unitPattern count="one">{0} m/s²</unitPattern>
+			</unit>
+			<unit type="angle-revolution">
+				<unitPattern count="one">{0} rev</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<displayName>radiano ag</displayName>
+				<unitPattern count="one">{0} rad</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<displayName>grav ag</displayName>
+				<unitPattern count="one">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
 				<displayName>arcmin ag</displayName>
@@ -7869,23 +7898,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} arcseg</unitPattern>
 				<unitPattern count="other">{0} arcseg</unitPattern>
 			</unit>
+			<unit type="area-square-kilometer">
+				<unitPattern count="one">{0} km²</unitPattern>
+			</unit>
 			<unit type="area-hectare">
 				<displayName>hegtar ag</displayName>
+				<unitPattern count="one">{0} ha</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
 				<displayName>mẽturo² ag</displayName>
+				<unitPattern count="one">{0} m²</unitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<unitPattern count="one">{0} cm²</unitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName>milha² ag</displayName>
+				<unitPattern count="one">{0} mi²</unitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>akre ag</displayName>
+				<unitPattern count="one">{0} ac</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
 				<displayName>jarda² ag</displayName>
+				<unitPattern count="one">{0} yd²</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
 				<displayName>tipẽn² ag</displayName>
+				<unitPattern count="one">{0} ft²</unitPattern>
 			</unit>
 			<unit type="area-square-inch">
 				<displayName>poregana² ag</displayName>
@@ -7915,6 +7956,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>kupar ‘e/milhão ki</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>sẽnto ki</displayName>
@@ -7928,6 +7970,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>pãntu mase</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<unitPattern count="one">{0} mol</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ritru ag/km ki</displayName>
@@ -8040,9 +8086,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-hour">
 				<displayName>óra ag</displayName>
+				<unitPattern count="one">{0} h</unitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>mĩn</displayName>
+				<unitPattern count="one">{0} min</unitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>sig</displayName>
@@ -8052,18 +8100,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>mĩrisigũnu ag</displayName>
+				<unitPattern count="one">{0} ms</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<unitPattern count="one">{0} μs</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<unitPattern count="one">{0} ns</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<displayName>amps</displayName>
+				<unitPattern count="one">{0} A</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
 				<displayName>mĩriamps</displayName>
+				<unitPattern count="one">{0} mA</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
 				<displayName>ohms</displayName>
+				<unitPattern count="one">{0} Ω</unitPattern>
 			</unit>
 			<unit type="electric-volt">
 				<displayName>volts</displayName>
+				<unitPattern count="one">{0} V</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<unitPattern count="one">{0} kcal</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<unitPattern count="one">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
 				<displayName>cal</displayName>
@@ -8072,15 +8137,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kirojoule</displayName>
+				<unitPattern count="one">{0} kJ</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<displayName>joule ag</displayName>
+				<unitPattern count="one">{0} J</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
 				<displayName>kW-óra</displayName>
+				<unitPattern count="one">{0} kWh</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>elétron-volt</displayName>
+				<unitPattern count="one">{0} eV</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
 				<displayName>BTU</displayName>
@@ -8094,24 +8163,83 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>rimra-tar</displayName>
+				<unitPattern count="one">{0} lbf</unitPattern>
 			</unit>
 			<unit type="force-newton">
 				<displayName>newton</displayName>
+				<unitPattern count="one">{0} N</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<unitPattern count="one">{0} GHz</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<unitPattern count="one">{0} MHz</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<unitPattern count="one">{0} kHz</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<unitPattern count="one">{0} Hz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<unitPattern count="one">{0} em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>pixel ag</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>megapixel ag</displayName>
+				<unitPattern count="one">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<unitPattern count="one">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<unitPattern count="one">{0} ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<unitPattern count="one">{0} km</unitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>m</displayName>
+				<unitPattern count="one">{0} m</unitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<unitPattern count="one">{0} dm</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<unitPattern count="one">{0} cm</unitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<unitPattern count="one">{0} mm</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<unitPattern count="one">{0} μm</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<unitPattern count="one">{0} nm</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<unitPattern count="one">{0} pm</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>milha ag</displayName>
+				<unitPattern count="one">{0} mi</unitPattern>
 			</unit>
 			<unit type="length-yard">
 				<displayName>jarda ag</displayName>
+				<unitPattern count="one">{0} yd</unitPattern>
 			</unit>
 			<unit type="length-foot">
 				<displayName>tipẽn ag</displayName>
@@ -8127,6 +8255,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-parsec">
 				<displayName>parsec ag</displayName>
+				<unitPattern count="one">{0} pc</unitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<displayName>prỹg-jẽngrẽ ag</displayName>
@@ -8151,25 +8280,42 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mn</unitPattern>
 				<unitPattern count="other">{0} mn</unitPattern>
 			</unit>
+			<unit type="length-mile-scandinavian">
+				<unitPattern count="one">{0} smi</unitPattern>
+			</unit>
 			<unit type="length-point">
 				<displayName>pãntu ag</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>rã nogno</displayName>
+				<unitPattern count="one">{0} R☉</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>jẽngrẽ ag</displayName>
+				<unitPattern count="one">{0} lx</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>rã jẽngrẽ ag</displayName>
+				<unitPattern count="one">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="other">{0} t</unitPattern>
 			</unit>
+			<unit type="mass-kilogram">
+				<unitPattern count="one">{0} kg</unitPattern>
+			</unit>
 			<unit type="mass-gram">
 				<displayName>grỹmỹ ag</displayName>
+				<unitPattern count="one">{0} g</unitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<unitPattern count="one">{0} mg</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<unitPattern count="one">{0} μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>tãnẽrana</displayName>
@@ -8181,9 +8327,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-pound">
 				<displayName>rimra ag</displayName>
+				<unitPattern count="one">{0} lb</unitPattern>
+			</unit>
+			<unit type="mass-ounce">
+				<unitPattern count="one">{0} oz</unitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
 				<displayName>oz troy</displayName>
+				<unitPattern count="one">{0} oz t</unitPattern>
 			</unit>
 			<unit type="mass-carat">
 				<displayName>kirate ag</displayName>
@@ -8192,15 +8343,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>dalton ag</displayName>
+				<unitPattern count="one">{0} Da</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
 				<displayName>ga-pãgoj ag</displayName>
+				<unitPattern count="one">{0} M⊕</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>rã-pãgoj ag</displayName>
+				<unitPattern count="one">{0} M☉</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<unitPattern count="one">{0} GW</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<unitPattern count="one">{0} MW</unitPattern>
+			</unit>
+			<unit type="power-kilowatt">
+				<unitPattern count="one">{0} kW</unitPattern>
 			</unit>
 			<unit type="power-watt">
 				<displayName>watt ag</displayName>
+				<unitPattern count="one">{0} W</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<unitPattern count="one">{0} mW</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>cv</displayName>
@@ -8212,17 +8379,42 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mmHg</unitPattern>
 				<unitPattern count="other">{0} mmHg</unitPattern>
 			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<unitPattern count="one">{0} psi</unitPattern>
+			</unit>
+			<unit type="pressure-inch-ofhg">
+				<unitPattern count="one">{0} inHg</unitPattern>
+			</unit>
 			<unit type="pressure-bar">
 				<unitPattern count="one">{0} bar</unitPattern>
 				<unitPattern count="other">{0} bar ag</unitPattern>
+			</unit>
+			<unit type="pressure-millibar">
+				<unitPattern count="one">{0} mbar</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
 				<displayName>atm</displayName>
 				<unitPattern count="one">{0} atm</unitPattern>
 				<unitPattern count="other">{0} atm</unitPattern>
 			</unit>
+			<unit type="pressure-pascal">
+				<unitPattern count="one">{0} Pa</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<unitPattern count="one">{0} hPa</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<unitPattern count="one">{0} kPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<unitPattern count="one">{0} MPa</unitPattern>
+			</unit>
+			<unit type="speed-kilometer-per-hour">
+				<unitPattern count="one">{0} km/h</unitPattern>
+			</unit>
 			<unit type="speed-meter-per-second">
 				<displayName>mẽturo ag/seg</displayName>
+				<unitPattern count="one">{0} m/s</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>milha ag/óra</displayName>
@@ -8234,6 +8426,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} kagje</unitPattern>
 				<unitPattern count="other">{0} kagje ag</unitPattern>
 			</unit>
+			<unit type="temperature-generic">
+				<unitPattern count="one">{0}°</unitPattern>
+			</unit>
 			<unit type="temperature-celsius">
 				<displayName>grav C ag</displayName>
 				<unitPattern count="one">{0} °C</unitPattern>
@@ -8244,11 +8439,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} °F</unitPattern>
 				<unitPattern count="other">{0} °F</unitPattern>
 			</unit>
+			<unit type="temperature-kelvin">
+				<unitPattern count="one">{0} K</unitPattern>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<unitPattern count="one">{0} N⋅m</unitPattern>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<unitPattern count="one">{0} km³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<unitPattern count="one">{0} m³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<unitPattern count="one">{0} cm³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<unitPattern count="one">{0} mi³</unitPattern>
+			</unit>
 			<unit type="volume-cubic-yard">
 				<displayName>jarda³ ag</displayName>
+				<unitPattern count="one">{0} yd³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-foot">
 				<displayName>tipẽn3 ag</displayName>
+				<unitPattern count="one">{0} ft³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-inch">
 				<displayName>poregana³ ag</displayName>
@@ -8267,6 +8485,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-liter">
 				<displayName>ritru ag</displayName>
+				<unitPattern count="one">{0} l</unitPattern>
 			</unit>
 			<unit type="volume-deciliter">
 				<displayName>dl</displayName>
@@ -8312,9 +8531,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-quart">
 				<displayName>qts</displayName>
+				<unitPattern count="one">{0} qt</unitPattern>
 			</unit>
 			<unit type="volume-pint">
 				<displayName>pint ag</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
 			</unit>
 			<unit type="volume-cup">
 				<displayName>sikara ag</displayName>
@@ -8325,6 +8546,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>fl oz</displayName>
 				<unitPattern count="one">{0} fl oz</unitPattern>
 				<unitPattern count="other">{0} fl oz</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<unitPattern count="one">{0} fl oz Imp.</unitPattern>
 			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>kume k.</displayName>
@@ -8338,6 +8562,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-barrel">
 				<displayName>marir</displayName>
+				<unitPattern count="one">{0} bbl</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>kãtá</displayName>
@@ -8348,6 +8573,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="per">
+				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName draft="contributed">tar g</displayName>
 			</unit>
@@ -8459,6 +8690,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-hour">
 				<displayName>óra</displayName>
+				<unitPattern count="one">{0} h</unitPattern>
+				<unitPattern count="other">{0} h</unitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>mĩn</displayName>
+				<unitPattern count="one">{0} min</unitPattern>
+				<unitPattern count="other">{0} min</unitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>sig</displayName>
@@ -8468,9 +8706,29 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>ms</displayName>
+				<unitPattern count="one">{0} ms</unitPattern>
+				<unitPattern count="other">{0} ms</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<displayName>km</displayName>
+				<unitPattern count="one">{0} km</unitPattern>
+				<unitPattern count="other">{0} km</unitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>m</displayName>
+				<unitPattern count="one">{0} m</unitPattern>
+				<unitPattern count="other">{0} m</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<displayName>cm</displayName>
+				<unitPattern count="one">{0} cm</unitPattern>
+				<unitPattern count="other">{0} cm</unitPattern>
+				<perUnitPattern draft="contributed">{0}/cm</perUnitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<displayName>mm</displayName>
+				<unitPattern count="one">{0} mm</unitPattern>
+				<unitPattern count="other">{0} mm</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName draft="contributed">mil</displayName>
@@ -8516,6 +8774,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0} mn</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
+				<displayName>kg</displayName>
 				<unitPattern count="one">{0}kg</unitPattern>
 				<unitPattern count="other">{0}kg</unitPattern>
 			</unit>
@@ -8553,6 +8812,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} mb</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
+				<displayName>km/h</displayName>
 				<unitPattern count="one">{0} km/h</unitPattern>
 				<unitPattern count="other">{0} km/h</unitPattern>
 			</unit>
@@ -8587,6 +8847,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<coordinateUnit>
 				<displayName>kãtá</displayName>
 				<coordinateUnitPattern type="east">{0}L</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} S</coordinateUnitPattern>
 				<coordinateUnitPattern type="west">{0}O</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
@@ -8609,7 +8871,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="end">{0} ketũmỹr {1}</listPatternPart>
 			<listPatternPart type="2">{0} ketũmỹr {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} ketũmỹr {1}</listPatternPart>
+			<listPatternPart type="2">{0} ketũmỹr {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} ketũmỹr {1}</listPatternPart>
+			<listPatternPart type="2">{0} ketũmỹr {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
@@ -8620,6 +8896,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="2">{0} kar {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} kar {1}</listPatternPart>
 			<listPatternPart type="2">{0} kar {1}</listPatternPart>
 		</listPattern>
@@ -8630,6 +8908,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="2">{0} {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} kar {1}</listPatternPart>
 			<listPatternPart type="2">{0} kar {1}</listPatternPart>
 		</listPattern>

@@ -1,4 +1,4 @@
-## libpng v1.6.38
+## libpng v1.6.40
 
 ### libpng License
 <pre>
@@ -9,8 +9,8 @@ COPYRIGHT NOTICE, DISCLAIMER, and LICENSE
 PNG Reference Library License version 2
 ---------------------------------------
 
-Copyright (c) 1995-2022 The PNG Reference Library Authors.
-Copyright (c) 2018-2022 Cosmin Truta
+Copyright (c) 1995-2023 The PNG Reference Library Authors.
+Copyright (c) 2018-2023 Cosmin Truta
 Copyright (c) 1998-2018 Glenn Randers-Pehrson
 Copyright (c) 1996-1997 Andreas Dilger
 Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
@@ -175,6 +175,7 @@ Authors, for copyright and licensing purposes.
  * Mike Klein
  * Pascal Massimino
  * Paul Schmidt
+ * Philippe Antoine
  * Qiang Zhou
  * Sam Bushell
  * Samuel Williams
@@ -188,10 +189,12 @@ Authors, for copyright and licensing purposes.
  * Arm Holdings
    - Richard Townsend
  * Google Inc.
+   - Dan Field
+   - Leon Scroggins III
    - Matt Sarett
    - Mike Klein
-   - Dan Field
    - Sami Boukortt
+   - Wan-Teh Chang
 
 The build projects, the build scripts, the test scripts, and other
 files in the "ci", "projects", "scripts" and "tests" directories, have

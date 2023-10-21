@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -759,7 +759,7 @@ public abstract class Clock implements InstantSource {
         @Override
         public long millis() {
             long millis = baseClock.millis();
-            return millis - Math.floorMod(millis, tickNanos / 1000_000L);
+            return tickNanos < 1000_000L ? millis : millis - Math.floorMod(millis, tickNanos / 1000_000L);
         }
         @Override
         public Instant instant() {

@@ -93,8 +93,6 @@ public class MissingPermittedSubtypes extends TestRunner {
         Files.createDirectories(libClasses);
 
         new JavacTask(tb)
-                .options("--enable-preview",
-                         "-source", JAVA_VERSION)
                 .outdir(libClasses)
                 .files(tb.findJavaFiles(libSrc))
                 .run();
@@ -129,10 +127,7 @@ public class MissingPermittedSubtypes extends TestRunner {
 
             var log =
                     new JavacTask(tb)
-                        .options("--enable-preview",
-                                 "-source", JAVA_VERSION,
-                                 "-XDrawDiagnostics",
-                                 "-Xlint:-preview",
+                        .options("-XDrawDiagnostics",
                                  "--class-path", libClasses.toString())
                         .outdir(classes1)
                         .files(tb.findJavaFiles(src1))
@@ -143,8 +138,6 @@ public class MissingPermittedSubtypes extends TestRunner {
             List<String> expectedErrors = List.of(
                    "Test1.java:5:24: compiler.err.cant.access: lib.B1, (compiler.misc.class.file.not.found: lib.B1)",
                    "Test1.java:8:29: compiler.err.cant.ref.non.effectively.final.var: obj, (compiler.misc.lambda)",
-                   "- compiler.note.preview.filename: Test1.java, DEFAULT",
-                   "- compiler.note.preview.recompile",
                    "2 errors");
 
             if (!expectedErrors.equals(log)) {
@@ -173,10 +166,7 @@ public class MissingPermittedSubtypes extends TestRunner {
 
             var log =
                     new JavacTask(tb)
-                        .options("--enable-preview",
-                                 "-source", JAVA_VERSION,
-                                 "-XDrawDiagnostics",
-                                 "-Xlint:-preview",
+                        .options("-XDrawDiagnostics",
                                  "--class-path", libClasses.toString())
                         .outdir(classes2)
                         .files(tb.findJavaFiles(src2))

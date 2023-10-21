@@ -44,6 +44,7 @@ public class ObjectMonitor extends VMObject {
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     heap = VM.getVM().getObjectHeap();
     Type type  = db.lookupType("ObjectMonitor");
+
     sun.jvm.hotspot.types.Field f = type.getField("_header");
     headerFieldOffset = f.getOffset();
     f = type.getField("_object");
@@ -55,6 +56,8 @@ public class ObjectMonitor extends VMObject {
     contentionsField  = new CIntField(type.getCIntegerField("_contentions"), 0);
     waitersField      = new CIntField(type.getCIntegerField("_waiters"), 0);
     recursionsField   = type.getCIntegerField("_recursions");
+
+    ANONYMOUS_OWNER = db.lookupLongConstant("ObjectMonitor::ANONYMOUS_OWNER").longValue();
   }
 
   public ObjectMonitor(Address addr) {
@@ -77,6 +80,10 @@ public class ObjectMonitor extends VMObject {
       return true;
     }
     return false;
+  }
+
+  public boolean isOwnedAnonymous() {
+    return addr.getAddressAt(ownerFieldOffset).asLongValue() == ANONYMOUS_OWNER;
   }
 
   public Address owner() { return addr.getAddressAt(ownerFieldOffset); }
@@ -114,5 +121,7 @@ public class ObjectMonitor extends VMObject {
   private static CIntField     contentionsField;
   private static CIntField     waitersField;
   private static CIntegerField recursionsField;
+  private static long          ANONYMOUS_OWNER;
+
   // FIXME: expose platform-dependent stuff
 }

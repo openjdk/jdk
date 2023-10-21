@@ -56,8 +56,6 @@ hb_set_create ()
   if (!(set = hb_object_create<hb_set_t> ()))
     return hb_set_get_empty ();
 
-  set->init_shallow ();
-
   return set;
 }
 
@@ -107,8 +105,6 @@ hb_set_destroy (hb_set_t *set)
 {
   if (!hb_object_destroy (set)) return;
 
-  set->fini_shallow ();
-
   hb_free (set);
 }
 
@@ -122,7 +118,7 @@ hb_set_destroy (hb_set_t *set)
  *
  * Attaches a user-data key/data pair to the specified set.
  *
- * Return value: %true if success, %false otherwise
+ * Return value: `true` if success, `false` otherwise
  *
  * Since: 0.9.2
  **/
@@ -149,7 +145,7 @@ hb_set_set_user_data (hb_set_t           *set,
  * Since: 0.9.2
  **/
 void *
-hb_set_get_user_data (hb_set_t           *set,
+hb_set_get_user_data (const hb_set_t     *set,
                       hb_user_data_key_t *key)
 {
   return hb_object_get_user_data (set, key);
@@ -162,7 +158,7 @@ hb_set_get_user_data (hb_set_t           *set,
  *
  * Tests whether memory allocation for a set was successful.
  *
- * Return value: %true if allocation succeeded, %false otherwise
+ * Return value: `true` if allocation succeeded, `false` otherwise
  *
  * Since: 0.9.2
  **/
@@ -178,7 +174,7 @@ hb_set_allocation_successful (const hb_set_t  *set)
  *
  * Allocate a copy of @set.
  *
- * Return value: Newly-allocated set.
+ * Return value: (transfer full): Newly-allocated set.
  *
  * Since: 2.8.2
  **/
@@ -186,7 +182,9 @@ hb_set_t *
 hb_set_copy (const hb_set_t *set)
 {
   hb_set_t *copy = hb_set_create ();
-  if (unlikely (!copy)) return nullptr;
+  if (unlikely (copy->in_error ()))
+    return hb_set_get_empty ();
+
   copy->set (*set);
   return copy;
 }
@@ -212,7 +210,7 @@ hb_set_clear (hb_set_t *set)
  *
  * Tests whether a set is empty (contains no elements).
  *
- * Return value: %true if @set is empty
+ * Return value: `true` if @set is empty
  *
  * Since: 0.9.7
  **/
@@ -229,7 +227,7 @@ hb_set_is_empty (const hb_set_t *set)
  *
  * Tests whether @codepoint belongs to @set.
  *
- * Return value: %true if @codepoint is in @set, %false otherwise
+ * Return value: `true` if @codepoint is in @set, `false` otherwise
  *
  * Since: 0.9.2
  **/
@@ -348,7 +346,7 @@ hb_set_del_range (hb_set_t       *set,
  * Tests whether @set and @other are equal (contain the same
  * elements).
  *
- * Return value: %true if the two sets are equal, %false otherwise.
+ * Return value: `true` if the two sets are equal, `false` otherwise.
  *
  * Since: 0.9.7
  **/
@@ -383,7 +381,7 @@ hb_set_hash (const hb_set_t *set)
  *
  * Tests whether @set is a subset of @larger_set.
  *
- * Return value: %true if the @set is a subset of (or equal to) @larger_set, %false otherwise.
+ * Return value: `true` if the @set is a subset of (or equal to) @larger_set, `false` otherwise.
  *
  * Since: 1.8.1
  **/
@@ -496,6 +494,22 @@ hb_set_invert (hb_set_t *set)
 }
 
 /**
+ * hb_set_is_inverted:
+ * @set: A set
+ *
+ * Returns whether the set is inverted.
+ *
+ * Return value: `true` if the set is inverted, `false` otherwise
+ *
+ * Since: 7.0.0
+ **/
+hb_bool_t
+hb_set_is_inverted (const hb_set_t *set)
+{
+  return set->is_inverted ();
+}
+
+/**
  * hb_set_get_population:
  * @set: A set
  *
@@ -553,7 +567,7 @@ hb_set_get_max (const hb_set_t *set)
  *
  * Set @codepoint to #HB_SET_VALUE_INVALID to get started.
  *
- * Return value: %true if there was a next value, %false otherwise
+ * Return value: `true` if there was a next value, `false` otherwise
  *
  * Since: 0.9.2
  **/
@@ -574,7 +588,7 @@ hb_set_next (const hb_set_t *set,
  *
  * Set @codepoint to #HB_SET_VALUE_INVALID to get started.
  *
- * Return value: %true if there was a previous value, %false otherwise
+ * Return value: `true` if there was a previous value, `false` otherwise
  *
  * Since: 1.8.0
  **/
@@ -597,7 +611,7 @@ hb_set_previous (const hb_set_t *set,
  *
  * Set @last to #HB_SET_VALUE_INVALID to get started.
  *
- * Return value: %true if there was a next range, %false otherwise
+ * Return value: `true` if there was a next range, `false` otherwise
  *
  * Since: 0.9.7
  **/
@@ -621,7 +635,7 @@ hb_set_next_range (const hb_set_t *set,
  *
  * Set @first to #HB_SET_VALUE_INVALID to get started.
  *
- * Return value: %true if there was a previous range, %false otherwise
+ * Return value: `true` if there was a previous range, `false` otherwise
  *
  * Since: 1.8.0
  **/

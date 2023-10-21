@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -68,7 +66,7 @@ class LowModuleTest {
     void testRead(Path path, TestInfo test) throws Exception {
         try {
             printf("%nCHECK %s%n", test.getDisplayName());
-            ClassModel classLow = Classfile.parse(path);
+            ClassModel classLow = Classfile.of().parse(path);
             testRead0(classLow);
         } catch(Exception ex) {
             System.err.printf("%nFAIL %s - %s%n", path, ex);

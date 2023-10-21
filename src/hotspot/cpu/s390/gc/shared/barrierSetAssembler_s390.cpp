@@ -53,7 +53,7 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
   case T_OBJECT: {
     if (UseCompressedOops && in_heap) {
       __ z_llgf(dst, addr);
-      if (L_handle_null != NULL) { // Label provided.
+      if (L_handle_null != nullptr) { // Label provided.
         __ compareU32_and_branch(dst, (intptr_t)0, Assembler::bcondEqual, *L_handle_null);
         __ oop_decoder(dst, dst, false);
       } else {
@@ -61,7 +61,7 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
       }
     } else {
       __ z_lg(dst, addr);
-      if (L_handle_null != NULL) {
+      if (L_handle_null != nullptr) {
         __ compareU64_and_branch(dst, (intptr_t)0, Assembler::bcondEqual, *L_handle_null);
       }
     }
@@ -108,7 +108,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
 void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2) {
   NearLabel Ldone;
   __ z_ltgr(tmp1, value);
-  __ z_bre(Ldone);          // Use NULL result as-is.
+  __ z_bre(Ldone);          // Use null result as-is.
 
   __ z_nill(value, ~JNIHandles::tag_mask);
   __ z_lg(value, 0, value); // Resolve (untagged) jobject.

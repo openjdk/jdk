@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,6 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
     protected ServerSocket serverSocket;
 
     protected String name;
-
     /**
      * Make general <code>IOPipe</code> object with specified parameters.
      */
@@ -93,6 +92,8 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
         this.timeout = timeout;
         this.listening = listening;
         this.name = name;
+
+        registerCleanup();
     }
 
     /**
@@ -104,6 +105,8 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
         this.port = port;
         this.timeout = timeout;
         this.listening = listening;
+
+        registerCleanup();
     }
 
     /**
@@ -308,18 +311,15 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
 
     /**
      * Perform finalization of the object by invoking close().
+     *
+     * This is replacement of finalize() method and is called
+     * when this instance becomes unreachable.
+     *
      */
-    protected void finalize() throws Throwable {
+    public void cleanup() {
         close();
-        super.finalize();
     }
 
-    /**
-     * Perform finalization of the object at exit by invoking finalize().
-     */
-    public void finalizeAtExit() throws Throwable {
-        finalize();
-    }
 
     /**
      * Field 'pipeCounter' and method 'getNextPipeNumber' are used to construct unique names for SocketIOPipes

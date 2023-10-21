@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -406,8 +406,7 @@ abstract class Builder {
 
     /**
      * Search the specified CertStores and add all certificates matching
-     * selector to resultCerts. Self-signed certs are not useful here
-     * and therefore ignored.
+     * selector to resultCerts.
      *
      * If the targetCert criterion of the selector is set, only that cert
      * is examined and the CertStores are not searched.
@@ -426,8 +425,7 @@ abstract class Builder {
         X509Certificate targetCert = selector.getCertificate();
         if (targetCert != null) {
             // no need to search CertStores
-            if (selector.match(targetCert) && !X509CertImpl.isSelfSigned
-                (targetCert, buildParams.sigProvider())) {
+            if (selector.match(targetCert)) {
                 if (debug != null) {
                     debug.println("Builder.addMatchingCerts: " +
                         "adding target cert" +
@@ -446,11 +444,8 @@ abstract class Builder {
                 Collection<? extends Certificate> certs =
                                         store.getCertificates(selector);
                 for (Certificate cert : certs) {
-                    if (!X509CertImpl.isSelfSigned
-                        ((X509Certificate)cert, buildParams.sigProvider())) {
-                        if (resultCerts.add((X509Certificate)cert)) {
-                            add = true;
-                        }
+                    if (resultCerts.add((X509Certificate)cert)) {
+                        add = true;
                     }
                 }
                 if (!checkAll && add) {

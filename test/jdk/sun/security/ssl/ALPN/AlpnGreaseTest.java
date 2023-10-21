@@ -53,7 +53,7 @@ import java.util.Arrays;
  * (wrap/unwrap) pass before any application data is consumed or
  * produced.
  */
-public class AlpnGreaseTest implements SSLContextTemplate {
+public class AlpnGreaseTest extends SSLContextTemplate {
 
     private final SSLEngine clientEngine;     // client Engine
     private final ByteBuffer clientOut;       // write side of clientEngine

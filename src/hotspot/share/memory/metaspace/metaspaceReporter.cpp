@@ -116,7 +116,6 @@ static void print_settings(outputStream* out, size_t scale) {
   print_human_readable_size(out, MetaspaceGC::capacity_until_GC(), scale);
   out->cr();
   out->print_cr("CDS: %s", (UseSharedSpaces ? "on" : (DumpSharedSpaces ? "dump" : "off")));
-  out->print_cr("MetaspaceReclaimPolicy: %s", MetaspaceReclaimPolicy);
   Settings::print_on(out);
 }
 

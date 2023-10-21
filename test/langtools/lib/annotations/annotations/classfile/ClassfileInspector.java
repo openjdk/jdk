@@ -25,10 +25,11 @@ package annotations.classfile;
 
 import java.io.*;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
-import com.sun.tools.classfile.*;
-import com.sun.tools.classfile.ConstantPool.InvalidIndex;
-import com.sun.tools.classfile.ConstantPool.UnexpectedEntry;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 
 /**
  * A class providing utilities for writing tests that inspect class
@@ -326,8 +327,8 @@ public class ClassfileInspector {
         /**
          * See if this template matches the given visibility.
          *
-         * @param Whether or not the annotation is visible at runtime.
-         * @return Whether or not this template matches the visibility.
+         * @param visibility Whether the annotation is visible at runtime.
+         * @return Whether this template matches the visibility.
          */
         public boolean matchVisibility(boolean visibility) {
             return this.visibility == visibility;
@@ -340,9 +341,8 @@ public class ClassfileInspector {
          *
          * @param anno The annotation to attempt to match.
          */
-        public void matchAnnotation(ConstantPool cpool,
-                                    Annotation anno) {
-            if (checkMatch(cpool, anno)) {
+        public void matchAnnotation(Annotation anno) {
+            if (checkMatch(anno)) {
                 count++;
             }
         }
@@ -351,17 +351,11 @@ public class ClassfileInspector {
          * Indicate whether an annotation matches this expected
          * annotation.
          *
-         * @param ConstantPool The constant pool to use.
          * @param anno The annotation to check.
          * @return Whether the annotation matches.
          */
-        protected boolean checkMatch(ConstantPool cpool,
-                                     Annotation anno) {
-            try {
-                return cpool.getUTF8Info(anno.type_index).value.equals("L" + expectedName + ";");
-            } catch (InvalidIndex | UnexpectedEntry e) {
-                return false;
-            }
+        protected boolean checkMatch(Annotation anno) {
+            return anno.classSymbol().descriptorString().equals("L" + expectedName + ";");
         }
 
         /**
@@ -532,7 +526,7 @@ public class ClassfileInspector {
         protected final int parameter_index;
         protected final int type_index;
         protected final int exception_index;
-        protected final TypeAnnotation.Position.TypePathEntry[] typePath;
+        protected final List<TypeAnnotation.TypePathComponent> typePath;
 
         /**
          * Create an {@code ExpectedTypeAnnotation} from its
@@ -561,7 +555,7 @@ public class ClassfileInspector {
                                       int parameter_index,
                                       int type_index,
                                       int exception_index,
-                                      TypeAnnotation.Position.TypePathEntry... typePath) {
+                                      List<TypeAnnotation.TypePathComponent> typePath) {
             super(expectedName, visibility, expectedCount);
             this.targetType = targetType;
             this.bound_index = bound_index;
@@ -589,19 +583,18 @@ public class ClassfileInspector {
             sb.append(", exception_index = ");
             sb.append(exception_index);
             sb.append(", type_path = [");
-            for(int i = 0; i < typePath.length; i++) {
+            for(int i = 0; i < typePath.size(); i++) {
                 if (i != 0) {
                     sb.append(", ");
                 }
-                sb.append(typePath[i]);
+                sb.append(typePath.get(i));
             }
             sb.append("]");
             return sb.toString();
         }
 
         @Override
-        public void matchAnnotation(ConstantPool cpool,
-                                    Annotation anno) {}
+        public void matchAnnotation(Annotation anno) {}
 
         public void matchAnnotation(TypeAnnotation anno) {
             if (checkMatch(anno)) {
@@ -610,20 +603,39 @@ public class ClassfileInspector {
         }
 
         public boolean checkMatch(TypeAnnotation anno) {
-            boolean matches = checkMatch(anno.constant_pool, anno.annotation);
-
-            matches = matches && anno.position.type == targetType;
-            matches = matches && anno.position.bound_index == bound_index;
-            matches = matches && anno.position.parameter_index == parameter_index;
-            matches = matches && anno.position.type_index == type_index;
-            matches = matches && anno.position.exception_index == exception_index;
-            matches = matches && anno.position.location.size() == typePath.length;
+            boolean matches = checkMatch((Annotation) anno);
+            int boundIdx = Integer.MIN_VALUE, paraIdx = Integer.MIN_VALUE, tIdx = Integer.MIN_VALUE, exIdx = Integer.MIN_VALUE;
+            switch (anno.targetInfo()) {
+                case TypeAnnotation.TypeParameterBoundTarget binfo -> {
+                    boundIdx = binfo.boundIndex();
+                    paraIdx = binfo.typeParameterIndex();
+                }
+                case TypeAnnotation.FormalParameterTarget fpinfo -> {
+                    paraIdx = fpinfo.formalParameterIndex();
+                }
+                case TypeAnnotation.TypeParameterTarget pinfo -> {
+                    paraIdx = pinfo.typeParameterIndex();
+                }
+                case TypeAnnotation.TypeArgumentTarget ainfo -> {
+                    tIdx = ainfo.typeArgumentIndex();
+                }
+                case TypeAnnotation.CatchTarget cinfo -> {
+                    exIdx = cinfo.exceptionTableIndex();
+                }
+                default -> {}
+            }
+            matches = matches && anno.targetInfo().targetType() == targetType;
+            matches = matches && boundIdx == bound_index;
+            matches = matches && paraIdx == parameter_index;
+            matches = matches && tIdx == type_index;
+            matches = matches && exIdx == exception_index;
+            matches = matches && anno.targetPath().size() == typePath.size();
 
             if (matches) {
                 int i = 0;
-                for(TypeAnnotation.Position.TypePathEntry entry :
-                         anno.position.location) {
-                    matches = matches && typePath[i++].equals(entry);
+                for(TypeAnnotation.TypePathComponent entry :
+                        anno.targetPath()) {
+                    matches = matches && typePath.get(i++).equals(entry);
                 }
             }
 
@@ -647,8 +659,8 @@ public class ClassfileInspector {
             protected int parameter_index = Integer.MIN_VALUE;
             protected int type_index = Integer.MIN_VALUE;
             protected int exception_index = Integer.MIN_VALUE;
-            protected TypeAnnotation.Position.TypePathEntry[] typePath =
-                new TypeAnnotation.Position.TypePathEntry[0];
+            protected List<TypeAnnotation.TypePathComponent> typePath =
+                new ArrayList<TypeAnnotation.TypePathComponent>();
 
             /**
              * Create a {@code Builder} from the mandatory parameters.
@@ -696,7 +708,7 @@ public class ClassfileInspector {
             /**
              * Provide a parameter index parameter.
              *
-             * @param bound_index The parameter_index value.
+             * @param parameter_index The parameter_index value.
              */
             public Builder setParameterIndex(int parameter_index) {
                 this.parameter_index = parameter_index;
@@ -728,7 +740,7 @@ public class ClassfileInspector {
              *
              * @param typePath The type path value.
              */
-            public Builder setTypePath(TypeAnnotation.Position.TypePathEntry[] typePath) {
+            public Builder setTypePath(List<TypeAnnotation.TypePathComponent> typePath) {
                 this.typePath = typePath;
                 return this;
             }
@@ -768,7 +780,7 @@ public class ClassfileInspector {
                                             int parameter_index,
                                             int type_index,
                                             int exception_index,
-                                            TypeAnnotation.Position.TypePathEntry... typePath) {
+                                            List<TypeAnnotation.TypePathComponent> typePath) {
             super(expectedName, visibility, expectedCount, targetType, bound_index,
                   parameter_index, type_index, exception_index, typePath);
             this.methodname = methodname;
@@ -792,11 +804,11 @@ public class ClassfileInspector {
             sb.append(", exception_index = ");
             sb.append(exception_index);
             sb.append(", type_path = [");
-            for(int i = 0; i < typePath.length; i++) {
+            for(int i = 0; i < typePath.size(); i++) {
                 if (i != 0) {
                     sb.append(", ");
                 }
-                sb.append(typePath[i]);
+                sb.append(typePath.get(i));
             }
             sb.append("]");
             sb.append(" on method ");
@@ -894,7 +906,7 @@ public class ClassfileInspector {
                                            int parameter_index,
                                            int type_index,
                                            int exception_index,
-                                           TypeAnnotation.Position.TypePathEntry... typePath) {
+                                           List<TypeAnnotation.TypePathComponent> typePath) {
             super(expectedName, visibility, expectedCount, targetType, bound_index,
                   parameter_index, type_index, exception_index, typePath);
             this.fieldname = fieldname;
@@ -913,11 +925,11 @@ public class ClassfileInspector {
             .append(", exception_index = ").append(exception_index)
             .append(", type_path = [");
 
-            for(int i = 0; i < typePath.length; i++) {
+            for(int i = 0; i < typePath.size(); i++) {
                 if (i != 0) {
                     sb.append(", ");
                 }
-                sb.append(typePath[i]);
+                sb.append(typePath.get(i));
             }
             sb.append("]")
             .append(" on field ").append(fieldname);
@@ -981,162 +993,146 @@ public class ClassfileInspector {
         }
     }
 
-    private void matchClassAnnotation(ClassFile classfile,
-                                      ExpectedAnnotation expected)
-        throws ConstantPoolException {
-        for(Attribute attr : classfile.attributes) {
-            attr.accept(annoMatcher(classfile.constant_pool), expected);
+    private void matchClassAnnotation(ClassModel classfile,
+                                      ExpectedAnnotation expected) {
+        for(Attribute<?> attr : classfile.attributes()) {
+            annoMatcher(attr, expected);
         }
     }
 
-    private void matchMethodAnnotation(ClassFile classfile,
-                                       ExpectedMethodAnnotation expected)
-        throws ConstantPoolException {
-        for(Method meth : classfile.methods) {
-            if (expected.matchMethodName(meth.getName(classfile.constant_pool))) {
-                for(Attribute attr : meth.attributes) {
-                    attr.accept(annoMatcher(classfile.constant_pool), expected);
+    private void matchMethodAnnotation(ClassModel classfile,
+                                       ExpectedMethodAnnotation expected) {
+        for(MethodModel meth : classfile.methods()) {
+            if (expected.matchMethodName(meth.methodName().stringValue())) {
+                for(Attribute<?> attr : meth.attributes()) {
+                    annoMatcher(attr, expected);
                 }
             }
         }
     }
 
-    private void matchParameterAnnotation(ClassFile classfile,
-                                          ExpectedParameterAnnotation expected)
-        throws ConstantPoolException {
-        for(Method meth : classfile.methods) {
-            if (expected.matchMethodName(meth.getName(classfile.constant_pool))) {
-                for(Attribute attr : meth.attributes) {
-                    attr.accept(paramMatcher(classfile.constant_pool), expected);
+    private void matchParameterAnnotation(ClassModel classfile,
+                                          ExpectedParameterAnnotation expected) {
+        for(MethodModel meth : classfile.methods()) {
+            if (expected.matchMethodName(meth.methodName().stringValue())) {
+                for(Attribute<?> attr : meth.attributes()) {
+                    paramMatcher(attr, expected);
                 }
             }
         }
     }
 
-    private void matchFieldAnnotation(ClassFile classfile,
-                                      ExpectedFieldAnnotation expected)
-        throws ConstantPoolException {
-        for(Field field : classfile.fields) {
-            if (expected.matchFieldName(field.getName(classfile.constant_pool))) {
-                for(Attribute attr : field.attributes) {
-                    attr.accept(annoMatcher(classfile.constant_pool), expected);
+    private void matchFieldAnnotation(ClassModel classfile,
+                                      ExpectedFieldAnnotation expected) {
+        for(FieldModel field : classfile.fields()) {
+            if (expected.matchFieldName(field.fieldName().stringValue())) {
+                for(Attribute<?> attr : field.attributes()) {
+                    annoMatcher(attr, expected);
                 }
             }
         }
     }
 
-    private void matchClassTypeAnnotation(ClassFile classfile,
-                                          ExpectedTypeAnnotation expected)
-        throws ConstantPoolException {
-        for(Attribute attr : classfile.attributes) {
-            attr.accept(typeAnnoMatcher, expected);
+    private void matchClassTypeAnnotation(ClassModel classfile,
+                                          ExpectedTypeAnnotation expected) {
+        for(Attribute<?> attr : classfile.attributes()) {
+            typeAnnoMatcher(attr, expected);
         }
     }
 
-    private void matchMethodTypeAnnotation(ClassFile classfile,
-                                           ExpectedMethodTypeAnnotation expected)
-        throws ConstantPoolException {
-        for(Method meth : classfile.methods) {
-            if (expected.matchMethodName(meth.getName(classfile.constant_pool))) {
-                for(Attribute attr : meth.attributes) {
-                    attr.accept(typeAnnoMatcher, expected);
+    private void matchMethodTypeAnnotation(ClassModel classfile,
+                                           ExpectedMethodTypeAnnotation expected) {
+        for(MethodModel meth : classfile.methods()) {
+            if (expected.matchMethodName(meth.methodName().stringValue())) {
+                for(Attribute<?> attr : meth.attributes()) {
+                    typeAnnoMatcher(attr, expected);
                 }
             }
         }
     }
 
-    private void matchFieldTypeAnnotation(ClassFile classfile,
-                                          ExpectedFieldTypeAnnotation expected)
-        throws ConstantPoolException {
-        for(Field field : classfile.fields) {
-            if (expected.matchFieldName(field.getName(classfile.constant_pool))) {
-                for(Attribute attr : field.attributes) {
-                    attr.accept(typeAnnoMatcher, expected);
+    private void matchFieldTypeAnnotation(ClassModel classfile,
+                                          ExpectedFieldTypeAnnotation expected) {
+        for(FieldModel field : classfile.fields()) {
+            if (expected.matchFieldName(field.fieldName().stringValue())) {
+                for(Attribute<?> attr : field.attributes()) {
+                    typeAnnoMatcher(attr, expected);
                 }
             }
         }
     }
 
-    private void matchClassAnnotations(ClassFile classfile,
-                                       ExpectedAnnotation[] expected)
-        throws ConstantPoolException {
+    private void matchClassAnnotations(ClassModel classfile,
+                                       ExpectedAnnotation[] expected) {
         for(ExpectedAnnotation one : expected) {
             matchClassAnnotation(classfile, one);
         }
     }
 
-    private void matchMethodAnnotations(ClassFile classfile,
-                                        ExpectedMethodAnnotation[] expected)
-        throws ConstantPoolException {
+    private void matchMethodAnnotations(ClassModel classfile,
+                                        ExpectedMethodAnnotation[] expected) {
         for(ExpectedMethodAnnotation one : expected) {
             matchMethodAnnotation(classfile, one);
         }
     }
 
-    private void matchParameterAnnotations(ClassFile classfile,
-                                           ExpectedParameterAnnotation[] expected)
-        throws ConstantPoolException {
+    private void matchParameterAnnotations(ClassModel classfile,
+                                           ExpectedParameterAnnotation[] expected) {
         for(ExpectedParameterAnnotation one : expected) {
             matchParameterAnnotation(classfile, one);
         }
     }
 
-    private void matchFieldAnnotations(ClassFile classfile,
-                                       ExpectedFieldAnnotation[] expected)
-        throws ConstantPoolException {
+    private void matchFieldAnnotations(ClassModel classfile,
+                                       ExpectedFieldAnnotation[] expected) {
         for(ExpectedFieldAnnotation one : expected) {
             matchFieldAnnotation(classfile, one);
         }
     }
 
-    private void matchClassTypeAnnotations(ClassFile classfile,
-                                           ExpectedTypeAnnotation[] expected)
-        throws ConstantPoolException {
+    private void matchClassTypeAnnotations(ClassModel classfile,
+                                           ExpectedTypeAnnotation[] expected) {
         for(ExpectedTypeAnnotation one : expected) {
             matchClassTypeAnnotation(classfile, one);
         }
     }
 
-    private void matchMethodTypeAnnotations(ClassFile classfile,
-                                            ExpectedMethodTypeAnnotation[] expected)
-        throws ConstantPoolException {
+    private void matchMethodTypeAnnotations(ClassModel classfile,
+                                            ExpectedMethodTypeAnnotation[] expected) {
         for(ExpectedMethodTypeAnnotation one : expected) {
             matchMethodTypeAnnotation(classfile, one);
         }
     }
 
-    private void matchFieldTypeAnnotations(ClassFile classfile,
-                                           ExpectedFieldTypeAnnotation[] expected)
-        throws ConstantPoolException {
+    private void matchFieldTypeAnnotations(ClassModel classfile,
+                                           ExpectedFieldTypeAnnotation[] expected) {
         for(ExpectedFieldTypeAnnotation one : expected) {
             matchFieldTypeAnnotation(classfile, one);
         }
     }
 
     /**
-     * Run a template on a single {@code ClassFile}.
+     * Run a template on a single {@code ClassModel}.
      *
-     * @param classfile The {@code ClassFile} on which to run tests.
+     * @param classfile The {@code ClassModel} on which to run tests.
      * @param expected The expected annotation template.
      */
-    public void run(ClassFile classfile,
-                    Expected... expected)
-            throws ConstantPoolException {
-        run(new ClassFile[] { classfile }, expected);
+    public void run(ClassModel classfile,
+                    Expected... expected) {
+        run(new ClassModel[] { classfile }, expected);
     }
 
     /**
-     * Run a template on multiple {@code ClassFile}s.
+     * Run a template on multiple {@code ClassModel}s.
      *
-     * @param classfile The {@code ClassFile}s on which to run tests.
+     * @param classfiles The {@code ClassModel}s on which to run tests.
      * @param expected The expected annotation template.
      */
-    public void run(ClassFile[] classfiles,
-                    Expected... expected)
-            throws ConstantPoolException {
-        for(ClassFile classfile : classfiles) {
+    public void run(ClassModel[] classfiles,
+                    Expected... expected) {
+        for(ClassModel classfile : classfiles) {
             for(Expected one : expected) {
-                if (one.matchClassName(classfile.getName())) {
+                if (one.matchClassName(classfile.thisClass().name().stringValue())) {
                     if (one.classAnnos != null)
                         matchClassAnnotations(classfile, one.classAnnos);
                     if (one.methodAnnos != null)
@@ -1165,303 +1161,81 @@ public class ClassfileInspector {
     }
 
     /**
-     * Get a {@code ClassFile} from its file name.
+     * Get a {@code ClassModel} from its file name.
      *
      * @param name The class' file name.
      * @param host A class in the same package.
-     * @return The {@code ClassFile}
+     * @return The {@code ClassModel}
      */
-    public static ClassFile getClassFile(String name,
+    public static ClassModel getClassFile(String name,
                                          Class<?> host)
-        throws IOException, ConstantPoolException {
+        throws IOException {
         final URL url = host.getResource(name);
+        assert url != null;
         try (InputStream in = url.openStream()) {
-            return ClassFile.read(in);
+            return Classfile.of().parse(in.readAllBytes());
         }
     }
 
-    private static class AbstractAttributeVisitor<T> implements Attribute.Visitor<Void, T> {
-
-        @Override
-        public Void visitDefault(DefaultAttribute attr, T p) {
-            return null;
+    public void typeAnnoMatcher(Attribute<?> attr, ExpectedTypeAnnotation expected) {
+        switch (attr) {
+            case RuntimeVisibleTypeAnnotationsAttribute vattr -> {
+                if (expected.matchVisibility(true)) {
+                    for (TypeAnnotation anno : vattr.annotations()) expected.matchAnnotation(anno);
+                }
+            }
+            case RuntimeInvisibleTypeAnnotationsAttribute ivattr -> {
+                if (expected.matchVisibility(false)) {
+                    ivattr.annotations().forEach(expected::matchAnnotation);
+                }
+            }
+            default -> {}
         }
+    };
 
-        @Override
-        public Void visitAnnotationDefault(AnnotationDefault_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitBootstrapMethods(BootstrapMethods_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitCharacterRangeTable(CharacterRangeTable_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitCode(Code_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitCompilationID(CompilationID_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitConstantValue(ConstantValue_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitDeprecated(Deprecated_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitEnclosingMethod(EnclosingMethod_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitExceptions(Exceptions_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitInnerClasses(InnerClasses_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitLineNumberTable(LineNumberTable_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitLocalVariableTable(LocalVariableTable_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitLocalVariableTypeTable(LocalVariableTypeTable_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-          public Void visitNestHost(NestHost_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitMethodParameters(MethodParameters_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitModule(Module_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitModuleHashes(ModuleHashes_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitModuleMainClass(ModuleMainClass_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitModulePackages(ModulePackages_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitModuleResolution(ModuleResolution_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitModuleTarget(ModuleTarget_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitNestMembers(NestMembers_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitRuntimeInvisibleAnnotations(RuntimeInvisibleAnnotations_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitRuntimeInvisibleParameterAnnotations(RuntimeInvisibleParameterAnnotations_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitRuntimeInvisibleTypeAnnotations(RuntimeInvisibleTypeAnnotations_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitRuntimeVisibleAnnotations(RuntimeVisibleAnnotations_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitRuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitRuntimeVisibleTypeAnnotations(RuntimeVisibleTypeAnnotations_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitSignature(Signature_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitSourceDebugExtension(SourceDebugExtension_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitSourceFile(SourceFile_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitSourceID(SourceID_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitStackMap(StackMap_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitStackMapTable(StackMapTable_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitSynthetic(Synthetic_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitPermittedSubclasses(PermittedSubclasses_attribute attr, T p) {
-            return null;
-        }
-
-        @Override
-        public Void visitRecord(Record_attribute attr, T p) {
-            return null;
+    public void annoMatcher(Attribute<?> attr, ExpectedAnnotation expected) {
+        switch (attr) {
+            case RuntimeVisibleTypeAnnotationsAttribute rvattr -> {
+                if (expected.matchVisibility(true)) {
+                    for(Annotation anno : rvattr.annotations()) {
+                        expected.matchAnnotation(anno);
+                    }
+                }
+            }
+            case RuntimeInvisibleAnnotationsAttribute rivattr -> {
+                if (expected.matchVisibility(false)) {
+                    for(Annotation anno : rivattr.annotations()) {
+                        expected.matchAnnotation(anno);
+                    }
+                }
+            }
+            default -> {}
         }
     }
 
-    private static final Attribute.Visitor<Void, ExpectedTypeAnnotation> typeAnnoMatcher
-            = new AbstractAttributeVisitor<ExpectedTypeAnnotation>() {
-
-                @Override
-                public Void visitRuntimeVisibleTypeAnnotations(RuntimeVisibleTypeAnnotations_attribute attr,
-                        ExpectedTypeAnnotation expected) {
-                    if (expected.matchVisibility(true)) {
-                        for (TypeAnnotation anno : attr.annotations) {
+    private void paramMatcher(Attribute<?> attr, ExpectedParameterAnnotation expected) {
+        switch (attr) {
+            case RuntimeVisibleParameterAnnotationsAttribute vattr -> {
+                if (expected.matchVisibility(true)) {
+                    if (expected.index < vattr.parameterAnnotations().size()) {
+                        for(Annotation anno :
+                                vattr.parameterAnnotations().get(expected.index)) {
                             expected.matchAnnotation(anno);
                         }
                     }
-
-                    return null;
                 }
-
-                @Override
-                public Void visitRuntimeInvisibleTypeAnnotations(RuntimeInvisibleTypeAnnotations_attribute attr,
-                        ExpectedTypeAnnotation expected) {
-                    if (expected.matchVisibility(false)) {
-                        for (TypeAnnotation anno : attr.annotations) {
+            }
+            case RuntimeInvisibleParameterAnnotationsAttribute ivattr -> {
+                if (expected.matchVisibility(false)) {
+                    if (expected.index < ivattr.parameterAnnotations().size()) {
+                        for(Annotation anno :
+                                ivattr.parameterAnnotations().get(expected.index)) {
                             expected.matchAnnotation(anno);
                         }
                     }
-
-                    return null;
                 }
-            };
-
-    private static Attribute.Visitor<Void, ExpectedAnnotation> annoMatcher(ConstantPool cpool) {
-        return new AbstractAttributeVisitor<ExpectedAnnotation>() {
-
-            @Override
-            public Void visitRuntimeVisibleAnnotations(RuntimeVisibleAnnotations_attribute attr,
-                                                       ExpectedAnnotation expected) {
-                if (expected.matchVisibility(true)) {
-                    for(Annotation anno : attr.annotations) {
-                        expected.matchAnnotation(cpool, anno);
-                    }
-                }
-
-                return null;
             }
-
-            @Override
-            public Void visitRuntimeInvisibleAnnotations(RuntimeInvisibleAnnotations_attribute attr,
-                                                         ExpectedAnnotation expected) {
-                if (expected.matchVisibility(false)) {
-                    for(Annotation anno : attr.annotations) {
-                        expected.matchAnnotation(cpool, anno);
-                    }
-                }
-
-                return null;
-            }
-        };
-    }
-
-    private static Attribute.Visitor<Void, ExpectedParameterAnnotation> paramMatcher(ConstantPool cpool) {
-        return new AbstractAttributeVisitor<ExpectedParameterAnnotation>() {
-
-            @Override
-            public Void visitRuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations_attribute attr,
-                                                                ExpectedParameterAnnotation expected) {
-                if (expected.matchVisibility(true)) {
-                    if (expected.index < attr.parameter_annotations.length) {
-                        for(Annotation anno :
-                                attr.parameter_annotations[expected.index]) {
-                            expected.matchAnnotation(cpool, anno);
-                        }
-                    }
-                }
-
-                return null;
-            }
-
-            @Override
-            public Void visitRuntimeInvisibleParameterAnnotations(RuntimeInvisibleParameterAnnotations_attribute attr,
-                                                                  ExpectedParameterAnnotation expected) {
-                if (expected.matchVisibility(false)) {
-                    if (expected.index < attr.parameter_annotations.length) {
-                        for(Annotation anno :
-                                attr.parameter_annotations[expected.index]) {
-                            expected.matchAnnotation(cpool, anno);
-                        }
-                    }
-                }
-
-                return null;
-            }
-        };
+            default -> {}
+        }
     }
 }

@@ -407,7 +407,14 @@ void VMThread::inner_execute(VM_Operation* op) {
   _cur_vm_operation = op;
 
   HandleMark hm(VMThread::vm_thread());
-  EventMarkVMOperation em("Executing %sVM operation: %s", prev_vm_operation != nullptr ? "nested " : "", op->name());
+
+  const char* const cause = op->cause();
+  EventMarkVMOperation em("Executing %sVM operation: %s%s%s%s",
+      prev_vm_operation != nullptr ? "nested " : "",
+      op->name(),
+      cause != nullptr ? " (" : "",
+      cause != nullptr ? cause : "",
+      cause != nullptr ? ")" : "");
 
   log_debug(vmthread)("Evaluating %s %s VM operation: %s",
                        prev_vm_operation != nullptr ? "nested" : "",

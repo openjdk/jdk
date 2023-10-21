@@ -21,7 +21,8 @@
  * questions.
  */
 
-import com.sun.tools.classfile.*;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 
 import java.io.IOException;
 import java.lang.annotation.RetentionPolicy;
@@ -34,14 +35,14 @@ public abstract class RuntimeAnnotationsTestBase extends AnnotationsTestBase {
 
     @Override
     public void test(TestCase testCase, Map<String, ? extends JavaFileObject> classes)
-            throws IOException, ConstantPoolException, Descriptor.InvalidDescriptor {
+            throws IOException {
         for (Map.Entry<String, ? extends JavaFileObject> entry : classes.entrySet()) {
             String className = entry.getKey();
             TestCase.TestClassInfo clazz = testCase.getTestClassInfo(className);
             echo("Testing class : " + className);
-            ClassFile classFile = readClassFile(entry.getValue());
+            ClassModel classFile = readClassFile(entry.getValue());
 
-            testAttributes(clazz, classFile, () -> classFile.attributes);
+            testAttributes(clazz, classFile, classFile);
 
             testMethods(clazz, classFile);
 
@@ -49,13 +50,13 @@ public abstract class RuntimeAnnotationsTestBase extends AnnotationsTestBase {
         }
     }
 
-    private void testMethods(TestCase.TestClassInfo clazz, ClassFile classFile)
-            throws ConstantPoolException, Descriptor.InvalidDescriptor {
+    private void testMethods(TestCase.TestClassInfo clazz, ClassModel classFile) {
         String className = clazz.getName();
         Set<String> foundMethods = new HashSet<>();
-        for (Method method : classFile.methods) {
-            String methodName = method.getName(classFile.constant_pool) +
-                    method.descriptor.getParameterTypes(classFile.constant_pool);
+        for (MethodModel method : classFile.methods()) {
+            String methodName = method.methodName().stringValue() +
+                    method.methodTypeSymbol().displayDescriptor();
+            methodName = methodName.substring(0, methodName.indexOf(")") + 1);
             if (methodName.startsWith("<init>")) {
                 String constructorName = className.replaceAll(".*\\$", "");
                 methodName = methodName.replace("<init>", constructorName);
@@ -67,16 +68,15 @@ public abstract class RuntimeAnnotationsTestBase extends AnnotationsTestBase {
             if (testMethod == null) {
                 continue;
             }
-            testAttributes(testMethod, classFile, () -> method.attributes);
+            testAttributes(testMethod, classFile, method);
         }
         checkContains(foundMethods, clazz.methods.keySet(), "Methods in class : " + className);
     }
 
-    private void testFields(TestCase.TestClassInfo clazz, ClassFile classFile)
-            throws ConstantPoolException {
+    private void testFields(TestCase.TestClassInfo clazz, ClassModel classFile) {
         Set<String> foundFields = new HashSet<>();
-        for (Field field : classFile.fields) {
-            String fieldName = field.getName(classFile.constant_pool);
+        for (FieldModel field : classFile.fields()) {
+            String fieldName = field.fieldName().stringValue();
             echo("Testing field : " + fieldName);
 
             TestCase.TestFieldInfo testField = clazz.getTestFieldInfo(fieldName);
@@ -84,26 +84,23 @@ public abstract class RuntimeAnnotationsTestBase extends AnnotationsTestBase {
             if (testField == null) {
                 continue;
             }
-            testAttributes(testField, classFile, () -> field.attributes);
+            testAttributes(testField, classFile, field);
         }
         checkContains(foundFields, clazz.fields.keySet(), "Fields in class : " + clazz.getName());
     }
 
     private void testAttributes(
             TestCase.TestMemberInfo member,
-            ClassFile classFile,
-            Supplier<Attributes> attributes)
-            throws ConstantPoolException {
+            ClassModel classFile,
+            AttributedElement attributedElement) {
         Map<String, Annotation> actualInvisible = collectAnnotations(
-                classFile,
                 member,
-                attributes.get(),
-                Attribute.RuntimeInvisibleAnnotations);
+                attributedElement,
+                Attributes.RUNTIME_INVISIBLE_ANNOTATIONS);
         Map<String, Annotation> actualVisible = collectAnnotations(
-                classFile,
                 member,
-                attributes.get(),
-                Attribute.RuntimeVisibleAnnotations);
+                attributedElement,
+                Attributes.RUNTIME_VISIBLE_ANNOTATIONS);
 
         checkEquals(actualInvisible.keySet(),
                 member.getRuntimeInvisibleAnnotations(), "RuntimeInvisibleAnnotations");
@@ -126,32 +123,41 @@ public abstract class RuntimeAnnotationsTestBase extends AnnotationsTestBase {
         }
     }
 
-    private Map<String, Annotation> collectAnnotations(
-            ClassFile classFile,
+    private <T extends Attribute<T>> Map<String, Annotation> collectAnnotations(
             TestCase.TestMemberInfo member,
-            Attributes attributes,
-            String attribute) throws ConstantPoolException {
+            AttributedElement attributedElement,
+            AttributeMapper<T> attribute) {
 
-        RuntimeAnnotations_attribute attr = (RuntimeAnnotations_attribute) attributes.get(attribute);
+        Object attr = attributedElement.findAttribute(attribute).orElse(null);
         Map<String, Annotation> actualAnnotations = new HashMap<>();
-        RetentionPolicy policy = getRetentionPolicy(attribute);
+        RetentionPolicy policy = getRetentionPolicy(attribute.name());
         if (member.isAnnotated(policy)) {
-            if (!checkNotNull(attr, String.format("%s should be not null value", attribute))) {
+            if (!checkNotNull(attr, String.format("%s should be not null value", attribute.name()))) {
                 // test case failed, stop checking
                 return actualAnnotations;
             }
-            for (Annotation ann : attr.annotations) {
-                String name = classFile.constant_pool.getUTF8Value(ann.type_index);
-                actualAnnotations.put(name.substring(1, name.length() - 1), ann);
+            List<Annotation> annotationList;
+            switch (attr) {
+                case RuntimeVisibleAnnotationsAttribute annots -> {
+                    annotationList = annots.annotations();
+                }
+                case RuntimeInvisibleAnnotationsAttribute annots -> {
+                    annotationList = annots.annotations();
+                }
+                default -> throw new AssertionError();
             }
-            checkEquals(countNumberOfAttributes(attributes.attrs,
-                    getRetentionPolicy(attribute) == RetentionPolicy.RUNTIME
-                            ? RuntimeVisibleAnnotations_attribute.class
-                            : RuntimeInvisibleAnnotations_attribute.class),
-                    1l,
-                    String.format("Number of %s", attribute));
+            for (Annotation ann : annotationList) {
+                String name = ann.classSymbol().displayName();
+                actualAnnotations.put(name, ann);
+            }
+            checkEquals(countNumberOfAttributes(attributedElement.attributes(),
+                    getRetentionPolicy(attribute.name()) == RetentionPolicy.RUNTIME
+                            ? RuntimeVisibleAnnotationsAttribute.class
+                            : RuntimeInvisibleAnnotationsAttribute.class),
+                    1L,
+                    String.format("Number of %s", attribute.name()));
         } else {
-            checkNull(attr, String.format("%s should be null", attribute));
+            checkNull(attr, String.format("%s should be null", attribute.name()));
         }
         return actualAnnotations;
     }
