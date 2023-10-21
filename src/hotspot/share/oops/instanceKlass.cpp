@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveUtils.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -702,7 +703,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   SystemDictionaryShared::handle_class_unloading(this);
 
 #if INCLUDE_CDS_JAVA_HEAP
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_heap()) {
     HeapShared::remove_scratch_objects(this);
   }
 #endif
@@ -4087,7 +4088,7 @@ void InstanceKlass::verify_on(outputStream* st) {
     Array<int>* method_ordering = this->method_ordering();
     int length = method_ordering->length();
     if (JvmtiExport::can_maintain_original_method_order() ||
-        ((UseSharedSpaces || Arguments::is_dumping_archive()) && length != 0)) {
+        ((UseSharedSpaces || CDSConfig::is_dumping_archive()) && length != 0)) {
       guarantee(length == methods()->length(), "invalid method ordering length");
       jlong sum = 0;
       for (int j = 0; j < length; j++) {
