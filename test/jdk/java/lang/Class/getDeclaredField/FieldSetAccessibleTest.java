@@ -312,7 +312,7 @@ public class FieldSetAccessibleTest {
             Set<String> mods = Set.of(
                     // All JVMCI packages other than jdk.vm.ci.services are dynamically
                     // exported to Graal
-                    "jdk.compiler.graal", "jdk.compiler.graal.management"
+                    "jdk.graal.compiler", "jdk.graal.compiler.management"
             );
             // Filters all modules that directly or indirectly require Graal modules
             // as these are upgradeable and also provide APIs to add qualified exports dynamically

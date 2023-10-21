@@ -44,8 +44,8 @@ import java.util.stream.Collectors;
 public class UpgradeableModules {
     private static final List<String> UPGRADEABLE_MODULES =
         List.of("java.compiler",
-                "jdk.compiler.graal",
-                "jdk.compiler.graal.management");
+                "jdk.graal.compiler",
+                "jdk.graal.compiler.management");
 
 
     public static void main(String... args) {

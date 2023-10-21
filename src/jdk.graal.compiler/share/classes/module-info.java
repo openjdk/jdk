@@ -36,6 +36,6 @@
   * @since 22
   */
 
-module jdk.compiler.graal {
+module jdk.graal.compiler {
     requires jdk.internal.vm.ci;
 }

@@ -35,7 +35,7 @@
  * @moduleGraph
  * @since 22
  */
-module jdk.compiler.graal.management {
+module jdk.graal.compiler.management {
     requires jdk.internal.vm.ci;
 }
 
