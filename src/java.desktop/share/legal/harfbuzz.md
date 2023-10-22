@@ -1,8 +1,8 @@
-## Harfbuzz v7.2.0
+## Harfbuzz v8.2.2
 
 ### Harfbuzz License
 
-https://github.com/harfbuzz/harfbuzz/blob/7.2.0/COPYING
+https://github.com/harfbuzz/harfbuzz/blob/8.2.2/COPYING
 
 <pre>
 
