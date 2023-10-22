@@ -978,4 +978,26 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+class SystemMapDCmd : public DCmdWithParser {
+  DCmdArgument<bool> _human_readable;
+public:
+  static int num_arguments() { return 1; }
+  SystemMapDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "System.map";
+  }
+  static const char* description() {
+    return "Prints out an annotated memory map. Requires NMT to be enabled.";
+  }
+  static const char* impact() {
+    return "Low";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "control", nullptr};
+    return p;
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 #endif // SHARE_SERVICES_DIAGNOSTICCOMMAND_HPP

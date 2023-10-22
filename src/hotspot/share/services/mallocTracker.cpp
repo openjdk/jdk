@@ -166,7 +166,6 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
     assert(header2->flags() == flags, "Wrong flags");
   }
 #endif
-
   return memblock;
 }
 

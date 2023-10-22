@@ -59,6 +59,7 @@
 #include "services/diagnosticFramework.hpp"
 #include "services/heapDumper.hpp"
 #include "services/management.hpp"
+#include "services/memMapPrinter.hpp"
 #include "services/nmtDCmd.hpp"
 #include "services/writeableFlags.hpp"
 #include "utilities/debug.hpp"
@@ -133,6 +134,7 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemMapDCmd>(full_export, true,false));
 #endif // LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
 
@@ -1150,4 +1152,14 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
   const bool human_readable = _human_readable.value();
   const size_t minsize = _minsize.has_value() ? _minsize.value()._size : 0;
   CompilationMemoryStatistic::print_all_by_size(output(), human_readable, minsize);
+}
+
+SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) :
+    DCmdWithParser(output, heap),
+  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false") {
+  _dcmdparser.add_dcmd_option(&_human_readable);
+}
+
+void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
+  MemMapPrinter::print_all_mappings(output(), _human_readable.value());
 }
