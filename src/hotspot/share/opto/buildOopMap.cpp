@@ -104,7 +104,19 @@ struct OopFlow : public ArenaObj {
   static OopFlow *make( Arena *A, int max_size, Compile* C );
 
   // Build an oopmap from the current flow info
-  OopMap *build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, int* live );
+  OopMap *build_oop_map__( Node *n, int max_reg, PhaseRegAlloc *regalloc, int* live );
+
+  bool failing() const {
+    return C != nullptr ? C->failing() : false;
+  }
+
+/*  void check_node_count__(uint margin, const char* reason) {
+    CHECKED(C->check_node_count__(margin, reason));
+  }
+*/
+  void record_method_not_compilable__(const char* text) {
+    CHECKED(C->record_method_not_compilable__(text));
+  }
 };
 
 // Given reaching-defs for this block start, compute it for this block end
@@ -119,7 +131,7 @@ void OopFlow::compute_reach( PhaseRegAlloc *regalloc, int max_reg, Dict *safehas
       if( n->is_MachSafePoint() && !n->is_MachCallLeaf() ) {
         int *live = (int*) (*safehash)[n];
         assert( live, "must find live" );
-        n->as_MachSafePoint()->set_oop_map( build_oop_map(n,max_reg,regalloc, live) );
+        n->as_MachSafePoint()->set_oop_map( build_oop_map__(n,max_reg,regalloc, live) );
       }
     }
 
@@ -207,7 +219,7 @@ static void clr_live_bit( int *live, int reg ) {
          live[reg>>LogBitsPerInt] &= ~(1<<(reg&(BitsPerInt-1))); }
 
 // Build an oopmap from the current flow info
-OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, int* live ) {
+OopMap *OopFlow::build_oop_map__( Node *n, int max_reg, PhaseRegAlloc *regalloc, int* live ) {
   int framesize = regalloc->_framesize;
   int max_inarg_slot = OptoReg::reg2stack(regalloc->_matcher._new_SP);
   debug_only( char *dup_check = NEW_RESOURCE_ARRAY(char,OptoReg::stack0());
@@ -255,8 +267,8 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
         ss.print("illegal oopMap register name: ");
         r->print_on(&ss);
         assert(false, "%s", ss.as_string());
-        regalloc->C->record_method_not_compilable(ss.as_string());
-        continue;
+// Attention
+        CHECKED_NULL(record_method_not_compilable__(ss.as_string()));
       }
       if( t->is_ptr()->_offset == 0 ) { // Not derived?
         if( mcall ) {
@@ -326,8 +338,8 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
         ss.print("illegal oopMap register name: ");
         r->print_on(&ss);
         assert(false, "%s", ss.as_string());
-        regalloc->C->record_method_not_compilable(ss.as_string());
-        continue;
+// Attention
+        CHECKED_NULL(record_method_not_compilable__(ss.as_string()));
       }
       if( mcall ) {
           // Outgoing argument GC mask responsibility belongs to the callee,

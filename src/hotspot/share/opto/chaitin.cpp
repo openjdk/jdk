@@ -352,7 +352,7 @@ void PhaseChaitin::compact() {
   _lrg_map.reset_uf_map(j);
 }
 
-void PhaseChaitin::Register_Allocate() {
+void PhaseChaitin::Register_Allocate__() {
 
   // Above the OLD FP (and in registers) are the incoming arguments.  Stack
   // slots in this area are called "arg_slots".  Above the NEW FP (and in
@@ -445,7 +445,7 @@ void PhaseChaitin::Register_Allocate() {
     coalesce.coalesce_driver();
     // Insert un-coalesced copies.  Visit all Phis.  Where inputs to a Phi do
     // not match the Phi itself, insert a copy.
-    coalesce.insert_copies(_matcher);
+    coalesce.insert_copies__(_matcher);
     if (C->failing()) {
       return;
     }
@@ -473,19 +473,13 @@ void PhaseChaitin::Register_Allocate() {
       return;
     }
     // Bail out if unique gets too large (ie - unique > MaxNodeLimit)
-    C->check_node_count(10*must_spill, "out of nodes before split");
-    if (C->failing()) {
-      return;
-    }
+    CHECKED(check_node_count__(10*must_spill, "out of nodes before split"));
 
-    uint new_max_lrg_id = Split(_lrg_map.max_lrg_id(), &split_arena);  // Split spilling LRG everywhere
+    uint new_max_lrg_id = Split__(_lrg_map.max_lrg_id(), &split_arena);  // Split spilling LRG everywhere
     _lrg_map.set_max_lrg_id(new_max_lrg_id);
     // Bail out if unique gets too large (ie - unique > MaxNodeLimit - 2*NodeLimitFudgeFactor)
     // or we failed to split
-    C->check_node_count(2*NodeLimitFudgeFactor, "out of nodes after physical split");
-    if (C->failing()) {
-      return;
-    }
+    CHECKED(check_node_count__(2*NodeLimitFudgeFactor, "out of nodes after physical split"));
 
     NOT_PRODUCT(C->verify_graph_edges();)
 
@@ -542,7 +536,7 @@ void PhaseChaitin::Register_Allocate() {
     if( _trip_cnt++ > 24 ) {
       DEBUG_ONLY( dump_for_spill_split_recycle(); )
       if( _trip_cnt > 27 ) {
-        C->record_method_not_compilable("failed spill-split-recycle sanity check");
+        C->record_method_not_compilable__("failed spill-split-recycle sanity check");
         return;
       }
     }
@@ -550,13 +544,10 @@ void PhaseChaitin::Register_Allocate() {
     if (!_lrg_map.max_lrg_id()) {
       return;
     }
-    uint new_max_lrg_id = Split(_lrg_map.max_lrg_id(), &split_arena);  // Split spilling LRG everywhere
+    uint new_max_lrg_id = Split__(_lrg_map.max_lrg_id(), &split_arena);  // Split spilling LRG everywhere
     _lrg_map.set_max_lrg_id(new_max_lrg_id);
     // Bail out if unique gets too large (ie - unique > MaxNodeLimit - 2*NodeLimitFudgeFactor)
-    C->check_node_count(2 * NodeLimitFudgeFactor, "out of nodes after split");
-    if (C->failing()) {
-      return;
-    }
+    CHECKED(check_node_count__(2 * NodeLimitFudgeFactor, "out of nodes after split"));
 
     compact(); // Compact LRGs; return new lower max lrg
 
@@ -637,7 +628,7 @@ void PhaseChaitin::Register_Allocate() {
 #endif
 
   // Convert CISC spills
-  fixup_spills();
+  fixup_spills__();
 
   // Log regalloc results
   CompileLog* log = Compile::current()->log();
@@ -1694,7 +1685,7 @@ void PhaseChaitin::set_was_spilled( Node *n ) {
 
 // Convert Ideal spill instructions into proper FramePtr + offset Loads and
 // Stores.  Use-def chains are NOT preserved, but Node->LRG->reg maps are.
-void PhaseChaitin::fixup_spills() {
+void PhaseChaitin::fixup_spills__() {
   // This function does only cisc spill work.
   if( !UseCISCSpill ) return;
 
@@ -1738,8 +1729,7 @@ void PhaseChaitin::fixup_spills() {
 #endif
           int stk_offset = reg2offset(src_reg);
           // Bailout if we might exceed node limit when spilling this instruction
-          C->check_node_count(0, "out of nodes fixing spills");
-          if (C->failing())  return;
+          CHECKED(check_node_count__(0, "out of nodes fixing spills"));
           // Transform node
           MachNode *cisc = mach->cisc_version(stk_offset)->as_Mach();
           cisc->set_req(inp,fp);          // Base register is frame pointer

@@ -270,11 +270,9 @@ void PhaseOutput::Output() {
 
   // The number of new nodes (mostly MachNop) is proportional to
   // the number of java calls and inner loops which are aligned.
-  if ( C->check_node_count((NodeLimitFudgeFactor + C->java_calls()*3 +
-                            C->inner_loops()*(OptoLoopAlignment-1)),
-                           "out of nodes before code generation" ) ) {
-    return;
-  }
+  CHECKED(check_node_count__((NodeLimitFudgeFactor + C->java_calls()*3 +
+                             C->inner_loops()*(OptoLoopAlignment-1)),
+                            "out of nodes before code generation" ) );
   // Make sure I can find the Start Node
   Block *entry = C->cfg()->get_block(1);
   Block *broot = C->cfg()->get_root_block();
@@ -2911,7 +2909,7 @@ void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is
     if (pinch->_idx >= _regalloc->node_regs_max_index()) {
       DEBUG_ONLY( pinch->dump(); );
       assert(false, "too many D-U pinch points: %d >= %d", pinch->_idx, _regalloc->node_regs_max_index());
-      _cfg->C->record_method_not_compilable("too many D-U pinch points");
+      _cfg->C->record_method_not_compilable__("too many D-U pinch points");
       return;
     }
     _cfg->map_node_to_block(pinch, b);      // Pretend it's valid in this block (lazy init)
@@ -3341,7 +3339,7 @@ void PhaseOutput::install_code(ciMethod*         target,
   {
 #ifndef PRODUCT
     if (OptoNoExecute) {
-      C->record_method_not_compilable("+OptoNoExecute");  // Flag as failed
+      C->record_method_not_compilable__("+OptoNoExecute");  // Flag as failed
       return;
     }
 #endif

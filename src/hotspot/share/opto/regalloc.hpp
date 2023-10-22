@@ -72,7 +72,7 @@ public:
   }
 
   // Do all the real work of allocate
-  virtual void Register_Allocate() = 0;
+  virtual void Register_Allocate__() = 0;
 
 
   // notify the register allocator that "node" is a new reference

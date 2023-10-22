@@ -439,12 +439,12 @@ class Parse : public GraphKit {
 
  private:
   // Create a JVMS & map for the initial state of this method.
-  SafePointNode* create_entry_map();
+  SafePointNode* create_entry_map__();
 
   // OSR helpers
   Node *fetch_interpreter_state(int index, BasicType bt, Node *local_addrs, Node *local_addrs_base);
   Node* check_interpreter_type(Node* l, const Type* type, SafePointNode* &bad_type_exit);
-  void  load_interpreter_state(Node* osr_buf);
+  void  load_interpreter_state__(Node* osr_buf);
 
   // Functions for managing basic blocks:
   void init_blocks();
@@ -485,7 +485,7 @@ class Parse : public GraphKit {
   void merge_memory_edges(MergeMemNode* n, int pnum, bool nophi);
 
   // Parse this bytecode, and alter the Parsers JVM->Node mapping
-  void do_one_bytecode();
+  void do_one_bytecode__();
 
   // helper function to generate array store check
   void array_store_check();
@@ -595,7 +595,7 @@ class Parse : public GraphKit {
   void do_exceptions();
 
   // Fix up all exiting control flow at the end of the parse.
-  void do_exits();
+  void do_exits__();
 
   // Add Catch/CatchProjs
   // The call is either a Java call or the VM's rethrow stub

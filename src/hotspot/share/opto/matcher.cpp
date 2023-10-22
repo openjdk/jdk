@@ -134,7 +134,7 @@ Matcher::Matcher()
 
 //------------------------------warp_incoming_stk_arg------------------------
 // This warps a VMReg into an OptoReg::Name
-OptoReg::Name Matcher::warp_incoming_stk_arg( VMReg reg ) {
+OptoReg::Name Matcher::warp_incoming_stk_arg__( VMReg reg ) {
   OptoReg::Name warped;
   if( reg->is_stack() ) {  // Stack slot argument?
     warped = OptoReg::add(_old_SP, reg->reg2stack() );
@@ -144,8 +144,7 @@ OptoReg::Name Matcher::warp_incoming_stk_arg( VMReg reg ) {
     if (!RegMask::can_represent_arg(warped)) {
       // the compiler cannot represent this method's calling sequence
       // Bailout. We do not have space to represent all arguments.
-      C->record_method_not_compilable("unsupported incoming calling sequence");
-      return OptoReg::Bad;
+      CHECKED_(record_method_not_compilable__("unsupported incoming calling sequence"), OptoReg::Bad)
     }
     return warped;
   }
@@ -185,9 +184,14 @@ void Matcher::verify_new_nodes_only(Node* xroot) {
 }
 #endif
 
+struct DelayedArenaDestructor {
+  Arena* const _arena;
+  DelayedArenaDestructor(Arena* a) : _arena(a) {}
+  ~DelayedArenaDestructor() { _arena->destruct_contents(); }
+};
 
 //---------------------------match---------------------------------------------
-void Matcher::match( ) {
+void Matcher::match__( ) {
   if( MaxLabelRootDepth < 100 ) { // Too small?
     assert(false, "invalid MaxLabelRootDepth, increase it to 100 minimum");
     MaxLabelRootDepth = 100;
@@ -286,11 +290,11 @@ void Matcher::match( ) {
     // the allocators point of view, taking into account all the
     // preserve area, locks & pad2.
 
-    OptoReg::Name reg1 = warp_incoming_stk_arg(vm_parm_regs[i].first());
+    OptoReg::Name reg1 = warp_incoming_stk_arg__(vm_parm_regs[i].first());
     if( OptoReg::is_valid(reg1))
       _calling_convention_mask[i].Insert(reg1);
 
-    OptoReg::Name reg2 = warp_incoming_stk_arg(vm_parm_regs[i].second());
+    OptoReg::Name reg2 = warp_incoming_stk_arg__(vm_parm_regs[i].second());
     if( OptoReg::is_valid(reg2))
       _calling_convention_mask[i].Insert(reg2);
 
@@ -314,10 +318,8 @@ void Matcher::match( ) {
   if (!RegMask::can_represent_arg(OptoReg::add(_out_arg_limit,-1))) {
     // the compiler cannot represent this method's calling sequence
     // Bailout. We do not have space to represent all arguments.
-    C->record_method_not_compilable("must be able to represent all call arguments in reg mask");
+    CHECKED(record_method_not_compilable__("must be able to represent all call arguments in reg mask"));
   }
-
-  if (C->failing())  return;  // bailed out on incoming arg failure
 
   // ---------------
   // Collect roots of matcher trees.  Every node for which
@@ -336,6 +338,7 @@ void Matcher::match( ) {
 
   // Swap out to old-space; emptying new-space
   Arena* old = C->swap_old_and_new();
+  DelayedArenaDestructor destruct_arena(old); // earmark for cleaning when unwinding
 
   // Save debug and profile information for nodes in old space:
   _old_node_note_array = C->node_note_array();
@@ -356,15 +359,14 @@ void Matcher::match( ) {
   // Recursively match trees from old space into new space.
   // Correct leaves of new-space Nodes; they point to old-space.
   _visited.clear();
-  Node* const n = xform(C->top(), live_nodes);
-  if (C->failing()) return;
+  Node* const n = CHECKED(xform__(C->top(), live_nodes));
   C->set_cached_top_node(n);
   if (!C->failing()) {
-    Node* xroot =        xform( C->root(), 1 );
+    Node* xroot = CHECKED(xform__( C->root(), 1 ));
     if (xroot == nullptr) {
       Matcher::soft_match_failure();  // recursive matching process failed
       assert(false, "instruction match failed");
-      C->record_method_not_compilable("instruction match failed");
+      CHECKED(record_method_not_compilable__("instruction match failed"));
     } else {
       // During matching shared constants were attached to C->root()
       // because xroot wasn't available yet, so transfer the uses to
@@ -403,12 +405,7 @@ void Matcher::match( ) {
       assert(C->failure_reason() != nullptr, "graph lost: reason unknown");
       ss.print("graph lost: reason unknown");
     }
-    C->record_method_not_compilable(ss.as_string());
-  }
-  if (C->failing()) {
-    // delete old;
-    old->destruct_contents();
-    return;
+    CHECKED(record_method_not_compilable__(ss.as_string()));
   }
   assert( C->top(), "" );
   assert( C->root(), "" );
@@ -1110,13 +1107,12 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
 // Given a Node in old-space, Match him (Label/Reduce) to produce a machine
 // Node in new-space.  Given a new-space Node, recursively walk his children.
 Node *Matcher::transform( Node *n ) { ShouldNotCallThis(); return n; }
-Node *Matcher::xform( Node *n, int max_stack ) {
+Node *Matcher::xform__( Node *n, int max_stack ) {
   // Use one stack to keep both: child's node/state and parent's node/index
   MStack mstack(max_stack * 2 * 2); // usually: C->live_nodes() * 2 * 2
   mstack.push(n, Visit, nullptr, -1);  // set null as parent to indicate root
   while (mstack.is_nonempty()) {
-    C->check_node_count(NodeLimitFudgeFactor, "too many nodes matching instructions");
-    if (C->failing()) return nullptr;
+    CHECKED_NULL(check_node_count__(NodeLimitFudgeFactor, "too many nodes matching instructions"));
     n = mstack.node();          // Leave node on stack
     Node_State nstate = mstack.state();
     if (nstate == Visit) {
@@ -1132,8 +1128,11 @@ Node *Matcher::xform( Node *n, int max_stack ) {
           if (!is_dontcare(n)) { // Matcher can match this guy
             // Calls match special.  They match alone with no children.
             // Their children, the incoming arguments, match normally.
-            m = n->is_SafePoint() ? match_sfpt(n->as_SafePoint()):match_tree(n);
-            if (C->failing())  return nullptr;
+            if (n->is_SafePoint()) {
+              m = CHECKED_NULL(match_sfpt__(n->as_SafePoint()));
+            } else {
+              m = match_tree(n);
+            }
             if (m == nullptr) { Matcher::soft_match_failure(); return nullptr; }
             if (n->is_MemBar()) {
               m->as_MachMemBar()->set_adr_type(n->adr_type());
@@ -1243,7 +1242,7 @@ Node *Matcher::xform( Node *n, int max_stack ) {
 }
 
 //------------------------------warp_outgoing_stk_arg------------------------
-OptoReg::Name Matcher::warp_outgoing_stk_arg( VMReg reg, OptoReg::Name begin_out_arg_area, OptoReg::Name &out_arg_limit_per_call ) {
+OptoReg::Name Matcher::warp_outgoing_stk_arg__( VMReg reg, OptoReg::Name begin_out_arg_area, OptoReg::Name &out_arg_limit_per_call ) {
   // Convert outgoing argument location to a pre-biased stack offset
   if (reg->is_stack()) {
     OptoReg::Name warped = reg->reg2stack();
@@ -1257,8 +1256,7 @@ OptoReg::Name Matcher::warp_outgoing_stk_arg( VMReg reg, OptoReg::Name begin_out
       out_arg_limit_per_call = OptoReg::add(warped,1);
     if (!RegMask::can_represent_arg(warped)) {
       // Bailout. For example not enough space on stack for all arguments. Happens for methods with too many arguments.
-      C->record_method_not_compilable("unsupported calling sequence");
-      return OptoReg::Bad;
+      CHECKED_(C->record_method_not_compilable__("unsupported calling sequence"), OptoReg::Bad);
     }
     return warped;
   }
@@ -1270,7 +1268,7 @@ OptoReg::Name Matcher::warp_outgoing_stk_arg( VMReg reg, OptoReg::Name begin_out
 // Helper function to match call instructions.  Calls match special.
 // They match alone with no children.  Their children, the incoming
 // arguments, match normally.
-MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
+MachNode *Matcher::match_sfpt__( SafePointNode *sfpt ) {
   MachSafePointNode *msfpt = nullptr;
   MachCallNode      *mcall = nullptr;
   uint               cnt;
@@ -1424,11 +1422,11 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
         }
       }
       // Grab first register, adjust stack slots and insert in mask.
-      OptoReg::Name reg1 = warp_outgoing_stk_arg(first, begin_out_arg_area, out_arg_limit_per_call );
+      OptoReg::Name reg1 = warp_outgoing_stk_arg__(first, begin_out_arg_area, out_arg_limit_per_call );
       if (OptoReg::is_valid(reg1))
         rm->Insert( reg1 );
       // Grab second register (if any), adjust stack slots and insert in mask.
-      OptoReg::Name reg2 = warp_outgoing_stk_arg(second, begin_out_arg_area, out_arg_limit_per_call );
+      OptoReg::Name reg2 = warp_outgoing_stk_arg__(second, begin_out_arg_area, out_arg_limit_per_call );
       if (OptoReg::is_valid(reg2))
         rm->Insert( reg2 );
     } // End of for all arguments
@@ -1450,7 +1448,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     MachProjNode *proj = new MachProjNode( mcall, r_cnt+10000, RegMask::Empty, MachProjNode::fat_proj );
     if (!RegMask::can_represent_arg(OptoReg::Name(out_arg_limit_per_call-1))) {
       // Bailout. We do not have space to represent all arguments.
-      C->record_method_not_compilable("unsupported outgoing calling sequence");
+      CHECKED_NULL(record_method_not_compilable__("unsupported outgoing calling sequence"));
     } else {
       for (int i = begin_out_arg_area; i < out_arg_limit_per_call; i++)
         proj->_rout.Insert(OptoReg::Name(i));
@@ -1516,7 +1514,7 @@ MachNode *Matcher::match_tree( const Node *n ) {
   s->_leaf = (Node*)n;
   // Label the input tree, allocating labels from top-level arena
   Node* root_mem = mem;
-  Label_Root(n, s, n->in(0), root_mem);
+  Label_Root__(n, s, n->in(0), root_mem);
   if (C->failing())  return nullptr;
 
   // The minimum cost match for the whole tree is found at the root State
@@ -1632,14 +1630,13 @@ static bool match_into_reg( const Node *n, Node *m, Node *control, int i, bool s
 // does not handle DAGs), I have to match the Memory input myself.  If the
 // Tree root is a Store or if there are multiple Loads in the tree, I require
 // all Loads to have the identical memory.
-Node* Matcher::Label_Root(const Node* n, State* svec, Node* control, Node*& mem) {
+Node* Matcher::Label_Root__(const Node* n, State* svec, Node* control, Node*& mem) {
   // Since Label_Root is a recursive function, its possible that we might run
   // out of stack space.  See bugs 6272980 & 6227033 for more info.
   LabelRootDepth++;
   if (LabelRootDepth > MaxLabelRootDepth) {
     // Bailout. Can for example be hit with a deep chain of operations.
-    C->record_method_not_compilable("Out of stack space, increase MaxLabelRootDepth");
-    return nullptr;
+    CHECKED_NULL(record_method_not_compilable__("Out of stack space, increase MaxLabelRootDepth"));
   }
   uint care = 0;                // Edges matcher cares about
   uint cnt = n->req();
@@ -1706,7 +1703,7 @@ Node* Matcher::Label_Root(const Node* n, State* svec, Node* control, Node*& mem)
       if( control == nullptr && m->in(0) != nullptr && m->req() > 1 )
         control = m->in(0);         // Pick up control
       // Else match as a normal part of the match tree.
-      control = Label_Root(m, s, control, mem);
+      control = Label_Root__(m, s, control, mem);
       if (C->failing()) return nullptr;
     }
   }

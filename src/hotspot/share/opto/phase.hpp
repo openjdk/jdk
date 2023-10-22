@@ -25,6 +25,7 @@
 #ifndef SHARE_OPTO_PHASE_HPP
 #define SHARE_OPTO_PHASE_HPP
 
+#include "opto/bailout.hpp"
 #include "runtime/timer.hpp"
 
 class IfNode;
@@ -141,6 +142,18 @@ protected:
   // class prior to coming here.
   // Used in GraphKit and PhaseMacroExpand
   static Node* gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, Node* mem, PhaseGVN& gvn, ciMethod* method, int bci);
+
+  bool failing() const {
+    return C != nullptr ? C->failing() : false;
+  }
+
+  void check_node_count__(uint margin, const char* reason) {
+    CHECKED(C->check_node_count__(margin, reason));
+  }
+
+  void record_method_not_compilable__(const char* text) {
+    CHECKED(C->record_method_not_compilable__(text));
+  }
 
 public:
   Compile * C;

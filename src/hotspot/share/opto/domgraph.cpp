@@ -87,7 +87,7 @@ void PhaseCFG::build_dominator_tree() {
     // Since this situation is so unlikely, instead I've decided to bail out.
     // CNC 7/24/2001
     assert(false, "unreachable loop");
-    C->record_method_not_compilable("unreachable loop");
+    C->record_method_not_compilable__("unreachable loop");
     return;
   }
   _blocks._cnt = number_of_blocks();

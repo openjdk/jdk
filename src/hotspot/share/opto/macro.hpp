@@ -203,7 +203,7 @@ public:
     _igvn.set_delay_transform(true);
   }
   void eliminate_macro_nodes();
-  bool expand_macro_nodes();
+  bool expand_macro_nodes__();
 
   SafePointScalarObjectNode* create_scalarized_object_description(AllocateNode *alloc, SafePointNode* sfpt);
   static bool can_eliminate_allocation(PhaseIterGVN *igvn, AllocateNode *alloc, GrowableArray <SafePointNode *> *safepoints);

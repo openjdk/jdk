@@ -2424,7 +2424,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 
 //------------------------------expand_macro_nodes----------------------
 //  Returns true if a failure occurred.
-bool PhaseMacroExpand::expand_macro_nodes() {
+bool PhaseMacroExpand::expand_macro_nodes__() {
   // Last attempt to eliminate macro nodes.
   eliminate_macro_nodes();
   if (C->failing())  return true;
@@ -2543,9 +2543,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     // Make sure expansion will not cause node limit to be exceeded.
     // Worst case is a macro node gets expanded into about 200 nodes.
     // Allow 50% more for optimization.
-    if (C->check_node_count(300, "out of nodes before macro expansion")) {
-      return true;
-    }
+    CHECKED_true(check_node_count__(300, "out of nodes before macro expansion"));
 
     DEBUG_ONLY(int old_macro_count = C->macro_count();)
     switch (n->class_id()) {
@@ -2593,9 +2591,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     // Make sure expansion will not cause node limit to be exceeded.
     // Worst case is a macro node gets expanded into about 200 nodes.
     // Allow 50% more for optimization.
-    if (C->check_node_count(300, "out of nodes before macro expansion")) {
-      return true;
-    }
+    CHECKED_true(check_node_count__(300, "out of nodes before macro expansion"));
     switch (n->class_id()) {
     case Node::Class_Allocate:
       expand_allocate(n->as_Allocate());

@@ -56,7 +56,7 @@ static const char out_of_nodes[] = "out of nodes during split";
 // Get a SpillCopy node with wide-enough masks.  Use the 'wide-mask', the
 // wide ideal-register spill-mask if possible.  If the 'wide-mask' does
 // not cover the input (or output), use the input (or output) mask instead.
-Node *PhaseChaitin::get_spillcopy_wide(MachSpillCopyNode::SpillType spill_type, Node *def, Node *use, uint uidx) {
+Node *PhaseChaitin::get_spillcopy_wide__(MachSpillCopyNode::SpillType spill_type, Node *def, Node *use, uint uidx) {
   // If ideal reg doesn't exist we've got a bad schedule happening
   // that is forcing us to spill something that isn't spillable.
   // Bail rather than abort
@@ -65,12 +65,9 @@ Node *PhaseChaitin::get_spillcopy_wide(MachSpillCopyNode::SpillType spill_type, 
     assert(false, "attempted to spill a non-spillable item: %d: %s <- %d: %s, ireg = %u, spill_type: %s",
            def->_idx, def->Name(), use->_idx, use->Name(), ireg,
            MachSpillCopyNode::spill_type(spill_type));
-    C->record_method_not_compilable("attempted to spill a non-spillable item");
-    return nullptr;
+    CHECKED_NULL(record_method_not_compilable__("attempted to spill a non-spillable item"));
   }
-  if (C->check_node_count(NodeLimitFudgeFactor, out_of_nodes)) {
-    return nullptr;
-  }
+  CHECKED_NULL(check_node_count__(NodeLimitFudgeFactor, out_of_nodes));
   const RegMask *i_mask = &def->out_RegMask();
   const RegMask *w_mask = C->matcher()->idealreg2spillmask[ireg];
   const RegMask *o_mask = use ? &use->in_RegMask(uidx) : w_mask;
@@ -164,7 +161,7 @@ uint PhaseChaitin::split_DEF( Node *def, Block *b, int loc, uint maxlrg, Node **
   assert( loc >= 0, "must insert past block head" );
 
   // Get a def-side SpillCopy
-  Node *spill = get_spillcopy_wide(MachSpillCopyNode::Definition, def, nullptr, 0);
+  Node *spill = get_spillcopy_wide__(MachSpillCopyNode::Definition, def, nullptr, 0);
   // Did we fail to split?, then bail
   if (!spill) {
     return 0;
@@ -224,7 +221,7 @@ int PhaseChaitin::split_USE(MachSpillCopyNode::SpillType spill_type, Node *def, 
         // DEF is UP, so must copy it DOWN and hook in USE
         // Insert SpillCopy before the USE, which uses DEF as its input,
         // and defs a new live range, which is used by this node.
-        Node *spill = get_spillcopy_wide(spill_type, def,use,useidx);
+        Node *spill = get_spillcopy_wide__(spill_type, def,use,useidx);
         // did we fail to split?
         if (!spill) {
           // Bail
@@ -276,7 +273,7 @@ int PhaseChaitin::split_USE(MachSpillCopyNode::SpillType spill_type, Node *def, 
     bindex = b->find_node(use);
   }
 
-  Node *spill = get_spillcopy_wide(spill_type, def, use, useidx );
+  Node *spill = get_spillcopy_wide__(spill_type, def, use, useidx );
   if( !spill ) return -1;        // Bailed out
   // Insert SpillCopy before the USE, which uses the reaching DEF as
   // its input, and defs a new live range, which is used by this node.
@@ -289,7 +286,7 @@ int PhaseChaitin::split_USE(MachSpillCopyNode::SpillType spill_type, Node *def, 
 
 //------------------------------clone_node----------------------------
 // Clone node with anti dependence check.
-Node* clone_node(Node* def, Block *b, Compile* C) {
+Node* clone_node__(Node* def, Block *b, Compile* C) {
   if (def->needs_anti_dependence_check()) {
 #ifdef ASSERT
     if (PrintOpto && WizardMode) {
@@ -303,22 +300,22 @@ Node* clone_node(Node* def, Block *b, Compile* C) {
       // Retry with subsume_loads == false
       // If this is the first failure, the sentinel string will "stick"
       // to the Compile object, and the C2Compiler will see it and retry.
-      C->record_failure(C2Compiler::retry_no_subsuming_loads());
+      C->record_failure__(C2Compiler::retry_no_subsuming_loads());
     } else {
       // Bailout without retry
       assert(false, "RA Split failed: attempt to clone node with anti_dependence");
-      C->record_method_not_compilable("RA Split failed: attempt to clone node with anti_dependence");
+      C->record_method_not_compilable__("RA Split failed: attempt to clone node with anti_dependence");
     }
-    return 0;
+    return nullptr;
   }
   return def->clone();
 }
 
 //------------------------------split_Rematerialize----------------------------
 // Clone a local copy of the def.
-Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &maxlrg,
-                                        GrowableArray<uint> splits, int slidx, uint *lrg2reach,
-                                        Node **Reachblock, bool walkThru) {
+Node *PhaseChaitin::split_Rematerialize__(Node *def, Block *b, uint insidx, uint &maxlrg,
+                                          GrowableArray<uint> splits, int slidx, uint *lrg2reach,
+                                          Node **Reachblock, bool walkThru) {
   // The input live ranges will be stretched to the site of the new
   // instruction.  They might be stretched past a def and will thus
   // have the old and new values of the same live range alive at the
@@ -340,7 +337,7 @@ Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &
       // Cannot spill Op_RegFlags.
       Node *in_spill;
       if (in->ideal_reg() != Op_RegFlags) {
-        in_spill = get_spillcopy_wide(MachSpillCopyNode::InputToRematerialization, in, def, i);
+        in_spill = get_spillcopy_wide__(MachSpillCopyNode::InputToRematerialization, in, def, i);
         if (!in_spill) { return 0; } // Bailed out
         insert_proj(b_def, idx_def, in_spill, maxlrg++);
         if (b_def == b) {
@@ -356,18 +353,15 @@ Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &
           assert(false, "Can not rematerialize %d: %s. Prolongs RegFlags live"
                  " range and defining node %d: %s may not be rematerialized.",
                  def->_idx, def->Name(), in->_idx, in->Name());
-          C->record_method_not_compilable("attempted to spill a non-spillable item with RegFlags input");
+          C->record_method_not_compilable__("attempted to spill a non-spillable item with RegFlags input");
           return 0; // Bailed out
         }
       }
     }
   }
 
-  Node *spill = clone_node(def, b, C);
-  if (spill == nullptr || C->check_node_count(NodeLimitFudgeFactor, out_of_nodes)) {
-    // Check when generating nodes
-    return 0;
-  }
+  Node *spill = CHECKED_NULL(clone_node__(def, b, C));
+  CHECKED_NULL(check_node_count__(NodeLimitFudgeFactor, out_of_nodes));
 
   // See if any inputs are currently being spilled, and take the
   // latest copy of spilled inputs.
@@ -494,7 +488,7 @@ bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
 // USES: If USE is in HRP, split at use to leave main LRG on stack.
 //       Else, hoist LRG back up to register only (ie - split is also DEF)
 // We will compute a new maxlrg as we go
-uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
+uint PhaseChaitin::Split__(uint maxlrg, ResourceArea* split_arena) {
   Compile::TracePhase tp("regAllocSplit", &timers[_t_regAllocSplit]);
 
   // Free thread local resources used by this method on exit.
@@ -579,9 +573,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   // Walk the Blocks in RPO for DEF & USE info
   for( bidx = 0; bidx < _cfg.number_of_blocks(); bidx++ ) {
 
-    if (C->check_node_count(spill_cnt, out_of_nodes)) {
-      return 0;
-    }
+    CHECKED_NULL(check_node_count__(spill_cnt, out_of_nodes));
 
     b  = _cfg.get_block(bidx);
     // Reaches & UP arrays for this block
@@ -936,10 +928,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
               // The effect of this clone is to drop the node out of the block,
               // so that the allocator does not see it anymore, and therefore
               // does not attempt to assign it a register.
-              def = clone_node(def, b, C);
-              if (def == nullptr || C->check_node_count(NodeLimitFudgeFactor, out_of_nodes)) {
-                return 0;
-              }
+              def = CHECKED_NULL(clone_node__(def, b, C));
+              CHECKED_NULL(check_node_count__(NodeLimitFudgeFactor, out_of_nodes));
               _lrg_map.extend(def->_idx, 0);
               _cfg.map_node_to_block(def, b);
               n->set_req(inpidx, def);
@@ -950,7 +940,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
             // of store/load
             if( def->rematerialize() ) {
               int old_size = b->number_of_nodes();
-              def = split_Rematerialize( def, b, insidx, maxlrg, splits, slidx, lrg2reach, Reachblock, true );
+              def = split_Rematerialize__( def, b, insidx, maxlrg, splits, slidx, lrg2reach, Reachblock, true );
               if( !def ) return 0; // Bail out
               insidx += b->number_of_nodes()-old_size;
             }
@@ -1262,9 +1252,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
             const RegMask &def_rm = *Matcher::idealreg2regmask[def_ideal_reg];
             const RegMask &use_rm = n->in_RegMask(copyidx);
             if( def_rm.overlap(use_rm) && n->is_SpillCopy() ) {  // Bug 4707800, 'n' may be a storeSSL
-              if (C->check_node_count(NodeLimitFudgeFactor, out_of_nodes)) {  // Check when generating nodes
-                return 0;
-              }
+              CHECKED_NULL(check_node_count__(NodeLimitFudgeFactor, out_of_nodes)); // Check when generating nodes
               Node *spill = new MachSpillCopyNode(MachSpillCopyNode::MemToReg, use,use_rm,def_rm);
               n->set_req(copyidx,spill);
               n->as_MachSpillCopy()->set_in_RegMask(def_rm);
@@ -1366,7 +1354,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                _lrg_map.find(pred->get_node(insert - 1)) >= lrgs_before_phi_split) {
           insert--;
         }
-        def = split_Rematerialize(def, pred, insert, maxlrg, splits, slidx, lrg2reach, Reachblock, false);
+        def = split_Rematerialize__(def, pred, insert, maxlrg, splits, slidx, lrg2reach, Reachblock, false);
         if (!def) {
           return 0;    // Bail out
         }

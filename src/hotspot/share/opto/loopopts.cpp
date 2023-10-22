@@ -3100,7 +3100,7 @@ bool PhaseIdealLoop::has_use_internal_to_set( Node* n, VectorSet& vset, IdealLoo
 
 //------------------------------ clone_for_use_outside_loop -------------------------------------
 // clone "n" for uses that are outside of loop
-int PhaseIdealLoop::clone_for_use_outside_loop( IdealLoopTree *loop, Node* n, Node_List& worklist ) {
+int PhaseIdealLoop::clone_for_use_outside_loop__( IdealLoopTree *loop, Node* n, Node_List& worklist ) {
   int cloned = 0;
   assert(worklist.size() == 0, "should be empty");
   for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
@@ -3110,10 +3110,8 @@ int PhaseIdealLoop::clone_for_use_outside_loop( IdealLoopTree *loop, Node* n, No
     }
   }
 
-  if (C->check_node_count(worklist.size() + NodeLimitFudgeFactor,
-                          "Too many clones required in clone_for_use_outside_loop in partial peeling")) {
-    return -1;
-  }
+  CHECKED_neg1(check_node_count__(worklist.size() + NodeLimitFudgeFactor,
+                                  "Too many clones required in clone_for_use_outside_loop in partial peeling"));
 
   while( worklist.size() ) {
     Node *use = worklist.pop();
@@ -3684,7 +3682,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
           // if not pinned and not a load (which maybe anti-dependent on a store)
           // and not a CMove (Matcher expects only bool->cmove).
           if (n->in(0) == nullptr && !n->is_Load() && !n->is_CMove()) {
-            int new_clones = clone_for_use_outside_loop(loop, n, worklist);
+            int new_clones = clone_for_use_outside_loop__(loop, n, worklist);
             if (new_clones == -1) {
               too_many_clones = true;
               break;

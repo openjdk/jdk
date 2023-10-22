@@ -462,11 +462,11 @@ class PhaseChaitin : public PhaseRegAlloc {
     return found_projs;
   }
 
-  Node *split_Rematerialize(Node *def, Block *b, uint insidx, uint &maxlrg, GrowableArray<uint> splits,
+  Node *split_Rematerialize__(Node *def, Block *b, uint insidx, uint &maxlrg, GrowableArray<uint> splits,
                             int slidx, uint *lrg2reach, Node **Reachblock, bool walkThru);
   // True if lidx is used before any real register is def'd in the block
   bool prompt_use( Block *b, uint lidx );
-  Node *get_spillcopy_wide(MachSpillCopyNode::SpillType spill_type, Node *def, Node *use, uint uidx );
+  Node *get_spillcopy_wide__(MachSpillCopyNode::SpillType spill_type, Node *def, Node *use, uint uidx );
   // Insert the spill at chosen location.  Skip over any intervening Proj's or
   // Phis.  Skip over a CatchNode and projs, inserting in the fall-through block
   // instead.  Update high-pressure indices.  Create a new live range.
@@ -493,7 +493,7 @@ public:
   LRG &lrgs(uint idx) const { return _ifg->lrgs(idx); }
 
   // Do all the real work of allocate
-  void Register_Allocate();
+  void Register_Allocate__();
 
   double high_frequency_lrg() const { return _high_frequency_lrg; }
 
@@ -703,14 +703,14 @@ private:
 
   // Split uncolorable live ranges
   // Return new number of live ranges
-  uint Split(uint maxlrg, ResourceArea* split_arena);
+  uint Split__(uint maxlrg, ResourceArea* split_arena);
 
   // Set the 'spilled_once' or 'spilled_twice' flag on a node.
   void set_was_spilled( Node *n );
 
   // Convert ideal spill-nodes into machine loads & stores
   // Set C->failing when fixup spills could not complete, node limit exceeded.
-  void fixup_spills();
+  void fixup_spills__();
 
   // Post-Allocation peephole copy removal
   void post_allocate_copy_removal();

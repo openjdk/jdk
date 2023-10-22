@@ -210,7 +210,7 @@ void PhaseAggressiveCoalesce::insert_copy_with_overlap( Block *b, Node *copy, ui
   b->insert_node(copy, last_use_idx + 1);
 }
 
-void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
+void PhaseAggressiveCoalesce::insert_copies__( Matcher &matcher ) {
   // We do LRGs compressing and fix a liveout data only here since the other
   // place in Split() is guarded by the assert which we never hit.
   _phc._lrg_map.compress_uf_map_for_nodes();
@@ -233,8 +233,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
   _unique = C->unique();
 
   for (uint i = 0; i < _phc._cfg.number_of_blocks(); i++) {
-    C->check_node_count(NodeLimitFudgeFactor, "out of nodes in coalesce");
-    if (C->failing()) return;
+    CHECKED(check_node_count__(NodeLimitFudgeFactor, "out of nodes in coalesce"));
     Block *b = _phc._cfg.get_block(i);
     uint cnt = b->num_preds();  // Number of inputs to the Phi
 
@@ -300,7 +299,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
                 } else {
                   assert(false, "attempted to spill a non-spillable item: %d: %s, ireg = %u, spill_type: %s",
                          m->_idx, m->Name(), ireg, MachSpillCopyNode::spill_type(MachSpillCopyNode::PhiInput));
-                  C->record_method_not_compilable("attempted to spill a non-spillable item");
+                  C->record_method_not_compilable__("attempted to spill a non-spillable item");
                 }
                 return;
               }
@@ -342,7 +341,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
               if (ireg == 0 || ireg == Op_RegFlags) {
                 assert(false, "attempted to spill a non-spillable item: %d: %s, ireg = %u, spill_type: %s",
                        m->_idx, m->Name(), ireg, MachSpillCopyNode::spill_type(MachSpillCopyNode::TwoAddress));
-                C->record_method_not_compilable("attempted to spill a non-spillable item");
+                C->record_method_not_compilable__("attempted to spill a non-spillable item");
                 return;
               }
               const RegMask *rm = C->matcher()->idealreg2spillmask[ireg];
@@ -396,7 +395,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
               if (ireg == 0 || ireg == Op_RegFlags) {
                 assert(false, "attempted to spill a non-spillable item: %d: %s, ireg = %u, spill_type: %s",
                        inp->_idx, inp->Name(), ireg, MachSpillCopyNode::spill_type(MachSpillCopyNode::DebugUse));
-                C->record_method_not_compilable("attempted to spill a non-spillable item");
+                C->record_method_not_compilable__("attempted to spill a non-spillable item");
                 return;
               }
               const RegMask *rm = C->matcher()->idealreg2spillmask[ireg];

@@ -182,7 +182,7 @@ Node* Parse::check_interpreter_type(Node* l, const Type* type,
 // Helper routine which sets up elements of the initial parser map when
 // performing a parse for on stack replacement.  Add values into map.
 // The only parameter contains the address of a interpreter arguments.
-void Parse::load_interpreter_state(Node* osr_buf) {
+void Parse::load_interpreter_state__(Node* osr_buf) {
   int index;
   int max_locals = jvms()->loc_size();
   int max_stack  = jvms()->stk_size();
@@ -208,13 +208,13 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   // Check bailouts.  We currently do not perform on stack replacement
   // of loops in catch blocks or loops which branch with a non-empty stack.
   if (sp() != 0) {
-    C->record_method_not_compilable("OSR starts with non-empty stack");
+    CHECKED(record_method_not_compilable__("OSR starts with non-empty stack"));
     return;
   }
   // Do not OSR inside finally clauses:
   if (osr_block->has_trap_at(osr_block->start())) {
     assert(false, "OSR starts with an immediate trap");
-    C->record_method_not_compilable("OSR starts with an immediate trap");
+    CHECKED(C->record_method_not_compilable__("OSR starts with an immediate trap"));
     return;
   }
 
@@ -255,7 +255,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   if (!live_locals.is_valid()) {
     // Degenerate or breakpointed method.
     assert(false, "OSR in empty or breakpointed method");
-    C->record_method_not_compilable("OSR in empty or breakpointed method");
+    CHECKED(record_method_not_compilable__("OSR in empty or breakpointed method"));
     return;
   }
 
@@ -432,7 +432,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _flow = method()->get_flow_analysis();
   if (_flow->failing()) {
     assert(false, "type flow failed during parsing");
-    C->record_method_not_compilable(_flow->failure_reason());
+    CHECKED(record_method_not_compilable__(_flow->failure_reason()));
   }
 
 #ifndef PRODUCT
@@ -511,7 +511,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
     _flow = method()->get_osr_flow_analysis(osr_bci());
     if (_flow->failing()) {
       assert(false, "type flow analysis failed for OSR compilation");
-      C->record_method_not_compilable(_flow->failure_reason());
+      CHECKED_DONTRETURN(record_method_not_compilable__(_flow->failure_reason()));
 #ifndef PRODUCT
       if (PrintOpto && (Verbose || WizardMode)) {
         tty->print_cr("OSR @%d type flow bailout: %s", _entry_bci, _flow->failure_reason());
@@ -557,7 +557,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   build_exits();
 
   // Setup the initial JVM state map.
-  SafePointNode* entry_map = create_entry_map();
+  SafePointNode* entry_map = create_entry_map__();
 
   // Check for bailouts during map initialization
   if (failing() || entry_map == nullptr) {
@@ -575,7 +575,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
     Node* osr_buf = entry_map->in(TypeFunc::Parms+0);
     entry_map->set_req(TypeFunc::Parms+0, top());
     set_map(entry_map);
-    load_interpreter_state(osr_buf);
+    load_interpreter_state__(osr_buf);
   } else {
     set_map(entry_map);
     do_method_entry();
@@ -624,7 +624,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
 
   // Fix up all exiting control flow.
   set_map(entry_map);
-  do_exits();
+  do_exits__();
 
   // Only reset this now, to make sure that debug information emitted
   // for exiting control flow still refers to the inlined method.
@@ -963,7 +963,7 @@ void Parse::throw_to_exit(SafePointNode* ex_map) {
 }
 
 //------------------------------do_exits---------------------------------------
-void Parse::do_exits() {
+void Parse::do_exits__() {
   set_parse_bci(InvocationEntryBci);
 
   // Now peephole on the return bits
@@ -1058,8 +1058,7 @@ void Parse::do_exits() {
       ret_phi->dump(2);
 #endif // ASSERT
       assert(false, "Can't determine return type.");
-      C->record_method_not_compilable("Can't determine return type.");
-      return;
+      CHECKED(C->record_method_not_compilable__("Can't determine return type."));
     }
     if (ret_type->isa_int()) {
       BasicType ret_bt = method()->return_type()->basic_type();
@@ -1129,13 +1128,12 @@ void Parse::do_exits() {
 // Initialize our parser map to contain the types at method entry.
 // For OSR, the map contains a single RawPtr parameter.
 // Initial monitor locking for sync. methods is performed by do_method_entry.
-SafePointNode* Parse::create_entry_map() {
+SafePointNode* Parse::create_entry_map__() {
   // Check for really stupid bail-out cases.
   uint len = TypeFunc::Parms + method()->max_locals() + method()->max_stack();
   if (len >= 32760) {
     // Bailout expected, this is a very rare edge case.
-    C->record_method_not_compilable("too many local variables");
-    return nullptr;
+    CHECKED_NULL(C->record_method_not_compilable__("too many local variables"));
   }
 
   // clear current replaced nodes that are of no use from here on (map was cloned in build_exits).
@@ -1574,7 +1572,7 @@ void Parse::do_one_block() {
     assert(!have_se || pre_bc_sp >= inputs, "have enough stack to execute this BC: pre_bc_sp=%d, inputs=%d", pre_bc_sp, inputs);
 #endif //ASSERT
 
-    do_one_bytecode();
+    do_one_bytecode__();
     if (failing()) return;
 
     assert(!have_se || stopped() || failing() || (sp() - pre_bc_sp) == depth,

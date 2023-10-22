@@ -137,7 +137,7 @@ private:
   GrowableArray<Node_Notes*>* _old_node_note_array;
 
   // Node labeling iterator for instruction selection
-  Node* Label_Root(const Node* n, State* svec, Node* control, Node*& mem);
+  Node* Label_Root__(const Node* n, State* svec, Node* control, Node*& mem);
 
   Node *transform( Node *dummy );
 
@@ -270,20 +270,20 @@ public:
   }
 
   // Select instructions for entire method
-  void match();
+  void match__();
 
   // Helper for match
-  OptoReg::Name warp_incoming_stk_arg( VMReg reg );
+  OptoReg::Name warp_incoming_stk_arg__( VMReg reg );
 
   // Transform, then walk.  Does implicit DCE while walking.
   // Name changed from "transform" to avoid it being virtual.
-  Node *xform( Node *old_space_node, int Nodes );
+  Node *xform__( Node *old_space_node, int Nodes );
 
   // Match a single Ideal Node - turn it into a 1-Node tree; Label & Reduce.
   MachNode *match_tree( const Node *n );
-  MachNode *match_sfpt( SafePointNode *sfpt );
+  MachNode *match_sfpt__( SafePointNode *sfpt );
   // Helper for match_sfpt
-  OptoReg::Name warp_outgoing_stk_arg( VMReg reg, OptoReg::Name begin_out_arg_area, OptoReg::Name &out_arg_limit_per_call );
+  OptoReg::Name warp_outgoing_stk_arg__( VMReg reg, OptoReg::Name begin_out_arg_area, OptoReg::Name &out_arg_limit_per_call );
 
   // Initialize first stack mask and related masks.
   void init_first_stack_mask();

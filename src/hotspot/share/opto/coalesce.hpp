@@ -81,7 +81,7 @@ public:
   virtual void coalesce( Block *b );
 
   // Where I fail to coalesce, manifest virtual copies as the Real Thing
-  void insert_copies( Matcher &matcher );
+  void insert_copies__( Matcher &matcher );
 
   // Copy insertion needs some smarts in case live ranges overlap
   void insert_copy_with_overlap( Block *b, Node *copy, uint dst_name, uint src_name );

@@ -1828,17 +1828,14 @@ Node* Parse::optimize_cmp_with_klass(Node* c) {
 
 //------------------------------do_one_bytecode--------------------------------
 // Parse this bytecode, and alter the Parsers JVM->Node mapping
-void Parse::do_one_bytecode() {
+void Parse::do_one_bytecode__() {
   Node *a, *b, *c, *d;          // Handy temps
   BoolTest::mask btest;
   int i;
 
   assert(!has_exceptions(), "bytecode entry state must be clear of throws");
 
-  if (C->check_node_count(NodeLimitFudgeFactor * 5,
-                          "out of nodes parsing method")) {
-    return;
-  }
+  CHECKED(check_node_count__(NodeLimitFudgeFactor * 5, "out of nodes parsing method"));
 
 #ifdef ASSERT
   // for setting breakpoints

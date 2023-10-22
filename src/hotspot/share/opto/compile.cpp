@@ -2430,7 +2430,7 @@ void Compile::Optimize() {
   {
     TracePhase tp("macroExpand", &timers[_t_macroExpand]);
     PhaseMacroExpand  mex(igvn);
-    if (mex.expand_macro_nodes()) {
+    if (mex.expand_macro_nodes__()) {
       assert(failing(), "must bail out w/ explicit message");
       return;
     }
@@ -2918,7 +2918,7 @@ void Compile::Code_Gen() {
   _matcher = &matcher;
   {
     TracePhase tp("matcher", &timers[_t_matcher]);
-    matcher.match();
+    matcher.match__();
     if (failing()) {
       return;
     }
@@ -2957,7 +2957,7 @@ void Compile::Code_Gen() {
     // Perform register allocation.  After Chaitin, use-def chains are
     // no longer accurate (at spill code) and so must be ignored.
     // Node->LRG->reg mappings are still accurate.
-    _regalloc->Register_Allocate();
+    _regalloc->Register_Allocate__();
 
     // Bail out if the allocator builds too many nodes
     if (failing()) {
