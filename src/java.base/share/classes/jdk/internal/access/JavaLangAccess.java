@@ -391,6 +391,10 @@ public interface JavaLangAccess {
      */
     int encodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len);
 
+    String scale(int i, int scale);
+
+    String scale2(long i);
+
     /**
      * Set the cause of Throwable
      * @param cause set t's cause to new value
