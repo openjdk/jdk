@@ -4676,6 +4676,7 @@ final class DualPivotQuicksort {
 
         private static final long serialVersionUID = 123456789L;
 
+        @SuppressWarnings("serial")
         private final T a, b;
         private final int low, size, offset, depth;
 
@@ -4760,6 +4761,7 @@ final class DualPivotQuicksort {
 
         private static final long serialVersionUID = 123456789L;
 
+        @SuppressWarnings("serial")
         private final T dst, a1, a2;
         private final int k, lo1, hi1, lo2, hi2;
 
