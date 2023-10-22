@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3505,27 +3506,26 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /**
+     * Returns a string representation without an exponent field.
      *
-     * @param signum
+     * @param signum the signum of {@code BigDecimal}.
      * @param coeff the significand as an absolute value
-     * @param scale
-     * @return
+     * @param scale the scale of this {@code BigDecimal}.
      */
     private static String layoutCharsPlain(int signum, String coeff, int scale) {
-        /* Insert decimal point */
         int coeffLen = coeff.length();
-        int insertionPoint = coeffLen - scale;
-        if (insertionPoint == 0)  /* Point goes right before intVal */
+        int insertionPoint = coeffLen - scale; // Insert decimal point
+        if (insertionPoint == 0)               // Point goes right before intVal
             return (signum < 0 ? "-0." : "0.").concat(coeff);
 
         StringBuilder buf;
-        if (insertionPoint > 0) { /* Point goes inside intVal */
+        if (insertionPoint > 0) {              // Point goes inside intVal
             buf = new StringBuilder();
             if (signum < 0)
                 buf.append('-');
             buf.append(coeff)
                .insert(insertionPoint + (signum < 0 ? 1 : 0), '.');
-        } else { /* We must insert zeros between point and intVal */
+        } else {                               // We must insert zeros between point and intVal
             buf = new StringBuilder(3 - insertionPoint + coeffLen)
                     .append(signum < 0 ? "-0." : "0.")
                     .repeat('0', -insertionPoint)
