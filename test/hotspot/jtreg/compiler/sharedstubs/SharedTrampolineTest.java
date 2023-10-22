@@ -33,7 +33,7 @@
  * @requires os.arch=="aarch64" | os.arch=="riscv64"
  * @requires vm.debug
  *
- * @run driver compiler.sharedstubs.SharedTrampolineTest
+ * @run driver compiler.sharedstubs.SharedTrampolineTest -XX:-TieredCompilation
  */
 
 package compiler.sharedstubs;
@@ -47,10 +47,10 @@ import jdk.test.lib.process.ProcessTools;
 public class SharedTrampolineTest {
     private final static int ITERATIONS_TO_HEAT_LOOP = 20_000;
 
-    private static void runTest(String test) throws Exception {
+    private static void runTest(String compiler, String test) throws Exception {
         String testClassName = SharedTrampolineTest.class.getName() + "$" + test;
         ArrayList<String> command = new ArrayList<String>();
-        command.add("-XX:-TieredCompilation");  // C2-compiler only
+        command.add(compiler);
         command.add("-XX:+UnlockDiagnosticVMOptions");
         command.add("-Xbatch");
         command.add("-XX:+PrintRelocations");
@@ -74,7 +74,7 @@ public class SharedTrampolineTest {
     public static void main(String[] args) throws Exception {
         String[] tests = new String[] {"StaticMethodTest"};
         for (String test : tests) {
-            runTest(test);
+            runTest(args[0], test);
         }
     }
 
