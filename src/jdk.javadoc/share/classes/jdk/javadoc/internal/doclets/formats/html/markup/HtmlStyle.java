@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -383,6 +383,22 @@ public enum HtmlStyle {
     previewLabel,
 
     /**
+     * The class for a block describing the "restricted" status of a declaration.
+     */
+    restrictedBlock,
+
+    /**
+     * The class for the details in a block describing the "restricted" status of a declaration.
+     */
+    restrictedComment,
+
+    /**
+     * The class for the "Restricted" label in a block describing the "restricted" status
+     * of a declaration.
+     */
+    restrictedLabel,
+
+    /**
      * The class for a list containing the tags of an element.
      */
     tagList,
@@ -563,29 +579,6 @@ public enum HtmlStyle {
     notes,
     //</editor-fold>
 
-    //<editor-fold desc="flex layout">
-    //
-    // The following constants are used for the components of the top-level structures for "flex" layout.
-
-    /**
-     * The class of the top-level {@code div} element used to arrange for "flex" layout in
-     * a browser window. The element should contain two child elements: one with class
-     * {@link #flexHeader flex-header} and one with class {@link #flexContent flex-content}.
-     */
-    flexBox,
-
-    /**
-     * The class of the {@code header} element within a {@link #flexBox flex-box} container.
-     * The element is always displayed at the top of the viewport.
-     */
-    flexHeader,
-
-    /**
-     * The class of the {@code div} element within a {@link #flexBox flex-box} container
-     * This element appears below the header and can be scrolled if too big for the available height.
-     */
-    flexContent,
-    //</editor-fold>
 
     //<editor-fold desc="signatures">
     //
@@ -817,6 +810,11 @@ public enum HtmlStyle {
     previewListPage,
 
     /**
+     * The class of the {@code body} element for the page listing restricted methods.
+     */
+    restrictedListPage,
+
+    /**
      * The class of the {@code body} element for the search page.
      */
     searchPage,
@@ -963,6 +961,11 @@ public enum HtmlStyle {
      * The class of a {@code ul} element with horizontal (inline) display style.
      */
     horizontal,
+
+    /**
+     * The class of a {@code div} element that allows its horizontal overflow to be scrolled.
+     */
+    horizontalScroll,
 
     /**
      * The class of a {@code span} element containing implementation details of
