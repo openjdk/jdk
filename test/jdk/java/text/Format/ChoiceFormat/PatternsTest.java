@@ -33,6 +33,7 @@
 
 import java.text.ChoiceFormat;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -106,9 +107,6 @@ public class PatternsTest {
         var cf2 = new ChoiceFormat(actualPattern);
         assertEquals(cf2, cf1,
                 String.format("Expected %s, but got %s", cf2.toPattern(), cf1.toPattern()));
-        if (actualPattern.isEmpty()) {
-            assertThrows(ArrayIndexOutOfBoundsException.class, () -> cf1.format(1));
-        }
     }
 
     // Variety of incorrect patterns with the actual expected pattern
@@ -127,5 +125,18 @@ public class PatternsTest {
                 // empty string
                 arguments("", "")
         };
+    }
+
+    // Calling format() with empty limits and formats
+    // throws an ArrayIndexOutOfBoundsException
+    @Test
+    public void emptyLimitsAndFormatsTest() {
+        var cf1 = new ChoiceFormat("");
+        assertThrows(ArrayIndexOutOfBoundsException.class,
+                () -> cf1.format(1));
+
+        var cf2 = new ChoiceFormat(new double[]{}, new String[]{});
+        assertThrows(ArrayIndexOutOfBoundsException.class,
+                () -> cf2.format(2));
     }
 }
