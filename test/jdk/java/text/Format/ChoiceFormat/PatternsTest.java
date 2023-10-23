@@ -51,22 +51,23 @@ public class PatternsTest {
 
     // Check that some valid patterns do not throw an exception
     @ParameterizedTest
-    @MethodSource("validPatterns")
+    @MethodSource
     public void validPatternsTest(String pattern) {
         assertDoesNotThrow( ()-> new ChoiceFormat(pattern),
-                "Valid pattern threw an exception");
+                "Valid pattern should not have thrown an exception");
     }
 
-    // Valid patterns ranging from normal appearing to odd
-    private static String[] validPatterns() {
+    // Valid patterns ranging from normal appearing to odd. These should not
+    // throw an exception or discard any portions of the pattern.
+    private static String[] validPatternsTest() {
         return new String[] {
-                "1#foo|2#foo|", // Trailing '|'
-                "1#foo|1<baz", // Same numerical value Limits, different Relations
+                "1#foo|2#bar|3#", // Multi pattern with trailing empty string Format
+                "1#foo|2#foo|", // Multi patten with trailing '|'
                 "1#foo|2#bar>", // Using a '>' (not a Relation) within a Format
-                "1#|2<|3#", // Format can be an empty string
-                "1#foo", // normal pattern
-                "1#foo|2#bar", // normal multi pattern
-                "1#" // normal pattern with empty string Format
+                "1#foo|2#bar", // Standard Multi Pattern
+                "1#foo|1<baz", // Same numerical value Limits, different Relations
+                "1#foo", // Standard Single Pattern
+                "1#", // Single pattern with empty string Format
         };
     }
 
@@ -74,7 +75,7 @@ public class PatternsTest {
     // This also tests applyPattern, as the ChoiceFormat constructor calls applyPattern
     @ParameterizedTest
     @MethodSource
-    public void invalidPatternsThrows(String pattern, String errMsg) {
+    public void invalidPatternsThrowsTest(String pattern, String errMsg) {
         var ex = assertThrows(IllegalArgumentException.class,
                 () -> new ChoiceFormat(pattern));
         assertEquals(errMsg, ex.getMessage());
@@ -82,7 +83,7 @@ public class PatternsTest {
 
     // Variety of patterns that break the ChoiceFormat pattern syntax and throw
     // an exception.
-    private static Arguments[] invalidPatternsThrows() {
+    private static Arguments[] invalidPatternsThrowsTest() {
         return new Arguments[] {
                 arguments("#foo", err1), // No Limit
                 arguments("0#foo|#|1#bar", err1), // Missing Relation in SubPattern
@@ -95,12 +96,12 @@ public class PatternsTest {
         };
     }
 
-    // Check that the incorrect pattern discards the trailing incorrect portion
+    // Check that the incorrect pattern discards the trailing incorrect portion.
     // These incorrect patterns should ideally throw an exception, but for
     // behavioral compatibility reasons do not.
     @ParameterizedTest
     @MethodSource
-    public void invalidPatternsDiscarded(String brokenPattern, String actualPattern) {
+    public void invalidPatternsDiscardedTest(String brokenPattern, String actualPattern) {
         var cf1 = new ChoiceFormat(brokenPattern);
         var cf2 = new ChoiceFormat(actualPattern);
         assertEquals(cf2, cf1,
@@ -111,7 +112,8 @@ public class PatternsTest {
     }
 
     // Variety of incorrect patterns with the actual expected pattern
-    private static Arguments[] invalidPatternsDiscarded() {
+    // after discarding occurs.
+    private static Arguments[] invalidPatternsDiscardedTest() {
         return new Arguments[] {
                 // Incomplete SubPattern at the end of the Pattern
                 arguments("0#foo|1#bar|baz", "0#foo|1#bar"),
