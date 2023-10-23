@@ -306,7 +306,7 @@ import java.util.Objects;
  * {@link toPlainString} result with over one billion characters.
  *
  * <p>Operations may also allocate and compute on intermediate
- * results, potentially those allocations may be large as in
+ * results, potentially those allocations may be as large as in
  * proportion to the running time of the algorithm.
  *
  * <p>Users of {@code BigDecimal} concerned with bounding the running
