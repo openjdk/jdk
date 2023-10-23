@@ -8518,7 +8518,7 @@ class StubGenerator: public StubCodeGenerator {
       if (UseSVE > 0) {
         for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
           int vop = VectorSupport::VECTOR_OP_MATH_START + op;
-          // Skip "tanh", since there is performance regression
+          // Skip "tanh", because there is performance regression
           if (vop == VectorSupport::VECTOR_OP_TANH) {
             continue;
           }
@@ -8552,7 +8552,7 @@ class StubGenerator: public StubCodeGenerator {
       }
     } else {
       if (FLAG_IS_DEFAULT(UseSleefLib)) {
-        log_info(library)("Fail to load sleef library!");
+        log_info(library)("Sleef is disabled!");
       } else {
         warning("Fail to load sleef library: %s. Please check the path/name!", UseSleefLib);
       }
