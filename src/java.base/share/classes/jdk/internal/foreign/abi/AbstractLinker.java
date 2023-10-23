@@ -91,7 +91,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         return downcallHandle0(function, options);
     }
 
-    private final MethodHandle downcallHandle0(FunctionDescriptor function, Option... options) {
+    private MethodHandle downcallHandle0(FunctionDescriptor function, Option... options) {
         Objects.requireNonNull(function);
         Objects.requireNonNull(options);
         checkLayouts(function);
