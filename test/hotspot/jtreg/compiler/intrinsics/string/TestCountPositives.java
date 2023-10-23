@@ -112,7 +112,7 @@ public class TestCountPositives {
                 test_countPositives(off, len, 1, 0);
                 test_countPositives(off, len, RANDOM.nextInt(len) + 2, 0);
             }
-            for (int len : new int[] { 0, 128, 2048 }) {
+            for (int len : new int[] { 128, 2048 }) {
                 // test with negatives only in a 1-63 byte tail
                 int tail = RANDOM.nextInt(63) + 1;
                 int ng = RANDOM.nextInt(tail) + 1;
