@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022,2023 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  * questions.
  */
 package sun.nio.ch;
+
+import jdk.internal.event.SocketReadEvent;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,8 +62,7 @@ class SocketInputStream extends InputStream {
         return (n > 0) ? (a[0] & 0xff) : -1;
     }
 
-    @Override
-    public int read(byte[] b, int off, int len) throws IOException {
+    private int implRead(byte[] b, int off, int len) throws IOException {
         int timeout = timeoutSupplier.getAsInt();
         if (timeout > 0) {
             long nanos = MILLISECONDS.toNanos(timeout);
@@ -69,6 +70,17 @@ class SocketInputStream extends InputStream {
         } else {
             return sc.blockingRead(b, off, len, 0);
         }
+    }
+
+    @Override
+    public int read(byte[] b, int off, int len) throws IOException {
+        if (!SocketReadEvent.enabled()) {
+            return implRead(b, off, len);
+        }
+        long start = SocketReadEvent.timestamp();
+        int n = implRead(b, off, len);
+        SocketReadEvent.offer(start, n, sc.remoteAddress(), timeoutSupplier.getAsInt());
+        return n;
     }
 
     @Override
