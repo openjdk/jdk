@@ -124,17 +124,17 @@ import jdk.internal.vm.annotation.Stable;
  * methods of this class varies and may be superlinear in the size of
  * the input. For example, a method like {@link intValue()} would be
  * expected to run in <i>O</i>(1), that is constant time, since with
- * the current internal reprentation only a fixed-size component of
+ * the current internal representation only a fixed-size component of
  * the {@code BigInteger} needs to be accessed to perform the
  * conversion to {@code int}. In contrast, a method like {@link not()}
  * would be expected to run in <i>O</i>(<i>n</i>) time where <i>n</i>
  * is size of the {@code BigInteger} in bits, that is, to run in time
  * proportional to the size of the input. For multiplying two {@code
- * BigInteger} values of size <i>n</i>, a naive multiply algorithm
+ * BigInteger} values of size <i>n</i>, a naive multiplication algorithm
  * would run in time <i>O</i>(<i>n<sup>2</sup></i>) and theoretical
- * results indicate a multiply algorithm for numbers using this
+ * results indicate a multiplication algorithm for numbers using this
  * category of representation must run in <em>at least</em>
- * <i>O</i>(<i>n</i>&nbsp;log&nbsp;<i>n</i>). Common multiply
+ * <i>O</i>(<i>n</i>&nbsp;log&nbsp;<i>n</i>). Common multiplication
  * algorithms between the bounds of the naive and theoretical cases
  * include the Karatsuba multiplication
  * (<i>O</i>(<i>n<sup>1.585</sup></i>)) and 3-way Toom-Cook
@@ -147,7 +147,7 @@ import jdk.internal.vm.annotation.Stable;
  * the simpler algorithm has a larger asymptotic complexity.
  *
  * <p>Operations may also allocate and compute on intermediate
- * results, potentially those allocations may be large as in
+ * results, potentially those allocations may be as large as in
  * proportion to the running time of the algorithm.
  *
  * <p>Users of {@code BigInteger} concerned with bounding the running
