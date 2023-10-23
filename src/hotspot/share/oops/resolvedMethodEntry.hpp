@@ -75,8 +75,8 @@ class ResolvedMethodEntry {
   u2 _cpool_index;                   // Constant pool index
   u2 _number_of_parameters;          // Number of arguments for method
   u1 _tos_state;                     // TOS state
-  u1 _flags;                         // Flags: [000|has_local_signature|has_appendix|forced_virtual|final|virtual_final]
-  u1 _bytecode1, _bytecode2;         // Bytecodes for f1 and f2
+  u1 _flags;                         // Flags: [00|has_resolved_ref_index|has_local_signature|has_appendix|forced_virtual|final|virtual_final]
+  u1 _bytecode1, _bytecode2;         // Resovled invoke codes
 
   // Constructors
   public:
@@ -87,7 +87,7 @@ class ResolvedMethodEntry {
       _tos_state(0),
       _flags(0),
       _bytecode1(0),
-      _bytecode2(0) {}
+      _bytecode2(0) { _entry_specific._interface_klass = nullptr; }
     ResolvedMethodEntry() :
       ResolvedMethodEntry(0) {}
 
@@ -97,14 +97,24 @@ class ResolvedMethodEntry {
       is_final_shift            = 1,
       is_forced_virtual_shift   = 2,
       has_appendix_shift        = 3,
-      has_local_signature_shift = 4
+      has_local_signature_shift = 4,
+      has_resolved_ref_shift    = 5
   };
 
   // Getters
   Method* method() const { return Atomic::load_acquire(&_method); }
-  InstanceKlass* interface_klass() const { return _entry_specific._interface_klass; }
-  u2 resolved_references_index() const { return _entry_specific._resolved_references_index; }
-  u2 table_index() const { return _entry_specific._table_index; }
+  InstanceKlass* interface_klass() const {
+    assert(_bytecode1 == Bytecodes::_invokeinterface, "Only invokeinterface has a klass %d", _bytecode1);
+    return _entry_specific._interface_klass;
+  }
+  u2 resolved_references_index() const {
+    // This index may be read before resolution completes
+    return _entry_specific._resolved_references_index;
+  }
+  u2 table_index() const {
+    assert(_bytecode2 == Bytecodes::_invokevirtual, "Only invokevirtual has a vtable/itable index %d", _bytecode2);
+    return _entry_specific._table_index;
+  }
   u2 constant_pool_index() const { return _cpool_index; }
   u1 tos_state() const { return _tos_state; }
   u2 number_of_parameters() const { return _number_of_parameters; }
@@ -112,11 +122,12 @@ class ResolvedMethodEntry {
   u1 bytecode2() const { return Atomic::load_acquire(&_bytecode2); }
 
   // Flags
-  bool is_vfinal()           const { return (_flags & (1 << is_vfinal_shift))           != 0; }
-  bool is_final()            const { return (_flags & (1 << is_final_shift))            != 0; }
-  bool is_forced_virtual()   const { return (_flags & (1 << is_forced_virtual_shift))   != 0; }
-  bool has_appendix()        const { return (_flags & (1 << has_appendix_shift))        != 0; }
-  bool has_local_signature() const { return (_flags & (1 << has_local_signature_shift)) != 0; }
+  bool is_vfinal()              const { return (_flags & (1 << is_vfinal_shift))           != 0; }
+  bool is_final()               const { return (_flags & (1 << is_final_shift))            != 0; }
+  bool is_forced_virtual()      const { return (_flags & (1 << is_forced_virtual_shift))   != 0; }
+  bool has_appendix()           const { return (_flags & (1 << has_appendix_shift))        != 0; }
+  bool has_local_signature()    const { return (_flags & (1 << has_local_signature_shift)) != 0; }
+  bool has_resolved_ref_index() const { return (_flags & (1 << has_resolved_ref_shift))    != 0; }
 
   bool is_resolved(Bytecodes::Code code) const {
     switch(code) {
@@ -171,6 +182,7 @@ class ResolvedMethodEntry {
   }
 
   void set_resolved_references_index(u2 ref_index) {
+    set_flags(1 << has_resolved_ref_shift);
     _entry_specific._resolved_references_index = ref_index;
   }
 
