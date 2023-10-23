@@ -128,12 +128,12 @@ import jdk.internal.vm.annotation.Stable;
  * the {@code BigInteger} needs to be accessed to perform the
  * conversion to {@code int}. In contrast, a method like {@link not()}
  * would be expected to run in <i>O</i>(<i>n</i>) time where <i>n</i>
- * is the size of the {@code BigInteger} in bits, that is, to run in time
- * proportional to the size of the input. For multiplying two {@code
- * BigInteger} values of size <i>n</i>, a naive multiplication algorithm
- * would run in time <i>O</i>(<i>n<sup>2</sup></i>) and theoretical
- * results indicate a multiplication algorithm for numbers using this
- * category of representation must run in <em>at least</em>
+ * is the size of the {@code BigInteger} in bits, that is, to run in
+ * time proportional to the size of the input. For multiplying two
+ * {@code BigInteger} values of size <i>n</i>, a naive multiplication
+ * algorithm would run in time <i>O</i>(<i>n<sup>2</sup></i>) and
+ * theoretical results indicate a multiplication algorithm for numbers
+ * using this category of representation must run in <em>at least</em>
  * <i>O</i>(<i>n</i>&nbsp;log&nbsp;<i>n</i>). Common multiplication
  * algorithms between the bounds of the naive and theoretical cases
  * include the Karatsuba multiplication
