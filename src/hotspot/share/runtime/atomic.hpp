@@ -715,9 +715,9 @@ public:
     D old_value;
     D new_value;
     do {
-      old_value = PlatformLoad<byte_size>()(dest);
+      old_value = Atomic::load(dest);
       new_value = old_value + add_value;
-    } while (old_value != PlatformCmpxchg<byte_size>()(dest, old_value, new_value, order));
+    } while (old_value != Atomic::cmpxchg(dest, old_value, new_value, order));
     return old_value;
   }
 };
@@ -1224,8 +1224,8 @@ inline T Atomic::XchgUsingCmpxchg<byte_size>::operator()(T volatile* dest,
 
   T old_value;
   do {
-    old_value = PlatformLoad<byte_size>()(dest);
-  } while (old_value != PlatformCmpxchg<byte_size>()(dest, old_value, exchange_value, order));
+    old_value = Atomic::load(dest);
+  } while (old_value != Atomic::cmpxchg(dest, old_value, exchange_value, order));
   return old_value;
 }
 
