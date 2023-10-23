@@ -423,6 +423,9 @@ public final class Channels {
      * the {@link Reader#mark mark} or {@link Reader#reset reset} methods.
      * Closing the stream will in turn cause the channel to be closed.  </p>
      *
+     * @implNote
+     * The implementation may ignore the value of {@code minBufferCap} provided.
+     *
      * @param  ch
      *         The channel from which bytes will be read
      *
