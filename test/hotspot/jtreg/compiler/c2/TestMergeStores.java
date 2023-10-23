@@ -117,6 +117,14 @@ public class TestMergeStores {
         test_groups.put("test101", new HashMap<String,TestFunction>());
         test_groups.get("test101").put("test101R", () -> { return test101R(aS.clone(), offset1, vL1, vI1, vS1); });
         test_groups.get("test101").put("test101a", () -> { return test101a(aS.clone(), offset1, vL1, vI1, vS1); });
+
+        test_groups.put("test200", new HashMap<String,TestFunction>());
+        test_groups.get("test200").put("test200R", () -> { return test200R(aI.clone(), offset1); });
+        test_groups.get("test200").put("test200a", () -> { return test200a(aI.clone(), offset1); });
+
+        test_groups.put("test201", new HashMap<String,TestFunction>());
+        test_groups.get("test201").put("test201R", () -> { return test201R(aI.clone(), offset1, vL1, vI1); });
+        test_groups.get("test201").put("test201a", () -> { return test201a(aI.clone(), offset1, vL1, vI1); });
     }
 
     @Run(test = {"test1a",
@@ -134,7 +142,9 @@ public class TestMergeStores {
                  "test5a",
                  "test6a",
                  "test100a",
-                 "test101a"})
+                 "test101a",
+                 "test200a",
+                 "test201a"})
     public void runTests() {
         // Write random values to inputs
         set_random(aB);
@@ -595,7 +605,7 @@ public class TestMergeStores {
         a[offset1 +  7] = (byte)0x44;
         b[offset1 +  8] = (byte)0x55;
         b[offset1 + 10] = (byte)0x66;
-        return new Object[]{ a };
+        return new Object[]{ a, b };
     }
 
     @Test
@@ -612,7 +622,7 @@ public class TestMergeStores {
         a[offset1 +  7] = (byte)0x44;
         b[offset1 +  8] = (byte)0x55;
         b[offset1 + 10] = (byte)0x66;
-        return new Object[]{ a };
+        return new Object[]{ a, b };
     }
 
     @DontCompile
@@ -704,6 +714,98 @@ public class TestMergeStores {
         a[offset + 14] = (short)(v2 >> 0);
         a[offset + 15] = (short)(v2 >> 16);
         a[offset + 16] = (short)0xEFEF;
+        return new Object[]{ a };
+    }
+
+    @DontCompile
+    static Object[] test200R(int[] a, int offset) {
+        a[offset +  0] = 0x01001236;
+        a[offset +  1] = 0x02001284;
+        a[offset +  2] = 0x03111235;
+        a[offset +  3] = 0x04001294;
+        a[offset +  4] = 0x11001234;
+        a[offset +  5] = 0x22331332;
+        a[offset +  6] = 0x33001234;
+        a[offset +  7] = 0x44001432;
+        a[offset +  8] = 0x55991234;
+        a[offset +  9] = 0x66001233;
+        a[offset + 10] = 0x77001434;
+        a[offset + 11] = 0xAACC1234;
+        a[offset + 12] = 0xBB001434;
+        a[offset + 13] = 0xCC001236;
+        a[offset + 14] = 0xDDFF1534;
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_C_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+                  IRNode.STORE_L_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "7"})
+    static Object[] test200a(int[] a, int offset) {
+        a[offset +  0] = 0x01001236;
+        a[offset +  1] = 0x02001284;
+        a[offset +  2] = 0x03111235;
+        a[offset +  3] = 0x04001294;
+        a[offset +  4] = 0x11001234;
+        a[offset +  5] = 0x22331332;
+        a[offset +  6] = 0x33001234;
+        a[offset +  7] = 0x44001432;
+        a[offset +  8] = 0x55991234;
+        a[offset +  9] = 0x66001233;
+        a[offset + 10] = 0x77001434;
+        a[offset + 11] = 0xAACC1234;
+        a[offset + 12] = 0xBB001434;
+        a[offset + 13] = 0xCC001236;
+        a[offset + 14] = 0xDDFF1534;
+        return new Object[]{ a };
+    }
+
+    @DontCompile
+    static Object[] test201R(int[] a, int offset, long v1, int v2) {
+        a[offset +  0] = 0x00000000;
+        a[offset +  1] = 0xFFFFFFFF;
+        a[offset +  2] = v2;
+        a[offset +  3] = 0x42424242;
+        a[offset +  4] = (int)(v1 >>  0);
+        a[offset +  5] = (int)(v1 >> 32);
+        a[offset +  6] = 0xAB110129;
+        a[offset +  7] = 0xCD360183;
+        a[offset +  8] = 0xEF890173;
+        a[offset +  9] = 0x01560124;
+        a[offset + 10] = (int)(v1 >> 0);
+        a[offset + 11] = (int)(v1 >> 32);
+        a[offset + 12] = (int)(v1 >> 0);
+        a[offset + 13] = (int)(v1 >> 32);
+        a[offset + 14] = v2;
+        a[offset + 15] = v2;
+        a[offset + 16] = 0xEFEFEFEF;
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_C_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "5",
+                  IRNode.STORE_L_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "6"})
+    static Object[] test201a(int[] a, int offset, long v1, int v2) {
+        a[offset +  0] = 0x00000000;
+        a[offset +  1] = 0xFFFFFFFF;
+        a[offset +  2] = v2;
+        a[offset +  3] = 0x42424242;
+        a[offset +  4] = (int)(v1 >>  0);
+        a[offset +  5] = (int)(v1 >> 32);
+        a[offset +  6] = 0xAB110129;
+        a[offset +  7] = 0xCD360183;
+        a[offset +  8] = 0xEF890173;
+        a[offset +  9] = 0x01560124;
+        a[offset + 10] = (int)(v1 >> 0);
+        a[offset + 11] = (int)(v1 >> 32);
+        a[offset + 12] = (int)(v1 >> 0);
+        a[offset + 13] = (int)(v1 >> 32);
+        a[offset + 14] = v2;
+        a[offset + 15] = v2;
+        a[offset + 16] = 0xEFEFEFEF;
         return new Object[]{ a };
     }
 
