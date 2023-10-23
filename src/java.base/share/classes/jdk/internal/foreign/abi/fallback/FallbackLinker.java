@@ -240,30 +240,25 @@ public final class FallbackLinker extends AbstractLinker {
 
     private static void writeValue(Object arg, MemoryLayout layout, MemorySegment argSeg,
                                    Consumer<MemorySegment> acquireCallback) {
-        if (layout instanceof ValueLayout.OfBoolean bl) {
-            argSeg.set(bl, 0, (Boolean) arg);
-        } else if (layout instanceof ValueLayout.OfByte bl) {
-            argSeg.set(bl, 0, (Byte) arg);
-        } else if (layout instanceof ValueLayout.OfShort sl) {
-            argSeg.set(sl, 0, (Short) arg);
-        } else if (layout instanceof ValueLayout.OfChar cl) {
-            argSeg.set(cl, 0, (Character) arg);
-        } else if (layout instanceof ValueLayout.OfInt il) {
-            argSeg.set(il, 0, (Integer) arg);
-        } else if (layout instanceof ValueLayout.OfLong ll) {
-            argSeg.set(ll, 0, (Long) arg);
-        } else if (layout instanceof ValueLayout.OfFloat fl) {
-            argSeg.set(fl, 0, (Float) arg);
-        } else if (layout instanceof ValueLayout.OfDouble dl) {
-            argSeg.set(dl, 0, (Double) arg);
-        } else if (layout instanceof AddressLayout al) {
-            MemorySegment addrArg = (MemorySegment) arg;
-            acquireCallback.accept(addrArg);
-            argSeg.set(al, 0, addrArg);
-        } else if (layout instanceof GroupLayout) {
-            MemorySegment.copy((MemorySegment) arg, 0, argSeg, 0, argSeg.byteSize()); // by-value struct
-        } else {
-            assert layout == null;
+        switch (layout) {
+            case ValueLayout.OfBoolean bl -> argSeg.set(bl, 0, (Boolean) arg);
+            case ValueLayout.OfByte    bl -> argSeg.set(bl, 0, (Byte) arg);
+            case ValueLayout.OfShort   sl -> argSeg.set(sl, 0, (Short) arg);
+            case ValueLayout.OfChar    cl -> argSeg.set(cl, 0, (Character) arg);
+            case ValueLayout.OfInt     il -> argSeg.set(il, 0, (Integer) arg);
+            case ValueLayout.OfLong    ll -> argSeg.set(ll, 0, (Long) arg);
+            case ValueLayout.OfFloat   fl -> argSeg.set(fl, 0, (Float) arg);
+            case ValueLayout.OfDouble  dl -> argSeg.set(dl, 0, (Double) arg);
+            case AddressLayout         al -> {
+                MemorySegment addrArg = (MemorySegment) arg;
+                acquireCallback.accept(addrArg);
+                argSeg.set(al, 0, addrArg);
+            }
+            case GroupLayout           __ ->
+                    MemorySegment.copy((MemorySegment) arg, 0, argSeg, 0, argSeg.byteSize()); // by-value struct
+            case null, default -> {
+                assert layout == null;
+            }
         }
     }
 
