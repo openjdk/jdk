@@ -4405,7 +4405,7 @@ void MacroAssembler::sign_extend(Register dst, Register src, int bits) {
 }
 
 void MacroAssembler::cmp_x2i(Register dst, Register src1, Register src2,
-                            Register tmp, bool is_signed) {
+                             Register tmp, bool is_signed) {
   if (src1 == src2) {
     mv(dst, zr);
     return;
