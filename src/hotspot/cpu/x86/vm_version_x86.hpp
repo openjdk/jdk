@@ -428,7 +428,7 @@ protected:
   //
   // The info block is laid out in subblocks of 4 dwords corresponding to
   // eax, ebx, ecx and edx, whether or not they contain anything useful.
-  struct CpuidInfo {
+  struct _CpuidInfo {
     // cpuid function 0
     uint32_t std_max_function;
     uint32_t std_vendor_name_0;
@@ -522,6 +522,12 @@ protected:
 
     // Space to save zmm registers after signal handle
     int          zmm_save[16*4]; // Save zmm0, zmm7, zmm8, zmm31
+  };
+
+  class CpuidInfo : public _CpuidInfo {
+  public:
+    // Zero-initialize the members
+    CpuidInfo() : _CpuidInfo() {}
 
     uint64_t feature_flags() const;
 
