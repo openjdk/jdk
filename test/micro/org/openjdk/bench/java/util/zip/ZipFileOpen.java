@@ -97,7 +97,11 @@ public class ZipFileOpen {
 
     @Benchmark
     public void openCloseZipFilex2() throws Exception {
-        // Ensure that we only create ZipFile.Source.Key entry per unique zip file
+        // A follow on from the openCloseZipFile benchmark.
+        // The initCEN logic should be called once per file, if
+        // opened multiple times and not closed, for the ZipFile
+        // under test if that file is identified by a unique value
+        // returned via attrs.fileKey()
         ZipFile zf = new ZipFile(zipFile);
         ZipFile zf2 = new ZipFile(relativePathFile);
         zf.close();
