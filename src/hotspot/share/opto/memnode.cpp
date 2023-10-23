@@ -2791,9 +2791,6 @@ Node* StoreNode::Ideal_merge_stores(PhaseGVN* phase) {
   int pow2size = round_down_power_of_2(merge_list.size());
   assert(pow2size >= 2, "must be merging at least 2 stores");
 
-  tty->print_cr("merge_list");
-  merge_list.dump();
-
   // Create / find new value:
   Node* new_value = nullptr;
   int new_memory_size = memory_size() * pow2size;
@@ -2812,6 +2809,10 @@ Node* StoreNode::Ideal_merge_stores(PhaseGVN* phase) {
   } else {
     Node* first = merge_list.at(pow2size-1);
     new_value = first->in(MemNode::ValueIn);
+    if (new_value->Opcode() == Op_ConvL2I) {
+      // look through
+      new_value = new_value->in(1);
+    }
     Node* base_last;
     jint shift_last;
     bool is_true = is_con_RShift(in(MemNode::ValueIn), base_last, shift_last);
@@ -2888,19 +2889,19 @@ StoreNode* StoreNode::can_merge_with_def(PhaseGVN* phase, bool check_use) {
 
   StoreNode* s1 = this;
   StoreNode* s2 = def->as_Store();
-  tty->print_cr("try");
-  s1->dump();
-  s2->dump();
+  //tty->print_cr("try");
+  //s1->dump_bfs(4,0,"#d");
+  //s2->dump_bfs(4,0,"#d");
   assert(s1->memory_size() == s2->memory_size(), "same size");
 
   // Check ctrl compatibility
   Node* ctrl_s1 = s1->in(MemNode::Control);
   Node* ctrl_s2 = s2->in(MemNode::Control);
   if (ctrl_s1 != ctrl_s2) {
-    tty->print_cr("fail on ctrl");
-    s1->dump_bfs(5,0,"#c$");
-    tty->print_cr("with");
-    s2->dump_bfs(5,0,"#c$");
+    //tty->print_cr("fail on ctrl");
+    //s1->dump_bfs(5,0,"#c$");
+    //tty->print_cr("with");
+    //s2->dump_bfs(5,0,"#c$");
     return nullptr;
   }
 
@@ -2921,6 +2922,10 @@ StoreNode* StoreNode::can_merge_with_def(PhaseGVN* phase, bool check_use) {
     }
     Node* base_s2;
     jint shift_s2;
+    if (value_s2->Opcode() == Op_ConvL2I) {
+      // look through
+      value_s2 = value_s2->in(1);
+    }
     if (value_s2 == base_s1) {
       // This is the "shift by zero" case.
       base_s2 = value_s2;
@@ -2950,10 +2955,10 @@ StoreNode* StoreNode::can_merge_with_def(PhaseGVN* phase, bool check_use) {
       adr_s1->in(AddPNode::Address) != adr_s2->in(AddPNode::Address) ||
       !adr_s1->in(AddPNode::Offset)->is_Con() ||
       !adr_s2->in(AddPNode::Offset)->is_Con()) {
-    tty->print_cr("fail on adr");
-    s1->dump_bfs(10,0,"#d$");
-    tty->print_cr("with");
-    s2->dump_bfs(10,0,"#d$");
+    //tty->print_cr("fail on adr");
+    //s1->dump_bfs(10,0,"#d$");
+    //tty->print_cr("with");
+    //s2->dump_bfs(10,0,"#d$");
     return nullptr;
   }
 

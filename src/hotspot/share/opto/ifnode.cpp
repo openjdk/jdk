@@ -539,15 +539,14 @@ int RangeCheckNode::is_range_check(Node* &range, Node* &index, jint &offset) {
 
 //------------------------------adjust_check-----------------------------------
 // Adjust (widen) a prior range check
-static void adjust_check(Node* proj, Node* range, Node* index,
+static void adjust_check(Node* iff, Node* range, Node* index,
                          int flip, jint off_lo, PhaseIterGVN* igvn) {
   PhaseGVN *gvn = igvn;
   // Break apart the old check
-  Node *iff = proj->in(0);
   Node *bol = iff->in(1);
   if( bol->is_top() ) return;   // In case a partially dead range check appears
   // bail (or bomb[ASSERT/DEBUG]) if NOT projection-->IfNode-->BoolNode
-  DEBUG_ONLY( if( !bol->is_Bool() ) { proj->dump(3); fatal("Expect projection-->IfNode-->BoolNode"); } )
+  DEBUG_ONLY( if( !bol->is_Bool() ) { iff->dump(2); fatal("Expect IfNode-->BoolNode"); } )
   if( !bol->is_Bool() ) return;
 
   Node *cmp = bol->in(1);
@@ -1417,11 +1416,6 @@ static Node *remove_useless_bool(IfNode *iff, PhaseGVN *phase) {
 
 static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff);
 
-struct RangeCheck {
-  Node* ctl;
-  jint off;
-};
-
 Node* IfNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   if (remove_dead_region(phase, can_reshape))  return this;
   // No Def-Use info?
@@ -1858,26 +1852,45 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   jint offset1;
   int flip1 = is_range_check(range1, index1, offset1);
   if (flip1) {
-    Node* dom = in(0);
+    // Go up the dom-chain and find more RangeChecks with the same pattern
+    // but possibly different offset constants, and combine them.
+    // If index1 == nullptr, we have the pattern:
+    //
+    //   RangeCheck(Bool( CmpU(offset1, range1) ))
+    //
+    // We know that all offsets are in int:[0,maxint], and hence we can
+    // only have a single RangeCheck with the maximum offset. We ensure
+    // that the top RangeCheck has this maximum offset - then all
+    // others can be folded away.
+    // If index1 != nullptr, then we could have over/underflow on the AddI
+    // in the following pattern:
+    //
+    //   RangeCheck(Bool( CmpU(AddI(index1, offset1), range1) ))
+    //
+    // Hence, we must check both the minimum and maximum offset in a
+    // RangeCheck each. We ensure that the top RangeCheck has the
+    // maximum offset, and that right after it is the RangeCheck with the
+    // minumum offset.
+    // TODO comment about hoisting through ifs that are not RangeChecks:
+    //      we may deopt for a RC that would never fire.
     // Try to remove extra range checks.  All 'up_one_dom' gives up at merges
     // so all checks we inspect post-dominate the top-most check we find.
     // If we are going to fail the current check and we reach the top check
     // then we are guaranteed to fail, so just start interpreting there.
-    // We 'expand' the top 3 range checks to include all post-dominating
-    // checks.
 
-    // The top 3 range checks seen
-    const int NRC = 3;
-    RangeCheck prev_checks[NRC];
-    int nb_checks = 0;
+    // Track the 2 top RangeChecks
+    RangeCheckNode* top_range_checks[2] = {this,    nullptr};
+    jint  top_offsets[2] =                {offset1, 0};
+    Node* top_projs[2] =                  {nullptr, nullptr};
+    int num_range_checks = 1;
 
-    // Low and high offsets seen so far
-    jint off_lo = offset1;
-    jint off_hi = offset1;
+    // Track minimum and maximum offset
+    jint offset_min = offset1;
+    jint offset_max = offset1;
 
+    // Traverse up the dom-chain and find RangeChecks with the same pattern
+    Node* dom = in(0);
     bool found_immediate_dominator = false;
-
-    // Scan for the top checks and collect range of offsets
     for (int dist = 0; dist < 999; dist++) { // Range-Check scan limit
       if (dom->Opcode() == Op_RangeCheck &&  // Not same opcode?
           prev_dom->in(0) == dom) { // One path of test does dominate?
@@ -1891,7 +1904,7 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // the same array bounds.
         if (flip2 == flip1 && range2 == range1 && index2 == index1 &&
             dom->outcnt() == 2) {
-          if (nb_checks == 0 && dom->in(1) == in(1)) {
+          if (num_range_checks == 1 && dom->in(1) == in(1)) {
             // Found an immediately dominating test at the same offset.
             // This kind of back-to-back test can be eliminated locally,
             // and there is no need to search further for dominating tests.
@@ -1900,12 +1913,13 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             break;
           }
           // Gather expanded bounds
-          off_lo = MIN2(off_lo,offset2);
-          off_hi = MAX2(off_hi,offset2);
-          // Record top NRC range checks
-          prev_checks[nb_checks%NRC].ctl = prev_dom;
-          prev_checks[nb_checks%NRC].off = offset2;
-          nb_checks++;
+          offset_min = MIN2(offset_min, offset2);
+          offset_max = MAX2(offset_max, offset2);
+          // Record this as top top RangeCheck so far
+          top_range_checks[num_range_checks % 2] = dom->as_RangeCheck();
+          top_offsets[num_range_checks % 2] = offset2;
+          top_projs[num_range_checks % 2] = prev_dom;
+          num_range_checks++;
         }
       }
       prev_dom = dom;
@@ -1921,77 +1935,99 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if (!phase->C->allow_range_check_smearing())  return nullptr;
 
       // Didn't find prior covering check, so cannot remove anything.
-      if (nb_checks == 0) {
+      if (num_range_checks < 2) {
         return nullptr;
       }
-      // Constant indices only need to check the upper bound.
-      // Non-constant indices must check both low and high.
-      int chk0 = (nb_checks - 1) % NRC;
-      if (index1) {
-        if (nb_checks == 1) {
-          return nullptr;
-        } else {
-          // If the top range check's constant is the min or max of
-          // all constants we widen the next one to cover the whole
-          // range of constants.
-          RangeCheck rc0 = prev_checks[chk0];
-          int chk1 = (nb_checks - 2) % NRC;
-          RangeCheck rc1 = prev_checks[chk1];
-          if (rc0.off == off_lo) {
-            adjust_check(rc1.ctl, range1, index1, flip1, off_hi, igvn);
-            prev_dom = rc1.ctl;
-          } else if (rc0.off == off_hi) {
-            adjust_check(rc1.ctl, range1, index1, flip1, off_lo, igvn);
-            prev_dom = rc1.ctl;
-          } else {
-            // If the top test's constant is not the min or max of all
-            // constants, we need 3 range checks. We must leave the
-            // top test unchanged because widening it would allow the
-            // accesses it protects to successfully read/write out of
-            // bounds.
-            if (nb_checks == 2) {
-              return nullptr;
-            }
-            int chk2 = (nb_checks - 3) % NRC;
-            RangeCheck rc2 = prev_checks[chk2];
-            // The top range check a+i covers interval: -a <= i < length-a
-            // The second range check b+i covers interval: -b <= i < length-b
-            if (rc1.off <= rc0.off) {
-              // if b <= a, we change the second range check to:
-              // -min_of_all_constants <= i < length-min_of_all_constants
-              // Together top and second range checks now cover:
-              // -min_of_all_constants <= i < length-a
-              // which is more restrictive than -b <= i < length-b:
-              // -b <= -min_of_all_constants <= i < length-a <= length-b
-              // The third check is then changed to:
-              // -max_of_all_constants <= i < length-max_of_all_constants
-              // so 2nd and 3rd checks restrict allowed values of i to:
-              // -min_of_all_constants <= i < length-max_of_all_constants
-              adjust_check(rc1.ctl, range1, index1, flip1, off_lo, igvn);
-              adjust_check(rc2.ctl, range1, index1, flip1, off_hi, igvn);
-            } else {
-              // if b > a, we change the second range check to:
-              // -max_of_all_constants <= i < length-max_of_all_constants
-              // Together top and second range checks now cover:
-              // -a <= i < length-max_of_all_constants
-              // which is more restrictive than -b <= i < length-b:
-              // -b < -a <= i < length-max_of_all_constants <= length-b
-              // The third check is then changed to:
-              // -max_of_all_constants <= i < length-max_of_all_constants
-              // so 2nd and 3rd checks restrict allowed values of i to:
-              // -min_of_all_constants <= i < length-max_of_all_constants
-              adjust_check(rc1.ctl, range1, index1, flip1, off_hi, igvn);
-              adjust_check(rc2.ctl, range1, index1, flip1, off_lo, igvn);
-            }
-            prev_dom = rc2.ctl;
-          }
-        }
+
+      RangeCheckNode* first = top_range_checks[(num_range_checks - 1) % 2];
+      jint first_offset = top_offsets[(num_range_checks - 1) % 2];
+      Node* first_proj = top_projs[(num_range_checks - 1) % 2];
+      RangeCheckNode* second = top_range_checks[num_range_checks % 2];
+      jint second_offset = top_offsets[num_range_checks % 2];
+      Node* second_proj = top_projs[num_range_checks % 2];
+
+      assert(first != nullptr &&
+             first_proj != nullptr &&
+             first_proj->in(0) == first &&
+             second != nullptr,
+             "expect 2 valid RangeChecks");
+
+      if (index1 == nullptr) {
+        // Constant bound: We only need a single RangeChech with the
+        // maximum offset. We can reuse "first" for this.
+        adjust_check(first, range1, index1, flip1, offset_max, igvn);
+        // "this" is now covered by "first", dominate "this" out
+        prev_dom = first_proj;
       } else {
-        RangeCheck rc0 = prev_checks[chk0];
-        // 'Widen' the offset of the 1st and only covering check
-        adjust_check(rc0.ctl, range1, index1, flip1, off_hi, igvn);
-        // Test is now covered by prior checks, dominate it out
-        prev_dom = rc0.ctl;
+        // Non-constant bound: We need 2 RangeChecks, in this pattern:
+	//
+	// RangeCheck (with offset_max)
+	// IfProj     (should not have any use)
+	// RangeCheck (with offset_min)
+
+        // Ensure the nodes have this pattern (ignoring offsets):
+        if (second->in(0) != first_proj ||
+            first_proj->outcnt() != 1) {
+          Node* first_proj_f = first->proj_out(false);
+          Node* first_proj_t = first->proj_out(true);
+          Node* first_proj_unc = (first_proj == first_proj_t) ? first_proj_f: first_proj_t;
+
+          // Clone and rewire the new RangeCheck
+          RangeCheckNode* new_rc = first->clone()->as_RangeCheck();
+          Node* new_rc_proj = first_proj->clone();
+          Node* new_rc_proj_unc = first_proj_unc->clone();
+          new_rc->set_req(0, first->in(0));
+          new_rc_proj->set_req(0, new_rc);
+          new_rc_proj_unc->set_req(0, new_rc);
+
+          // Put old RangeCheck below the new one
+          first->set_req(0, new_rc_proj);
+
+          // Region to merge the uncommon trap paths
+          Node* unc_region = new RegionNode(3);
+
+          // Replace all uses of first_proj_unc with region
+          for (DUIterator_Fast imax, i = first_proj_unc->fast_outs(imax); i < imax; i++) {
+            Node* use = first_proj_unc->fast_out(i);
+            imax -= use->replace_edge(first_proj_unc, unc_region, igvn);
+            --i;
+            igvn->_worklist.push(use);
+          }
+          assert(first_proj_unc->outcnt() == 0, "no uses any more");
+
+          // Merge uncommon trap paths at region
+          unc_region->init_req(1, first_proj_unc);
+          unc_region->init_req(2, new_rc_proj_unc);
+
+          igvn->_worklist.push(first);
+          igvn->register_new_node_with_optimizer(new_rc);
+          igvn->register_new_node_with_optimizer(new_rc_proj);
+          igvn->register_new_node_with_optimizer(new_rc_proj_unc);
+          igvn->register_new_node_with_optimizer(unc_region);
+
+          second = first;
+          second_proj = first_proj;
+          second_offset = first_offset;
+          first = new_rc;
+          first_proj = new_rc_proj;
+        }
+        assert(second->in(0) == first_proj && first_proj->outcnt() == 1,
+               "second right after first, nothing in between");
+
+        // Check the bounds
+        bool change_bounds = false;
+        if (first_offset != offset_max || second_offset != offset_min) {
+          change_bounds = true;
+          adjust_check(first,  range1, index1, flip1, offset_max, igvn);
+          adjust_check(second, range1, index1, flip1, offset_min, igvn);
+        }
+
+        if (second == this) {
+          assert(num_range_checks == 2, "if second is this, we only have 2 RangeChecks");
+          return change_bounds ? this : nullptr;
+        }
+        assert(second_proj != nullptr, "must have at least 3 RangeChecks");
+        prev_dom = second_proj;
       }
     }
   } else {
