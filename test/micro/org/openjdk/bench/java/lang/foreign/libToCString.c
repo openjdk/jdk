@@ -21,13 +21,14 @@
  * questions.
  */
 
+#include <jlong.h>
 #include <jni.h>
 #include <stdlib.h>
 #include <string.h>
 
 JNIEXPORT jlong JNICALL Java_org_openjdk_bench_java_lang_foreign_ToCStringTest_writeString(JNIEnv *const env, const jclass cls, const jstring text) {
     const char *str = (*env)->GetStringUTFChars(env, text, NULL);
-    jlong addr = (jlong)(void*)str;
+    jlong addr = ptr_to_jlong(str);
     (*env)->ReleaseStringUTFChars(env, text, str);
     return addr;
 }

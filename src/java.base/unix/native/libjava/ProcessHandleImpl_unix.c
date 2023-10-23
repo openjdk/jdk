@@ -485,7 +485,7 @@ void unix_getUserInfo(JNIEnv* env, jobject jinfo, uid_t uid) {
 }
 
 /*
- * The following functions are common on Solaris, Linux and AIX.
+ * The following functions are for Linux
  */
 
 #if defined (__linux__)
