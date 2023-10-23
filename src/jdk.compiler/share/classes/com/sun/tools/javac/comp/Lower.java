@@ -3007,7 +3007,8 @@ public class Lower extends TreeTranslator {
             // is qualified, pass qualifier as first argument in front of
             // the explicit constructor arguments. If the call
             // is not qualified, pass the correct outer instance as
-            // first argument.
+            // first argument. If we are a static class, there is no
+            // such outer instance, so generate an error.
             if (c.hasOuterInstance()) {
                 JCExpression thisArg;
                 if (tree.meth.hasTag(SELECT)) {
@@ -3018,6 +3019,11 @@ public class Lower extends TreeTranslator {
                 } else if (c.isDirectlyOrIndirectlyLocal() || methName == names._this){
                     // local class or this() call
                     thisArg = makeThis(tree.meth.pos(), c.type.getEnclosingType().tsym);
+                } else if (currentClass.isStatic()) {
+                    // super() call from static nested class - invalid
+                    log.error(tree.pos(),
+                        Errors.NoEnclInstanceOfTypeInScope(c.type.getEnclosingType().tsym));
+                    thisArg = make.Literal(BOT, null).setType(syms.botType);
                 } else {
                     // super() call of nested class - never pick 'this'
                     thisArg = makeOwnerThisN(tree.meth.pos(), c, false);
