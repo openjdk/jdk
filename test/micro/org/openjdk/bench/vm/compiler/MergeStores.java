@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit;
         "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.util=ALL-UNNAMED"})
 @State(Scope.Benchmark)
-public class ByteArrayJMH {
+public class MergeStores {
 
     static Unsafe UNSAFE = Unsafe.getUnsafe();
 
