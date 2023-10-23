@@ -887,6 +887,13 @@ jlong JVMCIRuntime::make_oop_handle(const Handle& obj) {
   return reinterpret_cast<jlong>(ptr);
 }
 
+#ifdef ASSERT
+bool JVMCIRuntime::is_oop_handle(jlong handle) {
+  const oop* ptr = (oop*) handle;
+  return object_handles()->allocation_status(ptr) == OopStorage::ALLOCATED_ENTRY;
+}
+#endif
+
 int JVMCIRuntime::release_and_clear_oop_handles() {
   guarantee(_num_attached_threads == cannot_be_attached, "only call during JVMCI runtime shutdown");
   int released = release_cleared_oop_handles();
@@ -975,7 +982,7 @@ int JVMCIRuntime::release_cleared_oop_handles() {
       object_handles()->release(_oop_handles.adr_at(num_alive), to_release);
 
       // Truncate oop handles to only those with a non-null referent
-      JVMCI_event_1("compacted oop handles in JVMCI runtime %d from %d to %d", _id, _oop_handles.length(), num_alive);
+      JVMCI_event_2("compacted oop handles in JVMCI runtime %d from %d to %d", _id, _oop_handles.length(), num_alive);
       _oop_handles.trunc_to(num_alive);
       // Example: HHH
 
