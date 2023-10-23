@@ -49,13 +49,15 @@
    HotSpot PrintAssembly option.
 */
 
-#ifndef SYSTEM_BINUTILS
-#include <config.h> /* required by bfd.h */
-#endif
-
 #include <errno.h>
 #include <inttypes.h>
 #include <string.h>
+
+#ifndef SYSTEM_BINUTILS
+/* defines for bfd.h */
+#define PACKAGE "hsdis"
+#define PACKAGE_VERSION 1
+#endif
 
 #include <bfd.h>
 #include <dis-asm.h>
@@ -555,12 +557,34 @@ static void parse_fake_insn(disassembler_ftype dfn,
   dinfo->fprintf_func     = fprintf_func;
 }
 
+static fprintf_ftype target_fprintf_func = NULL;
+
+#ifdef BINUTILS_NEW_API
+static int wrapper_fprintf_styled_ftype(void *v, enum disassembler_style style_unused, const char* fmt, ...) {
+  char buffer[1024] = {};
+  va_list args;
+  int r;
+  va_start(args, fmt);
+  r = vsnprintf(buffer, sizeof(buffer), fmt, args);
+  va_end(args);
+  if (target_fprintf_func != NULL) {
+    return target_fprintf_func(v, "%s", buffer);
+  }
+  return r;
+}
+#endif
+
 static void init_disassemble_info_from_bfd(struct disassemble_info* dinfo,
                                            void *stream,
                                            fprintf_ftype fprintf_func,
                                            bfd* abfd,
                                            char* disassembler_options) {
+  target_fprintf_func = fprintf_func;
+#ifdef BINUTILS_NEW_API
+  init_disassemble_info(dinfo, stream, fprintf_func, wrapper_fprintf_styled_ftype);
+#else
   init_disassemble_info(dinfo, stream, fprintf_func);
+#endif
 
   dinfo->flavour = bfd_get_flavour(abfd);
   dinfo->arch = bfd_get_arch(abfd);
