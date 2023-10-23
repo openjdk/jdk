@@ -910,9 +910,9 @@ public:
 
   static int compare(ciKlass* const& k1, ciKlass* const& k2);
 
-  const Type* xmeet(const Type* t) const override;
+  const Type* xmeet(const Type* t) const;
 
-  bool singleton(void) const override;
+  bool singleton(void) const;
 };
 
 //------------------------------TypePtr----------------------------------------
