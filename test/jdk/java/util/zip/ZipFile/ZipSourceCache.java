@@ -77,7 +77,7 @@ public class ZipSourceCache {
         ZipFile absoluteZipFile;
         HashMap internalMap;
         int numSources;
-        try (ZipFile zipFile = new ZipFile(ZIPFILE_NAME)) {
+        try (ZipFile zipFile = new ZipFile(relativeFile)) {
             Class source = Class.forName("java.util.zip.ZipFile$Source");
             Field filesMap = source.getDeclaredField("files");
             filesMap.setAccessible(true);
@@ -95,7 +95,7 @@ public class ZipSourceCache {
             // update the zip file, should expect a new Source Object
             // ignore this part of test if file can't be updated (can't overwrite)
             if (createZipFile("differentContent")) {
-                ZipFile z = new ZipFile(ZIPFILE_NAME);
+                ZipFile z = new ZipFile(relativeFile);
                 // update of file should trigger new <Key, Source> mapping
                 assertEquals(++numSources, internalMap.size());
                 // new Source created, CEN structure should map fine
