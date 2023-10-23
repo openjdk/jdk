@@ -8670,7 +8670,7 @@ instruct cmpU3_reg_reg(iRegINoSp dst, iRegI op1, iRegI op2)
             "neg   $dst, $dst\t#@cmpU3_reg_reg"
   %}
   ins_encode %{
-    __ cmp_ui2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ cmp_uw2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
     __ mv(as_Register($dst$$reg), t0);
   %}
 

@@ -4449,7 +4449,7 @@ void MacroAssembler::cmp_ul2i(Register dst, Register src1, Register src2, Regist
   cmp_x2i(dst, src1, src2, tmp, false);
 }
 
-void MacroAssembler::cmp_ui2i(Register dst, Register src1, Register src2, Register tmp) {
+void MacroAssembler::cmp_uw2i(Register dst, Register src1, Register src2, Register tmp) {
   cmp_x2i(dst, src1, src2, tmp, false);
 }
 
