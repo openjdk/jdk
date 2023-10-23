@@ -46,22 +46,15 @@ import static org.junit.jupiter.api.Assertions.*;
  * @bug 8318130
  * @summary Tests that java.net.SocksSocketImpl produces correct arguments
  *      for proxy selector
- * @run junit SocksSocketProxySelectorTest
+ * @run junit/othervm SocksSocketProxySelectorTest
  */
 public class SocksSocketProxySelectorTest {
 
     public static final String SHORTEN_IPV6 = "((?<=\\[)0)?:(0:)+";
-    private static ProxySelector previousDefault;
 
     @BeforeAll
     public static void beforeTest() {
-        previousDefault = ProxySelector.getDefault();
         ProxySelector.setDefault(new LoggingProxySelector());
-    }
-
-    @AfterAll
-    public static void afterTest() {
-        ProxySelector.setDefault(previousDefault);
     }
 
     // should match the host name
