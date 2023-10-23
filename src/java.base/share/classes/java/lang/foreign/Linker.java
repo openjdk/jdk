@@ -365,7 +365,7 @@ import java.util.stream.Stream;
  *
  * The size of the segment returned by the {@code malloc} downcall method handle is
  * <a href="MemorySegment.html#wrapping-addresses">zero</a>. Moreover, the scope of the
- * returned segment is a fresh scope that is always alive. To provide safe access to the segment, we must,
+ * returned segment is the global scope. To provide safe access to the segment, we must,
  * unsafely, resize the segment to the desired size (100, in this case). It might also be desirable to
  * attach the segment to some existing {@linkplain Arena arena}, so that the lifetime of the region of memory
  * backing the segment can be managed automatically, as for any other native segment created directly from Java code.
@@ -519,10 +519,6 @@ public sealed interface Linker permits AbstractLinker {
      * {@snippet lang=java :
      * linker.downcallHandle(function).bindTo(symbol);
      * }
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption.
      *
      * @param address  the native memory segment whose {@linkplain MemorySegment#address() base address} is the
      *                 address of the target foreign function.
@@ -563,7 +559,7 @@ public sealed interface Linker permits AbstractLinker {
      * <p>
      * Moreover, if the provided function descriptor's return layout is an {@linkplain AddressLayout address layout},
      * invoking the returned method handle will return a native segment associated with
-     * a fresh scope that is always alive. Under normal conditions, the size of the returned segment is {@code 0}.
+     * the global scope. Under normal conditions, the size of the returned segment is {@code 0}.
      * However, if the function descriptor's return layout has a {@linkplain AddressLayout#targetLayout() target layout}
      * {@code T}, then the size of the returned segment is set to {@code T.byteSize()}.
      * <p>
@@ -575,10 +571,6 @@ public sealed interface Linker permits AbstractLinker {
      * {@link MemorySegment#copy(MemorySegment, long, MemorySegment, long, long)} methods may be thrown.
      * The returned method handle will additionally throw {@link NullPointerException} if any argument
      * passed to it is {@code null}.
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption.
      *
      * @param function the function descriptor of the target foreign function.
      * @param options  the linker options associated with this linkage request.
@@ -602,7 +594,7 @@ public sealed interface Linker permits AbstractLinker {
      * upcall stub segment will be deallocated when the provided confined arena is {@linkplain Arena#close() closed}.
      * <p>
      * An upcall stub argument whose corresponding layout is an {@linkplain AddressLayout address layout}
-     * is a native segment associated with a fresh scope that is always alive.
+     * is a native segment associated with the global scope.
      * Under normal conditions, the size of this segment argument is {@code 0}.
      * However, if the address layout has a {@linkplain AddressLayout#targetLayout() target layout} {@code T}, then the size of the
      * segment argument is set to {@code T.byteSize()}.
@@ -612,10 +604,6 @@ public sealed interface Linker permits AbstractLinker {
      * try/catch block to catch any unexpected exceptions. This can be done using the
      * {@link java.lang.invoke.MethodHandles#catchException(MethodHandle, Class, MethodHandle)} method handle combinator,
      * and handle exceptions as desired in the corresponding catch block.
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption.
      *
      * @param target the target method handle.
      * @param function the upcall stub function descriptor.

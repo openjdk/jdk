@@ -165,7 +165,7 @@ public interface SymbolLookup {
      * <p>
      * Libraries associated with a class loader are unloaded when the class loader becomes
      * <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>. The symbol lookup
-     * returned by this method is associated with a fresh {@linkplain MemorySegment.Scope scope} which keeps the caller's
+     * returned by this method is associated with an automatic {@linkplain MemorySegment.Scope scope} which keeps the caller's
      * class loader reachable. Therefore, libraries associated with the caller's class loader are kept loaded
      * (and their symbols available) as long as a loader lookup for that class loader, or any of the segments
      * obtained by it, is reachable.
@@ -189,7 +189,7 @@ public interface SymbolLookup {
         if ((loader == null || loader instanceof BuiltinClassLoader)) {
             loaderArena = Arena.global();
         } else {
-            MemorySessionImpl session = MemorySessionImpl.heapSession(loader);
+            MemorySessionImpl session = MemorySessionImpl.createHeap(loader);
             loaderArena = session.asArena();
         }
         return name -> {
@@ -211,10 +211,6 @@ public interface SymbolLookup {
      * For instance, if the provided arena is a confined arena, the library
      * associated with the returned lookup will be unloaded when the provided confined arena is
      * {@linkplain Arena#close() closed}.
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption.
      *
      * @implNote The process of resolving a library name is OS-specific. For instance, in a POSIX-compliant OS,
      * the library name is resolved according to the specification of the {@code dlopen} function for that OS.
@@ -245,10 +241,6 @@ public interface SymbolLookup {
      * For instance, if the provided arena is a confined arena, the library
      * associated with the returned lookup will be unloaded when the provided confined arena is
      * {@linkplain Arena#close() closed}.
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption.
      *
      * @implNote On Linux, the functionalities provided by this factory method and the returned symbol lookup are
      * implemented using the {@code dlopen}, {@code dlsym} and {@code dlclose} functions.

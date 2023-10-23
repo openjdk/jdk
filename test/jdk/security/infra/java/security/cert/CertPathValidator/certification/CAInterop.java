@@ -392,6 +392,16 @@
  * @run main/othervm -Djava.security.debug=certpath CAInterop affirmtrustpremiumeccca CRL
  */
 
+/*
+ * @test id=teliarootcav2
+ * @bug 8317373
+ * @summary Interoperability tests with Telia Root CA V2
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop teliarootcav2 OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop teliarootcav2 CRL
+ */
+
 /**
  * Collection of certificate validation tests for interoperability with external CAs
  */
@@ -532,6 +542,10 @@ public class CAInterop {
             case "affirmtrustpremiumeccca" ->
                     new CATestURLs("https://validpremiumecc.affirmtrust.com",
                             "https://revokedpremiumecc.affirmtrust.com");
+
+            case "teliarootcav2" ->
+                    new CATestURLs("https://juolukka.cover.telia.fi:10600",
+                            "https://juolukka.cover.telia.fi:10601");
 
             default -> throw new RuntimeException("No test setup found for: " + alias);
         };
