@@ -62,6 +62,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.NewAPIBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.ResourceIOException;
+import jdk.javadoc.internal.doclets.toolkit.util.RestrictedAPIListBuilder;
 
 /**
  * The class with "start" method, calls individual Writers.
@@ -195,6 +196,11 @@ public class HtmlDoclet extends AbstractDoclet {
             configuration.previewAPIListBuilder = previewBuilder;
             configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.PREVIEW);
         }
+        RestrictedAPIListBuilder restrictedBuilder = new RestrictedAPIListBuilder(configuration);
+        if (!restrictedBuilder.isEmpty()) {
+            configuration.restrictedAPIListBuilder = restrictedBuilder;
+            configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.RESTRICTED);
+        }
 
         super.generateClassFiles(classTree);
     }
@@ -247,12 +253,14 @@ public class HtmlDoclet extends AbstractDoclet {
         for (var cp : EnumSet.of(
                 HtmlConfiguration.ConditionalPage.DEPRECATED,
                 HtmlConfiguration.ConditionalPage.PREVIEW,
+                HtmlConfiguration.ConditionalPage.RESTRICTED,
                 HtmlConfiguration.ConditionalPage.NEW)) {
             if (configuration.conditionalPages.contains(cp)) {
                 var w = switch (cp) {
                     case DEPRECATED -> writerFactory.newDeprecatedListWriter();
                     case NEW -> writerFactory.newNewAPIListWriter();
                     case PREVIEW -> writerFactory.newPreviewListWriter();
+                    case RESTRICTED -> writerFactory.newRestrictedListWriter();
                     default -> throw new AssertionError();
                 };
                 w.buildPage();

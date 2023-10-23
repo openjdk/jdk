@@ -30,7 +30,6 @@
 
 import java.lang.foreign.*;
 
-import jdk.internal.foreign.NativeMemorySegmentImpl;
 import org.testng.annotations.*;
 
 import java.lang.foreign.Arena;
@@ -239,7 +238,7 @@ public class TestSegmentAllocators {
                 assertThrows(UnsupportedOperationException.class, segment::isLoaded);
                 assertThrows(UnsupportedOperationException.class, segment::force);
                 assertFalse(segment.isMapped());
-                assertEquals(segment.isNative(), segment instanceof NativeMemorySegmentImpl);
+                assertTrue(segment.isNative());
             }
         }
     }

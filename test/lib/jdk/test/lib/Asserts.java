@@ -553,6 +553,46 @@ public class Asserts {
     }
 
     /**
+     * A functional interface for executing tests in assertThrownException
+     */
+    @FunctionalInterface
+    public interface TestMethod {
+        void execute() throws Throwable;
+    }
+
+
+    public static <T extends Throwable> T assertThrows(Class<T> expected, TestMethod testMethod) {
+        return assertThrows(expected, testMethod, "An unexpected exception was thrown.");
+    }
+
+    /**
+     * Asserts that the given exception (or a subclass of it) is thrown when
+     * executing the test method.
+     *
+     * If the test method throws the correct exception, the exception is returned
+     * to the caller for additional validation e.g., comparing the exception
+     * message.
+     *
+     * @param expected The expected exception
+     * @param testMethod The code to execute that should throw the exception
+     * @param msg A description of the assumption
+     * @return The thrown exception.
+     */
+    public static <T extends Throwable> T assertThrows(Class<T> expected, TestMethod testMethod, String msg) {
+        try {
+            testMethod.execute();
+        } catch (Throwable exc) {
+            if (expected.isInstance(exc)) {
+                return (T) exc;
+            } else {
+                fail(Objects.toString(msg, "An unexpected exception was thrown.")
+                        + " Expected " + expected.getName(), exc);
+            }
+        }
+        throw new RuntimeException("No exception was thrown. Expected: " + expected.getName());
+    }
+
+    /**
      * Returns a string formatted with a message and expected and actual values.
      * @param lhs the actual value
      * @param rhs  the expected value

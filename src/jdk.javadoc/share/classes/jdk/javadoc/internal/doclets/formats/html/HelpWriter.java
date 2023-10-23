@@ -342,6 +342,15 @@ public class HelpWriter extends HtmlDocletWriter {
             pageKindsSection.add(section);
         }
 
+        // Restricted
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.RESTRICTED)) {
+            section = newHelpSection(contents.restrictedMethods, PageMode.RESTRICTED, subTOC);
+            Content restrictedBody = getContent("doclet.help.restricted.body",
+                    links.createLink(DocPaths.RESTRICTED_LIST, resources.getText("doclet.Restricted_Methods")));
+            section.add(HtmlTree.P(restrictedBody));
+            pageKindsSection.add(section);
+        }
+
         // Constant Field Values
         if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.CONSTANT_VALUES)) {
             section = newHelpSection(contents.constantsSummaryTitle, PageMode.CONSTANT_VALUES, subTOC);

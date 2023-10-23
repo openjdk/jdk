@@ -117,7 +117,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   // Try to CAS m->owner from NULL to current thread.
   add(tmp, disp_hdr, (in_bytes(ObjectMonitor::owner_offset())-markWord::monitor_value));
   cmpxchg(tmp, zr, rthread, Assembler::xword, /*acquire*/ true,
-          /*release*/ true, /*weak*/ false, rscratch1); // Sets flags for result
+          /*release*/ true, /*weak*/ false, tmp3Reg); // Sets flags for result
 
   if (LockingMode != LM_LIGHTWEIGHT) {
     // Store a non-null value into the box to avoid looking like a re-entrant
@@ -129,7 +129,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   }
   br(Assembler::EQ, cont); // CAS success means locking succeeded
 
-  cmp(rscratch1, rthread);
+  cmp(tmp3Reg, rthread);
   br(Assembler::NE, cont); // Check for recursive locking
 
   // Recursive lock case
