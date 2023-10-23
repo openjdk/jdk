@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,87 +25,97 @@
  * @test
  * @bug 4944439
  * @summary Confirm that numbers where all digits after the decimal separator are 0
- * and which are between Long.MIN_VALUE and Long.MAX_VALUE are returned as Long(not double).
+ *          and which are between Long.MIN_VALUE and Long.MAX_VALUE are returned
+ *          as Long(not double).
+ * @run junit Bug4944439
  */
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Locale;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 public class Bug4944439 {
 
-    static boolean err = false;
-    static DecimalFormat df;
+    // Save JVM default locale
+    private static final Locale savedLocale = Locale.getDefault();
+    private static final DecimalFormat df = new DecimalFormat();
 
-    public static void main(String[] args) throws Exception {
-
-        Locale defaultLoc = Locale.getDefault();
+    // Set JVM default locale to US for testing
+    @BeforeAll
+    static void initAll() {
         Locale.setDefault(Locale.US);
-
-        df = new DecimalFormat();
-        String s = "-9223372036854775809";      // Long.MIN_VALUE-1
-        check_Double(s);
-
-        test(Long.MIN_VALUE, Long.MIN_VALUE+10);
-        test(-10, 10);
-        test(Long.MAX_VALUE-10, Long.MAX_VALUE-1);
-
-        s = "9223372036854775807.00";   // Long.MAX_VALUE
-        check_Long(s);
-        s = "9223372036854775808";      // Long.MAX_VALUE+1
-        check_Double(s);
-
-        s = "-0.0";
-        check_Double(s);
-        s = "0.0";
-        check_Long(s);
-
-        Locale.setDefault(defaultLoc);
-
-        if (err) {
-            throw new RuntimeException("Wrong parsing with DecimalFormat");
-        }
     }
 
-    private static void test(long from, long to) throws Exception {
+    // Restore JVM default locale
+    @AfterAll
+    static void tearDownAll() {
+        Locale.setDefault(savedLocale);
+    }
+
+    // Check return type and value returned by DecimalFormat.parse() for longs
+    @ParameterizedTest
+    @MethodSource("longs")
+    public void parseLongTest(String s) {
+        // This was originally intended to ensure a ParseException is not thrown
+        Number parsedNumber = assertDoesNotThrow(() -> df.parse(s),
+                "DecimalFormat.parse(\"%s\") should not throw an Exception");
+        assertInstanceOf(Long.class, parsedNumber,
+                "DecimalFormat.parse(\"%s\") did not return Long");
+        // Grab integer portion of value
+        Long expectedVal = Long.valueOf(s.substring(0, s.indexOf('.')));
+        assertEquals(parsedNumber, expectedVal,
+                "DecimalFormat.parse(\"%s\") returned numerically incorrect value");
+    }
+
+    // Test some values between Long.MIN_VALUE and Long.MAX_VALUE
+    private static Stream<String> longs() {
+        ArrayList<String> longs = new ArrayList<>();
+        addLongData(Long.MIN_VALUE, Long.MIN_VALUE+10, longs);
+        addLongData(-10, 10, longs);
+        addLongData(Long.MAX_VALUE-10, Long.MAX_VALUE-1, longs);
+        longs.add("9223372036854775807.00");
+        longs.add("0.0");
+        return longs.stream();
+    }
+
+    // Utility to add values between parameters(long, to) to testLongs ArrayList
+    private static void addLongData(long from, long to, ArrayList<String> testLongs){
         for (long l = from; l <= to; l++) {
-            check_Long(Long.toString(l) + ".00");
+            testLongs.add(l + ".00");
         }
     }
 
-    private static void check_Long(String s) throws Exception {
-        Number number = df.parse(s);
-        if (!(number instanceof Long)) {
-            err = true;
-            System.err.println("Failed: DecimalFormat.parse(\"" + s +
-                "\") should return a Long, but returned a " +
-                number.getClass().getName());
-        }
-
-        int index = s.indexOf('.');
-        Long l = Long.valueOf(s.substring(0, index));
-        if (!l.equals(number)) {
-            err = true;
-            System.err.println("Failed: DecimalFormat.parse(" + s +
-                ") should return a Long(" + l + "), but returned " + number);
-        }
+    // Check return type and value returned by DecimalFormat.parse() for doubles
+    @ParameterizedTest
+    @MethodSource("doubles")
+    public void parseDoubleTest(String s) {
+        // This was originally intended to ensure a ParseException is not thrown
+        Number parsedNumber = assertDoesNotThrow(() -> df.parse(s),
+                "DecimalFormat.parse(\"%s\") should not throw an Exception");
+        assertInstanceOf(Double.class, parsedNumber,
+                "DecimalFormat.parse(\"%s\") did not return Double");
+        Double expectedVal = Double.valueOf(s);
+        assertEquals(parsedNumber, expectedVal,
+                "DecimalFormat.parse(\"%s\") returned numerically incorrect value");
     }
 
-    private static void check_Double(String s) throws Exception {
-        Number number = df.parse(s);
-        if (!(number instanceof Double)) {
-            err = true;
-            System.err.println("Failed: DecimalFormat.parse(\"" + s +
-                "\") should return a Double, but returned a " +
-                number.getClass().getName());
-        }
-
-        Double d = Double.valueOf(s);
-        if (!d.equals(number)) {
-            err = true;
-            System.err.println("Failed: DecimalFormat.parse(" + s +
-                ") should return a Double(" + d + "), but returned " + number);
-        }
+    // Check values not between Long.MIN_VALUE and Long.MAX_VALUE
+    private static Stream<String> doubles() {
+        return Stream.of(
+                "-9223372036854775809", // Long.MIN_VALUE-1
+                "9223372036854775808", // Long.MAX_VALUE+1
+                "-0.0"
+        );
     }
 }

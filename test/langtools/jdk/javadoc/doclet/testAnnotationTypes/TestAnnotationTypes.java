@@ -66,6 +66,7 @@ public class TestAnnotationTypes extends JavadocTester {
                 """
                     <section class="detail" id="DEFAULT_NAME">
                     <h3>DEFAULT_NAME</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">static final</span>&nbsp;<\
                     span class="return-type">java.lang.String</span>&nbsp;<span class="element-name">DEFAULT_NAME</span></div>
                     """);
@@ -132,17 +133,21 @@ public class TestAnnotationTypes extends JavadocTester {
                     <li>
                     <section class="detail" id="value()">
                     <h3>value</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="return-type">int</span>&nbsp;<span class="element-name">value</span></div>
+                    </div>
                     </section>
                     </li>
                     <li>
                     <section class="detail" id="optional()">
                     <h3>optional</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="return-type">java.lang.String</span>&nbsp;<span class="element-name">optional</span></div>
                     <dl class="notes">
                     <dt>Default:</dt>
                     <dd><code>""</code></dd>
                     </dl>
+                    </div>
                     </section>
                     </li>
                     </ul>

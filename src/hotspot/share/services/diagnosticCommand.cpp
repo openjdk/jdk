@@ -31,6 +31,8 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/directivesParser.hpp"
 #include "gc/shared/gcVMOperations.hpp"
@@ -138,6 +140,7 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesAddDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesRemoveDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesClearDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilationMemoryStatisticDCmd>(full_export, true, false));
 
   // Enhanced JMX Agent Support
   // These commands won't be exported via the DiagnosticCommandMBean until an
@@ -1133,4 +1136,18 @@ void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const cha
   typeArrayOop ba = typeArrayOop(res);
   jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
   output()->print_raw((const char*)addr, ba->length());
+}
+
+CompilationMemoryStatisticDCmd::CompilationMemoryStatisticDCmd(outputStream* output, bool heap) :
+    DCmdWithParser(output, heap),
+  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false"),
+  _minsize("-s", "Minimum memory size", "MEMORY SIZE", false, "0") {
+  _dcmdparser.add_dcmd_option(&_human_readable);
+  _dcmdparser.add_dcmd_option(&_minsize);
+}
+
+void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
+  const bool human_readable = _human_readable.value();
+  const size_t minsize = _minsize.has_value() ? _minsize.value()._size : 0;
+  CompilationMemoryStatistic::print_all_by_size(output(), human_readable, minsize);
 }
