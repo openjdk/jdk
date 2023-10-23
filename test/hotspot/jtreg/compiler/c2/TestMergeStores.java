@@ -93,6 +93,10 @@ public class TestMergeStores {
         test_groups.get("test2").put("test2c", () -> { return test2c(aB.clone(), offset1, vL1); });
         test_groups.get("test2").put("test2d", () -> { return test2d(aB.clone(), offset1, vL1); });
         test_groups.get("test2").put("test2e", () -> { return test2d(aB.clone(), offset1, vL1); });
+
+        test_groups.put("test3", new HashMap<String,TestFunction>());
+        test_groups.get("test3").put("test3R", () -> { return test3R(aB.clone(), offset1, vL1); });
+        test_groups.get("test3").put("test3a", () -> { return test3a(aB.clone(), offset1, vL1); });
     }
 
     @Run(test = {"test1a",
@@ -104,7 +108,8 @@ public class TestMergeStores {
                  "test2b",
                  "test2c",
                  "test2d",
-                 "test2e"})
+                 "test2e",
+                 "test3a"})
     public void runTests() {
         // Write random values to inputs
         set_random(aB);
@@ -436,5 +441,31 @@ public class TestMergeStores {
         return new Object[]{ a };
     }
 
+    @DontCompile
+    static Object[] test3R(byte[] a, int offset, long v) {
+        a[offset + 0] = (byte)(v >> 0);
+        a[offset + 1] = (byte)(v >> 8);
+        a[offset + 2] = (byte)(v >> 16);
+        a[offset + 3] = (byte)(v >> 24);
+        a[offset + 4] = (byte)(v >> 0);
+        a[offset + 5] = (byte)(v >> 8);
+        a[offset + 6] = (byte)(v >> 16);
+        a[offset + 7] = (byte)(v >> 24);
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2"})
+    static Object[] test3a(byte[] a, int offset, long v) {
+        a[offset + 0] = (byte)(v >> 0);
+        a[offset + 1] = (byte)(v >> 8);
+        a[offset + 2] = (byte)(v >> 16);
+        a[offset + 3] = (byte)(v >> 24);
+        a[offset + 4] = (byte)(v >> 0);
+        a[offset + 5] = (byte)(v >> 8);
+        a[offset + 6] = (byte)(v >> 16);
+        a[offset + 7] = (byte)(v >> 24);
+        return new Object[]{ a };
+    }
 
 }

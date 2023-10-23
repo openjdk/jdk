@@ -2804,24 +2804,31 @@ Node* StoreNode::Ideal_merge_stores(PhaseGVN* phase) {
       con = con << bits_per_store;
       con = con | (mask & con_i);
     }
-    new_value = new_memory_size == 8 ? (Node*)phase->longcon(con)
-                                     : (Node*)phase->intcon((jint)con);
+    new_value = phase->longcon(con);
   } else {
     Node* first = merge_list.at(pow2size-1);
     new_value = first->in(MemNode::ValueIn);
-    if (new_value->Opcode() == Op_ConvL2I) {
-      // look through
-      new_value = new_value->in(1);
-    }
     Node* base_last;
     jint shift_last;
     bool is_true = is_con_RShift(in(MemNode::ValueIn), base_last, shift_last);
     assert(is_true, "must detect con RShift");
+    if (new_value != base_last && new_value->Opcode() == Op_ConvL2I) {
+      // look through
+      new_value = new_value->in(1);
+    }
     if (new_value != base_last) {
       // new_value is not the base
       return nullptr;
     }
   }
+
+  if (phase->type(new_value)->isa_long() != nullptr && new_memory_size <= 4) {
+    new_value = phase->transform(new ConvL2INode(new_value));
+  }
+
+  assert((phase->type(new_value)->isa_int() != nullptr && new_memory_size <= 4) ||
+         (phase->type(new_value)->isa_long() != nullptr && new_memory_size == 8),
+         "new_value is either int or long, and new_memory_size is small enough");
 
   Node* first = merge_list.at(pow2size-1);
   Node* new_ctrl = first->in(MemNode::Control);
