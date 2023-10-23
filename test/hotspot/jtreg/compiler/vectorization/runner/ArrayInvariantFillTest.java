@@ -55,7 +55,6 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
 
     private static final int SIZE = 543;
 
-    private boolean booleanInv;
     private int intInv;
     private char charInv;
     private float floatInv;
@@ -67,7 +66,6 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
         charInv = (char) ran.nextInt();
         floatInv = ran.nextFloat();
         doubleInv = ran.nextDouble();
-        booleanInv = ran.nextBoolean();
     }
 
     // ---------------- Simple Fill ----------------
