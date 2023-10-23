@@ -144,6 +144,16 @@
           " compact - run GC more frequently and with deeper targets to "   \
           "free up more memory.")                                           \
                                                                             \
+  product(uintx, ShenandoahExpeditePromotionsThreshold, 5, EXPERIMENTAL,    \
+          "When Shenandoah expects to promote at least this percentage "    \
+          "of the young generation, trigger a young collection to "         \
+          "expedite these promotions.")                                     \
+          range(0,100)                                                      \
+                                                                            \
+  product(uintx, ShenandoahExpediteMixedThreshold, 10, EXPERIMENTAL,        \
+          "When there are this many old regions waiting to be collected, "  \
+          "trigger a mixed collection immediately.")                        \
+                                                                            \
   product(uintx, ShenandoahUnloadClassesFrequency, 1, EXPERIMENTAL,         \
           "Unload the classes every Nth cycle. Normally affects concurrent "\
           "GC cycles, as degenerated and full GCs would try to unload "     \
