@@ -29,6 +29,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "services/attachListener.hpp"
+#include "utilities/checkedCast.hpp"
 
 #include <signal.h>
 #include <sys/socket.h>
@@ -108,7 +109,7 @@ class AixAttachListener: AllStatic {
   static bool is_shutdown()     { return _shutdown; }
 
   // write the given buffer to a socket
-  static int write_fully(int s, char* buf, int len);
+  static int write_fully(int s, char* buf, size_t len);
 
   static AixAttachOperation* dequeue();
 };
@@ -276,7 +277,7 @@ AixAttachOperation* AixAttachListener::read_request(int s) {
   // where <ver> is the protocol version (1), <cmd> is the command
   // name ("load", "datadump", ...), and <arg> is an argument
   int expected_str_count = 2 + AttachOperation::arg_count_max;
-  const int max_len = (sizeof(ver_str) + 1) + (AttachOperation::name_length_max + 1) +
+  const size_t max_len = (sizeof(ver_str) + 1) + (AttachOperation::name_length_max + 1) +
     AttachOperation::arg_count_max*(AttachOperation::arg_length_max + 1);
 
   char buf[max_len];
@@ -285,15 +286,15 @@ AixAttachOperation* AixAttachListener::read_request(int s) {
   // Read until all (expected) strings have been read, the buffer is
   // full, or EOF.
 
-  int off = 0;
-  int left = max_len;
+  size_t off = 0;
+  size_t left = max_len;
 
   do {
-    int n;
+    ssize_t n;
     // Don't block on interrupts because this will
     // hang in the clean-up when shutting down.
     n = read(s, buf+off, left);
-    assert(n <= left, "buffer was too small, impossible!");
+    assert(n <= checked_cast<ssize_t>(left), "buffer was too small, impossible!");
     buf[max_len - 1] = '\0';
     if (n == -1) {
       return nullptr;      // reset by peer or other error
@@ -414,9 +415,9 @@ AixAttachOperation* AixAttachListener::dequeue() {
 }
 
 // write the given buffer to the socket
-int AixAttachListener::write_fully(int s, char* buf, int len) {
+int AixAttachListener::write_fully(int s, char* buf, size_t len) {
   do {
-    int n = ::write(s, buf, len);
+    ssize_t n = ::write(s, buf, len);
     if (n == -1) {
       if (errno != EINTR) return -1;
     } else {
@@ -577,15 +578,6 @@ void AttachListener::abort() {
 
 void AttachListener::pd_data_dump() {
   os::signal_notify(SIGQUIT);
-}
-
-AttachOperationFunctionInfo* AttachListener::pd_find_operation(const char* n) {
-  return nullptr;
-}
-
-jint AttachListener::pd_set_flag(AttachOperation* op, outputStream* out) {
-  out->print_cr("flag '%s' cannot be changed", op->arg(0));
-  return JNI_ERR;
 }
 
 void AttachListener::pd_detachall() {

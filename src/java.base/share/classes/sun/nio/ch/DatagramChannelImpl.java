@@ -33,6 +33,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner.Cleanable;
 import java.lang.reflect.Method;
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -650,114 +651,130 @@ class DatagramChannelImpl
     }
 
     /**
-     * Receives a datagram into the given buffer.
+     * Receives a datagram.
      *
-     * @apiNote This method is for use by the socket adaptor. The buffer is
-     * assumed to be trusted, meaning it is not accessible to user code.
+     * @apiNote This method is for use by the socket adaptor.
      *
      * @throws IllegalBlockingModeException if the channel is non-blocking
      * @throws SocketTimeoutException if the timeout elapses
      */
-    SocketAddress blockingReceive(ByteBuffer dst, long nanos) throws IOException {
+    void blockingReceive(DatagramPacket p, long nanos) throws IOException {
+        Objects.requireNonNull(p);
+        assert nanos >= 0;
+
         readLock.lock();
         try {
             ensureOpen();
             if (!isBlocking())
                 throw new IllegalBlockingModeException();
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            boolean connected = isConnected();
-            SocketAddress sender;
-            do {
-                if (nanos > 0) {
-                    sender = trustedBlockingReceive(dst, nanos);
-                } else {
-                    sender = trustedBlockingReceive(dst);
-                }
-                // check sender when security manager set and not connected
-                if (sm != null && !connected) {
-                    InetSocketAddress isa = (InetSocketAddress) sender;
-                    try {
-                        sm.checkAccept(isa.getAddress().getHostAddress(), isa.getPort());
-                    } catch (SecurityException e) {
-                        sender = null;
+
+            // underlying socket needs to be non-blocking if timed receive or virtual thread
+            if (nanos > 0) {
+                configureSocketNonBlocking();
+            } else {
+                configureSocketNonBlockingIfVirtualThread();
+                nanos = Long.MAX_VALUE;
+            }
+
+            // p.bufLength is the maximum size of the datagram that can be received
+            int bufLength;
+            synchronized (p) {
+                bufLength = DatagramPackets.getBufLength(p);
+            }
+
+            long startNanos = System.nanoTime();
+            SocketAddress sender = null;
+            try {
+                SocketAddress remote = beginRead(true, false);
+                boolean connected = (remote != null);
+                do {
+                    long remainingNanos = nanos - (System.nanoTime() - startNanos);
+                    ByteBuffer dst = tryBlockingReceive(connected, bufLength, remainingNanos);
+
+                    // if datagram received then get sender and copy to DatagramPacket
+                    if (dst != null) {
+                        try {
+                            // sender address is in socket address buffer
+                            sender = sourceSocketAddress();
+
+                            // check sender when security manager set and not connected
+                            @SuppressWarnings("removal")
+                            SecurityManager sm = System.getSecurityManager();
+                            if (sm != null && !connected) {
+                                InetSocketAddress isa = (InetSocketAddress) sender;
+                                try {
+                                    sm.checkAccept(isa.getAddress().getHostAddress(), isa.getPort());
+                                } catch (SecurityException e) {
+                                    sender = null;
+                                }
+                            }
+
+                            // copy bytes to the DatagramPacket, and set length and sender
+                            if (sender != null) {
+                                synchronized (p) {
+                                    // re-read p.bufLength in case DatagramPacket changed
+                                    int len = Math.min(dst.limit(), DatagramPackets.getBufLength(p));
+                                    dst.get(p.getData(), p.getOffset(), len);
+                                    DatagramPackets.setLength(p, len);
+                                    p.setSocketAddress(sender);
+                                }
+                            }
+                        } finally {
+                            Util.offerFirstTemporaryDirectBuffer(dst);
+                        }
                     }
-                }
-            } while (sender == null);
-            return sender;
+                } while (sender == null && isOpen());
+            } finally {
+                endRead(true, (sender != null));
+            }
         } finally {
             readLock.unlock();
         }
     }
 
     /**
-     * Receives a datagram into given buffer. This method is used to support
-     * the socket adaptor. The buffer is assumed to be trusted.
+     * Attempt to receive a datagram.
+     *
+     * @param connected if the channel's socket is connected
+     * @param len the maximum size of the datagram to receive
+     * @param nanos the timeout, should be Long.MAX_VALUE for untimed
+     * @return a direct buffer containing the datagram or null if channel is closed
      * @throws SocketTimeoutException if the timeout elapses
      */
-    private SocketAddress trustedBlockingReceive(ByteBuffer dst)
+    private ByteBuffer tryBlockingReceive(boolean connected, int len, long nanos)
         throws IOException
     {
-        assert readLock.isHeldByCurrentThread() && isBlocking();
-        SocketAddress sender = null;
+        long startNanos = System.nanoTime();
+        ByteBuffer dst = Util.getTemporaryDirectBuffer(len);
+        int n = -1;
         try {
-            SocketAddress remote = beginRead(true, false);
-            configureSocketNonBlockingIfVirtualThread();
-            boolean connected = (remote != null);
-            int n = receive(dst, connected);
-            while (IOStatus.okayToRetry(n) && isOpen()) {
-                park(Net.POLLIN);
+            n = receive(dst, connected);
+            while (n == IOStatus.UNAVAILABLE && isOpen()) {
+                // virtual thread needs to release temporary direct buffer before parking
+                if (Thread.currentThread().isVirtual()) {
+                    Util.offerFirstTemporaryDirectBuffer(dst);
+                    dst = null;
+                }
+                long remainingNanos = nanos - (System.nanoTime() - startNanos);
+                if (remainingNanos <= 0) {
+                    throw new SocketTimeoutException("Receive timed out");
+                }
+                park(Net.POLLIN, remainingNanos);
+                // virtual thread needs to re-allocate temporary direct buffer after parking
+                if (Thread.currentThread().isVirtual()) {
+                    dst = Util.getTemporaryDirectBuffer(len);
+                }
                 n = receive(dst, connected);
             }
-            if (n > 0 || (n == 0 && isOpen())) {
-                // sender address is in socket address buffer
-                sender = sourceSocketAddress();
-            }
-            return sender;
+            dst.flip();
         } finally {
-            endRead(true, (sender != null));
-        }
-    }
-
-    /**
-     * Receives a datagram into given buffer with a timeout. This method is
-     * used to support the socket adaptor. The buffer is assumed to be trusted.
-     * @throws SocketTimeoutException if the timeout elapses
-     */
-    private SocketAddress trustedBlockingReceive(ByteBuffer dst, long nanos)
-        throws IOException
-    {
-        assert readLock.isHeldByCurrentThread() && isBlocking();
-        SocketAddress sender = null;
-        try {
-            SocketAddress remote = beginRead(true, false);
-            boolean connected = (remote != null);
-
-            // change socket to non-blocking
-            lockedConfigureBlocking(false);
-            try {
-                long startNanos = System.nanoTime();
-                int n = receive(dst, connected);
-                while (n == IOStatus.UNAVAILABLE && isOpen()) {
-                    long remainingNanos = nanos - (System.nanoTime() - startNanos);
-                    if (remainingNanos <= 0) {
-                        throw new SocketTimeoutException("Receive timed out");
-                    }
-                    park(Net.POLLIN, remainingNanos);
-                    n = receive(dst, connected);
-                }
-                if (n > 0 || (n == 0 && isOpen())) {
-                    // sender address is in socket address buffer
-                    sender = sourceSocketAddress();
-                }
-                return sender;
-            } finally {
-                // restore socket to blocking mode (if channel is open)
-                tryLockedConfigureBlocking(true);
+            // release buffer if no datagram received
+            if (dst != null && (n < 0 || (n == 0 && !isOpen()))) {
+                Util.offerFirstTemporaryDirectBuffer(dst);
+                dst = null;
             }
-        } finally {
-            endRead(true, (sender != null));
         }
+        return dst;
     }
 
     /**
@@ -889,19 +906,54 @@ class DatagramChannelImpl
     }
 
     /**
-     * Sends a datagram from the bytes in given buffer.
+     * Sends a datagram.
      *
      * @apiNote This method is for use by the socket adaptor.
      *
+     * @throws IllegalArgumentException if not connected and target address not set
      * @throws IllegalBlockingModeException if the channel is non-blocking
      */
-    void blockingSend(ByteBuffer src, SocketAddress target) throws IOException {
+    void blockingSend(DatagramPacket p) throws IOException {
+        Objects.requireNonNull(p);
+
         writeLock.lock();
         try {
             ensureOpen();
             if (!isBlocking())
                 throw new IllegalBlockingModeException();
-            send(src, target);
+
+            ByteBuffer src = null;
+            try {
+                InetSocketAddress target;
+                synchronized (p) {
+                    int len = p.getLength();
+                    src = Util.getTemporaryDirectBuffer(len);
+
+                    // copy bytes to temporary direct buffer
+                    src.put(p.getData(), p.getOffset(), len);
+                    src.flip();
+
+                    // target address
+                    if (p.getAddress() == null) {
+                        InetSocketAddress remote = remoteAddress();
+                        if (remote == null) {
+                            throw new IllegalArgumentException("Address not set");
+                        }
+                        // set address/port to be compatible with long standing behavior
+                        p.setAddress(remote.getAddress());
+                        p.setPort(remote.getPort());
+                        target = remote;
+                    } else {
+                        target = (InetSocketAddress) p.getSocketAddress();
+                    }
+                }
+
+                // send the datagram (does not block)
+                send(src, target);
+
+            } finally {
+                if (src != null) Util.offerFirstTemporaryDirectBuffer(src);
+            }
         } finally {
             writeLock.unlock();
         }
@@ -1198,17 +1250,27 @@ class DatagramChannelImpl
     }
 
     /**
-     * Ensures that the socket is configured non-blocking when on a virtual thread.
+     * Ensures that the socket is configured non-blocking.
      * @throws IOException if there is an I/O error changing the blocking mode
      */
-    private void configureSocketNonBlockingIfVirtualThread() throws IOException {
+    private void configureSocketNonBlocking() throws IOException {
         assert readLock.isHeldByCurrentThread() || writeLock.isHeldByCurrentThread();
-        if (!forcedNonBlocking && Thread.currentThread().isVirtual()) {
+        if (!forcedNonBlocking) {
             synchronized (stateLock) {
                 ensureOpen();
                 IOUtil.configureBlocking(fd, false);
                 forcedNonBlocking = true;
             }
+        }
+    }
+
+    /**
+     * Ensures that the socket is configured non-blocking when on a virtual thread.
+     * @throws IOException if there is an I/O error changing the blocking mode
+     */
+    private void configureSocketNonBlockingIfVirtualThread() throws IOException {
+        if (Thread.currentThread().isVirtual()) {
+            configureSocketNonBlocking();
         }
     }
 
@@ -1950,6 +2012,44 @@ class DatagramChannelImpl
                 NativeSocketAddress.freeAll(sockAddrs);
             }
         };
+    }
+
+    /**
+     * Defines static methods to get/set DatagramPacket fields and workaround
+     * DatagramPacket deficiencies.
+     */
+    private static class DatagramPackets {
+        private static final VarHandle LENGTH;
+        private static final VarHandle BUF_LENGTH;
+        static {
+            try {
+                PrivilegedExceptionAction<MethodHandles.Lookup> pa = () ->
+                    MethodHandles.privateLookupIn(DatagramPacket.class, MethodHandles.lookup());
+                @SuppressWarnings("removal")
+                MethodHandles.Lookup l = AccessController.doPrivileged(pa);
+                LENGTH = l.findVarHandle(DatagramPacket.class, "length", int.class);
+                BUF_LENGTH = l.findVarHandle(DatagramPacket.class, "bufLength", int.class);
+            } catch (Exception e) {
+                throw new ExceptionInInitializerError(e);
+            }
+        }
+
+        /**
+         * Sets the DatagramPacket.length field. DatagramPacket.setLength cannot be
+         * used at this time because it sets both the length and bufLength fields.
+         */
+        static void setLength(DatagramPacket p, int value) {
+            assert Thread.holdsLock(p);
+            LENGTH.set(p, value);
+        }
+
+        /**
+         * Returns the value of the DatagramPacket.bufLength field.
+         */
+        static int getBufLength(DatagramPacket p) {
+            assert Thread.holdsLock(p);
+            return (int) BUF_LENGTH.get(p);
+        }
     }
 
     // -- Native methods --

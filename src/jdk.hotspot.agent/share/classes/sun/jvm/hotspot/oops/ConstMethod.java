@@ -417,30 +417,41 @@ public class ConstMethod extends Metadata {
     return ret;
   }
 
-  private boolean hasMethodParameters() {
-    return (getFlags() & HAS_METHOD_PARAMETERS) != 0;
+  public U1Array getMethodAnnotations() {
+    if (hasMethodAnnotations()) {
+      Address addr = getAddressAtOffset(getSize() - getMethodAnnotationsOffset());
+      return VMObjectFactory.newObject(U1Array.class, addr);
+    } else {
+      return null;
+    }
   }
 
-  private boolean hasGenericSignature() {
-    return (getFlags() & HAS_GENERIC_SIGNATURE) != 0;
+  public U1Array getParameterAnnotations() {
+    if (hasParameterAnnotations()) {
+      Address addr = getAddressAtOffset(getSize() - getParameterAnnotationsOffset());
+      return VMObjectFactory.newObject(U1Array.class, addr);
+    } else {
+      return null;
+    }
   }
 
-  private boolean hasMethodAnnotations() {
-    return (getFlags() & HAS_METHOD_ANNOTATIONS) != 0;
+  public U1Array getTypeAnnotations() {
+    if (hasTypeAnnotations()) {
+      Address addr = getAddressAtOffset(getSize() - getTypeAnnotationsOffset());
+      return VMObjectFactory.newObject(U1Array.class, addr);
+    } else {
+      return null;
+    }
   }
 
-  private boolean hasParameterAnnotations() {
-    return (getFlags() & HAS_PARAMETER_ANNOTATIONS) != 0;
+  public U1Array getDefaultAnnotations() {
+    if (hasDefaultAnnotations()) {
+      Address addr = getAddressAtOffset(getSize() - getDefaultAnnotationsOffset());
+      return VMObjectFactory.newObject(U1Array.class, addr);
+    } else {
+      return null;
+    }
   }
-
-  private boolean hasDefaultAnnotations() {
-    return (getFlags() & HAS_DEFAULT_ANNOTATIONS) != 0;
-  }
-
-  private boolean hasTypeAnnotations() {
-    return (getFlags() & HAS_TYPE_ANNOTATIONS) != 0;
-  }
-
 
   //---------------------------------------------------------------------------
   // Internals only below this point
@@ -608,6 +619,72 @@ public class ConstMethod extends Metadata {
     }
     offset -= length * exceptionTableElementSize;
     return offset;
+  }
+
+  private boolean hasMethodParameters() {
+    return (getFlags() & HAS_METHOD_PARAMETERS) != 0;
+  }
+
+  private boolean hasGenericSignature() {
+    return (getFlags() & HAS_GENERIC_SIGNATURE) != 0;
+  }
+
+  private Address getAddressAtOffset(long offsetInWords) {
+    return getAddress().getAddressAt(offsetInWords * VM.getVM().getAddressSize());
+  }
+
+  // Pointers to annotations are stored towards the end of the ConstMethod in following format.
+  // Each of the pointer may or may not be present.
+  //
+  //            |<-------------- getSize() -----------------|
+  //   start of ConstMethod                          end of ConstMethod
+  //            |                                           |
+  //            V                                           V
+  //            | ... | default | type | parameter | method |
+  //
+  // These methods return the offset of the pointer to the requested annotation from the end of ConstMethod.
+  private int getMethodAnnotationsOffset() {
+    return 1;
+  }
+
+  private int getParameterAnnotationsOffset() {
+    int offset = 1;
+    if (hasMethodAnnotations()) {
+      offset += getMethodAnnotationsOffset();
+    }
+    return offset;
+  }
+
+  private int getTypeAnnotationsOffset() {
+    int offset = 1;
+    if (hasParameterAnnotations()) {
+      offset += getParameterAnnotationsOffset();
+    }
+    return offset;
+  }
+
+  private int getDefaultAnnotationsOffset() {
+    int offset = 1;
+    if (hasTypeAnnotations()) {
+      offset += getTypeAnnotationsOffset();
+    }
+    return offset;
+  }
+
+  private boolean hasMethodAnnotations() {
+    return (getFlags() & HAS_METHOD_ANNOTATIONS) != 0;
+  }
+
+  private boolean hasParameterAnnotations() {
+    return (getFlags() & HAS_PARAMETER_ANNOTATIONS) != 0;
+  }
+
+  private boolean hasTypeAnnotations() {
+    return (getFlags() & HAS_TYPE_ANNOTATIONS) != 0;
+  }
+
+  private boolean hasDefaultAnnotations() {
+    return (getFlags() & HAS_DEFAULT_ANNOTATIONS) != 0;
   }
 
 }

@@ -394,19 +394,20 @@ public final class ScopedValue<T> {
          * to its value in the current thread.
          * When the operation completes (normally or with an exception), each scoped value
          * in the mapping will revert to being unbound, or revert to its previous value
-         * when previously bound, in the current thread.
+         * when previously bound, in the current thread. If {@code op} completes with an
+         * exception then it propagated by this method.
          *
-         * <p> Scoped values are intended to be used in a <em>structured manner</em>.
-         * If {@code op} creates a {@link StructuredTaskScope} but does not {@linkplain
-         * StructuredTaskScope#close() close} it, then exiting {@code op} causes the
-         * underlying construct of each {@code StructuredTaskScope} created in the
-         * dynamic scope to be closed. This may require blocking until all child threads
-         * have completed their sub-tasks. The closing is done in the reverse order that
-         * they were created. Once closed, {@link StructureViolationException} is thrown.
+         * <p> Scoped values are intended to be used in a <em>structured manner</em>. If code
+         * invoked directly or indirectly by the operation creates a {@link StructuredTaskScope}
+         * but does not {@linkplain StructuredTaskScope#close() close} it, then it is detected
+         * as a <em>structure violation</em> when the operation completes (normally or with an
+         * exception). In that case, the underlying construct of the {@code StructuredTaskScope}
+         * is closed and {@link StructureViolationException} is thrown.
          *
          * @param op the operation to run
          * @param <R> the type of the result of the operation
          * @return the result
+         * @throws StructureViolationException if a structure violation is detected
          * @throws Exception if {@code op} completes with an exception
          * @see ScopedValue#callWhere(ScopedValue, Object, Callable)
          */
@@ -423,19 +424,20 @@ public final class ScopedValue<T> {
          * to its value in the current thread.
          * When the operation completes (normally or with an exception), each scoped value
          * in the mapping will revert to being unbound, or revert to its previous value
-         * when previously bound, in the current thread.
+         * when previously bound, in the current thread. If {@code op} completes with an
+         * exception then it propagated by this method.
          *
-         * <p> Scoped values are intended to be used in a <em>structured manner</em>.
-         * If {@code op} creates a {@link StructuredTaskScope} but does not {@linkplain
-         * StructuredTaskScope#close() close} it, then exiting {@code op} causes the
-         * underlying construct of each {@code StructuredTaskScope} created in the
-         * dynamic scope to be closed. This may require blocking until all child threads
-         * have completed their sub-tasks. The closing is done in the reverse order that
-         * they were created. Once closed, {@link StructureViolationException} is thrown.
+         * <p> Scoped values are intended to be used in a <em>structured manner</em>. If code
+         * invoked directly or indirectly by the operation creates a {@link StructuredTaskScope}
+         * but does not {@linkplain StructuredTaskScope#close() close} it, then it is detected
+         * as a <em>structure violation</em> when the operation completes (normally or with an
+         * exception). In that case, the underlying construct of the {@code StructuredTaskScope}
+         * is closed and {@link StructureViolationException} is thrown.
          *
          * @param op the operation to run
          * @param <R> the type of the result of the operation
          * @return the result
+         * @throws StructureViolationException if a structure violation is detected
          * @see ScopedValue#getWhere(ScopedValue, Object, Supplier)
          */
         public <R> R get(Supplier<? extends R> op) {
@@ -486,17 +488,18 @@ public final class ScopedValue<T> {
          * in the current thread.
          * When the operation completes (normally or with an exception), each scoped value
          * in the mapping will revert to being unbound, or revert to its previous value
-         * when previously bound, in the current thread.
+         * when previously bound, in the current thread. If {@code op} completes with an
+         * exception then it propagated by this method.
          *
-         * <p> Scoped values are intended to be used in a <em>structured manner</em>.
-         * If {@code op} creates a {@link StructuredTaskScope} but does not {@linkplain
-         * StructuredTaskScope#close() close} it, then exiting {@code op} causes the
-         * underlying construct of each {@code StructuredTaskScope} created in the
-         * dynamic scope to be closed. This may require blocking until all child threads
-         * have completed their sub-tasks. The closing is done in the reverse order that
-         * they were created. Once closed, {@link StructureViolationException} is thrown.
+         * <p> Scoped values are intended to be used in a <em>structured manner</em>. If code
+         * invoked directly or indirectly by the operation creates a {@link StructuredTaskScope}
+         * but does not {@linkplain StructuredTaskScope#close() close} it, then it is detected
+         * as a <em>structure violation</em> when the operation completes (normally or with an
+         * exception). In that case, the underlying construct of the {@code StructuredTaskScope}
+         * is closed and {@link StructureViolationException} is thrown.
          *
          * @param op the operation to run
+         * @throws StructureViolationException if a structure violation is detected
          * @see ScopedValue#runWhere(ScopedValue, Object, Runnable)
          */
         public void run(Runnable op) {
@@ -553,15 +556,15 @@ public final class ScopedValue<T> {
      * Calls a value-returning operation with a {@code ScopedValue} bound to a value
      * in the current thread. When the operation completes (normally or with an
      * exception), the {@code ScopedValue} will revert to being unbound, or revert to
-     * its previous value when previously bound, in the current thread.
+     * its previous value when previously bound, in the current thread. If {@code op}
+     * completes with an exception then it propagated by this method.
      *
-     * <p> Scoped values are intended to be used in a <em>structured manner</em>.
-     * If {@code op} creates a {@link StructuredTaskScope} but does not {@linkplain
-     * StructuredTaskScope#close() close} it, then exiting {@code op} causes the
-     * underlying construct of each {@code StructuredTaskScope} created in the
-     * dynamic scope to be closed. This may require blocking until all child threads
-     * have completed their sub-tasks. The closing is done in the reverse order that
-     * they were created. Once closed, {@link StructureViolationException} is thrown.
+     * <p> Scoped values are intended to be used in a <em>structured manner</em>. If code
+     * invoked directly or indirectly by the operation creates a {@link StructuredTaskScope}
+     * but does not {@linkplain StructuredTaskScope#close() close} it, then it is detected
+     * as a <em>structure violation</em> when the operation completes (normally or with an
+     * exception). In that case, the underlying construct of the {@code StructuredTaskScope}
+     * is closed and {@link StructureViolationException} is thrown.
      *
      * @implNote
      * This method is implemented to be equivalent to:
@@ -576,6 +579,7 @@ public final class ScopedValue<T> {
      * @param <R> the result type
      * @param op the operation to call
      * @return the result
+     * @throws StructureViolationException if a structure violation is detected
      * @throws Exception if the operation completes with an exception
      */
     public static <T, R> R callWhere(ScopedValue<T> key,
@@ -588,15 +592,15 @@ public final class ScopedValue<T> {
      * Invokes a supplier of results with a {@code ScopedValue} bound to a value
      * in the current thread. When the operation completes (normally or with an
      * exception), the {@code ScopedValue} will revert to being unbound, or revert to
-     * its previous value when previously bound, in the current thread.
+     * its previous value when previously bound, in the current thread. If {@code op}
+     * completes with an exception then it propagated by this method.
      *
-     * <p> Scoped values are intended to be used in a <em>structured manner</em>.
-     * If {@code op} creates a {@link StructuredTaskScope} but does not {@linkplain
-     * StructuredTaskScope#close() close} it, then exiting {@code op} causes the
-     * underlying construct of each {@code StructuredTaskScope} created in the
-     * dynamic scope to be closed. This may require blocking until all child threads
-     * have completed their sub-tasks. The closing is done in the reverse order that
-     * they were created. Once closed, {@link StructureViolationException} is thrown.
+     * <p> Scoped values are intended to be used in a <em>structured manner</em>. If code
+     * invoked directly or indirectly by the operation creates a {@link StructuredTaskScope}
+     * but does not {@linkplain StructuredTaskScope#close() close} it, then it is detected
+     * as a <em>structure violation</em> when the operation completes (normally or with an
+     * exception). In that case, the underlying construct of the {@code StructuredTaskScope}
+     * is closed and {@link StructureViolationException} is thrown.
      *
      * @implNote
      * This method is implemented to be equivalent to:
@@ -611,6 +615,7 @@ public final class ScopedValue<T> {
      * @param <R> the result type
      * @param op the operation to call
      * @return the result
+     * @throws StructureViolationException if a structure violation is detected
      */
     public static <T, R> R getWhere(ScopedValue<T> key,
                                     T value,
@@ -622,15 +627,15 @@ public final class ScopedValue<T> {
      * Run an operation with a {@code ScopedValue} bound to a value in the current
      * thread. When the operation completes (normally or with an exception), the
      * {@code ScopedValue} will revert to being unbound, or revert to its previous value
-     * when previously bound, in the current thread.
+     * when previously bound, in the current thread. If {@code op} completes with an
+     * exception then it propagated by this method.
      *
-     * <p> Scoped values are intended to be used in a <em>structured manner</em>.
-     * If {@code op} creates a {@link StructuredTaskScope} but does not {@linkplain
-     * StructuredTaskScope#close() close} it, then exiting {@code op} causes the
-     * underlying construct of each {@code StructuredTaskScope} created in the
-     * dynamic scope to be closed. This may require blocking until all child threads
-     * have completed their sub-tasks. The closing is done in the reverse order that
-     * they were created. Once closed, {@link StructureViolationException} is thrown.
+     * <p> Scoped values are intended to be used in a <em>structured manner</em>. If code
+     * invoked directly or indirectly by the operation creates a {@link StructuredTaskScope}
+     * but does not {@linkplain StructuredTaskScope#close() close} it, then it is detected
+     * as a <em>structure violation</em> when the operation completes (normally or with an
+     * exception). In that case, the underlying construct of the {@code StructuredTaskScope}
+     * is closed and {@link StructureViolationException} is thrown.
      *
      * @implNote
      * This method is implemented to be equivalent to:
@@ -643,6 +648,7 @@ public final class ScopedValue<T> {
      * @param value the value, can be {@code null}
      * @param <T> the type of the value
      * @param op the operation to call
+     * @throws StructureViolationException if a structure violation is detected
      */
     public static <T> void runWhere(ScopedValue<T> key, T value, Runnable op) {
         where(key, value).run(op);

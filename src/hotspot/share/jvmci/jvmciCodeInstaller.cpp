@@ -32,10 +32,11 @@
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "memory/universe.hpp"
-#include "oops/compressedOops.inline.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
@@ -396,7 +397,8 @@ ScopeValue* CodeInstaller::get_scope_value(HotSpotCompiledCodeStream* stream, u1
     }
     case REGISTER_PRIMITIVE:
     case REGISTER_NARROW_OOP:
-    case REGISTER_OOP: {
+    case REGISTER_OOP:
+    case REGISTER_VECTOR: {
       u2 number = stream->read_u2("register");
       VMReg hotspotRegister = get_hotspot_reg(number, JVMCI_CHECK_NULL);
       if (is_general_purpose_reg(hotspotRegister)) {
@@ -422,6 +424,8 @@ ScopeValue* CodeInstaller::get_scope_value(HotSpotCompiledCodeStream* stream, u1
           locationType = Location::normal;
         } else if (type == T_DOUBLE) {
           locationType = Location::dbl;
+        } else if (type == T_OBJECT && tag == REGISTER_VECTOR) {
+          locationType = Location::vector;
         } else {
           JVMCI_ERROR_NULL("unexpected type %s in floating point register%s", basictype_to_str(type), stream->context());
         }
@@ -434,14 +438,15 @@ ScopeValue* CodeInstaller::get_scope_value(HotSpotCompiledCodeStream* stream, u1
     }
     case STACK_SLOT_PRIMITIVE:
     case STACK_SLOT_NARROW_OOP:
-    case STACK_SLOT_OOP: {
+    case STACK_SLOT_OOP:
+    case STACK_SLOT_VECTOR: {
       jint offset = (jshort) stream->read_s2("offset");
       if (stream->read_bool("addRawFrameSize")) {
         offset += _total_frame_size;
       }
       Location::Type locationType;
       if (type == T_OBJECT) {
-        locationType = tag == STACK_SLOT_NARROW_OOP ? Location::narrowoop : Location::oop;
+        locationType = tag == STACK_SLOT_VECTOR ? Location::vector : tag == STACK_SLOT_NARROW_OOP ? Location::narrowoop : Location::oop;
       } else if (type == T_LONG) {
         locationType = Location::lng;
       } else if (type == T_DOUBLE) {
@@ -646,6 +651,53 @@ void CodeInstaller::initialize_dependencies(HotSpotCompiledCodeStream* stream, u
   }
 }
 
+JVMCI::CodeInstallResult CodeInstaller::install_runtime_stub(CodeBlob*& cb,
+                                                             const char* name,
+                                                             CodeBuffer* buffer,
+                                                             int stack_slots,
+                                                             JVMCI_TRAPS) {
+  if (name == nullptr) {
+    JVMCI_ERROR_OK("stub should have a name");
+  }
+
+  name = os::strdup(name);
+  GrowableArray<RuntimeStub*> *stubs_to_free = nullptr;
+#ifdef ASSERT
+  const char* val = Arguments::PropertyList_get_value(Arguments::system_properties(), "test.jvmci.forceRuntimeStubAllocFail");
+  if (val != nullptr && strstr(name , val) != 0) {
+    stubs_to_free = new GrowableArray<RuntimeStub*>();
+    JVMCI_event_1("forcing allocation of %s in code cache to fail", name);
+  }
+#endif
+
+  do {
+    RuntimeStub* stub = RuntimeStub::new_runtime_stub(name,
+                                       buffer,
+                                       _offsets.value(CodeOffsets::Frame_Complete),
+                                       stack_slots,
+                                       _debug_recorder->_oopmaps,
+                                       /* caller_must_gc_arguments */ false,
+                                       /* alloc_fail_is_fatal */ false);
+    cb = stub;
+    if (stub == nullptr) {
+      // Allocation failed
+#ifdef ASSERT
+      if (stubs_to_free != nullptr) {
+        JVMCI_event_1("allocation of %s in code cache failed, freeing %d stubs", name, stubs_to_free->length());
+        for (GrowableArrayIterator<RuntimeStub*> iter = stubs_to_free->begin(); iter != stubs_to_free->end(); ++iter) {
+          RuntimeStub::free(*iter);
+        }
+      }
+#endif
+      return JVMCI::cache_full;
+    }
+    if (stubs_to_free == nullptr) {
+      return JVMCI::ok;
+    }
+    stubs_to_free->append(stub);
+  } while (true);
+}
+
 JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     jlong compiled_code_buffer,
     bool with_type_info,
@@ -703,17 +755,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
   int stack_slots = _total_frame_size / HeapWordSize; // conversion to words
 
   if (!is_nmethod) {
-    if (name == nullptr) {
-      JVMCI_ERROR_OK("stub should have a name");
-    }
-    name = os::strdup(name); // Note: this leaks. See JDK-8289632
-    cb = RuntimeStub::new_runtime_stub(name,
-                                       &buffer,
-                                       _offsets.value(CodeOffsets::Frame_Complete),
-                                       stack_slots,
-                                       _debug_recorder->_oopmaps,
-                                       false);
-    result = JVMCI::ok;
+    return install_runtime_stub(cb, name, &buffer, stack_slots, JVMCI_CHECK_OK);
   } else {
     if (compile_state != nullptr) {
       jvmci_env()->set_compile_state(compile_state);

@@ -1096,7 +1096,9 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                           G1CollectedHeap heap = (G1CollectedHeap)collHeap;
                           HeapRegion region = heap.hrm().getByAddress(handle);
 
-                          if (region.isFree()) {
+                          if (region == null) {
+                            // intentionally skip
+                          } else if (region.isFree()) {
                             anno = "Free ";
                             bad = false;
                           } else if (region.isYoung()) {

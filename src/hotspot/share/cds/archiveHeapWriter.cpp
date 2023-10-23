@@ -24,8 +24,10 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveHeapWriter.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/oopFactory.hpp"
@@ -64,12 +66,19 @@ GrowableArrayCHeap<oop, mtClassShared>* ArchiveHeapWriter::_source_objs;
 ArchiveHeapWriter::BufferOffsetToSourceObjectTable*
   ArchiveHeapWriter::_buffer_offset_to_source_obj_table = nullptr;
 
+
+typedef ResourceHashtable<address, size_t,
+      127, // prime number
+      AnyObj::C_HEAP,
+      mtClassShared> FillersTable;
+static FillersTable* _fillers;
+
 void ArchiveHeapWriter::init() {
   if (HeapShared::can_write()) {
     Universe::heap()->collect(GCCause::_java_lang_system_gc);
 
     _buffer_offset_to_source_obj_table = new BufferOffsetToSourceObjectTable();
-
+    _fillers = new FillersTable();
     _requested_bottom = nullptr;
     _requested_top = nullptr;
 
@@ -130,7 +139,7 @@ oop ArchiveHeapWriter::requested_obj_from_buffer_offset(size_t offset) {
 }
 
 oop ArchiveHeapWriter::source_obj_to_requested_obj(oop src_obj) {
-  assert(DumpSharedSpaces, "dump-time only");
+  assert(CDSConfig::is_dumping_heap(), "dump-time only");
   HeapShared::CachedOopInfo* p = HeapShared::archived_object_cache()->get(src_obj);
   if (p != nullptr) {
     return requested_obj_from_buffer_offset(p->buffer_offset());
@@ -255,7 +264,7 @@ int ArchiveHeapWriter::filler_array_length(size_t fill_bytes) {
   return -1;
 }
 
-void ArchiveHeapWriter::init_filler_array_at_buffer_top(int array_length, size_t fill_bytes) {
+HeapWord* ArchiveHeapWriter::init_filler_array_at_buffer_top(int array_length, size_t fill_bytes) {
   assert(UseCompressedClassPointers, "Archived heap only supported for compressed klasses");
   Klass* oak = Universe::objectArrayKlassObj(); // already relocated to point to archived klass
   HeapWord* mem = offset_to_buffered_address<HeapWord*>(_buffer_used);
@@ -264,6 +273,7 @@ void ArchiveHeapWriter::init_filler_array_at_buffer_top(int array_length, size_t
   narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(oak);
   cast_to_oop(mem)->set_narrow_klass(nk);
   arrayOopDesc::set_length(mem, array_length);
+  return mem;
 }
 
 void ArchiveHeapWriter::maybe_fill_gc_region_gap(size_t required_byte_size) {
@@ -293,10 +303,26 @@ void ArchiveHeapWriter::maybe_fill_gc_region_gap(size_t required_byte_size) {
     int array_length = filler_array_length(fill_bytes);
     log_info(cds, heap)("Inserting filler obj array of %d elements (" SIZE_FORMAT " bytes total) @ buffer offset " SIZE_FORMAT,
                         array_length, fill_bytes, _buffer_used);
-    init_filler_array_at_buffer_top(array_length, fill_bytes);
-
+    HeapWord* filler = init_filler_array_at_buffer_top(array_length, fill_bytes);
     _buffer_used = filler_end;
+    _fillers->put((address)filler, fill_bytes);
   }
+}
+
+size_t ArchiveHeapWriter::get_filler_size_at(address buffered_addr) {
+  size_t* p = _fillers->get(buffered_addr);
+  if (p != nullptr) {
+    assert(*p > 0, "filler must be larger than zero bytes");
+    return *p;
+  } else {
+    return 0; // buffered_addr is not a filler
+  }
+}
+
+template <typename T>
+void update_buffered_object_field(address buffered_obj, int field_offset, T value) {
+  T* field_addr = cast_to_oop(buffered_obj)->field_addr<T>(field_offset);
+  *field_addr = value;
 }
 
 size_t ArchiveHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
@@ -323,6 +349,20 @@ size_t ArchiveHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
   assert(is_object_aligned(_buffer_used), "sanity");
   assert(is_object_aligned(byte_size), "sanity");
   memcpy(to, from, byte_size);
+
+  // These native pointers will be restored explicitly at run time.
+  if (java_lang_Module::is_instance(src_obj)) {
+    update_buffered_object_field<ModuleEntry*>(to, java_lang_Module::module_entry_offset(), nullptr);
+  } else if (java_lang_ClassLoader::is_instance(src_obj)) {
+#ifdef ASSERT
+    // We only archive these loaders
+    if (src_obj != SystemDictionary::java_platform_loader() &&
+        src_obj != SystemDictionary::java_system_loader()) {
+      assert(src_obj->klass()->name()->equals("jdk/internal/loader/ClassLoaders$BootClassLoader"), "must be");
+    }
+#endif
+    update_buffered_object_field<ClassLoaderData*>(to, java_lang_ClassLoader::loader_data_offset(), nullptr);
+  }
 
   size_t buffered_obj_offset = _buffer_used;
   _buffer_used = new_used;
@@ -438,12 +478,12 @@ void ArchiveHeapWriter::update_header_for_requested_obj(oop requested_obj, oop s
   // identity_hash for all shared objects, so they are less likely to be written
   // into during run time, increasing the potential of memory sharing.
   if (src_obj != nullptr) {
-    int src_hash = src_obj->identity_hash();
+    intptr_t src_hash = src_obj->identity_hash();
     fake_oop->set_mark(markWord::prototype().copy_set_hash(src_hash));
     assert(fake_oop->mark().is_unlocked(), "sanity");
 
-    DEBUG_ONLY(int archived_hash = fake_oop->identity_hash());
-    assert(src_hash == archived_hash, "Different hash codes: original %x, archived %x", src_hash, archived_hash);
+    DEBUG_ONLY(intptr_t archived_hash = fake_oop->identity_hash());
+    assert(src_hash == archived_hash, "Different hash codes: original " INTPTR_FORMAT ", archived " INTPTR_FORMAT, src_hash, archived_hash);
   }
 }
 
@@ -512,6 +552,20 @@ void ArchiveHeapWriter::mark_native_pointer(oop src_obj, int field_offset) {
     info._field_offset = field_offset;
     _native_pointers->append(info);
   }
+}
+
+// Do we have a jlong/jint field that's actually a pointer to a MetaspaceObj?
+bool ArchiveHeapWriter::is_marked_as_native_pointer(ArchiveHeapInfo* heap_info, oop src_obj, int field_offset) {
+  HeapShared::CachedOopInfo* p = HeapShared::archived_object_cache()->get(src_obj);
+  assert(p != nullptr, "must be");
+
+  // requested_field_addr = the address of this field in the requested space
+  oop requested_obj = requested_obj_from_buffer_offset(p->buffer_offset());
+  Metadata** requested_field_addr = (Metadata**)(cast_from_oop<address>(requested_obj) + field_offset);
+  assert((Metadata**)_requested_bottom <= requested_field_addr && requested_field_addr < (Metadata**) _requested_top, "range check");
+
+  BitMap::idx_t idx = requested_field_addr - (Metadata**) _requested_bottom;
+  return (idx < heap_info->ptrmap()->size()) && (heap_info->ptrmap()->at(idx) == true);
 }
 
 void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {

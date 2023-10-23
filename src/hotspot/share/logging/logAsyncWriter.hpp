@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,13 +67,13 @@ class AsyncLogWriter : public NonJavaThread {
                           uint32_t, 17, /*table_size*/
                           ALLOC_TYPE, mtLogging>;
 
-  // Messsage is the envelop of a log line and its associative data.
+  // Messsage is the envelope of a log line and its associative data.
   // Its length is variable because of the zero-terminated c-str. It is only valid when we create it using placement new
   // within a buffer.
   //
   // Example layout:
   // ---------------------------------------------
-  // |_output|_decorations|"a log line", |pad| <- pointer aligned.
+  // |_output|_decorations|"a log line", |pad| <- Message aligned.
   // |_output|_decorations|"yet another",|pad|
   // ...
   // |nullptr|_decorations|"",|pad| <- flush token
@@ -84,16 +85,16 @@ class AsyncLogWriter : public NonJavaThread {
     LogFileStreamOutput* const _output;
     const LogDecorations _decorations;
    public:
-    Message(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg)
+    // msglen excludes NUL-byte
+    Message(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg, const size_t msglen)
       : _output(output), _decorations(decorations) {
       assert(msg != nullptr, "c-str message can not be null!");
-      PRAGMA_STRINGOP_OVERFLOW_IGNORED
-      strcpy(reinterpret_cast<char* >(this+1), msg);
+      memcpy(reinterpret_cast<char* >(this+1), msg, msglen + 1);
     }
 
     // Calculate the size for a prospective Message object depending on its message length including the trailing zero
     static constexpr size_t calc_size(size_t message_len) {
-      return align_up(sizeof(Message) + message_len + 1, sizeof(void*));
+      return align_up(sizeof(Message) + message_len + 1, alignof(Message));
     }
 
     size_t size() const {
@@ -114,6 +115,8 @@ class AsyncLogWriter : public NonJavaThread {
    public:
     Buffer(size_t capacity) :  _pos(0), _capacity(capacity) {
       _buf = NEW_C_HEAP_ARRAY(char, capacity, mtLogging);
+      // Ensure _pos is Message-aligned
+      _pos = align_up(_buf, alignof(Message)) - _buf;
       assert(capacity >= Message::calc_size(0), "capcity must be great a token size");
     }
 
@@ -124,7 +127,10 @@ class AsyncLogWriter : public NonJavaThread {
     void push_flush_token();
     bool push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg);
 
-    void reset() { _pos = 0; }
+    void reset() {
+      // Ensure _pos is Message-aligned
+      _pos = align_up(_buf, alignof(Message)) - _buf;
+    }
 
     class Iterator {
       const Buffer& _buf;
@@ -166,7 +172,7 @@ class AsyncLogWriter : public NonJavaThread {
 
   AsyncLogWriter();
   void enqueue_locked(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg);
-  void write();
+  void write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot);
   void run() override;
   void pre_run() override {
     NonJavaThread::pre_run();

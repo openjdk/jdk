@@ -726,7 +726,6 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
   fprintf(fp_cpp, "  }\n");
   fprintf(fp_cpp, "#endif\n\n");
 #endif
-  fprintf(fp_cpp, "  assert(this, \"null pipeline info\");\n");
   fprintf(fp_cpp, "  assert(pred, \"null predecessor pipline info\");\n\n");
   fprintf(fp_cpp, "  if (pred->hasFixedLatency())\n    return (pred->fixedLatency());\n\n");
   fprintf(fp_cpp, "  // If this is not an operand, then assume a dependence with 0 latency\n");
@@ -1469,10 +1468,14 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
       // End of scope for this peephole's constraints
       fprintf(fp, "    }\n");
     } else {
-      const char* replace_inst = nullptr;
-      preplace->next_instruction(replace_inst);
-      // Generate the target instruction
-      fprintf(fp, "    auto replacing = [](){ return static_cast<MachNode*>(new %sNode()); };\n", replace_inst);
+      if (preplace != nullptr) {
+        const char *replace_inst = nullptr;
+        preplace->next_instruction(replace_inst);
+        // Generate the target instruction
+        fprintf(fp, "    auto replacing = [](){ return static_cast<MachNode*>(new %sNode()); };\n", replace_inst);
+      } else {
+        fprintf(fp, "    auto replacing = nullptr;\n");
+      }
 
       // Call the precedure
       fprintf(fp, "    bool replacement = Peephole::%s(block, block_index, cfg_, ra_, replacing", pprocedure->name());
@@ -4009,6 +4012,22 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
     }
     fprintf(fp_cpp, " );\n");
     // #####
+  }
+  if (inst->_flag != nullptr) {
+    Flag* node = inst->_flag;
+    const char* prefix = "Node::";
+    bool node_flags_set = false;
+    do {
+      if (!node_flags_set) {
+        fprintf(fp_cpp, "%s node->add_flag(%s%s", indent, prefix, node->_name);
+        node_flags_set = true;
+      } else {
+        fprintf(fp_cpp, " | %s%s", prefix, node->_name);
+      }
+    } while ((node = node->next()) != nullptr);
+    if (node_flags_set) {
+      fprintf(fp_cpp, ");\n");
+    }
   }
 
   // Fill in the bottom_type where requested

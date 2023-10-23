@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaAssertions.hpp"
@@ -41,6 +42,7 @@
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
+#include "oops/compressedKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiAgentList.hpp"
@@ -59,6 +61,7 @@
 #include "services/management.hpp"
 #include "services/nmtCommon.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
@@ -85,7 +88,6 @@ char*  Arguments::_java_command                 = nullptr;
 SystemProperty* Arguments::_system_properties   = nullptr;
 size_t Arguments::_conservative_max_heap_alignment = 0;
 Arguments::Mode Arguments::_mode                = _mixed;
-bool   Arguments::_xdebug_mode                  = false;
 const char*  Arguments::_java_vendor_url_bug    = nullptr;
 const char*  Arguments::_sun_java_launcher      = DEFAULT_JAVA_LAUNCHER;
 bool   Arguments::_sun_java_launcher_is_altjvm  = false;
@@ -523,6 +525,12 @@ static SpecialFlag const special_jvm_flags[] = {
   { "G1ConcRSHotCardLimit",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "RefDiscoveryPolicy",           JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+  { "DoReserveCopyInSuperWord",     JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
+
+#ifdef LINUX
+  { "UseHugeTLBFS",                 JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
+  { "UseSHM",                       JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
+#endif
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1177,7 +1185,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
   bool in_white_space = true;
   bool in_comment     = false;
   bool in_quote       = false;
-  char quote_c        = 0;
+  int  quote_c        = 0;
   bool result         = true;
 
   int c = getc(stream);
@@ -1189,7 +1197,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
         if (c == '#') in_comment = true;
         else if (!isspace(c)) {
           in_white_space = false;
-          token[pos++] = c;
+          token[pos++] = checked_cast<char>(c);
         }
       }
     } else {
@@ -1209,7 +1217,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
       } else if (in_quote && (c == quote_c)) {
         in_quote = false;
       } else {
-        token[pos++] = c;
+        token[pos++] = checked_cast<char>(c);
       }
     }
     c = getc(stream);
@@ -1325,7 +1333,7 @@ const char* unsupported_options[] = { "--limit-modules",
                                       "--patch-module"
                                     };
 void Arguments::check_unsupported_dumping_properties() {
-  assert(is_dumping_archive(),
+  assert(CDSConfig::is_dumping_archive(),
          "this function is only used with CDS dump time");
   assert(ARRAY_SIZE(unsupported_properties) == ARRAY_SIZE(unsupported_options), "must be");
   // If a vm option is found in the unsupported_options array, vm will exit with an error message.
@@ -1565,22 +1573,22 @@ void Arguments::set_heap_size() {
   // Convert deprecated flags
   if (FLAG_IS_DEFAULT(MaxRAMPercentage) &&
       !FLAG_IS_DEFAULT(MaxRAMFraction))
-    MaxRAMPercentage = 100.0 / MaxRAMFraction;
+    MaxRAMPercentage = 100.0 / (double)MaxRAMFraction;
 
   if (FLAG_IS_DEFAULT(MinRAMPercentage) &&
       !FLAG_IS_DEFAULT(MinRAMFraction))
-    MinRAMPercentage = 100.0 / MinRAMFraction;
+    MinRAMPercentage = 100.0 / (double)MinRAMFraction;
 
   if (FLAG_IS_DEFAULT(InitialRAMPercentage) &&
       !FLAG_IS_DEFAULT(InitialRAMFraction))
-    InitialRAMPercentage = 100.0 / InitialRAMFraction;
+    InitialRAMPercentage = 100.0 / (double)InitialRAMFraction;
 
   // If the maximum heap size has not been set with -Xmx,
   // then set it as fraction of the size of physical memory,
   // respecting the maximum and minimum sizes of the heap.
   if (FLAG_IS_DEFAULT(MaxHeapSize)) {
-    julong reasonable_max = (julong)((phys_mem * MaxRAMPercentage) / 100);
-    const julong reasonable_min = (julong)((phys_mem * MinRAMPercentage) / 100);
+    julong reasonable_max = (julong)(((double)phys_mem * MaxRAMPercentage) / 100);
+    const julong reasonable_min = (julong)(((double)phys_mem * MinRAMPercentage) / 100);
     if (reasonable_min < MaxHeapSize) {
       // Small physical memory, so use a minimum fraction of it for the heap
       reasonable_max = reasonable_min;
@@ -1664,7 +1672,7 @@ void Arguments::set_heap_size() {
     reasonable_minimum = limit_heap_by_allocatable_memory(reasonable_minimum);
 
     if (InitialHeapSize == 0) {
-      julong reasonable_initial = (julong)((phys_mem * InitialRAMPercentage) / 100);
+      julong reasonable_initial = (julong)(((double)phys_mem * InitialRAMPercentage) / 100);
       reasonable_initial = limit_heap_by_allocatable_memory(reasonable_initial);
 
       reasonable_initial = MAX3(reasonable_initial, reasonable_minimum, (julong)MinHeapSize);
@@ -1902,22 +1910,12 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif
 
-
-#if !defined(X86) && !defined(AARCH64) && !defined(RISCV64) && !defined(ARM) && !defined(PPC64)
+#if !defined(X86) && !defined(AARCH64) && !defined(RISCV64) && !defined(ARM) && !defined(PPC64) && !defined(S390)
   if (LockingMode == LM_LIGHTWEIGHT) {
     FLAG_SET_CMDLINE(LockingMode, LM_LEGACY);
     warning("New lightweight locking not supported on this platform");
   }
 #endif
-
-  if (UseHeavyMonitors) {
-    if (FLAG_IS_CMDLINE(LockingMode) && LockingMode != LM_MONITOR) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "Conflicting -XX:+UseHeavyMonitors and -XX:LockingMode=%d flags\n", LockingMode);
-      return false;
-    }
-    FLAG_SET_CMDLINE(LockingMode, LM_MONITOR);
-  }
 
 #if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64) && !defined(S390)
   if (LockingMode == LM_MONITOR) {
@@ -1965,15 +1963,15 @@ static const char* system_assertion_options[] = {
   "-dsa", "-esa", "-disablesystemassertions", "-enablesystemassertions", 0
 };
 
-bool Arguments::parse_uintx(const char* value,
-                            uintx* uintx_arg,
-                            uintx min_size) {
-  uintx n;
+bool Arguments::parse_uint(const char* value,
+                           uint* uint_arg,
+                           uint min_size) {
+  uint n;
   if (!parse_integer(value, &n)) {
     return false;
   }
   if (n >= min_size) {
-    *uintx_arg = n;
+    *uint_arg = n;
     return true;
   } else {
     return false;
@@ -2654,11 +2652,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       }
     // -Xdebug
     } else if (match_option(option, "-Xdebug")) {
-      // note this flag has been used, then ignore
-      set_xdebug_mode(true);
+      warning("Option -Xdebug was deprecated in JDK 22 and will likely be removed in a future release.");
     // -Xnoagent
     } else if (match_option(option, "-Xnoagent")) {
-      // For compatibility with classic. HotSpot refuses to load the old style agent.dll.
+      warning("Option -Xnoagent was deprecated in JDK 22 and will likely be removed in a future release.");
     } else if (match_option(option, "-Xloggc:", &tail)) {
       // Deprecated flag to redirect GC output to a file. -Xloggc:<filename>
       log_warning(gc)("-Xloggc is deprecated. Will use -Xlog:gc:%s instead.", tail);
@@ -2729,8 +2726,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_EINVAL;
       }
     } else if (match_option(option, "-XX:MaxTenuringThreshold=", &tail)) {
-      uintx max_tenuring_thresh = 0;
-      if (!parse_uintx(tail, &max_tenuring_thresh, 0)) {
+      uint max_tenuring_thresh = 0;
+      if (!parse_uint(tail, &max_tenuring_thresh, 0)) {
         jio_fprintf(defaultStream::error_stream(),
                     "Improperly specified VM option \'MaxTenuringThreshold=%s\'\n", tail);
         return JNI_EINVAL;
@@ -3455,7 +3452,7 @@ void Arguments::init_shared_archive_paths() {
     int archives = num_archives(SharedArchiveFile);
     assert(archives > 0, "must be");
 
-    if (is_dumping_archive() && archives > 1) {
+    if (CDSConfig::is_dumping_archive() && archives > 1) {
       vm_exit_during_initialization(
         "Cannot have more than 1 archive file specified in -XX:SharedArchiveFile during CDS dumping");
     }
@@ -4042,7 +4039,7 @@ jint Arguments::apply_ergo() {
     JVMFlag::printSetFlags(tty);
   }
 
-#ifdef COMPILER2
+#if COMPILER2_OR_JVMCI
   if (!FLAG_IS_DEFAULT(EnableVectorSupport) && !EnableVectorSupport) {
     if (!FLAG_IS_DEFAULT(EnableVectorReboxing) && EnableVectorReboxing) {
       warning("Disabling EnableVectorReboxing since EnableVectorSupport is turned off.");
@@ -4063,7 +4060,7 @@ jint Arguments::apply_ergo() {
     }
     FLAG_SET_DEFAULT(UseVectorStubs, false);
   }
-#endif // COMPILER2
+#endif // COMPILER2_OR_JVMCI
 
   if (FLAG_IS_CMDLINE(DiagnoseSyncOnValueBasedClasses)) {
     if (DiagnoseSyncOnValueBasedClasses == ObjectSynchronizer::LOG_WARNING && !log_is_enabled(Info, valuebasedclasses)) {

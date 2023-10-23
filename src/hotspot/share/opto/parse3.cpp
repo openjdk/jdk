@@ -339,10 +339,13 @@ void Parse::do_multianewarray() {
   // It is often the case that the lengths are small (except the last).
   // If that happens, use the fast 1-d creator a constant number of times.
   const int expand_limit = MIN2((int)MultiArrayExpandLimit, 100);
-  int expand_count = 1;        // count of allocations in the expansion
-  int expand_fanout = 1;       // running total fanout
+  int64_t expand_count = 1;        // count of allocations in the expansion
+  int64_t expand_fanout = 1;       // running total fanout
   for (j = 0; j < ndimensions-1; j++) {
     int dim_con = find_int_con(length[j], -1);
+    // To prevent overflow, we use 64-bit values.  Alternatively,
+    // we could clamp dim_con like so:
+    // dim_con = MIN2(dim_con, expand_limit);
     expand_fanout *= dim_con;
     expand_count  += expand_fanout; // count the level-J sub-arrays
     if (dim_con <= 0

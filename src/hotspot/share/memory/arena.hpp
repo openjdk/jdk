@@ -37,16 +37,19 @@
 #define ARENA_AMALLOC_ALIGNMENT BytesPerLong
 #define ARENA_ALIGN(x) (align_up((x), ARENA_AMALLOC_ALIGNMENT))
 
-//------------------------------Chunk------------------------------------------
+
 // Linked list of raw memory chunks
-class Chunk: CHeapObj<mtChunk> {
+class Chunk {
 
  private:
   Chunk*       _next;     // Next Chunk in list
   const size_t _len;      // Size of this Chunk
- public:
-  void* operator new(size_t size, AllocFailType alloc_failmode, size_t length) throw();
-  void  operator delete(void* p);
+public:
+  NONCOPYABLE(Chunk);
+
+  void operator delete(void*) = delete;
+  void* operator new(size_t) = delete;
+
   Chunk(size_t length);
 
   enum {
@@ -67,8 +70,8 @@ class Chunk: CHeapObj<mtChunk> {
     non_pool_size = init_size + 32 // An initial size which is not one of above
   };
 
-  void chop();                  // Chop this chunk
-  void next_chop();             // Chop next chunk
+  static void chop(Chunk* chunk);                  // Chop this chunk
+  static void next_chop(Chunk* chunk);             // Chop next chunk
   static size_t aligned_overhead_size(void) { return ARENA_ALIGN(sizeof(Chunk)); }
   static size_t aligned_overhead_size(size_t byte_size) { return ARENA_ALIGN(byte_size); }
 
@@ -79,24 +82,30 @@ class Chunk: CHeapObj<mtChunk> {
   char* bottom() const          { return ((char*) this) + aligned_overhead_size();  }
   char* top()    const          { return bottom() + _len; }
   bool contains(char* p) const  { return bottom() <= p && p <= top(); }
-
-  // Start the chunk_pool cleaner task
-  static void start_chunk_pool_cleaner_task();
 };
 
-//------------------------------Arena------------------------------------------
 // Fast allocation of memory
 class Arena : public CHeapObjBase {
+public:
+
+  enum class Tag {
+    tag_other = 0,
+    tag_ra,   // resource area
+    tag_ha,   // handle area
+    tag_node  // C2 Node arena
+  };
+
 protected:
   friend class HandleMark;
   friend class NoHandleMark;
   friend class VMStructs;
 
   MEMFLAGS    _flags;           // Memory tracking flags
-
-  Chunk *_first;                // First chunk
-  Chunk *_chunk;                // current chunk
-  char *_hwm, *_max;            // High water mark and max in current chunk
+  const Tag _tag;
+  Chunk* _first;                // First chunk
+  Chunk* _chunk;                // current chunk
+  char* _hwm;                   // High water mark
+  char* _max;                   // and max in current chunk
   // Get a new Chunk of at least size x
   void* grow(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
   size_t _size_in_bytes;        // Size of arena (used for native memory tracking)
@@ -113,8 +122,10 @@ protected:
   }
 
  public:
-  Arena(MEMFLAGS memflag);
-  Arena(MEMFLAGS memflag, size_t init_size);
+  // Start the chunk_pool cleaner task
+  static void start_chunk_pool_cleaner_task();
+  Arena(MEMFLAGS memflag, Tag tag = Tag::tag_other);
+  Arena(MEMFLAGS memflag, Tag tag, size_t init_size);
   ~Arena();
   void  destruct_contents();
   char* hwm() const             { return _hwm; }
@@ -167,6 +178,8 @@ protected:
   // Total # of bytes used
   size_t size_in_bytes() const         {  return _size_in_bytes; };
   void set_size_in_bytes(size_t size);
+
+  Tag get_tag() const { return _tag; }
 
 private:
   // Reset this Arena to empty, access will trigger grow if necessary
