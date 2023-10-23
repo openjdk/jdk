@@ -45,30 +45,41 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class PatternsTest {
 
-    private static final String err1 =
+    private static final String ERR1 =
             "Each interval must contain a number before a format";
-    private static final String err2 =
+    private static final String ERR2 =
             "Incorrect order of intervals, must be in ascending order";
 
-    // Check that some valid patterns do not throw an exception
+    // Check that some valid patterns do not throw an exception. Check
+    // them against the expected values they should be formatted as.
     @ParameterizedTest
     @MethodSource
-    public void validPatternsTest(String pattern) {
-        assertDoesNotThrow( ()-> new ChoiceFormat(pattern),
-                "Valid pattern should not have thrown an exception");
+    public void validPatternsTest(String pattern, String[] expectedValues) {
+        var fmt = new ChoiceFormat(pattern);
+        for (int i=1; i<=expectedValues.length; i++) {
+            assertEquals(expectedValues[i-1], fmt.format(i),
+                    String.format("ChoiceFormat formatted %s incorrectly:", i));
+        }
     }
 
     // Valid patterns ranging from normal appearing to odd. These should not
     // throw an exception or discard any portions of the pattern.
-    private static String[] validPatternsTest() {
-        return new String[] {
-                "1#foo|2#bar|3#", // Multi pattern with trailing empty string Format
-                "1#foo|2#foo|", // Multi patten with trailing '|'
-                "1#foo|2#bar>", // Using a '>' (not a Relation) within a Format
-                "1#foo|2#bar", // Standard Multi Pattern
-                "1#foo|1<baz", // Same numerical value Limits, different Relations
-                "1#foo", // Standard Single Pattern
-                "1#", // Single pattern with empty string Format
+    private static Arguments[] validPatternsTest() {
+        return new Arguments[] {
+                // Multi pattern with trailing empty string Format
+                arguments("1#foo|2#bar|3#", new String[]{"foo", "bar", ""}),
+                // Multi patten with trailing '|'
+                arguments("1#foo|2#bar|", new String[]{"foo", "bar"}),
+                // Using a '>' (not a Relation) within a Format
+                arguments("1#foo|2#bar>", new String[]{"foo", "bar>"}),
+                // Standard Multi Pattern
+                arguments("1#foo|2#bar", new String[]{"foo", "bar"}),
+                // Same numerical value Limits, different Relations
+                arguments("1#foo|1<baz", new String[]{"foo", "baz"}),
+                // Standard Single Pattern
+                arguments("1#foo", new String[]{"foo"}),
+                // Single pattern with empty string Format
+                arguments("1#", new String[]{""})
         };
     }
 
@@ -86,14 +97,14 @@ public class PatternsTest {
     // an exception.
     private static Arguments[] invalidPatternsThrowsTest() {
         return new Arguments[] {
-                arguments("#foo", err1), // No Limit
-                arguments("0#foo|#|1#bar", err1), // Missing Relation in SubPattern
-                arguments("#|", err1), // Missing Limit
-                arguments("##|", err1), // Double Relations
-                arguments("0#foo1#", err1), // SubPattern not separated by '|'
-                arguments("0#foo#", err1), // Using a Relation in a format
-                arguments("0#test|#", err1), // SubPattern missing Limit
-                arguments("0#foo|3#bar|1#baz", err2), // Non-ascending Limits
+                arguments("#foo", ERR1), // No Limit
+                arguments("0#foo|#|1#bar", ERR1), // Missing Relation in SubPattern
+                arguments("#|", ERR1), // Missing Limit
+                arguments("##|", ERR1), // Double Relations
+                arguments("0#foo1#", ERR1), // SubPattern not separated by '|'
+                arguments("0#foo#", ERR1), // Using a Relation in a format
+                arguments("0#test|#", ERR1), // SubPattern missing Limit
+                arguments("0#foo|3#bar|1#baz", ERR2), // Non-ascending Limits
         };
     }
 
