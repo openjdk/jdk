@@ -145,8 +145,6 @@ class NMTAnalyze {
     } catch (IOException ioe) {
       ioe.printStackTrace();
       System.out.println(ioe.getMessage());
-    } finally {
     }
-
   }
 }
