@@ -67,8 +67,8 @@ public class CheckCodeCacheInfo {
         ProcessBuilder pb;
 
         pb = ProcessTools.createTestJavaProcessBuilder("-XX:+PrintCodeCache",
-                                        "-XX:+Verbose",
-                                        "-version");
+                                                       "-XX:+Verbose",
+                                                       "-version");
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         out.shouldHaveExitValue(0);
         out.stdoutShouldMatch(VERBOSE_REGEXP);
