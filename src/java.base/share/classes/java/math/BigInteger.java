@@ -124,7 +124,7 @@ import jdk.internal.vm.annotation.Stable;
  * methods of this class varies and may be superlinear in the size of
  * the input. For example, a method like {@link intValue()} would be
  * expected to run in <i>O</i>(1), that is constant time, since with
- * the current internal presentation only a fixed-size component of
+ * the current internal reprentation only a fixed-size component of
  * the {@code BigInteger} needs to be accessed to perform the
  * conversion to {@code int}. In contrast, a method like {@link not()}
  * would be expected to run in <i>O</i>(<i>n</i>) time where <i>n</i>
@@ -146,9 +146,13 @@ import jdk.internal.vm.annotation.Stable;
  * the product by using simpler algorithms for smaller inputs even if
  * the simpler algorithm has a larger asymptotic complexity.
  *
+ * <p>Operations may also allocate and compute on intermediate
+ * results, potentially those allocations may be large as in
+ * proportion to the running time of the algorithm.
+ *
  * <p>Users of {@code BigInteger} concerned with bounding the running
- * time of operations can screen out {@code BigInteger} values above a
- * chosen magnitude.
+ * time or space of operations can screen out {@code BigInteger}
+ * values above a chosen magnitude.
  *
  * @implNote
  * In the reference implementation, BigInteger constructors and

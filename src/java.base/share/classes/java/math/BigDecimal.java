@@ -293,6 +293,7 @@ import java.util.Objects;
  * {@code BigDecimal} arithmetic.
  *
  * <h2><a id=algorithmicComplexity>Algorithmic Complexity</a></h2>
+ *
  * Operations on {@code BigDecimal} values have a range of algorithmic
  * complexities; in general, those complexities are a function of both
  * the size of the unscaled value as well as the size of the
@@ -304,9 +305,13 @@ import java.util.Objects;
  * representation like {@code new BigDecimal(1E-1000000000)} has a
  * {@link toPlainString} result with over one billion characters.
  *
+ * <p>Operations may also allocate and compute on intermediate
+ * results, potentially those allocations may be large as in
+ * proportion to the running time of the algorithm.
+ *
  * <p>Users of {@code BigDecimal} concerned with bounding the running
- * time of operations can screen out {@code BigDecimal} values with
- * unscaled values or scales above a chosen magnitude.
+ * time or space of operations can screen out {@code BigDecimal}
+ * values with unscaled values or scales above a chosen magnitude.
  *
  * @see     BigInteger
  * @see     MathContext
