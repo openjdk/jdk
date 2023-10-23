@@ -1395,6 +1395,13 @@ public class ZipFile implements ZipConstants, Closeable {
         private int[] table;                 // Hash chain heads: indexes into entries
         private int tablelen;                // number of hash heads
 
+        /**
+         * A class representing a key to a zip file. A key is based
+         * on the file key if available, or the path value if the
+         * file key is not available. The key is also based on the
+         * file's last modified time to allow for cases where a zip
+         * file is re-opened after it has been modified.
+         */
         private static class Key {
             final BasicFileAttributes attrs;
             File file;
@@ -1408,11 +1415,6 @@ public class ZipFile implements ZipConstants, Closeable {
 
             public int hashCode() {
                 long t = utf8 ? 0 : Long.MAX_VALUE;
-                /*
-                 * The lastModifiedTime attribute is used to detect cases where
-                 * the same file is opened more than once and where it has been
-                 * modified in the mean-time
-                 */
                 t += attrs.lastModifiedTime().toMillis();
                 Object fk = attrs.fileKey();
                 return Long.hashCode(t) +
@@ -1424,11 +1426,6 @@ public class ZipFile implements ZipConstants, Closeable {
                     if (key.utf8 != utf8) {
                         return false;
                     }
-                    /*
-                     * The lastModifiedTime attribute is used to detect cases where
-                     * the same file is opened more than once and where it has been
-                     * modified in the mean-time
-                     */
                     if (!attrs.lastModifiedTime().equals(key.attrs.lastModifiedTime())) {
                         return false;
                     }
