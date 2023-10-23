@@ -29,20 +29,13 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-/*
+// Rules:
+// - Every function that either directly or indirectly calls Compile::record_failure()
+//   has to have two trailing underscores ('__') in its name (unless its a constructor).
+// - Every call to such a function needs to be wrapped in one of the CHECKED... macros
 
-enum class BailState {
-  ok = 0, failed = 1
-};
-
-#define BAIL              __bail__
-#define BAILARG           BailState& BAIL
-
-#define DO_BAIL           { BAIL = BailState::failed; return; }
-#define DO_BAIL_(res)     { BAIL = BailState::failed; return (res); }
-
-#define BAILED            BAIL == BailState::failed
-*/
+// To grep for missed bailouts, scan for function calls with leading underscores that
+// are not wrapped in CHECKED.
 
 #define CHECK_BAIL        { if (failing()) return; }
 #define CHECK_BAIL_(res)  { if (failing()) return (res); }

@@ -353,8 +353,7 @@ Node *PhaseChaitin::split_Rematerialize__(Node *def, Block *b, uint insidx, uint
           assert(false, "Can not rematerialize %d: %s. Prolongs RegFlags live"
                  " range and defining node %d: %s may not be rematerialized.",
                  def->_idx, def->Name(), in->_idx, in->Name());
-          C->record_method_not_compilable__("attempted to spill a non-spillable item with RegFlags input");
-          return 0; // Bailed out
+          CHECKED_0(record_method_not_compilable__("attempted to spill a non-spillable item with RegFlags input"));
         }
       }
     }

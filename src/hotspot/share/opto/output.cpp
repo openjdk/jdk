@@ -264,7 +264,7 @@ void PhaseOutput::perform_mach_node_analysis() {
 }
 
 // Convert Nodes to instruction bits and pass off to the VM
-void PhaseOutput::Output() {
+void PhaseOutput::Output__() {
   // RootNode goes
   assert( C->cfg()->get_root_block()->number_of_nodes() == 0, "" );
 

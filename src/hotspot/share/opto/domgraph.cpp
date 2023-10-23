@@ -60,7 +60,7 @@ struct Tarjan {
 
 // Compute the dominator tree of the CFG.  The CFG must already have been
 // constructed.  This is the Lengauer & Tarjan O(E-alpha(E,V)) algorithm.
-void PhaseCFG::build_dominator_tree() {
+void PhaseCFG::build_dominator_tree__() {
   // Pre-grow the blocks array, prior to the ResourceMark kicking in
   _blocks.map(number_of_blocks(), 0);
 
@@ -87,7 +87,7 @@ void PhaseCFG::build_dominator_tree() {
     // Since this situation is so unlikely, instead I've decided to bail out.
     // CNC 7/24/2001
     assert(false, "unreachable loop");
-    C->record_method_not_compilable__("unreachable loop");
+    CHECKED(record_method_not_compilable__("unreachable loop"));
     return;
   }
   _blocks._cnt = number_of_blocks();

@@ -411,7 +411,7 @@ class PhaseCFG : public Phase {
   uint build_cfg();
 
   // Build the dominator tree so that we know where we can move instructions
-  void build_dominator_tree();
+  void build_dominator_tree__();
 
   // Estimate block frequencies based on IfNode probabilities, so that we know where we want to move instructions
   void estimate_block_frequency();
@@ -419,7 +419,7 @@ class PhaseCFG : public Phase {
   // Global Code Motion.  See Click's PLDI95 paper.  Place Nodes in specific
   // basic blocks; i.e. _node_to_block_mapping now maps _idx for all Nodes to some Block.
   // Move nodes to ensure correctness from GVN and also try to move nodes out of loops.
-  void global_code_motion();
+  void global_code_motion__();
 
   // Schedule Nodes early in their basic blocks.
   bool schedule_early(VectorSet &visited, Node_Stack &roots);
@@ -427,7 +427,7 @@ class PhaseCFG : public Phase {
   // For each node, find the latest block it can be scheduled into
   // and then select the cheapest block between the latest and earliest
   // block to place the node.
-  void schedule_late(VectorSet &visited, Node_Stack &stack);
+  void schedule_late__(VectorSet &visited, Node_Stack &stack);
 
   // Compute the (backwards) latency of a node from a single use
   int latency_from_use(Node *n, const Node *def, Node *use);
@@ -446,7 +446,7 @@ class PhaseCFG : public Phase {
 
   // Pick a block between early and late that is a cheaper alternative
   // to late. Helper for schedule_late.
-  Block* hoist_to_cheaper_block(Block* LCA, Block* early, Node* self);
+  Block* hoist_to_cheaper_block__(Block* LCA, Block* early, Node* self);
 
   bool schedule_local(Block* block, GrowableArray<int>& ready_cnt, VectorSet& next_call, intptr_t* recacl_pressure_nodes);
   void set_next_call(Block* block, Node* n, VectorSet& next_call);

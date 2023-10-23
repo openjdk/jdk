@@ -1155,7 +1155,7 @@ private:
   // Phase control:
   void Init(bool aliasing);                      // Prepare for a single compilation
   void Optimize();                               // Given a graph, optimize it
-  void Code_Gen();                               // Generate code from a graph
+  void Code_Gen__();                               // Generate code from a graph
 
   // Management of the AliasType table.
   void grow_alias_types();

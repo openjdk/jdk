@@ -1164,7 +1164,7 @@ bool PhaseCFG::is_cheaper_block(Block* LCA, Node* self, uint target_latency,
 //------------------------------hoist_to_cheaper_block-------------------------
 // Pick a block for node self, between early and LCA block of uses, that is a
 // cheaper alternative to LCA.
-Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
+Block* PhaseCFG::hoist_to_cheaper_block__(Block* LCA, Block* early, Node* self) {
   Block* least       = LCA;
   double least_freq  = least->_freq;
   uint target        = get_latency_for_node(self);
@@ -1209,7 +1209,7 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
     if (LCA == nullptr) {
       // Bailout without retry
       assert(false, "graph should be schedulable");
-      C->record_method_not_compilable__("late schedule failed: LCA is null");
+      CHECKED_DONTRETURN(record_method_not_compilable__("late schedule failed: LCA is null"));
       return least;
     }
 
@@ -1273,7 +1273,7 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
 // dominator tree of all USES of a value.  Pick the block with the least
 // loop nesting depth that is lowest in the dominator tree.
 extern const char must_clone[];
-void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
+void PhaseCFG::schedule_late__(VectorSet &visited, Node_Stack &stack) {
 #ifndef PRODUCT
   if (trace_opto_pipelining())
     tty->print("\n#---- schedule_late ----\n");
@@ -1417,11 +1417,11 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
         // Retry with subsume_loads == false
         // If this is the first failure, the sentinel string will "stick"
         // to the Compile object, and the C2Compiler will see it and retry.
-        C->record_failure(C2Compiler::retry_no_subsuming_loads());
+        CHECKED(C->record_failure__(C2Compiler::retry_no_subsuming_loads()));
       } else {
         // Bailout without retry when (early->_dom_depth > LCA->_dom_depth)
         assert(false, "graph should be schedulable");
-        C->record_method_not_compilable__("late schedule failed: incorrect graph");
+        CHECKED(record_method_not_compilable__("late schedule failed: incorrect graph"));
       }
       return;
     }
@@ -1453,7 +1453,7 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
       // Now find the block with the least execution frequency.
       // Start at the latest schedule and work up to the earliest schedule
       // in the dominator tree.  Thus the Node will dominate all its uses.
-      late = hoist_to_cheaper_block(LCA, early, self);
+      late = hoist_to_cheaper_block__(LCA, early, self);
     } else {
       // Just use the LCA of the uses.
       late = LCA;
@@ -1475,7 +1475,7 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
 } // end ScheduleLate
 
 //------------------------------GlobalCodeMotion-------------------------------
-void PhaseCFG::global_code_motion() {
+void PhaseCFG::global_code_motion__() {
   ResourceMark rm;
 
 #ifndef PRODUCT
@@ -1518,10 +1518,7 @@ void PhaseCFG::global_code_motion() {
   // dominator tree of all USES of a value.  Pick the block with the least
   // loop nesting depth that is lowest in the dominator tree.
   // ( visited.clear() called in schedule_late()->Node_Backward_Iterator() )
-  schedule_late(visited, stack);
-  if (C->failing()) {
-    return;
-  }
+  CHECKED(schedule_late__(visited, stack));
 
 #ifndef PRODUCT
   if (trace_opto_pipelining()) {
@@ -1602,7 +1599,7 @@ void PhaseCFG::global_code_motion() {
     if (!schedule_local(block, ready_cnt, visited, recalc_pressure_nodes)) {
       if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {
         assert(false, "local schedule failed");
-        C->record_method_not_compilable__("local schedule failed");
+        CHECKED_DONTRETURN(record_method_not_compilable__("local schedule failed"));
       }
       _regalloc = nullptr;
       return;
@@ -1632,7 +1629,7 @@ void PhaseCFG::global_code_motion() {
 
 bool PhaseCFG::do_global_code_motion() {
 
-  build_dominator_tree();
+  build_dominator_tree__();
   if (C->failing()) {
     return false;
   }
@@ -1641,7 +1638,7 @@ bool PhaseCFG::do_global_code_motion() {
 
   estimate_block_frequency();
 
-  global_code_motion();
+  global_code_motion__();
 
   if (C->failing()) {
     return false;

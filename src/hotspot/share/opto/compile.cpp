@@ -884,7 +884,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   set_allowed_deopt_reasons();
 
   // Now generate code
-  Code_Gen();
+  Code_Gen__();
 }
 
 //------------------------------Compile----------------------------------------
@@ -982,7 +982,7 @@ Compile::Compile( ciEnv* ci_env,
 
   NOT_PRODUCT( verify_graph_edges(); )
 
-  Code_Gen();
+  Code_Gen__();
 }
 
 //------------------------------Init-------------------------------------------
@@ -2899,7 +2899,7 @@ void Compile::optimize_logic_cones(PhaseIterGVN &igvn) {
 
 //------------------------------Code_Gen---------------------------------------
 // Given a graph, generate code for it
-void Compile::Code_Gen() {
+void Compile::Code_Gen__() {
   if (failing()) {
     return;
   }
@@ -2928,10 +2928,7 @@ void Compile::Code_Gen() {
   NOT_PRODUCT( verify_graph_edges(); )
 
   // If you have too many nodes, or if matching has failed, bail out
-  check_node_count(0, "out of nodes matching instructions");
-  if (failing()) {
-    return;
-  }
+  CHECKED(check_node_count__(0, "out of nodes matching instructions"));
 
   print_method(PHASE_MATCHING, 2);
 
@@ -2957,12 +2954,7 @@ void Compile::Code_Gen() {
     // Perform register allocation.  After Chaitin, use-def chains are
     // no longer accurate (at spill code) and so must be ignored.
     // Node->LRG->reg mappings are still accurate.
-    _regalloc->Register_Allocate__();
-
-    // Bail out if the allocator builds too many nodes
-    if (failing()) {
-      return;
-    }
+    CHECKED(_regalloc->Register_Allocate__());
   }
 
   // Prior to register allocation we kept empty basic blocks in case the
@@ -2999,8 +2991,7 @@ void Compile::Code_Gen() {
   {
     TracePhase tp("output", &timers[_t_output]);
     PhaseOutput output;
-    output.Output();
-    if (failing())  return;
+    CHECKED(output.Output__());
     output.install();
     print_method(PHASE_FINAL_CODE, 1); // Compile::_output is not null here
   }

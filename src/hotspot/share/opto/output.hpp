@@ -113,7 +113,7 @@ public:
   ~PhaseOutput();
 
   // Convert Nodes to instruction bits and pass off to the VM
-  void Output();
+  void Output__();
   bool need_stack_bang(int frame_size_in_bytes) const;
   bool need_register_stack_bang() const;
   void compute_loop_first_inst_sizes();
