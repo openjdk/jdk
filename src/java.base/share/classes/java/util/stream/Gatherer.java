@@ -209,7 +209,7 @@ public interface Gatherer<T, A, R> {
     }
 
     /**
-     * A function which accepts the final intermediate state and a {@link Downstream} handle,
+     * A function which accepts the final intermediate state and a {@link Downstream} object,
      * allowing to perform a final action at the end of input elements.
      *
      * <p>By default, this method returns {@link #defaultFinisher()}
@@ -422,7 +422,7 @@ public interface Gatherer<T, A, R> {
     }
 
     /**
-     * A Downstream is a handle to the next stage in a pipeline of operations,
+     * A Downstream represents the next stage in a pipeline of operations,
      * to which elements can be sent.
      * @param <T> the type of elements this downstream accepts to be pushed
      */
@@ -465,7 +465,7 @@ public interface Gatherer<T, A, R> {
     @FunctionalInterface
     @PreviewFeature(feature = PreviewFeature.Feature.GATHERERS)
     interface Integrator<A, T, R> {
-        /** Integrate is the method which given: the current state, the next element, and a downstream handle;
+        /** Integrate is the method which given: the current state, the next element, and a downstream object;
          * performs the main logic -- potentially inspecting and/or updating the state, optionally sending any
          * number of elements downstream -- and then returns whether more elements are to be consumed or not.
          *
