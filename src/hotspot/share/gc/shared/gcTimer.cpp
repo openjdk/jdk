@@ -130,7 +130,7 @@ void TimePartitions::clear() {
 }
 
 void TimePartitions::report_gc_phase_start(const char* name, const Ticks& time, GCPhase::PhaseType type) {
-  assert(_phases->length() <= 1000, "Too many recored phases?");
+  assert(_phases->length() <= 1000, "Too many recorded phases? (count: %d)", _phases->length());
 
   int level = _active_phases.count();
 
