@@ -292,8 +292,7 @@ public class TestArrayCopy {
     }
 
     private static VarHandle arrayVarHandle(ValueLayout layout) {
-        return MethodHandles.collectCoordinates(layout.varHandle(),
-                1, MethodHandles.insertArguments(layout.scaleHandle(), 0, 0L));
+        return MethodHandles.insertCoordinates(layout.arrayElementVarHandle(), 1, 0L);
     }
 
     public static MemorySegment truthSegment(MemorySegment srcSeg, CopyHelper<?, ?> helper, int indexShifts, CopyMode mode) {

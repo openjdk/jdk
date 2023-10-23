@@ -702,14 +702,6 @@ void CodeCache::metadata_do(MetadataClosure* f) {
   }
 }
 
-int CodeCache::alignment_unit() {
-  return (int)_heaps->first()->alignment_unit();
-}
-
-int CodeCache::alignment_offset() {
-  return (int)_heaps->first()->alignment_offset();
-}
-
 // Calculate the number of GCs after which an nmethod is expected to have been
 // used in order to not be classed as cold.
 void CodeCache::update_cold_gc_count() {
@@ -1024,7 +1016,7 @@ void CodeCache::increment_unloading_cycle() {
   }
 }
 
-CodeCache::UnloadingScope::UnloadingScope(BoolObjectClosure* is_alive)
+CodeCache::UnlinkingScope::UnlinkingScope(BoolObjectClosure* is_alive)
   : _is_unloading_behaviour(is_alive)
 {
   _saved_behaviour = IsUnloadingBehaviour::current();
@@ -1033,10 +1025,9 @@ CodeCache::UnloadingScope::UnloadingScope(BoolObjectClosure* is_alive)
   DependencyContext::cleaning_start();
 }
 
-CodeCache::UnloadingScope::~UnloadingScope() {
+CodeCache::UnlinkingScope::~UnlinkingScope() {
   IsUnloadingBehaviour::set_current(_saved_behaviour);
   DependencyContext::cleaning_end();
-  CodeCache::flush_unlinked_nmethods();
 }
 
 void CodeCache::verify_oops() {

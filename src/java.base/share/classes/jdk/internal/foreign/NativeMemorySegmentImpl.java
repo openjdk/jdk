@@ -69,8 +69,7 @@ sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl permits M
 
     @Override
     ByteBuffer makeByteBuffer() {
-        return NIO_ACCESS.newDirectByteBuffer(min, (int) this.length, null,
-                scope == MemorySessionImpl.GLOBAL ? null : this);
+        return NIO_ACCESS.newDirectByteBuffer(min, (int) this.length, null, this);
     }
 
     @Override
