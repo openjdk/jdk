@@ -30,6 +30,7 @@
 #include "nmt/memBaseline.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
+#include "nmt/nmtPhysicalDeviceTracker.hpp"
 #include "oops/instanceKlass.hpp"
 
 /*
@@ -165,6 +166,7 @@ class MemDetailReporter : public MemSummaryReporter {
   virtual void report() {
     MemSummaryReporter::report();
     report_virtual_memory_map();
+    report_physical_devices();
     report_detail();
   }
 
@@ -173,6 +175,15 @@ class MemDetailReporter : public MemSummaryReporter {
   void report_detail();
   // Report virtual memory map
   void report_virtual_memory_map();
+  // Report all physical devices
+  void report_physical_devices() {
+    const GrowableArrayCHeap<PhysicalDeviceTracker::PhysicalDevice*, mtNMT>& devices =
+        PhysicalDeviceTracker::Instance::devices();
+    for (int i = 0; i < devices.length(); i++) {
+      PhysicalDeviceTracker::PhysicalDevice* dev = devices.at(i);
+      PhysicalDeviceTracker::Instance::print_report_on(dev, this->output());
+    }
+  }
   // Report malloc allocation sites; returns number of omitted sites
   int report_malloc_sites();
   // Report virtual memory reservation sites; returns number of omitted sites

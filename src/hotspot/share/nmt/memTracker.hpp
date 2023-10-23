@@ -28,6 +28,7 @@
 #include "nmt/mallocTracker.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/threadStackTracker.hpp"
+#include "nmt/nmtPhysicalDeviceTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/threadCritical.hpp"
@@ -164,6 +165,35 @@ class MemTracker : AllStatic {
       ThreadCritical tc;
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
+  }
+
+  static inline PhysicalDeviceTracker::PhysicalDevice* register_device(const char* descriptive_name) {
+    assert_post_init();
+    if (!enabled()) return nullptr;
+    ThreadCritical tc;
+    return PhysicalDeviceTracker::Instance::make_device(descriptive_name);
+  }
+
+  static inline void remove_device(PhysicalDeviceTracker::PhysicalDevice* device) {
+    assert_post_init();
+    if (!enabled()) return;
+    ThreadCritical tc;
+    PhysicalDeviceTracker::Instance::free_device(device);
+  }
+
+  static inline void allocate_memory_in(PhysicalDeviceTracker::PhysicalDevice* device, size_t offset, size_t size,
+                                        MEMFLAGS flag, const NativeCallStack& stack) {
+    assert_post_init();
+    if (!enabled()) return;
+    ThreadCritical tc;
+    PhysicalDeviceTracker::Instance::allocate_memory(device, offset, size, flag, stack);
+  }
+  static inline void free_memory_in(PhysicalDeviceTracker::PhysicalDevice* device,
+                                        size_t offset, size_t size) {
+    assert_post_init();
+    if (!enabled()) return;
+    ThreadCritical tc;
+    PhysicalDeviceTracker::Instance::free_memory(device, offset, size);
   }
 
   // Given an existing memory mapping registered with NMT and a splitting

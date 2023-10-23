@@ -31,20 +31,16 @@
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/nativeCallStack.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/nmtPhysicalDeviceTracker.hpp"
 
 class ZNMT : public AllStatic {
 private:
-  struct Reservation {
-    zaddress_unsafe _start;
-    size_t          _size;
-  };
-  static Reservation _reservations[ZMaxVirtualReservations];
-  static size_t      _num_reservations;
-
-  static size_t reservation_index(zoffset offset, size_t* offset_in_reservation);
-  static void process_fake_mapping(zoffset offset, size_t size, bool commit);
-
+  static PhysicalDeviceTracker::PhysicalDevice* _device;
 public:
+  static void init();
+  static void map(zaddress_unsafe addr, size_t size, zoffset offset);
+  static void unmap(zaddress_unsafe addr, size_t size);
   static void reserve(zaddress_unsafe start, size_t size);
   static void commit(zoffset offset, size_t size);
   static void uncommit(zoffset offset, size_t size);
