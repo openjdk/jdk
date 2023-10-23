@@ -5300,7 +5300,6 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
     if (num_found == 0) {
       st->print_cr("nothing.");
     }
-    st->cr();
   }
 }
 
