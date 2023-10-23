@@ -200,7 +200,7 @@ public class ArraysSupport {
     public static int vectorizedHashCode(Object array, int fromIndex, int length, int initialValue,
                                          int basicType) {
         return switch (basicType) {
-            case T_BOOLEAN -> signedHashCode(initialValue, (byte[]) array, fromIndex, length);
+            case T_BOOLEAN -> unsignedHashCode(initialValue, (byte[]) array, fromIndex, length);
             case T_CHAR -> array instanceof byte[]
                     ? utf16hashCode(initialValue, (byte[]) array, fromIndex, length)
                     : hashCode(initialValue, (char[]) array, fromIndex, length);
@@ -211,7 +211,7 @@ public class ArraysSupport {
         };
     }
 
-    private static int signedHashCode(int result, byte[] a, int fromIndex, int length) {
+    private static int unsignedHashCode(int result, byte[] a, int fromIndex, int length) {
         int end = fromIndex + length;
         for (int i = fromIndex; i < end; i++) {
             result = 31 * result + (a[i] & 0xff);
