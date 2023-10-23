@@ -357,7 +357,7 @@ ExpandJtregPath = \
 # with test id: dir/Test.java#selection -> Test.java#selection -> .java#selection -> #selection
 #      without: dir/Test.java           -> Test.java           -> .java           -> <<empty string>>
 TestID = \
-    $(subst .sh,,$(subst .html,,$(subst .java,,$(suffix $(notdir $1)))))
+    $(subst .jasm,,$(subst .sh,,$(subst .html,,$(subst .java,,$(suffix $(notdir $1))))))
 
 # The test id starting with a hash (#testid) will be stripped by all
 # evals in ParseJtregTestSelectionInner and will be reinserted by calling

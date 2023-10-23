@@ -27,6 +27,7 @@
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/cdsProtectionDomain.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/classListParser.hpp"
@@ -640,7 +641,7 @@ void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
 }
 
 void MetaspaceShared::prepare_for_dumping() {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   Arguments::check_unsupported_dumping_properties();
 
   ClassLoader::initialize_shared_path(JavaThread::current());
@@ -667,7 +668,7 @@ void MetaspaceShared::preload_and_dump() {
 
 #if INCLUDE_CDS_JAVA_HEAP && defined(_LP64)
 void MetaspaceShared::adjust_heap_sizes_for_dumping() {
-  if (!DumpSharedSpaces || UseCompressedOops) {
+  if (!CDSConfig::is_dumping_heap() || UseCompressedOops) {
     return;
   }
   // CDS heap dumping requires all string oops to have an offset
@@ -774,10 +775,12 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
   log_info(cds)("Rewriting and linking classes: done");
 
 #if INCLUDE_CDS_JAVA_HEAP
-  StringTable::allocate_shared_strings_array(CHECK);
-  ArchiveHeapWriter::init();
-  if (use_full_module_graph()) {
-    HeapShared::reset_archived_object_states(CHECK);
+  if (CDSConfig::is_dumping_heap()) {
+    StringTable::allocate_shared_strings_array(CHECK);
+    ArchiveHeapWriter::init();
+    if (use_full_module_graph()) {
+      HeapShared::reset_archived_object_states(CHECK);
+    }
   }
 #endif
 
@@ -789,7 +792,7 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
 bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
   ExceptionMark em(current);
   JavaThread* THREAD = current; // For exception macros.
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   if (!ik->is_shared() && ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
