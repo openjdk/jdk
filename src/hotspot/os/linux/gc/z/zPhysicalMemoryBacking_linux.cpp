@@ -29,6 +29,7 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLargePages.inline.hpp"
 #include "gc/z/zMountPoint_linux.hpp"
+#include "gc/z/zNMT.hpp"
 #include "gc/z/zNUMA.inline.hpp"
 #include "gc/z/zPhysicalMemoryBacking_linux.hpp"
 #include "gc/z/zSyscall_linux.hpp"
@@ -41,6 +42,7 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
+#include "services/memTracker.hpp"
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -125,7 +127,6 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity)
     _block_size(0),
     _available(0),
     _initialized(false) {
-
   // Create backing file
   _fd = create_fd(ZFILENAME_HEAP);
   if (_fd == -1) {
@@ -661,6 +662,7 @@ size_t ZPhysicalMemoryBacking::commit_default(zoffset offset, size_t length) con
   // Try to commit the whole region
   if (commit_inner(offset, length)) {
     // Success
+    ZNMT::commit(offset, length);
     return length;
   }
 
@@ -672,6 +674,7 @@ size_t ZPhysicalMemoryBacking::commit_default(zoffset offset, size_t length) con
     length = align_down((end - start) / 2, ZGranuleSize);
     if (length < ZGranuleSize) {
       // Done, don't commit more
+      ZNMT::commit(offset, length);
       return start - offset;
     }
 
@@ -704,7 +707,7 @@ size_t ZPhysicalMemoryBacking::uncommit(zoffset offset, size_t length) const {
     log_error(gc)("Failed to uncommit memory (%s)", err.to_string());
     return 0;
   }
-
+  ZNMT::uncommit(offset, length);
   return length;
 }
 
@@ -714,6 +717,7 @@ void ZPhysicalMemoryBacking::map(zaddress_unsafe addr, size_t size, zoffset offs
     ZErrno err;
     fatal("Failed to map memory (%s)", err.to_string());
   }
+  ZNMT::map(addr, size, offset);
 }
 
 void ZPhysicalMemoryBacking::unmap(zaddress_unsafe addr, size_t size) const {
@@ -725,4 +729,5 @@ void ZPhysicalMemoryBacking::unmap(zaddress_unsafe addr, size_t size) const {
     ZErrno err;
     fatal("Failed to map memory (%s)", err.to_string());
   }
+  ZNMT::unmap(addr, size);
 }

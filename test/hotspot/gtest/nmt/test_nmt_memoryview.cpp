@@ -22,32 +22,37 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zAddress.inline.hpp"
-#include "gc/z/zGlobals.hpp"
-#include "gc/z/zNMT.hpp"
-#include "gc/z/zVirtualMemory.hpp"
 #include "memory/allocation.hpp"
-#include "nmt/memTracker.hpp"
+#include "runtime/os.hpp"
+#include "services/mallocHeader.inline.hpp"
 #include "services/virtualMemoryView.hpp"
-#include "utilities/nativeCallStack.hpp"
+#include "nmtMemoryViewFixture.hpp"
 
-VirtualMemoryView::PhysicalMemorySpace ZNMT::_space{};
+#include "unittest.hpp"
+#include "testutils.hpp"
 
-void ZNMT::reserve(zaddress_unsafe start, size_t size) {
-  MemTracker::add_view_into_space(ZNMT::_space, (address)start, size, (address)start, mtJavaHeap, CALLER_PC);
-}
-void ZNMT::commit(zoffset offset, size_t size) {
-  MemTracker::commit_memory_into_space(ZNMT::_space, (address)offset, size, CALLER_PC);
-}
-void ZNMT::uncommit(zoffset offset, size_t size) {
-  MemTracker::uncommit_memory_into_space(ZNMT::_space, (address)offset, size);
-}
-void ZNMT::map(zaddress_unsafe addr, size_t size, zoffset offset) {
-  MemTracker::add_view_into_space(ZNMT::_space, (address)addr, size, (address)offset, mtJavaHeap, CALLER_PC);
-}
-void ZNMT::unmap(zaddress_unsafe addr, size_t size) {
-  MemTracker::remove_view_into_space(ZNMT::_space, (address)addr, size);
-}
-void ZNMT::init() {
-  _space = MemTracker::register_space("ZGC heap mapping");
+// Check the results of VirtualMemoryView.:overlap.
+// The test fixture wraps these APIs, we're constructing
+// ranges R{start, end} encoding a range [start, end).
+TEST_F(NmtVirtualMemoryViewTest, OverlappingRanges) {
+  OutR result;
+  result = overlap(R{0, 1}, R{1,2});
+  ASSERT_TRUE(result.result == OverlappingResult::NoOverlap);
+  ASSERT_TRUE(result.len == 0);
+
+  result = overlap(R{0, 1}, R{0,2});
+  ASSERT_TRUE(result.result == OverlappingResult::EntirelyEnclosed);
+  ASSERT_TRUE(result.len == 0);
+
+  result = overlap(R{0, 100}, R{50, 75});
+  ASSERT_TRUE(result.result == OverlappingResult::SplitInMiddle);
+  ASSERT_TRUE(result.len == 2);
+
+  result = overlap(R{0, 100}, R{50, 100});
+  ASSERT_TRUE(result.result == OverlappingResult::ShortenedFromRight);
+  ASSERT_TRUE(result.len == 1);
+
+  result = overlap(R{0, 100}, R{0, 50});
+  ASSERT_TRUE(result.result == OverlappingResult::ShortenedFromLeft);
+  ASSERT_TRUE(result.len == 1);
 }

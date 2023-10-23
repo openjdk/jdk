@@ -21,29 +21,38 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZNMT_HPP
-#define SHARE_GC_Z_ZNMT_HPP
-
-#include "gc/z/zAddress.hpp"
-#include "gc/z/zGlobals.hpp"
-#include "gc/z/zMemory.hpp"
-#include "gc/z/zVirtualMemory.hpp"
-#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/nativeCallStack.hpp"
-#include "services/memTracker.hpp"
 #include "services/virtualMemoryView.hpp"
+#include "unittest.hpp"
 
-class ZNMT : public AllStatic {
-private:
-  static VirtualMemoryView::PhysicalMemorySpace _space;
+using VMV = VirtualMemoryView;
+
+class NmtVirtualMemoryViewTest : public testing::Test  {
 public:
-  static void init();
-  static void map(zaddress_unsafe addr, size_t size, zoffset offset);
-  static void unmap(zaddress_unsafe addr, size_t size);
-  static void reserve(zaddress_unsafe start, size_t size);
-  static void commit(zoffset offset, size_t size);
-  static void uncommit(zoffset offset, size_t size);
+  NmtVirtualMemoryViewTest() {}
+  ~NmtVirtualMemoryViewTest() override {}
+  // Must match that of VirtualMemoryView.
+  enum class OverlappingResult {
+    NoOverlap,
+    EntirelyEnclosed,
+    SplitInMiddle,
+    ShortenedFromLeft,
+    ShortenedFromRight,
+  };
+  struct R{uint64_t start; uint64_t end;};
+  struct OutR{int len; R out[3]; NmtVirtualMemoryViewTest::OverlappingResult result;};
+  OutR overlap(R a, R b) {
+    VMV::TrackedOffsetRange aa{(address)a.start, (size_t)a.end-a.start};
+    VMV::Range bb{(address)b.start, (size_t)b.end-b.start};
+    VMV::TrackedOffsetRange out[3];
+    int len;
+    VMV::OverlappingResult ores = VMV::overlap_of(aa, bb, out, &len);
+    OutR ret;
+    ret.result = (OverlappingResult)(int)ores;
+    ret.len = len;
+    for (int i = 0; i < len; i++) {
+      ret.out[i] = R{(uint64_t)out[i].start, (uint64_t)(out[i].start + out[i].size)};
+    };
+    return ret;
+  };
 };
-
-#endif // SHARE_GC_Z_ZNMT_HPP

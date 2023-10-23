@@ -33,6 +33,7 @@
 #include "gc/z/zLargePages.hpp"
 #include "gc/z/zMarkStackAllocator.hpp"
 #include "gc/z/zNUMA.hpp"
+#include "gc/z/zNMT.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zThreadLocalAllocBuffer.hpp"
 #include "gc/z/zTracer.hpp"
@@ -46,6 +47,7 @@ ZInitialize::ZInitialize(ZBarrierSet* barrier_set) {
                      VM_Version::jdk_debug_level());
 
   // Early initialization
+  ZNMT::init();
   ZGlobalsPointers::initialize();
   ZNUMA::initialize();
   ZCPU::initialize();

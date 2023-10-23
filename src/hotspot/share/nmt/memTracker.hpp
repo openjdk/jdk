@@ -169,6 +169,45 @@ class MemTracker : AllStatic {
     }
   }
 
+  using VMV = VirtualMemoryView;
+  static inline VMV::PhysicalMemorySpace register_space(const char* descriptive_name) {
+    assert_post_init();
+    // if (!enabled()) return;
+    ThreadCritical tc;
+    return VMV::register_space(descriptive_name);
+  }
+  static inline void add_view_into_space(const VMV::PhysicalMemorySpace space, address base_addr, size_t size, address offset,
+                                         MEMFLAGS flag, const NativeCallStack& stack) {
+    assert_post_init();
+    if (!enabled()) return;
+    if (base_addr != nullptr) {
+      ThreadCritical tc;
+      VMV::add_view_into_space(space, base_addr, size, offset, flag, stack);
+    }
+  }
+
+  static inline void remove_view_into_space(const VMV::PhysicalMemorySpace space, address base_addr, size_t size) {
+    assert_post_init();
+    if (!enabled()) return;
+    if (base_addr != nullptr) {
+      ThreadCritical tc;
+      VMV::remove_view_into_space(space, base_addr, size);
+    }
+  }
+  static inline void commit_memory_into_space(const VMV::PhysicalMemorySpace space,
+                                              address offset, size_t size, const NativeCallStack& stack) {
+    assert_post_init();
+    if (!enabled()) return;
+    ThreadCritical tc;
+    VMV::commit_memory_into_space(space, offset, size, stack);
+  }
+  static inline void uncommit_memory_into_space(const VMV::PhysicalMemorySpace space, address offset, size_t size) {
+    assert_post_init();
+    if (!enabled()) return;
+    ThreadCritical tc;
+    VMV::uncommit_memory_into_space(space, offset, size);
+  }
+
   // Given an existing memory mapping registered with NMT and a splitting
   //  address, split the mapping in two. The memory region is supposed to
   //  be fully uncommitted.

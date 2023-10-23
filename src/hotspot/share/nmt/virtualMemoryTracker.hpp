@@ -25,6 +25,8 @@
 #ifndef SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
 #define SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
 
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp" // For MetadataType
 #include "memory/metaspaceStats.hpp"
