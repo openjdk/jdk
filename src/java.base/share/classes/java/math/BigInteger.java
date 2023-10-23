@@ -128,7 +128,7 @@ import jdk.internal.vm.annotation.Stable;
  * the {@code BigInteger} needs to be accessed to perform the
  * conversion to {@code int}. In contrast, a method like {@link not()}
  * would be expected to run in <i>O</i>(<i>n</i>) time where <i>n</i>
- * is size of the {@code BigInteger} in bits, that is, to run in time
+ * is the size of the {@code BigInteger} in bits, that is, to run in time
  * proportional to the size of the input. For multiplying two {@code
  * BigInteger} values of size <i>n</i>, a naive multiplication algorithm
  * would run in time <i>O</i>(<i>n<sup>2</sup></i>) and theoretical
