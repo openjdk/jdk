@@ -83,7 +83,7 @@ public abstract sealed class MemorySessionImpl
     }
 
     @ForceInline
-    public static final MemorySessionImpl toMemorySession(Arena arena) {
+    public static MemorySessionImpl toMemorySession(Arena arena) {
         return (MemorySessionImpl) arena.scope();
     }
 
@@ -99,10 +99,10 @@ public abstract sealed class MemorySessionImpl
     }
 
     /**
-     * Add a cleanup action. If a failure occurred (because of a add vs. close race), call the cleanup action.
+     * Add a cleanup action. If a failure occurred (because of an add vs. close race), call the cleanup action.
      * This semantics is useful when allocating new memory segments, since we first do a malloc/mmap and _then_
      * we register the cleanup (free/munmap) against the session; so, if registration fails, we still have to
-     * cleanup memory. From the perspective of the client, such a failure would manifest as a factory
+     * clean up memory. From the perspective of the client, such a failure would manifest as a factory
      * returning a segment that is already "closed" - which is always possible anyway (e.g. if the session
      * is closed _after_ the cleanup for the segment is registered but _before_ the factory returns the
      * new segment to the client). For this reason, it's not worth adding extra complexity to the segment
@@ -201,7 +201,7 @@ public abstract sealed class MemorySessionImpl
     /**
      * Checks that this session is still alive (see {@link #isAlive()}).
      * @throws IllegalStateException if this session is already closed or if this is
-     * a confined session and this method is called outside of the owner thread.
+     * a confined session and this method is called outside the owner thread.
      */
     public void checkValidState() {
         try {
@@ -211,7 +211,7 @@ public abstract sealed class MemorySessionImpl
         }
     }
 
-    public static final void checkValidState(MemorySegment segment) {
+    public static void checkValidState(MemorySegment segment) {
         ((AbstractMemorySegmentImpl)segment).sessionImpl().checkValidState();
     }
 
@@ -227,7 +227,7 @@ public abstract sealed class MemorySessionImpl
     /**
      * Closes this session, executing any cleanup action (where provided).
      * @throws IllegalStateException if this session is already closed or if this is
-     * a confined session and this method is called outside of the owner thread.
+     * a confined session and this method is called outside the owner thread.
      */
     public void close() {
         justClose();

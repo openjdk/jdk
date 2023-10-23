@@ -2055,7 +2055,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
 
     bool unloading_occurred;
     {
-      CodeCache::UnloadingScope scope(is_alive_closure());
+      CodeCache::UnlinkingScope scope(is_alive_closure());
 
       // Follow system dictionary roots and unload classes.
       unloading_occurred = SystemDictionary::do_unloading(&_gc_timer);
