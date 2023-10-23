@@ -41,15 +41,15 @@ import jdk.test.whitebox.WhiteBox;
 public class TestSkipRebuildRemsetPhase {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xbootclasspath/a:.",
-                                                                  "-XX:+UseG1GC",
-                                                                  "-XX:+UnlockExperimentalVMOptions",
-                                                                  "-XX:+UnlockDiagnosticVMOptions",
-                                                                  "-XX:+WhiteBoxAPI",
-                                                                  "-XX:G1MixedGCLiveThresholdPercent=20",
-                                                                  "-Xlog:gc+marking=debug,gc+phases=debug,gc+remset+tracking=trace",
-                                                                  "-Xms10M",
-                                                                  "-Xmx10M",
-                                                                  GCTest.class.getName());
+                                                                             "-XX:+UseG1GC",
+                                                                             "-XX:+UnlockExperimentalVMOptions",
+                                                                             "-XX:+UnlockDiagnosticVMOptions",
+                                                                             "-XX:+WhiteBoxAPI",
+                                                                             "-XX:G1MixedGCLiveThresholdPercent=20",
+                                                                             "-Xlog:gc+marking=debug,gc+phases=debug,gc+remset+tracking=trace",
+                                                                             "-Xms10M",
+                                                                             "-Xmx10M",
+                                                                             GCTest.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Skipping Remembered Set Rebuild.");
         output.shouldContain("No Remembered Sets to update after rebuild");

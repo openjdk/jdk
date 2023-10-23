@@ -225,10 +225,10 @@ public class TestBufferVectorization {
         OutputAnalyzer out;
         try {
             pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:-BackgroundCompilation",
-                                                       "-XX:+TraceNewVectors",
-                                                       "compiler.vectorization.TestBufferVectorization",
-                                                       testName,
-                                                       "run");
+                                                                  "-XX:+TraceNewVectors",
+                                                                  "compiler.vectorization.TestBufferVectorization",
+                                                                  testName,
+                                                                  "run");
             out = new OutputAnalyzer(pb.start());
         } catch (Exception e) {
             throw new RuntimeException(" Exception launching Java process: " + e);

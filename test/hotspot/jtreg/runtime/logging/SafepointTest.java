@@ -39,7 +39,7 @@ import jdk.test.lib.process.ProcessTools;
 public class SafepointTest {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:safepoint=trace",
-                                                                  InnerClass.class.getName());
+                                                                             InnerClass.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Safepoint synchronization initiated");
         output.shouldHaveExitValue(0);

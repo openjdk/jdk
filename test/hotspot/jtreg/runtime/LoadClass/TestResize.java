@@ -132,9 +132,9 @@ public class TestResize {
     // -Xlog:safepoint+cleanup will print out cleanup details at safepoint
     // that will allow us to detect if the system dictionary resized.
     ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+PrintClassLoaderDataGraphAtExit",
-                                                              "-Xlog:safepoint+cleanup,class+loader+data",
-                                                              "TriggerResize",
-                                                              String.valueOf(CLASSES_TO_LOAD));
+                                                                         "-Xlog:safepoint+cleanup,class+loader+data",
+                                                                         "TriggerResize",
+                                                                         String.valueOf(CLASSES_TO_LOAD));
     analyzeOutputOn(pb);
   }
 }

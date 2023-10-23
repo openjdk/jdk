@@ -88,11 +88,11 @@ public class TestLargePageUseForHeap {
         ProcessBuilder pb;
         // Test with large page enabled.
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                   "-XX:G1HeapRegionSize=" + regionSize,
-                                                   "-Xmx128m",
-                                                   "-Xlog:gc+init,pagesize,gc+heap+coops=debug",
-                                                   "-XX:+UseLargePages",
-                                                   "-version");
+                                                              "-XX:G1HeapRegionSize=" + regionSize,
+                                                              "-Xmx128m",
+                                                              "-Xlog:gc+init,pagesize,gc+heap+coops=debug",
+                                                              "-XX:+UseLargePages",
+                                                              "-version");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         boolean largePageEnabled = checkLargePageEnabled(output);
@@ -101,11 +101,11 @@ public class TestLargePageUseForHeap {
 
         // Test with large page disabled.
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                   "-XX:G1HeapRegionSize=" + regionSize,
-                                                   "-Xmx128m",
-                                                   "-Xlog:gc+init,pagesize,gc+heap+coops=debug",
-                                                   "-XX:-UseLargePages",
-                                                   "-version");
+                                                              "-XX:G1HeapRegionSize=" + regionSize,
+                                                              "-Xmx128m",
+                                                              "-Xlog:gc+init,pagesize,gc+heap+coops=debug",
+                                                              "-XX:-UseLargePages",
+                                                              "-version");
 
         output = new OutputAnalyzer(pb.start());
         checkHeap(output, smallPageSize);

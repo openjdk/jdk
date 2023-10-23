@@ -43,14 +43,14 @@ public class CompressedClassSpaceSize {
         OutputAnalyzer output;
         // Minimum size is 1MB
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:CompressedClassSpaceSize=0",
-                                                   "-version");
+                                                              "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("outside the allowed range")
               .shouldHaveExitValue(1);
 
         // Invalid size of -1 should be handled correctly
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:CompressedClassSpaceSize=-1",
-                                                   "-version");
+                                                              "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Improperly specified VM option 'CompressedClassSpaceSize=-1'")
               .shouldHaveExitValue(1);
@@ -58,7 +58,7 @@ public class CompressedClassSpaceSize {
 
         // Maximum size is 3GB
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:CompressedClassSpaceSize=4g",
-                                                   "-version");
+                                                              "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("outside the allowed range")
               .shouldHaveExitValue(1);
@@ -68,9 +68,9 @@ public class CompressedClassSpaceSize {
         // (Note: ccs size are rounded up to the next larger root chunk boundary (16m).
         // Note that this is **reserved** size and does not affect rss.
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
-                                                   "-XX:CompressedClassSpaceSize=1m",
-                                                   "-Xlog:gc+metaspace=trace",
-                                                   "-version");
+                                                              "-XX:CompressedClassSpaceSize=1m",
+                                                              "-Xlog:gc+metaspace=trace",
+                                                              "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldMatch("Compressed class space.*16777216")
               .shouldHaveExitValue(0);
@@ -78,17 +78,17 @@ public class CompressedClassSpaceSize {
 
         // Make sure the maximum size is set correctly and printed
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
-                                                   "-XX:CompressedClassSpaceSize=3g",
-                                                   "-Xlog:gc+metaspace=trace",
-                                                   "-version");
+                                                              "-XX:CompressedClassSpaceSize=3g",
+                                                              "-Xlog:gc+metaspace=trace",
+                                                              "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldMatch("Compressed class space.*3221225472")
               .shouldHaveExitValue(0);
 
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:-UseCompressedClassPointers",
-                                                   "-XX:CompressedClassSpaceSize=1m",
-                                                   "-version");
+                                                              "-XX:CompressedClassSpaceSize=1m",
+                                                              "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Setting CompressedClassSpaceSize has no effect when compressed class pointers are not used")
               .shouldHaveExitValue(0);

@@ -80,10 +80,10 @@ public class TestMaxJavaStackTraceDepth {
       for (int d : depths) {
         System.out.println("running test with -XX:MaxJavaStackTraceDepth=" + d);
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:stacktrace=info",
-                                                                  "-XX:MaxJavaStackTraceDepth=" + d,
-                                                                  "--add-opens",
-                                                                  "java.base/java.lang=ALL-UNNAMED",
-                                                                  "TestMaxJavaStackTraceDepth");
+                                                                             "-XX:MaxJavaStackTraceDepth=" + d,
+                                                                             "--add-opens",
+                                                                             "java.base/java.lang=ALL-UNNAMED",
+                                                                             "TestMaxJavaStackTraceDepth");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         if (d == 0) {
           // Should get all the elements in stack trace

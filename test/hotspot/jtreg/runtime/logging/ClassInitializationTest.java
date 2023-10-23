@@ -42,9 +42,9 @@ public class ClassInitializationTest {
 
         // (1)
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:class+init=info",
-                                                                  "-Xverify:all",
-                                                                  "-Xmx128m",
-                                                                  "BadMap50");
+                                                                             "-Xverify:all",
+                                                                             "-Xmx128m",
+                                                                             "BadMap50");
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         out.shouldNotHaveExitValue(0);
         out.shouldContain("Start class verification for:");
@@ -55,9 +55,9 @@ public class ClassInitializationTest {
 
         // (2) class+init should turn off.
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:class+init=off",
-                                                   "-Xverify:all",
-                                                   "-Xmx128m",
-                                                   "BadMap50");
+                                                              "-Xverify:all",
+                                                              "-Xmx128m",
+                                                              "BadMap50");
         out = new OutputAnalyzer(pb.start());
         out.shouldNotHaveExitValue(0);
         out.shouldNotContain("[class,init]");

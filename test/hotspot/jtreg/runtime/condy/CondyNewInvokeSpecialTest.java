@@ -39,7 +39,7 @@ import jdk.test.lib.compiler.InMemoryJavaCompiler;
 public class CondyNewInvokeSpecialTest {
     public static void main(String args[]) throws Throwable {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xverify:all",
-                                                                  "CondyNewInvokeSpecial");
+                                                                             "CondyNewInvokeSpecial");
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
         oa.shouldContain("In CondyNewInvokeSpecial <init> method");
         oa.shouldHaveExitValue(0);

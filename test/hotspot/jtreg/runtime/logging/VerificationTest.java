@@ -64,16 +64,16 @@ public class VerificationTest {
 
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:verification=info",
-                                                                  InternalClass.class.getName());
+                                                                             InternalClass.class.getName());
         analyzeOutputOn(pb, true);
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:verification=off",
-                                                   InternalClass.class.getName());
+                                                              InternalClass.class.getName());
         analyzeOutputOff(pb);
 
         // logging level 'debug' should output stackmaps and bytecode data.
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:verification=debug",
-                                                   InternalClass.class.getName());
+                                                              InternalClass.class.getName());
         analyzeOutputOn(pb, false);
     }
 

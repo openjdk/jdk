@@ -45,11 +45,11 @@ public class TestRemsetLoggingThreads {
 
   private static void runTest(int refinementThreads, int workerThreads) throws Exception {
     ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                              "-XX:+UnlockDiagnosticVMOptions",
-                                                              "-Xlog:gc+remset+exit=trace",
-                                                              "-XX:G1ConcRefinementThreads=" + refinementThreads,
-                                                              "-XX:ParallelGCThreads=" + workerThreads,
-                                                              "-version");
+                                                                         "-XX:+UnlockDiagnosticVMOptions",
+                                                                         "-Xlog:gc+remset+exit=trace",
+                                                                         "-XX:G1ConcRefinementThreads=" + refinementThreads,
+                                                                         "-XX:ParallelGCThreads=" + workerThreads,
+                                                                         "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 

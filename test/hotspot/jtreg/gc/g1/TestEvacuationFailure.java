@@ -44,14 +44,14 @@ public class TestEvacuationFailure {
 
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                                  "-Xmx32M",
-                                                                  "-Xmn16M",
-                                                                  "-XX:+G1EvacuationFailureALot",
-                                                                  "-XX:G1EvacuationFailureALotCount=100",
-                                                                  "-XX:G1EvacuationFailureALotInterval=1",
-                                                                  "-XX:+UnlockDiagnosticVMOptions",
-                                                                  "-Xlog:gc",
-                                                                  GCTestWithEvacuationFailure.class.getName());
+                                                                             "-Xmx32M",
+                                                                             "-Xmn16M",
+                                                                             "-XX:+G1EvacuationFailureALot",
+                                                                             "-XX:G1EvacuationFailureALotCount=100",
+                                                                             "-XX:G1EvacuationFailureALotInterval=1",
+                                                                             "-XX:+UnlockDiagnosticVMOptions",
+                                                                             "-Xlog:gc",
+                                                                             GCTestWithEvacuationFailure.class.getName());
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         System.out.println(output.getStdout());

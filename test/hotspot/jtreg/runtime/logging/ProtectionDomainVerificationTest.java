@@ -40,9 +40,9 @@ public class ProtectionDomainVerificationTest {
 
         // -Xlog:protectiondomain=trace
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:protectiondomain=trace",
-                                                                  "-Xmx128m",
-                                                                  "-Djava.security.manager=allow",
-                                                                  Hello.class.getName(), "security_manager");
+                                                                             "-Xmx128m",
+                                                                             "-Djava.security.manager=allow",
+                                                                             Hello.class.getName(), "security_manager");
         new OutputAnalyzer(pb.start())
         .shouldHaveExitValue(0)
         .shouldContain("[protectiondomain] Checking package access")
@@ -50,9 +50,9 @@ public class ProtectionDomainVerificationTest {
 
         // -Xlog:protectiondomain=debug
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:protectiondomain=debug",
-                                                                  "-Xmx128m",
-                                                                  "-Djava.security.manager=allow",
-                                                                  Hello.class.getName(), "security_manager");
+                                                              "-Xmx128m",
+                                                              "-Djava.security.manager=allow",
+                                                              Hello.class.getName(), "security_manager");
         new OutputAnalyzer(pb.start())
         .shouldHaveExitValue(0)
         .shouldContain("[protectiondomain] Checking package access")
@@ -60,9 +60,9 @@ public class ProtectionDomainVerificationTest {
 
         // -Xlog:protectiondomain=debug
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:protectiondomain=trace",
-                                                   "-Xmx128m",
-                                                   "-Djava.security.manager=disallow",
-                                                   Hello.class.getName());
+                                                              "-Xmx128m",
+                                                              "-Djava.security.manager=disallow",
+                                                              Hello.class.getName());
         new OutputAnalyzer(pb.start())
         .shouldHaveExitValue(0)
         .shouldNotContain("[protectiondomain] Checking package access")

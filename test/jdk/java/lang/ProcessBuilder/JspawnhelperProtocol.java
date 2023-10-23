@@ -79,8 +79,8 @@ public class JspawnhelperProtocol {
     private static void normalExec() throws Exception {
         ProcessBuilder pb;
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Djdk.lang.Process.launchMechanism=posix_spawn",
-                                                   "JspawnhelperProtocol",
-                                                   "normalExec");
+                                                              "JspawnhelperProtocol",
+                                                              "normalExec");
         pb.inheritIO();
         Process p = pb.start();
         if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
@@ -94,8 +94,8 @@ public class JspawnhelperProtocol {
     private static void simulateCrashInChild(int stage) throws Exception {
         ProcessBuilder pb;
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Djdk.lang.Process.launchMechanism=posix_spawn",
-                                                   "JspawnhelperProtocol",
-                                                   "simulateCrashInChild" + stage);
+                                                              "JspawnhelperProtocol",
+                                                              "simulateCrashInChild" + stage);
         pb.environment().put(ENV_KEY, Integer.toString(stage));
         Process p = pb.start();
 
@@ -127,8 +127,8 @@ public class JspawnhelperProtocol {
     private static void simulateCrashInParent(int stage) throws Exception {
         ProcessBuilder pb;
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Djdk.lang.Process.launchMechanism=posix_spawn",
-                                                   "JspawnhelperProtocol",
-                                                   "simulateCrashInParent" + stage);
+                                                              "JspawnhelperProtocol",
+                                                              "simulateCrashInParent" + stage);
         pb.environment().put(ENV_KEY, Integer.toString(stage));
         Process p = pb.start();
 
@@ -173,8 +173,8 @@ public class JspawnhelperProtocol {
     private static void simulateTruncatedWriteInParent(int stage) throws Exception {
         ProcessBuilder pb;
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Djdk.lang.Process.launchMechanism=posix_spawn",
-                                                   "JspawnhelperProtocol",
-                                                   "simulateTruncatedWriteInParent" + stage);
+                                                              "JspawnhelperProtocol",
+                                                              "simulateTruncatedWriteInParent" + stage);
         pb.environment().put(ENV_KEY, Integer.toString(stage));
         Process p = pb.start();
 

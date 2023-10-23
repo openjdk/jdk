@@ -41,10 +41,10 @@ public class TestPeriodicLogMessages {
 
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                                  "-XX:G1PeriodicGCInterval=0",
-                                                                  "-Xlog:gc+init,gc+periodic=debug",
-                                                                  "-Xmx10M",
-                                                                  GCTest.class.getName());
+                                                                             "-XX:G1PeriodicGCInterval=0",
+                                                                             "-Xlog:gc+init,gc+periodic=debug",
+                                                                             "-Xmx10M",
+                                                                             GCTest.class.getName());
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Periodic GC: Disabled");
@@ -52,10 +52,10 @@ public class TestPeriodicLogMessages {
         output.shouldHaveExitValue(0);
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                   "-XX:G1PeriodicGCInterval=100",
-                                                   "-Xlog:gc+init,gc+periodic=debug",
-                                                   "-Xmx10M",
-                                                   GCTest.class.getName());
+                                                              "-XX:G1PeriodicGCInterval=100",
+                                                              "-Xlog:gc+init,gc+periodic=debug",
+                                                              "-Xmx10M",
+                                                              GCTest.class.getName());
 
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Periodic GC: Enabled");

@@ -39,9 +39,9 @@ import jdk.test.lib.process.ProcessTools;
 public class VMOperationTest {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:vmoperation=debug",
-                                                                  "-Xmx128m",
-                                                                  "-Xms128m",
-                                                                  InternalClass.class.getName());
+                                                                             "-Xmx128m",
+                                                                             "-Xms128m",
+                                                                             InternalClass.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("VM_Operation (");
         output.shouldHaveExitValue(0);

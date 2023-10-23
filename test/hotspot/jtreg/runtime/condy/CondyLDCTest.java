@@ -43,7 +43,7 @@ public class CondyLDCTest {
         // 1. Test a ldc_w instruction can be used with condy's which generate
         //    loadable constants of the following types: byte, char, short, float, integer, boolean.
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xverify:all",
-                                                                  "CondyUseLDC_W");
+                                                                             "CondyUseLDC_W");
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
         oa.shouldNotContain("VerifyError");
         oa.shouldHaveExitValue(0);
@@ -51,7 +51,7 @@ public class CondyLDCTest {
         // 2. Test ldc2_w of a condy which returns a dynamically generated
         //    float constant, generates a VerifyError.
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xverify:all",
-                                                   "CondyBadLDC2_W");
+                                                              "CondyBadLDC2_W");
         oa = new OutputAnalyzer(pb.start());
         oa.shouldContain("java.lang.VerifyError: Illegal type at constant pool entry");
         oa.shouldContain("CondyBadLDC2_W.F()F @0: ldc2_w");
@@ -60,7 +60,7 @@ public class CondyLDCTest {
         // 3. Test a ldc of a condy which returns a dynamically generated
         //    double constant, generates a VerifyError.
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xverify:all",
-                                                   "CondyBadLDC");
+                                                              "CondyBadLDC");
         oa = new OutputAnalyzer(pb.start());
         oa.shouldContain("java.lang.VerifyError: Illegal type at constant pool entry");
         oa.shouldContain("CondyBadLDC.D()D @0: ldc");

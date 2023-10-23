@@ -66,12 +66,12 @@ public class TestNewSizeThreadIncrease {
 
   static void runNewSizeThreadIncreaseTest(String expectedValue, boolean isNewsizeChanged) throws Exception {
     ProcessBuilder pb = GCArguments.createLimitedTestJavaProcessBuilder("-XX:+UseSerialGC",
-                                                             "-Xms96M",
-                                                             "-Xmx128M",
-                                                             "-XX:NewRatio=2",
-                                                             "-Xlog:gc+heap+ergo=debug",
-                                                             "-XX:NewSizeThreadIncrease="+expectedValue,
-                                                             GCTest.class.getName());
+                                                                        "-Xms96M",
+                                                                        "-Xmx128M",
+                                                                        "-XX:NewRatio=2",
+                                                                        "-Xlog:gc+heap+ergo=debug",
+                                                                        "-XX:NewSizeThreadIncrease="+expectedValue,
+                                                                        GCTest.class.getName());
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     output.shouldHaveExitValue(0);

@@ -37,12 +37,12 @@ public class TestMultipleXlogArgs {
 
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:logging=debug",
-                                                                  "-Xlog:logging=trace",
-                                                                  "-Xlog:defaultmethods=trace",
-                                                                  "-Xlog:defaultmethods=warning",
-                                                                  "-Xlog:safepoint=info",
-                                                                  "-Xlog:safepoint=info",
-                                                                  "-version");
+                                                                             "-Xlog:logging=trace",
+                                                                             "-Xlog:defaultmethods=trace",
+                                                                             "-Xlog:defaultmethods=warning",
+                                                                             "-Xlog:safepoint=info",
+                                                                             "-Xlog:safepoint=info",
+                                                                             "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         // -Xlog:logging=trace means that the log configuration will be printed.
         String stdoutConfigLine = "\\[logging *\\]  #0: stdout .*";

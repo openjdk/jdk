@@ -68,9 +68,9 @@ public class TestPrintReferences {
 
     public static void testRefs() throws Exception {
         ProcessBuilder pb_enabled = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:gc+ref+phases=debug",
-                                                                          "-XX:+UseG1GC",
-                                                                          "-Xmx32M",
-                                                                          GCTest.class.getName());
+                                                                                     "-XX:+UseG1GC",
+                                                                                     "-Xmx32M",
+                                                                                     GCTest.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb_enabled.start());
 
         checkRefsLogFormat(output);
@@ -96,12 +96,12 @@ public class TestPrintReferences {
 
     public static void testPhases(boolean parallelRefProcEnabled) throws Exception {
         ProcessBuilder pb_enabled = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:gc+phases+ref=debug",
-                                                                          "-XX:+UseG1GC",
-                                                                          "-Xmx32M",
-                                                                          "-XX:" + (parallelRefProcEnabled ? "+" : "-") + "ParallelRefProcEnabled",
-                                                                          "-XX:-UseDynamicNumberOfGCThreads",
-                                                                          "-XX:ParallelGCThreads=2",
-                                                                          GCTest.class.getName());
+                                                                                     "-XX:+UseG1GC",
+                                                                                     "-Xmx32M",
+                                                                                     "-XX:" + (parallelRefProcEnabled ? "+" : "-") + "ParallelRefProcEnabled",
+                                                                                     "-XX:-UseDynamicNumberOfGCThreads",
+                                                                                     "-XX:ParallelGCThreads=2",
+                                                                                     GCTest.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb_enabled.start());
 
         checkLogFormat(output, parallelRefProcEnabled);

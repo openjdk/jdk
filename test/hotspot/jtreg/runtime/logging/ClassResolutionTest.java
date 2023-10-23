@@ -61,7 +61,7 @@ public class ClassResolutionTest {
 
         // (1) class+resolve should turn on.
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:class+resolve=debug",
-                                                                  ClassResolutionTestMain.class.getName());
+                                                                             ClassResolutionTestMain.class.getName());
         OutputAnalyzer o = new OutputAnalyzer(pb.start());
         o.shouldHaveExitValue(0);
         o.shouldContain("[class,resolve] ClassResolutionTest$ClassResolutionTestMain$Thing1Handler ClassResolutionTest$ClassResolutionTestMain$Thing1");
@@ -69,8 +69,8 @@ public class ClassResolutionTest {
 
         // (2) class+resolve should turn off.
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:class+resolve=debug",
-                                                   "-Xlog:class+resolve=off",
-                                                   ClassResolutionTestMain.class.getName());
+                                                              "-Xlog:class+resolve=off",
+                                                              ClassResolutionTestMain.class.getName());
         o = new OutputAnalyzer(pb.start());
         o.shouldHaveExitValue(0);
         o.shouldNotContain("[class,resolve]");

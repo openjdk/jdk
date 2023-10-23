@@ -90,12 +90,12 @@ public class ShortLivedSymbolCleanup {
 
   public static void main(String[] args) throws Exception {
     ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:symboltable=trace",
-                                                              "-version");
+                                                                         "-version");
     int size = getSymbolTableSize(pb);
 
     pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+PrintSymbolTableSizeHistogram",
-                                               LotsOfTempSymbols.class.getName(),
-                                               Integer.toString(size));
+                                                          LotsOfTempSymbols.class.getName(),
+                                                          Integer.toString(size));
     analyzeOutputOn(size, pb);
   }
 

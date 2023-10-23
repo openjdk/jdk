@@ -52,11 +52,11 @@ public class MonitorInflationTest {
 
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:monitorinflation=trace",
-                                                                  InnerClass.class.getName());
+                                                                             InnerClass.class.getName());
         analyzeOutputOn(pb);
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:monitorinflation=off",
-                                                   InnerClass.class.getName());
+                                                              InnerClass.class.getName());
         analyzeOutputOff(pb);
     }
 

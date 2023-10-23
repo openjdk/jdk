@@ -52,19 +52,19 @@ public class CompressedOopsTest {
 
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseCompressedOops",
-                                                   "-Xlog:gc+heap+coops=debug",
-                                                   InnerClass.class.getName());
+                                                                             "-Xlog:gc+heap+coops=debug",
+                                                                             InnerClass.class.getName());
         analyzeOutputOn(pb);
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseCompressedOops",
-                                                   "-Xlog:gc+heap+coops",
-                                                   InnerClass.class.getName());
+                                                              "-Xlog:gc+heap+coops",
+                                                              InnerClass.class.getName());
         // No coops logging on info level.
         analyzeOutputOff(pb);
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseCompressedOops",
-                                                   "-Xlog:gc+heap+coops=off",
-                                                   InnerClass.class.getName());
+                                                              "-Xlog:gc+heap+coops=off",
+                                                              InnerClass.class.getName());
         analyzeOutputOff(pb);
     }
 

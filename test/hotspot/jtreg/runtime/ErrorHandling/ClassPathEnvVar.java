@@ -52,8 +52,8 @@ public class ClassPathEnvVar {
     private static OutputAnalyzer runCrasher() throws Exception {
         ProcessBuilder pb =
             ProcessTools.createLimitedTestJavaProcessBuilder("-XX:-CreateCoredumpOnCrash",
-                                                  "-XX:ErrorHandlerTest=14",
-                                                  "-XX:+ErrorFileToStdout");
+                                                             "-XX:ErrorHandlerTest=14",
+                                                             "-XX:+ErrorFileToStdout");
 
         // Obtain the CLASSPATH setting and expand it to more than 2000 chars.
         Map<String, String> envMap = pb.environment();

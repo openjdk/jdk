@@ -64,8 +64,8 @@ public class TestFullNames {
             Asserts.assertFalse(file.exists());
             // Run with logging=trace on stdout so that we can verify the log configuration afterwards.
             ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:logging=trace",
-                                                                      "-Xlog:all=trace:" + logOutput,
-                                                                      "-version");
+                                                                                 "-Xlog:all=trace:" + logOutput,
+                                                                                 "-version");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
             Asserts.assertTrue(file.exists());

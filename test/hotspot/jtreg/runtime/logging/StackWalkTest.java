@@ -50,11 +50,11 @@ public class StackWalkTest {
 
     public static void main(String... args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:stackwalk=debug",
-                                                                  InnerClass.class.getName());
+                                                                             InnerClass.class.getName());
         analyzeOutputOn(pb);
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:stackwalk=off",
-                                                   InnerClass.class.getName());
+                                                              InnerClass.class.getName());
         analyzeOutputOff(pb);
     }
 

@@ -38,7 +38,7 @@ import jdk.test.lib.process.ProcessTools;
 public class DefaultMethodsTest {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:defaultmethods=debug",
-                                                                  InnerClass.class.getName());
+                                                                             InnerClass.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Slots that need filling:");
         output.shouldContain("requires default method processing");

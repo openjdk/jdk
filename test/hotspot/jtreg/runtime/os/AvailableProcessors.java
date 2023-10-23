@@ -70,7 +70,7 @@ public class AvailableProcessors {
             // Enable logging for easier failure diagnosis
             ProcessBuilder master =
                     ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:os=trace",
-                                                          "AvailableProcessors");
+                                                                     "AvailableProcessors");
 
             int[] expected = new int[] { 1, available/2, available-1, available };
 

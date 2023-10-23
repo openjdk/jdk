@@ -58,11 +58,11 @@ public class ExceptionsTest {
 
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:exceptions=info",
-                                                                  InternalClass.class.getName());
+                                                                             InternalClass.class.getName());
         analyzeOutputOn(pb);
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:exceptions=off",
-                                                   InternalClass.class.getName());
+                                                              InternalClass.class.getName());
         analyzeOutputOff(pb);
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(InternalClass.class.getName());
@@ -74,8 +74,8 @@ public class ExceptionsTest {
         analyzeOutputOff(pb);
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:VMOptionsFile=" + System.getProperty("test.src", ".")
-                                                   + File.separator + "ExceptionsTest_options_file",
-                                                   InternalClass.class.getName());
+                                                              + File.separator + "ExceptionsTest_options_file",
+                                                              InternalClass.class.getName());
         analyzeOutputOn(pb);
     }
 

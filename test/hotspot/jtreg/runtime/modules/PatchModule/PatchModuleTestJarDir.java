@@ -93,12 +93,12 @@ public class PatchModuleTestJarDir {
 
         // Supply --patch-module with the name of the jar file for the module java.naming.
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("--patch-module=java.naming=" +
-                                                                           moduleJar +
-                                                                           File.pathSeparator +
-                                                                           System.getProperty("test.classes") + "/mods/java.naming",
-                                                                  "PatchModule2DirsMain",
-                                                                  "javax.naming.spi.NamingManager1",
-                                                                  "javax.naming.spi.NamingManager2");
+                                                                                 moduleJar +
+                                                                                 File.pathSeparator +
+                                                                                 System.getProperty("test.classes") + "/mods/java.naming",
+                                                                             "PatchModule2DirsMain",
+                                                                             "javax.naming.spi.NamingManager1",
+                                                                             "javax.naming.spi.NamingManager2");
 
         new OutputAnalyzer(pb.start())
             .shouldContain("I pass one!")
