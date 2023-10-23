@@ -304,7 +304,6 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
             } else {
                 host = ParseUtil.encodePath(host);
             }
-            // IPv6 literal?
             try {
                 uri = new URI("socket://" + host + ":"+ epoint.getPort());
             } catch (URISyntaxException e) {
