@@ -565,6 +565,9 @@ class StubGenerator: public StubCodeGenerator {
                                    Register arg1 = noreg,
                                    Register arg2 = noreg);
 
+  // shared exception handler for FFM upcall stubs
+  address generate_upcall_stub_exception_handler();
+
   void create_control_words();
 
   // Initialization
