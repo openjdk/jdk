@@ -97,6 +97,19 @@ public class TestMergeStores {
         test_groups.put("test3", new HashMap<String,TestFunction>());
         test_groups.get("test3").put("test3R", () -> { return test3R(aB.clone(), offset1, vL1); });
         test_groups.get("test3").put("test3a", () -> { return test3a(aB.clone(), offset1, vL1); });
+
+        test_groups.put("test4", new HashMap<String,TestFunction>());
+        test_groups.get("test4").put("test4R", () -> { return test4R(aB.clone(), offset1, vL1, vI1, vS1, vB1); });
+        test_groups.get("test4").put("test4a", () -> { return test4a(aB.clone(), offset1, vL1, vI1, vS1, vB1); });
+
+        test_groups.put("test5", new HashMap<String,TestFunction>());
+        test_groups.get("test5").put("test5R", () -> { return test5R(aB.clone(), offset1); });
+        test_groups.get("test5").put("test5a", () -> { return test5a(aB.clone(), offset1); });
+
+        test_groups.put("test6", new HashMap<String,TestFunction>());
+        test_groups.get("test6").put("test6R", () -> { return test6R(aB.clone(), bB.clone(), offset1, offset2); });
+        test_groups.get("test6").put("test6a", () -> { return test6a(aB.clone(), bB.clone(), offset1, offset2); });
+
     }
 
     @Run(test = {"test1a",
@@ -109,7 +122,10 @@ public class TestMergeStores {
                  "test2c",
                  "test2d",
                  "test2e",
-                 "test3a"})
+                 "test3a",
+                 "test4a",
+                 "test5a",
+                 "test6a"})
     public void runTests() {
         // Write random values to inputs
         set_random(aB);
@@ -149,7 +165,7 @@ public class TestMergeStores {
                     verify("group " + group_name + ", gold " + gold_name + ", test " + name, gold, result);
                 }
             }
-	}
+        }
     }
 
     static void verify(String name, Object[] gold, Object[] result) {
@@ -467,5 +483,128 @@ public class TestMergeStores {
         a[offset + 7] = (byte)(v >> 24);
         return new Object[]{ a };
     }
+
+    @DontCompile
+    static Object[] test4R(byte[] a, int offset, long v1, int v2, short v3, byte v4) {
+        a[offset +  0] = (byte)0x00;
+        a[offset +  1] = (byte)0xFF;
+        a[offset +  2] = v4;
+        a[offset +  3] = (byte)0x42;
+        a[offset +  4] = (byte)(v1 >> 0);
+        a[offset +  5] = (byte)(v1 >> 8);
+        a[offset +  6] = (byte)0xAB;
+        a[offset +  7] = (byte)0xCD;
+        a[offset +  8] = (byte)0xEF;
+        a[offset +  9] = (byte)0x01;
+        a[offset + 10] = (byte)(v2 >> 0);
+        a[offset + 11] = (byte)(v2 >> 8);
+        a[offset + 12] = (byte)(v2 >> 16);
+        a[offset + 13] = (byte)(v2 >> 24);
+        a[offset + 14] = (byte)(v3 >> 0);
+        a[offset + 15] = (byte)(v3 >> 8);
+        a[offset + 16] = (byte)0xEF;
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3",
+                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3",
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2",
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"})
+    static Object[] test4a(byte[] a, int offset, long v1, int v2, short v3, byte v4) {
+        a[offset +  0] = (byte)0x00;
+        a[offset +  1] = (byte)0xFF;
+        a[offset +  2] = v4;
+        a[offset +  3] = (byte)0x42;
+        a[offset +  4] = (byte)(v1 >> 0);
+        a[offset +  5] = (byte)(v1 >> 8);
+        a[offset +  6] = (byte)0xAB;
+        a[offset +  7] = (byte)0xCD;
+        a[offset +  8] = (byte)0xEF;
+        a[offset +  9] = (byte)0x01;
+        a[offset + 10] = (byte)(v2 >> 0);
+        a[offset + 11] = (byte)(v2 >> 8);
+        a[offset + 12] = (byte)(v2 >> 16);
+        a[offset + 13] = (byte)(v2 >> 24);
+        a[offset + 14] = (byte)(v3 >> 0);
+        a[offset + 15] = (byte)(v3 >> 8);
+        a[offset + 16] = (byte)0xEF;
+        return new Object[]{ a };
+    }
+
+    @DontCompile
+    static Object[] test5R(byte[] a, int offset) {
+        a[offset +  0] = (byte)0x01;
+        a[offset +  1] = (byte)0x02;
+        a[offset +  2] = (byte)0x03;
+        a[offset +  3] = (byte)0x04;
+        a[offset +  4] = (byte)0x11;
+        a[offset +  5] = (byte)0x22;
+        a[offset +  6] = (byte)0x33;
+        a[offset +  7] = (byte)0x44;
+        a[offset +  8] = (byte)0x55;
+        a[offset +  9] = (byte)0x66;
+        a[offset + 10] = (byte)0x77;
+        a[offset + 11] = (byte)0xAA;
+        a[offset + 12] = (byte)0xBB;
+        a[offset + 13] = (byte)0xCC;
+        a[offset + 14] = (byte)0xDD;
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    static Object[] test5a(byte[] a, int offset) {
+        a[offset +  0] = (byte)0x01;
+        a[offset +  1] = (byte)0x02;
+        a[offset +  2] = (byte)0x03;
+        a[offset +  3] = (byte)0x04;
+        a[offset +  4] = (byte)0x11;
+        a[offset +  5] = (byte)0x22;
+        a[offset +  6] = (byte)0x33;
+        a[offset +  7] = (byte)0x44;
+        a[offset +  8] = (byte)0x55;
+        a[offset +  9] = (byte)0x66;
+        a[offset + 10] = (byte)0x77;
+        a[offset + 11] = (byte)0xAA;
+        a[offset + 12] = (byte)0xBB;
+        a[offset + 13] = (byte)0xCC;
+        a[offset + 14] = (byte)0xDD;
+        return new Object[]{ a };
+    }
+
+    @DontCompile
+    static Object[] test6R(byte[] a, byte[] b, int offset1, int offset2) {
+        a[offset1 +  1] = (byte)0x02;
+        a[offset1 +  3] = (byte)0x04;
+        b[offset1 +  4] = (byte)0x11;
+        a[offset1 +  5] = (byte)0x22;
+        a[offset2 +  6] = (byte)0x33;
+        a[offset1 +  7] = (byte)0x44;
+        b[offset1 +  8] = (byte)0x55;
+        b[offset1 + 10] = (byte)0x66;
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8",
+                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"})
+    static Object[] test6a(byte[] a, byte[] b, int offset1, int offset2) {
+        a[offset1 +  1] = (byte)0x02;
+        a[offset1 +  3] = (byte)0x04;
+        b[offset1 +  4] = (byte)0x11;
+        a[offset1 +  5] = (byte)0x22;
+        a[offset2 +  6] = (byte)0x33;
+        a[offset1 +  7] = (byte)0x44;
+        b[offset1 +  8] = (byte)0x55;
+        b[offset1 + 10] = (byte)0x66;
+        return new Object[]{ a };
+    }
+
 
 }

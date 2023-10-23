@@ -1960,10 +1960,10 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         prev_dom = first_proj;
       } else {
         // Non-constant bound: We need 2 RangeChecks, in this pattern:
-	//
-	// RangeCheck (with offset_max)
-	// IfProj     (should not have any use)
-	// RangeCheck (with offset_min)
+        //
+        // RangeCheck (with offset_max)
+        // IfProj     (should not have any use)
+        // RangeCheck (with offset_min)
 
         // Ensure the nodes have this pattern (ignoring offsets):
         if (second->in(0) != first_proj ||

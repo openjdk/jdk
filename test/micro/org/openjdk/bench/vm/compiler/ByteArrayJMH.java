@@ -142,7 +142,7 @@ public class ByteArrayJMH {
     @Benchmark
     public void test3a() {
         a[0] = 't';
-        a[1] = 'r'; 
+        a[1] = 'r';
         a[2] = 'u';
         a[3] = 'e';
         a[4] = 'f';

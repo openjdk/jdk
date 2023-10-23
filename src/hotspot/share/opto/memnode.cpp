@@ -2846,6 +2846,9 @@ Node* StoreNode::Ideal_merge_stores(PhaseGVN* phase) {
                                          atp, new_value, bt, MemNode::unordered);
   new_store->set_mismatched_access();
 
+  // Constants above may now also be be packed -> put candidate on worklist
+  phase->is_IterGVN()->_worklist.push(new_mem);
+
 #ifdef ASSERT
   if (TraceMergeStores) {
     tty->print_cr("[TraceMergeStores]: Replace");
