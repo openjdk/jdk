@@ -1041,6 +1041,9 @@ public class StyleSheet extends StyleContext {
      *   Color color1 = styleSheet.stringToColor("#20b2aa");
      * }
      *
+     * @spec https://www.w3.org/TR/css-color-4/#named-colors
+     * @spec https://www.w3.org/TR/css-color-4/#hex-notation
+     * @spec https://www.w3.org/TR/css-color-4/#rgb-functions
      * @param string color, string such as "RED" or "rgb(r g b)",  "rgba(r g b a)"
      * or "#NNN", "#NNNN", "#NNNNNN", "#NNNNNNNN".
      * @return the color

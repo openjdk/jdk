@@ -127,9 +127,14 @@ import javax.swing.text.View;
  * </ul>
  * <p><b>Note: for the time being we do not fully support relative units,
  * unless noted, so that
- * p { margin-top: 10% } will be treated as if no margin-top was specified.</b>
+ * p { margin-top: 10% } will be treated as if no margin-top was specified.
+ * Additionally, the named, hexadecimal and rgb or rgba color notations from
+ * CSS 4 are supported.</b>
  *
  * @spec https://www.w3.org/TR/REC-CSS1 Cascading Style Sheets, level 1
+ * @spec https://www.w3.org/TR/css-color-4/#named-colors
+ * @spec https://www.w3.org/TR/css-color-4/#hex-notation
+ * @spec https://www.w3.org/TR/css-color-4/#rgb-functions
  * @author  Timothy Prinzing
  * @author  Scott Violet
  * @see StyleSheet
