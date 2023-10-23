@@ -108,19 +108,17 @@ public class SocketWriteEvent extends Event {
      * {@link #commit(long, long, String, String, int, long)}.
      *
      * @param start  the start time
+     * @param duration the duration
      * @param bytesWritten  how many bytes were sent
      * @param remote  the address of the remote socket being written to
      */
-    public static void offer(long start, long bytesWritten, SocketAddress remote) {
-        long duration = timestamp() - start;
-        if (shouldCommit(duration)) {
-            long bytes = bytesWritten < 0 ? 0 : bytesWritten;
-            if (remote instanceof InetSocketAddress isa) {
-                commit(start, duration, isa.getHostString(), isa.getAddress().getHostAddress(), isa.getPort(), bytes);
-            } else if (remote instanceof UnixDomainSocketAddress udsa) {
-                String path = "[" + udsa.getPath().toString() + "]";
-                commit(start, duration, "Unix domain socket", path, 0, bytes);
-            }
+    public static void emit(long start, long duration, long bytesWritten, SocketAddress remote) {
+        long bytes = bytesWritten < 0 ? 0 : bytesWritten;
+        if (remote instanceof InetSocketAddress isa) {
+            commit(start, duration, isa.getHostString(), isa.getAddress().getHostAddress(), isa.getPort(), bytes);
+        } else if (remote instanceof UnixDomainSocketAddress udsa) {
+            String path = "[" + udsa.getPath().toString() + "]";
+            commit(start, duration, "Unix domain socket", path, 0, bytes);
         }
     }
 }

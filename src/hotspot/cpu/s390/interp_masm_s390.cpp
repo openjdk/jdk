@@ -36,6 +36,7 @@
 #include "oops/markWord.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -349,14 +350,43 @@ void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, Regis
 }
 
 void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index) {
-  // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
+  // Get index out of bytecode pointer.
   get_cache_index_at_bcp(index, 1, sizeof(u4));
-  // Get address of invokedynamic array
+
+  // Get the address of the ResolvedIndyEntry array
   get_constant_pool_cache(cache);
   z_lg(cache, Address(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
-  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
-  z_sllg(index, index, exact_log2(sizeof(ResolvedIndyEntry)));
+
+  // Scale the index to form a byte offset into the ResolvedIndyEntry array
+  size_t entry_size = sizeof(ResolvedIndyEntry);
+  if (is_power_of_2(entry_size)) {
+    z_sllg(index, index, exact_log2(entry_size));
+  } else {
+    z_mghi(index, entry_size);
+  }
+
+  // Calculate the final field address.
   z_la(cache, Array<ResolvedIndyEntry>::base_offset_in_bytes(), index, cache);
+}
+
+void InterpreterMacroAssembler::load_field_entry(Register cache, Register index, int bcp_offset) {
+  // Get field index out of bytecode pointer.
+  get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
+
+  // Get the address of the ResolvedFieldEntry array.
+  get_constant_pool_cache(cache);
+  z_lg(cache, Address(cache, in_bytes(ConstantPoolCache::field_entries_offset())));
+
+  // Scale the index to form a byte offset into the ResolvedFieldEntry array
+  size_t entry_size = sizeof(ResolvedFieldEntry);
+  if (is_power_of_2(entry_size)) {
+    z_sllg(index, index, exact_log2(entry_size));
+  } else {
+    z_mghi(index, entry_size);
+  }
+
+  // Calculate the final field address.
+  z_la(cache, Array<ResolvedFieldEntry>::base_offset_in_bytes(), index, cache);
 }
 
 // Kills Z_R0_scratch.

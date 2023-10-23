@@ -26,7 +26,7 @@
 #define SHARE_GC_SERIAL_TENUREDGENERATION_HPP
 
 #include "gc/serial/cSpaceCounters.hpp"
-#include "gc/shared/generation.hpp"
+#include "gc/serial/generation.hpp"
 #include "gc/shared/gcStats.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "utilities/macros.hpp"
@@ -132,8 +132,6 @@ class TenuredGeneration: public Generation {
   void save_marks();
 
   bool no_allocs_since_save_marks();
-
-  inline size_t block_size(const HeapWord* addr) const;
 
   inline bool block_is_obj(const HeapWord* addr) const;
 

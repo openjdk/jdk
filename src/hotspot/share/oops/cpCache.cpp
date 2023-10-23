@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -70,75 +71,6 @@ static Array<T>* initialize_resolved_entries_array(ClassLoaderData* loader_data,
     return resolved_entries;
   }
   return nullptr;
-}
-
-ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
-                                     const intStack& invokedynamic_map,
-                                     const GrowableArray<ResolvedIndyEntry> indy_entries,
-                                     const GrowableArray<ResolvedFieldEntry> field_entries,
-                                     const GrowableArray<ResolvedMethodEntry> method_entries,
-                                     TRAPS) {
-
-  int size = ConstantPoolCache::size();
-
-  // Initialize resolved entry arrays with available data
-  Array<ResolvedFieldEntry>* resolved_field_entries = initialize_resolved_entries_array(loader_data, field_entries, CHECK_NULL);
-  Array<ResolvedIndyEntry>* resolved_indy_entries = initialize_resolved_entries_array(loader_data, indy_entries, CHECK_NULL);
-  Array<ResolvedMethodEntry>* resolved_method_entries = initialize_resolved_entries_array(loader_data, method_entries, CHECK_NULL);
-
-  return new (loader_data, size, MetaspaceObj::ConstantPoolCacheType, THREAD)
-              ConstantPoolCache(invokedynamic_map, resolved_indy_entries, resolved_field_entries, resolved_method_entries);
-}
-
-// Record the GC marking cycle when redefined vs. when found in the loom stack chunks.
-void ConstantPoolCache::record_gc_epoch() {
-  _gc_epoch = CodeCache::gc_epoch();
-}
-
-#if INCLUDE_CDS
-void ConstantPoolCache::remove_unshareable_info() {
-  Arguments::assert_is_dumping_archive();
-  // <this> is the copy to be written into the archive. It's in the ArchiveBuilder's "buffer space".
-  // However, this->_initial_entries was not copied/relocated by the ArchiveBuilder, so it's
-  // still pointing to the array allocated inside save_for_archive().
-  if (_resolved_indy_entries != nullptr) {
-    for (int i = 0; i < _resolved_indy_entries->length(); i++) {
-      resolved_indy_entry_at(i)->remove_unshareable_info();
-    }
-  }
-  if (_resolved_field_entries != nullptr) {
-    for (int i = 0; i < _resolved_field_entries->length(); i++) {
-      resolved_field_entry_at(i)->remove_unshareable_info();
-    }
-  }
-  if (_resolved_method_entries != nullptr) {
-    for (int i = 0; i < _resolved_method_entries->length(); i++) {
-      resolved_method_entry_at(i)->remove_unshareable_info();
-    }
-  }
-}
-#endif // INCLUDE_CDS
-
-void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
-  assert(!is_shared(), "shared caches are not deallocated");
-  data->remove_handle(_resolved_references);
-  set_resolved_references(OopHandle());
-  MetadataFactory::free_array<u2>(data, _reference_map);
-  set_reference_map(nullptr);
-#if INCLUDE_CDS
-  if (_resolved_indy_entries != nullptr) {
-    MetadataFactory::free_array<ResolvedIndyEntry>(data, _resolved_indy_entries);
-    _resolved_indy_entries = nullptr;
-  }
-  if (_resolved_field_entries != nullptr) {
-    MetadataFactory::free_array<ResolvedFieldEntry>(data, _resolved_field_entries);
-    _resolved_field_entries = nullptr;
-  }
-  if (_resolved_method_entries != nullptr) {
-    MetadataFactory::free_array<ResolvedMethodEntry>(data, _resolved_method_entries);
-    _resolved_method_entries = nullptr;
-  }
-#endif
 }
 
 void ConstantPoolCache::set_direct_or_vtable_call(Bytecodes::Code invoke_code,
@@ -428,6 +360,75 @@ Method* ConstantPoolCache::method_if_resolved(int method_index) const {
     }
   }
   return nullptr;
+}
+
+ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
+                                     const intStack& invokedynamic_map,
+                                     const GrowableArray<ResolvedIndyEntry> indy_entries,
+                                     const GrowableArray<ResolvedFieldEntry> field_entries,
+                                     const GrowableArray<ResolvedMethodEntry> method_entries,
+                                     TRAPS) {
+
+  int size = ConstantPoolCache::size();
+
+  // Initialize resolved entry arrays with available data
+  Array<ResolvedFieldEntry>* resolved_field_entries = initialize_resolved_entries_array(loader_data, field_entries, CHECK_NULL);
+  Array<ResolvedIndyEntry>* resolved_indy_entries = initialize_resolved_entries_array(loader_data, indy_entries, CHECK_NULL);
+  Array<ResolvedMethodEntry>* resolved_method_entries = initialize_resolved_entries_array(loader_data, method_entries, CHECK_NULL);
+
+  return new (loader_data, size, MetaspaceObj::ConstantPoolCacheType, THREAD)
+              ConstantPoolCache(invokedynamic_map, resolved_indy_entries, resolved_field_entries, resolved_method_entries);
+}
+
+// Record the GC marking cycle when redefined vs. when found in the loom stack chunks.
+void ConstantPoolCache::record_gc_epoch() {
+  _gc_epoch = CodeCache::gc_epoch();
+}
+
+#if INCLUDE_CDS
+void ConstantPoolCache::remove_unshareable_info() {
+  assert(CDSConfig::is_dumping_archive(), "sanity");
+  // <this> is the copy to be written into the archive. It's in the ArchiveBuilder's "buffer space".
+  // However, this->_initial_entries was not copied/relocated by the ArchiveBuilder, so it's
+  // still pointing to the array allocated inside save_for_archive().
+  if (_resolved_indy_entries != nullptr) {
+    for (int i = 0; i < _resolved_indy_entries->length(); i++) {
+      resolved_indy_entry_at(i)->remove_unshareable_info();
+    }
+  }
+  if (_resolved_field_entries != nullptr) {
+    for (int i = 0; i < _resolved_field_entries->length(); i++) {
+      resolved_field_entry_at(i)->remove_unshareable_info();
+    }
+  }
+  if (_resolved_method_entries != nullptr) {
+    for (int i = 0; i < _resolved_method_entries->length(); i++) {
+      resolved_method_entry_at(i)->remove_unshareable_info();
+    }
+  }
+}
+#endif // INCLUDE_CDS
+
+void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
+  assert(!is_shared(), "shared caches are not deallocated");
+  data->remove_handle(_resolved_references);
+  set_resolved_references(OopHandle());
+  MetadataFactory::free_array<u2>(data, _reference_map);
+  set_reference_map(nullptr);
+#if INCLUDE_CDS
+  if (_resolved_indy_entries != nullptr) {
+    MetadataFactory::free_array<ResolvedIndyEntry>(data, _resolved_indy_entries);
+    _resolved_indy_entries = nullptr;
+  }
+  if (_resolved_field_entries != nullptr) {
+    MetadataFactory::free_array<ResolvedFieldEntry>(data, _resolved_field_entries);
+    _resolved_field_entries = nullptr;
+  }
+  if (_resolved_method_entries != nullptr) {
+    MetadataFactory::free_array<ResolvedMethodEntry>(data, _resolved_method_entries);
+    _resolved_method_entries = nullptr;
+  }
+#endif
 }
 
 #if INCLUDE_CDS_JAVA_HEAP

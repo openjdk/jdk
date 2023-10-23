@@ -23,6 +23,7 @@
  */
 
 // no precompiled headers
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -51,7 +52,6 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -2445,7 +2445,7 @@ run:
             CHECK_NULL(STACK_OBJECT(-(entry->number_of_parameters())));
             if (entry->is_vfinal()) {
               callee = entry->method();
-              if (REWRITE_BYTECODES && !UseSharedSpaces && !Arguments::is_dumping_archive()) {
+              if (REWRITE_BYTECODES && !UseSharedSpaces && !CDSConfig::is_dumping_archive()) {
                 // Rewrite to _fast_invokevfinal.
                 REWRITE_AT_PC(Bytecodes::_fast_invokevfinal);
               }

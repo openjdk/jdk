@@ -488,18 +488,6 @@ CodeBlob* CodeHeap::find_blob(void* start) const {
   return (result != nullptr && result->blob_contains((address)start)) ? result : nullptr;
 }
 
-size_t CodeHeap::alignment_unit() const {
-  // this will be a power of two
-  return _segment_size;
-}
-
-
-size_t CodeHeap::alignment_offset() const {
-  // The lowest address in any allocated block will be
-  // equal to alignment_offset (mod alignment_unit).
-  return sizeof(HeapBlock) & (_segment_size - 1);
-}
-
 // Returns the current block if available and used.
 // If not, it returns the subsequent block (if available), null otherwise.
 // Free blocks are merged, therefore there is at most one free block

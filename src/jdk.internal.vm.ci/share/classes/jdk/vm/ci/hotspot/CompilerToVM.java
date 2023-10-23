@@ -1301,6 +1301,11 @@ final class CompilerToVM {
     native boolean isTrustedForIntrinsics(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
     /**
+     * Clears the oop handle in {@code handle}.
+     */
+    native void clearOopHandle(long handle);
+
+    /**
      * Releases all oop handles whose referent is null.
      */
     native void releaseClearedOopHandles();
