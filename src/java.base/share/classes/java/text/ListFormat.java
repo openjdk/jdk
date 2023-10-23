@@ -503,7 +503,7 @@ public final class ListFormat extends Format {
      * Checks if this {@code ListFormat} is equal to another {@code ListFormat}.
      * The comparison is based on the {@code locale} and {@code patterns}, returned
      * from {@link #getLocale()} and {@link #getPatterns()} respectively.
-     * @param obj the object to check, {@code null} returns {@code false}
+     * @param obj the object to check.
      * @return {@code true} if this is equals to the other {@code ListFormat}
      */
     @Override
