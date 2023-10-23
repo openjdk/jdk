@@ -153,35 +153,18 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
       }
     }
 
-    bool failed_win = false;
-    if (x == the_clone && region->is_Loop() && n->is_Load()) {
-      // only move LoadI from inner to outer loop
-      Node* n_ctrl = region;
-      IdealLoopTree* n_loop_tree = get_loop(n_ctrl); // wrong -> gives parent, we want region itself
-
-      for (uint j = 1; j < n->req(); j++) {
-        Node* in = n->in(j);
-        if (in->is_Phi() && in->in(0) == region) {
-          Node* x_ctrl = x->in(j); // in->in(i); Use pre-Phi input for the clone
-          if (has_ctrl(x_ctrl)) {
-            x_ctrl = get_ctrl(x_ctrl);
-          }
-          IdealLoopTree* x_loop_tree = get_loop(x_ctrl);
-          // is n_loop_tree (should be inner or same loop) a member of x_loop_tree (should be outer loop)
-          if (!x_loop_tree->is_member(n_loop_tree)) {
-            wins = 0;
-            failed_win = true;
-            break;
-          }
-        }
-      }
-    }
-
-    if (x != the_clone && the_clone != nullptr)
-      _igvn.remove_dead_node(the_clone);
     phi->set_req( i, x );
-    if (failed_win) {
-      break;
+
+    if (the_clone == nullptr) continue;
+
+    if (the_clone != x) {
+      _igvn.remove_dead_node(the_clone);
+    } else if (region->is_Loop() && i == LoopNode::LoopBackControl) {
+      // it is not a win if work has moved from an outer to an inner loop
+      if (has_moved_to_inner_loop(n, region, x)) {
+        wins = 0;
+        break;
+      }
     }
   }
   // Too few wins?
@@ -244,6 +227,23 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
   }
 
   return phi;
+}
+
+// Check if Node 'x' has moved to inner loop compared to Node 'n'
+bool PhaseIdealLoop::has_moved_to_inner_loop(Node* n, Node* region, Node* x) {
+  assert(region->is_Loop(), "region should be a loop");
+  IdealLoopTree* n_loop_tree = get_loop(region);
+  for (uint j = 1; j < n->req(); j++) {
+    Node* in = n->in(j);
+    if (in->is_Phi() && in->in(0) == region) {
+      IdealLoopTree* x_loop_tree = get_loop(get_early_ctrl(x));
+      // x_loop_tree should be outer or same loop as n_loop_tree
+      if (!x_loop_tree->is_member(n_loop_tree)) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 // Subtype checks that carry profile data don't common so look for a replacement by following edges
