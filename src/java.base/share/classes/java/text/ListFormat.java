@@ -504,7 +504,7 @@ public final class ListFormat extends Format {
      * The comparison is based on the {@code locale} and {@code patterns}, returned
      * from {@link #getLocale()} and {@link #getPatterns()} respectively.
      * @param obj the object to check.
-     * @return {@code true} if this is equals to the other {@code ListFormat}
+     * @return {@code true} if this is equal to the other {@code ListFormat}
      */
     @Override
     public boolean equals(Object obj) {
