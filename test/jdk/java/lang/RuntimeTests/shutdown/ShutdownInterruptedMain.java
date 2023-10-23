@@ -31,7 +31,7 @@
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
-import static jdk.test.lib.process.ProcessTools.createTestJvm;
+import static jdk.test.lib.process.ProcessTools.createTestJavaProcessBuilder;
 import static jdk.test.lib.process.ProcessTools.executeProcess;
 
 public class ShutdownInterruptedMain {
