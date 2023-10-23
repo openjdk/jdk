@@ -41,7 +41,7 @@ public class TestUpcallStubAllocFailure extends UpcallTestHelper {
 
     @Test
     public void testUpcallFailure() throws IOException, InterruptedException {
-        runInNewProcess(Runner.class, true, "-XX:ReservedCodeCacheSize=100m")
+        runInNewProcess(Runner.class, true, "-XX:ReservedCodeCacheSize=3M")
             .assertStdOutContains("UpcallStub allocation failed. CodeCache is too small");
     }
 
