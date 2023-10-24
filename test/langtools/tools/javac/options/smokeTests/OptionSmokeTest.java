@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.util.Locale;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -253,6 +254,50 @@ public class OptionSmokeTest extends TestRunner {
                 String.format("--release %s --system none", Source.DEFAULT.name));
         doTestNoSource(base, "error: option --upgrade-module-path cannot be used together with --release",
                 String.format("--release %s --upgrade-module-path any", Source.DEFAULT.name));
+    }
+
+    @Test
+    public void consistentSystemOptionHandlingWithAnEmptyDirectory(Path base) throws Exception {
+        tb.createDirectories(base);
+
+        Assert.check(Files.notExists(base.resolve("lib").resolve("jrt-fs.jar")), "expected: empty\nfound: lib/jrt-fs.jar");
+        Assert.check(Files.notExists(base.resolve("lib").resolve("modules")), "expected: empty\nfound: lib/modules");
+
+        doTestNoSource(base, "error: illegal argument for --system: %s".formatted(base), String.format("--system %s", base));
+    }
+
+    @Test
+    public void consistentSystemOptionHandlingWithLibJrtFsJar(Path base) throws Exception {
+        tb.createDirectories(base);
+        tb.writeFile(base.resolve("lib").resolve("jrt-fs.jar"), "this is not a JAR file");
+
+        Assert.check(Files.exists(base.resolve("lib").resolve("jrt-fs.jar")), "expected to find lib/jrt-fs.jar");
+        Assert.check(Files.notExists(base.resolve("lib").resolve("modules")), "expected: empty\nfound: lib/modules");
+
+        doTestNoSource(base, "error: illegal argument for --system: %s".formatted(base), String.format("--system %s", base));
+    }
+
+    @Test
+    public void consistentSystemOptionHandlingWithLibModules(Path base) throws Exception {
+        tb.createDirectories(base);
+        tb.writeFile(base.resolve("lib").resolve("modules"), "this is not a modules file");
+
+        Assert.check(Files.notExists(base.resolve("lib").resolve("jrt-fs.jar")), "expected: empty\nfound: lib/jrt-fs.jar");
+        Assert.check(Files.exists(base.resolve("lib").resolve("modules")), "expected to find lib/modules");
+
+        doTestNoSource(base, "error: illegal argument for --system: %s".formatted(base), String.format("--system %s", base));
+    }
+
+    @Test
+    public void consistentSystemOptionHandlingWithAlmostValidLibEntries(Path base) throws Exception {
+        tb.createDirectories(base);
+        tb.writeFile(base.resolve("lib").resolve("jrt-fs.jar"), "this is not a JAR file");
+        tb.writeFile(base.resolve("lib").resolve("modules"), "this is not a modules file");
+
+        Assert.check(Files.exists(base.resolve("lib").resolve("jrt-fs.jar")), "expected to find lib/jrt-fs.jar");
+        Assert.check(Files.exists(base.resolve("lib").resolve("modules")), "expected to find lib/modules");
+
+        doTestNoSource(base, "error: no source files", String.format("--system %s", base));
     }
 
     void doTest(Path base, String output, String options) throws Exception {

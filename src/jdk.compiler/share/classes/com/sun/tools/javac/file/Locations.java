@@ -1906,23 +1906,26 @@ public class Locations {
         }
 
         private void update(Path p) {
-            if (!isCurrentPlatform(p) && !Files.exists(resolveJavaRuntimeFileSystemJar(p)) &&
-                    !Files.exists(p.resolve("modules")))
-                throw new IllegalArgumentException(p.toString());
+            if (isOtherPlatformDirectory(p)) {
+                var noJavaRuntimeFS = Files.notExists(resolveInJavaHomeLib(p, "jrt-fs.jar"));
+                var noModulesFile = Files.notExists(resolveInJavaHomeLib(p, "modules"));
+                if (noJavaRuntimeFS || noModulesFile)
+                    throw new IllegalArgumentException(p.toString());
+            }
             systemJavaHome = p;
             modules = null;
         }
 
-        private static Path resolveJavaRuntimeFileSystemJar(Path javaHomePath) {
-            return javaHomePath.resolve("lib").resolve("jrt-fs.jar");
-        }
-
-        private boolean isCurrentPlatform(Path p) {
+        private boolean isOtherPlatformDirectory(Path p) {
             try {
-                return Files.isSameFile(p, Locations.javaHome);
+                return !Files.isSameFile(p, Locations.javaHome);
             } catch (IOException ex) {
                 throw new IllegalArgumentException(p.toString(), ex);
             }
+        }
+
+        private static Path resolveInJavaHomeLib(Path javaHomePath, String name) {
+            return javaHomePath.resolve("lib").resolve(name);
         }
 
         @Override
@@ -1963,7 +1966,7 @@ public class Locations {
                     URI jrtURI = URI.create("jrt:/");
                     FileSystem jrtfs;
 
-                    if (isCurrentPlatform(systemJavaHome)) {
+                    if (isOtherPlatformDirectory(systemJavaHome)) {
                         jrtfs = FileSystems.getFileSystem(jrtURI);
                     } else {
                         try {
@@ -1971,7 +1974,7 @@ public class Locations {
                                     Collections.singletonMap("java.home", systemJavaHome.toString());
                             jrtfs = FileSystems.newFileSystem(jrtURI, attrMap);
                         } catch (ProviderNotFoundException ex) {
-                            URL jfsJar = resolveJavaRuntimeFileSystemJar(systemJavaHome).toUri().toURL();
+                            URL jfsJar = resolveInJavaHomeLib(systemJavaHome, "jrt-fs.jar").toUri().toURL();
                             ClassLoader currentLoader = Locations.class.getClassLoader();
                             URLClassLoader fsLoader =
                                     new URLClassLoader(new URL[] {jfsJar}, currentLoader);
@@ -1986,7 +1989,7 @@ public class Locations {
 
                     modules = jrtfs.getPath("/modules");
                 } catch (FileSystemNotFoundException | ProviderNotFoundException e) {
-                    modules = systemJavaHome.resolve("modules");
+                    modules = resolveInJavaHomeLib(systemJavaHome, "modules");
                     if (!Files.exists(modules))
                         throw new IOException("can't find system classes", e);
                 }
