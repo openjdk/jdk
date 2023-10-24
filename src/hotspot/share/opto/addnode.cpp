@@ -784,24 +784,6 @@ Node* rotate_shift(PhaseGVN* phase, Node* lshift, Node* rshift, int mask) {
   return nullptr;
 }
 
-// Check if the given node is a NOT operation, i.e., n == m ^ (-1).
-static bool is_not(PhaseGVN* phase, Node* n, BasicType bt) {
-  return n->Opcode() == Op_Xor(bt) && phase->type(n->in(2)) == TypeInteger::minus_1(bt);
-}
-
-// Make a NOT operation, i.e., returning n ^ (-1).
-static Node* make_not(PhaseGVN* phase, Node* n, BasicType bt) {
-  switch (bt) {
-    case T_INT:
-      return new XorINode(n, phase->intcon(-1));
-    case T_LONG:
-      return new XorLNode(n, phase->longcon(-1L));
-    default:
-      fatal("Not implemented for %s", type2name(bt));
-  }
-  return nullptr;
-}
-
 Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   int lopcode = in(1)->Opcode();
   int ropcode = in(2)->Opcode();
@@ -826,10 +808,10 @@ Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   // Convert "~a | ~b" into "~(a & b)"
-  if (is_not(phase, in(1), T_INT) && is_not(phase, in(2), T_INT)) {
-    return make_not(phase,
-                    phase->transform(new AndINode(in(1)->in(1), in(2)->in(1))),
-                    T_INT);
+  if (AddNode::is_not(phase, in(1), T_INT) && AddNode::is_not(phase, in(2), T_INT)) {
+    Node* and_a_b = new AndINode(in(1)->in(1), in(2)->in(1));
+    Node* tn = phase->transform(and_a_b);
+    return AddNode::make_not(phase, tn, T_INT);
   }
   return nullptr;
 }
@@ -899,10 +881,10 @@ Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   // Convert "~a | ~b" into "~(a & b)"
-  if (is_not(phase, in(1), T_LONG) && is_not(phase, in(2), T_LONG)) {
-    return make_not(phase,
-                    phase->transform(new AndLNode(in(1)->in(1), in(2)->in(1))),
-                    T_LONG);
+  if (AddNode::is_not(phase, in(1), T_LONG) && AddNode::is_not(phase, in(2), T_LONG)) {
+    Node* and_a_b = new AndLNode(in(1)->in(1), in(2)->in(1));
+    Node* tn = phase->transform(and_a_b);
+    return AddNode::make_not(phase, tn, T_LONG);
   }
 
   return nullptr;
