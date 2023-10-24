@@ -2604,21 +2604,29 @@ WB_ENTRY(void, WB_UnlockCritical(JNIEnv* env, jobject wb))
 WB_END
 
 WB_ENTRY(void, WB_PinObject(JNIEnv* env, jobject wb, jobject o))
+#if INCLUDE_G1GC
   if (!UseG1GC) {
     ShouldNotReachHere();
     return;
   }
   oop obj = JNIHandles::resolve(o);
   G1CollectedHeap::heap()->pin_object(thread, obj);
+#else
+  ShouldNotReachHere();
+#endif // INCLUDE_G1GC
 WB_END
 
 WB_ENTRY(void, WB_UnpinObject(JNIEnv* env, jobject wb, jobject o))
+#if INCLUDE_G1GC
   if (!UseG1GC) {
     ShouldNotReachHere();
     return;
   }
   oop obj = JNIHandles::resolve(o);
   G1CollectedHeap::heap()->unpin_object(thread, obj);
+#else
+  ShouldNotReachHere();
+#endif // INCLUDE_G1GC
 WB_END
 
 WB_ENTRY(jboolean, WB_SetVirtualThreadsNotifyJvmtiMode(JNIEnv* env, jobject wb, jboolean enable))
