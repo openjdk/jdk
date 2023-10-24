@@ -214,6 +214,9 @@
         return 7;
       case Op_MulVL:
         return VM_Version::supports_avx512vldq() ? 0 : 6;
+      case Op_LoadVectorGather:
+      case Op_LoadVectorGatherMasked:
+        return is_subword_type(ety) ? 50 : 0;
       case Op_VectorCastF2X: // fall through
       case Op_VectorCastD2X:
         return is_floating_point_type(ety) ? 0 : (is_subword_type(ety) ? 35 : 30);

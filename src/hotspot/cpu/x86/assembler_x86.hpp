@@ -1524,6 +1524,8 @@ private:
   void kordl(KRegister dst, KRegister src1, KRegister src2);
   void korql(KRegister dst, KRegister src1, KRegister src2);
 
+  void kxnorwl(KRegister dst, KRegister src1, KRegister src2);
+
   void kxorbl(KRegister dst, KRegister src1, KRegister src2);
   void kxorwl(KRegister dst, KRegister src1, KRegister src2);
   void kxordl(KRegister dst, KRegister src1, KRegister src2);
@@ -1731,6 +1733,7 @@ private:
   void btsq(Address dst, int imm8);
   void btrq(Address dst, int imm8);
 #endif
+  void bt(Register dst, Register src);
 
   void orw(Register dst, Register src);
 

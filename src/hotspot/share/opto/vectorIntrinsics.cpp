@@ -1482,8 +1482,8 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     }
 
     // Check whether the predicated gather/scatter node is supported by architecture.
-    if (!arch_supports_vector(is_scatter ? Op_StoreVectorScatterMasked : Op_LoadVectorGatherMasked, num_elem, elem_bt,
-                              (VectorMaskUseType) (VecMaskUseLoad | VecMaskUsePred))) {
+    VectorMaskUseType mask = (is_scatter || !is_subword_type(elem_bt)) ? (VectorMaskUseType) (VecMaskUseLoad | VecMaskUsePred) : VecMaskUseLoad;
+    if (!arch_supports_vector(is_scatter ? Op_StoreVectorScatterMasked : Op_LoadVectorGatherMasked, num_elem, elem_bt, mask)) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** not supported: arity=%d op=%s vlen=%d etype=%s is_masked_op=1",
                       is_scatter, is_scatter ? "scatterMasked" : "gatherMasked",
@@ -1504,7 +1504,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   }
 
   // Check that the vector holding indices is supported by architecture
-  if (!arch_supports_vector(Op_LoadVector, num_elem, T_INT, VecMaskNotUsed)) {
+  if (!is_subword_type(elem_bt) && !arch_supports_vector(Op_LoadVector, num_elem, T_INT, VecMaskNotUsed)) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** not supported: arity=%d op=%s/loadindex vlen=%d etype=int is_masked_op=%d",
                       is_scatter, is_scatter ? "scatter" : "gather",
@@ -1546,12 +1546,15 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     return false;
   }
 
+  Node* index_vect = nullptr;
   const TypeInstPtr* vbox_idx_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_idx_klass);
-  Node* index_vect = unbox_vector(argument(8), vbox_idx_type, T_INT, num_elem);
-  if (index_vect == nullptr) {
-    set_map(old_map);
-    set_sp(old_sp);
-    return false;
+  if (!is_subword_type(elem_bt)) {
+    index_vect = unbox_vector(argument(8), vbox_idx_type, T_INT, num_elem);
+    if (index_vect == nullptr) {
+      set_map(old_map);
+      set_sp(old_sp);
+      return false;
+    }
   }
 
   Node* mask = nullptr;
@@ -1591,9 +1594,19 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   } else {
     Node* vload = nullptr;
     if (mask != nullptr) {
-      vload = gvn().transform(new LoadVectorGatherMaskedNode(control(), memory(addr), addr, addr_type, vector_type, index_vect, mask));
+      if (is_subword_type(elem_bt)) {
+        Node* index_arr_base = array_element_address(argument(12), argument(13), T_INT);
+        vload = gvn().transform(new LoadVectorGatherMaskedNode(control(), memory(addr), addr, addr_type, vector_type, index_arr_base, mask, argument(11)));
+      } else {
+        vload = gvn().transform(new LoadVectorGatherMaskedNode(control(), memory(addr), addr, addr_type, vector_type, index_vect, mask));
+      }
     } else {
-      vload = gvn().transform(new LoadVectorGatherNode(control(), memory(addr), addr, addr_type, vector_type, index_vect));
+      if (is_subword_type(elem_bt)) {
+        Node* index_arr_base = array_element_address(argument(12), argument(13), T_INT);
+        vload = gvn().transform(new LoadVectorGatherNode(control(), memory(addr), addr, addr_type, vector_type, index_arr_base, argument(11)));
+      } else {
+        vload = gvn().transform(new LoadVectorGatherNode(control(), memory(addr), addr, addr_type, vector_type, index_vect));
+      }
     }
     Node* box = box_vector(vload, vbox_type, elem_bt, num_elem);
     set_result(box);

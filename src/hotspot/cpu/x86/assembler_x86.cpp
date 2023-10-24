@@ -2845,6 +2845,13 @@ void Assembler::kxorbl(KRegister dst, KRegister src1, KRegister src2) {
   emit_int16(0x47, (0xC0 | encode));
 }
 
+void Assembler::kxnorwl(KRegister dst, KRegister src1, KRegister src2) {
+  assert(VM_Version::supports_evex(), "");
+  InstructionAttr attributes(AVX_256bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
+  emit_int16(0x46, (0xC0 | encode));
+}
+
 void Assembler::kxorwl(KRegister dst, KRegister src1, KRegister src2) {
   assert(VM_Version::supports_evex(), "");
   InstructionAttr attributes(AVX_256bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -13551,6 +13558,11 @@ void Assembler::negq(Address dst) {
 void Assembler::notq(Register dst) {
   int encode = prefixq_and_encode(dst->encoding());
   emit_int16((unsigned char)0xF7, (0xD0 | encode));
+}
+
+void Assembler::bt(Register dst, Register src) {
+  int encode = prefixq_and_encode(src->encoding(), dst->encoding());
+  emit_int24(0x0F, 0xA3, (encode | 0xC0));
 }
 
 void Assembler::btsq(Address dst, int imm8) {

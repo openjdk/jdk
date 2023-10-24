@@ -2865,6 +2865,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
      *         for any lane {@code N} in the vector
      * @see FloatVector#toIntArray()
      */
+
     @ForceInline
     public static
     FloatVector fromArray(VectorSpecies<Float> species,
