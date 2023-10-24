@@ -114,10 +114,11 @@ public class TestHasNegatives {
     private static void test_hasNegatives(int off, int len, int maxNegatives) throws Exception {
         assert (len + off < bytes.length);
         initialize(off, len, maxNegatives);
-        boolean r = Helper.StringCodingHasNegatives(bytes, off, len);
-        if (r ^ ((maxNegatives == 0) ? false : true)) {
+        boolean expected = (maxNegatives > 0);
+        boolean actual = Helper.StringCodingHasNegatives(bytes, off, len);
+        if (actual != expected) {
             throw new Exception("Failed test hasNegatives " + "offset: " + off + " "
-                    + "length: " + len + " " + "return: " + r + " " + "negatives: "
+                    + "length: " + len + " " + "return: " + actual + " " + "negatives: "
                     + maxNegatives);
         }
     }
