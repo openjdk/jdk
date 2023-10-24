@@ -1989,6 +1989,7 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           // Replace all uses of first_proj_unc with region
           for (DUIterator_Fast imax, i = first_proj_unc->fast_outs(imax); i < imax; i++) {
             Node* use = first_proj_unc->fast_out(i);
+            igvn->hash_delete(use);
             imax -= use->replace_edge(first_proj_unc, unc_region, igvn);
             --i;
             igvn->_worklist.push(use);
