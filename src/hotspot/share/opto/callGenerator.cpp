@@ -97,6 +97,8 @@ JVMState* ParseGenerator::generate(JVMState* jvms) {
   }
 
   Parse parser(jvms, method(), _expected_uses);
+  if (C->failing()) return nullptr;
+
   // Grab signature for matching/allocation
   GraphKit& exits = parser.exits();
 

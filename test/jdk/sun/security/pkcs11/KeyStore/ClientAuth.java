@@ -389,6 +389,10 @@ public class ClientAuth extends PKCS11Test {
                      * Our client thread just died.
                      */
                     System.err.println("Client died...");
+                    // if the exception is thrown before connecting to the
+                    // server, the test will time out and the exception will
+                    // be lost/hidden.
+                    e.printStackTrace(System.err);
                     clientException = e;
                 }
             });
