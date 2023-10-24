@@ -1736,7 +1736,7 @@ public:
 
   void update_addp_chain_base(Node* x, Node* old_base, Node* new_base);
 
-  bool has_moved_to_inner_loop(Node* n, Node* region, Node* x);
+  bool moved_to_inner_loop(Node* n, Node* region, Node* x);
 };
 
 
