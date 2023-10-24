@@ -1006,6 +1006,7 @@ void ShenandoahHeapRegion::promote_in_place() {
   ShenandoahMarkingContext* marking_context = heap->marking_context();
   HeapWord* tams = marking_context->top_at_mark_start(this);
   assert(heap->active_generation()->is_mark_complete(), "sanity");
+  assert(!heap->is_concurrent_old_mark_in_progress(), "Cannot promote in place during old marking");
   assert(is_young(), "Only young regions can be promoted");
   assert(is_regular(), "Use different service to promote humongous regions");
   assert(age() >= heap->age_census()->tenuring_threshold(), "Only promote regions that are sufficiently aged");
@@ -1031,7 +1032,7 @@ void ShenandoahHeapRegion::promote_in_place() {
   while (obj_addr < tams) {
     oop obj = cast_to_oop(obj_addr);
     if (marking_context->is_marked(obj)) {
-      assert(obj->klass() != NULL, "klass should not be NULL");
+      assert(obj->klass() != nullptr, "klass should not be NULL");
       // This thread is responsible for registering all objects in this region.  No need for lock.
       heap->card_scan()->register_object_without_lock(obj_addr);
       obj_addr += obj->size();

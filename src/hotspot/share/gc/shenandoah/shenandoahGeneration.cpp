@@ -561,7 +561,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available, size_t nu
       if ((r->garbage() < old_garbage_threshold)) {
         HeapWord* tams = ctx->top_at_mark_start(r);
         HeapWord* original_top = r->top();
-        if (tams == original_top) {
+        if (!heap->is_concurrent_old_mark_in_progress() && tams == original_top) {
           // No allocations from this region have been made during concurrent mark. It meets all the criteria
           // for in-place-promotion. Though we only need the value of top when we fill the end of the region,
           // we use this field to indicate that this region should be promoted in place during the evacuation
