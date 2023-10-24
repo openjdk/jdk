@@ -1192,6 +1192,7 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
     ```
 
   * To create a Ubuntu-based chroot:
+
     ```
     sudo debootstrap \
       --arch=arm64 \
