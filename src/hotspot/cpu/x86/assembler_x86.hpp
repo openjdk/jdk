@@ -986,6 +986,7 @@ private:
 
   void addb(Address dst, int imm8);
   void addb(Address dst, Register src);
+  void addb(Register dst, int imm8);
   void addw(Register dst, Register src);
   void addw(Address dst, int imm16);
   void addw(Address dst, Register src);
@@ -1952,6 +1953,7 @@ private:
   void pshufb(XMMRegister dst, XMMRegister src);
   void pshufb(XMMRegister dst, Address src);
   void vpshufb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpshufb(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void evpshufb(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
 
 

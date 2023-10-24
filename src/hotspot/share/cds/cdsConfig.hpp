@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,21 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/**
- * Registers JVMCI compiler specific management interfaces for the JVM.
- *
- * This is an empty and upgradeable module that is a placeholder for an
- * external implementation of a JVMCI compiler. It must be upgradeable so
- * that it can be replaced when jlinking a new JDK image without failing
- * the hash check for the qualified exports in jdk.internal.vm.ci's
- * module descriptor.
- *
- * @moduleGraph
- * @since 10
- */
-module jdk.internal.vm.compiler.management {
-    requires jdk.internal.vm.ci;
-}
+#ifndef SHARE_CDS_CDSCONFIG_HPP
+#define SHARE_CDS_CDSCONFIG_HPP
 
+#include "memory/allStatic.hpp"
+#include "utilities/macros.hpp"
+
+class CDSConfig : public AllStatic {
+public:
+  // Basic CDS features
+  static bool      is_dumping_archive()                      NOT_CDS_RETURN_(false);
+  static bool      is_dumping_static_archive()               NOT_CDS_RETURN_(false);
+  static bool      is_dumping_dynamic_archive()              NOT_CDS_RETURN_(false);
+
+  // CDS archived heap
+  static bool      is_dumping_heap()                         NOT_CDS_JAVA_HEAP_RETURN_(false);
+};
+
+#endif // SHARE_CDS_CDSCONFIG_HPP
