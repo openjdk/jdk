@@ -45,7 +45,7 @@ static const char* LibFallback_doUpcall_sig = "(JJLjava/lang/invoke/MethodHandle
 JNIEXPORT void JNICALL
 Java_jdk_internal_foreign_abi_fallback_LibFallback_init(JNIEnv* env, jclass cls) {
   (*env)->GetJavaVM(env, &VM);
-  LibFallback_class = (*env)->FindClass(env, "jdk/internal/foreign/abi/fallback/LibFallback");
+  LibFallback_class = (*env)->NewGlobalRef(env, (*env)->FindClass(env, "jdk/internal/foreign/abi/fallback/LibFallback"));
   LibFallback_doUpcall_ID = (*env)->GetStaticMethodID(env,
     LibFallback_class, "doUpcall", LibFallback_doUpcall_sig);
 }
