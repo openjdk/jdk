@@ -565,10 +565,13 @@ public sealed interface Linker permits AbstractLinker {
      * <p>
      * The returned method handle will throw an {@link IllegalArgumentException} if the {@link MemorySegment}
      * representing the target address of the foreign function is the {@link MemorySegment#NULL} address. If an argument
-     * is a {@link MemorySegment}, whose corresponding layout is a {@linkplain GroupLayout group layout}, the linker
+     * is a {@link MemorySegment} whose corresponding layout is a {@linkplain GroupLayout group layout}, the linker
      * might attempt to access the contents of the segment. As such, one of the exceptions specified by the
      * {@link MemorySegment#get(ValueLayout.OfByte, long)} or the
-     * {@link MemorySegment#copy(MemorySegment, long, MemorySegment, long, long)} methods may be thrown.
+     * {@link MemorySegment#copy(MemorySegment, long, MemorySegment, long, long)} methods may be thrown. If an argument
+     * is a {@link MemorySegment} whose corresponding layout is a {@linkplain AddressLayout address layout}, the linker
+     * will throw an {@link IllegalArgumentException} if the segment is a heap memory segment, unless heap memory segments
+     * are explicitly allowed through the {@link Linker.Option#critical(boolean)} linker option.
      * The returned method handle will additionally throw {@link NullPointerException} if any argument
      * passed to it is {@code null}.
      *
