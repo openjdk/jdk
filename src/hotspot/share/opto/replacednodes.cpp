@@ -229,7 +229,7 @@ void ReplacedNodes::apply(Compile* C, Node* ctl) {
       }
       Node* clone = n->clone();
       bool added = clones.put(n, clone);
-      assert(added, "");
+      assert(added, "clone node must be added to mapping");
       C->initial_gvn()->set_type_bottom(clone);
       to_fix.map(i, clone); // Update list of nodes with cloned node
     }
