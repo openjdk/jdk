@@ -29,7 +29,7 @@
 /**
  * @test
  * @bug 4302026
- * @run main/othervm -Djavax.net.debug=all -Djavatest.maxOutputSize=500000 GetPeerHost
+ * @run main/othervm GetPeerHost
  * @summary make sure the server side doesn't do DNS lookup.
  */
 import javax.net.*;
@@ -42,6 +42,7 @@ public class GetPeerHost {
         System.setProperty("javax.net.ssl.trustStore", testRoot
                             + "/../../../../javax/net/ssl/etc/truststore");
         System.setProperty("javax.net.ssl.trustStoreType", "PKCS12");
+        System.setProperty("javax.net.ssl.trustStorePassword", "passphrase");
         GetPeerHostServer server = new GetPeerHostServer();
         server.start();
         GetPeerHostClient client =
