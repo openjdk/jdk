@@ -423,9 +423,6 @@ public final class Channels {
      * the {@link Reader#mark mark} or {@link Reader#reset reset} methods.
      * Closing the stream will in turn cause the channel to be closed.  </p>
      *
-     * @implNote
-     * The value of {@code minBufferCap} is ignored.
-     *
      * @param  ch
      *         The channel from which bytes will be read
      *
@@ -435,7 +432,7 @@ public final class Channels {
      * @param  minBufferCap
      *         The minimum capacity of the internal byte buffer,
      *         or {@code -1} if an implementation-dependent
-     *         default capacity is to be used; may be ignored
+     *         default capacity is to be used
      *
      * @return  A new reader
      */
@@ -526,6 +523,9 @@ public final class Channels {
      * The resulting stream will not otherwise be buffered.  Closing the stream
      * will in turn cause the channel to be closed.  </p>
      *
+     * @implNote
+     * The value of {@code minBufferCap} is ignored.
+     *
      * @param  ch
      *         The channel to which bytes will be written
      *
@@ -535,7 +535,7 @@ public final class Channels {
      * @param  minBufferCap
      *         The minimum capacity of the internal byte buffer,
      *         or {@code -1} if an implementation-dependent
-     *         default capacity is to be used
+     *         default capacity is to be used; may be ignored
      *
      * @return  A new writer
      */
