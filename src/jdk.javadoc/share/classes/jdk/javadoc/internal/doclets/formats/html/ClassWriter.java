@@ -769,4 +769,9 @@ public class ClassWriter extends SubWriterHolderWriter {
         }
         return section;
     }
+
+    @Override
+    public boolean isIndexable() {
+        return true;
+    }
 }

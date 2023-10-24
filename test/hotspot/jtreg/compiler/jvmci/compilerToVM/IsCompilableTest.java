@@ -27,7 +27,6 @@
  * @requires vm.graal.enabled & vm.compMode == "Xmixed"
  * @library /test/lib /
  * @library ../common/patches
- * @modules jdk.internal.vm.compiler
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.org.objectweb.asm.tree
