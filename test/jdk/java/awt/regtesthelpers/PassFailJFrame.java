@@ -80,6 +80,10 @@ public class PassFailJFrame {
      * Prefix for the user-provided failure reason.
      */
     private static final String FAILURE_REASON = "Failure Reason:\n";
+    /**
+     * The failure reason message when the user didn't provide one.
+     */
+    private static final String EMPTY_REASON = "(no reason provided)";
 
     private static final List<Window> windowList = new ArrayList<>();
 
@@ -87,9 +91,15 @@ public class PassFailJFrame {
 
     private static TimeoutHandler timeoutHandler;
 
-    private static volatile boolean failed;
-    private static volatile boolean timeout;
-    private static volatile String testFailedReason;
+    /**
+     * The description of why the test fails.
+     * <p>
+     * Note: <strong>do not use</strong> this field directly,
+     * use the {@link #setFailureReason(String) setFailureReason} and
+     * {@link #getFailureReason() getFailureReason} methods to modify and
+     * to read its value.
+     */
+    private static String failureReason;
 
     private static final AtomicInteger imgCounter = new AtomicInteger(0);
 
@@ -250,7 +260,7 @@ public class PassFailJFrame {
 
         JButton btnFail = new JButton("Fail");
         btnFail.addActionListener((e) -> {
-            getFailureReason();
+            requestFailureReason();
             timeoutHandler.stop();
         });
 
@@ -323,11 +333,10 @@ public class PassFailJFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             long leftTime = endTime - System.currentTimeMillis();
-            if ((leftTime < 0) || failed) {
+            if (leftTime < 0) {
                 timer.stop();
-                testFailedReason = FAILURE_REASON
-                                   + "Timeout User did not perform testing.";
-                timeout = true;
+                setFailureReason(FAILURE_REASON
+                                 + "Timeout - User did not perform testing.");
                 latch.countDown();
             }
             updateTime(leftTime);
@@ -354,9 +363,8 @@ public class PassFailJFrame {
     private static final class WindowClosingHandler extends WindowAdapter {
         @Override
         public void windowClosing(WindowEvent e) {
-            testFailedReason = FAILURE_REASON
-                               + "User closed a window";
-            failed = true;
+            setFailureReason(FAILURE_REASON
+                             + "User closed a window");
             latch.countDown();
         }
     }
@@ -451,6 +459,30 @@ public class PassFailJFrame {
     }
 
     /**
+     * Sets the failure reason which describes why the test fails.
+     * This method ensures the {@code failureReason} field does not change
+     * after it's set to a non-{@code null} value.
+     * @param reason the description of why the test fails
+     * @throws IllegalArgumentException if the {@code reason} parameter
+     *         is {@code null}
+     */
+    private static synchronized void setFailureReason(final String reason) {
+        if (reason == null) {
+            throw new IllegalArgumentException("The failure reason must not be null");
+        }
+        if (failureReason == null) {
+            failureReason = reason;
+        }
+    }
+
+    /**
+     * {@return the description of why the test fails}
+     */
+    private static synchronized String getFailureReason() {
+        return failureReason;
+    }
+
+    /**
      * Wait for the user decision i,e user selects pass or fail button.
      * If user does not select pass or fail button then the test waits for
      * the specified timeoutMinutes period and the test gets timeout.
@@ -468,30 +500,18 @@ public class PassFailJFrame {
         latch.await();
         invokeAndWait(PassFailJFrame::disposeWindows);
 
-        if (timeout) {
-            throw new RuntimeException(testFailedReason);
-        }
-
-        if (failed) {
-            throw new RuntimeException("Test failed! : " + testFailedReason);
+        String failure = getFailureReason();
+        if (failure != null) {
+            throw new RuntimeException(failure);
         }
 
         System.out.println("Test passed!");
     }
 
     /**
-     * Disposes of all the windows. It disposes of the test instruction frame
-     * and all other windows added via {@link #addTestWindow(Window)}.
+     * Requests the description of the test failure reason from the tester.
      */
-    private static synchronized void disposeWindows() {
-        windowList.forEach(Window::dispose);
-    }
-
-    /**
-     * Read the test failure reason and add the reason to the test result
-     * example in the jtreg .jtr file.
-     */
-    private static void getFailureReason() {
+    private static void requestFailureReason() {
         final JDialog dialog = new JDialog(frame, "Test Failure ", true);
         dialog.setTitle("Failure reason");
         JPanel jPanel = new JPanel(new BorderLayout());
@@ -499,7 +519,9 @@ public class PassFailJFrame {
 
         JButton okButton = new JButton("OK");
         okButton.addActionListener((ae) -> {
-            testFailedReason = FAILURE_REASON + jTextArea.getText();
+            String text = jTextArea.getText();
+            setFailureReason(FAILURE_REASON
+                             + (!text.isEmpty() ? text : EMPTY_REASON));
             dialog.setVisible(false);
         });
 
@@ -514,9 +536,20 @@ public class PassFailJFrame {
         dialog.pack();
         dialog.setVisible(true);
 
-        failed = true;
+        // Ensure the test fails even if the dialog is closed
+        // without clicking the OK button
+        setFailureReason(FAILURE_REASON + EMPTY_REASON);
+
         dialog.dispose();
         latch.countDown();
+    }
+
+    /**
+     * Disposes of all the windows. It disposes of the test instruction frame
+     * and all other windows added via {@link #addTestWindow(Window)}.
+     */
+    private static synchronized void disposeWindows() {
+        windowList.forEach(Window::dispose);
     }
 
     /**
@@ -665,8 +698,7 @@ public class PassFailJFrame {
      * @param reason the reason why the test is failed
      */
     public static void forceFail(String reason) {
-        failed = true;
-        testFailedReason = FAILURE_REASON + reason;
+        setFailureReason(FAILURE_REASON + reason);
         latch.countDown();
     }
 
