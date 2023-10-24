@@ -176,7 +176,6 @@ public:
         blk->do_code_blob(*value);
         return true;
       };
-
     _table_scanner.do_safepoint_scan(do_value);
   }
 
