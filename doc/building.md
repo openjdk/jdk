@@ -1284,7 +1284,7 @@ shown below is the path where you want to install the toolchain.
     ```
 
   * Configure and build OpenJDK:
-  
+
     ```
     bash configure \
       --with-boot-jdk=$BOOT_JDK \
