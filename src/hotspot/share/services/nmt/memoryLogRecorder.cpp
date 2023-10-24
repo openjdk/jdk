@@ -40,7 +40,9 @@
 
 #ifdef ASSERT
 
-constexpr size_t _horizontal_space = 100;
+constexpr size_t _histogram_horizontal_space = 100;
+constexpr double _histogram_cutoff = 0.25;
+constexpr size_t _feedback_cutoff_count = 500000;
 
 size_t* NMT_MemoryLogRecorder::malloc_buckets = nullptr;
 size_t NMT_MemoryLogRecorder::malloc_buckets_count = 0;
@@ -183,8 +185,8 @@ void NMT_MemoryLogRecorder::find_malloc_buckets_sizes(Entry* entries, size_t cou
   fprintf(stderr, "\n");
 #endif
 }
-  
-void NMT_MemoryLogRecorder::print_histogram(Entry* entries, size_t count) {
+
+void NMT_MemoryLogRecorder::print_histogram(Entry* entries, size_t count, double cutoff) {
   find_malloc_buckets_sizes(entries, count);
 
   size_t* histogram_counts = (size_t*)calloc(malloc_buckets_count, sizeof(size_t));
@@ -234,26 +236,28 @@ void NMT_MemoryLogRecorder::print_histogram(Entry* entries, size_t count) {
       double overhead_ratio = ratio(overhead, alloc_overhead);
       // quadratic function which goes through 3 points: (0,0) (25,50) (100,100)
       // https://www.mathepower.com/en/quadraticfunctions.php
-      size_t mark = MIN((size_t)round(-(1.0/(double)_horizontal_space)*overhead_ratio*overhead_ratio + 2.0*overhead_ratio), 100);
+      size_t mark = MIN((size_t)round(-(1.0/(double)_histogram_horizontal_space)*overhead_ratio*overhead_ratio + 2.0*overhead_ratio), 100);
 
       r_total += histogram_counts[i] * malloc_buckets[i];
       a_total += histogram_counts[i] * histogram_actual_sizes[i];
       o_total += overhead;
 
-      if (overhead_ratio < 10.0) {
-        fprintf(stderr, "%9zu%c %9zu %9zu   %6zu  %02.3f ",
-                malloc_buckets[i], flag, histogram_actual_sizes[i], overhead, histogram_counts[i], overhead_ratio);
-      } else {
-        fprintf(stderr, "%9zu%c %9zu %9zu   %6zu  %02.2f ",
-                malloc_buckets[i], flag, histogram_actual_sizes[i], overhead, histogram_counts[i], overhead_ratio);
+      if (overhead_ratio > cutoff) {
+        if (overhead_ratio < 10.0) {
+          fprintf(stderr, "%9zu%c %9zu %9zu   %6zu  %02.3f ",
+                  malloc_buckets[i], flag, histogram_actual_sizes[i], overhead, histogram_counts[i], overhead_ratio);
+        } else {
+          fprintf(stderr, "%9zu%c %9zu %9zu   %6zu  %02.2f ",
+                  malloc_buckets[i], flag, histogram_actual_sizes[i], overhead, histogram_counts[i], overhead_ratio);
+        }
+        for (size_t j=0; j<mark; j++) {
+          fprintf(stderr, "*");
+        }
+        for (size_t j=mark; j<=_histogram_horizontal_space; j++) {
+          fprintf(stderr, ".");
+        }
+        fprintf(stderr, "\n");
       }
-      for (size_t j=0; j<mark; j++) {
-        fprintf(stderr, "#");
-      }
-      for (size_t j=mark; j<=_horizontal_space; j++) {
-        fprintf(stderr, ".");
-      }
-      fprintf(stderr, "\n");
     }
   }
   fprintf(stderr, "\nnative malloc used %zu distinct allocation sizes\n\n", buckets_count);
@@ -319,7 +323,6 @@ void NMT_MemoryLogRecorder::report_by_thread(Entry* entries, size_t count) {
       }
     }
   }
-  fprintf(stderr, "Found %zu threads\n", thread_count);
 #if 0
   for (size_t i=0; i<threads_max; i++) {
     if (threads[i] != nullptr) {
@@ -412,6 +415,8 @@ void NMT_MemoryLogRecorder::report_by_thread(Entry* entries, size_t count) {
           total_count_mallocs, total_count_reallocs, total_count_frees,
           total_size_requested, total_size_actual, total_size_freed);
 
+  fprintf(stderr, "\nfound %zu threads\n", thread_count);
+
   free(sizes_freed);
   free(sizes_actual);
   free(sizes_requested);
@@ -440,7 +445,6 @@ NMT_MemoryLogRecorder::Entry* NMT_MemoryLogRecorder::find_realloc_entry(Entry* e
     for (size_t b=count-1; b>0; b--) {
       Entry* found = access_non_empty(entries, b);
       if ((found != nullptr) && (found->ptr == e->old)) {
-        print_entry(found);
         return found;
       }
     }
@@ -453,7 +457,7 @@ void NMT_MemoryLogRecorder::consolidate(Entry* entries, size_t count, size_t sta
   constexpr size_t steps = 99;
   size_t gap = count / steps;
   for (size_t c=start; c<count; c++) {
-    if (c%gap == 0) {
+    if ((count > _feedback_cutoff_count) && (c%gap == 0)) {
       fprintf(stderr, "%3ld", (steps - (c/gap)));
     }
     Entry* e = &entries[c];
@@ -465,7 +469,7 @@ void NMT_MemoryLogRecorder::consolidate(Entry* entries, size_t count, size_t sta
           assert(is_alloc(found), "is_alloc(found)");
           memset(found, 0, sizeof(Entry));
         } else {
-          // realloc without malloc -> turn it into a malloc
+          // realloc without initial malloc -> turn it into a malloc
           e->old = nullptr;
         }
       }
@@ -498,7 +502,7 @@ void NMT_MemoryLogRecorder::print_summary(Entry* entries, size_t count) {
   constexpr size_t steps = 99;
   size_t gap = count / steps;
   for (size_t c=0; c<count; c++) {
-    if (c%gap == 0) {
+    if ((count > _feedback_cutoff_count) && (c%gap == 0)) {
       fprintf(stderr, "%3ld", (steps - (c/gap)));
     }
     Entry* e = access_non_empty(entries, c);
@@ -630,7 +634,7 @@ void NMT_MemoryLogRecorder::print_summary(Entry* entries, size_t count) {
     fprintf(stderr, "NMT overhead (current actual memory allocated): %12.3f%%\n", diff);
   }
 
-#if 1
+#if 0
   fprintf(stderr, "\n\n");
   fprintf(stderr, "overhead_per_malloc:     %12ld\n", overhead_per_malloc);
   fprintf(stderr, "total_requested:         %12ld\n", total_requested);
@@ -649,18 +653,8 @@ void NMT_MemoryLogRecorder::print_summary(Entry* entries, size_t count) {
 }
 
 void NMT_MemoryLogRecorder::dump(Entry* entries, size_t count) {
-  fprintf(stderr, "\nProcessing recorded NMT entries ...\n");
+  fprintf(stderr, "Processing recorded NMT entries ...\n");
   fprintf(stderr, "\n\n");
-
-#if 0
-  fprintf(stderr, "\nnapping: ");
-  int nap = 30;
-  for (int i=0; i<nap; i++) {
-    fprintf(stderr, "%d ", 30-i); fflush(stderr);
-    sleep(1);
-  }
-  fprintf(stderr, "\n\n");
-#endif
 
   calculate_good_sizes(entries, count);
 
@@ -668,25 +662,34 @@ void NMT_MemoryLogRecorder::dump(Entry* entries, size_t count) {
     print_records(entries, count);
   }
 
-  fprintf(stderr, "\nProcessing histograms ...\n");
+#if 0
+  fprintf(stderr, "#########################\n");
+  fprintf(stderr, "Processing histograms ...\n\n");
   print_histogram(entries, count);
-  fprintf(stderr, "\nProcessing memory usage by thread ...\n");
+#endif
+  fprintf(stderr, "#####################################\n");
+  fprintf(stderr, "Processing memory usage by thread ...\n");
   report_by_thread(entries, count);
 
   fprintf(stderr, "\n\n");
-  fprintf(stderr, "----------------------------------------------------------\n");
+  fprintf(stderr, "##########################################################\n");
   fprintf(stderr, "Consolidating memory by accouting for free and realloc ...\n");
+  fprintf(stderr, "\n");
   consolidate(entries, count);
-  fprintf(stderr, "----------------------------------------------------------\n");
-  fprintf(stderr, "\n\n");
+  fprintf(stderr, "\n");
 
-  fprintf(stderr, "\nProcessing histograms ...\n");
-  print_histogram(entries, count);
-  fprintf(stderr, "\nProcessing memory usage by thread ...\n");
+  fprintf(stderr, "\n\n");
+  fprintf(stderr, "#########################\n");
+  fprintf(stderr, "Processing histograms ...\n\n");
+  print_histogram(entries, count, _histogram_cutoff);
+#if 0
+  fprintf(stderr, "Processing memory usage by thread ...\n\n");
   report_by_thread(entries, count);
+#endif
 
   fprintf(stderr, "\n\n");
-  fprintf(stderr, "Processing memory summary ...\n");
+  fprintf(stderr, "#############################\n");
+  fprintf(stderr, "Processing memory summary ...\n\n");
   print_summary(entries, count);
 
   fprintf(stderr, "\nDONE!\n\n");
@@ -718,10 +721,10 @@ void NMT_MemoryLogRecorder::log(MEMFLAGS flags, size_t requested, address ptr, a
         bool triggered_by_request = ((requested == 0) && (ptr == nullptr));
         if (triggered_by_limit) {
           fprintf(stderr, "\n\n");
-          fprintf(stderr, "WARNING: reached RecordNMTEntries limit: %ld/%ld\n\n", count, RecordNMTEntries);
+          fprintf(stderr, "REASON: reached RecordNMTEntries limit: %ld/%ld\n\n", count, RecordNMTEntries);
         } else if (triggered_by_request) {
           fprintf(stderr, "\n\n");
-          fprintf(stderr, "WARNING: triggered by request\n\n");
+          fprintf(stderr, "REASON: triggered by exit\n\n");
         }
         done = (triggered_by_limit || triggered_by_request);
         // if we reach max or hit "special" marker, then we are done

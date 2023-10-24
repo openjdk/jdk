@@ -52,7 +52,7 @@ private:
   static Entry* find_realloc_entry(Entry* entries, size_t count);
   static void print_entry(Entry* entries);
   static void calculate_good_sizes(Entry* entries, size_t count);
-  static void print_histogram(Entry* entries, size_t count);
+  static void print_histogram(Entry* entries, size_t count, double cutoff = 0.0);
   static void print_records(Entry* entries, size_t count);
   static void report_by_thread(Entry* entries, size_t count);
   static void print_summary(Entry* entries, size_t count);
