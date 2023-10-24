@@ -2952,35 +2952,66 @@ StoreNode* StoreNode::can_merge_with_def(PhaseGVN* phase, bool check_use) {
     // both load from same value with correct shift
   }
 
-  // Check address compatibility
-  Node* adr_s1 = s1->in(MemNode::Address);
-  Node* adr_s2 = s2->in(MemNode::Address);
+  // Check address compatibility. We expect patterns like this:
+  //
+  //   AddP(AddP(AddP(AddP(base, o2), o2), o1), con)
+  //
+  // Two adresses are adjacent, if they share a base and all offset (o1, o2, ...)
+  // are the same, and the constants have an exact difference of the memory_size.
+  AddPNode* adr_s1 = s1->in(MemNode::Address)->as_AddP();
+  AddPNode* adr_s2 = s2->in(MemNode::Address)->as_AddP();
+  assert(adr_s1 != nullptr && adr_s2 != nullptr, "two valid addresses");
 
-  // Expect:
-  //   adr_s1 = AddP(x, c1)
-  //   adr_s1 = AddP(x, c2)
-  //   c2 + memory_size = c1
-  if (!adr_s1->is_AddP() ||
-      !adr_s2->is_AddP() ||
-      adr_s1->in(AddPNode::Address) != adr_s2->in(AddPNode::Address) ||
-      !adr_s1->in(AddPNode::Offset)->is_Con() ||
-      !adr_s2->in(AddPNode::Offset)->is_Con()) {
-    //tty->print_cr("fail on adr");
-    //s1->dump_bfs(10,0,"#d$");
-    //tty->print_cr("with");
-    //s2->dump_bfs(10,0,"#d$");
+  // Must have the same base
+  if (adr_s1->in(AddPNode::Base) != adr_s2->in(AddPNode::Base)) {
     return nullptr;
   }
 
-  const Type* c1_t = phase->type(adr_s1->in(AddPNode::Offset));
-  const Type* c2_t = phase->type(adr_s2->in(AddPNode::Offset));
+  const int search_depth = 5;
+  Node* adr_offsets_s1[search_depth];
+  Node* adr_offsets_s2[search_depth];
+  int count_s1 = adr_s1->unpack_offsets(adr_offsets_s1, search_depth);
+  int count_s2 = adr_s2->unpack_offsets(adr_offsets_s2, search_depth);
+
+  // Must have same number of offsets, and at least a constant each
+  if (count_s1 != count_s2 || count_s1 <= 0 ||
+      !adr_offsets_s1[0]->is_Con() ||
+      !adr_offsets_s2[0]->is_Con()) {
+    return nullptr;
+  }
+
+  // Constants must have correct offset
+  const Type* c1_t = phase->type(adr_offsets_s1[0]);
+  const Type* c2_t = phase->type(adr_offsets_s2[0]);
   assert(c1_t->isa_int() || c1_t->isa_long(), "int or long");
   assert(c2_t->isa_int() || c2_t->isa_long(), "int or long");
-
   jlong c1 = c1_t->isa_int() ? c1_t->is_int()->get_con() : c1_t->is_long()->get_con();
   jlong c2 = c2_t->isa_int() ? c2_t->is_int()->get_con() : c2_t->is_long()->get_con();
-
   if (c2 + s2->memory_size() != c1) {
+    return nullptr;
+  }
+
+  // All other offsets must be the same
+  for (int i = 1; i < count_s1; i++) {
+    Node* o1 = adr_offsets_s1[i];
+    Node* o2 = adr_offsets_s2[i];
+    if (o1 == o2) { continue; }
+    // Sometimes the same values hide behind ConvI2L that are only different in
+    // their internal type. This can happen if they come from range checks with
+    // different offsets. This prevents commoning of the use nodes.
+    // Additionally, for array accesses with memory_size larger than 1, we may
+    // have a LShiftL node on that path.
+    if (o1->Opcode() == Op_LShiftL &&
+        o2->Opcode() == Op_LShiftL &&
+        o1->in(2) == o2->in(2)) {
+      o1 = o1->in(1);
+      o2 = o2->in(1);
+    }
+    if (o1->Opcode() == Op_ConvI2L &&
+        o2->Opcode() == Op_ConvI2L &&
+        o1->in(1) == o2->in(1)) {
+      continue;
+    }
     return nullptr;
   }
 
