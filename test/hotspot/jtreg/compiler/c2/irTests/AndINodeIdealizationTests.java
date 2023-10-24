@@ -41,7 +41,7 @@ public class AndINodeIdealizationTests {
     @Run(test = { "test1", "test2" })
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
-	int b = RunInfo.getRandom().nextInt();
+        int b = RunInfo.getRandom().nextInt();
 
         int min = Integer.MIN_VALUE;
         int max = Integer.MAX_VALUE;
@@ -55,7 +55,7 @@ public class AndINodeIdealizationTests {
     @DontCompile
     public void assertResult(int a, int b) {
         Asserts.assertEQ((0 - a) & 1, test1(a));
-	Asserts.assertEQ((~a) & (~b), test2(a, b));
+        Asserts.assertEQ((~a) & (~b), test2(a, b));
     }
 
     @Test
@@ -69,7 +69,7 @@ public class AndINodeIdealizationTests {
     @Test
     @IR(failOn = { IRNode.AND })
     @IR(counts = { IRNode.OR, "1",
-	           IRNode.XOR, "1" })
+                   IRNode.XOR, "1" })
     // Checks (~a) & (~b) => ~(a | b)
     public int test2(int a, int b) {
         return (~a) & (~b);

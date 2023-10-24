@@ -41,7 +41,7 @@ public class AndLNodeIdealizationTests {
     @Run(test = { "test1" })
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
-	long b = RunInfo.getRandom().nextLong();
+        long b = RunInfo.getRandom().nextLong();
 
         long min = Long.MIN_VALUE;
         long max = Long.MAX_VALUE;
@@ -54,13 +54,13 @@ public class AndLNodeIdealizationTests {
 
     @DontCompile
     public void assertResult(long a, long b) {
-	Asserts.assertEQ((~a) & (~b), test1(a, b));
+        Asserts.assertEQ((~a) & (~b), test1(a, b));
     }
 
     @Test
     @IR(failOn = { IRNode.AND })
     @IR(counts = { IRNode.OR, "1",
-	           IRNode.XOR, "1" })
+                   IRNode.XOR, "1" })
     // Checks (~a) & (~b) => ~(a | b)
     public long test1(long a, long b) {
         return (~a) & (~b);
