@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.util.List;
 
 import jdk.jfr.EventType;
 import jdk.jfr.ValueDescriptor;
-import jdk.jfr.internal.EventInstrumentation;
+import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.consumer.ObjectContext;
 
 /**
@@ -57,7 +57,7 @@ public final class RecordedEvent extends RecordedObject {
      * @return stack trace, or {@code null} if doesn't exist for the event
      */
     public RecordedStackTrace getStackTrace() {
-        return getTyped(EventInstrumentation.FIELD_STACK_TRACE, RecordedStackTrace.class, null);
+        return getTyped(Utils.FIELD_STACK_TRACE, RecordedStackTrace.class, null);
     }
 
     /**
@@ -67,7 +67,7 @@ public final class RecordedEvent extends RecordedObject {
      * @return thread, or {@code null} if doesn't exist for the event
      */
     public RecordedThread getThread() {
-        return getTyped(EventInstrumentation.FIELD_EVENT_THREAD, RecordedThread.class, null);
+        return getTyped(Utils.FIELD_EVENT_THREAD, RecordedThread.class, null);
     }
 
     /**

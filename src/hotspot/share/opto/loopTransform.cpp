@@ -3605,9 +3605,13 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   // Non-counted loops may be peeled; exactly 1 iteration is peeled.
   // This removes loop-invariant tests (usually null checks).
   if (!_head->is_CountedLoop()) { // Non-counted loop
-    if (PartialPeelLoop && phase->partial_peel(this, old_new)) {
-      // Partial peel succeeded so terminate this round of loop opts
-      return false;
+    if (PartialPeelLoop) {
+      bool rc = phase->partial_peel(this, old_new);
+      if (Compile::current()->failing()) { return false; }
+      if (rc) {
+        // Partial peel succeeded so terminate this round of loop opts
+        return false;
+      }
     }
     if (policy_peeling(phase)) {    // Should we peel?
       if (PrintOpto) { tty->print_cr("should_peel"); }
