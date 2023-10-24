@@ -365,15 +365,19 @@ void NMT_MemoryLogRecorder::report_by_thread(Entry* entries, size_t count) {
           } else if (is_free(e)) {
             counter_free[i]++;
             total_count_frees++;
+          } else {
+            assert(false, "HUH?");
           }
           if (is_alloc(e)) {
             total_size_requested += e->requested;
             sizes_requested[i] += e->requested;
             total_size_actual += e->actual;
             sizes_actual[i] += e->actual;
-          } else { // free
+          } else if (is_free(e)) {
             total_size_freed += e->actual;
             sizes_freed[i] += e->actual;
+          } else {
+            assert(false, "HUH?");
           }
           break;
         }
