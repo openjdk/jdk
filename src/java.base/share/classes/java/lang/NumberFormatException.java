@@ -106,8 +106,4 @@ public class NumberFormatException extends IllegalArgumentException {
     static NumberFormatException forNull() {
         return new NumberFormatException("Cannot parse null string");
     }
-
-    static NumberFormatException forEmpty() {
-        return new NumberFormatException("");
-    }
 }

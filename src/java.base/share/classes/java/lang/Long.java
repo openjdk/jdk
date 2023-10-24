@@ -591,7 +591,7 @@ public final class Long extends Number
 
         int len = s.length();
         if (len == 0) {
-            throw NumberFormatException.forEmpty();
+            throw NumberFormatException.forInputString("", radix);
         }
         int digit = ~0xFF;
         int i = 0;
@@ -664,7 +664,7 @@ public final class Long extends Number
          * and by not updating i anywhere else.
          */
         if (beginIndex == endIndex) {
-            throw NumberFormatException.forEmpty();
+            throw NumberFormatException.forInputString("", radix);
         }
         int digit = ~0xFF;  // ~0xFF means firstChar char is sign
         int i = beginIndex;
@@ -720,7 +720,7 @@ public final class Long extends Number
             final byte[] value = s.value();
             final int len = value.length;
             if (len == 0) {
-                throw NumberFormatException.forEmpty();
+                throw NumberFormatException.forInputString("", 10);
             }
             int digit = ~0xFF;
             int i = 0;
@@ -885,7 +885,7 @@ public final class Long extends Number
          * and by not updating i anywhere else.
          */
         if (beginIndex == endIndex) {
-            throw NumberFormatException.forEmpty();
+            throw NumberFormatException.forInputString("", radix);
         }
         int i = beginIndex;
         char firstChar = s.charAt(i++);
