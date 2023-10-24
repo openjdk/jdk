@@ -424,7 +424,7 @@ public final class Channels {
      * Closing the stream will in turn cause the channel to be closed.  </p>
      *
      * @implNote
-     * The implementation may ignore the value of {@code minBufferCap} provided.
+     * The value of {@code minBufferCap} is ignored.
      *
      * @param  ch
      *         The channel from which bytes will be read
@@ -435,7 +435,7 @@ public final class Channels {
      * @param  minBufferCap
      *         The minimum capacity of the internal byte buffer,
      *         or {@code -1} if an implementation-dependent
-     *         default capacity is to be used
+     *         default capacity is to be used; may be ignored
      *
      * @return  A new reader
      */
