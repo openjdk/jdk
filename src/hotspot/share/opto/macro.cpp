@@ -2241,7 +2241,7 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   Node* obj = unlock->obj_node();
   Node* box = unlock->box_node();
 
-  assert(!box->as_BoxLock()->is_eliminated(), "sanity");
+  assert(box->is_Con() || !box->as_BoxLock()->is_eliminated(), "sanity");
 
   // No need for a null check on unlock
 

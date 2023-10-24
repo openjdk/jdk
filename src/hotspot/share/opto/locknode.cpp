@@ -202,9 +202,17 @@ void Parse::do_monitor_exit() {
   // OSR compiled methods can start with lock taken
   C->set_has_monitors(true);
 
-  pop();                        // Pop oop to unlock
+  Node* obj = pop(); // Pop oop to unlock
   // Because monitors are guaranteed paired (else we bail out), we know
   // the matching Lock for this Unlock.  Hence we know there is no need
   // for a null check on Unlock.
-  shared_unlock(map()->peek_monitor_box(), map()->peek_monitor_obj());
+  // In case of OSR compilation, the monitor may have been transferred
+  // from the interpreter frame. Using map()->peek... may return them
+  // in wrong order. We should use the popped obj.
+  if (LockingMode == LM_LEGACY) {
+    // May potentially be the wrong one in case of OSR, but we need both, box and obj.
+    shared_unlock(map()->peek_monitor_box(), map()->peek_monitor_obj());
+  } else {
+    shared_unlock(/* unused */ zerocon(T_ADDRESS), obj);
+  }
 }
