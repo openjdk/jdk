@@ -410,7 +410,6 @@ Node* ConvI2LNode::Identity(PhaseGVN* phase) {
       return x;
     }
   }
-
   return this;
 }
 
