@@ -214,20 +214,26 @@ class FilteredFieldStream : public FieldStream {
  private:
   int  _filtered_fields_count;
   bool has_filtered_field() { return (_filtered_fields_count > 0); }
+  void skip_filtered_fields() {
+    if (has_filtered_field()) {
+      while (_index >= 0 && FilteredFieldsMap::is_filtered_field((Klass*)_klass, offset())) {
+        _index -= 1;
+      }
+    }
+  }
 
  public:
   FilteredFieldStream(InstanceKlass* klass, bool local_only, bool classes_only)
     : FieldStream(klass, local_only, classes_only) {
     _filtered_fields_count = FilteredFieldsMap::filtered_fields_count(klass, local_only);
+    // skip filtered fields at the end
+    skip_filtered_fields();
+
   }
   int field_count();
   void next() {
     _index -= 1;
-    if (has_filtered_field()) {
-      while (_index >=0 && FilteredFieldsMap::is_filtered_field((Klass*)_klass, offset())) {
-        _index -= 1;
-      }
-    }
+    skip_filtered_fields();
   }
 };
 
