@@ -128,9 +128,8 @@ public class Kinit {
             }
         } catch (Exception e) {
             String msg;
-            if (e instanceof KrbException) {
-                msg = ((KrbException)e).krbErrorMessage() + " " +
-                        ((KrbException)e).returnCodeMessage();
+            if (e instanceof KrbException ke) {
+                msg = ke.krbErrorMessage() + " " + ke.returnCodeMessage();
             } else  {
                 msg = e.getMessage();
             }
