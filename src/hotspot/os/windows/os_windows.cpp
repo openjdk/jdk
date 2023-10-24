@@ -506,7 +506,6 @@ struct tm* os::gmtime_pd(const time_t* clock, struct tm* res) {
 }
 
 enum Ept { EPT_THREAD, EPT_PROCESS, EPT_PROCESS_DIE };
-
 // Wrapper around _endthreadex(), exit() and _exit()
 [[noreturn]]
 static void exit_process_or_thread(Ept what, int code);
