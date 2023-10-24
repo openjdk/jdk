@@ -411,24 +411,6 @@ Node* ConvI2LNode::Identity(PhaseGVN* phase) {
     }
   }
 
-  // Find other ConvI2L with type at least as good and same input
-  assert(in(0) == nullptr, "no ctrl");
-  Node* def = in(1);
-  const TypeLong* t = phase->type(this)->is_long();
-  for (uint i = 0; i < def->outcnt(); i++) {
-    Node* other = def->raw_out(i);
-    if (other->Opcode() != Op_ConvI2L || other == this) { continue; }
-    const TypeLong* other_t = phase->type(other)->isa_long();
-    if (other_t != nullptr &&
-        t->_lo <= other_t->_lo &&
-        t->_hi >= other_t->_lo) {
-      //tty->print_cr("replacing");
-      //this->dump();
-      //other->dump();
-      return other;
-    }
-  }
-
   return this;
 }
 
