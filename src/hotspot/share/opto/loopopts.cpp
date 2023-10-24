@@ -159,12 +159,11 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
 
     if (the_clone != x) {
       _igvn.remove_dead_node(the_clone);
-    } else if (region->is_Loop() && i == LoopNode::LoopBackControl) {
-      // it is not a win if work has moved from an outer to an inner loop
-      if (has_moved_to_inner_loop(n, region, x)) {
-        wins = 0;
-        break;
-      }
+    } else if (region->is_Loop() && i == LoopNode::LoopBackControl &&
+               moved_to_inner_loop(n, region, x)) {
+      // it is not a win if 'x' moved from an outer to an inner loop
+      wins = 0;
+      break;
     }
   }
   // Too few wins?
