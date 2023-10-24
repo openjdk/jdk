@@ -26,6 +26,7 @@
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveUtils.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -196,7 +197,7 @@ bool SystemDictionaryShared::check_for_exclusion(InstanceKlass* k, DumpTimeClass
   if (MetaspaceShared::is_in_shared_metaspace(k)) {
     // We have reached a super type that's already in the base archive. Treat it
     // as "not excluded".
-    assert(DynamicDumpSharedSpaces, "must be");
+    assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
     return false;
   }
 
@@ -435,7 +436,7 @@ bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKla
   // We don't allow duplicated unregistered classes with the same name.
   // We only archive the first class with that name that succeeds putting
   // itself into the table.
-  assert(Arguments::is_dumping_archive() || ClassListWriter::is_enabled(), "sanity");
+  assert(CDSConfig::is_dumping_archive() || ClassListWriter::is_enabled(), "sanity");
   MutexLocker ml(current, UnregisteredClassesTable_lock, Mutex::_no_safepoint_check_flag);
   Symbol* name = klass->name();
   if (_unregistered_classes_table == nullptr) {
@@ -489,7 +490,7 @@ InstanceKlass* SystemDictionaryShared::lookup_super_for_unregistered_class(
 }
 
 void SystemDictionaryShared::set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   assert(!is_builtin(k), "must be unregistered class");
   DumpTimeClassInfo* info = get_info(k);
   info->_clsfile_size  = cfs->length();
@@ -497,7 +498,7 @@ void SystemDictionaryShared::set_shared_class_misc_info(InstanceKlass* k, ClassF
 }
 
 void SystemDictionaryShared::initialize() {
-  if (Arguments::is_dumping_archive()) {
+  if (CDSConfig::is_dumping_archive()) {
     _dumptime_table = new (mtClass) DumpTimeSharedClassTable;
     _dumptime_lambda_proxy_class_dictionary =
                       new (mtClass) DumpTimeLambdaProxyClassDictionary;
@@ -516,11 +517,11 @@ void SystemDictionaryShared::remove_dumptime_info(InstanceKlass* k) {
 }
 
 void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
-  if (Arguments::is_dumping_archive()) {
+  if (CDSConfig::is_dumping_archive()) {
     remove_dumptime_info(klass);
   }
 
-  if (Arguments::is_dumping_archive() || ClassListWriter::is_enabled()) {
+  if (CDSConfig::is_dumping_archive() || ClassListWriter::is_enabled()) {
     MutexLocker ml(Thread::current(), UnregisteredClassesTable_lock, Mutex::_no_safepoint_check_flag);
     if (_unregistered_classes_table != nullptr) {
       // Remove the class from _unregistered_classes_table: keep the entry but
@@ -625,7 +626,7 @@ void SystemDictionaryShared::check_excluded_classes() {
   assert(!class_loading_may_happen(), "class loading must be disabled");
   assert_lock_strong(DumpTimeTable_lock);
 
-  if (DynamicDumpSharedSpaces) {
+  if (CDSConfig::is_dumping_dynamic_archive()) {
     // Do this first -- if a base class is excluded due to duplication,
     // all of its subclasses will also be excluded.
     ResourceMark rm;
@@ -646,32 +647,32 @@ void SystemDictionaryShared::check_excluded_classes() {
 bool SystemDictionaryShared::is_excluded_class(InstanceKlass* k) {
   assert(!class_loading_may_happen(), "class loading must be disabled");
   assert_lock_strong(DumpTimeTable_lock);
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   DumpTimeClassInfo* p = get_info_locked(k);
   return p->is_excluded();
 }
 
 void SystemDictionaryShared::set_excluded_locked(InstanceKlass* k) {
   assert_lock_strong(DumpTimeTable_lock);
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   DumpTimeClassInfo* info = get_info_locked(k);
   info->set_excluded();
 }
 
 void SystemDictionaryShared::set_excluded(InstanceKlass* k) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   DumpTimeClassInfo* info = get_info(k);
   info->set_excluded();
 }
 
 void SystemDictionaryShared::set_class_has_failed_verification(InstanceKlass* ik) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   DumpTimeClassInfo* p = get_info(ik);
   p->set_failed_verification();
 }
 
 bool SystemDictionaryShared::has_class_failed_verification(InstanceKlass* ik) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   DumpTimeClassInfo* p = _dumptime_table->get(ik);
   return (p == nullptr) ? false : p->failed_verification();
 }
@@ -697,12 +698,12 @@ void SystemDictionaryShared::dumptime_classes_do(class MetaspaceClosure* it) {
 
 bool SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   DumpTimeClassInfo* info = get_info(k);
   info->add_verification_constraint(k, name, from_name, from_field_is_protected,
                                     from_is_array, from_is_object);
 
-  if (DynamicDumpSharedSpaces) {
+  if (CDSConfig::is_dumping_dynamic_archive()) {
     // For dynamic dumping, we can resolve all the constraint classes for all class loaders during
     // the initial run prior to creating the archive before vm exit. We will also perform verification
     // check when running with the archive.
@@ -993,7 +994,7 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
   }
   assert(!Thread::current()->is_VM_thread(), "must be");
 
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   DumpTimeClassInfo* info = get_info(klass);
   info->record_linking_constraint(name, loader1, loader2);
 }
