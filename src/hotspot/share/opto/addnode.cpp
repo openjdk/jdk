@@ -806,6 +806,14 @@ Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new RotateRightNode(in(1)->in(1), shift, TypeInt::INT);
     }
   }
+
+  // Convert "~a | ~b" into "~(a & b)"
+  if (in(1)->Opcode() == Op_XorI
+      && phase->type(in(1)->in(2)) == TypeInt::MINUS_1
+      && in(2)->Opcode() == Op_XorI
+      && in(1)->in(2) == in(2)->in(2)) {
+    return new XorINode(phase->transform(new AndINode(in(1)->in(1), in(2)->in(1))), in(1)->in(2));
+  }
   return nullptr;
 }
 
@@ -872,6 +880,15 @@ Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new RotateRightNode(in(1)->in(1), shift, TypeLong::LONG);
     }
   }
+
+  // Convert "~a | ~b" into "~(a & b)"
+  if (in(1)->Opcode() == Op_XorL
+      && phase->type(in(1)->in(2)) == TypeLong::MINUS_1
+      && in(2)->Opcode() == Op_XorL
+      && in(1)->in(2) == in(2)->in(2)) {
+    return new XorLNode(phase->transform(new AndLNode(in(1)->in(1), in(2)->in(1))), in(1)->in(2));
+  }
+
   return nullptr;
 }
 
