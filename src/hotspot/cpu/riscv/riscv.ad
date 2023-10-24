@@ -6712,12 +6712,12 @@ instruct UdivL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
 
   format %{
     "bltz $src2, Lltz\t#@UdivL\n\t"
-    "divu  $dst, $src1, $src2\n\t"
-    "j Ldone\n\t"
+    "divu $dst, $src1, $src2\n\t"
+    "j    Ldone\n\t"
     "Lltz:"
-    "sub $dst, $src1, $src2\n\t"
-    "not $dst, $dst\n\t"
-    "and $dst, $dst, $src1\n\t"
+    "sub  $dst, $src1, $src2\n\t"
+    "not  $dst, $dst\n\t"
+    "and  $dst, $dst, $src1\n\t"
     "srli $dst, $dst, 63\n\t"
     "Ldone:\t#@UdivL"
   %}
@@ -6727,7 +6727,7 @@ instruct UdivL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
     __ bltz(as_Register($src2$$reg), Lltz);
     __ divu(as_Register($dst$$reg), as_Register($src1$$reg), as_Register($src2$$reg));
     __ j(Ldone);
-    __ bind(Lltz); // check j.l.Long::divideUnsigned
+    __ bind(Lltz); // For the algorithm, check j.l.Long::divideUnsigned
     __ sub(as_Register($dst$$reg), as_Register($src1$$reg), as_Register($src2$$reg));
     __ notr(as_Register($dst$$reg), as_Register($dst$$reg));
     __ andr(as_Register($dst$$reg), as_Register($dst$$reg), as_Register($src1$$reg));
