@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,8 @@
  * questions.
  */
 
-package jdk.jpackage.tests;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Files;
 import java.util.Collection;
 import java.util.List;
-
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
@@ -36,59 +30,75 @@ import jdk.jpackage.test.TKit;
 
 /*
  * @test
- * @summary Test jpackage output for erroneous input with --type "app-image" and --app-image
- * @library ../../../../helpers
- * @build jdk.jpackage.test.*
+ * @summary Test jpackage signing options errors
+ * @library ../helpers
+ * @build SigningOptionsTest
  * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile PredefinedAppImageErrorTest.java
- *
+ * @requires (os.family == "mac")
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=jdk.jpackage.tests.PredefinedAppImageErrorTest
+ *  --jpt-run=SigningOptionsTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useExecutableByDefault
- *
+ */
+
+/*
+ * @test
+ * @summary Test jpackage signing options errors
+ * @library ../helpers
+ * @build SigningOptionsTest
+ * @modules jdk.jpackage/jdk.jpackage.internal
+ * @requires (os.family == "mac")
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=jdk.jpackage.tests.PredefinedAppImageErrorTest
+ *  --jpt-run=SigningOptionsTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useToolProviderByDefault
  */
 
-public final class PredefinedAppImageErrorTest {
+public final class SigningOptionsTest {
 
     private final String expectedError;
     private final JPackageCommand cmd;
 
     @Parameters
-    public static Collection input() throws IOException {
+    public static Collection input() {
         return List.of(new Object[][]{
-            // --mac-sign is required
+            // --mac-signing-key-user-name and --mac-app-image-sign-identity
             {"Hello",
+                    new String[]{"--mac-sign",
+                                 "--mac-signing-key-user-name", "test-key",
+                                 "--mac-app-image-sign-identity", "test-identity"},
                     null,
-                    new String[]{"--input", "--dest", "--name", "--main-jar", "--main-class"},
-                    TKit.isOSX() ?
-                            "--mac-sign option is required" :
-                            "Option [--app-image] is not valid with type [app-image]"
-                            },
-            // --mac-app-store is required
+                    "Mutually exclusive options"},
+            // --mac-signing-key-user-name and --mac-installer-sign-identity
             {"Hello",
-                    new String[]{"--mac-sign", "--mac-app-store", "--mac-app-image-sign-identity", "test"},
-                    new String[]{"--input", "--dest", "--name", "--main-jar", "--main-class"},
-                    TKit.isOSX() ?
-                            "Option [--mac-app-store] is not valid" :
-                            "Option [--mac-sign] is not valid on this platform"
-                            },
+                    new String[]{"--mac-sign",
+                                 "--mac-signing-key-user-name", "test-key",
+                                 "--mac-installer-sign-identity", "test-identity"},
+                    null,
+                    "Mutually exclusive options"},
+            // --mac-installer-sign-identity and --type app-image
+            {"Hello",
+                    new String[]{"--mac-sign",
+                                 "--mac-installer-sign-identity", "test-identity"},
+                    null,
+                    "Option [--mac-installer-sign-identity] is not valid with type"},
+            // --mac-installer-sign-identity and --type dmg
+            {"Hello",
+                    new String[]{"--type", "dmg",
+                                 "--mac-sign",
+                                 "--mac-installer-sign-identity", "test-identity"},
+                    new String[]{"--type"},
+                    "Option [--mac-installer-sign-identity] is not valid with type"},
         });
     }
 
-    public PredefinedAppImageErrorTest(String javaAppDesc, String[] jpackageArgs,
-                String[] removeArgs,
-                String expectedError) {
+    public SigningOptionsTest(String javaAppDesc, String[] jpackageArgs,
+                              String[] removeArgs, String expectedError) {
         this.expectedError = expectedError;
 
         cmd = JPackageCommand.helloAppImage(javaAppDesc)
                 .saveConsoleOutput(true).dumpOutput(true);
         if (jpackageArgs != null) {
             cmd.addArguments(jpackageArgs);
-        }
-        if (removeArgs != null) {
+        } if (removeArgs != null) {
             for (String arg : removeArgs) {
                 cmd.removeArgumentWithValue(arg);
             }
@@ -96,24 +106,10 @@ public final class PredefinedAppImageErrorTest {
     }
 
     @Test
-    public void test() throws IOException {
-        getDummyAppImage(cmd);
-
+    public void test() {
         List<String> output = cmd.execute(1).getOutput();
         TKit.assertNotNull(output, "output is null");
         TKit.assertTextStream(expectedError).apply(output.stream());
-    }
-
-    private void getDummyAppImage(JPackageCommand cmd) throws IOException {
-        Path dummyAppFolder
-            = TKit.createTempDirectory("DummyAppImage").toAbsolutePath();
-
-        Path dummyAppFile
-            = dummyAppFolder.resolve("DummyAppFile").toAbsolutePath();
-        Files.createFile(dummyAppFile);
-
-        cmd.addArguments("--app-image", dummyAppFolder.toString());
-        cmd.createJPackageXMLFile("PredefinedAppImageErrorTest", "Hello");
     }
 
 }
