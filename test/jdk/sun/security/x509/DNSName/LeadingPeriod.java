@@ -105,7 +105,7 @@ public class LeadingPeriod {
             // unexpected exception, rethrow it.
             throw uoe;
         }
-    
+
         // Load certificates with a NameConstraint where the DNS value does begin with a period
         Path targetFromCAWithPeriodPath = Paths.get(System.getProperty(
             "test.src", "./") + "/certs/withLeadingPeriod/leaf.pem");
