@@ -315,7 +315,7 @@ public class SessionCacheSizeTests {
 
         sslctx = SSLContext.getInstance("TLS");
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         try (FileInputStream fis = new FileInputStream(keyFilename)) {
             ks.load(fis, passwd.toCharArray());
         }

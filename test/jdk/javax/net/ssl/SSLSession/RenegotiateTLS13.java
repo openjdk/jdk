@@ -51,6 +51,7 @@ public class RenegotiateTLS13 {
     static String keyStoreFile = "keystore";
     static String trustStoreFile = "truststore";
     static String passwd = "passphrase";
+    static String pkcs12Type = "PKCS12";
 
     // Server ready flag
     volatile static boolean serverReady = false;
@@ -141,8 +142,10 @@ public class RenegotiateTLS13 {
 
         System.setProperty("javax.net.ssl.keyStore", keyFilename);
         System.setProperty("javax.net.ssl.keyStorePassword", passwd);
+        System.setProperty("javax.net.ssl.keyStoreType", pkcs12Type);
         System.setProperty("javax.net.ssl.trustStore", trustFilename);
         System.setProperty("javax.net.ssl.trustStorePassword", passwd);
+        System.setProperty("javax.net.ssl.trustStoreType", pkcs12Type);
 
         if (debug)
             System.setProperty("javax.net.debug", "ssl");
