@@ -26,8 +26,9 @@
 #ifndef SHARE_NMT_MEMTRACKER_INLINE_HPP
 #define SHARE_NMT_MEMTRACKER_INLINE_HPP
 
-#include "nmt/mallocTracker.inline.hpp"
 #include "nmt/memTracker.hpp"
+
+#include "nmt/mallocTracker.inline.hpp"
 
 inline bool MemTracker::check_exceeds_limit(size_t s, MEMFLAGS f) {
   if (!enabled()) {

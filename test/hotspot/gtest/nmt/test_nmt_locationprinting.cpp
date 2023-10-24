@@ -27,7 +27,6 @@
 #include "nmt/mallocHeader.inline.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/os.hpp"
-
 #include "testutils.hpp"
 #include "unittest.hpp"
 

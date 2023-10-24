@@ -31,7 +31,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
-
 #include "testutils.hpp"
 #include "unittest.hpp"
 
