@@ -298,6 +298,11 @@ public class IRNode {
         optoOnly(ALLOC_ARRAY_OF, regex);
     }
 
+    public static final String OR = PREFIX + "OR" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(OR, "Or(I|L)");
+    }
+
     public static final String AND = PREFIX + "AND" + POSTFIX;
     static {
         beforeMatchingNameRegex(AND, "And(I|L)");

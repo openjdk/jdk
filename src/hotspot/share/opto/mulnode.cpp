@@ -610,6 +610,14 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return progress;
   }
 
+  // Convert "(~a) & (~b)" into "~(a | b)"
+  if (in(1)->Opcode() == Op_XorI
+      && phase->type(in(1)->in(2)) == TypeInt::MINUS_1
+      && in(2)->Opcode() == Op_XorI
+      && in(1)->in(2) == in(2)->in(2)) {
+	return new XorINode(phase->transform(new OrINode(in(1)->in(1), in(2)->in(1))), in(1)->in(2));
+  }
+
   // Special case constant AND mask
   const TypeInt *t2 = phase->type( in(2) )->isa_int();
   if( !t2 || !t2->is_con() ) return MulNode::Ideal(phase, can_reshape);
@@ -748,6 +756,14 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* progress = AndIL_add_shift_and_mask(phase, T_LONG);
   if (progress != nullptr) {
     return progress;
+  }
+
+  // Convert "(~a) & (~b)" into "~(a | b)"
+  if (in(1)->Opcode() == Op_XorL
+      && phase->type(in(1)->in(2)) == TypeLong::MINUS_1
+      && in(2)->Opcode() == Op_XorL
+      && in(1)->in(2) == in(2)->in(2)) {
+	return new XorLNode(phase->transform(new OrLNode(in(1)->in(1), in(2)->in(1))), in(1)->in(2));
   }
 
   // Special case constant AND mask
