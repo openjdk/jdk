@@ -1906,7 +1906,7 @@ public class Locations {
         }
 
         private void update(Path p) {
-            if (isOtherPlatformDirectory(p)) {
+            if (!isCurrentPlatform(p)) {
                 var noJavaRuntimeFS = Files.notExists(resolveInJavaHomeLib(p, "jrt-fs.jar"));
                 var noModulesFile = Files.notExists(resolveInJavaHomeLib(p, "modules"));
                 if (noJavaRuntimeFS || noModulesFile)
@@ -1916,9 +1916,9 @@ public class Locations {
             modules = null;
         }
 
-        private boolean isOtherPlatformDirectory(Path p) {
+        private boolean isCurrentPlatform(Path p) {
             try {
-                return !Files.isSameFile(p, Locations.javaHome);
+                return Files.isSameFile(p, Locations.javaHome);
             } catch (IOException ex) {
                 throw new IllegalArgumentException(p.toString(), ex);
             }
@@ -1966,7 +1966,7 @@ public class Locations {
                     URI jrtURI = URI.create("jrt:/");
                     FileSystem jrtfs;
 
-                    if (isOtherPlatformDirectory(systemJavaHome)) {
+                    if (isCurrentPlatform(systemJavaHome)) {
                         jrtfs = FileSystems.getFileSystem(jrtURI);
                     } else {
                         try {
