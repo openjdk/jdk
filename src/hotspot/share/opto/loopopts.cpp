@@ -232,17 +232,9 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
 bool PhaseIdealLoop::moved_to_inner_loop(Node* n, Node* region, Node* x) {
   assert(region->is_Loop(), "region should be a loop");
   IdealLoopTree* n_loop_tree = get_loop(region);
-  for (uint j = 1; j < n->req(); j++) {
-    Node* in = n->in(j);
-    if (in->is_Phi() && in->in(0) == region) {
-      IdealLoopTree* x_loop_tree = get_loop(get_early_ctrl(x));
-      // x_loop_tree should be outer or same loop as n_loop_tree
-      if (!x_loop_tree->is_member(n_loop_tree)) {
-        return true;
-      }
-    }
-  }
-  return false;
+  IdealLoopTree* x_loop_tree = get_loop(get_early_ctrl(x));
+  // x_loop_tree should be outer or same loop as n_loop_tree
+  return !x_loop_tree->is_member(n_loop_tree);
 }
 
 // Subtype checks that carry profile data don't common so look for a replacement by following edges
