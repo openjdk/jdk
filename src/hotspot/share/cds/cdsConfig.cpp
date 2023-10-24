@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,21 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/**
-  * JVMCI compiler implementation for the JVM.
-  *
-  * This is an empty and upgradeable module that is a placeholder for an
-  * external implementation of a JVMCI compiler. It must be upgradeable so
-  * that it can be replaced when jlinking a new JDK image without failing
-  * the hash check for the qualified exports in jdk.internal.vm.ci's
-  * module descriptor.
-  *
-  * @moduleGraph
-  * @since 9
-  */
+#include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
+#include "cds/heapShared.hpp"
 
-module jdk.internal.vm.compiler {
-    requires jdk.internal.vm.ci;
+bool CDSConfig::is_dumping_archive() {
+  return is_dumping_static_archive() || is_dumping_dynamic_archive();
 }
+
+bool CDSConfig::is_dumping_static_archive() {
+  return DumpSharedSpaces;
+}
+
+bool CDSConfig::is_dumping_dynamic_archive() {
+  return DynamicDumpSharedSpaces;
+}
+
+#if INCLUDE_CDS_JAVA_HEAP
+bool CDSConfig::is_dumping_heap() {
+  // heap dump is not supported in dynamic dump
+  return is_dumping_static_archive() && HeapShared::can_write();
+}
+#endif // INCLUDE_CDS_JAVA_HEAP
