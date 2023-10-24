@@ -2261,6 +2261,7 @@ public class ClassReader {
                 currentClassFile = classFile;
                 List<Attribute.TypeCompound> newList = deproxyTypeCompoundList(proxies);
                 sym.setTypeAttributes(newList.prependList(sym.getRawTypeAttributes()));
+                TypeAnnotationMapper.addTypeAnnotationsToSymbol(sym, newList);
             } finally {
                 currentClassFile = previousClassFile;
             }
