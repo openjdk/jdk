@@ -37,91 +37,91 @@ import java.security.cert.*;
 
 public class LeadingPeriod {
 
-	private static CertPath makeCertPath(String caStr, String targetCertStr)
-		throws CertificateException {
-		// generate certificate from cert strings
-		CertificateFactory cf = CertificateFactory.getInstance("X.509");
+    private static CertPath makeCertPath(String caStr, String targetCertStr)
+        throws CertificateException {
+        // generate certificate from cert strings
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
-		ByteArrayInputStream is;
+        ByteArrayInputStream is;
 
-		is = new ByteArrayInputStream(targetCertStr.getBytes());
-		Certificate targetCert = cf.generateCertificate(is);
+        is = new ByteArrayInputStream(targetCertStr.getBytes());
+        Certificate targetCert = cf.generateCertificate(is);
 
-		is = new ByteArrayInputStream(caStr.getBytes());
-		Certificate ca = cf.generateCertificate(is);
+        is = new ByteArrayInputStream(caStr.getBytes());
+        Certificate ca = cf.generateCertificate(is);
 
-		// generate certification path
-		List<Certificate> list = Arrays.asList(targetCert, ca);
+        // generate certification path
+        List<Certificate> list = Arrays.asList(targetCert, ca);
 
-		return cf.generateCertPath(list);
-	}
+        return cf.generateCertPath(list);
+    }
 
-	private static PKIXParameters genParams(String caStr) throws Exception {
-		// generate certificate from cert string
-		CertificateFactory cf = CertificateFactory.getInstance("X.509");
+    private static PKIXParameters genParams(String caStr) throws Exception {
+        // generate certificate from cert string
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
-		ByteArrayInputStream is = new ByteArrayInputStream(caStr.getBytes());
-		Certificate selfSignedCert = cf.generateCertificate(is);
+        ByteArrayInputStream is = new ByteArrayInputStream(caStr.getBytes());
+        Certificate selfSignedCert = cf.generateCertificate(is);
 
-		// generate a trust anchor
-		TrustAnchor anchor;
-		anchor = new TrustAnchor((X509Certificate) selfSignedCert, null);
+        // generate a trust anchor
+        TrustAnchor anchor;
+        anchor = new TrustAnchor((X509Certificate) selfSignedCert, null);
 
-		Set<TrustAnchor> anchors = Collections.singleton(anchor);
+        Set<TrustAnchor> anchors = Collections.singleton(anchor);
 
-		PKIXParameters params = new PKIXParameters(anchors);
+        PKIXParameters params = new PKIXParameters(anchors);
 
-		// disable certificate revocation checking
-		params.setRevocationEnabled(false);
+        // disable certificate revocation checking
+        params.setRevocationEnabled(false);
 
-		// disable OCSP checker
-		Security.setProperty("ocsp.enable", "false");
+        // disable OCSP checker
+        Security.setProperty("ocsp.enable", "false");
 
-		// disable CRL checker
-		System.setProperty("com.sun.security.enableCRLDP", "false");
+        // disable CRL checker
+        System.setProperty("com.sun.security.enableCRLDP", "false");
 
-		return params;
-	}
+        return params;
+    }
 
-	public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
 
-		CertPathValidator validator = CertPathValidator.getInstance("PKIX");
+        CertPathValidator validator = CertPathValidator.getInstance("PKIX");
 
-    	// Load certs with a NameConstraint where DNS value does not begin with a period
-		Path targetFromCAWithoutPeriodPath = Paths.get(System.getProperty(
-			"test.src", "./") + "/certs/withoutLeadingPeriod/leaf.pem");
-		String targetFromCAWithoutPeriod = Files.readString(targetFromCAWithoutPeriodPath);
+        // Load certs with a NameConstraint where DNS value does not begin with a period
+        Path targetFromCAWithoutPeriodPath = Paths.get(System.getProperty(
+            "test.src", "./") + "/certs/withoutLeadingPeriod/leaf.pem");
+        String targetFromCAWithoutPeriod = Files.readString(targetFromCAWithoutPeriodPath);
 
-		Path caWithoutLeadingPeriodPath = Paths.get(System.getProperty(
-			"test.src", "./") + "/certs/withoutLeadingPeriod/ca.pem");
-		String caWithoutLeadingPeriod = Files.readString(caWithoutLeadingPeriodPath);
+        Path caWithoutLeadingPeriodPath = Paths.get(System.getProperty(
+            "test.src", "./") + "/certs/withoutLeadingPeriod/ca.pem");
+        String caWithoutLeadingPeriod = Files.readString(caWithoutLeadingPeriodPath);
 
-		PKIXParameters paramsForCAWithoutLeadingPeriod = genParams(caWithoutLeadingPeriod);
-		CertPath pathWithoutLeadingPeriod = makeCertPath(caWithoutLeadingPeriod,
-			targetFromCAWithoutPeriod);
-		try {
-			validator.validate(pathWithoutLeadingPeriod, paramsForCAWithoutLeadingPeriod);
-		} catch (CertPathValidatorException uoe) {
-			// unexpected exception, rethrow it.
-			throw uoe;
-		}
+        PKIXParameters paramsForCAWithoutLeadingPeriod = genParams(caWithoutLeadingPeriod);
+        CertPath pathWithoutLeadingPeriod = makeCertPath(caWithoutLeadingPeriod,
+            targetFromCAWithoutPeriod);
+        try {
+            validator.validate(pathWithoutLeadingPeriod, paramsForCAWithoutLeadingPeriod);
+        } catch (CertPathValidatorException uoe) {
+            // unexpected exception, rethrow it.
+            throw uoe;
+        }
     
-    	// Load certificates with a NameConstraint where the DNS value does begin with a period
-		Path targetFromCAWithPeriodPath = Paths.get(System.getProperty(
-			"test.src", "./") + "/certs/withLeadingPeriod/leaf.pem");
-		String targetFromCAWithPeriod = Files.readString(targetFromCAWithPeriodPath);
+        // Load certificates with a NameConstraint where the DNS value does begin with a period
+        Path targetFromCAWithPeriodPath = Paths.get(System.getProperty(
+            "test.src", "./") + "/certs/withLeadingPeriod/leaf.pem");
+        String targetFromCAWithPeriod = Files.readString(targetFromCAWithPeriodPath);
 
-		Path caWithLeadingPeriodPath = Paths.get(System.getProperty(
-			"test.src", "./") + "/certs/withLeadingPeriod/ca.pem");
-		String caWithLeadingPeriod = Files.readString(caWithLeadingPeriodPath);
+        Path caWithLeadingPeriodPath = Paths.get(System.getProperty(
+            "test.src", "./") + "/certs/withLeadingPeriod/ca.pem");
+        String caWithLeadingPeriod = Files.readString(caWithLeadingPeriodPath);
 
-		PKIXParameters paramsForCAWithLeadingPeriod = genParams(caWithLeadingPeriod);
-		CertPath pathWithLeadingPeriod = makeCertPath(caWithLeadingPeriod, targetFromCAWithPeriod);
-		try {
-			validator.validate(pathWithLeadingPeriod, paramsForCAWithLeadingPeriod);
-		} catch (CertPathValidatorException uoe) {
-			// unexpected exception, rethrow it.
-			throw uoe;
-		}
-	}
+        PKIXParameters paramsForCAWithLeadingPeriod = genParams(caWithLeadingPeriod);
+        CertPath pathWithLeadingPeriod = makeCertPath(caWithLeadingPeriod, targetFromCAWithPeriod);
+        try {
+            validator.validate(pathWithLeadingPeriod, paramsForCAWithLeadingPeriod);
+        } catch (CertPathValidatorException uoe) {
+            // unexpected exception, rethrow it.
+            throw uoe;
+        }
+    }
 }
