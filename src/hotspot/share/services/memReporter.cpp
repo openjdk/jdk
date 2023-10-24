@@ -236,7 +236,6 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
         MallocMemory* thread_stack_memory = _malloc_snapshot->by_type(mtThreadStack);
         const char* scale = current_scale();
         // report thread count
-        assert(ThreadStackTracker::thread_count() == 0, "Not used");
         out->print_cr("%27s (threads #" SIZE_FORMAT ")", " ", thread_stack_memory->malloc_count());
         out->print("%27s (Stack: " SIZE_FORMAT "%s", " ",
           amount_in_current_scale(thread_stack_memory->malloc_size()), scale);
@@ -246,7 +245,7 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
 
      // report malloc'd memory
     if (amount_in_current_scale(malloc_memory->malloc_size()) > 0
-        DEBUG_ONLY(|| amount_in_current_scale(malloc_memory->malloc_peak_size()) > 0)) {
+        || amount_in_current_scale(malloc_memory->malloc_peak_size()) > 0) {
       print_malloc_line(malloc_memory->malloc_counter());
     }
 

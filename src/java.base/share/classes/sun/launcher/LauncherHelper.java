@@ -102,6 +102,7 @@ public final class LauncherHelper {
     private static final String MAIN_CLASS = "Main-Class";
     private static final String ADD_EXPORTS = "Add-Exports";
     private static final String ADD_OPENS = "Add-Opens";
+    private static final String ENABLE_NATIVE_ACCESS = "Enable-Native-Access";
 
     private static StringBuilder outBuf = new StringBuilder();
 
@@ -631,6 +632,13 @@ public final class LauncherHelper {
             String opens = mainAttrs.getValue(ADD_OPENS);
             if (opens != null) {
                 addExportsOrOpens(opens, true);
+            }
+            String enableNativeAccess = mainAttrs.getValue(ENABLE_NATIVE_ACCESS);
+            if (enableNativeAccess != null) {
+                if (!enableNativeAccess.equals("ALL-UNNAMED")) {
+                    abort(null, "java.launcher.jar.error.illegal.ena.value", enableNativeAccess);
+                }
+                Modules.addEnableNativeAccessToAllUnnamed();
             }
 
             /*

@@ -25,6 +25,7 @@
 #include "prims/jvmtiAgent.hpp"
 
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "jni.h"
 #include "jvm_io.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
@@ -623,7 +624,7 @@ static bool invoke_Agent_OnAttach(JvmtiAgent* agent, outputStream* st) {
 // CDS dumping supports Java agent if the AllowArchivingWithJavaAgent diagnostic option is specified.
 static void check_cds_dump(JvmtiAgent* agent) {
   assert(agent != nullptr, "invariant");
-  assert(Arguments::is_dumping_archive(), "invariant");
+  assert(CDSConfig::is_dumping_archive(), "invariant");
   if (!agent->is_instrument_lib()) {
     vm_exit_during_cds_dumping("CDS dumping does not support native JVMTI agent, name", agent->name());
   }
@@ -639,7 +640,7 @@ static bool invoke_Agent_OnLoad(JvmtiAgent* agent) {
   assert(!agent->is_xrun(), "invariant");
   assert(!agent->is_dynamic(), "invariant");
   assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_ONLOAD, "invariant");
-  if (Arguments::is_dumping_archive()) {
+  if (CDSConfig::is_dumping_archive()) {
     check_cds_dump(agent);
   }
   OnLoadEntry_t on_load_entry = lookup_Agent_OnLoad_entry_point(agent);
