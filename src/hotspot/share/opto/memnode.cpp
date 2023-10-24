@@ -2958,12 +2958,13 @@ StoreNode* StoreNode::can_merge_with_def(PhaseGVN* phase, bool check_use) {
   //
   // Two adresses are adjacent, if they share a base and all offset (o1, o2, ...)
   // are the same, and the constants have an exact difference of the memory_size.
-  AddPNode* adr_s1 = s1->in(MemNode::Address)->as_AddP();
-  AddPNode* adr_s2 = s2->in(MemNode::Address)->as_AddP();
-  assert(adr_s1 != nullptr && adr_s2 != nullptr, "two valid addresses");
+  AddPNode* adr_s1 = s1->in(MemNode::Address)->isa_AddP();
+  AddPNode* adr_s2 = s2->in(MemNode::Address)->isa_AddP();
 
   // Must have the same base
-  if (adr_s1->in(AddPNode::Base) != adr_s2->in(AddPNode::Base)) {
+  if (adr_s1 == nullptr ||
+      adr_s2 == nullptr ||
+      adr_s1->in(AddPNode::Base) != adr_s2->in(AddPNode::Base)) {
     return nullptr;
   }
 
