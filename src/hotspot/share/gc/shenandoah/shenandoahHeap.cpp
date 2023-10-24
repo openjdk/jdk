@@ -1812,7 +1812,7 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
                                           ShenandoahPhaseTimings::degen_gc_purge_class_unload;
     ShenandoahIsAliveSelector is_alive;
     {
-      CodeCache::UnloadingScope scope(is_alive.is_alive_closure());
+      CodeCache::UnlinkingScope scope(is_alive.is_alive_closure());
       ShenandoahGCPhase gc_phase(phase);
       ShenandoahGCWorkerPhase worker_phase(phase);
       bool unloading_occurred = SystemDictionary::do_unloading(gc_timer());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,18 @@
  */
 
 /**
-  * JVMCI compiler implementation for the JVM.
-  *
-  * This is an empty and upgradeable module that is a placeholder for an
-  * external implementation of a JVMCI compiler. It must be upgradeable so
-  * that it can be replaced when jlinking a new JDK image without failing
-  * the hash check for the qualified exports in jdk.internal.vm.ci's
-  * module descriptor.
-  *
-  * @moduleGraph
-  * @since 9
-  */
-
-module jdk.internal.vm.compiler {
+ * Registers JVMCI compiler specific management interfaces for the JVM.
+ *
+ * This is an empty and upgradeable module that is a placeholder for an
+ * external implementation of a JVMCI compiler. It must be upgradeable so
+ * that it can be replaced when jlinking a new JDK image without failing
+ * the hash check for the qualified exports in jdk.internal.vm.ci's
+ * module descriptor.
+ *
+ * @moduleGraph
+ * @since 22
+ */
+module jdk.graal.compiler.management {
     requires jdk.internal.vm.ci;
 }
+

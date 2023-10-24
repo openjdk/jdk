@@ -74,6 +74,10 @@
 #include "jvmci/jvmci.hpp"
 #endif
 
+#ifdef AIX
+#include "loadlib_aix.hpp"
+#endif
+
 #ifndef PRODUCT
 #include <signal.h>
 #endif // PRODUCT
@@ -1343,6 +1347,8 @@ void VMError::report(outputStream* st, bool _verbose) {
 void VMError::print_vm_info(outputStream* st) {
 
   char buf[O_BUFLEN];
+  AIX_ONLY(LoadedLibraries::reload());
+
   report_vm_version(st, buf, sizeof(buf));
 
   // STEP("printing summary")

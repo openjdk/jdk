@@ -1695,7 +1695,7 @@ void G1ConcurrentMark::weak_refs_work() {
   if (ClassUnloadingWithConcurrentMark) {
     GCTraceTime(Debug, gc, phases) debug("Class Unloading", _gc_timer_cm);
     {
-      CodeCache::UnloadingScope scope(&g1_is_alive);
+      CodeCache::UnlinkingScope scope(&g1_is_alive);
       bool unloading_occurred = SystemDictionary::do_unloading(_gc_timer_cm);
       _g1h->complete_cleaning(unloading_occurred);
     }

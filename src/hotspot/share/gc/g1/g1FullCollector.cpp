@@ -320,7 +320,7 @@ void G1FullCollector::phase1_mark_live_objects() {
   if (ClassUnloading) {
     GCTraceTime(Debug, gc, phases) debug("Phase 1: Class Unloading and Cleanup", scope()->timer());
     {
-      CodeCache::UnloadingScope unloading_scope(&_is_alive);
+      CodeCache::UnlinkingScope unloading_scope(&_is_alive);
       // Unload classes and purge the SystemDictionary.
       bool unloading_occurred = SystemDictionary::do_unloading(scope()->timer());
       _heap->complete_cleaning(unloading_occurred);
