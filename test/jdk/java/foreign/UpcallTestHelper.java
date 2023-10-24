@@ -22,6 +22,7 @@
  */
 
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.Utils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -30,6 +31,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertTrue;
@@ -53,20 +55,27 @@ public class UpcallTestHelper extends NativeTestHelper {
     }
 
     public Output runInNewProcess(Class<?> target, boolean useSpec, String... programArgs) throws IOException, InterruptedException {
+        return runInNewProcess(target, useSpec, List.of(), List.of(programArgs));
+    }
+
+    public Output runInNewProcess(Class<?> target, boolean useSpec, List<String> vmArgs, List<String> programArgs) throws IOException, InterruptedException {
         assert !target.isArray();
 
         List<String> command = new ArrayList<>(List.of(
             "--enable-native-access=ALL-UNNAMED",
             "-Djava.library.path=" + System.getProperty("java.library.path"),
-            "-Djdk.internal.foreign.UpcallLinker.USE_SPEC=" + useSpec,
-            target.getName()
+            "-Djdk.internal.foreign.UpcallLinker.USE_SPEC=" + useSpec
         ));
-        command.addAll(Arrays.asList(programArgs));
+        command.addAll(vmArgs);
+        command.add(target.getName());
+        command.addAll(programArgs);
 
         Process process = ProcessTools.createTestJvm(command).start();
 
-        int result = process.waitFor();
-        assertNotEquals(result, 0);
+        long timeOut = (long) (Utils.TIMEOUT_FACTOR * 1L);
+        boolean completed = process.waitFor(timeOut, TimeUnit.MINUTES);
+        assertTrue(completed, "Time out while waiting for process");
+        assertNotEquals(process.exitValue(), 0);
 
         List<String> outLines = linesFromStream(process.getInputStream());
         outLines.forEach(System.out::println);

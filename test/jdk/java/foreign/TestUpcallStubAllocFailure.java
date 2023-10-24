@@ -32,6 +32,7 @@
 
 import java.lang.foreign.*;
 import java.io.IOException;
+import java.util.List;
 
 import org.testng.annotations.Test;
 
@@ -41,7 +42,7 @@ public class TestUpcallStubAllocFailure extends UpcallTestHelper {
 
     @Test
     public void testUpcallFailure() throws IOException, InterruptedException {
-        runInNewProcess(Runner.class, true, "-XX:ReservedCodeCacheSize=3M")
+        runInNewProcess(Runner.class, true, List.of("-XX:ReservedCodeCacheSize=3M"), List.of())
             .assertStdOutContains("UpcallStub allocation failed. CodeCache is too small");
     }
 
