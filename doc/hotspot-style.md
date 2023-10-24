@@ -1088,6 +1088,13 @@ The following attributes are expressly forbidden:
 
 * Rvalue references and move semantics
 ([n1690](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1690.html))
+Rvalue references and move semantics is an advanced C++ concept and should be
+treated as such. In HotSpot we prefer copy construction when possible.
+However, we do recognize that there are cases where move semantics permit significant
+ergonomic and performance advantages to the developer.
+For example, if you have a data structure T which is non-copyable but needs to
+be stored in a resizable container, then defining a move constructor may be preferable
+to changing the contained element type from T to T\*.
 
 * `alignof`
 ([n2341](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf))
