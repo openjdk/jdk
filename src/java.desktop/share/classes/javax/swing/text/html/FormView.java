@@ -274,6 +274,9 @@ public class FormView extends ComponentView implements ActionListener {
         } else if (type.equals("image")) {
             String srcAtt = (String) attr.getAttribute(HTML.Attribute.SRC);
             String altAtt = (String) attr.getAttribute(HTML.Attribute.ALT);
+            if (altAtt == null) {
+                altAtt = srcAtt;
+            }
             JButton button;
             try {
                 URL base = ((HTMLDocument)getElement().getDocument()).getBase();
@@ -282,7 +285,7 @@ public class FormView extends ComponentView implements ActionListener {
                 ImageIcon icon = new ImageIcon(srcURL);
                 button  = icon.getImageLoadStatus() == MediaTracker.COMPLETE ? new JButton(icon) : new JButton(altAtt);
             } catch (MalformedURLException e) {
-                button = new JButton(srcAtt);
+                button = new JButton(altAtt == null ? srcAtt : altAtt);
             }
             if (model != null) {
                 button.setModel((ButtonModel)model);
