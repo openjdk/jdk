@@ -29,6 +29,31 @@
 #include "compiler/compilerThread.hpp"
 #include "runtime/javaThread.inline.hpp"
 
+#if INCLUDE_JVMCI
+JVMCICanCallJava::JVMCICanCallJava(JavaThread* current, bool new_state) {
+  _current = nullptr;
+  if (current->is_Compiler_thread()) {
+    CompilerThread* ct = CompilerThread::cast(current);
+    if (ct->_can_call_java != new_state &&
+        ct->_compiler != nullptr &&
+        ct->_compiler->is_jvmci())
+    {
+      // Only enter a new context if the ability of the
+      // current thread to call Java actually changes
+      _reset_state = ct->_can_call_java;
+      ct->_can_call_java = new_state;
+      _current = ct;
+    }
+  }
+}
+
+JVMCICanCallJava::~JVMCICanCallJava() {
+  if (_current != nullptr) {
+    _current->_can_call_java = _reset_state;
+  }
+}
+#endif
+
 // Create a CompilerThread
 CompilerThread::CompilerThread(CompileQueue* queue,
                                CompilerCounters* counters)
@@ -39,6 +64,7 @@ CompilerThread::CompilerThread(CompileQueue* queue,
   _queue = queue;
   _counters = counters;
   _buffer_blob = nullptr;
+  _can_call_java = false;
   _compiler = nullptr;
   _arena_stat = CompilationMemoryStatistic::enabled() ? new ArenaStatCounter : nullptr;
 
@@ -56,13 +82,19 @@ CompilerThread::~CompilerThread() {
   delete _arena_stat;
 }
 
+void CompilerThread::set_compiler(AbstractCompiler* c) {
+  // Only jarjvmci can initially call Java
+#if INCLUDE_JVMCI
+  _can_call_java = c != nullptr && c->is_jvmci() && !UseJVMCINativeLibrary;
+#else
+  _can_call_java = false;
+#endif
+  _compiler = c;
+}
+
 void CompilerThread::thread_entry(JavaThread* thread, TRAPS) {
   assert(thread->is_Compiler_thread(), "must be compiler thread");
   CompileBroker::compiler_thread_loop();
-}
-
-bool CompilerThread::can_call_java() const {
-  return _compiler != nullptr && _compiler->is_jvmci();
 }
 
 // Hide native compiler threads from external view.

@@ -29,6 +29,7 @@
 // No interfaceSupport.hpp
 
 #include "gc/shared/gc_globals.hpp"
+#include "compiler/compilerThread.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
@@ -361,6 +362,7 @@ extern "C" {                                                         \
     MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));        \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
+    JVMCI_ONLY(JVMCICanCallJava ccj(thread, true);)                  \
     VM_ENTRY_BASE(result_type, header, thread)
 
 

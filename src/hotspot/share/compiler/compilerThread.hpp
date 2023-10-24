@@ -31,7 +31,7 @@ class AbstractCompiler;
 class ArenaStatCounter;
 class BufferBlob;
 class ciEnv;
-class CompileThread;
+class CompilerThread;
 class CompileLog;
 class CompileTask;
 class CompileQueue;
@@ -40,9 +40,33 @@ class IdealGraphPrinter;
 class JVMCIEnv;
 class JVMCIPrimitiveArray;
 
+#if INCLUDE_JVMCI
+// If the current thread is a CompilerThread for a JVMCI compiler,
+// this object manages a context in which CompilerThread::_can_call_java
+// can be changed.
+class JVMCICanCallJava : StackObj {
+ private:
+  CompilerThread* _current; // Only non-null if state of thread changed
+  bool _reset_state;        // Value prior to state change, undefined
+                            // if no state change.
+public:
+  // Enters a scope in which the ability of the current CompilerThread
+  // to call Java is specified by `new_state`. This call only makes a
+  // change if the current thread is a CompilerThread associated with
+  // a JVMCI compiler whose CompilerThread::_can_call_java is not
+  // currently `new_state`.
+  JVMCICanCallJava(JavaThread* current, bool new_state);
+
+  // Resets CompilerThread::_can_call_java of the current thread if the
+  // constructor changed it.
+  ~JVMCICanCallJava();
+};
+#endif
+
 // A thread used for Compilation.
 class CompilerThread : public JavaThread {
   friend class VMStructs;
+  JVMCI_ONLY(friend class JVMCICanCallJava;)
  private:
   CompilerCounters* _counters;
 
@@ -51,6 +75,7 @@ class CompilerThread : public JavaThread {
   CompileTask* volatile _task;  // print_threads_compiling can read this concurrently.
   CompileQueue*         _queue;
   BufferBlob*           _buffer_blob;
+  bool                  _can_call_java;
 
   AbstractCompiler*     _compiler;
   TimeStamp             _idle_time;
@@ -73,14 +98,14 @@ class CompilerThread : public JavaThread {
 
   bool is_Compiler_thread() const                { return true; }
 
-  virtual bool can_call_java() const;
+  virtual bool can_call_java() const             { return _can_call_java; }
 
   // Returns true if this CompilerThread is hidden from JVMTI and FlightRecorder.  C1 and C2 are
   // always hidden but JVMCI compiler threads might be hidden.
   virtual bool is_hidden_from_external_view() const;
 
-  void set_compiler(AbstractCompiler* c)         { _compiler = c; }
   AbstractCompiler* compiler() const             { return _compiler; }
+  void set_compiler(AbstractCompiler* c);
 
   CompileQueue* queue()        const             { return _queue; }
   CompilerCounters* counters() const             { return _counters; }

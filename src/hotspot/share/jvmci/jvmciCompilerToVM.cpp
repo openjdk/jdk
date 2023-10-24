@@ -2721,6 +2721,10 @@ C2V_VMENTRY_PREFIX(jboolean, detachCurrentThread, (JNIEnv* env, jobject c2vm, jb
 C2V_END
 
 C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jboolean callPostTranslation))
+  // translate implies a mixed libjvmci/Java context in
+  // which the caller needs to be able to call Java
+  JVMCICanCallJava ccj(thread, true);
+
   requireJVMCINativeLibrary(JVMCI_CHECK_0);
   if (obj_handle == nullptr) {
     return 0L;
@@ -2808,6 +2812,10 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, unhand, (JNIEnv* env, jobject, jlong obj_handle))
+  // unhand implies a mixed libjvmci/Java context in
+  // which the caller needs to be able to call Java
+  JVMCICanCallJava ccj(thread, true);
+
   requireJVMCINativeLibrary(JVMCI_CHECK_NULL);
   if (obj_handle == 0L) {
     return nullptr;
