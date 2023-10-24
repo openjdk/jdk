@@ -600,8 +600,8 @@ It is highly recommended to use the latest NSS version when running PKCS11
 tests. Improper NSS version may lead to unexpected failures which are hard to
 diagnose. For example, sun/security/pkcs11/Secmod/AddTrustedCert.java may fail
 on Ubuntu 18.04 with the default NSS version in the system. To run these tests
-correctly, the system property `jdk.test.lib.artifacts.<NAME>` is required on 
-Ubuntu 18.04 to specify the alternative NSS lib directories. The `<NAME>` 
+correctly, the system property `jdk.test.lib.artifacts.<NAME>` is required on
+Ubuntu 18.04 to specify the alternative NSS lib directories. The `<NAME>`
 component should be replaced with the name element of the appropriate`@Artfact`
 class. (See `test/jdk/sun/security/pkcs11/PKCS11Test.java`)
 
