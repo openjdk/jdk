@@ -229,7 +229,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
   return phi;
 }
 
-// Check if Node 'x' has moved to inner loop compared to Node 'n'
+// Check if node 'x' moved to an inner loop relative to node 'n'
 bool PhaseIdealLoop::has_moved_to_inner_loop(Node* n, Node* region, Node* x) {
   assert(region->is_Loop(), "region should be a loop");
   IdealLoopTree* n_loop_tree = get_loop(region);
