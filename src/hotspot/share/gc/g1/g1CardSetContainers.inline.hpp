@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/g1/g1CardSetContainers.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/spinYield.hpp"
 
@@ -144,7 +145,7 @@ inline G1CardSetArray::G1CardSetArray(uint card_in_region, EntryCountType num_ca
   _num_entries(1) {
   assert(_size > 0, "CardSetArray of size 0 not supported.");
   assert(_size < LockBitMask, "Only support CardSetArray of size %u or smaller.", LockBitMask - 1);
-  _data[0] = card_in_region;
+  _data[0] = checked_cast<EntryDataType>(card_in_region);
 }
 
 inline G1CardSetArray::G1CardSetArrayLocker::G1CardSetArrayLocker(EntryCountType volatile* num_entries_addr) :
@@ -195,7 +196,7 @@ inline G1AddCardResult G1CardSetArray::add(uint card_idx) {
     return Overflow;
   }
 
-  _data[num_entries] = card_idx;
+  _data[num_entries] = checked_cast<EntryDataType>(card_idx);
 
   x.inc_num_entries();
 

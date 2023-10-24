@@ -190,6 +190,7 @@ void MemBaseline::baseline(bool summaryOnly) {
 
   _instance_class_count = ClassLoaderDataGraph::num_instance_classes();
   _array_class_count = ClassLoaderDataGraph::num_array_classes();
+  _thread_count = ThreadStackTracker::thread_count();
   baseline_summary();
 
   _baseline_type = Summary_baselined;

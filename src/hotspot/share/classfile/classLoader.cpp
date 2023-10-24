@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.inline.hpp"
@@ -73,6 +74,7 @@
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
 #include "services/threadService.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/classpathStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
@@ -122,7 +124,6 @@ PerfCounter*    ClassLoader::_perf_class_verify_selftime = nullptr;
 PerfCounter*    ClassLoader::_perf_classes_linked = nullptr;
 PerfCounter*    ClassLoader::_perf_class_link_time = nullptr;
 PerfCounter*    ClassLoader::_perf_class_link_selftime = nullptr;
-PerfCounter*    ClassLoader::_perf_sys_class_lookup_time = nullptr;
 PerfCounter*    ClassLoader::_perf_shared_classload_time = nullptr;
 PerfCounter*    ClassLoader::_perf_sys_classload_time = nullptr;
 PerfCounter*    ClassLoader::_perf_app_classload_time = nullptr;
@@ -446,7 +447,7 @@ bool ClassPathImageEntry::is_modules_image() const {
 
 #if INCLUDE_CDS
 void ClassLoader::exit_with_path_failure(const char* error, const char* message) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   tty->print_cr("Hint: enable -Xlog:class+path=info to diagnose the failure");
   vm_exit_during_initialization(error, message);
 }
@@ -516,7 +517,7 @@ void ClassLoader::setup_bootstrap_search_path(JavaThread* current) {
 
 #if INCLUDE_CDS
 void ClassLoader::setup_app_search_path(JavaThread* current, const char *class_path) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
 
   ResourceMark rm(current);
   ClasspathStream cp_stream(class_path);
@@ -531,7 +532,7 @@ void ClassLoader::setup_app_search_path(JavaThread* current, const char *class_p
 void ClassLoader::add_to_module_path_entries(const char* path,
                                              ClassPathEntry* entry) {
   assert(entry != nullptr, "ClassPathEntry should not be nullptr");
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
 
   // The entry does not exist, add to the list
   if (_module_path_entries == nullptr) {
@@ -545,7 +546,7 @@ void ClassLoader::add_to_module_path_entries(const char* path,
 
 // Add a module path to the _module_path_entries list.
 void ClassLoader::setup_module_search_path(JavaThread* current, const char* path) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   struct stat st;
   if (os::stat(path, &st) != 0) {
     tty->print_cr("os::stat error %d (%s). CDS dump aborted (path was \"%s\").",
@@ -633,7 +634,7 @@ void ClassLoader::setup_bootstrap_search_path_impl(JavaThread* current, const ch
   bool set_base_piece = true;
 
 #if INCLUDE_CDS
-  if (Arguments::is_dumping_archive()) {
+  if (CDSConfig::is_dumping_archive()) {
     if (!Arguments::has_jimage()) {
       vm_exit_during_initialization("CDS is not supported in exploded JDK build", nullptr);
     }
@@ -937,7 +938,7 @@ void ClassLoader::load_java_library() {
 }
 
 void ClassLoader::release_load_zip_library() {
-  MutexLocker locker(Zip_lock, Monitor::_no_safepoint_check_flag);
+  ConditionalMutexLocker locker(Zip_lock, Zip_lock != nullptr, Monitor::_no_safepoint_check_flag);
   if (_libzip_loaded == 0) {
     load_zip_library();
     Atomic::release_store(&_libzip_loaded, 1);
@@ -1249,7 +1250,7 @@ char* ClassLoader::skip_uri_protocol(char* source) {
 // by the builtin loaders at dump time.
 void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
                                 const ClassFileStream* stream, bool redefined) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   assert(stream != nullptr, "sanity");
 
   if (ik->is_hidden()) {
@@ -1376,7 +1377,6 @@ void ClassLoader::initialize(TRAPS) {
     NEWPERFEVENTCOUNTER(_perf_classes_linked, SUN_CLS, "linkedClasses");
     NEWPERFEVENTCOUNTER(_perf_classes_verified, SUN_CLS, "verifiedClasses");
 
-    NEWPERFTICKCOUNTER(_perf_sys_class_lookup_time, SUN_CLS, "lookupSysClassTime");
     NEWPERFTICKCOUNTER(_perf_shared_classload_time, SUN_CLS, "sharedClassLoadTime");
     NEWPERFTICKCOUNTER(_perf_sys_classload_time, SUN_CLS, "sysClassLoadTime");
     NEWPERFTICKCOUNTER(_perf_app_classload_time, SUN_CLS, "appClassLoadTime");
@@ -1444,13 +1444,13 @@ bool ClassLoader::is_module_observable(const char* module_name) {
 
 #if INCLUDE_CDS
 void ClassLoader::initialize_shared_path(JavaThread* current) {
-  if (Arguments::is_dumping_archive()) {
+  if (CDSConfig::is_dumping_archive()) {
     ClassLoaderExt::setup_search_paths(current);
   }
 }
 
 void ClassLoader::initialize_module_path(TRAPS) {
-  if (Arguments::is_dumping_archive()) {
+  if (CDSConfig::is_dumping_archive()) {
     ClassLoaderExt::setup_module_paths(THREAD);
     FileMapInfo::allocate_shared_path_table(CHECK);
   }
@@ -1459,7 +1459,7 @@ void ClassLoader::initialize_module_path(TRAPS) {
 // Helper function used by CDS code to get the number of module path
 // entries during shared classpath setup time.
 int ClassLoader::num_module_path_entries() {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   int num_entries = 0;
   ClassPathEntry* e= ClassLoader::_module_path_entries;
   while (e != nullptr) {

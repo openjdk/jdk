@@ -210,8 +210,6 @@ public class TypeVariableImpl<D extends GenericDeclaration>
                                                          typeVarIndex());
     }
 
-    private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
-
     // Helpers for annotation methods
     private int typeVarIndex() {
         TypeVariable<?>[] tVars = getGenericDeclaration().getTypeParameters();

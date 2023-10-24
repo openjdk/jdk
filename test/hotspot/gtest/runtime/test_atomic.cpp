@@ -53,7 +53,7 @@ struct AtomicAddTestSupport {
   }
 };
 
-TEST(AtomicAddTest, int32) {
+TEST_VM(AtomicAddTest, int32) {
   using Support = AtomicAddTestSupport<int32_t>;
   Support().test_add();
   Support().test_fetch_add();
@@ -61,14 +61,14 @@ TEST(AtomicAddTest, int32) {
 
 // 64bit Atomic::add is only supported on 64bit platforms.
 #ifdef _LP64
-TEST(AtomicAddTest, int64) {
+TEST_VM(AtomicAddTest, int64) {
   using Support = AtomicAddTestSupport<int64_t>;
   Support().test_add();
   Support().test_fetch_add();
 }
 #endif // _LP64
 
-TEST(AtomicAddTest, ptr) {
+TEST_VM(AtomicAddTest, ptr) {
   uint _test_values[10] = {};
   uint* volatile _test_value{};
 
@@ -103,14 +103,14 @@ struct AtomicXchgTestSupport {
   }
 };
 
-TEST(AtomicXchgTest, int32) {
+TEST_VM(AtomicXchgTest, int32) {
   using Support = AtomicXchgTestSupport<int32_t>;
   Support().test();
 }
 
 // 64bit Atomic::xchg is only supported on 64bit platforms.
 #ifdef _LP64
-TEST(AtomicXchgTest, int64) {
+TEST_VM(AtomicXchgTest, int64) {
   using Support = AtomicXchgTestSupport<int64_t>;
   Support().test();
 }
@@ -136,14 +136,59 @@ struct AtomicCmpxchgTestSupport {
   }
 };
 
-TEST(AtomicCmpxchgTest, int32) {
+TEST_VM(AtomicCmpxchgTest, int32) {
   using Support = AtomicCmpxchgTestSupport<int32_t>;
   Support().test();
 }
 
-TEST(AtomicCmpxchgTest, int64) {
+TEST_VM(AtomicCmpxchgTest, int64) {
   using Support = AtomicCmpxchgTestSupport<int64_t>;
   Support().test();
+}
+
+struct AtomicCmpxchg1ByteStressSupport {
+  char _default_val;
+  int  _base;
+  char _array[7+32+7];
+
+  AtomicCmpxchg1ByteStressSupport() : _default_val(0x7a), _base(7), _array{} {}
+
+  void validate(char val, char val2, int index) {
+    for (int i = 0; i < 7; i++) {
+      EXPECT_EQ(_array[i], _default_val);
+    }
+    for (int i = 7; i < (7+32); i++) {
+      if (i == index) {
+        EXPECT_EQ(_array[i], val2);
+      } else {
+        EXPECT_EQ(_array[i], val);
+      }
+    }
+    for (int i = 0; i < 7; i++) {
+      EXPECT_EQ(_array[i], _default_val);
+    }
+  }
+
+  void test_index(int index) {
+    char one = 1;
+    Atomic::cmpxchg(&_array[index], _default_val, one);
+    validate(_default_val, one, index);
+
+    Atomic::cmpxchg(&_array[index], one, _default_val);
+    validate(_default_val, _default_val, index);
+  }
+
+  void test() {
+    memset(_array, _default_val, sizeof(_array));
+    for (int i = _base; i < (_base+32); i++) {
+      test_index(i);
+    }
+  }
+};
+
+TEST_VM(AtomicCmpxchg1Byte, stress) {
+  AtomicCmpxchg1ByteStressSupport support;
+  support.test();
 }
 
 template<typename T>
@@ -179,7 +224,7 @@ namespace AtomicEnumTestUnscoped {       // Scope the enumerators.
   enum TestEnum { A, B, C };
 }
 
-TEST(AtomicEnumTest, unscoped_enum) {
+TEST_VM(AtomicEnumTest, unscoped_enum) {
   using namespace AtomicEnumTestUnscoped;
   using Support = AtomicEnumTestSupport<TestEnum>;
 
@@ -190,7 +235,7 @@ TEST(AtomicEnumTest, unscoped_enum) {
 
 enum class AtomicEnumTestScoped { A, B, C };
 
-TEST(AtomicEnumTest, scoped_enum) {
+TEST_VM(AtomicEnumTest, scoped_enum) {
   const AtomicEnumTestScoped B = AtomicEnumTestScoped::B;
   const AtomicEnumTestScoped C = AtomicEnumTestScoped::C;
   using Support = AtomicEnumTestSupport<AtomicEnumTestScoped>;
@@ -284,28 +329,28 @@ const T AtomicBitopsTestSupport<T>::_old_value;
 template<typename T>
 const T AtomicBitopsTestSupport<T>::_change_value;
 
-TEST(AtomicBitopsTest, int8) {
+TEST_VM(AtomicBitopsTest, int8) {
   AtomicBitopsTestSupport<int8_t>()();
 }
 
-TEST(AtomicBitopsTest, uint8) {
+TEST_VM(AtomicBitopsTest, uint8) {
   AtomicBitopsTestSupport<uint8_t>()();
 }
 
-TEST(AtomicBitopsTest, int32) {
+TEST_VM(AtomicBitopsTest, int32) {
   AtomicBitopsTestSupport<int32_t>()();
 }
 
-TEST(AtomicBitopsTest, uint32) {
+TEST_VM(AtomicBitopsTest, uint32) {
   AtomicBitopsTestSupport<uint32_t>()();
 }
 
 #ifdef _LP64
-TEST(AtomicBitopsTest, int64) {
+TEST_VM(AtomicBitopsTest, int64) {
   AtomicBitopsTestSupport<int64_t>()();
 }
 
-TEST(AtomicBitopsTest, uint64) {
+TEST_VM(AtomicBitopsTest, uint64) {
   AtomicBitopsTestSupport<uint64_t>()();
 }
 #endif // _LP64

@@ -162,7 +162,7 @@ class XPStyle {
      *    in the current style
      *
      * This is currently only used by WindowsInternalFrameTitlePane for painting
-     * title foregound and can be removed when no longer needed
+     * title foreground and can be removed when no longer needed
      */
     String getString(Component c, Part part, State state, Prop prop) {
         return getTypeEnumName(c, part, state, prop);
@@ -222,7 +222,7 @@ class XPStyle {
      *    in the current style
      *
      * This is currently only used by WindowsInternalFrameTitlePane for painting
-     * title foregound and can be removed when no longer needed
+     * title foreground and can be removed when no longer needed
      */
     Point getPoint(Component c, Part part, State state, Prop prop) {
         Dimension d = ThemeReader.getPosition(part.getControlName(c), part.getValue(),
@@ -237,7 +237,7 @@ class XPStyle {
      *    in the current style
      *
      * This is currently only used to create borders and by
-     * WindowsInternalFrameTitlePane for painting title foregound.
+     * WindowsInternalFrameTitlePane for painting title foreground.
      * The return value is already cached in those places.
      */
     Insets getMargin(Component c, Part part, State state, Prop prop) {

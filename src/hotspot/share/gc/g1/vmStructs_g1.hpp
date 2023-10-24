@@ -35,7 +35,7 @@
                         static_field)                                         \
                                                                               \
   static_field(HeapRegion, GrainBytes,        size_t)                         \
-  static_field(HeapRegion, LogOfHRGrainBytes, int)                            \
+  static_field(HeapRegion, LogOfHRGrainBytes, uint)                           \
                                                                               \
   nonstatic_field(HeapRegion, _type,           HeapRegionType)                \
   nonstatic_field(HeapRegion, _bottom,         HeapWord* const)               \
