@@ -3775,6 +3775,8 @@ void os::large_page_init() {
     _large_page_size = HugePages::thp_pagesize();
     _page_sizes.add(_large_page_size);
     _page_sizes.add(os::vm_page_size());
+    // +UseTransparentHugePages implies +UseLargePages
+    UseLargePages = true;
 
   } else {
 
@@ -5298,7 +5300,6 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
     if (num_found == 0) {
       st->print_cr("nothing.");
     }
-    st->cr();
   }
 }
 
