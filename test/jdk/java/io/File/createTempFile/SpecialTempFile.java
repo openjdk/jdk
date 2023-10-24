@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8013827 8011950 8017212 8025128
+ * @modules java.base/jdk.internal.util
  * @summary Check whether File.createTempFile can handle special parameters
  * @author Dan Xu
  */
@@ -32,6 +33,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import jdk.internal.util.OperatingSystem;
+import jdk.internal.util.OSVersion;
 
 public class SpecialTempFile {
     private static void test(String name, String[] prefix, String[] suffix,
@@ -97,15 +101,15 @@ public class SpecialTempFile {
         test("SlashedName", slashPre, slashSuf, true);
 
         // Windows tests
-        String osName = System.getProperty("os.name");
-        if (!osName.startsWith("Windows"))
+        if (!OperatingSystem.isWindows())
             return;
 
         // Test JDK-8013827
         String[] resvPre = { "LPT1.package.zip", "com7.4.package.zip" };
         String[] resvSuf = { ".temp", ".temp" };
-        double osVersion = Double.valueOf(System.getProperty("os.version"));
-        boolean exceptionExpected = !(osName.endsWith("11") || osVersion > 10.0);
+        boolean exceptionExpected =
+            !(System.getProperty("os.name").endsWith("11") ||
+              new OSVersion(10, 0).compareTo(OSVersion.current()) > 0);
         test("ReservedName", resvPre, resvSuf, exceptionExpected);
     }
 }
