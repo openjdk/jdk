@@ -1088,6 +1088,7 @@ The following attributes are expressly forbidden:
 
 * Rvalue references and move semantics
 ([n1690](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1690.html))
+* Use `std::move` when moving an object.
 Rvalue references and move semantics is an advanced C++ concept and should be
 treated as such. In HotSpot we prefer copy construction when possible.
 However, we do recognize that there are cases where move semantics permit significant
