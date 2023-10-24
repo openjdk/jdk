@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,36 @@
  * questions.
  */
 
+import java.nio.file.Path;
+
+import javadoc.tester.JavadocTester;
+import toolbox.ToolBox;
+
 /*
- * @test TestEventWriterLog
- * @summary Test that log message of JFR when handle bytecodes
- * @key jfr
- * @requires vm.hasJFR
- * @library /test/lib /test/jdk
- * @run main/othervm TestEventWriterLog
+ * @test
+ * @bug 8317289
+ * @library /tools/lib ../../lib
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
+ * @build toolbox.ToolBox javadoc.tester.*
+ * @run main TestSourcePathModule
  */
+public class TestSourcePathModule extends JavadocTester {
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
+    public static void main(String... args) throws Exception {
+        new TestSourcePathModule().runTests();
+    }
 
-public class TestEventWriterLog {
-    public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:jfr+system+bytecode=trace", "-XX:StartFlightRecording", "-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("superclass: jdk/jfr/events/AbstractJDKEvent");
+    @Test
+    public void testSourcePath(Path base) throws Exception {
+        Path src = base.resolve("src");
+        new ToolBox().writeJavaFiles(src, """
+                import java.lang.Object;
+                /** documentation */
+                module m { }
+                """);
+        javadoc("-d", "out",
+                "-sourcepath", src.toString(),
+                "--module", "m");
+        checkExit(Exit.OK);
     }
 }

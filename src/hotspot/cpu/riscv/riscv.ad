@@ -8641,6 +8641,42 @@ instruct cmpL3_reg_reg(iRegINoSp dst, iRegL op1, iRegL op2)
   ins_pipe(pipe_class_default);
 %}
 
+instruct cmpUL3_reg_reg(iRegINoSp dst, iRegL op1, iRegL op2)
+%{
+  match(Set dst (CmpUL3 op1 op2));
+
+  ins_cost(ALU_COST * 3 + BRANCH_COST);
+  format %{ "sltu  $dst, $op2, $op1\t#@cmpUL3_reg_reg\n\t"
+            "bnez  $dst, done\n\t"
+            "sltu  $dst, $op1, $op2\n\t"
+            "neg   $dst, $dst\t#@cmpUL3_reg_reg"
+  %}
+  ins_encode %{
+    __ cmp_ul2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ mv(as_Register($dst$$reg), t0);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmpU3_reg_reg(iRegINoSp dst, iRegI op1, iRegI op2)
+%{
+  match(Set dst (CmpU3 op1 op2));
+
+  ins_cost(ALU_COST * 3 + BRANCH_COST);
+  format %{ "sltu  $dst, $op2, $op1\t#@cmpU3_reg_reg\n\t"
+            "bnez  $dst, done\n\t"
+            "sltu  $dst, $op1, $op2\n\t"
+            "neg   $dst, $dst\t#@cmpU3_reg_reg"
+  %}
+  ins_encode %{
+    __ cmp_uw2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ mv(as_Register($dst$$reg), t0);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
 instruct cmpLTMask_reg_reg(iRegINoSp dst, iRegI p, iRegI q)
 %{
   match(Set dst (CmpLTMask p q));
