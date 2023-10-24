@@ -615,8 +615,9 @@ class Stream<T> extends ExchangeImpl<T> {
                 debug.log("completing requestBodyCF normally due to received" +
                         " RESET(NO_ERROR) (stream=%s)", streamid);
             }
-            if (!endStreamSeen) {
-                // If no END_STREAM flag seen, any RST_STREAM should be handled here immediately
+            if (!endStreamSeen || !finalResponseCodeReceived) {
+                // If no END_STREAM flag seen or the final response code has not been received, any RST_STREAM
+                // should be handled here immediately
                 handleReset(frame, subscriber);
             } else {
                 requestBodyCF.complete(null);
