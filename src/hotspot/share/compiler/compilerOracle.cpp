@@ -634,19 +634,24 @@ void skip_comma(char* &line) {
   }
 }
 
-static bool parseEnumValueAsUintx(enum CompileCommand option, const char* line, uintx& value, int& bytes_read, char* errorbuf, const int buf_size) {
+enum parse_result_t { handled_ok, handled_err, not_handled };
+
+static parse_result_t parseEnumValueAsUintx(enum CompileCommand option, const char* line, uintx& value, int& bytes_read, char* errorbuf, const int buf_size) {
   if (option == CompileCommand::MemStat) {
     if (strncasecmp(line, "collect", 7) == 0) {
       value = (uintx)MemStatAction::collect;
+      return handled_ok;
     } else if (strncasecmp(line, "print", 5) == 0) {
       value = (uintx)MemStatAction::print;
       print_final_memstat_report = true;
+      return handled_ok;
     } else {
       jio_snprintf(errorbuf, buf_size, "MemStat: invalid value expected 'collect' or 'print' (omitting value means 'collect')");
+      return handled_err;
     }
-    return true; // handled
+
   }
-  return false;
+  return not_handled;
 #undef HANDLE_VALUE
 }
 
@@ -669,13 +674,18 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
     }
   } else if (type == OptionType::Uintx) {
     uintx value;
-    // Is it a named enum?
-    bool success = parseEnumValueAsUintx(option, line, value, bytes_read, errorbuf, buf_size);
-    if (!success) {
-      // Is it a raw number?
-      success = (sscanf(line, "" UINTX_FORMAT "%n", &value, &bytes_read) == 1);
+    // Parse named enum value
+    const parse_result_t res = parseEnumValueAsUintx(option, line, value, bytes_read, errorbuf, buf_size);
+    if (res != not_handled) {
+      total_bytes_read += bytes_read;
+      line += bytes_read;
+      if (res == handled_ok) {
+        register_command(matcher, option, value);
+      }
+      return; // in case of an error, error string had been set.
     }
-    if (success) {
+    // Parse raw number
+    if ((sscanf(line, "" UINTX_FORMAT "%n", &value, &bytes_read) == 1)) {
       total_bytes_read += bytes_read;
       line += bytes_read;
       register_command(matcher, option, value);
