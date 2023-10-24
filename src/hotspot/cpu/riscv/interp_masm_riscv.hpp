@@ -75,7 +75,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void restore_locals() {
     ld(xlocals, Address(fp, frame::interpreter_frame_locals_offset * wordSize));
-    shadd(xlocals, xlocals, fp,  t0,  LogBytesPerWord);
+    shadd(xlocals, xlocals, fp, t0, LogBytesPerWord);
   }
 
   void restore_constant_pool_cache() {
@@ -165,7 +165,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void push(TosState state); // transition state -> vtos
 
   void empty_expression_stack() {
-    ld(esp, Address(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
+    ld(t0, Address(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
+    shadd(esp, t0, fp, t0, LogBytesPerWord);
     // null last_sp until next java call
     sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
   }

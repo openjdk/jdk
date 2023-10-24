@@ -33,6 +33,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
 import java.util.Objects;
+
+import jdk.internal.foreign.GlobalSession.HeapSession;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -59,10 +61,10 @@ public abstract sealed class MemorySessionImpl
     static final VarHandle STATE;
     static final int MAX_FORKS = Integer.MAX_VALUE;
 
-    public static final MemorySessionImpl GLOBAL = new GlobalSession(null);
-
     static final ScopedMemoryAccess.ScopedAccessError ALREADY_CLOSED = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::alreadyClosed);
     static final ScopedMemoryAccess.ScopedAccessError WRONG_THREAD = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::wrongThread);
+    // This is the session of all zero-length memory segments
+    public static final MemorySessionImpl GLOBAL_SESSION = new GlobalSession();
 
     final ResourceList resourceList;
     final Thread owner;
@@ -77,21 +79,11 @@ public abstract sealed class MemorySessionImpl
     }
 
     public Arena asArena() {
-        return new Arena() {
-            @Override
-            public Scope scope() {
-                return MemorySessionImpl.this;
-            }
-
-            @Override
-            public void close() {
-                MemorySessionImpl.this.close();
-            }
-        };
+        return new ArenaImpl(this);
     }
 
     @ForceInline
-    public static final MemorySessionImpl toMemorySession(Arena arena) {
+    public static MemorySessionImpl toMemorySession(Arena arena) {
         return (MemorySessionImpl) arena.scope();
     }
 
@@ -107,10 +99,10 @@ public abstract sealed class MemorySessionImpl
     }
 
     /**
-     * Add a cleanup action. If a failure occurred (because of a add vs. close race), call the cleanup action.
+     * Add a cleanup action. If a failure occurred (because of an add vs. close race), call the cleanup action.
      * This semantics is useful when allocating new memory segments, since we first do a malloc/mmap and _then_
      * we register the cleanup (free/munmap) against the session; so, if registration fails, we still have to
-     * cleanup memory. From the perspective of the client, such a failure would manifest as a factory
+     * clean up memory. From the perspective of the client, such a failure would manifest as a factory
      * returning a segment that is already "closed" - which is always possible anyway (e.g. if the session
      * is closed _after_ the cleanup for the segment is registered but _before_ the factory returns the
      * new segment to the client). For this reason, it's not worth adding extra complexity to the segment
@@ -153,9 +145,8 @@ public abstract sealed class MemorySessionImpl
         return new ImplicitSession(cleaner);
     }
 
-    public MemorySegment allocate(long byteSize, long byteAlignment) {
-        Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
-        return NativeMemorySegmentImpl.makeNativeSegment(byteSize, byteAlignment, this);
+    public static MemorySessionImpl createHeap(Object ref) {
+        return new HeapSession(ref);
     }
 
     public abstract void release0();
@@ -210,7 +201,7 @@ public abstract sealed class MemorySessionImpl
     /**
      * Checks that this session is still alive (see {@link #isAlive()}).
      * @throws IllegalStateException if this session is already closed or if this is
-     * a confined session and this method is called outside of the owner thread.
+     * a confined session and this method is called outside the owner thread.
      */
     public void checkValidState() {
         try {
@@ -220,7 +211,7 @@ public abstract sealed class MemorySessionImpl
         }
     }
 
-    public static final void checkValidState(MemorySegment segment) {
+    public static void checkValidState(MemorySegment segment) {
         ((AbstractMemorySegmentImpl)segment).sessionImpl().checkValidState();
     }
 
@@ -236,7 +227,7 @@ public abstract sealed class MemorySessionImpl
     /**
      * Closes this session, executing any cleanup action (where provided).
      * @throws IllegalStateException if this session is already closed or if this is
-     * a confined session and this method is called outside of the owner thread.
+     * a confined session and this method is called outside the owner thread.
      */
     public void close() {
         justClose();
@@ -244,10 +235,6 @@ public abstract sealed class MemorySessionImpl
     }
 
     abstract void justClose();
-
-    public static MemorySessionImpl heapSession(Object ref) {
-        return new GlobalSession(ref);
-    }
 
     /**
      * A list of all cleanup actions associated with a memory session. Cleanup actions are modelled as instances

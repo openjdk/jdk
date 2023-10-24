@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,26 @@
  * @test
  * @bug 4348864 4112924 4425386 4495052 4836940 4851113 8008577
  * @summary test time zone display names in en_US locale
- * @library /java/text/testlib
- * @run main/othervm -Djava.locale.providers=COMPAT,SPI TimeZoneNameTest
+ * @run junit/othervm -Djava.locale.providers=COMPAT,SPI TimeZoneNameTest
  */
 
 import java.util.*;
 import java.text.*;
 
-public class TimeZoneNameTest extends IntlTest
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class TimeZoneNameTest
 {
+
+    // Change JVM default Locale
+    @BeforeAll
+    static void initAll() {
+        Locale.setDefault(Locale.US);
+    }
+
     static final String[] data = {
         // Added to verify the fix for 4836940
         "N", "Antarctica/Rothera", "ROTT", "Rothera Time", "ROTT", "Rothera Time",
@@ -94,17 +105,7 @@ public class TimeZoneNameTest extends IntlTest
                                "ChST", "Chamorro Standard Time",
     };
 
-    public static void main(String[] args) throws Exception {
-        Locale reservedLocale = Locale.getDefault();
-        try {
-            Locale.setDefault(Locale.US);
-            new TimeZoneNameTest().run(args);
-        } finally {
-            // restore the reserved locale
-            Locale.setDefault(reservedLocale);
-        }
-    }
-
+    @Test
     public void Test4112924() {
         SimpleDateFormat lfmt = new SimpleDateFormat("zzzz");
         SimpleDateFormat sfmt = new SimpleDateFormat("z");
@@ -129,23 +130,23 @@ public class TimeZoneNameTest extends IntlTest
             lfmt.setTimeZone(tz);
             sfmt.setTimeZone(tz);
 
-            logln(tz.getID() + ": " + sfmt.format(sol1.getTime()) + ", " + lfmt.format(sol1.getTime()));
-            logln(tz.getID() + ": " + sfmt.format(sol2.getTime()) + ", " + lfmt.format(sol2.getTime()));
+            System.out.println(tz.getID() + ": " + sfmt.format(sol1.getTime()) + ", " + lfmt.format(sol1.getTime()));
+            System.out.println(tz.getID() + ": " + sfmt.format(sol2.getTime()) + ", " + lfmt.format(sol2.getTime()));
             String s = sfmt.format(sol1.getTime());
             if (!data[i].equals(s)) {
-                errln(tz.getID() + ": wrong short name: \"" + s + "\" (expected \"" + data[i] + "\")");
+                fail(tz.getID() + ": wrong short name: \"" + s + "\" (expected \"" + data[i] + "\")");
             }
             s = lfmt.format(sol1.getTime());
             if (!data[++i].equals(s)) {
-                errln(tz.getID() + ": wrong long name: \"" + s + "\" (expected \"" + data[i] + "\")");
+                fail(tz.getID() + ": wrong long name: \"" + s + "\" (expected \"" + data[i] + "\")");
             }
             s = sfmt.format(sol2.getTime());
             if (!data[++i].equals(s)) {
-                errln(tz.getID() + ": wrong short name: \"" + s + "\" (expected \"" + data[i] + "\")");
+                fail(tz.getID() + ": wrong short name: \"" + s + "\" (expected \"" + data[i] + "\")");
             }
             s = lfmt.format(sol2.getTime());
             if (!data[++i].equals(s)) {
-                errln(tz.getID() + ": wrong long name: \"" + s + "\" (expected \"" + data[i] + "\")");
+                fail(tz.getID() + ": wrong long name: \"" + s + "\" (expected \"" + data[i] + "\")");
             }
         }
     }

@@ -23,8 +23,6 @@
 
 /*
  * @test
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestIllegalLink
  */
@@ -46,6 +44,8 @@ import java.util.List;
 import jdk.internal.foreign.CABI;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import static java.lang.foreign.ValueLayout.*;
 
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
@@ -102,7 +102,7 @@ public class TestIllegalLink extends NativeTestHelper {
         return new Object[][]{
             { Linker.Option.firstVariadicArg(0) },
             { Linker.Option.captureCallState("errno") },
-            { Linker.Option.isTrivial() },
+            { Linker.Option.critical() },
         };
     }
 
@@ -128,7 +128,7 @@ public class TestIllegalLink extends NativeTestHelper {
             {
                     FunctionDescriptor.ofVoid(C_POINTER.withByteAlignment(2)),
                     NO_OPTIONS,
-                    IS_LE ? "Unsupported layout: 2%a8" : "Unsupported layout: 2%A8"
+                    (IS_LE ? "Unsupported layout: 2%a" : "Unsupported layout: 2%A")  + ADDRESS.byteSize()
             },
             {
                     FunctionDescriptor.ofVoid(ValueLayout.JAVA_CHAR.withByteAlignment(4)),
@@ -156,7 +156,7 @@ public class TestIllegalLink extends NativeTestHelper {
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                            MemoryLayout.sequenceLayout(
+                            MemoryLayout.sequenceLayout(1,
                                 C_INT.withByteAlignment(1)
                             ))),
                     NO_OPTIONS,
@@ -181,16 +181,9 @@ public class TestIllegalLink extends NativeTestHelper {
                     IS_LE ? "Unsupported layout: I4" : "Unsupported layout: i4"
             },
             {
-                    FunctionDescriptor.of(MemoryLayout.structLayout(MemoryLayout.sequenceLayout(C_INT.withOrder(nonNativeOrder())))),
+                    FunctionDescriptor.of(MemoryLayout.structLayout(MemoryLayout.sequenceLayout(1, C_INT.withOrder(nonNativeOrder())))),
                     NO_OPTIONS,
                     IS_LE ? "Unsupported layout: I4" : "Unsupported layout: i4"
-            },
-            {
-                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                            ValueLayout.JAVA_LONG,
-                            ValueLayout.JAVA_INT)), // missing trailing padding
-                    NO_OPTIONS,
-                    "has unexpected size"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -198,6 +191,11 @@ public class TestIllegalLink extends NativeTestHelper {
                             MemoryLayout.paddingLayout(4))), // too much trailing padding
                     NO_OPTIONS,
                     "has unexpected size"
+            },
+            {
+                    FunctionDescriptor.ofVoid(),
+                    new Linker.Option[]{Linker.Option.critical(), Linker.Option.captureCallState("errno")},
+                    "Incompatible linker options: captureCallState, critical"
             },
         }));
 
@@ -212,11 +210,20 @@ public class TestIllegalLink extends NativeTestHelper {
         if (IS_SYSV) {
             cases.add(new Object[] {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                            MemoryLayout.sequenceLayout(
+                            MemoryLayout.sequenceLayout(Long.MAX_VALUE / C_INT.byteSize(),
                                 C_INT
                             ))),
                     NO_OPTIONS,
                     "GroupLayout is too large"
+            });
+        }
+        if (ValueLayout.JAVA_LONG.byteAlignment() == 8) {
+            cases.add(new Object[]{
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            ValueLayout.JAVA_LONG,
+                            ValueLayout.JAVA_INT)), // missing trailing padding
+                    NO_OPTIONS,
+                    "has unexpected size"
             });
         }
         return cases.toArray(Object[][]::new);

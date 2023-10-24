@@ -843,7 +843,7 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
     public static void staticSetUp() {
         inflatedLock = new XYVal(1, 1);
         synchronized (inflatedLock) {
-            inflatorThread = TestScaffold.newThread(() -> {
+            inflatorThread = DebuggeeWrapper.newThread(() -> {
                 synchronized (inflatedLock) {
                     inflatedLockIsPermanentlyInflated = true;
                     inflatedLock.notify(); // main thread

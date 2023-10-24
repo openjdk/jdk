@@ -33,7 +33,35 @@ class ObjectStartArray;
 class PSPromotionManager;
 
 class PSCardTable: public CardTable {
- private:
+  friend class PSStripeShadowCardTable;
+  static constexpr size_t num_cards_in_stripe = 128;
+  static_assert(num_cards_in_stripe >= 1, "progress");
+
+  volatile int _preprocessing_active_workers;
+
+  bool is_dirty(CardValue* card) {
+    return !is_clean(card);
+  }
+
+  bool is_clean(CardValue* card) {
+    return *card == clean_card_val();
+  }
+
+  // Iterate the stripes with the given index and copy imprecise card marks of
+  // objects reaching into a stripe to its first card.
+  template <typename Func>
+  void preprocess_card_table_parallel(Func&& object_start,
+                                      HeapWord* old_gen_bottom,
+                                      HeapWord* old_gen_top,
+                                      uint stripe_index,
+                                      uint n_stripes);
+
+  // Scavenge contents on dirty cards of the given stripe [start, end).
+  template <typename Func>
+  void process_range(Func&& object_start,
+                     PSPromotionManager* pm,
+                     HeapWord* const start,
+                     HeapWord* const end);
 
   void verify_all_young_refs_precise_helper(MemRegion mr);
 
@@ -42,29 +70,24 @@ class PSCardTable: public CardTable {
     verify_card       = CT_MR_BS_last_reserved + 5
   };
 
-  CardValue* find_first_dirty_card(CardValue* const start_card,
-                                   CardValue* const end_card);
-
-  CardValue* find_first_clean_card(ObjectStartArray* start_array,
-                                   CardValue* const start_card,
-                                   CardValue* const end_card);
-
-  void clear_cards(CardValue* const start, CardValue* const end);
-
-  void scan_objects_in_range(PSPromotionManager* pm,
-                             HeapWord* start,
-                             HeapWord* end);
+  void scan_obj_with_limit(PSPromotionManager* pm,
+                           oop obj,
+                           HeapWord* start,
+                           HeapWord* end);
 
  public:
-  PSCardTable(MemRegion whole_heap) : CardTable(whole_heap) {}
+  PSCardTable(MemRegion whole_heap) : CardTable(whole_heap),
+                                      _preprocessing_active_workers(0) {}
 
   static CardValue youngergen_card_val() { return youngergen_card; }
   static CardValue verify_card_val()     { return verify_card; }
 
   // Scavenge support
+  void pre_scavenge(HeapWord* old_gen_bottom, uint active_workers);
+  // Scavenge contents of stripes with the given index.
   void scavenge_contents_parallel(ObjectStartArray* start_array,
-                                  MutableSpace* sp,
-                                  HeapWord* space_top,
+                                  HeapWord* old_gen_bottom,
+                                  HeapWord* old_gen_top,
                                   PSPromotionManager* pm,
                                   uint stripe_index,
                                   uint n_stripes);

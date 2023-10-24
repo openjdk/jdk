@@ -1653,6 +1653,38 @@ void C2_MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, 
   bind(done);
 }
 
+// According to Java SE specification, for floating-point signum operations, if
+// on input we have NaN or +/-0.0 value we should return it,
+// otherwise return +/- 1.0 using sign of input.
+// one - gives us a floating-point 1.0 (got from matching rule)
+// bool is_double - specifies single or double precision operations will be used.
+void C2_MacroAssembler::signum_fp(FloatRegister dst, FloatRegister src, FloatRegister one, bool is_double) {
+  Register tmp1 = t0;
+
+  Label done;
+
+  is_double ? fclass_d(tmp1, src)
+            : fclass_s(tmp1, src);
+
+  is_double ? fmv_d(dst, src)
+            : fmv_s(dst, src);
+
+  //bitmask 0b1100011000 specifies this bits:
+  // 3 - src is -0
+  // 4 - src is +0
+  // 8 - src is signaling NaN
+  // 9 - src is a quiet NaN
+  andi(tmp1, tmp1, 0b1100011000);
+
+  bnez(tmp1, done);
+
+  // use floating-point 1.0 with a sign of input
+  is_double ? fsgnj_d(dst, one, src)
+            : fsgnj_s(dst, one, src);
+
+  bind(done);
+}
+
 void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,
                                         VectorRegister vr1, VectorRegister vr2, VectorRegister vrs, bool islatin, Label &DONE) {
   Label loop;
@@ -2179,13 +2211,13 @@ void C2_MacroAssembler::integer_narrow_v(VectorRegister dst, BasicType dst_bt, i
       }
     }
   } else if (src_bt == T_INT) {
-      // T_SHORT
-      vsetvli(t0, t0, Assembler::e16, Assembler::mf2);
-      vncvt_x_x_w(dst, src);
-      if (dst_bt == T_BYTE) {
-        vsetvli(t0, t0, Assembler::e8, Assembler::mf2);
-        vncvt_x_x_w(dst, dst);
-      }
+    // T_SHORT
+    vsetvli(t0, t0, Assembler::e16, Assembler::mf2);
+    vncvt_x_x_w(dst, src);
+    if (dst_bt == T_BYTE) {
+      vsetvli(t0, t0, Assembler::e8, Assembler::mf2);
+      vncvt_x_x_w(dst, dst);
+    }
   } else if (src_bt == T_SHORT) {
     vsetvli(t0, t0, Assembler::e8, Assembler::mf2);
     vncvt_x_x_w(dst, src);
@@ -2201,8 +2233,6 @@ void C2_MacroAssembler::VFLOATCVT##_safe(VectorRegister dst, VectorRegister src)
 }
 
 VFCVT_SAFE(vfcvt_rtz_x_f_v);
-VFCVT_SAFE(vfwcvt_rtz_x_f_v);
-VFCVT_SAFE(vfncvt_rtz_x_f_w);
 
 #undef VFCVT_SAFE
 

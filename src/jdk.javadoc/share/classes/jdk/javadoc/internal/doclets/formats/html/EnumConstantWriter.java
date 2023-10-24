@@ -73,13 +73,13 @@ public class EnumConstantWriter extends AbstractMemberWriter {
             for (Element enumConstant : enumConstants) {
                 currentElement = (VariableElement)enumConstant;
                 Content enumConstantContent = getEnumConstantsHeader(currentElement);
-
-                buildSignature(enumConstantContent);
-                buildDeprecationInfo(enumConstantContent);
-                buildPreviewInfo(enumConstantContent);
-                buildEnumConstantComments(enumConstantContent);
-                buildTagInfo(enumConstantContent);
-
+                Content div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+                buildSignature(div);
+                buildDeprecationInfo(div);
+                buildPreviewInfo(div);
+                buildEnumConstantComments(div);
+                buildTagInfo(div);
+                enumConstantContent.add(div);
                 memberList.add(getMemberListItem(enumConstantContent));
             }
             Content enumConstantDetails = getEnumConstantsDetails(
