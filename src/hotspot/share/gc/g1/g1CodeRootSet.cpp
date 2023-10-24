@@ -143,8 +143,25 @@ public:
   }
 
   void clear() {
+    size_t num_entries = Atomic::load(&_num_entries);
+    if (num_entries != 0) {
+      auto do_value =
+        [] (nmethod** value) {
+          return true;
+      };
+
+      size_t num_deleted = 0;
+      auto do_delete =
+        [&] (nmethod** value) {
+          num_deleted++;
+      };
+
+      bool succeeded = _table.try_bulk_delete(Thread::current(), do_value, do_delete);
+      guarantee(succeeded, "unable to clean table");
+      assert(num_entries == num_deleted, "must empty the table");
+      Atomic::store(&_num_entries, (size_t)0);
+    }
     _table.unsafe_reset();
-    Atomic::store(&_num_entries, (size_t)0);
   }
 
   void iterate_at_safepoint(CodeBlobClosure* blk) {
@@ -159,6 +176,7 @@ public:
         blk->do_code_blob(*value);
         return true;
       };
+
     _table_scanner.do_safepoint_scan(do_value);
   }
 
