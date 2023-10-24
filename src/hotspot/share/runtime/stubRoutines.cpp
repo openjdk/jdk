@@ -188,6 +188,8 @@ JFR_ONLY(address StubRoutines::_jfr_write_checkpoint = nullptr;)
 JFR_ONLY(RuntimeStub* StubRoutines::_jfr_return_lease_stub = nullptr;)
 JFR_ONLY(address StubRoutines::_jfr_return_lease = nullptr;)
 
+address StubRoutines::_upcall_stub_exception_handler = nullptr;
+
 // Initialization
 //
 // Note: to break cycle with universe initialization, stubs are generated in two phases.
