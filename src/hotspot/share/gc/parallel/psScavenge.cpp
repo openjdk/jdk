@@ -643,11 +643,7 @@ bool PSScavenge::invoke_no_policy() {
       old_gen->verify_object_start_array();
     }
 
-    // Verify all old -> young cards are now precise
     if (VerifyRememberedSets) {
-      // Precise verification will give false positives. Until this is fixed,
-      // use imprecise verification.
-      // heap->card_table()->verify_all_young_refs_precise();
       heap->card_table()->verify_all_young_refs_imprecise();
     }
 
