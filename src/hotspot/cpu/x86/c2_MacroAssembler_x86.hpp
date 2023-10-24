@@ -43,6 +43,10 @@ public:
                  bool use_rtm, bool profile_rtm);
   void fast_unlock(Register obj, Register box, Register tmp, bool use_rtm);
 
+  void fast_lock_lightweight(Register objReg, Register boxReg, Register tmpReg,
+                             Register scrReg,Register thread);
+  void fast_unlock_lightweight(Register objReg, Register boxReg, Register tmpReg);
+
 #if INCLUDE_RTM_OPT
   void rtm_counters_update(Register abort_status, Register rtm_counters);
   void branch_on_random_using_rdtsc(Register tmp, Register scr, int count, Label& brLabel);

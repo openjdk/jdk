@@ -13415,7 +13415,7 @@ instruct cmpFastLockRTM(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, 
 %}
 
 instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr) %{
-  predicate(!Compile::current()->use_rtm());
+  predicate(LockingMode != LM_LIGHTWEIGHT && !Compile::current()->use_rtm());
   match(Set cr (FastLock object box));
   effect(TEMP tmp, TEMP scr, USE_KILL box);
   ins_cost(300);
@@ -13428,12 +13428,37 @@ instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRe
 %}
 
 instruct cmpFastUnlock(rFlagsReg cr, rRegP object, rax_RegP box, rRegP tmp) %{
+  predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set cr (FastUnlock object box));
   effect(TEMP tmp, USE_KILL box);
   ins_cost(300);
   format %{ "fastunlock $object,$box\t! kills $box,$tmp" %}
   ins_encode %{
     __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register, ra_->C->use_rtm());
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmpFastLockLightweight(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr) %{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set cr (FastLock object box));
+  effect(TEMP tmp, TEMP scr, USE_KILL box);
+  ins_cost(300);
+  format %{ "fastlock $object,$box\t! kills $box,$tmp,$scr" %}
+  ins_encode %{
+    __ fast_lock_lightweight($object$$Register, $box$$Register, $tmp$$Register, $scr$$Register, r15_thread);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmpFastUnlockLightweight(rFlagsReg cr, rRegP object, rax_RegP box, rRegP tmp) %{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set cr (FastUnlock object box));
+  effect(TEMP tmp, USE_KILL box);
+  ins_cost(300);
+  format %{ "fastunlock $object,$box\t! kills $box,$tmp" %}
+  ins_encode %{
+    __ fast_unlock_lightweight($object$$Register, $box$$Register, $tmp$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
