@@ -150,5 +150,12 @@ AC_DEFUN([FLAGS_SETUP_ASFLAGS_CPU_DEP],
     $2JVM_ASFLAGS="${$2JVM_ASFLAGS} $ARM_ARCH_TYPE_ASFLAGS $ARM_FLOAT_TYPE_ASFLAGS"
   fi
 
+  if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+    if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+      # BRANCH_PROTECTION_ASFLAGS is setup in flags-cflags.m4.
+      $2JVM_ASFLAGS="${$2JVM_ASFLAGS} $BRANCH_PROTECTION_ASFLAGS"
+    fi
+  fi
+
   AC_SUBST($2JVM_ASFLAGS)
 ])
