@@ -25,7 +25,7 @@
  * @test
  * @summary Testing that, faced with a given (possibly odd) mapping address of class space, the encoding
  *          scheme fits the address
- * @requires vm.bits == 64 & !vm.graal.enabled
+ * @requires vm.bits == 64 & !vm.graal.enabled & vm.debug == true
  * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
