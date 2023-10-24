@@ -2446,12 +2446,28 @@ encode %{
     __ corrected_idivl(dst_reg, src1_reg, src2_reg, false);
   %}
 
+  enc_class riscv_enc_divuw(iRegI dst, iRegI src1, iRegI src2) %{
+    C2_MacroAssembler _masm(&cbuf);
+    Register dst_reg = as_Register($dst$$reg);
+    Register src1_reg = as_Register($src1$$reg);
+    Register src2_reg = as_Register($src2$$reg);
+    __ corrected_idivl(dst_reg, src1_reg, src2_reg, false, false);
+  %}
+
   enc_class riscv_enc_div(iRegI dst, iRegI src1, iRegI src2) %{
     C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
     __ corrected_idivq(dst_reg, src1_reg, src2_reg, false);
+  %}
+
+  enc_class riscv_enc_divu(iRegI dst, iRegI src1, iRegI src2) %{
+    C2_MacroAssembler _masm(&cbuf);
+    Register dst_reg = as_Register($dst$$reg);
+    Register src1_reg = as_Register($src1$$reg);
+    Register src2_reg = as_Register($src2$$reg);
+    __ corrected_idivq(dst_reg, src1_reg, src2_reg, false, false);
   %}
 
   enc_class riscv_enc_modw(iRegI dst, iRegI src1, iRegI src2) %{
@@ -6678,9 +6694,7 @@ instruct UdivI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   ins_cost(IDIVSI_COST);
   format %{ "divuw  $dst, $src1, $src2\t#@UdivI"%}
 
-  ins_encode %{
-    __ divuw(as_Register($dst$$reg), as_Register($src1$$reg), as_Register($src2$$reg));
-  %}
+  ins_encode(riscv_enc_divuw(dst, src1, src2));
   ins_pipe(idiv_reg_reg);
 %}
 
@@ -6722,19 +6736,7 @@ instruct UdivL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
     "Ldone:\t#@UdivL"
   %}
 
-  ins_encode %{
-    Label Lltz, Ldone;
-    __ bltz(as_Register($src2$$reg), Lltz);
-    __ divu(as_Register($dst$$reg), as_Register($src1$$reg), as_Register($src2$$reg));
-    __ j(Ldone);
-    __ bind(Lltz); // For the algorithm, check j.l.Long::divideUnsigned
-    __ sub(as_Register($dst$$reg), as_Register($src1$$reg), as_Register($src2$$reg));
-    __ notr(as_Register($dst$$reg), as_Register($dst$$reg));
-    __ andr(as_Register($dst$$reg), as_Register($dst$$reg), as_Register($src1$$reg));
-    __ srli(as_Register($dst$$reg), as_Register($dst$$reg), 63);
-    __ bind(Ldone);
-  %}
-
+  ins_encode(riscv_enc_divu(dst, src1, src2));
   ins_pipe(ldiv_reg_reg);
 %}
 
