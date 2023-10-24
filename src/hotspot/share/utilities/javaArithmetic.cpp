@@ -72,8 +72,8 @@
 // As a result, x * ((v + 1) / v) <= x * ((x + 2) / x)
 
 // floor(x / d) = (v + 1) / d
-// floor(x * ((v + 1) / v) / d) <= floor(x * ((x + 2) / x) / d) = floor((x + 2) / d)
-//                              <= floor((v + d - 1 + 2) / d) = (v + 1) / d + 1
+// x * c / m < x * ((v + 1) / v) / d) <= x * ((x + 2) / x) / d = (x + 2) / d
+//           <= (v + d - 1 + 2) / d = (v + 1) / d + 1
 // Which means (v + 1) / d <= floor(x * c / m) < (v + 1) / d + 1 with (v + 1) / d being an integer
 // This implies floor(x / d) = floor(x * c / m) for v + 1 <= x <= v + d - 1
 
@@ -98,8 +98,9 @@
 
 // x / d <= (-v - 1) / d
 // floor((x - 1) / d) = (-v - 1) / d - 1
-// floor(x * ((v + 1) / v) / d) >= floor((x - 2) / d) >= (-v - d + 1 - 2) / d = (-v - 1) / d - 1
-// which means (-v - 1) / d >= x / d > x * c / m >= floor(x * c / m) >= (-v - 1) / d - 1
+// x * c / m >= x * ((v + 1) / v) / d) >= (x - 2) / d
+//           >= (-v - d + 1 - 2) / d = (-v - 1) / d - 1
+// which means (-v - 1) / d >= x / d > x * c / m >= (-v - 1) / d - 1
 // This implies floor((x - 1) / d) = floor(x * c / m) for -v - 1 >= x >= -v - d + 1
 
 // Combining all the cases gives us the conclusion.
