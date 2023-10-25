@@ -109,9 +109,8 @@ public class NoStringToLower {
     void scan(JavaFileObject fo) throws IOException {
         try (InputStream in = fo.openInputStream()) {
             ClassModel cf = Classfile.of().parse(in.readAllBytes());
-            ConstantPool cp = cf.constantPool();
-            for (int i = 1; i < cp.entryCount(); i += cp.entryByIndex(i).width()) {
-                if (cp.entryByIndex(i) instanceof MethodRefEntry ref) {
+            for (PoolEntry pe : cf.constantPool()) {
+                if (pe instanceof MethodRefEntry ref) {
                     String methodDesc = ref.owner().name().stringValue() + "." + ref.name().stringValue() + ":" + ref.type().stringValue();
 
                     if ("java/lang/String.toLowerCase:()Ljava/lang/String;".equals(methodDesc)) {

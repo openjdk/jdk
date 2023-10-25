@@ -47,6 +47,7 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
+import jdk.internal.classfile.constantpool.PoolEntry;
 
 /*
  * This bug was reproduced having two classes B and C referenced from a class A
@@ -96,17 +97,12 @@ public class DuplicateConstantPoolEntry {
         File file = new File("A.class");
         ClassModel classFile = Classfile.of().parse(file.toPath());
         ConstantPool constantPool = classFile.constantPool();
-        for (int i = 1;
-                i < constantPool.entryCount() - 1;
-                i += constantPool.entryByIndex(i).width()) {
-            for (int j = i + constantPool.entryByIndex(i).width();
-                    j < constantPool.entryCount();
-                    j += constantPool.entryByIndex(j).width()) {
-                if (constantPool.entryByIndex(i).toString().
-                        equals(constantPool.entryByIndex(j).toString())) {
+        for (PoolEntry pe1 : constantPool) {
+            for (PoolEntry pe2 : constantPool) {
+                if (pe2.index() > pe1.index() && pe1.equals(pe2)) {
                     throw new AssertionError(
                             "Duplicate entries in the constant pool at positions " +
-                            i + " and " + j);
+                            pe1.index() + " and " + pe2.index());
                 }
             }
         }
