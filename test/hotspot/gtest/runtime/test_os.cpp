@@ -377,7 +377,7 @@ static inline bool can_reserve_executable_memory(void) {
 #endif
 
 // Test that os::release_memory() can deal with areas containing multiple mappings.
-#define PRINT_MAPPINGS(s) { tty->print_cr("%s", s); os::print_memory_mappings((char*)p, total_range_len, tty); }
+#define PRINT_MAPPINGS(s) { tty->print_cr("%s", s); os::print_memory_mappings((char*)p, total_range_len, tty); tty->cr(); }
 //#define PRINT_MAPPINGS
 
 // Release a range allocated with reserve_multiple carefully, to not trip mapping

@@ -323,6 +323,26 @@ public final class ListFormat extends Format {
     }
 
     /**
+     * {@return the {@code Locale} of this ListFormat}
+     *
+     * The {@code locale} is defined by {@link #getInstance(Locale, Type, Style)} or
+     * {@link #getInstance(String[])}.
+     */
+    public Locale getLocale() {
+        return locale;
+    }
+
+    /**
+     * {@return the patterns used in this ListFormat}
+     *
+     * The {@code patterns} are defined by {@link #getInstance(Locale, Type, Style)} or
+     * {@link #getInstance(String[])}.
+     */
+    public String[] getPatterns() {
+        return Arrays.copyOf(patterns, patterns.length);
+    }
+
+    /**
      * {@return the string that consists of the input strings, concatenated with the
      * patterns of this {@code ListFormat}}
      * @apiNote Formatting the string from an excessively long list may exceed memory
@@ -353,8 +373,8 @@ public final class ListFormat extends Format {
      * @return       the string buffer passed in as {@code toAppendTo},
      *               with formatted text appended
      * @throws    NullPointerException if {@code obj} or {@code toAppendTo} is null
-     * @throws    IllegalArgumentException if the given object cannot
-     *               be formatted
+     * @throws    IllegalArgumentException if {@code obj} is neither a {@code List}
+     *               nor an array of {@code Object}s, or its length is zero.
      */
     @Override
     public StringBuffer format(Object obj, StringBuffer toAppendTo, FieldPosition pos) {
@@ -416,6 +436,8 @@ public final class ListFormat extends Format {
      * @return A list of string parsed from the {@code source}.
      *            In case of error, returns null.
      * @throws NullPointerException if {@code source} or {@code parsePos} is null.
+     * @throws IndexOutOfBoundsException if the starting index given by
+     *            {@code parsePos} is outside {@code source}.
      */
     @Override
     public Object parseObject(String source, ParsePosition parsePos) {

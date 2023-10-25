@@ -1282,6 +1282,18 @@ C2V_VMENTRY_0(jint, getLocalVariableTableLength, (JNIEnv* env, jobject, ARGUMENT
   return method->localvariable_table_length();
 C2V_END
 
+static MethodData* get_profiling_method_data(const methodHandle& method, TRAPS) {
+  MethodData* method_data = method->method_data();
+  if (method_data == nullptr) {
+    method->build_profiling_method_data(method, CHECK_NULL);
+    method_data = method->method_data();
+    if (method_data == nullptr) {
+      THROW_MSG_NULL(vmSymbols::java_lang_OutOfMemoryError(), "cannot allocate MethodData")
+    }
+  }
+  return method_data;
+}
+
 C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
   methodHandle method(THREAD, UNPACK_PAIR(Method, method));
   MethodCounters* mcs = method->method_counters();
@@ -1297,9 +1309,7 @@ C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
 
   MethodData* method_data = method->method_data();
   if (method_data == nullptr) {
-    ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
-    method_data = MethodData::allocate(loader_data, method, CHECK);
-    method->set_method_data(method_data);
+    method_data = get_profiling_method_data(method, CHECK);
   } else {
     method_data->initialize();
   }
@@ -2426,6 +2436,16 @@ C2V_VMENTRY_0(jint, arrayIndexScale, (JNIEnv* env, jobject, jchar type_char))
   return type2aelembytes(type);
 C2V_END
 
+C2V_VMENTRY(void, clearOopHandle, (JNIEnv* env, jobject, jlong oop_handle))
+  if (oop_handle == 0L) {
+    JVMCI_THROW(NullPointerException);
+  }
+  // Assert before nulling out, for better debugging.
+  assert(JVMCIRuntime::is_oop_handle(oop_handle), "precondition");
+  oop* oop_ptr = (oop*) oop_handle;
+  NativeAccess<>::oop_store(oop_ptr, (oop) nullptr);
+C2V_END
+
 C2V_VMENTRY(void, releaseClearedOopHandles, (JNIEnv* env, jobject))
   JVMCIENV->runtime()->release_cleared_oop_handles();
 C2V_END
@@ -2976,12 +2996,7 @@ C2V_END
 
 C2V_VMENTRY_0(jlong, getFailedSpeculationsAddress, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
   methodHandle method(THREAD, UNPACK_PAIR(Method, method));
-  MethodData* method_data = method->method_data();
-  if (method_data == nullptr) {
-    ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
-    method_data = MethodData::allocate(loader_data, method, CHECK_0);
-    method->set_method_data(method_data);
-  }
+  MethodData* method_data = get_profiling_method_data(method, CHECK_0);
   return (jlong) method_data->get_failed_speculations_address();
 C2V_END
 
@@ -3255,6 +3270,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "readArrayElement",                             CC "(" OBJECTCONSTANT "I)Ljava/lang/Object;",                                         FN_PTR(readArrayElement)},
   {CC "arrayBaseOffset",                              CC "(C)I",                                                                            FN_PTR(arrayBaseOffset)},
   {CC "arrayIndexScale",                              CC "(C)I",                                                                            FN_PTR(arrayIndexScale)},
+  {CC "clearOopHandle",                               CC "(J)V",                                                                            FN_PTR(clearOopHandle)},
   {CC "releaseClearedOopHandles",                     CC "()V",                                                                             FN_PTR(releaseClearedOopHandles)},
   {CC "registerNativeMethods",                        CC "(" CLASS ")[J",                                                                   FN_PTR(registerNativeMethods)},
   {CC "isCurrentThreadAttached",                      CC "()Z",                                                                             FN_PTR(isCurrentThreadAttached)},

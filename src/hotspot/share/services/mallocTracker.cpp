@@ -45,7 +45,6 @@
 
 size_t MallocMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
 
-#ifdef ASSERT
 void MemoryCounter::update_peak(size_t size, size_t cnt) {
   size_t peak_sz = peak_size();
   while (peak_sz < size) {
@@ -59,7 +58,6 @@ void MemoryCounter::update_peak(size_t size, size_t cnt) {
     }
   }
 }
-#endif // ASSERT
 
 // Total malloc'd memory used by arenas
 size_t MallocMemorySnapshot::total_arena() const {

@@ -25,6 +25,8 @@
 
 package com.sun.crypto.provider;
 
+import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.lang.ref.Reference;
 import java.security.MessageDigest;
 import java.security.KeyRep;
@@ -45,7 +47,7 @@ import jdk.internal.ref.CleanerFactory;
 final class DESKey implements SecretKey {
 
     @java.io.Serial
-    static final long serialVersionUID = 7724971015953279128L;
+    private static final long serialVersionUID = 7724971015953279128L;
 
     private byte[] key;
 
@@ -143,17 +145,26 @@ final class DESKey implements SecretKey {
     }
 
     /**
-     * readObject is called to restore the state of this key from
-     * a stream.
+     * Restores the state of this object from the stream.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
-         throws java.io.IOException, ClassNotFoundException
+         throws IOException, ClassNotFoundException
     {
         s.defaultReadObject();
+        if ((key == null) || (key.length != DESKeySpec.DES_KEY_LEN)) {
+            throw new InvalidObjectException("Wrong key size");
+        }
         byte[] temp = key;
         key = temp.clone();
         Arrays.fill(temp, (byte)0x00);
+
+        DESKeyGenerator.setParityBit(key, 0);
+
         // Use the cleaner to zero the key when no longer referenced
         final byte[] k = this.key;
         CleanerFactory.cleaner().register(this,

@@ -25,8 +25,6 @@
 
 package java.net;
 
-import jdk.internal.util.StaticProperty;
-
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
@@ -90,9 +88,6 @@ public class URLDecoder {
      */
     private URLDecoder() {}
 
-    // The default charset
-    private static final String DEFAULT_ENCODING_NAME = StaticProperty.fileEncoding();
-
     /**
      * Decodes a {@code x-www-form-urlencoded} string.
      * The default charset is used to determine what characters
@@ -106,16 +101,7 @@ public class URLDecoder {
      */
     @Deprecated
     public static String decode(String s) {
-
-        String str = null;
-
-        try {
-            str = decode(s, DEFAULT_ENCODING_NAME);
-        } catch (UnsupportedEncodingException e) {
-            // The system should always have the default charset
-        }
-
-        return str;
+        return decode(s, Charset.defaultCharset());
     }
 
     /**
