@@ -54,6 +54,7 @@ private:
   static void calculate_good_sizes(Entry* entries, size_t count);
   static void print_histogram(Entry* entries, size_t count, double cutoff = 0.0);
   static void print_records(Entry* entries, size_t count);
+  static void report_by_component(Entry* entries, size_t count);
   static void report_by_thread(Entry* entries, size_t count);
   static void print_summary(Entry* entries, size_t count);
   static void consolidate(Entry* entries, size_t count, size_t start = 0);

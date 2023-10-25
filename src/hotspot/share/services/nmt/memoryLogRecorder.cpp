@@ -40,6 +40,82 @@
 
 #ifdef ASSERT
 
+/*
+
+ This code collects malloc/realloc/free os requests (-XX:RecordNMTEntries=XXX) and has 2 purposes:
+
+ #1 Print all the entries captured in the log (-XX:+PrintRecordedNMTEntries),
+      which later can be "played back" to allow measuring the time using the exact memory
+      access pattern as the captured use case.
+      This can be used to compare NMT off vs NMT summary vs NMT detail speed performance.
+
+ #2 Calculate memory usage and memory overhead attributed to malloc and NMT.
+      This can be used to compare NMT off vs NMT summary vs NMT detail overhead memory.
+
+
+ Notes:
+
+ Imagine that we issue os::malloc(20) call. We will get back not just the 20 bytes that we asked for,
+      but instead a bigger chunk, depending on the particular OS (and its malloc implementation):
+
+ - Linux allocates   24 bytes   BBBBBBBB BBBBBBBB BBBBDDDD
+ - macOS allocates   32 bytes   BBBBBBBB BBBBBBBB BBBBDDDD DDDDDDDD
+ - Windows allocates ?? bytes
+
+ In this case the malloc overhead is:
+
+ - Linux malloc overhead is   ((24 - 20) / 20) == 20.0 % increase
+ - macOS malloc overhead is   ((32 - 20) / 20) == 60.0 % increase
+ - Windows malloc overhead is                        ? % increase
+
+
+ Now imagine that we issue os::malloc(20) call with NMT ON (either summary or detail mode). Since NMT
+      needs a header and a footer, this will add additional (16 + 2 == 18) bytes, so we end up asking
+      for (20 + 18 == 38) bytes, and after malloc rounding it up, we will get back:
+
+ - Linux allocates   40 bytes   AAAAAAAA AAAAAAAA BBBBBBBB BBBBBBBB BBBBCCDD
+ - macOS allocates   48 bytes   AAAAAAAA AAAAAAAA BBBBBBBB BBBBBBBB BBBBCCDD DDDDDDDD
+ - Windows allocates ?? bytes
+
+ In this case the malloc overhead is:
+
+ - Linux malloc overhead is   ((40 - 38) / 38) ==  5.3 % increase
+ - macOS malloc overhead is   ((48 - 38) / 38) == 26.3 % increase
+ - Windows malloc overhead is                        ? % increase
+
+ where:
+
+ - A NMT header
+ - B client chunk
+ - C NMT footer
+ - D malloc rounding
+
+ When calculating the NMT overhead, this code will compare the allocated sizes, i.e. the actual
+      acquired sizes, not requested sizes. In this case we would compare:
+
+ - Linux NMT overhead is   ((40 - 24) / 24) == 66.7 % increase
+ - macOS NMT overhead is   ((48 - 32) / 32) == 50.0 % increase
+ - Windows NMT overhead is                        ? % increase
+
+When estimating the NMT impact, from memory overhead point of view, we have a choice of either
+      comparing 2 different runs, i.e. NMT off vs NMT on, or we can do a single run with NMT on
+      and estimate the memory consumption without NMT, by substracting the NMT header (we can estimate
+      what the malloc would return by using _malloc_good_size()) and by substracting malloc's
+      flagged as NMT objects. The advantage is that the memory allocations can vary from
+      run to run, so normally we would be required to run each case (NMT off, NMT on) multiple
+      times, and we would have to compare the averages of those, which we can avoid here
+      and do all in a single run. The (small) disadvantage is that malloc on certain
+      platforms is free to return varying sizes even for the same requested size,
+      but we can statistically estimate what the average allocated size is for given requested size,
+      which is what we do here (see _malloc_good_size_stats())
+
+ To estimate NMT memory overhead, just a single run with NMT on (either summary or detail)
+      is needed, and the calculated NMT overhead will be compared to an estimated usage with NMT off
+      in that same run. Of course we will get a better estimate with an average accross multiple runs,
+      each one with NMT on.
+
+ */
+
 constexpr size_t _histogram_horizontal_space = 100;
 constexpr double _histogram_cutoff = 0.25;
 constexpr size_t _feedback_cutoff_count = 500000;
@@ -293,6 +369,45 @@ void NMT_MemoryLogRecorder::print_records(Entry* entries, size_t count) {
   for (size_t c=0; c<count; c++) {
     Entry* e = &entries[c];
     print_entry(e);
+  }
+}
+
+void NMT_MemoryLogRecorder::report_by_component(Entry* entries, size_t count) {
+  fprintf(stderr, "\n");
+  fprintf(stderr, "---------------------------------------------------------------------------\n");
+  fprintf(stderr, "         component name:     mallocs:   requested:   allocated:   overhead:\n");
+  fprintf(stderr, "                             (count)      (bytes)      (bytes)        (%%) \n");
+  fprintf(stderr, "---------------------------------------------------------------------------\n");
+  for (int i=0; i<mt_number_of_types; i++) {
+    size_t mallocs = 0;
+    size_t requested = 0;
+    size_t allocated = 0;
+    for (size_t c=0; c<count; c++) {
+      Entry* e = access_non_empty(entries, c);
+      if (e != nullptr) {
+        if (e->flags == NMTUtil::index_to_flag(i)) {
+          if (is_malloc(e)) {
+            mallocs++;
+            requested += e->requested;
+            allocated += e->actual;
+          } else {
+            print_entry(e);
+            assert(false, "HUH?");
+          }
+        }
+      }
+    }
+    double overhead = 0.0;
+    if (mallocs > 0) {
+      overhead = percent_diff(requested, allocated);
+    }
+    if (overhead > 10.0) {
+      fprintf(stderr, "%24s %12ld %12ld %12ld      %.3f\n",
+            NMTUtil::flag_to_name(NMTUtil::index_to_flag(i)), mallocs, requested, allocated, overhead);
+    } else {
+      fprintf(stderr, "%24s %12ld %12ld %12ld       %.3f\n",
+            NMTUtil::flag_to_name(NMTUtil::index_to_flag(i)), mallocs, requested, allocated, overhead);
+    }
   }
 }
 
@@ -633,9 +748,11 @@ void NMT_MemoryLogRecorder::print_summary(Entry* entries, size_t count) {
             overhead_ratio_actual_no_NMT,
             (count_Objects - count_NMTObjects));
 
-    double diff = percent_diff(total_actual_no_NMT, total_actual);
     fprintf(stderr, "\n");
-    fprintf(stderr, "NMT overhead (current actual memory allocated): %12.3f%%\n", diff);
+    fprintf(stderr, "NMT overhead (current actual memory allocated) increase : %2.3f%%\n",
+            percent_diff(total_actual_no_NMT, total_actual));
+    //fprintf(stderr, "NMT overhead (current actual memory allocated) ratio    : %2.3f%%\n",
+    //        ratio(total_actual, total_actual_no_NMT));
   }
 
 #if 0
@@ -654,6 +771,10 @@ void NMT_MemoryLogRecorder::print_summary(Entry* entries, size_t count) {
   fprintf(stderr, "#mallocs + #reallocs + #frees: %ld counts\n",
           (count_mallocs + count_reallocs + count_frees));
 #endif
+
+//  fprintf(stderr, "MemTracker::overhead_per_malloc(): %zu\n\n", MemTracker::overhead_per_malloc());
+//  fprintf(stderr, "malloc_size(malloc(20)): %zu\n\n", malloc_size(malloc(20)));
+//  fprintf(stderr, "malloc_size(malloc(20+18)): %zu\n\n", malloc_size(malloc(20+18)));
 }
 
 void NMT_MemoryLogRecorder::dump(Entry* entries, size_t count) {
@@ -681,6 +802,11 @@ void NMT_MemoryLogRecorder::dump(Entry* entries, size_t count) {
   fprintf(stderr, "\n");
   consolidate(entries, count);
   fprintf(stderr, "\n");
+
+  fprintf(stderr, "\n\n");
+  fprintf(stderr, "#############################################\n");
+  fprintf(stderr, "Processing memory usage by NMT components ...\n");
+  report_by_component(entries, count);
 
   fprintf(stderr, "\n\n");
   fprintf(stderr, "#########################\n");
@@ -738,7 +864,7 @@ void NMT_MemoryLogRecorder::log(MEMFLAGS flags, size_t requested, address ptr, a
           dump(_entries, count);
           free((void*)_entries);
           _entries = nullptr;
-          exit(0);
+          //exit(0);
         }
       }
     }
@@ -769,32 +895,6 @@ void NMT_MemoryLogRecorder::log(MEMFLAGS flags, size_t requested, address ptr, a
       for (int i=0; i<NMT_TrackingStackDepth; i++) {
         _entry->stack[i] = stack->get_frame(i);
       }
-    }
-    if (_entry->requested > 0) {
-//#if defined(LINUX)
-//     size_t good_size = _malloc_good_size_native(_entry->requested);
-//     if (_entry->actual != good_size) {
-//       fprintf(stderr, ">>> %zu != %zu:%zu\n", _entry->actual, good_size, _entry->requested);
-//     }
-//     // assert(_entry->actual == good_size, "%zu != _malloc_good_size_native(%zu):%zu",
-//     //        _entry->actual, _entry->requested, good_size);
-//#endif
-#if defined(WINDOWS)
-      //???
-#endif
-#if defined(__APPLE__)
-      size_t good_size = _malloc_good_size_native(_entry->requested);
-      assert(_entry->actual == good_size, "%zu != malloc_good_size(%zu):%zu",
-             _entry->actual, _entry->requested, good_size);
-#endif
-    } else {
-//#if 0
-//      for (size_t i=0; i<_entry->actual; i++)
-//      {
-//        u_char *b = (u_char*)&_entry->ptr[i];
-//        *b = 0x00;
-//      }
-//#endif
     }
   }
 }

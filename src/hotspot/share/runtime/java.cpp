@@ -330,6 +330,9 @@ void print_statistics() {
   if (PrintNMTStatistics) {
     MemTracker::final_report(tty);
   }
+#ifdef ASSERT
+  NMT_MemoryLogRecorder::log();
+#endif
 
   if (PrintMetaspaceStatisticsAtExit) {
     MetaspaceUtils::print_basic_report(tty, 0);
@@ -378,6 +381,9 @@ void print_statistics() {
   if (PrintNMTStatistics) {
     MemTracker::final_report(tty);
   }
+#ifdef ASSERT
+  NMT_MemoryLogRecorder::log();
+#endif
 
   if (PrintMetaspaceStatisticsAtExit) {
     MetaspaceUtils::print_basic_report(tty, 0);
@@ -588,9 +594,6 @@ void vm_exit(int code) {
 void notify_vm_shutdown() {
   // For now, just a dtrace probe.
   HOTSPOT_VM_SHUTDOWN();
-#ifdef ASSERT
-  NMT_MemoryLogRecorder::log();
-#endif
 }
 
 void vm_direct_exit(int code) {

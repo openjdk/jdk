@@ -59,6 +59,7 @@
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/memTracker.hpp"
+#include "services/nmt/memoryLogRecorder.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
@@ -1830,6 +1831,9 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     fdStream fds(fd_out);
     MemTracker::final_report(&fds);
   }
+#ifdef ASSERT
+  NMT_MemoryLogRecorder::log();
+#endif
 
   static bool skip_replay = ReplayCompiles && !ReplayReduce; // Do not overwrite file during replay
   if (DumpReplayDataOnError && _thread && _thread->is_Compiler_thread() && !skip_replay) {
