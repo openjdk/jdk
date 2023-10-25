@@ -25,8 +25,6 @@
 
 package java.security;
 
-import java.security.spec.AlgorithmParameterSpec;
-
 /**
  * A private key.
  * The purpose of this interface is to group (and provide type safety
@@ -59,7 +57,7 @@ import java.security.spec.AlgorithmParameterSpec;
  * @since 1.1
  */
 
-public interface PrivateKey extends Key, javax.security.auth.Destroyable {
+public non-sealed interface PrivateKey extends AsymmetricKey, javax.security.auth.Destroyable {
 
     // Declare serialVersionUID to be compatible with JDK1.1
     /**
@@ -73,20 +71,4 @@ public interface PrivateKey extends Key, javax.security.auth.Destroyable {
     @SuppressWarnings("serial")
     @java.io.Serial
     long serialVersionUID = 6034044314589513430L;
-
-    /**
-     * Returns the parameters associated with this key.
-     * The parameters are optional and may be either
-     * explicitly specified or implicitly created during
-     * key pair generation.
-     *
-     * @implSpec
-     * The default implementation returns {@code null}.
-     *
-     * @return the associated parameters, may be {@code null}
-     * @since 22
-     */
-    default AlgorithmParameterSpec getParams() {
-        return null;
-    }
 }

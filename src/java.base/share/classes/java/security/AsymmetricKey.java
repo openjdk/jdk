@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,36 +25,29 @@
 
 package java.security;
 
+import java.security.spec.AlgorithmParameterSpec;
+
 /**
- * <p>A public key. This interface contains no methods or constants.
- * It merely serves to group (and provide type safety for) all public key
- * interfaces.
+ * An asymmetric key, which can be either a public key or a private key.
+ * This interface contains methods that are common to either a public key or
+ * a private key.
  *
- * Note: The specialized public key interfaces extend this interface.
- * See, for example, the DSAPublicKey interface in
- * {@code java.security.interfaces}.
- *
- * @since 1.1
- * @see Key
- * @see PrivateKey
- * @see java.security.cert.Certificate
- * @see Signature#initVerify
- * @see java.security.interfaces.DSAPublicKey
- * @see java.security.interfaces.RSAPublicKey
- *
+ * @since 22
  */
 
-public non-sealed interface PublicKey extends AsymmetricKey {
-    // Declare serialVersionUID to be compatible with JDK1.1
+public sealed interface AsymmetricKey extends Key permits PrivateKey, PublicKey {
     /**
-     * The class fingerprint that is set to indicate serialization
-     * compatibility with a previous version of the class.
+     * Returns the parameters associated with this key.
+     * The parameters are optional and may be either
+     * explicitly specified or implicitly created during
+     * key pair generation.
      *
-     * @deprecated A {@code serialVersionUID} field in an interface is
-     * ineffectual. Do not use; no replacement.
+     * @implSpec
+     * The default implementation returns {@code null}.
+     *
+     * @return the associated parameters, may be {@code null}
      */
-    @Deprecated
-    @SuppressWarnings("serial")
-    @java.io.Serial
-    long serialVersionUID = 7187392471159151072L;
+    default AlgorithmParameterSpec getParams() {
+        return null;
+    }
 }
