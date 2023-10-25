@@ -7506,6 +7506,52 @@ instruct roundD_reg(fRegD dst, fRegD src, immI rmode, iRegLNoSp tmp1, iRegLNoSp 
   ins_pipe(pipe_class_default);
 %}
 
+// Copysign and signum intrinsics
+
+instruct copySignD_reg(fRegD dst, fRegD src1, fRegD src2, immD zero) %{
+  match(Set dst (CopySignD src1 (Binary src2 zero)));
+  format %{ "CopySignD  $dst $src1 $src2" %}
+  ins_encode %{
+    FloatRegister dst = as_FloatRegister($dst$$reg),
+                  src1 = as_FloatRegister($src1$$reg),
+                  src2 = as_FloatRegister($src2$$reg);
+    __ fsgnj_d(dst, src1, src2);
+  %}
+  ins_pipe(fp_dop_reg_reg_d);
+%}
+
+instruct copySignF_reg(fRegF dst, fRegF src1, fRegF src2) %{
+  match(Set dst (CopySignF src1 src2));
+  format %{ "CopySignF  $dst $src1 $src2" %}
+  ins_encode %{
+    FloatRegister dst = as_FloatRegister($dst$$reg),
+                  src1 = as_FloatRegister($src1$$reg),
+                  src2 = as_FloatRegister($src2$$reg);
+    __ fsgnj_s(dst, src1, src2);
+  %}
+  ins_pipe(fp_dop_reg_reg_s);
+%}
+
+instruct signumD_reg(fRegD dst, fRegD src, immD zero, fRegD one) %{
+  match(Set dst (SignumD src (Binary zero one)));
+  format %{ "signumD  $dst, $src" %}
+  ins_encode %{
+    __ signum_fp(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                 as_FloatRegister($one$$reg), true /* is_double */);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct signumF_reg(fRegF dst, fRegF src, immF zero, fRegF one) %{
+  match(Set dst (SignumF src (Binary zero one)));
+  format %{ "signumF  $dst, $src" %}
+  ins_encode %{
+    __ signum_fp(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                 as_FloatRegister($one$$reg), false /* is_double */);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 // Arithmetic Instructions End
 
 // ============================================================================
@@ -8589,6 +8635,42 @@ instruct cmpL3_reg_reg(iRegINoSp dst, iRegL op1, iRegL op2)
   %}
   ins_encode %{
     __ cmp_l2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ mv(as_Register($dst$$reg), t0);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmpUL3_reg_reg(iRegINoSp dst, iRegL op1, iRegL op2)
+%{
+  match(Set dst (CmpUL3 op1 op2));
+
+  ins_cost(ALU_COST * 3 + BRANCH_COST);
+  format %{ "sltu  $dst, $op2, $op1\t#@cmpUL3_reg_reg\n\t"
+            "bnez  $dst, done\n\t"
+            "sltu  $dst, $op1, $op2\n\t"
+            "neg   $dst, $dst\t#@cmpUL3_reg_reg"
+  %}
+  ins_encode %{
+    __ cmp_ul2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ mv(as_Register($dst$$reg), t0);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmpU3_reg_reg(iRegINoSp dst, iRegI op1, iRegI op2)
+%{
+  match(Set dst (CmpU3 op1 op2));
+
+  ins_cost(ALU_COST * 3 + BRANCH_COST);
+  format %{ "sltu  $dst, $op2, $op1\t#@cmpU3_reg_reg\n\t"
+            "bnez  $dst, done\n\t"
+            "sltu  $dst, $op1, $op2\n\t"
+            "neg   $dst, $dst\t#@cmpU3_reg_reg"
+  %}
+  ins_encode %{
+    __ cmp_uw2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
     __ mv(as_Register($dst$$reg), t0);
   %}
 

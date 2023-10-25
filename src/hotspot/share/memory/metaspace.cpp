@@ -404,12 +404,11 @@ size_t MetaspaceGC::allowed_expansion() {
   size_t committed_bytes = MetaspaceUtils::committed_bytes();
   size_t capacity_until_gc = capacity_until_GC();
 
-  assert(capacity_until_gc >= committed_bytes,
-         "capacity_until_gc: " SIZE_FORMAT " < committed_bytes: " SIZE_FORMAT,
-         capacity_until_gc, committed_bytes);
-
   size_t left_until_max  = MaxMetaspaceSize - committed_bytes;
-  size_t left_until_GC = capacity_until_gc - committed_bytes;
+  // capacity_until_GC may have been decreased concurrently and may
+  // temporarily be lower than what metaspace has committed. Allow for that.
+  size_t left_until_GC = capacity_until_gc > committed_bytes ?
+      capacity_until_gc - committed_bytes : 0;
   size_t left_to_commit = MIN2(left_until_GC, left_until_max);
   log_trace(gc, metaspace, freelist)("allowed expansion words: " SIZE_FORMAT
             " (left_until_max: " SIZE_FORMAT ", left_until_GC: " SIZE_FORMAT ".",
@@ -779,6 +778,11 @@ void Metaspace::global_initialize() {
       if (rs.is_reserved()) {
         log_info(metaspace)("Successfully forced class space address to " PTR_FORMAT, p2i(base));
       } else {
+        LogTarget(Debug, metaspace) lt;
+        if (lt.is_enabled()) {
+          LogStream ls(lt);
+          os::print_memory_mappings((char*)base, size, &ls);
+        }
         vm_exit_during_initialization(
             err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given, but reserving class space failed.",
                 CompressedClassSpaceBaseAddress));

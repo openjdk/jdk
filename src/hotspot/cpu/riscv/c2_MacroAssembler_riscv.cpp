@@ -1653,6 +1653,38 @@ void C2_MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, 
   bind(done);
 }
 
+// According to Java SE specification, for floating-point signum operations, if
+// on input we have NaN or +/-0.0 value we should return it,
+// otherwise return +/- 1.0 using sign of input.
+// one - gives us a floating-point 1.0 (got from matching rule)
+// bool is_double - specifies single or double precision operations will be used.
+void C2_MacroAssembler::signum_fp(FloatRegister dst, FloatRegister src, FloatRegister one, bool is_double) {
+  Register tmp1 = t0;
+
+  Label done;
+
+  is_double ? fclass_d(tmp1, src)
+            : fclass_s(tmp1, src);
+
+  is_double ? fmv_d(dst, src)
+            : fmv_s(dst, src);
+
+  //bitmask 0b1100011000 specifies this bits:
+  // 3 - src is -0
+  // 4 - src is +0
+  // 8 - src is signaling NaN
+  // 9 - src is a quiet NaN
+  andi(tmp1, tmp1, 0b1100011000);
+
+  bnez(tmp1, done);
+
+  // use floating-point 1.0 with a sign of input
+  is_double ? fsgnj_d(dst, one, src)
+            : fsgnj_s(dst, one, src);
+
+  bind(done);
+}
+
 void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,
                                         VectorRegister vr1, VectorRegister vr2, VectorRegister vrs, bool islatin, Label &DONE) {
   Label loop;
