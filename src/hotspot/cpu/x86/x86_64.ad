@@ -5525,7 +5525,7 @@ instruct storeSSI(stackSlotI dst, rRegI src)
   ins_cost(100);
   format %{ "movl    $dst, $src\t# int stk" %}
   ins_encode %{
-    __ movl ($dst$$Address, $src$$Register);
+    __ movl $dst$$Address, $src$$Register);
   %}
   ins_pipe( ialu_mem_reg );
 %}
