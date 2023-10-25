@@ -187,7 +187,7 @@ int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
   bool may_enter = bs_nm->nmethod_entry_barrier(nm);
 
   // In case a concurrent thread disarmed the nmethod, we need to ensure the new instructions
-  // are made visible using a cross modify fence. Note that this is synchronous cross modifying
+  // are made visible, by using a cross modify fence. Note that this is synchronous cross modifying
   // code, where the existence of new instructions is communicated via data (the guard value).
   // This cross modify fence is only needed when the nmethod entry barrier modifies the
   // instructions. Not all platforms currently do that, so if this check becomes expensive,
