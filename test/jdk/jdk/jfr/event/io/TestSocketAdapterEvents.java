@@ -28,6 +28,8 @@ import static jdk.test.lib.Asserts.assertEquals;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
@@ -65,19 +67,22 @@ public class TestSocketAdapterEvents {
 
     public void test() throws Throwable {
         try (Recording recording = new Recording()) {
-            try (ServerSocketChannel ss = ServerSocketChannel.open()) {
+            try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
                 recording.enable(IOEvent.EVENT_SOCKET_READ).withThreshold(Duration.ofMillis(0));
                 recording.enable(IOEvent.EVENT_SOCKET_WRITE).withThreshold(Duration.ofMillis(0));
                 recording.start();
 
-                ss.socket().setReuseAddress(true);
-                ss.socket().bind(null);
+                ssc.socket().setReuseAddress(true);
+                InetAddress lb = InetAddress.getLoopbackAddress();
+                ssc.bind(new InetSocketAddress(lb, 0));
 
                 TestThread readerThread = new TestThread(new XRun() {
                     @Override
                     public void xrun() throws IOException {
                         byte[] bs = new byte[4];
-                        try (SocketChannel sc = ss.accept(); Socket s = sc.socket(); InputStream is = s.getInputStream()) {
+                        try (SocketChannel sc = ssc.accept(); Socket s = sc.socket();
+                             InputStream is = s.getInputStream()) {
+
                             int readInt = is.read();
                             assertEquals(readInt, writeInt, "Wrong readInt");
                             addExpectedEvent(IOEvent.createSocketReadEvent(1, s));
@@ -100,7 +105,9 @@ public class TestSocketAdapterEvents {
                 });
                 readerThread.start();
 
-                try (SocketChannel sc = SocketChannel.open(ss.socket().getLocalSocketAddress()); Socket s = sc.socket(); OutputStream os = s.getOutputStream()) {
+                try (SocketChannel sc = SocketChannel.open(ssc.getLocalAddress());
+                     Socket s = sc.socket(); OutputStream os = s.getOutputStream()) {
+
                     os.write(writeInt);
                     addExpectedEvent(IOEvent.createSocketWriteEvent(1, s));
                     os.write(writeBuf, 0, 3);

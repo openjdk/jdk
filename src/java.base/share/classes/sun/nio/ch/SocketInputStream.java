@@ -62,8 +62,7 @@ class SocketInputStream extends InputStream {
         return (n > 0) ? (a[0] & 0xff) : -1;
     }
 
-    private int implRead(byte[] b, int off, int len) throws IOException {
-        int timeout = timeoutSupplier.getAsInt();
+    private int implRead(byte[] b, int off, int len, int timeout) throws IOException {
         if (timeout > 0) {
             long nanos = MILLISECONDS.toNanos(timeout);
             return sc.blockingRead(b, off, len, nanos);
@@ -74,12 +73,13 @@ class SocketInputStream extends InputStream {
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
+        int timeout = timeoutSupplier.getAsInt();
         if (!SocketReadEvent.enabled()) {
-            return implRead(b, off, len);
+            return implRead(b, off, len, timeout);
         }
         long start = SocketReadEvent.timestamp();
-        int n = implRead(b, off, len);
-        SocketReadEvent.offer(start, n, sc.remoteAddress(), timeoutSupplier.getAsInt());
+        int n = implRead(b, off, len, timeout);
+        SocketReadEvent.offer(start, n, sc.remoteAddress(), timeout);
         return n;
     }
 
