@@ -3271,7 +3271,7 @@ TypeInterfaces::TypeInterfaces(GrowableArray<ciInstanceKlass*>* interfaces)
 }
 
 const TypeInterfaces* TypeInterfaces::make(GrowableArray<ciInstanceKlass*>* interfaces) {
-  TypeInterfaces* result = interfaces == nullptr ? new TypeInterfaces() : new TypeInterfaces(interfaces);
+  TypeInterfaces* result = (interfaces == nullptr) ? new TypeInterfaces() : new TypeInterfaces(interfaces);
   return (const TypeInterfaces*)result->hashcons();
 }
 
