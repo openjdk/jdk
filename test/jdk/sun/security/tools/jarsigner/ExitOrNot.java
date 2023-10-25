@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,42 +21,32 @@
  * questions.
  */
 
-package compiler.c2.irTests;
-
-import compiler.lib.ir_framework.*;
-
 /*
  * @test
- * bug 8290529
- * @summary verify that x <u 1 is transformed to x == 0
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="riscv64"
- * @library /test/lib /
- * @requires vm.compiler2.enabled
- * @run driver compiler.c2.irTests.CmpUWithZero
+ * @bug 8316964
+ * @summary check exit code in jarsigner and keytool
+ * @library /test/lib
+ * @modules java.base/sun.security.tools.keytool
+ *          jdk.jartool/sun.security.tools.jarsigner
  */
 
-public class CmpUWithZero {
-    static volatile boolean field;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.SecurityTools;
 
-    public static void main(String[] args) {
-        TestFramework.run();
+public class ExitOrNot {
+    public static void main(String[] args) throws Exception {
+
+        // launching the tool still exits
+        SecurityTools.jarsigner("1 2 3")
+                .shouldHaveExitValue(1);
+        SecurityTools.keytool("-x")
+                .shouldHaveExitValue(1);
+
+        // calling the run() methods no longer
+        Asserts.assertEQ(new sun.security.tools.jarsigner.Main()
+                    .run("1 2 3".split(" ")), 1);
+
+        Asserts.assertEQ(new sun.security.tools.keytool.Main()
+                    .run("-x".split(" "), System.out), 1);
     }
-
-    @Test
-    @IR(counts = { IRNode.CMP_I, "1" })
-    @IR(failOn = { IRNode.CMP_U})
-    public static void test(int x) {
-        if (Integer.compareUnsigned(x, 1) < 0) {
-            field = true;
-        } else {
-            field = false;
-        }
-    }
-
-    @Run(test = "test")
-    private void testRunner() {
-        test(0);
-        test(42);
-    }
-
 }
