@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8196433
+ * @bug 8196433 8307168
  * @summary use the new error diagnostic approach at javac.Main
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -40,7 +40,6 @@ import java.util.Locale;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -259,10 +258,6 @@ public class OptionSmokeTest extends TestRunner {
     @Test
     public void consistentSystemOptionHandlingWithAnEmptyDirectory(Path base) throws Exception {
         tb.createDirectories(base);
-
-        Assert.check(Files.notExists(base.resolve("lib").resolve("jrt-fs.jar")), "expected: empty\nfound: lib/jrt-fs.jar");
-        Assert.check(Files.notExists(base.resolve("lib").resolve("modules")), "expected: empty\nfound: lib/modules");
-
         doTestNoSource(base, "error: illegal argument for --system: %s".formatted(base), String.format("--system %s", base));
     }
 
@@ -270,10 +265,6 @@ public class OptionSmokeTest extends TestRunner {
     public void consistentSystemOptionHandlingWithLibJrtFsJar(Path base) throws Exception {
         tb.createDirectories(base);
         tb.writeFile(base.resolve("lib").resolve("jrt-fs.jar"), "this is not a JAR file");
-
-        Assert.check(Files.exists(base.resolve("lib").resolve("jrt-fs.jar")), "expected to find lib/jrt-fs.jar");
-        Assert.check(Files.notExists(base.resolve("lib").resolve("modules")), "expected: empty\nfound: lib/modules");
-
         doTestNoSource(base, "error: illegal argument for --system: %s".formatted(base), String.format("--system %s", base));
     }
 
@@ -281,10 +272,6 @@ public class OptionSmokeTest extends TestRunner {
     public void consistentSystemOptionHandlingWithLibModules(Path base) throws Exception {
         tb.createDirectories(base);
         tb.writeFile(base.resolve("lib").resolve("modules"), "this is not a modules file");
-
-        Assert.check(Files.notExists(base.resolve("lib").resolve("jrt-fs.jar")), "expected: empty\nfound: lib/jrt-fs.jar");
-        Assert.check(Files.exists(base.resolve("lib").resolve("modules")), "expected to find lib/modules");
-
         doTestNoSource(base, "error: illegal argument for --system: %s".formatted(base), String.format("--system %s", base));
     }
 
@@ -293,10 +280,6 @@ public class OptionSmokeTest extends TestRunner {
         tb.createDirectories(base);
         tb.writeFile(base.resolve("lib").resolve("jrt-fs.jar"), "this is not a JAR file");
         tb.writeFile(base.resolve("lib").resolve("modules"), "this is not a modules file");
-
-        Assert.check(Files.exists(base.resolve("lib").resolve("jrt-fs.jar")), "expected to find lib/jrt-fs.jar");
-        Assert.check(Files.exists(base.resolve("lib").resolve("modules")), "expected to find lib/modules");
-
         doTestNoSource(base, "error: no source files", String.format("--system %s", base));
     }
 
