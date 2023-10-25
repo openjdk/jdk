@@ -77,6 +77,7 @@ public class TestPinnedOldObjectsEvacuation {
                                                                   "-Xbootclasspath/a:.",
                                                                   "-Xmx32M",
                                                                   "-Xmn16M",
+                                                                  "-XX:MarkSweepDeadRatio=0",
                                                                   "-XX:G1NumCollectionsKeepUnreclaimable=3",
                                                                   "-XX:+UnlockExperimentalVMOptions",
                                                                   // We only want the one region containing the pinned object to be part of the collection set.
@@ -124,7 +125,8 @@ class TestObjectPin {
 
         long address = pinAndGetAddress(o);
 
-        // Move pinned object into old gen. That region containing it should be almost completely empty too.
+        // Move pinned object into old gen. That region containing it should be almost completely empty,
+        // so it will be picked up as collection set candidate.
         wb.fullGC();
         Asserts.assertTrue(wb.isObjectInOldGen(o), "Pinned object not in old gen after young GC");
 
