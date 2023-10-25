@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -753,7 +753,9 @@ invoker_completeInvokeRequest(jthread thread)
         }
         id = request->id;
         exc = request->exception;
+        request->exception = NULL;
         returnValue = request->returnValue;
+        request->returnValue.l = NULL;
 
         /* Release return value and exception references, but delay the release
          * until after the return packet was sent. */
@@ -796,23 +798,20 @@ invoker_completeInvokeRequest(jthread thread)
         (void)outStream_writeObjectTag(env, &out, exc);
         (void)outStream_writeObjectRef(env, &out, exc);
         outStream_sendReply(&out);
+        /*
+         * Delete potentially saved global references for return value
+         * and exception. This must be done before sending the reply or
+         * these objects will briefly be viewable by the debugger as live
+         * when they shouldn't be.
+         */
+        if (mustReleaseReturnValue && returnValue.l != NULL) {
+            tossGlobalRef(env, &returnValue.l);
+        }
+        if (exc != NULL) {
+            tossGlobalRef(env, &exc);
+        }
         outStream_destroy(&out);
     }
-
-    /*
-     * Delete potentially saved global references of return value
-     * and exception
-     */
-    eventHandler_lock(); // for proper lock order
-    debugMonitorEnter(invokerLock);
-    if (mustReleaseReturnValue && returnValue.l != NULL) {
-        tossGlobalRef(env, &returnValue.l);
-    }
-    if (exc != NULL) {
-        tossGlobalRef(env, &exc);
-    }
-    debugMonitorExit(invokerLock);
-    eventHandler_unlock();
 }
 
 jboolean
