@@ -758,10 +758,11 @@ UpcallStub* UpcallStub::create(const char* name, CodeBuffer* cb, jobject receive
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = new (size) UpcallStub(name, cb, size, receiver, frame_data_offset);
-    if (blob == nullptr) {
-      fatal("UpcallStub allocation failed. CodeCache is too small");
-    }
   }
+  if (blob == nullptr) {
+    fatal("UpcallStub allocation failed. CodeCache is too small");
+  }
+
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
 
