@@ -61,7 +61,7 @@ ifeq ($(call isTargetOs, windows), true)
       $(eval $(call SetupCopyFiles, COPY_GTEST_PDB_$v, \
           SRC := $(HOTSPOT_OUTPUTDIR)/variant-$v/libjvm/gtest, \
           DEST := $(TEST_IMAGE_DIR)/hotspot/gtest/$v, \
-          FILES := jvm.pdb gtestLauncher.pdb, \
+          FILES := jvm.dll.pdb gtestLauncher.exe.pdb, \
       )) \
       $(eval TARGETS += $$(COPY_GTEST_PDB_$v)) \
     ) \
