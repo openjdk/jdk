@@ -5053,7 +5053,7 @@ instruct loadSSL(rRegL dst, stackSlotL src)
   ins_cost(125);
   format %{ "movq    $dst, $src\t# long stk" %}
   ins_encode %{
-    __ movq ($dst$$Register, $src$$Address);
+    __ movq($dst$$Register, $src$$Address);
   %}
   ins_pipe(ialu_reg_mem);
 %}
