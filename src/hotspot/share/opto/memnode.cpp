@@ -2797,8 +2797,8 @@ Node* StoreNode::Ideal_merge_stores(PhaseGVN* phase) {
   if (in(MemNode::ValueIn)->Opcode() == Op_ConI) {
     // Collect all constants
     jlong con = 0;
-    int bits_per_store = memory_size() * 8;
-    jlong mask = (1L << bits_per_store) - 1;
+    jlong bits_per_store = memory_size() * 8;
+    jlong mask = (((jlong)1) << bits_per_store) - 1;
     for (int i = 0; i < pow2size; i++) {
       jlong con_i = merge_list.at(i)->in(MemNode::ValueIn)->get_int();
       con = con << bits_per_store;
