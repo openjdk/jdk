@@ -443,7 +443,9 @@ public class TestMergeStores {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIfPlatformAnd = {"64-bit", "true", "linux", "true"})
+    // unaligned load only has the class info on some platforms, hence the platform restriction
     static Object[] test2b(byte[] a, int offset, long v) {
         UNSAFE.putLongUnaligned(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset, v);
         return new Object[]{ a };
