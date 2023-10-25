@@ -91,6 +91,7 @@ public class Navigation {
         OVERVIEW,
         PACKAGE,
         PREVIEW,
+        RESTRICTED,
         SERIALIZED_FORM,
         SEARCH,
         SYSTEM_PROPERTIES,
@@ -316,6 +317,7 @@ public class Navigation {
             case ALL_PACKAGES:
             case CONSTANT_VALUES:
             case EXTERNAL_SPECS:
+            case RESTRICTED:
             case SERIALIZED_FORM:
             case SEARCH:
             case SYSTEM_PROPERTIES:

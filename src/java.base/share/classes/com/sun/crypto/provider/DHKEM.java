@@ -353,9 +353,9 @@ public class DHKEM implements KEMSpi {
             }
         } else if (k instanceof XECKey xkey
                 && xkey.getParams() instanceof NamedParameterSpec ns) {
-            if (ns.getName().equals("X25519")) {
+            if (ns.getName().equalsIgnoreCase("X25519")) {
                 return Params.X25519;
-            } else if (ns.getName().equals("X448")) {
+            } else if (ns.getName().equalsIgnoreCase("X448")) {
                 return Params.X448;
             }
         }

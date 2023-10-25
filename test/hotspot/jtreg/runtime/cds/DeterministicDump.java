@@ -79,6 +79,7 @@ public class DeterministicDump {
         String archiveName = logName + ".jsa";
         String mapName = logName + ".map";
         CDSOptions opts = (new CDSOptions())
+            .addPrefix("-Xint") // Override any -Xmixed/-Xcomp flags from jtreg -vmoptions
             .addPrefix("-Xlog:cds=debug")
             .addPrefix("-Xlog:cds+map*=trace:file=" + mapName + ":none:filesize=0")
             .setArchiveName(archiveName)
