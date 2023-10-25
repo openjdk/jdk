@@ -31,7 +31,10 @@
 #include "opto/rootnode.hpp"
 #include "opto/vectorization.hpp"
 
+#ifndef PRODUCT
 uintx Vectorizer::_vector_loop_debug = 0;
+int VPointer::Tracer::_depth = 0;
+#endif
 
 Vectorizer::Vectorizer(PhaseIdealLoop* phase) :
   _phase(phase),
@@ -176,10 +179,6 @@ void Vectorizer::print_body_nodes() {
   }
 #endif
 }
-
-#ifndef PRODUCT
-int VPointer::Tracer::_depth = 0;
-#endif
 
 VPointer::VPointer(MemNode* mem, PhaseIdealLoop* phase, IdealLoopTree* lpt,
                    Node_Stack* nstack, bool analyze_only) :

@@ -1029,7 +1029,7 @@ void SuperWord::dependence_graph() {
 
   // First, assign a dependence node to each memory node
   for (int i = 0; i < _body_nodes.length(); i++ ) {
-    Node *n = _body_nodes.at(i);
+    Node* n = _body_nodes.at(i);
     if (n->is_Mem() || n->is_memory_phi()) {
       _dg.make_node(n);
     }
@@ -3537,9 +3537,9 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   int v_align  = vw / elt_size;
   assert(v_align > 1, "sanity");
   int offset   = align_to_ref_p.offset_in_bytes() / elt_size;
-  Node *offsn  = igvn()->intcon(offset);
+  Node* offsn  = igvn()->intcon(offset);
 
-  Node *e = offsn;
+  Node* e = offsn;
   if (align_to_ref_p.invar() != nullptr) {
     // incorporate any extra invariant piece producing (offset +/- invar) >>> log2(elt)
     Node* log2_elt = igvn()->intcon(exact_log2(elt_size));
