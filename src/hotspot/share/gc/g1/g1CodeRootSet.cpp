@@ -143,25 +143,11 @@ public:
   }
 
   void clear() {
-    size_t num_entries = Atomic::load(&_num_entries);
-    if (num_entries != 0) {
-      auto always_true =
-        [] (nmethod** value) {
-          return true;
-      };
-
-      size_t num_deleted = 0;
-      auto do_delete =
-        [&] (nmethod** value) {
-          num_deleted++;
-      };
-
-      bool succeeded = _table.try_bulk_delete(Thread::current(), always_true, do_delete);
-      guarantee(succeeded, "unable to clean table");
-      assert(num_entries == num_deleted, "must empty the table");
-      Atomic::store(&_num_entries, (size_t)0);
-    }
-    _table.unsafe_reset();
+    // Remove all entries.
+    auto always_true = [] (nmethod** value) {
+                         return true;
+                       };
+    clean(always_true);
   }
 
   void iterate_at_safepoint(CodeBlobClosure* blk) {
