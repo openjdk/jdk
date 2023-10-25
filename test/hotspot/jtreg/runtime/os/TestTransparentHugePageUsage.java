@@ -24,7 +24,7 @@
 /**
  * @test TestTransparentHugePageUsage
  * @bug 8315923
- * @requires vm.gc.Parallel & os.family == "linux" & os.maxMemory > 30G
+ * @requires vm.gc.Parallel & os.family == "linux" & os.maxMemory > 2G
  * @summary Check if the usage of THP is zero when enabled.
  * @comment The test is not ParallelGC-specific, but a multi-threaded GC is
  *          required. So ParallelGC is used here.
@@ -32,7 +32,7 @@
  * @run main/othervm -XX:+UseTransparentHugePages
  *                   -XX:+UseParallelGC -XX:ParallelGCThreads=${os.processors}
  *                   -Xlog:startuptime,pagesize,gc+heap=debug
- *                   -Xms24G -Xmx24G -XX:+AlwaysPreTouch
+ *                   -Xms1G -Xmx1G -XX:+AlwaysPreTouch
  *                   runtime.os.TestTransparentHugePageUsage
  */
 
@@ -46,6 +46,34 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class TestTransparentHugePageUsage {
+  private static boolean foundHeapFrom(BufferedReader reader) throws Exception {
+    String line = null;
+    // Read the size. It is given right after the start of the mapping.
+    Pattern size = Pattern.compile("^Size:\\s+(\\d+)\\skB");
+    if ((line = reader.readLine()) != null) {
+      Matcher matcher = size.matcher(line);
+      // Found the heap based on its size.
+      if (matcher.matches() &&
+          Integer.valueOf(line.substring(matcher.start(1), matcher.end(1))) >= 1 * 1024 * 1024) {
+        Pattern thpUsage = Pattern.compile("^AnonHugePages:\\s+(\\d+)\\skB");
+        while ((line = reader.readLine()) != null) {
+          matcher = thpUsage.matcher(line);
+          if (matcher.matches()) {
+            if (Integer.valueOf(line.substring(matcher.start(1), matcher.end(1))) == 0) {
+              // Trigger failure when the usage is 0. This does not cover
+              // all cases considered to be failures, but we can just say
+              // the non-usage of THP failes for sure.
+              throw new RuntimeException("The usage of THP should not be zero.");
+            }
+            break;
+          }
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
   public static void main(String[] args) throws Exception {
     HotSpotDiagnosticMXBean mxBean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
     // Ensure THP is not disabled by OS.
@@ -57,27 +85,7 @@ public class TestTransparentHugePageUsage {
       String line = null;
       while ((line = reader.readLine()) != null) {
         if (mapping.matcher(line).matches()) {
-          // Read the size. It is given right after the start of the mapping.
-          Pattern size = Pattern.compile("^Size:\\s+(\\d+)\\skB");
-          if ((line = reader.readLine()) != null) {
-            Matcher matcher = size.matcher(line);
-            if (matcher.matches() &&
-                Integer.valueOf(line.substring(matcher.start(1), matcher.end(1))) >= 24 * 1024 * 1024) {
-              Pattern thpUsage = Pattern.compile("^AnonHugePages:\\s+(\\d+)\\skB");
-              while ((line = reader.readLine()) != null) {
-                matcher = thpUsage.matcher(line);
-                if (matcher.matches()) {
-                  if (Integer.valueOf(line.substring(matcher.start(1), matcher.end(1))) == 0) {
-                    // Trigger a failure when the usage is 0. This does not
-                    // cover all cases considered to be failures, but we can
-                    // just say the non-usage of THP failes for sure.
-                    System.exit(1);
-                  }
-                  System.exit(0);
-                }
-              }
-            }
-          }
+          if (foundHeapFrom(reader)) break;
         }
       }
     }
