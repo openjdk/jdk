@@ -422,7 +422,8 @@ jint ShenandoahHeap::initialize() {
     size_t young_cset_regions, old_cset_regions;
 
     // We are initializing free set.  We ignore cset region tallies.
-    _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions);
+    size_t first_old, last_old, num_old;
+    _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
     _free_set->rebuild(young_cset_regions, old_cset_regions);
   }
 
@@ -2433,7 +2434,7 @@ void ShenandoahHeap::set_concurrent_old_mark_in_progress(bool in_progress) {
   bool updating_or_evacuating = _gc_state.is_set(UPDATEREFS | EVACUATION);
   bool evacuating = _gc_state.is_set(EVACUATION);
   assert ((has_forwarded == updating_or_evacuating) || (evacuating && !has_forwarded && collection_set()->is_empty()),
-          "Updating or evacuating iff has forwarded object, or evacuation phase is promoting in place without forwarding");
+          "Updating or evacuating iff has forwarded objects, or if evacuation phase is promoting in place without forwarding");
 #endif
   if (!in_progress && is_concurrent_young_mark_in_progress()) {
     // If young-marking is in progress when we turn off OLD_MARKING, leave MARKING (and YOUNG_MARKING) on
@@ -3078,7 +3079,14 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
   size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
   ShenandoahHeapLocker locker(lock());
   size_t young_cset_regions, old_cset_regions;
-  _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions);
+  size_t first_old_region, last_old_region, old_region_count;
+  _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old_region, last_old_region, old_region_count);
+  // If there are no old regions, first_old_region will be greater than last_old_region
+  assert((first_old_region > last_old_region) ||
+         ((last_old_region + 1 - first_old_region >= old_region_count) &&
+          get_region(first_old_region)->is_old() && get_region(last_old_region)->is_old()),
+         "sanity: old_region_count: " SIZE_FORMAT ", first_old_region: " SIZE_FORMAT ", last_old_region: " SIZE_FORMAT,
+         old_region_count, first_old_region, last_old_region);
 
   if (mode()->is_generational()) {
     assert(verify_generation_usage(true, old_generation()->used_regions(),
@@ -3104,16 +3112,36 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
   _free_set->rebuild(young_cset_regions, old_cset_regions);
 
   if (mode()->is_generational()) {
-    size_t old_available = old_generation()->available();
-    size_t old_unaffiliated_available = old_generation()->free_unaffiliated_regions() * region_size_bytes;
-    size_t old_fragmented_available;
-    assert(old_available >= old_unaffiliated_available, "unaffiliated available is a subset of total available");
-    old_fragmented_available = old_available - old_unaffiliated_available;
+    size_t old_region_span = (first_old_region <= last_old_region)? (last_old_region + 1 - first_old_region): 0;
+    size_t allowed_old_gen_span = num_regions() - (ShenandoahGenerationalHumongousReserve * num_regions() / 100);
 
-    size_t old_capacity = old_generation()->max_capacity();
-    size_t heap_capacity = capacity();
-    if ((old_capacity > heap_capacity / 8) && (old_fragmented_available > old_capacity / 8)) {
-      old_heuristics()->trigger_old_is_fragmented();
+    // Tolerate lower density if total span is small.  Here's the implementation:
+    //   if old_gen spans more than 100% and density < 87.5%, trigger old-defrag
+    //   else if old_gen spans more than 87.5% and density < 75%, trigger old-defrag
+    //   else if old_gen spans more than 75% and density < 62.5%, trigger old-defrag
+    //   else if old_gen spans more than 62.5% and density < 50%, trigger old-defrag
+    //   else if old_gen spans more than 50% and density < 37.5%, trigger old-defrag
+
+    ShenandoahGeneration* old_gen = old_generation();
+    size_t old_available = old_gen->available();
+    size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
+    size_t old_unaffiliated_available = old_gen->free_unaffiliated_regions() * region_size_bytes;
+    assert(old_available >= old_unaffiliated_available, "sanity");
+    size_t old_fragmented_available = old_available - old_unaffiliated_available;
+
+    size_t old_bytes_consumed = old_region_count * region_size_bytes - old_fragmented_available;
+    size_t old_bytes_spanned = old_region_span * region_size_bytes;
+    double old_density = ((double) old_bytes_consumed) / old_bytes_spanned;
+
+    uint eighths = 8;
+    for (uint i = 0; i < 5; i++) {
+      size_t span_threshold = eighths * allowed_old_gen_span / 8;
+      eighths--;
+      double density_threshold = eighths / 8.0;
+      if ((old_region_span >= span_threshold) && (old_density < density_threshold)) {
+        old_heuristics()->trigger_old_is_fragmented(old_density, first_old_region, last_old_region);
+        break;
+      }
     }
 
     size_t old_used = old_generation()->used() + old_generation()->get_humongous_waste();

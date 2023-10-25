@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2016, 2019, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
@@ -97,6 +98,8 @@ public:
   size_t leftmost_empty(ShenandoahFreeMemoryType which_set);
   size_t rightmost_empty(ShenandoahFreeMemoryType which_set);
 
+  inline bool is_empty(ShenandoahFreeMemoryType which_set) const;
+
   inline void increase_used(ShenandoahFreeMemoryType which_set, size_t bytes);
 
   inline size_t capacity_of(ShenandoahFreeMemoryType which_set) const {
@@ -187,7 +190,8 @@ public:
   size_t alloc_capacity(size_t idx) const;
 
   void clear();
-  void prepare_to_rebuild(size_t &young_cset_regions, size_t &old_cset_regions);
+  void prepare_to_rebuild(size_t &young_cset_regions, size_t &old_cset_regions,
+                          size_t &first_old_region, size_t &last_old_region, size_t &old_region_count);
   void rebuild(size_t young_cset_regions, size_t old_cset_regions);
   void move_collector_sets_to_mutator(size_t cset_regions);
 
@@ -212,7 +216,8 @@ public:
 
   void print_on(outputStream* out) const;
 
-  void find_regions_with_alloc_capacity(size_t &young_cset_regions, size_t &old_cset_regions);
+  void find_regions_with_alloc_capacity(size_t &young_cset_regions, size_t &old_cset_regions,
+                                        size_t &first_old_region, size_t &last_old_region, size_t &old_region_count);
   void reserve_regions(size_t young_reserve, size_t old_reserve);
 };
 
