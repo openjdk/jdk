@@ -3333,7 +3333,7 @@ uint TypeInterfaces::hash() const {
   return _hash;
 }
 
-const Type *TypeInterfaces::xdual() const {
+const Type* TypeInterfaces::xdual() const {
   return this;
 }
 
