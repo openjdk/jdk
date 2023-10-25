@@ -35,40 +35,45 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Threads(Threads.MAX)
 @State(Scope.Benchmark)
-public class SecondarySuperCache {
+public class SecondarySuperCacheContention {
 
     // This test targets C1 specifically, to enter the interesting code path
     // without heavily optimizing compiler like C2 optimizing based on profiles,
     // or folding the instanceof checks.
 
+    // The test verifies what happens on unhappy path, when we contend a lot over
+    // the secondary super cache.
+
     interface IA {}
     interface IB {}
-    interface I extends IA, IB {}
-    public class C1 implements I {}
-    public class C2 implements I {}
+    class B {}
+    class C1 extends B implements IA, IB {}
+    class C2 extends B implements IA, IB {}
 
-    I c1, c2;
+    volatile B o1, o2;
 
     @Setup
     public void setup() {
-        c1 = new C1();
-        c2 = new C2();
+        o1 = new C1();
+        o2 = new C2();
     }
 
     @Benchmark
+    @OperationsPerInvocation(4)
     public void contended(Blackhole bh) {
-        bh.consume(c1 instanceof IA);
-        bh.consume(c2 instanceof IA);
-        bh.consume(c1 instanceof IB);
-        bh.consume(c2 instanceof IB);
+        bh.consume(o1 instanceof IA);
+        bh.consume(o2 instanceof IA);
+        bh.consume(o1 instanceof IB);
+        bh.consume(o2 instanceof IB);
     }
 
     @Benchmark
+    @OperationsPerInvocation(4)
     public void uncontended(Blackhole bh) {
-        bh.consume(c1 instanceof IA);
-        bh.consume(c1 instanceof IA);
-        bh.consume(c2 instanceof IB);
-        bh.consume(c2 instanceof IB);
+        bh.consume(o1 instanceof IA);
+        bh.consume(o1 instanceof IA);
+        bh.consume(o2 instanceof IB);
+        bh.consume(o2 instanceof IB);
     }
 
 }
