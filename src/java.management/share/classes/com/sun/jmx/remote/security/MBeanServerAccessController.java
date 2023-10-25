@@ -467,7 +467,6 @@ public abstract class MBeanServerAccessController
         MBeanException,
         ReflectionException {
         checkWrite();
-        checkMLetMethods(name, operationName);
         return getMBeanServer().invoke(name, operationName, params, signature);
     }
 
