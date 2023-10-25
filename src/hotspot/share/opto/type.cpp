@@ -3280,7 +3280,7 @@ void TypeInterfaces::initialize() {
   DEBUG_ONLY(_initialized = true;)
 }
 
-int TypeInterfaces::compare(ciKlass* const& k1, ciKlass* const& k2) {
+int TypeInterfaces::compare(ciInstanceKlass* const& k1, ciInstanceKlass* const& k2) {
   if ((intptr_t)k1 < (intptr_t)k2) {
     return -1;
   } else if ((intptr_t)k1 > (intptr_t)k2) {
@@ -3289,7 +3289,7 @@ int TypeInterfaces::compare(ciKlass* const& k1, ciKlass* const& k2) {
   return 0;
 }
 
-void TypeInterfaces::add(ciKlass* interface) {
+void TypeInterfaces::add(ciInstanceKlass* interface) {
   assert(interface->is_interface(), "for interfaces only");
   _list.insert_sorted<compare>(interface);
   verify();
@@ -3312,13 +3312,13 @@ bool TypeInterfaces::eq(const Type* t) const {
 
 bool TypeInterfaces::eq(ciInstanceKlass* k) const {
   assert(k->is_loaded(), "should be loaded");
-  GrowableArray<ciInstanceKlass *>* interfaces = k->as_instance_klass()->transitive_interfaces();
+  GrowableArray<ciInstanceKlass *>* interfaces = k->transitive_interfaces();
   if (_list.length() != interfaces->length()) {
     return false;
   }
   for (int i = 0; i < interfaces->length(); i++) {
     bool found = false;
-    _list.find_sorted<ciKlass*, compare>(interfaces->at(i), found);
+    _list.find_sorted<ciInstanceKlass*, compare>(interfaces->at(i), found);
     if (!found) {
       return false;
     }
@@ -3345,7 +3345,7 @@ void TypeInterfaces::compute_hash() {
   _hash = hash;
 }
 
-static int compare_interfaces(ciKlass** k1, ciKlass** k2) {
+static int compare_interfaces(ciInstanceKlass** k1, ciInstanceKlass** k2) {
   return (int)((*k1)->ident() - (*k2)->ident());
 }
 
@@ -3355,7 +3355,7 @@ void TypeInterfaces::dump(outputStream* st) const {
   }
   ResourceMark rm;
   st->print(" (");
-  GrowableArray<ciKlass*> interfaces;
+  GrowableArray<ciInstanceKlass*> interfaces;
   interfaces.appendAll(&_list);
   // Sort the interfaces so they are listed in the same order from one run to the other of the same compilation
   interfaces.sort(compare_interfaces);
@@ -3372,8 +3372,8 @@ void TypeInterfaces::dump(outputStream* st) const {
 #ifdef ASSERT
 void TypeInterfaces::verify() const {
   for (int i = 1; i < _list.length(); i++) {
-    ciKlass* k1 = _list.at(i-1);
-    ciKlass* k2 = _list.at(i);
+    ciInstanceKlass* k1 = _list.at(i-1);
+    ciInstanceKlass* k2 = _list.at(i);
     assert(compare(k2, k1) > 0, "should be ordered");
     assert(k1 != k2, "no duplicate");
   }
@@ -3388,19 +3388,19 @@ const TypeInterfaces* TypeInterfaces::union_with(const TypeInterfaces* other) co
     while (i < _list.length() &&
            (j >= other->_list.length() ||
             compare(_list.at(i), other->_list.at(j)) < 0)) {
-      result_list.push((ciInstanceKlass*)_list.at(i));
+      result_list.push(_list.at(i));
       i++;
     }
     while (j < other->_list.length() &&
            (i >= _list.length() ||
             compare(other->_list.at(j), _list.at(i)) < 0)) {
-      result_list.push((ciInstanceKlass*)other->_list.at(j));
+      result_list.push(other->_list.at(j));
       j++;
     }
     if (i < _list.length() &&
         j < other->_list.length() &&
         _list.at(i) == other->_list.at(j)) {
-      result_list.push((ciInstanceKlass*)_list.at(i));
+      result_list.push(_list.at(i));
       i++;
       j++;
     }
@@ -3439,7 +3439,7 @@ const TypeInterfaces* TypeInterfaces::intersection_with(const TypeInterfaces* ot
     if (i < _list.length() &&
         j < other->_list.length() &&
         _list.at(i) == other->_list.at(j)) {
-      result_list.push((ciInstanceKlass*)_list.at(i));
+      result_list.push(_list.at(i));
       i++;
       j++;
     }
@@ -3461,7 +3461,7 @@ const TypeInterfaces* TypeInterfaces::intersection_with(const TypeInterfaces* ot
 }
 
 // Is there a single ciKlass* that can represent the interface set?
-ciKlass* TypeInterfaces::exact_klass() const {
+ciInstanceKlass* TypeInterfaces::exact_klass() const {
   assert(_initialized, "must be");
   return _exact_klass;
 }
@@ -3471,9 +3471,9 @@ void TypeInterfaces::compute_exact_klass() {
     _exact_klass = nullptr;
     return;
   }
-  ciKlass* res = nullptr;
+  ciInstanceKlass* res = nullptr;
   for (int i = 0; i < _list.length(); i++) {
-    ciInstanceKlass* interface = _list.at(i)->as_instance_klass();
+    ciInstanceKlass* interface = _list.at(i);
     if (eq(interface)) {
       assert(res == nullptr, "");
       res = interface;
