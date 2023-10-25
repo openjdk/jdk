@@ -161,7 +161,7 @@ public sealed interface ClassFile
     }
 
     /**
-     * Option describing whether or not to patch out unreachable code.
+     * Option describing whether to patch out unreachable code.
      * Default is {@code PATCH_DEAD_CODE} to automatically patch out unreachable
      * code with NOPs.
      *
@@ -178,7 +178,7 @@ public sealed interface ClassFile
     }
 
     /**
-     * Option describing whether or not to filter unresolved labels.
+     * Option describing whether to filter unresolved labels.
      * Default is {@code FAIL_ON_DEAD_LABELS} to throw IllegalStateException
      * when any {@link ExceptionCatch}, {@link LocalVariableInfo},
      * {@link LocalVariableTypeInfo}, or {@link CharacterRangeInfo}
@@ -236,7 +236,7 @@ public sealed interface ClassFile
     }
 
     /**
-     * Option describing whether or not to automatically rewrite short jumps to
+     * Option describing whether to automatically rewrite short jumps to
      * long when necessary.
      * Default is {@code FIX_SHORT_JUMPS} to automatically rewrite jump
      * instructions.
@@ -254,7 +254,7 @@ public sealed interface ClassFile
     }
 
     /**
-     * Option describing whether or not to generate stackmaps.
+     * Option describing whether to generate stackmaps.
      * Default is {@code STACK_MAPS_WHEN_REQUIRED} to generate stack
      * maps for {@link #JAVA_6_VERSION} or above, where specifically for
      * {@link #JAVA_6_VERSION} the stack maps may not be generated.
