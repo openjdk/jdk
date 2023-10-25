@@ -42,7 +42,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 
 import static java.lang.invoke.MethodType.methodType;
-import static test.java.lang.invoke.lib.InstructionHelper.csym;
+import static test.java.lang.invoke.lib.InstructionHelper.classDesc;
 
 public class CondyWithGarbageTest {
     static final MethodHandles.Lookup L = MethodHandles.lookup();
@@ -64,7 +64,8 @@ public class CondyWithGarbageTest {
     }
 
     static MethodHandle lcdStringBasher() throws Exception {
-        byte[] bytes = Classfile.of().build(ClassDesc.of(csym(L.lookupClass()) + "$Code$String"), classBuilder -> classBuilder
+        ClassDesc cd = classDesc(L.lookupClass(), "$Code$String");
+        byte[] bytes = Classfile.of().build(cd, classBuilder -> classBuilder
                 .withVersion(55, 0)
                 .withSuperclass(ConstantDescs.CD_Object)
                 .withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, Classfile.ACC_PUBLIC,
@@ -74,14 +75,14 @@ public class CondyWithGarbageTest {
                                         .invokespecial(ConstantDescs.CD_Object, ConstantDescs.INIT_NAME,
                                                 ConstantDescs.MTD_void, false)
                                         .return_()))
-                .withMethod("m", MethodTypeDesc.of(ClassDesc.of(String.class.getCanonicalName())),
+                .withMethod("m", MethodTypeDesc.of(ConstantDescs.CD_String),
                         Classfile.ACC_PUBLIC + Classfile.ACC_STATIC, methodBuilder -> methodBuilder
                                 .withCode(codeBuilder -> {
                                             codeBuilder
-                                                    .new_(ClassDesc.of(StringBuilder.class.getCanonicalName()))
+                                                    .new_(classDesc(StringBuilder.class))
                                                     .dup()
-                                                    .invokespecial(ClassDesc.of(StringBuilder.class.getCanonicalName()),
-                                                            ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, false)
+                                                    .invokespecial(classDesc(StringBuilder.class), ConstantDescs.INIT_NAME,
+                                                            ConstantDescs.MTD_void, false)
                                                     .astore(0);
 
                                             for (int i = 10; i < 100; i++) {
@@ -91,20 +92,20 @@ public class CondyWithGarbageTest {
                                                         .aload(0)
                                                         .aload(1)
                                                         .invokevirtual(
-                                                                ClassDesc.of(StringBuilder.class.getCanonicalName()),
+                                                                classDesc(StringBuilder.class),
                                                                 "append",
                                                                 MethodTypeDesc.of(
-                                                                        ClassDesc.of(StringBuilder.class.getCanonicalName()),
-                                                                        ClassDesc.of(String.class.getCanonicalName())))
+                                                                        classDesc(StringBuilder.class),
+                                                                        classDesc(String.class)))
                                                         .pop();
                                             }
 
                                             codeBuilder
                                                     .aload(0)
                                                     .invokevirtual(
-                                                            ClassDesc.of(StringBuilder.class.getCanonicalName()),
+                                                            classDesc(StringBuilder.class),
                                                             "toString",
-                                                            MethodTypeDesc.of(ClassDesc.of(String.class.getCanonicalName())))
+                                                            MethodTypeDesc.of(classDesc(String.class)))
                                                     .areturn();
                                         }
                                 )));
@@ -116,11 +117,11 @@ public class CondyWithGarbageTest {
         codeBuilder.ldc(DynamicConstantDesc.ofNamed(
                 MethodHandleDesc.of(
                         DirectMethodHandleDesc.Kind.STATIC,
-                        ClassDesc.of(L.lookupClass().getCanonicalName()),
+                        classDesc(L.lookupClass()),
                         "bsmString",
                         methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class).toMethodDescriptorString()),
                 name,
-                ClassDesc.of(String.class.getCanonicalName())
+                classDesc(String.class)
         ));
     }
 
@@ -142,7 +143,8 @@ public class CondyWithGarbageTest {
     }
 
     static MethodHandle lcdStringArrayBasher() throws Exception {
-        byte[] bytes = Classfile.of().build(ClassDesc.of(csym(L.lookupClass()) + "$Code$StringArray"), classBuilder -> classBuilder
+        ClassDesc cd = classDesc(L.lookupClass(), "$Code$StringArray");
+        byte[] bytes = Classfile.of().build(cd, classBuilder -> classBuilder
                 .withVersion(55, 0)
                 .withSuperclass(ConstantDescs.CD_Object)
                 .withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, Classfile.ACC_PUBLIC,
@@ -152,13 +154,13 @@ public class CondyWithGarbageTest {
                                         .invokespecial(ConstantDescs.CD_Object, ConstantDescs.INIT_NAME,
                                                 ConstantDescs.MTD_void, false)
                                         .return_()))
-                .withMethod("m", MethodTypeDesc.of(ClassDesc.of(String.class.getCanonicalName())),
+                .withMethod("m", MethodTypeDesc.of(classDesc(String.class)),
                         Classfile.ACC_PUBLIC + Classfile.ACC_STATIC, methodBuilder -> methodBuilder
                                 .withCode(codeBuilder -> {
                                             codeBuilder
-                                                    .new_(ClassDesc.of(StringBuilder.class.getCanonicalName()))
+                                                    .new_(classDesc(StringBuilder.class))
                                                     .dup()
-                                                    .invokespecial(ClassDesc.of(StringBuilder.class.getCanonicalName()),
+                                                    .invokespecial(classDesc(StringBuilder.class),
                                                             ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, false)
                                                     .astore(0);
 
@@ -171,20 +173,20 @@ public class CondyWithGarbageTest {
                                                         .aload(0)
                                                         .aload(1)
                                                         .invokevirtual(
-                                                                ClassDesc.of(StringBuilder.class.getCanonicalName()),
+                                                                classDesc(StringBuilder.class),
                                                                 "append",
                                                                 MethodTypeDesc.of(
-                                                                        ClassDesc.of(StringBuilder.class.getCanonicalName()),
-                                                                        ClassDesc.of(String.class.getCanonicalName())))
+                                                                        classDesc(StringBuilder.class),
+                                                                        classDesc(String.class)))
                                                         .pop();
                                             }
 
                                             codeBuilder
                                                     .aload(0)
                                                     .invokevirtual(
-                                                            ClassDesc.of(StringBuilder.class.getCanonicalName()),
+                                                            classDesc(StringBuilder.class),
                                                             "toString",
-                                                            MethodTypeDesc.of(ClassDesc.of(String.class.getCanonicalName())))
+                                                            MethodTypeDesc.of(classDesc(String.class)))
                                                     .areturn();
                                         }
                                 )));
@@ -196,12 +198,12 @@ public class CondyWithGarbageTest {
         codeBuilder.ldc(DynamicConstantDesc.ofNamed(
                 MethodHandleDesc.of(
                         DirectMethodHandleDesc.Kind.STATIC,
-                        ClassDesc.of(L.lookupClass().getCanonicalName()),
+                        classDesc(L.lookupClass()),
                         "bsmStringArray",
                         methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class).toMethodDescriptorString()
                 ),
                 name,
-                ClassDesc.ofDescriptor(String[].class.descriptorString())
+                classDesc(String[].class)
         ));
     }
 }

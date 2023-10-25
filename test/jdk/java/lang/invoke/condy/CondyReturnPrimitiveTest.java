@@ -95,13 +95,13 @@ public class CondyReturnPrimitiveTest {
     @BeforeClass
     public void generateClass() throws Exception {
         String genClassName = CondyReturnPrimitiveTest.class.getSimpleName() + "$Code";
-        String bsmClassName = CondyReturnPrimitiveTest.class.getCanonicalName().replace('.', '/');
+        String bsmClassDesc = CondyReturnPrimitiveTest.class.descriptorString();
         String bsmMethodName = "intConversion";
         String bsmDescriptor = MethodType.methodType(Object.class, MethodHandles.Lookup.class,
                 String.class, Class.class, int.class).toMethodDescriptorString();
         DirectMethodHandleDesc bsmMhDesc = MethodHandleDesc.of(
                 DirectMethodHandleDesc.Kind.STATIC,
-                ClassDesc.ofInternalName(bsmClassName),
+                ClassDesc.ofDescriptor(bsmClassDesc),
                 bsmMethodName,
                 bsmDescriptor
         );

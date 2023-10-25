@@ -52,15 +52,10 @@ public class InstructionHelper {
                                         .return_()));
     }
 
-    private static String className(MethodHandles.Lookup l) {
-        return l.lookupClass().getCanonicalName().replace('.', '/') + "$Code_" +
-                COUNT.getAndIncrement();
-    }
-
     public static MethodHandle invokedynamic(MethodHandles.Lookup l, String name, MethodType type, String bsmMethodName,
-                                             MethodType bsmType,
-                                             ConstantDesc[] boostrapArgs) throws Exception {
-        byte[] byteArray = Classfile.of().build(ClassDesc.of(className(l)), classBuilder -> {
+                                             MethodType bsmType, ConstantDesc[] boostrapArgs) throws Exception {
+        ClassDesc genClassDesc = classDesc(l.lookupClass(), "$Code_" + COUNT.getAndIncrement());
+        byte[] byteArray = Classfile.of().build(genClassDesc, classBuilder -> {
             commonBuild(classBuilder);
             classBuilder
                     .withMethod("m", MethodTypeDesc.ofDescriptor(type.toMethodDescriptorString()),
@@ -73,7 +68,7 @@ public class InstructionHelper {
                                         codeBuilder.invokedynamic(DynamicCallSiteDesc.of(
                                                 MethodHandleDesc.ofMethod(
                                                         DirectMethodHandleDesc.Kind.STATIC,
-                                                        ClassDesc.of(l.lookupClass().getCanonicalName()),
+                                                        classDesc(l.lookupClass()),
                                                         bsmMethodName,
                                                         MethodTypeDesc.ofDescriptor(
                                                                 bsmType.toMethodDescriptorString())),
@@ -88,37 +83,30 @@ public class InstructionHelper {
         return l.findStatic(gc, "m", type);
     }
 
-    public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l, String name, Class<?> type, String bsmMethodName, MethodType bsmType, ConstantDesc[] bootstrapArgs) throws Exception {
+    public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l, String name, Class<?> type, String bsmMethodName,
+                                                  MethodType bsmType, ConstantDesc[] bootstrapArgs) throws Exception {
         return ldcDynamicConstant(l, name, type, l.lookupClass(), bsmMethodName, bsmType, bootstrapArgs);
     }
 
-    public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l, String name, Class<?> type, Class<?> bsmClass, String bsmMethodName, MethodType bsmType, ConstantDesc[] bootstrapArgs) throws Exception {
-        return ldcDynamicConstant(l, name, cref(type), csym(bsmClass), bsmMethodName, bsmType.toMethodDescriptorString(), bootstrapArgs);
-    }
-
-    public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l, String name, String type, String bsmMethodName,
-                                                  String bsmType, ConstantDesc[] bootstrapArgs) throws Exception {
-        return ldcDynamicConstant(l, name, type, csym(l.lookupClass()), bsmMethodName, bsmType, bootstrapArgs);
-    }
-
-    public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l, String name, String type, String bsmClass,
-                                                  String bsmMethodName, String bsmType, ConstantDesc[] bootstrapArgs) throws Exception {
+    public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l, String name, Class<?> type, Class<?> bsmClass,
+                                                  String bsmMethodName, MethodType bsmType, ConstantDesc[] bootstrapArgs) throws Exception {
         String methodType = "()" + type;
-        byte[] bytes = Classfile.of().build(ClassDesc.of(className(l)), classBuilder -> {
+        ClassDesc genClassDesc = classDesc(l.lookupClass(), "$Code_" + COUNT.getAndIncrement());
+        byte[] bytes = Classfile.of().build(genClassDesc, classBuilder -> {
             commonBuild(classBuilder);
-            classBuilder.withMethod("m", MethodTypeDesc.of(ClassDesc.ofDescriptor(type)),
+            classBuilder.withMethod("m", MethodTypeDesc.of(classDesc(type)),
                     Classfile.ACC_PUBLIC + Classfile.ACC_STATIC, methodBuilder -> methodBuilder
                             .withCode(codeBuilder -> codeBuilder
                                     .ldc(DynamicConstantDesc.ofNamed(
                                             MethodHandleDesc.ofMethod(
                                                     DirectMethodHandleDesc.Kind.STATIC,
-                                                    ClassDesc.of(bsmClass),
+                                                    classDesc(bsmClass),
                                                     bsmMethodName,
-                                                    MethodTypeDesc.ofDescriptor(bsmType)),
+                                                    MethodTypeDesc.ofDescriptor(bsmType.descriptorString())),
                                             name,
-                                            ClassDesc.ofDescriptor(type),
+                                            classDesc(type),
                                             bootstrapArgs))
-                                    .returnInstruction(TypeKind.fromDescriptor(type))));
+                                    .returnInstruction(TypeKind.fromDescriptor(type.descriptorString()))));
         });
         Class<?> gc = l.defineClass(bytes);
         return l.findStatic(gc, "m", fromMethodDescriptorString(methodType, l.lookupClass().getClassLoader()));
@@ -128,7 +116,13 @@ public class InstructionHelper {
         return c.getCanonicalName().replace('.', '/');
     }
 
-    public static String cref(Class<?> c) {
-        return c.descriptorString();
+    public static ClassDesc classDesc(Class<?> c) {
+        return ClassDesc.ofDescriptor(c.descriptorString());
+    }
+
+    public static ClassDesc classDesc(Class<?> c, String suffix) {
+        StringBuilder sb = new StringBuilder(c.descriptorString());
+        String classDescStr = sb.insert(sb.length() - 1, suffix).toString();
+        return ClassDesc.ofDescriptor(classDescStr);
     }
 }
