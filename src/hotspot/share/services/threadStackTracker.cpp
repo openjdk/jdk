@@ -49,40 +49,38 @@ int ThreadStackTracker::compare_thread_stack_base(const SimpleThreadStackSite& s
 void ThreadStackTracker::new_thread_stack(void* base, size_t size, const NativeCallStack& stack) {
   assert(MemTracker::tracking_level() >= NMT_summary, "Must be");
   assert(base != nullptr, "Should have been filtered");
+  ThreadCritical tc;
   if (track_as_vm()) {
-    ThreadCritical tc;
     VirtualMemoryTracker::add_reserved_region((address)base, size, stack, mtThreadStack);
-    _thread_count ++;
   } else {
     // Use a slot in mallocMemorySummary for thread stack bookkeeping
     MallocMemorySummary::record_malloc(size, mtThreadStack);
     if (MemTracker::tracking_level() == NMT_detail) {
-      ThreadCritical tc;
       assert(_simple_thread_stacks != nullptr, "Must be initialized");
       SimpleThreadStackSite site((address)base, size, stack);
       _simple_thread_stacks->add(site);
     }
   }
+  _thread_count++;
 }
 
 void ThreadStackTracker::delete_thread_stack(void* base, size_t size) {
   assert(MemTracker::tracking_level() >= NMT_summary, "Must be");
   assert(base != nullptr, "Should have been filtered");
+  ThreadCritical tc;
   if(track_as_vm()) {
-    ThreadCritical tc;
     VirtualMemoryTracker::remove_released_region((address)base, size);
-    _thread_count--;
   } else {
     // Use a slot in mallocMemorySummary for thread stack bookkeeping
     MallocMemorySummary::record_free(size, mtThreadStack);
     if (MemTracker::tracking_level() == NMT_detail) {
-      ThreadCritical tc;
       assert(_simple_thread_stacks != nullptr, "Must be initialized");
       SimpleThreadStackSite site((address)base, size, NativeCallStack::empty_stack()); // Fake object just to serve as compare target for delete
       bool removed = _simple_thread_stacks->remove(site);
       assert(removed, "Must exist");
     }
   }
+  _thread_count--;
 }
 
 bool ThreadStackTracker::walk_simple_thread_stack_site(MallocSiteWalker* walker) {
