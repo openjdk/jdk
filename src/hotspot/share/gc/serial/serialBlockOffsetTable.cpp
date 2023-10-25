@@ -81,7 +81,7 @@ void BlockOffsetSharedArray::resize(size_t new_word_size) {
   }
 }
 
-// Write the backskip value for each region.
+// Write the backskip value for each logarithmic region (array slots containing the same entry value).
 //
 //    offset
 //    card             2nd                       3rd
@@ -134,13 +134,13 @@ void BlockOffsetTable::update_for_block_work(HeapWord* blk_start,
       // of the next.
       size_t reach = offset_card + BOTConstants::power_to_cards_back(i + 1) - 1;
       u_char value = checked_cast<u_char>(BOTConstants::card_size_in_words() + i);
+
+      _array->set_offset_array(start_card_for_region, MIN2(reach, end_card), value);
+      start_card_for_region = reach + 1;
+
       if (reach >= end_card) {
-        _array->set_offset_array(start_card_for_region, end_card, value);
-        start_card_for_region = reach + 1;
         break;
       }
-      _array->set_offset_array(start_card_for_region, reach, value);
-      start_card_for_region = reach + 1;
     }
     assert(start_card_for_region > end_card, "Sanity check");
   }

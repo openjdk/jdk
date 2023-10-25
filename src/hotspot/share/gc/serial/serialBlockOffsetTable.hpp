@@ -36,12 +36,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-// The CollectedHeap type requires subtypes to implement a method
-// "block_start".  For some subtypes, notably generational
-// systems using card-table-based write barriers, the efficiency of this
-// operation may be important.  Implementations of the BlockOffsetTable
-// class may be useful in providing such efficient implementations.
-
 class BlockOffsetSharedArray: public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class BlockOffsetTable;
