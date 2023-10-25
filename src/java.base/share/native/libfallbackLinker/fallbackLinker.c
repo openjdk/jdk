@@ -42,16 +42,29 @@ static jclass LibFallback_class;
 static jmethodID LibFallback_doUpcall_ID;
 static const char* LibFallback_doUpcall_sig = "(JJLjava/lang/invoke/MethodHandle;)V";
 
-JNIEXPORT void JNICALL
-Java_jdk_internal_foreign_abi_fallback_LibFallback_init(JNIEnv* env, jclass cls) {
-  (*env)->GetJavaVM(env, &VM);
-  jclass LibFallback_class_local = (*env)->FindClass(env, "jdk/internal/foreign/abi/fallback/LibFallback");
-  if (LibFallback_class_local == NULL) {
-    return; // let caller deal with exception
+#define CHECK_NULL(expr) \
+  if (expr == NULL) { \
+    return JNI_FALSE; \
   }
+
+JNIEXPORT jboolean JNICALL
+Java_jdk_internal_foreign_abi_fallback_LibFallback_init(JNIEnv* env, jclass cls) {
+  jint result = (*env)->GetJavaVM(env, &VM);
+  if (result != 0) {
+    return JNI_FALSE;
+  }
+
+  jclass LibFallback_class_local = (*env)->FindClass(env, "jdk/internal/foreign/abi/fallback/LibFallback");
+  CHECK_NULL(LibFallback_class_local)
+
   LibFallback_class = (*env)->NewGlobalRef(env, LibFallback_class_local);
+  CHECK_NULL(LibFallback_class)
+
   LibFallback_doUpcall_ID = (*env)->GetStaticMethodID(env,
     LibFallback_class, "doUpcall", LibFallback_doUpcall_sig);
+  CHECK_NULL(LibFallback_doUpcall_ID)
+
+  return JNI_TRUE;
 }
 
 JNIEXPORT jlong JNICALL

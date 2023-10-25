@@ -43,7 +43,10 @@ final class LibFallback {
                     public Boolean run() {
                         try {
                             System.loadLibrary("fallbackLinker");
-                            init();
+                            if (!init()) {
+                                // library failed to initialize. Do not silently mark as unsupported
+                                throw new ExceptionInInitializerError("Fallback library failed to initialize");
+                            }
                             return true;
                         } catch (UnsatisfiedLinkError ule) {
                             return false;
@@ -201,7 +204,7 @@ final class LibFallback {
         }
     }
 
-    private static native void init();
+    private static native boolean init();
 
     private static native long sizeofCif();
 
