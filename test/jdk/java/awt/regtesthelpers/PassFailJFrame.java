@@ -34,6 +34,8 @@ import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
@@ -155,14 +157,26 @@ public class PassFailJFrame {
      * Prefix for the user-provided failure reason.
      */
     private static final String FAILURE_REASON = "Failure Reason:\n";
+    /**
+     * The failure reason message when the user didn't provide one.
+     */
+    private static final String EMPTY_REASON = "(no reason provided)";
 
     private static final List<Window> windowList = new ArrayList<>();
-    private static final Timer timer = new Timer(0, null);
+
     private static final CountDownLatch latch = new CountDownLatch(1);
 
-    private static volatile boolean failed;
-    private static volatile boolean timeout;
-    private static volatile String testFailedReason;
+    private static TimeoutHandler timeoutHandler;
+
+    /**
+     * The description of why the test fails.
+     * <p>
+     * Note: <strong>do not use</strong> this field directly,
+     * use the {@link #setFailureReason(String) setFailureReason} and
+     * {@link #getFailureReason() getFailureReason} methods to modify and
+     * to read its value.
+     */
+    private static String failureReason;
 
     private static final AtomicInteger imgCounter = new AtomicInteger(0);
 
@@ -319,42 +333,27 @@ public class PassFailJFrame {
         frame = new JFrame(title);
         frame.setLayout(new BorderLayout());
 
+        JLabel testTimeoutLabel = new JLabel("", JLabel.CENTER);
+        timeoutHandler = new TimeoutHandler(testTimeoutLabel, testTimeOut);
+        frame.add(testTimeoutLabel, BorderLayout.NORTH);
+
         JTextComponent text = instructions.startsWith("<html>")
                               ? configureHTML(instructions, rows, columns)
                               : configurePlainText(instructions, rows, columns);
         text.setEditable(false);
 
-        long tTimeout = TimeUnit.MINUTES.toMillis(testTimeOut);
-
-        final JLabel testTimeoutLabel = new JLabel(String.format("Test " +
-                "timeout: %s", convertMillisToTimeStr(tTimeout)), JLabel.CENTER);
-        final long startTime = System.currentTimeMillis();
-        timer.setDelay(1000);
-        timer.addActionListener((e) -> {
-            long leftTime = tTimeout - (System.currentTimeMillis() - startTime);
-            if ((leftTime < 0) || failed) {
-                timer.stop();
-                testFailedReason = FAILURE_REASON
-                                   + "Timeout User did not perform testing.";
-                timeout = true;
-                latch.countDown();
-            }
-            testTimeoutLabel.setText(String.format("Test timeout: %s", convertMillisToTimeStr(leftTime)));
-        });
-        timer.start();
-        frame.add(testTimeoutLabel, BorderLayout.NORTH);
         frame.add(new JScrollPane(text), BorderLayout.CENTER);
 
         JButton btnPass = new JButton("Pass");
         btnPass.addActionListener((e) -> {
             latch.countDown();
-            timer.stop();
+            timeoutHandler.stop();
         });
 
         JButton btnFail = new JButton("Fail");
         btnFail.addActionListener((e) -> {
-            getFailureReason();
-            timer.stop();
+            requestFailureReason();
+            timeoutHandler.stop();
         });
 
         JPanel buttonsPanel = new JPanel();
@@ -480,12 +479,58 @@ public class PassFailJFrame {
     }
 
 
+    private static final class TimeoutHandler implements ActionListener {
+        private final long endTime;
+
+        private final Timer timer;
+
+        private final JLabel label;
+
+        public TimeoutHandler(final JLabel label, final long testTimeOut) {
+            endTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(testTimeOut);
+
+            this.label = label;
+
+            timer = new Timer(1000, this);
+            timer.start();
+            updateTime(testTimeOut);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            long leftTime = endTime - System.currentTimeMillis();
+            if (leftTime < 0) {
+                timer.stop();
+                setFailureReason(FAILURE_REASON
+                                 + "Timeout - User did not perform testing.");
+                latch.countDown();
+            }
+            updateTime(leftTime);
+        }
+
+        private void updateTime(final long leftTime) {
+            if (leftTime < 0) {
+                label.setText("Test timeout: 00:00:00");
+                return;
+            }
+            long hours = leftTime / 3_600_000;
+            long minutes = (leftTime - hours * 3_600_000) / 60_000;
+            long seconds = (leftTime - hours * 3_600_000 - minutes * 60_000) / 1_000;
+            label.setText(String.format("Test timeout: %02d:%02d:%02d",
+                                        hours, minutes, seconds));
+        }
+
+        public void stop() {
+            timer.stop();
+        }
+    }
+
+
     private static final class WindowClosingHandler extends WindowAdapter {
         @Override
         public void windowClosing(WindowEvent e) {
-            testFailedReason = FAILURE_REASON
-                               + "User closed a window";
-            failed = true;
+            setFailureReason(FAILURE_REASON
+                             + "User closed a window");
             latch.countDown();
         }
     }
@@ -579,14 +624,28 @@ public class PassFailJFrame {
                                       JOptionPane.INFORMATION_MESSAGE);
     }
 
-    private static String convertMillisToTimeStr(long millis) {
-        if (millis < 0) {
-            return "00:00:00";
+    /**
+     * Sets the failure reason which describes why the test fails.
+     * This method ensures the {@code failureReason} field does not change
+     * after it's set to a non-{@code null} value.
+     * @param reason the description of why the test fails
+     * @throws IllegalArgumentException if the {@code reason} parameter
+     *         is {@code null}
+     */
+    private static synchronized void setFailureReason(final String reason) {
+        if (reason == null) {
+            throw new IllegalArgumentException("The failure reason must not be null");
         }
-        long hours = millis / 3_600_000;
-        long minutes = (millis - hours * 3_600_000) / 60_000;
-        long seconds = (millis - hours * 3_600_000 - minutes * 60_000) / 1_000;
-        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
+        if (failureReason == null) {
+            failureReason = reason;
+        }
+    }
+
+    /**
+     * {@return the description of why the test fails}
+     */
+    private static synchronized String getFailureReason() {
+        return failureReason;
     }
 
     /**
@@ -607,30 +666,18 @@ public class PassFailJFrame {
         latch.await();
         invokeAndWait(PassFailJFrame::disposeWindows);
 
-        if (timeout) {
-            throw new RuntimeException(testFailedReason);
-        }
-
-        if (failed) {
-            throw new RuntimeException("Test failed! : " + testFailedReason);
+        String failure = getFailureReason();
+        if (failure != null) {
+            throw new RuntimeException(failure);
         }
 
         System.out.println("Test passed!");
     }
 
     /**
-     * Disposes of all the windows. It disposes of the test instruction frame
-     * and all other windows added via {@link #addTestWindow(Window)}.
+     * Requests the description of the test failure reason from the tester.
      */
-    private static synchronized void disposeWindows() {
-        windowList.forEach(Window::dispose);
-    }
-
-    /**
-     * Read the test failure reason and add the reason to the test result
-     * example in the jtreg .jtr file.
-     */
-    private static void getFailureReason() {
+    private static void requestFailureReason() {
         final JDialog dialog = new JDialog(frame, "Test Failure ", true);
         dialog.setTitle("Failure reason");
         JPanel jPanel = new JPanel(new BorderLayout());
@@ -638,7 +685,9 @@ public class PassFailJFrame {
 
         JButton okButton = new JButton("OK");
         okButton.addActionListener((ae) -> {
-            testFailedReason = FAILURE_REASON + jTextArea.getText();
+            String text = jTextArea.getText();
+            setFailureReason(FAILURE_REASON
+                             + (!text.isEmpty() ? text : EMPTY_REASON));
             dialog.setVisible(false);
         });
 
@@ -653,9 +702,20 @@ public class PassFailJFrame {
         dialog.pack();
         dialog.setVisible(true);
 
-        failed = true;
+        // Ensure the test fails even if the dialog is closed
+        // without clicking the OK button
+        setFailureReason(FAILURE_REASON + EMPTY_REASON);
+
         dialog.dispose();
         latch.countDown();
+    }
+
+    /**
+     * Disposes of all the windows. It disposes of the test instruction frame
+     * and all other windows added via {@link #addTestWindow(Window)}.
+     */
+    private static synchronized void disposeWindows() {
+        windowList.forEach(Window::dispose);
     }
 
     private static void positionInstructionFrame(final Position position) {
@@ -827,8 +887,7 @@ public class PassFailJFrame {
      * @param reason the reason why the test is failed
      */
     public static void forceFail(String reason) {
-        failed = true;
-        testFailedReason = FAILURE_REASON + reason;
+        setFailureReason(FAILURE_REASON + reason);
         latch.countDown();
     }
 
