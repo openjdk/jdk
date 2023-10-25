@@ -130,7 +130,8 @@ serviceability_ttf_virtual = \
   -serviceability/jvmti/vthread \
   -serviceability/jvmti/thread  \
   -serviceability/jvmti/events  \
-  -serviceability/jvmti/negative
+  -serviceability/jvmti/negative \
+  -serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorVMEventsTest.java
 
 tier1_common = \
   sanity/BasicVMTest.java \

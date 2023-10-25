@@ -23,12 +23,23 @@
 
 import java.util.concurrent.ThreadFactory;
 
+@SuppressWarnings("removal")
 public class Virtual implements ThreadFactory {
 
     static {
-        // This property is used by ProcessTools and some tests
         try {
+            // This property is used by ProcessTools and some tests
             System.setProperty("test.thread.factory", "Virtual");
+            // Temporary workaround until CODETOOLS-7903526 is fixed in jtreg
+            // The jtreg run main() in the ThreadGroup and catch only exceptions in this group.
+            // The virtual threads don't belong to any group and need global handler.
+            Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+                    if (e instanceof ThreadDeath) {
+                        return;
+                    }
+                    e.printStackTrace(System.err);
+                    System.exit(1);
+                });
         } catch (Throwable t) {
             // might be thrown by security manager
         }
