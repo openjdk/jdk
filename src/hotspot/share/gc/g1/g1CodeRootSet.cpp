@@ -145,7 +145,7 @@ public:
   void clear() {
     size_t num_entries = Atomic::load(&_num_entries);
     if (num_entries != 0) {
-      auto do_value =
+      auto always_true =
         [] (nmethod** value) {
           return true;
       };
@@ -156,7 +156,7 @@ public:
           num_deleted++;
       };
 
-      bool succeeded = _table.try_bulk_delete(Thread::current(), do_value, do_delete);
+      bool succeeded = _table.try_bulk_delete(Thread::current(), always_true, do_delete);
       guarantee(succeeded, "unable to clean table");
       assert(num_entries == num_deleted, "must empty the table");
       Atomic::store(&_num_entries, (size_t)0);
