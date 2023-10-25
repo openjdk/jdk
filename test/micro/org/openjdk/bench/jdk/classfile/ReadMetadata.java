@@ -75,7 +75,7 @@ public class ReadMetadata extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkReadMemberNames(Blackhole bh) {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         for (byte[] bytes : classes) {
             var cm = cc.parse(bytes);
             bh.consume(cm.thisClass().asInternalName());
