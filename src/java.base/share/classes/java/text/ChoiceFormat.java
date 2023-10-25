@@ -231,9 +231,6 @@ public class ChoiceFormat extends NumberFormat {
      * for the ChoiceFormat pattern can be seen in the {@linkplain ##patterns
      * Patterns} section.
      *
-     * @implSpec {@link #ChoiceFormat(String)} may invoke this method.
-     * Therefore, any changes made to the {@code applyPattern} method in subclasses
-     * may be reflected in the constructor as well.
      * @param newPattern a pattern string
      * @throws    NullPointerException if {@code newPattern}
      *            is {@code null}
@@ -242,6 +239,17 @@ public class ChoiceFormat extends NumberFormat {
      * @see #ChoiceFormat(String)
      */
     public void applyPattern(String newPattern) {
+        applyPatternImpl(newPattern);
+    }
+
+    /**
+     * Implementation of applying a pattern to this ChoiceFormat.
+     * This method processes a String pattern in accordance with the ChoiceFormat
+     * pattern syntax and populates the internal {@code limits} and {@code formats}
+     * array variables. See the {@linkplain ##patterns} section for
+     * further understanding of certain special characters: "#", "<", "\u2264", "|".
+     */
+    private void applyPatternImpl(String newPattern) {
         StringBuilder[] segments = new StringBuilder[2];
         for (int i = 0; i < segments.length; ++i) {
             segments[i] = new StringBuilder();
@@ -322,8 +330,8 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     /**
-     * {@return a pattern {@code string} that represents the the limits and formats
-     * of this ChoiceFormat object}
+     * {@return a pattern {@code string} that represents the {@code limits} and
+     * {@code formats} of this ChoiceFormat object}
      *
      * The {@code string} returned is not guaranteed to be the same input
      * {@code string} passed to either {@link #applyPattern(String)} or
@@ -392,7 +400,7 @@ public class ChoiceFormat extends NumberFormat {
      * @see #applyPattern
      */
     public ChoiceFormat(String newPattern)  {
-        applyPattern(newPattern);
+        applyPatternImpl(newPattern);
     }
 
     /**
@@ -407,15 +415,12 @@ public class ChoiceFormat extends NumberFormat {
      * @see #setChoices
      */
     public ChoiceFormat(double[] limits, String[] formats) {
-        setChoices(limits, formats);
+        setChoicesImpl(limits, formats);
     }
 
     /**
      * Set the choices to be used in formatting.
      *
-     * @implSpec {@link #ChoiceFormat(double[], String[])} may invoke this method.
-     * Therefore, any changes made to the {@code setChoices} method in subclasses
-     * may be reflected in the constructor as well.
      * @param limits contains the top value that you want
      * parsed with that format, and should be in ascending sorted order. When
      * formatting X, the choice will be the i, where
@@ -429,6 +434,14 @@ public class ChoiceFormat extends NumberFormat {
      *            and {@code formats} are not equal
      */
     public void setChoices(double[] limits, String[] formats) {
+        setChoicesImpl(limits, formats);
+    }
+
+    /**
+     * Implementation of populating the {@code limits} and
+     * {@code formats} of this ChoiceFormat. Defensive copies are made.
+     */
+    private void setChoicesImpl(double[] limits, String[] formats) {
         if (limits.length != formats.length) {
             throw new IllegalArgumentException(
                     "Input arrays must be of the same length.");
@@ -441,16 +454,14 @@ public class ChoiceFormat extends NumberFormat {
      * {@return the limits of this ChoiceFormat}
      */
     public double[] getLimits() {
-        double[] newLimits = Arrays.copyOf(choiceLimits, choiceLimits.length);
-        return newLimits;
+        return Arrays.copyOf(choiceLimits, choiceLimits.length);
     }
 
     /**
      * {@return the formats of this ChoiceFormat}
      */
     public Object[] getFormats() {
-        Object[] newFormats = Arrays.copyOf(choiceFormats, choiceFormats.length);
-        return newFormats;
+        return Arrays.copyOf(choiceFormats, choiceFormats.length);
     }
 
     // Overrides
@@ -546,7 +557,7 @@ public class ChoiceFormat extends NumberFormat {
      * @return the least double value greater than {@code d}
      * @see #previousDouble
      */
-    public static final double nextDouble (double d) {
+    public static double nextDouble (double d) {
         return Math.nextUp(d);
     }
 
@@ -561,7 +572,7 @@ public class ChoiceFormat extends NumberFormat {
      * @return the greatest double value less than {@code d}
      * @see #nextDouble
      */
-    public static final double previousDouble (double d) {
+    public static double previousDouble (double d) {
         return Math.nextDown(d);
     }
 
