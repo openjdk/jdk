@@ -5041,7 +5041,7 @@ instruct loadSSI(rRegI dst, stackSlotI src)
   ins_cost(125);
   format %{ "movl    $dst, $src\t# int stk" %}
   ins_encode %{
-    __ movl ($dst$$Register, $src$$Address);
+    __ movl($dst$$Register, $src$$Address);
   %}
   ins_pipe(ialu_reg_mem);
 %}
