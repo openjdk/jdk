@@ -142,6 +142,6 @@ public class HeapRegion extends ContiguousSpace implements LiveRegionsProvider {
 
     public void printOn(PrintStream tty) {
         tty.print("Region: " + bottom() + "," + top() + "," + end());
-        tty.println(": " + type.typeAnnotation() + (isPinned() ? " Pinned" : ""));
+        tty.println(":" + type.typeAnnotation() + (isPinned() ? " Pinned" : ""));
     }
 }
