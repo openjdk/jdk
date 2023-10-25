@@ -522,14 +522,15 @@ class ServerImpl {
 
                                     key.cancel();
                                     chan.configureBlocking (true);
+                                    // check if connection is being closed
                                     if (newlyAcceptedConnections.remove(conn)
                                             || idleConnections.remove(conn)) {
                                         // was either a newly accepted connection or an idle
                                         // connection. In either case, we mark that the request
                                         // has now started on this connection.
                                         requestStarted(conn);
+                                        handle (chan, conn);
                                     }
-                                    handle (chan, conn);
                                 } else {
                                     assert false : "Unexpected non-readable key:" + key;
                                 }
