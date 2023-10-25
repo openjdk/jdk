@@ -83,7 +83,7 @@ public class ByteCodeTest {
             e.printStackTrace();
         }
         assert c != null;
-        ConstantPoolVisitor cpv = new ConstantPoolVisitor(c, c.constantPool().entryCount());
+        ConstantPoolVisitor cpv = new ConstantPoolVisitor(c, c.constantPool().size());
         Map<Integer, String> hm = cpv.getBSMMap();
 
         List<String> expectedValList = tc.getExpectedArgValues();

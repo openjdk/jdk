@@ -280,10 +280,12 @@ void os::run_periodic_checks(outputStream* st) {
   return;
 }
 
+#ifndef _WIN64
 // previous UnhandledExceptionFilter, if there is one
 static LPTOP_LEVEL_EXCEPTION_FILTER prev_uef_handler = nullptr;
+#endif
 
-LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo);
+static LONG WINAPI Uncaught_Exception_Handler(struct _EXCEPTION_POINTERS* exceptionInfo);
 
 void os::init_system_properties_values() {
   // sysclasspath, java_home, dll_dir
@@ -397,7 +399,7 @@ void os::init_system_properties_values() {
 
 #ifndef _WIN64
   // set our UnhandledExceptionFilter and save any previous one
-  prev_uef_handler = SetUnhandledExceptionFilter(Handle_FLT_Exception);
+  prev_uef_handler = SetUnhandledExceptionFilter(Uncaught_Exception_Handler);
 #endif
 
   // Done
@@ -2494,8 +2496,8 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #if defined(_M_ARM64)
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Sp;
-  assert(pc[0] == 0x83, "not an sdiv opcode"); //Fixme did i get the right opcode?
-  assert(ctx->X4 == min_jint, "unexpected idiv exception");
+  guarantee(pc[0] == 0x83, "not an sdiv opcode(0x83), the actual value = 0x%x", pc[0]); //Fixme did i get the right opcode?
+  guarantee(ctx->X4 == min_jint, "unexpected idiv exception, the actual value = %d while the expected is %d", ctx->X4, min_jint);
   // set correct result values and continue after idiv instruction
   ctx->Pc = (uint64_t)pc + 4;        // idiv reg, reg, reg  is 4 bytes
   ctx->X4 = (uint64_t)min_jint;      // result
@@ -2504,8 +2506,10 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #elif defined(_M_AMD64)
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Rip;
-  assert(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && pc[1] == 0xF7 || pc[0] == 0xF7, "not an idiv opcode");
-  assert(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && (pc[2] & ~0x7) == 0xF8 || (pc[1] & ~0x7) == 0xF8, "cannot handle non-register operands");
+  guarantee(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && pc[1] == 0xF7 || pc[0] == 0xF7,
+            "not an idiv opcode, pc[0] = 0x%x and pc[1] = 0x%x", pc[0], pc[1]);
+  guarantee(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && (pc[2] & ~0x7) == 0xF8 || (pc[1] & ~0x7) == 0xF8,
+            "cannot handle non-register operands, pc[0] = 0x%x, pc[1] = 0x%x and pc[2] = 0x%x", pc[0], pc[1], pc[2]);
   if (pc[0] == 0xF7) {
     // set correct result values and continue after idiv instruction
     ctx->Rip = (DWORD64)pc + 2;        // idiv reg, reg  is 2 bytes
@@ -2520,9 +2524,9 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #else
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Eip;
-  assert(pc[0] == 0xF7, "not an idiv opcode");
-  assert((pc[1] & ~0x7) == 0xF8, "cannot handle non-register operands");
-  assert(ctx->Eax == min_jint, "unexpected idiv exception");
+  guarantee(pc[0] == 0xF7, "not an idiv opcode(0xF7), the actual value = 0x%x", pc[1]);
+  guarantee((pc[1] & ~0x7) == 0xF8, "cannot handle non-register operands, the actual value = 0x%x", pc[1]);
+  guarantee(ctx->Eax == min_jint, "unexpected idiv exception, the actual value = %d while the expected is %d", ctx->Eax, min_jint);
   // set correct result values and continue after idiv instruction
   ctx->Eip = (DWORD)pc + 2;        // idiv reg, reg  is 2 bytes
   ctx->Eax = (DWORD)min_jint;      // result
@@ -2534,9 +2538,7 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 
 #if defined(_M_AMD64) || defined(_M_IX86)
 //-----------------------------------------------------------------------------
-LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
-  PCONTEXT ctx = exceptionInfo->ContextRecord;
-#ifndef  _WIN64
+static bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   // handle exception caused by native method modifying control word
   DWORD exception_code = exceptionInfo->ExceptionRecord->ExceptionCode;
 
@@ -2547,34 +2549,48 @@ LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   case EXCEPTION_FLT_INVALID_OPERATION:
   case EXCEPTION_FLT_OVERFLOW:
   case EXCEPTION_FLT_STACK_CHECK:
-  case EXCEPTION_FLT_UNDERFLOW:
+  case EXCEPTION_FLT_UNDERFLOW: {
+    PCONTEXT ctx = exceptionInfo->ContextRecord;
+#ifndef  _WIN64
     jint fp_control_word = (* (jint*) StubRoutines::x86::addr_fpu_cntrl_wrd_std());
     if (fp_control_word != ctx->FloatSave.ControlWord) {
       // Restore FPCW and mask out FLT exceptions
       ctx->FloatSave.ControlWord = fp_control_word | 0xffffffc0;
       // Mask out pending FLT exceptions
       ctx->FloatSave.StatusWord &=  0xffffff00;
-      return EXCEPTION_CONTINUE_EXECUTION;
+      return true;
     }
+#else // !_WIN64
+    // On Windows, the mxcsr control bits are non-volatile across calls
+    // See also CR 6192333
+    //
+    jint MxCsr = INITIAL_MXCSR;
+    // we can't use StubRoutines::x86::addr_mxcsr_std()
+    // because in Win64 mxcsr is not saved there
+    if (MxCsr != ctx->MxCsr) {
+      ctx->MxCsr = MxCsr;
+      return true;
+    }
+#endif // !_WIN64
+  }
   }
 
+  return false;
+}
+#endif
+
+#ifndef _WIN64
+static LONG WINAPI Uncaught_Exception_Handler(struct _EXCEPTION_POINTERS* exceptionInfo) {
+  if (handle_FLT_exception(exceptionInfo)) {
+    return EXCEPTION_CONTINUE_EXECUTION;
+  }
+
+  // we only override this on 32 bits, so only check it there
   if (prev_uef_handler != nullptr) {
     // We didn't handle this exception so pass it to the previous
     // UnhandledExceptionFilter.
     return (prev_uef_handler)(exceptionInfo);
   }
-#else // !_WIN64
-  // On Windows, the mxcsr control bits are non-volatile across calls
-  // See also CR 6192333
-  //
-  jint MxCsr = INITIAL_MXCSR;
-  // we can't use StubRoutines::x86::addr_mxcsr_std()
-  // because in Win64 mxcsr is not saved there
-  if (MxCsr != ctx->MxCsr) {
-    ctx->MxCsr = MxCsr;
-    return EXCEPTION_CONTINUE_EXECUTION;
-  }
-#endif // !_WIN64
 
   return EXCEPTION_CONTINUE_SEARCH;
 }
@@ -2831,9 +2847,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     }
 
 #if defined(_M_AMD64) || defined(_M_IX86)
-    if ((in_java || in_native) && exception_code != EXCEPTION_UNCAUGHT_CXX_EXCEPTION) {
-      LONG result=Handle_FLT_Exception(exceptionInfo);
-      if (result==EXCEPTION_CONTINUE_EXECUTION) return result;
+    if ((in_java || in_native) && handle_FLT_exception(exceptionInfo)) {
+      return EXCEPTION_CONTINUE_EXECUTION;
     }
 #endif
 
@@ -3825,7 +3840,7 @@ void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint)    { }
 bool os::numa_topology_changed()                       { return false; }
 size_t os::numa_get_groups_num()                       { return MAX2(numa_node_list_holder.get_count(), 1); }
 int os::numa_get_group_id()                            { return 0; }
-size_t os::numa_get_leaf_groups(int *ids, size_t size) {
+size_t os::numa_get_leaf_groups(uint *ids, size_t size) {
   if (numa_node_list_holder.get_count() == 0 && size > 0) {
     // Provide an answer for UMA systems
     ids[0] = 0;
@@ -3834,7 +3849,8 @@ size_t os::numa_get_leaf_groups(int *ids, size_t size) {
     // check for size bigger than actual groups_num
     size = MIN2(size, numa_get_groups_num());
     for (int i = 0; i < (int)size; i++) {
-      ids[i] = numa_node_list_holder.get_node_list_entry(i);
+      int node_id = numa_node_list_holder.get_node_list_entry(i);
+      ids[i] = checked_cast<uint>(node_id);
     }
     return size;
   }

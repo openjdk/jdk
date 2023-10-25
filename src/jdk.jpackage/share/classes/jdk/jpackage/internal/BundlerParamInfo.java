@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,6 @@ class BundlerParamInfo<T> {
     Class<T> valueType;
 
     /**
-     * Indicates if value was set using default value function
-     */
-    boolean isDefaultValue;
-
-    /**
      * If the value is not set, and no fallback value is found,
      * the parameter uses the value returned by the producer.
      */
@@ -70,8 +65,24 @@ class BundlerParamInfo<T> {
         return valueType;
     }
 
-    boolean getIsDefaultValue() {
-        return isDefaultValue;
+    /**
+     * Returns true if value was not provided on command line for this
+     * parameter.
+     *
+     * @param params - params from which value will be fetch
+     * @return true if value was not provided on command line, false otherwise
+     */
+    boolean getIsDefaultValue(Map<String, ? super Object> params) {
+        Object o = params.get(getID());
+        if (o != null) {
+            return false; // We have user provided value
+        }
+
+        if (params.containsKey(getID())) {
+            return false; // explicit nulls are allowed for provided value
+        }
+
+        return true;
     }
 
     Function<Map<String, ? super Object>, T> getDefaultValueFunction() {
@@ -114,7 +125,6 @@ class BundlerParamInfo<T> {
             T result =  getDefaultValueFunction().apply(params);
             if (result != null) {
                 params.put(getID(), result);
-                isDefaultValue = true;
             }
             return result;
         }

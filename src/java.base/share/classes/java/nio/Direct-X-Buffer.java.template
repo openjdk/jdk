@@ -75,31 +75,15 @@ class Direct$Type$Buffer$RW$$BO$
 
 #if[byte]
 
-    private static class Deallocator
-        implements Runnable
-    {
-
-        private long address;
-        private long size;
-        private int capacity;
-
-        private Deallocator(long address, long size, int capacity) {
-            assert (address != 0);
-            this.address = address;
-            this.size = size;
-            this.capacity = capacity;
+    private record Deallocator(long address, long size, int capacity) implements Runnable {
+        private Deallocator {
+            assert address != 0;
         }
 
         public void run() {
-            if (address == 0) {
-                // Paranoia
-                return;
-            }
             UNSAFE.freeMemory(address);
-            address = 0;
             Bits.unreserveMemory(size, capacity);
         }
-
     }
 
     private final Cleaner cleaner;

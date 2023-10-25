@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,56 +23,43 @@
 
 /*
  * @test
- * @bug 5052433
- * @summary NullPointerException for generateCRL and generateCRLs methods.
+ * @bug 5052433 8315042
+ * @summary Verify that generateCRL and generateCRLs methods do not throw
+ *          NullPointerException. They should throw CRLException instead.
+ * @library /test/lib
  */
 import java.security.NoSuchProviderException;
 import java.security.cert.*;
 import java.io.ByteArrayInputStream;
+import java.util.Base64;
+
+import jdk.test.lib.Utils;
 
 public class UnexpectedNPE {
-    CertificateFactory cf = null ;
+    static CertificateFactory cf = null;
 
-    public UnexpectedNPE() {}
-
-    public static void main( String[] av ) {
+    public static void main(String[] av ) throws CertificateException,
+            NoSuchProviderException {
         byte[] encoded_1 = { 0x00, 0x00, 0x00, 0x00 };
         byte[] encoded_2 = { 0x30, 0x01, 0x00, 0x00 };
         byte[] encoded_3 = { 0x30, 0x01, 0x00 };
+        byte[] encoded_4 = Base64.getDecoder().decode(
+                "MAsGCSqGSMP7TQEHAjI1Bgn///////8wCwUyAQ==");
 
-        UnexpectedNPE unpe = new UnexpectedNPE() ;
+        cf = CertificateFactory.getInstance("X.509", "SUN");
 
-        if(!unpe.run(encoded_1)) {
-            throw new SecurityException("CRLException has not been thrown");
-        }
-
-        if(!unpe.run(encoded_2)) {
-            throw new SecurityException("CRLException has not been thrown");
-        }
-
-        if(!unpe.run(encoded_2)) {
-            throw new SecurityException("CRLException has not been thrown");
-        }
+        run(encoded_1);
+        run(encoded_2);
+        run(encoded_3);
+        run(encoded_4);
     }
 
-    private boolean run(byte[] buf) {
-        if (cf == null) {
-            try {
-                cf = CertificateFactory.getInstance("X.509", "SUN");
-            } catch (CertificateException e) {
-                throw new SecurityException("Cannot get CertificateFactory");
-            } catch (NoSuchProviderException npe) {
-                throw new SecurityException("Cannot get CertificateFactory");
-            }
-        }
-        try {
-            cf.generateCRL(new ByteArrayInputStream(buf));
-        } catch (CRLException ce) {
-            System.out.println("NPE checking passed");
-            return true;
-        }
-
-        System.out.println("CRLException has not been thrown");
-        return false;
+    private static void run(byte[] buf) {
+        Utils.runAndCheckException(
+                () -> cf.generateCRL(new ByteArrayInputStream(buf)),
+                CRLException.class);
+        Utils.runAndCheckException(
+                () -> cf.generateCRLs(new ByteArrayInputStream(buf)),
+                CRLException.class);
     }
 }

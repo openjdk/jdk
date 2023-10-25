@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public:
   static void define_module(Handle module, jboolean is_open, jstring version,
                             jstring location, jobjectArray packages, TRAPS);
 
-  static bool check_module_oop(oop orig_module_obj) NOT_CDS_JAVA_HEAP_RETURN_(false);
+  static bool check_archived_module_oop(oop orig_module_obj) NOT_CDS_JAVA_HEAP_RETURN_(false);
   static void update_oops_in_archived_module(oop orig_module_obj, int archived_module_root_index)
                                              NOT_CDS_JAVA_HEAP_RETURN;
   static void define_archived_modules(Handle h_platform_loader, Handle h_system_loader,

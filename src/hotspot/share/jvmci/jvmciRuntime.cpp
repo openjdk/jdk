@@ -887,6 +887,13 @@ jlong JVMCIRuntime::make_oop_handle(const Handle& obj) {
   return reinterpret_cast<jlong>(ptr);
 }
 
+#ifdef ASSERT
+bool JVMCIRuntime::is_oop_handle(jlong handle) {
+  const oop* ptr = (oop*) handle;
+  return object_handles()->allocation_status(ptr) == OopStorage::ALLOCATED_ENTRY;
+}
+#endif
+
 int JVMCIRuntime::release_and_clear_oop_handles() {
   guarantee(_num_attached_threads == cannot_be_attached, "only call during JVMCI runtime shutdown");
   int released = release_cleared_oop_handles();
@@ -975,7 +982,7 @@ int JVMCIRuntime::release_cleared_oop_handles() {
       object_handles()->release(_oop_handles.adr_at(num_alive), to_release);
 
       // Truncate oop handles to only those with a non-null referent
-      JVMCI_event_1("compacted oop handles in JVMCI runtime %d from %d to %d", _id, _oop_handles.length(), num_alive);
+      JVMCI_event_2("compacted oop handles in JVMCI runtime %d from %d to %d", _id, _oop_handles.length(), num_alive);
       _oop_handles.trunc_to(num_alive);
       // Example: HHH
 
@@ -1246,7 +1253,7 @@ bool JVMCIRuntime::detach_thread(JavaThread* thread, const char* reason, bool ca
   return destroyed_javavm;
 }
 
-JNIEnv* JVMCIRuntime::init_shared_library_javavm(int* create_JavaVM_err) {
+JNIEnv* JVMCIRuntime::init_shared_library_javavm(int* create_JavaVM_err, const char** err_msg) {
   MutexLocker locker(_lock);
   JavaVM* javaVM = _shared_library_javavm;
   if (javaVM == nullptr) {
@@ -1273,7 +1280,7 @@ JNIEnv* JVMCIRuntime::init_shared_library_javavm(int* create_JavaVM_err) {
     JavaVMInitArgs vm_args;
     vm_args.version = JNI_VERSION_1_2;
     vm_args.ignoreUnrecognized = JNI_TRUE;
-    JavaVMOption options[5];
+    JavaVMOption options[6];
     jlong javaVM_id = 0;
 
     // Protocol: JVMCI shared library JavaVM should support a non-standard "_javavm_id"
@@ -1290,6 +1297,8 @@ JNIEnv* JVMCIRuntime::init_shared_library_javavm(int* create_JavaVM_err) {
     options[3].extraInfo = (void*) _fatal;
     options[4].optionString = (char*) "_fatal_log";
     options[4].extraInfo = (void*) _fatal_log;
+    options[5].optionString = (char*) "_createvm_errorstr";
+    options[5].extraInfo = (void*) err_msg;
 
     vm_args.version = JNI_VERSION_1_2;
     vm_args.options = options;

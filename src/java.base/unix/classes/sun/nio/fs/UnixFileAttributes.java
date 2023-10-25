@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,15 @@
 
 package sun.nio.fs;
 
-import java.nio.file.attribute.*;
-import java.util.concurrent.TimeUnit;
-import java.util.Set;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.GroupPrincipal;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.UserPrincipal;
 import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Unix implementation of PosixFileAttributes.
@@ -52,6 +57,7 @@ class UnixFileAttributes
     private long    st_ctime_sec;
     private long    st_ctime_nsec;
     private long    st_birthtime_sec;
+    private long    st_birthtime_nsec;
 
     // created lazily
     private volatile UserPrincipal owner;
@@ -158,7 +164,7 @@ class UnixFileAttributes
     @Override
     public FileTime creationTime() {
         if (UnixNativeDispatcher.birthtimeSupported()) {
-            return FileTime.from(st_birthtime_sec, TimeUnit.SECONDS);
+            return toFileTime(st_birthtime_sec, st_birthtime_nsec);
         } else {
             // return last modified when birth time not supported
             return lastModifiedTime();
