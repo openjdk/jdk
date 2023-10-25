@@ -197,7 +197,7 @@ class os: AllStatic {
 
   static char*  pd_reserve_memory(size_t bytes, bool executable);
 
-  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, int *fail_reason);
+  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable);
 
   static bool   pd_commit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
@@ -438,7 +438,7 @@ class os: AllStatic {
 
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
-  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false, int *fail_reason = nullptr);
+  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false);
 
   // Given an address range [min, max), attempts to reserve memory within this area, with the given alignment.
   // If randomize is true, the location will be randomized.
