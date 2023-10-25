@@ -45,8 +45,8 @@ void G1RemSetTrackingPolicy::update_at_allocate(HeapRegion* r) {
     r->rem_set()->set_state_untracked();
     return;
   }
-  // Always collect remembered set for young regions.
-  // Collect remembered sets for humongous regions by default to allow eager reclaim.
+  // Always collect remembered set for young regions and for humongous regions.
+  // Humongous regions need that for eager reclaim.
   r->rem_set()->set_state_complete();
 }
 
