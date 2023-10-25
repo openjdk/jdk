@@ -61,7 +61,7 @@ private:
   static void dump(Entry* entries, size_t count);
   static size_t _malloc_good_size_stats(size_t size);
   static size_t _malloc_good_size(size_t size);
-  static void find_malloc_buckets_sizes(Entry* entries, size_t count);
+  static void find_malloc_requests_buckets_sizes(Entry* entries, size_t count);
   static Entry* access_non_empty(Entry* entries, size_t count) {
     Entry* e = &entries[count];
     if (!is_empty(e))
@@ -69,8 +69,8 @@ private:
     else
       return nullptr;
   };
-  static size_t* malloc_buckets;
-  static size_t malloc_buckets_count;
+  static size_t* malloc_requests_buckets;
+  static size_t malloc_requests_count;
   static size_t* good_sizes_counts;
   static size_t* good_sizes_totals;
 
