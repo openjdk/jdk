@@ -84,29 +84,41 @@ public class InstructionHelper {
     }
 
     public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l, String name, Class<?> type, String bsmMethodName,
-                                                  MethodType bsmType, ConstantDesc[] bootstrapArgs) throws Exception {
+                                                  MethodType bsmType, ConstantDesc... bootstrapArgs) throws Exception {
         return ldcDynamicConstant(l, name, type, l.lookupClass(), bsmMethodName, bsmType, bootstrapArgs);
     }
 
     public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l, String name, Class<?> type, Class<?> bsmClass,
-                                                  String bsmMethodName, MethodType bsmType, ConstantDesc[] bootstrapArgs) throws Exception {
+                                                  String bsmMethodName, MethodType bsmType, ConstantDesc... bootstrapArgs) throws Exception {
+        return ldcDynamicConstant(l, name, type.descriptorString(), bsmClass.descriptorString(), bsmMethodName,
+                bsmType.descriptorString(), bootstrapArgs);
+    }
+
+    public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l, String name, String type, String bsmMethodName,
+                                                  String bsmType, ConstantDesc... bootstrapArgs) throws Exception {
+        return ldcDynamicConstant(l, name, type, l.lookupClass().descriptorString(), bsmMethodName, bsmType, bootstrapArgs);
+    }
+
+    public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l, String name, String type, String bsmClass,
+                                                   String bsmMethodName, String bsmType, ConstantDesc... bootstrapArgs)
+            throws IllegalAccessException, NoSuchMethodException {
         String methodType = "()" + type;
         ClassDesc genClassDesc = classDesc(l.lookupClass(), "$Code_" + COUNT.getAndIncrement());
         byte[] bytes = Classfile.of().build(genClassDesc, classBuilder -> {
             commonBuild(classBuilder);
-            classBuilder.withMethod("m", MethodTypeDesc.of(classDesc(type)),
+            classBuilder.withMethod("m", MethodTypeDesc.of(ClassDesc.ofDescriptor(type)),
                     Classfile.ACC_PUBLIC + Classfile.ACC_STATIC, methodBuilder -> methodBuilder
                             .withCode(codeBuilder -> codeBuilder
                                     .ldc(DynamicConstantDesc.ofNamed(
                                             MethodHandleDesc.ofMethod(
                                                     DirectMethodHandleDesc.Kind.STATIC,
-                                                    classDesc(bsmClass),
+                                                    ClassDesc.ofDescriptor(bsmClass),
                                                     bsmMethodName,
-                                                    MethodTypeDesc.ofDescriptor(bsmType.descriptorString())),
+                                                    MethodTypeDesc.ofDescriptor(bsmType)),
                                             name,
-                                            classDesc(type),
+                                            ClassDesc.ofDescriptor(type),
                                             bootstrapArgs))
-                                    .returnInstruction(TypeKind.fromDescriptor(type.descriptorString()))));
+                                    .returnInstruction(TypeKind.fromDescriptor(type))));
         });
         Class<?> gc = l.defineClass(bytes);
         return l.findStatic(gc, "m", fromMethodDescriptorString(methodType, l.lookupClass().getClassLoader()));
