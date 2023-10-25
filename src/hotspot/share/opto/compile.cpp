@@ -646,8 +646,8 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _unique(0),
                   _dead_node_count(0),
                   _dead_node_list(comp_arena()),
-                  _node_arena_one(mtCompiler),
-                  _node_arena_two(mtCompiler),
+                  _node_arena_one(mtCompiler, Arena::Tag::tag_node),
+                  _node_arena_two(mtCompiler, Arena::Tag::tag_node),
                   _node_arena(&_node_arena_one),
                   _mach_constant_base_node(nullptr),
                   _Compile_types(mtCompiler),
@@ -1854,6 +1854,7 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
       igvn._worklist.push(n);
     }
     igvn.optimize();
+    if (failing()) return;
     assert(_for_post_loop_igvn.length() == 0, "no more delayed nodes allowed");
     assert(C->parse_predicate_count() == 0, "all parse predicates should have been removed now");
 
@@ -2069,6 +2070,7 @@ void Compile::inline_incrementally_cleanup(PhaseIterGVN& igvn) {
     TracePhase tp("incrementalInline_igvn", &timers[_t_incrInline_igvn]);
     igvn.reset_from_gvn(initial_gvn());
     igvn.optimize();
+    if (failing()) return;
   }
   print_method(PHASE_INCREMENTAL_INLINE_CLEANUP, 3);
 }
@@ -2245,6 +2247,8 @@ void Compile::Optimize() {
 
   process_for_unstable_if_traps(igvn);
 
+  if (failing())  return;
+
   inline_incrementally(igvn);
 
   print_method(PHASE_INCREMENTAL_INLINE, 2);
@@ -2254,6 +2258,8 @@ void Compile::Optimize() {
   if (eliminate_boxing()) {
     // Inline valueOf() methods now.
     inline_boxing_calls(igvn);
+
+    if (failing())  return;
 
     if (AlwaysIncrementalInline) {
       inline_incrementally(igvn);
@@ -2270,16 +2276,20 @@ void Compile::Optimize() {
   // CastPP nodes.
   remove_speculative_types(igvn);
 
+  if (failing())  return;
+
   // No more new expensive nodes will be added to the list from here
   // so keep only the actual candidates for optimizations.
   cleanup_expensive_nodes(igvn);
+
+  if (failing())  return;
 
   assert(EnableVectorSupport || !has_vbox_nodes(), "sanity");
   if (EnableVectorSupport && has_vbox_nodes()) {
     TracePhase tp("", &timers[_t_vector]);
     PhaseVector pv(igvn);
     pv.optimize_vector_boxes();
-
+    if (failing())  return;
     print_method(PHASE_ITER_GVN_AFTER_VECTOR, 2);
   }
   assert(!has_vbox_nodes(), "sanity");
@@ -2293,11 +2303,14 @@ void Compile::Optimize() {
     }
     igvn.reset_from_gvn(initial_gvn());
     igvn.optimize();
+    if (failing()) return;
   }
 
   // Now that all inlining is over and no PhaseRemoveUseless will run, cut edge from root to loop
   // safepoints
   remove_root_to_sfpts_edges(igvn);
+
+  if (failing())  return;
 
   // Perform escape analysis
   if (do_escape_analysis() && ConnectionGraph::has_candidates(this)) {
@@ -2320,7 +2333,7 @@ void Compile::Optimize() {
       igvn.optimize();
       print_method(PHASE_ITER_GVN_AFTER_EA, 2);
 
-      if (failing())  return;
+      if (failing()) return;
 
       if (congraph() != nullptr && macro_count() > 0) {
         TracePhase tp("macroEliminate", &timers[_t_macroEliminate]);
@@ -2330,6 +2343,8 @@ void Compile::Optimize() {
 
         igvn.set_delay_transform(false);
         igvn.optimize();
+        if (failing()) return;
+
         print_method(PHASE_ITER_GVN_AFTER_ELIMINATION, 2);
       }
 
@@ -2411,6 +2426,8 @@ void Compile::Optimize() {
 
   process_for_post_loop_opts_igvn(igvn);
 
+  if (failing())  return;
+
 #ifdef ASSERT
   bs->verify_gc_barriers(this, BarrierSetC2::BeforeMacroExpand);
 #endif
@@ -2437,6 +2454,7 @@ void Compile::Optimize() {
   if (C->max_vector_size() > 0) {
     C->optimize_logic_cones(igvn);
     igvn.optimize();
+    if (failing()) return;
   }
 
   DEBUG_ONLY( _modified_nodes = nullptr; )
@@ -2449,6 +2467,7 @@ void Compile::Optimize() {
     // More opportunities to optimize virtual and MH calls.
     // Though it's maybe too late to perform inlining, strength-reducing them to direct calls is still an option.
     process_late_inline_calls_no_inline(igvn);
+    if (failing())  return;
   }
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
@@ -4009,8 +4028,6 @@ bool Compile::final_graph_reshaping() {
 
       // Recheck with a better notion of 'required_outcnt'
       if (n->outcnt() != required_outcnt) {
-        DEBUG_ONLY( n->dump_bfs(1, 0, "-"); );
-        assert(false, "malformed control flow");
         record_method_not_compilable("malformed control flow");
         return true;            // Not all targets reachable!
       }
@@ -4355,6 +4372,7 @@ Compile::TracePhase::TracePhase(const char* name, elapsedTimer* accumulator)
 }
 
 Compile::TracePhase::~TracePhase() {
+  if (_compile->failing()) return;
 #ifdef ASSERT
   if (PrintIdealNodeCount) {
     tty->print_cr("phase name='%s' nodes='%d' live='%d' live_graph_walk='%d'",
@@ -4927,6 +4945,7 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
     igvn.remove_speculative_types();
     if (modified > 0) {
       igvn.optimize();
+      if (failing())  return;
     }
 #ifdef ASSERT
     // Verify that after the IGVN is over no speculative type has resurfaced
@@ -5071,6 +5090,7 @@ void Compile::sort_macro_nodes() {
 }
 
 void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
+  if (failing()) { return; }
   EventCompilerPhase event;
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, cpt, C->_compile_id, level);
@@ -5127,7 +5147,7 @@ bool Compile::should_print_phase(CompilerPhaseType cpt) {
   return false;
 }
 
-bool Compile::should_print_igv(int level) {
+bool Compile::should_print_igv(const int level) {
 #ifndef PRODUCT
   if (PrintIdealGraphLevel < 0) { // disabled by the user
     return false;

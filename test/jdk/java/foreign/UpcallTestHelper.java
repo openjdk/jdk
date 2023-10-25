@@ -56,7 +56,6 @@ public class UpcallTestHelper extends NativeTestHelper {
         assert !target.isArray();
 
         List<String> command = new ArrayList<>(List.of(
-            "--enable-preview",
             "--enable-native-access=ALL-UNNAMED",
             "-Djava.library.path=" + System.getProperty("java.library.path"),
             "-Djdk.internal.foreign.UpcallLinker.USE_SPEC=" + useSpec,

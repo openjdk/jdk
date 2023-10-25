@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @modules java.base/jdk.internal.vm.annotation java.base/jdk.internal.misc
  * @key randomness
  * @run testng/othervm TestHandshake

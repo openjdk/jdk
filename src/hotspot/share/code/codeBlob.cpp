@@ -174,8 +174,10 @@ void RuntimeBlob::free(RuntimeBlob* blob) {
 }
 
 void CodeBlob::flush() {
-  FREE_C_HEAP_ARRAY(unsigned char, _oop_maps);
-  _oop_maps = nullptr;
+  if (_oop_maps != nullptr) {
+    delete _oop_maps;
+    _oop_maps = nullptr;
+  }
   NOT_PRODUCT(_asm_remarks.clear());
   NOT_PRODUCT(_dbg_strings.clear());
 }
@@ -190,7 +192,6 @@ void CodeBlob::set_oop_maps(OopMapSet* p) {
   }
 }
 
-
 void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const char* name2) {
   // Do not hold the CodeCache lock during name formatting.
   assert(!CodeCache_lock->owned_by_self(), "release CodeCache before registering the stub");
@@ -204,7 +205,8 @@ void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const cha
     if (PrintStubCode) {
       ttyLocker ttyl;
       tty->print_cr("- - - [BEGIN] - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
-      tty->print_cr("Decoding %s " INTPTR_FORMAT, stub_id, (intptr_t) stub);
+      tty->print_cr("Decoding %s " PTR_FORMAT " [" PTR_FORMAT ", " PTR_FORMAT "] (%d bytes)",
+                    stub_id, p2i(stub), p2i(stub->code_begin()), p2i(stub->code_end()), stub->code_size());
       Disassembler::decode(stub->code_begin(), stub->code_end(), tty
                            NOT_PRODUCT(COMMA &stub->asm_remarks()));
       if ((stub->oop_maps() != nullptr) && AbstractDisassembler::show_structs()) {
@@ -412,7 +414,8 @@ RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
                                            int frame_complete,
                                            int frame_size,
                                            OopMapSet* oop_maps,
-                                           bool caller_must_gc_arguments)
+                                           bool caller_must_gc_arguments,
+                                           bool alloc_fail_is_fatal)
 {
   RuntimeStub* stub = nullptr;
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(RuntimeStub));
@@ -420,6 +423,12 @@ RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     stub = new (size) RuntimeStub(stub_name, cb, size, frame_complete, frame_size, oop_maps, caller_must_gc_arguments);
+    if (stub == nullptr) {
+      if (!alloc_fail_is_fatal) {
+        return nullptr;
+      }
+      fatal("Initial size of CodeCache is too small");
+    }
   }
 
   trace_new_stub(stub, "RuntimeStub - ", stub_name);
@@ -429,9 +438,7 @@ RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
 
 
 void* RuntimeStub::operator new(size_t s, unsigned size) throw() {
-  void* p = CodeCache::allocate(size, CodeBlobType::NonNMethod);
-  if (!p) fatal("Initial size of CodeCache is too small");
-  return p;
+  return CodeCache::allocate(size, CodeBlobType::NonNMethod);
 }
 
 // operator new shared by all singletons:
@@ -731,12 +738,9 @@ void DeoptimizationBlob::print_value_on(outputStream* st) const {
 
 // Implementation of UpcallStub
 
-UpcallStub::UpcallStub(const char* name, CodeBuffer* cb, int size,
-                       intptr_t exception_handler_offset,
-                       jobject receiver, ByteSize frame_data_offset) :
+UpcallStub::UpcallStub(const char* name, CodeBuffer* cb, int size, jobject receiver, ByteSize frame_data_offset) :
   RuntimeBlob(name, cb, sizeof(UpcallStub), size, CodeOffsets::frame_never_safe, 0 /* no frame size */,
               /* oop maps = */ nullptr, /* caller must gc arguments = */ false),
-  _exception_handler_offset(exception_handler_offset),
   _receiver(receiver),
   _frame_data_offset(frame_data_offset) {
   CodeCache::commit(this);
@@ -746,17 +750,14 @@ void* UpcallStub::operator new(size_t s, unsigned size) throw() {
   return CodeCache::allocate(size, CodeBlobType::NonNMethod);
 }
 
-UpcallStub* UpcallStub::create(const char* name, CodeBuffer* cb,
-                               intptr_t exception_handler_offset,
-                               jobject receiver, ByteSize frame_data_offset) {
+UpcallStub* UpcallStub::create(const char* name, CodeBuffer* cb, jobject receiver, ByteSize frame_data_offset) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
   UpcallStub* blob = nullptr;
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(UpcallStub));
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) UpcallStub(name, cb, size,
-                                         exception_handler_offset, receiver, frame_data_offset);
+    blob = new (size) UpcallStub(name, cb, size, receiver, frame_data_offset);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();

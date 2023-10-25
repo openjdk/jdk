@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
@@ -1064,7 +1065,7 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
       // concurrently doesn't expect a k to have a null java_mirror.
       release_set_array_klass(comp_mirror(), k);
     }
-    if (DumpSharedSpaces) {
+    if (CDSConfig::is_dumping_heap()) {
       create_scratch_mirror(k, CHECK);
     }
   } else {
@@ -1366,7 +1367,7 @@ BasicType java_lang_Class::primitive_type(oop java_class) {
     assert(java_class == Universe::void_mirror(), "only valid non-array primitive");
   }
 #ifdef ASSERT
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_heap()) {
     oop mirror = Universe::java_mirror(type);
     oop scratch_mirror = HeapShared::scratch_java_mirror(type);
     assert(java_class == mirror || java_class == scratch_mirror, "must be consistent");
@@ -1986,22 +1987,25 @@ int java_lang_VirtualThread::state(oop vthread) {
 
 JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) {
   JavaThreadStatus status = JavaThreadStatus::NEW;
-  switch (state) {
+  switch (state & ~SUSPENDED) {
     case NEW :
       status = JavaThreadStatus::NEW;
       break;
     case STARTED :
     case RUNNABLE :
-    case RUNNABLE_SUSPENDED :
     case RUNNING :
     case PARKING :
+    case TIMED_PARKING:
     case YIELDING :
       status = JavaThreadStatus::RUNNABLE;
       break;
     case PARKED :
-    case PARKED_SUSPENDED :
     case PINNED :
       status = JavaThreadStatus::PARKED;
+      break;
+    case TIMED_PARKED:
+    case TIMED_PINNED:
+      status = JavaThreadStatus::PARKED_TIMED;
       break;
     case TERMINATED :
       status = JavaThreadStatus::TERMINATED;

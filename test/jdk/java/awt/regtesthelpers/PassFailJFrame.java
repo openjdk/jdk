@@ -71,6 +71,79 @@ import static java.util.Collections.unmodifiableList;
 import static javax.swing.SwingUtilities.invokeAndWait;
 import static javax.swing.SwingUtilities.isEventDispatchThread;
 
+/**
+ * Provides a framework for manual tests to display test instructions and
+ * Pass/Fail buttons.
+ * <p>
+ * Instructions for the user can be either plain text or HTML as supported
+ * by Swing. If the instructions start with {@code <html>}, the
+ * instructions are displayed as HTML.
+ * <p>
+ * A simple test would look like this:
+ * <pre>{@code
+ * public class SampleManualTest {
+ *     private static final String INSTRUCTIONS =
+ *             "Click Pass, or click Fail if the test failed.";
+ *
+ *     public static void main(String[] args) throws Exception {
+ *         PassFailJFrame.builder()
+ *                       .instructions(INSTRUCTIONS)
+ *                       .testUI(() -> createTestUI())
+ *                       .build()
+ *                       .awaitAndCheck();
+ *     }
+ *
+ *     private static List<Window> createTestUI() {
+ *         JFrame testUI = new JFrame("Test UI");
+ *         testUI.setSize(250, 150);
+ *         return List.of(testUI);
+ *     }
+ * }
+ * }</pre>
+ * <p>
+ * The above example uses the {@link Builder Builder} to set the parameters of
+ * the instruction frame. It is the recommended way.
+ * <p>
+ * The framework will create instruction UI, it will call
+ * the provided {@code createTestUI} on the Event Dispatch Thread (EDT),
+ * and it will automatically position the test UI and make it visible.
+ * <p>
+ * Alternatively, use one of the {@code PassFailJFrame} constructors to
+ * create an object, then create secondary test UI, register it
+ * with {@code PassFailJFrame}, position it and make it visible.
+ * The following sample demonstrates it:
+ * <pre>{@code
+ * public class SampleOldManualTest {
+ *     private static final String INSTRUCTIONS =
+ *             "Click Pass, or click Fail if the test failed.";
+ *
+ *     public static void main(String[] args) throws Exception {
+ *         PassFailJFrame passFail = new PassFailJFrame(INSTRUCTIONS);
+ *
+ *         SwingUtilities.invokeAndWait(() -> createTestUI());
+ *
+ *         passFail.awaitAndCheck();
+ *     }
+ *
+ *     private static void createTestUI() {
+ *         JFrame testUI = new JFrame("Test UI");
+ *         testUI.setSize(250, 150);
+ *         PassFailJFrame.addTestWindow(testUI);
+ *         PassFailJFrame.positionTestWindow(testUI, PassFailJFrame.Position.HORIZONTAL);
+ *         testUI.setVisible(true);
+ *     }
+ * }
+ * }</pre>
+ * <p>
+ * Use methods of the {@code Builder} class or constructors of the
+ * {@code PassFailJFrame} class to control other parameters:
+ * <ul>
+ *     <li>the title of the instruction UI,</li>
+ *     <li>the timeout of the test,</li>
+ *     <li>the size of the instruction UI via rows and columns, and</li>
+ *     <li>to enable screenshots.</li>
+ * </ul>
+ */
 public class PassFailJFrame {
 
     private static final String TITLE = "Test Instruction Frame";

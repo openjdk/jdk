@@ -225,6 +225,7 @@ static bool reload_table() {
     lm->path = g_stringlist.add(ldi->ldinfo_filename);
     if (!lm->path) {
       trcVerbose("OOM.");
+      free(lm);
       goto cleanup;
     }
 
@@ -246,6 +247,7 @@ static bool reload_table() {
       lm->member = g_stringlist.add(p_mbr_name);
       if (!lm->member) {
         trcVerbose("OOM.");
+        free(lm);
         goto cleanup;
       }
     } else {
