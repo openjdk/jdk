@@ -25,9 +25,12 @@
 
 package com.sun.tools.javac.jvm;
 
+import com.sun.tools.javac.code.Symbol.DynamicVarSymbol;
 import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.code.Types.UniqueType;
+import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant.BasicConstant;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Pair;
@@ -116,6 +119,18 @@ public interface PoolConstant {
             public Object poolKey(Types types) {
                 return data;
             }
+        }
+
+        static boolean isLongOrDouble(LoadableConstant constant) {
+            return switch (constant) {
+                case DynamicVarSymbol dynamicVar ->
+                        dynamicVar.type.hasTag(TypeTag.LONG) ||
+                                dynamicVar.type.hasTag(TypeTag.DOUBLE);
+                case BasicConstant bc ->
+                        bc.tag == ClassFile.CONSTANT_Long ||
+                                bc.tag == ClassFile.CONSTANT_Double;
+                default -> false;
+            };
         }
     }
 

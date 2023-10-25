@@ -401,10 +401,11 @@ public class Code {
     */
     public void emitLdc(LoadableConstant constant) {
         int od = poolWriter.putConstant(constant);
-        if (od <= 255) {
+        if (LoadableConstant.isLongOrDouble(constant)) {
+            emitop2(ldc2w, od, constant);
+        } else if (od <= 255) {
             emitop1(ldc1, od, constant);
-        }
-        else {
+        } else {
             emitop2(ldc2, od, constant);
         }
     }
