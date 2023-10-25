@@ -138,7 +138,7 @@ public:
   static bool is_crossing_card_boundary(HeapWord* const obj_start,
                                         HeapWord* const obj_end) {
     HeapWord* cur_card_boundary = align_up_by_card_size(obj_start);
-    // strictly greater-than
+    // Strictly greater-than, since we check if this block *crosses* card boundary.
     return obj_end > cur_card_boundary;
   }
 
@@ -153,6 +153,5 @@ public:
     }
   }
 };
-
 
 #endif // SHARE_GC_SERIAL_SERIALBLOCKOFFSETTABLE_HPP

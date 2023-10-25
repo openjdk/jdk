@@ -117,7 +117,7 @@ void BlockOffsetSharedArray::resize(size_t new_word_size) {
 void BlockOffsetTable::update_for_block_work(HeapWord* blk_start,
                                              HeapWord* blk_end) {
   HeapWord* const cur_card_boundary = align_up_by_card_size(blk_start);
-  size_t const offset_card =  _array->index_for(cur_card_boundary);
+  size_t const offset_card = _array->index_for(cur_card_boundary);
 
   // The first card holds the actual offset.
   _array->set_offset_array(offset_card, cur_card_boundary, blk_start);
@@ -132,7 +132,7 @@ void BlockOffsetTable::update_for_block_work(HeapWord* blk_start,
     for (uint i = 0; i < BOTConstants::N_powers; i++) {
       // -1 so that the reach ends in this region and not at the start
       // of the next.
-      size_t reach = offset_card + BOTConstants::power_to_cards_back(i+1) - 1;
+      size_t reach = offset_card + BOTConstants::power_to_cards_back(i + 1) - 1;
       u_char value = checked_cast<u_char>(BOTConstants::card_size_in_words() + i);
       if (reach >= end_card) {
         _array->set_offset_array(start_card_for_region, end_card, value);

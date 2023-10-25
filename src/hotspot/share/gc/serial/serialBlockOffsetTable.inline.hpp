@@ -27,12 +27,6 @@
 
 #include "gc/serial/serialBlockOffsetTable.hpp"
 
-#include "gc/shared/space.hpp"
-#include "runtime/safepoint.hpp"
-
-//////////////////////////////////////////////////////////////////////////
-// BlockOffsetSharedArray inlines
-//////////////////////////////////////////////////////////////////////////
 inline size_t BlockOffsetSharedArray::index_for(const void* p) const {
   char* pc = (char*)p;
   assert(pc >= (char*)_reserved.start() &&
