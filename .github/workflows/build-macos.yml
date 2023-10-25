@@ -55,7 +55,7 @@ on:
 jobs:
   build-macos:
     name: build
-    runs-on: macos-11
+    runs-on: macos-13
 
     strategy:
       fail-fast: false

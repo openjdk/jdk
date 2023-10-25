@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -162,7 +163,7 @@ bool oopDesc::has_klass_gap() {
 
 #if INCLUDE_CDS_JAVA_HEAP
 void oopDesc::set_narrow_klass(narrowKlass nk) {
-  assert(DumpSharedSpaces, "Used by CDS only. Do not abuse!");
+  assert(CDSConfig::is_dumping_heap(), "Used by CDS only. Do not abuse!");
   assert(UseCompressedClassPointers, "must be");
   _metadata._compressed_klass = nk;
 }

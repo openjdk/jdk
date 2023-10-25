@@ -525,12 +525,6 @@ class Arguments : AllStatic {
 
   static bool has_jfr_option() NOT_JFR_RETURN_(false);
 
-  static bool is_dumping_archive() { return DumpSharedSpaces || DynamicDumpSharedSpaces; }
-
-  static void assert_is_dumping_archive() {
-    assert(Arguments::is_dumping_archive(), "dump time only");
-  }
-
   DEBUG_ONLY(static bool verify_special_jvm_flags(bool check_globals);)
 };
 

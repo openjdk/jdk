@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "jfr/dcmd/jfrDcmds.hpp"
 #include "jfr/instrumentation/jfrJvmtiAgent.hpp"
@@ -185,7 +186,7 @@ static void log_jdk_jfr_module_resolution_error(TRAPS) {
 
 static bool is_cds_dump_requested() {
   // we will not be able to launch recordings on startup if a cds dump is being requested
-  if (Arguments::is_dumping_archive() && JfrOptionSet::start_flight_recording_options() != nullptr) {
+  if (CDSConfig::is_dumping_archive() && JfrOptionSet::start_flight_recording_options() != nullptr) {
     warning("JFR will be disabled during CDS dumping");
     teardown_startup_support();
     return true;
@@ -227,7 +228,7 @@ bool JfrRecorder::on_create_vm_2() {
 
 bool JfrRecorder::on_create_vm_3() {
   assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_LIVE, "invalid init sequence");
-  return Arguments::is_dumping_archive() || launch_command_line_recordings(JavaThread::current());
+  return CDSConfig::is_dumping_archive() || launch_command_line_recordings(JavaThread::current());
 }
 
 static bool _created = false;

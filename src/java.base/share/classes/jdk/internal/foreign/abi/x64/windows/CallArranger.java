@@ -33,7 +33,6 @@ import jdk.internal.foreign.abi.CallingSequenceBuilder;
 import jdk.internal.foreign.abi.DowncallLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.SharedUtils;
-import jdk.internal.foreign.abi.UpcallLinker;
 import jdk.internal.foreign.abi.VMStorage;
 import jdk.internal.foreign.abi.x64.X86_64Architecture;
 
@@ -42,7 +41,6 @@ import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.List;
@@ -68,7 +66,9 @@ public class CallArranger {
         new VMStorage[] { xmm0 },
         0,
         new VMStorage[] { rax, r10, r11 },
-        new VMStorage[] { xmm4, xmm5 },
+        new VMStorage[] { xmm4, xmm5,
+                          xmm16, xmm17, xmm18, xmm19, xmm20, xmm21, xmm22, xmm23,
+                          xmm24, xmm25, xmm26, xmm27, xmm28, xmm29, xmm30, xmm31 },
         16,
         32,
         r10, r11 // scratch 1 & 2
