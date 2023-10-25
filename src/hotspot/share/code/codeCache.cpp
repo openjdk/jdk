@@ -200,7 +200,10 @@ void CodeCache::initialize_heaps() {
   bool non_nmethod_set      = FLAG_IS_CMDLINE(NonNMethodCodeHeapSize);
   bool profiled_set         = FLAG_IS_CMDLINE(ProfiledCodeHeapSize);
   bool non_profiled_set     = FLAG_IS_CMDLINE(NonProfiledCodeHeapSize);
-  size_t min_size           = os::vm_page_size();
+  const size_t ps           = page_size(false, 8);
+  size_t min_size           = MAX3(os::vm_page_size(),
+                                   os::vm_allocation_granularity(),
+                                   ps);
   size_t cache_size         = ReservedCodeCacheSize;
   size_t non_nmethod_size   = NonNMethodCodeHeapSize;
   size_t profiled_size      = ProfiledCodeHeapSize;
@@ -234,6 +237,9 @@ void CodeCache::initialize_heaps() {
   if (!non_nmethod_set && !profiled_set && !non_profiled_set) {
     // Check if we have enough space for the non-nmethod code heap
     if (cache_size > non_nmethod_size) {
+      // Ensure at least min_size is available for profiled and non-profiled
+      // methods
+      non_nmethod_size = MIN2(non_nmethod_size, cache_size - 2 * min_size);
       // Use the default value for non_nmethod_size and one half of the
       // remaining size for non-profiled and one half for profiled methods
       size_t remaining_size = cache_size - non_nmethod_size;
@@ -310,7 +316,6 @@ void CodeCache::initialize_heaps() {
   FLAG_SET_ERGO(ProfiledCodeHeapSize, profiled_size);
   FLAG_SET_ERGO(NonProfiledCodeHeapSize, non_profiled_size);
 
-  const size_t ps = page_size(false, 8);
   // Print warning if using large pages but not able to use the size given
   if (UseLargePages) {
     const size_t lg_ps = page_size(false, 1);
