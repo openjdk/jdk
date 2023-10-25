@@ -62,8 +62,7 @@ const Type::TypeInfo Type::_type_info[Type::lastype] = {
   { Bad,             T_NARROWKLASS,"narrowklass:",  false, Op_RegN,              relocInfo::none          },  // NarrowKlass
   { Bad,             T_ILLEGAL,    "tuple:",        false, Node::NotAMachineReg, relocInfo::none          },  // Tuple
   { Bad,             T_ARRAY,      "array:",        false, Node::NotAMachineReg, relocInfo::none          },  // Array
-
-  { Bad,             T_ARRAY,      "interfaces:",  false, Node::NotAMachineReg, relocInfo::none          },  // Interfaces
+  { Bad,             T_ARRAY,      "interfaces:",   false, Node::NotAMachineReg, relocInfo::none          },  // Interfaces
 
 #if defined(PPC64)
   { Bad,             T_ILLEGAL,    "vectormask:",   false, Op_RegVectMask,       relocInfo::none          },  // VectorMask.

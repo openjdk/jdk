@@ -94,7 +94,7 @@ public:
     Tuple,                      // Method signature or object layout
     Array,                      // Array types
 
-    Interfaces,
+    Interfaces,                 // Set of implemented interfaces for oop types
 
     VectorMask,                 // Vector predicate/mask type
     VectorA,                    // (Scalable) Vector types for vector length agnostic
@@ -874,6 +874,7 @@ public:
   static const TypeVectMask* make(const Type* elem, uint length);
 };
 
+// Set of implemented interfaces. Referenced from TypeOopPtr and TypeKlassPtr.
 class TypeInterfaces : public Type {
 private:
   GrowableArray<ciKlass*> _list;
