@@ -138,14 +138,14 @@ public class WheelModifier {
 
         r.mouseMove(sLoc.x + bSize.width / 2, sLoc.y + bSize.height * 2);
         if (!exitSema.await(1, TimeUnit.SECONDS)) {
-            throw new RuntimeException("Mouse is not moved");
+            throw new RuntimeException("Mouse did not exit");
         }
         System.out.println("# Exited");
 
         wheelSema = new CountDownLatch(1);
         r.mouseWheel(1);
         if (!wheelSema.await(1, TimeUnit.SECONDS)) {
-            throw new RuntimeException("Mouse is not wheeled");
+            throw new RuntimeException("Mouse is not wheeled 1");
         }
         System.out.println("# Wheeled 1");
 
@@ -170,8 +170,9 @@ public class WheelModifier {
             SwingUtilities.invokeAndWait(test::createGui);
             test.run();
         } finally {
-            if (test.f != null)
+            if (test.f != null) {
                 SwingUtilities.invokeAndWait(test.f::dispose);
+            }
         }
 
         System.out.println("Done.");
