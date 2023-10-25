@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
  * @test segv
  * @summary Test that for a given crash situation we see the correct siginfo in the hs-err file
  * @library /test/lib
+ * @requires vm.flagless
  * @requires vm.debug
  * @requires os.family != "windows"
  * @modules java.base/jdk.internal.misc
