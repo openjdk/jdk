@@ -1197,6 +1197,21 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
     # the path should be `debian-ports` instead of `debian`.
     ```
 
+  * To create a Ubuntu-based chroot:
+
+    ```
+    sudo debootstrap \
+      --arch=arm64 \
+      --verbose \
+      --components=main,universe \
+      --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev,libffi-dev \
+      --resolve-deps \
+      jammy \
+      ~/sysroot-arm64 \
+      http://ports.ubuntu.com/ubuntu-ports/
+    # symlinks is in the universe repository
+    ```
+
   * Make sure the symlinks inside the newly created chroot point to proper locations:
 
     ```
