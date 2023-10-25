@@ -282,7 +282,12 @@ void NMT_MemoryLogRecorder::print_histogram(Entry* entries, size_t count, double
   size_t alloc_overhead = (total_actual - total_requested);
 
   // find total_actual sizes for alloc requests and count how many of them there are
+  constexpr size_t steps = 99;
+  size_t gap = malloc_requests_count / (steps-1);
   for (size_t i=0; i<malloc_requests_count; i++) {
+    if ((count > _feedback_cutoff_count) && (i%gap == 0)) {
+      fprintf(stderr, "%3ld", (steps - (i/gap))); fflush(stderr);
+    }
     for (size_t c=0; c<count; c++) {
       Entry* e = access_non_empty(entries, c);
       if ((e != nullptr) && (malloc_requests_buckets[i] == e->requested)) {
@@ -295,6 +300,10 @@ void NMT_MemoryLogRecorder::print_histogram(Entry* entries, size_t count, double
       }
     }
   }
+  if (count > _feedback_cutoff_count) {
+    fprintf(stderr, "\n");
+  }
+  fprintf(stderr, "\n");
 
   size_t r_total = 0;
   size_t a_total = 0;
@@ -405,7 +414,7 @@ void NMT_MemoryLogRecorder::report_by_component(Entry* entries, size_t count) {
             allocated += e->actual;
           } else {
             print_entry(e);
-            assert(false, "HUH?");
+            assert(false, "HUH? %d:%d:%d", is_malloc(e), is_realloc(e), is_free(e));
           }
         }
       }
@@ -587,10 +596,10 @@ NMT_MemoryLogRecorder::Entry* NMT_MemoryLogRecorder::find_realloc_entry(Entry* e
 void NMT_MemoryLogRecorder::consolidate(Entry* entries, size_t count, size_t start) {
   assert(start < count, "start < count");
   constexpr size_t steps = 99;
-  size_t gap = count / steps;
+  size_t gap = count / (steps-1);
   for (size_t c=start; c<count; c++) {
     if ((count > _feedback_cutoff_count) && (c%gap == 0)) {
-      fprintf(stderr, "%3ld", (steps - (c/gap)));
+      fprintf(stderr, "%3ld", (steps - (c/gap))); fflush(stderr);
     }
     Entry* e = &entries[c];
     if (is_alloc(e)) {
@@ -617,6 +626,21 @@ void NMT_MemoryLogRecorder::consolidate(Entry* entries, size_t count, size_t sta
       assert(false, "HUH?");
     }
   }
+  if (count > _feedback_cutoff_count) {
+    fprintf(stderr, "\n");
+  }
+  fprintf(stderr, "\n");
+
+  for (size_t c=start; c<count; c++) {
+    Entry* e = &entries[c];
+    if (is_realloc(e)) {
+      // unchained realloc -> malloc
+      e->old = nullptr;
+    } else if (is_free(e)) {
+      // nuke any unchained free's
+      memset(e, 0, sizeof(Entry));
+    }
+  }
 }
 
 void NMT_MemoryLogRecorder::print_summary(Entry* entries, size_t count) {
@@ -632,10 +656,10 @@ void NMT_MemoryLogRecorder::print_summary(Entry* entries, size_t count) {
   long count_Objects = 0;
   long count_NMTObjects = 0;
   constexpr size_t steps = 99;
-  size_t gap = count / steps;
+  size_t gap = count / (steps-1);
   for (size_t c=0; c<count; c++) {
     if ((count > _feedback_cutoff_count) && (c%gap == 0)) {
-      fprintf(stderr, "%3ld", (steps - (c/gap)));
+      fprintf(stderr, "%3ld", (steps - (c/gap))); fflush(stderr);
     }
     Entry* e = access_non_empty(entries, c);
     if (e == nullptr) {
@@ -712,8 +736,11 @@ void NMT_MemoryLogRecorder::print_summary(Entry* entries, size_t count) {
       assert(false, "HUH?");
     }
   }
+  if (count > _feedback_cutoff_count) {
+    fprintf(stderr, "\n");
+  }
   fprintf(stderr, "\n");
-  
+
   long alloc_overhead = (total_actual - total_requested);
 
   fprintf(stderr, "\n\n");
