@@ -31,7 +31,6 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 
-import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
@@ -2659,7 +2658,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
      *
      * @param i the lane index
      * @return the lane element at lane index {@code i}
-     * @throws IllegalArgumentException if the index is is out of range
+     * @throws IllegalArgumentException if the index is out of range
      * ({@code < 0 || >= length()})
      */
     public abstract double lane(int i);
@@ -2677,7 +2676,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
      * @param e the value to be placed
      * @return the result of replacing the lane element of this vector at lane
      * index {@code i} with value {@code e}.
-     * @throws IllegalArgumentException if the index is is out of range
+     * @throws IllegalArgumentException if the index is out of range
      * ({@code < 0 || >= length()})
      */
     public abstract DoubleVector withLane(int i, double e);
@@ -2965,7 +2964,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
      *         or {@code offset+N*8 >= ms.byteSize()}
      *         for any lane {@code N} in the vector
      * @throws IllegalArgumentException if the memory segment is a heap segment that is
-     *         not backed by a {@code byte[]} array.
+     *         not backed by a {@code byte[]} array and if access to the backing array
+     *         is not {@code double} aligned.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
      * @since 19
@@ -3022,7 +3022,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
      *         for any lane {@code N} in the vector
      *         where the mask is set
      * @throws IllegalArgumentException if the memory segment is a heap segment that is
-     *         not backed by a {@code byte[]} array.
+     *         not backed by a {@code byte[]} array and if access to the backing array
+     *         is not {@code double} aligned.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
      * @since 19
@@ -3383,7 +3384,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         DoubleSpecies vsp = vspecies();
         return ScopedMemoryAccess.loadFromMemorySegment(
                 vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-                (AbstractMemorySegmentImpl) ms, offset, vsp,
+                requireSegmentConvertibleFor(ms, offset, vsp.elementByteSize()), offset, vsp,
                 (msp, off, s) -> {
                     return s.ldLongOp((MemorySegment) msp, off, DoubleVector::memorySegmentGet);
                 });
@@ -3399,7 +3400,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         m.check(vsp);
         return ScopedMemoryAccess.loadFromMemorySegmentMasked(
                 vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-                (AbstractMemorySegmentImpl) ms, offset, m, vsp, offsetInRange,
+                requireSegmentConvertibleFor(ms, offset, vsp.elementByteSize()), offset, m, vsp, offsetInRange,
                 (msp, off, s, vm) -> {
                     return s.ldLongOp((MemorySegment) msp, off, vm, DoubleVector::memorySegmentGet);
                 });
@@ -3502,7 +3503,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         ScopedMemoryAccess.storeIntoMemorySegment(
                 vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
                 this,
-                (AbstractMemorySegmentImpl) ms, offset,
+                requireSegmentConvertibleFor(ms, offset, vsp.elementByteSize()), offset,
                 (msp, off, v) -> {
                     v.stLongOp((MemorySegment) msp, off, DoubleVector::memorySegmentSet);
                 });
@@ -3519,7 +3520,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         ScopedMemoryAccess.storeIntoMemorySegmentMasked(
                 vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
                 this, m,
-                (AbstractMemorySegmentImpl) ms, offset,
+                requireSegmentConvertibleFor(ms, offset, vsp.elementByteSize()), offset,
                 (msp, off, v, vm) -> {
                     v.stLongOp((MemorySegment) msp, off, vm, DoubleVector::memorySegmentSet);
                 });

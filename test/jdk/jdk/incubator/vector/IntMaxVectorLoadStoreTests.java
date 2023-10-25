@@ -188,7 +188,7 @@ public class IntMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
     @DataProvider
     public Object[][] intMemorySegmentProvider() {
         return INT_GENERATORS.stream().
-                flatMap(fa -> MEMORY_SEGMENT_GENERATORS.stream().
+                flatMap(fa -> memorySegmentGenerators(ELEMENT_LAYOUT).
                         flatMap(fb -> BYTE_ORDER_VALUES.stream().map(bo -> {
                             return new Object[]{fa, fb, bo};
                         }))).
@@ -199,7 +199,7 @@ public class IntMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
     public Object[][] intMemorySegmentMaskProvider() {
         return BOOLEAN_MASK_GENERATORS.stream().
                 flatMap(fm -> INT_GENERATORS.stream().
-                        flatMap(fa -> MEMORY_SEGMENT_GENERATORS.stream().
+                        flatMap(fa -> memorySegmentGenerators(ELEMENT_LAYOUT).
                                 flatMap(fb -> BYTE_ORDER_VALUES.stream().map(bo -> {
                             return new Object[]{fa, fb, fm, bo};
                         })))).

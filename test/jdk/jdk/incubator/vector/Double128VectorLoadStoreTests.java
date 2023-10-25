@@ -181,7 +181,7 @@ public class Double128VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
     @DataProvider
     public Object[][] doubleMemorySegmentProvider() {
         return DOUBLE_GENERATORS.stream().
-                flatMap(fa -> MEMORY_SEGMENT_GENERATORS.stream().
+                flatMap(fa -> memorySegmentGenerators(ELEMENT_LAYOUT).
                         flatMap(fb -> BYTE_ORDER_VALUES.stream().map(bo -> {
                             return new Object[]{fa, fb, bo};
                         }))).
@@ -192,7 +192,7 @@ public class Double128VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
     public Object[][] doubleMemorySegmentMaskProvider() {
         return BOOLEAN_MASK_GENERATORS.stream().
                 flatMap(fm -> DOUBLE_GENERATORS.stream().
-                        flatMap(fa -> MEMORY_SEGMENT_GENERATORS.stream().
+                        flatMap(fa -> memorySegmentGenerators(ELEMENT_LAYOUT).
                                 flatMap(fb -> BYTE_ORDER_VALUES.stream().map(bo -> {
                             return new Object[]{fa, fb, fm, bo};
                         })))).

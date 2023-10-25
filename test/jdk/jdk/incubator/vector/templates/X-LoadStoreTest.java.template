@@ -201,7 +201,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
     @DataProvider
     public Object[][] $type$MemorySegmentProvider() {
         return $TYPE$_GENERATORS.stream().
-                flatMap(fa -> MEMORY_SEGMENT_GENERATORS.stream().
+                flatMap(fa -> memorySegmentGenerators(ELEMENT_LAYOUT).
                         flatMap(fb -> BYTE_ORDER_VALUES.stream().map(bo -> {
                             return new Object[]{fa, fb, bo};
                         }))).
@@ -212,7 +212,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
     public Object[][] $type$MemorySegmentMaskProvider() {
         return BOOLEAN_MASK_GENERATORS.stream().
                 flatMap(fm -> $TYPE$_GENERATORS.stream().
-                        flatMap(fa -> MEMORY_SEGMENT_GENERATORS.stream().
+                        flatMap(fa -> memorySegmentGenerators(ELEMENT_LAYOUT).
                                 flatMap(fb -> BYTE_ORDER_VALUES.stream().map(bo -> {
                             return new Object[]{fa, fb, fm, bo};
                         })))).

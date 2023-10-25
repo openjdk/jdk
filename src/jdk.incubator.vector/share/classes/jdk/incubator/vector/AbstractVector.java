@@ -25,10 +25,16 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
+
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.Utils;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
+import java.lang.foreign.ValueLayout;
+import java.lang.reflect.Array;
 import java.nio.ByteOrder;
+import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
 import static jdk.incubator.vector.VectorOperators.*;
@@ -734,6 +740,25 @@ abstract class AbstractVector<E> extends Vector<E> {
                     AbstractVector::defaultReinterpret);
         }
         throw new AssertionError();
+    }
+
+    /*package-private*/
+    @ForceInline
+    final
+    AbstractMemorySegmentImpl requireSegmentConvertibleFor(MemorySegment segment, long offset, int elementByteSize)  {
+        AbstractMemorySegmentImpl ams = (AbstractMemorySegmentImpl) segment;
+        if (ams.maxAlignMask() > 1 && !ams.isAlignedForElement(offset, elementByteSize)) {
+            String arrayComponent = ams.heapBase()
+                    .map(Object::getClass)
+                    .map(Class::componentType)
+                    .map(Object::toString)
+                    .orElse("?");
+            throw new IllegalArgumentException("Misaligned access in the backing " + arrayComponent + "[]" +
+                    " array for elements of size " + elementByteSize + " bytes" +
+                    " at address: " + Utils.toHexString(ams.address() + offset));
+        }
+
+        return ams;
     }
 
     static {

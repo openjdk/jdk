@@ -31,7 +31,6 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 
-import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
@@ -2830,7 +2829,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
      *
      * @param i the lane index
      * @return the lane element at lane index {@code i}
-     * @throws IllegalArgumentException if the index is is out of range
+     * @throws IllegalArgumentException if the index is out of range
      * ({@code < 0 || >= length()})
      */
     public abstract int lane(int i);
@@ -2848,7 +2847,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
      * @param e the value to be placed
      * @return the result of replacing the lane element of this vector at lane
      * index {@code i} with value {@code e}.
-     * @throws IllegalArgumentException if the index is is out of range
+     * @throws IllegalArgumentException if the index is out of range
      * ({@code < 0 || >= length()})
      */
     public abstract IntVector withLane(int i, int e);
@@ -3127,7 +3126,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
      *         or {@code offset+N*4 >= ms.byteSize()}
      *         for any lane {@code N} in the vector
      * @throws IllegalArgumentException if the memory segment is a heap segment that is
-     *         not backed by a {@code byte[]} array.
+     *         not backed by a {@code byte[]} array and if access to the backing array
+     *         is not {@code int} aligned.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
      * @since 19
@@ -3184,7 +3184,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
      *         for any lane {@code N} in the vector
      *         where the mask is set
      * @throws IllegalArgumentException if the memory segment is a heap segment that is
-     *         not backed by a {@code byte[]} array.
+     *         not backed by a {@code byte[]} array and if access to the backing array
+     *         is not {@code int} aligned.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
      * @since 19
@@ -3508,7 +3509,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         IntSpecies vsp = vspecies();
         return ScopedMemoryAccess.loadFromMemorySegment(
                 vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-                (AbstractMemorySegmentImpl) ms, offset, vsp,
+                requireSegmentConvertibleFor(ms, offset, vsp.elementByteSize()), offset, vsp,
                 (msp, off, s) -> {
                     return s.ldLongOp((MemorySegment) msp, off, IntVector::memorySegmentGet);
                 });
@@ -3524,7 +3525,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         m.check(vsp);
         return ScopedMemoryAccess.loadFromMemorySegmentMasked(
                 vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-                (AbstractMemorySegmentImpl) ms, offset, m, vsp, offsetInRange,
+                requireSegmentConvertibleFor(ms, offset, vsp.elementByteSize()), offset, m, vsp, offsetInRange,
                 (msp, off, s, vm) -> {
                     return s.ldLongOp((MemorySegment) msp, off, vm, IntVector::memorySegmentGet);
                 });
@@ -3608,7 +3609,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         ScopedMemoryAccess.storeIntoMemorySegment(
                 vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
                 this,
-                (AbstractMemorySegmentImpl) ms, offset,
+                requireSegmentConvertibleFor(ms, offset, vsp.elementByteSize()), offset,
                 (msp, off, v) -> {
                     v.stLongOp((MemorySegment) msp, off, IntVector::memorySegmentSet);
                 });
@@ -3625,7 +3626,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         ScopedMemoryAccess.storeIntoMemorySegmentMasked(
                 vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
                 this, m,
-                (AbstractMemorySegmentImpl) ms, offset,
+                requireSegmentConvertibleFor(ms, offset, vsp.elementByteSize()), offset,
                 (msp, off, v, vm) -> {
                     v.stLongOp((MemorySegment) msp, off, vm, IntVector::memorySegmentSet);
                 });
