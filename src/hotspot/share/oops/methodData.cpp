@@ -965,6 +965,12 @@ int MethodData::compute_allocation_size_in_bytes(const methodHandle& method) {
   if (args_cell > 0) {
     object_size += DataLayout::compute_size_in_bytes(args_cell);
   }
+
+  if (PruneDeadCatchBlocks && method()->has_exception_handler()) {
+    int num_ex_handlers = method()->exception_table_length();
+    object_size += num_ex_handlers * DataLayout::compute_size_in_bytes(BitData::static_cell_count());
+  }
+
   return object_size;
 }
 
@@ -1275,13 +1281,29 @@ void MethodData::initialize() {
   // for method entry so they don't fit with the framework for the
   // profiling of bytecodes). We store the offset within the MDO of
   // this area (or -1 if no parameter is profiled)
+  int parm_data_size = 0;
   if (parms_cell > 0) {
-    object_size += DataLayout::compute_size_in_bytes(parms_cell);
+    parm_data_size = DataLayout::compute_size_in_bytes(parms_cell);
+    object_size += parm_data_size;
     _parameters_type_data_di = data_size + extra_size + arg_data_size;
     DataLayout *dp = data_layout_at(data_size + extra_size + arg_data_size);
     dp->initialize(DataLayout::parameters_type_data_tag, 0, parms_cell);
   } else {
     _parameters_type_data_di = no_parameters;
+  }
+
+  if (PruneDeadCatchBlocks && method()->has_exception_handler()) {
+    int num_ex_handlers = method()->exception_table_length();
+    _num_ex_handler_data = num_ex_handlers;
+    object_size += num_ex_handlers * DataLayout::compute_size_in_bytes(BitData::static_cell_count());
+    _ex_handler_data_di = data_size + extra_size + arg_data_size + parm_data_size;
+    ExceptionTableElement* ex_handlers = method()->exception_table_start();
+    for (int i = 0; i < num_ex_handlers; i++) {
+      DataLayout *dp = ex_handler_data_at(i);
+      dp->initialize(DataLayout::bit_data_tag, ex_handlers[i].handler_pc, BitData::static_cell_count());
+    }
+  } else {
+    _num_ex_handler_data = 0;
   }
 
   // Set an initial hint. Don't use set_hint_di() because
@@ -1376,6 +1398,16 @@ ProfileData* MethodData::bci_to_data(int bci) {
     }
   }
   return bci_to_extra_data(bci, nullptr, false);
+}
+
+BitData* MethodData::ex_handler_bci_to_data(int bci) {
+  for (int i = 0; i < _num_ex_handler_data; i++) {
+    BitData* ex_handler_data = ex_handler_data_at(i)->data_in()->as_BitData();
+    if (ex_handler_data->bci() == bci) {
+      return ex_handler_data;
+    }
+  }
+  return nullptr;
 }
 
 DataLayout* MethodData::next_extra(DataLayout* dp) {

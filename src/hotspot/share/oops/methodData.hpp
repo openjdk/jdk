@@ -491,10 +491,11 @@ protected:
   enum : u1 {
     // null_seen:
     //  saw a null operand (cast/aastore/instanceof)
-      null_seen_flag              = DataLayout::first_flag + 0
+      null_seen_flag              = DataLayout::first_flag + 0,
+      ex_handler_entered_flag     = null_seen_flag + 1
 #if INCLUDE_JVMCI
     // bytecode threw any exception
-    , exception_seen_flag         = null_seen_flag + 1
+    , exception_seen_flag         = ex_handler_entered_flag + 1
 #endif
   };
   enum { bit_cell_count = 0 };  // no additional data fields needed.
@@ -524,6 +525,10 @@ public:
   bool exception_seen() { return flag_at(exception_seen_flag); }
   void set_exception_seen() { set_flag_at(exception_seen_flag); }
 #endif
+
+  // true if a ex handler block at this bci was entered
+  bool ex_handler_entered() { return flag_at(ex_handler_entered_flag); }
+  void set_ex_handler_entered() { set_flag_at(ex_handler_entered_flag); }
 
   // Code generation support
   static u1 null_seen_byte_constant() {
@@ -2063,6 +2068,9 @@ private:
   enum { no_parameters = -2, parameters_uninitialized = -1 };
   int _parameters_type_data_di;
 
+  int _num_ex_handler_data;
+  int _ex_handler_data_di;
+
   // Beginning of the data entries
   intptr_t _data[1];
 
@@ -2076,6 +2084,10 @@ private:
   DataLayout* data_layout_at(int data_index) const {
     assert(data_index % sizeof(intptr_t) == 0, "unaligned");
     return (DataLayout*) (((address)_data) + data_index);
+  }
+
+  DataLayout* ex_handler_data_at(int ex_handler_index) const {
+    return data_layout_at(_ex_handler_data_di + (ex_handler_index * DataLayout::compute_size_in_bytes(BitData::static_cell_count())));
   }
 
   // Initialize an individual data segment.  Returns the size of
@@ -2332,6 +2344,8 @@ public:
     }
     return bci_to_extra_data(bci, nullptr, true);
   }
+
+  BitData* ex_handler_bci_to_data(int bci);
 
   // Add a handful of extra data records, for trap tracking.
   DataLayout* extra_data_base() const  { return limit_data_position(); }

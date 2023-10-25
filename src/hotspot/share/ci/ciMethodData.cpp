@@ -438,6 +438,14 @@ ciProfileData* ciMethodData::bci_to_data(int bci, ciMethod* m) {
   return nullptr;
 }
 
+ciBitData* ciMethodData::ex_handler_bci_to_data(int bci) {
+  BitData* data = get_MethodData()->ex_handler_bci_to_data(bci);
+  if (data == nullptr) {
+    return nullptr;
+  }
+  return new ciBitData((DataLayout*) data->dp());
+}
+
 // Conservatively decode the trap_state of a ciProfileData.
 int ciMethodData::has_trap_at(ciProfileData* data, int reason) {
   typedef Deoptimization::DeoptReason DR_t;

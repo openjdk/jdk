@@ -579,6 +579,13 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
   } else {
     // handler in this method => change bci/bcp to handler bci/bcp and continue there
     handler_pc = h_method->code_base() + handler_bci;
+    if (PruneDeadCatchBlocks) {
+        MethodData* mdo = h_method()->method_data();
+        if (mdo != nullptr) {
+          BitData* bit_data = mdo->ex_handler_bci_to_data(handler_bci);
+          bit_data->set_ex_handler_entered();
+        }
+    }
 #ifndef ZERO
     set_bcp_and_mdp(handler_pc, current);
     continuation = Interpreter::dispatch_table(vtos)[*handler_pc];

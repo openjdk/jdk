@@ -1532,6 +1532,23 @@ void Parse::do_one_block() {
   // Set iterator to start of block.
   iter().reset_to_bci(block()->start());
 
+  if (PruneDeadCatchBlocks && block()->is_handler()) {
+    ciMethodData* methodData = method()->method_data();
+    if (methodData->is_mature()) {
+      ciBitData* data = methodData->ex_handler_bci_to_data(block()->start());
+      assert(data != nullptr, "need data for catch block");
+      if (!data->ex_handler_entered()) {
+        // dead catch block
+        // Emit an uncommon trap instead of processing the block.
+        set_parse_bci(block()->start());
+        uncommon_trap(Deoptimization::Reason_unreached,
+                      Deoptimization::Action_reinterpret,
+                      nullptr, "dead catch block");
+        return;
+      }
+    }
+  }
+
   CompileLog* log = C->log();
 
   // Parse bytecodes
