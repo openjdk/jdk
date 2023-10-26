@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 
 #include "nmt/mallocHeader.inline.hpp"
-
 #include "nmt/mallocSiteTable.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
