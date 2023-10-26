@@ -8240,6 +8240,30 @@ instruct convN2I(iRegINoSp dst, iRegN src)
   ins_pipe(ialu_reg);
 %}
 
+instruct round_double_reg(iRegLNoSp dst, fRegD src) %{
+  match(Set dst (RoundD src));
+
+  format %{ "fcvt.l.d $dst, $src\t#@round_double_reg" %}
+
+  ins_encode %{
+    __ fcvt_l_d_safe(as_Register($dst$$reg), as_FloatRegister($src$$reg), Assembler::RoundingMode::rne);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct round_float_reg(iRegINoSp dst, fRegF src) %{
+  match(Set dst (RoundF src));
+
+  format %{ "fcvt.w.s  $dst, $src\t#@round_float_reg" %}
+
+  ins_encode %{
+    __ fcvt_w_s_safe(as_Register($dst$$reg), as_FloatRegister($src$$reg), Assembler::RoundingMode::rne);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
 // Convert oop pointer into compressed form
 instruct encodeHeapOop(iRegNNoSp dst, iRegP src) %{
   match(Set dst (EncodeP src));

@@ -4222,7 +4222,8 @@ void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tm
 }
 
 #define FCVT_SAFE(FLOATCVT, FLOATSIG)                                                     \
-void MacroAssembler::FLOATCVT##_safe(Register dst, FloatRegister src, Register tmp) {     \
+void MacroAssembler::FLOATCVT##_safe(Register dst, FloatRegister src,                     \
+                                     RoundingMode rm, Register tmp) {                     \
   Label done;                                                                             \
   assert_different_registers(dst, tmp);                                                   \
   fclass_##FLOATSIG(tmp, src);                                                            \
@@ -4230,7 +4231,7 @@ void MacroAssembler::FLOATCVT##_safe(Register dst, FloatRegister src, Register t
   /* check if src is NaN */                                                               \
   andi(tmp, tmp, 0b1100000000);                                                           \
   bnez(tmp, done);                                                                        \
-  FLOATCVT(dst, src);                                                                     \
+  FLOATCVT(dst, src, rm);                                                                 \
   bind(done);                                                                             \
 }
 
