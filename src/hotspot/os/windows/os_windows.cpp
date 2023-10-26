@@ -801,7 +801,7 @@ void os::free_thread(OSThread* osthread) {
 static jlong first_filetime;
 static jlong initial_performance_count;
 static jlong performance_frequency;
-static double counts_per_nano; // NANOSECS_PER_SEC / performance_frequency
+static double nanos_per_count; // NANOSECS_PER_SEC / performance_frequency
 
 jlong os::elapsed_counter() {
   LARGE_INTEGER count;
@@ -971,7 +971,7 @@ void os::win32::initialize_performance_counter() {
   LARGE_INTEGER count;
   QueryPerformanceFrequency(&count);
   performance_frequency = count.QuadPart;
-  counts_per_nano = NANOSECS_PER_SEC / (double)performance_frequency;
+  nanos_per_count = NANOSECS_PER_SEC / (double)performance_frequency;
   QueryPerformanceCounter(&count);
   initial_performance_count = count.QuadPart;
 }
@@ -1076,7 +1076,7 @@ jlong os::javaTimeNanos() {
     LARGE_INTEGER current_count;
     QueryPerformanceCounter(&current_count);
     double current = current_count.QuadPart;
-    jlong time = (jlong)(current * counts_per_nano);
+    jlong time = (jlong)(current * nanos_per_count);
     return time;
 }
 
