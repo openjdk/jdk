@@ -59,17 +59,15 @@ public interface RSAPublicKey extends java.security.PublicKey, RSAKey
     BigInteger getPublicExponent();
 
     /**
-     * Returns the parameters associated with this key.
-     * The parameters are optional and may be either
-     * explicitly specified or implicitly created during
-     * key pair generation.
+     * {@inheritDoc java.security.AsymmetricKey}
      *
      * @implSpec
      * The default implementation returns {@code null}.
      *
-     * @return the associated parameters, may be {@code null}
+     * @return {@inheritDoc java.security.AsymmetricKey}
      * @since 22
      */
+    @Override
     default AlgorithmParameterSpec getParams() {
         return null;
     }
