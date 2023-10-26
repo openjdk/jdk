@@ -2408,7 +2408,12 @@ int MacroAssembler::corrected_idivl(Register result, Register rs1, Register rs2,
       divuw(result, rs1, rs2);
     }
   } else {
-    remw(result, rs1, rs2); // result = rs1 % rs2;
+    // result = rs1 % rs2;
+    if (is_signed) {
+      remw(result, rs1, rs2);
+    } else {
+      remuw(result, rs1, rs2);
+    }
   }
   return idivl_offset;
 }
@@ -2435,7 +2440,12 @@ int MacroAssembler::corrected_idivq(Register result, Register rs1, Register rs2,
       divu(result, rs1, rs2);
     }
   } else {
-    rem(result, rs1, rs2); // result = rs1 % rs2;
+    // result = rs1 % rs2;
+    if (is_signed) {
+      rem(result, rs1, rs2);
+    } else {
+      remu(result, rs1, rs2);
+    }
   }
   return idivq_offset;
 }
