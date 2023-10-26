@@ -535,7 +535,8 @@ public final class Channels {
      * @param  minBufferCap
      *         The minimum capacity of the internal byte buffer,
      *         or {@code -1} if an implementation-dependent
-     *         default capacity is to be used; may be ignored
+     *         default capacity is to be used. The value of
+     *         {@code minBufferCap} may be ignored
      *
      * @return  A new writer
      */
