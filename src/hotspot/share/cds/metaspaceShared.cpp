@@ -27,9 +27,11 @@
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/cdsProtectionDomain.hpp"
-#include "cds/classListWriter.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/classListParser.hpp"
+#include "cds/classListWriter.hpp"
 #include "cds/classPrelinker.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
@@ -45,8 +47,8 @@
 #include "classfile/loaderConstraints.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/placeholders.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
@@ -63,6 +65,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
@@ -77,14 +80,13 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "sanitizers/leak.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
-#include "utilities/ostream.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/resourceHash.hpp"
 
 ReservedSpace MetaspaceShared::_symbol_rs;
@@ -644,7 +646,7 @@ void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
 }
 
 void MetaspaceShared::prepare_for_dumping() {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   Arguments::check_unsupported_dumping_properties();
 
   ClassLoader::initialize_shared_path(JavaThread::current());
@@ -671,7 +673,7 @@ void MetaspaceShared::preload_and_dump() {
 
 #if INCLUDE_CDS_JAVA_HEAP && defined(_LP64)
 void MetaspaceShared::adjust_heap_sizes_for_dumping() {
-  if (!DumpSharedSpaces || UseCompressedOops) {
+  if (!CDSConfig::is_dumping_heap() || UseCompressedOops) {
     return;
   }
   // CDS heap dumping requires all string oops to have an offset
@@ -797,7 +799,7 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
 bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
   ExceptionMark em(current);
   JavaThread* THREAD = current; // For exception macros.
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   if (!ik->is_shared() && ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;

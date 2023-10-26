@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "logging/log.hpp"
@@ -240,7 +241,7 @@ intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address ob
     _orig_cpp_vtptrs_inited = true;
   }
 
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   int kind = -1;
   switch (msotype) {
   case MetaspaceObj::SymbolType:

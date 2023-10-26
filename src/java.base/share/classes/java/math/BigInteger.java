@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,6 +117,42 @@ import jdk.internal.vm.annotation.Stable;
  * The range of probable prime values is limited and may be less than
  * the full supported positive range of {@code BigInteger}.
  * The range must be at least 1 to 2<sup>500000000</sup>.
+ *
+ * @apiNote
+ * <a id=algorithmicComplexity>As {@code BigInteger} values are
+ * arbitrary precision integers, the algorithmic complexity of the
+ * methods of this class varies and may be superlinear in the size of
+ * the input. For example, a method like {@link intValue()} would be
+ * expected to run in <i>O</i>(1), that is constant time, since with
+ * the current internal representation only a fixed-size component of
+ * the {@code BigInteger} needs to be accessed to perform the
+ * conversion to {@code int}. In contrast, a method like {@link not()}
+ * would be expected to run in <i>O</i>(<i>n</i>) time where <i>n</i>
+ * is the size of the {@code BigInteger} in bits, that is, to run in
+ * time proportional to the size of the input. For multiplying two
+ * {@code BigInteger} values of size <i>n</i>, a naive multiplication
+ * algorithm would run in time <i>O</i>(<i>n<sup>2</sup></i>) and
+ * theoretical results indicate a multiplication algorithm for numbers
+ * using this category of representation must run in <em>at least</em>
+ * <i>O</i>(<i>n</i>&nbsp;log&nbsp;<i>n</i>). Common multiplication
+ * algorithms between the bounds of the naive and theoretical cases
+ * include the Karatsuba multiplication
+ * (<i>O</i>(<i>n<sup>1.585</sup></i>)) and 3-way Toom-Cook
+ * multiplication (<i>O</i>(<i>n<sup>1.465</sup></i>)).</a>
+ *
+ * <p>A particular implementation of {@link multiply(BigInteger)
+ * multiply} is free to switch between different algorithms for
+ * different inputs, such as to improve actual running time to produce
+ * the product by using simpler algorithms for smaller inputs even if
+ * the simpler algorithm has a larger asymptotic complexity.
+ *
+ * <p>Operations may also allocate and compute on intermediate
+ * results, potentially those allocations may be as large as in
+ * proportion to the running time of the algorithm.
+ *
+ * <p>Users of {@code BigInteger} concerned with bounding the running
+ * time or space of operations can screen out {@code BigInteger}
+ * values above a chosen magnitude.
  *
  * @implNote
  * In the reference implementation, BigInteger constructors and

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,117 +25,112 @@
 
 package jdk.jfr.internal;
 
+import static jdk.jfr.internal.util.Bytecode.invokespecial;
+
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.reflect.AccessFlag;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jdk.internal.org.objectweb.asm.AnnotationVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Label;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.Type;
-import jdk.internal.org.objectweb.asm.commons.GeneratorAdapter;
-import jdk.internal.org.objectweb.asm.commons.Method;
+import jdk.internal.classfile.AnnotationValue;
+import jdk.internal.classfile.ClassBuilder;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.Label;
+import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.Event;
 import jdk.jfr.ValueDescriptor;
-
+import jdk.jfr.internal.util.Bytecode;
+import jdk.jfr.internal.util.Bytecode.MethodDesc;
 
 // Helper class for building dynamic events
 public final class EventClassBuilder {
-
-    private static final Type TYPE_EVENT = Type.getType(Event.class);
-    private static final Type TYPE_IOBE = Type.getType(IndexOutOfBoundsException.class);
-    private static final Method DEFAULT_CONSTRUCTOR = Method.getMethod("void <init> ()");
-    private static final Method SET_METHOD = Method.getMethod("void set (int, java.lang.Object)");
+    private static final ClassDesc TYPE_EVENT = Bytecode.classDesc(Event.class);
+    private static final ClassDesc TYPE_IOBE = Bytecode.classDesc(IndexOutOfBoundsException.class);
+    private static final MethodDesc DEFAULT_CONSTRUCTOR = MethodDesc.of("<init>", "()V");
+    private static final MethodDesc SET_METHOD = MethodDesc.of("set", "(ILjava/lang/Object;)V");
     private static final AtomicLong idCounter = new AtomicLong();
-    private final ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+
     private final String fullClassName;
-    private final Type type;
+    private final ClassDesc type;
     private final List<ValueDescriptor> fields;
     private final List<AnnotationElement> annotationElements;
 
     public EventClassBuilder(List<AnnotationElement> annotationElements, List<ValueDescriptor> fields) {
         this.fullClassName = "jdk.jfr.DynamicEvent" + idCounter.incrementAndGet();
-        this.type = Type.getType("L" + fullClassName.replace(".", "/") + ";");
+        this.type = ClassDesc.of(fullClassName);
         this.fields = fields;
         this.annotationElements = annotationElements;
     }
 
     public Class<? extends Event> build() {
-        buildClassInfo();
-        buildConstructor();
-        buildFields();
-        buildSetMethod();
-        endClass();
-        byte[] bytes = classWriter.toByteArray();
-        ASMToolkit.logASM(fullClassName, bytes);
+        byte[] bytes = Classfile.of().build(ClassDesc.of(fullClassName), cb -> build(cb));
+        Bytecode.log(fullClassName, bytes);
         return SecuritySupport.defineClass(Event.class, bytes).asSubclass(Event.class);
     }
 
-    private void endClass() {
-        classWriter.visitEnd();
+    void build(ClassBuilder builder) {
+        buildClassInfo(builder);
+        buildConstructor(builder);
+        buildFields(builder);
+        buildSetMethod(builder);
     }
 
-    private void buildSetMethod() {
-        GeneratorAdapter ga = new GeneratorAdapter(Opcodes.ACC_PUBLIC, SET_METHOD, null, null, classWriter);
-        int index = 0;
-        for (ValueDescriptor v : fields) {
-            ga.loadArg(0);
-            ga.visitLdcInsn(index);
-            Label notEqual = new Label();
-            ga.ifICmp(GeneratorAdapter.NE, notEqual);
-            ga.loadThis();
-            ga.loadArg(1);
-            Type fieldType = ASMToolkit.toType(v);
-            ga.unbox(ASMToolkit.toType(v));
-            ga.putField(type, v.getName(), fieldType);
-            ga.visitInsn(Opcodes.RETURN);
-            ga.visitLabel(notEqual);
-            index++;
-        }
-        ga.throwException(TYPE_IOBE, "Index must between 0 and " + fields.size());
-        ga.endMethod();
-    }
-
-    private void buildConstructor() {
-        MethodVisitor mv = classWriter.visitMethod(Opcodes.ACC_PUBLIC, DEFAULT_CONSTRUCTOR.getName(), DEFAULT_CONSTRUCTOR.getDescriptor(), null, null);
-        mv.visitIntInsn(Opcodes.ALOAD, 0);
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, TYPE_EVENT.getInternalName(), DEFAULT_CONSTRUCTOR.getName(), DEFAULT_CONSTRUCTOR.getDescriptor(), false);
-        mv.visitInsn(Opcodes.RETURN);
-        mv.visitMaxs(0, 0);
-    }
-
-    private void buildClassInfo() {
-        String internalSuperName = ASMToolkit.getInternalName(Event.class.getName());
-        String internalClassName = type.getInternalName();
-        classWriter.visit(52, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL + Opcodes.ACC_SUPER, internalClassName, null, internalSuperName, null);
-
-        for (AnnotationElement a : annotationElements) {
-            String descriptor = ASMToolkit.getDescriptor(a.getTypeName());
-            AnnotationVisitor av = classWriter.visitAnnotation(descriptor, true);
-            for (ValueDescriptor v : a.getValueDescriptors()) {
-                Object value = a.getValue(v.getName());
-                String name = v.getName();
-                if (v.isArray()) {
-                    AnnotationVisitor arrayVisitor = av.visitArray(name);
-                    Object[] array = (Object[]) value;
-                    for (int i = 0; i < array.length; i++) {
-                        arrayVisitor.visit(null, array[i]);
-                    }
-                    arrayVisitor.visitEnd();
-                } else {
-                    av.visit(name, value);
-                }
+    private void buildSetMethod(ClassBuilder builder) {
+        // void Event::set(int index, Object value);
+        builder.withMethod(SET_METHOD.name(), SET_METHOD.descriptor(), Classfile.ACC_PUBLIC, methodBuilder -> methodBuilder.withCode(codeBuilder -> {
+            int index = 0;
+            for (ValueDescriptor v : fields) {
+                codeBuilder.iload(1);
+                codeBuilder.ldc(index);
+                Label notEqual = codeBuilder.newLabel();
+                codeBuilder.if_icmpne(notEqual);
+                codeBuilder.aload(0); // this
+                codeBuilder.aload(2); // value
+                ClassDesc cd = Bytecode.classDesc(v);
+                Bytecode.unbox(codeBuilder, cd);
+                codeBuilder.putfield(type, v.getName(), cd);
+                codeBuilder.return_();
+                codeBuilder.labelBinding(notEqual);
+                index++;
             }
-            av.visitEnd();
-        }
+            Bytecode.throwException(codeBuilder, TYPE_IOBE, "Index must between 0 and " + fields.size());
+        }));
     }
 
-    private void buildFields() {
+    private void buildConstructor(ClassBuilder builder) {
+        builder.withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, Classfile.ACC_PUBLIC, methodBuilder -> methodBuilder.withCode(codeBuilder -> {
+            codeBuilder.aload(0);
+            invokespecial(codeBuilder, TYPE_EVENT, DEFAULT_CONSTRUCTOR);
+            codeBuilder.return_();
+        }));
+    }
+
+    private void buildClassInfo(ClassBuilder builder) {
+        builder.withSuperclass(Bytecode.classDesc(Event.class));
+        builder.withFlags(AccessFlag.FINAL, AccessFlag.PUBLIC, AccessFlag.SUPER);
+        List<jdk.internal.classfile.Annotation> annotations = new ArrayList<>();
+        for (jdk.jfr.AnnotationElement a : annotationElements) {
+            List<jdk.internal.classfile.AnnotationElement> list = new ArrayList<>();
+            for (ValueDescriptor v : a.getValueDescriptors()) {
+                // ValueDescriptor can only hold primitive
+                // No need to care about classes/enums
+                var value = a.getValue(v.getName());
+                var av = AnnotationValue.of(value);
+                var ae = jdk.internal.classfile.AnnotationElement.of(v.getName(), av);
+                list.add(ae);
+            }
+            ClassDesc cd = ClassDesc.of(a.getTypeName());
+            annotations.add(jdk.internal.classfile.Annotation.of(cd, list));
+        }
+        builder.with(RuntimeVisibleAnnotationsAttribute.of(annotations));
+    }
+
+    private void buildFields(ClassBuilder builder) {
         for (ValueDescriptor v : fields) {
-            String internal = ASMToolkit.getDescriptor(v.getTypeName());
-            classWriter.visitField(Opcodes.ACC_PRIVATE, v.getName(), internal, null, null);
+            builder.withField(v.getName(), Bytecode.classDesc(v), Classfile.ACC_PRIVATE);
             // No need to store annotations on field since they will be replaced anyway.
         }
     }
