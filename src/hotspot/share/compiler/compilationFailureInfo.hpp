@@ -46,7 +46,7 @@ public:
   void print_on(outputStream* st) const;
 
   // Convenience function to print, safely, current compile failure iff
-  // current thread is compiler thread and there is a ongoing compilation
+  // current thread is compiler thread and there is an ongoing compilation
   // and a pending failure.
   // Otherwise prints nothing.
   static bool print_pending_compilation_failure(outputStream* st);
