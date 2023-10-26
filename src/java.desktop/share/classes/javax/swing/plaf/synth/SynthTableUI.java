@@ -521,6 +521,13 @@ public class SynthTableUI extends BasicTableUI
         Rectangle minCell = table.getCellRect(rMin, cMin, true);
         Rectangle maxCell = table.getCellRect(rMax, cMax, true);
         Rectangle damagedArea = minCell.union( maxCell );
+
+        if (table.getComponentOrientation().isLeftToRight()) {
+            damagedArea.x = getXPosition(cMin);
+        } else {
+            damagedArea.x = getXPosition(cMax);
+        }
+
         SynthGraphicsUtils synthG = context.getStyle().getGraphicsUtils(
                      context);
 
@@ -530,7 +537,7 @@ public class SynthTableUI extends BasicTableUI
             for (int row = rMin; row <= rMax; row++) {
                 y += table.getRowHeight(row);
                 synthG.drawLine(context, "Table.grid",
-                                g, damagedArea.x, y - 1, tableWidth - 1,y - 1);
+                                g, damagedArea.x, y - 1, damagedArea.x + tableWidth - 1,y - 1);
             }
         }
         if (table.getShowVerticalLines()) {
@@ -581,6 +588,7 @@ public class SynthTableUI extends BasicTableUI
         if (table.getComponentOrientation().isLeftToRight()) {
             for(int row = rMin; row <= rMax; row++) {
                 cellRect = table.getCellRect(row, cMin, false);
+                cellRect.x = getXPosition(cMin);
                 for(int column = cMin; column <= cMax; column++) {
                     aColumn = cm.getColumn(column);
                     columnWidth = aColumn.getWidth();
@@ -594,17 +602,18 @@ public class SynthTableUI extends BasicTableUI
         } else {
             for(int row = rMin; row <= rMax; row++) {
                 cellRect = table.getCellRect(row, cMin, false);
-                aColumn = cm.getColumn(cMin);
+                cellRect.x = getXPosition(cMax);
+                aColumn = cm.getColumn(cMax);
                 if (aColumn != draggedColumn) {
                     columnWidth = aColumn.getWidth();
                     cellRect.width = columnWidth - columnMargin;
-                    paintCell(context, g, cellRect, row, cMin);
+                    paintCell(context, g, cellRect, row, cMax);
                 }
                 for(int column = cMin+1; column <= cMax; column++) {
                     aColumn = cm.getColumn(column);
                     columnWidth = aColumn.getWidth();
                     cellRect.width = columnWidth - columnMargin;
-                    cellRect.x -= columnWidth;
+                    cellRect.x += columnWidth;
                     if (aColumn != draggedColumn) {
                         paintCell(context, g, cellRect, row, column);
                     }
@@ -843,4 +852,37 @@ public class SynthTableUI extends BasicTableUI
             SynthLookAndFeel.resetSelectedUI();
         }
     }
+    private int getXPosition(int column) {
+        int x = 0;
+        TableColumnModel cm = table.getColumnModel();
+
+        if (column < 0) {
+            if( !table.getComponentOrientation().isLeftToRight() ) {
+                x = getWidthInRightToLeft();
+            }
+        }
+        else if (column >= cm.getColumnCount()) {
+            if( table.getComponentOrientation().isLeftToRight() ) {
+                x = table.getWidth();
+            }
+        }
+        else {
+            for(int i = 0; i < column; i++) {
+                x += cm.getColumn(i).getWidth();
+            }
+            if( !table.getComponentOrientation().isLeftToRight() ) {
+                x = getWidthInRightToLeft() - x - cm.getColumn(column).getWidth();
+            }
+        }
+        return x;
+    }
+
+    private int getWidthInRightToLeft() {
+        if ((table != null) &&
+                (table.getAutoResizeMode() != JTable.AUTO_RESIZE_OFF)) {
+            return table.getWidth();
+        }
+        return table.getParent().getWidth();
+    }
+
 }

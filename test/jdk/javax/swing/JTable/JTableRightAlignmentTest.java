@@ -36,6 +36,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.UIManager;
+
 import javax.imageio.ImageIO;
 
 import java.io.File;
@@ -45,8 +47,10 @@ import java.util.List;
 
 /*
  * @test
+ * @key headful
  * @bug 5108458
- * @summary Test to check Right alignment of JTable data w.r.t Table Header.
+ * @summary Test to check Right alignment of JTable data
+ * (Fix affects all L&F, test verifies only Metal L&F)
  * @run main JTableRightAlignmentTest
  */
 
@@ -57,6 +61,7 @@ public class JTableRightAlignmentTest {
     static String failureString;
 
     public static void main(String[] args) throws Exception {
+        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
         Robot robot = new Robot();
         try {
             SwingUtilities.invokeAndWait(() -> {
