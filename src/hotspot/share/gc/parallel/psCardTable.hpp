@@ -63,8 +63,6 @@ class PSCardTable: public CardTable {
                      HeapWord* const start,
                      HeapWord* const end);
 
-  void verify_all_young_refs_precise_helper(MemRegion mr);
-
   enum ExtendedCardValue {
     youngergen_card   = CT_MR_BS_last_reserved + 1,
     verify_card       = CT_MR_BS_last_reserved + 5
@@ -93,7 +91,6 @@ class PSCardTable: public CardTable {
                                   uint n_stripes);
 
   bool addr_is_marked_imprecise(void *addr);
-  bool addr_is_marked_precise(void *addr);
 
   void set_card_newgen(void* addr)   { CardValue* p = byte_for(addr); *p = verify_card; }
 
@@ -120,7 +117,6 @@ class PSCardTable: public CardTable {
 
   // Verification
   void verify_all_young_refs_imprecise();
-  void verify_all_young_refs_precise();
 };
 
 #endif // SHARE_GC_PARALLEL_PSCARDTABLE_HPP
