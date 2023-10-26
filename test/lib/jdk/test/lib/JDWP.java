@@ -49,17 +49,4 @@ public class JDWP {
         return null;
     }
 
-    /**
-     * Parses debuggee output to get listening transport and address, printed by `launch=echo`.
-     * Returns null if the string specified does not contain required info.
-     */
-    public static ListenAddress parseLaunchEchoListenAddress(String debuggeeOutput) {
-        String[] parts = debuggeeOutput.split(" ");
-        if (parts.length != 2) {
-            return null;
-        }
-        return new ListenAddress(parts[0], parts[1]);
-    }
-
-
 }

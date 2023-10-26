@@ -58,7 +58,7 @@ public class JdwpOnThrowTest {
 
     public static void main(String[] args) throws Exception {
         try (Debuggee debuggee = Debuggee.launcher("ThrowCaughtException")
-                                         .enableOnThrow("Ex", "Start").setSuspended(true).launch()) {
+                                         .enableOnThrow("Ex").setSuspended(true).launch()) {
             VirtualMachine vm = null;
             try {
                 vm = attach("localhost", debuggee.getAddress());

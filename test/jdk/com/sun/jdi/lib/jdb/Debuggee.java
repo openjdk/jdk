@@ -33,6 +33,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -69,7 +72,6 @@ public class Debuggee implements Closeable {
         private String address = null;
         private boolean suspended = true;
         private String onthrow = "";
-        private String expectedOutputBeforeThrow = "";
 
         private Launcher(String mainClass) {
             this.mainClass = mainClass;
@@ -104,8 +106,7 @@ public class Debuggee implements Closeable {
 
         // required to pass non null port with address and emit string before the throw
         public Launcher enableOnThrow(String exceptionClassName) {
-            this.onthrow = value;
-            this.expectedOutputBeforeThrow = expectedOutputBeforeThrow;
+            this.onthrow = exceptionClassName;
             return this;
         }
 
@@ -114,7 +115,7 @@ public class Debuggee implements Closeable {
             if (vmOptions != null) {
                 debuggeeArgs.add(vmOptions);
             }
-            String onthrowArgs = onthrow.isEmpty() ? "" : ",onthrow=" + onthrow + ",launch=echo";
+            String onthrowArgs = onthrow.isEmpty() ? "" : ",onthrow=" + onthrow + ",launch=echo Listen Args:";
             debuggeeArgs.add("-agentlib:jdwp=transport=" + transport
                     + (address == null ? "" : ",address=" + address)
                     + ",server=y,suspend=" + (suspended ? "y" : "n")
@@ -125,7 +126,12 @@ public class Debuggee implements Closeable {
         }
 
         public Debuggee launch(String name) {
-            return new Debuggee(prepare(), name, !onthrow.isEmpty(), expectedOutputBeforeThrow);
+            return new Debuggee(prepare(), name, s -> {
+                if (!onthrow.isEmpty()) {
+                    return parseLaunchEchoListenAddress(s);
+                }
+                return JDWP.parseListenAddress(s);
+            });
         }
         public Debuggee launch() {
             return launch("debuggee");
@@ -138,12 +144,8 @@ public class Debuggee implements Closeable {
         try {
             p = ProcessTools.startProcess(name, pb,
                     s -> output.add(s),  // output consumer
-                    s -> {  // warm-up predicate
-                        if (hasOnThrow) {
-                            listenAddress[0] = JDWP.parseLaunchEchoListenAddress(s);
-                        } else {
-                            listenAddress[0] = JDWP.parseListenAddress(s);
-                        }
+                    s -> {
+                        listenAddress[0] = addressDetector.apply(s);
                         return listenAddress[0] != null;
                     },
                     30, TimeUnit.SECONDS);
@@ -200,6 +202,19 @@ public class Debuggee implements Closeable {
         if (p.isAlive()) {
             p.destroy();
         }
+    }
+
+    /**
+     * Parses debuggee output to get listening transport and address, printed by `launch=echo`.
+     * Returns null if the string specified does not contain required info.
+     */
+    private static JDWP.ListenAddress parseLaunchEchoListenAddress(String debuggeeOutput) {
+        Pattern listenRegexp = Pattern.compile("Listen Args: \\b(.+)\\b \\b(.+)\\b");
+        Matcher m = listenRegexp.matcher(debuggeeOutput);
+        if (m.find()) {
+            return new JDWP.ListenAddress(m.group(1), m.group(2));
+        }
+        return null;
     }
 
 }
