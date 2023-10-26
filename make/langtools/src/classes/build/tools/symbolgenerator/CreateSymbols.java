@@ -2258,7 +2258,9 @@ public class CreateSymbols {
             }
         }
 
-        headerDesc.versions += version;
+        if (!headerDesc.versions.contains(version)) {
+            headerDesc.versions += version;
+        }
 
         if (!existed) {
             moduleDesc.header.add(headerDesc);
@@ -2302,10 +2304,12 @@ public class CreateSymbols {
             }
         }
 
+        if (!headerDesc.versions.contains(version)) {
+            headerDesc.versions += version;
+        }
+
         if (!existed) {
             clazzDesc.header.add(headerDesc);
-        } else {
-            headerDesc.versions += version;
         }
     }
 

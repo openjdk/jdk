@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,16 @@
 
 /*
  * @test
- * @bug 8277106
- * @summary Verify no error is when compiling a class whose supertype is not exported.
+ * @bug 8318913
+ * @summary Ensure release and enable-preview work well together.
  * @modules jdk.compiler
- *          jdk.jfr
- * @compile --release 17 NonExportedSuperTypes.java
- * @compile --release ${jdk.version} NonExportedSuperTypes.java
+ * @compile --release ${jdk.version} --enable-preview ReleaseAndEnablePreview.java
  */
 
-import jdk.jfr.Event;
+public class ReleaseAndEnablePreview {
 
-public class NonExportedSuperTypes {
-
-    public void evt(Event evt) {
-        evt.toString();
+    public String evt(String str) {
+        return str.length() + "" + str.charAt(0);
     }
 
 }
