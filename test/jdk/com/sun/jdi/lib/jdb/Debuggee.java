@@ -103,7 +103,7 @@ public class Debuggee implements Closeable {
         }
 
         // required to pass non null port with address and emit string before the throw
-        public Launcher enableOnThrow(String value, String expectedOutputBeforeThrow) {
+        public Launcher enableOnThrow(String exceptionClassName) {
             this.onthrow = value;
             this.expectedOutputBeforeThrow = expectedOutputBeforeThrow;
             return this;
