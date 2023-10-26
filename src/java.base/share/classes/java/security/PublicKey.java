@@ -44,7 +44,7 @@ package java.security;
  *
  */
 
-public non-sealed interface PublicKey extends AsymmetricKey {
+public interface PublicKey extends AsymmetricKey {
     // Declare serialVersionUID to be compatible with JDK1.1
     /**
      * The class fingerprint that is set to indicate serialization

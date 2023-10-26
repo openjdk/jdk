@@ -57,7 +57,7 @@ package java.security;
  * @since 1.1
  */
 
-public non-sealed interface PrivateKey extends AsymmetricKey, javax.security.auth.Destroyable {
+public interface PrivateKey extends AsymmetricKey, javax.security.auth.Destroyable {
 
     // Declare serialVersionUID to be compatible with JDK1.1
     /**
