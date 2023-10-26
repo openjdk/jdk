@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,10 @@ Java_sun_nio_fs_AixNativeDispatcher_getmntctl(JNIEnv* env, jclass this)
         }
         buffer_size *= 8;
         buffer = malloc(buffer_size);
+        if (buffer == NULL) {
+            throwUnixException(env, errno);
+            return NULL;
+        }
         must_free_buf = 1;
     }
     /* Treat zero entries like errors. */

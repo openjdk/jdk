@@ -191,6 +191,14 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
   }
 
+  if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
+      FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
+  }
+
+  if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
+      FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
+  }
+
   if (UseRVV) {
     if (!ext_V.enabled()) {
       warning("RVV is not supported on this CPU");
@@ -252,6 +260,16 @@ void VM_Version::initialize() {
   } else if (UseBlockZeroing) {
     warning("Block zeroing is not available");
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
+  }
+  if (UseRVV) {
+    if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+      FLAG_SET_DEFAULT(UseChaCha20Intrinsics, true);
+    }
+  } else if (UseChaCha20Intrinsics) {
+    if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+      warning("Chacha20 intrinsic requires RVV instructions (not available on this CPU)");
+    }
+    FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
 
 #ifdef COMPILER2

@@ -63,6 +63,7 @@ bool ShenandoahBarrierC2Support::expand(Compile* C, PhaseIterGVN& igvn) {
       C->clear_major_progress();
 
       C->process_for_post_loop_opts_igvn(igvn);
+      if (C->failing()) return false;
     }
     C->set_post_loop_opts_phase(); // now for real!
   }
@@ -387,6 +388,12 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
           verify_type t;
         } args[6];
       } calls[] = {
+        "array_partition_stub",
+        { { TypeFunc::Parms, ShenandoahStore }, { TypeFunc::Parms+4, ShenandoahStore },   { -1, ShenandoahNone },
+          { -1, ShenandoahNone },                { -1, ShenandoahNone },                  { -1, ShenandoahNone } },
+        "arraysort_stub",
+        { { TypeFunc::Parms, ShenandoahStore },  { -1, ShenandoahNone },                  { -1, ShenandoahNone },
+          { -1,  ShenandoahNone},                 { -1,  ShenandoahNone},                 { -1,  ShenandoahNone} },
         "aescrypt_encryptBlock",
         { { TypeFunc::Parms, ShenandoahLoad },   { TypeFunc::Parms+1, ShenandoahStore },  { TypeFunc::Parms+2, ShenandoahLoad },
           { -1,  ShenandoahNone},                 { -1,  ShenandoahNone},                 { -1,  ShenandoahNone} },

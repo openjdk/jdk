@@ -2215,7 +2215,9 @@ void InterpreterMacroAssembler::call_VM(Register oop_result, address entry_point
 
 void InterpreterMacroAssembler::save_interpreter_state(Register scratch) {
   ld(scratch, 0, R1_SP);
-  std(R15_esp, _ijava_state_neg(esp), scratch);
+  subf(R0, scratch, R15_esp);
+  sradi(R0, R0, Interpreter::logStackElementSize);
+  std(R0, _ijava_state_neg(esp), scratch);
   std(R14_bcp, _ijava_state_neg(bcp), scratch);
   subf(R0, scratch, R26_monitor);
   sradi(R0, R0, Interpreter::logStackElementSize);
@@ -2245,7 +2247,10 @@ void InterpreterMacroAssembler::restore_interpreter_state(Register scratch, bool
     ld(R19_method, _ijava_state_neg(method), scratch);
     ld(R27_constPoolCache, _ijava_state_neg(cpoolCache), scratch);
     // Following ones are stack addresses and don't require reload.
+    // Derelativize esp
     ld(R15_esp, _ijava_state_neg(esp), scratch);
+    sldi(R15_esp, R15_esp, Interpreter::logStackElementSize);
+    add(R15_esp, R15_esp, scratch);
     ld(R18_locals, _ijava_state_neg(locals), scratch);
     sldi(R18_locals, R18_locals, Interpreter::logStackElementSize);
     add(R18_locals, R18_locals, scratch);

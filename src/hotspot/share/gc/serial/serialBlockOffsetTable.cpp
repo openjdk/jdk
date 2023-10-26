@@ -30,9 +30,9 @@
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
-#include "services/memTracker.hpp"
 
 //////////////////////////////////////////////////////////////////////
 // BlockOffsetSharedArray
