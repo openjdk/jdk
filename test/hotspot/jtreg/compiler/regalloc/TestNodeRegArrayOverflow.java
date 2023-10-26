@@ -593,7 +593,7 @@ public class TestNodeRegArrayOverflow {
             testWithManualUnrolling(0);
             break;
         default:
-            System.out.println("invalid mode");
+            throw new IllegalArgumentException("Invalid mode: " + args[0]);
         }
     }
 }
