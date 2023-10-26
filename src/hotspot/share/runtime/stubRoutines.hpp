@@ -258,8 +258,8 @@ class StubRoutines: AllStatic {
   static address _cont_returnBarrier;
   static address _cont_returnBarrierExc;
 
-  static const double _large_denormal;
-  static const volatile double _small_denormal;
+  static const double _large_subnormal;
+  static const volatile double _small_subnormal;
 
   JFR_ONLY(static RuntimeStub* _jfr_write_checkpoint_stub;)
   JFR_ONLY(static address _jfr_write_checkpoint;)
@@ -484,11 +484,11 @@ class StubRoutines: AllStatic {
   static void arrayof_oop_copy       (HeapWord* src, HeapWord* dest, size_t count);
   static void arrayof_oop_copy_uninit(HeapWord* src, HeapWord* dest, size_t count);
 
-  static address small_denormal_addr() {
-    return (address)&_small_denormal;
+  static address small_subnormal_addr() {
+    return (address)&_small_subnormal;
   }
-  static address large_denormal_addr() {
-    return (address)&_large_denormal;
+  static address large_subnormal_addr() {
+    return (address)&_large_subnormal;
   }
   static bool FTZ_mode_enabled();
 };

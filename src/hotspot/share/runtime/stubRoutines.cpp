@@ -180,9 +180,9 @@ address StubRoutines::_cont_thaw          = nullptr;
 address StubRoutines::_cont_returnBarrier = nullptr;
 address StubRoutines::_cont_returnBarrierExc = nullptr;
 
-const double StubRoutines::_large_denormal
+const double StubRoutines::_large_subnormal
     = jdouble_cast(0x0030000000000000); // 0x1.0p-1020;
-const volatile double StubRoutines::_small_denormal
+const volatile double StubRoutines::_small_subnormal
     = jdouble_cast(0x0000000000000003); // 0x0.0000000000003p-1022;
 
 JFR_ONLY(RuntimeStub* StubRoutines::_jfr_write_checkpoint_stub = nullptr;)
@@ -315,23 +315,24 @@ void compiler_stubs_init(bool in_compiler_thread) {
 // Check for Flush-To-Zero mode
 
 // On some processors faster execution can be achieved by returning
-// zero for extremely small results, rather than an IEEE-754 denormal
+// zero for extremely small results, rather than an IEEE-754 subnormal
 // number. This mode is not compatible with the Java Language
 // Standard.
 bool StubRoutines::FTZ_mode_enabled() {
-  // Quickly test to make sure denormals are correctly handled.
+  // Quickly test to make sure subnormals are correctly handled.
 
-  // _small_denormal is the smallest denormal number that has two bits
-  // set. _large_denormal is a number such that, when _small_denormal
-  // is added to it, must be rounded according to the mode. These two
-  // tests detect the rounding mode in use. If denormals are turned
-  // off (i.e. denormals-are-zero) FTZ mode is in use.
+  // _small_subnormal is the smallest subnormal number that has two
+  // bits set. _large_subnormal is a number such that, when
+  // _small_subnormal is added to it, must be rounded according to the
+  // mode. These two tests detect the rounding mode in use. If
+  // subnormals are turned off (i.e. subnormals-are-zero) FTZ mode is
+  // in use.
 
-  // We need the addition of _large_denormal and _small_denormal to be
-  // performed at runtime. Making _small_denormal volatile ensures
+  // We need the addition of _large_subnormal and _small_subnormal to
+  // be performed at runtime. Making _small_subnormal volatile ensures
   // that the following expression isn't evaluated at compile time:
-  return (_large_denormal + _small_denormal == _large_denormal
-      || -_large_denormal - _small_denormal == -_large_denormal);
+  return (_large_subnormal + _small_subnormal == _large_subnormal
+      || -_large_subnormal - _small_subnormal == -_large_subnormal);
 }
 
 //

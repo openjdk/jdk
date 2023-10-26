@@ -1850,7 +1850,7 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
 #endif
 
 #ifndef IA32
-    // Quickly test to make sure denormals are correctly handled.
+    // Quickly test to make sure subnormals are correctly handled.
     if (StubRoutines::FTZ_mode_enabled()) {
       // We just dlopen()ed a library that mangled the floating-point
       // flags. Silently fix things now.

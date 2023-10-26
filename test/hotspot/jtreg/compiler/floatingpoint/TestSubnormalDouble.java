@@ -25,14 +25,14 @@
  * @test
  * @bug 8295159
  * @summary DSO created with -ffast-math breaks Java floating-point arithmetic
- * @run main/othervm/native compiler.floatingpoint.TestDenormalDouble
+ * @run main/othervm/native compiler.floatingpoint.TestSubnormalDouble
  */
 
 package compiler.floatingpoint;
 
 import static java.lang.System.loadLibrary;
 
-public class TestDenormalDouble {
+public class TestSubnormalDouble {
     static volatile double lastDouble;
 
     private static void testDoubles() {
