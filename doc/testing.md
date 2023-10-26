@@ -135,7 +135,7 @@ the first N tiers they can afford to run, but at least tier1.
 
 A brief description of the tiered test groups:
 
-- `tier1`: This is the lowest test tier.
+- `tier1`: This is the most fundamental test tier.
   Roughly speaking, a failure of a test in this tier has the potential to
   indicate a problem that would affect many Java programs. Tests in `tier1` include
   tests of HotSpot, libraries in the `java.base` module, and the `javac` compiler.
