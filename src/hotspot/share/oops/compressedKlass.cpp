@@ -34,7 +34,7 @@ int CompressedKlassPointers::_shift = 0;
 size_t CompressedKlassPointers::_range = 0;
 // Note: initialization value is unchanged for -UseCompressedClassPointers, so
 // the bit mirroring UseCompressedClassPointers is off and maches the switch.
-uint64_t CompressedKlassPointers::_combo = 0;
+uint64_t CompressedKlassPointers::_compressionInfo;
 
 #ifdef _LP64
 
@@ -50,11 +50,11 @@ void CompressedKlassPointers::set_base_and_shift(address thebase, int theshift) 
   assert((base_i & ~mask_base) == 0, "Base not aligned?");
   assert(_shift <= 63, "Sanity");
 
-  _combo = (uint64_t)_base | (uint64_t)_shift | (1 << bitpos_useccp);
+  _compressionInfo = (uint64_t)_base | (uint64_t)_shift | (1 << bitpos_useccp);
 
-  assert(base() == _base, "combo encoding");
-  assert(shift() == _shift, "combo encoding");
-  assert(use_compressed_class_pointers() == true, "combo encoding");
+  assert(base() == _base, "compressionInfo encoding");
+  assert(shift() == _shift, "compressionInfo encoding");
+  assert(use_compressed_class_pointers() == true, "compressionInfo encoding");
 }
 
 // Given a klass range [addr, addr+len) and a given encoding scheme, assert that this scheme covers the range, then
