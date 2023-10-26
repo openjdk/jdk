@@ -1276,7 +1276,7 @@ public abstract class Provider extends Properties {
     public Service getService(String type, String algorithm) {
         checkInitialized();
         // avoid allocating a new ServiceKey object if possible
-        ServiceKey key = previousKey;
+        ServiceKey key = new ServiceKey(type, algorithm, false);
         if (!key.matches(type, algorithm)) {
             key = new ServiceKey(type, algorithm, false);
             previousKey = key;
