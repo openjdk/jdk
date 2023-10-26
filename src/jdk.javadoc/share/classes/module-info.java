@@ -52,6 +52,9 @@
  * @provides javax.tools.DocumentationTool
  * @provides javax.tools.Tool
  *
+ * @uses com.sun.source.util.DocTrees.DocCommentTreeTransformer
+ *     By default, this module uses the {@linkplain com.sun.source.util.DocTrees.DocCommentTreeTransformer standard}
+ *     tree transformer to handle some Markdown constructs.
  *
  * @moduleGraph
  * @since 9
@@ -77,4 +80,6 @@ module jdk.javadoc {
 
     provides com.sun.tools.doclint.DocLint with
             jdk.javadoc.internal.doclint.DocLint;
+
+    uses com.sun.source.util.DocTrees.DocCommentTreeTransformer;
 }

@@ -28,6 +28,7 @@ package com.sun.tools.javac.parser;
 import java.util.Locale;
 
 import com.sun.source.util.DocTrees;
+import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.tree.DocTreeMaker;
@@ -69,7 +70,7 @@ public class ParserFactory {
     final ScannerFactory scannerFactory;
     final Locale locale;
 
-    private DocTrees.DocCommentTreeTransformer docCommentTreeTransformer;
+    private final JavacTrees trees;
 
     @SuppressWarnings("this-escape")
     protected ParserFactory(Context context) {
@@ -85,6 +86,7 @@ public class ParserFactory {
         this.options = Options.instance(context);
         this.scannerFactory = ScannerFactory.instance(context);
         this.locale = context.get(Locale.class);
+        this.trees = JavacTrees.instance(context);
     }
 
     public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepEndPos, boolean keepLineMap) {
@@ -96,11 +98,7 @@ public class ParserFactory {
         return new JavacParser(this, lexer, keepDocComments, keepLineMap, keepEndPos, parseModuleInfo);
     }
 
-    public DocTrees.DocCommentTreeTransformer getDocCommentTreeTransformer() {
-        return docCommentTreeTransformer;
-    }
-
-    public void setDocCommentTreeTransformer(DocTrees.DocCommentTreeTransformer transformer) {
-        this.docCommentTreeTransformer = transformer;
+    public JavacTrees getTrees() {
+        return trees;
     }
 }

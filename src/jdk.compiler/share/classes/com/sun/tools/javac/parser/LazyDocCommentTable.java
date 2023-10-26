@@ -31,7 +31,6 @@ import java.util.Map;
 import com.sun.source.doctree.DocCommentTree;
 
 import com.sun.tools.javac.parser.Tokens.Comment;
-import com.sun.tools.javac.tree.DCTree.DCDocComment;
 import com.sun.tools.javac.tree.DocCommentTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.DiagnosticSource;
@@ -46,7 +45,7 @@ import com.sun.tools.javac.util.DiagnosticSource;
 public class LazyDocCommentTable implements DocCommentTable {
     private static class Entry {
         final Comment comment;
-        DCDocComment tree;
+        DocCommentTree tree;
 
         Entry(Comment c) {
             comment = c;
@@ -87,9 +86,7 @@ public class LazyDocCommentTable implements DocCommentTable {
             return null;
         }
         if (e.tree == null) {
-            var dct = new DocCommentParser(fac, diagSource, e.comment).parse();
-            var transformer = fac.getDocCommentTreeTransformer(); // lazy!
-            e.tree = transformer == null ? dct : (DCDocComment) transformer.transform(dct);
+            e.tree = fac.getTrees().getDocCommentTree(diagSource, e.comment);
         }
         return e.tree;
     }

@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclint;
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -57,11 +56,12 @@ import com.sun.source.util.DocTrees;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
-import jdk.internal.markdown.MarkdownTransformer;
 import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.MatchingUtils;
 import com.sun.tools.javac.util.StringUtils;
+
+import jdk.internal.markdown.MarkdownTransformer;
 
 /**
  * Utility container for current execution environment,
@@ -161,7 +161,9 @@ public class Env {
         this.elements = elements;
         this.types = types;
 
-        this.trees.setDocCommentTreeTransformer(MarkdownTransformer.instance(trees));
+        if (this.trees.getDocCommentTreeTransformer()== null) {
+            this.trees.setDocCommentTreeTransformer(new MarkdownTransformer());
+        }
     }
 
     void initTypes() {

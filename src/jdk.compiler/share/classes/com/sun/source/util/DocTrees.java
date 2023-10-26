@@ -37,9 +37,12 @@ import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.JavaCompiler.CompilationTask;
 
+import com.sun.source.doctree.BlockTagTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EntityTree;
+import com.sun.source.doctree.InlineTagTree;
+import com.sun.source.doctree.LinkTree;
 import com.sun.source.tree.CompilationUnitTree;
 
 /**
@@ -291,14 +294,59 @@ public abstract class DocTrees extends Trees {
     public abstract String getCharacters(EntityTree tree);
 
     /**
-     * FIXME: needs CSR
+     * A functional interface to transform a {@code DocCommentTree}.
+     *
+     * <p>An implementation may detect specific patterns within a documentation
+     * comment and replace them with alternate forms, perhaps involving the
+     * tree nodes for instances of {@link InlineTagTree} or {@link BlockTagTree}.
+     *
+     * <p>Implementations may be located by using the
+     * {@linkplain java.util.ServiceLoader service loader}.
+     *
+     * @apiNote
+     * The standard implementation of this interface supports an extended form
+     * of reference links in Markdown comments, such that if the label for a
+     * reference link is undefined and matches a reference to a program
+     * element, the link is replaced by an equivalent {@link LinkTree} node.
+     * The standard implementation is used by {@linkplain jdk.javadoc <em>javadoc</em>}
+     * and related tools.
+     *
+     * <p>The standard implementation returns the string {@code "standard"}
+     * from {@link DocCommentTreeTransformer#name()}.
      */
     public interface DocCommentTreeTransformer {
-        DocCommentTree transform(DocCommentTree tree);
+        /**
+         * {@return the name of this transformer}
+         * @implSpec this implementation returns an empty string
+         */
+        default String name() { return ""; }
+
+        /**
+         * Transforms a documentation comment tree.
+         *
+         * @param trees an instance of the {@link Trees} utility interface.
+         * @param tree the tree to be transformed
+         * @return the transformed tree
+         */
+        DocCommentTree transform(DocTrees trees, DocCommentTree tree);
     }
 
     /**
-     * FIXME: needs CSR
+     * {@return the transformer to be used after a documentation comment has been parsed,
+     * or {@code null} if no transformer is to be used}
+     */
+    public abstract DocCommentTreeTransformer getDocCommentTreeTransformer();
+
+    /**
+     * Sets the transformer to be used after a documentation comment has been parsed,
+     * or {@code null} if no transformer is to be used.
+     *
+     * @apiNote
+     * This should normally be called before accessing any {@code DocCommentTree}
+     * through this class. The effects are undefined if this method is invoked
+     * after any {@code DocCommentTree} has been accessed.
+     *
+     * @param transformer the transformer
      */
     public abstract void setDocCommentTreeTransformer(DocCommentTreeTransformer transformer);
 }

@@ -326,7 +326,9 @@ public class HtmlConfiguration extends BaseConfiguration {
         initDocLint(options.doclintOpts(), tagletManager.getAllTagletNames());
         if (doclint == null) {
             var trees = docEnv.getDocTrees();
-            trees.setDocCommentTreeTransformer(MarkdownTransformer.instance(trees));
+            if (trees.getDocCommentTreeTransformer()== null) {
+                trees.setDocCommentTreeTransformer(new MarkdownTransformer());
+            }
         }
         return true;
     }

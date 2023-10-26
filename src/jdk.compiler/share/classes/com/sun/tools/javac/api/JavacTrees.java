@@ -99,6 +99,7 @@ import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.parser.DocCommentParser;
 import com.sun.tools.javac.parser.ParserFactory;
+import com.sun.tools.javac.parser.ReferenceParser;
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
@@ -1094,7 +1095,8 @@ public class JavacTrees extends DocTrees {
 
         boolean isHtmlFile = jfo.getKind() == Kind.HTML;
 
-        return new DocCommentParser(parserFactory, diagSource, comment, isHtmlFile).parse();
+        var dct = new DocCommentParser(parserFactory, diagSource, comment, isHtmlFile).parse();
+        return transform(dct);
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -1118,11 +1120,42 @@ public class JavacTrees extends DocTrees {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
-    public void setDocCommentTreeTransformer(DocTrees.DocCommentTreeTransformer transformer) {
-        this.docCommentTreeTransformer = transformer;
-        parserFactory.setDocCommentTreeTransformer(transformer);
+    public DocCommentTreeTransformer getDocCommentTreeTransformer() {
+        return docCommentTreeTransformer;
     }
 
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public void setDocCommentTreeTransformer(DocTrees.DocCommentTreeTransformer transformer) {
+        docCommentTreeTransformer = transformer;
+    }
+
+    /**
+     * {@return the doc comment tree for a given comment}
+     *
+     * @param diagSource the source containing the comment, used when displaying any diagnostics
+     * @param c the comment
+     */
+    public DocCommentTree getDocCommentTree(DiagnosticSource diagSource, Comment c) {
+        var dct = new DocCommentParser(parserFactory, diagSource, c).parse();
+        return transform(dct);
+    }
+
+    /**
+     * Transforms the given tree using the current
+     * {@linkplain #setDocCommentTreeTransformer(DocCommentTreeTransformer) transformer}.
+     * If there is no current transformer, the tree is returned unmodified.
+     *
+     * @param tree the tree
+     * @return the transformed tree
+     */
+    private DocCommentTree transform(DocCommentTree tree) {
+        return docCommentTreeTransformer == null ? tree : docCommentTreeTransformer.transform(this, tree);
+    }
+
+    /**
+     * {@return the {@linkplain ParserFactory} parser factory}.
+     * The factory can be used to create a {@link ReferenceParser}, to parse link references.
+     */
     public ParserFactory getParserFactory() {
         return parserFactory;
     }

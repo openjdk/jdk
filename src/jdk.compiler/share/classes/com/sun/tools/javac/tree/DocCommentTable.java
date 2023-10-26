@@ -29,7 +29,6 @@ import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.ErroneousTree;
 
 import com.sun.tools.javac.parser.Tokens.Comment;
-import com.sun.tools.javac.tree.DCTree.DCDocComment;
 
 /**
  * A table giving the doc comment, if any, for any tree node.

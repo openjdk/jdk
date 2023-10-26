@@ -26,7 +26,7 @@
 /**
  * Internal support for Markdown.
  *
- * @since 21
+ * @since 22
  */
 module jdk.internal.md {
     requires jdk.compiler;
@@ -49,4 +49,7 @@ module jdk.internal.md {
     exports jdk.internal.org.commonmark.renderer.html to
             jdk.javadoc,
             jdk.jshell;
+
+    provides com.sun.source.util.DocTrees.DocCommentTreeTransformer
+            with jdk.internal.markdown.MarkdownTransformer;
 }
