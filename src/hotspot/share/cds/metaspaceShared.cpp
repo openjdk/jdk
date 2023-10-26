@@ -390,7 +390,6 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc);)
 
   LambdaFormInvokers::serialize(soc);
-
   soc->do_tag(666);
 }
 
@@ -780,6 +779,10 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
 
 #if INCLUDE_CDS_JAVA_HEAP
   StringTable::allocate_shared_strings_array(CHECK);
+  if (!HeapShared::is_archived_boot_layer_available(THREAD)) {
+    log_info(cds)("archivedBootLayer not available, disabling full module graph");
+    disable_full_module_graph();
+  }
   ArchiveHeapWriter::init();
   if (use_full_module_graph()) {
     HeapShared::reset_archived_object_states(CHECK);

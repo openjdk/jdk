@@ -221,7 +221,7 @@ public final class ModuleBootstrap {
             systemModuleFinder = archivedModuleGraph.finder();
             hasSplitPackages = archivedModuleGraph.hasSplitPackages();
             hasIncubatorModules = archivedModuleGraph.hasIncubatorModules();
-            needResolution = (traceOutput != null) || CDS.isDumpingStaticArchive();
+            needResolution = (traceOutput != null);
         } else {
             if (!haveModulePath && addModules.isEmpty() && limitModules.isEmpty()) {
                 systemModules = SystemModuleFinders.systemModules(mainModule);
@@ -472,12 +472,15 @@ public final class ModuleBootstrap {
         // is in the runtime image and not on the upgrade module path. If so,
         // set canArchive to true so that the module graph can be archived.
         if (CDS.isDumpingStaticArchive() && mainModule != null) {
-            ModuleReference mainModuleRef = systemModuleFinder.find(mainModule).orElse(null);
-            if (mainModuleRef != null) {
-                URI mainModuleLocation = mainModuleRef.location().orElse(null);
-                if (mainModuleLocation != null && mainModuleLocation.getScheme().equalsIgnoreCase("jrt")) {
-                    canArchive = true;
-                }
+            String scheme = systemModuleFinder.find(mainModule)
+                    .stream()
+                    .map(ModuleReference::location)
+                    .flatMap(Optional::stream)
+                    .findAny()
+                    .map(URI::getScheme)
+                    .orElse(null);
+            if ("jrt".equalsIgnoreCase(scheme)) {
+                canArchive = true;
             }
         }
 
@@ -488,7 +491,7 @@ public final class ModuleBootstrap {
                                         systemModuleFinder,
                                         cf,
                                         clf);
-            if (!hasSplitPackages) {
+            if (!hasSplitPackages && !hasIncubatorModules) {
                 ArchivedBootLayer.archive(bootLayer);
             }
         }

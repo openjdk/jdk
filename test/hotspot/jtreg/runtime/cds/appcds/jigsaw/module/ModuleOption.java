@@ -35,12 +35,14 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class ModuleOption {
     public static void main(String[] args) throws Exception {
-        final String moduleOption = "jdk.compiler/com.sun.tools.javac.Main";
-        final String loggingOption = "-Xlog:cds=debug,cds+module=debug";
-        final String javacVersionPattern = "javac.[0-9][0-9][-].*";
+        final String moduleOption = "jdk.httpserver/sun.net.httpserver.simpleserver.Main";
+        final String incubatorModule = "jdk.incubator.vector";
+        final String loggingOption = "-Xlog:cds=debug,cds+module=debug,module=trace";
+        final String versionPattern = "java.[0-9][0-9][-].*";
         String archiveName = TestCommon.getNewArchiveName("module-option");
         TestCommon.setCurrentArchiveName(archiveName);
 
+        // dump a base archive with -m jdk.httpserver
         OutputAnalyzer oa = TestCommon.dumpBaseArchive(
             archiveName,
             loggingOption,
@@ -54,24 +56,24 @@ public class ModuleOption {
             "-m", moduleOption,
             "-version");
         oa.shouldHaveExitValue(0)
-          // version of the jdk.compiler module, e.g. javac 22-ea
-          .shouldMatch(javacVersionPattern)
-          .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.compiler");
+          // version of the jdk.httpserver module, e.g. java 22-ea
+          .shouldMatch(versionPattern)
+          .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.httpserver");
 
         // different module specified during runtime
         oa = TestCommon.execCommon(
             loggingOption,
-            "-m", "jdk.httpserver/sun.net.httpserver.simpleserver.Main",
+            "-m", "jdk.compiler/com.sun.tools.javac.Main",
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldContain("Mismatched modules: runtime jdk.httpserver dump time jdk.compiler");
+          .shouldContain("Mismatched modules: runtime jdk.compiler dump time jdk.httpserver");
 
         // no module specified during runtime
         oa = TestCommon.execCommon(
             loggingOption,
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldContain("Module jdk.compiler specified during dump time but not during runtime");
+          .shouldContain("Module jdk.httpserver specified during dump time but not during runtime");
 
         // dump an archive without the module option
         archiveName = TestCommon.getNewArchiveName("no-module-option");
@@ -88,8 +90,32 @@ public class ModuleOption {
             "-m", moduleOption,
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldContain("Module jdk.compiler specified during runtime but not during dump time")
-          // version of the jdk.compiler module, e.g. javac 22-ea
-          .shouldMatch(javacVersionPattern);
+          .shouldContain("Module jdk.httpserver specified during runtime but not during dump time")
+          // version of the jdk.httpserver module, e.g. java 22-ea
+          .shouldMatch(versionPattern);
+
+        // dump an archive with an incubator module, -m jdk.incubator.vector
+        archiveName = TestCommon.getNewArchiveName("incubator-module");
+        TestCommon.setCurrentArchiveName(archiveName);
+        oa = TestCommon.dumpBaseArchive(
+            archiveName,
+            loggingOption,
+            "-m", incubatorModule,
+            "-version");
+        oa.shouldHaveExitValue(0)
+          // module graph won't be archived with an incubator module
+          .shouldContain("archivedBootLayer not available, disabling full module graph");
+
+        // run with the same incubator module
+        oa = TestCommon.execCommon(
+            loggingOption,
+            "-m", incubatorModule,
+            "-version");
+        oa.shouldContain("full module graph: disabled")
+          // module is not restored from archive
+          .shouldContain("define_module(): creation of module: jdk.incubator.vector")
+          .shouldContain("WARNING: Using incubator modules: jdk.incubator.vector")
+          .shouldContain("module jdk.incubator.vector does not have a ModuleMainClass attribute, use -m <module>/<main-class>")
+          .shouldHaveExitValue(1);
     }
 }
