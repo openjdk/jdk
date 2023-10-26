@@ -634,25 +634,35 @@ void skip_comma(char* &line) {
   }
 }
 
-enum parse_result_t { handled_ok, handled_err, not_handled };
+// Parse an uintx-based option value. Also takes care of parsing enum values for options that are enums.
+// Returns true if ok, false if the value could not be parsed.
+static bool parseUintxValue(enum CompileCommand option, const char* line, uintx& value, int& bytes_read) {
 
-static parse_result_t parseEnumValueAsUintx(enum CompileCommand option, const char* line, uintx& value, int& bytes_read, char* errorbuf, const int buf_size) {
-  if (option == CompileCommand::MemStat) {
-    if (strncasecmp(line, "collect", 7) == 0) {
-      value = (uintx)MemStatAction::collect;
-      return handled_ok;
-    } else if (strncasecmp(line, "print", 5) == 0) {
-      value = (uintx)MemStatAction::print;
-      print_final_memstat_report = true;
-      return handled_ok;
-    } else {
-      jio_snprintf(errorbuf, buf_size, "MemStat: invalid value expected 'collect' or 'print' (omitting value means 'collect')");
-      return handled_err;
-    }
-
+#define IF_ENUM_STRING(S, CMD)                \
+  if (strncasecmp(line, S, strlen(S)) == 0) { \
+	  bytes_read += strlen(S);                  \
+    CMD                                       \
+    return true;                              \
   }
-  return not_handled;
-#undef HANDLE_VALUE
+  // Parse MemStat as enum
+  if (option == CompileCommand::MemStat) {
+    IF_ENUM_STRING("collect", {
+        value = (uintx)MemStatAction::collect;
+    });
+    IF_ENUM_STRING("print", {
+        value = (uintx)MemStatAction::print;
+        print_final_memstat_report = true;
+    });
+    return false;
+  }
+#undef IF_ENUM_STRING
+
+  // Option is not an enum. Parse as literal number.
+  if ((sscanf(line, "" UINTX_FORMAT "%n", &value, &bytes_read) == 1)) {
+    return true;
+  }
+
+  return false;
 }
 
 static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
@@ -674,22 +684,10 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
     }
   } else if (type == OptionType::Uintx) {
     uintx value;
-    // Parse named enum value
-    const parse_result_t res = parseEnumValueAsUintx(option, line, value, bytes_read, errorbuf, buf_size);
-    if (res != not_handled) {
-      total_bytes_read += bytes_read;
-      line += bytes_read;
-      if (res == handled_ok) {
-        register_command(matcher, option, value);
-      }
-      return; // in case of an error, error string had been set.
-    }
-    // Parse raw number
-    if ((sscanf(line, "" UINTX_FORMAT "%n", &value, &bytes_read) == 1)) {
+    if (parseUintxValue(option, line, value, bytes_read)) {
       total_bytes_read += bytes_read;
       line += bytes_read;
       register_command(matcher, option, value);
-      return;
     } else {
       jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
     }

@@ -56,7 +56,7 @@ public class MemStatTest {
         ProcessTools.executeTestJvm("-XX:CompileCommand=MemStat,*.*,invalid", "-version")
                 .shouldNotHaveExitValue(0)
                 .shouldContain("CompileCommand: An error occurred during parsing")
-                .shouldContain("MemStat: invalid value")
+                .shouldContain("Error: Value cannot be read for option 'MemStat'")
                 .shouldNotContain("CompileCommand: MemStat"); // should *NOT* be registered
     }
 }
