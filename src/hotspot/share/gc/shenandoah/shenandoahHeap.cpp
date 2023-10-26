@@ -76,6 +76,8 @@
 #include "code/codeCache.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "nmt/mallocTracker.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/atomic.hpp"
@@ -85,8 +87,6 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/vmThread.hpp"
-#include "services/mallocTracker.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/events.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -1812,7 +1812,7 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
                                           ShenandoahPhaseTimings::degen_gc_purge_class_unload;
     ShenandoahIsAliveSelector is_alive;
     {
-      CodeCache::UnloadingScope scope(is_alive.is_alive_closure());
+      CodeCache::UnlinkingScope scope(is_alive.is_alive_closure());
       ShenandoahGCPhase gc_phase(phase);
       ShenandoahGCWorkerPhase worker_phase(phase);
       bool unloading_occurred = SystemDictionary::do_unloading(gc_timer());

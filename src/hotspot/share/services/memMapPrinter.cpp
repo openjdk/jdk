@@ -35,8 +35,8 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/memMapPrinter.hpp"
-#include "services/memTracker.hpp"
-#include "services/virtualMemoryTracker.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 

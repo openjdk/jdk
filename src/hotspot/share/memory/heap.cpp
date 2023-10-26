@@ -24,10 +24,10 @@
 
 #include "precompiled.hpp"
 #include "memory/heap.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/os.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "services/memTracker.hpp"
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
