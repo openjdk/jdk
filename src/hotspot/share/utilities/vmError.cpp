@@ -1051,7 +1051,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
 #if defined(COMPILER1) || defined(COMPILER2)
   STEP_IF("printing pending compilation failure",
-         _verbose && _thread != nullptr && _thread->is_Compiler_thread())
+          _verbose && _thread != nullptr && _thread->is_Compiler_thread())
     CompilationFailureInfo::print_pending_compilation_failure(st);
 #endif
 
