@@ -43,6 +43,13 @@ const Type* SubTypeCheckNode::sub(const Type* sub_t, const Type* super_t) const 
     if (!superklass->is_interface() && superklass->is_abstract() &&
         !superklass->as_instance_klass()->has_subklass()) {
       Compile::current()->dependencies()->assert_leaf_type(superklass);
+      if (subk->is_same_java_type_as(superk) && !sub_t->maybe_null()) {
+        // The super_t has no subclasses, and sub_t has the same type and is not null,
+        // hence the check should always evaluate to EQ. However, this is an impossible
+        // situation since super_t is also abstract, and hence sub_t cannot have the
+        // same type and be non-null.
+        return TypeInt::CC_EQ;
+      }
       return TypeInt::CC_GT;
     }
   }
