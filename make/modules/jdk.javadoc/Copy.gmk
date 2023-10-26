@@ -32,8 +32,7 @@ JDK_JAVADOC_DOCLET_RESOURCE_DIR := $(JDK_JAVADOC_DIR)/jdk/javadoc/internal/docle
 
 $(eval $(call SetupCopyFiles, COPY_JAVADOC_MODULE_LEGAL_RESOURCES, \
     DEST := $(JDK_JAVADOC_DOCLET_RESOURCE_DIR)/legal, \
-    FILES := $(wildcard $(TOPDIR)/src/jdk.javadoc/share/legal/*.md), \
-    FLATTEN := true, \
+    FILES := $(wildcard $(MODULE_SRC)/share/legal/*.md), \
 ))
 TARGETS += $(COPY_JAVADOC_MODULE_LEGAL_RESOURCES)
 
@@ -41,8 +40,7 @@ TARGETS += $(COPY_JAVADOC_MODULE_LEGAL_RESOURCES)
 
 $(eval $(call SetupCopyFiles, COPY_JAVADOC_COMMON_LEGAL_RESOURCES, \
     DEST := $(JDK_JAVADOC_DOCLET_RESOURCE_DIR)/legal, \
-    FILES := $(wildcard $(SUPPORT_OUTPUTDIR)/modules_legal/common/*), \
-    FLATTEN := true, \
+    FILES := $(wildcard $(COMMON_LEGAL_DST_DIR)/*), \
 ))
 TARGETS += $(COPY_JAVADOC_COMMON_LEGAL_RESOURCES)
 
