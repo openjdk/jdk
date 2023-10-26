@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,44 +23,30 @@
  * questions.
  */
 
-package java.security.interfaces;
+package java.security;
 
-import java.math.BigInteger;
 import java.security.spec.AlgorithmParameterSpec;
 
 /**
- * Interface to a DSA-specific set of key parameters, which defines a
- * DSA <em>key family</em>. DSA (Digital Signature Algorithm) is defined
- * in NIST's FIPS-186.
+ * An asymmetric key, which can be either a public key or a private key.
+ * This interface contains methods that are common to either a public key or
+ * a private key.
  *
- * @see DSAKey
- * @see java.security.Key
- * @see java.security.Signature
- *
- * @author Benjamin Renaud
- * @author Josh Bloch
- * @since 1.1
+ * @since 22
  */
-public interface DSAParams extends AlgorithmParameterSpec {
-
+public interface AsymmetricKey extends Key {
     /**
-     * Returns the prime, {@code p}.
+     * Returns the parameters associated with this key.
+     * The parameters are optional and may be either
+     * explicitly specified or implicitly created during
+     * key pair generation.
      *
-     * @return the prime, {@code p}.
-     */
-    BigInteger getP();
-
-    /**
-     * Returns the subprime, {@code q}.
+     * @implSpec
+     * The default implementation returns {@code null}.
      *
-     * @return the subprime, {@code q}.
+     * @return the associated parameters, may be {@code null}
      */
-    BigInteger getQ();
-
-    /**
-     * Returns the base, {@code g}.
-     *
-     * @return the base, {@code g}.
-     */
-    BigInteger getG();
+    default AlgorithmParameterSpec getParams() {
+        return null;
+    }
 }
