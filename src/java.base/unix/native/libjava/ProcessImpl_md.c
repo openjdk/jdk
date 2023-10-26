@@ -488,16 +488,20 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     pid_t resultPid;
     int i, offset, rval, bufsize, magic;
     char *buf, buf1[(3 * 11) + 3]; // "%d:%d:%d\0"
-    char *hlpargs[2];
+    char *hlpargs[3];
     SpawnInfo sp;
 
     /* need to tell helper which fd is for receiving the childstuff
      * and which fd to send response back on
      */
     snprintf(buf1, sizeof(buf1), "%d:%d:%d", c->childenv[0], c->childenv[1], c->fail[1]);
-    /* put the fd string as argument to the helper cmd */
-    hlpargs[0] = buf1;
-    hlpargs[1] = 0;
+    /* NULL-terminated argv array.
+     * argv[0] contains path to jspawnhelper, to follow conventions.
+     * argv[1] contains the fd string as argument to jspawnhelper
+     */
+    hlpargs[0] = (char*)helperpath;
+    hlpargs[1] = buf1;
+    hlpargs[2] = NULL;
 
     /* Following items are sent down the pipe to the helper
      * after it is spawned.
@@ -558,6 +562,7 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
 
     /* write the two structs and the data buffer */
     if (writeFully(c->childenv[1], (char *)&magic, sizeof(magic)) != sizeof(magic)) { // magic number first
+        free(buf);
         return -1;
     }
 #ifdef DEBUG
@@ -566,6 +571,7 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     if (writeFully(c->childenv[1], (char *)c, sizeof(*c)) != sizeof(*c) ||
         writeFully(c->childenv[1], (char *)&sp, sizeof(sp)) != sizeof(sp) ||
         writeFully(c->childenv[1], buf, bufsize) != bufsize) {
+        free(buf);
         return -1;
     }
     /* We're done. Let jspwanhelper know he can't expect any more data from us. */

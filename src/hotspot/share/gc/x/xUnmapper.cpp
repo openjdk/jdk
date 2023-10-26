@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/x/xList.inline.hpp"
 #include "gc/x/xLock.inline.hpp"
 #include "gc/x/xPage.inline.hpp"
@@ -35,6 +36,8 @@ XUnmapper::XUnmapper(XPageAllocator* page_allocator) :
     _page_allocator(page_allocator),
     _lock(),
     _queue(),
+    _enqueued_bytes(0),
+    _warned_sync_unmapping(false),
     _stop(false) {
   set_name("XUnmapper");
   create_and_start();
@@ -50,11 +53,48 @@ XPage* XUnmapper::dequeue() {
 
     XPage* const page = _queue.remove_first();
     if (page != nullptr) {
+      _enqueued_bytes -= page->size();
       return page;
     }
 
     _lock.wait();
   }
+}
+
+bool XUnmapper::try_enqueue(XPage* page) {
+  if (ZVerifyViews) {
+    // Asynchronous unmap and destroy is not supported with ZVerifyViews
+    return false;
+  }
+
+  // Enqueue for asynchronous unmap and destroy
+  XLocker<XConditionLock> locker(&_lock);
+  if (is_saturated()) {
+    // The unmapper thread is lagging behind and is unable to unmap memory fast enough
+    if (!_warned_sync_unmapping) {
+      _warned_sync_unmapping = true;
+      log_warning_p(gc)("WARNING: Encountered synchronous unmapping because asynchronous unmapping could not keep up");
+    }
+    log_debug(gc, unmap)("Synchronous unmapping " SIZE_FORMAT "M page", page->size() / M);
+    return false;
+  }
+
+  log_trace(gc, unmap)("Asynchronous unmapping " SIZE_FORMAT "M page (" SIZE_FORMAT "M / " SIZE_FORMAT "M enqueued)",
+                       page->size() / M, _enqueued_bytes / M, queue_capacity() / M);
+
+  _queue.insert_last(page);
+  _enqueued_bytes += page->size();
+  _lock.notify_all();
+
+  return true;
+}
+
+size_t XUnmapper::queue_capacity() const {
+  return align_up<size_t>(_page_allocator->max_capacity() * ZAsyncUnmappingLimit / 100.0, XGranuleSize);
+}
+
+bool XUnmapper::is_saturated() const {
+  return _enqueued_bytes >= queue_capacity();
 }
 
 void XUnmapper::do_unmap_and_destroy_page(XPage* page) const {
@@ -70,15 +110,9 @@ void XUnmapper::do_unmap_and_destroy_page(XPage* page) const {
 }
 
 void XUnmapper::unmap_and_destroy_page(XPage* page) {
-  // Asynchronous unmap and destroy is not supported with ZVerifyViews
-  if (ZVerifyViews) {
-    // Immediately unmap and destroy
+  if (!try_enqueue(page)) {
+    // Synchronously unmap and destroy
     do_unmap_and_destroy_page(page);
-  } else {
-    // Enqueue for asynchronous unmap and destroy
-    XLocker<XConditionLock> locker(&_lock);
-    _queue.insert_last(page);
-    _lock.notify_all();
   }
 }
 

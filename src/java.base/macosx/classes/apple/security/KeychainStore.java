@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ public final class KeychainStore extends KeyStoreSpi {
             password = Long.toString(random.nextLong()).toCharArray();
         }
 
-        Object entry = entries.get(alias.toLowerCase());
+        Object entry = entries.get(alias.toLowerCase(Locale.ROOT));
 
         if (!(entry instanceof KeyEntry keyEntry)) {
             return null;
@@ -271,7 +271,7 @@ public final class KeychainStore extends KeyStoreSpi {
     public Certificate[] engineGetCertificateChain(String alias) {
         permissionCheck();
 
-        Object entry = entries.get(alias.toLowerCase());
+        Object entry = entries.get(alias.toLowerCase(Locale.ROOT));
 
         if (entry instanceof KeyEntry keyEntry) {
             if (keyEntry.chain == null) {
@@ -302,7 +302,7 @@ public final class KeychainStore extends KeyStoreSpi {
     public Certificate engineGetCertificate(String alias) {
         permissionCheck();
 
-        Object entry = entries.get(alias.toLowerCase());
+        Object entry = entries.get(alias.toLowerCase(Locale.ROOT));
 
         if (entry != null) {
             if (entry instanceof TrustedCertEntry) {
@@ -337,7 +337,7 @@ public final class KeychainStore extends KeyStoreSpi {
     public KeyStore.Entry engineGetEntry(String alias, KeyStore.ProtectionParameter protParam)
             throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableEntryException {
         if (engineIsCertificateEntry(alias)) {
-            Object entry = entries.get(alias.toLowerCase());
+            Object entry = entries.get(alias.toLowerCase(Locale.ROOT));
             if (entry instanceof TrustedCertEntry tEntry) {
                 return new KeyStore.TrustedCertificateEntry(
                         tEntry.cert, Set.of(
@@ -359,7 +359,7 @@ public final class KeychainStore extends KeyStoreSpi {
     public Date engineGetCreationDate(String alias) {
         permissionCheck();
 
-        Object entry = entries.get(alias.toLowerCase());
+        Object entry = entries.get(alias.toLowerCase(Locale.ROOT));
 
         if (entry != null) {
             if (entry instanceof TrustedCertEntry) {
@@ -427,7 +427,7 @@ public final class KeychainStore extends KeyStoreSpi {
                     entry.chainRefs = new long[entry.chain.length];
                 }
 
-                String lowerAlias = alias.toLowerCase();
+                String lowerAlias = alias.toLowerCase(Locale.ROOT);
                 if (entries.get(lowerAlias) != null) {
                     deletedEntries.put(lowerAlias, entries.get(lowerAlias));
                 }
@@ -491,7 +491,7 @@ public final class KeychainStore extends KeyStoreSpi {
                 entry.chainRefs = new long[entry.chain.length];
             }
 
-            String lowerAlias = alias.toLowerCase();
+            String lowerAlias = alias.toLowerCase(Locale.ROOT);
             if (entries.get(lowerAlias) != null) {
                 deletedEntries.put(lowerAlias, entries.get(alias));
             }
@@ -521,9 +521,10 @@ public final class KeychainStore extends KeyStoreSpi {
     {
         permissionCheck();
 
+        String lowerAlias = alias.toLowerCase(Locale.ROOT);
         synchronized(entries) {
-            Object entry = entries.remove(alias.toLowerCase());
-            deletedEntries.put(alias.toLowerCase(), entry);
+            Object entry = entries.remove(lowerAlias);
+            deletedEntries.put(lowerAlias, entry);
         }
     }
 
@@ -546,7 +547,7 @@ public final class KeychainStore extends KeyStoreSpi {
      */
     public boolean engineContainsAlias(String alias) {
         permissionCheck();
-        return entries.containsKey(alias.toLowerCase());
+        return entries.containsKey(alias.toLowerCase(Locale.ROOT));
     }
 
     /**
@@ -568,7 +569,7 @@ public final class KeychainStore extends KeyStoreSpi {
      */
     public boolean engineIsKeyEntry(String alias) {
         permissionCheck();
-        Object entry = entries.get(alias.toLowerCase());
+        Object entry = entries.get(alias.toLowerCase(Locale.ROOT));
         return entry instanceof KeyEntry;
     }
 
@@ -581,7 +582,7 @@ public final class KeychainStore extends KeyStoreSpi {
      */
     public boolean engineIsCertificateEntry(String alias) {
         permissionCheck();
-        Object entry = entries.get(alias.toLowerCase());
+        Object entry = entries.get(alias.toLowerCase(Locale.ROOT));
         return entry instanceof TrustedCertEntry;
     }
 
@@ -806,10 +807,10 @@ public final class KeychainStore extends KeyStoreSpi {
             // Check whether a certificate with same alias already exists and is the same
             // If yes, we can return here - the existing entry must have the same
             // properties and trust settings
-            if (entries.contains(alias.toLowerCase())) {
+            if (entries.contains(alias.toLowerCase(Locale.ROOT))) {
                 int uniqueVal = 1;
                 String originalAlias = alias;
-                var co = entries.get(alias.toLowerCase());
+                var co = entries.get(alias.toLowerCase(Locale.ROOT));
                 while (co != null) {
                     if (co instanceof TrustedCertEntry tco) {
                         if (tco.cert.equals(tce.cert)) {
@@ -817,7 +818,7 @@ public final class KeychainStore extends KeyStoreSpi {
                         }
                     }
                     alias = originalAlias + " " + uniqueVal++;
-                    co = entries.get(alias.toLowerCase());
+                    co = entries.get(alias.toLowerCase(Locale.ROOT));
                 }
             }
 
@@ -900,7 +901,7 @@ public final class KeychainStore extends KeyStoreSpi {
             else
                 tce.date = new Date();
 
-            entries.put(alias.toLowerCase(), tce);
+            entries.put(alias.toLowerCase(Locale.ROOT), tce);
         } catch (Exception e) {
             // The certificate will be skipped.
             System.err.println("KeychainStore Ignored Exception: " + e);
@@ -971,12 +972,12 @@ public final class KeychainStore extends KeyStoreSpi {
         int uniqueVal = 1;
         String originalAlias = alias;
 
-        while (entries.containsKey(alias.toLowerCase())) {
+        while (entries.containsKey(alias.toLowerCase(Locale.ROOT))) {
             alias = originalAlias + " " + uniqueVal;
             uniqueVal++;
         }
 
-        entries.put(alias.toLowerCase(), ke);
+        entries.put(alias.toLowerCase(Locale.ROOT), ke);
     }
 
     private static class CertKeychainItemPair {

@@ -97,7 +97,7 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
   MemTracker::record_virtual_memory_type((address)heap_rs.base(), mtGC);
 
   os::trace_page_sizes("Card Table", num_bytes, num_bytes,
-                       _page_size, heap_rs.base(), heap_rs.size());
+                       heap_rs.base(), heap_rs.size(), _page_size);
   if (!heap_rs.is_reserved()) {
     vm_exit_during_initialization("Could not reserve enough space for the "
                                   "card marking array");

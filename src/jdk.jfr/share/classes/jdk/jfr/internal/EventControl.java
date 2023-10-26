@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import jdk.jfr.internal.settings.PeriodSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
 import jdk.jfr.internal.settings.ThrottleSetting;
+import jdk.jfr.internal.util.Utils;
 
 // This class can't have a hard reference from PlatformEventType, since it
 // holds SettingControl instances that need to be released
@@ -282,7 +283,7 @@ public final class EventControl {
             return;
         }
         for (NamedControl nc : namedControls) {
-            if (Utils.isSettingVisible(nc.control, type.hasEventHook()) && type.isVisible()) {
+            if (nc.control.isVisible(type.hasEventHook()) && type.isVisible()) {
                 String value = nc.control.getLastValue();
                 if (value == null) {
                     value = nc.control.getDefaultValue();

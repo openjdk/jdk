@@ -53,7 +53,6 @@ import java.security.AccessController;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -87,11 +86,13 @@ import java.net.http.HttpResponse.PushPromiseHandler;
 import java.net.http.WebSocket;
 
 import jdk.internal.net.http.common.BufferSupplier;
+import jdk.internal.net.http.common.Deadline;
 import jdk.internal.net.http.common.HttpBodySubscriberWrapper;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Pair;
+import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.common.OperationTrackers.Trackable;
 import jdk.internal.net.http.common.OperationTrackers.Tracker;
@@ -282,23 +283,25 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         }
     }
 
-    static void registerPending(PendingRequest pending) {
+    static <T> CompletableFuture<T> registerPending(PendingRequest pending, CompletableFuture<T> res) {
         // shortcut if cf is already completed: no need to go through the trouble of
         //    registering it
-        if (pending.cf.isDone()) return;
+        if (pending.cf.isDone()) return res;
 
         var client = pending.client;
         var cf = pending.cf;
         var id = pending.id;
         boolean added = client.pendingRequests.add(pending);
         // this may immediately remove `pending` from the set is the cf is already completed
-        pending.ref = cf.whenComplete((r,t) -> client.pendingRequests.remove(pending));
+        var ref = res.whenComplete((r,t) -> client.pendingRequests.remove(pending));
+        pending.ref = ref;
         assert added : "request %d was already added".formatted(id);
         // should not happen, unless the selector manager has already
         // exited abnormally
         if (client.selmgr.isClosed()) {
             pending.abort(client.selmgr.selectorClosedException());
         }
+        return ref;
     }
 
     static void abortPendingRequests(HttpClientImpl client, Throwable reason) {
@@ -575,8 +578,9 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                         if (debug.on()) {
                             debug.log("body subscriber registered: " + count);
                         }
+                        return true;
                     }
-                    return true;
+                    return false;
                 }
             } finally {
                 selmgr.unlock();
@@ -930,8 +934,9 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             cf = sendAsync(req, responseHandler, null, null);
             return cf.get();
         } catch (InterruptedException ie) {
-            if (cf != null )
+            if (cf != null) {
                 cf.cancel(true);
+            }
             throw ie;
         } catch (ExecutionException e) {
             final Throwable throwable = e.getCause();
@@ -1051,19 +1056,23 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                         (b,t) -> debugCompleted("ClientImpl (async)", start, userRequest));
             }
 
-            // makes sure that any dependent actions happen in the CF default
-            // executor. This is only needed for sendAsync(...), when
-            // exchangeExecutor is non-null.
-            if (exchangeExecutor != null) {
-                res = res.whenCompleteAsync((r, t) -> { /* do nothing */}, ASYNC_POOL);
-            }
-
             // The mexCf is the Cf we need to abort if the SelectorManager thread
             // is aborted.
             PendingRequest pending = new PendingRequest(id, requestImpl, mexCf, mex, this);
-            registerPending(pending);
-            return res;
-        } catch(Throwable t) {
+            res = registerPending(pending, res);
+
+            if (exchangeExecutor != null) {
+                // makes sure that any dependent actions happen in the CF default
+                // executor. This is only needed for sendAsync(...), when
+                // exchangeExecutor is non-null.
+                return res.isDone() ? res
+                        : res.whenCompleteAsync((r, t) -> { /* do nothing */}, ASYNC_POOL);
+            } else {
+                // make a defensive copy that can be safely canceled
+                // by the caller
+                return res.isDone() ? res : res.copy();
+            }
+        } catch (Throwable t) {
             requestUnreference();
             debugCompleted("ClientImpl (async)", start, userRequest);
             throw t;
@@ -1482,10 +1491,10 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             SelectionKey key = channel.keyFor(selmgr.selector);
             if (key == null) return "channel not registered with selector";
             String keyInterestOps = key.isValid()
-                    ? "key.interestOps=" + key.interestOps() : "invalid key";
+                    ? "key.interestOps=" + Utils.interestOps(key) : "invalid key";
             return String.format("channel registered with selector, %s, sa.interestOps=%s",
-                                 keyInterestOps,
-                                 ((SelectorAttachment)key.attachment()).interestOps);
+                    keyInterestOps,
+                    Utils.describeOps(((SelectorAttachment)key.attachment()).interestOps));
         } catch (Throwable t) {
             return String.valueOf(t);
         }
@@ -1524,7 +1533,8 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             interestOps |= newOps;
             pending.add(e);
             if (debug.on())
-                debug.log("Registering %s for %d (%s)", e, newOps, reRegister);
+                debug.log("Registering %s for %s (%s)",
+                        e, Utils.describeOps(newOps), reRegister);
             if (reRegister) {
                 // first time registration happens here also
                 try {
@@ -1745,7 +1755,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         synchronized (this) {
             if (timeouts.isEmpty()) return 0L;
 
-            Instant now = Instant.now();
+            Deadline now = TimeSource.now();
             Iterator<TimeoutEvent> itr = timeouts.iterator();
             while (itr.hasNext()) {
                 TimeoutEvent event = itr.next();
@@ -1840,7 +1850,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                 if (timeoutVal >= 0) return timeoutVal;
             }
         } catch (NumberFormatException ignored) {
-            Log.logTrace("Invalid value set for " + prop + " property: " + ignored.toString());
+            Log.logTrace("Invalid value set for " + prop + " property: " + ignored);
         }
         return def;
     }

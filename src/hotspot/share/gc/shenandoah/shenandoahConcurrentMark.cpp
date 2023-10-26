@@ -58,7 +58,6 @@ public:
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     ShenandoahSuspendibleThreadSetJoiner stsj(ShenandoahSuspendibleWorkers);
-    ShenandoahObjToScanQueue* q = _cm->get_queue(worker_id);
     ShenandoahReferenceProcessor* rp = heap->ref_processor();
     assert(rp != nullptr, "need reference processor");
     StringDedup::Requests requests;
@@ -73,7 +72,6 @@ class ShenandoahSATBAndRemarkThreadsClosure : public ThreadClosure {
 private:
   SATBMarkQueueSet& _satb_qset;
   OopClosure* const _cl;
-  uintx _claim_token;
 
 public:
   ShenandoahSATBAndRemarkThreadsClosure(SATBMarkQueueSet& satb_qset, OopClosure* cl) :

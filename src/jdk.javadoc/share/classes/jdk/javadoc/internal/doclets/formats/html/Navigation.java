@@ -42,14 +42,11 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
-
-import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.*;
 
 /**
  * Factory for navigation bar.
@@ -94,11 +91,12 @@ public class Navigation {
         OVERVIEW,
         PACKAGE,
         PREVIEW,
+        RESTRICTED,
         SERIALIZED_FORM,
         SEARCH,
         SYSTEM_PROPERTIES,
         TREE,
-        USE;
+        USE
     }
 
     /**
@@ -319,6 +317,7 @@ public class Navigation {
             case ALL_PACKAGES:
             case CONSTANT_VALUES:
             case EXTERNAL_SPECS:
+            case RESTRICTED:
             case SERIALIZED_FORM:
             case SEARCH:
             case SYSTEM_PROPERTIES:

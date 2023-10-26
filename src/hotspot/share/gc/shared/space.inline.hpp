@@ -27,8 +27,8 @@
 
 #include "gc/shared/space.hpp"
 
+#include "gc/serial/generation.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/generation.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"

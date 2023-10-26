@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
+#include "interpreter/invocationCounter.hpp"
 #include "jvm_io.h"
 #include "runtime/arguments.hpp"
 #include "runtime/continuation.hpp"
@@ -511,15 +512,6 @@ bool CompilerConfig::check_args_consistency(bool status) {
     }
     FLAG_SET_CMDLINE(BackgroundCompilation, false);
   }
-
-#ifdef COMPILER2
-  if (PostLoopMultiversioning && !RangeCheckElimination) {
-    if (!FLAG_IS_DEFAULT(PostLoopMultiversioning)) {
-      warning("PostLoopMultiversioning disabled because RangeCheckElimination is disabled.");
-    }
-    FLAG_SET_CMDLINE(PostLoopMultiversioning, false);
-  }
-#endif // COMPILER2
 
   if (CompilerConfig::is_interpreter_only()) {
     if (UseCompiler) {

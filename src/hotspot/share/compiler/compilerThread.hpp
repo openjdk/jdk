@@ -27,8 +27,9 @@
 
 #include "runtime/javaThread.hpp"
 
-class BufferBlob;
 class AbstractCompiler;
+class ArenaStatCounter;
+class BufferBlob;
 class ciEnv;
 class CompileThread;
 class CompileLog;
@@ -54,6 +55,8 @@ class CompilerThread : public JavaThread {
   AbstractCompiler*     _compiler;
   TimeStamp             _idle_time;
 
+  ArenaStatCounter*     _arena_stat;
+
  public:
 
   static CompilerThread* current() {
@@ -72,14 +75,16 @@ class CompilerThread : public JavaThread {
 
   virtual bool can_call_java() const;
 
-  // Hide native compiler threads from external view.
-  bool is_hidden_from_external_view() const      { return !can_call_java(); }
+  // Returns true if this CompilerThread is hidden from JVMTI and FlightRecorder.  C1 and C2 are
+  // always hidden but JVMCI compiler threads might be hidden.
+  virtual bool is_hidden_from_external_view() const;
 
   void set_compiler(AbstractCompiler* c)         { _compiler = c; }
   AbstractCompiler* compiler() const             { return _compiler; }
 
   CompileQueue* queue()        const             { return _queue; }
   CompilerCounters* counters() const             { return _counters; }
+  ArenaStatCounter* arena_stat() const           { return _arena_stat; }
 
   // Get/set the thread's compilation environment.
   ciEnv*        env()                            { return _env; }

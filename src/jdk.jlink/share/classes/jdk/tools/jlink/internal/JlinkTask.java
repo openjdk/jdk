@@ -60,6 +60,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.internal.module.ModuleReferenceImpl;
 import jdk.tools.jlink.internal.TaskHelper.BadArgs;
 import static jdk.tools.jlink.internal.TaskHelper.JLINK_BUNDLE;
 import jdk.tools.jlink.internal.Jlink.JlinkConfiguration;
@@ -68,8 +69,6 @@ import jdk.tools.jlink.internal.TaskHelper.Option;
 import jdk.tools.jlink.internal.TaskHelper.OptionsHelper;
 import jdk.tools.jlink.internal.ImagePluginStack.ImageProvider;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.builder.DefaultImageBuilder;
-import jdk.tools.jlink.plugin.Plugin;
 import jdk.internal.opt.CommandLine;
 import jdk.internal.module.ModulePath;
 import jdk.internal.module.ModuleResolution;
@@ -219,7 +218,7 @@ public class JlinkTask {
         Path output;
         final Map<String, String> launchers = new HashMap<>();
         Path packagedModulesPath;
-        ByteOrder endian = ByteOrder.nativeOrder();
+        ByteOrder endian;
         boolean ignoreSigning = false;
         boolean bindServices = false;
         boolean suggestProviders = false;
@@ -355,6 +354,7 @@ public class JlinkTask {
                                     null,
                                     IGNORE_SIGNING_DEFAULT,
                                     false,
+                                    null,
                                     false,
                                     null);
 
@@ -394,7 +394,6 @@ public class JlinkTask {
 
         return new JlinkConfiguration(options.output,
                                       roots,
-                                      options.endian,
                                       finder);
     }
 
@@ -408,16 +407,18 @@ public class JlinkTask {
         }
 
         // First create the image provider
-        ImageProvider imageProvider = createImageProvider(config,
-                                                          options.packagedModulesPath,
-                                                          options.ignoreSigning,
-                                                          options.bindServices,
-                                                          options.verbose,
-                                                          log);
+        ImageHelper imageProvider = createImageProvider(config,
+                                                        options.packagedModulesPath,
+                                                        options.ignoreSigning,
+                                                        options.bindServices,
+                                                        options.endian,
+                                                        options.verbose,
+                                                        log);
 
         // Then create the Plugin Stack
         ImagePluginStack stack = ImagePluginConfiguration.parseConfiguration(
-            taskHelper.getPluginsConfig(options.output, options.launchers));
+            taskHelper.getPluginsConfig(options.output, options.launchers,
+                    imageProvider.targetPlatform));
 
         //Ask the stack to proceed
         stack.operate(imageProvider);
@@ -511,12 +512,13 @@ public class JlinkTask {
     }
 
 
-    private static ImageProvider createImageProvider(JlinkConfiguration config,
-                                                     Path retainModulesPath,
-                                                     boolean ignoreSigning,
-                                                     boolean bindService,
-                                                     boolean verbose,
-                                                     PrintWriter log)
+    private static ImageHelper createImageProvider(JlinkConfiguration config,
+                                                   Path retainModulesPath,
+                                                   boolean ignoreSigning,
+                                                   boolean bindService,
+                                                   ByteOrder endian,
+                                                   boolean verbose,
+                                                   PrintWriter log)
             throws IOException
     {
         Configuration cf = bindService ? config.resolveAndBind()
@@ -563,7 +565,22 @@ public class JlinkTask {
 
         Map<String, Path> mods = cf.modules().stream()
             .collect(Collectors.toMap(ResolvedModule::name, JlinkTask::toPathLocation));
-        return new ImageHelper(cf, mods, config.getByteOrder(), retainModulesPath, ignoreSigning);
+        // determine the target platform of the image being created
+        Platform targetPlatform = targetPlatform(cf, mods);
+        // if the user specified any --endian, then it must match the target platform's native
+        // endianness
+        if (endian != null && endian != targetPlatform.arch().byteOrder()) {
+            throw new IOException(
+                    taskHelper.getMessage("err.target.endianness.mismatch", endian, targetPlatform));
+        }
+        if (verbose && log != null) {
+            Platform runtime = Platform.runtime();
+            if (runtime.os() != targetPlatform.os() || runtime.arch() != targetPlatform.arch()) {
+                log.format("Cross-platform image generation, using %s for target platform %s%n",
+                        targetPlatform.arch().byteOrder(), targetPlatform);
+            }
+        }
+        return new ImageHelper(cf, mods, targetPlatform, retainModulesPath, ignoreSigning);
     }
 
     /*
@@ -607,6 +624,63 @@ public class JlinkTask {
                 return mrefs;
             }
         };
+    }
+
+    private static Platform targetPlatform(Configuration cf, Map<String, Path> modsPaths) throws IOException {
+        Path javaBasePath = modsPaths.get("java.base");
+        assert javaBasePath != null : "java.base module path is missing";
+        if (isJavaBaseFromDefaultModulePath(javaBasePath)) {
+            // this implies that the java.base module used for the target image
+            // will correspond to the current platform. So this isn't an attempt to
+            // build a cross-platform image. We use the current platform's endianness
+            // in this case
+            return Platform.runtime();
+        } else {
+            // this is an attempt to build a cross-platform image. We now attempt to
+            // find the target platform's arch and thus its endianness from the java.base
+            // module's ModuleTarget attribute
+            String targetPlatformVal = readJavaBaseTargetPlatform(cf);
+            try {
+                return Platform.parsePlatform(targetPlatformVal);
+            } catch (IllegalArgumentException iae) {
+                throw new IOException(
+                        taskHelper.getMessage("err.unknown.target.platform", targetPlatformVal));
+            }
+        }
+    }
+
+    // returns true if the default module-path is the parent of the passed javaBasePath
+    private static boolean isJavaBaseFromDefaultModulePath(Path javaBasePath) throws IOException {
+        Path defaultModulePath = getDefaultModulePath();
+        if (defaultModulePath == null) {
+            return false;
+        }
+        // resolve, against the default module-path dir, the java.base module file used
+        // for image creation
+        Path javaBaseInDefaultPath = defaultModulePath.resolve(javaBasePath.getFileName());
+        if (Files.notExists(javaBaseInDefaultPath)) {
+            // the java.base module used for image creation doesn't exist in the default
+            // module path
+            return false;
+        }
+        return Files.isSameFile(javaBasePath, javaBaseInDefaultPath);
+    }
+
+    // returns the targetPlatform value from the ModuleTarget attribute of the java.base module.
+    // throws IOException if the targetPlatform cannot be determined.
+    private static String readJavaBaseTargetPlatform(Configuration cf) throws IOException {
+        Optional<ResolvedModule> javaBase = cf.findModule("java.base");
+        assert javaBase.isPresent() : "java.base module is missing";
+        ModuleReference ref = javaBase.get().reference();
+        if (ref instanceof ModuleReferenceImpl modRefImpl
+                && modRefImpl.moduleTarget() != null) {
+            return modRefImpl.moduleTarget().targetPlatform();
+        }
+        // could not determine target platform
+        throw new IOException(
+                taskHelper.getMessage("err.cannot.determine.target.platform",
+                        ref.location().map(URI::toString)
+                                .orElse("java.base module")));
     }
 
     /*
@@ -772,7 +846,7 @@ public class JlinkTask {
     }
 
     private static class ImageHelper implements ImageProvider {
-        final ByteOrder order;
+        final Platform targetPlatform;
         final Path packagedModulesPath;
         final boolean ignoreSigning;
         final Runtime.Version version;
@@ -780,10 +854,11 @@ public class JlinkTask {
 
         ImageHelper(Configuration cf,
                     Map<String, Path> modsPaths,
-                    ByteOrder order,
+                    Platform targetPlatform,
                     Path packagedModulesPath,
                     boolean ignoreSigning) throws IOException {
-            this.order = order;
+            Objects.requireNonNull(targetPlatform);
+            this.targetPlatform = targetPlatform;
             this.packagedModulesPath = packagedModulesPath;
             this.ignoreSigning = ignoreSigning;
 
@@ -810,7 +885,7 @@ public class JlinkTask {
 
                 try (Stream<Archive.Entry> entries = modularJarArchive.entries()) {
                     boolean hasSignatures = entries.anyMatch((entry) -> {
-                        String name = entry.name().toUpperCase(Locale.ENGLISH);
+                        String name = entry.name().toUpperCase(Locale.ROOT);
 
                         return name.startsWith("META-INF/") && name.indexOf('/', 9) == -1 && (
                                 name.endsWith(".SF") ||
@@ -857,7 +932,8 @@ public class JlinkTask {
 
         @Override
         public ExecutableImage retrieve(ImagePluginStack stack) throws IOException {
-            ExecutableImage image = ImageFileCreator.create(archives, order, stack);
+            ExecutableImage image = ImageFileCreator.create(archives,
+                    targetPlatform.arch().byteOrder(), stack);
             if (packagedModulesPath != null) {
                 // copy the packaged modules to the given path
                 Files.createDirectories(packagedModulesPath);

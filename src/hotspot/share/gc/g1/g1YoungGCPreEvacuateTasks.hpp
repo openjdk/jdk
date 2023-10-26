@@ -46,4 +46,3 @@ public:
 };
 
 #endif // SHARE_GC_G1_G1YOUNGGCPREEVACUATETASKS_HPP
-

@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.inline.hpp"
@@ -73,6 +74,7 @@
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
 #include "services/threadService.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/classpathStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
@@ -122,7 +124,6 @@ PerfCounter*    ClassLoader::_perf_class_verify_selftime = nullptr;
 PerfCounter*    ClassLoader::_perf_classes_linked = nullptr;
 PerfCounter*    ClassLoader::_perf_class_link_time = nullptr;
 PerfCounter*    ClassLoader::_perf_class_link_selftime = nullptr;
-PerfCounter*    ClassLoader::_perf_sys_class_lookup_time = nullptr;
 PerfCounter*    ClassLoader::_perf_shared_classload_time = nullptr;
 PerfCounter*    ClassLoader::_perf_sys_classload_time = nullptr;
 PerfCounter*    ClassLoader::_perf_app_classload_time = nullptr;
@@ -218,7 +219,7 @@ Symbol* ClassLoader::package_from_class_name(const Symbol* name, bool* bad_class
     }
     return nullptr;
   }
-  return SymbolTable::new_symbol(name, start - base, end - base);
+  return SymbolTable::new_symbol(name, pointer_delta_as_int(start, base), pointer_delta_as_int(end, base));
 }
 
 // Given a fully qualified package name, find its defining package in the class loader's
@@ -269,9 +270,11 @@ ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char*
         // debug builds so that we guard against use-after-free bugs.
         FREE_RESOURCE_ARRAY_IN_THREAD(current, char, path, path_len);
 #endif
+        // We don't verify the length of the classfile stream fits in an int, but this is the
+        // bootloader so we have control of this.
         // Resource allocated
         return new ClassFileStream(buffer,
-                                   st.st_size,
+                                   checked_cast<int>(st.st_size),
                                    _dir,
                                    ClassFileStream::verify);
       }
@@ -420,7 +423,7 @@ ClassFileStream* ClassPathImageEntry::open_stream_for_loader(JavaThread* current
     // Resource allocated
     assert(this == (ClassPathImageEntry*)ClassLoader::get_jrt_entry(), "must be");
     return new ClassFileStream((u1*)data,
-                               (int)size,
+                               checked_cast<int>(size),
                                _name,
                                ClassFileStream::verify,
                                true); // from_boot_loader_modules_image
@@ -444,7 +447,7 @@ bool ClassPathImageEntry::is_modules_image() const {
 
 #if INCLUDE_CDS
 void ClassLoader::exit_with_path_failure(const char* error, const char* message) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   tty->print_cr("Hint: enable -Xlog:class+path=info to diagnose the failure");
   vm_exit_during_initialization(error, message);
 }
@@ -514,21 +517,22 @@ void ClassLoader::setup_bootstrap_search_path(JavaThread* current) {
 
 #if INCLUDE_CDS
 void ClassLoader::setup_app_search_path(JavaThread* current, const char *class_path) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
 
   ResourceMark rm(current);
   ClasspathStream cp_stream(class_path);
 
   while (cp_stream.has_next()) {
     const char* path = cp_stream.get_next();
-    update_class_path_entry_list(current, path, false, false, false);
+    update_class_path_entry_list(current, path, /* check_for_duplicates */ true,
+                                 /* is_boot_append */ false, /* from_class_path_attr */ false);
   }
 }
 
 void ClassLoader::add_to_module_path_entries(const char* path,
                                              ClassPathEntry* entry) {
   assert(entry != nullptr, "ClassPathEntry should not be nullptr");
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
 
   // The entry does not exist, add to the list
   if (_module_path_entries == nullptr) {
@@ -542,7 +546,7 @@ void ClassLoader::add_to_module_path_entries(const char* path,
 
 // Add a module path to the _module_path_entries list.
 void ClassLoader::setup_module_search_path(JavaThread* current, const char* path) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   struct stat st;
   if (os::stat(path, &st) != 0) {
     tty->print_cr("os::stat error %d (%s). CDS dump aborted (path was \"%s\").",
@@ -630,7 +634,7 @@ void ClassLoader::setup_bootstrap_search_path_impl(JavaThread* current, const ch
   bool set_base_piece = true;
 
 #if INCLUDE_CDS
-  if (Arguments::is_dumping_archive()) {
+  if (CDSConfig::is_dumping_archive()) {
     if (!Arguments::has_jimage()) {
       vm_exit_during_initialization("CDS is not supported in exploded JDK build", nullptr);
     }
@@ -666,7 +670,8 @@ void ClassLoader::setup_bootstrap_search_path_impl(JavaThread* current, const ch
     } else {
       // Every entry on the boot class path after the initial base piece,
       // which is set by os::set_boot_path(), is considered an appended entry.
-      update_class_path_entry_list(current, path, false, true, false);
+      update_class_path_entry_list(current, path, /* check_for_duplicates */ false,
+                                    /* is_boot_append */ true, /* from_class_path_attr */ false);
     }
   }
 }
@@ -801,7 +806,7 @@ void ClassLoader::add_to_boot_append_entries(ClassPathEntry *new_entry) {
 // Note that at dump time, ClassLoader::_app_classpath_entries are NOT used for
 // loading app classes. Instead, the app class are loaded by the
 // jdk/internal/loader/ClassLoaders$AppClassLoader instance.
-void ClassLoader::add_to_app_classpath_entries(JavaThread* current,
+bool ClassLoader::add_to_app_classpath_entries(JavaThread* current,
                                                ClassPathEntry* entry,
                                                bool check_for_duplicates) {
 #if INCLUDE_CDS
@@ -811,7 +816,7 @@ void ClassLoader::add_to_app_classpath_entries(JavaThread* current,
     while (e != nullptr) {
       if (strcmp(e->name(), entry->name()) == 0) {
         // entry already exists
-        return;
+        return false;
       }
       e = e->next();
     }
@@ -830,6 +835,7 @@ void ClassLoader::add_to_app_classpath_entries(JavaThread* current,
     ClassLoaderExt::process_jar_manifest(current, entry);
   }
 #endif
+  return true;
 }
 
 // Returns true IFF the file/dir exists and the entry was successfully created.
@@ -852,7 +858,10 @@ bool ClassLoader::update_class_path_entry_list(JavaThread* current,
     if (is_boot_append) {
       add_to_boot_append_entries(new_entry);
     } else {
-      add_to_app_classpath_entries(current, new_entry, check_for_duplicates);
+      if (!add_to_app_classpath_entries(current, new_entry, check_for_duplicates)) {
+        // new_entry is not saved, free it now
+        delete new_entry;
+      }
     }
     return true;
   } else {
@@ -929,7 +938,7 @@ void ClassLoader::load_java_library() {
 }
 
 void ClassLoader::release_load_zip_library() {
-  MutexLocker locker(Zip_lock, Monitor::_no_safepoint_check_flag);
+  ConditionalMutexLocker locker(Zip_lock, Zip_lock != nullptr, Monitor::_no_safepoint_check_flag);
   if (_libzip_loaded == 0) {
     load_zip_library();
     Atomic::release_store(&_libzip_loaded, 1);
@@ -1241,7 +1250,7 @@ char* ClassLoader::skip_uri_protocol(char* source) {
 // by the builtin loaders at dump time.
 void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
                                 const ClassFileStream* stream, bool redefined) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   assert(stream != nullptr, "sanity");
 
   if (ik->is_hidden()) {
@@ -1368,7 +1377,6 @@ void ClassLoader::initialize(TRAPS) {
     NEWPERFEVENTCOUNTER(_perf_classes_linked, SUN_CLS, "linkedClasses");
     NEWPERFEVENTCOUNTER(_perf_classes_verified, SUN_CLS, "verifiedClasses");
 
-    NEWPERFTICKCOUNTER(_perf_sys_class_lookup_time, SUN_CLS, "lookupSysClassTime");
     NEWPERFTICKCOUNTER(_perf_shared_classload_time, SUN_CLS, "sharedClassLoadTime");
     NEWPERFTICKCOUNTER(_perf_sys_classload_time, SUN_CLS, "sysClassLoadTime");
     NEWPERFTICKCOUNTER(_perf_app_classload_time, SUN_CLS, "appClassLoadTime");
@@ -1436,13 +1444,13 @@ bool ClassLoader::is_module_observable(const char* module_name) {
 
 #if INCLUDE_CDS
 void ClassLoader::initialize_shared_path(JavaThread* current) {
-  if (Arguments::is_dumping_archive()) {
+  if (CDSConfig::is_dumping_archive()) {
     ClassLoaderExt::setup_search_paths(current);
   }
 }
 
 void ClassLoader::initialize_module_path(TRAPS) {
-  if (Arguments::is_dumping_archive()) {
+  if (CDSConfig::is_dumping_archive()) {
     ClassLoaderExt::setup_module_paths(THREAD);
     FileMapInfo::allocate_shared_path_table(CHECK);
   }
@@ -1451,7 +1459,7 @@ void ClassLoader::initialize_module_path(TRAPS) {
 // Helper function used by CDS code to get the number of module path
 // entries during shared classpath setup time.
 int ClassLoader::num_module_path_entries() {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   int num_entries = 0;
   ClassPathEntry* e= ClassLoader::_module_path_entries;
   while (e != nullptr) {

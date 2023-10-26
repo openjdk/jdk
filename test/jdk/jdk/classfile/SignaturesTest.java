@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -128,7 +126,7 @@ class SignaturesTest {
                 .flatMap(p -> p)
                 .filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".class")).forEach(path -> {
             try {
-                var cm = Classfile.parse(path);
+                var cm = Classfile.of().parse(path);
                 cm.findAttribute(Attributes.SIGNATURE).ifPresent(csig -> {
                     assertEquals(
                             ClassSignature.parseFrom(csig.signature().stringValue()).signatureString(),

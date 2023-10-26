@@ -1492,7 +1492,7 @@ static Register reg_to_register_object(int register_encoding) {
   return as_Register(register_encoding);
 }
 
-const bool Matcher::match_rule_supported(int opcode) {
+bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode)) {
     return false; // no match rule present
   }
@@ -1505,31 +1505,30 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_PopCountL:
       // PopCount supported by H/W from z/Architecture G5 (z196) on.
       return (UsePopCountInstruction && VM_Version::has_PopCount());
+    case Op_FmaF:
+    case Op_FmaD:
+      return UseFMA;
   }
 
   return true; // Per default match rules are supported.
 }
 
-const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
   return match_rule_supported_vector(opcode, vlen, bt);
 }
 
-const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
   if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
     return false;
   }
   return true; // Per default match rules are supported.
 }
 
-const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
   return false;
 }
 
-const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
-  return false;
-}
-
-const bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
+bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
   return false;
 }
 
@@ -1542,7 +1541,7 @@ const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) 
 }
 
 // Vector calling convention not yet implemented.
-const bool Matcher::supports_vector_calling_convention(void) {
+bool Matcher::supports_vector_calling_convention(void) {
   return false;
 }
 
@@ -1554,32 +1553,32 @@ OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
 //----------SUPERWORD HELPERS----------------------------------------
 
 // Vector width in bytes.
-const int Matcher::vector_width_in_bytes(BasicType bt) {
+int Matcher::vector_width_in_bytes(BasicType bt) {
   assert(MaxVectorSize == 8, "");
   return 8;
 }
 
 // Vector ideal reg.
-const uint Matcher::vector_ideal_reg(int size) {
+uint Matcher::vector_ideal_reg(int size) {
   assert(MaxVectorSize == 8 && size == 8, "");
   return Op_RegL;
 }
 
 // Limits on vector size (number of elements) loaded into vector.
-const int Matcher::max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size(const BasicType bt) {
   assert(is_java_primitive(bt), "only primitive type vectors");
   return vector_width_in_bytes(bt)/type2aelembytes(bt);
 }
 
-const int Matcher::min_vector_size(const BasicType bt) {
+int Matcher::min_vector_size(const BasicType bt) {
   return max_vector_size(bt); // Same as max.
 }
 
-const int Matcher::superword_max_vector_size(const BasicType bt) {
+int Matcher::superword_max_vector_size(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
-const int Matcher::scalable_vector_reg_size(const BasicType bt) {
+int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return -1;
 }
 
@@ -7164,6 +7163,7 @@ instruct maddF_reg_reg(regF dst, regF src1, regF src2) %{
   size(4);
   format %{ "MAEBR    $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_maebr($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_dummy);
@@ -7177,6 +7177,7 @@ instruct maddD_reg_reg(regD dst, regD src1, regD src2) %{
   size(4);
   format %{ "MADBR    $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_madbr($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_dummy);
@@ -7190,6 +7191,7 @@ instruct msubF_reg_reg(regF dst, regF src1, regF src2) %{
   size(4);
   format %{ "MSEBR    $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_msebr($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_dummy);
@@ -7203,6 +7205,7 @@ instruct msubD_reg_reg(regD dst, regD src1, regD src2) %{
   size(4);
   format %{ "MSDBR    $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_msdbr($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_dummy);
@@ -7216,6 +7219,7 @@ instruct maddF_reg_mem(regF dst, regF src1, memoryRX src2) %{
   size(6);
   format %{ "MAEB     $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_maeb($dst$$FloatRegister, $src1$$FloatRegister,
               Address(reg_to_register_object($src2$$base), $src2$$index$$Register, $src2$$disp));
   %}
@@ -7230,6 +7234,7 @@ instruct maddD_reg_mem(regD dst, regD src1, memoryRX src2) %{
   size(6);
   format %{ "MADB     $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_madb($dst$$FloatRegister, $src1$$FloatRegister,
               Address(reg_to_register_object($src2$$base), $src2$$index$$Register, $src2$$disp));
   %}
@@ -7244,6 +7249,7 @@ instruct msubF_reg_mem(regF dst, regF src1, memoryRX src2) %{
   size(6);
   format %{ "MSEB     $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_mseb($dst$$FloatRegister, $src1$$FloatRegister,
               Address(reg_to_register_object($src2$$base), $src2$$index$$Register, $src2$$disp));
   %}
@@ -7258,6 +7264,7 @@ instruct msubD_reg_mem(regD dst, regD src1, memoryRX src2) %{
   size(6);
   format %{ "MSDB    $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_msdb($dst$$FloatRegister, $src1$$FloatRegister,
               Address(reg_to_register_object($src2$$base), $src2$$index$$Register, $src2$$disp));
   %}
@@ -7272,6 +7279,7 @@ instruct maddF_mem_reg(regF dst, memoryRX src1, regF src2) %{
   size(6);
   format %{ "MAEB     $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_maeb($dst$$FloatRegister, $src2$$FloatRegister,
               Address(reg_to_register_object($src1$$base), $src1$$index$$Register, $src1$$disp));
   %}
@@ -7286,6 +7294,7 @@ instruct maddD_mem_reg(regD dst, memoryRX src1, regD src2) %{
   size(6);
   format %{ "MADB     $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_madb($dst$$FloatRegister, $src2$$FloatRegister,
               Address(reg_to_register_object($src1$$base), $src1$$index$$Register, $src1$$disp));
   %}
@@ -7300,6 +7309,7 @@ instruct msubF_mem_reg(regF dst, memoryRX src1, regF src2) %{
   size(6);
   format %{ "MSEB     $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_mseb($dst$$FloatRegister, $src2$$FloatRegister,
               Address(reg_to_register_object($src1$$base), $src1$$index$$Register, $src1$$disp));
   %}
@@ -7314,6 +7324,7 @@ instruct msubD_mem_reg(regD dst, memoryRX src1, regD src2) %{
   size(6);
   format %{ "MSDB    $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_msdb($dst$$FloatRegister, $src2$$FloatRegister,
               Address(reg_to_register_object($src1$$base), $src1$$index$$Register, $src1$$disp));
   %}
