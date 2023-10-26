@@ -389,20 +389,7 @@ void PSCardTable::verify_all_young_refs_imprecise() {
 
 bool PSCardTable::addr_is_marked_imprecise(void *addr) {
   CardValue* p = byte_for(addr);
-  CardValue val = *p;
-
-  if (card_is_dirty(val))
-    return true;
-
-  if (card_is_newgen(val))
-    return true;
-
-  if (card_is_clean(val))
-    return false;
-
-  assert(false, "Found unhandled card mark type");
-
-  return false;
+  return is_dirty(p);
 }
 
 bool PSCardTable::is_in_young(const void* p) const {
