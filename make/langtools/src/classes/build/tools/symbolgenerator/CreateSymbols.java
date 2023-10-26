@@ -1136,8 +1136,9 @@ public class CreateSymbols {
             MethodParameters_attribute.Entry[] entries =
                     desc.methodParameters
                         .stream()
-                        .map(p -> new MethodParameters_attribute.Entry(addString(constantPool, p.name),
-                                                                        p.flags))
+                        .map(p -> new MethodParameters_attribute.Entry(p.name == null || p.name.isEmpty() ? 0
+                                                                                                          : addString(constantPool, p.name),
+                                                                       p.flags))
                         .toArray(s -> new MethodParameters_attribute.Entry[s]);
             attributes.put(Attribute.MethodParameters,
                            new MethodParameters_attribute(attributeString, entries));
