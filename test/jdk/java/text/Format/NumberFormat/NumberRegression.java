@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,11 @@
  * 4217661 4243011 4243108 4330377 4233840 4241880 4833877 8008577 8227313
  * @summary Regression tests for NumberFormat and associated classes
  * @library /java/text/testlib
- * @build IntlTest HexDumpReader TestUtils
+ * @build HexDumpReader TestUtils
  * @modules java.base/sun.util.resources
  *          jdk.localedata
  * @compile -XDignore.symbol.file NumberRegression.java
- * @run main/othervm -Djava.locale.providers=COMPAT,SPI NumberRegression
+ * @run junit/othervm -Djava.locale.providers=COMPAT,SPI NumberRegression
  */
 
 /*
@@ -58,23 +58,24 @@ import java.io.*;
 import java.math.BigInteger;
 import sun.util.resources.LocaleData;
 
-public class NumberRegression extends IntlTest {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        new NumberRegression().run(args);
-    }
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class NumberRegression {
 
     /**
      * NumberFormat.equals comparing with null should always return false.
      */
+    @Test
     public void Test4075713(){
 
         try {
             MyNumberFormatTest tmp = new MyNumberFormatTest();
             if (!tmp.equals(null))
-                logln("NumberFormat.equals passed");
+                System.out.println("NumberFormat.equals passed");
         } catch (NullPointerException e) {
-            errln("(new MyNumberFormatTest()).equals(null) throws unexpected exception");
+            fail("(new MyNumberFormatTest()).equals(null) throws unexpected exception");
         }
     }
 
@@ -82,6 +83,7 @@ public class NumberRegression extends IntlTest {
      * NumberFormat.equals comparing two obj equal even the setGroupingUsed
      * flag is different.
      */
+    @Test
     public void Test4074620() {
 
         MyNumberFormatTest nf1 = new MyNumberFormatTest();
@@ -90,8 +92,8 @@ public class NumberRegression extends IntlTest {
         nf1.setGroupingUsed(false);
         nf2.setGroupingUsed(true);
 
-        if (nf1.equals(nf2)) errln("Test for bug 4074620 failed");
-        else logln("Test for bug 4074620 passed.");
+        if (nf1.equals(nf2)) fail("Test for bug 4074620 failed");
+        else System.out.println("Test for bug 4074620 passed.");
         return;
     }
 
@@ -100,10 +102,11 @@ public class NumberRegression extends IntlTest {
      * DecimalFormat.format() incorrectly uses maxFractionDigits setting.
      */
 
+    @Test
     public void Test4088161 (){
         Locale locale = Locale.getDefault();
         if (!TestUtils.usesAsciiDigits(locale)) {
-            logln("Skipping this test because locale is " + locale);
+            System.out.println("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -113,39 +116,41 @@ public class NumberRegression extends IntlTest {
         df.setMaximumFractionDigits(16);
         StringBuffer sBuf1 = new StringBuffer("");
         FieldPosition fp1 = new FieldPosition(0);
-        logln("d = " + d);
-        logln("maxFractionDigits = " + df.getMaximumFractionDigits());
-        logln(" format(d) = '" + df.format(d, sBuf1, fp1) + "'");
+        System.out.println("d = " + d);
+        System.out.println("maxFractionDigits = " + df.getMaximumFractionDigits());
+        System.out.println(" format(d) = '" + df.format(d, sBuf1, fp1) + "'");
         df.setMaximumFractionDigits(17);
         StringBuffer sBuf2 = new StringBuffer("");
         FieldPosition fp2 = new FieldPosition(0);
-        logln("maxFractionDigits = " + df.getMaximumFractionDigits());
+        System.out.println("maxFractionDigits = " + df.getMaximumFractionDigits());
         df.format(d, sBuf2, fp2);
         String expected = "100";
         if (!sBuf2.toString().equals(expected))
-            errln(" format(d) = '" + sBuf2 + "'");
+            fail(" format(d) = '" + sBuf2 + "'");
     }
     /**
      * DecimalFormatSymbols should be cloned in the ctor DecimalFormat.
      * DecimalFormat(String, DecimalFormatSymbols).
      */
+    @Test
     public void Test4087245 (){
         DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance();
         DecimalFormat df = new DecimalFormat("#,##0.0", symbols);
         long n = 123;
         StringBuffer buf1 = new StringBuffer();
         StringBuffer buf2 = new StringBuffer();
-        logln("format(" + n + ") = " +
+        System.out.println("format(" + n + ") = " +
         df.format(n, buf1, new FieldPosition(0)));
         symbols.setDecimalSeparator('p'); // change value of field
-        logln("format(" + n + ") = " +
+        System.out.println("format(" + n + ") = " +
         df.format(n, buf2, new FieldPosition(0)));
         if (!buf1.toString().equals(buf2.toString()))
-            errln("Test for bug 4087245 failed");
+            fail("Test for bug 4087245 failed");
     }
     /**
      * DecimalFormat.format() incorrectly formats 0.0
      */
+    @Test
     public void Test4087535 ()
     {
         DecimalFormat df = new DecimalFormat();
@@ -155,31 +160,33 @@ public class NumberRegression extends IntlTest {
         String buffer = new String();
         buffer = df.format(n);
         if (buffer.length() == 0)
-            errln(n + ": '" + buffer + "'");
+            fail(n + ": '" + buffer + "'");
         n = 0.1;
         buffer = df.format(n);
         if (buffer.length() == 0)
-            errln(n + ": '" + buffer + "'");
+            fail(n + ": '" + buffer + "'");
     }
 
     /**
      * DecimalFormat.format fails when groupingSize is set to 0.
      */
+    @Test
     public void Test4088503 (){
         DecimalFormat df = new DecimalFormat();
         df.setGroupingSize(0);
         StringBuffer sBuf = new StringBuffer("");
         FieldPosition fp = new FieldPosition(0);
         try {
-            logln(df.format(123, sBuf, fp).toString());
+            System.out.println(df.format(123, sBuf, fp).toString());
         } catch (Exception foo) {
-            errln("Test for bug 4088503 failed.");
+            fail("Test for bug 4088503 failed.");
         }
 
     }
     /**
      * NumberFormat.getCurrencyInstance is wrong.
      */
+    @Test
     public void Test4066646 () {
         float returnfloat = 0.0f;
         assignFloatValue(2.04f);
@@ -190,42 +197,45 @@ public class NumberRegression extends IntlTest {
 
     public float assignFloatValue(float returnfloat)
     {
-        logln(" VALUE " + returnfloat);
+        System.out.println(" VALUE " + returnfloat);
         NumberFormat nfcommon =  NumberFormat.getCurrencyInstance(Locale.US);
         nfcommon.setGroupingUsed(false);
 
         String stringValue = nfcommon.format(returnfloat).substring(1);
         if (Float.valueOf(stringValue).floatValue() != returnfloat)
-            errln(" DISPLAYVALUE " + stringValue);
+            fail(" DISPLAYVALUE " + stringValue);
         return returnfloat;
     } // End Of assignFloatValue()
 
     /**
      * DecimalFormat throws exception when parsing "0"
      */
+    @Test
     public void Test4059870() {
         DecimalFormat format = new DecimalFormat("00");
         try {
-            logln(format.parse("0").toString());
-        } catch (Exception e) { errln("Test for bug 4059870 failed : " + e); }
+            System.out.println(format.parse("0").toString());
+        } catch (Exception e) { fail("Test for bug 4059870 failed : " + e); }
     }
     /**
      * DecimalFormatSymbol.equals should always return false when
      * comparing with null.
      */
 
+    @Test
     public void Test4083018 (){
         DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance();
         try {
             if (!dfs.equals(null))
-                logln("Test Passed!");
+                System.out.println("Test Passed!");
         } catch (Exception foo) {
-            errln("Test for bug 4083018 failed => Message : " + foo.getMessage());
+            fail("Test for bug 4083018 failed => Message : " + foo.getMessage());
         }
     }
     /**
      * DecimalFormat does not round up correctly.
      */
+    @Test
     public void Test4071492 (){
         Locale savedLocale = Locale.getDefault();
         Locale.setDefault(Locale.US);
@@ -233,10 +243,10 @@ public class NumberRegression extends IntlTest {
         NumberFormat nf = NumberFormat.getInstance();
         nf.setMaximumFractionDigits(4);
         String out = nf.format(x);
-        logln("0.00159999 formats with 4 fractional digits to " + out);
+        System.out.println("0.00159999 formats with 4 fractional digits to " + out);
         String expected = "0.0016";
         if (!out.equals(expected))
-            errln("FAIL: Expected " + expected);
+            fail("FAIL: Expected " + expected);
         Locale.setDefault(savedLocale);
     }
 
@@ -244,33 +254,34 @@ public class NumberRegression extends IntlTest {
      * A space as a group separator for localized pattern causes
      * wrong format.  WorkAround : use non-breaking space.
      */
+    @Test
     public void Test4086575() {
 
         NumberFormat nf = NumberFormat.getInstance(Locale.FRANCE);
-        logln("nf toPattern1: " + ((DecimalFormat)nf).toPattern());
-        logln("nf toLocPattern1: " + ((DecimalFormat)nf).toLocalizedPattern());
+        System.out.println("nf toPattern1: " + ((DecimalFormat)nf).toPattern());
+        System.out.println("nf toLocPattern1: " + ((DecimalFormat)nf).toLocalizedPattern());
 
         // No group separator
-        logln("...applyLocalizedPattern ###,00;(###,00) ");
+        System.out.println("...applyLocalizedPattern ###,00;(###,00) ");
         ((DecimalFormat)nf).applyLocalizedPattern("###,00;(###,00)");
-        logln("nf toPattern2: " + ((DecimalFormat)nf).toPattern());
-        logln("nf toLocPattern2: " + ((DecimalFormat)nf).toLocalizedPattern());
+        System.out.println("nf toPattern2: " + ((DecimalFormat)nf).toPattern());
+        System.out.println("nf toLocPattern2: " + ((DecimalFormat)nf).toLocalizedPattern());
 
-        logln("nf: " + nf.format(1234)); // 1234,00
-        logln("nf: " + nf.format(-1234)); // (1234,00)
+        System.out.println("nf: " + nf.format(1234)); // 1234,00
+        System.out.println("nf: " + nf.format(-1234)); // (1234,00)
 
         // Space as group separator
 
-        logln("...applyLocalizedPattern # ###,00;(# ###,00) ");
+        System.out.println("...applyLocalizedPattern # ###,00;(# ###,00) ");
         ((DecimalFormat)nf).applyLocalizedPattern("#\u00a0###,00;(#\u00a0###,00)");
-        logln("nf toPattern2: " + ((DecimalFormat)nf).toPattern());
-        logln("nf toLocPattern2: " + ((DecimalFormat)nf).toLocalizedPattern());
+        System.out.println("nf toPattern2: " + ((DecimalFormat)nf).toPattern());
+        System.out.println("nf toLocPattern2: " + ((DecimalFormat)nf).toLocalizedPattern());
         String buffer = nf.format(1234);
         if (!buffer.equals("1\u00a0234,00"))
-            errln("nf : " + buffer); // Expect 1 234,00
+            fail("nf : " + buffer); // Expect 1 234,00
         buffer = nf.format(-1234);
         if (!buffer.equals("(1\u00a0234,00)"))
-            errln("nf : " + buffer); // Expect (1 234,00)
+            fail("nf : " + buffer); // Expect (1 234,00)
 
         // Erroneously prints:
         // 1234,00 ,
@@ -280,16 +291,17 @@ public class NumberRegression extends IntlTest {
     /**
      * DecimalFormat.parse returns wrong value
      */
+    @Test
     public void Test4068693()
     {
         Locale savedLocale = Locale.getDefault();
         Locale.setDefault(Locale.US);
-        logln("----- Test Application -----");
+        System.out.println("----- Test Application -----");
         ParsePosition pos;
         DecimalFormat df = new DecimalFormat();
         Double d = (Double)df.parse("123.55456", pos=new ParsePosition(0));
         if (!d.toString().equals("123.55456")) {
-            errln("Result -> " + d);
+            fail("Result -> " + d);
         }
         Locale.setDefault(savedLocale);
     }
@@ -298,53 +310,56 @@ public class NumberRegression extends IntlTest {
      * null pointer thrown when accessing a deserialized DecimalFormat
      * object.
      */
+    @Test
     public void Test4069754()
     {
         try {
             myformat it = new myformat();
-            logln(it.Now());
+            System.out.println(it.Now());
             FileOutputStream ostream = new FileOutputStream("t.tmp");
             ObjectOutputStream p = new ObjectOutputStream(ostream);
             p.writeObject(it);
             ostream.close();
-            logln("Saved ok.");
+            System.out.println("Saved ok.");
 
             FileInputStream istream = new FileInputStream("t.tmp");
             ObjectInputStream p2 = new ObjectInputStream(istream);
             myformat it2 = (myformat)p2.readObject();
-            logln(it2.Now());
+            System.out.println(it2.Now());
             istream.close();
-            logln("Loaded ok.");
+            System.out.println("Loaded ok.");
         } catch (Exception foo) {
-            errln("Test for bug 4069754 or 4057878 failed => Exception: " + foo.getMessage());
+            fail("Test for bug 4069754 or 4057878 failed => Exception: " + foo.getMessage());
         }
     }
 
     /**
      * DecimalFormat.applyPattern(String) allows illegal patterns
      */
+    @Test
     public void Test4087251 (){
         DecimalFormat df = new DecimalFormat();
         try {
             df.applyPattern("#.#.#");
-            logln("toPattern() returns \"" + df.toPattern() + "\"");
-            errln("applyPattern(\"#.#.#\") doesn't throw IllegalArgumentException");
+            System.out.println("toPattern() returns \"" + df.toPattern() + "\"");
+            fail("applyPattern(\"#.#.#\") doesn't throw IllegalArgumentException");
         } catch (IllegalArgumentException e) {
-            logln("Caught Illegal Argument Error !");
+            System.out.println("Caught Illegal Argument Error !");
         }
         // Second test; added 5/11/98 when reported to fail on 1.2b3
         try {
             df.applyPattern("#0.0#0#0");
-            logln("toPattern() returns \"" + df.toPattern() + "\"");
-            errln("applyPattern(\"#0.0#0#0\") doesn't throw IllegalArgumentException");
+            System.out.println("toPattern() returns \"" + df.toPattern() + "\"");
+            fail("applyPattern(\"#0.0#0#0\") doesn't throw IllegalArgumentException");
         } catch (IllegalArgumentException e) {
-            logln("Ok - IllegalArgumentException for #0.0#0#0");
+            System.out.println("Ok - IllegalArgumentException for #0.0#0#0");
         }
     }
 
     /**
      * DecimalFormat.format() loses precision
      */
+    @Test
     public void Test4090489 (){
         Locale savedLocale = Locale.getDefault();
         Locale.setDefault(Locale.US);
@@ -355,11 +370,11 @@ public class NumberRegression extends IntlTest {
         BigDecimal bd = new BigDecimal(d);
         StringBuffer sb = new StringBuffer("");
         FieldPosition fp = new FieldPosition(0);
-        logln("d = " + d);
-        logln("BigDecimal.toString():  " + bd.toString());
+        System.out.println("d = " + d);
+        System.out.println("BigDecimal.toString():  " + bd.toString());
         df.format(d, sb, fp);
         if (!sb.toString().equals("10000000.0000000100")) {
-            errln("DecimalFormat.format(): " + sb.toString());
+            fail("DecimalFormat.format(): " + sb.toString());
         }
         Locale.setDefault(savedLocale);
     }
@@ -367,10 +382,11 @@ public class NumberRegression extends IntlTest {
     /**
      * DecimalFormat.format() loses precision
      */
+    @Test
     public void Test4090504 ()
     {
         double d = 1;
-        logln("d = " + d);
+        System.out.println("d = " + d);
         DecimalFormat df = new DecimalFormat();
         StringBuffer sb;
         FieldPosition fp;
@@ -379,16 +395,17 @@ public class NumberRegression extends IntlTest {
                 df.setMaximumFractionDigits(i);
                 sb = new StringBuffer("");
                 fp = new FieldPosition(0);
-                logln("  getMaximumFractionDigits() = " + i);
-                logln("  formated: " + df.format(d, sb, fp));
+                System.out.println("  getMaximumFractionDigits() = " + i);
+                System.out.println("  formated: " + df.format(d, sb, fp));
             }
         } catch (Exception foo) {
-            errln("Bug 4090504 regression test failed. Message : " + foo.getMessage());
+            fail("Bug 4090504 regression test failed. Message : " + foo.getMessage());
         }
     }
     /**
      * DecimalFormat.parse(String str, ParsePosition pp) loses precision
      */
+    @Test
     public void Test4095713 ()
     {
         Locale savedLocale = Locale.getDefault();
@@ -397,15 +414,16 @@ public class NumberRegression extends IntlTest {
         String str = "0.1234";
         Double d1 = 0.1234;
         Double d2 = (Double) df.parse(str, new ParsePosition(0));
-        logln(d1.toString());
+        System.out.println(d1.toString());
         if (d2.doubleValue() != d1.doubleValue())
-            errln("Bug 4095713 test failed, new double value : " + d2);
+            fail("Bug 4095713 test failed, new double value : " + d2);
         Locale.setDefault(savedLocale);
     }
 
     /**
      * DecimalFormat.parse() fails when multiplier is not set to 1
      */
+    @Test
     public void Test4092561 ()
     {
         Locale savedLocale = Locale.getDefault();
@@ -413,32 +431,32 @@ public class NumberRegression extends IntlTest {
         DecimalFormat df = new DecimalFormat();
 
         String str = Long.toString(Long.MIN_VALUE);
-        logln("Long.MIN_VALUE : " + df.parse(str, new ParsePosition(0)).toString());
+        System.out.println("Long.MIN_VALUE : " + df.parse(str, new ParsePosition(0)).toString());
         df.setMultiplier(100);
         Number num = df.parse(str, new ParsePosition(0));
         if (num.doubleValue() != -9.223372036854776E16) {
-            errln("Bug 4092561 test failed when multiplier is not set to 1. Expected: -9.223372036854776E16, got: " + num.doubleValue());
+            fail("Bug 4092561 test failed when multiplier is not set to 1. Expected: -9.223372036854776E16, got: " + num.doubleValue());
         }
 
         df.setMultiplier(-100);
         num = df.parse(str, new ParsePosition(0));
         if (num.doubleValue() != 9.223372036854776E16) {
-            errln("Bug 4092561 test failed when multiplier is not set to 1. Expected: 9.223372036854776E16, got: " + num.doubleValue());
+            fail("Bug 4092561 test failed when multiplier is not set to 1. Expected: 9.223372036854776E16, got: " + num.doubleValue());
         }
 
         str = Long.toString(Long.MAX_VALUE);
-        logln("Long.MAX_VALUE : " + df.parse(str, new ParsePosition(0)).toString());
+        System.out.println("Long.MAX_VALUE : " + df.parse(str, new ParsePosition(0)).toString());
 
         df.setMultiplier(100);
         num = df.parse(str, new ParsePosition(0));
         if (num.doubleValue() != 9.223372036854776E16) {
-            errln("Bug 4092561 test failed when multiplier is not set to 1. Expected: 9.223372036854776E16, got: " + num.doubleValue());
+            fail("Bug 4092561 test failed when multiplier is not set to 1. Expected: 9.223372036854776E16, got: " + num.doubleValue());
         }
 
         df.setMultiplier(-100);
         num = df.parse(str, new ParsePosition(0));
         if (num.doubleValue() != -9.223372036854776E16) {
-            errln("Bug 4092561 test failed when multiplier is not set to 1. Expected: -9.223372036854776E16, got: " + num.doubleValue());
+            fail("Bug 4092561 test failed when multiplier is not set to 1. Expected: -9.223372036854776E16, got: " + num.doubleValue());
         }
 
         Locale.setDefault(savedLocale);
@@ -447,6 +465,7 @@ public class NumberRegression extends IntlTest {
     /**
      * DecimalFormat: Negative format ignored.
      */
+    @Test
     public void Test4092480 ()
     {
         DecimalFormat dfFoo = new DecimalFormat("000");
@@ -454,28 +473,28 @@ public class NumberRegression extends IntlTest {
         try {
             dfFoo.applyPattern("0000;-000");
             if (!dfFoo.toPattern().equals("#0000"))
-                errln("dfFoo.toPattern : " + dfFoo.toPattern());
-            logln(dfFoo.format(42));
-            logln(dfFoo.format(-42));
+                fail("dfFoo.toPattern : " + dfFoo.toPattern());
+            System.out.println(dfFoo.format(42));
+            System.out.println(dfFoo.format(-42));
             dfFoo.applyPattern("000;-000");
             if (!dfFoo.toPattern().equals("#000"))
-                errln("dfFoo.toPattern : " + dfFoo.toPattern());
-            logln(dfFoo.format(42));
-            logln(dfFoo.format(-42));
+                fail("dfFoo.toPattern : " + dfFoo.toPattern());
+            System.out.println(dfFoo.format(42));
+            System.out.println(dfFoo.format(-42));
 
             dfFoo.applyPattern("000;-0000");
             if (!dfFoo.toPattern().equals("#000"))
-                errln("dfFoo.toPattern : " + dfFoo.toPattern());
-            logln(dfFoo.format(42));
-            logln(dfFoo.format(-42));
+                fail("dfFoo.toPattern : " + dfFoo.toPattern());
+            System.out.println(dfFoo.format(42));
+            System.out.println(dfFoo.format(-42));
 
             dfFoo.applyPattern("0000;-000");
             if (!dfFoo.toPattern().equals("#0000"))
-                errln("dfFoo.toPattern : " + dfFoo.toPattern());
-            logln(dfFoo.format(42));
-            logln(dfFoo.format(-42));
+                fail("dfFoo.toPattern : " + dfFoo.toPattern());
+            System.out.println(dfFoo.format(42));
+            System.out.println(dfFoo.format(-42));
         } catch (Exception foo) {
-            errln("Message " + foo.getMessage());
+            fail("Message " + foo.getMessage());
         }
     }
     /**
@@ -486,6 +505,7 @@ public class NumberRegression extends IntlTest {
      * never contain the monetary separator!  Decimal separator in pattern is
      * interpreted as monetary separator if currency symbol is seen!
      */
+    @Test
     public void Test4087244 () {
         Locale de = Locale.of("pt", "PT");
         DecimalFormat df = (DecimalFormat) NumberFormat.getCurrencyInstance(de);
@@ -496,7 +516,7 @@ public class NumberRegression extends IntlTest {
         char monSep = sym.getMonetaryDecimalSeparator();
         char zero = sym.getZeroDigit();
         if (decSep == monSep) {
-            errln("ERROR in test: want decimal sep != monetary sep");
+            fail("ERROR in test: want decimal sep != monetary sep");
         } else {
             df.setMinimumIntegerDigits(1);
             df.setMinimumFractionDigits(2);
@@ -504,10 +524,10 @@ public class NumberRegression extends IntlTest {
             String monStr = "1" + monSep + "23";
             String decStr = "1" + decSep + "23";
             if (str.indexOf(monStr) >= 0 && str.indexOf(decStr) < 0) {
-                logln("OK: 1.23 -> \"" + str + "\" contains \"" +
+                System.out.println("OK: 1.23 -> \"" + str + "\" contains \"" +
                       monStr + "\" and not \"" + decStr + '"');
             } else {
-                errln("FAIL: 1.23 -> \"" + str + "\", should contain \"" +
+                fail("FAIL: 1.23 -> \"" + str + "\", should contain \"" +
                       monStr +
                       "\" and not \"" + decStr + '"');
             }
@@ -516,6 +536,7 @@ public class NumberRegression extends IntlTest {
     /**
      * Number format data rounding errors for locale FR
      */
+    @Test
     public void Test4070798 () {
         NumberFormat formatter;
         String tempString;
@@ -533,9 +554,9 @@ public class NumberRegression extends IntlTest {
         tempString = formatter.format (-5789.9876);
 
         if (tempString.equals(expectedDefault)) {
-            logln ("Bug 4070798 default test passed.");
+            System.out.println("Bug 4070798 default test passed.");
         } else {
-            errln("Failed:" +
+            fail("Failed:" +
             " Expected " + expectedDefault +
             " Received " + tempString );
         }
@@ -545,9 +566,9 @@ public class NumberRegression extends IntlTest {
         tempString = formatter.format( 5789.9876 );
 
         if (tempString.equals(expectedCurrency) ) {
-            logln ("Bug 4070798 currency test assed.");
+            System.out.println("Bug 4070798 currency test assed.");
         } else {
-            errln("Failed:" +
+            fail("Failed:" +
             " Expected " + expectedCurrency +
             " Received " + tempString );
         }
@@ -557,9 +578,9 @@ public class NumberRegression extends IntlTest {
         tempString = formatter.format (-5789.9876);
 
         if (tempString.equals(expectedPercent) ) {
-            logln ("Bug 4070798 percentage test passed.");
+            System.out.println("Bug 4070798 percentage test passed.");
         } else {
-            errln("Failed:" +
+            fail("Failed:" +
             " Expected " + expectedPercent +
             " Received " + tempString );
         }
@@ -567,6 +588,7 @@ public class NumberRegression extends IntlTest {
     /**
      * Data rounding errors for French (Canada) locale
      */
+    @Test
     public void Test4071005 () {
 
         NumberFormat formatter;
@@ -584,9 +606,9 @@ public class NumberRegression extends IntlTest {
         formatter = NumberFormat.getNumberInstance(Locale.CANADA_FRENCH);
         tempString = formatter.format (-5789.9876);
         if (tempString.equals(expectedDefault)) {
-            logln ("Bug 4071005 default test passed.");
+            System.out.println("Bug 4071005 default test passed.");
         } else {
-            errln("Failed:" +
+            fail("Failed:" +
             " Expected " + expectedDefault +
             " Received " + tempString );
         }
@@ -595,9 +617,9 @@ public class NumberRegression extends IntlTest {
         tempString = formatter.format( 5789.9876 ) ;
 
         if (tempString.equals(expectedCurrency) ) {
-            logln ("Bug 4071005 currency test passed.");
+            System.out.println("Bug 4071005 currency test passed.");
         } else {
-            errln("Failed:" +
+            fail("Failed:" +
             " Expected " + expectedCurrency +
             " Received " + tempString );
         }
@@ -605,9 +627,9 @@ public class NumberRegression extends IntlTest {
         tempString = formatter.format (-5789.9876);
 
         if (tempString.equals(expectedPercent) ) {
-            logln ("Bug 4071005 percentage test passed.");
+            System.out.println("Bug 4071005 percentage test passed.");
         } else {
-            errln("Failed:" +
+            fail("Failed:" +
             " Expected " + expectedPercent +
             " Received " + tempString );
         }
@@ -616,6 +638,7 @@ public class NumberRegression extends IntlTest {
     /**
      * Data rounding errors for German (Germany) locale
      */
+    @Test
     public void Test4071014 () {
         NumberFormat formatter;
         String tempString;
@@ -632,9 +655,9 @@ public class NumberRegression extends IntlTest {
         tempString = formatter.format (-5789.9876);
 
         if (tempString.equals(expectedDefault)) {
-            logln ("Bug 4071014 default test passed.");
+            System.out.println("Bug 4071014 default test passed.");
         } else {
-            errln("Failed:" +
+            fail("Failed:" +
             " Expected " + expectedDefault +
             " Received " + tempString );
         }
@@ -643,9 +666,9 @@ public class NumberRegression extends IntlTest {
         tempString = formatter.format( 5789.9876 ) ;
 
         if (tempString.equals(expectedCurrency) ) {
-            logln ("Bug 4071014 currency test passed.");
+            System.out.println("Bug 4071014 currency test passed.");
         } else {
-            errln("Failed:" +
+            fail("Failed:" +
             " Expected " + expectedCurrency +
             " Received " + tempString );
         }
@@ -654,9 +677,9 @@ public class NumberRegression extends IntlTest {
         tempString = formatter.format (-5789.9876);
 
         if (tempString.equals(expectedPercent) ) {
-            logln ("Bug 4071014 percentage test passed.");
+            System.out.println("Bug 4071014 percentage test passed.");
         } else {
-            errln("Failed:" +
+            fail("Failed:" +
             " Expected " + expectedPercent +
             " Received " + tempString );
         }
@@ -665,6 +688,7 @@ public class NumberRegression extends IntlTest {
     /**
      * Data rounding errors for Italian locale number formats
      */
+    @Test
     public void Test4071859 () {
         NumberFormat formatter;
         String tempString;
@@ -681,9 +705,9 @@ public class NumberRegression extends IntlTest {
         tempString = formatter.format (-5789.9876);
 
         if (tempString.equals(expectedDefault)) {
-            logln ("Bug 4071859 default test passed.");
+            System.out.println("Bug 4071859 default test passed.");
         } else {
-            errln("Failed:" +
+            fail("Failed:" +
             " Expected " + expectedDefault +
             " Received " + tempString );
         }
@@ -692,9 +716,9 @@ public class NumberRegression extends IntlTest {
         tempString = formatter.format( -5789.9876 ) ;
 
         if (tempString.equals(expectedCurrency) ) {
-            logln ("Bug 4071859 currency test passed.");
+            System.out.println("Bug 4071859 currency test passed.");
         } else {
-            errln("Failed:" +
+            fail("Failed:" +
             " Expected " + expectedCurrency +
             " Received " + tempString );
         }
@@ -703,9 +727,9 @@ public class NumberRegression extends IntlTest {
         tempString = formatter.format (-5789.9876);
 
         if (tempString.equals(expectedPercent) ) {
-            logln ("Bug 4071859 percentage test passed.");
+            System.out.println("Bug 4071859 percentage test passed.");
         } else {
-            errln("Failed:" +
+            fail("Failed:" +
             " Expected " + expectedPercent +
             " Received " + tempString );
         }
@@ -715,6 +739,7 @@ public class NumberRegression extends IntlTest {
     /* bug 4071859
      * Test rounding for nearest even.
      */
+    @Test
     public void Test4093610()
     {
         Locale savedLocale = Locale.getDefault();
@@ -739,20 +764,21 @@ public class NumberRegression extends IntlTest {
     void roundingTest(DecimalFormat df, double x, String expected)
     {
         String out = df.format(x);
-        logln("" + x + " formats with 1 fractional digits to " + out);
-        if (!out.equals(expected)) errln("FAIL: Expected " + expected);
+        System.out.println("" + x + " formats with 1 fractional digits to " + out);
+        if (!out.equals(expected)) fail("FAIL: Expected " + expected);
     }
     /**
      * Tests the setMaximumFractionDigits limit.
      */
+    @Test
     public void Test4098741()
     {
         try {
             NumberFormat fmt = NumberFormat.getPercentInstance();
             fmt.setMaximumFractionDigits(20);
-            logln(fmt.format(.001));
+            System.out.println(fmt.format(.001));
         } catch (Exception foo) {
-            errln("Bug 4098471 failed with exception thrown : " + foo.getMessage());
+            fail("Bug 4098471 failed with exception thrown : " + foo.getMessage());
         }
     }
     /**
@@ -760,19 +786,20 @@ public class NumberRegression extends IntlTest {
      * Fix comment : HShih A31 Part1 will not be fixed and javadoc needs to be updated.
      * Part2 has been fixed.
      */
+    @Test
     public void Test4074454()
     {
         Locale savedLocale = Locale.getDefault();
         Locale.setDefault(Locale.US);
         try {
             DecimalFormat fmt = new DecimalFormat("#,#00.00;-#.#");
-            logln("Inconsistent negative pattern is fine.");
+            System.out.println("Inconsistent negative pattern is fine.");
             DecimalFormat newFmt = new DecimalFormat("#,#00.00 p''ieces;-#,#00.00 p''ieces");
             String tempString = newFmt.format(3456.78);
             if (!tempString.equals("3,456.78 p'ieces"))
-                errln("Failed!  3,456.78 p'ieces expected, but got : " + tempString);
+                fail("Failed!  3,456.78 p'ieces expected, but got : " + tempString);
         } catch (Exception foo) {
-            errln("An exception was thrown for any inconsistent negative pattern.");
+            fail("An exception was thrown for any inconsistent negative pattern.");
         }
         Locale.setDefault(savedLocale);
     }
@@ -796,46 +823,50 @@ public class NumberRegression extends IntlTest {
      * Otherwise, an IllegalArgumentException will be thrown when formatting
      * "January 35".  See GregorianCalendar class javadoc for more details.
      */
+    @Test
     public void Test4099404()
     {
         try {
             DecimalFormat fmt = new DecimalFormat("000.0#0");
-            errln("Bug 4099404 failed applying illegal pattern \"000.0#0\"");
+            fail("Bug 4099404 failed applying illegal pattern \"000.0#0\"");
         } catch (Exception foo) {
-            logln("Bug 4099404 pattern \"000.0#0\" passed");
+            System.out.println("Bug 4099404 pattern \"000.0#0\" passed");
         }
         try {
             DecimalFormat fmt = new DecimalFormat("0#0.000");
-            errln("Bug 4099404 failed applying illegal pattern \"0#0.000\"");
+            fail("Bug 4099404 failed applying illegal pattern \"0#0.000\"");
         } catch (Exception foo) {
-            logln("Bug 4099404 pattern \"0#0.000\" passed");
+            System.out.println("Bug 4099404 pattern \"0#0.000\" passed");
         }
     }
     /**
      * DecimalFormat.applyPattern doesn't set minimum integer digits
      */
+    @Test
     public void Test4101481()
     {
         DecimalFormat sdf = new DecimalFormat("#,##0");
         if (sdf.getMinimumIntegerDigits() != 1)
-            errln("Minimum integer digits : " + sdf.getMinimumIntegerDigits());
+            fail("Minimum integer digits : " + sdf.getMinimumIntegerDigits());
     }
     /**
      * Tests ParsePosition.setErrorPosition() and ParsePosition.getErrorPosition().
      */
+    @Test
     public void Test4052223()
     {
         try {
             DecimalFormat fmt = new DecimalFormat("#,#00.00");
             Number num = fmt.parse("abc3");
-            errln("Bug 4052223 failed : can't parse string \"a\".  Got " + num);
+            fail("Bug 4052223 failed : can't parse string \"a\".  Got " + num);
         } catch (ParseException foo) {
-            logln("Caught expected ParseException : " + foo.getMessage() + " at index : " + foo.getErrorOffset());
+            System.out.println("Caught expected ParseException : " + foo.getMessage() + " at index : " + foo.getErrorOffset());
         }
     }
     /**
      * API tests for API addition request A9.
      */
+    @Test
     public void Test4061302()
     {
         DecimalFormatSymbols fmt = DecimalFormatSymbols.getInstance();
@@ -845,9 +876,9 @@ public class NumberRegression extends IntlTest {
         if (currency.equals("") ||
             intlCurrency.equals("") ||
             monDecSeparator == 0) {
-            errln("getCurrencySymbols failed, got empty string.");
+            fail("getCurrencySymbols failed, got empty string.");
         }
-        logln("Before set ==> Currency : " + currency + " Intl Currency : " + intlCurrency + " Monetary Decimal Separator : " + monDecSeparator);
+        System.out.println("Before set ==> Currency : " + currency + " Intl Currency : " + intlCurrency + " Monetary Decimal Separator : " + monDecSeparator);
         fmt.setCurrencySymbol("XYZ");
         fmt.setInternationalCurrencySymbol("ABC");
         fmt.setMonetaryDecimalSeparator('*');
@@ -857,14 +888,15 @@ public class NumberRegression extends IntlTest {
         if (!currency.equals("XYZ") ||
             !intlCurrency.equals("ABC") ||
             monDecSeparator != '*') {
-            errln("setCurrencySymbols failed.");
+            fail("setCurrencySymbols failed.");
         }
-        logln("After set ==> Currency : " + currency + " Intl Currency : " + intlCurrency + " Monetary Decimal Separator : " + monDecSeparator);
+        System.out.println("After set ==> Currency : " + currency + " Intl Currency : " + intlCurrency + " Monetary Decimal Separator : " + monDecSeparator);
     }
     /**
      * API tests for API addition request A23. FieldPosition.getBeginIndex and
      * FieldPosition.getEndIndex.
      */
+    @Test
     public void Test4062486()
     {
         DecimalFormat fmt = new DecimalFormat("#,##0.00");
@@ -873,16 +905,17 @@ public class NumberRegression extends IntlTest {
         Double num = 1234.5;
         fmt.format(num, formatted, field);
         if (field.getBeginIndex() != 0 && field.getEndIndex() != 5)
-            errln("Format 1234.5 failed. Begin index: " + field.getBeginIndex() + " End index: " + field.getEndIndex());
+            fail("Format 1234.5 failed. Begin index: " + field.getBeginIndex() + " End index: " + field.getEndIndex());
         field.setBeginIndex(7);
         field.setEndIndex(4);
         if (field.getBeginIndex() != 7 && field.getEndIndex() != 4)
-            errln("Set begin/end field indexes failed. Begin index: " + field.getBeginIndex() + " End index: " + field.getEndIndex());
+            fail("Set begin/end field indexes failed. Begin index: " + field.getBeginIndex() + " End index: " + field.getEndIndex());
     }
 
     /**
      * DecimalFormat.parse incorrectly works with a group separator.
      */
+    @Test
     public void Test4108738()
     {
 
@@ -891,16 +924,17 @@ public class NumberRegression extends IntlTest {
         String text = "1.222,111";
         Number num = df.parse(text,new ParsePosition(0));
         if (!num.toString().equals("1.222"))
-            errln("\"" + text + "\"  is parsed as " + num);
+            fail("\"" + text + "\"  is parsed as " + num);
         text = "1.222x111";
         num = df.parse(text,new ParsePosition(0));
         if (!num.toString().equals("1.222"))
-            errln("\"" + text + "\"  is parsed as " + num);
+            fail("\"" + text + "\"  is parsed as " + num);
     }
 
     /**
      * DecimalFormat.format() incorrectly formats negative doubles.
      */
+    @Test
     public void Test4106658()
     {
         Locale savedLocale = Locale.getDefault();
@@ -909,15 +943,15 @@ public class NumberRegression extends IntlTest {
         double d1 = -0.0;
         double d2 = -0.0001;
         StringBuffer buffer = new StringBuffer();
-        logln("pattern: \"" + df.toPattern() + "\"");
+        System.out.println("pattern: \"" + df.toPattern() + "\"");
         df.format(d1, buffer, new FieldPosition(0));
         if (!buffer.toString().equals("-0")) { // Corrected; see 4147706
-            errln(d1 + "      is formatted as " + buffer);
+            fail(d1 + "      is formatted as " + buffer);
         }
         buffer.setLength(0);
         df.format(d2, buffer, new FieldPosition(0));
         if (!buffer.toString().equals("-0")) { // Corrected; see 4147706
-            errln(d2 + "      is formatted as " + buffer);
+            fail(d2 + "      is formatted as " + buffer);
         }
         Locale.setDefault(savedLocale);
     }
@@ -925,40 +959,43 @@ public class NumberRegression extends IntlTest {
     /**
      * DecimalFormat.parse returns 0 if string parameter is incorrect.
      */
+    @Test
     public void Test4106662()
     {
         DecimalFormat df = new DecimalFormat();
         String text = "x";
         ParsePosition pos1 = new ParsePosition(0), pos2 = new ParsePosition(0);
 
-        logln("pattern: \"" + df.toPattern() + "\"");
+        System.out.println("pattern: \"" + df.toPattern() + "\"");
         Number num = df.parse(text, pos1);
         if (num != null) {
-            errln("Test Failed: \"" + text + "\" is parsed as " + num);
+            fail("Test Failed: \"" + text + "\" is parsed as " + num);
         }
         df = null;
         df = new DecimalFormat("$###.00");
         num = df.parse("$", pos2);
         if (num != null){
-            errln("Test Failed: \"$\" is parsed as " + num);
+            fail("Test Failed: \"$\" is parsed as " + num);
         }
     }
 
     /**
      * NumberFormat.parse doesn't return null
      */
+    @Test
     public void Test4114639()
     {
         NumberFormat format = NumberFormat.getInstance();
         String text = "time 10:x";
         ParsePosition pos = new ParsePosition(8);
         Number result = format.parse(text, pos);
-        if (result != null) errln("Should return null but got : " + result); // Should be null; it isn't
+        if (result != null) fail("Should return null but got : " + result); // Should be null; it isn't
     }
 
     /**
      * DecimalFormat.format(long n) fails if n * multiplier > MAX_LONG.
      */
+    @Test
     public void Test4106664()
     {
         DecimalFormat df = new DecimalFormat();
@@ -968,13 +1005,14 @@ public class NumberRegression extends IntlTest {
         bigN = bigN.multiply(BigInteger.valueOf(m));
         df.setMultiplier(m);
         df.setGroupingUsed(false);
-        logln("formated: " +
+        System.out.println("formated: " +
             df.format(n, new StringBuffer(), new FieldPosition(0)));
-        logln("expected: " + bigN.toString());
+        System.out.println("expected: " + bigN.toString());
     }
     /**
      * DecimalFormat.format incorrectly formats -0.0.
      */
+    @Test
     public void Test4106667()
     {
         Locale savedLocale = Locale.getDefault();
@@ -982,11 +1020,11 @@ public class NumberRegression extends IntlTest {
         DecimalFormat df = new DecimalFormat();
         df.setPositivePrefix("+");
         double d = -0.0;
-        logln("pattern: \"" + df.toPattern() + "\"");
+        System.out.println("pattern: \"" + df.toPattern() + "\"");
         StringBuffer buffer = new StringBuffer();
         df.format(d, buffer, new FieldPosition(0));
         if (!buffer.toString().equals("-0")) { // Corrected; see 4147706
-            errln(d + "  is formatted as " + buffer);
+            fail(d + "  is formatted as " + buffer);
         }
         Locale.setDefault(savedLocale);
     }
@@ -994,13 +1032,14 @@ public class NumberRegression extends IntlTest {
     /**
      * DecimalFormat.setMaximumIntegerDigits() works incorrectly.
      */
+    @Test
     public void Test4110936()
     {
         NumberFormat nf = NumberFormat.getInstance();
         nf.setMaximumIntegerDigits(128);
-        logln("setMaximumIntegerDigits(128)");
+        System.out.println("setMaximumIntegerDigits(128)");
         if (nf.getMaximumIntegerDigits() != 128)
-            errln("getMaximumIntegerDigits() returns " +
+            fail("getMaximumIntegerDigits() returns " +
                 nf.getMaximumIntegerDigits());
     }
 
@@ -1011,6 +1050,7 @@ public class NumberRegression extends IntlTest {
      * 2) Make sure we get the same results using the generic symbol or a
      *    hard-coded one.
      */
+    @Test
     public void Test4122840()
     {
         Locale[] locales = NumberFormat.getAvailableLocales();
@@ -1027,7 +1067,7 @@ public class NumberRegression extends IntlTest {
             String pattern = numPatterns[1];
 
             if (pattern.indexOf("\u00A4") == -1 ) {
-                errln("Currency format for " + locales[i] +
+                fail("Currency format for " + locales[i] +
                         " does not contain generic currency symbol:" +
                         pattern );
             }
@@ -1058,7 +1098,7 @@ public class NumberRegression extends IntlTest {
             String result2 = fmt2.format(1.111);
 
             if (!result1.equals(result2)) {
-                errln("Results for " + locales[i] + " differ: " +
+                fail("Results for " + locales[i] + " differ: " +
                       result1 + " vs " + result2);
             }
         }
@@ -1067,23 +1107,24 @@ public class NumberRegression extends IntlTest {
     /**
      * DecimalFormat.format() delivers wrong string.
      */
+    @Test
     public void Test4125885()
     {
         Locale savedLocale = Locale.getDefault();
         Locale.setDefault(Locale.US);
         double rate = 12.34;
         DecimalFormat formatDec = new DecimalFormat ("000.00");
-        logln("toPattern: " + formatDec.toPattern());
+        System.out.println("toPattern: " + formatDec.toPattern());
         String rateString= formatDec.format(rate);
         if (!rateString.equals("012.34"))
-            errln("result : " + rateString + " expected : 012.34");
+            fail("result : " + rateString + " expected : 012.34");
         rate = 0.1234;
         formatDec = null;
         formatDec = new DecimalFormat ("+000.00%;-000.00%");
-        logln("toPattern: " + formatDec.toPattern());
+        System.out.println("toPattern: " + formatDec.toPattern());
         rateString= formatDec.format(rate);
         if (!rateString.equals("+012.34%"))
-            errln("result : " + rateString + " expected : +012.34%");
+            fail("result : " + rateString + " expected : +012.34%");
         Locale.setDefault(savedLocale);
     }
 
@@ -1091,16 +1132,17 @@ public class NumberRegression extends IntlTest {
      **
      * DecimalFormat produces extra zeros when formatting numbers.
      */
+    @Test
     public void Test4134034() {
         Locale savedLocale = Locale.getDefault();
         Locale.setDefault(Locale.US);
         DecimalFormat nf = new DecimalFormat("##,###,###.00");
 
         String f = nf.format(9.02);
-        if (f.equals("9.02")) logln(f + " ok"); else errln("9.02 -> " + f + "; want 9.02");
+        if (f.equals("9.02")) System.out.println(f + " ok"); else fail("9.02 -> " + f + "; want 9.02");
 
         f = nf.format(0);
-        if (f.equals(".00")) logln(f + " ok"); else errln("0 -> " + f + "; want .00");
+        if (f.equals(".00")) System.out.println(f + " ok"); else fail("0 -> " + f + "; want .00");
         Locale.setDefault(savedLocale);
     }
 
@@ -1128,6 +1170,7 @@ public class NumberRegression extends IntlTest {
      * Value 1.2 Format #0.0# Result '1.2'
      * Value 1.2 Format #0.00 Result '1.20'
      */
+    @Test
     public void Test4134300() {
         Locale savedLocale = Locale.getDefault();
         Locale.setDefault(Locale.US);
@@ -1142,11 +1185,11 @@ public class NumberRegression extends IntlTest {
         for (int i=0; i<DATA.length; i+=2) {
             String result = new DecimalFormat(DATA[i]).format(1.2);
             if (!result.equals(DATA[i+1])) {
-                errln("Fail: 1.2 x " + DATA[i] + " = " + result +
+                fail("Fail: 1.2 x " + DATA[i] + " = " + result +
                       "; want " + DATA[i+1]);
             }
             else {
-                logln("Ok: 1.2 x " + DATA[i] + " = " + result);
+                System.out.println("Ok: 1.2 x " + DATA[i] + " = " + result);
             }
         }
         Locale.setDefault(savedLocale);
@@ -1155,6 +1198,7 @@ public class NumberRegression extends IntlTest {
     /**
      * Empty pattern produces double negative prefix.
      */
+    @Test
     public void Test4140009() {
         for (int i=0; i<2; ++i) {
             DecimalFormat f = null;
@@ -1171,16 +1215,17 @@ public class NumberRegression extends IntlTest {
             }
             String s = f.format(123.456);
             if (!s.equals("123.456"))
-                errln("Fail: Format empty pattern x 123.456 => " + s);
+                fail("Fail: Format empty pattern x 123.456 => " + s);
             s = f.format(-123.456);
             if (!s.equals("-123.456"))
-                errln("Fail: Format empty pattern x -123.456 => " + s);
+                fail("Fail: Format empty pattern x -123.456 => " + s);
         }
     }
 
     /**
      * BigDecimal numbers get their fractions truncated by NumberFormat.
      */
+    @Test
     public void Test4141750() {
         try {
             String str = "12345.67";
@@ -1188,11 +1233,11 @@ public class NumberRegression extends IntlTest {
             NumberFormat nf = NumberFormat.getInstance(Locale.US);
             String sd = nf.format(bd);
             if (!sd.endsWith("67")) {
-                errln("Fail: " + str + " x format -> " + sd);
+                fail("Fail: " + str + " x format -> " + sd);
             }
         }
         catch (Exception e) {
-            errln(e.toString());
+            fail(e.toString());
             e.printStackTrace();
         }
     }
@@ -1201,6 +1246,7 @@ public class NumberRegression extends IntlTest {
      * DecimalFormat toPattern() doesn't quote special characters or handle
      * single quotes.
      */
+    @Test
     public void Test4145457() {
         try {
             DecimalFormat nf = (DecimalFormat)NumberFormat.getInstance();
@@ -1223,25 +1269,25 @@ public class NumberRegression extends IntlTest {
                 double val2 = nf.parse(out2).doubleValue();
 
                 if (!pat.equals(pat2))
-                    errln("Fail with \"" + PATS[i] + "\": Patterns should concur, \"" +
+                    fail("Fail with \"" + PATS[i] + "\": Patterns should concur, \"" +
                           pat + "\" vs. \"" + pat2 + "\"");
                 else
-                    logln("Ok \"" + PATS[i] + "\" toPattern() -> \"" + pat + '"');
+                    System.out.println("Ok \"" + PATS[i] + "\" toPattern() -> \"" + pat + '"');
 
                 if (val == val2 && out.equals(out2)) {
-                    logln("Ok " + pi + " x \"" + PATS[i] + "\" -> \"" +
+                    System.out.println("Ok " + pi + " x \"" + PATS[i] + "\" -> \"" +
                           out + "\" -> " + val + " -> \"" +
                           out2 + "\" -> " + val2);
                 }
                 else {
-                    errln("Fail " + pi + " x \"" + PATS[i] + "\" -> \"" +
+                    fail("Fail " + pi + " x \"" + PATS[i] + "\" -> \"" +
                           out + "\" -> " + val + " -> \"" +
                           out2 + "\" -> " + val2);
                 }
             }
         }
         catch (ParseException e) {
-            errln("Fail: " + e);
+            fail("Fail: " + e);
             e.printStackTrace();
         }
     }
@@ -1251,19 +1297,20 @@ public class NumberRegression extends IntlTest {
      * CANNOT REPRODUCE
      * This bug is a duplicate of 4139344, which is a duplicate of 4134300
      */
+    @Test
     public void Test4147295() {
         DecimalFormat sdf = new DecimalFormat();
         String pattern = "#,###";
-        logln("Applying pattern \"" + pattern + "\"");
+        System.out.println("Applying pattern \"" + pattern + "\"");
         sdf.applyPattern(pattern);
         int minIntDig = sdf.getMinimumIntegerDigits();
         if (minIntDig != 0) {
-            errln("Test failed");
-            errln(" Minimum integer digits : " + minIntDig);
-            errln(" new pattern: " + sdf.toPattern());
+            fail("Test failed"
+            + "\n Minimum integer digits : " + minIntDig
+            + "\n new pattern: " + sdf.toPattern());
         } else {
-            logln("Test passed");
-            logln(" Minimum integer digits : " + minIntDig);
+            System.out.println("Test passed");
+            System.out.println(" Minimum integer digits : " + minIntDig);
         }
     }
 
@@ -1271,6 +1318,7 @@ public class NumberRegression extends IntlTest {
      * DecimalFormat formats -0.0 as +0.0
      * See also older related bug 4106658, 4106667
      */
+    @Test
     public void Test4147706() {
         DecimalFormat df = new DecimalFormat("#,##0.0##");
         df.setDecimalFormatSymbols(DecimalFormatSymbols.getInstance(Locale.ENGLISH));
@@ -1279,39 +1327,41 @@ public class NumberRegression extends IntlTest {
         StringBuffer f1 = df.format(d1, new StringBuffer(), new FieldPosition(0));
         StringBuffer f2 = df.format(d2, new StringBuffer(), new FieldPosition(0));
         if (!f1.toString().equals("-0.0")) {
-            errln(d1 + " x \"" + df.toPattern() + "\" is formatted as \"" + f1 + '"');
+            fail(d1 + " x \"" + df.toPattern() + "\" is formatted as \"" + f1 + '"');
         }
         if (!f2.toString().equals("-0.0")) {
-            errln(d2 + " x \"" + df.toPattern() + "\" is formatted as \"" + f2 + '"');
+            fail(d2 + " x \"" + df.toPattern() + "\" is formatted as \"" + f2 + '"');
         }
     }
 
     /**
      * NumberFormat cannot format Double.MAX_VALUE
      */
+    @Test
     public void Test4162198() {
         double dbl = Double.MAX_VALUE;
         NumberFormat f = NumberFormat.getInstance();
         f.setMaximumFractionDigits(Integer.MAX_VALUE);
         f.setMaximumIntegerDigits(Integer.MAX_VALUE);
         String s = f.format(dbl);
-        logln("The number " + dbl + " formatted to " + s);
+        System.out.println("The number " + dbl + " formatted to " + s);
         Number n = null;
         try {
             n = f.parse(s);
         } catch (java.text.ParseException e) {
-            errln("Caught a ParseException:");
+            fail("Caught a ParseException:");
             e.printStackTrace();
         }
-        logln("The string " + s + " parsed as " + n);
+        System.out.println("The string " + s + " parsed as " + n);
         if (n.doubleValue() != dbl) {
-            errln("Round trip failure");
+            fail("Round trip failure");
         }
     }
 
     /**
      * NumberFormat does not parse negative zero.
      */
+    @Test
     public void Test4162852() throws ParseException {
         for (int i=0; i<2; ++i) {
             NumberFormat f = (i == 0) ? NumberFormat.getInstance()
@@ -1319,12 +1369,12 @@ public class NumberRegression extends IntlTest {
             double d = -0.0;
             String s = f.format(d);
             double e = f.parse(s).doubleValue();
-            logln("" +
+            System.out.println("" +
                   d + " -> " +
                   '"' + s + '"' + " -> " +
               e);
             if (e != 0.0 || 1.0/e > 0.0) {
-                logln("Failed to parse negative zero");
+                System.out.println("Failed to parse negative zero");
             }
         }
     }
@@ -1332,6 +1382,7 @@ public class NumberRegression extends IntlTest {
     /**
      * NumberFormat truncates data
      */
+    @Test
     public void Test4167494() throws Exception {
         NumberFormat fmt = NumberFormat.getInstance(Locale.US);
 
@@ -1340,9 +1391,9 @@ public class NumberRegression extends IntlTest {
         double b = fmt.parse(s).doubleValue();
         boolean match = a == b;
         if (match) {
-            logln("" + a + " -> \"" + s + "\" -> " + b + " ok");
+            System.out.println("" + a + " -> \"" + s + "\" -> " + b + " ok");
         } else {
-            errln("" + a + " -> \"" + s + "\" -> " + b + " FAIL");
+            fail("" + a + " -> \"" + s + "\" -> " + b + " FAIL");
         }
 
         // We don't test Double.MIN_VALUE because the locale data for the US
@@ -1355,9 +1406,9 @@ public class NumberRegression extends IntlTest {
             b = fmt.parse(s).doubleValue();
             match = a == b;
             if (match) {
-                logln("" + a + " -> \"" + s + "\" -> " + b + " ok");
+                System.out.println("" + a + " -> \"" + s + "\" -> " + b + " ok");
             } else {
-                errln("" + a + " -> \"" + s + "\" -> " + b + " FAIL");
+                fail("" + a + " -> \"" + s + "\" -> " + b + " FAIL");
             }
         }
     }
@@ -1365,6 +1416,7 @@ public class NumberRegression extends IntlTest {
     /**
      * DecimalFormat.parse() fails when ParseIntegerOnly set to true
      */
+    @Test
     public void Test4170798() {
         Locale savedLocale = Locale.getDefault();
         Locale.setDefault(Locale.US);
@@ -1373,7 +1425,7 @@ public class NumberRegression extends IntlTest {
         Number n = df.parse("-0.0", new ParsePosition(0));
         if (!(n instanceof Long || n instanceof Integer)
             || n.intValue() != 0) {
-            errln("FAIL: parse(\"-0.0\") returns " +
+            fail("FAIL: parse(\"-0.0\") returns " +
                   n + " (" + n.getClass().getName() + ')');
         }
         Locale.setDefault(savedLocale);
@@ -1382,6 +1434,7 @@ public class NumberRegression extends IntlTest {
     /**
      * toPattern only puts the first grouping separator in.
      */
+    @Test
     public void Test4176114() {
         String[] DATA = {
             "00", "#00",
@@ -1398,7 +1451,7 @@ public class NumberRegression extends IntlTest {
             DecimalFormat df = new DecimalFormat(DATA[i]);
             String s = df.toPattern();
             if (!s.equals(DATA[i+1])) {
-                errln("FAIL: " + DATA[i] + " -> " + s + ", want " + DATA[i+1]);
+                fail("FAIL: " + DATA[i] + " -> " + s + ", want " + DATA[i+1]);
             }
         }
     }
@@ -1406,6 +1459,7 @@ public class NumberRegression extends IntlTest {
     /**
      * DecimalFormat is incorrectly rounding numbers like 1.2501 to 1.2
      */
+    @Test
     public void Test4179818() {
         String DATA[] = {
             // Input  Pattern  Expected output
@@ -1422,14 +1476,15 @@ public class NumberRegression extends IntlTest {
             fmt.applyPattern(pat);
             String out = fmt.format(in);
             if (out.equals(exp)) {
-                logln("Ok: " + in + " x " + pat + " = " + out);
+                System.out.println("Ok: " + in + " x " + pat + " = " + out);
             } else {
-                errln("FAIL: " + in + " x  " + pat + " = " + out +
+                fail("FAIL: " + in + " x  " + pat + " = " + out +
                       ", expected " + exp);
             }
         }
     }
 
+    @Test
     public void Test4185761() throws IOException, ClassNotFoundException {
         /* Code used to write out the initial files, which are
          * then edited manually:
@@ -1456,13 +1511,13 @@ public class NumberRegression extends IntlTest {
         ObjectInputStream p = new ObjectInputStream(istream);
         try {
             NumberFormat nf = (NumberFormat) p.readObject();
-            errln("FAIL: Deserialized bogus NumberFormat int:" +
+            fail("FAIL: Deserialized bogus NumberFormat int:" +
                   nf.getMinimumIntegerDigits() + ".." +
                   nf.getMaximumIntegerDigits() + " frac:" +
                   nf.getMinimumFractionDigits() + ".." +
                   nf.getMaximumFractionDigits());
         } catch (InvalidObjectException e) {
-            logln("Ok: " + e.getMessage());
+            System.out.println("Ok: " + e.getMessage());
         }
         istream.close();
 
@@ -1470,13 +1525,13 @@ public class NumberRegression extends IntlTest {
         p = new ObjectInputStream(istream);
         try {
             NumberFormat nf = (NumberFormat) p.readObject();
-            errln("FAIL: Deserialized bogus DecimalFormat int:" +
+            fail("FAIL: Deserialized bogus DecimalFormat int:" +
                   nf.getMinimumIntegerDigits() + ".." +
                   nf.getMaximumIntegerDigits() + " frac:" +
                   nf.getMinimumFractionDigits() + ".." +
                   nf.getMaximumFractionDigits());
         } catch (InvalidObjectException e) {
-            logln("Ok: " + e.getMessage());
+            System.out.println("Ok: " + e.getMessage());
         }
         istream.close();
     }
@@ -1488,6 +1543,7 @@ public class NumberRegression extends IntlTest {
      * symbol, percent, and permille.  This is filed as bugs 4212072 and
      * 4212073.
      */
+    @Test
     public void Test4212072() throws IOException, ClassNotFoundException {
         DecimalFormatSymbols sym = DecimalFormatSymbols.getInstance(Locale.US);
         DecimalFormat fmt = new DecimalFormat("#", sym);
@@ -1495,11 +1551,11 @@ public class NumberRegression extends IntlTest {
         sym.setMinusSign('^');
         fmt.setDecimalFormatSymbols(sym);
         if (!fmt.format(-1).equals("^1")) {
-            errln("FAIL: -1 x (minus=^) -> " + fmt.format(-1) +
+            fail("FAIL: -1 x (minus=^) -> " + fmt.format(-1) +
                   ", exp ^1");
         }
         if (!fmt.getNegativePrefix().equals("^")) {
-            errln("FAIL: (minus=^).getNegativePrefix -> " +
+            fail("FAIL: (minus=^).getNegativePrefix -> " +
                   fmt.getNegativePrefix() + ", exp ^");
         }
         sym.setMinusSign('-');
@@ -1508,11 +1564,11 @@ public class NumberRegression extends IntlTest {
         sym.setPercent('^');
         fmt.setDecimalFormatSymbols(sym);
         if (!fmt.format(0.25).equals("25^")) {
-            errln("FAIL: 0.25 x (percent=^) -> " + fmt.format(0.25) +
+            fail("FAIL: 0.25 x (percent=^) -> " + fmt.format(0.25) +
                   ", exp 25^");
         }
         if (!fmt.getPositiveSuffix().equals("^")) {
-            errln("FAIL: (percent=^).getPositiveSuffix -> " +
+            fail("FAIL: (percent=^).getPositiveSuffix -> " +
                   fmt.getPositiveSuffix() + ", exp ^");
         }
         sym.setPercent('%');
@@ -1521,11 +1577,11 @@ public class NumberRegression extends IntlTest {
         sym.setPerMill('^');
         fmt.setDecimalFormatSymbols(sym);
         if (!fmt.format(0.25).equals("250^")) {
-            errln("FAIL: 0.25 x (permill=^) -> " + fmt.format(0.25) +
+            fail("FAIL: 0.25 x (permill=^) -> " + fmt.format(0.25) +
                   ", exp 250^");
         }
         if (!fmt.getPositiveSuffix().equals("^")) {
-            errln("FAIL: (permill=^).getPositiveSuffix -> " +
+            fail("FAIL: (permill=^).getPositiveSuffix -> " +
                   fmt.getPositiveSuffix() + ", exp ^");
         }
         sym.setPerMill('\u2030');
@@ -1534,11 +1590,11 @@ public class NumberRegression extends IntlTest {
         sym.setCurrencySymbol("usd");
         fmt.setDecimalFormatSymbols(sym);
         if (!fmt.format(12.5).equals("usd12.50")) {
-            errln("FAIL: 12.5 x (currency=usd) -> " + fmt.format(12.5) +
+            fail("FAIL: 12.5 x (currency=usd) -> " + fmt.format(12.5) +
                   ", exp usd12.50");
         }
         if (!fmt.getPositivePrefix().equals("usd")) {
-            errln("FAIL: (currency=usd).getPositivePrefix -> " +
+            fail("FAIL: (currency=usd).getPositivePrefix -> " +
                   fmt.getPositivePrefix() + ", exp usd");
         }
         sym.setCurrencySymbol("$");
@@ -1547,11 +1603,11 @@ public class NumberRegression extends IntlTest {
         sym.setInternationalCurrencySymbol("DOL");
         fmt.setDecimalFormatSymbols(sym);
         if (!fmt.format(12.5).equals("DOL12.50")) {
-            errln("FAIL: 12.5 x (intlcurrency=DOL) -> " + fmt.format(12.5) +
+            fail("FAIL: 12.5 x (intlcurrency=DOL) -> " + fmt.format(12.5) +
                   ", exp DOL12.50");
         }
         if (!fmt.getPositivePrefix().equals("DOL")) {
-            errln("FAIL: (intlcurrency=DOL).getPositivePrefix -> " +
+            fail("FAIL: (intlcurrency=DOL).getPositivePrefix -> " +
                   fmt.getPositivePrefix() + ", exp DOL");
         }
         sym.setInternationalCurrencySymbol("USD");
@@ -1580,7 +1636,7 @@ public class NumberRegression extends IntlTest {
                 DecimalFormatSymbols symb = DecimalFormatSymbols.getInstance(avail[i]);
                 DecimalFormat f2 = new DecimalFormat(pat, symb);
                 if (!df.equals(f2)) {
-                    errln("FAIL: " + avail[i] + " -> \"" + pat +
+                    fail("FAIL: " + avail[i] + " -> \"" + pat +
                           "\" -> \"" + f2.toPattern() + '"');
                 }
 
@@ -1588,7 +1644,7 @@ public class NumberRegression extends IntlTest {
                 pat = df.toLocalizedPattern();
                 f2.applyLocalizedPattern(pat);
                 if (!df.equals(f2)) {
-                    errln("FAIL: " + avail[i] + " -> localized \"" + pat +
+                    fail("FAIL: " + avail[i] + " -> localized \"" + pat +
                           "\" -> \"" + f2.toPattern() + '"');
                 }
 
@@ -1603,7 +1659,7 @@ public class NumberRegression extends IntlTest {
                     new ObjectInputStream(new ByteArrayInputStream(bytes));
                 f2 = (DecimalFormat) ois.readObject();
                 if (!df.equals(f2)) {
-                    errln("FAIL: Stream in/out " + avail[i] + " -> \"" + pat +
+                    fail("FAIL: Stream in/out " + avail[i] + " -> \"" + pat +
                           "\" -> " +
                           (f2 != null ? ("\""+f2.toPattern()+'"') : "null"));
                 }
@@ -1615,6 +1671,7 @@ public class NumberRegression extends IntlTest {
     /**
      * DecimalFormat.parse() fails for mulipliers 2^n.
      */
+    @Test
     public void Test4216742() throws ParseException {
         DecimalFormat fmt = (DecimalFormat) NumberFormat.getInstance(Locale.US);
         long[] DATA = { Long.MIN_VALUE, Long.MAX_VALUE, -100000000L, 100000000L};
@@ -1624,7 +1681,7 @@ public class NumberRegression extends IntlTest {
                 fmt.setMultiplier(m);
                 long n = fmt.parse(str).longValue();
                 if (n > 0 != DATA[i] > 0) {
-                    errln("\"" + str + "\" parse(x " + fmt.getMultiplier() +
+                    fail("\"" + str + "\" parse(x " + fmt.getMultiplier() +
                           ") => " + n);
                 }
             }
@@ -1635,6 +1692,7 @@ public class NumberRegression extends IntlTest {
      * DecimalFormat formats 1.001 to "1.00" instead of "1" with 2 fraction
      * digits.
      */
+    @Test
     public void Test4217661() {
         Object[] DATA = {
             0.001, "0",
@@ -1647,7 +1705,7 @@ public class NumberRegression extends IntlTest {
         for (int i=0; i<DATA.length; i+=2) {
             String s = fmt.format((Double) DATA[i]);
             if (!s.equals(DATA[i+1])) {
-                errln("FAIL: Got " + s + ", exp " + DATA[i+1]);
+                fail("FAIL: Got " + s + ", exp " + DATA[i+1]);
             }
         }
     }
@@ -1655,6 +1713,7 @@ public class NumberRegression extends IntlTest {
     /**
      * 4243011: Formatting .5 rounds to "1" instead of "0"
      */
+    @Test
     public void Test4243011() {
         Locale savedLocale = Locale.getDefault();
         Locale.setDefault(Locale.US);
@@ -1665,9 +1724,9 @@ public class NumberRegression extends IntlTest {
         for (int i = 0; i < DATA.length; i++) {
             String result = format.format(DATA[i]);
             if (result.equals(EXPECTED[i])) {
-                logln("OK: got " + result);
+                System.out.println("OK: got " + result);
             } else {
-                errln("FAIL: got " + result);
+                fail("FAIL: got " + result);
             }
         }
         Locale.setDefault(savedLocale);
@@ -1676,32 +1735,33 @@ public class NumberRegression extends IntlTest {
     /**
      * 4243108: format(0.0) gives "0.1" if preceded by parse("99.99")
      */
+    @Test
     public void Test4243108() {
         Locale savedLocale = Locale.getDefault();
         Locale.setDefault(Locale.US);
         DecimalFormat f = new DecimalFormat("#.#");
         String result = f.format(0.0);
         if (result.equals("0")) {
-            logln("OK: got " + result);
+            System.out.println("OK: got " + result);
         } else {
-            errln("FAIL: got " + result);
+            fail("FAIL: got " + result);
         }
         try {
             double dResult = f.parse("99.99").doubleValue();
             if (dResult == 99.99) {
-                logln("OK: got " + dResult);
+                System.out.println("OK: got " + dResult);
             } else {
-                errln("FAIL: got " + dResult);
+                fail("FAIL: got " + dResult);
             }
         } catch (ParseException e) {
-            errln("Caught a ParseException:");
+            fail("Caught a ParseException:");
             e.printStackTrace();
         }
         result = f.format(0.0);
         if (result.equals("0")) {
-            logln("OK: got " + result);
+            System.out.println("OK: got " + result);
         } else {
-            errln("FAIL: got " + result);
+            fail("FAIL: got " + result);
         }
         Locale.setDefault(savedLocale);
     }
@@ -1709,6 +1769,7 @@ public class NumberRegression extends IntlTest {
     /**
      * 4330377: DecimalFormat engineering notation gives incorrect results
      */
+    @Test
     public void test4330377() {
         Locale savedLocale = Locale.getDefault();
         Locale.setDefault(Locale.US);
@@ -1740,7 +1801,7 @@ public class NumberRegression extends IntlTest {
                 DecimalFormat format = new DecimalFormat(pattern[j]);
                 String result = format.format(input[i]);
                 if (!result.equals(expected[i][j])) {
-                    errln("FAIL: input: " + input[i] +
+                    fail("FAIL: input: " + input[i] +
                             ", pattern: " + pattern[j] +
                             ", expected: " + expected[i][j] +
                             ", got: " + result);
@@ -1753,6 +1814,7 @@ public class NumberRegression extends IntlTest {
     /**
      * 4233840: NumberFormat does not round correctly
      */
+    @Test
     public void test4233840() {
         float f = 0.0099f;
 
@@ -1762,13 +1824,14 @@ public class NumberRegression extends IntlTest {
         String result = nf.format(f);
 
         if (!result.equals("0.01")) {
-            errln("FAIL: input: " + f + ", expected: 0.01, got: " + result);
+            fail("FAIL: input: " + f + ", expected: 0.01, got: " + result);
         }
     }
 
     /**
      * 4241880: Decimal format doesnt round a double properly when the number is less than 1
      */
+    @Test
     public void test4241880() {
         Locale savedLocale = Locale.getDefault();
         Locale.setDefault(Locale.US);
@@ -1794,7 +1857,7 @@ public class NumberRegression extends IntlTest {
             DecimalFormat format = new DecimalFormat(pattern[i]);
             String result = format.format(input[i]);
             if (!result.equals(expected[i])) {
-                errln("FAIL: input: " + input[i] +
+                fail("FAIL: input: " + input[i] +
                         ", pattern: " + pattern[i] +
                         ", expected: " + expected[i] +
                         ", got: " + result);
@@ -1807,6 +1870,7 @@ public class NumberRegression extends IntlTest {
      * Test for get/setMonetaryGroupingSeparator() methods.
      * @since 15
      */
+    @Test
     public void test8227313() throws ParseException {
         var nrmSep = 'n';
         var monSep = 'm';
@@ -1829,11 +1893,11 @@ public class NumberRegression extends IntlTest {
         char gotNrmSep = mdfs.getGroupingSeparator();
         char gotMonSep = mdfs.getMonetaryGroupingSeparator();
         if (gotMonSep != monSep) {
-            errln("FAIL: getMonetaryGroupingSeparator() returned incorrect value. expected: "
+            fail("FAIL: getMonetaryGroupingSeparator() returned incorrect value. expected: "
                     + monSep + ", got: " + gotMonSep);
         }
         if (gotMonSep == gotNrmSep) {
-            errln("FAIL: getMonetaryGroupingSeparator() returned the same value with " +
+            fail("FAIL: getMonetaryGroupingSeparator() returned the same value with " +
                     "getGroupingSeparator(): monetary sep: " + gotMonSep +
                     ", normal sep: " + gotNrmSep);
         }
@@ -1841,24 +1905,24 @@ public class NumberRegression extends IntlTest {
         // format test
         var formatted = mf.format(inputNum);
         if (!formatted.equals(expectedMonFmt)) {
-            errln("FAIL: format failed. expected: " + expectedMonFmt +
+            fail("FAIL: format failed. expected: " + expectedMonFmt +
                     ", got: " + formatted);
         }
         formatted = nf.format(inputNum);
         if (!formatted.equals(expectedNrmFmt)) {
-            errln("FAIL: normal format failed. expected: " + expectedNrmFmt +
+            fail("FAIL: normal format failed. expected: " + expectedNrmFmt +
                     ", got: " + formatted);
         }
 
         // parse test
         Number parsed = mf.parse(expectedMonFmt);
         if (parsed.intValue() != inputNum) {
-            errln("FAIL: parse failed. expected: " + inputNum +
+            fail("FAIL: parse failed. expected: " + inputNum +
                     ", got: " + parsed);
         }
         parsed = nf.parse(expectedNrmFmt);
         if (parsed.intValue() != inputNum) {
-            errln("FAIL: normal parse failed. expected: " + inputNum +
+            fail("FAIL: normal parse failed. expected: " + inputNum +
                     ", got: " + parsed);
         }
     }

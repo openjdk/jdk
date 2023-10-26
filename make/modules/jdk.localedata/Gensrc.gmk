@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ TARGETS += $(GENSRC_LOCALEDATA)
 CLDR_DATA_DIR := $(TOPDIR)/make/data/cldr/common
 GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata
 CLDR_GEN_DONE := $(GENSRC_DIR)/_cldr-gensrc.marker
+TZ_DATA_DIR := $(TOPDIR)/src/java.base/share/data/tzdata
 
 $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
     $(wildcard $(CLDR_DATA_DIR)/main/*.xml) \
@@ -47,7 +48,8 @@ $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
 	    $(TOOL_CLDRCONVERTER) -base $(CLDR_DATA_DIR) \
 	    -baselocales "en-US" \
 	    -year $(COPYRIGHT_YEAR) \
-	    -o $(GENSRC_DIR))
+	    -o $(GENSRC_DIR) \
+	    -tzdatadir $(TZ_DATA_DIR))
 	$(TOUCH) $@
 
 TARGETS += $(CLDR_GEN_DONE)

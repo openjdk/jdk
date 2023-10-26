@@ -40,12 +40,10 @@ import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.CallingSequenceBuilder;
 import jdk.internal.foreign.abi.DowncallLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
-import jdk.internal.foreign.abi.UpcallLinker;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.VMStorage;
 import jdk.internal.foreign.Utils;
 
-import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.List;
@@ -150,7 +148,7 @@ public class LinuxRISCV64CallArranger {
             this.forArguments = forArguments;
         }
 
-        // Aggregates or scalars passed on the stack are aligned to the greater of
+        // Aggregates or scalars passed on the stack are aligned to the greatest of
         // the type alignment and XLEN bits, but never more than the stack alignment.
         void alignStack(long alignment) {
             alignment = Utils.alignUp(Math.clamp(alignment, STACK_SLOT_SIZE, 16), STACK_SLOT_SIZE);
@@ -253,8 +251,8 @@ public class LinuxRISCV64CallArranger {
                               Map.entry(STRUCT_REGISTER_XF, STRUCT_REGISTER_X));
     }
 
-    static class UnboxBindingCalculator extends BindingCalculator {
-        boolean forArguments;
+    static final class UnboxBindingCalculator extends BindingCalculator {
+        final boolean forArguments;
 
         UnboxBindingCalculator(boolean forArguments) {
             super(forArguments);

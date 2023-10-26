@@ -1349,7 +1349,6 @@ void G1ConcurrentMark::remark() {
 }
 
 class G1ReclaimEmptyRegionsTask : public WorkerTask {
-  // Per-region work during the Cleanup pause.
   class G1ReclaimEmptyRegionsClosure : public HeapRegionClosure {
     G1CollectedHeap* _g1h;
     size_t _freed_bytes;
@@ -1695,9 +1694,12 @@ void G1ConcurrentMark::weak_refs_work() {
   // Unload Klasses, String, Code Cache, etc.
   if (ClassUnloadingWithConcurrentMark) {
     GCTraceTime(Debug, gc, phases) debug("Class Unloading", _gc_timer_cm);
-    CodeCache::UnloadingScope scope(&g1_is_alive);
-    bool purged_classes = SystemDictionary::do_unloading(_gc_timer_cm);
-    _g1h->complete_cleaning(purged_classes);
+    {
+      CodeCache::UnlinkingScope scope(&g1_is_alive);
+      bool unloading_occurred = SystemDictionary::do_unloading(_gc_timer_cm);
+      _g1h->complete_cleaning(unloading_occurred);
+    }
+    CodeCache::flush_unlinked_nmethods();
   }
 }
 
@@ -2319,7 +2321,7 @@ void G1CMTask::drain_local_queue(bool partially) {
   // of things to do) or totally (at the very end).
   uint target_size;
   if (partially) {
-    target_size = MIN2(_task_queue->max_elems() / 3, GCDrainStackTargetSize);
+    target_size = GCDrainStackTargetSize;
   } else {
     target_size = 0;
   }

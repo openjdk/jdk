@@ -268,6 +268,8 @@ public:
 #else //ASSERT
   void verify_adr_type(bool recursive = false) const {}
 #endif //ASSERT
+
+  const TypeTuple* collect_types(PhaseGVN* phase) const;
 };
 
 //------------------------------GotoNode---------------------------------------
@@ -339,7 +341,7 @@ private:
 protected:
   ProjNode* range_check_trap_proj(int& flip, Node*& l, Node*& r);
   Node* Ideal_common(PhaseGVN *phase, bool can_reshape);
-  Node* search_identical(int dist);
+  Node* search_identical(int dist, PhaseIterGVN* igvn);
 
   Node* simple_subsuming(PhaseIterGVN* igvn);
 
@@ -438,6 +440,8 @@ public:
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
+
+  bool same_condition(const Node* dom, PhaseIterGVN* igvn) const;
 };
 
 class RangeCheckNode : public IfNode {

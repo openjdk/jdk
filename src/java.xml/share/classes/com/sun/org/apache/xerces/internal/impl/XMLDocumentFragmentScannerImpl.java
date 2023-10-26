@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -28,8 +28,6 @@ import com.sun.org.apache.xerces.internal.util.XMLAttributesIteratorImpl;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager.Limit;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.QName;
@@ -56,6 +54,8 @@ import javax.xml.stream.events.XMLEvent;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
+import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityManager.Limit;
 
 /**
  *
@@ -74,7 +74,7 @@ import jdk.xml.internal.SecuritySupport;
  * @author Eric Ye, IBM
  * @author Sunitha Reddy, SUN Microsystems
  *
- * @LastModified: May 2021
+ * @LastModified: July 2023
  */
 public class XMLDocumentFragmentScannerImpl
         extends XMLScanner
@@ -326,6 +326,8 @@ public class XMLDocumentFragmentScannerImpl
     protected String fDeclaredEncoding =  null;
     /** Xerces Feature: Disallow doctype declaration. */
     protected boolean fDisallowDoctype = false;
+    // DTD Error Code
+    protected String fDTDErrorCode = null;
 
     /** Create entity reference nodes. */
     protected boolean fCreateEntityRefNodes = false;
@@ -792,7 +794,7 @@ public class XMLDocumentFragmentScannerImpl
         }
 
 
-                // Xerces properties
+        // Xerces properties
         if (propertyId.startsWith(Constants.XERCES_PROPERTY_PREFIX)) {
             String property = propertyId.substring(Constants.XERCES_PROPERTY_PREFIX.length());
             if (property.equals(Constants.ENTITY_MANAGER_PROPERTY)) {

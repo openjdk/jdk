@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1440,7 +1440,7 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
     /*
      * Check whether we can encode image of given type using compression method in question.
      *
-     * For example, TYPE_USHORT_565_RGB can be encodeed with BI_BITFIELDS compression only.
+     * For example, TYPE_USHORT_565_RGB can be encoded with BI_BITFIELDS compression only.
      *
      * NB: method should be extended if other cases when we can not encode
      *     with given compression will be discovered.

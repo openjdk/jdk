@@ -74,6 +74,10 @@
 #include "jvmci/jvmci.hpp"
 #endif
 
+#ifdef AIX
+#include "loadlib_aix.hpp"
+#endif
+
 #ifndef PRODUCT
 #include <signal.h>
 #endif // PRODUCT
@@ -431,7 +435,7 @@ static frame next_frame(frame fr, Thread* t) {
     if (!t->is_in_full_stack((address)(fr.real_fp() + 1))) {
       return invalid;
     }
-    if (fr.is_java_frame() || fr.is_native_frame() || fr.is_runtime_frame()) {
+    if (fr.is_interpreted_frame() || (fr.cb() != nullptr && fr.cb()->frame_size() > 0)) {
       RegisterMap map(JavaThread::cast(t),
                       RegisterMap::UpdateMap::skip,
                       RegisterMap::ProcessFrames::include,
@@ -1100,6 +1104,11 @@ void VMError::report(outputStream* st, bool _verbose) {
     print_stack_location(st, _context, continuation);
     st->cr();
 
+  STEP_IF("printing lock stack", _verbose && _thread != nullptr && _thread->is_Java_thread() && LockingMode == LM_LIGHTWEIGHT);
+    st->print_cr("Lock stack of current Java thread (top to bottom):");
+    JavaThread::cast(_thread)->lock_stack().print_on(st);
+    st->cr();
+
   STEP_IF("printing code blobs if possible", _verbose)
     const int printed_capacity = max_error_log_print_code;
     address printed[printed_capacity];
@@ -1338,6 +1347,8 @@ void VMError::report(outputStream* st, bool _verbose) {
 void VMError::print_vm_info(outputStream* st) {
 
   char buf[O_BUFLEN];
+  AIX_ONLY(LoadedLibraries::reload());
+
   report_vm_version(st, buf, sizeof(buf));
 
   // STEP("printing summary")

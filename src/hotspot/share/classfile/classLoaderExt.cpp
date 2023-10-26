@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
@@ -70,7 +71,7 @@ void ClassLoaderExt::append_boot_classpath(ClassPathEntry* new_entry) {
 }
 
 void ClassLoaderExt::setup_app_search_path(JavaThread* current) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   int start_index = ClassLoader::num_boot_classpath_entries();
   _app_class_paths_start_index = checked_cast<jshort>(start_index);
   char* app_class_path = os::strdup_check_oom(Arguments::get_appclasspath(), mtClass);
@@ -121,7 +122,7 @@ void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable*
 }
 
 void ClassLoaderExt::setup_module_paths(JavaThread* current) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   int start_index = ClassLoader::num_boot_classpath_entries() +
                     ClassLoader::num_app_classpath_entries();
   _app_module_paths_start_index = checked_cast<jshort>(start_index);
@@ -257,7 +258,7 @@ void ClassLoaderExt::setup_search_paths(JavaThread* current) {
 }
 
 void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* result, bool redefined) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
 
   // We need to remember where the class comes from during dumping.
   oop loader = result->class_loader();
