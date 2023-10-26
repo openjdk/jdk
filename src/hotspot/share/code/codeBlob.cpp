@@ -760,7 +760,7 @@ UpcallStub* UpcallStub::create(const char* name, CodeBuffer* cb, jobject receive
     blob = new (size) UpcallStub(name, cb, size, receiver, frame_data_offset);
   }
   if (blob == nullptr) {
-    fatal("UpcallStub allocation failed. CodeCache is too small");
+    return nullptr; // caller must handle this
   }
 
   // Track memory usage statistic after releasing CodeCache_lock

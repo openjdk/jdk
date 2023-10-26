@@ -128,6 +128,7 @@ public class TestAddressDereference extends UpcallTestHelper {
         if (!badAlign) return;
         runInNewProcess(UpcallTestRunner.class, true,
                 new String[] {Long.toString(alignment), layout.toString() })
+                .assertFailed()
                 .assertStdErrContains("alignment constraint for address");
     }
 

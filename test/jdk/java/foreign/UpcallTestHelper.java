@@ -32,14 +32,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertTrue;
 
 public class UpcallTestHelper extends NativeTestHelper {
-    public record Output(List<String> stdout, List<String> stderr) {
+    public record Output(int result, List<String> stdout, List<String> stderr) {
         private static void assertContains(List<String> lines, String shouldInclude, String name) {
             assertTrue(lines.stream().anyMatch(line -> line.contains(shouldInclude)),
                 "Did not find '" + shouldInclude + "' in " + name);
+        }
+
+        public Output assertFailed() {
+            assertNotEquals(result, 0);
+            return this;
+        }
+
+        public Output assertSuccess() {
+            assertEquals(result, 0);
+            return this;
         }
 
         public Output assertStdErrContains(String shouldInclude) {
@@ -74,14 +85,13 @@ public class UpcallTestHelper extends NativeTestHelper {
         long timeOut = (long) (Utils.TIMEOUT_FACTOR * 1L);
         boolean completed = process.waitFor(timeOut, TimeUnit.MINUTES);
         assertTrue(completed, "Time out while waiting for process");
-        assertNotEquals(process.exitValue(), 0);
 
         List<String> outLines = linesFromStream(process.getInputStream());
         outLines.forEach(System.out::println);
         List<String> errLines = linesFromStream(process.getErrorStream());
         errLines.forEach(System.err::println);
 
-        return new Output(outLines, errLines);
+        return new Output(process.exitValue(), outLines, errLines);
     }
 
     private static List<String> linesFromStream(InputStream stream) throws IOException {

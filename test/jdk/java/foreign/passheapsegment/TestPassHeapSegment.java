@@ -53,7 +53,7 @@ public class TestPassHeapSegment extends UpcallTestHelper  {
 
     @Test(dataProvider = "specs")
     public void testNoHeapReturns(boolean spec) throws IOException, InterruptedException {
-        runInNewProcess(Runner.class, spec).assertStdErrContains("Heap segment not allowed");
+        runInNewProcess(Runner.class, spec).assertFailed().assertStdErrContains("Heap segment not allowed");
     }
 
     public static class Runner {
