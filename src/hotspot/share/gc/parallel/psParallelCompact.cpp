@@ -67,6 +67,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/instanceClassLoaderKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
@@ -80,7 +81,6 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/vmThread.hpp"
-#include "services/memTracker.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -2055,7 +2055,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
 
     bool unloading_occurred;
     {
-      CodeCache::UnloadingScope scope(is_alive_closure());
+      CodeCache::UnlinkingScope scope(is_alive_closure());
 
       // Follow system dictionary roots and unload classes.
       unloading_occurred = SystemDictionary::do_unloading(&_gc_timer);

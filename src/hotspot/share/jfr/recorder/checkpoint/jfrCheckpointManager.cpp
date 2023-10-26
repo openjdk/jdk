@@ -109,6 +109,9 @@ bool JfrCheckpointManager::initialize() {
   // preallocate buffer count to each of the epoch live lists
   for (size_t i = 0; i < global_buffer_prealloc_count * 2; ++i) {
     Buffer* const buffer = mspace_allocate(global_buffer_size, _global_mspace);
+    if (buffer == nullptr) {
+      return false;
+    }
     _global_mspace->add_to_live_list(buffer, i % 2 == 0);
   }
   assert(_global_mspace->free_list_is_empty(), "invariant");

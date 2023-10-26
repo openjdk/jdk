@@ -5069,6 +5069,18 @@ The output of this command should contain the following text:
 \f[V][info][class,load] test.Hello source: shared objects file\f[R]
 .RE
 .RE
+.PP
+By default, when the \f[V]-Xshare:dump\f[R] option is used, the JVM runs
+in interpreter-only mode (as if the \f[V]-Xint\f[R] option were
+specified).
+This is required for generating deterministic output in the shared
+archive file.
+I.e., the exact same archive will be generated, bit-for-bit, every time
+you dump it.
+However, if deterministic output is not needed, and you have a large
+classlist, you can explicitly add \f[V]-Xmixed\f[R] to the command-line
+to enable the JIT compiler.
+This will speed up the archive creation.
 .SS Creating a Dynamic CDS Archive File with -XX:ArchiveClassesAtExit
 .PP
 Advantages of dynamic CDS archives are:
