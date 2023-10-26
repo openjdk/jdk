@@ -28,6 +28,7 @@
  * @modules jdk.compiler
  *          jdk.jfr
  * @compile --release 17 NonExportedSuperTypes.java
+ * @compile --release ${jdk.version} NonExportedSuperTypes.java
  */
 
 import jdk.jfr.Event;
