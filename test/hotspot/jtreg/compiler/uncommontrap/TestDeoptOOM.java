@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,19 @@
  * @run main/othervm -XX:-BackgroundCompilation -Xmx128M -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack
  *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::main
  *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::m9_1
+ *      compiler.uncommontrap.TestDeoptOOM
+ */
+
+/*
+ * @test
+ * @bug 8273456
+ * @summary Test that ttyLock isn't held when taking StackWatermark_lock
+ * @requires !vm.graal.enabled & vm.gc.Z
+ * @run main/othervm -XX:-BackgroundCompilation -Xmx128M -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack
+ *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::main
+ *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::m9_1
+ *      -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+UseZGC -XX:+LogCompilation -XX:+PrintDeoptimizationDetails -XX:+TraceDeoptimization -XX:+Verbose
  *      compiler.uncommontrap.TestDeoptOOM
  */
 
