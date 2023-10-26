@@ -1413,6 +1413,17 @@ like this:</p>
   http://httpredir.debian.org/debian/
 # If the target architecture is `riscv64`,
 # the path should be `debian-ports` instead of `debian`.</code></pre></li>
+<li><p>To create a Ubuntu-based chroot:</p>
+<pre><code>sudo debootstrap \
+  --arch=arm64 \
+  --verbose \
+  --components=main,universe \
+  --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev,libffi-dev \
+  --resolve-deps \
+  jammy \
+  ~/sysroot-arm64 \
+  http://ports.ubuntu.com/ubuntu-ports/
+# symlinks is in the universe repository</code></pre></li>
 <li><p>Make sure the symlinks inside the newly created chroot point to
 proper locations:</p>
 <pre><code>sudo chroot ~/sysroot-arm64 symlinks -cr .</code></pre></li>

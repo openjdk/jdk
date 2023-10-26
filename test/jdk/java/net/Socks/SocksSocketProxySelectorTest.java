@@ -21,12 +21,14 @@
  * questions.
  */
 
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.Proxy;
@@ -76,6 +78,7 @@ public class SocksSocketProxySelectorTest {
         return NetworkInterface.networkInterfaces()
                         .flatMap(NetworkInterface::inetAddresses)
                         .filter(InetAddress::isLinkLocalAddress)
+                        .filter(Inet6Address.class::isInstance)
                         .map(InetAddress::getHostAddress);
     }
 
@@ -135,9 +138,12 @@ public class SocksSocketProxySelectorTest {
         }
     }
 
-    @ParameterizedTest
-    @MethodSource("linkLocalIpv6Literals")
-    public void testLinkLocalIpv6Literals(String host) throws Exception {
+    @Test
+    public void testLinkLocalIpv6Literals() throws Exception {
+        String host = linkLocalIpv6Literals()
+                .findFirst()
+                .orElseGet(() -> Assumptions.abort("No IPv6 link-local addresses found"));
+        System.err.println(host);
         try (Socket s1 = new Socket(host, 80)) {
             fail("IOException was expected to be thrown, but wasn't");
         } catch (IOException ioe) {

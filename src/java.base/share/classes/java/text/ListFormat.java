@@ -500,11 +500,12 @@ public final class ListFormat extends Format {
     }
 
     /**
-     * Checks if this {@code ListFormat} is equal to another {@code ListFormat}.
-     * The comparison is based on the {@code Locale} and formatting patterns, given or
-     * generated with {@code Locale}, {@code Type}, and {@code Style}.
-     * @param obj the object to check, {@code null} returns {@code false}
-     * @return {@code true} if this is equals to the other {@code ListFormat}
+     * Compares the specified object with this {@code ListFormat} for equality.
+     * Returns {@code true} if the specified object is also a {@code ListFormat}, and
+     * {@code locale} and {@code patterns}, returned from {@link #getLocale()}
+     * and {@link #getPatterns()} respectively, are equal.
+     * @param obj the object to be compared for equality.
+     * @return {@code true} if the specified object is equal to this {@code ListFormat}
      */
     @Override
     public boolean equals(Object obj) {
