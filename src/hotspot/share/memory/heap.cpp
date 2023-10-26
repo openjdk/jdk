@@ -553,8 +553,7 @@ int CodeHeap::allocated_segments() const {
 
 size_t CodeHeap::allocated_capacity() const {
   // size of used heap - size on freelist
-  size_t next_segment = Atomic::load_acquire(&_next_segment);
-  return segments_to_size(next_segment - _freelist_segments);
+  return segments_to_size(Atomic::load_acquire(&_next_segment) - _freelist_segments);
 }
 
 // Returns size of the unallocated heap block
