@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
@@ -2969,9 +2970,6 @@ public abstract class FloatVector extends AbstractVector<Float> {
      *         if {@code offset+N*4 < 0}
      *         or {@code offset+N*4 >= ms.byteSize()}
      *         for any lane {@code N} in the vector
-     * @throws IllegalArgumentException if the memory segment is a heap segment that is
-     *         not backed by a {@code byte[]} array and if access to the backing array
-     *         is not {@code float} aligned.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
      * @since 19
@@ -3027,9 +3025,6 @@ public abstract class FloatVector extends AbstractVector<Float> {
      *         or {@code offset+N*4 >= ms.byteSize()}
      *         for any lane {@code N} in the vector
      *         where the mask is set
-     * @throws IllegalArgumentException if the memory segment is a heap segment that is
-     *         not backed by a {@code byte[]} array and if access to the backing array
-     *         is not {@code float} aligned.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
      * @since 19
@@ -3353,7 +3348,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
         FloatSpecies vsp = vspecies();
         return ScopedMemoryAccess.loadFromMemorySegment(
                 vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-                requireSegmentConvertibleFor(ms, offset, vsp.elementByteSize()), offset, vsp,
+                (AbstractMemorySegmentImpl) ms, offset, vsp,
                 (msp, off, s) -> {
                     return s.ldLongOp((MemorySegment) msp, off, FloatVector::memorySegmentGet);
                 });
@@ -3369,7 +3364,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
         m.check(vsp);
         return ScopedMemoryAccess.loadFromMemorySegmentMasked(
                 vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-                requireSegmentConvertibleFor(ms, offset, vsp.elementByteSize()), offset, m, vsp, offsetInRange,
+                (AbstractMemorySegmentImpl) ms, offset, m, vsp, offsetInRange,
                 (msp, off, s, vm) -> {
                     return s.ldLongOp((MemorySegment) msp, off, vm, FloatVector::memorySegmentGet);
                 });
@@ -3453,7 +3448,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
         ScopedMemoryAccess.storeIntoMemorySegment(
                 vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
                 this,
-                requireSegmentConvertibleFor(ms, offset, vsp.elementByteSize()), offset,
+                (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v) -> {
                     v.stLongOp((MemorySegment) msp, off, FloatVector::memorySegmentSet);
                 });
@@ -3470,7 +3465,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
         ScopedMemoryAccess.storeIntoMemorySegmentMasked(
                 vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
                 this, m,
-                requireSegmentConvertibleFor(ms, offset, vsp.elementByteSize()), offset,
+                (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v, vm) -> {
                     v.stLongOp((MemorySegment) msp, off, vm, FloatVector::memorySegmentSet);
                 });

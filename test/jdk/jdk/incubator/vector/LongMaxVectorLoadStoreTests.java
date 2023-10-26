@@ -188,7 +188,7 @@ public class LongMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
     @DataProvider
     public Object[][] longMemorySegmentProvider() {
         return LONG_GENERATORS.stream().
-                flatMap(fa -> memorySegmentGenerators(ELEMENT_LAYOUT).
+                flatMap(fa -> MEMORY_SEGMENT_GENERATORS.stream().
                         flatMap(fb -> BYTE_ORDER_VALUES.stream().map(bo -> {
                             return new Object[]{fa, fb, bo};
                         }))).
@@ -199,7 +199,7 @@ public class LongMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
     public Object[][] longMemorySegmentMaskProvider() {
         return BOOLEAN_MASK_GENERATORS.stream().
                 flatMap(fm -> LONG_GENERATORS.stream().
-                        flatMap(fa -> memorySegmentGenerators(ELEMENT_LAYOUT).
+                        flatMap(fa -> MEMORY_SEGMENT_GENERATORS.stream().
                                 flatMap(fb -> BYTE_ORDER_VALUES.stream().map(bo -> {
                             return new Object[]{fa, fb, fm, bo};
                         })))).

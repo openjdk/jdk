@@ -181,7 +181,7 @@ public class Byte256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
     @DataProvider
     public Object[][] byteMemorySegmentProvider() {
         return BYTE_GENERATORS.stream().
-                flatMap(fa -> memorySegmentGenerators(ELEMENT_LAYOUT).
+                flatMap(fa -> MEMORY_SEGMENT_GENERATORS.stream().
                         flatMap(fb -> BYTE_ORDER_VALUES.stream().map(bo -> {
                             return new Object[]{fa, fb, bo};
                         }))).
@@ -192,7 +192,7 @@ public class Byte256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
     public Object[][] byteMemorySegmentMaskProvider() {
         return BOOLEAN_MASK_GENERATORS.stream().
                 flatMap(fm -> BYTE_GENERATORS.stream().
-                        flatMap(fa -> memorySegmentGenerators(ELEMENT_LAYOUT).
+                        flatMap(fa -> MEMORY_SEGMENT_GENERATORS.stream().
                                 flatMap(fb -> BYTE_ORDER_VALUES.stream().map(bo -> {
                             return new Object[]{fa, fb, fm, bo};
                         })))).

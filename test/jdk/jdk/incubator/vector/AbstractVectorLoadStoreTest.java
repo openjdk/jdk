@@ -108,42 +108,4 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
             })
     );
 
-    static Stream<IntFunction<MemorySegment>> memorySegmentGenerators(ValueLayout elementLayout) {
-        return MEMORY_SEGMENT_GENERATORS.stream()
-                .filter(f -> canBeConverted(f, elementLayout));
-    }
-
-    private static boolean canBeConverted(IntFunction<MemorySegment> function, ValueLayout elementLayout) {
-        // Create a sample to analyze
-        MemorySegment s = function.apply(Long.BYTES);
-        if (s.heapBase().isEmpty()) {
-            // Native segments can always be converted
-            return true;
-        }
-        Object heapBase = s.heapBase().orElseThrow();
-        Class<?> arrayType = heapBase.getClass();
-        Class<?> componentType = Objects.requireNonNull(arrayType.componentType());
-        int componentSize = sizeOf(componentType);
-        if (componentSize == 1) {
-            // bytes can always be converted
-            return true;
-        }
-
-        // Only allow arrays with the correct alignment
-        return componentSize % elementLayout.byteSize() == 0;
-    }
-
-    private static int sizeOf(Class<?> type) {
-        return switch (type) {
-            case Class<?> c when c.equals(byte.class)   -> 1;
-            case Class<?> c when c.equals(short.class)  -> 2;
-            case Class<?> c when c.equals(char.class)   -> 2;
-            case Class<?> c when c.equals(int.class)    -> 4;
-            case Class<?> c when c.equals(float.class)  -> 4;
-            case Class<?> c when c.equals(long.class)   -> 8;
-            case Class<?> c when c.equals(double.class) -> 8;
-            default -> throw new IllegalArgumentException(type.toString());
-        };
-    }
-
 }

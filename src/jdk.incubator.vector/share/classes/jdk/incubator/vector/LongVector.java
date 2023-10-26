@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
@@ -3004,9 +3005,6 @@ public abstract class LongVector extends AbstractVector<Long> {
      *         if {@code offset+N*8 < 0}
      *         or {@code offset+N*8 >= ms.byteSize()}
      *         for any lane {@code N} in the vector
-     * @throws IllegalArgumentException if the memory segment is a heap segment that is
-     *         not backed by a {@code byte[]} array and if access to the backing array
-     *         is not {@code long} aligned.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
      * @since 19
@@ -3062,9 +3060,6 @@ public abstract class LongVector extends AbstractVector<Long> {
      *         or {@code offset+N*8 >= ms.byteSize()}
      *         for any lane {@code N} in the vector
      *         where the mask is set
-     * @throws IllegalArgumentException if the memory segment is a heap segment that is
-     *         not backed by a {@code byte[]} array and if access to the backing array
-     *         is not {@code long} aligned.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
      * @since 19
@@ -3425,7 +3420,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         LongSpecies vsp = vspecies();
         return ScopedMemoryAccess.loadFromMemorySegment(
                 vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-                requireSegmentConvertibleFor(ms, offset, vsp.elementByteSize()), offset, vsp,
+                (AbstractMemorySegmentImpl) ms, offset, vsp,
                 (msp, off, s) -> {
                     return s.ldLongOp((MemorySegment) msp, off, LongVector::memorySegmentGet);
                 });
@@ -3441,7 +3436,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         m.check(vsp);
         return ScopedMemoryAccess.loadFromMemorySegmentMasked(
                 vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-                requireSegmentConvertibleFor(ms, offset, vsp.elementByteSize()), offset, m, vsp, offsetInRange,
+                (AbstractMemorySegmentImpl) ms, offset, m, vsp, offsetInRange,
                 (msp, off, s, vm) -> {
                     return s.ldLongOp((MemorySegment) msp, off, vm, LongVector::memorySegmentGet);
                 });
@@ -3544,7 +3539,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         ScopedMemoryAccess.storeIntoMemorySegment(
                 vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
                 this,
-                requireSegmentConvertibleFor(ms, offset, vsp.elementByteSize()), offset,
+                (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v) -> {
                     v.stLongOp((MemorySegment) msp, off, LongVector::memorySegmentSet);
                 });
@@ -3561,7 +3556,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         ScopedMemoryAccess.storeIntoMemorySegmentMasked(
                 vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
                 this, m,
-                requireSegmentConvertibleFor(ms, offset, vsp.elementByteSize()), offset,
+                (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v, vm) -> {
                     v.stLongOp((MemorySegment) msp, off, vm, LongVector::memorySegmentSet);
                 });

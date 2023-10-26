@@ -742,25 +742,6 @@ abstract class AbstractVector<E> extends Vector<E> {
         throw new AssertionError();
     }
 
-    /*package-private*/
-    @ForceInline
-    final
-    AbstractMemorySegmentImpl requireSegmentConvertibleFor(MemorySegment segment, long offset, int elementByteSize)  {
-        AbstractMemorySegmentImpl ams = (AbstractMemorySegmentImpl) segment;
-        if (ams.maxAlignMask() > 1 && !ams.isAlignedForElement(offset, elementByteSize)) {
-            String arrayComponent = ams.heapBase()
-                    .map(Object::getClass)
-                    .map(Class::componentType)
-                    .map(Object::toString)
-                    .orElse("?");
-            throw new IllegalArgumentException("Misaligned access in the backing " + arrayComponent + "[]" +
-                    " array for elements of size " + elementByteSize + " bytes" +
-                    " at address: " + Utils.toHexString(ams.address() + offset));
-        }
-
-        return ams;
-    }
-
     static {
         // Recode uses of VectorSupport.reinterpret if this assertion fails:
         assert(REGISTER_ENDIAN == ByteOrder.LITTLE_ENDIAN);
