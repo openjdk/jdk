@@ -212,7 +212,6 @@ class Stream<T> extends ExchangeImpl<T> {
                     connection.ensureWindowUpdated(df); // must update connection window
                     Log.logTrace("responseSubscriber.onComplete");
                     if (debug.on()) debug.log("incoming: onComplete");
-                    if (inputQ.isEmpty()) sched.stop();
                     connection.decrementStreamsCount(streamid);
                     subscriber.onComplete();
                     onCompleteCalled = true;
@@ -231,7 +230,6 @@ class Stream<T> extends ExchangeImpl<T> {
                     if (consumed(df)) {
                         Log.logTrace("responseSubscriber.onComplete");
                         if (debug.on()) debug.log("incoming: onComplete");
-                        if (inputQ.isEmpty()) sched.stop();
                         connection.decrementStreamsCount(streamid);
                         subscriber.onComplete();
                         onCompleteCalled = true;
@@ -579,22 +577,26 @@ class Stream<T> extends ExchangeImpl<T> {
 
     }
 
-    // Logic here starts checking roughly in reverse order of the Stream's life-cycle i.e. check if closed, check if
-    // closing or done sending, response received or waiting for expect continue, receiving reset on active stream...
     void incoming_reset(ResetFrame frame) {
         Log.logTrace("Received RST_STREAM on stream {0}", streamid);
+        // responseSubscriber will be null if readBodyAsync has not yet been called
         Flow.Subscriber<?> subscriber = responseSubscriber;
         if (subscriber == null) subscriber = pendingResponseSubscriber;
+        // See RFC 9113 sec 5.1 Figure 2, life-cycle of a stream
         if (endStreamReceived() && requestBodyCF.isDone()) {
-            // END_STREAM flag may have been seen in the queue before processing this ResetFrame
+            // Stream is in a half closed or fully closed state, the RST_STREAM is ignored and logged.
             Log.logTrace("Ignoring RST_STREAM frame received on remotely closed stream {0}", streamid);
         } else if (closed) {
+            // Stream is in a fully closed state, the RST_STREAM is ignored and logged.
             Log.logTrace("Ignoring RST_STREAM frame received on closed stream {0}", streamid);
         } else if (subscriber == null && !endStreamSeen) {
+            // subscriber is null and the reader has not seen an END_STREAM flag, handle reset immediately
             handleReset(frame, null);
         } else if (!requestBodyCF.isDone()) {
+            // Not done sending the body, complete exceptionally or normally based on RST_STREAM error code
             incompleteRequestBodyReset(frame, subscriber);
         } else if (response == null || !finalResponseCodeReceived) {
+            // Complete response has not been received, handle reset immediately
             handleReset(frame, null);
         } else {
             // Put ResetFrame into inputQ. Any frames already in the queue will be processed before the ResetFrame.
