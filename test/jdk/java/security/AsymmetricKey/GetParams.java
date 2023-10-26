@@ -29,13 +29,12 @@ import java.security.KeyPairGenerator;
 import java.security.interfaces.DSAParams;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
-import java.security.spec.EdDSAParameterSpec;
 import java.security.spec.NamedParameterSpec;
 
 /**
  * @test
  * @bug 8318096
- * @summary Add getParams method in PublicKey and PrivateKey
+ * @summary Introduce AsymmetricKey interface with a getParams method
  * @library /test/lib
  */
 
