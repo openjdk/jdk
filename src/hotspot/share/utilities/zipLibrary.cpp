@@ -77,8 +77,8 @@ static void store_function_pointers(const char* path, bool vm_exit_on_failure) {
   ZIP_FindEntry = CAST_TO_FN_PTR(ZIP_FindEntry_t, dll_lookup("ZIP_FindEntry", path, vm_exit_on_failure));
   ZIP_ReadEntry = CAST_TO_FN_PTR(ZIP_ReadEntry_t, dll_lookup("ZIP_ReadEntry", path, vm_exit_on_failure));
   ZIP_CRC32 = CAST_TO_FN_PTR(ZIP_CRC32_t, dll_lookup("ZIP_CRC32", path, vm_exit_on_failure));
-  ZIP_GZip_InitParams = CAST_TO_FN_PTR(ZIP_GZip_InitParams_t, dll_lookup("ZIP_GZip_InitParams", path, vm_exit_on_failure));
-  ZIP_GZip_Fully = CAST_TO_FN_PTR(ZIP_GZip_Fully_t, dll_lookup("ZIP_GZip_Fully", path, vm_exit_on_failure));
+  ZIP_GZip_InitParams = CAST_TO_FN_PTR(ZIP_GZip_InitParams_t, dll_lookup("ZIP_GZip_InitParams", path, false));
+  ZIP_GZip_Fully = CAST_TO_FN_PTR(ZIP_GZip_Fully_t, dll_lookup("ZIP_GZip_Fully", path, false));
 }
 
 static void load_zip_library(bool vm_exit_on_failure) {
