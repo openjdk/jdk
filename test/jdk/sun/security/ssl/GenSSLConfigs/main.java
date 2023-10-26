@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,7 +190,7 @@ public class main
             System.setProperty("javax.net.ssl.trustStore", testRoot
                                 + "/../../../../javax/net/ssl/etc/truststore");
 
-            KeyStore ks = KeyStore.getInstance("JKS");
+            KeyStore ks = KeyStore.getInstance("PKCS12");
             ks.load(new FileInputStream(testRoot
                                 + "/../../../../javax/net/ssl/etc/truststore"),
                     "passphrase".toCharArray());

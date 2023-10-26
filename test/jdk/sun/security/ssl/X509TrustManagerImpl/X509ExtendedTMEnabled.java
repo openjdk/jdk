@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ public class X509ExtendedTMEnabled {
     static String trustStoreFile = "truststore";
     static String passwd = "passphrase";
     private final static char[] cpasswd = "passphrase".toCharArray();
+    static String pkcs12Type = "PKCS12";
 
     /*
      * Is the server ready to serve?
@@ -181,12 +182,12 @@ public class X509ExtendedTMEnabled {
                 "/" + trustStoreFile;
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance(pkcs12Type);
         ks.load(new FileInputStream(keyFilename), cpasswd);
         kmf.init(ks, cpasswd);
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        KeyStore ts = KeyStore.getInstance("JKS");
+        KeyStore ts = KeyStore.getInstance(pkcs12Type);
         ts.load(new FileInputStream(trustFilename), cpasswd);
         tmf.init(ts);
 

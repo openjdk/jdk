@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class BadPem {
         String alias = "dummy";
 
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        KeyStore keyStore = KeyStore.getInstance("JKS");
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
         keyStore.load(new FileInputStream(ks), pass.toCharArray());
         byte[] cert = keyStore.getCertificate(alias).getEncoded();
 
