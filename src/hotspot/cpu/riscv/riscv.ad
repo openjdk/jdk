@@ -2443,7 +2443,7 @@ encode %{
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivl(dst_reg, src1_reg, src2_reg, false);
+    __ corrected_idivl(dst_reg, src1_reg, src2_reg, /* want_remainder */ false, /* is_signed */ true);
   %}
 
   enc_class riscv_enc_divuw(iRegI dst, iRegI src1, iRegI src2) %{
@@ -2451,7 +2451,7 @@ encode %{
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivl(dst_reg, src1_reg, src2_reg, false, false);
+    __ corrected_idivl(dst_reg, src1_reg, src2_reg, /* want_remainder */ false, /* is_signed */ false);
   %}
 
   enc_class riscv_enc_div(iRegI dst, iRegI src1, iRegI src2) %{
@@ -2459,7 +2459,7 @@ encode %{
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivq(dst_reg, src1_reg, src2_reg, false);
+    __ corrected_idivq(dst_reg, src1_reg, src2_reg, /* want_remainder */ false, /* is_signed */ true);
   %}
 
   enc_class riscv_enc_divu(iRegI dst, iRegI src1, iRegI src2) %{
@@ -2467,7 +2467,7 @@ encode %{
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivq(dst_reg, src1_reg, src2_reg, false, false);
+    __ corrected_idivq(dst_reg, src1_reg, src2_reg, /* want_remainder */ false, /* is_signed */ false);
   %}
 
   enc_class riscv_enc_modw(iRegI dst, iRegI src1, iRegI src2) %{
@@ -2475,7 +2475,7 @@ encode %{
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivl(dst_reg, src1_reg, src2_reg, true);
+    __ corrected_idivl(dst_reg, src1_reg, src2_reg, /* want_remainder */ true, /* is_signed */ true);
   %}
 
   enc_class riscv_enc_mod(iRegI dst, iRegI src1, iRegI src2) %{
@@ -2483,7 +2483,7 @@ encode %{
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivq(dst_reg, src1_reg, src2_reg, true);
+    __ corrected_idivq(dst_reg, src1_reg, src2_reg, /* want_remainder */ true, /* is_signed */ true);
   %}
 
   enc_class riscv_enc_tail_call(iRegP jump_target) %{

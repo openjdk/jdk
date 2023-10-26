@@ -2432,16 +2432,7 @@ int MacroAssembler::corrected_idivq(Register result, Register rs1, Register rs2,
     if (is_signed) {
       div(result, rs1, rs2);
     } else {
-      Label Lltz, Ldone;
-      bltz(rs2, Lltz);
       divu(result, rs1, rs2);
-      j(Ldone);
-      bind(Lltz); // For the algorithm details, check j.l.Long::divideUnsigned
-      sub(result, rs1, rs2);
-      notr(result, result);
-      andr(result, result, rs1);
-      srli(result, result, 63);
-      bind(Ldone);
     }
   } else {
     rem(result, rs1, rs2); // result = rs1 % rs2;
