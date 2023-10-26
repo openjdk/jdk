@@ -43,14 +43,14 @@ final class LibFallback {
                     public Boolean run() {
                         try {
                             System.loadLibrary("fallbackLinker");
-                            if (!init()) {
-                                // library failed to initialize. Do not silently mark as unsupported
-                                throw new ExceptionInInitializerError("Fallback library failed to initialize");
-                            }
-                            return true;
                         } catch (UnsatisfiedLinkError ule) {
                             return false;
                         }
+                        if (!init()) {
+                            // library failed to initialize. Do not silently mark as unsupported
+                            throw new ExceptionInInitializerError("Fallback library failed to initialize");
+                        }
+                        return true;
                     }
                 });
     }
