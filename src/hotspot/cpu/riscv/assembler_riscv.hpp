@@ -1074,23 +1074,23 @@ enum operand_size { int8, int16, int32, uint32, int64 };
 
 #undef INSN
 
-enum FCLASS_MASK {
-  FCLASS_MINF       = 1 << 0,   // negative infinite
-  FCLASS_MNORM      = 1 << 1,   // negative normal number
-  FCLASS_MSUBNORM   = 1 << 2,   // negative subnormal number
-  FCLASS_MZERO      = 1 << 3,   // negative zero
-  FCLASS_PZERO      = 1 << 4,   // positive zero
-  FCLASS_PSUBNORM   = 1 << 5,   // positive subnormal number
-  FCLASS_PNORM      = 1 << 6,   // positive normal number
-  FCLASS_PINF       = 1 << 7,   // positive infinite
-  FCLASS_SNAN       = 1 << 8,   // signaling NaN
-  FCLASS_QNAN       = 1 << 9,   // quiet NaN
-  FCLASS_ZERO       = FCLASS_MZERO    | FCLASS_PZERO,
-  FCLASS_SUBNORM    = FCLASS_MSUBNORM | FCLASS_PSUBNORM,
-  FCLASS_NORM       = FCLASS_MNORM    | FCLASS_PNORM,
-  FCLASS_INF        = FCLASS_MINF     | FCLASS_PINF,
-  FCLASS_NAN        = FCLASS_SNAN     | FCLASS_QNAN,
-  FCLASS_FINITE     = FCLASS_ZERO     | FCLASS_SUBNORM   | FCLASS_NORM,
+enum {
+  fclass_minf       = 1 << 0,   // negative infinite
+  fclass_mnorm      = 1 << 1,   // negative normal number
+  fclass_msubnorm   = 1 << 2,   // negative subnormal number
+  fclass_mzero      = 1 << 3,   // negative zero
+  fclass_pzero      = 1 << 4,   // positive zero
+  fclass_psubnorm   = 1 << 5,   // positive subnormal number
+  fclass_pnorm      = 1 << 6,   // positive normal number
+  fclass_pinf       = 1 << 7,   // positive infinite
+  fclass_snan       = 1 << 8,   // signaling NaN
+  fclass_qnan       = 1 << 9,   // quiet NaN
+  fclass_zero       = fclass_mzero    | fclass_pzero,
+  fclass_subnorm    = fclass_msubnorm | fclass_psubnorm,
+  fclass_norm       = fclass_mnorm    | fclass_pnorm,
+  fclass_inf        = fclass_minf     | fclass_pinf,
+  fclass_nan        = fclass_snan     | fclass_qnan,
+  fclass_finite     = fclass_zero     | fclass_subnorm   | fclass_norm,
 };
 
 // Float and Double Conversion/Classify Instruction
