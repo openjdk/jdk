@@ -48,6 +48,7 @@
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vmOperations.hpp"
+#include "services/memMapPrinter.hpp"
 #include "services/threadService.hpp"
 
 #define VM_OP_NAME_INITIALIZE(name) #name,
@@ -509,3 +510,7 @@ void VM_PrintClassHierarchy::doit() {
   KlassHierarchy::print_class_hierarchy(_out, _print_interfaces, _print_subclasses, _classname);
 }
 #endif
+
+void VM_PrintSystemMap::doit() {
+  MemMapPrinter::print_all_mappings(_out, _human_readable);
+}

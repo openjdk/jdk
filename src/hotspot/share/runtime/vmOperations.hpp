@@ -276,4 +276,17 @@ class VM_PrintClassHierarchy: public VM_Operation {
 };
 #endif // INCLUDE_SERVICES
 
+class VM_PrintSystemMap: public VM_Operation {
+ private:
+  outputStream* const _out;
+  const bool _human_readable;
+ public:
+  VM_PrintSystemMap(outputStream* out, bool human_readable)
+    : _out(out), _human_readable(human_readable) {}
+  VMOp_Type type() const {
+    return VMOp_SystemMap;
+  }
+  void doit();
+};
+
 #endif // SHARE_RUNTIME_VMOPERATIONS_HPP

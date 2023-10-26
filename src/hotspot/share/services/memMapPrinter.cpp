@@ -25,10 +25,15 @@
 
 #include "precompiled.hpp"
 
+#include "logging/logAsyncWriter.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "memory/allocation.hpp"
+#include "memory/universe.hpp"
+#include "runtime/nonJavaThread.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/memMapPrinter.hpp"
 #include "services/memTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"
@@ -109,11 +114,17 @@ struct NMTRegionSearchWalker : public VirtualMemoryWalker {
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) {
 
-    // Count if we have an intersection:
-    // - A region in NMT may contain committed and uncommitted regions, hence may
-    //   be presented by multiple VMAs at the system level
-    // - A VMA at system level may be the result of a folding operations, hence
-    //   may be represented by more than one mapping at NMT level
+    // Count if we have an intersection.
+    // Note:
+    // A) A NMT virtual memory region may contain committed and uncommitted regions, therefore
+    //    it may span multiple VMAs on system level. That happens frequently for memory regions
+    //    that are committed on demand (e.g. Metaspace, heap etc).
+    // B) A system-level VMA may be the result of a folding operation by the kernel. The kernel
+    //    folds adjacent memory mappings that share the same attributes into one.
+    // Therefore there is no 1:1 relationship between VMA and NMT region. It is m:n. We deal
+    // with (B) by returning a *set* of NMT flags associated with a single VMA. There is no need
+    // to deal with (A) explicitly; it just means that adjacent VMAs show the same NMT flag. For
+    // instance, one will always see multiple adjacent VMAs showing up as java heap or class space.
     address intersection_from = MAX2(rgn->base(), (address)_from);
     address intersection_to = MIN2(rgn->end(), (address)_to);
     if (intersection_from < intersection_to) {
@@ -139,18 +150,68 @@ struct NMTRegionSearchWalker : public VirtualMemoryWalker {
   }
 };
 
-static void print_thread_details_for_supposed_stack_address(const void* from, const void* to, outputStream* st) {
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
-    if (thread->is_in_full_stack((address)from + 10) || thread->is_in_full_stack((address)to - 10)) {
-      const OSThread* osth = thread->osthread();
-      uintx tid = 0;
-      if (osth != nullptr) {
-        tid = (uintx)(osth->thread_id());
-      }
-      st->print("(" UINTX_FORMAT " \"%s\")", tid, ((const Thread*)thread)->name());
-      break;
+// Given a VMA [from, to) and a thread, check if vma intersects with thread stack
+static bool vma_touches_thread_stack(const void* from, const void* to, const Thread* t) {
+  // Java thread stacks (and sometimes also other threads) have guard pages. Therefore they typically occupy
+  // at least two distinct neighboring VMAs. Therefore we typically have a 1:n relationshipt between thread
+  // stack and vma.
+  // Very rarely however is a VMA backing a thread stack folded together with another adjacent VMA by the
+  // kernel. That can happen, e.g., for non-java threads that don't have guard pages.
+  // Therefore we go for the simplest way here and check for intersection between VMA and thread stack.
+  const address min = MAX2((address)from, t->stack_end());
+  const address max = MIN2((address)to, t->stack_base());
+  return min < max;
+}
+
+struct GCThreadClosure : public ThreadClosure {
+  Thread* _t;
+  const void* const _from;
+  const void* const _to;
+public:
+  GCThreadClosure(const void* from, const void* to) : _t(nullptr), _from(from), _to(to) {}
+  void do_thread(Thread* thread) override {
+    if (_t == nullptr && thread != nullptr && vma_touches_thread_stack(_from, _to, thread)) {
+      _t = thread;
     }
   }
+};
+
+static uintx safely_get_thread_id(const Thread* t) {
+  const OSThread* osth = t->osthread();
+  uintx tid = 0;
+  if (osth != nullptr) {
+    return (uintx)(osth->thread_id());
+  }
+  return 0;
+}
+
+// Given a region [from, to) that is supposed to represent a thread stack,
+static void print_thread_details_for_supposed_stack_address(const void* from, const void* to, outputStream* st) {
+
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread* t = jtiwh.next(); ) {
+    const size_t len = pointer_delta(to, from, 1);
+    if (vma_touches_thread_stack(from, to, t)) {
+      st->print("(" UINTX_FORMAT " \"%s\")", safely_get_thread_id(t), t->name());
+      return;
+    }
+  }
+
+#define HANDLE_THREAD(T)                                                        \
+  if (T != nullptr && vma_touches_thread_stack(from, to, T)) {                                   \
+    st->print("(" UINTX_FORMAT " \"%s\")", safely_get_thread_id(T), ((const Thread*)T)->name()); \
+    return;                                                                     \
+  }
+
+  HANDLE_THREAD(VMThread::vm_thread());
+  HANDLE_THREAD(WatcherThread::watcher_thread());
+  HANDLE_THREAD(AsyncLogWriter::instance());
+
+  if (Universe::heap() != nullptr) {
+    GCThreadClosure cl(from, to);
+    Universe::heap()->gc_threads_do(&cl);
+    HANDLE_THREAD(cl._t);
+  }
+#undef HANDLE_THREAD
 }
 
 static bool ask_nmt_about(const void* from, const void* to, outputStream* st) {
@@ -160,16 +221,12 @@ static bool ask_nmt_about(const void* from, const void* to, outputStream* st) {
   NMTRegionSearchWalker walker(from, to);
   VirtualMemoryTracker::walk_virtual_memory(&walker);
   if (walker._found.has_any()) {
-    // The address range we may be asked about may be the
-    // result of a folding operation the kernel does at VMA level:
-    // Two adjacent memory mappings that happen to have the same
-    // property at the kernel level may belong, semantically, still
-    // to different JVM sub systems, but the kernel folds those
-    // together into a single mapping.
-    // Since that can seriously confuse readers of this mapping
-    // output, we try to find out if the mapping is used for multiple
-    // purposes. We mark VMAs with more than one region with "*" and print
-    // all region markings we know
+    // The address range we may be asked about may be the result of VMA folding:
+    // Two adjacent memory mappings that happen to have the same property will be folded
+    // by the kernel into a single VMA.
+    // Since that can seriously confuse readers of this mapping output, we try to find
+    // out if the mapping is used for multiple purposes. We mark those VMAs with "(*)"
+    // and print all NMT region markings.
     for (int i = 0; i < mt_number_of_types; i++) {
       const MEMFLAGS flag = (MEMFLAGS)i;
       if (walker._found.has_flag(flag)) {
@@ -207,6 +264,7 @@ void MappingPrintClosure::do_it(const MappingPrintInformation* info) {
   } else {
     _out->print("%11zu", size);
   }
+  assert(info->from() <= info->to(), "Invalid VMA");
   _out->fill_to(53);
   info->print_details_1(_out);
   _out->fill_to(70);
@@ -217,6 +275,7 @@ void MappingPrintClosure::do_it(const MappingPrintInformation* info) {
 }
 
 void MemMapPrinter::print_all_mappings(outputStream* st, bool human_readable) {
+
   st->print_cr("Memory mappings:");
   if (!MemTracker::enabled()) {
     st->print_cr(" (For full functionality, please enable Native Memory Tracking)");
@@ -227,11 +286,7 @@ void MemMapPrinter::print_all_mappings(outputStream* st, bool human_readable) {
   pd_print_header(st);
   MappingPrintClosure closure(st, human_readable);
   pd_iterate_all_mappings(closure);
-  st->print("Total: " UINTX_FORMAT " mappings with a total vsize of ", closure.total_count());
-  if (human_readable) {
-    st->print_cr(PROPERFMT ".", PROPERFMTARGS(closure.total_vsize()));
-  } else {
-    st->print_cr("%zu.", closure.total_vsize());
-  }
+  st->print("Total: " UINTX_FORMAT " mappings with a total vsize of %zu (" PROPERFMT ")",
+            closure.total_count(), closure.total_vsize(), PROPERFMTARGS(closure.total_vsize()));
   st->print_cr("(*) - Mapping contains data from multiple regions");
 }

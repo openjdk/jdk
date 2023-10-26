@@ -1161,5 +1161,6 @@ SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) :
 }
 
 void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
-  MemMapPrinter::print_all_mappings(output(), _human_readable.value());
+  VM_PrintSystemMap op(output(), _human_readable.value());
+  VMThread::execute(&op);
 }
