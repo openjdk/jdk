@@ -94,7 +94,6 @@
 # include <signal.h>
 # include <endian.h>
 # include <errno.h>
-# include <fcntl.h>
 # include <fenv.h>
 # include <dlfcn.h>
 # include <stdio.h>
