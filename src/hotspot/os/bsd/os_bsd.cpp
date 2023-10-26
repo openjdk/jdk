@@ -1001,7 +1001,7 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode) {
     // flags. Silently fix things now.
     int rtn = fesetenv(&default_fenv);
     assert(rtn == 0, "fesetenv must succeed");
-    assert(! StubRoutines::FTZ_mode_enabled, "fsetenv didn't work");
+    assert(! StubRoutines::FTZ_mode_enabled(), "fsetenv didn't work");
   }
 #endif // IA32
 
