@@ -2141,11 +2141,11 @@
                                          outerIndex,
                                          innerIndex );
 
-	  v += delta << 2;
+      v += delta << 2;
 
-	  /* Clamp value range. */
-	  v = v >=  0x10000L ?  0x10000 : v;
-	  v = v <= -0x10000L ? -0x10000 : v;
+      /* Clamp value range. */
+      v = v >=  0x10000L ?  0x10000 : v;
+      v = v <= -0x10000L ? -0x10000 : v;
 
           new_normalized[i] = v;
         }
