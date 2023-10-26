@@ -282,11 +282,11 @@ void MemMapPrinter::print_all_mappings(outputStream* st, bool human_readable) {
   }
   st->cr();
   print_legend(st);
+  st->print_cr("(*) - Mapping contains data from multiple regions");
   st->cr();
   pd_print_header(st);
   MappingPrintClosure closure(st, human_readable);
   pd_iterate_all_mappings(closure);
-  st->print("Total: " UINTX_FORMAT " mappings with a total vsize of %zu (" PROPERFMT ")",
+  st->print_cr("Total: " UINTX_FORMAT " mappings with a total vsize of %zu (" PROPERFMT ")",
             closure.total_count(), closure.total_vsize(), PROPERFMTARGS(closure.total_vsize()));
-  st->print_cr("(*) - Mapping contains data from multiple regions");
 }
