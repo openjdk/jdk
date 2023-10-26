@@ -133,7 +133,7 @@ public class Debuggee implements Closeable {
     }
 
     // starts the process, waits for "Listening for transport" output and detects transport/address
-    private Debuggee(ProcessBuilder pb, String name, boolean hasOnThrow, String expectedOutputBeforeThrow) {
+    private Debuggee(ProcessBuilder pb, String name, Function<String, JDWP.ListenAddress> addressDetector) {
         JDWP.ListenAddress[] listenAddress = new JDWP.ListenAddress[1];
         try {
             p = ProcessTools.startProcess(name, pb,
