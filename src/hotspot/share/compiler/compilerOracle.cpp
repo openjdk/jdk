@@ -640,7 +640,7 @@ static bool parseUintxValue(enum CompileCommand option, const char* line, uintx&
 
 #define IF_ENUM_STRING(S, CMD)                \
   if (strncasecmp(line, S, strlen(S)) == 0) { \
-    bytes_read += strlen(S);                  \
+    bytes_read += (int)strlen(S);             \
     CMD                                       \
     return true;                              \
   }
