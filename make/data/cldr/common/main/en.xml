@@ -93,6 +93,7 @@ annotations.
 			<language type="bjn">Banjar</language>
 			<language type="bkm">Kom</language>
 			<language type="bla">Siksiká</language>
+			<language type="blo">Anii</language>
 			<language type="blt">Tai Dam</language>
 			<language type="bm">Bambara</language>
 			<language type="bn">Bangla</language>
@@ -353,6 +354,7 @@ annotations.
 			<language type="kv">Komi</language>
 			<language type="kw">Cornish</language>
 			<language type="kwk">Kwakʼwala</language>
+			<language type="kxv">Kuvi</language>
 			<language type="ky">Kyrgyz</language>
 			<language type="ky" alt="variant">Kirghiz</language>
 			<language type="la">Latin</language>
@@ -677,6 +679,7 @@ annotations.
 			<language type="xal">Kalmyk</language>
 			<language type="xh">Xhosa</language>
 			<language type="xmf">Mingrelian</language>
+			<language type="xnr">Kangri</language>
 			<language type="xog">Soga</language>
 			<language type="yao">Yao</language>
 			<language type="yap">Yapese</language>
