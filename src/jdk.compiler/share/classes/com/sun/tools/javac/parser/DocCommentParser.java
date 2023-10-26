@@ -28,8 +28,10 @@ package com.sun.tools.javac.parser;
 import java.io.Serial;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import com.sun.source.doctree.AttributeTree.ValueKind;
+import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.ErroneousTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
 import com.sun.source.doctree.UnknownInlineTagTree;
@@ -76,7 +78,16 @@ public class DocCommentParser {
         }
     }
 
-    private enum Phase { PREAMBLE, BODY, POSTAMBLE }
+    private enum Phase {
+        /** The initial part of an HTML file up to and including the {@code body} and possible {@code <main>} tag. */
+        PREAMBLE,
+        /** The initial part of a doc comment, or the rich-text content of a block tag. */
+        BODY,
+        /** The end of an HTML file, from and including the {@code </main>} or {@code </body>} tag. */
+        POSTAMBLE,
+        /** The rich-text content of an inline documentation comment tag. */
+        INLINE
+    }
 
     private final ParserFactory fac;
     private final JCDiagnostic.Factory diags;
@@ -84,7 +95,8 @@ public class DocCommentParser {
     private final Comment comment;
     private final DocTreeMaker m;
     private final Names names;
-    private final boolean isFileContent;
+    private final boolean isHtmlFile;
+    private final DocTree.Kind textKind;
 
     /** The input buffer, index of most recent character read,
      *  index of one past last character in buffer.
@@ -103,20 +115,50 @@ public class DocCommentParser {
 
     private final Map<Name, TagParser> tagParsers;
 
+    /**
+     * Creates a parser for a documentation comment.
+     *
+     * @param fac a parser factory, for a doc-tree maker and for reference parsers
+     * @param diagSource the source in which the comment was found
+     * @param comment the comment
+     */
+    public DocCommentParser(ParserFactory fac, DiagnosticSource diagSource, Comment comment) {
+        this(fac, diagSource, comment, false);
+    }
+
+    /**
+     * Create a parser for a documentation comment.
+     *
+     * If the comment is the content of a standalone HTML file, it will be parsed
+     * in three parts: a preamble (up to and including the {@code <main>} tag,
+     * or {@code <body>} tag if there is no {@code <main>} tag, then the main content
+     * of the file, and then finally the end part of the file starting at the
+     * end tag matching the tag that ended the preamble.
+     *
+     * @param fac a parser factory, for a doc-tree maker and for reference parsers
+     * @param diagSource the source in which the comment was found
+     * @param comment the comment
+     * @param isHtmlFile whether the comment is the entire content of an HTML file
+     */
     public DocCommentParser(ParserFactory fac, DiagnosticSource diagSource,
-                            Comment comment, boolean isFileContent) {
+                            Comment comment, boolean isHtmlFile) {
         this.fac = fac;
         this.diags = fac.log.diags;
         this.diagSource = diagSource;
         this.comment = comment;
         names = fac.names;
-        this.isFileContent = isFileContent;
+        this.isHtmlFile = isHtmlFile;
+        textKind = isHtmlFile ? DocTree.Kind.TEXT : getTextKind(comment);
         m = fac.docTreeMaker;
         tagParsers = createTagParsers();
     }
 
-    public DocCommentParser(ParserFactory fac, DiagnosticSource diagSource, Comment comment) {
-        this(fac, diagSource, comment, false);
+    private static DocTree.Kind getTextKind(Comment c) {
+        return switch (c.getStyle()) {
+            case JAVADOC_BLOCK -> DocTree.Kind.TEXT;
+            case JAVADOC_LINE -> DocTree.Kind.MARKDOWN;
+            default -> throw new IllegalArgumentException(c.getStyle().name());
+        };
     }
 
     public DCDocComment parse() {
@@ -128,12 +170,13 @@ public class DocCommentParser {
         bp = -1;
         nextChar();
 
-        List<DCTree> preamble = isFileContent ? blockContent(Phase.PREAMBLE) : List.nil();
-        List<DCTree> body = blockContent(Phase.BODY);
+        List<DCTree> preamble = isHtmlFile ? content(Phase.PREAMBLE) : List.nil();
+        List<DCTree> body = content(Phase.BODY);
         List<DCTree> tags = blockTags();
-        List<DCTree> postamble = isFileContent ? blockContent(Phase.POSTAMBLE) : List.nil();
+        List<DCTree> postamble = isHtmlFile ? content(Phase.POSTAMBLE) : List.nil();
 
-        int pos = !preamble.isEmpty() ? preamble.head.pos
+        int pos = textKind == DocTree.Kind.MARKDOWN  ? 0
+                : !preamble.isEmpty() ? preamble.head.pos
                 : !body.isEmpty() ? body.head.pos
                 : !tags.isEmpty() ? tags.head.pos
                 : !postamble.isEmpty() ? postamble.head.pos
@@ -145,7 +188,17 @@ public class DocCommentParser {
     void nextChar() {
         ch = buf[bp < buflen ? ++bp : buflen];
         switch (ch) {
-            case '\f', '\n', '\r' -> newline = true;
+            case '\n' -> {
+                newline = true;
+            }
+
+            case '\r' -> {
+                if (bp + 1 < buflen && buf[bp + 1] == '\n') {
+                    bp++;
+                    ch = '\n';
+                }
+                newline = true;
+            }
         }
     }
 
@@ -153,82 +206,181 @@ public class DocCommentParser {
         return buf[bp < buflen ? bp + 1 : buflen];
     }
 
+    String peekLine() {
+        int p = bp;
+        while (p < buflen) {
+             switch (buf[p]) {
+                 case '\n', '\r' -> {
+                     return newString(bp, p);
+                 }
+                 default -> p++;
+             }
+        }
+        return newString(bp, buflen);
+    }
+
     protected List<DCTree> blockContent() {
-        return blockContent(Phase.BODY);
+        while (ch == ' ' && bp < buflen) {
+            nextChar();
+        }
+        return content(Phase.BODY);
     }
 
     /**
-     * Read block content, consisting of text, html and inline tags.
-     * Terminated by the end of input, or the beginning of the next block tag:
-     * that is, @ as the first non-whitespace character on a line.
+     * Reads "rich text" content, consisting of text, html and inline tags,
+     * according to the given {@code phase}.
+     *
+     * Inline tags are only recognized in {@code BODY} and {@code INLINE}
+     * phases, and not in {@code PREAMBLE} and {@code POSTAMBLE} phases.
+     *
+     * The end of the content is dependent on the phase:
+     *
+     * <ul>
+     * <li>{@code PREAMBLE}: the appearance of {@code <body>} (or {@code <main>}),
+     *      as determined by {@link #isEndPreamble()}
+     * <li>{@code BODY}: the beginning of a block tag, or when readung from
+     *      an HTML file, the appearance of {@code </main>} (or {@code </body>},
+     *       as determined by {@link #isEndBody()}
+     * <li>{@code INLINE}: '}', after skipping any matching {@code { }}
+     * <li>{@code PREAMBLE}: end of file
+     * </ul>
+     *
+     *
+     *
      */
-    @SuppressWarnings("fallthrough")
-    protected List<DCTree> blockContent(Phase phase) {
+    protected List<DCTree> content(Phase phase) {
         ListBuffer<DCTree> trees = new ListBuffer<>();
         textStart = -1;
 
+        int depth = 1;                  // only used when phase is INLINE
+        int pos = bp;                   // only used when phase is INLINE
+        LineKind lineKind = textKind == DocTree.Kind.MARKDOWN ? peekLineKind() : null;
+
+        if (DEBUG) System.err.println("starting content " + showPos(bp) + " " + newline);
+
         loop:
         while (bp < buflen) {
+            if (DEBUG) System.err.println("   in content " + showPos(bp) + " " + newline);
             switch (ch) {
-                case '\n': case '\r': case '\f':
-                case ' ': case '\t':
+                case '\n', '\r' -> {
                     nextChar();
-                    break;
-
-                case '&':
-                    entity(trees);
-                    break;
-
-                case '<':
-                    newline = false;
-                    if (isFileContent) {
-                        switch (phase) {
-                            case PREAMBLE -> {
-                                if (isEndPreamble()) {
-                                    trees.add(html());
-                                    if (textStart == -1) {
-                                        textStart = bp;
-                                        lastNonWhite = -1;
-                                    }
-                                    // mark this as the start, for processing purposes
-                                    newline = true;
-                                    break loop;
-                                }
-                            }
-                            case BODY -> {
-                                if (isEndBody()) {
-                                    addPendingText(trees, lastNonWhite);
-                                    break loop;
-                                }
-                            }
-
-                            default -> { }
+                    if (textKind == DocTree.Kind.MARKDOWN) {
+//                        // FIXME?
+//                        if (textStart == -1) {
+//                            textStart = bp;
+//                        }
+                        int indent = readIndent();
+                        // in the following, the evaluation of INDENTED_CODE_BLOCK is
+                        // inductively a sequence of indented lines following any
+                        // line that is not OTHER
+                        lineKind = (ch == '\n' || ch == '\r') ? LineKind.BLANK
+                                : (indent <= 3) ? peekLineKind()
+                                : lineKind != LineKind.OTHER ? LineKind.INDENTED_CODE_BLOCK
+                                : LineKind.OTHER;
+                        if (lineKind == LineKind.INDENTED_CODE_BLOCK) {
+                            skipLine();
                         }
                     }
-                    addPendingText(trees, bp - 1);
-                    trees.add(html());
+                }
 
-                    if (phase == Phase.PREAMBLE || phase == Phase.POSTAMBLE) {
-                        break; // Ignore newlines after html tags, in the meta content
-                    }
-                    if (textStart == -1) {
+                case ' ', '\t' -> {
+                    if (textKind == DocTree.Kind.MARKDOWN && textStart == -1) {
                         textStart = bp;
-                        lastNonWhite = -1;
                     }
-                    break;
+                    nextChar();
+                }
 
-                case '{':
-                    inlineTag(trees);
-                    break;
 
-                case '@':
+                case '&' -> {
+                    switch (textKind) {
+                        case MARKDOWN -> defaultContentCharacter();
+                        case TEXT -> entity(trees);
+                        default -> throw unknownTextKind(textKind);
+                    }
+                }
+
+                case '<' -> {
+                    switch (textKind) {
+                        case MARKDOWN -> {
+                            defaultContentCharacter();
+                        }
+                        case TEXT -> {
+                            newline = false;
+                            if (isHtmlFile) {
+                                switch (phase) {
+                                    case PREAMBLE -> {
+                                        if (isEndPreamble()) {
+                                            trees.add(html());
+                                            if (textStart == -1) {
+                                                textStart = bp;
+                                                lastNonWhite = -1;
+                                            }
+                                            // mark this as the start, for processing purposes
+                                            newline = true;
+                                            break loop;
+                                        }
+                                    }
+                                    case BODY -> {
+                                        if (isEndBody()) {
+                                            addPendingText(trees, lastNonWhite);
+                                            break loop;
+                                        }
+                                    }
+                                    default -> { }
+                                }
+                            }
+                            addPendingText(trees, bp - 1);
+                            trees.add(html());
+
+                            if (phase == Phase.PREAMBLE || phase == Phase.POSTAMBLE) {
+                                break; // Ignore newlines after html tags, in the meta content
+                            }
+                            if (textStart == -1) {
+                                textStart = bp;
+                                lastNonWhite = -1;
+                            }
+                        }
+                        default -> throw unknownTextKind(textKind);
+                    }
+                }
+
+                case '{' -> {
+                    switch (phase) {
+                        case PREAMBLE, POSTAMBLE -> defaultContentCharacter();
+                        case BODY -> inlineTag(trees);
+                        case INLINE -> {
+                            if (!inlineTag(trees)) {
+                                depth++;
+                            }
+                        }
+                    }
+                }
+
+                case '}' -> {
+                    if (phase == Phase.INLINE) {
+                        newline = false;
+                        if (--depth == 0) {
+                            addPendingText(trees, bp - 1);
+                            nextChar();
+                            return trees.toList();
+                        }
+                        nextChar();
+                    } else {
+                        defaultContentCharacter();
+                    }
+                }
+
+                case '@' -> {
+                    if (DEBUG) System.err.println("  content @");
                     // check for context-sensitive escape sequences:
                     //   newline whitespace @@
                     //   newline whitespace @*
                     //   *@/
                     if (newline) {
+                        if (DEBUG) System.err.println("  content @ newline");
                         char peek = peekChar();
                         if (peek == '@' || peek == '*') {
+                            if (DEBUG) System.err.println("  content @ newline escape1 " + peek);
                             addPendingText(trees, bp - 1);
                             nextChar();
                             trees.add(m.at(bp - 1).newEscapeTree(ch));
@@ -236,11 +388,13 @@ public class DocCommentParser {
                             nextChar();
                             textStart = bp;
                             break;
-                        } else {
+                        } else if (phase == Phase.BODY) {
+                            if (DEBUG) System.err.println("  content @ newline BODY will break loop");
                             addPendingText(trees, lastNonWhite);
                             break loop;
                         }
                     } else if (textStart != -1 && buf[bp - 1] == '*' && peekChar() == '/') {
+                        if (DEBUG) System.err.println("  content @ newline escape2");
                         addPendingText(trees, bp - 1);
                         nextChar();
                         trees.add(m.at(bp - 1).newEscapeTree('/'));
@@ -249,21 +403,60 @@ public class DocCommentParser {
                         textStart = bp;
                         break;
                     }
-                    // fallthrough
+                    if (DEBUG) System.err.println("  content @ final default");
+                    defaultContentCharacter();
+                }
 
-                default:
-                    newline = false;
-                    if (textStart == -1)
-                        textStart = bp;
-                    lastNonWhite = bp;
-                    nextChar();
+                case '`', '~' -> {
+                    switch (textKind) {
+                        case MARKDOWN -> {
+                            newline = false;
+                            if (textStart == -1) {
+                                textStart = bp;
+                            }
+                            lastNonWhite = bp;
+                            if (ch == '`' || ch == '~' && lineKind == LineKind.CODE_FENCE) {
+                                int end = skipMarkdownCode(ch, count(ch), lineKind);
+                                if (end == -1) {
+                                    bp = lastNonWhite;
+                                    nextChar();
+                                } else {
+                                    lastNonWhite = end - 1;
+                                }
+                            } else {
+                                nextChar();
+                            }
+                        }
+                        case TEXT -> {
+                            defaultContentCharacter();
+                        }
+                    }
+                }
+
+                default -> {
+                    defaultContentCharacter();
+                }
             }
         }
 
         if (lastNonWhite != -1)
             addPendingText(trees, lastNonWhite);
 
-        return trees.toList();
+        return (phase == Phase.INLINE)
+                ? List.of(erroneous("dc.unterminated.inline.tag", pos))
+                : trees.toList();
+    }
+
+    void defaultContentCharacter() {
+        newline = false;
+        if (textStart == -1)
+            textStart = bp;
+        lastNonWhite = bp;
+        nextChar();
+    }
+
+    private IllegalStateException unknownTextKind(DocTree.Kind textKind) {
+        return new IllegalStateException(textKind.toString());
     }
 
     /**
@@ -295,6 +488,7 @@ public class DocCommentParser {
                     List<DCTree> content = blockContent();
                     return m.at(p).newUnknownBlockTagTree(name, content);
                 } else {
+                    if (DEBUG) System.err.println("blockTag " + tp + " " + showPos(bp) + " " + textStart);
                     if (tp.allowsBlock()) {
                         return tp.parse(p, TagParser.Kind.BLOCK);
                     } else {
@@ -312,7 +506,42 @@ public class DocCommentParser {
         }
     }
 
-    protected void inlineTag(ListBuffer<DCTree> list) {
+    private static final boolean DEBUG = false;
+
+    //DEBUG
+    String showPos(int p) {
+        var sb = new StringBuilder();
+        sb.append("[").append(p).append("] ");
+        if (p >= 0) {
+            for (int i = Math.max(p - 10, 0); i < Math.min(p + 10, buflen); i++) {
+                if (i == p) sb.append("[");
+                var c = buf[i];
+                sb.append(switch (c) {
+                    case '\n' -> '|';
+                    case ' ' -> '_';
+                    default -> c;
+                });
+                if (i == p) sb.append("]");
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Reads a possible inline tag, after finding an opening brace <code>{</code> character.
+     *
+     * If the next character is {@code @}, an opening tag is read and added to the
+     * given {@code list}, and the result is {@code true}.
+     *
+     * Otherwise, the {@code list} is updated with the characters that have been read,
+     * and the result is {@code false}. The result also indicates that a single
+     * opening brace was read, and that a corresponding closing brace should eventually
+     * be read.
+     *
+     * @param list the list of trees being accumulated
+     * @return {@code true} if an inline tag was read, and {@code false} otherwise
+     */
+    protected boolean inlineTag(ListBuffer<DCTree> list) {
         newline = false;
         nextChar();
         if (ch == '@') {
@@ -333,12 +562,14 @@ public class DocCommentParser {
                 list.add(inlineTag());
                 textStart = bp;
                 lastNonWhite = -1;
+                return true;
             }
         } else {
             if (textStart == -1)
                 textStart = bp - 1;
             lastNonWhite = bp;
         }
+        return false;
     }
 
     /**
@@ -586,97 +817,9 @@ public class DocCommentParser {
      * Matching pairs of '{' '}' are skipped; the text is terminated by the first
      * unmatched '}'. It is an error if the beginning of the next tag is detected.
      */
-    @SuppressWarnings("fallthrough")
     private List<DCTree> inlineContent() {
-        ListBuffer<DCTree> trees = new ListBuffer<>();
-
         skipWhitespace();
-        int pos = bp;
-        int depth = 1;
-        textStart = -1;
-
-        loop:
-        while (bp < buflen) {
-
-            switch (ch) {
-                case '\n': case '\r': case '\f':
-                case ' ': case '\t':
-                    nextChar();
-                    break;
-
-                case '&':
-                    entity(trees);
-                    break;
-
-                case '<':
-                    newline = false;
-                    addPendingText(trees, bp - 1);
-                    trees.add(html());
-                    textStart = bp;
-                    lastNonWhite = -1;
-                    break;
-
-                case '{':
-                    if (textStart == -1)
-                        textStart = bp;
-                    newline = false;
-                    nextChar();
-                    if (ch == '@') {
-                        addPendingText(trees, bp - 2);
-                        trees.add(inlineTag());
-                        textStart = bp;
-                        lastNonWhite = -1;
-                    } else {
-                        depth++;
-                    }
-                    break;
-
-                case '}':
-                    newline = false;
-                    if (--depth == 0) {
-                        addPendingText(trees, bp - 1);
-                        nextChar();
-                        return trees.toList();
-                    }
-                    nextChar();
-                    break;
-
-                case '@':
-                    // check for context-sensitive escape sequences:
-                    //   newline whitespace @@
-                    //   newline whitespace @*
-                    //   *@/
-                    if (newline) {
-                        char peek = peekChar();
-                        if (peek == '@' || peek == '*') {
-                            addPendingText(trees, bp - 1);
-                            nextChar();
-                            trees.add(m.at(bp - 1).newEscapeTree(ch));
-                            newline = false;
-                            nextChar();
-                            textStart = bp;
-                            break;
-                        }
-                    } else if (textStart != -1 && buf[bp - 1] == '*' && peekChar() == '/') {
-                        addPendingText(trees, bp - 1);
-                        nextChar();
-                        trees.add(m.at(bp - 1).newEscapeTree('/'));
-                        newline = false;
-                        nextChar();
-                        textStart = bp;
-                        break;
-                    }
-                    // fallthrough
-
-                default:
-                    if (textStart == -1)
-                        textStart = bp;
-                    nextChar();
-                    break;
-            }
-        }
-
-        return List.of(erroneous("dc.unterminated.inline.tag", pos));
+        return content(Phase.INLINE);
     }
 
     protected void entity(ListBuffer<DCTree> list) {
@@ -845,8 +988,16 @@ public class DocCommentParser {
     }
 
     /**
-     * Read the start or end of an HTML tag, or an HTML comment
-     * {@literal <identifier attrs> } or {@literal </identifier> }
+     * Reads an HTML construct, beginning with {@code <}.
+     *
+     * <ul>
+     * <li>start element: {@code <identifier attrs> }
+     * <li>end element: {@code </identifier> }
+     * <li>comment: {@code <!-- ... -->}
+     * <li>doctype: {@code <!doctype ... >}
+     * <li>cdata: {@code <![CDATA[ ... ]]>}
+     * </ul>
+     *  or
      */
     private DCTree html() {
         int p = bp;
@@ -983,7 +1134,7 @@ public class DocCommentParser {
                         }
                         attrValueChar(v);
                     }
-                    addPendingText(v, bp - 1);
+                    addPendingText(v, bp - 1, DocTree.Kind.TEXT);
                     nextChar();
                 } else {
                     vkind = ValueKind.UNQUOTED;
@@ -991,7 +1142,7 @@ public class DocCommentParser {
                     while (bp < buflen && !isUnquotedAttrValueTerminator(ch)) {
                         attrValueChar(v);
                     }
-                    addPendingText(v, bp - 1);
+                    addPendingText(v, bp - 1, DocTree.Kind.TEXT);
                 }
                 skipWhitespace();
                 value = v.toList();
@@ -1011,10 +1162,22 @@ public class DocCommentParser {
         }
     }
 
+
     protected void addPendingText(ListBuffer<DCTree> list, int textEnd) {
+        addPendingText(list, textEnd, textKind);
+    }
+
+    protected void addPendingText(ListBuffer<DCTree> list, int textEnd, DocTree.Kind kind) {
         if (textStart != -1) {
             if (textStart <= textEnd) {
-                list.add(m.at(textStart).newTextTree(newString(textStart, textEnd + 1)));
+                switch (kind) {
+                    case TEXT ->
+                            list.add(m.at(textStart).newTextTree(newString(textStart, textEnd + 1)));
+                    case MARKDOWN ->
+                            list.add(m.at(textStart).newRawTextTree(DocTree.Kind.MARKDOWN, newString(textStart, textEnd + 1)));
+                    default ->
+                        throw new IllegalArgumentException(kind.toString());
+                }
             }
             textStart = -1;
         }
@@ -1122,6 +1285,149 @@ public class DocCommentParser {
         while (bp < buflen && Character.isUnicodeIdentifierPart(ch) || ch == '.')
             nextChar();
         return names.fromChars(buf, pos, bp - pos);
+    }
+
+    protected int readIndent() {
+        int indent = 0;
+        while (bp < buflen) {
+            switch (ch) {
+                case ' ' -> indent++;
+                case '\t' -> indent = 4;
+                default -> {
+                    return indent;
+                }
+            }
+            nextChar();
+        }
+        return indent;
+    }
+
+    int count(char c) {
+        int n = 1;
+        nextChar();
+        while (bp < buflen && ch == c) {
+            n++;
+            nextChar();
+        }
+        return n;
+    }
+
+    void skipLine() {
+        while (bp < buflen) {
+            if (ch == '\n' || ch == '\r') {
+                return;
+            }
+            nextChar();
+        }
+    }
+
+    int skipMarkdownCode(char term, int count, LineKind initialLineKind) {
+        LineKind lineKind = null;
+        while (bp < buflen) {
+            switch (ch) {
+                case '\n', '\r' -> {
+                    nextChar();
+                    int indent = readIndent();
+                    lineKind = (ch == '\n' || ch == '\r') ? LineKind.BLANK
+                            : (indent <= 3) ? peekLineKind()
+                            : LineKind.OTHER;
+                    switch (initialLineKind) {
+                        case CODE_FENCE -> {
+                            if (lineKind == LineKind.CODE_FENCE && ch == term && count(ch) == count) {
+                                return bp;
+                            }
+                        }
+
+                        case OTHER -> {
+                            if (lineKind != LineKind.OTHER) {
+                                return -1;
+                            }
+                        }
+
+                        default -> {
+                            return -1;
+                        }
+
+                    }
+
+                }
+
+                default -> {
+                    if (ch == term && initialLineKind != LineKind.CODE_FENCE ) {
+                        if (count(ch) == count) {
+                            return bp;
+                        }
+                    }
+                    nextChar();
+                }
+
+            }
+        }
+        // found end of input
+        return -1;
+    }
+
+    enum LineKind {
+        BLANK(Pattern.compile("[ \t]*")),
+
+        /**
+         * ATX header: starts with 1 to 6 # characters, followed by space or end of line.
+         * @see <a href="https://spec.commonmark.org/0.30/#atx-headings">ATX Headings</a>
+         */
+        ATX_HEADER(Pattern.compile("#{1,6}( .*|$)")),
+
+        /** Setext header: underline is sequence of = or - followed by optional spaces and tabs.
+         *  @see <a href="https://spec.commonmark.org/0.30/#setext-headings">Setext Headings</a>
+         */
+        SETEXT_UNDERLINE(Pattern.compile("[=-]+[ \t]*")),
+
+        /**
+         * Thematic break: a line of + - _ interspersed with optional spaces and tabs
+         * @see <a href="https://spec.commonmark.org/0.30/#thematic-breaks">Thematic Break</a>
+         */
+        THEMATIC_BREAK(Pattern.compile("((\\+[ \t]*+){3,})|((-[ \t]*+){3,})|((_[ \t]*+){3,})")),
+
+        /**
+         * Code fence: 3 or more back ticks or tildes; back tick fence cannot have back ticks
+         * in the info string.
+         * Note potential conflict with strikeout for similar reasons if strikeout is supported.
+         * @see <a href="https://spec.commonmark.org/0.30/#code-fence">Code Fence</a>
+         */
+        CODE_FENCE(Pattern.compile("(`{3,}[^`]*+)|(~{3,}.*+)")),
+
+        /**
+         * Indented code blocks are defined by preceding lines and indentation,
+         * not by any line-specific pattern.
+         * @see <a href="https://spec.commonmark.org/0.30/#indented-code-block">Indented Code Block</a>
+         */
+        INDENTED_CODE_BLOCK(null),
+
+        /**
+         * Everything else...
+         */
+        OTHER(Pattern.compile(".*"));
+
+        LineKind(Pattern p) {
+            this.pattern = p;
+        }
+
+        final Pattern pattern;
+    }
+
+    LineKind peekLineKind() {
+        switch (ch) {
+            case '#', '=', '-', '+', '_', '`', '~' -> {
+                String line = peekLine();
+                for (LineKind lk : LineKind.values()) {
+                    if (lk.pattern != null) {
+                        if (lk.pattern.matcher(line).matches()) {
+                            return lk;
+                        }
+                    }
+                }
+            }
+        }
+        return LineKind.OTHER;
     }
 
     protected boolean isDecimalDigit(char ch) {
@@ -1559,7 +1865,7 @@ public class DocCommentParser {
                                 while (bp < buflen && ch != quote) {
                                     nextChar();
                                 }
-                                addPendingText(v, bp - 1);
+                                addPendingText(v, bp - 1, DocTree.Kind.TEXT);
                                 nextChar();
                             } else {
                                 vkind = ValueKind.UNQUOTED;
@@ -1568,7 +1874,7 @@ public class DocCommentParser {
                                 while (bp < buflen && (ch != '}' && ch != ':' && !isUnquotedAttrValueTerminator(ch))) {
                                     nextChar();
                                 }
-                                addPendingText(v, bp - 1);
+                                addPendingText(v, bp - 1, DocTree.Kind.TEXT);
                             }
                             skipWhitespace();
                             value = v.toList();

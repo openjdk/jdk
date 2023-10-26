@@ -567,7 +567,7 @@ public abstract class BaseConfiguration {
 
     //<editor-fold desc="DocLint support">
 
-    private DocLint doclint;
+    protected DocLint doclint;
 
     Map<CompilationUnitTree, Boolean> shouldCheck = new HashMap<>();
 

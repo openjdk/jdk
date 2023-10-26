@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.lang.model.element.Name;
 import javax.tools.Diagnostic;
@@ -68,6 +70,7 @@ import com.sun.tools.javac.tree.DCTree.DCLiteral;
 import com.sun.tools.javac.tree.DCTree.DCParam;
 import com.sun.tools.javac.tree.DCTree.DCProvides;
 import com.sun.tools.javac.tree.DCTree.DCReference;
+import com.sun.tools.javac.tree.DCTree.DCRawText;
 import com.sun.tools.javac.tree.DCTree.DCReturn;
 import com.sun.tools.javac.tree.DCTree.DCSee;
 import com.sun.tools.javac.tree.DCTree.DCSerial;
@@ -223,9 +226,16 @@ public class DocTreeMaker implements DocTreeFactory {
                 return Position.NOPOS;
             }
 
+            // Currently, the style for a synthetic comment is not user-visible
+            // through the {@link DocTrees} API. Nevertheless, we heuristically
+            // infer a suitable style, based on the {@code preamble}, {@code postamble},
+            // and {@code fullBody}.
             @Override
             public CommentStyle getStyle() {
-                return CommentStyle.JAVADOC;
+                return preamble.isEmpty()
+                        && postamble.isEmpty()
+                        && fullBody.stream().anyMatch(t -> t.getKind() == Kind.MARKDOWN)
+                        ? CommentStyle.JAVADOC_LINE : CommentStyle.JAVADOC_BLOCK;
             }
 
             @Override
@@ -338,6 +348,13 @@ public class DocTreeMaker implements DocTreeFactory {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DCLiteral newLiteralTree(TextTree text) {
         DCLiteral tree = new DCLiteral(Kind.LITERAL, (DCText) text);
+        tree.pos = pos;
+        return tree;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCRawText newRawTextTree(DocTree.Kind kind, String text) {
+        DCTree.DCRawText tree = new DCRawText(kind, text);
         tree.pos = pos;
         return tree;
     }
@@ -569,34 +586,29 @@ public class DocTreeMaker implements DocTreeFactory {
                             foundFirstSentence = true;
                         }
 
-                        case TEXT -> {
-                            var dtPos = dt.pos;
-                            var s = ((DCText) dt).getBody();
-                            var peekedNext = iter.hasNext()
-                                    ? alist.get(iter.nextIndex())
-                                    : null;
-                            int sbreak = getSentenceBreak(s, peekedNext);
-                            if (sbreak > 0) {
-                                var fsPart = m.at(dtPos).newTextTree(s.substring(0, sbreak).stripTrailing());
+                        case TEXT, MARKDOWN -> {
+                            var peekedNext = iter.hasNext() ? alist.get(iter.nextIndex()) : null;
+                            var content = getContent(dt);
+                            int breakOffset = getSentenceBreak(dt.getKind(), content, peekedNext);
+                            if (breakOffset > 0) {
+                                // the end of sentence is within the current node;
+                                // split it, skipping whitespace in between the two parts
+                                var fsPart = newNode(dt.getKind(), dt.pos, content.substring(0, breakOffset).stripTrailing());
                                 fs.add(fsPart);
-                                int offsetPos = skipWhiteSpace(s, sbreak);
-                                if (offsetPos > 0) {
-                                    DCText bodyPart = m.at(dtPos + offsetPos).newTextTree(s.substring(offsetPos));
+                                int wsOffset = skipWhiteSpace(content, breakOffset);
+                                if (wsOffset > 0) {
+                                    var bodyPart = newNode(dt.getKind(), dt.pos + wsOffset, content.substring(wsOffset));
                                     body.add(bodyPart);
                                 }
                                 foundFirstSentence = true;
-                            } else if (peekedNext != null) {
-                                // if the next doctree is a break, remove trailing spaces
-                                if (isSentenceBreak(peekedNext, false)) {
-                                    DCTree next = iter.next();
-                                    DCText fsPart = m.at(dtPos).newTextTree(s.stripTrailing());
-                                    fs.add(fsPart);
-                                    body.add(next);
-                                    foundFirstSentence = true;
-                                } else {
-                                    fs.add(dt);
-                                }
+                            } else if (peekedNext != null && isSentenceBreak(peekedNext, false)) {
+                                // the next node is a sentence break, so this is the end of the first sentence;
+                                // remove trailing spaces
+                                var fsPart = newNode(dt.getKind(), dt.pos, content.stripTrailing());
+                                fs.add(fsPart);
+                                foundFirstSentence = true;
                             } else {
+                                // no sentence break found; keep scanning
                                 fs.add(dt);
                             }
                         }
@@ -628,34 +640,20 @@ public class DocTreeMaker implements DocTreeFactory {
             }
         }
 
-        /*
-         * Computes the first sentence break, a simple dot-space algorithm.
-         */
-        private int defaultSentenceBreak(String s) {
-            // scan for period followed by whitespace
-            int period = -1;
-            for (int i = 0; i < s.length(); i++) {
-                switch (s.charAt(i)) {
-                    case '.':
-                        period = i;
-                        break;
+        private String getContent(DCTree dt) {
+            return switch (dt.getKind()) {
+                case TEXT -> ((DCText) dt).text;
+                case MARKDOWN -> ((DCRawText) dt).code;
+                default -> throw new IllegalArgumentException(dt.getKind().toString());
+            };
+        }
 
-                    case ' ':
-                    case '\f':
-                    case '\n':
-                    case '\r':
-                    case '\t':
-                        if (period >= 0) {
-                            return i;
-                        }
-                        break;
-
-                    default:
-                        period = -1;
-                        break;
-                }
-            }
-            return -1;
+        private DCTree newNode(DocTree.Kind kind, int pos, String text) {
+            return switch (kind) {
+                case TEXT -> m.at(pos).newTextTree(text);
+                case MARKDOWN -> m.at(pos).newRawTextTree(kind, text);
+                default -> throw new IllegalArgumentException(kind.toString());
+            };
         }
 
         /*
@@ -678,36 +676,50 @@ public class DocTreeMaker implements DocTreeFactory {
          * Therefore, we have to probe further to determine whether
          * there really is a sentence break or not at the end of this run of text.
          */
-        private int getSentenceBreak(String s, DCTree nextTree) {
+        private int getSentenceBreak(DocTree.Kind kind, String s, DCTree nextTree) {
             BreakIterator breakIterator = m.trees.getBreakIterator();
             if (breakIterator == null) {
-                return defaultSentenceBreak(s);
+                return defaultSentenceBreak(kind, s);
             }
-            breakIterator.setText(s);
+
+            String s2 = normalize(kind, s);
+            if (s2.length() != s.length()) throw new AssertionError("normalize"); // DEBUG
+            breakIterator.setText(s2);
             final int sbrk = breakIterator.next();
+
+            switch (kind) {
+                case MARKDOWN -> {
+                    int endParaPos = endParaPos(s2);
+                    if (endParaPos != -1) {
+                        return Math.min(sbrk, endParaPos);
+                    }
+                }
+            }
+
             // This is the last doctree, found the droid we are looking for
             if (nextTree == null) {
                 return sbrk;
             }
 
-            // If the break is well within the span of the string ie. not
+            // If the break is well within the span of the string i.e. not
             // at EOL, then we have a clear break.
             if (sbrk < s.length() - 1) {
                 return sbrk;
             }
 
-            if (nextTree.getKind() == Kind.TEXT) {
-                // Two adjacent text trees, a corner case, perhaps
-                // produced by a tool synthesizing a doctree. In
-                // this case, does the break lie within the first span,
-                // then we have the droid, otherwise allow the callers
-                // logic to handle the break in the adjacent doctree.
-                TextTree ttnext = (TextTree) nextTree;
-                String combined = s + ttnext.getBody();
-                breakIterator.setText(combined);
-                int sbrk2 = breakIterator.next();
-                if (sbrk < sbrk2) {
-                    return sbrk;
+            switch (nextTree.getKind()) {
+                case TEXT, MARKDOWN -> {
+                    // Two adjacent text trees, a corner case, perhaps
+                    // produced by a tool synthesizing a doctree. In
+                    // this case, does the break lie within the first span,
+                    // then we have the droid, otherwise allow the callers
+                    // logic to handle the break in the adjacent doctree.
+                    String combined = s2 + normalize(nextTree.getKind(), getContent(nextTree));
+                    breakIterator.setText(combined);
+                    int sbrk2 = breakIterator.next();
+                    if (sbrk < sbrk2) {
+                        return sbrk;
+                    }
                 }
             }
 
@@ -726,6 +738,60 @@ public class DocTreeMaker implements DocTreeFactory {
                 return sbrk2;
             }
             return -1; // indeterminate at this time
+        }
+
+        /*
+         * Computes the first sentence break, a simple dot-space algorithm.
+         */
+        private int defaultSentenceBreak(DocTree.Kind kind, String s) {
+            String s2 = normalize(kind, s);
+
+            // scan for period followed by whitespace
+            int period = -1;
+            for (int i = 0; i < s2.length(); i++) {
+                switch (s2.charAt(i)) {
+                    case '.':
+                        period = i;
+                        break;
+
+                    case ' ':
+                    case '\f':
+                    case '\n':
+                    case '\r':
+                    case '\t':
+                        if (period >= 0) {
+                            switch (kind) {
+                                case MARKDOWN -> {
+                                    int endParaPos = endParaPos(s2);
+                                    return endParaPos == -1 || i < endParaPos ? i : endParaPos;
+                                }
+                                case TEXT -> {
+                                    return i;
+                                }
+                                default -> throw new IllegalArgumentException(kind.toString());
+                            }
+                        }
+                        break;
+
+                    default:
+                        period = -1;
+                        break;
+                }
+            }
+
+            return switch (kind) {
+                case MARKDOWN -> endParaPos(s2); // may be -1
+                case TEXT -> -1;
+                default -> throw new IllegalArgumentException(kind.toString());
+            };
+        }
+
+        // end of paragraph is newline, followed by a blank line or the beginning of the next block
+        private static final Pattern endPara = Pattern.compile("\n(([ \t]*\n)|( {0,3}[-+*#=]))");
+
+        private static int endParaPos(String s) {
+            Matcher m = endPara.matcher(s);
+            return m.find() ? m.start() : -1;
         }
 
         private boolean isSentenceBreak(DCTree dt, boolean isFirstDocTree) {
@@ -756,6 +822,72 @@ public class DocTreeMaker implements DocTreeFactory {
                 }
             }
             return -1;
+        }
+
+        private String normalize(DocTree.Kind kind, String s) {
+            return switch (kind) {
+                case TEXT -> s;
+                case MARKDOWN -> normalizeMarkdown(s);
+                default -> throw new IllegalArgumentException(kind.toString());
+            };
+        }
+
+        private String normalizeMarkdown(String s) {
+            StringBuilder sb = new StringBuilder();
+            int slen = s.length();
+            int i = 0;
+            while (i < slen) {
+                char ch = s.charAt(i);
+                switch (ch) {
+                    case '\\' -> {
+                        sb.append(ch);
+                        i++;
+                        if (i < slen) {
+                            sb.append(s.charAt(i));
+                            i++;
+                        }
+                    }
+
+                    case '<' -> i = skip(sb, s, i, ch, '>');
+                    case '[' -> i = skip(sb, s, i, ch, ']');
+                    case '(' -> i = skip(sb, s, i, ch, ')');
+
+                    case '`' -> {
+                        int start = i;
+                        i++;
+                        while (i < slen && s.charAt(i) == '`') {
+                            i++;
+                        }
+                        String prefix = s.substring(start, i);
+                        sb.append(prefix);
+                        int j = s.indexOf(prefix, i);
+                        if (j > i) {
+                            sb.append(s.substring(i, j).replace('.', '-'));
+                            sb.append(prefix);
+                            i = j + prefix.length();
+                        }
+                    }
+
+                    default -> {
+                        sb.append(ch);
+                        i++;
+                    }
+                }
+            }
+
+            return sb.toString();
+        }
+
+        private int skip(StringBuilder sb, String s, int i, char ch, char term) {
+            sb.append(ch);
+            i++;
+            int j = s.indexOf(term, i);
+            if (j != -1) {
+                sb.append(s.substring(i, j).replace('.', '-'));
+                return j;
+            } else {
+                return i;
+            }
         }
     }
 

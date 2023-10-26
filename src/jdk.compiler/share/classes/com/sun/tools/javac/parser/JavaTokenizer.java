@@ -1062,10 +1062,22 @@ public class JavaTokenizer extends UnicodeReader {
                     next();
 
                     if (accept('/')) { // (Spec. 3.7)
-                        skipToEOLN();
+                        if (accept('/')) { // Markdown comment
+                            int endPos;
+                            do {
+                                skipToEOLN();
+                                endPos = position();
+                                skipLineTerminator();
+                                skipWhitespace();
+                             } while (accept("///"));
 
-                        if (isAvailable()) {
-                            comments = appendComment(comments, processComment(pos, position(), CommentStyle.LINE));
+                            comments = appendComment(comments, processComment(pos, endPos, CommentStyle.JAVADOC_LINE));
+                        } else {
+                            skipToEOLN();
+
+                            if (isAvailable()) {
+                                comments = appendComment(comments, processComment(pos, position(), CommentStyle.LINE));
+                            }
                         }
                         break;
                     } else if (accept('*')) { // (Spec. 3.7)
@@ -1073,7 +1085,7 @@ public class JavaTokenizer extends UnicodeReader {
                         CommentStyle style;
 
                         if (accept('*')) {
-                            style = CommentStyle.JAVADOC;
+                            style = CommentStyle.JAVADOC_BLOCK;
 
                             if (is('/')) {
                                 isEmpty = true;
@@ -1538,6 +1550,50 @@ public class JavaTokenizer extends UnicodeReader {
         }
 
         /**
+         * Determine how much indent to remove from markdown comment.
+         *
+         * @return minimum indent to remove
+         */
+        int getMarkdownIndent() {
+            int result = Integer.MAX_VALUE;
+            UnicodeReader fullReader = lineReader(position(), position() + length());
+
+            while (fullReader.isAvailable()) {
+                UnicodeReader line = fullReader.lineReader();
+                line.skipWhitespace();
+                line.accept("///");
+                int pos = line.position();
+                line.skipWhitespace();
+
+                if (line.isAvailable()) {
+                    result = Integer.min(result, line.position() - pos);
+                }
+            }
+
+            return result == Integer.MAX_VALUE ? 0 : result;
+        }
+
+        /**
+         * Trim the first part of the Markdown comment.
+         *
+         * @param indent how much indentation to remove
+         * @param line line reader
+         *
+         * @return modified line reader
+         */
+        UnicodeReader trimMarkdownComment(UnicodeReader line, int indent) {
+            int pos = line.position();
+            line.skipWhitespace();
+            line.accept("///");
+
+            for (int i = 0; line.isAvailable() && i < indent; i++) {
+                line.next();
+            }
+
+            return line;
+        }
+
+        /**
          * Put the line into the buffer.
          *
          * @param line line reader
@@ -1553,39 +1609,49 @@ public class JavaTokenizer extends UnicodeReader {
             if (!scanned) {
                 deprecatedFlag = false;
                 scanned = true;
+                boolean isMarkdown = false;
+                int indent = 0;
+                int start = position();
 
-                if (!accept("/**")) {
+                if (accept("/**")) {
+                    if (skip('*') != 0 && is('/')) {
+                        return ;
+                    }
+
+                    skipWhitespace();
+
+                    if (isEOLN()) {
+                        accept('\r');
+                        accept('\n');
+                    }
+                } else if (accept("///")) {
+                    isMarkdown = true;
+                    reset(start);
+                    indent = getMarkdownIndent();
+                } else {
                     return;
-                }
-
-                if (skip('*') != 0 && is('/')) {
-                    return ;
-                }
-
-                skipWhitespace();
-
-                if (isEOLN()) {
-                    accept('\r');
-                    accept('\n');
                 }
 
                 while (isAvailable()) {
                     UnicodeReader line = lineReader();
-                    line = trimJavadocComment(line);
+                    line = isMarkdown ? trimMarkdownComment(line, indent) : trimJavadocComment(line);
 
-                    // If standalone @deprecated tag
-                    int pos = line.position();
-                    line.skipWhitespace();
+                    if (cs == CommentStyle.JAVADOC_BLOCK) {
+                        // If standalone @deprecated tag
+                        int pos = line.position();
+                        line.skipWhitespace();
 
-                    if (line.accept("@deprecated") &&
-                            (!line.isAvailable() ||
-                                    line.isWhitespace() ||
-                                    line.isEOLN() ||
-                                    line.get() == EOI)) {
-                        deprecatedFlag = true;
+                        if (line.accept("@deprecated") &&
+                                (!line.isAvailable() ||
+                                        line.isWhitespace() ||
+                                        line.isEOLN() ||
+                                        line.get() == EOI)) {
+                            deprecatedFlag = true;
+                        }
+
+                        line.reset(pos);
                     }
 
-                    line.reset(pos);
                     putLine(line);
                 }
             }

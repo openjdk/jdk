@@ -234,6 +234,20 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * {@return the attributes of this node}
+     */
+    public Map<HtmlAttr, String> getAttrs() {
+        return attrs;
+    }
+
+    /**
+     * {@return the contents of this node}
+     */
+    public List<Content> getContents() {
+        return content;
+    }
+
+    /**
      * Adds each of a collection of items, using a map function to create the content for each item.
      *
      * @param items  the items

@@ -50,6 +50,7 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
+import jdk.internal.markdown.MarkdownTransformer;
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
@@ -323,6 +324,12 @@ public class HtmlConfiguration extends BaseConfiguration {
         setCreateOverview();
         setTopFile();
         initDocLint(options.doclintOpts(), tagletManager.getAllTagletNames());
+        if (doclint == null) {
+            var trees = docEnv.getDocTrees();
+            if (trees.getDocCommentTreeTransformer()== null) {
+                trees.setDocCommentTreeTransformer(new MarkdownTransformer());
+            }
+        }
         return true;
     }
 

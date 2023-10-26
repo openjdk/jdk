@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,13 @@ package com.sun.tools.javac.parser;
 
 import java.util.Locale;
 
+import com.sun.source.util.DocTrees;
+import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.tree.DocTreeMaker;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
@@ -69,6 +70,8 @@ public class ParserFactory {
     final ScannerFactory scannerFactory;
     final Locale locale;
 
+    private final JavacTrees trees;
+
     @SuppressWarnings("this-escape")
     protected ParserFactory(Context context) {
         super();
@@ -83,6 +86,7 @@ public class ParserFactory {
         this.options = Options.instance(context);
         this.scannerFactory = ScannerFactory.instance(context);
         this.locale = context.get(Locale.class);
+        this.trees = JavacTrees.instance(context);
     }
 
     public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepEndPos, boolean keepLineMap) {
@@ -92,5 +96,9 @@ public class ParserFactory {
     public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepEndPos, boolean keepLineMap, boolean parseModuleInfo) {
         Lexer lexer = scannerFactory.newScanner(input, keepDocComments);
         return new JavacParser(this, lexer, keepDocComments, keepLineMap, keepEndPos, parseModuleInfo);
+    }
+
+    public JavacTrees getTrees() {
+        return trees;
     }
 }
