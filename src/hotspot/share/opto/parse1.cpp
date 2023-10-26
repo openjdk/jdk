@@ -1535,9 +1535,8 @@ void Parse::do_one_block() {
   if (PruneDeadCatchBlocks && block()->is_handler()) {
     ciMethodData* methodData = method()->method_data();
     if (methodData->is_mature()) {
-      ciBitData* data = methodData->ex_handler_bci_to_data(block()->start());
-      assert(data != nullptr, "need data for catch block");
-      if (!data->ex_handler_entered()) {
+      ciBitData data = methodData->ex_handler_bci_to_data(block()->start());
+      if (!data.ex_handler_entered()) {
         // dead catch block
         // Emit an uncommon trap instead of processing the block.
         set_parse_bci(block()->start());

@@ -522,7 +522,7 @@ public:
   // is not null look for a SpeculativeTrapData if any first.
   ciProfileData* bci_to_data(int bci, ciMethod* m = nullptr);
 
-  ciBitData* ex_handler_bci_to_data(int bci);
+  ciBitData ex_handler_bci_to_data(int bci);
 
   uint overflow_trap_count() const {
     return _orig.overflow_trap_count();

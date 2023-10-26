@@ -2087,6 +2087,7 @@ private:
   }
 
   DataLayout* ex_handler_data_at(int ex_handler_index) const {
+    assert(ex_handler_index >= 0 && ex_handler_index < _num_ex_handler_data, "OOB");
     return data_layout_at(_ex_handler_data_di + (ex_handler_index * DataLayout::compute_size_in_bytes(BitData::static_cell_count())));
   }
 
@@ -2345,7 +2346,7 @@ public:
     return bci_to_extra_data(bci, nullptr, true);
   }
 
-  BitData* ex_handler_bci_to_data(int bci);
+  BitData ex_handler_bci_to_data(int bci);
 
   // Add a handful of extra data records, for trap tracking.
   DataLayout* extra_data_base() const  { return limit_data_position(); }

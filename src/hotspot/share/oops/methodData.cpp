@@ -1400,14 +1400,15 @@ ProfileData* MethodData::bci_to_data(int bci) {
   return bci_to_extra_data(bci, nullptr, false);
 }
 
-BitData* MethodData::ex_handler_bci_to_data(int bci) {
+BitData MethodData::ex_handler_bci_to_data(int bci) {
   for (int i = 0; i < _num_ex_handler_data; i++) {
-    BitData* ex_handler_data = ex_handler_data_at(i)->data_in()->as_BitData();
+    DataLayout* ex_handler_data = ex_handler_data_at(i);
     if (ex_handler_data->bci() == bci) {
-      return ex_handler_data;
+      return BitData(ex_handler_data);
     }
   }
-  return nullptr;
+  // called with invalid bci or wrong Method/MethodData
+  ShouldNotReachHere();
 }
 
 DataLayout* MethodData::next_extra(DataLayout* dp) {

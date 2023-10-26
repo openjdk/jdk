@@ -677,6 +677,7 @@ JRT_END
 
 // ret_pc points into caller; we are returning caller's exception handler
 // for given exception
+// Note that the implementation of this method assumes it's only called when an exception has actually occured
 address SharedRuntime::compute_compiled_exc_handler(CompiledMethod* cm, address ret_pc, Handle& exception,
                                                     bool force_unwind, bool top_frame_only, bool& recursive_exception_occurred) {
   assert(cm != nullptr, "must exist");
@@ -689,6 +690,7 @@ address SharedRuntime::compute_compiled_exc_handler(CompiledMethod* cm, address 
     ExceptionHandlerTable table(cm);
     HandlerTableEntry *t = table.entry_for(catch_pco, -1, 0);
     if (t != nullptr) {
+      //cm->method()->set_ex_handler_entered(t->bci()); // profiling
       return cm->code_begin() + t->pco();
     } else {
       return Deoptimization::deoptimize_for_missing_exception_handler(cm);
@@ -779,6 +781,7 @@ address SharedRuntime::compute_compiled_exc_handler(CompiledMethod* cm, address 
     return nullptr;
   }
 
+  //sd->method()->set_ex_handler_entered(t->bci()); // profiling
   return nm->code_begin() + t->pco();
 }
 
