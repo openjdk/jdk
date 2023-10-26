@@ -495,12 +495,6 @@ class StubRoutines: AllStatic {
   static void arrayof_oop_copy       (HeapWord* src, HeapWord* dest, size_t count);
   static void arrayof_oop_copy_uninit(HeapWord* src, HeapWord* dest, size_t count);
 
-  static address small_subnormal_addr() {
-    return (address)&_small_subnormal;
-  }
-  static address large_subnormal_addr() {
-    return (address)&_large_subnormal;
-  }
   static bool FTZ_mode_enabled();
 };
 
