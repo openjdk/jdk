@@ -79,6 +79,13 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             params -> "",
             null);
 
+    public static final BundlerParamInfo<String> INSTALLER_SIGN_IDENTITY =
+            new StandardBundlerParam<>(
+            Arguments.CLIOptions.MAC_INSTALLER_SIGN_IDENTITY.getId(),
+            String.class,
+            params -> "",
+            null);
+
     public static final BundlerParamInfo<String> MAC_INSTALLER_NAME =
             new StandardBundlerParam<> (
             "mac.installerName",

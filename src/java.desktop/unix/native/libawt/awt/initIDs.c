@@ -40,13 +40,10 @@
  * which are used in the win32 awt.
  */
 
-JNIEXPORT jfieldID colorValueID;
-
 JNIEXPORT void JNICALL
 Java_java_awt_Color_initIDs
   (JNIEnv *env, jclass clazz)
 {
-    colorValueID = (*env)->GetFieldID(env, clazz, "value", "I");
 }
 
 JNIEXPORT void JNICALL

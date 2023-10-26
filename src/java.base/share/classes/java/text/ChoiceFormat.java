@@ -187,6 +187,12 @@ import java.util.Arrays;
  *
  * <i>Note:The relation &le; is not equivalent to &lt;&equals;</i>
  *
+ * <p>If a <i>Relation</i> symbol is to be used within a <i>Format</i> pattern,
+ * it must be single quoted. For example,
+ * {@code new ChoiceFormat("1# '#'1 ").format(1)} returns {@code " #1 "}.
+ * Use two single quotes in a row to produce a literal single quote. For example,
+ * {@code new ChoiceFormat("1# ''one'' ").format(1)} returns {@code " 'one' "}.
+ *
  * <p>Below is an example of constructing a ChoiceFormat with a pattern:
  * <blockquote>
  * {@snippet lang=java :
@@ -229,8 +235,9 @@ public class ChoiceFormat extends NumberFormat {
     /**
      * Apply the given pattern to this ChoiceFormat object. The syntax
      * for the ChoiceFormat pattern can be seen in the {@linkplain ##patterns
-     * Patterns} section.
-     *
+     * Patterns} section. Unlike {@link #setChoices(double[], String[])} this
+     * method will throw an {@code IllegalArgumentException} if the {@code
+     * limits} are not in ascending order.
      * @param newPattern a pattern string
      * @throws    NullPointerException if {@code newPattern}
      *            is {@code null}
