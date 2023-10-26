@@ -241,9 +241,9 @@ class MacroAssembler: public Assembler {
 
   // idiv variant which deals with MINLONG as dividend and -1 as divisor
   int corrected_idivl(Register result, Register rs1, Register rs2,
-                      bool want_remainder);
+                      bool want_remainder, bool is_signed);
   int corrected_idivq(Register result, Register rs1, Register rs2,
-                      bool want_remainder);
+                      bool want_remainder, bool is_signed);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,
