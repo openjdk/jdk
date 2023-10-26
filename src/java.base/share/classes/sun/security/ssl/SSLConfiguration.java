@@ -112,10 +112,10 @@ final class SSLConfiguration implements Cloneable {
     static final int maxCertificateChainLength;
 
     // Limit the certificate chain length accepted from clients
-    static final int maxClientCertificateChainLength;
+    static final int maxInboundClientCertChainLen;
 
     // Limit the certificate chain length accepted from servers
-    static final int maxServerCertificateChainLength;
+    static final int maxInboundServerCertChainLen;
 
     // To switch off the supported_groups extension for DHE cipher suite.
     static final boolean enableFFDHE =
@@ -153,43 +153,43 @@ final class SSLConfiguration implements Cloneable {
         }
         maxCertificateChainLength = certLen;
 
-        // Default for jdk.tls.maxClientCertificateChainLength is 8
-        Integer clientLen = GetIntegerAction.privilegedGetProperty(
-                "jdk.tls.maxClientCertificateChainLength");
-        if (clientLen == null || clientLen < 0) {
-            clientLen = 8;
-        } else {
-            clientPropSet = true;
-        }
-
-        // Default for jdk.tls.maxServerCertificateChainLength is 10
-        Integer serverLen = GetIntegerAction.privilegedGetProperty(
-                "jdk.tls.maxServerCertificateChainLength");
-        if (serverLen == null || serverLen < 0) {
-            serverLen = 10;
+        // Default for jdk.tls.server.maxInboundCertificateChainLength is 8
+        Integer inboundClientLen = GetIntegerAction.privilegedGetProperty(
+                "jdk.tls.server.maxInboundCertificateChainLength");
+        if (inboundClientLen == null || inboundClientLen < 0) {
+            inboundClientLen = 8;
         } else {
             serverPropSet = true;
         }
 
+        // Default for jdk.tls.client.maxInboundCertificateChainLength is 10
+        Integer inboundServerLen = GetIntegerAction.privilegedGetProperty(
+                "jdk.tls.client.maxInboundCertificateChainLength");
+        if (inboundServerLen == null || inboundServerLen < 0) {
+            inboundServerLen = 10;
+        } else {
+            clientPropSet = true;
+        }
+
         /*
          * When jdk.tls.maxCertificateChainLength is set, it will override
-         * the defaults for jdk.tls.maxClientCertificateChainLength and
-         * jdk.tls.maxServerCertificateChainLength if they are not explicitly
-         * overridden. That means if either of those properties have been set,
+         * the defaults for jdk.tls.server.maxInboundCertificateChainLength and
+         * jdk.tls.client.maxInboundCertificateChainLength if they are not explicitly
+         * set. That means if either of those properties have been set,
          * the jdk.tls.maxCertificateChainLength property will not override
          * the values.
          */
         if (globalPropSet) {
-            if (!clientPropSet) {
-                clientLen = maxCertificateChainLength;
-            }
             if (!serverPropSet) {
-                serverLen = maxCertificateChainLength;
+                inboundClientLen = maxCertificateChainLength;
+            }
+            if (!clientPropSet) {
+                inboundServerLen = maxCertificateChainLength;
             }
         }
 
-        maxClientCertificateChainLength = clientLen;
-        maxServerCertificateChainLength = serverLen;
+        maxInboundClientCertChainLen = inboundClientLen;
+        maxInboundServerCertChainLen = inboundServerLen;
     }
 
     SSLConfiguration(SSLContextImpl sslContext, boolean isClientMode) {

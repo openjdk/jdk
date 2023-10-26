@@ -131,8 +131,8 @@ final class CertificateMessage {
                     listLen -= (3 + encodedCert.length);
                     encodedCerts.add(encodedCert);
                     int maxAllowedChainLength = handshakeContext.sslConfig.isClientMode ?
-                            SSLConfiguration.maxServerCertificateChainLength :
-                            SSLConfiguration.maxClientCertificateChainLength;
+                            SSLConfiguration.maxInboundServerCertChainLen :
+                            SSLConfiguration.maxInboundClientCertChainLen;
 
                     if (encodedCerts.size() > maxAllowedChainLength) {
                         throw new SSLProtocolException(
@@ -866,8 +866,8 @@ final class CertificateMessage {
                         new SSLExtensions(this, m, enabledExtensions);
                 certList.add(new CertificateEntry(encodedCert, extensions));
                 int maxAllowedChainLength = handshakeContext.sslConfig.isClientMode ?
-                        SSLConfiguration.maxServerCertificateChainLength :
-                        SSLConfiguration.maxClientCertificateChainLength;
+                        SSLConfiguration.maxInboundServerCertChainLen :
+                        SSLConfiguration.maxInboundClientCertChainLen;
 
                 if (certList.size() > maxAllowedChainLength) {
                     throw new SSLProtocolException(
