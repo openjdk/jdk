@@ -170,9 +170,11 @@ public class WheelModifier {
             SwingUtilities.invokeAndWait(test::createGui);
             test.run();
         } finally {
-            if (test.f != null) {
-                SwingUtilities.invokeAndWait(test.f::dispose);
-            }
+            SwingUtilities.invokeAndWait(() -> {
+                if (test.f != null) {
+                    test.f.dispose();
+                }
+            });
         }
 
         System.out.println("Done.");
