@@ -609,7 +609,7 @@ public class SynthTableUI extends BasicTableUI
                     cellRect.width = columnWidth - columnMargin;
                     paintCell(context, g, cellRect, row, cMax);
                 }
-                for(int column = cMin+1; column <= cMax; column++) {
+                for(int column = cMax-1; column >= cMin; column--) {
                     aColumn = cm.getColumn(column);
                     columnWidth = aColumn.getWidth();
                     cellRect.width = columnWidth - columnMargin;
