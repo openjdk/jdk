@@ -23,18 +23,17 @@
  *
  */
 
-#ifndef SHARE_SERVICES_NMT_PREINIT_HPP
-#define SHARE_SERVICES_NMT_PREINIT_HPP
+#ifndef SHARE_NMT_NMT_PREINIT_HPP
+#define SHARE_NMT_NMT_PREINIT_HPP
 
 #include "memory/allStatic.hpp"
-#ifdef ASSERT
-#include "runtime/atomic.hpp"
-#endif
-#include "services/memTracker.hpp"
-#include "utilities/checkedCast.hpp"
+#include "nmt/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#ifdef ASSERT
+#include "runtime/atomic.hpp"
+#endif
 
 class outputStream;
 
@@ -378,5 +377,5 @@ public:
   DEBUG_ONLY(static void verify();)
 };
 
-#endif // SHARE_SERVICES_NMT_PREINIT_HPP
+#endif // SHARE_NMT_NMT_PREINIT_HPP
 

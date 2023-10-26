@@ -24,12 +24,12 @@
  */
 
 #include "precompiled.hpp"
+#include "nmt/nmtPreInit.hpp"
 #include "runtime/os.hpp"
-#include "services/nmtPreInit.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/ostream.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 // Obviously we cannot use os::malloc for any dynamic allocation during pre-NMT-init, so we must use
 // raw malloc; to make this very clear, wrap them.

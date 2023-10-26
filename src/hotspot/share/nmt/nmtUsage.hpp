@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_SERVICES_NMTUSAGE_HPP
-#define SHARE_SERVICES_NMTUSAGE_HPP
+#ifndef SHARE_NMT_NMTUSAGE_HPP
+#define SHARE_NMT_NMTUSAGE_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -65,4 +65,4 @@ public:
   size_t committed(MEMFLAGS flag) const;
 };
 
-#endif // SHARE_SERVICES_NMTUSAGE_HPP
+#endif // SHARE_NMT_NMTUSAGE_HPP

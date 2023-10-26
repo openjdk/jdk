@@ -22,15 +22,15 @@
  *
  */
 
-#ifndef SHARE_SERVICES_MEMTRACKER_HPP
-#define SHARE_SERVICES_MEMTRACKER_HPP
+#ifndef SHARE_NMT_MEMTRACKER_HPP
+#define SHARE_NMT_MEMTRACKER_HPP
 
+#include "nmt/mallocTracker.hpp"
+#include "nmt/nmtCommon.hpp"
+#include "nmt/threadStackTracker.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/threadCritical.hpp"
-#include "services/mallocTracker.hpp"
-#include "services/nmtCommon.hpp"
-#include "services/threadStackTracker.hpp"
-#include "services/virtualMemoryTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/nativeCallStack.hpp"
 
@@ -250,4 +250,4 @@ class MemTracker : AllStatic {
   static Mutex*           _query_lock;
 };
 
-#endif // SHARE_SERVICES_MEMTRACKER_HPP
+#endif // SHARE_NMT_MEMTRACKER_HPP

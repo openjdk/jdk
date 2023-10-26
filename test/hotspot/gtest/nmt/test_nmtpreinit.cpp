@@ -24,9 +24,9 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/nmtPreInit.hpp"
 #include "runtime/os.hpp"
-#include "services/memTracker.hpp"
-#include "services/nmtPreInit.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 #include "unittest.hpp"

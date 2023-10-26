@@ -26,10 +26,10 @@
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
-#include "services/mallocTracker.hpp"
-#include "services/memReporter.hpp"
-#include "services/threadStackTracker.hpp"
-#include "services/virtualMemoryTracker.hpp"
+#include "nmt/mallocTracker.hpp"
+#include "nmt/memReporter.hpp"
+#include "nmt/threadStackTracker.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Diff two counters, express them as signed, with range checks

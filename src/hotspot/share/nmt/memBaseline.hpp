@@ -22,15 +22,15 @@
  *
  */
 
-#ifndef SHARE_SERVICES_MEMBASELINE_HPP
-#define SHARE_SERVICES_MEMBASELINE_HPP
+#ifndef SHARE_NMT_MEMBASELINE_HPP
+#define SHARE_NMT_MEMBASELINE_HPP
 
 #include "memory/metaspaceStats.hpp"
+#include "nmt/mallocSiteTable.hpp"
+#include "nmt/mallocTracker.hpp"
+#include "nmt/nmtCommon.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutex.hpp"
-#include "services/mallocSiteTable.hpp"
-#include "services/mallocTracker.hpp"
-#include "services/nmtCommon.hpp"
-#include "services/virtualMemoryTracker.hpp"
 #include "utilities/linkedlist.hpp"
 
 typedef LinkedListIterator<MallocSite>                   MallocSiteIterator;
@@ -212,4 +212,4 @@ class MemBaseline {
   void virtual_memory_sites_to_reservation_site_order();
 };
 
-#endif // SHARE_SERVICES_MEMBASELINE_HPP
+#endif // SHARE_NMT_MEMBASELINE_HPP

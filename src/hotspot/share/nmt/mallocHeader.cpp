@@ -24,14 +24,12 @@
  */
 #include "precompiled.hpp"
 
-#include "services/mallocHeader.inline.hpp"
-
+#include "nmt/mallocHeader.inline.hpp"
+#include "nmt/mallocSiteTable.hpp"
 #include "runtime/os.hpp"
-#include "services/mallocSiteTable.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
-
 
 void MallocHeader::print_block_on_error(outputStream* st, address bad_address) const {
   assert(bad_address >= (address)this, "sanity");

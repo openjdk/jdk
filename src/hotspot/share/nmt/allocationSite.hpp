@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +22,34 @@
  *
  */
 
-#ifndef SHARE_SERVICES_MEMTRACKER_INLINE_HPP
-#define SHARE_SERVICES_MEMTRACKER_INLINE_HPP
+#ifndef SHARE_NMT_ALLOCATIONSITE_HPP
+#define SHARE_NMT_ALLOCATIONSITE_HPP
 
-#include "services/mallocTracker.inline.hpp"
-#include "services/memTracker.hpp"
+#include "memory/allocation.hpp"
+#include "utilities/nativeCallStack.hpp"
 
-inline bool MemTracker::check_exceeds_limit(size_t s, MEMFLAGS f) {
-  if (!enabled()) {
-    return false;
+// Allocation site represents a code path that makes a memory
+// allocation
+class AllocationSite {
+ private:
+  const NativeCallStack  _call_stack;
+  const MEMFLAGS         _flag;
+ public:
+  AllocationSite(const NativeCallStack& stack, MEMFLAGS flag) : _call_stack(stack), _flag(flag) { }
+
+  bool equals(const NativeCallStack& stack) const {
+    return _call_stack.equals(stack);
   }
-  return MallocTracker::check_exceeds_limit(s, f);
-}
 
-#endif // SHARE_SERVICES_MEMTRACKER_INLINE_HPP
+  bool equals(const AllocationSite& other) const {
+    return other.equals(_call_stack);
+  }
+
+  const NativeCallStack* call_stack() const {
+    return &_call_stack;
+  }
+
+  MEMFLAGS flag() const { return _flag; }
+};
+
+#endif // SHARE_NMT_ALLOCATIONSITE_HPP

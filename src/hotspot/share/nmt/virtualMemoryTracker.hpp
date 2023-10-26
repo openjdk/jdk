@@ -22,18 +22,17 @@
  *
  */
 
-#ifndef SHARE_SERVICES_VIRTUALMEMORYTRACKER_HPP
-#define SHARE_SERVICES_VIRTUALMEMORYTRACKER_HPP
+#ifndef SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
+#define SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
 
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp" // For MetadataType
 #include "memory/metaspaceStats.hpp"
-#include "services/allocationSite.hpp"
-#include "services/nmtCommon.hpp"
+#include "nmt/allocationSite.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "utilities/linkedlist.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
-
 
 /*
  * Virtual memory counter
@@ -413,5 +412,5 @@ class VirtualMemoryTracker : AllStatic {
   static SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>* _reserved_regions;
 };
 
-#endif // SHARE_SERVICES_VIRTUALMEMORYTRACKER_HPP
+#endif // SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
 

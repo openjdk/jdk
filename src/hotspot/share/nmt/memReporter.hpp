@@ -22,15 +22,15 @@
  *
  */
 
-#ifndef SHARE_SERVICES_MEMREPORTER_HPP
-#define SHARE_SERVICES_MEMREPORTER_HPP
+#ifndef SHARE_NMT_MEMREPORTER_HPP
+#define SHARE_NMT_MEMREPORTER_HPP
 
 #include "memory/metaspace.hpp"
+#include "nmt/mallocTracker.hpp"
+#include "nmt/memBaseline.hpp"
+#include "nmt/nmtCommon.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "oops/instanceKlass.hpp"
-#include "services/memBaseline.hpp"
-#include "services/nmtCommon.hpp"
-#include "services/mallocTracker.hpp"
-#include "services/virtualMemoryTracker.hpp"
 
 /*
  * Base class that provides helpers
@@ -265,4 +265,4 @@ class MemDetailDiffReporter : public MemSummaryDiffReporter {
     size_t current_committed, size_t early_reserved, size_t early_committed, MEMFLAGS flag) const;
 };
 
-#endif // SHARE_SERVICES_MEMREPORTER_HPP
+#endif // SHARE_NMT_MEMREPORTER_HPP

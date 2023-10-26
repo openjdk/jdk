@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef SHARE_SERVICES_MALLOCHEADER_HPP
-#define SHARE_SERVICES_MALLOCHEADER_HPP
+#ifndef SHARE_NMT_MALLOCHEADER_HPP
+#define SHARE_NMT_MALLOCHEADER_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -165,4 +165,4 @@ public:
 STATIC_ASSERT(sizeof(MallocHeader) == (sizeof(uint64_t) * 2));
 
 
-#endif // SHARE_SERVICES_MALLOCHEADER_HPP
+#endif // SHARE_NMT_MALLOCHEADER_HPP
