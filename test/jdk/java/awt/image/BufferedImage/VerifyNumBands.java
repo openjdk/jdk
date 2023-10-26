@@ -28,7 +28,7 @@ import java.awt.image.BufferedImage;
  * @bug 8318850
  * @summary Checks the total number of bands of image data
  */
-public final class VerifyNumBunds {
+public final class VerifyNumBands {
 
     public static void main(String[] args) {
         test(BufferedImage.TYPE_INT_RGB, 3);
