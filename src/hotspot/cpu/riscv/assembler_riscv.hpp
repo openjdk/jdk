@@ -1074,23 +1074,23 @@ enum operand_size { int8, int16, int32, uint32, int64 };
 
 #undef INSN
 
-enum {
-  fclass_minf       = 1 << 0,   // negative infinite
-  fclass_mnorm      = 1 << 1,   // negative normal number
-  fclass_msubnorm   = 1 << 2,   // negative subnormal number
-  fclass_mzero      = 1 << 3,   // negative zero
-  fclass_pzero      = 1 << 4,   // positive zero
-  fclass_psubnorm   = 1 << 5,   // positive subnormal number
-  fclass_pnorm      = 1 << 6,   // positive normal number
-  fclass_pinf       = 1 << 7,   // positive infinite
-  fclass_snan       = 1 << 8,   // signaling NaN
-  fclass_qnan       = 1 << 9,   // quiet NaN
-  fclass_zero       = fclass_mzero    | fclass_pzero,
-  fclass_subnorm    = fclass_msubnorm | fclass_psubnorm,
-  fclass_norm       = fclass_mnorm    | fclass_pnorm,
-  fclass_inf        = fclass_minf     | fclass_pinf,
-  fclass_nan        = fclass_snan     | fclass_qnan,
-  fclass_finite     = fclass_zero     | fclass_subnorm   | fclass_norm,
+enum fclass_mask {
+  minf       = 1 << 0,   // negative infinite
+  mnorm      = 1 << 1,   // negative normal number
+  msubnorm   = 1 << 2,   // negative subnormal number
+  mzero      = 1 << 3,   // negative zero
+  pzero      = 1 << 4,   // positive zero
+  psubnorm   = 1 << 5,   // positive subnormal number
+  pnorm      = 1 << 6,   // positive normal number
+  pinf       = 1 << 7,   // positive infinite
+  snan       = 1 << 8,   // signaling NaN
+  qnan       = 1 << 9,   // quiet NaN
+  zero       = mzero    | pzero,
+  subnorm    = msubnorm | psubnorm,
+  norm       = mnorm    | pnorm,
+  inf        = minf     | pinf,
+  nan        = snan     | qnan,
+  finite     = zero     | subnorm   | norm,
 };
 
 // Float and Double Conversion/Classify Instruction
