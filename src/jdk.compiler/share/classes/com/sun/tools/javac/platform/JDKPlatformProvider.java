@@ -170,8 +170,6 @@ public class JDKPlatformProvider implements PlatformProvider {
 
                         if (result != null) {
                             return new SigJavaFileObject(result);
-                        } else {
-                            return null;
                         }
                     }
 
