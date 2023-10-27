@@ -4115,7 +4115,7 @@ static BOOL CALLBACK init_crit_sect_call(PINIT_ONCE, PVOID pcrit_sect, PVOID*) {
   return TRUE;
 }
 
-static void exit_process_or_thread(Ept what, int code) {
+static void exit_process_or_thread(Ept what, int exit_code) {
   // Basic approach:
   //  - Each exiting thread registers its intent to exit and then does so.
   //  - A thread trying to terminate the process must wait for all
@@ -4285,11 +4285,11 @@ static void exit_process_or_thread(Ept what, int code) {
   // - the current thread has registered itself and left the critical section;
   // - the process-exiting thread has raised the flag and left the critical section.
   if (what == EPT_THREAD) {
-    _endthreadex((unsigned)code);
+    _endthreadex((unsigned)exit_code);
   } else if (what == EPT_PROCESS) {
-    ALLOW_C_FUNCTION(::exit, ::exit(code);)
+    ALLOW_C_FUNCTION(::exit, ::exit(exit_code);)
   } else { // EPT_PROCESS_DIE
-    ALLOW_C_FUNCTION(::_exit, ::_exit(code);)
+    ALLOW_C_FUNCTION(::_exit, ::_exit(exit_code);)
   }
 
   // Should not reach here
