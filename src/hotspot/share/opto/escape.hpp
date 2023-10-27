@@ -598,6 +598,7 @@ private:
   Node* specialize_castpp(Node* castpp, Node* base, Node* current_control);
 
   bool can_reduce_cmp(Node* n, Node* cmp) const;
+  bool has_been_reduced(PhiNode* n, SafePointNode* sfpt) const;
   bool can_reduce_phi(PhiNode* ophi) const;
   bool can_reduce_check_users(Node* n, uint nesting) const;
   bool can_reduce_phi_check_inputs(PhiNode* ophi) const;

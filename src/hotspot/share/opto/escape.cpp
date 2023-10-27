@@ -486,6 +486,25 @@ bool ConnectionGraph::can_reduce_cmp(Node* n, Node* cmp) const {
          cmp->outcnt() == 1;
 }
 
+// We are going to check if any of the SafePointScalarMerge entries
+// in the SafePoint reference the Phi that we are checking.
+bool ConnectionGraph::has_been_reduced(PhiNode* n, SafePointNode* sfpt) const {
+  JVMState *jvms = sfpt->jvms();
+
+  for (uint i = jvms->debug_start(); i < jvms->debug_end(); i++) {
+    Node* sfpt_in = sfpt->in(i);
+    if (sfpt_in->is_SafePointScalarMerge()) {
+      SafePointScalarMergeNode* smerge = sfpt_in->as_SafePointScalarMerge();
+      Node* nsr_ptr = sfpt->in(smerge->merge_pointer_idx(jvms));
+      if (nsr_ptr == n) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 // Check if we are able to untangle the merge. The following patterns are
 // supported:
 //  - Phi -> SafePoints
@@ -500,6 +519,9 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
     if (use->is_SafePoint()) {
       if (use->is_Call() && use->as_Call()->has_non_debug_use(n)) {
         NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. Call has non_debug_use().", n->_idx, _invocation);)
+        return false;
+      } else if (has_been_reduced(n->is_Phi() ? n->as_Phi() : n->as_CastPP()->in(1)->as_Phi(), use->as_SafePoint())) {
+        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. It has already been reduced.", n->_idx, _invocation);)
         return false;
       }
     } else if (use->is_AddP()) {
