@@ -27,6 +27,26 @@
 
 #include "memory/allocation.hpp"
 #include "oops/symbol.hpp"
+#include "utilities/nonblockingQueue.inline.hpp"
+
+class SymbolBufferQueueNode : public CHeapObj<mtSymbol> {
+  private:
+    Symbol* const _val;
+    SymbolBufferQueueNode* volatile _next;
+
+  public:
+    static SymbolBufferQueueNode* volatile* next(SymbolBufferQueueNode& node) {
+      return &node._next;
+    }
+
+    SymbolBufferQueueNode(Symbol* val) : _val(val), _next(nullptr) {
+      _val->increment_refcount();
+    }
+
+    ~SymbolBufferQueueNode() {
+      _val->decrement_refcount();
+    }
+};
 
 // TempNewSymbol acts as a handle class in a handle/body idiom and is
 // responsible for proper resource management of the body (which is a Symbol*).
@@ -43,6 +63,10 @@
 // probe() and lookup_only() will increment the refcount if symbol is found.
 template <bool TEMP>
 class SymbolHandleBase : public StackObj {
+  static NonblockingQueue<SymbolBufferQueueNode, &SymbolBufferQueueNode::next> _cleanup_delay;
+  static volatile int32_t _cleanup_delay_len;
+  static const int32_t CLEANUP_DELAY_QUEUE_LEN = 100;
+
   Symbol* _temp;
 
 public:
@@ -53,6 +77,13 @@ public:
   SymbolHandleBase(Symbol *s) : _temp(s) {
     if (!TEMP) {
       Symbol::maybe_increment_refcount(_temp);
+      return;
+    }
+
+    // Delay cleanup for temp symbols. But don't requeue existing entries,
+    // or entries that are held elsewhere - it's a waste of effort.
+    if (s != nullptr && s->refcount() == 1) {
+      add_to_cleanup_delay_queue(s);
     }
   }
 
@@ -76,6 +107,25 @@ public:
     Symbol::maybe_decrement_refcount(_temp);
   }
 
+  // Keep this symbol alive for some time to allow for reuse.
+  // Temp symbols for the same string can often be created in quick succession,
+  // and this queue allows them to be reused instead of churning.
+  void add_to_cleanup_delay_queue(Symbol* sym) {
+    if (sym == nullptr) return;
+
+    SymbolBufferQueueNode* node = new SymbolBufferQueueNode(sym);
+    _cleanup_delay.push(*node);
+
+    // If the queue is now full, implement a one-in, one-out policy.
+    if (Atomic::add(&_cleanup_delay_len, 1, memory_order_relaxed) >= CLEANUP_DELAY_QUEUE_LEN) {
+      SymbolBufferQueueNode* result = _cleanup_delay.pop();
+      if (result != nullptr) {
+        delete result;
+        Atomic::dec(&_cleanup_delay_len);
+      }
+    }
+  }
+
   // Symbol* conversion operators
   Symbol* operator -> () const                   { return _temp; }
   bool    operator == (Symbol* o) const          { return _temp == o; }
@@ -84,7 +134,20 @@ public:
   static unsigned int compute_hash(const SymbolHandleBase& name) {
     return (unsigned int) name->identity_hash();
   }
+
+  static void drain_cleanup_delay_queue() {
+    SymbolBufferQueueNode* curr;
+    while ((curr = _cleanup_delay.pop()) != nullptr) {
+      delete curr;
+      Atomic::dec(&_cleanup_delay_len);
+    }
+  }
 };
+
+template<bool TEMP>
+NonblockingQueue<SymbolBufferQueueNode, &SymbolBufferQueueNode::next> SymbolHandleBase<TEMP>::_cleanup_delay;
+template<bool TEMP>
+volatile int32_t SymbolHandleBase<TEMP>::_cleanup_delay_len = 0;
 
 // TempNewSymbol is a temporary holder for a newly created symbol
 using TempNewSymbol = SymbolHandleBase<true>;

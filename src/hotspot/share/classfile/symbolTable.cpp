@@ -783,6 +783,7 @@ void SymbolTable::check_concurrent_work() {
 }
 
 void SymbolTable::do_concurrent_work(JavaThread* jt) {
+  TempNewSymbol::drain_cleanup_delay_queue();
   double load_factor = get_load_factor();
   log_debug(symboltable, perf)("Concurrent work, live factor: %g", load_factor);
   // We prefer growing, since that also removes dead items
