@@ -690,7 +690,6 @@ address SharedRuntime::compute_compiled_exc_handler(CompiledMethod* cm, address 
     ExceptionHandlerTable table(cm);
     HandlerTableEntry *t = table.entry_for(catch_pco, -1, 0);
     if (t != nullptr) {
-      //cm->method()->set_ex_handler_entered(t->bci()); // profiling
       return cm->code_begin() + t->pco();
     } else {
       return Deoptimization::deoptimize_for_missing_exception_handler(cm);
@@ -781,7 +780,7 @@ address SharedRuntime::compute_compiled_exc_handler(CompiledMethod* cm, address 
     return nullptr;
   }
 
-  //sd->method()->set_ex_handler_entered(t->bci()); // profiling
+  sd->method()->set_ex_handler_entered(handler_bci); // profiling
   return nm->code_begin() + t->pco();
 }
 
