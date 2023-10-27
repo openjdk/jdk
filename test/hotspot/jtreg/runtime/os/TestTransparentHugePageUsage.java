@@ -43,7 +43,6 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 import jdk.test.lib.process.ProcessTools;
 
 public class TestTransparentHugePageUsage {
