@@ -120,10 +120,6 @@ inline const MallocHeader* MallocHeader::resolve_checked(const void* memblock) {
 
 // Used for debugging purposes only. Check header if it could constitute a valid (live or dead) header.
 inline bool MallocHeader::looks_valid() const {
-  // JDK-8306561: _canary may reside out of valid memory - don't try to dereference then
-  if (!os::is_readable_pointer(&_canary)) {
-    return false;
-  }
   // Note: we define these restrictions loose enough to also catch moderately corrupted blocks.
   // E.g. we don't check footer canary.
   return ( (_canary == _header_canary_live_mark NOT_LP64(&& _alt_canary == _header_alt_canary_live_mark)) ||
