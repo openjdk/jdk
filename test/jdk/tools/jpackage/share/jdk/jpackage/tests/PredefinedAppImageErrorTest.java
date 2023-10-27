@@ -69,7 +69,7 @@ public final class PredefinedAppImageErrorTest {
                             },
             // --mac-app-store is required
             {"Hello",
-                    new String[]{"--mac-sign", "--mac-app-store"},
+                    new String[]{"--mac-sign", "--mac-app-store", "--mac-app-image-sign-identity", "test"},
                     new String[]{"--input", "--dest", "--name", "--main-jar", "--main-class"},
                     TKit.isOSX() ?
                             "Option [--mac-app-store] is not valid" :

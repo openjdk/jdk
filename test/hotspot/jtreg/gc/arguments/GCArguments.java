@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,19 +66,19 @@ public final class GCArguments {
         return augmented.toArray(new String[augmented.size()]);
     }
 
-    static public ProcessBuilder createJavaProcessBuilder(List<String> arguments) {
-        return createJavaProcessBuilder(arguments.toArray(String[]::new));
+    static public ProcessBuilder createLimitedTestJavaProcessBuilder(List<String> arguments) {
+        return createLimitedTestJavaProcessBuilder(arguments.toArray(String[]::new));
     }
 
-    static public ProcessBuilder createJavaProcessBuilder(String... arguments) {
-        return ProcessTools.createJavaProcessBuilder(withDefaults(arguments));
+    static public ProcessBuilder createLimitedTestJavaProcessBuilder(String... arguments) {
+        return ProcessTools.createLimitedTestJavaProcessBuilder(withDefaults(arguments));
     }
 
-    static public ProcessBuilder createTestJvm(List<String> arguments) {
-        return createTestJvm(arguments.toArray(String[]::new));
+    static public ProcessBuilder createTestJavaProcessBuilder(List<String> arguments) {
+        return createTestJavaProcessBuilder(arguments.toArray(String[]::new));
     }
 
-    static public ProcessBuilder createTestJvm(String... arguments) {
-        return ProcessTools.createTestJvm(withDefaults(arguments));
+    static public ProcessBuilder createTestJavaProcessBuilder(String... arguments) {
+        return ProcessTools.createTestJavaProcessBuilder(withDefaults(arguments));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,9 +56,9 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
     private String mdName;
     private MGF1ParameterSpec mgfSpec;
     private byte[] p;
-    private static ObjectIdentifier OID_MGF1 =
+    private static final ObjectIdentifier OID_MGF1 =
             ObjectIdentifier.of(KnownOIDs.MGF1);
-    private static ObjectIdentifier OID_PSpecified =
+    private static final ObjectIdentifier OID_PSpecified =
             ObjectIdentifier.of(KnownOIDs.PSpecified);
 
     public OAEPParameters() {

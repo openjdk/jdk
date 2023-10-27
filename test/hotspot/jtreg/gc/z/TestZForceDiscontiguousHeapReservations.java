@@ -45,7 +45,7 @@ public class TestZForceDiscontiguousHeapReservations {
          */
         final int XmxInM = 2000;
         final int XmsInM = Math.min(16 * XmxInM / (n + 1), XmxInM);
-        OutputAnalyzer oa = ProcessTools.executeProcess(ProcessTools.createTestJvm(
+        OutputAnalyzer oa = ProcessTools.executeProcess(ProcessTools.createTestJavaProcessBuilder(
                                                         "-XX:+UseZGC",
                                                         "-XX:+ZGenerational",
                                                         "-Xms" + XmsInM + "M",

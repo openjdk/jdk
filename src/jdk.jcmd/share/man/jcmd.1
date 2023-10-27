@@ -453,6 +453,8 @@ If no filename is given, a filename is generated from the PID and the
 current date.
 The filename may also be a directory in which case, the filename is
 generated from the PID and the current date in the specified directory.
+If %p and/or %t is specified in the filename, it expands to the
+JVM\[aq]s PID and the current timestamp, respectively.
 (STRING, no default value)
 .IP \[bu] 2
 \f[V]maxage\f[R]: (Optional) Length of time for dumping the flight
@@ -521,6 +523,8 @@ current date and is placed in the directory where the process was
 started.
 The filename may also be a directory in which case, the filename is
 generated from the PID and the current date in the specified directory.
+If %p and/or %t is specified in the filename, it expands to the
+JVM\[aq]s PID and the current timestamp, respectively.
 (STRING, no default value)
 .IP \[bu] 2
 \f[V]maxage\f[R]: (Optional) Maximum time to keep the recorded data on
@@ -612,6 +616,8 @@ If no parameters are entered, then no recording is stopped.
 .IP \[bu] 2
 \f[V]filename\f[R]: (Optional) Name of the file to which the recording
 is written when the recording is stopped.
+If %p and/or %t is specified in the filename, it expands to the
+JVM\[aq]s PID and the current timestamp, respectively.
 If no path is provided, the data from the recording is discarded.
 (STRING, no default value)
 .IP \[bu] 2

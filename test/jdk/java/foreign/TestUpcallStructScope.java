@@ -24,8 +24,6 @@
 
 /*
  * @test
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  *
  * @run testng/othervm/native
  *   --enable-native-access=ALL-UNNAMED
@@ -51,16 +49,7 @@ import static org.testng.Assert.assertFalse;
 
 public class TestUpcallStructScope extends NativeTestHelper {
     static final MethodHandle MH_do_upcall;
-    static final Linker LINKER = Linker.nativeLinker();
     static final MethodHandle MH_Consumer_accept;
-
-    // struct S_PDI { void* p0; double p1; int p2; };
-    static final MemoryLayout S_PDI_LAYOUT = MemoryLayout.structLayout(
-        C_POINTER.withName("p0"),
-        C_DOUBLE.withName("p1"),
-        C_INT.withName("p2"),
-        MemoryLayout.paddingLayout(4)
-    );
 
     static {
         System.loadLibrary("TestUpcallStructScope");

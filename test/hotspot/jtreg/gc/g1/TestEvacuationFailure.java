@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,15 +43,15 @@ import jdk.test.lib.process.ProcessTools;
 public class TestEvacuationFailure {
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                                                  "-Xmx32M",
-                                                                  "-Xmn16M",
-                                                                  "-XX:+G1EvacuationFailureALot",
-                                                                  "-XX:G1EvacuationFailureALotCount=100",
-                                                                  "-XX:G1EvacuationFailureALotInterval=1",
-                                                                  "-XX:+UnlockDiagnosticVMOptions",
-                                                                  "-Xlog:gc",
-                                                                  GCTestWithEvacuationFailure.class.getName());
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
+                                                                             "-Xmx32M",
+                                                                             "-Xmn16M",
+                                                                             "-XX:+G1EvacuationFailureALot",
+                                                                             "-XX:G1EvacuationFailureALotCount=100",
+                                                                             "-XX:G1EvacuationFailureALotInterval=1",
+                                                                             "-XX:+UnlockDiagnosticVMOptions",
+                                                                             "-Xlog:gc",
+                                                                             GCTestWithEvacuationFailure.class.getName());
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         System.out.println(output.getStdout());
