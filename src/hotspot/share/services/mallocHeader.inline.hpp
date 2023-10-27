@@ -33,7 +33,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
-#include "runtime/os.hpp"
 
 inline MallocHeader::MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_marker)
   : _size(size), _mst_marker(mst_marker), _flags(flags),
