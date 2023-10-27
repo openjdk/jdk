@@ -529,7 +529,6 @@ public sealed interface Linker permits AbstractLinker {
      * @throws IllegalArgumentException if {@code !address.isNative()}, or if {@code address.equals(MemorySegment.NULL)}.
      * @throws IllegalArgumentException if an invalid combination of linker options is given.
      * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
-     * @throws OutOfMemoryError if the runtime does not have the memory needed to create the downcall handle.
      *
      * @see SymbolLookup
      */
@@ -579,7 +578,6 @@ public sealed interface Linker permits AbstractLinker {
      * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
      * @throws IllegalArgumentException if an invalid combination of linker options is given.
      * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
-     * @throws OutOfMemoryError if the runtime does not have the memory needed to create the downcall handle.
      */
     @CallerSensitive
     @Restricted
@@ -620,7 +618,6 @@ public sealed interface Linker permits AbstractLinker {
      * @throws WrongThreadException if {@code arena} is a confined arena, and this method is called from a
      * thread {@code T}, other than the arena's owner thread.
      * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
-     * @throws OutOfMemoryError if the runtime does not have the memory needed to create the upcall stub.
      */
     @CallerSensitive
     @Restricted
