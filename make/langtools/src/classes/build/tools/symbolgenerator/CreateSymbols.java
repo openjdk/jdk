@@ -1506,7 +1506,7 @@ public class CreateSymbols {
             }
         }
 
-        ExcludeIncludeList currentEIList = excludesIncludes;
+        ExcludeIncludeList currentEIList;
 
         if (!currentVersionModules.isEmpty()) {
             Set<String> privateIncludes =
@@ -1523,20 +1523,70 @@ public class CreateSymbols {
             currentEIList = new ExcludeIncludeList(includes,
                                                    privateIncludes,
                                                    Collections.emptySet());
+        } else {
+            currentEIList = excludesIncludes;
         }
 
         ClassList currentVersionClasses = new ClassList();
+        Map<String, String> extraModulesPackagesToDerive = new HashMap<>();
 
         for (byte[] classFileData : classData) {
             try (InputStream in = new ByteArrayInputStream(classFileData)) {
                 inspectClassFile(in, currentVersionClasses,
-                                 currentEIList, version);
+                                 currentEIList, version,
+                                 cf -> {
+                                     PermittedSubclasses_attribute permitted = (PermittedSubclasses_attribute) cf.getAttribute(Attribute.PermittedSubclasses);
+                                     if (permitted != null) {
+                                         try {
+                                             String currentPack = cf.getName().substring(0, cf.getName().lastIndexOf('/'));
+
+                                             for (int i = 0; i < permitted.subtypes.length; i++) {
+                                                 String permittedClassName = cf.constant_pool.getClassInfo(permitted.subtypes[i]).getName();
+                                                 if (!currentEIList.accepts(permittedClassName, false)) {
+                                                     String permittedPack = permittedClassName.substring(0, permittedClassName.lastIndexOf('/'));
+
+                                                     extraModulesPackagesToDerive.put(permittedPack, currentPack);
+                                                 }
+                                             }
+                                         } catch (ConstantPoolException ex) {
+                                             throw new IllegalStateException(ex);
+                                         }
+                                     }
+                                 });
             } catch (IOException | ConstantPoolException ex) {
                 throw new IllegalStateException(ex);
             }
         }
 
+        //derive extra module packages for permitted types based on on their supertypes:
+        boolean modified;
+
+        do {
+            modified = false;
+
+            for (Iterator<Entry<String, String>> it = extraModulesPackagesToDerive.entrySet().iterator(); it.hasNext();) {
+                Entry<String, String> e = it.next();
+                Optional<ModuleHeaderDescription> module = currentVersionModules.values().stream().map(md -> md.header.get(0)).filter(d -> containsPackage(d, e.getValue())).findAny();
+                if (module.isPresent()) {
+                    if (!module.get().extraModulePackages.contains(e.getKey())) {
+                        module.get().extraModulePackages.add(e.getKey());
+                    }
+                    it.remove();
+                    modified = true;
+                }
+            }
+        } while (modified);
+
+        if (!extraModulesPackagesToDerive.isEmpty()) {
+            throw new AssertionError("Cannot derive some owning modules: " + extraModulesPackagesToDerive);
+        }
+
         finishClassLoading(classes, modules, currentVersionModules, currentVersionClasses, currentEIList, version, baseline);
+    }
+
+    private boolean containsPackage(ModuleHeaderDescription module, String pack) {
+        return module.exports.stream().filter(ed -> ed.packageName().equals(pack)).findAny().isPresent() ||
+               module.extraModulePackages.contains(pack);
     }
 
     private void loadVersionClassesFromDirectory(ClassList classes,

@@ -1,2 +1,2 @@
-NonExportedPermittedTypes.java:41:9: compiler.err.not.exhaustive.statement
+NonExportedPermittedTypes.java:40:9: compiler.err.not.exhaustive.statement
 1 error
