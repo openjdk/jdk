@@ -478,7 +478,8 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
   int encode(JavaThread* THREAD, jlong buffer, int buffer_size) {
     if (!THREAD->can_call_java()) {
       char* char_buffer = print_throwable_to_buffer(_throwable, buffer, buffer_size);
-      JVMCI_event_1("cannot call Java to translate exception: %s", char_buffer);
+      const char* detail = log_is_enabled(Info, exceptions) ? "" : " (-Xlog:exceptions may give more detail)";
+      JVMCI_event_1("cannot call Java to translate exception%s: %s", detail, char_buffer);
       decode(THREAD, _encode_fail, buffer);
       return 0;
     }
