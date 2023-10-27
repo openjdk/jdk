@@ -51,18 +51,19 @@ public:
 class MappingPrintClosure {
   outputStream* const _out;
   const bool _humam_readable;
+  const int64_t _timeout_at;
   uintx _total_count;
   size_t _total_vsize;
 public:
-  MappingPrintClosure(outputStream* st, bool human_readable);
-  void do_it(const MappingPrintInformation* info);
+  MappingPrintClosure(outputStream* st, bool human_readable, jlong timeout_ms);
+  bool do_it(const MappingPrintInformation* info); // returns false if timeout reached.
   uintx total_count() const { return _total_count; }
   size_t total_vsize() const { return _total_vsize; }
 };
 
 class MemMapPrinter : public AllStatic {
   static void pd_print_header(outputStream* st);
-  static void pd_iterate_all_mappings(MappingPrintClosure& closure);
+  static bool pd_iterate_all_mappings(MappingPrintClosure& closure);
 public:
   static void mark_page_malloced(const void* p, MEMFLAGS f);
   static void print_all_mappings(outputStream* st, bool human_readable);

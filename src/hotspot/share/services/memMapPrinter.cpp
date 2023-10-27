@@ -242,6 +242,7 @@ static bool ask_nmt_about(const void* from, const void* to, outputStream* st) {
     }
     return true;
   }
+
   return false;
 }
 
@@ -251,10 +252,10 @@ static void print_legend(outputStream* st) {
 #undef DO
 }
 
-MappingPrintClosure::MappingPrintClosure(outputStream* st, bool human_readable) :
-    _out(st), _humam_readable(human_readable), _total_count(0), _total_vsize(0) {}
+MappingPrintClosure::MappingPrintClosure(outputStream* st, bool human_readable, jlong timeout_at) :
+    _out(st), _humam_readable(human_readable), _timeout_at(timeout_at), _total_count(0), _total_vsize(0) {}
 
-void MappingPrintClosure::do_it(const MappingPrintInformation* info) {
+bool MappingPrintClosure::do_it(const MappingPrintInformation* info) {
   _total_count++;
   _out->print(PTR_FORMAT " - " PTR_FORMAT " ", p2i(info->from()), p2i(info->to()));
   const size_t size = pointer_delta(info->to(), info->from(), 1);
@@ -272,6 +273,8 @@ void MappingPrintClosure::do_it(const MappingPrintInformation* info) {
   _out->fill_to(100);
   info->print_OS_specific_details_trailing(_out);
   _out->cr();
+
+  return _timeout_at > os::javaTimeNanos(); // false if timeout
 }
 
 void MemMapPrinter::print_all_mappings(outputStream* st, bool human_readable) {
@@ -285,8 +288,16 @@ void MemMapPrinter::print_all_mappings(outputStream* st, bool human_readable) {
   st->print_cr("(*) - Mapping contains data from multiple regions");
   st->cr();
   pd_print_header(st);
-  MappingPrintClosure closure(st, human_readable);
-  pd_iterate_all_mappings(closure);
-  st->print_cr("Total: " UINTX_FORMAT " mappings with a total vsize of %zu (" PROPERFMT ")",
-            closure.total_count(), closure.total_vsize(), PROPERFMTARGS(closure.total_vsize()));
+  // Under rare circumstances the process memory map may be insanely large and/or fragmented. We cap
+  // the absolute runtime of printing to blocking other VM operations too long.
+  const jlong timeout_at = os::javaTimeNanos() +
+                           ((jlong)(SafepointTimeoutDelay * NANOSECS_PER_MILLISEC) / 2);
+  MappingPrintClosure closure(st, human_readable, timeout_at);
+  bool ok = pd_iterate_all_mappings(closure);
+  if (!ok) {
+    st->print_cr("Aborted after printing " UINTX_FORMAT " mappings, took too long.", closure.total_count());
+  } else {
+    st->print_cr("Total: " UINTX_FORMAT " mappings with a total vsize of %zu (" PROPERFMT ")",
+                 closure.total_count(), closure.total_vsize(), PROPERFMTARGS(closure.total_vsize()));
+  }
 }

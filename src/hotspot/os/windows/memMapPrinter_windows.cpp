@@ -28,7 +28,7 @@
 #include "services/memMapPrinter.hpp"
 #include "utilities/ostream.hpp"
 
-void MemMapPrinter::pd_iterate_all_mappings(MappingPrintClosure& closure) {}
+bool MemMapPrinter::pd_iterate_all_mappings(MappingPrintClosure& closure) { return false; }
 void MemMapPrinter::pd_print_header(outputStream* st) {
   st->print_cr("not available");
 }
