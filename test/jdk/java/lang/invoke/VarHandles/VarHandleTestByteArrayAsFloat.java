@@ -899,11 +899,197 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
         bs.fill((byte) 0xff);
         int length = array.limit() - SIZE + 1;
         for (int i = 0; i < length; i++) {
+            boolean iAligned = array.isDirect() ? ((i + array.alignmentOffset(0, SIZE)) & (SIZE - 1)) == 0 : false;
+
             // Plain
             {
                 vh.set(array, i, VALUE_1);
                 float x = (float) vh.get(array, i);
                 assertEquals(x, VALUE_1, "get float value");
+            }
+
+            if (iAligned) {
+                // Volatile
+                {
+                    vh.setVolatile(array, i, VALUE_2);
+                    float x = (float) vh.getVolatile(array, i);
+                    assertEquals(x, VALUE_2, "setVolatile float value");
+                }
+
+                // Lazy
+                {
+                    vh.setRelease(array, i, VALUE_1);
+                    float x = (float) vh.getAcquire(array, i);
+                    assertEquals(x, VALUE_1, "setRelease float value");
+                }
+
+                // Opaque
+                {
+                    vh.setOpaque(array, i, VALUE_2);
+                    float x = (float) vh.getOpaque(array, i);
+                    assertEquals(x, VALUE_2, "setOpaque float value");
+                }
+
+                vh.set(array, i, VALUE_1);
+
+                // Compare
+                {
+                    boolean r = vh.compareAndSet(array, i, VALUE_1, VALUE_2);
+                    assertEquals(r, true, "success compareAndSet float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "success compareAndSet float value");
+                }
+
+                {
+                    boolean r = vh.compareAndSet(array, i, VALUE_1, VALUE_3);
+                    assertEquals(r, false, "failing compareAndSet float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "failing compareAndSet float value");
+                }
+
+                {
+                    float r = (float) vh.compareAndExchange(array, i, VALUE_2, VALUE_1);
+                    assertEquals(r, VALUE_2, "success compareAndExchange float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "success compareAndExchange float value");
+                }
+
+                {
+                    float r = (float) vh.compareAndExchange(array, i, VALUE_2, VALUE_3);
+                    assertEquals(r, VALUE_1, "failing compareAndExchange float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "failing compareAndExchange float value");
+                }
+
+                {
+                    float r = (float) vh.compareAndExchangeAcquire(array, i, VALUE_1, VALUE_2);
+                    assertEquals(r, VALUE_1, "success compareAndExchangeAcquire float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "success compareAndExchangeAcquire float value");
+                }
+
+                {
+                    float r = (float) vh.compareAndExchangeAcquire(array, i, VALUE_1, VALUE_3);
+                    assertEquals(r, VALUE_2, "failing compareAndExchangeAcquire float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "failing compareAndExchangeAcquire float value");
+                }
+
+                {
+                    float r = (float) vh.compareAndExchangeRelease(array, i, VALUE_2, VALUE_1);
+                    assertEquals(r, VALUE_2, "success compareAndExchangeRelease float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "success compareAndExchangeRelease float value");
+                }
+
+                {
+                    float r = (float) vh.compareAndExchangeRelease(array, i, VALUE_2, VALUE_3);
+                    assertEquals(r, VALUE_1, "failing compareAndExchangeRelease float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "failing compareAndExchangeRelease float value");
+                }
+
+                {
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSetPlain(array, i, VALUE_1, VALUE_2);
+                        if (!success) weakDelay();
+                    }
+                    assertEquals(success, true, "success weakCompareAndSetPlain float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "success weakCompareAndSetPlain float value");
+                }
+
+                {
+                    boolean success = vh.weakCompareAndSetPlain(array, i, VALUE_1, VALUE_3);
+                    assertEquals(success, false, "failing weakCompareAndSetPlain float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "failing weakCompareAndSetPlain float value");
+                }
+
+                {
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_1);
+                        if (!success) weakDelay();
+                    }
+                    assertEquals(success, true, "success weakCompareAndSetAcquire float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "success weakCompareAndSetAcquire float");
+                }
+
+                {
+                    boolean success = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_3);
+                    assertEquals(success, false, "failing weakCompareAndSetAcquire float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "failing weakCompareAndSetAcquire float value");
+                }
+
+                {
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_2);
+                        if (!success) weakDelay();
+                    }
+                    assertEquals(success, true, "success weakCompareAndSetRelease float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "success weakCompareAndSetRelease float");
+                }
+
+                {
+                    boolean success = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_3);
+                    assertEquals(success, false, "failing weakCompareAndSetRelease float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "failing weakCompareAndSetRelease float value");
+                }
+
+                {
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSet(array, i, VALUE_2, VALUE_1);
+                        if (!success) weakDelay();
+                    }
+                    assertEquals(success, true, "success weakCompareAndSet float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "success weakCompareAndSet float");
+                }
+
+                {
+                    boolean success = vh.weakCompareAndSet(array, i, VALUE_2, VALUE_3);
+                    assertEquals(success, false, "failing weakCompareAndSet float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "failing weakCompareAndSet float value");
+                }
+
+                // Compare set and get
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    float o = (float) vh.getAndSet(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndSet float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "getAndSet float value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    float o = (float) vh.getAndSetAcquire(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndSetAcquire float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "getAndSetAcquire float value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    float o = (float) vh.getAndSetRelease(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndSetRelease float");
+                    float x = (float) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "getAndSetRelease float value");
+                }
+
+
             }
         }
     }
@@ -918,6 +1104,8 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
 
         int length = array.limit() - SIZE + 1;
         for (int i = 0; i < length; i++) {
+            boolean iAligned = array.isDirect() ? ((i + array.alignmentOffset(0, SIZE)) & (SIZE - 1)) == 0 : false;
+
             float v = MemoryMode.BIG_ENDIAN.isSet(vhs.memoryModes)
                     ? rotateLeft(VALUE_2, (i % SIZE) << 3)
                     : rotateRight(VALUE_2, (i % SIZE) << 3);
@@ -925,6 +1113,26 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
             {
                 float x = (float) vh.get(array, i);
                 assertEquals(x, v, "get float value");
+            }
+
+            if (iAligned) {
+                // Volatile
+                {
+                    float x = (float) vh.getVolatile(array, i);
+                    assertEquals(x, v, "getVolatile float value");
+                }
+
+                // Lazy
+                {
+                    float x = (float) vh.getAcquire(array, i);
+                    assertEquals(x, v, "getRelease float value");
+                }
+
+                // Opaque
+                {
+                    float x = (float) vh.getOpaque(array, i);
+                    assertEquals(x, v, "getOpaque float value");
+                }
             }
         }
     }

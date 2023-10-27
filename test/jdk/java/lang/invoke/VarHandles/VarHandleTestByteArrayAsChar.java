@@ -756,11 +756,38 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
         bs.fill((byte) 0xff);
         int length = array.limit() - SIZE + 1;
         for (int i = 0; i < length; i++) {
+            boolean iAligned = array.isDirect() ? ((i + array.alignmentOffset(0, SIZE)) & (SIZE - 1)) == 0 : false;
+
             // Plain
             {
                 vh.set(array, i, VALUE_1);
                 char x = (char) vh.get(array, i);
                 assertEquals(x, VALUE_1, "get char value");
+            }
+
+            if (iAligned) {
+                // Volatile
+                {
+                    vh.setVolatile(array, i, VALUE_2);
+                    char x = (char) vh.getVolatile(array, i);
+                    assertEquals(x, VALUE_2, "setVolatile char value");
+                }
+
+                // Lazy
+                {
+                    vh.setRelease(array, i, VALUE_1);
+                    char x = (char) vh.getAcquire(array, i);
+                    assertEquals(x, VALUE_1, "setRelease char value");
+                }
+
+                // Opaque
+                {
+                    vh.setOpaque(array, i, VALUE_2);
+                    char x = (char) vh.getOpaque(array, i);
+                    assertEquals(x, VALUE_2, "setOpaque char value");
+                }
+
+
             }
         }
     }
@@ -775,6 +802,8 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
 
         int length = array.limit() - SIZE + 1;
         for (int i = 0; i < length; i++) {
+            boolean iAligned = array.isDirect() ? ((i + array.alignmentOffset(0, SIZE)) & (SIZE - 1)) == 0 : false;
+
             char v = MemoryMode.BIG_ENDIAN.isSet(vhs.memoryModes)
                     ? rotateLeft(VALUE_2, (i % SIZE) << 3)
                     : rotateRight(VALUE_2, (i % SIZE) << 3);
@@ -782,6 +811,26 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
             {
                 char x = (char) vh.get(array, i);
                 assertEquals(x, v, "get char value");
+            }
+
+            if (iAligned) {
+                // Volatile
+                {
+                    char x = (char) vh.getVolatile(array, i);
+                    assertEquals(x, v, "getVolatile char value");
+                }
+
+                // Lazy
+                {
+                    char x = (char) vh.getAcquire(array, i);
+                    assertEquals(x, v, "getRelease char value");
+                }
+
+                // Opaque
+                {
+                    char x = (char) vh.getOpaque(array, i);
+                    assertEquals(x, v, "getOpaque char value");
+                }
             }
         }
     }

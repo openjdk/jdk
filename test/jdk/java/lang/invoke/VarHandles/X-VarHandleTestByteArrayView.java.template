@@ -1190,11 +1190,313 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
         bs.fill((byte) 0xff);
         int length = array.limit() - SIZE + 1;
         for (int i = 0; i < length; i++) {
+            boolean iAligned = array.isDirect() ? ((i + array.alignmentOffset(0, SIZE)) & (SIZE - 1)) == 0 : false;
+
             // Plain
             {
                 vh.set(array, i, VALUE_1);
                 $type$ x = ($type$) vh.get(array, i);
                 assertEquals(x, VALUE_1, "get $type$ value");
+            }
+
+            if (iAligned) {
+                // Volatile
+                {
+                    vh.setVolatile(array, i, VALUE_2);
+                    $type$ x = ($type$) vh.getVolatile(array, i);
+                    assertEquals(x, VALUE_2, "setVolatile $type$ value");
+                }
+
+                // Lazy
+                {
+                    vh.setRelease(array, i, VALUE_1);
+                    $type$ x = ($type$) vh.getAcquire(array, i);
+                    assertEquals(x, VALUE_1, "setRelease $type$ value");
+                }
+
+                // Opaque
+                {
+                    vh.setOpaque(array, i, VALUE_2);
+                    $type$ x = ($type$) vh.getOpaque(array, i);
+                    assertEquals(x, VALUE_2, "setOpaque $type$ value");
+                }
+#if[CAS]
+
+                vh.set(array, i, VALUE_1);
+
+                // Compare
+                {
+                    boolean r = vh.compareAndSet(array, i, VALUE_1, VALUE_2);
+                    assertEquals(r, true, "success compareAndSet $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "success compareAndSet $type$ value");
+                }
+
+                {
+                    boolean r = vh.compareAndSet(array, i, VALUE_1, VALUE_3);
+                    assertEquals(r, false, "failing compareAndSet $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "failing compareAndSet $type$ value");
+                }
+
+                {
+                    $type$ r = ($type$) vh.compareAndExchange(array, i, VALUE_2, VALUE_1);
+                    assertEquals(r, VALUE_2, "success compareAndExchange $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "success compareAndExchange $type$ value");
+                }
+
+                {
+                    $type$ r = ($type$) vh.compareAndExchange(array, i, VALUE_2, VALUE_3);
+                    assertEquals(r, VALUE_1, "failing compareAndExchange $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "failing compareAndExchange $type$ value");
+                }
+
+                {
+                    $type$ r = ($type$) vh.compareAndExchangeAcquire(array, i, VALUE_1, VALUE_2);
+                    assertEquals(r, VALUE_1, "success compareAndExchangeAcquire $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "success compareAndExchangeAcquire $type$ value");
+                }
+
+                {
+                    $type$ r = ($type$) vh.compareAndExchangeAcquire(array, i, VALUE_1, VALUE_3);
+                    assertEquals(r, VALUE_2, "failing compareAndExchangeAcquire $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "failing compareAndExchangeAcquire $type$ value");
+                }
+
+                {
+                    $type$ r = ($type$) vh.compareAndExchangeRelease(array, i, VALUE_2, VALUE_1);
+                    assertEquals(r, VALUE_2, "success compareAndExchangeRelease $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "success compareAndExchangeRelease $type$ value");
+                }
+
+                {
+                    $type$ r = ($type$) vh.compareAndExchangeRelease(array, i, VALUE_2, VALUE_3);
+                    assertEquals(r, VALUE_1, "failing compareAndExchangeRelease $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "failing compareAndExchangeRelease $type$ value");
+                }
+
+                {
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSetPlain(array, i, VALUE_1, VALUE_2);
+                        if (!success) weakDelay();
+                    }
+                    assertEquals(success, true, "success weakCompareAndSetPlain $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "success weakCompareAndSetPlain $type$ value");
+                }
+
+                {
+                    boolean success = vh.weakCompareAndSetPlain(array, i, VALUE_1, VALUE_3);
+                    assertEquals(success, false, "failing weakCompareAndSetPlain $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "failing weakCompareAndSetPlain $type$ value");
+                }
+
+                {
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_1);
+                        if (!success) weakDelay();
+                    }
+                    assertEquals(success, true, "success weakCompareAndSetAcquire $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "success weakCompareAndSetAcquire $type$");
+                }
+
+                {
+                    boolean success = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_3);
+                    assertEquals(success, false, "failing weakCompareAndSetAcquire $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "failing weakCompareAndSetAcquire $type$ value");
+                }
+
+                {
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_2);
+                        if (!success) weakDelay();
+                    }
+                    assertEquals(success, true, "success weakCompareAndSetRelease $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "success weakCompareAndSetRelease $type$");
+                }
+
+                {
+                    boolean success = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_3);
+                    assertEquals(success, false, "failing weakCompareAndSetRelease $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "failing weakCompareAndSetRelease $type$ value");
+                }
+
+                {
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSet(array, i, VALUE_2, VALUE_1);
+                        if (!success) weakDelay();
+                    }
+                    assertEquals(success, true, "success weakCompareAndSet $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "success weakCompareAndSet $type$");
+                }
+
+                {
+                    boolean success = vh.weakCompareAndSet(array, i, VALUE_2, VALUE_3);
+                    assertEquals(success, false, "failing weakCompareAndSet $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "failing weakCompareAndSet $type$ value");
+                }
+
+                // Compare set and get
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    $type$ o = ($type$) vh.getAndSet(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndSet $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "getAndSet $type$ value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    $type$ o = ($type$) vh.getAndSetAcquire(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndSetAcquire $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "getAndSetAcquire $type$ value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    $type$ o = ($type$) vh.getAndSetRelease(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndSetRelease $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "getAndSetRelease $type$ value");
+                }
+#end[CAS]
+
+#if[AtomicAdd]
+                // get and add, add and get
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    $type$ o = ($type$) vh.getAndAdd(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndAdd $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1 + VALUE_2, "getAndAdd $type$ value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    $type$ o = ($type$) vh.getAndAddAcquire(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndAddAcquire $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1 + VALUE_2, "getAndAddAcquire $type$ value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    $type$ o = ($type$) vh.getAndAddRelease(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndAddRelease $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1 + VALUE_2, "getAndAddRelease $type$ value");
+                }
+#end[AtomicAdd]
+
+#if[Bitwise]
+                // get and bitwise or
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    $type$ o = ($type$) vh.getAndBitwiseOr(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndBitwiseOr $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1 | VALUE_2, "getAndBitwiseOr $type$ value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    $type$ o = ($type$) vh.getAndBitwiseOrAcquire(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndBitwiseOrAcquire $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1 | VALUE_2, "getAndBitwiseOrAcquire $type$ value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    $type$ o = ($type$) vh.getAndBitwiseOrRelease(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndBitwiseOrRelease $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1 | VALUE_2, "getAndBitwiseOrRelease $type$ value");
+                }
+
+                // get and bitwise and
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    $type$ o = ($type$) vh.getAndBitwiseAnd(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndBitwiseAnd $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1 & VALUE_2, "getAndBitwiseAnd $type$ value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    $type$ o = ($type$) vh.getAndBitwiseAndAcquire(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndBitwiseAndAcquire $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1 & VALUE_2, "getAndBitwiseAndAcquire $type$ value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    $type$ o = ($type$) vh.getAndBitwiseAndRelease(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndBitwiseAndRelease $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1 & VALUE_2, "getAndBitwiseAndRelease $type$ value");
+                }
+
+                // get and bitwise xor
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    $type$ o = ($type$) vh.getAndBitwiseXor(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndBitwiseXor $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1 ^ VALUE_2, "getAndBitwiseXor $type$ value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    $type$ o = ($type$) vh.getAndBitwiseXorAcquire(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndBitwiseXorAcquire $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1 ^ VALUE_2, "getAndBitwiseXorAcquire $type$ value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    $type$ o = ($type$) vh.getAndBitwiseXorRelease(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndBitwiseXorRelease $type$");
+                    $type$ x = ($type$) vh.get(array, i);
+                    assertEquals(x, VALUE_1 ^ VALUE_2, "getAndBitwiseXorRelease $type$ value");
+                }
+#end[Bitwise]
             }
         }
     }
@@ -1209,6 +1511,8 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
 
         int length = array.limit() - SIZE + 1;
         for (int i = 0; i < length; i++) {
+            boolean iAligned = array.isDirect() ? ((i + array.alignmentOffset(0, SIZE)) & (SIZE - 1)) == 0 : false;
+
             $type$ v = MemoryMode.BIG_ENDIAN.isSet(vhs.memoryModes)
                     ? rotateLeft(VALUE_2, (i % SIZE) << 3)
                     : rotateRight(VALUE_2, (i % SIZE) << 3);
@@ -1216,6 +1520,26 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
             {
                 $type$ x = ($type$) vh.get(array, i);
                 assertEquals(x, v, "get $type$ value");
+            }
+
+            if (iAligned) {
+                // Volatile
+                {
+                    $type$ x = ($type$) vh.getVolatile(array, i);
+                    assertEquals(x, v, "getVolatile $type$ value");
+                }
+
+                // Lazy
+                {
+                    $type$ x = ($type$) vh.getAcquire(array, i);
+                    assertEquals(x, v, "getRelease $type$ value");
+                }
+
+                // Opaque
+                {
+                    $type$ x = ($type$) vh.getOpaque(array, i);
+                    assertEquals(x, v, "getOpaque $type$ value");
+                }
             }
         }
     }

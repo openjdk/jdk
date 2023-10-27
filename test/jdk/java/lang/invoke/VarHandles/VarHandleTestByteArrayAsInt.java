@@ -1055,11 +1055,307 @@ public class VarHandleTestByteArrayAsInt extends VarHandleBaseByteArrayTest {
         bs.fill((byte) 0xff);
         int length = array.limit() - SIZE + 1;
         for (int i = 0; i < length; i++) {
+            boolean iAligned = array.isDirect() ? ((i + array.alignmentOffset(0, SIZE)) & (SIZE - 1)) == 0 : false;
+
             // Plain
             {
                 vh.set(array, i, VALUE_1);
                 int x = (int) vh.get(array, i);
                 assertEquals(x, VALUE_1, "get int value");
+            }
+
+            if (iAligned) {
+                // Volatile
+                {
+                    vh.setVolatile(array, i, VALUE_2);
+                    int x = (int) vh.getVolatile(array, i);
+                    assertEquals(x, VALUE_2, "setVolatile int value");
+                }
+
+                // Lazy
+                {
+                    vh.setRelease(array, i, VALUE_1);
+                    int x = (int) vh.getAcquire(array, i);
+                    assertEquals(x, VALUE_1, "setRelease int value");
+                }
+
+                // Opaque
+                {
+                    vh.setOpaque(array, i, VALUE_2);
+                    int x = (int) vh.getOpaque(array, i);
+                    assertEquals(x, VALUE_2, "setOpaque int value");
+                }
+
+                vh.set(array, i, VALUE_1);
+
+                // Compare
+                {
+                    boolean r = vh.compareAndSet(array, i, VALUE_1, VALUE_2);
+                    assertEquals(r, true, "success compareAndSet int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "success compareAndSet int value");
+                }
+
+                {
+                    boolean r = vh.compareAndSet(array, i, VALUE_1, VALUE_3);
+                    assertEquals(r, false, "failing compareAndSet int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "failing compareAndSet int value");
+                }
+
+                {
+                    int r = (int) vh.compareAndExchange(array, i, VALUE_2, VALUE_1);
+                    assertEquals(r, VALUE_2, "success compareAndExchange int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "success compareAndExchange int value");
+                }
+
+                {
+                    int r = (int) vh.compareAndExchange(array, i, VALUE_2, VALUE_3);
+                    assertEquals(r, VALUE_1, "failing compareAndExchange int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "failing compareAndExchange int value");
+                }
+
+                {
+                    int r = (int) vh.compareAndExchangeAcquire(array, i, VALUE_1, VALUE_2);
+                    assertEquals(r, VALUE_1, "success compareAndExchangeAcquire int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "success compareAndExchangeAcquire int value");
+                }
+
+                {
+                    int r = (int) vh.compareAndExchangeAcquire(array, i, VALUE_1, VALUE_3);
+                    assertEquals(r, VALUE_2, "failing compareAndExchangeAcquire int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "failing compareAndExchangeAcquire int value");
+                }
+
+                {
+                    int r = (int) vh.compareAndExchangeRelease(array, i, VALUE_2, VALUE_1);
+                    assertEquals(r, VALUE_2, "success compareAndExchangeRelease int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "success compareAndExchangeRelease int value");
+                }
+
+                {
+                    int r = (int) vh.compareAndExchangeRelease(array, i, VALUE_2, VALUE_3);
+                    assertEquals(r, VALUE_1, "failing compareAndExchangeRelease int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "failing compareAndExchangeRelease int value");
+                }
+
+                {
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSetPlain(array, i, VALUE_1, VALUE_2);
+                        if (!success) weakDelay();
+                    }
+                    assertEquals(success, true, "success weakCompareAndSetPlain int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "success weakCompareAndSetPlain int value");
+                }
+
+                {
+                    boolean success = vh.weakCompareAndSetPlain(array, i, VALUE_1, VALUE_3);
+                    assertEquals(success, false, "failing weakCompareAndSetPlain int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "failing weakCompareAndSetPlain int value");
+                }
+
+                {
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_1);
+                        if (!success) weakDelay();
+                    }
+                    assertEquals(success, true, "success weakCompareAndSetAcquire int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "success weakCompareAndSetAcquire int");
+                }
+
+                {
+                    boolean success = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_3);
+                    assertEquals(success, false, "failing weakCompareAndSetAcquire int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "failing weakCompareAndSetAcquire int value");
+                }
+
+                {
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_2);
+                        if (!success) weakDelay();
+                    }
+                    assertEquals(success, true, "success weakCompareAndSetRelease int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "success weakCompareAndSetRelease int");
+                }
+
+                {
+                    boolean success = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_3);
+                    assertEquals(success, false, "failing weakCompareAndSetRelease int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "failing weakCompareAndSetRelease int value");
+                }
+
+                {
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSet(array, i, VALUE_2, VALUE_1);
+                        if (!success) weakDelay();
+                    }
+                    assertEquals(success, true, "success weakCompareAndSet int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "success weakCompareAndSet int");
+                }
+
+                {
+                    boolean success = vh.weakCompareAndSet(array, i, VALUE_2, VALUE_3);
+                    assertEquals(success, false, "failing weakCompareAndSet int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "failing weakCompareAndSet int value");
+                }
+
+                // Compare set and get
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    int o = (int) vh.getAndSet(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndSet int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "getAndSet int value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    int o = (int) vh.getAndSetAcquire(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndSetAcquire int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "getAndSetAcquire int value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    int o = (int) vh.getAndSetRelease(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndSetRelease int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "getAndSetRelease int value");
+                }
+
+                // get and add, add and get
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    int o = (int) vh.getAndAdd(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndAdd int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_1 + VALUE_2, "getAndAdd int value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    int o = (int) vh.getAndAddAcquire(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndAddAcquire int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_1 + VALUE_2, "getAndAddAcquire int value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    int o = (int) vh.getAndAddRelease(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndAddRelease int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_1 + VALUE_2, "getAndAddRelease int value");
+                }
+
+                // get and bitwise or
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    int o = (int) vh.getAndBitwiseOr(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndBitwiseOr int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_1 | VALUE_2, "getAndBitwiseOr int value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    int o = (int) vh.getAndBitwiseOrAcquire(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndBitwiseOrAcquire int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_1 | VALUE_2, "getAndBitwiseOrAcquire int value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    int o = (int) vh.getAndBitwiseOrRelease(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndBitwiseOrRelease int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_1 | VALUE_2, "getAndBitwiseOrRelease int value");
+                }
+
+                // get and bitwise and
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    int o = (int) vh.getAndBitwiseAnd(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndBitwiseAnd int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_1 & VALUE_2, "getAndBitwiseAnd int value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    int o = (int) vh.getAndBitwiseAndAcquire(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndBitwiseAndAcquire int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_1 & VALUE_2, "getAndBitwiseAndAcquire int value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    int o = (int) vh.getAndBitwiseAndRelease(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndBitwiseAndRelease int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_1 & VALUE_2, "getAndBitwiseAndRelease int value");
+                }
+
+                // get and bitwise xor
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    int o = (int) vh.getAndBitwiseXor(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndBitwiseXor int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_1 ^ VALUE_2, "getAndBitwiseXor int value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    int o = (int) vh.getAndBitwiseXorAcquire(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndBitwiseXorAcquire int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_1 ^ VALUE_2, "getAndBitwiseXorAcquire int value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    int o = (int) vh.getAndBitwiseXorRelease(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndBitwiseXorRelease int");
+                    int x = (int) vh.get(array, i);
+                    assertEquals(x, VALUE_1 ^ VALUE_2, "getAndBitwiseXorRelease int value");
+                }
             }
         }
     }
@@ -1074,6 +1370,8 @@ public class VarHandleTestByteArrayAsInt extends VarHandleBaseByteArrayTest {
 
         int length = array.limit() - SIZE + 1;
         for (int i = 0; i < length; i++) {
+            boolean iAligned = array.isDirect() ? ((i + array.alignmentOffset(0, SIZE)) & (SIZE - 1)) == 0 : false;
+
             int v = MemoryMode.BIG_ENDIAN.isSet(vhs.memoryModes)
                     ? rotateLeft(VALUE_2, (i % SIZE) << 3)
                     : rotateRight(VALUE_2, (i % SIZE) << 3);
@@ -1081,6 +1379,26 @@ public class VarHandleTestByteArrayAsInt extends VarHandleBaseByteArrayTest {
             {
                 int x = (int) vh.get(array, i);
                 assertEquals(x, v, "get int value");
+            }
+
+            if (iAligned) {
+                // Volatile
+                {
+                    int x = (int) vh.getVolatile(array, i);
+                    assertEquals(x, v, "getVolatile int value");
+                }
+
+                // Lazy
+                {
+                    int x = (int) vh.getAcquire(array, i);
+                    assertEquals(x, v, "getRelease int value");
+                }
+
+                // Opaque
+                {
+                    int x = (int) vh.getOpaque(array, i);
+                    assertEquals(x, v, "getOpaque int value");
+                }
             }
         }
     }

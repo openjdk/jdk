@@ -756,11 +756,38 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
         bs.fill((byte) 0xff);
         int length = array.limit() - SIZE + 1;
         for (int i = 0; i < length; i++) {
+            boolean iAligned = array.isDirect() ? ((i + array.alignmentOffset(0, SIZE)) & (SIZE - 1)) == 0 : false;
+
             // Plain
             {
                 vh.set(array, i, VALUE_1);
                 short x = (short) vh.get(array, i);
                 assertEquals(x, VALUE_1, "get short value");
+            }
+
+            if (iAligned) {
+                // Volatile
+                {
+                    vh.setVolatile(array, i, VALUE_2);
+                    short x = (short) vh.getVolatile(array, i);
+                    assertEquals(x, VALUE_2, "setVolatile short value");
+                }
+
+                // Lazy
+                {
+                    vh.setRelease(array, i, VALUE_1);
+                    short x = (short) vh.getAcquire(array, i);
+                    assertEquals(x, VALUE_1, "setRelease short value");
+                }
+
+                // Opaque
+                {
+                    vh.setOpaque(array, i, VALUE_2);
+                    short x = (short) vh.getOpaque(array, i);
+                    assertEquals(x, VALUE_2, "setOpaque short value");
+                }
+
+
             }
         }
     }
@@ -775,6 +802,8 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
 
         int length = array.limit() - SIZE + 1;
         for (int i = 0; i < length; i++) {
+            boolean iAligned = array.isDirect() ? ((i + array.alignmentOffset(0, SIZE)) & (SIZE - 1)) == 0 : false;
+
             short v = MemoryMode.BIG_ENDIAN.isSet(vhs.memoryModes)
                     ? rotateLeft(VALUE_2, (i % SIZE) << 3)
                     : rotateRight(VALUE_2, (i % SIZE) << 3);
@@ -782,6 +811,26 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
             {
                 short x = (short) vh.get(array, i);
                 assertEquals(x, v, "get short value");
+            }
+
+            if (iAligned) {
+                // Volatile
+                {
+                    short x = (short) vh.getVolatile(array, i);
+                    assertEquals(x, v, "getVolatile short value");
+                }
+
+                // Lazy
+                {
+                    short x = (short) vh.getAcquire(array, i);
+                    assertEquals(x, v, "getRelease short value");
+                }
+
+                // Opaque
+                {
+                    short x = (short) vh.getOpaque(array, i);
+                    assertEquals(x, v, "getOpaque short value");
+                }
             }
         }
     }

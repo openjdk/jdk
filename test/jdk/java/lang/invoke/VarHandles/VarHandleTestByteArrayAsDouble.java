@@ -899,11 +899,197 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
         bs.fill((byte) 0xff);
         int length = array.limit() - SIZE + 1;
         for (int i = 0; i < length; i++) {
+            boolean iAligned = array.isDirect() ? ((i + array.alignmentOffset(0, SIZE)) & (SIZE - 1)) == 0 : false;
+
             // Plain
             {
                 vh.set(array, i, VALUE_1);
                 double x = (double) vh.get(array, i);
                 assertEquals(x, VALUE_1, "get double value");
+            }
+
+            if (iAligned) {
+                // Volatile
+                {
+                    vh.setVolatile(array, i, VALUE_2);
+                    double x = (double) vh.getVolatile(array, i);
+                    assertEquals(x, VALUE_2, "setVolatile double value");
+                }
+
+                // Lazy
+                {
+                    vh.setRelease(array, i, VALUE_1);
+                    double x = (double) vh.getAcquire(array, i);
+                    assertEquals(x, VALUE_1, "setRelease double value");
+                }
+
+                // Opaque
+                {
+                    vh.setOpaque(array, i, VALUE_2);
+                    double x = (double) vh.getOpaque(array, i);
+                    assertEquals(x, VALUE_2, "setOpaque double value");
+                }
+
+                vh.set(array, i, VALUE_1);
+
+                // Compare
+                {
+                    boolean r = vh.compareAndSet(array, i, VALUE_1, VALUE_2);
+                    assertEquals(r, true, "success compareAndSet double");
+                    double x = (double) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "success compareAndSet double value");
+                }
+
+                {
+                    boolean r = vh.compareAndSet(array, i, VALUE_1, VALUE_3);
+                    assertEquals(r, false, "failing compareAndSet double");
+                    double x = (double) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "failing compareAndSet double value");
+                }
+
+                {
+                    double r = (double) vh.compareAndExchange(array, i, VALUE_2, VALUE_1);
+                    assertEquals(r, VALUE_2, "success compareAndExchange double");
+                    double x = (double) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "success compareAndExchange double value");
+                }
+
+                {
+                    double r = (double) vh.compareAndExchange(array, i, VALUE_2, VALUE_3);
+                    assertEquals(r, VALUE_1, "failing compareAndExchange double");
+                    double x = (double) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "failing compareAndExchange double value");
+                }
+
+                {
+                    double r = (double) vh.compareAndExchangeAcquire(array, i, VALUE_1, VALUE_2);
+                    assertEquals(r, VALUE_1, "success compareAndExchangeAcquire double");
+                    double x = (double) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "success compareAndExchangeAcquire double value");
+                }
+
+                {
+                    double r = (double) vh.compareAndExchangeAcquire(array, i, VALUE_1, VALUE_3);
+                    assertEquals(r, VALUE_2, "failing compareAndExchangeAcquire double");
+                    double x = (double) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "failing compareAndExchangeAcquire double value");
+                }
+
+                {
+                    double r = (double) vh.compareAndExchangeRelease(array, i, VALUE_2, VALUE_1);
+                    assertEquals(r, VALUE_2, "success compareAndExchangeRelease double");
+                    double x = (double) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "success compareAndExchangeRelease double value");
+                }
+
+                {
+                    double r = (double) vh.compareAndExchangeRelease(array, i, VALUE_2, VALUE_3);
+                    assertEquals(r, VALUE_1, "failing compareAndExchangeRelease double");
+                    double x = (double) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "failing compareAndExchangeRelease double value");
+                }
+
+                {
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSetPlain(array, i, VALUE_1, VALUE_2);
+                        if (!success) weakDelay();
+                    }
+                    assertEquals(success, true, "success weakCompareAndSetPlain double");
+                    double x = (double) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "success weakCompareAndSetPlain double value");
+                }
+
+                {
+                    boolean success = vh.weakCompareAndSetPlain(array, i, VALUE_1, VALUE_3);
+                    assertEquals(success, false, "failing weakCompareAndSetPlain double");
+                    double x = (double) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "failing weakCompareAndSetPlain double value");
+                }
+
+                {
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_1);
+                        if (!success) weakDelay();
+                    }
+                    assertEquals(success, true, "success weakCompareAndSetAcquire double");
+                    double x = (double) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "success weakCompareAndSetAcquire double");
+                }
+
+                {
+                    boolean success = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_3);
+                    assertEquals(success, false, "failing weakCompareAndSetAcquire double");
+                    double x = (double) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "failing weakCompareAndSetAcquire double value");
+                }
+
+                {
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_2);
+                        if (!success) weakDelay();
+                    }
+                    assertEquals(success, true, "success weakCompareAndSetRelease double");
+                    double x = (double) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "success weakCompareAndSetRelease double");
+                }
+
+                {
+                    boolean success = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_3);
+                    assertEquals(success, false, "failing weakCompareAndSetRelease double");
+                    double x = (double) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "failing weakCompareAndSetRelease double value");
+                }
+
+                {
+                    boolean success = false;
+                    for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                        success = vh.weakCompareAndSet(array, i, VALUE_2, VALUE_1);
+                        if (!success) weakDelay();
+                    }
+                    assertEquals(success, true, "success weakCompareAndSet double");
+                    double x = (double) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "success weakCompareAndSet double");
+                }
+
+                {
+                    boolean success = vh.weakCompareAndSet(array, i, VALUE_2, VALUE_3);
+                    assertEquals(success, false, "failing weakCompareAndSet double");
+                    double x = (double) vh.get(array, i);
+                    assertEquals(x, VALUE_1, "failing weakCompareAndSet double value");
+                }
+
+                // Compare set and get
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    double o = (double) vh.getAndSet(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndSet double");
+                    double x = (double) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "getAndSet double value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    double o = (double) vh.getAndSetAcquire(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndSetAcquire double");
+                    double x = (double) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "getAndSetAcquire double value");
+                }
+
+                {
+                    vh.set(array, i, VALUE_1);
+
+                    double o = (double) vh.getAndSetRelease(array, i, VALUE_2);
+                    assertEquals(o, VALUE_1, "getAndSetRelease double");
+                    double x = (double) vh.get(array, i);
+                    assertEquals(x, VALUE_2, "getAndSetRelease double value");
+                }
+
+
             }
         }
     }
@@ -918,6 +1104,8 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
 
         int length = array.limit() - SIZE + 1;
         for (int i = 0; i < length; i++) {
+            boolean iAligned = array.isDirect() ? ((i + array.alignmentOffset(0, SIZE)) & (SIZE - 1)) == 0 : false;
+
             double v = MemoryMode.BIG_ENDIAN.isSet(vhs.memoryModes)
                     ? rotateLeft(VALUE_2, (i % SIZE) << 3)
                     : rotateRight(VALUE_2, (i % SIZE) << 3);
@@ -925,6 +1113,26 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
             {
                 double x = (double) vh.get(array, i);
                 assertEquals(x, v, "get double value");
+            }
+
+            if (iAligned) {
+                // Volatile
+                {
+                    double x = (double) vh.getVolatile(array, i);
+                    assertEquals(x, v, "getVolatile double value");
+                }
+
+                // Lazy
+                {
+                    double x = (double) vh.getAcquire(array, i);
+                    assertEquals(x, v, "getRelease double value");
+                }
+
+                // Opaque
+                {
+                    double x = (double) vh.getOpaque(array, i);
+                    assertEquals(x, v, "getOpaque double value");
+                }
             }
         }
     }
