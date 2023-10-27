@@ -26,29 +26,49 @@
 #define SHARE_UTILITIES_WAITBARRIER_GENERIC_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/padded.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// In addition to the barrier tag, it uses two counters to keep the semaphore
-// count correct and not leave any late thread waiting.
 class GenericWaitBarrier : public CHeapObj<mtInternal> {
+private:
+  class Cell : public CHeapObj<mtInternal> {
+    friend GenericWaitBarrier;
+  private:
+    DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
+
+    Semaphore _sem_barrier;
+
+    // The number of threads in the wait path.
+    volatile int _wait_threads;
+
+    // The number of waits that need to be signalled.
+    volatile int _unsignaled_waits;
+
+    DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+
+  public:
+    Cell() : _sem_barrier(0), _wait_threads(0), _unsignaled_waits(0) {}
+    NONCOPYABLE(Cell);
+
+    int wake_if_needed(int max);
+  };
+
+  // Should be enough for most uses without exploding the footprint.
+  static constexpr int CELLS_COUNT = 16;
+
+  Cell _cells[CELLS_COUNT];
+  Cell& tag_to_cell(int tag) { return _cells[tag & (CELLS_COUNT - 1)]; }
+
   volatile int _barrier_tag;
-  // The number of threads waiting on or about to wait on the semaphore.
-  volatile int _waiters;
-  // The number of threads in the wait path, before or after the tag check.
-  // These threads can become waiters.
-  volatile int _barrier_threads;
-  Semaphore _sem_barrier;
 
   NONCOPYABLE(GenericWaitBarrier);
 
-  int wake_if_needed();
-
- public:
-  GenericWaitBarrier() : _barrier_tag(0), _waiters(0), _barrier_threads(0), _sem_barrier(0) {}
+public:
+  GenericWaitBarrier() : _cells(), _barrier_tag(0) {}
   ~GenericWaitBarrier() {}
 
-  const char* description() { return "semaphore"; }
+  const char* description() { return "striped semaphore"; }
 
   void arm(int barrier_tag);
   void disarm();

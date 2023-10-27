@@ -29,66 +29,159 @@
 #include "utilities/waitBarrier_generic.hpp"
 #include "utilities/spinYield.hpp"
 
+// Implements the striped semaphore wait barrier.
+//
+// In addition to the barrier tag, it uses two counters to keep the semaphore
+// count correct and not leave any late thread waiting.
+//
+// To guarantee progress and safety, we should make sure that new barrier tag
+// starts with the completely empty set of waiters and free semaphore. This
+// requires either waiting for all threads to leave wait() for current barrier
+// tag on disarm(), or waiting for all threads to leave the previous tag before
+// reusing the semaphore in arm().
+//
+// When there are multiple threads, it is normal for some threads to take
+// significant time to leave the barrier. Waiting for these threads introduces
+// stalls on barrier reuse. If wait on disarm(), this stall is nearly guaranteed
+// to happen if some threads are stalled. If we wait on arm(), we can get lucky
+// that most threads would be able to catch up, exit wait(), and so we arrive
+// to arm() with semaphore ready for reuse.
+//
+// However, that is insufficient in practice. Therefore, this implementation goes
+// a step further and implements the _striped_ semaphores. We maintain several
+// semaphores (along with aux counters) in cells. The barrier tags are assigned
+// to cells in some simple manner. Most of the current uses have sequential barrier
+// tags, so simple modulo works well.
+//
+// We then operate on a cell like we would operate on a single semaphore: we wait
+// at arm() for all threads to catch up before reusing the cell, and only then use it.
+// For the cost of maintaining just a few cells, we have enough window for threads
+// to catch up.
+//
+// For extra generality, the implementation uses the strongest barriers for extra safety,
+// even when not strictly required to do so for correctness. Extra barrier overhead
+// is dominated by the actual wait/notify latency.
+//
+
 void GenericWaitBarrier::arm(int barrier_tag) {
-  assert(_barrier_tag == 0, "Already armed");
-  assert(_waiters == 0, "We left a thread hanging");
-  _barrier_tag = barrier_tag;
-  _waiters = 0;
+  assert(barrier_tag != 0, "Pre-condition: should be arming with armed value");
+  assert(Atomic::load(&_barrier_tag) == 0, "Pre-condition: should not be already armed");
+
+  Cell& cell = tag_to_cell(barrier_tag);
+
+  // Prepare target cell for arming.
+  // New waiters would still return immediately until barrier is fully armed.
+
+  assert(Atomic::load(&cell._unsignaled_waits) == 0, "Pre-condition: no unsignaled waits");
+
+  // Before we continue to arm, we need to make sure that all threads
+  // have left the previous cell. This allows reusing the cell.
+  SpinYield sp;
+  while (Atomic::load_acquire(&cell._wait_threads) > 0) {
+    assert(Atomic::load(&cell._unsignaled_waits) == 0, "Lifecycle sanity: no new waiters");
+    sp.wait();
+  }
+
+  // Announce the barrier is ready to accept waiters.
+  Atomic::release_store_fence(&_barrier_tag, barrier_tag);
+
+  // API specifies arm() must provide a trailing fence.
   OrderAccess::fence();
 }
 
-int GenericWaitBarrier::wake_if_needed() {
-  assert(_barrier_tag == 0, "Not disarmed");
-  int w = _waiters;
-  if (w == 0) {
-    // Load of _barrier_threads in caller must not pass the load of _waiters.
-    OrderAccess::loadload();
-    return 0;
-  }
-  assert(w > 0, "Bad counting");
-  // We need an exact count which never goes below zero,
-  // otherwise the semaphore may be signalled too many times.
-  if (Atomic::cmpxchg(&_waiters, w, w - 1) == w) {
+int GenericWaitBarrier::Cell::wake_if_needed(int max) {
+  // Match the signal counts with the number of unsignaled waits.
+  // This would allow semaphore to be reused after we are done with it in
+  // this arm-wait-disarm cycle.
+
+  int wakeups = 0;
+  while (true) {
+    int cur = Atomic::load_acquire(&_unsignaled_waits);
+    if (cur == 0) {
+      // All done, no more waiters.
+      return 0;
+    }
+    assert(cur > 0, "Sanity");
+
+    int prev = Atomic::cmpxchg(&_unsignaled_waits, cur, cur - 1);
+    if (prev != cur) {
+      // Contention! Return to caller for early return or backoff.
+      return prev;
+    }
+
+    // Signal!
     _sem_barrier.signal();
-    return w - 1;
+
+    if (wakeups++ > max) {
+      // Over the wakeup limit, break out.
+      return prev;
+    }
   }
-  return w;
 }
 
 void GenericWaitBarrier::disarm() {
-  assert(_barrier_tag != 0, "Not armed");
-  _barrier_tag = 0;
-  // Loads of _barrier_threads/_waiters must not float above disarm store and
-  // disarm store must not sink below.
-  OrderAccess::fence();
-  int left;
+  int tag = Atomic::load_acquire(&_barrier_tag);
+  assert(tag != 0, "Pre-condition: should be armed");
+
+  // Announce the barrier is disarmed. New waiters would start to return immediately.
+  Atomic::release_store_fence(&_barrier_tag, 0);
+
+  Cell& cell = tag_to_cell(tag);
+
+  // Wake up all current waiters.
   SpinYield sp;
-  do {
-    left = GenericWaitBarrier::wake_if_needed();
-    if (left == 0 && _barrier_threads > 0) {
-      // There is no thread to wake but we still have barrier threads.
-      sp.wait();
-    }
-    // We must loop here until there are no waiters or potential waiters.
-  } while (left > 0 || _barrier_threads > 0);
+  while (cell.wake_if_needed(INT_MAX) > 0) {
+    sp.wait();
+  }
+
+  assert(Atomic::load(&cell._unsignaled_waits) == 0, "Post-condition: no unsignaled waits");
+
   // API specifies disarm() must provide a trailing fence.
   OrderAccess::fence();
 }
 
 void GenericWaitBarrier::wait(int barrier_tag) {
-  assert(barrier_tag != 0, "Trying to wait on disarmed value");
-  if (barrier_tag != _barrier_tag) {
+  assert(barrier_tag != 0, "Pre-condition: should be waiting on armed value");
+
+  if (Atomic::load(&_barrier_tag) != barrier_tag) {
+    // Not our current barrier at all, return right away without touching
+    // anything. Chances are we catching up with disarm() disarming right now.
     // API specifies wait() must provide a trailing fence.
     OrderAccess::fence();
     return;
   }
-  Atomic::add(&_barrier_threads, 1);
-  if (barrier_tag != 0 && barrier_tag == _barrier_tag) {
-    Atomic::add(&_waiters, 1);
-    _sem_barrier.wait();
-    // We help out with posting, but we need to do so before we decrement the
-    // _barrier_threads otherwise we might wake threads up in next wait.
-    GenericWaitBarrier::wake_if_needed();
+
+  Cell& cell = tag_to_cell(barrier_tag);
+
+  Atomic::add(&cell._wait_threads, 1);
+
+  // There is a subtle race against disarming code.
+  //
+  // Disarming first lowers the actual barrier tag, and then proceeds to signal
+  // threads. If we resume here after disarm() signaled all current waiters, we
+  // might go into the wait without a matching signal, and be stuck indefinitely.
+  // To avoid this, we check the expected barrier tag right here.
+  //
+  // Note that we have to do this check *after* incrementing _wait_threads. Otherwise,
+  // the disarming code might not notice that we are about to wait, and not deliver
+  // additional signal to wake us up. (This is a Dekker-like step in disguise.)
+
+  if (Atomic::load(&_barrier_tag) == barrier_tag) {
+    Atomic::add(&cell._unsignaled_waits, 1);
+
+    // Wait for notification.
+    cell._sem_barrier.wait();
+
+    // Unblocked! We help out with waking up two siblings. This allows to avalanche
+    // the wakeups for many threads, even if some threads are lagging behind.
+    // Note that we can only do this *before* decrementing _wait_threads, otherwise
+    // we might prematurely wake up threads for another barrier tag. Current arm()
+    // sequence protects us from this trouble by waiting until all waiters leave.
+    cell.wake_if_needed(2);
   }
-  Atomic::add(&_barrier_threads, -1);
+
+  Atomic::sub(&cell._wait_threads, 1);
+
+  // API specifies wait() must provide a trailing fence.
+  OrderAccess::fence();
 }
