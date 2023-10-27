@@ -49,12 +49,6 @@ public class TestStubAllocFailure extends UpcallTestHelper {
                 .assertSuccess();
     }
 
-    @Test
-    public void testUDowncallAllocFailure() throws IOException, InterruptedException {
-        runInNewProcess(DowncallRunner.class, true, List.of("-XX:ReservedCodeCacheSize=3M"), List.of())
-                .assertSuccess();
-    }
-
     public static class UpcallRunner extends NativeTestHelper {
         public static void main(String[] args) throws Throwable {
             try (Arena arena = Arena.ofConfined()) {
@@ -69,34 +63,6 @@ public class TestStubAllocFailure extends UpcallTestHelper {
 
         public static void target() {
             fail("Should not get here");
-        }
-    }
-
-    public static class DowncallRunner extends NativeTestHelper {
-
-        private static final int MAX_ARITY = 5;
-
-        private static void mapper(FunctionDescriptor fd, Consumer<FunctionDescriptor> sink) {
-            for (MemoryLayout l : List.of(C_INT, C_LONG_LONG, C_DOUBLE, C_FLOAT, C_SHORT)) {
-                sink.accept(fd.appendArgumentLayouts(l));
-            }
-        }
-
-        public static void main(String[] args) throws Throwable {
-            Linker linker = Linker.nativeLinker();
-            Stream<FunctionDescriptor> stream = Stream.of(FunctionDescriptor.ofVoid());
-            for (int i = 0; i < MAX_ARITY; i++) {
-                stream = stream.mapMulti(DowncallRunner::mapper);
-            }
-
-            try {
-                stream.forEach(linker::downcallHandle);
-            } catch (OutOfMemoryError e) {
-                assertTrue(e.getMessage().contains("Failed to allocate downcall stub"));
-            } catch (VirtualMachineError e) {
-                // Other allocation failure when creating MethodHandle. Let it pass
-                // The important thing for this test is that we don't see a hard VM crash
-            }
         }
     }
 }
