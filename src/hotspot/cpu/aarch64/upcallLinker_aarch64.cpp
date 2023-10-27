@@ -128,6 +128,9 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   const CallRegs call_regs = ForeignGlobals::parse_call_regs(jconv);
   int code_size = upcall_stub_code_base_size + (total_in_args * upcall_stub_size_per_arg);
   CodeBuffer buffer("upcall_stub", code_size, /* locs_size = */ 1);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
 
   Register shuffle_reg = r19;
   JavaCallingConvention out_conv;
@@ -322,6 +325,9 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
                          &buffer,
                          receiver,
                          in_ByteSize(frame_data_offset));
+  if (blob == nullptr) {
+    return nullptr;
+  }
 
 #ifndef PRODUCT
   if (lt.is_enabled()) {

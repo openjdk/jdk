@@ -108,6 +108,9 @@ RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
   int code_size = native_invoker_code_base_size + (num_args * native_invoker_size_per_arg);
   int locs_size = 1; // must be non-zero
   CodeBuffer code("nep_invoker_blob", code_size, locs_size);
+  if (code.blob() == nullptr) {
+    return nullptr;
+  }
   DowncallStubGenerator g(&code, signature, num_args, ret_bt, abi,
                           input_registers, output_registers,
                           needs_return_buffer, captured_state_mask,
@@ -121,6 +124,9 @@ RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
                                   g.frame_complete(),
                                   g.framesize(),
                                   g.oop_maps(), false);
+  if (stub == nullptr) {
+    return nullptr;
+  }
 
 #ifndef PRODUCT
   LogTarget(Trace, foreign, downcall) lt;
