@@ -2,8 +2,6 @@
 
 ### Harfbuzz License
 
-https://github.com/harfbuzz/harfbuzz/blob/8.2.2/COPYING
-
 <pre>
 
 HarfBuzz is licensed under the so-called "Old MIT" license.  Details follow.
