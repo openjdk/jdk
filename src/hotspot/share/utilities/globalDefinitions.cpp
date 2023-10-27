@@ -409,3 +409,32 @@ STATIC_ASSERT(nth_bit(1|2) == 0x8);
 
 STATIC_ASSERT(right_n_bits(3)   == 0x7);
 STATIC_ASSERT(right_n_bits(1|2) == 0x7);
+
+// Check for Flush-To-Zero mode
+
+// On some processors faster execution can be achieved by setting a
+// mode to return zero for extremely small results, rather than an
+// IEEE-754 subnormal number. This mode is not compatible with the
+// Java Language Standard.
+
+// We need the addition of _large_subnormal and _small_subnormal to be
+// performed at runtime. _small_subnormal is volatile so that
+// expressions involving it cannot be evaluated at compile time.
+static const double large_subnormal_double
+  = jdouble_cast(0x0030000000000000); // 0x1.0p-1020;
+static const volatile double small_subnormal_double
+  = jdouble_cast(0x0000000000000003); // 0x0.0000000000003p-1022;
+
+// Quickly test to make sure IEEE-754 subnormal numbers are correctly
+// handled.
+bool IEEE_subnormal_handling_OK() {
+  // _small_subnormal is the smallest subnormal number that has two
+  // bits set. _large_subnormal is a number such that, when
+  // _small_subnormal is added to it, must be rounded according to the
+  // mode. These two tests detect the rounding mode in use. If
+  // subnormals are turned off (i.e. subnormals-are-zero) flush-to-
+  // zero mode is in use.
+
+  return (large_subnormal_double + small_subnormal_double > large_subnormal_double
+          && -large_subnormal_double - small_subnormal_double < -large_subnormal_double);
+}

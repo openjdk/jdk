@@ -1856,12 +1856,12 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
 
 #ifndef IA32
     // Quickly test to make sure subnormals are correctly handled.
-    if (StubRoutines::FTZ_mode_enabled()) {
+    if (! IEEE_subnormal_handling_OK()) {
       // We just dlopen()ed a library that mangled the floating-point
       // flags. Silently fix things now.
       int rtn = fesetenv(&default_fenv);
       assert(rtn == 0, "fesetenv must succeed");
-      assert(! StubRoutines::FTZ_mode_enabled(), "fsetenv didn't work");
+      assert(IEEE_subnormal_handling_OK(), "fsetenv didn't work");
     }
 #endif // IA32
 

@@ -183,11 +183,6 @@ address StubRoutines::_cont_thaw          = nullptr;
 address StubRoutines::_cont_returnBarrier = nullptr;
 address StubRoutines::_cont_returnBarrierExc = nullptr;
 
-const double StubRoutines::_large_subnormal
-    = jdouble_cast(0x0030000000000000); // 0x1.0p-1020;
-const volatile double StubRoutines::_small_subnormal
-    = jdouble_cast(0x0000000000000003); // 0x0.0000000000003p-1022;
-
 JFR_ONLY(RuntimeStub* StubRoutines::_jfr_write_checkpoint_stub = nullptr;)
 JFR_ONLY(address StubRoutines::_jfr_write_checkpoint = nullptr;)
 JFR_ONLY(RuntimeStub* StubRoutines::_jfr_return_lease_stub = nullptr;)
@@ -315,29 +310,6 @@ void compiler_stubs_init(bool in_compiler_thread) {
   } else if (!in_compiler_thread && !DelayCompilerStubsGeneration) {
     StubRoutines::initialize_compiler_stubs();
   }
-}
-
-// Check for Flush-To-Zero mode
-
-// On some processors faster execution can be achieved by returning
-// zero for extremely small results, rather than an IEEE-754 subnormal
-// number. This mode is not compatible with the Java Language
-// Standard.
-bool StubRoutines::FTZ_mode_enabled() {
-  // Quickly test to make sure subnormals are correctly handled.
-
-  // _small_subnormal is the smallest subnormal number that has two
-  // bits set. _large_subnormal is a number such that, when
-  // _small_subnormal is added to it, must be rounded according to the
-  // mode. These two tests detect the rounding mode in use. If
-  // subnormals are turned off (i.e. subnormals-are-zero) FTZ mode is
-  // in use.
-
-  // We need the addition of _large_subnormal and _small_subnormal to
-  // be performed at runtime. Making _small_subnormal volatile ensures
-  // that the following expression isn't evaluated at compile time:
-  return (_large_subnormal + _small_subnormal == _large_subnormal
-      || -_large_subnormal - _small_subnormal == -_large_subnormal);
 }
 
 //

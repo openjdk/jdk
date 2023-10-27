@@ -1335,4 +1335,8 @@ template<typename K> int primitive_compare(const K& k0, const K& k1) {
 template<typename T>
 std::add_rvalue_reference_t<T> declval() noexcept;
 
+// Quickly test to make sure IEEE-754 subnormal numbers are correctly
+// handled.
+bool IEEE_subnormal_handling_OK();
+
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
