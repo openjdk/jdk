@@ -371,7 +371,7 @@ public class MessageFormat extends Format {
      * The constructor first sets the locale, then parses the pattern and
      * creates a list of subformats for the format elements contained in it.
      * Patterns and their interpretation are specified in the
-     * <a href="#patterns">class description</a>.
+     * {@linkplain ##patterns class description}.
      *
      * @param pattern the pattern for this message format
      * @throws    IllegalArgumentException if the pattern is invalid
@@ -389,7 +389,7 @@ public class MessageFormat extends Format {
      * The constructor first sets the locale, then parses the pattern and
      * creates a list of subformats for the format elements contained in it.
      * Patterns and their interpretation are specified in the
-     * <a href="#patterns">class description</a>.
+     * {@linkplain ##patterns class description}.
      *
      * @implSpec The default implementation throws a
      * {@code NullPointerException} if {@code locale} is {@code null}
@@ -447,7 +447,7 @@ public class MessageFormat extends Format {
      * The method parses the pattern and creates a list of subformats
      * for the format elements contained in it.
      * Patterns and their interpretation are specified in the
-     * <a href="#patterns">class description</a>.
+     * {@linkplain ##patterns class description}.
      *
      * @param pattern the pattern for this message format
      * @throws    IllegalArgumentException if the pattern is invalid
@@ -461,9 +461,12 @@ public class MessageFormat extends Format {
     /**
      * Implementation of applying a pattern to this MessageFormat.
      * This method processes a String pattern in accordance with the MessageFormat
-     * pattern syntax and sets the internal {@code pattern} variable. See the
-     * {@linkplain ##patterns} section for further understanding of certain special
-     * characters: "{", "}", ",".
+     * pattern syntax and sets the internal {@code pattern} variable as well as
+     * populating the {@code formats} array with the subformats defined in the
+     * pattern. See the {@linkplain ##patterns} section for further understanding
+     * of certain special characters: "{", "}", ",". See {@linkplain
+     * ##makeFormat(int, int, StringBuilder[])} for the implementation of setting
+     * a subformat.
      */
     @SuppressWarnings("fallthrough") // fallthrough in switch is expected, suppress it
     private void applyPatternImpl(String pattern) {
@@ -520,6 +523,7 @@ public class MessageFormat extends Format {
                         case '}':
                             if (braceStack == 0) {
                                 part = SEG_RAW;
+                                // Set the subformat
                                 makeFormat(i, formatNumber, segments);
                                 formatNumber++;
                                 // throw away other segments
