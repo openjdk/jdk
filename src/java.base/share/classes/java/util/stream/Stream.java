@@ -1088,7 +1088,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @param gatherer a gatherer
      * @return the new stream
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.GATHERERS)
+    @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
     default <R> Stream<R> gather(Gatherer<? super T, ?, R> gatherer) {
         return StreamSupport.stream(spliterator(), isParallel()).gather(gatherer);
     }

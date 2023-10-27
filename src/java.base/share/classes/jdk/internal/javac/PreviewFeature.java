@@ -75,8 +75,8 @@ public @interface PreviewFeature {
         SCOPED_VALUES,
         @JEP(number=453, title="Structured Concurrency", status="Preview")
         STRUCTURED_CONCURRENCY,
-        @JEP(number=999, title="Extensible intermediate Stream operations", status="Preview")
-        GATHERERS,
+        @JEP(number=461, title="Stream Gatherers", status="Preview")
+        STREAM_GATHERERS,
         /**
          * A key for testing.
          */

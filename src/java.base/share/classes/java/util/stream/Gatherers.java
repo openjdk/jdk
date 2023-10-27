@@ -31,8 +31,6 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.Semaphore;
@@ -50,7 +48,7 @@ import java.util.stream.Gatherer.Downstream;
  * operations, such as windowing functions, folding functions, transforming elements
  * concurrently, etc.
 */
-@PreviewFeature(feature = PreviewFeature.Feature.GATHERERS)
+@PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
 public final class Gatherers {
     private Gatherers() { }
 

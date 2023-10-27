@@ -173,7 +173,7 @@ import java.util.function.Supplier;
  * @param <R> the type of output elements from the gatherer operation
  * @since 22
  */
-@PreviewFeature(feature = PreviewFeature.Feature.GATHERERS)
+@PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
 public interface Gatherer<T, A, R> {
     /**
      * A function that produces an instance of the intermediate state used for this
@@ -427,7 +427,7 @@ public interface Gatherer<T, A, R> {
      * @param <T> the type of elements this downstream accepts to be pushed
      */
     @FunctionalInterface
-    @PreviewFeature(feature = PreviewFeature.Feature.GATHERERS)
+    @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
     interface Downstream<T> {
 
         /**
@@ -463,7 +463,7 @@ public interface Gatherer<T, A, R> {
      * @param <R> the type of results this integrator can produce
      */
     @FunctionalInterface
-    @PreviewFeature(feature = PreviewFeature.Feature.GATHERERS)
+    @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
     interface Integrator<A, T, R> {
         /** Integrate is the method which given: the current state, the next element, and a downstream object;
          * performs the main logic -- potentially inspecting and/or updating the state, optionally sending any
@@ -516,7 +516,7 @@ public interface Gatherer<T, A, R> {
          * @param <R> the type of results this greedy integrator can produce
          */
         @FunctionalInterface
-        @PreviewFeature(feature = PreviewFeature.Feature.GATHERERS)
+        @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
         interface Greedy<A, T, R> extends Integrator<A, T, R> { }
     }
 }
