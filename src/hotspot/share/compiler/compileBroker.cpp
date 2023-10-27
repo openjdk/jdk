@@ -31,6 +31,7 @@
 #include "code/codeHeapState.hpp"
 #include "code/dependencyContext.hpp"
 #include "compiler/compilationLog.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
@@ -649,6 +650,10 @@ void CompileBroker::compilation_init(JavaThread* THREAD) {
      JFR_ONLY(register_jfr_phasetype_serializer(compiler_jvmci);)
    }
 #endif // INCLUDE_JVMCI
+
+  if (CompilerOracle::should_collect_memstat()) {
+    CompilationMemoryStatistic::initialize();
+  }
 
   // Start the compiler thread(s)
   init_compiler_threads();
@@ -1695,8 +1700,11 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   bool free_task;
 #if INCLUDE_JVMCI
   AbstractCompiler* comp = compiler(task->comp_level());
-  if (comp->is_jvmci() && !task->should_wait_for_compilation()) {
+  if (!UseJVMCINativeLibrary && comp->is_jvmci() && !task->should_wait_for_compilation()) {
     // It may return before compilation is completed.
+    // Note that libjvmci should not pre-emptively unblock
+    // a thread waiting for a compilation as it does not call
+    // Java code and so is not deadlock prone like jarjvmci.
     free_task = wait_for_jvmci_completion((JVMCICompiler*) comp, task, thread);
   } else
 #endif
@@ -1770,17 +1778,22 @@ bool CompileBroker::init_compiler_runtime() {
   return true;
 }
 
+void CompileBroker::free_buffer_blob_if_allocated(CompilerThread* thread) {
+  BufferBlob* blob = thread->get_buffer_blob();
+  if (blob != nullptr) {
+    blob->flush();
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    CodeCache::free(blob);
+  }
+}
+
 /**
  * If C1 and/or C2 initialization failed, we shut down all compilation.
  * We do this to keep things simple. This can be changed if it ever turns
  * out to be a problem.
  */
 void CompileBroker::shutdown_compiler_runtime(AbstractCompiler* comp, CompilerThread* thread) {
-  // Free buffer blob, if allocated
-  if (thread->get_buffer_blob() != nullptr) {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    CodeCache::free(thread->get_buffer_blob());
-  }
+  free_buffer_blob_if_allocated(thread);
 
   if (comp->should_perform_shutdown()) {
     // There are two reasons for shutting down the compiler
@@ -1919,11 +1932,7 @@ void CompileBroker::compiler_thread_loop() {
           // Notify compiler that the compiler thread is about to stop
           thread->compiler()->stopping_compiler_thread(thread);
 
-          // Free buffer blob, if allocated
-          if (thread->get_buffer_blob() != nullptr) {
-            MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-            CodeCache::free(thread->get_buffer_blob());
-          }
+          free_buffer_blob_if_allocated(thread);
           return; // Stop this thread.
         }
       }
@@ -2202,7 +2211,9 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     } else {
       JVMCIEnv env(thread, &compile_state, __FILE__, __LINE__);
       if (env.init_error() != JNI_OK) {
-        failure_reason = os::strdup(err_msg("Error attaching to libjvmci (err: %d)", env.init_error()), mtJVMCI);
+        const char* msg = env.init_error_msg();
+        failure_reason = os::strdup(err_msg("Error attaching to libjvmci (err: %d, %s)",
+                                    env.init_error(), msg == nullptr ? "unknown" : msg), mtJVMCI);
         bool reason_on_C_heap = true;
         // In case of JNI_ENOMEM, there's a good chance a subsequent attempt to create libjvmci or attach to it
         // might succeed. Other errors most likely indicate a non-recoverable error in the JVMCI runtime.

@@ -157,6 +157,9 @@
   void round_double_mode(FloatRegister dst, FloatRegister src, int round_mode,
                          Register tmp1, Register tmp2, Register tmp3);
 
+  void signum_fp(FloatRegister dst, FloatRegister src, FloatRegister one,
+                 bool is_double);
+
   // intrinsic methods implemented by rvv instructions
   void string_equals_v(Register r1, Register r2,
                        Register result, Register cnt1,
@@ -250,8 +253,6 @@
                         VectorRegister src, BasicType src_bt);
 
   void vfcvt_rtz_x_f_v_safe(VectorRegister dst, VectorRegister src);
-  void vfwcvt_rtz_x_f_v_safe(VectorRegister dst, VectorRegister src);
-  void vfncvt_rtz_x_f_w_safe(VectorRegister dst, VectorRegister src);
 
   void extract_v(Register dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);
   void extract_fp_v(FloatRegister dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);

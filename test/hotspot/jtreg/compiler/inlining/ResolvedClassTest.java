@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.io.IOException;
 public class ResolvedClassTest {
     /* ======================================================================== */
     static void testStatic() throws IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
                 "-Xbatch", "-XX:CompileCommand=quiet", "-XX:CompileCommand=compileonly," + TestStatic.class.getName() + "::test",
@@ -78,7 +78,7 @@ public class ResolvedClassTest {
 
     /* ======================================================================== */
     static void testStaticInit() throws IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
                 "-Xbatch", "-XX:CompileCommand=quiet", "-XX:CompileCommand=compileonly," + TestStaticInit.class.getName() + "::test",
@@ -115,7 +115,7 @@ public class ResolvedClassTest {
 
     /* ======================================================================== */
     static void testIndy() throws IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
                 "-Xbatch", "-XX:CompileCommand=quiet", "-XX:CompileCommand=compileonly," + TestIndy.class.getName() + "::test",

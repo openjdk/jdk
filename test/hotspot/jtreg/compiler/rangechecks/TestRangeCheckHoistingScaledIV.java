@@ -28,8 +28,7 @@
  * @library /test/lib /
  * @requires vm.debug & vm.compiler2.enabled & (os.simpleArch == "x64" | os.arch == "aarch64")
  * @modules jdk.incubator.vector
- * @compile --enable-preview -source ${jdk.version} TestRangeCheckHoistingScaledIV.java
- * @run main/othervm --enable-preview compiler.rangechecks.TestRangeCheckHoistingScaledIV
+ * @run main/othervm compiler.rangechecks.TestRangeCheckHoistingScaledIV
  */
 
 package compiler.rangechecks;
@@ -82,8 +81,8 @@ public class TestRangeCheckHoistingScaledIV {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createTestJvm(
-                "--enable-preview", "--add-modules", "jdk.incubator.vector",
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                "--add-modules", "jdk.incubator.vector",
                 "-Xbatch", "-XX:+TraceLoopPredicate", Launcher.class.getName());
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);

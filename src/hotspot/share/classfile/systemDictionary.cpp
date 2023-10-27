@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
@@ -1524,6 +1525,8 @@ InstanceKlass* SystemDictionary::find_or_define_instance_class(Symbol* class_nam
     assert(defined_k != nullptr, "Should have a klass if there's no exception");
     k->class_loader_data()->add_to_deallocate_list(k);
   } else if (HAS_PENDING_EXCEPTION) {
+    // Remove this InstanceKlass from the LoaderConstraintTable if added.
+    LoaderConstraintTable::remove_failed_loaded_klass(k, class_loader_data(class_loader));
     assert(defined_k == nullptr, "Should not have a klass if there's an exception");
     k->class_loader_data()->add_to_deallocate_list(k);
   }
@@ -1780,7 +1783,7 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
     bool result = LoaderConstraintTable::add_entry(constraint_name, klass1, loader_data1,
                                                    klass2, loader_data2);
 #if INCLUDE_CDS
-    if (Arguments::is_dumping_archive() && klass_being_linked != nullptr &&
+    if (CDSConfig::is_dumping_archive() && klass_being_linked != nullptr &&
         !klass_being_linked->is_shared()) {
          SystemDictionaryShared::record_linking_constraint(constraint_name,
                                      InstanceKlass::cast(klass_being_linked),
