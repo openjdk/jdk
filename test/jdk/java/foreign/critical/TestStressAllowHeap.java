@@ -102,7 +102,7 @@ public class TestStressAllowHeap {
             while (true) {
                 try {
                     doStep(handle, sequence);
-                } catch(Throwable t) {
+                } catch (Throwable t) {
                     throw new RuntimeException(t);
                 }
             }
