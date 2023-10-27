@@ -818,7 +818,6 @@ void MachEpilogNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
     __ addq(as_Register(RSP_enc), framesize);
   }
 
-  // popq rbp
   __ popq(as_Register(RBP_enc));
 
   if (StackReservedPages > 0 && C->has_reserved_stack_access()) {
@@ -5029,7 +5028,7 @@ instruct loadConD0(regD dst, immD0 src)
 
   format %{ "xorpd   $dst, $dst\t# double 0.0" %}
   ins_encode %{
-    __ xorpd ($dst$$XMMRegister, $dst$$XMMRegister);
+    __ xorpd($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -5525,7 +5524,7 @@ instruct storeSSI(stackSlotI dst, rRegI src)
   ins_cost(100);
   format %{ "movl    $dst, $src\t# int stk" %}
   ins_encode %{
-    __ movl $dst$$Address, $src$$Register);
+    __ movl($dst$$Address, $src$$Register);
   %}
   ins_pipe( ialu_mem_reg );
 %}
