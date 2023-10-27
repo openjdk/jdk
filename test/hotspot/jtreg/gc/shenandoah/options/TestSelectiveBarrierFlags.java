@@ -54,7 +54,6 @@ public class TestSelectiveBarrierFlags {
                 new String[] { "ShenandoahSATBBarrier", "ShenandoahIUBarrier" },
                 new String[] { "ShenandoahCASBarrier" },
                 new String[] { "ShenandoahCloneBarrier" },
-                new String[] { "ShenandoahNMethodBarrier" },
                 new String[] { "ShenandoahStackWatermarkBarrier" }
         };
 
@@ -91,7 +90,7 @@ public class TestSelectiveBarrierFlags {
 
             pool.submit(() -> {
                 try {
-                    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(conf.toArray(new String[0]));
+                    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(conf.toArray(new String[0]));
                     OutputAnalyzer output = new OutputAnalyzer(pb.start());
                     output.shouldHaveExitValue(0);
                 } catch (Exception e) {

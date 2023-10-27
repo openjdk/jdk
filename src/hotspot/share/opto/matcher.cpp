@@ -356,9 +356,12 @@ void Matcher::match( ) {
   // Recursively match trees from old space into new space.
   // Correct leaves of new-space Nodes; they point to old-space.
   _visited.clear();
-  C->set_cached_top_node(xform( C->top(), live_nodes ));
+  Node* const n = xform(C->top(), live_nodes);
+  if (C->failing()) return;
+  C->set_cached_top_node(n);
   if (!C->failing()) {
     Node* xroot =        xform( C->root(), 1 );
+    if (C->failing()) return;
     if (xroot == nullptr) {
       Matcher::soft_match_failure();  // recursive matching process failed
       assert(false, "instruction match failed");

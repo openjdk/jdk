@@ -91,41 +91,113 @@ import jdk.internal.classfile.impl.StackMapDecoder;
  * @see AttributeMapper
  */
 public class Attributes {
+
+    /** AnnotationDefault */
     public static final String NAME_ANNOTATION_DEFAULT = "AnnotationDefault";
+
+    /** BootstrapMethods */
     public static final String NAME_BOOTSTRAP_METHODS = "BootstrapMethods";
+
+    /** CharacterRangeTable */
     public static final String NAME_CHARACTER_RANGE_TABLE = "CharacterRangeTable";
+
+    /** Code */
     public static final String NAME_CODE = "Code";
+
+    /** CompilationID */
     public static final String NAME_COMPILATION_ID = "CompilationID";
+
+    /** ConstantValue */
     public static final String NAME_CONSTANT_VALUE = "ConstantValue";
+
+    /** Deprecated */
     public static final String NAME_DEPRECATED = "Deprecated";
+
+    /** EnclosingMethod */
     public static final String NAME_ENCLOSING_METHOD = "EnclosingMethod";
+
+    /** Exceptions */
     public static final String NAME_EXCEPTIONS = "Exceptions";
+
+    /** InnerClasses */
     public static final String NAME_INNER_CLASSES = "InnerClasses";
+
+    /** LineNumberTable */
     public static final String NAME_LINE_NUMBER_TABLE = "LineNumberTable";
+
+    /** LocalVariableTable */
     public static final String NAME_LOCAL_VARIABLE_TABLE = "LocalVariableTable";
+
+    /** LocalVariableTypeTable */
     public static final String NAME_LOCAL_VARIABLE_TYPE_TABLE = "LocalVariableTypeTable";
+
+    /** MethodParameters */
     public static final String NAME_METHOD_PARAMETERS = "MethodParameters";
+
+    /** Module */
     public static final String NAME_MODULE = "Module";
+
+    /** ModuleHashes */
     public static final String NAME_MODULE_HASHES = "ModuleHashes";
+
+    /** ModuleMainClass */
     public static final String NAME_MODULE_MAIN_CLASS = "ModuleMainClass";
+
+    /** ModulePackages */
     public static final String NAME_MODULE_PACKAGES = "ModulePackages";
+
+    /** ModuleResolution */
     public static final String NAME_MODULE_RESOLUTION = "ModuleResolution";
+
+    /** ModuleTarget */
     public static final String NAME_MODULE_TARGET = "ModuleTarget";
+
+    /** NestHost */
     public static final String NAME_NEST_HOST = "NestHost";
+
+    /** NestMembers */
     public static final String NAME_NEST_MEMBERS = "NestMembers";
+
+    /** PermittedSubclasses */
     public static final String NAME_PERMITTED_SUBCLASSES = "PermittedSubclasses";
+
+    /** Record */
     public static final String NAME_RECORD = "Record";
+
+    /** RuntimeInvisibleAnnotations */
     public static final String NAME_RUNTIME_INVISIBLE_ANNOTATIONS = "RuntimeInvisibleAnnotations";
+
+    /** RuntimeInvisibleTypeAnnotations */
     public static final String NAME_RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS = "RuntimeInvisibleParameterAnnotations";
+
+    /**  */
     public static final String NAME_RUNTIME_INVISIBLE_TYPE_ANNOTATIONS = "RuntimeInvisibleTypeAnnotations";
+
+    /** RuntimeVisibleAnnotations */
     public static final String NAME_RUNTIME_VISIBLE_ANNOTATIONS = "RuntimeVisibleAnnotations";
+
+    /** RuntimeVisibleParameterAnnotations */
     public static final String NAME_RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS = "RuntimeVisibleParameterAnnotations";
+
+    /** RuntimeVisibleTypeAnnotations */
     public static final String NAME_RUNTIME_VISIBLE_TYPE_ANNOTATIONS = "RuntimeVisibleTypeAnnotations";
+
+    /** Signature */
     public static final String NAME_SIGNATURE = "Signature";
+
+    /** SourceDebugExtension */
     public static final String NAME_SOURCE_DEBUG_EXTENSION = "SourceDebugExtension";
+
+    /** SourceFile */
     public static final String NAME_SOURCE_FILE = "SourceFile";
+
+    /** SourceID */
     public static final String NAME_SOURCE_ID = "SourceID";
+
+    /** StackMapTable */
     public static final String NAME_STACK_MAP_TABLE = "StackMapTable";
+
+    /** Synthetic */
     public static final String NAME_SYNTHETIC = "Synthetic";
 
     private Attributes() {
@@ -143,6 +215,11 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, AnnotationDefaultAttribute attr) {
                     attr.defaultValue().writeTo(buf);
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
+                }
             };
 
     /** Attribute mapper for the {@code BootstrapMethods} attribute */
@@ -156,6 +233,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, BootstrapMethodsAttribute attr) {
                     buf.writeList(attr.bootstrapMethods());
+                }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
                 }
             };
 
@@ -179,6 +261,11 @@ public class Attributes {
                         buf.writeU2(info.flags());
                     }
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.LABELS;
+                }
             };
 
     /** Attribute mapper for the {@code Code} attribute */
@@ -192,6 +279,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, CodeAttribute attr) {
                     throw new UnsupportedOperationException("Code attribute does not support direct write");
+                }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
                 }
             };
 
@@ -208,6 +300,11 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, CompilationIDAttribute attr) {
                     buf.writeIndex(attr.compilationId());
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
+                }
             };
 
     /** Attribute mapper for the {@code ConstantValue} attribute */
@@ -222,6 +319,11 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, ConstantValueAttribute attr) {
                     buf.writeIndex(attr.constant());
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
+                }
             };
 
     /** Attribute mapper for the {@code Deprecated} attribute */
@@ -235,6 +337,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, DeprecatedAttribute attr) {
                     // empty
+                }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.STATELESS;
                 }
             };
 
@@ -251,6 +358,11 @@ public class Attributes {
                     buf.writeIndex(attr.enclosingClass());
                     buf.writeIndexOrZero(attr.enclosingMethod().orElse(null));
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
+                }
             };
 
     /** Attribute mapper for the {@code Exceptions} attribute */
@@ -264,6 +376,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, ExceptionsAttribute attr) {
                     buf.writeListIndices(attr.exceptions());
+                }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
                 }
             };
 
@@ -286,6 +403,11 @@ public class Attributes {
                         buf.writeU2(ic.flagsMask());
                     }
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
+                }
             };
 
     /** Attribute mapper for the {@code LineNumberTable} attribute */
@@ -304,6 +426,11 @@ public class Attributes {
                         buf.writeU2(line.startPc());
                         buf.writeU2(line.lineNumber());
                     }
+                }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.LABELS;
                 }
             };
 
@@ -327,6 +454,11 @@ public class Attributes {
                         buf.writeU2(info.slot());
                     }
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.LABELS;
+                }
             };
 
     /** Attribute mapper for the {@code LocalVariableTypeTable} attribute */
@@ -349,6 +481,11 @@ public class Attributes {
                         buf.writeU2(info.slot());
                     }
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.LABELS;
+                }
             };
 
     /** Attribute mapper for the {@code MethodParameters} attribute */
@@ -368,47 +505,57 @@ public class Attributes {
                         buf.writeU2(info.flagsMask());
                     }
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
+                }
             };
 
     /** Attribute mapper for the {@code Module} attribute */
     public static final AttributeMapper<ModuleAttribute>
             MODULE = new AbstractAttributeMapper<>(NAME_MODULE, Classfile.JAVA_9_VERSION) {
-        @Override
-        public ModuleAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundModuleAttribute(cf, this, p);
-        }
+                @Override
+                public ModuleAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+                    return new BoundAttribute.BoundModuleAttribute(cf, this, p);
+                }
 
-        @Override
-        protected void writeBody(BufWriter buf, ModuleAttribute attr) {
-            buf.writeIndex(attr.moduleName());
-            buf.writeU2(attr.moduleFlagsMask());
-            buf.writeIndexOrZero(attr.moduleVersion().orElse(null));
-            buf.writeU2(attr.requires().size());
-            for (ModuleRequireInfo require : attr.requires()) {
-                buf.writeIndex(require.requires());
-                buf.writeU2(require.requiresFlagsMask());
-                buf.writeIndexOrZero(require.requiresVersion().orElse(null));
-            }
-            buf.writeU2(attr.exports().size());
-            for (ModuleExportInfo export : attr.exports()) {
-                buf.writeIndex(export.exportedPackage());
-                buf.writeU2(export.exportsFlagsMask());
-                buf.writeListIndices(export.exportsTo());
-            }
-            buf.writeU2(attr.opens().size());
-            for (ModuleOpenInfo open : attr.opens()) {
-                buf.writeIndex(open.openedPackage());
-                buf.writeU2(open.opensFlagsMask());
-                buf.writeListIndices(open.opensTo());
-            }
-            buf.writeListIndices(attr.uses());
-            buf.writeU2(attr.provides().size());
-            for (ModuleProvideInfo provide : attr.provides()) {
-                buf.writeIndex(provide.provides());
-                buf.writeListIndices(provide.providesWith());
-            }
-        }
-    };
+                @Override
+                protected void writeBody(BufWriter buf, ModuleAttribute attr) {
+                    buf.writeIndex(attr.moduleName());
+                    buf.writeU2(attr.moduleFlagsMask());
+                    buf.writeIndexOrZero(attr.moduleVersion().orElse(null));
+                    buf.writeU2(attr.requires().size());
+                    for (ModuleRequireInfo require : attr.requires()) {
+                        buf.writeIndex(require.requires());
+                        buf.writeU2(require.requiresFlagsMask());
+                        buf.writeIndexOrZero(require.requiresVersion().orElse(null));
+                    }
+                    buf.writeU2(attr.exports().size());
+                    for (ModuleExportInfo export : attr.exports()) {
+                        buf.writeIndex(export.exportedPackage());
+                        buf.writeU2(export.exportsFlagsMask());
+                        buf.writeListIndices(export.exportsTo());
+                    }
+                    buf.writeU2(attr.opens().size());
+                    for (ModuleOpenInfo open : attr.opens()) {
+                        buf.writeIndex(open.openedPackage());
+                        buf.writeU2(open.opensFlagsMask());
+                        buf.writeListIndices(open.opensTo());
+                    }
+                    buf.writeListIndices(attr.uses());
+                    buf.writeU2(attr.provides().size());
+                    for (ModuleProvideInfo provide : attr.provides()) {
+                        buf.writeIndex(provide.provides());
+                        buf.writeListIndices(provide.providesWith());
+                    }
+                }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
+                }
+            };
 
     /** Attribute mapper for the {@code ModuleHashes} attribute */
     public static final AttributeMapper<ModuleHashesAttribute>
@@ -429,6 +576,11 @@ public class Attributes {
                         buf.writeBytes(hash.hash());
                     }
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
+                }
             };
 
     /** Attribute mapper for the {@code ModuleMainClass} attribute */
@@ -442,6 +594,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, ModuleMainClassAttribute attr) {
                     buf.writeIndex(attr.mainClass());
+                }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
                 }
             };
 
@@ -457,11 +614,16 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, ModulePackagesAttribute attr) {
                     buf.writeListIndices(attr.packages());
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
+                }
             };
 
     /** Attribute mapper for the {@code ModuleResolution} attribute */
     public static final AttributeMapper<ModuleResolutionAttribute>
-            MODULE_RESOLUTION = new AbstractAttributeMapper<>(NAME_MODULE_RESOLUTION, true, Classfile.JAVA_9_VERSION) {
+            MODULE_RESOLUTION = new AbstractAttributeMapper<>(NAME_MODULE_RESOLUTION, Classfile.JAVA_9_VERSION) {
                 @Override
                 public ModuleResolutionAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundModuleResolutionAttribute(cf, this, p);
@@ -471,11 +633,16 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, ModuleResolutionAttribute attr) {
                     buf.writeU2(attr.resolutionFlags());
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.STATELESS;
+                }
             };
 
     /** Attribute mapper for the {@code ModuleTarget} attribute */
     public static final AttributeMapper<ModuleTargetAttribute>
-            MODULE_TARGET = new AbstractAttributeMapper<>(NAME_MODULE_TARGET, true, Classfile.JAVA_9_VERSION) {
+            MODULE_TARGET = new AbstractAttributeMapper<>(NAME_MODULE_TARGET, Classfile.JAVA_9_VERSION) {
                 @Override
                 public ModuleTargetAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundModuleTargetAttribute(cf, this, p);
@@ -484,6 +651,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, ModuleTargetAttribute attr) {
                     buf.writeIndex(attr.targetPlatform());
+                }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
                 }
             };
 
@@ -499,6 +671,11 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, NestHostAttribute attr) {
                     buf.writeIndex(attr.nestHost());
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
+                }
             };
 
     /** Attribute mapper for the {@code NestMembers} attribute */
@@ -513,6 +690,11 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, NestMembersAttribute attr) {
                     buf.writeListIndices(attr.nestMembers());
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
+                }
             };
 
     /** Attribute mapper for the {@code PermittedSubclasses} attribute */
@@ -526,6 +708,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, PermittedSubclassesAttribute attr) {
                     buf.writeListIndices(attr.permittedSubclasses());
+                }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
                 }
             };
 
@@ -547,6 +734,11 @@ public class Attributes {
                         buf.writeList(info.attributes());
                     }
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
+                }
             };
 
     /** Attribute mapper for the {@code RuntimeInvisibleAnnotations} attribute */
@@ -561,7 +753,12 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, RuntimeInvisibleAnnotationsAttribute attr) {
                     buf.writeList(attr.annotations());
                 }
-    };
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
+                }
+            };
 
     /** Attribute mapper for the {@code RuntimeInvisibleParameterAnnotations} attribute */
     public static final AttributeMapper<RuntimeInvisibleParameterAnnotationsAttribute>
@@ -578,6 +775,11 @@ public class Attributes {
                     for (List<Annotation> list : lists)
                         buf.writeList(list);
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
+                }
             };
 
     /** Attribute mapper for the {@code RuntimeInvisibleTypeAnnotations} attribute */
@@ -592,21 +794,31 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, RuntimeInvisibleTypeAnnotationsAttribute attr) {
                     buf.writeList(attr.annotations());
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.UNSTABLE;
+                }
             };
 
     /** Attribute mapper for the {@code RuntimeVisibleAnnotations} attribute */
     public static final AttributeMapper<RuntimeVisibleAnnotationsAttribute>
             RUNTIME_VISIBLE_ANNOTATIONS = new AbstractAttributeMapper<>(NAME_RUNTIME_VISIBLE_ANNOTATIONS, Classfile.JAVA_5_VERSION) {
-        @Override
-        public RuntimeVisibleAnnotationsAttribute readAttribute(AttributedElement enclosing, ClassReader cf, int pos) {
-            return new BoundAttribute.BoundRuntimeVisibleAnnotationsAttribute(cf, pos);
-        }
+                @Override
+                public RuntimeVisibleAnnotationsAttribute readAttribute(AttributedElement enclosing, ClassReader cf, int pos) {
+                    return new BoundAttribute.BoundRuntimeVisibleAnnotationsAttribute(cf, pos);
+                }
 
-        @Override
-        protected void writeBody(BufWriter buf, RuntimeVisibleAnnotationsAttribute attr) {
-            buf.writeList(attr.annotations());
-        }
-    };
+                @Override
+                protected void writeBody(BufWriter buf, RuntimeVisibleAnnotationsAttribute attr) {
+                    buf.writeList(attr.annotations());
+                }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
+                }
+            };
 
     /** Attribute mapper for the {@code RuntimeVisibleParameterAnnotations} attribute */
     public static final AttributeMapper<RuntimeVisibleParameterAnnotationsAttribute>
@@ -623,6 +835,11 @@ public class Attributes {
                     for (List<Annotation> list : lists)
                         buf.writeList(list);
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
+                }
             };
 
     /** Attribute mapper for the {@code RuntimeVisibleTypeAnnotations} attribute */
@@ -636,6 +853,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, RuntimeVisibleTypeAnnotationsAttribute attr) {
                     buf.writeList(attr.annotations());
+                }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.UNSTABLE;
                 }
             };
 
@@ -651,6 +873,11 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, SignatureAttribute attr) {
                     buf.writeIndex(attr.signature());
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
+                }
             };
 
     /** Attribute mapper for the {@code SourceDebugExtension} attribute */
@@ -664,6 +891,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, SourceDebugExtensionAttribute attr) {
                     buf.writeBytes(attr.contents());
+                }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.STATELESS;
                 }
             };
 
@@ -679,6 +911,11 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, SourceFileAttribute attr) {
                     buf.writeIndex(attr.sourceFile());
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
+                }
             };
 
     /** Attribute mapper for the {@code SourceID} attribute */
@@ -692,6 +929,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, SourceIDAttribute attr) {
                     buf.writeIndex(attr.sourceId());
+                }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.CP_REFS;
                 }
             };
 
@@ -707,12 +949,17 @@ public class Attributes {
                 protected void writeBody(BufWriter b, StackMapTableAttribute attr) {
                     StackMapDecoder.writeFrames(b, attr.entries());
                 }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.LABELS;
+                }
             };
 
 
     /** Attribute mapper for the {@code Synthetic} attribute */
     public static final AttributeMapper<SyntheticAttribute>
-            SYNTHETIC = new AbstractAttributeMapper<>(NAME_SYNTHETIC) {
+            SYNTHETIC = new AbstractAttributeMapper<>(NAME_SYNTHETIC, true) {
                 @Override
                 public SyntheticAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundSyntheticAttribute(cf, this, p);
@@ -721,6 +968,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, SyntheticAttribute attr) {
                     // empty
+                }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return AttributeStability.STATELESS;
                 }
             };
 

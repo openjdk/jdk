@@ -25,7 +25,10 @@
 
 package com.sun.crypto.provider;
 
+import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.lang.ref.Reference;
+import java.lang.ref.Cleaner.Cleanable;
 import java.security.MessageDigest;
 import java.security.KeyRep;
 import java.security.spec.InvalidKeySpecException;
@@ -45,19 +48,20 @@ import jdk.internal.ref.CleanerFactory;
 final class PBEKey implements SecretKey {
 
     @java.io.Serial
-    static final long serialVersionUID = -2234768909660948176L;
+    private static final long serialVersionUID = -2234768909660948176L;
 
     private byte[] key;
 
-    private String type;
+    private final String type;
+
+    private transient Cleanable cleanable;
 
     /**
      * Creates a PBE key from a given PBE key specification.
      *
      * @param keytype the given PBE key specification
      */
-    PBEKey(PBEKeySpec keySpec, String keytype, boolean useCleaner)
-            throws InvalidKeySpecException {
+    PBEKey(PBEKeySpec keySpec, String keytype) throws InvalidKeySpecException {
         char[] passwd = keySpec.getPassword();
         if (passwd == null) {
             // Should allow an empty password.
@@ -78,19 +82,18 @@ final class PBEKey implements SecretKey {
         type = keytype;
 
         // Use the cleaner to zero the key when no longer referenced
-        if (useCleaner) {
-            final byte[] k = this.key;
-            CleanerFactory.cleaner().register(this,
-                () -> Arrays.fill(k, (byte) 0x00));
-        }
+        final byte[] k = this.key;
+        cleanable = CleanerFactory.cleaner().register(this,
+                () -> java.util.Arrays.fill(k, (byte)0x00));
     }
 
     public byte[] getEncoded() {
-        // The key is zeroized by finalize()
-        // The reachability fence ensures finalize() isn't called early
-        byte[] result = key.clone();
-        Reference.reachabilityFence(this);
-        return result;
+        try {
+            return key.clone();
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
+        }
     }
 
     public String getAlgorithm() {
@@ -107,25 +110,40 @@ final class PBEKey implements SecretKey {
      */
     @Override
     public int hashCode() {
-        return Arrays.hashCode(this.key)
-                ^ getAlgorithm().toLowerCase(Locale.ENGLISH).hashCode();
+        try {
+            return Arrays.hashCode(this.key)
+                    ^ getAlgorithm().toLowerCase(Locale.ENGLISH).hashCode();
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
+        }
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == this)
-            return true;
+        try {
+            if (obj == this)
+                return true;
 
-        if (!(obj instanceof SecretKey that))
-            return false;
+            if (!(obj instanceof SecretKey that))
+                return false;
 
-        if (!(that.getAlgorithm().equalsIgnoreCase(type)))
-            return false;
+            // destroyed keys are considered different
+            if (isDestroyed() || that.isDestroyed()) {
+                return false;
+            }
 
-        byte[] thatEncoded = that.getEncoded();
-        boolean ret = MessageDigest.isEqual(this.key, thatEncoded);
-        Arrays.fill(thatEncoded, (byte)0x00);
-        return ret;
+            if (!(that.getAlgorithm().equalsIgnoreCase(type)))
+                return false;
+
+            byte[] thatEncoded = that.getEncoded();
+            boolean ret = MessageDigest.isEqual(this.key, thatEncoded);
+            Arrays.fill(thatEncoded, (byte)0x00);
+            return ret;
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
+        }
     }
 
     /**
@@ -134,22 +152,51 @@ final class PBEKey implements SecretKey {
      */
     @Override
     public void destroy() {
-        if (key != null) {
-            Arrays.fill(key, (byte) 0x00);
-            key = null;
+        if (cleanable != null) {
+            cleanable.clean();
+            cleanable = null;
         }
     }
 
+    @Override
+    public boolean isDestroyed() {
+        return (cleanable == null);
+    }
+
     /**
-     * readObject is called to restore the state of this key from
-     * a stream.
+     * Restores the state of this object from the stream.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
-         throws java.io.IOException, ClassNotFoundException
+         throws IOException, ClassNotFoundException
     {
         s.defaultReadObject();
-        key = key.clone();
+        if (key == null) {
+            throw new InvalidObjectException(
+                    "PBEKey couldn't be deserialized");
+        }
+        byte[] temp = key;
+        key = temp.clone();
+        Arrays.fill(temp, (byte)0x00);
+
+        // Accept "\0" to signify "zero-length password with no terminator".
+        if (!(key.length == 1 && key[0] == 0)) {
+            for (int i = 0; i < key.length; i++) {
+                if ((key[i] < '\u0020') || (key[i] > '\u007E')) {
+                    throw new InvalidObjectException(
+                            "PBEKey had non-ASCII chars");
+                }
+            }
+        }
+
+        // Use cleaner to zero the key when no longer referenced
+        final byte[] k = this.key;
+        cleanable = CleanerFactory.cleaner().register(this,
+                () -> java.util.Arrays.fill(k, (byte)0x00));
     }
 
 
@@ -163,9 +210,14 @@ final class PBEKey implements SecretKey {
      */
     @java.io.Serial
     private Object writeReplace() throws java.io.ObjectStreamException {
-        return new KeyRep(KeyRep.Type.SECRET,
-                getAlgorithm(),
-                getFormat(),
-                key);
+        try {
+            return new KeyRep(KeyRep.Type.SECRET,
+                    getAlgorithm(),
+                    getFormat(),
+                    key);
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
+        }
     }
 }

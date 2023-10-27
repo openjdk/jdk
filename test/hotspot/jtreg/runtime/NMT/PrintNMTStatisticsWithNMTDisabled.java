@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  /*
  * @test
  * @summary Trying to enable PrintNMTStatistics should result in a warning
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -36,7 +37,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class PrintNMTStatisticsWithNMTDisabled {
 
   public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
       "-XX:+UnlockDiagnosticVMOptions",
       "-XX:+PrintNMTStatistics", "-XX:NativeMemoryTracking=off",
       "-version");
