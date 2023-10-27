@@ -1554,7 +1554,7 @@ public class CreateSymbols {
                 Collections.emptySet());
 
         try {
-            List<Path> modulePaths = new ArrayList<>();
+            Map<Path, ModuleHeaderDescription> modulePath2Header = new HashMap<>();
             List<Path> pendingExportedDirectories = new ArrayList<>();
 
             try (DirectoryStream<Path> ds = Files.newDirectoryStream(modulesDirectory)) {
@@ -1562,8 +1562,6 @@ public class CreateSymbols {
                     Path moduleInfo = p.resolve("module-info.class");
 
                     if (Files.isReadable(moduleInfo)) {
-                        modulePaths.add(p);
-
                         ModuleDescription md;
 
                         try (InputStream in = Files.newInputStream(moduleInfo)) {
@@ -1573,6 +1571,8 @@ public class CreateSymbols {
                         if (md == null) {
                             continue;
                         }
+
+                        modulePath2Header.put(p, md.header.get(0));
 
                         Set<String> currentModuleExports =
                                 md.header.get(0).exports.stream()
@@ -1611,10 +1611,14 @@ public class CreateSymbols {
                     continue;
                 }
 
-                for (Path modulePath : modulePaths) {
-                    Path currentPath = modulePath.resolve(current + ".class");
+                for (Entry<Path, ModuleHeaderDescription> e : modulePath2Header.entrySet()) {
+                    Path currentPath = e.getKey().resolve(current + ".class");
 
                     if (Files.isReadable(currentPath)) {
+                        String pack = current.substring(0, current.lastIndexOf('/'));
+
+                        e.getValue().extraModulePackages.add(pack);
+
                         loadFromDirectoryHandleClassFile(currentPath, currentVersionClasses,
                                                          currentEIList, version,
                                                          pendingExtraClasses);
