@@ -997,7 +997,7 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
     add_req(indices);
     add_req(mask);
     assert(req() == MemNode::ValueIn + 2, "match_edge expects that last input is in MemNode::ValueIn+1");
-    if (is_subword_type(vect_type()->is_vect()->element_basic_type())) {
+    if (is_subword_type(vt->element_basic_type())) {
       add_req(offset);
     }
   }

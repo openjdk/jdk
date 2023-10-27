@@ -1574,6 +1574,10 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     }
   }
 
+  Node* index    = argument(11);
+  Node* indexMap = argument(12);
+  Node* indexM   = argument(13);
+
   const TypeVect* vector_type = TypeVect::make(elem_bt, num_elem);
   if (is_scatter) {
     Node* val = unbox_vector(argument(9), vbox_type, elem_bt, num_elem);
@@ -1595,15 +1599,15 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     Node* vload = nullptr;
     if (mask != nullptr) {
       if (is_subword_type(elem_bt)) {
-        Node* index_arr_base = array_element_address(argument(12), argument(13), T_INT);
-        vload = gvn().transform(new LoadVectorGatherMaskedNode(control(), memory(addr), addr, addr_type, vector_type, index_arr_base, mask, argument(11)));
+        Node* index_arr_base = array_element_address(indexMap, indexM, T_INT);
+        vload = gvn().transform(new LoadVectorGatherMaskedNode(control(), memory(addr), addr, addr_type, vector_type, index_arr_base, mask, index));
       } else {
         vload = gvn().transform(new LoadVectorGatherMaskedNode(control(), memory(addr), addr, addr_type, vector_type, index_vect, mask));
       }
     } else {
       if (is_subword_type(elem_bt)) {
-        Node* index_arr_base = array_element_address(argument(12), argument(13), T_INT);
-        vload = gvn().transform(new LoadVectorGatherNode(control(), memory(addr), addr, addr_type, vector_type, index_arr_base, argument(11)));
+        Node* index_arr_base = array_element_address(indexMap, indexM, T_INT);
+        vload = gvn().transform(new LoadVectorGatherNode(control(), memory(addr), addr, addr_type, vector_type, index_arr_base, index));
       } else {
         vload = gvn().transform(new LoadVectorGatherNode(control(), memory(addr), addr, addr_type, vector_type, index_vect));
       }
