@@ -557,7 +557,7 @@ public class ChoiceFormat extends NumberFormat {
      * @return the least double value greater than {@code d}
      * @see #previousDouble
      */
-    public static double nextDouble (double d) {
+    public static final double nextDouble (double d) {
         return Math.nextUp(d);
     }
 
@@ -572,7 +572,7 @@ public class ChoiceFormat extends NumberFormat {
      * @return the greatest double value less than {@code d}
      * @see #nextDouble
      */
-    public static double previousDouble (double d) {
+    public static final double previousDouble (double d) {
         return Math.nextDown(d);
     }
 
