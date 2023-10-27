@@ -108,9 +108,6 @@ final class SSLConfiguration implements Cloneable {
     static final int maxHandshakeMessageSize = GetIntegerAction.privilegedGetProperty(
             "jdk.tls.maxHandshakeMessageSize", 32768);
 
-    // Maximum allowed certificate chain length
-    static final int maxCertificateChainLength;
-
     // Limit the certificate chain length accepted from clients
     static final int maxInboundClientCertChainLen;
 
@@ -151,7 +148,7 @@ final class SSLConfiguration implements Cloneable {
         } else {
             globalPropSet = true;
         }
-        maxCertificateChainLength = certLen;
+        int maxCertificateChainLength = certLen;
 
         // Default for jdk.tls.server.maxInboundCertificateChainLength is 8
         Integer inboundClientLen = GetIntegerAction.privilegedGetProperty(
