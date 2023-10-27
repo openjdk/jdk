@@ -129,34 +129,51 @@ size_t MonitorList::unlink_deflated(Thread* current, LogStream* ls,
                                     elapsedTimer* timer_p,
                                     GrowableArray<ObjectMonitor*>* unlinked_list) {
   size_t unlinked_count = 0;
+  size_t unlink_batch = 0;
   ObjectMonitor* prev = nullptr;
-  ObjectMonitor* head = Atomic::load_acquire(&_head);
-  ObjectMonitor* m = head;
+  ObjectMonitor* m = Atomic::load_acquire(&_head);
+
   // The in-use list head can be null during the final audit.
   while (m != nullptr) {
     if (m->is_being_async_deflated()) {
-      // Find next live ObjectMonitor.
+      // Find next live ObjectMonitor. Batch up the unlinkable monitors, so we can
+      // modify the list once per batch. The batch starts at "m".
       ObjectMonitor* next = m;
       do {
         ObjectMonitor* next_next = next->next_om();
         unlinked_count++;
         unlinked_list->append(next);
         next = next_next;
-        if (unlinked_count >= (size_t)MonitorDeflationMax) {
-          // Reached the max so bail out on the gathering loop.
+        if (unlink_batch++ >= (size_t)MonitorUnlinkBatch) {
+          // Reached the max batch, so bail out of the gathering loop.
+          unlink_batch = 0;
+          break;
+        }
+        if (prev == nullptr && Atomic::load(&_head) != m) {
+          // Current batch used to be at head, but it is not at head anymore.
+          // Bail out and figure out where we currently are. This avoids long
+          // walks searching for new prev during unlink under heavy lock mutations.
           break;
         }
       } while (next != nullptr && next->is_being_async_deflated());
+
+      // Unlink the found batch.
       if (prev == nullptr) {
-        ObjectMonitor* prev_head = Atomic::cmpxchg(&_head, head, next);
-        if (prev_head != head) {
-          // Find new prev ObjectMonitor that just got inserted.
+        // The batch is not preceded by another monitor. There is a chance the batch starts at head.
+        // Optimistically assume no inserts happened, and try to remove the entire batch from the head.
+        ObjectMonitor* prev_head = Atomic::cmpxchg(&_head, m, next);
+        if (prev_head != m) {
+          // Something must have updated the head. Figure out the actual prev for this batch.
           for (ObjectMonitor* n = prev_head; n != m; n = n->next_om()) {
             prev = n;
           }
+          assert(prev != nullptr, "Should have found the batch head");
           prev->set_next_om(next);
         }
       } else {
+        // The batch is preceded by another monitor. This guarantees the current batch does not
+        // start at head. Remove the entire batch without updating the head.
+        assert(Atomic::load(&_head) != m, "Sanity");
         prev->set_next_om(next);
       }
       if (unlinked_count >= (size_t)MonitorDeflationMax) {
