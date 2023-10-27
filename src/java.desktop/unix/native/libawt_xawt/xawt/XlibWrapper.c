@@ -2299,6 +2299,7 @@ Java_sun_awt_X11_XlibWrapper_SetBitmapShape
 
     pRect = (RECT_T *)SAFE_SIZE_ARRAY_ALLOC(malloc, worstBufferSize, sizeof(RECT_T));
     if (!pRect) {
+        (*env)->ReleaseIntArrayElements(env, bitmap, values, JNI_ABORT);
         return;
     }
 
