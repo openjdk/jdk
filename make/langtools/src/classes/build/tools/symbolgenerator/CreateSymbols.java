@@ -1635,7 +1635,7 @@ public class CreateSymbols {
             inspectClassFile(in, currentVersionClasses,
                              currentEIList, version,
                              cf -> {
-                                 Set<String> superTypes = superTypesWithOwners(cf);
+                                 Set<String> superTypes = otherRelevantTypesWithOwners(cf);
 
                                  currentEIList.privateIncludeList.addAll(superTypes);
                                  todo.addAll(superTypes);
@@ -1685,6 +1685,11 @@ public class CreateSymbols {
                     modified |= include(includedClasses, currentVersionClasses, header.extendsAttr);
                     for (String i : header.implementsAttr) {
                         modified |= include(includedClasses, currentVersionClasses, i);
+                    }
+                    if (header.permittedSubclasses != null) {
+                        for (String i : header.permittedSubclasses) {
+                            modified |= include(includedClasses, currentVersionClasses, i);
+                        }
                     }
 
                     modified |= includeOutputType(Collections.singleton(header),
@@ -2204,7 +2209,7 @@ public class CreateSymbols {
             try (InputStream in = new ByteArrayInputStream(classFileData)) {
                 ClassFile cf = ClassFile.read(in);
 
-                additionalIncludes.addAll(superTypesWithOwners(cf));
+                additionalIncludes.addAll(otherRelevantTypesWithOwners(cf));
             } catch (IOException | ConstantPoolException ex) {
                 throw new IllegalStateException(ex);
             }
@@ -2213,7 +2218,7 @@ public class CreateSymbols {
         return additionalIncludes;
     }
 
-    private Set<String> superTypesWithOwners(ClassFile cf) {
+    private Set<String> otherRelevantTypesWithOwners(ClassFile cf) {
         Set<String> supertypes = new HashSet<>();
 
         try {
@@ -2228,6 +2233,12 @@ public class CreateSymbols {
             }
             for (int i = 0; i < cf.interfaces.length; i++) {
                 additionalClasses.add(cf.getInterfaceName(i));
+            }
+            PermittedSubclasses_attribute permitted = (PermittedSubclasses_attribute) cf.getAttribute(Attribute.PermittedSubclasses);
+            if (permitted != null) {
+                for (int i = 0; i < permitted.subtypes.length; i++) {
+                    additionalClasses.add(cf.constant_pool.getClassInfo(permitted.subtypes[i]).getName());
+                }
             }
 
             for (String additional : additionalClasses) {
