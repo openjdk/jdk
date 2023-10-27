@@ -51,7 +51,8 @@ ciMethodData::ciMethodData(MethodData* md)
   _eflags(0), _arg_local(0), _arg_stack(0), _arg_returned(0),
   _invocation_counter(0),
   _orig(),
-  _parameters(nullptr) {}
+  _parameters(nullptr),
+  _ex_handlers_size(0) {}
 
 // Check for entries that reference an unloaded method
 class PrepareExtraDataClosure : public CleanExtraDataClosure {
@@ -195,12 +196,15 @@ bool ciMethodData::load_data() {
   //  args_data_limit:  ---------------------------
   //                    |  parameter data entries |
   //                    |           ...           |
+  //                    ---------------------------
+  //                    | ex handler data entries |
+  //                    |           ...           |
   //  extra_data_limit: ---------------------------
   //
   // _data_size = extra_data_base - data_base
   // _extra_data_size = extra_data_limit - extra_data_base
   // total_size = _data_size + _extra_data_size
-  // args_data_limit = data_base + total_size - parameter_data_size
+  // args_data_limit = data_base + total_size - parameter_data_size - _ex_handlers_size
 
 #ifndef ZERO
   // Some Zero platforms do not have expected alignment, and do not use
@@ -220,10 +224,12 @@ bool ciMethodData::load_data() {
                               _data_size / HeapWordSize);
 
   int parameters_data_size = mdo->parameters_size_in_bytes();
+  _ex_handlers_size = mdo->ex_handlers_size_in_bytes();
+  assert(_ex_handlers_size % sizeof(intptr_t) == 0, "unaligned: %d", _ex_handlers_size);
   if (parameters_data_size > 0) {
     // Snapshot the parameter data
     Copy::disjoint_words_atomic((HeapWord*) mdo->args_data_limit(),
-                                (HeapWord*) ((address)_data + total_size - parameters_data_size),
+                                (HeapWord*) ((address)_data + total_size - parameters_data_size - _ex_handlers_size),
                                 parameters_data_size / HeapWordSize);
   }
   // Traverse the profile data, translating any oops into their
@@ -242,7 +248,7 @@ bool ciMethodData::load_data() {
     parameters->translate_from(mdo->parameters_type_data());
   }
 
-  assert((DataLayout*) ((address)_data + total_size - parameters_data_size) == args_data_limit(),
+  assert((DataLayout*) ((address)_data + total_size - parameters_data_size - _ex_handlers_size) == args_data_limit(),
       "sanity - parameter data starts after the argument data of the single ArgInfoData entry");
   load_remaining_extra_data();
 

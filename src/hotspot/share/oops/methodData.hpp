@@ -2296,6 +2296,10 @@ public:
     return param == nullptr ? 0 : param->size_in_bytes();
   }
 
+  int ex_handlers_size_in_bytes() const {
+    return _num_ex_handler_data * DataLayout::compute_size_in_bytes(BitData::static_cell_count());
+  }
+
   // Accessors
   Method* method() const { return _method; }
 
@@ -2352,7 +2356,7 @@ public:
   DataLayout* extra_data_base() const  { return limit_data_position(); }
   DataLayout* extra_data_limit() const { return (DataLayout*)((address)this + size_in_bytes()); }
   DataLayout* args_data_limit() const  { return (DataLayout*)((address)this + size_in_bytes() -
-                                                              parameters_size_in_bytes()); }
+                                                              parameters_size_in_bytes() - ex_handlers_size_in_bytes()); }
   int extra_data_size() const          { return (int)((address)extra_data_limit() - (address)extra_data_base()); }
   static DataLayout* next_extra(DataLayout* dp);
 

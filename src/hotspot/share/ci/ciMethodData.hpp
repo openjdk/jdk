@@ -409,6 +409,8 @@ private:
     return _parameters == nullptr ? 0 : parameters_type_data()->size_in_bytes();
   }
 
+  int _ex_handlers_size; // size of ex handlers data
+
   ciMethodData(MethodData* md = nullptr);
 
   // Accessors
@@ -516,7 +518,7 @@ public:
 
   DataLayout* extra_data_base() const  { return data_layout_at(data_size()); }
   DataLayout* args_data_limit() const  { return data_layout_at(data_size() + extra_data_size() -
-                                                               parameters_size()); }
+                                                               parameters_size() - _ex_handlers_size); }
 
   // Get the data at an arbitrary bci, or null if there is none. If m
   // is not null look for a SpeculativeTrapData if any first.
