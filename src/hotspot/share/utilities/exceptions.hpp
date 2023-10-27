@@ -105,8 +105,7 @@ class ThreadShadow: public CHeapObj<mtThread> {
 // used directly if the macros below are insufficient.
 
 class Exceptions {
-  static bool special_exception(JavaThread* thread, const char* file, int line, Handle exception);
-  static bool special_exception(JavaThread* thread, const char* file, int line, Symbol* name, const char* message);
+  static bool special_exception(JavaThread* thread, const char* file, int line, Handle exception, Symbol* name = nullptr, const char* message = nullptr);
 
   // Count out of memory errors that are interesting in error diagnosis
   static volatile int _out_of_memory_error_java_heap_errors;
