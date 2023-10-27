@@ -3930,9 +3930,9 @@ void os::naked_short_nanosleep(jlong ns) {
 
 // Sleep forever; naked call to OS-specific sleep; use with CAUTION
 void os::infinite_sleep() {
-  sleep:            // sleep forever ...
+  while (true) {    // sleep forever ...
     Sleep(100000);  // ... 100 seconds at a time
-  goto sleep;
+  }
 }
 
 typedef BOOL (WINAPI * STTSignature)(void);
