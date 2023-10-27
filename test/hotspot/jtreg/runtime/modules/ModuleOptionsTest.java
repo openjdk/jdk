@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public class ModuleOptionsTest {
 
         // Test that multiple --add-modules options are cumulative, not last one wins.
         // An exception should be thrown because module i_dont_exist doesn't exist.
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "--add-modules=i_dont_exist", "--add-modules=java.base", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("FindException");
@@ -51,7 +51,7 @@ public class ModuleOptionsTest {
 
         // Test that the last --limit-modules is the only one recognized.  No exception
         // should be thrown.
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "--limit-modules=i_dont_exist", "--limit-modules=java.base", "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);

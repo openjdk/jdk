@@ -87,9 +87,9 @@ ifeq ($(call isTargetOs, windows), true)
   $(eval $(call SetupZipArchive,BUILD_JGSS_BIN_ZIP, \
       SRC := $(SUPPORT_OUTPUTDIR), \
       INCLUDE_FILES := modules_libs/java.security.jgss/w2k_lsa_auth.dll \
-          modules_libs/java.security.jgss/w2k_lsa_auth.diz \
-          modules_libs/java.security.jgss/w2k_lsa_auth.map \
-          modules_libs/java.security.jgss/w2k_lsa_auth.pdb, \
+          modules_libs/java.security.jgss/w2k_lsa_auth.dll.diz \
+          modules_libs/java.security.jgss/w2k_lsa_auth.dll.map \
+          modules_libs/java.security.jgss/w2k_lsa_auth.dll.pdb, \
       ZIP := $(IMAGES_OUTPUTDIR)/$(JGSS_ZIP_NAME)))
 
   TARGETS += $(IMAGES_OUTPUTDIR)/$(JGSS_ZIP_NAME)
