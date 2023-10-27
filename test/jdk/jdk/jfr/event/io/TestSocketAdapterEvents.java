@@ -46,6 +46,8 @@ import jdk.test.lib.thread.XRun;
 
 /**
  * @test
+ * @bug 8310978
+ * @summary test socket read/write events on socket adaptors
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
@@ -72,7 +74,6 @@ public class TestSocketAdapterEvents {
                 recording.enable(IOEvent.EVENT_SOCKET_WRITE).withThreshold(Duration.ofMillis(0));
                 recording.start();
 
-                ssc.socket().setReuseAddress(true);
                 InetAddress lb = InetAddress.getLoopbackAddress();
                 ssc.bind(new InetSocketAddress(lb, 0));
 
