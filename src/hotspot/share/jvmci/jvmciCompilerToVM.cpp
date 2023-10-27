@@ -169,11 +169,15 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   debug_only(VMNativeEntryWrapper __vew;)
 
 // Native method block that transitions current thread to '_thread_in_vm'.
+// Note: CompilerThreadCanCallJava must precede JVMCIENV_FROM_JNI so that
+// the translation of an uncaught exception in the JVMCIEnv does not make
+// a Java call when __is_hotspot == false.
 #define C2V_BLOCK(result_type, name, signature)            \
   JVMCI_VM_ENTRY_MARK;                                     \
   ResourceMark rm;                                         \
+  bool __is_hotspot = env == thread->jni_environment();    \
+  CompilerThreadCanCallJava ccj(thread, __is_hotspot);     \
   JVMCIENV_FROM_JNI(JVMCI::compilation_tick(thread), env); \
-  CompilerThreadCanCallJava ccj(thread, JVMCIENV->is_hotspot());    \
 
 static JavaThread* get_current_thread(bool allow_null=true) {
   Thread* thread = Thread::current_or_null_safe();
