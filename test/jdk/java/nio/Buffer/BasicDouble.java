@@ -540,18 +540,6 @@ public class BasicDouble
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
     private static void fail(String problem,
                              DoubleBuffer xb, DoubleBuffer yb,
                              double x, double y) {

@@ -394,8 +394,8 @@ public class BasicByte
             }
         }
 
-        // Probe for long misalignment at index zero for a newly created buffer
         if (direct) {
+            // Probe for long misalignment at index zero for a newly created buffer
             ByteBuffer empty = ByteBuffer.allocateDirect(0);
             int longMisalignmentAtZero = empty.alignmentOffset(0, 8);
 

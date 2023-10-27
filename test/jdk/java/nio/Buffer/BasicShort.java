@@ -540,18 +540,6 @@ public class BasicShort
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
     private static void fail(String problem,
                              ShortBuffer xb, ShortBuffer yb,
                              short x, short y) {

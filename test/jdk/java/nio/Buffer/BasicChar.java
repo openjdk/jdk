@@ -540,18 +540,6 @@ public class BasicChar
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
     private static void fail(String problem,
                              CharBuffer xb, CharBuffer yb,
                              char x, char y) {
