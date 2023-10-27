@@ -50,7 +50,7 @@ public:
 
 class MappingPrintClosure {
   outputStream* const _out;
-  const bool _humam_readable;
+  const bool _human_readable;
   const int64_t _timeout_at;
   uintx _total_count;
   size_t _total_vsize;

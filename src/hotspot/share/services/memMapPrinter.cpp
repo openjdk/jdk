@@ -253,14 +253,14 @@ static void print_legend(outputStream* st) {
 }
 
 MappingPrintClosure::MappingPrintClosure(outputStream* st, bool human_readable, jlong timeout_at) :
-    _out(st), _humam_readable(human_readable), _timeout_at(timeout_at), _total_count(0), _total_vsize(0) {}
+    _out(st), _human_readable(human_readable), _timeout_at(timeout_at), _total_count(0), _total_vsize(0) {}
 
 bool MappingPrintClosure::do_it(const MappingPrintInformation* info) {
   _total_count++;
   _out->print(PTR_FORMAT " - " PTR_FORMAT " ", p2i(info->from()), p2i(info->to()));
   const size_t size = pointer_delta(info->to(), info->from(), 1);
   _total_vsize += size;
-  if (_humam_readable) {
+  if (_human_readable) {
     _out->print(PROPERFMT " ", PROPERFMTARGS(size));
   } else {
     _out->print("%11zu", size);
