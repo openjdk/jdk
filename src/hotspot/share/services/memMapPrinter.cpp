@@ -266,11 +266,11 @@ void MappingPrintClosure::do_it(const MappingPrintInformation* info) {
   }
   assert(info->from() <= info->to(), "Invalid VMA");
   _out->fill_to(53);
-  info->print_details_1(_out);
+  info->print_OS_specific_details_heading(_out);
   _out->fill_to(70);
   ask_nmt_about(info->from(), info->to(), _out);
   _out->fill_to(100);
-  info->print_details_2(_out);
+  info->print_OS_specific_details_trailing(_out);
   _out->cr();
 }
 

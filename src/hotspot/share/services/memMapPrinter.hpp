@@ -39,8 +39,13 @@ public:
   MappingPrintInformation(const void* from, const void* to) : _from(from), _to(to) {}
   const void* from() const { return _from; }
   const void* to() const { return _to; }
-  virtual void print_details_1(outputStream* st) const {} // To be printed before VM annotations
-  virtual void print_details_2(outputStream* st) const {} // To be printed before VM annotations
+  // Will be called for each mapping before VM annotations are printed.
+  // Platforms should print any details that should appear between the mapping addresses
+  //  and the VM annotations.
+  virtual void print_OS_specific_details_heading(outputStream* st) const {}
+  // Will be called for each mapping before VM annotations are printed.
+  // Platforms should print any details that should appear at the end of the line.
+  virtual void print_OS_specific_details_trailing(outputStream* st) const {}
 };
 
 class MappingPrintClosure {

@@ -42,10 +42,7 @@ public class SystemMapTest {
         OutputAnalyzer output = executor.execute("System.map");
         output.reportDiagnosticSummary();
         // Only with NMT we get VM annotations
-        boolean have_nmt = true;
-        if (output.getOutput().contains("please enable Native Memory Tracking")) {
-            have_nmt = false;
-        }
+        boolean have_nmt = !output.getOutput().contains("please enable Native Memory Tracking");
 
         if (have_nmt) {
             String expectedMarkings[] = new String[] { "STACK", "JAVAHEAP", "META", "CODE", "POLL" };

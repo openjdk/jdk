@@ -28,10 +28,11 @@
 #include "runtime/os.hpp"
 #include "services/memMapPrinter.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include <limits.h>
 
-struct proc_maps_info_t {
-  unsigned long long from = 0;
-  unsigned long long to = 0;
+struct ProcMapsInfo {
+  void* from = 0;
+  void* to = 0;
   char prot[20 + 1];
   char offset[20 + 1];
   char dev[20 + 1];
@@ -40,26 +41,23 @@ struct proc_maps_info_t {
 
   bool scan_proc_maps_line(const char* line) {
     prot[0] = offset[0] = dev[0] = inode[0] = filename[0] = '\0';
-    const int items_read = ::sscanf(line, "%llx-%llx %20s %20s %20s %20s %1024s",
+    const int items_read = ::sscanf(line, "%p-%p %20s %20s %20s %20s %1024s",
         &from, &to, prot, offset, dev, inode, filename);
-    if (items_read < 2) {
-      return false;
-    }
     return items_read >= 2; // need at least from and to
   }
 };
 
 class LinuxMappingPrintInformation : public MappingPrintInformation {
-  const proc_maps_info_t _info;
+  const ProcMapsInfo _info;
 public:
 
-  LinuxMappingPrintInformation(const void* from, const void* to, const proc_maps_info_t* info) :
+  LinuxMappingPrintInformation(const void* from, const void* to, const ProcMapsInfo* info) :
     MappingPrintInformation(from, to), _info(*info) {}
 
-  void print_details_1(outputStream* st) const override {
+  void print_OS_specific_details_heading(outputStream* st) const override {
     st->print("%s %s ", _info.prot, _info.offset);
   }
-  void print_details_2(outputStream* st) const override {
+  void print_OS_specific_details_trailing(outputStream* st) const override {
     st->print_raw(_info.filename);
   }
 };
@@ -67,8 +65,10 @@ public:
 void MemMapPrinter::pd_print_header(outputStream* st) {
   st->print(
 #ifdef _LP64
+  //   0x0000000000000000 - 0x0000000000000000
       "from                 to                 "
 #else
+  //   0x00000000 - 0x00000000
       "from         to         "
 #endif
   );
@@ -78,12 +78,13 @@ void MemMapPrinter::pd_print_header(outputStream* st) {
 void MemMapPrinter::pd_iterate_all_mappings(MappingPrintClosure& closure) {
   FILE* f = os::fopen("/proc/self/maps", "r");
   if (f != nullptr) {
-    char line[1024];
+    static constexpr size_t linesize = sizeof(ProcMapsInfo);
+    char line[linesize];
     while(fgets(line, sizeof(line), f) == line) {
       line[sizeof(line) - 1] = '\0';
-      proc_maps_info_t info;
+      ProcMapsInfo info;
       if (info.scan_proc_maps_line(line)) {
-        LinuxMappingPrintInformation mapinfo((void*)info.from, (void*)info.to, &info);
+        LinuxMappingPrintInformation mapinfo(info.from, info.to, &info);
         closure.do_it(&mapinfo);
       }
     }
