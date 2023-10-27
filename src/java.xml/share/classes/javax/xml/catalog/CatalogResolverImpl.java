@@ -51,7 +51,8 @@ import org.xml.sax.XMLReader;
  */
 final class CatalogResolverImpl implements CatalogResolver {
     Catalog catalog;
-    GroupEntry.ResolveType resolveType;
+    // resolution action type
+    NotFoundAction resolveType;
 
     /**
      * Construct an instance of the CatalogResolver from a Catalog.
@@ -63,18 +64,19 @@ final class CatalogResolverImpl implements CatalogResolver {
     }
 
     /**
-     * Construct an instance of the CatalogResolver from a Catalog and the resolve
-     * property.
+     * Construct an instance of the CatalogResolver from a Catalog and the
+     * {@link CatalogResolver.NotFoundAction action} type.
      *
      * @param catalog a Catalog object
-     * @param resolve the resolve property
+     * @param action the action type
      */
-    public CatalogResolverImpl(Catalog catalog, String resolve) {
+    public CatalogResolverImpl(Catalog catalog, NotFoundAction action) {
         this.catalog = catalog;
-        if (resolve == null) {
+        // Note: can only happen in this impl
+        if (action == null) {
             resolveType = ((CatalogImpl) catalog).getResolve();
         } else {
-            resolveType = GroupEntry.ResolveType.getType(resolve);
+            resolveType = action;
         }
     }
     /*
@@ -160,7 +162,6 @@ final class CatalogResolverImpl implements CatalogResolver {
 
         //Report error or return the URI as is when no match is found
         if (result == null) {
-            GroupEntry.ResolveType resolveType = c.getResolve();
             switch (resolveType) {
                 case IGNORE:
                     return new SAXSource(new InputSource(new StringReader("")));
@@ -244,7 +245,6 @@ final class CatalogResolverImpl implements CatalogResolver {
 
         }
 
-        GroupEntry.ResolveType resolveType = ((CatalogImpl) catalog).getResolve();
         switch (resolveType) {
             case IGNORE:
                 return null;
@@ -265,7 +265,6 @@ final class CatalogResolverImpl implements CatalogResolver {
             return new LSInputImpl(is.getSystemId());
         }
 
-        GroupEntry.ResolveType resolveType = ((CatalogImpl) catalog).getResolve();
         switch (resolveType) {
             case IGNORE:
                 return null;

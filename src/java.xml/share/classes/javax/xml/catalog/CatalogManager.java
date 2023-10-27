@@ -77,8 +77,11 @@ public final class CatalogManager {
     /**
      * Creates an instance of a {@code CatalogResolver} using the specified catalog.
      *
-     * @apiNote Calling this method is equivalent to calling
-     * {@code catalogResolver(Catalog, null)}.
+     * @apiNote The {@code CatalogResolver} created by this method delegates to
+     * the underlying {@code catalog}'s RESOLVE property. The {@code CatalogResolver}
+     * created by {@link #catalogResolver(Catalog, CatalogResolver.NotFoundAction)
+     * catalogResover(Catalog, CatalogResolver.NotFoundAction)} is based on the
+     * specified action type when it is unable to resolve a reference.
      *
      * @param catalog the catalog instance
      * @return an instance of a {@code CatalogResolver}
@@ -89,32 +92,25 @@ public final class CatalogManager {
     }
 
     /**
-     * Creates an instance of a {@code CatalogResolver} using the specified catalog
-     * and the value of the {@link CatalogFeatures.Feature#RESOLVE RESOLVE} property.
+     * Creates a {@code CatalogResolver} that resolves external references with the given
+     * {@code catalog} and {@link CatalogResolver.NotFoundAction action} type
+     * that determines the behavior when unable to resolve a reference.
+     * <p>
+     * The {@link CatalogResolver.NotFoundAction action} types are mapped to the values
+     * of the {@link CatalogFeatures.Feature#RESOLVE RESOLVE} property.
      *
      * @param catalog the catalog instance
-     * @param resolve the value of the {@link CatalogFeatures.Feature#RESOLVE RESOLVE}
-     * property that overrides the previous setting used for creating the {@code catalog}
-     * object. The supported values are: {@code strict}, {@code continue},
-     * and {@code ignore}. {@code null} may be specified to indicate that the
-     * {@code catalog} object's current {@link CatalogFeatures.Feature#RESOLVE RESOLVE}
-     * value remains unchanged.
+     * @param action the action to be taken when unable to resolve a reference
      *
-     * @return an instance of a {@code CatalogResolver}
-     * @throws IllegalArgumentException if the value of the {@code resolve} property is
-     * not a supported value or {@code null}.
-     * @throws NullPointerException if {@code catalog} is null
+     * @return a {@code CatalogResolver} with the {@code catalog} and {@code action} type
      *
      * @since 22
      */
-    public static CatalogResolver catalogResolver(Catalog catalog, String resolve) {
+    public static CatalogResolver catalogResolver(Catalog catalog, CatalogResolver.NotFoundAction action) {
         if (catalog == null) CatalogMessages.reportNPEOnNull("catalog", null);
+        if (action == null) CatalogMessages.reportNPEOnNull("action", null);
 
-        if (resolve != null && GroupEntry.ResolveType.getType(resolve) == null) {
-            CatalogMessages.reportIAE(CatalogMessages.ERR_INVALID_ARGUMENT,
-                    new Object[]{resolve, "RESOLVE"}, null);
-        }
-        return new CatalogResolverImpl(catalog, resolve);
+        return new CatalogResolverImpl(catalog, action);
     }
 
     /**

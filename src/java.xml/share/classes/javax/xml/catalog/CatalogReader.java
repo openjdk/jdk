@@ -159,7 +159,7 @@ class CatalogReader extends DefaultHandler implements EntityResolver, URIResolve
                                 CatalogFeatures.DEFER_TRUE : CatalogFeatures.DEFER_FALSE;
                     }
                     if (resolve == null) {
-                        resolve = catalog.getResolve().literal;
+                        resolve = catalog.getResolve().toString();
                     }
                     //override property settings with those from the catalog file
                     catalog.setResolve(resolve);

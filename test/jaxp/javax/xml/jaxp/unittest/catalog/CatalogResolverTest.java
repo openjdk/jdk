@@ -29,6 +29,7 @@ import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogManager;
 import javax.xml.catalog.CatalogResolver;
+import javax.xml.catalog.CatalogResolver.NotFoundAction;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -70,32 +71,35 @@ public class CatalogResolverTest extends CatalogSupportBase {
         return new Object[][]{
             // Valid values and overriding verification
             // RESOLVE=strict but expected match
-            {"continue", "strict", SYSTEM_ID, "system.dtd", null},
+            {"continue", NotFoundAction.STRICT, SYSTEM_ID, "system.dtd", null},
             // RESOLVE=strict plus no match: expect exception
-            {"continue", "strict", "bogusID", "", CatalogException.class},
+            {"continue", NotFoundAction.STRICT, "bogusID", "", CatalogException.class},
             // RESOLVE=ignore, continue: expect no match but without an exception
             // Note that these tests do not differentiate empty InputSource from
             // null, in both cases, the returned ID is null
-            {"strict", "ignore", "bogusID", null, null},
-            {"strict", "continue", "bogusID", null, null},
-            // null indicates not explicitly set
-            {"continue", null, "bogusID", null, null},
+            {"strict", NotFoundAction.IGNORE, "bogusID", null, null},
+            {"strict", NotFoundAction.CONTINUE, "bogusID", null, null},
+         };
+    }
 
-            // invalid values, expect IAE
-            {"continue", "invalidValue", "bogusID", "", IllegalArgumentException.class},
-            {"continue", "", "bogusID", "", IllegalArgumentException.class},
+    @DataProvider(name = "NPETest")
+    public Object[][] getNPETest() throws Exception {
+        return new Object[][]{
+            {null, null},
+            {getCatalog("ignore"), null},
          };
     }
 
     /**
-     * Tests the factory method for creating CatalogResolver with a RESOLVE property.
-     * The 2-arg {@link javax.xml.catalog.CatalogManager#catalogResolver(javax.xml.catalog.Catalog, java.lang.String) catalogResolver}
-     * method adds the RESOLVE property on top of the single arg
-     * {@link javax.xml.catalog.CatalogManager#catalogResolver(javax.xml.catalog.Catalog) catalogResolver}
-     * method.
+     * Tests the factory method for creating CatalogResolver with an
+     * {@link javax.xml.catalog.CatalogResolver.NotFoundAction action} type.
+     * The 2-arg {@link javax.xml.catalog.CatalogManager#catalogResolver(
+     * javax.xml.catalog.Catalog, javax.xml.catalog.CatalogResolver.NotFoundAction)
+     * catalogResolver} method adds the action type to be used for determining
+     * the behavior instead of relying on the underlying catalog.
      *
      * @param cResolve the resolve property set on the Catalog object
-     * @param crResolve the resolve property set on the CatalogResolver to override
+     * @param action the resolve property set on the CatalogResolver to override
      *                  that of the Catalog
      * @param systemId the system ID to be resolved
      * @param expectedResult the expected result
@@ -103,39 +107,44 @@ public class CatalogResolverTest extends CatalogSupportBase {
      * @throws Exception if the test fails
      */
     @Test(dataProvider = "factoryMethodInput")
-    public void testResolveProperty(String cResolve, String crResolve, String systemId, String expectedResult, Class<Throwable> expectedThrow) throws Exception {
-        URI catalogFile = getClass().getResource("catalog.xml").toURI();
-        Catalog c = CatalogManager.catalog(
-                CatalogFeatures.builder().with(CatalogFeatures.Feature.RESOLVE, cResolve).build(),
-                catalogFile);
+    public void testResolveProperty(String cResolve, NotFoundAction action,
+            String systemId, String expectedResult, Class<Throwable> expectedThrow)
+            throws Exception {
+        Catalog c = getCatalog(cResolve);
 
         if (expectedThrow != null) {
             Assert.assertThrows(expectedThrow,
-                () -> resolveRef(c, crResolve, systemId));
+                () -> resolveRef(c, action, systemId));
         } else {
 
-            String sysId = resolveRef(c, crResolve, systemId);
+            String sysId = resolveRef(c, action, systemId);
             System.out.println(sysId);
             Assert.assertEquals(sysId,
                     (expectedResult == null) ? null : Paths.get(filepath + expectedResult).toUri().toString().replace("///", "/"),
                     "System ID match not right");
         }
-
     }
 
     /**
      * Verifies that the catalogResolver method throws NullPointerException if
-     * the {@code catalog} parameter is null. Note that the {@code resolve} parameter
-     * is tested with {@code testResolveProperty}.
+     * any of the parameters is null.
      */
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testCatalogProperty() {
-        CatalogManager.catalogResolver((Catalog)null, (String)null);
+    @Test(dataProvider = "NPETest", expectedExceptions = NullPointerException.class)
+    public void testCatalogProperty(Catalog c, NotFoundAction action) {
+        CatalogManager.catalogResolver(c, action);
     }
 
-    private String resolveRef(Catalog c, String crResolve, String systemId) throws Exception {
-        CatalogResolver cr = CatalogManager.catalogResolver(c, crResolve);
+    private String resolveRef(Catalog c, NotFoundAction action, String systemId) throws Exception {
+        CatalogResolver cr = CatalogManager.catalogResolver(c, action);
         InputSource is = cr.resolveEntity("", systemId);
         return is == null ? null : is.getSystemId();
+    }
+
+    private Catalog getCatalog(String cResolve) throws Exception {
+        URI catalogFile = getClass().getResource("catalog.xml").toURI();
+        Catalog c = CatalogManager.catalog(
+                CatalogFeatures.builder().with(CatalogFeatures.Feature.RESOLVE, cResolve).build(),
+                catalogFile);
+        return c;
     }
 }
