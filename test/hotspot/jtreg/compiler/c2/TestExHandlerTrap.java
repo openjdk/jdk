@@ -54,6 +54,11 @@ public class TestExHandlerTrap {
                 throw e;
             }
         }
+
+        // continue for a bit, to see if anything breaks
+        for (int i = 0; i < 1_000; i++) {
+            payload(false);
+        }
     }
 
     public static void payload(boolean shouldThrow) {
