@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,7 @@ public class TestVMProcess {
     }
 
     private void start() {
-        ProcessBuilder process = ProcessTools.createJavaProcessBuilder(cmds);
+        ProcessBuilder process = ProcessTools.createLimitedTestJavaProcessBuilder(cmds);
         try {
             // Calls 'main' of TestVM to run all specified tests with commands 'cmds'.
             // Use executeProcess instead of executeTestJvm as we have already added the JTreg VM and

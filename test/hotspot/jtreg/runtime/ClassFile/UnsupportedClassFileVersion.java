@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class UnsupportedClassFileVersion implements Opcodes {
     public static void main(String... args) throws Exception {
         writeClassFile();
-        ProcessBuilder pb = ProcessTools.createTestJvm("-cp", ".",  "ClassFile");
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-cp", ".",  "ClassFile");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("ClassFile has been compiled by a more recent version of the " +
                             "Java Runtime (class file version 99.0), this version of " +
