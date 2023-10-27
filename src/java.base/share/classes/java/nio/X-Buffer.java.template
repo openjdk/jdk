@@ -1557,7 +1557,7 @@ public abstract sealed class $Type$Buffer
         super.position(newPosition);
         return this;
     }
-    
+
     /**
      * {@inheritDoc}
      * @since 9
@@ -1571,13 +1571,13 @@ public abstract sealed class $Type$Buffer
         super.limit(newLimit);
         return this;
     }
-    
+
     /**
      * {@inheritDoc}
      * @since 9
      */
     @Override
-    public 
+    public
 #if[!byte]
     final
 #end[!byte]
@@ -1591,7 +1591,7 @@ public abstract sealed class $Type$Buffer
      * @since 9
      */
     @Override
-    public 
+    public
 #if[!byte]
     final
 #end[!byte]
@@ -1605,7 +1605,7 @@ public abstract sealed class $Type$Buffer
      * @since 9
      */
     @Override
-    public 
+    public
 #if[!byte]
     final
 #end[!byte]
@@ -1619,7 +1619,7 @@ public abstract sealed class $Type$Buffer
      * @since 9
      */
     @Override
-    public 
+    public
 #if[!byte]
     final
 #end[!byte]
@@ -1633,7 +1633,7 @@ public abstract sealed class $Type$Buffer
      * @since 9
      */
     @Override
-    public 
+    public
 #if[!byte]
     final
 #end[!byte]
@@ -2208,7 +2208,7 @@ public abstract sealed class $Type$Buffer
      *     alignmentOffset(index + (unitSize - value), unitSize) == 0
      * }
      * must hold.
-     * 
+     *
      * @apiNote
      * This method may be utilized to determine if unit size bytes from an
      * index can be accessed atomically, if supported by the native platform.
@@ -2247,7 +2247,7 @@ public abstract sealed class $Type$Buffer
             throw new IllegalArgumentException("Index less than zero: " + index);
         if (unitSize < 1 || (unitSize & (unitSize - 1)) != 0)
             throw new IllegalArgumentException("Unit size not a power of two: " + unitSize);
-        if (unitSize > 8 && !isDirect())
+        if (unitSize > 1 && !isDirect())
             throw new UnsupportedOperationException("Unit size unsupported for non-direct buffers: " + unitSize);
 
         return (int) ((address + index) & (unitSize - 1));
