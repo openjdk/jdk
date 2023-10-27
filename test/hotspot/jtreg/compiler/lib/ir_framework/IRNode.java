@@ -1531,6 +1531,11 @@ public class IRNode {
         trapNodes(UNSTABLE_IF_TRAP,"unstable_if");
     }
 
+    public static final String UNREACHED_TRAP = PREFIX + "UNREACHED_TRAP" + POSTFIX;
+    static {
+        trapNodes(UNREACHED_TRAP,"unreached");
+    }
+
     public static final String URSHIFT = PREFIX + "URSHIFT" + POSTFIX;
     static {
         beforeMatchingNameRegex(URSHIFT, "URShift(B|S|I|L)");
