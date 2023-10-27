@@ -78,7 +78,7 @@ public class TestG1ConcMarkStepDurationMillis {
 
     Collections.addAll(vmOpts, "-XX:+UseG1GC", "-XX:G1ConcMarkStepDurationMillis="+expectedValue, "-XX:+PrintFlagsFinal", "-version");
 
-    ProcessBuilder pb = GCArguments.createTestJvm(vmOpts);
+    ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(vmOpts);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     output.shouldHaveExitValue(expectedResult == PASS ? 0 : 1);

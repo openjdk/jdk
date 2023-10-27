@@ -108,7 +108,7 @@ public class TimeoutInErrorHandlingTest {
             arguments.add("-XX:OnError=echo hi");
         }
         arguments.add("-version");
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(arguments);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(arguments);
 
         OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
 

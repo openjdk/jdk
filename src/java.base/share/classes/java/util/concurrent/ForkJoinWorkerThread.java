@@ -76,9 +76,8 @@ public class ForkJoinWorkerThread extends Thread {
                          boolean clearThreadLocals) {
         super(group, null, pool.nextWorkerThreadName(), 0L, !clearThreadLocals);
         UncaughtExceptionHandler handler = (this.pool = pool).ueh;
-        this.workQueue = new ForkJoinPool.WorkQueue(this, 0);
-        if (clearThreadLocals)
-            workQueue.setClearThreadLocals();
+        this.workQueue = new ForkJoinPool.WorkQueue(this, 0, (int)pool.config,
+                                                    clearThreadLocals);
         super.setDaemon(true);
         if (handler != null)
             super.setUncaughtExceptionHandler(handler);

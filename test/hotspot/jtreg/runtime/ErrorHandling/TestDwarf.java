@@ -137,7 +137,7 @@ public class TestDwarf {
 
     private static void runAndCheck(Flags flags, DwarfConstraint... constraints) throws Exception {
         OutputAnalyzer crashOut;
-        crashOut = ProcessTools.executeProcess(ProcessTools.createTestJvm(flags.getFlags()));
+        crashOut = ProcessTools.executeProcess(ProcessTools.createTestJavaProcessBuilder(flags.getFlags()));
         String crashOutputString = crashOut.getOutput();
         Asserts.assertNotEquals(crashOut.getExitValue(), 0, "Crash JVM should not exit gracefully");
         System.out.println(crashOutputString);

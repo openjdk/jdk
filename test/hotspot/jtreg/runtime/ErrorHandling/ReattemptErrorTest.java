@@ -57,7 +57,7 @@ public class ReattemptErrorTest {
         // * Third a step will use almost all stack space and then fault with SIGSEGV. After this the
         //   proceeding reattempt steps will be skipped because of low stack headroom.
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-Xmx100M",
             "-XX:-CreateCoredumpOnCrash",

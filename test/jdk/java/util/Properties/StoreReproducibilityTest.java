@@ -92,7 +92,7 @@ public class StoreReproducibilityTest {
         for (int i = 0; i < 5; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
-            final ProcessBuilder processBuilder = ProcessTools.createTestJvm(
+            final ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
@@ -134,7 +134,7 @@ public class StoreReproducibilityTest {
         for (int i = 0; i < 5; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
-            final ProcessBuilder processBuilder = ProcessTools.createTestJvm(
+            final ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                     "-Djava.security.manager",
                     "-Djava.security.policy=" + policyFile,
@@ -178,7 +178,7 @@ public class StoreReproducibilityTest {
         for (int i = 0; i < 5; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
-            final ProcessBuilder processBuilder = ProcessTools.createTestJvm(
+            final ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                     "-Djava.security.manager",
                     "-Djava.security.policy=" + policyFile,
@@ -208,7 +208,7 @@ public class StoreReproducibilityTest {
         for (int i = 0; i < 2; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
-            final ProcessBuilder processBuilder = ProcessTools.createTestJvm(
+            final ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
@@ -240,7 +240,7 @@ public class StoreReproducibilityTest {
     private static void testEmptySysPropValue() throws Exception {
         for (int i = 0; i < 2; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
-            final ProcessBuilder processBuilder = ProcessTools.createTestJvm(
+            final ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=",
                     "-Duser.timezone=UTC",
                     StoreTest.class.getName(),
@@ -272,7 +272,7 @@ public class StoreReproducibilityTest {
         for (int i = 0; i < 2; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
-            final ProcessBuilder processBuilder = ProcessTools.createTestJvm(
+            final ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
@@ -301,7 +301,7 @@ public class StoreReproducibilityTest {
             for (int i = 0; i < 2; i++) {
                 final Path tmpFile = Files.createTempFile("8231640", ".props");
                 storedFiles.add(tmpFile);
-                final ProcessBuilder processBuilder = ProcessTools.createTestJvm(
+                final ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(
                         "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                         StoreTest.class.getName(),
                         tmpFile.toString(),
@@ -343,7 +343,7 @@ public class StoreReproducibilityTest {
             for (int i = 0; i < 2; i++) {
                 final Path tmpFile = Files.createTempFile("8231640", ".props");
                 storedFiles.add(tmpFile);
-                final ProcessBuilder processBuilder = ProcessTools.createTestJvm(
+                final ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(
                         "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                         StoreTest.class.getName(),
                         tmpFile.toString(),

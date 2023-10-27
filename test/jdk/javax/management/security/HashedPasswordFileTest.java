@@ -439,7 +439,7 @@ public class HashedPasswordFileTest {
         pbArgs.add("jdk.management.agent/jdk.internal.agent=ALL-UNNAMED");
         pbArgs.add(TestApp.class.getSimpleName());
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 pbArgs.toArray(new String[0]));
         Process process = ProcessTools.startProcess(
                 TestApp.class.getSimpleName(),
@@ -481,7 +481,7 @@ public class HashedPasswordFileTest {
         pbArgs.add("jdk.management.agent/jdk.internal.agent=ALL-UNNAMED");
         pbArgs.add(TestApp.class.getSimpleName());
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 pbArgs.toArray(new String[0]));
         Process process = ProcessTools.startProcess(
                 TestApp.class.getSimpleName(),
