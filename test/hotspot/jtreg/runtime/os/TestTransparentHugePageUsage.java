@@ -24,70 +24,85 @@
 /**
  * @test TestTransparentHugePageUsage
  * @bug 8315923
+ * @library /test/lib
  * @requires vm.gc.Parallel & os.family == "linux" & os.maxMemory > 2G
  * @summary Check if the usage of THP is zero when enabled.
  * @comment The test is not ParallelGC-specific, but a multi-threaded GC is
  *          required. So ParallelGC is used here.
- *
- * @run main/othervm -XX:+UseTransparentHugePages
- *                   -XX:+UseParallelGC -XX:ParallelGCThreads=${os.processors}
- *                   -Xlog:startuptime,pagesize,gc+heap=debug
- *                   -Xms1G -Xmx1G -XX:+AlwaysPreTouch
- *                   runtime.os.TestTransparentHugePageUsage
+ * @run driver runtime.os.TestTransparentHugePageUsage ${os.processors}
  */
 
 package runtime.os;
 
-import com.sun.management.HotSpotDiagnosticMXBean;
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.lang.management.ManagementFactory;
+import java.io.InputStreamReader;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+import jdk.test.lib.process.ProcessTools;
 
 public class TestTransparentHugePageUsage {
-  private static boolean foundHeapFrom(BufferedReader reader) throws Exception {
-    String line = null;
-    // Read the size. It is given right after the start of the mapping.
-    Pattern size = Pattern.compile("^Size:\\s+(\\d+)\\skB");
-    if ((line = reader.readLine()) != null) {
-      Matcher matcher = size.matcher(line);
-      // Found the heap based on its size.
-      if (matcher.matches() &&
-          Integer.valueOf(line.substring(matcher.start(1), matcher.end(1))) >= 1 * 1024 * 1024) {
-        Pattern thpUsage = Pattern.compile("^AnonHugePages:\\s+(\\d+)\\skB");
-        while ((line = reader.readLine()) != null) {
-          matcher = thpUsage.matcher(line);
-          if (matcher.matches()) {
-            if (Integer.valueOf(line.substring(matcher.start(1), matcher.end(1))) == 0) {
-              // Trigger failure when the usage is 0. This does not cover
-              // all cases considered to be failures, but we can just say
-              // the non-usage of THP failes for sure.
-              throw new RuntimeException("The usage of THP should not be zero.");
-            }
-            break;
-          }
-        }
-        return true;
-      }
-    }
-    return false;
-  }
+  private static final String[] fixedCmdLine = {
+    "-XX:+UseTransparentHugePages", "-XX:+AlwaysPreTouch",
+    "-Xlog:startuptime,pagesize,gc+heap=debug",
+    "-XX:+UseParallelGC", "-Xms1G", "-Xmx1G",
+  };
 
   public static void main(String[] args) throws Exception {
-    HotSpotDiagnosticMXBean mxBean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
+    ArrayList<String> cmdLine = new ArrayList<>(Arrays.asList(fixedCmdLine));
+    if (args.length > 0) {
+      cmdLine.add("-XX:ParallelGCThreads=" + args[0]);
+    }
+    cmdLine.add("runtime.os.TestTransparentHugePageUsage$CatSmaps");
+    ProcessBuilder builder = ProcessTools.createTestJvm(cmdLine);
+    checkUsage(new BufferedReader(new InputStreamReader(builder.start().getInputStream())));
+  }
+
+  private static void checkUsage(BufferedReader reader) throws Exception {
+    final Pattern useThp = Pattern.compile(".*\\[info\\]\\[pagesize\\].+UseTransparentHugePages=1.*");
     // Ensure THP is not disabled by OS.
-    if (mxBean.getVMOption("UseTransparentHugePages").getValue() == "true") {
-      BufferedReader reader = new BufferedReader(new FileReader("/proc/self/smaps"));
+    if (reader.lines().filter(line -> useThp.matcher(line).matches()).findFirst().isPresent()) {
+      final Pattern heapAddr = Pattern.compile(".*\\sHeap:\\s.+base=0x0*(\\p{XDigit}+).*");
+      final Optional<Long> addr = reader.lines()
+          .map(line -> new SimpleEntry<String, Matcher>(line, heapAddr.matcher(line)))
+          .filter(e -> e.getValue().matches())
+          .findFirst()
+          .map(e -> Long.valueOf(e.getKey().substring(e.getValue().start(1), e.getValue().end(1)), 16));
+      if (!addr.isPresent()) throw new RuntimeException("Heap base was not found in smaps.");
       // Match the start of a mapping, for example:
       // 200000000-800000000 rw-p 00000000 00:00 0
-      Pattern mapping = Pattern.compile("^\\p{XDigit}+-\\p{XDigit}+.*");
-      String line = null;
-      while ((line = reader.readLine()) != null) {
-        if (mapping.matcher(line).matches()) {
-          if (foundHeapFrom(reader)) break;
-        }
-      }
+      final Pattern mapping = Pattern.compile("^(\\p{XDigit}+)-\\p{XDigit}+.*");
+      reader.lines()
+            .filter(line -> {
+                  Matcher matcher = mapping.matcher(line);
+                  if (matcher.matches()) {
+                    Long mappingAddr = Long.valueOf(line.substring(matcher.start(1), matcher.end(1)), 16);
+                    if (mappingAddr.equals(addr.get())) return true;
+                  }
+                  return false;
+                })
+            .findFirst();
+      final Pattern thpUsage = Pattern.compile("^AnonHugePages:\\s+(\\d+)\\skB");
+      final Optional<Long> usage = reader.lines()
+          .map(line -> new SimpleEntry<String, Matcher>(line, thpUsage.matcher(line)))
+          .filter(e -> e.getValue().matches())
+          .findFirst()
+          .map(e -> Long.valueOf(e.getKey().substring(e.getValue().start(1), e.getValue().end(1))));
+      if (!usage.isPresent()) throw new RuntimeException("The usage of THP was not found.");
+      if (usage.get() == 0) throw new RuntimeException("The usage of THP should not be zero.");
+    }
+  }
+
+  public static class CatSmaps {
+    public static void main(String[] args) throws Exception {
+      new BufferedReader(new FileReader("/proc/self/smaps"))
+          .lines()
+          .forEach(line -> System.out.println(line));
     }
   }
 }
