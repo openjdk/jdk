@@ -37,7 +37,7 @@
  * @requires vm.compiler2.enabled
  * @run main/othervm -XX:CompileCommand=printcompilation,*A::test
  *                   -XX:CompileCommand=compileonly,*A::test
- *                   -Xcomp -XX:+StressReflectiveCode
+ *                   -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:+StressReflectiveCode
  *                   compiler.types.TestSubTypeOfAsbtractClass
  */
 
