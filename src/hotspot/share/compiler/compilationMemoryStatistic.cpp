@@ -397,7 +397,7 @@ void CompilationMemoryStatistic::on_end_compilation() {
   }
 
   // Store result
-  // For this to work, we must call on_end_compilatio()n at a point where
+  // For this to work, we must call on_end_compilation() at a point where
   // Compile|Compilation already handed over the failure string to ciEnv,
   // but ciEnv must still be alive.
   const char* result = "ok"; // ok
