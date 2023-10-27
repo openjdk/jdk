@@ -146,7 +146,7 @@ public class TestHugePageDecisionsAtVMStartup {
         boolean useTHP = allOptions.contains("-XX:+UseTransparentHugePages");
         System.out.println("useLP: " + useLP + " useTHP: " + useTHP);
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(allOptions.toArray(new String[0]));
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(allOptions.toArray(new String[0]));
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.reportDiagnosticSummary();
         HugePageConfiguration configuration = HugePageConfiguration.readFromOS();

@@ -43,7 +43,7 @@ public class TestSymbolsInHsErrFile {
   public static void main(String[] args) throws Exception {
 
     // Start a jvm and cause a SIGSEGV / ACCESS_VIOLATION
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions",
         "-Xmx100M",
         "-XX:-CreateCoredumpOnCrash",
