@@ -297,6 +297,9 @@ private:
   // concurrent cycles) we have completed.
   volatile uint _old_marking_cycles_completed;
 
+  // Keeps track of humongous bytes allocated.
+  PerfCounter* _humongous_total_alloc_bytes;
+
   // Create a memory mapper for auxiliary data structures of the given size and
   // translation factor.
   static G1RegionToSpaceMapper* create_aux_memory_mapper(const char* description,

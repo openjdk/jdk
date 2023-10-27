@@ -159,6 +159,9 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
   HSpaceCounters*      _from_space_counters;
   HSpaceCounters*      _to_space_counters;
 
+  // The total cumulative number of bytes allocated in eden.
+  PerfCounter*        _eden_total_alloc_bytes;
+
   // When it's appropriate to recalculate the various sizes (at the
   // end of a GC, when a new eden region is allocated, etc.) we store
   // them here so that we can easily report them when needed and not
@@ -197,6 +200,8 @@ public:
   void update_sizes();
 
   void update_eden_size();
+
+  void update_eden_total_alloc_bytes();
 
   // Monitoring support used by
   //   MemoryService

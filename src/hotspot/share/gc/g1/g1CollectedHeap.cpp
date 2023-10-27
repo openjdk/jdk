@@ -372,6 +372,11 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
     // information of the old generation so we need to recalculate the
     // sizes and update the jstat counters here.
     monitoring_support()->update_sizes();
+
+    if (UsePerfData) {
+      _humongous_total_alloc_bytes->inc(
+          (jlong)(obj_regions * HeapRegion::GrainBytes));
+    }
   }
 
   _verifier->verify_region_sets_optional();
@@ -1288,6 +1293,14 @@ G1CollectedHeap::G1CollectedHeap() :
   _gc_tracer_stw->initialize();
 
   guarantee(_task_queues != nullptr, "task_queues allocation failure.");
+
+  if (UsePerfData) {
+    EXCEPTION_MARK;
+
+    _humongous_total_alloc_bytes =
+        PerfDataManager::create_counter(NULL_NS, "g1_huge_alloc_bytes",
+                                        PerfData::U_Bytes, CHECK);
+  }
 }
 
 G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* description,
@@ -2309,6 +2322,12 @@ void G1CollectedHeap::gc_prologue(bool full) {
   if (full || collector_state()->in_concurrent_start_gc()) {
     increment_old_marking_cycles_started();
   }
+
+  // monitoring_support()->eden_space_used() is always reset to zero after each incremental
+  // and full collection, and gc_prologue() is called exactly once before each
+  // incremental and full collection, so this call accurately accounts for total
+  // bytes allocated into eden.
+  monitoring_support()->update_eden_total_alloc_bytes();
 }
 
 void G1CollectedHeap::gc_epilogue(bool full) {

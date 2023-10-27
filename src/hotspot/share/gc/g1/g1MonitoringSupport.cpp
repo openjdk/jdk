@@ -172,10 +172,16 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
                                             "s0", 1 /* ordinal */,
                                             0 /* max_capacity */,
                                             0 /* init_capacity */);
-  // Given that this survivor space is not used, we update it here
-  // once to reflect that its used space is 0 so that we don't have to
-  // worry about updating it again later.
   if (UsePerfData) {
+    EXCEPTION_MARK;
+
+    _eden_total_alloc_bytes =
+        PerfDataManager::create_counter(NULL_NS, "g1_eden_alloc_bytes",
+                                        PerfData::U_Bytes, CHECK);
+
+    // Given that this survivor space is not used, we update it here
+    // once to reflect that its used space is 0 so that we don't have to
+    // worry about updating it again later.
     _from_space_counters->update_used(0);
   }
 
@@ -320,6 +326,12 @@ void G1MonitoringSupport::update_eden_size() {
   recalculate_sizes();
   if (UsePerfData) {
     _eden_space_counters->update_used(_eden_space_used);
+  }
+}
+
+void G1MonitoringSupport::update_eden_total_alloc_bytes() {
+  if (UsePerfData) {
+    _eden_total_alloc_bytes->inc((jlong)eden_space_used());
   }
 }
 
