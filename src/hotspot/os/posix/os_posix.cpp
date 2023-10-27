@@ -889,9 +889,9 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
 
 // Sleep forever; naked call to OS-specific sleep; use with CAUTION
 void os::infinite_sleep() {
-  sleep:            // sleep forever ...
+  while (true) {    // sleep forever ...
     ::sleep(100);   // ... 100 seconds at a time
-  goto sleep;
+  }
 }
 
 void os::naked_short_nanosleep(jlong ns) {
