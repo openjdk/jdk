@@ -780,7 +780,9 @@ address SharedRuntime::compute_compiled_exc_handler(CompiledMethod* cm, address 
     return nullptr;
   }
 
-  sd->method()->set_ex_handler_entered(handler_bci); // profiling
+  if (handler_bci != -1) { // did we find a handler in this method?
+    sd->method()->set_ex_handler_entered(handler_bci); // profile
+  }
   return nm->code_begin() + t->pco();
 }
 

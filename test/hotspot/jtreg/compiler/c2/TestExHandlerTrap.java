@@ -46,8 +46,14 @@ public class TestExHandlerTrap {
             payload(false);
         }
 
-        // trigger uncommon trap in pruned catch block
-        payload(true);
+        try {
+            // trigger uncommon trap in pruned catch block
+            payload(true);
+        } catch (IllegalStateException e) {
+            if (!e.getMessage().equals("Testing trap")) {
+                throw e;
+            }
+        }
     }
 
     public static void payload(boolean shouldThrow) {
@@ -63,7 +69,7 @@ public class TestExHandlerTrap {
 
     private static void maybeThrow(boolean shouldThrow) {
         if (shouldThrow) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("Testing trap");
         }
     }
 
