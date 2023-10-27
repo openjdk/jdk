@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Verify that jcmd correctly reports that NMT is not enabled
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -50,13 +51,13 @@ public class JcmdWithNMTDisabled {
 
       // First run without enabling NMT (not in debug, where NMT is by default on)
       if (!Platform.isDebugBuild()) {
-        pb = ProcessTools.createJavaProcessBuilder("-Dtest.jdk=" + testjdkPath, "JcmdWithNMTDisabled");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Dtest.jdk=" + testjdkPath, "JcmdWithNMTDisabled");
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
       }
 
       // Then run with explicitly disabling NMT, should not be any difference
-      pb = ProcessTools.createJavaProcessBuilder("-Dtest.jdk=" + testjdkPath, "-XX:NativeMemoryTracking=off", "JcmdWithNMTDisabled");
+      pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Dtest.jdk=" + testjdkPath, "-XX:NativeMemoryTracking=off", "JcmdWithNMTDisabled");
       output = new OutputAnalyzer(pb.start());
       output.shouldHaveExitValue(0);
 

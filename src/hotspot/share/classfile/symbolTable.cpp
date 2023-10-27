@@ -219,7 +219,7 @@ void SymbolTable::create_table ()  {
   if (symbol_alloc_arena_size == 0) {
     _arena = new (mtSymbol) Arena(mtSymbol);
   } else {
-    _arena = new (mtSymbol) Arena(mtSymbol, symbol_alloc_arena_size);
+    _arena = new (mtSymbol) Arena(mtSymbol, Arena::Tag::tag_other, symbol_alloc_arena_size);
   }
 }
 

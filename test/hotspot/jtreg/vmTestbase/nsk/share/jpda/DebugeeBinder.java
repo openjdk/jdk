@@ -350,9 +350,9 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
 
         args.add(jdwpArgs);
 
-        if(System.getProperty("main.wrapper") != null) {
+        if (System.getProperty("test.thread.factory") != null) {
             args.add(MainWrapper.class.getName());
-            args.add(System.getProperty("main.wrapper"));
+            args.add(System.getProperty("test.thread.factory"));
         }
 
         if (classToExecute != null) {

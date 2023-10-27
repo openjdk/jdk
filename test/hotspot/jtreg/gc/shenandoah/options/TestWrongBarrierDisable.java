@@ -42,7 +42,6 @@ public class TestWrongBarrierDisable {
                 "ShenandoahSATBBarrier",
                 "ShenandoahCASBarrier",
                 "ShenandoahCloneBarrier",
-                "ShenandoahNMethodBarrier",
                 "ShenandoahStackWatermarkBarrier",
         };
         String[] iu = {
@@ -50,7 +49,6 @@ public class TestWrongBarrierDisable {
                 "ShenandoahIUBarrier",
                 "ShenandoahCASBarrier",
                 "ShenandoahCloneBarrier",
-                "ShenandoahNMethodBarrier",
                 "ShenandoahStackWatermarkBarrier",
         };
 
@@ -65,7 +63,7 @@ public class TestWrongBarrierDisable {
 
     private static void shouldFailAll(String h, String[] barriers) throws Exception {
         for (String b : barriers) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",
@@ -83,7 +81,7 @@ public class TestWrongBarrierDisable {
 
     private static void shouldPassAll(String h, String[] barriers) throws Exception {
         for (String b : barriers) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",

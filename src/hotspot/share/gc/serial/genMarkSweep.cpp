@@ -34,15 +34,15 @@
 #include "compiler/oopMap.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/defNewGeneration.hpp"
+#include "gc/serial/generation.hpp"
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
+#include "gc/serial/serialHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/generation.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
@@ -68,7 +68,7 @@
 void GenMarkSweep::invoke_at_safepoint(bool clear_all_softrefs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
 
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  SerialHeap* gch = SerialHeap::heap();
 #ifdef ASSERT
   if (gch->soft_ref_policy()->should_clear_all_soft_refs()) {
     assert(clear_all_softrefs, "Policy should have been checked earlier");
@@ -129,7 +129,7 @@ void GenMarkSweep::invoke_at_safepoint(bool clear_all_softrefs) {
 void GenMarkSweep::allocate_stacks() {
   void* scratch = nullptr;
   size_t num_words;
-  DefNewGeneration* young_gen = (DefNewGeneration*)GenCollectedHeap::heap()->young_gen();
+  DefNewGeneration* young_gen = (DefNewGeneration*)SerialHeap::heap()->young_gen();
   young_gen->contribute_scratch(scratch, num_words);
 
   if (scratch != nullptr) {
@@ -147,7 +147,7 @@ void GenMarkSweep::allocate_stacks() {
 
 void GenMarkSweep::deallocate_stacks() {
   if (_preserved_count_max != 0) {
-    DefNewGeneration* young_gen = (DefNewGeneration*)GenCollectedHeap::heap()->young_gen();
+    DefNewGeneration* young_gen = (DefNewGeneration*)SerialHeap::heap()->young_gen();
     young_gen->reset_scratch();
   }
 
@@ -160,7 +160,7 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   // Recursively traverse all live objects and mark them
   GCTraceTime(Info, gc, phases) tm("Phase 1: Mark live objects", _gc_timer);
 
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  SerialHeap* gch = SerialHeap::heap();
 
   ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_mark);
 
@@ -171,7 +171,7 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
     CLDClosure* weak_cld_closure = ClassUnloading ? nullptr : &follow_cld_closure;
     MarkingCodeBlobClosure mark_code_closure(&follow_root_closure, !CodeBlobToOopClosure::FixRelocations, true);
-    gch->process_roots(GenCollectedHeap::SO_None,
+    gch->process_roots(SerialHeap::SO_None,
                        &follow_root_closure,
                        &follow_cld_closure,
                        weak_cld_closure,
@@ -199,19 +199,26 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
   {
     GCTraceTime(Debug, gc, phases) tm_m("Class Unloading", gc_timer());
-    CodeCache::UnloadingScope scope(&is_alive);
 
-    // Unload classes and purge the SystemDictionary.
-    bool purged_class = SystemDictionary::do_unloading(gc_timer());
+    bool unloading_occurred;
+    {
+      CodeCache::UnlinkingScope scope(&is_alive);
 
-    // Unload nmethods.
-    CodeCache::do_unloading(purged_class);
+      // Unload classes and purge the SystemDictionary.
+      unloading_occurred = SystemDictionary::do_unloading(gc_timer());
+
+      // Unload nmethods.
+      CodeCache::do_unloading(unloading_occurred);
+    }
+
+    // Release unloaded nmethod's memory.
+    CodeCache::flush_unlinked_nmethods();
 
     // Prune dead klasses from subklass/sibling/implementor lists.
-    Klass::clean_weak_klass_links(purged_class);
+    Klass::clean_weak_klass_links(unloading_occurred);
 
     // Clean JVMCI metadata handles.
-    JVMCI_ONLY(JVMCI::do_unloading(purged_class));
+    JVMCI_ONLY(JVMCI::do_unloading(unloading_occurred));
   }
 
   {
@@ -225,10 +232,10 @@ void GenMarkSweep::mark_sweep_phase2() {
   // Now all live objects are marked, compute the new object addresses.
   GCTraceTime(Info, gc, phases) tm("Phase 2: Compute new object addresses", _gc_timer);
 
-  GenCollectedHeap::heap()->prepare_for_compaction();
+  SerialHeap::heap()->prepare_for_compaction();
 }
 
-class GenAdjustPointersClosure: public GenCollectedHeap::GenClosure {
+class GenAdjustPointersClosure: public SerialHeap::GenClosure {
 public:
   void do_generation(Generation* gen) {
     gen->adjust_pointers();
@@ -236,7 +243,7 @@ public:
 };
 
 void GenMarkSweep::mark_sweep_phase3() {
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  SerialHeap* gch = SerialHeap::heap();
 
   // Adjust the pointers to reflect the new locations
   GCTraceTime(Info, gc, phases) tm("Phase 3: Adjust pointers", gc_timer());
@@ -244,7 +251,7 @@ void GenMarkSweep::mark_sweep_phase3() {
   ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
 
   CodeBlobToOopClosure code_closure(&adjust_pointer_closure, CodeBlobToOopClosure::FixRelocations);
-  gch->process_roots(GenCollectedHeap::SO_AllCodeCache,
+  gch->process_roots(SerialHeap::SO_AllCodeCache,
                      &adjust_pointer_closure,
                      &adjust_cld_closure,
                      &adjust_cld_closure,
@@ -257,7 +264,7 @@ void GenMarkSweep::mark_sweep_phase3() {
   gch->generation_iterate(&blk, true);
 }
 
-class GenCompactClosure: public GenCollectedHeap::GenClosure {
+class GenCompactClosure: public SerialHeap::GenClosure {
 public:
   void do_generation(Generation* gen) {
     gen->compact();
@@ -269,5 +276,5 @@ void GenMarkSweep::mark_sweep_phase4() {
   GCTraceTime(Info, gc, phases) tm("Phase 4: Move objects", _gc_timer);
 
   GenCompactClosure blk;
-  GenCollectedHeap::heap()->generation_iterate(&blk, true);
+  SerialHeap::heap()->generation_iterate(&blk, true);
 }

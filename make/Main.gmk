@@ -1431,13 +1431,13 @@ ALL_TARGETS += $(addsuffix -only, $(filter-out dist-clean clean%, $(ALL_TARGETS)
 # are internal only, to support Init.gmk.
 
 print-targets:
-	  @$(ECHO) $(sort $(ALL_TARGETS))
+	$(info $(subst $(SPACE),$(NEWLINE),$(sort $(ALL_TARGETS))))
 
 print-modules:
-	  @$(ECHO) $(sort $(ALL_MODULES))
+	$(info $(subst $(SPACE),$(NEWLINE),$(sort $(ALL_MODULES))))
 
 print-tests:
-	  @$(ECHO) $(sort $(ALL_NAMED_TESTS))
+	$(info $(subst $(SPACE),$(NEWLINE),$(sort $(ALL_NAMED_TESTS))))
 
 create-main-targets-include:
 	  $(call LogInfo, Generating main target list)
