@@ -260,9 +260,6 @@ class StubRoutines: AllStatic {
   static address _cont_returnBarrier;
   static address _cont_returnBarrierExc;
 
-  static const double _large_subnormal;
-  static const volatile double _small_subnormal;
-
   JFR_ONLY(static RuntimeStub* _jfr_write_checkpoint_stub;)
   JFR_ONLY(static address _jfr_write_checkpoint;)
   JFR_ONLY(static RuntimeStub* _jfr_return_lease_stub;)
