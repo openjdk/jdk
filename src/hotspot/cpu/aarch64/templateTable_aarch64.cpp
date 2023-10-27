@@ -3311,10 +3311,6 @@ void TemplateTable::prepare_invoke(Register recv,   // if caller wants to see it
     __ verify_oop(recv);
   }
 
-  // compute return type
-  // x86 uses a shift and mask or wings it with a shift plus assert
-  // the mask is not needed. aarch64 just uses bitfield extract
-
   // load return address
   {
     const address table_addr = (address) Interpreter::invoke_return_entry_table_for(code);

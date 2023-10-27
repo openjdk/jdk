@@ -279,13 +279,13 @@ class TemplateTable: AllStatic {
                                                            Register method,
                                                            Register flags);
   static void load_resolved_method_entry_handle(Register cache,
-                                               Register method,
-                                               Register ref_index,
-                                               Register flags);
+                                                Register method,
+                                                Register ref_index,
+                                                Register flags);
   static void load_resolved_method_entry_interface(Register cache,
-                                               Register klass,
-                                               Register method_or_table_index,
-                                               Register flags);
+                                                   Register klass,
+                                                   Register method_or_table_index,
+                                                   Register flags);
   static void load_resolved_method_entry_virtual(Register cache,
                                                  Register method_or_table_index,
                                                  Register flags);

@@ -29,10 +29,10 @@
 bool ResolvedMethodEntry::check_no_old_or_obsolete_entry() {
   // return false if m refers to a non-deleted old or obsolete method
   if (_method != nullptr) {
-      assert(_method->is_valid() && _method->is_method(), "m is a valid method");
-      return !_method->is_old() && !_method->is_obsolete(); // old is always set for old and obsolete
+    assert(_method->is_valid() && _method->is_method(), "m is a valid method");
+    return !_method->is_old() && !_method->is_obsolete(); // old is always set for old and obsolete
   } else {
-      return true;
+    return true;
   }
 }
 

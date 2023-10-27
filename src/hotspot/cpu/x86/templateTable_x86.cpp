@@ -3794,10 +3794,9 @@ void TemplateTable::invokespecial(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
 
-  load_resolved_method_entry_special_or_static(rcx, // ResolvedMethodEntry*
-                                               rbx, // Method*
-                                               rdx  // flags
-                                               );
+  load_resolved_method_entry_special_or_static(rcx,  // ResolvedMethodEntry*
+                                               rbx,  // Method*
+                                               rdx); // flags
   prepare_invoke(rcx,
                  rcx,  // get receiver also for null check
                  rdx); // flags

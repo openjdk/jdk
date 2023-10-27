@@ -26,7 +26,6 @@
 #define SHARE_OOPS_RESOLVEDMETHODENTRY_HPP
 
 #include "interpreter/bytecodes.hpp"
-#include "oops/instanceKlass.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/sizes.hpp"
 
@@ -62,6 +61,7 @@
 //       pool entry and thus the same resolved method entry.
 // The is_vfinal flag indicates method pointer for a final method or an index.
 
+class InstanceKlass;
 class ResolvedMethodEntry {
   friend class VMStructs;
 

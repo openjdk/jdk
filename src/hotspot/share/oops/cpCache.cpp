@@ -230,7 +230,7 @@ void ConstantPoolCache::set_direct_or_vtable_call(Bytecodes::Code invoke_code,
 }
 
 void ConstantPoolCache::set_direct_call(Bytecodes::Code invoke_code, int method_index, const methodHandle& method,
-                                             bool sender_is_interface) {
+                                        bool sender_is_interface) {
   int index = Method::nonvirtual_vtable_index;
   // index < 0; FIXME: inline and customize set_direct_or_vtable_call
   set_direct_or_vtable_call(invoke_code, method_index, method, index, sender_is_interface);
@@ -244,9 +244,9 @@ void ConstantPoolCache::set_vtable_call(Bytecodes::Code invoke_code, int method_
 }
 
 void ConstantPoolCache::set_itable_call(Bytecodes::Code invoke_code,
-                                             int method_index,
-                                             Klass* referenced_klass,
-                                             const methodHandle& method, int index) {
+                                        int method_index,
+                                        Klass* referenced_klass,
+                                        const methodHandle& method, int index) {
   assert(method->method_holder()->verify_itable_index(index), "");
   assert(invoke_code == Bytecodes::_invokeinterface, "");
   InstanceKlass* interf = method->method_holder();
