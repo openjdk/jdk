@@ -281,6 +281,8 @@ public interface CatalogResolver extends EntityResolver, XMLResolver,
                     return type;
                 }
             }
+            CatalogMessages.reportIAE(CatalogMessages.ERR_INVALID_ARGUMENT,
+                    new Object[]{resolve, "RESOLVE"}, null);
             return null;
         }
     }
