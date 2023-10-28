@@ -182,23 +182,19 @@ static void print_thread_details(uintx thread_id, const char* name, outputStream
 // Given a region [from, to), if it intersects a known thread stack, print detail infos about that thread.
 static void print_thread_details_for_supposed_stack_address(const void* from, const void* to, outputStream* st) {
 
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread* t = jtiwh.next(); ) {
-    const size_t len = pointer_delta(to, from, 1);
-    if (vma_touches_thread_stack(from, to, t)) {
-      print_thread_details((uintx)(t->osthread()->thread_id()), t->name(), st);
-      return;
-    }
-  }
-
 #define HANDLE_THREAD(T)                                                        \
   if (T != nullptr && vma_touches_thread_stack(from, to, T)) {                  \
-	  print_thread_details((uintx)(T->osthread()->thread_id()), T->name(), st);   \
+    print_thread_details((uintx)(T->osthread()->thread_id()), T->name(), st);   \
     return;                                                                     \
+  }
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread* t = jtiwh.next(); ) {
+    HANDLE_THREAD(t);
   }
   HANDLE_THREAD(VMThread::vm_thread());
   HANDLE_THREAD(WatcherThread::watcher_thread());
   HANDLE_THREAD(AsyncLogWriter::instance());
 #undef HANDLE_THREAD
+
   if (Universe::heap() != nullptr) {
     GCThreadClosure cl(from, to);
     Universe::heap()->gc_threads_do(&cl);
