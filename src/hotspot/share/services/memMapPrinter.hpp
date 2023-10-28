@@ -31,6 +31,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;
+class CachedNMTInformation;
 
 class MappingPrintInformation {
   const void* const _from;
@@ -54,8 +55,9 @@ class MappingPrintClosure {
   const int64_t _timeout_at;
   uintx _total_count;
   size_t _total_vsize;
+  const CachedNMTInformation& _nmt_info;
 public:
-  MappingPrintClosure(outputStream* st, bool human_readable, jlong timeout_ms);
+  MappingPrintClosure(outputStream* st, bool human_readable, jlong timeout_ms, const CachedNMTInformation& nmt_info);
   bool do_it(const MappingPrintInformation* info); // returns false if timeout reached.
   uintx total_count() const { return _total_count; }
   size_t total_vsize() const { return _total_vsize; }

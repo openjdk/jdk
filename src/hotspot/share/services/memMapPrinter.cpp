@@ -38,6 +38,7 @@
 #include "nmt/memTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 
 // Note: throughout this code we will use the term "VMA" for OS system level memory mapping
@@ -94,61 +95,83 @@ public:
 
 /// NMT virtual memory
 
-struct NMTRegionSearchWalker : public VirtualMemoryWalker {
+static bool range_intersects(const void* from1, const void* to1, const void* from2, const void* to2) {
+  const void* const min = MAX2(from1, from2);
+  const void* const max = MIN2(to1, to2);
+  return min < max;
+}
 
-  const void* const _from;
-  const void* const _to;
-  // Number of round region associations by type
-  MemFlagBitmap _found;
-  enum class MatchType {
-    exact,        // VMA is the same size as NMT region
-    vma_superset, // VMA is a superset of the region
-    nmt_superset, // NMT region is a superset of VMA
-    unclear       // unclear match
-  };
-  MatchType _match_type;
+// A Cache that correlates range with MEMFLAG, optimized to be iterated quickly
+// (cache friendly).
+class CachedNMTInformation : public VirtualMemoryWalker {
+  struct Range { const void* from; const void* to; };
+  // Unfortunately, we need to allocate manually, raw, since we must prevent
+  // NMT deadlocks (ThreadCritical).
+  Range* _ranges;
+  MEMFLAGS* _flags;
+  uintx _count, _capacity;
+  bool _ordered;
+public:
+  CachedNMTInformation() : _ranges(nullptr), _flags(nullptr), _count(0), _capacity(0), _ordered(true) {}
 
-  NMTRegionSearchWalker(const void* from, const void* to) :
-    _from(from), _to(to), _found(), _match_type(MatchType::unclear) {
+  ~CachedNMTInformation() {
+    ALLOW_C_FUNCTION(free, ::free(_ranges);)
+    ALLOW_C_FUNCTION(free, ::free(_flags);)
   }
 
-  bool do_allocation_site(const ReservedMemoryRegion* rgn) {
-
-    // Count if we have an intersection.
-    // Note:
-    // A) A NMT virtual memory region may contain committed and uncommitted regions, therefore
-    //    it may span multiple VMAs on system level. That happens frequently for memory regions
-    //    that are committed on demand (e.g. Metaspace, heap etc).
-    // B) A system-level VMA may be the result of a folding operation by the kernel. The kernel
-    //    folds adjacent memory mappings that share the same attributes into one.
-    // Therefore there is no 1:1 relationship between VMA and NMT region. It is m:n. We deal
-    // with (B) by returning a *set* of NMT flags associated with a single VMA. There is no need
-    // to deal with (A) explicitly; it just means that adjacent VMAs show the same NMT flag. For
-    // instance, one will always see multiple adjacent VMAs showing up as java heap or class space.
-    address intersection_from = MAX2(rgn->base(), (address)_from);
-    address intersection_to = MIN2(rgn->end(), (address)_to);
-    if (intersection_from < intersection_to) {
-      // we intersect
-      const MEMFLAGS flag = rgn->flag();
-      _found.set_flag(flag);
-      if (_match_type == MatchType::unclear) {
-        if (rgn->base() == (address)_from && rgn->end() == (address)_to) {
-          _match_type = MatchType::exact;
-        } else if (rgn->base() <= (address)_from && rgn->end() >= (address)_to) {
-          // this will most often happen, since JVM regions are typically committed on demand,
-          // leaving us with multiple matching VMAs at the system that differ by protectedness.
-          _match_type = MatchType::nmt_superset;
-        } else if ((address)_from <= rgn->base() && (address)_to >= rgn->end()) {
-          // This can happen if mappings from different JVM subsystems are mapped adjacent
-          // of each other and share the same properties; the kernel will fold them into
-          // one OS-side VMA.
-          _match_type = MatchType::vma_superset;
-        }
+  bool add(const void* from, const void* to, MEMFLAGS f) {
+    const void* highest_from = nullptr;
+    if (_count == _capacity) {
+      // Enlarge if needed
+      const uintx new_capacity = MAX2((uintx)4096, 2 * _capacity);
+      ALLOW_C_FUNCTION(realloc, _ranges = (Range*)::realloc(_ranges, new_capacity * sizeof(Range));)
+      ALLOW_C_FUNCTION(realloc, _flags = (MEMFLAGS*)::realloc(_flags, new_capacity * sizeof(MEMFLAGS));)
+      if (_ranges == nullptr || _flags == nullptr) {
+        // In case of OOM lets make no fuzz. Just return.
+        return false;
       }
+      _capacity = new_capacity;
     }
+    assert(_capacity > _count, "Sanity");
+    _ranges[_count].from = from;
+    _ranges[_count].to = to;
+    _flags[_count] = f;
+    // Keep track of whether the regions are ordered.
+    if (_ordered && from < highest_from) {
+      _ordered = false;
+    } else {
+      highest_from = from;
+    }
+    _count++;
     return true;
   }
+
+  // Given a vma [from, to), find all regions that intersect with this vma and
+  // return their collective flags.
+  MemFlagBitmap lookup(const void* from, const void* to) const {
+    MemFlagBitmap bm;
+    for(uintx i = 0; i < _count; i++) {
+      if (range_intersects(from, to, _ranges[i].from, _ranges[i].to)) {
+        bm.set_flag(_flags[i]);
+      } else if (_ordered && from < _ranges[i].to) {
+        break;
+      }
+    }
+    return bm;
+  }
+
+  bool do_allocation_site(const ReservedMemoryRegion* rgn) override {
+    // Cancel iteration if we run out of memory (add returns false);
+    return add(rgn->base(), rgn->end(), rgn->flag());
+  }
+
+  // Iterate all NMT virtual memory regions and fill this cache.
+  bool fill_from_nmt() {
+    return VirtualMemoryTracker::walk_virtual_memory(this);
+  }
 };
+
+/////// Thread information //////////////////////////
 
 // Given a VMA [from, to) and a thread, check if vma intersects with thread stack
 static bool vma_touches_thread_stack(const void* from, const void* to, const Thread* t) {
@@ -158,9 +181,7 @@ static bool vma_touches_thread_stack(const void* from, const void* to, const Thr
   // Very rarely however is a VMA backing a thread stack folded together with another adjacent VMA by the
   // kernel. That can happen, e.g., for non-java threads that don't have guard pages.
   // Therefore we go for the simplest way here and check for intersection between VMA and thread stack.
-  const address min = MAX2((address)from, t->stack_end());
-  const address max = MIN2((address)to, t->stack_base());
-  return min < max;
+  return range_intersects(from, to, (const void*)t->stack_end(), (const void*)t->stack_base());
 }
 
 struct GCThreadClosure : public ThreadClosure {
@@ -214,37 +235,7 @@ static void print_thread_details_for_supposed_stack_address(const void* from, co
 #undef HANDLE_THREAD
 }
 
-static bool ask_nmt_about(const void* from, const void* to, outputStream* st) {
-  if (!MemTracker::enabled()) {
-    return false;
-  }
-  NMTRegionSearchWalker walker(from, to);
-  VirtualMemoryTracker::walk_virtual_memory(&walker);
-  if (walker._found.has_any()) {
-    // The address range we may be asked about may be the result of VMA folding:
-    // Two adjacent memory mappings that happen to have the same property will be folded
-    // by the kernel into a single VMA.
-    // Since that can seriously confuse readers of this mapping output, we try to find
-    // out if the mapping is used for multiple purposes. We mark those VMAs with "(*)"
-    // and print all NMT region markings.
-    for (int i = 0; i < mt_number_of_types; i++) {
-      const MEMFLAGS flag = (MEMFLAGS)i;
-      if (walker._found.has_flag(flag)) {
-        st->print("%s", get_shortname_for_nmt_flag(flag));
-        if (flag == mtThreadStack) {
-          print_thread_details_for_supposed_stack_address(from, to, st);
-        }
-        st->print(" ");
-      }
-    }
-    if (walker._match_type == NMTRegionSearchWalker::MatchType::vma_superset) {
-      st->print(" (*)");
-    }
-    return true;
-  }
-
-  return false;
-}
+///////////////
 
 static void print_legend(outputStream* st) {
 #define DO(flag, shortname, text) st->print_cr("%10s    %s", shortname, text);
@@ -252,24 +243,51 @@ static void print_legend(outputStream* st) {
 #undef DO
 }
 
-MappingPrintClosure::MappingPrintClosure(outputStream* st, bool human_readable, jlong timeout_at) :
-    _out(st), _human_readable(human_readable), _timeout_at(timeout_at), _total_count(0), _total_vsize(0) {}
+MappingPrintClosure::MappingPrintClosure(outputStream* st, bool human_readable,
+                                         jlong timeout_at, const CachedNMTInformation& nmt_info) :
+    _out(st), _human_readable(human_readable), _timeout_at(timeout_at),
+    _total_count(0), _total_vsize(0), _nmt_info(nmt_info)
+{}
 
 bool MappingPrintClosure::do_it(const MappingPrintInformation* info) {
+
   _total_count++;
-  _out->print(PTR_FORMAT " - " PTR_FORMAT " ", p2i(info->from()), p2i(info->to()));
-  const size_t size = pointer_delta(info->to(), info->from(), 1);
+
+  const void* const vma_from = info->from();
+  const void* const vma_to = info->to();
+
+  _out->print(PTR_FORMAT " - " PTR_FORMAT " ", p2i(vma_from), p2i(vma_to));
+  const size_t size = pointer_delta(vma_to, vma_from, 1);
   _total_vsize += size;
+
   if (_human_readable) {
     _out->print(PROPERFMT " ", PROPERFMTARGS(size));
   } else {
     _out->print("%11zu", size);
   }
+
   assert(info->from() <= info->to(), "Invalid VMA");
   _out->fill_to(53);
   info->print_OS_specific_details_heading(_out);
   _out->fill_to(70);
-  ask_nmt_about(info->from(), info->to(), _out);
+
+  if (MemTracker::enabled()) {
+    // Correlate vma region (from, to) with NMT region(s) we collected previously.
+    const MemFlagBitmap flags = _nmt_info.lookup(vma_from, vma_to);
+    if (flags.has_any()) {
+      for (int i = 0; i < mt_number_of_types; i++) {
+        const MEMFLAGS flag = (MEMFLAGS)i;
+        if (flags.has_flag(flag)) {
+          _out->print("%s", get_shortname_for_nmt_flag(flag));
+          if (flag == mtThreadStack) {
+            print_thread_details_for_supposed_stack_address(vma_from, vma_to, _out);
+          }
+          _out->print(" ");
+        }
+      }
+    }
+  }
+
   _out->fill_to(100);
   info->print_OS_specific_details_trailing(_out);
   _out->cr();
@@ -278,6 +296,10 @@ bool MappingPrintClosure::do_it(const MappingPrintInformation* info) {
 }
 
 void MemMapPrinter::print_all_mappings(outputStream* st, bool human_readable) {
+
+  // First collect all NMT information
+  CachedNMTInformation nmt_info;
+  nmt_info.fill_from_nmt();
 
   st->print_cr("Memory mappings:");
   if (!MemTracker::enabled()) {
@@ -292,7 +314,7 @@ void MemMapPrinter::print_all_mappings(outputStream* st, bool human_readable) {
   // the absolute runtime of printing to blocking other VM operations too long.
   const jlong timeout_at = os::javaTimeNanos() +
                            ((jlong)(SafepointTimeoutDelay * NANOSECS_PER_MILLISEC) / 2);
-  MappingPrintClosure closure(st, human_readable, timeout_at);
+  MappingPrintClosure closure(st, human_readable, timeout_at, nmt_info);
   bool ok = pd_iterate_all_mappings(closure);
   if (!ok) {
     st->print_cr("Aborted after printing " UINTX_FORMAT " mappings, took too long.", closure.total_count());
