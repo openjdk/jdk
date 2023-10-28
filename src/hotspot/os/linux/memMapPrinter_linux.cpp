@@ -75,21 +75,19 @@ void MemMapPrinter::pd_print_header(outputStream* st) {
   st->print_cr("size          prot offset  VM info");
 }
 
-bool MemMapPrinter::pd_iterate_all_mappings(MappingPrintClosure& closure) {
+void MemMapPrinter::pd_iterate_all_mappings(MappingPrintClosure& closure) {
   FILE* f = os::fopen("/proc/self/maps", "r");
-  bool ok = true;
   if (f != nullptr) {
     static constexpr size_t linesize = sizeof(ProcMapsInfo);
     char line[linesize];
-    while(ok && fgets(line, sizeof(line), f) == line) {
+    while(fgets(line, sizeof(line), f) == line) {
       line[sizeof(line) - 1] = '\0';
       ProcMapsInfo info;
       if (info.scan_proc_maps_line(line)) {
         LinuxMappingPrintInformation mapinfo(info.from, info.to, &info);
-        ok = closure.do_it(&mapinfo);
+        closure.do_it(&mapinfo);
       }
     }
     ::fclose(f);
   }
-  return ok;
 }

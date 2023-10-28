@@ -980,14 +980,15 @@ public:
 
 class SystemMapDCmd : public DCmdWithParser {
   DCmdArgument<bool> _human_readable;
+  DCmdArgument<char*> _filename;
 public:
-  static int num_arguments() { return 1; }
+  static int num_arguments() { return 2; }
   SystemMapDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "System.map";
   }
   static const char* description() {
-    return "Prints out an annotated memory map. Requires NMT to be enabled.";
+    return "Dumps an annotated process memory map to an output file.";
   }
   static const char* impact() {
     return "Low";

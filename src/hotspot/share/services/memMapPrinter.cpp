@@ -183,54 +183,49 @@ static bool vma_touches_thread_stack(const void* from, const void* to, const Thr
 }
 
 struct GCThreadClosure : public ThreadClosure {
-  Thread* _t;
+  bool _found;
+  uintx _tid;
   const void* const _from;
   const void* const _to;
-public:
-  GCThreadClosure(const void* from, const void* to) : _t(nullptr), _from(from), _to(to) {}
-  void do_thread(Thread* thread) override {
-    if (_t == nullptr && thread != nullptr && vma_touches_thread_stack(_from, _to, thread)) {
-      _t = thread;
+  GCThreadClosure(const void* from, const void* to) : _found(false), _tid(0), _from(from), _to(to) {}
+  void do_thread(Thread* t) override {
+    if (_tid == 0 && t != nullptr && vma_touches_thread_stack(_from, _to, t)) {
+      _found = true;
+      _tid = t->osthread()->thread_id();
+      // lemme stooop! No way to signal stop.
     }
   }
 };
 
-static uintx safely_get_thread_id(const Thread* t) {
-  const OSThread* osth = t->osthread();
-  uintx tid = 0;
-  if (osth != nullptr) {
-    return (uintx)(osth->thread_id());
-  }
-  return 0;
+static void print_thread_details(uintx thread_id, const char* name, outputStream* st) {
+  st->print("(" UINTX_FORMAT " \"%s\")", (uintx)thread_id, name);
 }
 
-// Given a region [from, to) that is supposed to represent a thread stack,
+// Given a region [from, to), if it intersects a known thread stack, print detail infos about that thread.
 static void print_thread_details_for_supposed_stack_address(const void* from, const void* to, outputStream* st) {
 
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread* t = jtiwh.next(); ) {
     const size_t len = pointer_delta(to, from, 1);
     if (vma_touches_thread_stack(from, to, t)) {
-      st->print("(" UINTX_FORMAT " \"%s\")", safely_get_thread_id(t), t->name());
+      print_thread_details((uintx)(t->osthread()->thread_id()), t->name(), st);
       return;
     }
   }
 
 #define HANDLE_THREAD(T)                                                        \
-  if (T != nullptr && vma_touches_thread_stack(from, to, T)) {                                   \
-    st->print("(" UINTX_FORMAT " \"%s\")", safely_get_thread_id(T), ((const Thread*)T)->name()); \
+  if (T != nullptr && vma_touches_thread_stack(from, to, T)) {                  \
+	  print_thread_details((uintx)(T->osthread()->thread_id()), T->name(), st);   \
     return;                                                                     \
   }
-
   HANDLE_THREAD(VMThread::vm_thread());
   HANDLE_THREAD(WatcherThread::watcher_thread());
   HANDLE_THREAD(AsyncLogWriter::instance());
-
+#undef HANDLE_THREAD
   if (Universe::heap() != nullptr) {
     GCThreadClosure cl(from, to);
     Universe::heap()->gc_threads_do(&cl);
-    HANDLE_THREAD(cl._t);
+    print_thread_details(cl._tid, "GC Thread", st);
   }
-#undef HANDLE_THREAD
 }
 
 ///////////////
@@ -241,23 +236,24 @@ static void print_legend(outputStream* st) {
 #undef DO
 }
 
-MappingPrintClosure::MappingPrintClosure(outputStream* st, bool human_readable,
-                                         jlong timeout_at, const CachedNMTInformation& nmt_info) :
-    _out(st), _human_readable(human_readable), _timeout_at(timeout_at),
+MappingPrintClosure::MappingPrintClosure(outputStream* st, bool human_readable, const CachedNMTInformation& nmt_info) :
+    _out(st), _human_readable(human_readable),
     _total_count(0), _total_vsize(0), _nmt_info(nmt_info)
 {}
 
-bool MappingPrintClosure::do_it(const MappingPrintInformation* info) {
+void MappingPrintClosure::do_it(const MappingPrintInformation* info) {
 
   _total_count++;
 
   const void* const vma_from = info->from();
   const void* const vma_to = info->to();
 
+  // print from, to
   _out->print(PTR_FORMAT " - " PTR_FORMAT " ", p2i(vma_from), p2i(vma_to));
   const size_t size = pointer_delta(vma_to, vma_from, 1);
   _total_vsize += size;
 
+  // print mapping size
   if (_human_readable) {
     _out->print(PROPERFMT " ", PROPERFMTARGS(size));
   } else {
@@ -269,6 +265,7 @@ bool MappingPrintClosure::do_it(const MappingPrintInformation* info) {
   info->print_OS_specific_details_heading(_out);
   _out->fill_to(70);
 
+  // print NMT information, if available
   if (MemTracker::enabled()) {
     // Correlate vma region (from, to) with NMT region(s) we collected previously.
     const MemFlagBitmap flags = _nmt_info.lookup(vma_from, vma_to);
@@ -286,15 +283,13 @@ bool MappingPrintClosure::do_it(const MappingPrintInformation* info) {
     }
   }
 
+  // print file name, if available
   _out->fill_to(100);
   info->print_OS_specific_details_trailing(_out);
   _out->cr();
-
-  return _timeout_at > os::javaTimeNanos(); // false if timeout
 }
 
 void MemMapPrinter::print_all_mappings(outputStream* st, bool human_readable) {
-
   // First collect all NMT information
   CachedNMTInformation nmt_info;
   nmt_info.fill_from_nmt();
@@ -304,20 +299,14 @@ void MemMapPrinter::print_all_mappings(outputStream* st, bool human_readable) {
     st->print_cr(" (For full functionality, please enable Native Memory Tracking)");
   }
   st->cr();
+
   print_legend(st);
   st->print_cr("(*) - Mapping contains data from multiple regions");
   st->cr();
+
   pd_print_header(st);
-  // Under rare circumstances the process memory map may be insanely large and/or fragmented. We cap
-  // the absolute runtime of printing to blocking other VM operations too long.
-  const jlong timeout_at = os::javaTimeNanos() +
-                           ((jlong)(SafepointTimeoutDelay * NANOSECS_PER_MILLISEC) / 2);
-  MappingPrintClosure closure(st, human_readable, timeout_at, nmt_info);
-  bool ok = pd_iterate_all_mappings(closure);
-  if (!ok) {
-    st->print_cr("Aborted after printing " UINTX_FORMAT " mappings, took too long.", closure.total_count());
-  } else {
-    st->print_cr("Total: " UINTX_FORMAT " mappings with a total vsize of %zu (" PROPERFMT ")",
-                 closure.total_count(), closure.total_vsize(), PROPERFMTARGS(closure.total_vsize()));
-  }
+  MappingPrintClosure closure(st, human_readable, nmt_info);
+  pd_iterate_all_mappings(closure);
+  st->print_cr("Total: " UINTX_FORMAT " mappings with a total vsize of %zu (" PROPERFMT ")",
+               closure.total_count(), closure.total_vsize(), PROPERFMTARGS(closure.total_vsize()));
 }

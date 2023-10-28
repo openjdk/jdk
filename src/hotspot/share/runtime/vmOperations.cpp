@@ -510,7 +510,3 @@ void VM_PrintClassHierarchy::doit() {
   KlassHierarchy::print_class_hierarchy(_out, _print_interfaces, _print_subclasses, _classname);
 }
 #endif
-
-void VM_PrintSystemMap::doit() {
-  MemMapPrinter::print_all_mappings(_out, _human_readable);
-}

@@ -1156,11 +1156,26 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
 
 SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) :
     DCmdWithParser(output, heap),
-  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false") {
+  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false"),
+  _filename("-f", "file path (defaults: \"vm_memory_map_<pid>.txt\")", "STRING", false) {
   _dcmdparser.add_dcmd_option(&_human_readable);
+  _dcmdparser.add_dcmd_option(&_filename);
 }
 
 void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
-  VM_PrintSystemMap op(output(), _human_readable.value());
-  VMThread::execute(&op);
+  stringStream default_name;
+  default_name.print("vm_memory_map_%d.txt", os::current_process_id());
+  const char* name = _filename.is_set() ? _filename.value() : default_name.base();
+  fileStream fs(name);
+  if (fs.is_open()) {
+    MemMapPrinter::print_all_mappings(&fs, _human_readable.value());
+#ifndef _WIN32
+    char buf[4096];
+    const char* absname = os::Posix::realpath(name, buf,  sizeof(buf));
+    name = absname != nullptr ? absname : name;
+#endif
+    output()->print_cr("Memory map dumped to \"%s\".", name);
+  } else {
+    output()->print_cr("Failed to open \"%s\" for writing.", name);
+  }
 }
