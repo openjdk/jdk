@@ -52,39 +52,6 @@ ShenandoahNMethod::~ShenandoahNMethod() {
   }
 }
 
-class ShenandoahHasCSetOopClosure : public OopClosure {
-private:
-  ShenandoahHeap* const _heap;
-  bool                  _has_cset_oops;
-
-public:
-  ShenandoahHasCSetOopClosure(ShenandoahHeap *heap) :
-    _heap(heap),
-    _has_cset_oops(false) {
-  }
-
-  bool has_cset_oops() const {
-    return _has_cset_oops;
-  }
-
-  void do_oop(oop* p) {
-    oop value = RawAccess<>::oop_load(p);
-    if (!_has_cset_oops && _heap->in_collection_set(value)) {
-      _has_cset_oops = true;
-    }
-  }
-
-  void do_oop(narrowOop* p) {
-    ShouldNotReachHere();
-  }
-};
-
-bool ShenandoahNMethod::has_cset_oops(ShenandoahHeap *heap) {
-  ShenandoahHasCSetOopClosure cl(heap);
-  oops_do(&cl);
-  return cl.has_cset_oops();
-}
-
 void ShenandoahNMethod::update() {
   ResourceMark rm;
   bool non_immediate_oops = false;
@@ -208,10 +175,6 @@ public:
 
   GrowableArray<oop*>* oops() {
     return &_oops;
-  }
-
-  bool has_oops() {
-    return !_oops.is_empty();
   }
 };
 
@@ -471,7 +434,7 @@ void ShenandoahNMethodTableSnapshot::parallel_blobs_do(CodeBlobClosure *f) {
 
   size_t max = (size_t)_limit;
   while (_claimed < max) {
-    size_t cur = Atomic::fetch_and_add(&_claimed, stride, memory_order_relaxed);
+    size_t cur = Atomic::fetch_then_add(&_claimed, stride, memory_order_relaxed);
     size_t start = cur;
     size_t end = MIN2(cur + stride, max);
     if (start >= max) break;
@@ -495,7 +458,7 @@ void ShenandoahNMethodTableSnapshot::concurrent_nmethods_do(NMethodClosure* cl) 
   ShenandoahNMethod** list = _list->list();
   size_t max = (size_t)_limit;
   while (_claimed < max) {
-    size_t cur = Atomic::fetch_and_add(&_claimed, stride, memory_order_relaxed);
+    size_t cur = Atomic::fetch_then_add(&_claimed, stride, memory_order_relaxed);
     size_t start = cur;
     size_t end = MIN2(cur + stride, max);
     if (start >= max) break;

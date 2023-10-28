@@ -50,15 +50,15 @@ package sun.security.pkcs11.wrapper;
 
 
 /**
- * class CK_PBE_PARAMS provides all of the necessary information required byte
+ * class CK_PBE_PARAMS provides all the necessary information required by
  * the CKM_PBE mechanisms and the CKM_PBA_SHA1_WITH_SHA1_HMAC mechanism.<p>
  * <B>PKCS#11 structure:</B>
  * <PRE>
  * typedef struct CK_PBE_PARAMS {
- *   CK_CHAR_PTR pInitVector;
- *   CK_CHAR_PTR pPassword;
+ *   CK_BYTE_PTR pInitVector;
+ *   CK_UTF8CHAR_PTR pPassword;
  *   CK_ULONG ulPasswordLen;
- *   CK_CHAR_PTR pSalt;
+ *   CK_BYTE_PTR pSalt;
  *   CK_ULONG ulSaltLen;
  *   CK_ULONG ulIteration;
  * } CK_PBE_PARAMS;
@@ -72,15 +72,15 @@ public class CK_PBE_PARAMS {
     /**
      * <B>PKCS#11:</B>
      * <PRE>
-     *   CK_CHAR_PTR pInitVector;
+     *   CK_BYTE_PTR pInitVector;
      * </PRE>
      */
-    public char[] pInitVector;
+    public byte[] pInitVector;
 
     /**
      * <B>PKCS#11:</B>
      * <PRE>
-     *   CK_CHAR_PTR pPassword;
+     *   CK_UTF8CHAR_PTR pPassword;
      *   CK_ULONG ulPasswordLen;
      * </PRE>
      */
@@ -89,11 +89,11 @@ public class CK_PBE_PARAMS {
     /**
      * <B>PKCS#11:</B>
      * <PRE>
-     *   CK_CHAR_PTR pSalt
+     *   CK_BYTE_PTR pSalt
      *   CK_ULONG ulSaltLen;
      * </PRE>
      */
-    public char[] pSalt;
+    public byte[] pSalt;
 
     /**
      * <B>PKCS#11:</B>
@@ -102,6 +102,12 @@ public class CK_PBE_PARAMS {
      * </PRE>
      */
     public long ulIteration;
+
+    public CK_PBE_PARAMS(char[] pPassword, byte[] pSalt, long ulIteration) {
+         this.pPassword = pPassword;
+         this.pSalt = pSalt;
+         this.ulIteration = ulIteration;
+     }
 
     /**
      * Returns the string representation of CK_PBE_PARAMS.

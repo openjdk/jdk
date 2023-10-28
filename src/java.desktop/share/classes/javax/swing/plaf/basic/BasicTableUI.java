@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,7 +206,7 @@ public class BasicTableUI extends TableUI
                 boolean inSelection) {
             super(name);
 
-            // Actions spcifying true for "inSelection" are
+            // Actions specifying true for "inSelection" are
             // fairly sensitive to bad parameter values. They require
             // that one of dx and dy be 0 and the other be -1 or 1.
             // Bogus parameter values could cause an infinite loop.
@@ -437,7 +437,7 @@ public class BasicTableUI extends TableUI
                         return;
                     }
 
-                    Dimension delta = table.getParent().getSize();
+                    Dimension delta = SwingUtilities.getUnwrappedParent(table).getSize();
 
                     if (vertically) {
                         Rectangle r = table.getCellRect(leadRow, 0, true);
@@ -526,7 +526,7 @@ public class BasicTableUI extends TableUI
                 // for the focus regardless of who owns the focus at the
                 // time the call to requestFocus() is made. The optimisation
                 // to ignore the call to requestFocus() when the component
-                // already has focus may ligitimately be made as the
+                // already has focus may legitimately be made as the
                 // request focus event is dequeued, not before.
 
                 // boolean wasEditingWithFocus = table.isEditing() &&
@@ -2121,6 +2121,9 @@ public class BasicTableUI extends TableUI
     private void paintDraggedArea(Graphics g, int rMin, int rMax, TableColumn draggedColumn, int distance) {
         int draggedColumnIndex = viewIndexForColumn(draggedColumn);
 
+        if (draggedColumnIndex == -1) {
+            return;
+        }
         Rectangle minCell = table.getCellRect(rMin, draggedColumnIndex, true);
         Rectangle maxCell = table.getCellRect(rMax, draggedColumnIndex, true);
 

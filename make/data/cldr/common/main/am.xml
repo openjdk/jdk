@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -923,6 +923,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">ዚምቧቤ</territory>
 			<territory type="ZZ">ያልታወቀ ክልል</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">እንግሊዝ</subdivision>
+			<subdivision type="gbsct">ስኮትላንድ</subdivision>
+			<subdivision type="gbwls">ዌልስ</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">የቀን አቆጣጠር</key>
 			<key type="cf">የምንዛሪ ቅርጸት</key>
@@ -1298,12 +1303,69 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="coptic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="narrow">
+							<month type="1">1</month>
+							<month type="2">2</month>
+							<month type="3">3</month>
+							<month type="4">4</month>
+							<month type="5">5</month>
+							<month type="6">6</month>
+							<month type="7">7</month>
+							<month type="8">8</month>
+							<month type="9">9</month>
+							<month type="10">10</month>
+							<month type="11">11</month>
+							<month type="12">12</month>
+							<month type="13">13</month>
+						</monthWidth>
+					</monthContext>
+				</months>
 				<eras>
 					<eraAbbr>
 						<era type="0" draft="unconfirmed">ዓ/ዓ</era>
 						<era type="1" draft="unconfirmed">ዓ/ም</era>
 					</eraAbbr>
 				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE፣ d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="MEd">E፣ M/d</dateFormatItem>
+						<dateFormatItem id="MMMEd">E፣ MMM d</dateFormatItem>
+						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E፣ MMMM d</dateFormatItem>
+						<dateFormatItem id="yMEd">E፣ d/M/y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E፣ MMM d y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E፣ d/M/y – E፣ d/M/y</greatestDifference>
+							<greatestDifference id="y">E፣ d/M/y – E፣ d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">MMM d–d፣ y</greatestDifference>
+							<greatestDifference id="y">MMM d፣ y – MMM d፣ y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="y">E፣ MMM d፣ y – E፣ MMM d፣ y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="dangi">
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+					</intervalFormats>
+				</dateTimeFormats>
 			</calendar>
 			<calendar type="ethiopic">
 				<months>
@@ -1641,9 +1703,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1651,9 +1719,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2160,9 +2234,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2170,9 +2250,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2366,9 +2452,155 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="hebrew">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="narrow">
+							<month type="1">1</month>
+							<month type="2">2</month>
+							<month type="3">3</month>
+							<month type="4">4</month>
+							<month type="5">5</month>
+							<month type="6">6</month>
+							<month type="7">7</month>
+							<month type="7" yeartype="leap">7</month>
+							<month type="8">8</month>
+							<month type="9">9</month>
+							<month type="10">10</month>
+							<month type="11">11</month>
+							<month type="12">12</month>
+							<month type="13">13</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraNames>
+						<era type="0">AM</era>
+					</eraNames>
+					<eraNarrow>
+						<era type="0">AM</era>
+					</eraNarrow>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE፣ d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="MMMEd">E፣ MMM d</dateFormatItem>
+						<dateFormatItem id="yMEd">E፣ d/M/y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="M">E፣ d/M – E፣ d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">E d – E d፣ MMM</greatestDifference>
+							<greatestDifference id="M">E፣ MMM d – E፣ MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E፣ d/M/y – E፣ d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">MMM d–d፣ y</greatestDifference>
+							<greatestDifference id="y">MMM d፣ y – MMM d፣ y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="y">E፣ MMM d፣ y – E፣ MMM d፣ y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="indian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="narrow">
+							<month type="1">1</month>
+							<month type="2">2</month>
+							<month type="3">3</month>
+							<month type="4">4</month>
+							<month type="5">5</month>
+							<month type="6">6</month>
+							<month type="7">7</month>
+							<month type="8">8</month>
+							<month type="9">9</month>
+							<month type="10">10</month>
+							<month type="11">11</month>
+							<month type="12">12</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE፣ d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="MEd">E፣ M/d</dateFormatItem>
+						<dateFormatItem id="MMMEd">E፣ MMM d</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E፣ MMMM d</dateFormatItem>
+						<dateFormatItem id="yMEd">E፣ d/M/y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E፣ MMM d y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="M">E፣ d/M – E፣ d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="M">E፣ MMM d – E፣ MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E፣ d/M/y – E፣ d/M/y</greatestDifference>
+							<greatestDifference id="M">E d/M/ – E d/M፣ y</greatestDifference>
+							<greatestDifference id="y">E፣ d/M/y – E፣ d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">MMM–MMM፣ y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="islamic">
 				<months>
 					<monthContext type="format">
+						<monthWidth type="narrow">
+							<month type="1">1</month>
+							<month type="2">2</month>
+							<month type="3">3</month>
+							<month type="4">4</month>
+							<month type="5">5</month>
+							<month type="6">6</month>
+							<month type="7">7</month>
+							<month type="8">8</month>
+							<month type="9">9</month>
+							<month type="10">10</month>
+							<month type="11">11</month>
+							<month type="12">12</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">ሙሀረም</month>
+							<month type="2">ሳፈር</month>
+							<month type="3">ረቢዑል አወል</month>
+							<month type="4">ረቢዑል አኺር</month>
+							<month type="5">ጀማደል አወል</month>
+							<month type="6">ጀማደል አኺር</month>
+							<month type="7">ረጀብ</month>
+							<month type="8">ሻእባን</month>
+							<month type="9">ረመዳን</month>
+							<month type="10">ሸዋል</month>
+							<month type="11">ዙልቂዳህ</month>
+							<month type="12">ዙልሂጃህ</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
 						<monthWidth type="wide">
 							<month type="1">ሙሀረም</month>
 							<month type="2">ሳፈር</month>
@@ -2385,6 +2617,118 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE፣ d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMMMd">MMM d፣ y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E MMM d፣ y G</dateFormatItem>
+						<dateFormatItem id="MEd">E፣ M/d</dateFormatItem>
+						<dateFormatItem id="MMMEd">E፣ MMM d</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E፣ MMMM d</dateFormatItem>
+						<dateFormatItem id="yMEd">E፣ d/M/y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E፣ MMM d y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="M">E፣ d/M – E፣ d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="M">E፣ MMM d – E፣ MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E፣ d/M/y – E፣ d/M/y</greatestDifference>
+							<greatestDifference id="M">E d/M/ – E d/M፣ y</greatestDifference>
+							<greatestDifference id="y">E፣ d/M/y – E፣ d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">MMM–MMM፣ y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">MMM d–d፣ y</greatestDifference>
+							<greatestDifference id="y">MMM d፣ y – MMM d፣ y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="japanese">
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="M">E፣ d/M – E፣ d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">E d – E d፣ MMM</greatestDifference>
+							<greatestDifference id="M">E፣ MMM d – E፣ MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E፣ d/M/y – E፣ d/M/y</greatestDifference>
+							<greatestDifference id="M">E d/M/ – E d/M፣ y</greatestDifference>
+							<greatestDifference id="y">E፣ d/M/y – E፣ d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">MMM–MMM፣ y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">MMM d–d፣ y</greatestDifference>
+							<greatestDifference id="y">MMM d፣ y – MMM d፣ y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="persian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="narrow">
+							<month type="1">1</month>
+							<month type="2">2</month>
+							<month type="3">3</month>
+							<month type="4">4</month>
+							<month type="5">5</month>
+							<month type="6">6</month>
+							<month type="7">7</month>
+							<month type="8">8</month>
+							<month type="9">9</month>
+							<month type="10">10</month>
+							<month type="11">11</month>
+							<month type="12">12</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE፣ d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="M">MMM d – MMM d፣ y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">E MMM d – E MMM d፣ y</greatestDifference>
+							<greatestDifference id="M">E MMM d – E MMM d፣ y</greatestDifference>
+							<greatestDifference id="y">E፣ MMM d፣ y – E፣ MMM d፣ y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="roc">
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+					</intervalFormats>
+				</dateTimeFormats>
 			</calendar>
 		</calendars>
 		<fields>
@@ -2948,6 +3292,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="hour-short">
 				<displayName>ሰዓት</displayName>
+				<relative type="0">ይህ ሰዓት</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">በ{0} ሰዓት ውስጥ</relativeTimePattern>
 					<relativeTimePattern count="other">በ{0} ሰዓቶች ውስጥ</relativeTimePattern>
@@ -2959,6 +3304,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="hour-narrow">
 				<displayName>ሰዓት</displayName>
+				<relative type="0">ይህ ሰዓት</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">በ{0} ሰዓት ውስጥ</relativeTimePattern>
 					<relativeTimePattern count="other">በ{0} ሰዓቶች ውስጥ</relativeTimePattern>
@@ -2982,6 +3328,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="minute-short">
 				<displayName>ደቂቃ</displayName>
+				<relative type="0">ይህ ደቂቃ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">በ{0} ደቂቃ ውስጥ</relativeTimePattern>
 					<relativeTimePattern count="other">በ{0} ደቂቃዎች ውስጥ</relativeTimePattern>
@@ -2993,6 +3340,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="minute-narrow">
 				<displayName>ደቂቃ</displayName>
+				<relative type="0">ይህ ደቂቃ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">በ{0} ደቂቃ ውስጥ</relativeTimePattern>
 					<relativeTimePattern count="other">በ{0} ደቂቃዎች ውስጥ</relativeTimePattern>
@@ -3849,6 +4197,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>ኸርሞዚሎ</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>ሳዮዳድ ሁዋሬዝ</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>ማዛትላን</exemplarCity>
@@ -5268,6 +5619,39 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<traditional>ethi</traditional>
 		</otherNumberingSystems>
 		<minimumGroupingDigits>1</minimumGroupingDigits>
+		<symbols numberSystem="adlm">
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="bali">
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="beng">
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="brah">
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="cakm">
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="cham">
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="deva">
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="fullwide">
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gong">
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gujr">
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="hanidec">
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
 		<symbols numberSystem="latn">
 			<decimal>.</decimal>
 			<group>,</group>
@@ -5985,6 +6369,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="LSL">
 				<displayName>የሌሶቶ ሎቲ</displayName>
+				<displayName count="one">የሌሶቶ ሎቲ</displayName>
+				<displayName count="other">የሌሶቶ ሎቲ</displayName>
 			</currency>
 			<currency type="LTL">
 				<displayName>ሊቱዌንያን ሊታስ</displayName>
@@ -6576,6 +6962,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p9">
 				<unitPrefixPattern>ጊጋ{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>T{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>P{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>E{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>Z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>Y{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="1024p1">
 				<unitPrefixPattern>{0} ኪቢ</unitPrefixPattern>
 			</compoundUnit>
@@ -6591,8 +6992,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="1024p5">
 				<unitPrefixPattern>{0} ፔቢ</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="1024p7">
 				<unitPrefixPattern>{0} ዜቢ</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} በ{1}</compoundUnitPattern>
@@ -6604,6 +7011,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="power3">
 				<compoundUnitPattern1 count="one">ኪዩቢክ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">ኪዩቢክ {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>ጂ-ኃይል</displayName>
@@ -6764,7 +7174,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}‰</unitPattern>
 				<unitPattern count="other" case="accusative">{0}‰</unitPattern>
 			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>‱</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="one" case="accusative">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
+				<unitPattern count="other" case="accusative">{0}‱</unitPattern>
+			</unit>
 			<unit type="concentr-mole">
+				<displayName>mol</displayName>
 				<unitPattern count="one">{0} mol</unitPattern>
 				<unitPattern count="one" case="accusative">{0} mole</unitPattern>
 				<unitPattern count="other">{0} mol</unitPattern>
@@ -6925,6 +7343,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="accusative">{0} ቀናት</unitPattern>
 				<perUnitPattern>{0}/ቀ</perUnitPattern>
 			</unit>
+			<unit type="duration-day-person">
+				<unitPattern count="one">{0} ቀናት</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ቀናት</unitPattern>
+				<unitPattern count="other">{0} ቀናት</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ቀናት</unitPattern>
+			</unit>
 			<unit type="duration-hour">
 				<displayName>ሰዓቶች</displayName>
 				<unitPattern count="one">{0} ሰዓት</unitPattern>
@@ -7041,6 +7465,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ኤቮ</unitPattern>
 				<unitPattern count="other">{0} ኤቮ</unitPattern>
 			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>Btu</displayName>
+				<unitPattern count="one">{0} Btu</unitPattern>
+				<unitPattern count="other">{0} Btu</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>US therm</displayName>
+				<unitPattern count="one">{0} US therm</unitPattern>
+				<unitPattern count="other">{0} US therm</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>lbf</displayName>
+				<unitPattern count="one">{0} lbf</unitPattern>
+				<unitPattern count="other">{0} lbf</unitPattern>
+			</unit>
 			<unit type="force-newton">
 				<displayName>ኒ</displayName>
 				<unitPattern count="one">{0} ኒ</unitPattern>
@@ -7130,6 +7569,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ነቁጥ</displayName>
 				<unitPattern count="one">{0} ነቁጥ</unitPattern>
 				<unitPattern count="other">{0} ነቁጥ</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>ኪሎሜትር</displayName>
@@ -7279,6 +7723,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="accusative">{0} ቱቦ ቀዳዳ</unitPattern>
 				<unitPattern count="other">{0} ቱቦ ቀዳዳ</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ቱቦ ቀዳዳ</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>L☉</displayName>
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
 				<displayName>t</displayName>
@@ -7524,6 +7973,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="accusative">{0} ኬልቪን</unitPattern>
 				<unitPattern count="other">{0} K</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ኬልቪኖች</unitPattern>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>lbf⋅ft</displayName>
+				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
 				<displayName>ኒ.ሜ</displayName>
@@ -7801,6 +8255,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>ጂ-ኃይል</displayName>
 				<unitPattern count="one">{0} ጂ</unitPattern>
@@ -7925,6 +8387,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>በማይል</displayName>
 				<unitPattern count="one">{0}‰</unitPattern>
 				<unitPattern count="other">{0}‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<unitPattern count="one">{0} mol</unitPattern>
+				<unitPattern count="other">{0} mol</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ሊ/ኪሜ</displayName>
@@ -8129,10 +8599,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ኤቮ</unitPattern>
 				<unitPattern count="other">{0} ኤቮ</unitPattern>
 			</unit>
+			<unit type="energy-british-thermal-unit">
+				<unitPattern count="one">{0} Btu</unitPattern>
+				<unitPattern count="other">{0} Btu</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<unitPattern count="one">{0} US therm</unitPattern>
+				<unitPattern count="other">{0} US therm</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<unitPattern count="one">{0} lbf</unitPattern>
+				<unitPattern count="other">{0} lbf</unitPattern>
+			</unit>
 			<unit type="force-newton">
 				<displayName>ኒ</displayName>
 				<unitPattern count="one">{0} ኒ</unitPattern>
 				<unitPattern count="other">{0} ኒ</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<unitPattern count="one">{0} kWh/100km</unitPattern>
+				<unitPattern count="other">{0} kWh/100km</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
@@ -8153,6 +8639,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Hz</displayName>
 				<unitPattern count="one">{0} Hz</unitPattern>
 				<unitPattern count="other">{0} Hz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>ፒክስል</displayName>
@@ -8188,6 +8678,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ነቁጥ</displayName>
 				<unitPattern count="one">{0} ነቁጥ</unitPattern>
 				<unitPattern count="other">{0} ነቁጥ</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>ኪሎሜትር</displayName>
@@ -8296,6 +8790,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>ሶላር ራዲ</displayName>
+				<unitPattern count="one">{0} R☉</unitPattern>
+				<unitPattern count="other">{0} R☉</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lx</displayName>
@@ -8311,6 +8807,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ቱቦ ቀዳዳ</displayName>
 				<unitPattern count="one">{0} ቱቦ ቀዳዳ</unitPattern>
 				<unitPattern count="other">{0} ቱቦ ቀዳዳ</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
 				<displayName>t</displayName>
@@ -8373,12 +8873,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>ዳተንስ</displayName>
+				<unitPattern count="one">{0} Da</unitPattern>
+				<unitPattern count="other">{0} Da</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
 				<displayName>ኤርዝማስስ</displayName>
+				<unitPattern count="one">{0} M⊕</unitPattern>
+				<unitPattern count="other">{0} M⊕</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>ሶላር ማስስ</displayName>
+				<unitPattern count="one">{0} M☉</unitPattern>
+				<unitPattern count="other">{0} M☉</unitPattern>
 			</unit>
 			<unit type="mass-grain">
 				<displayName>ጥራ ጥሬ</displayName>
@@ -8505,6 +9011,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} K</unitPattern>
 				<unitPattern count="other">{0} K</unitPattern>
 			</unit>
+			<unit type="torque-pound-force-foot">
+				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
+			</unit>
 			<unit type="torque-newton-meter">
 				<displayName>ኒ.ሜ</displayName>
 				<unitPattern count="one">{0} ኒ.ሜ</unitPattern>
@@ -8630,6 +9140,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} fl oz</unitPattern>
 				<unitPattern count="other">{0} fl oz</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<unitPattern count="one">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="other">{0} fl oz Imp.</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>tbsp</displayName>
 				<unitPattern count="one">{0} tbsp</unitPattern>
@@ -8731,6 +9245,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p6">
 				<unitPrefixPattern>ሜ{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>G{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>T{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>P{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>E{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>Z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>Y{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="1024p1">
 				<unitPrefixPattern>{0} ኪቢ</unitPrefixPattern>
 			</compoundUnit>
@@ -8746,15 +9278,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="1024p5">
 				<unitPrefixPattern>{0} ፔቢ</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="1024p7">
 				<unitPrefixPattern>{0} ዜቢ</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
+				<displayName>ጂ-ኃይል</displayName>
 				<unitPattern count="one">{0} ጂ</unitPattern>
 				<unitPattern count="other">{0} ጂ</unitPattern>
+			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<displayName>ሜ/ሰ²</displayName>
+				<unitPattern count="one">{0} ሜ/ሰ²</unitPattern>
+				<unitPattern count="other">{0} ሜ/ሰ²</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<displayName>ኡደ</displayName>
@@ -8767,107 +9324,292 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}ራዲ</unitPattern>
 			</unit>
 			<unit type="angle-degree">
+				<displayName>ዲግሪ</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
+				<displayName>ደቂቃ</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
+				<displayName>ሰከንድ</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<displayName>ካሬ ኪሎሜትር</displayName>
 				<unitPattern count="one">{0} ኪሜ²</unitPattern>
 				<unitPattern count="other">{0} ኪሜ²</unitPattern>
+				<perUnitPattern>{0}/ኪሜ²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
+				<displayName>ሄክታር</displayName>
 				<unitPattern count="one">{0} ሄክታር</unitPattern>
 				<unitPattern count="other">{0} ሄክታር</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<displayName>ካሬ ሜትር</displayName>
 				<unitPattern count="one">{0} ሜ²</unitPattern>
 				<unitPattern count="other">{0} ሜ²</unitPattern>
+				<perUnitPattern>{0}/ሜ²</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>ሴሜ²</displayName>
+				<unitPattern count="one">{0} ሴሜ²</unitPattern>
+				<unitPattern count="other">{0} ሴሜ²</unitPattern>
+				<perUnitPattern>{0}/ሴሜ²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
+				<displayName>ካሬ ማይል</displayName>
 				<unitPattern count="one">{0} ማይል²</unitPattern>
 				<unitPattern count="other">{0} ማይል²</unitPattern>
+				<perUnitPattern>{0}/ማይል²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
+				<displayName>ኤክር</displayName>
 				<unitPattern count="one">{0} ኤክር</unitPattern>
 				<unitPattern count="other">{0} ኤክር</unitPattern>
 			</unit>
+			<unit type="area-square-yard">
+				<displayName>yd²</displayName>
+				<unitPattern count="one">{0} yd²</unitPattern>
+				<unitPattern count="other">{0} yd²</unitPattern>
+			</unit>
 			<unit type="area-square-foot">
+				<displayName>ካሬ ጫማ</displayName>
 				<unitPattern count="one">{0} ጫማ²</unitPattern>
 				<unitPattern count="other">{0} ጫማ²</unitPattern>
 			</unit>
+			<unit type="area-square-inch">
+				<displayName>ኢንች²</displayName>
+				<unitPattern count="one">{0} ኢንች²</unitPattern>
+				<unitPattern count="other">{0} ኢንች²</unitPattern>
+				<perUnitPattern>{0}/ኢንች²</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>ጋሻዎች</displayName>
+				<unitPattern count="one">{0} ጋሻ</unitPattern>
+				<unitPattern count="other">{0} ጋሻ</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>ካራት</displayName>
+				<unitPattern count="one">{0} ካራት</unitPattern>
+				<unitPattern count="other">{0} ካራት</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>mg/dL</displayName>
+				<unitPattern count="one">{0} mg/dL</unitPattern>
+				<unitPattern count="other">{0} mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmol/L</displayName>
+				<unitPattern count="one">{0} mmol/L</unitPattern>
+				<unitPattern count="other">{0} mmol/L</unitPattern>
+			</unit>
 			<unit type="concentr-item">
 				<displayName>ንጥል</displayName>
+				<unitPattern count="one">{0} ንጥል</unitPattern>
+				<unitPattern count="other">{0} ንጥል</unitPattern>
+			</unit>
+			<unit type="concentr-permillion">
+				<displayName>ppm</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
+				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
+			<unit type="concentr-permille">
+				<displayName>በማይል</displayName>
+				<unitPattern count="one">{0}‰</unitPattern>
+				<unitPattern count="other">{0}‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>‱</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>mol</displayName>
+				<unitPattern count="one">{0} mol</unitPattern>
+				<unitPattern count="other">{0} mol</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>ሊ/ኪሜ</displayName>
+				<unitPattern count="one">{0} ሊ/ኪሜ</unitPattern>
+				<unitPattern count="other">{0} ሊ/ኪሜ</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ሊትር በ100 ኪሎሜትሮች</displayName>
 				<unitPattern count="one">{0}ሊበ100ኪሜ</unitPattern>
 				<unitPattern count="other">{0}ሊበ100ኪሜ</unitPattern>
 			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName>mpg</displayName>
+				<unitPattern count="one">{0} mpg</unitPattern>
+				<unitPattern count="other">{0} mpg</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mpg Imp.</displayName>
+				<unitPattern count="one">{0} mpg Imp.</unitPattern>
+				<unitPattern count="other">{0} mpg Imp.</unitPattern>
+			</unit>
 			<unit type="digital-petabyte">
 				<displayName>ፔባ</displayName>
+				<unitPattern count="one">{0} ፔባ</unitPattern>
+				<unitPattern count="other">{0} ፔባ</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>ቴባይት</displayName>
+				<unitPattern count="one">{0} ቴራባይት</unitPattern>
+				<unitPattern count="other">{0} ቴራባይት</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName>ቴባ</displayName>
+				<unitPattern count="one">{0} ቴባ</unitPattern>
+				<unitPattern count="other">{0} ቴባ</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>ጊባ</displayName>
+				<unitPattern count="one">{0} ጊባ</unitPattern>
+				<unitPattern count="other">{0} ጊባ</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName>ጊጋባይት</displayName>
+				<unitPattern count="one">{0} ጊጋባይት</unitPattern>
+				<unitPattern count="other">{0} ጊጋባይት</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>ሜጋባይት</displayName>
+				<unitPattern count="one">{0} ሜጋባይት</unitPattern>
+				<unitPattern count="other">{0} ሜጋባይት</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>ሜባ</displayName>
+				<unitPattern count="one">{0} ሜባ</unitPattern>
+				<unitPattern count="other">{0} ሜባ</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>ኪባ</displayName>
+				<unitPattern count="one">{0} ኪባ</unitPattern>
+				<unitPattern count="other">{0} ኪባ</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName>ኪሎባይት</displayName>
+				<unitPattern count="one">{0} ኪሎባይት</unitPattern>
+				<unitPattern count="other">{0} ኪሎባይት</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>ባይት</displayName>
+				<unitPattern count="one">{0} ባይት</unitPattern>
+				<unitPattern count="other">{0} ባይት</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<displayName>ቢት</displayName>
+				<unitPattern count="one">{0} ቢት</unitPattern>
+				<unitPattern count="other">{0} ቢት</unitPattern>
 			</unit>
 			<unit type="duration-century">
+				<displayName>ምዕተ ዓመት</displayName>
 				<unitPattern count="one">{0}ም.ዓ</unitPattern>
 				<unitPattern count="other">{0}ም.ዓ</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>ዓሠርተ-ዓመት</displayName>
+				<unitPattern count="one">{0} ዓሠ.ዓ</unitPattern>
+				<unitPattern count="other">{0} ዓሠ.ዓ</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>ዓመታት</displayName>
 				<unitPattern count="one">{0} ዓመት</unitPattern>
 				<unitPattern count="other">{0} ዓ</unitPattern>
+				<perUnitPattern>{0}/ዓ</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
+				<displayName>ሩብ</displayName>
 				<unitPattern count="one">{0} ሩብ</unitPattern>
 				<unitPattern count="other">{0} ሩ</unitPattern>
+				<perUnitPattern>{0}/ሩ</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>ወራት</displayName>
 				<unitPattern count="one">{0} ወር</unitPattern>
 				<unitPattern count="other">{0} ወር</unitPattern>
+				<perUnitPattern>{0}/ወ</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>ሳምንታት</displayName>
 				<unitPattern count="one">{0} ሳምንት</unitPattern>
 				<unitPattern count="other">{0} ሳምንት</unitPattern>
+				<perUnitPattern>{0}/ሳ</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>ቀናት</displayName>
 				<unitPattern count="one">{0} ቀ</unitPattern>
 				<unitPattern count="other">{0} ቀ</unitPattern>
+				<perUnitPattern>{0}/ቀ</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>ሰዓቶች</displayName>
 				<unitPattern count="one">{0} ሰ</unitPattern>
 				<unitPattern count="other">{0} ሰ</unitPattern>
+				<perUnitPattern>{0}/ሰ</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>ደቂቃዎች</displayName>
 				<unitPattern count="one">{0} ደ</unitPattern>
 				<unitPattern count="other">{0} ደ</unitPattern>
+				<perUnitPattern>{0}/ደ</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>ሰከንድ</displayName>
 				<unitPattern count="one">{0} ሰ</unitPattern>
 				<unitPattern count="other">{0} ሰ</unitPattern>
+				<perUnitPattern>{0}/ሰከ</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>ሚሊሰከንድ</displayName>
 				<unitPattern count="one">{0} ሚሴ</unitPattern>
 				<unitPattern count="other">{0} ሚሴ</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName>ማይክሮሰከንድ</displayName>
+				<unitPattern count="one">{0} ማሰ</unitPattern>
+				<unitPattern count="other">{0} ማሰ</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>ናኖሰከንድ</displayName>
+				<unitPattern count="one">{0} ናኖሰከንድ</unitPattern>
+				<unitPattern count="other">{0} ናኖሰከንድ</unitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName>amp</displayName>
+				<unitPattern count="one">{0} A</unitPattern>
+				<unitPattern count="other">{0} A</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>mA</displayName>
+				<unitPattern count="one">{0} mA</unitPattern>
+				<unitPattern count="other">{0} mA</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>ohm</displayName>
+				<unitPattern count="one">{0} Ω</unitPattern>
+				<unitPattern count="other">{0} Ω</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>volt</displayName>
+				<unitPattern count="one">{0} V</unitPattern>
+				<unitPattern count="other">{0} V</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName>kcal</displayName>
+				<unitPattern count="one">{0} kcal</unitPattern>
+				<unitPattern count="other">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
 				<displayName>ካሎሪ</displayName>
@@ -8879,64 +9621,245 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ካሎሪ</unitPattern>
 				<unitPattern count="other">{0} ካሎሪ</unitPattern>
 			</unit>
+			<unit type="energy-kilojoule">
+				<displayName>kJ</displayName>
+				<unitPattern count="one">{0} kJ</unitPattern>
+				<unitPattern count="other">{0} kJ</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>joule</displayName>
+				<unitPattern count="one">{0} J</unitPattern>
+				<unitPattern count="other">{0} J</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName>kWh</displayName>
+				<unitPattern count="one">{0} kWh</unitPattern>
+				<unitPattern count="other">{0} kWh</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>ኤቮ</displayName>
+				<unitPattern count="one">{0} ኤቮ</unitPattern>
+				<unitPattern count="other">{0} ኤቮ</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>Btu</displayName>
+				<unitPattern count="one">{0} Btu</unitPattern>
+				<unitPattern count="other">{0} Btu</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>US therm</displayName>
+				<unitPattern count="one">{0} US therm</unitPattern>
+				<unitPattern count="other">{0} US therm</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>lbf</displayName>
+				<unitPattern count="one">{0} lbf</unitPattern>
+				<unitPattern count="other">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>ኒ</displayName>
+				<unitPattern count="one">{0} ኒ</unitPattern>
+				<unitPattern count="other">{0} ኒ</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100km</displayName>
+				<unitPattern count="one">{0} kWh/100km</unitPattern>
+				<unitPattern count="other">{0} kWh/100km</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName>GHz</displayName>
+				<unitPattern count="one">{0} GHz</unitPattern>
+				<unitPattern count="other">{0} GHz</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName>MHz</displayName>
+				<unitPattern count="one">{0} MHz</unitPattern>
+				<unitPattern count="other">{0} MHz</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName>kHz</displayName>
+				<unitPattern count="one">{0} kHz</unitPattern>
+				<unitPattern count="other">{0} kHz</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName>Hz</displayName>
+				<unitPattern count="one">{0} Hz</unitPattern>
+				<unitPattern count="other">{0} Hz</unitPattern>
+			</unit>
 			<unit type="graphics-em">
 				<displayName>em</displayName>
 				<unitPattern count="one">{0} em</unitPattern>
 				<unitPattern count="other">{0} em</unitPattern>
 			</unit>
+			<unit type="graphics-pixel">
+				<displayName>ፒክስል</displayName>
+				<unitPattern count="one">{0} ፒክስል</unitPattern>
+				<unitPattern count="other">{0} ፒክስል</unitPattern>
+			</unit>
 			<unit type="graphics-megapixel">
+				<displayName>ሜጋ ፒክስል</displayName>
 				<unitPattern count="one">{0} ሜፒ</unitPattern>
 				<unitPattern count="other">{0} ሜፒ</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ፒበሴሜ</displayName>
+				<unitPattern count="one">{0} ፒበሴሜ</unitPattern>
+				<unitPattern count="other">{0} ፒበሴሜ</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ፒበኢ</displayName>
+				<unitPattern count="one">{0} ፒበኢ</unitPattern>
+				<unitPattern count="other">{0} ፒበኢ</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>ነበሴሜ</displayName>
+				<unitPattern count="one">{0} ነበሴሜ</unitPattern>
+				<unitPattern count="other">{0} ነበሴሜ</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>ነበኢ</displayName>
+				<unitPattern count="one">{0} ነበኢ</unitPattern>
+				<unitPattern count="other">{0} ነበኢ</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>ነቁጥ</displayName>
+				<unitPattern count="one">{0} ነቁጥ</unitPattern>
+				<unitPattern count="other">{0} ነቁጥ</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>ኪሎሜትር</displayName>
 				<unitPattern count="one">{0} ኪሜ</unitPattern>
 				<unitPattern count="other">{0} ኪሜ</unitPattern>
+				<perUnitPattern>{0}/ኪሜ</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>ሜትር</displayName>
 				<unitPattern count="one">{0} ሜ</unitPattern>
 				<unitPattern count="other">{0} ሜ</unitPattern>
+				<perUnitPattern>{0}/ሜ</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName>ዴሜ</displayName>
+				<unitPattern count="one">{0} ዴሜ</unitPattern>
+				<unitPattern count="other">{0} ዴሜ</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>ሴንቲሜትር</displayName>
 				<unitPattern count="one">{0} ሴሜ</unitPattern>
 				<unitPattern count="other">{0} ሴሜ</unitPattern>
+				<perUnitPattern>{0}/ሴሜ</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>ሚሊሜትር</displayName>
 				<unitPattern count="one">{0} ሚሜ</unitPattern>
 				<unitPattern count="other">{0} ሚሜ</unitPattern>
 			</unit>
+			<unit type="length-micrometer">
+				<displayName>ማሜ</displayName>
+				<unitPattern count="one">{0} ማሜ</unitPattern>
+				<unitPattern count="other">{0} ማሜ</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>ናሜ</displayName>
+				<unitPattern count="one">{0} ናሜ</unitPattern>
+				<unitPattern count="other">{0} ናሜ</unitPattern>
+			</unit>
 			<unit type="length-picometer">
+				<displayName>ፒኮሜትር</displayName>
 				<unitPattern count="one">{0} ፒሜ</unitPattern>
 				<unitPattern count="other">{0} ፒሜ</unitPattern>
 			</unit>
 			<unit type="length-mile">
+				<displayName>ማይል</displayName>
 				<unitPattern count="one">{0} ማይል</unitPattern>
 				<unitPattern count="other">{0} ማይል</unitPattern>
 			</unit>
 			<unit type="length-yard">
+				<displayName>ያርድ</displayName>
 				<unitPattern count="one">{0} ያርድ</unitPattern>
 				<unitPattern count="other">{0} ያርድ</unitPattern>
 			</unit>
 			<unit type="length-foot">
+				<displayName>ጫማ</displayName>
 				<unitPattern count="one">{0} ጫማ</unitPattern>
 				<unitPattern count="other">{0} ጫማ</unitPattern>
+				<perUnitPattern>{0}/ጫማ</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
+				<displayName>ኢንች</displayName>
 				<unitPattern count="one">{0} ኢንች</unitPattern>
 				<unitPattern count="other">{0} ኢንች</unitPattern>
+				<perUnitPattern>{0}/ኢንች</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName>pc</displayName>
+				<unitPattern count="one">{0} pc</unitPattern>
+				<unitPattern count="other">{0} pc</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<displayName>የብርሃን ዓመት</displayName>
+				<unitPattern count="one">{0} ብዓ</unitPattern>
+				<unitPattern count="other">{0} ብዓ</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>au</displayName>
+				<unitPattern count="one">{0} au</unitPattern>
+				<unitPattern count="other">{0} au</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>ፈሎን</displayName>
+				<unitPattern count="one">{0} ፈሎን</unitPattern>
+				<unitPattern count="other">{0} ፈሎን</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>ተዳክሞዎች</displayName>
+				<unitPattern count="one">{0} ተዳክሞ</unitPattern>
+				<unitPattern count="other">{0} ተዳክሞ</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>ማይለባህር</displayName>
 				<unitPattern count="one">{0} ማይለባህር</unitPattern>
 				<unitPattern count="other">{0} ማይለባህር</unitPattern>
 			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>ስማይል</displayName>
+				<unitPattern count="one">{0} ስማይል</unitPattern>
+				<unitPattern count="other">{0} ስማይል</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>ነጥብ</displayName>
+				<unitPattern count="one">{0} ነጥብ</unitPattern>
+				<unitPattern count="other">{0} ነጥብ</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>ሶላር ራዲ</displayName>
+				<unitPattern count="one">{0} R☉</unitPattern>
+				<unitPattern count="other">{0} R☉</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
 				<unitPattern count="one">{0} lx</unitPattern>
 				<unitPattern count="other">{0} lx</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>ካንዴላ</displayName>
+				<unitPattern count="one">{0} ካንዴላ</unitPattern>
+				<unitPattern count="other">{0} ካንዴላ</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>ቱቦ ቀዳዳ</displayName>
+				<unitPattern count="one">{0} ቱቦ ቀዳዳ</unitPattern>
+				<unitPattern count="other">{0} ቱቦ ቀዳዳ</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>L☉</displayName>
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
 				<displayName>ቶ</displayName>
@@ -8947,61 +9870,153 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ኪሎግራም</displayName>
 				<unitPattern count="one">{0} ኪግ</unitPattern>
 				<unitPattern count="other">{0} ኪግ</unitPattern>
+				<perUnitPattern>{0}/ኪሎግራም</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>ግራም</displayName>
 				<unitPattern count="one">{0} ግ</unitPattern>
 				<unitPattern count="other">{0} ግ</unitPattern>
+				<perUnitPattern>{0}/ግራም</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
 				<displayName>ሚሊግራም</displayName>
 				<unitPattern count="one">{0} ሚሊግራም</unitPattern>
 				<unitPattern count="other">{0} ሚሊግራም</unitPattern>
 			</unit>
+			<unit type="mass-microgram">
+				<displayName>μg</displayName>
+				<unitPattern count="one">{0} μg</unitPattern>
+				<unitPattern count="other">{0} μg</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<displayName>ቶን</displayName>
+				<unitPattern count="one">{0} ቶን</unitPattern>
+				<unitPattern count="other">{0} ቶን</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>ድንጋይ</displayName>
+				<unitPattern count="one">{0} ድንጋይ</unitPattern>
+				<unitPattern count="other">{0} ድንጋይ</unitPattern>
+			</unit>
 			<unit type="mass-pound">
+				<displayName>ፓውንድ</displayName>
 				<unitPattern count="one">{0} ፓውንድ</unitPattern>
 				<unitPattern count="other">{0} ፓውንድ</unitPattern>
+				<perUnitPattern>{0}/ፓውንድ</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
+				<displayName>አውንስ</displayName>
 				<unitPattern count="one">{0} አውንስ</unitPattern>
 				<unitPattern count="other">{0} አውንስ</unitPattern>
+				<perUnitPattern>{0}/አውንስ</perUnitPattern>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<displayName>oz t</displayName>
+				<unitPattern count="one">{0} oz t</unitPattern>
+				<unitPattern count="other">{0} oz t</unitPattern>
 			</unit>
 			<unit type="mass-carat">
 				<displayName>ካራት</displayName>
+				<unitPattern count="one">{0} CD</unitPattern>
+				<unitPattern count="other">{0} CD</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>ዳተንስ</displayName>
+				<unitPattern count="one">{0} Da</unitPattern>
+				<unitPattern count="other">{0} Da</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>ኤርዝማስስ</displayName>
+				<unitPattern count="one">{0} M⊕</unitPattern>
+				<unitPattern count="other">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>ሶላር ማስስ</displayName>
+				<unitPattern count="one">{0} M☉</unitPattern>
+				<unitPattern count="other">{0} M☉</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>ጥራ ጥሬ</displayName>
+				<unitPattern count="one">{0} ጥራ ጥሬ</unitPattern>
+				<unitPattern count="other">{0} ጥራ ጥሬ</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName>GW</displayName>
+				<unitPattern count="one">{0} GW</unitPattern>
+				<unitPattern count="other">{0} GW</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName>MW</displayName>
+				<unitPattern count="one">{0} MW</unitPattern>
+				<unitPattern count="other">{0} MW</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<displayName>ኪሎዋት</displayName>
 				<unitPattern count="one">{0} ኪዋ</unitPattern>
 				<unitPattern count="other">{0} ኪዋ</unitPattern>
 			</unit>
 			<unit type="power-watt">
+				<displayName>ዋት</displayName>
 				<unitPattern count="one">{0} ዋ</unitPattern>
 				<unitPattern count="other">{0} ዋ</unitPattern>
 			</unit>
+			<unit type="power-milliwatt">
+				<displayName>mW</displayName>
+				<unitPattern count="one">{0} mW</unitPattern>
+				<unitPattern count="other">{0} mW</unitPattern>
+			</unit>
 			<unit type="power-horsepower">
+				<displayName>የፈረስ ጉልበት</displayName>
 				<unitPattern count="one">{0} የፈረስ ኃይል</unitPattern>
 				<unitPattern count="other">{0} የፈረስ ኃይል</unitPattern>
 			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<displayName>mm Hg</displayName>
+				<unitPattern count="one">{0} mm Hg</unitPattern>
+				<unitPattern count="other">{0} mm Hg</unitPattern>
+			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<displayName>psi</displayName>
+				<unitPattern count="one">{0} psi</unitPattern>
+				<unitPattern count="other">{0} psi</unitPattern>
+			</unit>
 			<unit type="pressure-inch-ofhg">
+				<displayName>ኢንች ሜርኩሪ</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>አሞሌ</displayName>
+				<unitPattern count="one">{0} አሞሌ</unitPattern>
+				<unitPattern count="other">{0} አሞሌዎች</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
+				<displayName>ሚሊባር</displayName>
 				<unitPattern count="one">{0} ሚባ</unitPattern>
 				<unitPattern count="other">{0} ሚባ</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
+				<displayName>ከባቢ አየር</displayName>
 				<unitPattern count="one">{0} ከአ</unitPattern>
 				<unitPattern count="other">{0} ከአ</unitPattern>
 			</unit>
+			<unit type="pressure-pascal">
+				<displayName>ፓስካል</displayName>
+				<unitPattern count="one">{0} ፓስካል</unitPattern>
+				<unitPattern count="other">{0} ፓስካል</unitPattern>
+			</unit>
 			<unit type="pressure-hectopascal">
+				<displayName>ሄክቶፓስካል</displayName>
 				<unitPattern count="one">{0} hPa</unitPattern>
 				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
+				<displayName>ኪሎፓስካል</displayName>
 				<unitPattern count="one">{0} ኪፓ</unitPattern>
 				<unitPattern count="other">{0} ኪፓ</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
+				<displayName>ሜጋፓስካል</displayName>
 				<unitPattern count="one">{0} ሜፓ</unitPattern>
 				<unitPattern count="other">{0} ሜፓ</unitPattern>
 			</unit>
@@ -9011,12 +10026,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ኪሜ/ሰ</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<displayName>ሜትር በሰከንድ</displayName>
 				<unitPattern count="one">{0} ሜ/ሴ</unitPattern>
 				<unitPattern count="other">{0} ሜ/ሴ</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
+				<displayName>ማይል በሰዓት</displayName>
 				<unitPattern count="one">{0} ማይል/ሰ</unitPattern>
 				<unitPattern count="other">{0} ማይል/ሰ</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<displayName>kn</displayName>
+				<unitPattern count="one">{0} kn</unitPattern>
+				<unitPattern count="other">{0} kn</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>°</displayName>
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>ዲግሪ ሴልሺየስ</displayName>
@@ -9024,6 +10051,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
+				<displayName>ዲግሪ ፋራንሃይት</displayName>
 				<unitPattern count="one">{0}°ፋ</unitPattern>
 				<unitPattern count="other">{0}°ፋ</unitPattern>
 			</unit>
@@ -9032,25 +10060,81 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ኬ</unitPattern>
 				<unitPattern count="other">{0} ኬ</unitPattern>
 			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>lbf⋅ft</displayName>
+				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>ኒ.ሜ</displayName>
+				<unitPattern count="one">{0} ኒ.ሜ</unitPattern>
+				<unitPattern count="other">{0} ኒ.ሜ</unitPattern>
+			</unit>
 			<unit type="volume-cubic-kilometer">
+				<displayName>ኩቢክ ኪሎሜትር</displayName>
 				<unitPattern count="one">{0} ኪሜ³</unitPattern>
 				<unitPattern count="other">{0} ኪሜ³</unitPattern>
 			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>ሜ³</displayName>
+				<unitPattern count="one">{0} ሜ³</unitPattern>
+				<unitPattern count="other">{0} ሜ³</unitPattern>
+				<perUnitPattern>{0}/ሜ³</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>ሴሜ³</displayName>
+				<unitPattern count="one">{0} ሴሜ³</unitPattern>
+				<unitPattern count="other">{0} ሴሜ³</unitPattern>
+				<perUnitPattern>{0}/ሴሜ³</perUnitPattern>
+			</unit>
 			<unit type="volume-cubic-mile">
+				<displayName>ኩቢክ ማይል</displayName>
 				<unitPattern count="one">{0} ማይል³</unitPattern>
 				<unitPattern count="other">{0} ማይል³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>yd³</displayName>
+				<unitPattern count="one">{0} yd³</unitPattern>
+				<unitPattern count="other">{0} yd³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>ጫማ³</displayName>
+				<unitPattern count="one">{0} ጫማ³</unitPattern>
+				<unitPattern count="other">{0} ጫማ³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>ኢንች³</displayName>
+				<unitPattern count="one">{0} ኢንች³</unitPattern>
+				<unitPattern count="other">{0} ኢንች³</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
 				<displayName>ሜጋሊትር</displayName>
 				<unitPattern count="one">{0} ሜጋሊትር</unitPattern>
 				<unitPattern count="other">{0} ሜጋሊትር</unitPattern>
 			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>hL</displayName>
+				<unitPattern count="one">{0} hL</unitPattern>
+				<unitPattern count="other">{0} hL</unitPattern>
+			</unit>
 			<unit type="volume-liter">
 				<displayName>ሊትር</displayName>
 				<unitPattern count="one">{0} ሊ</unitPattern>
 				<unitPattern count="other">{0} ሊ</unitPattern>
+				<perUnitPattern>{0}/ሊትር</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>ዴሊ</displayName>
+				<unitPattern count="one">{0} ዴሊ</unitPattern>
+				<unitPattern count="other">{0} ዴሊ</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>ሴሊ</displayName>
+				<unitPattern count="one">{0} ሴሊ</unitPattern>
+				<unitPattern count="other">{0} ሴሊ</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
+				<displayName>ሚሊ ሊትር</displayName>
 				<unitPattern count="one">{0} ሚሊ</unitPattern>
 				<unitPattern count="other">{0} ሚሊ</unitPattern>
 			</unit>
@@ -9059,20 +10143,105 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mpt</unitPattern>
 				<unitPattern count="other">{0} mpt</unitPattern>
 			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>mcup</displayName>
+				<unitPattern count="one">{0} mc</unitPattern>
+				<unitPattern count="other">{0} mc</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
+				<displayName>ኤከር ጫማ</displayName>
 				<unitPattern count="one">{0} ኤጫ</unitPattern>
 				<unitPattern count="other">{0} ኤጫ</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>ዳውላ</displayName>
+				<unitPattern count="one">{0} ዳውላ</unitPattern>
+				<unitPattern count="other">{0} ዳውላ</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>gal</displayName>
+				<unitPattern count="one">{0} gal</unitPattern>
+				<unitPattern count="other">{0} gal</unitPattern>
+				<perUnitPattern>{0}/gal</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>Imp. gal</displayName>
+				<unitPattern count="one">{0} gal Imp.</unitPattern>
+				<unitPattern count="other">{0} gal Imp.</unitPattern>
+				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>qt</displayName>
+				<unitPattern count="one">{0} qt</unitPattern>
+				<unitPattern count="other">{0} qt</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>pt</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
 			<unit type="volume-cup">
 				<displayName>ኩባያ</displayName>
 				<unitPattern count="one">{0} ኩባያ</unitPattern>
 				<unitPattern count="other">{0} ኩባያ</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>fl oz</displayName>
+				<unitPattern count="one">{0} fl oz</unitPattern>
+				<unitPattern count="other">{0} fl oz</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp. fl oz</displayName>
+				<unitPattern count="one">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="other">{0} fl oz Imp.</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>tbsp</displayName>
+				<unitPattern count="one">{0} tbsp</unitPattern>
+				<unitPattern count="other">{0} tbsp</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>tsp</displayName>
+				<unitPattern count="one">{0} tsp</unitPattern>
+				<unitPattern count="other">{0} tsp</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName>በርሜል</displayName>
+				<unitPattern count="one">{0} በርሜል</unitPattern>
+				<unitPattern count="other">{0} በርሜል</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>የመምድረ በዳ ማንኪያ</displayName>
+				<unitPattern count="one">{0} የመምድረ በዳ ማንኪያ</unitPattern>
+				<unitPattern count="other">{0} የመምድረ በዳ ማንኪያ</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>የምድረ በዳ ማንኪያ</displayName>
+				<unitPattern count="one">{0} የምድረ በዳ ማንኪያ</unitPattern>
+				<unitPattern count="other">{0} የምድረ በዳ ማንኪያ</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>ጠብታ</displayName>
+				<unitPattern count="one">{0} ጠብታ</unitPattern>
+				<unitPattern count="other">{0} ጠብታ</unitPattern>
+			</unit>
 			<unit type="volume-dram">
+				<displayName>የክብደት መለኪያ</displayName>
 				<unitPattern count="one">{0} ክመ</unitPattern>
 				<unitPattern count="other">{0} ክመ</unitPattern>
 			</unit>
+			<unit type="volume-jigger">
+				<displayName>ሙጃሌ</displayName>
+				<unitPattern count="one">{0} ሙጃሌ</unitPattern>
+				<unitPattern count="other">{0} ሙጃሌ</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>ቁንጥ</displayName>
+				<unitPattern count="one">{0} ቁንጥ</unitPattern>
+				<unitPattern count="other">{0} ቁንጥ</unitPattern>
+			</unit>
 			<unit type="volume-quart-imperial">
+				<displayName>የፈሳሽ መለኪያ</displayName>
 				<unitPattern count="one">{0} ፈመ</unitPattern>
 				<unitPattern count="other">{0} ፈመ</unitPattern>
 			</unit>
@@ -9108,10 +10277,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="2">{0} ወይም {1}﻿</listPatternPart>
 		</listPattern>
 		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}፣ {1}</listPatternPart>
 			<listPatternPart type="end">{0}፣ ወይም {1}</listPatternPart>
+			<listPatternPart type="2">{0} ወይም {1}﻿</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="end">{0}፣ ወይም {1}</listPatternPart>
+			<listPatternPart type="2">{0} ወይም {1}﻿</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-narrow">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="end">{0}, እና {1}</listPatternPart>
+			<listPatternPart type="2">{0} እና {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}፣ {1}</listPatternPart>
@@ -9318,27 +10499,162 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<personNames>
 		<nameOrderLocales order="givenFirst">und am</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
-		<sampleName item="givenOnly">
-			<nameField type="given">ሲንባድ</nameField>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<sampleName item="nativeG">
+			<nameField type="given">ዜንዳያ</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
+		<sampleName item="nativeGS">
 			<nameField type="given">ኢሬን</nameField>
 			<nameField type="surname">አድለር</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
+		<sampleName item="nativeGGS">
 			<nameField type="given">ጆን</nameField>
 			<nameField type="given2">ሃሚሽ</nameField>
 			<nameField type="surname">ዋትሰን</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">ፕ/ር ዶ/ር</nameField>
+		<sampleName item="nativeFull">
+			<nameField type="title">አቶ</nameField>
+			<nameField type="given">በርታም ዊልበርፎርስ</nameField>
+			<nameField type="given-informal">በርቲ</nameField>
+			<nameField type="given2">ሄነሪ ሮበርት</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">ዉስተር</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="generation">ተማሪ</nameField>
+			<nameField type="credentials">ኤምፒ</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">ሲንባድ</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">ካቲ</nameField>
+			<nameField type="surname">ሙለር</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">ዛዚላ</nameField>
+			<nameField type="given2">ሃሚሽ</nameField>
+			<nameField type="surname">ስቶበር</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">ፕ/ር ዶ/ር</nameField>
 			<nameField type="given">አዳ ኮርኔሊያ</nameField>
 			<nameField type="given-informal">ኒል</nameField>
 			<nameField type="given2">ኢቫ ሶፊያ</nameField>
 			<nameField type="surname-prefix">ቫን ደን</nameField>
-			<nameField type="surname-core">ዎልፍ</nameField>
-			<nameField type="surname2">ቤከር ሽሚት</nameField>
-			<nameField type="suffix">ሚ/ዶ ዶ/ር</nameField>
+			<nameField type="surname-core">ብሩህል</nameField>
+			<nameField type="surname2">ጎንዛሌዝ ዶሚንጎ</nameField>
+			<nameField type="generation">ተማሪ</nameField>
+			<nameField type="credentials">ሚ/ዶ ዶ/ር</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

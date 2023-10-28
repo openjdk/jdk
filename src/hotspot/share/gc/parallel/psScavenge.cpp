@@ -408,7 +408,7 @@ bool PSScavenge::invoke_no_policy() {
     GCTraceCPUTime tcpu(&_gc_tracer);
     GCTraceTime(Info, gc) tm("Pause Young", nullptr, gc_cause, true);
     TraceCollectorStats tcs(counters());
-    TraceMemoryManagerStats tms(heap->young_gc_manager(), gc_cause);
+    TraceMemoryManagerStats tms(heap->young_gc_manager(), gc_cause, "end of minor GC");
 
     if (log_is_enabled(Debug, gc, heap, exit)) {
       accumulated_time()->start();
@@ -553,7 +553,7 @@ bool PSScavenge::invoke_no_policy() {
                                                            _tenuring_threshold,
                                                            survivor_limit);
 
-       log_debug(gc, age)("Desired survivor size " SIZE_FORMAT " bytes, new threshold %u (max threshold " UINTX_FORMAT ")",
+       log_debug(gc, age)("Desired survivor size %zu bytes, new threshold %u (max threshold %u)",
                           size_policy->calculated_survivor_size_in_bytes(),
                           _tenuring_threshold, MaxTenuringThreshold);
 

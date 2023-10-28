@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package java.lang.constant;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.TypeDescriptor;
 import java.util.List;
@@ -55,6 +56,34 @@ public sealed interface MethodTypeDesc
     }
 
     /**
+     * {@return a {@linkplain MethodTypeDesc} with the given return type and no
+     * parameter types}
+     *
+     * @param returnDesc a {@linkplain ClassDesc} describing the return type
+     * @throws NullPointerException if {@code returnDesc} is {@code null}
+     * @since 21
+     */
+    static MethodTypeDesc of(ClassDesc returnDesc) {
+        return MethodTypeDescImpl.ofTrusted(returnDesc, ConstantUtils.EMPTY_CLASSDESC);
+    }
+
+    /**
+     * {@return a {@linkplain MethodTypeDesc} given the return type and a list of
+     * parameter types}
+     *
+     * @param returnDesc a {@linkplain ClassDesc} describing the return type
+     * @param paramDescs a {@linkplain List} of {@linkplain ClassDesc}s
+     * describing the parameter types
+     * @throws NullPointerException if any argument or its contents are {@code null}
+     * @throws IllegalArgumentException if any element of {@code paramDescs} is a
+     * {@link ClassDesc} for {@code void}
+     * @since 21
+     */
+    static MethodTypeDesc of(ClassDesc returnDesc, List<ClassDesc> paramDescs) {
+        return of(returnDesc, paramDescs.toArray(ConstantUtils.EMPTY_CLASSDESC));
+    }
+
+    /**
      * Returns a {@linkplain MethodTypeDesc} given the return type and parameter
      * types.
      *
@@ -66,7 +95,7 @@ public sealed interface MethodTypeDesc
      * {@link ClassDesc} for {@code void}
      */
     static MethodTypeDesc of(ClassDesc returnDesc, ClassDesc... paramDescs) {
-        return new MethodTypeDescImpl(returnDesc, paramDescs);
+        return MethodTypeDescImpl.ofTrusted(returnDesc, paramDescs.clone());
     }
 
     /**
@@ -90,7 +119,7 @@ public sealed interface MethodTypeDesc
      * @param index the index of the parameter to retrieve
      * @return a {@link ClassDesc} describing the desired parameter type
      * @throws IndexOutOfBoundsException if the index is outside the half-open
-     * range {[0, parameterCount())}
+     * range {@code [0, parameterCount())}
      */
     ClassDesc parameterType(int index);
 
@@ -127,7 +156,7 @@ public sealed interface MethodTypeDesc
      * @return a {@linkplain MethodTypeDesc} describing the desired method type
      * @throws NullPointerException if any argument is {@code null}
      * @throws IndexOutOfBoundsException if the index is outside the half-open
-     * range {[0, parameterCount)}
+     * range {@code [0, parameterCount)}
      */
     MethodTypeDesc changeParameterType(int index, ClassDesc paramType);
 
@@ -154,7 +183,7 @@ public sealed interface MethodTypeDesc
      * @return a {@linkplain MethodTypeDesc} describing the desired method type
      * @throws NullPointerException if any argument or its contents are {@code null}
      * @throws IndexOutOfBoundsException if {@code pos} is outside the closed
-     * range {[0, parameterCount]}
+     * range {@code [0, parameterCount]}
      * @throws IllegalArgumentException if any element of {@code paramTypes}
      * is a {@link ClassDesc} for {@code void}
      */
@@ -166,13 +195,7 @@ public sealed interface MethodTypeDesc
      * @return the method type descriptor string
      * @jvms 4.3.3 Method Descriptors
      */
-    default String descriptorString() {
-        return String.format("(%s)%s",
-                             Stream.of(parameterArray())
-                                   .map(ClassDesc::descriptorString)
-                                   .collect(Collectors.joining()),
-                             returnType().descriptorString());
-    }
+    String descriptorString();
 
     /**
      * Returns a human-readable descriptor for this method type, using the
@@ -187,6 +210,16 @@ public sealed interface MethodTypeDesc
                                    .collect(Collectors.joining(",")),
                              returnType().displayName());
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @apiNote {@linkplain MethodTypeDesc} can represent method type descriptors
+     * that are not representable by {@linkplain MethodType}, such as methods with
+     * more than 255 parameter slots, so attempts to resolve these may result in errors.
+     */
+    @Override
+    MethodType resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException;
 
     /**
      * Compares the specified object with this descriptor for equality.  Returns

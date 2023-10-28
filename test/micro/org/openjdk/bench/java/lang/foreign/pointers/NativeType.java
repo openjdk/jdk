@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package org.openjdk.bench.java.lang.foreign.pointers;
 
+import java.lang.foreign.AddressLayout;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.ValueLayout;
@@ -38,10 +39,11 @@ public sealed abstract class NativeType<X> {
         public abstract ValueLayout.OfDouble layout();
     }
 
-    private static final ValueLayout.OfAddress UNSAFE_ADDRESS = ValueLayout.ADDRESS.asUnbounded();
+    private static final AddressLayout UNSAFE_ADDRESS = ValueLayout.ADDRESS
+            .withTargetLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, ValueLayout.JAVA_BYTE));
 
     public final static class OfPointer<X> extends NativeType<X> {
-        public ValueLayout.OfAddress layout() {
+        public AddressLayout layout() {
             return UNSAFE_ADDRESS;
         }
     }

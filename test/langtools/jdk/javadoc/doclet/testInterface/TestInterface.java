@@ -128,6 +128,7 @@ public class TestInterface extends JavadocTester {
                 """
                     <section class="detail" id="f">
                     <h3>f</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
                     <span class="return-type">int</span>&nbsp;<span class="element-name">f</span></div>
                     <div class="block">A hider field</div>""",
@@ -147,6 +148,18 @@ public class TestInterface extends JavadocTester {
                 """
                     <section class="detail" id="staticMethod()">
                     <h3>staticMethod</h3>
+                    <div class="horizontal-scroll">
+                    <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
+                    <span class="return-type">void</span>&nbsp;<span class="element-name">staticMethod</span\
+                    >()</div>
+                    """
+        );
+
+        checkOutput("pkg/ClassWithStaticMembers.html", false,
+                """
+                    <section class="detail" id="staticMethod()">
+                    <h3>staticMethod</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
                     <span class="return-type">void</span>&nbsp;<span class="element-name">staticMethod</span\
                     >()</div>
@@ -285,5 +298,68 @@ public class TestInterface extends JavadocTester {
                 terface in pkg2">Spliterator.OfPrimitive&lt;T,<wbr>T_CONS,<wbr>T_SPLITR&gt;</a> \
                 - Interface in <a href="pkg2/package-summary.html">pkg2</a></dt>
                 <dd>&nbsp;</dd>""");
+    }
+
+    @Test
+    public void test3() {
+        javadoc("-d", "out-3",
+                "--no-platform-links", // disable links to simplify output matching
+                "-sourcepath", testSrc,
+                "pkg3");
+
+        checkExit(Exit.OK);
+
+        checkOutput("pkg3/I.html", true,
+                """
+                <li>
+                <section class="detail" id="hashCode()">
+                <h3>hashCode</h3>
+                <div class="horizontal-scroll">
+                <div class="member-signature"><span class="return-type">\
+                int</span>&nbsp;<span class="element-name">hashCode</span>()</div>
+                <dl class="notes">
+                <dt>Overrides:</dt>
+                <dd><code>hashCode</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>
+                </dl>
+                </div>
+                </section>
+                </li>
+                <li>
+                <section class="detail" id="equals(java.lang.Object)">
+                <h3>equals</h3>
+                <div class="horizontal-scroll">
+                <div class="member-signature"><span class="return-type">\
+                boolean</span>&nbsp;<span class="element-name">equals</span>\
+                <wbr><span class="parameters">(java.lang.Object&nbsp;obj)</span></div>
+                <dl class="notes">
+                <dt>Overrides:</dt>
+                <dd><code>equals</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>
+                </dl>
+                </div>
+                </section>
+                </li>
+                <li>
+                <section class="detail" id="toString()">
+                <h3>toString</h3>
+                <div class="horizontal-scroll">
+                <div class="member-signature"><span class="return-type">\
+                java.lang.String</span>&nbsp;<span class="element-name">toString</span>()</div>
+                <dl class="notes">
+                <dt>Overrides:</dt>
+                <dd><code>toString</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>
+                </dl>
+                </div>
+                </section>
+                </li>
+                <li>
+                <section class="detail" id="clone()">
+                <h3>clone</h3>
+                <div class="horizontal-scroll">
+                <div class="member-signature"><span class="return-type">\
+                java.lang.Object</span>&nbsp;<span class="element-name">clone</span>()</div>
+                </div>
+                </section>
+                </li>
+                """);
     }
 }

@@ -137,6 +137,7 @@ enum {
   IS_TYPE              = java_lang_invoke_MemberName::MN_IS_TYPE,
   CALLER_SENSITIVE     = java_lang_invoke_MemberName::MN_CALLER_SENSITIVE,
   TRUSTED_FINAL        = java_lang_invoke_MemberName::MN_TRUSTED_FINAL,
+  HIDDEN_MEMBER        = java_lang_invoke_MemberName::MN_HIDDEN_MEMBER,
   REFERENCE_KIND_SHIFT = java_lang_invoke_MemberName::MN_REFERENCE_KIND_SHIFT,
   REFERENCE_KIND_MASK  = java_lang_invoke_MemberName::MN_REFERENCE_KIND_MASK,
   LM_UNCONDITIONAL     = java_lang_invoke_MemberName::MN_UNCONDITIONAL_MODE,
@@ -693,7 +694,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, int lookup
 
   if (java_lang_invoke_MemberName::vmtarget(mname()) != nullptr) {
     // Already resolved.
-    DEBUG_ONLY(int vmindex = java_lang_invoke_MemberName::vmindex(mname()));
+    DEBUG_ONLY(intptr_t vmindex = java_lang_invoke_MemberName::vmindex(mname()));
     assert(vmindex >= Method::nonvirtual_vtable_index, "");
     return mname;
   }
@@ -707,7 +708,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, int lookup
     THROW_MSG_(vmSymbols::java_lang_InternalError(), "obsolete MemberName format", empty);
   }
 
-  DEBUG_ONLY(int old_vmindex);
+  DEBUG_ONLY(intptr_t old_vmindex);
   assert((old_vmindex = java_lang_invoke_MemberName::vmindex(mname())) == 0, "clean input");
 
   if (defc_oop.is_null() || name_str.is_null() || type_str.is_null()) {
@@ -907,10 +908,10 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
       }
       InstanceKlass* defc = InstanceKlass::cast(java_lang_Class::as_Klass(clazz));
       DEBUG_ONLY(clazz = nullptr);  // safety
-      int vmindex  = java_lang_invoke_MemberName::vmindex(mname());
+      intptr_t vmindex  = java_lang_invoke_MemberName::vmindex(mname());
       bool is_static = ((flags & JVM_ACC_STATIC) != 0);
       fieldDescriptor fd; // find_field initializes fd if found
-      if (!defc->find_field_from_offset(vmindex, is_static, &fd))
+      if (!defc->find_field_from_offset(checked_cast<int>(vmindex), is_static, &fd))
         break;                  // cannot expand
       if (!have_name) {
         //not java_lang_String::create_from_symbol; let's intern member names
@@ -950,22 +951,17 @@ void MethodHandles::clean_dependency_context(oop call_site) {
   deps.clean_unloading_dependents();
 }
 
-void MethodHandles::flush_dependent_nmethods(Handle call_site, Handle target) {
+void MethodHandles::mark_dependent_nmethods(DeoptimizationScope* deopt_scope, Handle call_site, Handle target) {
   assert_lock_strong(Compile_lock);
 
-  int marked = 0;
   CallSiteDepChange changes(call_site, target);
   {
     NoSafepointVerifier nsv;
-    MutexLocker mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
     oop context = java_lang_invoke_CallSite::context_no_keepalive(call_site());
     DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
-    marked = deps.mark_dependent_nmethods(changes);
-  }
-  if (marked > 0) {
-    // At least one nmethod has been marked for deoptimization.
-    Deoptimization::deoptimize_all_marked();
+    deps.mark_dependent_nmethods(deopt_scope, changes);
   }
 }
 
@@ -1008,6 +1004,7 @@ void MethodHandles::trace_method_handle_interpreter_entry(MacroAssembler* _masm,
     template(java_lang_invoke_MemberName,MN_IS_TYPE) \
     template(java_lang_invoke_MemberName,MN_CALLER_SENSITIVE) \
     template(java_lang_invoke_MemberName,MN_TRUSTED_FINAL) \
+    template(java_lang_invoke_MemberName,MN_HIDDEN_MEMBER) \
     template(java_lang_invoke_MemberName,MN_REFERENCE_KIND_SHIFT) \
     template(java_lang_invoke_MemberName,MN_REFERENCE_KIND_MASK) \
     template(java_lang_invoke_MemberName,MN_NESTMATE_CLASS) \
@@ -1166,7 +1163,7 @@ static jlong find_member_field_offset(oop mname, bool must_be_static, TRAPS) {
         (must_be_static
          ? (flags & JVM_ACC_STATIC) != 0
          : (flags & JVM_ACC_STATIC) == 0)) {
-      int vmindex = java_lang_invoke_MemberName::vmindex(mname);
+      intptr_t vmindex = java_lang_invoke_MemberName::vmindex(mname);
       return (jlong) vmindex;
     }
   }
@@ -1218,11 +1215,15 @@ JVM_END
 JVM_ENTRY(void, MHN_setCallSiteTargetNormal(JNIEnv* env, jobject igcls, jobject call_site_jh, jobject target_jh)) {
   Handle call_site(THREAD, JNIHandles::resolve_non_null(call_site_jh));
   Handle target   (THREAD, JNIHandles::resolve_non_null(target_jh));
+  DeoptimizationScope deopt_scope;
   {
     // Walk all nmethods depending on this call site.
     MutexLocker mu(thread, Compile_lock);
-    MethodHandles::flush_dependent_nmethods(call_site, target);
+    MethodHandles::mark_dependent_nmethods(&deopt_scope, call_site, target);
     java_lang_invoke_CallSite::set_target(call_site(), target());
+    // This is assumed to be an 'atomic' operation by verification.
+    // So keep it under lock for now.
+    deopt_scope.deoptimize_marked();
   }
 }
 JVM_END
@@ -1230,11 +1231,15 @@ JVM_END
 JVM_ENTRY(void, MHN_setCallSiteTargetVolatile(JNIEnv* env, jobject igcls, jobject call_site_jh, jobject target_jh)) {
   Handle call_site(THREAD, JNIHandles::resolve_non_null(call_site_jh));
   Handle target   (THREAD, JNIHandles::resolve_non_null(target_jh));
+  DeoptimizationScope deopt_scope;
   {
     // Walk all nmethods depending on this call site.
     MutexLocker mu(thread, Compile_lock);
-    MethodHandles::flush_dependent_nmethods(call_site, target);
+    MethodHandles::mark_dependent_nmethods(&deopt_scope, call_site, target);
     java_lang_invoke_CallSite::set_target_volatile(call_site(), target());
+    // This is assumed to be an 'atomic' operation by verification.
+    // So keep it under lock for now.
+    deopt_scope.deoptimize_marked();
   }
 }
 JVM_END
@@ -1279,14 +1284,14 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
           }
         case -3:  // name
           {
-            Symbol* name = caller->constants()->name_ref_at(bss_index_in_pool);
+            Symbol* name = caller->constants()->name_ref_at(bss_index_in_pool, Bytecodes::_invokedynamic);
             Handle str = java_lang_String::create_from_symbol(name, CHECK);
             pseudo_arg = str();
             break;
           }
         case -2:  // type
           {
-            Symbol* type = caller->constants()->signature_ref_at(bss_index_in_pool);
+            Symbol* type = caller->constants()->signature_ref_at(bss_index_in_pool, Bytecodes::_invokedynamic);
             Handle th;
             if (type->char_at(0) == JVM_SIGNATURE_FUNC) {
               th = SystemDictionary::find_method_handle_type(type, caller, CHECK);
@@ -1324,21 +1329,15 @@ JVM_END
 // deallocate their dependency information.
 JVM_ENTRY(void, MHN_clearCallSiteContext(JNIEnv* env, jobject igcls, jobject context_jh)) {
   Handle context(THREAD, JNIHandles::resolve_non_null(context_jh));
+  DeoptimizationScope deopt_scope;
   {
-    // Walk all nmethods depending on this call site.
-    MutexLocker mu1(thread, Compile_lock);
-
-    int marked = 0;
-    {
-      NoSafepointVerifier nsv;
-      MutexLocker mu2(THREAD, CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context());
-      marked = deps.remove_and_mark_for_deoptimization_all_dependents();
-    }
-    if (marked > 0) {
-      // At least one nmethod has been marked for deoptimization
-      Deoptimization::deoptimize_all_marked();
-    }
+    NoSafepointVerifier nsv;
+    MutexLocker ml(THREAD, CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context());
+    deps.remove_and_mark_for_deoptimization_all_dependents(&deopt_scope);
+    // This is assumed to be an 'atomic' operation by verification.
+    // So keep it under lock for now.
+    deopt_scope.deoptimize_marked();
   }
 }
 JVM_END

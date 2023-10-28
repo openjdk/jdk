@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -169,6 +169,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax">جنوبی ہائیڈا</language>
 			<language type="he">عبرانی</language>
 			<language type="hi">ہندی</language>
+			<language type="hi_Latn">ہندی (لاطینی)</language>
 			<language type="hi_Latn" alt="variant">ہنگلش</language>
 			<language type="hil">ہالیگینون</language>
 			<language type="hmn">ہمانگ</language>
@@ -248,6 +249,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="li">لیمبرگش</language>
 			<language type="lil">للوئیٹ</language>
 			<language type="lkt">لاکوٹا</language>
+			<language type="lmo" draft="contributed">لومبارڈ</language>
 			<language type="ln">لِنگَلا</language>
 			<language type="lo">لاؤ</language>
 			<language type="lou">لوزیانا کریول</language>
@@ -816,7 +818,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="TM">ترکمانستان</territory>
 			<territory type="TN">تونس</territory>
 			<territory type="TO">ٹونگا</territory>
-			<territory type="TR">ترکی</territory>
+			<territory type="TR">ترکیہ</territory>
 			<territory type="TT">ترینیداد اور ٹوباگو</territory>
 			<territory type="TV">ٹووالو</territory>
 			<territory type="TW">تائیوان</territory>
@@ -848,6 +850,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">زمبابوے</territory>
 			<territory type="ZZ">نامعلوم علاقہ</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">انگلینڈ</subdivision>
+			<subdivision type="gbsct">اسکاٹ لینڈ</subdivision>
+			<subdivision type="gbwls">ویلز</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">کیلنڈر</key>
 			<key type="cf">کرنسی فارمیٹ</key>
@@ -1246,6 +1253,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2238,6 +2248,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11">ذوالقعدۃ</month>
 							<month type="12">ذوالحجۃ</month>
 						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">1</month>
+							<month type="2">2</month>
+							<month type="3">3</month>
+							<month type="4">4</month>
+							<month type="5">5</month>
+							<month type="6">6</month>
+							<month type="7">7</month>
+							<month type="8">8</month>
+							<month type="9">9</month>
+							<month type="10">10</month>
+							<month type="11">11</month>
+							<month type="12">12</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">محرم</month>
 							<month type="2">صفر</month>
@@ -2295,9 +2319,60 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="0" draft="contributed">ہجری</era>
 					</eraNarrow>
 				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE، d MMMM، y G</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM، y G</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM، y G</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d/M/y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM، y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E، d MMM، y G</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E، d/M</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E، d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="y">y G</dateFormatItem>
+						<dateFormatItem id="yyyy">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM">M/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d/M/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E، d/M/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">d MMM، y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E، d MMM، y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
@@ -3847,6 +3922,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>ہرموسیلو</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>سیوداد جیوریز</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>میزٹلان</exemplarCity>
@@ -6662,6 +6740,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="other">کیوبک {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="feminine">کیوبک {0}</compoundUnitPattern1>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<gender>feminine</gender>
 				<displayName>جی-فورس</displayName>
@@ -6953,6 +7034,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-day-person">
 				<gender>masculine</gender>
+				<unitPattern count="one">{0} دن</unitPattern>
+				<unitPattern count="other">{0} دن</unitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<gender>masculine</gender>
@@ -7148,6 +7231,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-dot">
 				<displayName>ڈاٹ</displayName>
+				<unitPattern count="one">{0} ڈاٹ</unitPattern>
+				<unitPattern count="other">{0} ڈاٹ</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>زمینی رداس</displayName>
@@ -7808,6 +7893,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>جی-فورس</displayName>
 				<unitPattern count="one">{0} G</unitPattern>
@@ -7935,6 +8028,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>پرمرئیڈ</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<displayName>مول</displayName>
@@ -8141,9 +8236,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>الیکٹرون وولٹ</displayName>
+				<unitPattern count="one">{0} eV</unitPattern>
+				<unitPattern count="other">{0} eV</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
 				<displayName>BTU</displayName>
+				<unitPattern count="one">{0} Btu</unitPattern>
+				<unitPattern count="other">{0} Btu</unitPattern>
 			</unit>
 			<unit type="energy-therm-us">
 				<displayName>امریکی تھرم</displayName>
@@ -8152,9 +8251,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>پاؤنڈ قوت</displayName>
+				<unitPattern count="one">{0} lbf</unitPattern>
+				<unitPattern count="other">{0} lbf</unitPattern>
 			</unit>
 			<unit type="force-newton">
 				<displayName>نیوٹن</displayName>
+				<unitPattern count="one">{0} N</unitPattern>
+				<unitPattern count="other">{0} N</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<unitPattern count="one">{0} kWh/100km</unitPattern>
+				<unitPattern count="other">{0} kWh/100km</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
@@ -8176,11 +8283,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} Hz</unitPattern>
 				<unitPattern count="other">{0} Hz</unitPattern>
 			</unit>
+			<unit type="graphics-em">
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
+			</unit>
 			<unit type="graphics-pixel">
 				<displayName>پکسلز</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>میگا پکسلز</displayName>
+				<unitPattern count="one">{0} MP</unitPattern>
+				<unitPattern count="other">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
 				<displayName>dpcm</displayName>
@@ -8309,6 +8432,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>شمسی رداس</displayName>
+				<unitPattern count="one">{0} R☉</unitPattern>
+				<unitPattern count="other">{0} R☉</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
@@ -8327,6 +8452,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>شمسی چمک</displayName>
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
 				<displayName>t</displayName>
@@ -8467,6 +8594,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} atm</unitPattern>
 				<unitPattern count="other">{0} atm</unitPattern>
 			</unit>
+			<unit type="pressure-pascal">
+				<unitPattern count="one">{0} Pa</unitPattern>
+				<unitPattern count="other">{0} Pa</unitPattern>
+			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>hPa</displayName>
 				<unitPattern count="one">{0} hPa</unitPattern>
@@ -8521,6 +8652,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>K</displayName>
 				<unitPattern count="one">{0} K</unitPattern>
 				<unitPattern count="other">{0} K</unitPattern>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<unitPattern count="one">{0} N⋅m</unitPattern>
+				<unitPattern count="other">{0} N⋅m</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>km³</displayName>
@@ -8642,6 +8781,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} fl oz</unitPattern>
 				<unitPattern count="other">{0} fl oz</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<unitPattern count="one">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="other">{0} fl oz Imp.</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>tbsp</displayName>
 				<unitPattern count="one">{0} tbsp</unitPattern>
@@ -8654,6 +8797,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-barrel">
 				<displayName>بیرل</displayName>
+				<unitPattern count="one">{0} bbl</unitPattern>
+				<unitPattern count="other">{0} bbl</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
 				<displayName>ڈیزرٹ اسپون</displayName>
@@ -8706,6 +8851,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p-3">
 				<unitPrefixPattern>m{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>μ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-9">
 				<unitPrefixPattern>n{0}</unitPrefixPattern>
@@ -8782,48 +8930,92 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
+				<displayName>جی-فورس</displayName>
 				<unitPattern count="one">{0}g</unitPattern>
 				<unitPattern count="other">{0}g</unitPattern>
 			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<displayName>m/s²</displayName>
+				<unitPattern count="one">{0} m/s²</unitPattern>
+				<unitPattern count="other">{0} m/s²</unitPattern>
+			</unit>
+			<unit type="angle-revolution">
+				<displayName>rev</displayName>
+				<unitPattern count="one">{0} rev</unitPattern>
+				<unitPattern count="other">{0} rev</unitPattern>
+			</unit>
 			<unit type="angle-radian">
 				<displayName>ریڈین</displayName>
+				<unitPattern count="one">{0} rad</unitPattern>
+				<unitPattern count="other">{0} rad</unitPattern>
 			</unit>
 			<unit type="angle-degree">
+				<displayName>ڈگری</displayName>
 				<unitPattern count="one">{0} ڈگری</unitPattern>
 				<unitPattern count="other">{0} ڈگری</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
+				<displayName>آرک منٹ</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
+				<displayName>آرک سیکنڈ</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<displayName>km²</displayName>
 				<unitPattern count="one">{0} km²</unitPattern>
 				<unitPattern count="other">{0} km²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
+				<displayName>ہیکٹر</displayName>
 				<unitPattern count="one">{0} ہیکٹر</unitPattern>
 				<unitPattern count="other">{0} ہیکٹر</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<displayName>مربع میٹر</displayName>
 				<unitPattern count="one">{0} m²</unitPattern>
 				<unitPattern count="other">{0} m²</unitPattern>
+				<perUnitPattern>{0}/m²</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>cm²</displayName>
+				<unitPattern count="one">{0} cm²</unitPattern>
+				<unitPattern count="other">{0} cm²</unitPattern>
+				<perUnitPattern>{0}/cm²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName>mi²</displayName>
 				<unitPattern count="one">{0}mi²</unitPattern>
 				<unitPattern count="other">{0}mi²</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
+				<displayName>ایکڑ</displayName>
 				<unitPattern count="one">{0} ایکڑ</unitPattern>
 				<unitPattern count="other">{0} ایکڑ</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
 				<displayName>yd²</displayName>
+				<unitPattern count="one">{0} yd²</unitPattern>
+				<unitPattern count="other">{0} yd²</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
 				<displayName>ft²</displayName>
@@ -8832,32 +9024,144 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="area-square-inch">
 				<displayName>in²</displayName>
+				<unitPattern count="one">{0} in²</unitPattern>
+				<unitPattern count="other">{0} in²</unitPattern>
+				<perUnitPattern>{0}/in²</perUnitPattern>
 			</unit>
 			<unit type="area-dunam">
 				<displayName>دُنام</displayName>
+				<unitPattern count="one">{0} دُنام</unitPattern>
+				<unitPattern count="other">{0} دُنام</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>قیراط</displayName>
+				<unitPattern count="one">{0} kt</unitPattern>
+				<unitPattern count="other">{0} kt</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>mg/dL</displayName>
+				<unitPattern count="one">{0} mg/dL</unitPattern>
+				<unitPattern count="other">{0} mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>ملی مول/لیٹر</displayName>
+				<unitPattern count="one">{0} mmol/L</unitPattern>
+				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
 			<unit type="concentr-item">
+				<displayName>آئٹم</displayName>
 				<unitPattern count="one">{0} آئٹم</unitPattern>
 				<unitPattern count="other">{0} آئٹمز</unitPattern>
+			</unit>
+			<unit type="concentr-permillion">
+				<displayName>حصے/ملین</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
+				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
+			<unit type="concentr-permille">
+				<displayName>فی ہزار</displayName>
+				<unitPattern count="one">{0}‰</unitPattern>
+				<unitPattern count="other">{0}‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>پرمرئیڈ</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>مول</displayName>
+				<unitPattern count="one">{0} مول</unitPattern>
+				<unitPattern count="other">{0} مول</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>L/km</displayName>
+				<unitPattern count="one">{0} L/km</unitPattern>
+				<unitPattern count="other">{0} L/km</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>لیٹر/100 کلو میٹر</displayName>
 				<unitPattern count="one">{0}L/100km</unitPattern>
 				<unitPattern count="other">{0}L/100km</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName>mpg</displayName>
+				<unitPattern count="one">{0} mpg</unitPattern>
+				<unitPattern count="other">{0} mpg</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName>mpg UK</displayName>
 				<unitPattern count="one">{0}m/gUK</unitPattern>
 				<unitPattern count="other">{0}m/gUK</unitPattern>
 			</unit>
+			<unit type="digital-petabyte">
+				<displayName>پی بائٹ</displayName>
+				<unitPattern count="one">{0} پی بی</unitPattern>
+				<unitPattern count="other">{0} پی بی</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName>TB</displayName>
+				<unitPattern count="one">{0} TB</unitPattern>
+				<unitPattern count="other">{0} TB</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName>Tbit</displayName>
+				<unitPattern count="one">{0} Tb</unitPattern>
+				<unitPattern count="other">{0} Tb</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>GB</displayName>
+				<unitPattern count="one">{0} GB</unitPattern>
+				<unitPattern count="other">{0} GB</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName>Gbit</displayName>
+				<unitPattern count="one">{0} Gb</unitPattern>
+				<unitPattern count="other">{0} Gb</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>MByte</displayName>
+				<unitPattern count="one">{0} MB</unitPattern>
+				<unitPattern count="other">{0} MB</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>Mb</displayName>
+				<unitPattern count="one">{0} Mb</unitPattern>
+				<unitPattern count="other">{0} Mb</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>kByte</displayName>
+				<unitPattern count="one">{0} kB</unitPattern>
+				<unitPattern count="other">{0} kB</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName>kbit</displayName>
+				<unitPattern count="one">{0} kb</unitPattern>
+				<unitPattern count="other">{0} kb</unitPattern>
+			</unit>
 			<unit type="digital-byte">
+				<displayName>بائٹ</displayName>
 				<unitPattern count="one">{0}B</unitPattern>
 				<unitPattern count="other">{0}B</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<displayName>bit</displayName>
+				<unitPattern count="one">{0} bit</unitPattern>
+				<unitPattern count="other">{0} bit</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName>صدی</displayName>
+				<unitPattern count="one">{0} صدی</unitPattern>
+				<unitPattern count="other">{0} صدیاں</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>دہائی</displayName>
+				<unitPattern count="one">{0} دہائی</unitPattern>
+				<unitPattern count="other">{0} دہائی</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>سال</displayName>
@@ -8912,23 +9216,140 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ms</unitPattern>
 				<unitPattern count="other">{0} ms</unitPattern>
 			</unit>
+			<unit type="duration-microsecond">
+				<displayName>مائیکرو سیکنڈ</displayName>
+				<unitPattern count="one">{0} مائیکرو سیکنڈ</unitPattern>
+				<unitPattern count="other">{0} مائیکرو سیکنڈ</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>نینو سیکنڈز</displayName>
+				<unitPattern count="one">{0} نینو سیکنڈ</unitPattern>
+				<unitPattern count="other">{0} نینو سیکنڈ</unitPattern>
+			</unit>
 			<unit type="electric-ampere">
 				<displayName>amp</displayName>
+				<unitPattern count="one">{0} A</unitPattern>
+				<unitPattern count="other">{0} A</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>milliamps</displayName>
+				<unitPattern count="one">{0} mA</unitPattern>
+				<unitPattern count="other">{0} mA</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>اوہم</displayName>
+				<unitPattern count="one">{0} Ω</unitPattern>
+				<unitPattern count="other">{0} Ω</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>وولٹ</displayName>
+				<unitPattern count="one">{0} V</unitPattern>
+				<unitPattern count="other">{0} V</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName>kcal</displayName>
+				<unitPattern count="one">{0} kcal</unitPattern>
+				<unitPattern count="other">{0} kcal</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName>cal</displayName>
+				<unitPattern count="one">{0} cal</unitPattern>
+				<unitPattern count="other">{0} cal</unitPattern>
+			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName>Cal</displayName>
+				<unitPattern count="one">{0} Cal</unitPattern>
+				<unitPattern count="other">{0} Cal</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName>kJ</displayName>
+				<unitPattern count="one">{0} kJ</unitPattern>
+				<unitPattern count="other">{0} kJ</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<displayName>جول</displayName>
+				<unitPattern count="one">{0} J</unitPattern>
+				<unitPattern count="other">{0} J</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
 				<displayName>kWh</displayName>
+				<unitPattern count="one">{0} kWh</unitPattern>
+				<unitPattern count="other">{0} kWh</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>الیکٹرون وولٹ</displayName>
+				<unitPattern count="one">{0} eV</unitPattern>
+				<unitPattern count="other">{0} eV</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>BTU</displayName>
+				<unitPattern count="one">{0} Btu</unitPattern>
+				<unitPattern count="other">{0} Btu</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>امریکی تھرم</displayName>
+				<unitPattern count="one">{0} امریکی تھرم</unitPattern>
+				<unitPattern count="other">{0} امریکی تھرمز</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>lbf</displayName>
+				<unitPattern count="one">{0} lbf</unitPattern>
+				<unitPattern count="other">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>نیوٹن</displayName>
+				<unitPattern count="one">{0} N</unitPattern>
+				<unitPattern count="other">{0} N</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100km</displayName>
+				<unitPattern count="one">{0} kWh/100km</unitPattern>
+				<unitPattern count="other">{0} kWh/100km</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName>GHz</displayName>
+				<unitPattern count="one">{0} GHz</unitPattern>
+				<unitPattern count="other">{0} GHz</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName>MHz</displayName>
+				<unitPattern count="one">{0} MHz</unitPattern>
+				<unitPattern count="other">{0} MHz</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName>kHz</displayName>
+				<unitPattern count="one">{0} kHz</unitPattern>
+				<unitPattern count="other">{0} kHz</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName>Hz</displayName>
+				<unitPattern count="one">{0} Hz</unitPattern>
+				<unitPattern count="other">{0} Hz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>em</displayName>
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>px</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>MP</displayName>
+				<unitPattern count="one">{0} MP</unitPattern>
+				<unitPattern count="other">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
 				<displayName>dpcm</displayName>
@@ -8939,6 +9360,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>dpi</displayName>
 				<unitPattern count="one">{0} dpi</unitPattern>
 				<unitPattern count="other">{0} dpi</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>ڈاٹ</displayName>
+				<unitPattern count="one">{0} ڈاٹ</unitPattern>
+				<unitPattern count="other">{0} ڈاٹ</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>کلو میٹر</displayName>
@@ -8968,6 +9399,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ملیمیٹر</unitPattern>
 				<unitPattern count="other">{0} ملیمیٹر</unitPattern>
 			</unit>
+			<unit type="length-micrometer">
+				<displayName>μm</displayName>
+				<unitPattern count="one">{0} μm</unitPattern>
+				<unitPattern count="other">{0} μm</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>nm</displayName>
+				<unitPattern count="one">{0} nm</unitPattern>
+				<unitPattern count="other">{0} nm</unitPattern>
+			</unit>
 			<unit type="length-picometer">
 				<displayName>pm</displayName>
 				<unitPattern count="one">{0}pm</unitPattern>
@@ -8995,19 +9436,75 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} انچ</unitPattern>
 				<perUnitPattern>{0} فی انچ</perUnitPattern>
 			</unit>
+			<unit type="length-parsec">
+				<displayName>پارسیک</displayName>
+				<unitPattern count="one">{0} pc</unitPattern>
+				<unitPattern count="other">{0} pc</unitPattern>
+			</unit>
 			<unit type="length-light-year">
 				<displayName>ly</displayName>
 				<unitPattern count="one">{0}ly</unitPattern>
 				<unitPattern count="other">{0}ly</unitPattern>
 			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>au</displayName>
+				<unitPattern count="one">{0} au</unitPattern>
+				<unitPattern count="other">{0} au</unitPattern>
+			</unit>
 			<unit type="length-furlong">
 				<displayName>فرلانگ</displayName>
+				<unitPattern count="one">{0} فرلانگ</unitPattern>
+				<unitPattern count="other">{0} فرلانگ</unitPattern>
 			</unit>
 			<unit type="length-fathom">
 				<displayName>فیدم</displayName>
+				<unitPattern count="one">{0} فیدم</unitPattern>
+				<unitPattern count="other">{0} فیدم</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>nmi</displayName>
+				<unitPattern count="one">{0} nmi</unitPattern>
+				<unitPattern count="other">{0} nmi</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>smi</displayName>
+				<unitPattern count="one">{0} smi</unitPattern>
+				<unitPattern count="other">{0} smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>پوائنٹس</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>R☉</displayName>
+				<unitPattern count="one">{0} R☉</unitPattern>
+				<unitPattern count="other">{0} R☉</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<displayName>lux</displayName>
+				<unitPattern count="one">{0} lx</unitPattern>
+				<unitPattern count="other">{0} lx</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>cd</displayName>
+				<unitPattern count="one">{0} cd</unitPattern>
+				<unitPattern count="other">{0} cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lm</displayName>
+				<unitPattern count="one">{0} lm</unitPattern>
+				<unitPattern count="other">{0} lm</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>شمسی چمک</displayName>
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
+			</unit>
+			<unit type="mass-tonne">
+				<displayName>t</displayName>
+				<unitPattern count="one">{0} t</unitPattern>
+				<unitPattern count="other">{0} t</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>kg</displayName>
@@ -9021,6 +9518,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} گرام</unitPattern>
 				<perUnitPattern>{0} فی گرام</perUnitPattern>
 			</unit>
+			<unit type="mass-milligram">
+				<displayName>mg</displayName>
+				<unitPattern count="one">{0} mg</unitPattern>
+				<unitPattern count="other">{0} mg</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<displayName>μg</displayName>
+				<unitPattern count="one">{0} μg</unitPattern>
+				<unitPattern count="other">{0} μg</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<displayName>ٹن</displayName>
+				<unitPattern count="one">{0} tn</unitPattern>
+				<unitPattern count="other">{0} tn</unitPattern>
+			</unit>
 			<unit type="mass-stone">
 				<displayName>st</displayName>
 				<unitPattern count="one">{0} st</unitPattern>
@@ -9030,6 +9542,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>lb</displayName>
 				<unitPattern count="one">{0} پونڈ</unitPattern>
 				<unitPattern count="other">{0} پونڈ</unitPattern>
+				<perUnitPattern>{0}/lb</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
 				<displayName>oz</displayName>
@@ -9037,28 +9550,63 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ونس</unitPattern>
 				<perUnitPattern>{0}/oz</perUnitPattern>
 			</unit>
+			<unit type="mass-ounce-troy">
+				<displayName>oz t</displayName>
+				<unitPattern count="one">{0} oz t</unitPattern>
+				<unitPattern count="other">{0} oz t</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<displayName>قیراط</displayName>
+				<unitPattern count="one">{0} CD</unitPattern>
+				<unitPattern count="other">{0} CD</unitPattern>
+			</unit>
 			<unit type="mass-dalton">
 				<displayName>ڈالٹن</displayName>
+				<unitPattern count="one">{0} Da</unitPattern>
+				<unitPattern count="other">{0} Da</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
 				<displayName>زمینی کمیت</displayName>
+				<unitPattern count="one">{0} M⊕</unitPattern>
+				<unitPattern count="other">{0} M⊕</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>شمسی کمیت</displayName>
+				<unitPattern count="one">{0} M☉</unitPattern>
+				<unitPattern count="other">{0} M☉</unitPattern>
 			</unit>
 			<unit type="mass-grain">
+				<displayName>گرین</displayName>
 				<unitPattern count="one">{0}gr</unitPattern>
 				<unitPattern count="other">{0}gr</unitPattern>
 			</unit>
+			<unit type="power-gigawatt">
+				<displayName>GW</displayName>
+				<unitPattern count="one">{0} GW</unitPattern>
+				<unitPattern count="other">{0} GW</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName>MW</displayName>
+				<unitPattern count="one">{0} MW</unitPattern>
+				<unitPattern count="other">{0} MW</unitPattern>
+			</unit>
 			<unit type="power-kilowatt">
+				<displayName>kW</displayName>
 				<unitPattern count="one">{0}kW</unitPattern>
 				<unitPattern count="other">{0}kW</unitPattern>
 			</unit>
 			<unit type="power-watt">
+				<displayName>واٹ</displayName>
 				<unitPattern count="one">{0} واٹ</unitPattern>
 				<unitPattern count="other">{0} واٹ</unitPattern>
 			</unit>
+			<unit type="power-milliwatt">
+				<displayName>mW</displayName>
+				<unitPattern count="one">{0} mW</unitPattern>
+				<unitPattern count="other">{0} mW</unitPattern>
+			</unit>
 			<unit type="power-horsepower">
+				<displayName>hp</displayName>
 				<unitPattern count="one">{0}hp</unitPattern>
 				<unitPattern count="other">{0}hp</unitPattern>
 			</unit>
@@ -9077,15 +9625,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} انچ مرکری</unitPattern>
 				<unitPattern count="other">{0} انچ مرکری</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>بار</displayName>
+				<unitPattern count="one">{0} بار</unitPattern>
+				<unitPattern count="other">{0} بارز</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>mbar</displayName>
 				<unitPattern count="one">{0}mb</unitPattern>
 				<unitPattern count="other">{0}mb</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>atm</displayName>
+				<unitPattern count="one">{0} atm</unitPattern>
+				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>Pa</displayName>
+				<unitPattern count="one">{0} Pa</unitPattern>
+				<unitPattern count="other">{0} Pa</unitPattern>
+			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>hPa</displayName>
 				<unitPattern count="one">{0}hPa</unitPattern>
 				<unitPattern count="other">{0}hPa</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>kPa</displayName>
+				<unitPattern count="one">{0} kPa</unitPattern>
+				<unitPattern count="other">{0} kPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>MPa</displayName>
+				<unitPattern count="one">{0} MPa</unitPattern>
+				<unitPattern count="other">{0} MPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/hr</displayName>
@@ -9101,6 +9674,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>میل فی گھنٹہ</displayName>
 				<unitPattern count="one">{0}mph</unitPattern>
 				<unitPattern count="other">{0}mph</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<displayName>kn</displayName>
+				<unitPattern count="one">{0} kn</unitPattern>
+				<unitPattern count="other">{0} kn</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
 				<displayName>°</displayName>
@@ -9122,13 +9700,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} K</unitPattern>
 				<unitPattern count="other">{0} K</unitPattern>
 			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>lbf⋅ft</displayName>
+				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>N⋅m</displayName>
+				<unitPattern count="one">{0} N⋅m</unitPattern>
+				<unitPattern count="other">{0} N⋅m</unitPattern>
+			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>km³</displayName>
 				<unitPattern count="one">{0}km³</unitPattern>
 				<unitPattern count="other">{0}km³</unitPattern>
 			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>m³</displayName>
+				<unitPattern count="one">{0} m³</unitPattern>
+				<unitPattern count="other">{0} m³</unitPattern>
+				<perUnitPattern>{0}/m³</perUnitPattern>
+			</unit>
 			<unit type="volume-cubic-centimeter">
 				<displayName>cm³</displayName>
+				<unitPattern count="one">{0} cm³</unitPattern>
+				<unitPattern count="other">{0} cm³</unitPattern>
+				<perUnitPattern>{0}/cm³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
 				<displayName>mi³</displayName>
@@ -9137,36 +9734,121 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-cubic-yard">
 				<displayName>yd³</displayName>
+				<unitPattern count="one">{0} yd³</unitPattern>
+				<unitPattern count="other">{0} yd³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-foot">
 				<displayName>ft³</displayName>
+				<unitPattern count="one">{0} ft³</unitPattern>
+				<unitPattern count="other">{0} ft³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-inch">
 				<displayName>in³</displayName>
+				<unitPattern count="one">{0} in³</unitPattern>
+				<unitPattern count="other">{0} in³</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>ML</displayName>
+				<unitPattern count="one">{0} ML</unitPattern>
+				<unitPattern count="other">{0} ML</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>hL</displayName>
+				<unitPattern count="one">{0} hL</unitPattern>
+				<unitPattern count="other">{0} hL</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>لیٹر</displayName>
 				<unitPattern count="one">{0} لیٹر</unitPattern>
 				<unitPattern count="other">{0} لیٹر</unitPattern>
+				<perUnitPattern>{0} فی لیٹر</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
 				<displayName>dL</displayName>
+				<unitPattern count="one">{0} dL</unitPattern>
+				<unitPattern count="other">{0} dL</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
 				<displayName>cL</displayName>
+				<unitPattern count="one">{0} cL</unitPattern>
+				<unitPattern count="other">{0} cL</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>mL</displayName>
+				<unitPattern count="one">{0} mL</unitPattern>
+				<unitPattern count="other">{0} mL</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
 				<displayName>pt</displayName>
+				<unitPattern count="one">{0} mpt</unitPattern>
+				<unitPattern count="other">{0} mpt</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>mcup</displayName>
+				<unitPattern count="one">{0} mc</unitPattern>
+				<unitPattern count="other">{0} mc</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>ایکڑ فٹ</displayName>
+				<unitPattern count="one">{0} ac ft</unitPattern>
+				<unitPattern count="other">{0} ac ft</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
 				<displayName>بُشل</displayName>
+				<unitPattern count="one">{0} بو</unitPattern>
+				<unitPattern count="other">{0} بو</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>gal</displayName>
+				<unitPattern count="one">{0} gal</unitPattern>
+				<unitPattern count="other">{0} gal</unitPattern>
+				<perUnitPattern>{0}/gal</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>Imp. gal</displayName>
+				<unitPattern count="one">{0} gal Imp.</unitPattern>
+				<unitPattern count="other">{0} gal Imp.</unitPattern>
+				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName>qt</displayName>
+				<unitPattern count="one">{0} qt</unitPattern>
+				<unitPattern count="other">{0} qt</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>pt</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>کپ</displayName>
+				<unitPattern count="one">{0} c</unitPattern>
+				<unitPattern count="other">{0} c</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>fl oz</displayName>
+				<unitPattern count="one">{0} fl oz</unitPattern>
+				<unitPattern count="other">{0} fl oz</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp. fl oz</displayName>
 				<unitPattern count="one">{0}fl oz Im</unitPattern>
 				<unitPattern count="other">{0}fl oz Im</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>tbsp</displayName>
+				<unitPattern count="one">{0} tbsp</unitPattern>
+				<unitPattern count="other">{0} tbsp</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>tsp</displayName>
+				<unitPattern count="one">{0} tsp</unitPattern>
+				<unitPattern count="other">{0} tsp</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName>بیرل</displayName>
+				<unitPattern count="one">{0} bbl</unitPattern>
+				<unitPattern count="other">{0} bbl</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
 				<displayName>dsp</displayName>
@@ -9178,10 +9860,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}dsp-Imp</unitPattern>
 				<unitPattern count="other">{0}dsp-Imp</unitPattern>
 			</unit>
+			<unit type="volume-drop">
+				<displayName>قطرہ</displayName>
+				<unitPattern count="one">{0} قطرہ</unitPattern>
+				<unitPattern count="other">{0} قطرہ</unitPattern>
+			</unit>
 			<unit type="volume-dram">
 				<displayName>fl.dr.</displayName>
 				<unitPattern count="one">{0}fl.dr.</unitPattern>
 				<unitPattern count="other">{0}fl.dr.</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>جگر</displayName>
+				<unitPattern count="one">{0} جگر</unitPattern>
+				<unitPattern count="other">{0} جگر</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>چٹکی</displayName>
+				<unitPattern count="one">{0} چٹکی</unitPattern>
+				<unitPattern count="other">{0} چٹکی</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt Imp</displayName>
+				<unitPattern count="one">{0} qt Imp.</unitPattern>
+				<unitPattern count="other">{0} qt Imp.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>ڈائریکشن</displayName>
@@ -9214,7 +9916,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="end">{0}، یا {1}</listPatternPart>
 			<listPatternPart type="2">{0} یا {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}، {1}</listPatternPart>
+			<listPatternPart type="middle">{0}، {1}</listPatternPart>
+			<listPatternPart type="end">{0}، یا {1}</listPatternPart>
+			<listPatternPart type="2">{0} یا {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}، {1}</listPatternPart>
+			<listPatternPart type="middle">{0}، {1}</listPatternPart>
+			<listPatternPart type="end">{0}، یا {1}</listPatternPart>
+			<listPatternPart type="2">{0} یا {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}، {1}</listPatternPart>
+			<listPatternPart type="middle">{0}، {1}</listPatternPart>
 			<listPatternPart type="end">{0}، {1}</listPatternPart>
 			<listPatternPart type="2">{0}، {1}</listPatternPart>
 		</listPattern>
@@ -9422,36 +10138,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und ur</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">ja ko si ta te vi yue zh</nameOrderLocales>
-		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
-		<initialPattern type="initial">{0}.</initialPattern>
-		<initialPattern type="initialSequence">{0} {1}</initialPattern>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
+			<namePattern>{given} {given2} {surname} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
-			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+			<namePattern>{given-monogram-allCaps} {given2-monogram-allCaps} {surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
-			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+			<namePattern>{given-informal-monogram-allCaps} {surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{given} {given2-initial} {surname} {suffix}</namePattern>
+			<namePattern>{given} {given2-initial} {surname} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -9469,7 +10181,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal} {surname-initial}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -9481,31 +10193,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{surname} {given} {given2} {suffix}</namePattern>
+			<namePattern>{surname} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+			<namePattern>{surname-monogram-allCaps} {given-monogram-allCaps} {given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
-			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
+			<namePattern>{surname-monogram-allCaps} {given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname} {given} {given2-initial} {suffix}</namePattern>
+			<namePattern>{surname} {given} {given2-initial} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -9523,7 +10235,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{surname} {given-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -9535,13 +10247,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="formal">
-			<namePattern>{surname}، {given} {given2} {suffix}</namePattern>
+			<namePattern>{surname}، {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
 			<namePattern>{surname}، {given-informal}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname}، {given} {given2-initial} {suffix}</namePattern>
+			<namePattern>{surname}، {given} {given2-initial} {credentials}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname}، {given-informal}</namePattern>
@@ -9552,27 +10264,51 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<personName order="sorting" length="short" usage="referring" formality="informal">
 			<namePattern>{surname}، {given-informal}</namePattern>
 		</personName>
-		<sampleName item="givenOnly">
+		<sampleName item="nativeG">
 			<nameField type="given">احمد</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
+		<sampleName item="nativeGS">
 			<nameField type="given">شازیہ</nameField>
 			<nameField type="surname">اصغر</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
-			<nameField type="given">عبدل</nameField>
-			<nameField type="given2">باری</nameField>
+		<sampleName item="nativeGGS">
+			<nameField type="given">مریم</nameField>
+			<nameField type="given2">نواز</nameField>
 			<nameField type="surname">خان</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">پروفیسر ڈاکٹر</nameField>
+		<sampleName item="nativeFull">
+			<nameField type="title">محترم</nameField>
+			<nameField type="given">عبد الکریم</nameField>
+			<nameField type="given-informal">پٹھان</nameField>
+			<nameField type="given2">عبد الحمید</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">سید</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="generation">جونیئر</nameField>
+			<nameField type="credentials">ایم پی</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">سندباد</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">حاتم</nameField>
+			<nameField type="surname">منصور</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">محمد</nameField>
+			<nameField type="given2">ہاشم</nameField>
+			<nameField type="surname">صابری</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">پروفیسر ڈاکٹر</nameField>
 			<nameField type="given">یاسمین راشد</nameField>
 			<nameField type="given-informal">ملک</nameField>
 			<nameField type="given2">سدرہ منیر</nameField>
-			<nameField type="surname-prefix">ندیم جاوید</nameField>
+			<nameField type="surname-prefix">ندیم</nameField>
 			<nameField type="surname-core">رضا</nameField>
 			<nameField type="surname2">یوسف زئی</nameField>
-			<nameField type="suffix">ایم ڈی، پی ایچ ڈی</nameField>
+			<nameField type="generation">جونيئر</nameField>
+			<nameField type="credentials">ایم ڈی ڈی ڈی ایس</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

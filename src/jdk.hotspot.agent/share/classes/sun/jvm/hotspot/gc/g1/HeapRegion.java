@@ -124,10 +124,6 @@ public class HeapRegion extends ContiguousSpace implements LiveRegionsProvider {
         return type.isHumongous();
     }
 
-    public boolean isPinned() {
-        return type.isPinned();
-    }
-
     public boolean isOld() {
         return type.isOld();
     }

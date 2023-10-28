@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,6 +239,7 @@ public enum KnownOIDs {
     TimeStampTokenInfo("1.2.840.113549.1.9.16.1.4"),
     SigningCertificate("1.2.840.113549.1.9.16.2.12"),
     SignatureTimestampToken("1.2.840.113549.1.9.16.2.14"),
+    HSSLMS("1.2.840.113549.1.9.16.3.17", "HSS/LMS"),
     CHACHA20_POLY1305("1.2.840.113549.1.9.16.3.18", "CHACHA20-POLY1305"),
     FriendlyName("1.2.840.113549.1.9.20"),
     LocalKeyID("1.2.840.113549.1.9.21"),

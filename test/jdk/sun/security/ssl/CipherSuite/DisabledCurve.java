@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,21 +48,23 @@ public class DisabledCurve extends SSLSocketTemplate {
             { { "TLSv1.2" }, { "TLSv1.2" } }, { { "TLSv1.1" }, { "TLSv1.1" } },
             { { "TLSv1" }, { "TLSv1" } } };
 
+    @Override
     protected SSLContext createClientSSLContext() throws Exception {
         return createSSLContext(
-                new SSLSocketTemplate.Cert[] {
-                        SSLSocketTemplate.Cert.CA_ECDSA_SECP384R1 },
-                new SSLSocketTemplate.Cert[] {
-                        SSLSocketTemplate.Cert.EE_ECDSA_SECP384R1 },
+                new SSLContextTemplate.Cert[] {
+                        SSLContextTemplate.Cert.CA_ECDSA_SECP384R1 },
+                new SSLContextTemplate.Cert[] {
+                        SSLContextTemplate.Cert.EE_ECDSA_SECP384R1 },
                 getClientContextParameters());
     }
 
+    @Override
     protected SSLContext createServerSSLContext() throws Exception {
         return createSSLContext(
-                new SSLSocketTemplate.Cert[] {
-                        SSLSocketTemplate.Cert.CA_ECDSA_SECP384R1 },
-                new SSLSocketTemplate.Cert[] {
-                        SSLSocketTemplate.Cert.EE_ECDSA_SECP384R1 },
+                new SSLContextTemplate.Cert[] {
+                        SSLContextTemplate.Cert.CA_ECDSA_SECP384R1 },
+                new SSLContextTemplate.Cert[] {
+                        SSLContextTemplate.Cert.EE_ECDSA_SECP384R1 },
                 getServerContextParameters());
     }
 

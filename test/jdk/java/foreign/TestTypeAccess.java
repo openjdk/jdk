@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @enablePreview
  * @run testng TestTypeAccess
  */
 
@@ -43,7 +42,7 @@ public class TestTypeAccess {
 
     @Test(expectedExceptions=ClassCastException.class)
     public void testMemoryAddressCoordinateAsString() {
-        int v = (int)INT_HANDLE.get("string");
+        int v = (int)INT_HANDLE.get("string", 0L);
     }
 
     @Test(expectedExceptions=WrongMethodTypeException.class)
@@ -53,32 +52,32 @@ public class TestTypeAccess {
 
     @Test(expectedExceptions=ClassCastException.class)
     public void testMemoryAddressValueGetAsString() {
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment s = MemorySegment.allocateNative(8, 8, arena.scope());;
-            String address = (String)ADDR_HANDLE.get(s);
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment s = arena.allocate(8, 8);
+            String address = (String)ADDR_HANDLE.get(s, 0L);
         }
     }
 
     @Test(expectedExceptions=ClassCastException.class)
     public void testMemoryAddressValueSetAsString() {
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment s = MemorySegment.allocateNative(8, 8, arena.scope());;
-            ADDR_HANDLE.set(s, "string");
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment s = arena.allocate(8, 8);;
+            ADDR_HANDLE.set(s, 0L, "string");
         }
     }
 
     @Test(expectedExceptions=WrongMethodTypeException.class)
     public void testMemoryAddressValueGetAsPrimitive() {
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment s = MemorySegment.allocateNative(8, 8, arena.scope());;
-            int address = (int)ADDR_HANDLE.get(s);
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment s = arena.allocate(8, 8);
+            int address = (int)ADDR_HANDLE.get(s, 0L);
         }
     }
 
     @Test(expectedExceptions=WrongMethodTypeException.class)
     public void testMemoryAddressValueSetAsPrimitive() {
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment s = MemorySegment.allocateNative(8, 8, arena.scope());;
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment s = arena.allocate(8, 8);;
             ADDR_HANDLE.set(s, 1);
         }
     }

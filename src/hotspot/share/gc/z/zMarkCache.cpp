@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,25 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-ZMarkCacheEntry::ZMarkCacheEntry() :
-    _page(NULL),
+static size_t shift_for_stripes(size_t nstripes) {
+  return ZMarkStripeShift + exact_log2(nstripes);
+}
+
+ZMarkCacheEntry::ZMarkCacheEntry()
+  : _page(nullptr),
     _objects(0),
     _bytes(0) {}
 
-ZMarkCache::ZMarkCache(size_t nstripes) :
-    _shift(ZMarkStripeShift + exact_log2(nstripes)) {}
+ZMarkCache::ZMarkCache(size_t nstripes)
+  : _shift(shift_for_stripes(nstripes)) {}
 
 ZMarkCache::~ZMarkCache() {
   // Evict all entries
   for (size_t i = 0; i < ZMarkCacheSize; i++) {
     _cache[i].evict();
   }
+}
+
+void ZMarkCache::set_nstripes(size_t nstripes) {
+  _shift = shift_for_stripes(nstripes);
 }

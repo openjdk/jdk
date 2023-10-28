@@ -378,7 +378,7 @@ void JNIHandleBlock::release_block(JNIHandleBlock* block, JavaThread* thread) {
     while (block != nullptr) {
       JNIHandleBlock* next = block->_next;
       Atomic::dec(&_blocks_allocated);
-      assert(block->pop_frame_link() == nullptr, "pop_frame_link should be nullptr");
+      assert(block->pop_frame_link() == nullptr, "pop_frame_link should be null");
       delete block;
       block = next;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,12 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.constant.*;
+import java.lang.invoke.TypeDescriptor;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ConstantDynamicEntry;
@@ -51,8 +54,10 @@ import jdk.internal.classfile.constantpool.PackageEntry;
 import jdk.internal.classfile.constantpool.PoolEntry;
 import jdk.internal.classfile.constantpool.StringEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.java.lang.constant.ModuleDesc;
-import jdk.internal.classfile.java.lang.constant.PackageDesc;
+import jdk.internal.util.ArraysSupport;
+
+import java.lang.constant.ModuleDesc;
+import java.lang.constant.PackageDesc;
 
 public abstract sealed class AbstractPoolEntry {
     /*
@@ -141,6 +146,8 @@ public abstract sealed class AbstractPoolEntry {
 
         enum State { RAW, BYTE, CHAR, STRING }
 
+        private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
         private State state;
         private final byte[] rawBytes; // null if initialized directly from a string
         private final int offset;
@@ -163,6 +170,10 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         Utf8EntryImpl(ConstantPool cpm, int index, String s) {
+            this(cpm, index, s, hashString(s.hashCode()));
+        }
+
+        Utf8EntryImpl(ConstantPool cpm, int index, String s, int hash) {
             super(cpm, Classfile.TAG_UTF8, index, 0);
             this.rawBytes = null;
             this.offset = 0;
@@ -170,7 +181,7 @@ public abstract sealed class AbstractPoolEntry {
             this.state = State.STRING;
             this.stringValue = s;
             this.charLen = s.length();
-            this.hash = hashString(s.hashCode());
+            this.hash = hash;
         }
 
         Utf8EntryImpl(ConstantPool cpm, int index, Utf8EntryImpl u) {
@@ -221,34 +232,21 @@ public abstract sealed class AbstractPoolEntry {
          * two-times-three-byte format instead.
          */
         private void inflate() {
-            int hash = 0;
-            boolean foundHigh = false;
-
-            int px = offset;
-            int utfend = px + rawLen;
-            while (px < utfend) {
-                int c = (int) rawBytes[px] & 0xff;
-                if (c > 127) {
-                    foundHigh = true;
-                    break;
-                }
-                hash = 31 * hash + c;
-                px++;
-            }
-
-            if (!foundHigh) {
+            int singleBytes = JLA.countPositives(rawBytes, offset, rawLen);
+            int hash = ArraysSupport.vectorizedHashCode(rawBytes, offset, singleBytes, 0, ArraysSupport.T_BOOLEAN);
+            if (singleBytes == rawLen) {
                 this.hash = hashString(hash);
                 charLen = rawLen;
                 state = State.BYTE;
             }
             else {
                 char[] chararr = new char[rawLen];
-                int chararr_count = 0;
+                int chararr_count = singleBytes;
                 // Inflate prefix of bytes to characters
-                for (int i = offset; i < px; i++) {
-                    int c = (int) rawBytes[i] & 0xff;
-                    chararr[chararr_count++] = (char) c;
-                }
+                JLA.inflateBytesToChars(rawBytes, offset, chararr, 0, singleBytes);
+
+                int px = offset + singleBytes;
+                int utfend = offset + rawLen;
                 while (px < utfend) {
                     int c = (int) rawBytes[px] & 0xff;
                     switch (c >> 4) {
@@ -326,7 +324,7 @@ public abstract sealed class AbstractPoolEntry {
             if (state != State.STRING) {
                 stringValue = (chars != null)
                               ? new String(chars, 0, charLen)
-                              : new String(rawBytes, offset, charLen, StandardCharsets.UTF_8);
+                              : new String(rawBytes, offset, charLen, StandardCharsets.ISO_8859_1);
                 state = State.STRING;
             }
             return stringValue;
@@ -556,18 +554,30 @@ public abstract sealed class AbstractPoolEntry {
 
     public static final class ClassEntryImpl extends AbstractNamedEntry implements ClassEntry {
 
+        public ClassDesc sym = null;
+
         ClassEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name) {
             super(cpm, Classfile.TAG_CLASS, index, name);
         }
 
         @Override
         public ClassEntry clone(ConstantPoolBuilder cp) {
-            return cp.canWriteDirect(constantPool) ? this : cp.classEntry(ref1);
+            if (cp.canWriteDirect(constantPool)) {
+                return this;
+            } else {
+                ClassEntryImpl ret = (ClassEntryImpl)cp.classEntry(ref1);
+                ret.sym = sym;
+                return ret;
+            }
         }
 
         @Override
         public ClassDesc asSymbol() {
-            return Util.toClassDesc(asInternalName());
+            var sym = this.sym;
+            if (sym != null) {
+                return sym;
+            }
+            return this.sym = Util.toClassDesc(asInternalName());
         }
 
         @Override
@@ -637,6 +647,8 @@ public abstract sealed class AbstractPoolEntry {
     public static final class NameAndTypeEntryImpl extends AbstractRefsEntry<Utf8EntryImpl, Utf8EntryImpl>
             implements NameAndTypeEntry {
 
+        public TypeDescriptor typeSym = null;
+
         NameAndTypeEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name, Utf8EntryImpl type) {
             super(cpm, Classfile.TAG_NAMEANDTYPE, index, name, type);
         }
@@ -651,9 +663,31 @@ public abstract sealed class AbstractPoolEntry {
             return ref2;
         }
 
+        public ClassDesc fieldTypeSymbol() {
+            if (typeSym instanceof ClassDesc cd) {
+                return cd;
+            } else {
+                return (ClassDesc)(typeSym = ClassDesc.ofDescriptor(ref2.stringValue()));
+            }
+        }
+
+        public MethodTypeDesc methodTypeSymbol() {
+            if (typeSym instanceof MethodTypeDesc mtd) {
+                return mtd;
+            } else {
+                return (MethodTypeDesc)(typeSym = MethodTypeDesc.ofDescriptor(ref2.stringValue()));
+            }
+        }
+
         @Override
         public NameAndTypeEntry clone(ConstantPoolBuilder cp) {
-            return cp.canWriteDirect(constantPool) ? this : cp.nameAndTypeEntry(ref1, ref2);
+            if (cp.canWriteDirect(constantPool)) {
+                return this;
+            } else {
+                var ret = (NameAndTypeEntryImpl)cp.nameAndTypeEntry(ref1, ref2);
+                ret.typeSym = typeSym;
+                return ret;
+            }
         }
 
         @Override
@@ -772,6 +806,13 @@ public abstract sealed class AbstractPoolEntry {
                 bootstrapMethod = (BootstrapMethodEntryImpl) constantPool.bootstrapMethodEntry(bsmIndex);
             }
             return bootstrapMethod;
+        }
+
+        /**
+         * @return the bsmIndex
+         */
+        public int bootstrapMethodIndex() {
+            return bsmIndex;
         }
 
         /**
@@ -918,6 +959,8 @@ public abstract sealed class AbstractPoolEntry {
             extends AbstractRefEntry<Utf8EntryImpl>
             implements MethodTypeEntry {
 
+        public MethodTypeDesc sym = null;
+
         MethodTypeEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl descriptor) {
             super(cpm, Classfile.TAG_METHODTYPE, index, descriptor);
         }
@@ -929,7 +972,22 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public MethodTypeEntry clone(ConstantPoolBuilder cp) {
-            return cp.canWriteDirect(constantPool) ? this : cp.methodTypeEntry(ref1);
+            if (cp.canWriteDirect(constantPool)) {
+                return this;
+            } else {
+                var ret = (MethodTypeEntryImpl)cp.methodTypeEntry(ref1);
+                ret.sym = sym;
+                return ret;
+            }
+        }
+
+        @Override
+        public MethodTypeDesc asSymbol() {
+            var sym = this.sym;
+            if (sym != null) {
+                return sym;
+            }
+            return this.sym = MethodTypeDesc.ofDescriptor(descriptor().stringValue());
         }
 
         @Override

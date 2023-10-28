@@ -31,6 +31,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #define FOREIGN_ABI "jdk/internal/foreign/abi/"
@@ -75,6 +76,7 @@ JavaThread* UpcallLinker::maybe_attach_and_get_thread() {
 // modelled after JavaCallWrapper::JavaCallWrapper
 JavaThread* UpcallLinker::on_entry(UpcallStub::FrameData* context) {
   JavaThread* thread = maybe_attach_and_get_thread();
+  guarantee(thread->thread_state() == _thread_in_native, "wrong thread state for upcall");
   context->thread = thread;
 
   assert(thread->can_call_java(), "must be able to call Java");

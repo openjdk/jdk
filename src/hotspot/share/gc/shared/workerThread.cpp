@@ -61,7 +61,7 @@ void WorkerTaskDispatcher::worker_run_task() {
   _start_semaphore.wait();
 
   // Get and set worker id.
-  const uint worker_id = Atomic::fetch_and_add(&_started, 1u);
+  const uint worker_id = Atomic::fetch_then_add(&_started, 1u);
   WorkerThread::set_worker_id(worker_id);
 
   // Run task.
@@ -141,8 +141,40 @@ void WorkerThreads::threads_do(ThreadClosure* tc) const {
   }
 }
 
+void WorkerThreads::set_indirectly_suspendible_threads() {
+#ifdef ASSERT
+  class SetIndirectlySuspendibleThreadClosure : public ThreadClosure {
+    virtual void do_thread(Thread* thread) {
+      thread->set_indirectly_suspendible_thread();
+    }
+  };
+
+  if (Thread::current()->is_suspendible_thread()) {
+    SetIndirectlySuspendibleThreadClosure cl;
+    threads_do(&cl);
+  }
+#endif
+}
+
+void WorkerThreads::clear_indirectly_suspendible_threads() {
+#ifdef ASSERT
+  class ClearIndirectlySuspendibleThreadClosure : public ThreadClosure {
+    virtual void do_thread(Thread* thread) {
+      thread->clear_indirectly_suspendible_thread();
+    }
+  };
+
+  if (Thread::current()->is_suspendible_thread()) {
+    ClearIndirectlySuspendibleThreadClosure cl;
+    threads_do(&cl);
+  }
+#endif
+}
+
 void WorkerThreads::run_task(WorkerTask* task) {
+  set_indirectly_suspendible_threads();
   _dispatcher.coordinator_distribute_task(task, _active_workers);
+  clear_indirectly_suspendible_threads();
 }
 
 void WorkerThreads::run_task(WorkerTask* task, uint num_workers) {

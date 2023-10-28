@@ -20,6 +20,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/* @test
+ * @summary StrokeShapeTest: createStrokedShape() behaves differently
+ * @bug 6829678 8311666
+ */
+
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.GeneralPath;

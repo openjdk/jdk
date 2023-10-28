@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ class MethodHandles: AllStatic {
   static void add_dependent_nmethod(oop call_site, nmethod* nm);
   static void clean_dependency_context(oop call_site);
 
-  static void flush_dependent_nmethods(Handle call_site, Handle target);
+  static void mark_dependent_nmethods(DeoptimizationScope* deopt_scope, Handle call_site, Handle target);
 
   // Generate MethodHandles adapters.
   static void generate_adapters();

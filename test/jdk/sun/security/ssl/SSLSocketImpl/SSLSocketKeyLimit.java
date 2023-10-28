@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,24 @@
 
 /*
  * @test
- * @bug 8164879
+ * @bug 8164879 8300285
  * @library ../../
  * @library /test/lib
  * @modules java.base/sun.security.util
- * @summary Verify AES/GCM's limits set in the jdk.tls.keyLimits property
- * @run main SSLSocketKeyLimit 0 server AES/GCM/NoPadding keyupdate 1000000
- * @run main SSLSocketKeyLimit 0 client AES/GCM/NoPadding keyupdate 1000000
- * @run main SSLSocketKeyLimit 1 client AES/GCM/NoPadding keyupdate 2^22
+ * @summary Verify AEAD TLS cipher suite limits set in the jdk.tls.keyLimits
+ * property
+ * @run main SSLSocketKeyLimit 0 server TLS_AES_256_GCM_SHA384
+ *      AES/GCM/NoPadding keyupdate 1000000
+ * @run main SSLSocketKeyLimit 0 client TLS_AES_256_GCM_SHA384
+ *      AES/GCM/NoPadding keyupdate 1000000
+ * @run main SSLSocketKeyLimit 1 client TLS_AES_256_GCM_SHA384
+ *      AES/GCM/NoPadding keyupdate 2^22
+ * @run main SSLSocketKeyLimit 0 server TLS_CHACHA20_POLY1305_SHA256
+ *      AES/GCM/NoPadding keyupdate 1000000, ChaCha20-Poly1305 KeyUpdate 1000000
+ * @run main SSLSocketKeyLimit 0 client TLS_CHACHA20_POLY1305_SHA256
+ *      AES/GCM/NoPadding keyupdate 1000000, ChaCha20-Poly1305 KeyUpdate 1000000
+ * @run main SSLSocketKeyLimit 1 client TLS_CHACHA20_POLY1305_SHA256
+ *      AES/GCM/NoPadding keyupdate 2^22, ChaCha20-Poly1305 KeyUpdate 2^22
  */
 
  /**
@@ -96,7 +106,7 @@ public class SSLSocketKeyLimit {
     }
 
     /**
-     * args should have two values:  server|client, <limit size>
+     * args should have three values:  server|client, cipher suite, <limit size>
      * Prepending 'p' is for internal use only.
      */
     public static void main(String args[]) throws Exception {
@@ -110,7 +120,7 @@ public class SSLSocketKeyLimit {
             File f = new File("keyusage."+ System.nanoTime());
             PrintWriter p = new PrintWriter(f);
             p.write("jdk.tls.keyLimits=");
-            for (int i = 2; i < args.length; i++) {
+            for (int i = 3; i < args.length; i++) {
                 p.write(" "+ args[i]);
             }
             p.close();
@@ -125,10 +135,13 @@ public class SSLSocketKeyLimit {
                     System.getProperty("test.java.opts"));
 
             ProcessBuilder pb = ProcessTools.createTestJvm(
-                    Utils.addTestJavaOpts("SSLSocketKeyLimit", "p", args[1]));
+                    Utils.addTestJavaOpts("SSLSocketKeyLimit", "p", args[1],
+                            args[2]));
 
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             try {
+                output.shouldContain(String.format(
+                        "\"cipher suite\"        : \"%s", args[2]));
                 if (expectedFail) {
                     output.shouldNotContain("KeyUpdate: write key updated");
                     output.shouldNotContain("KeyUpdate: read key updated");
@@ -150,7 +163,7 @@ public class SSLSocketKeyLimit {
             return;
         }
 
-        if (args.length > 0 && args[0].compareToIgnoreCase("client") == 0) {
+        if (args.length > 0 && args[1].compareToIgnoreCase("client") == 0) {
             serverwrite = false;
         }
 
@@ -162,7 +175,7 @@ public class SSLSocketKeyLimit {
         System.setProperty("javax.net.ssl.keyStorePassword", passwd);
 
         Arrays.fill(data, (byte)0x0A);
-        Thread ts = new Thread(new Server());
+        Thread ts = new Thread(new Server(args[2]));
 
         ts.start();
         while (!serverReady) {
@@ -200,7 +213,8 @@ public class SSLSocketKeyLimit {
         int len;
         byte i = 0;
         try {
-            System.out.println("Server: connected " + s.getSession().getCipherSuite());
+            System.out.println("Server: connected " +
+                    s.getSession().getCipherSuite());
             in = s.getInputStream();
             out = s.getOutputStream();
             while (true) {
@@ -212,7 +226,8 @@ public class SSLSocketKeyLimit {
                     if (b == 0x0A || b == 0x0D) {
                         continue;
                     }
-                    System.out.println("\nData invalid: " + HexPrinter.minimal().toString(buf));
+                    System.out.println("\nData invalid: " +
+                            HexPrinter.minimal().toString(buf));
                     break;
                 }
 
@@ -237,11 +252,14 @@ public class SSLSocketKeyLimit {
     static class Server extends SSLSocketKeyLimit implements Runnable {
         private SSLServerSocketFactory ssf;
         private SSLServerSocket ss;
-        Server() {
+        Server(String cipherSuite) {
             super();
             try {
                 ssf = initContext().getServerSocketFactory();
                 ss = (SSLServerSocket) ssf.createServerSocket(serverPort);
+                if (cipherSuite != null && cipherSuite.length() > 0) {
+                    ss.setEnabledCipherSuites(new String[] { cipherSuite });
+                }
                 serverPort = ss.getLocalPort();
             } catch (Exception e) {
                 System.out.println("server: " + e.getMessage());

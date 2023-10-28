@@ -237,19 +237,27 @@ public interface NavigableMap<K,V> extends SortedMap<K,V> {
 
     /**
      * Removes and returns a key-value mapping associated with
-     * the least key in this map, or {@code null} if the map is empty.
+     * the least key in this map, or {@code null} if the map is empty
+     * (optional operation).
      *
      * @return the removed first entry of this map,
      *         or {@code null} if this map is empty
+     *
+     * @throws UnsupportedOperationException if the {@code pollFirstEntry}
+     *         operation is not supported by this map
      */
     Map.Entry<K,V> pollFirstEntry();
 
     /**
      * Removes and returns a key-value mapping associated with
-     * the greatest key in this map, or {@code null} if the map is empty.
+     * the greatest key in this map, or {@code null} if the map is empty
+     * (optional operation).
      *
      * @return the removed last entry of this map,
      *         or {@code null} if this map is empty
+     *
+     * @throws UnsupportedOperationException if the {@code pollLastEntry}
+     *         operation is not supported by this map
      */
     Map.Entry<K,V> pollLastEntry();
 
@@ -429,4 +437,20 @@ public interface NavigableMap<K,V> extends SortedMap<K,V> {
      * @throws IllegalArgumentException {@inheritDoc}
      */
     SortedMap<K,V> tailMap(K fromKey);
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method is equivalent to {@link #descendingMap descendingMap}.
+     *
+     * @implSpec
+     * The implementation in this interface returns the result of calling the
+     * {@code descendingMap} method.
+     *
+     * @return a reverse-ordered view of this map, as a {@code NavigableMap}
+     * @since 21
+     */
+    default NavigableMap<K, V> reversed() {
+        return this.descendingMap();
+    }
 }

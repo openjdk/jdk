@@ -1,4 +1,3 @@
-#
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -299,9 +298,10 @@ Zone	PST8PDT		 -8:00	US	P%sT
 #  -10	Standard Alaska Time (AST)	Alaska-Hawaii standard time (AHST)
 #  -11	(unofficial) Nome (NST)		Bering standard time (BST)
 #
-# From Paul Eggert (2000-01-08), following a heads-up from Rives McDow:
-# Public law 106-564 (2000-12-23) introduced ... "Chamorro Standard Time"
+# From Paul Eggert (2023-01-23), from a 2001-01-08 heads-up from Rives McDow:
+# Public law 106-564 (2000-12-23) introduced "Chamorro standard time"
 # for time in Guam and the Northern Marianas.  See the file "australasia".
+# Also see 15 U.S.C. §263 <https://www.law.cornell.edu/uscode/text/15/263>.
 #
 # From Paul Eggert (2015-04-17):
 # HST and HDT are standardized abbreviations for Hawaii-Aleutian
@@ -618,7 +618,7 @@ Zone America/Los_Angeles -7:52:58 -	LMT	1883 Nov 18 20:00u
 # local times of other Alaskan locations so that they change simultaneously.
 
 # From Paul Eggert (2014-07-18):
-# One opinion of the early-1980s turmoil in Alaska over time zones and
+# One opinion of the early 1980s turmoil in Alaska over time zones and
 # daylight saving time appeared as graffiti on a Juneau airport wall:
 # "Welcome to Juneau.  Please turn your watch back to the 19th century."
 # See: Turner W. Alaska's four time zones now two. NY Times 1983-11-01.
@@ -689,6 +689,10 @@ Zone America/Los_Angeles -7:52:58 -	LMT	1883 Nov 18 20:00u
 # https://www.facebook.com/141055983004923/photos/607150969728753/
 # So they won't be waiting for Alaska to join them on 2019-03-10, but will
 # rather change their clocks twice in seven weeks.
+
+# From Paul Eggert (2023-01-23):
+# America/Adak is for the Aleutian Islands that are part of Alaska
+# and are west of 169.5° W.
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Juneau	 15:02:19 -	LMT	1867 Oct 19 15:33:32
@@ -2148,10 +2152,6 @@ Zone America/Fort_Nelson	-8:10:47 -	LMT	1884
 # Nunavut ... moved ... to incorporate the whole territory into one time zone.
 # Nunavut moves to single time zone Oct. 31
 # http://www.nunatsiaq.com/nunavut/nvt90903_13.html
-#
-# From Antoine Leca (1999-09-06):
-# We then need to create a new timezone for the Kitikmeot region of Nunavut
-# to differentiate it from the Yellowknife region.
 
 # From Paul Eggert (1999-09-20):
 # Basic Facts: The New Territory
@@ -2344,9 +2344,6 @@ Zone America/Cambridge_Bay 0	-	-00	1920 # trading post est.?
 			-6:00	Canada	C%sT	2000 Oct 29  2:00
 			-5:00	-	EST	2000 Nov  5  0:00
 			-6:00	-	CST	2001 Apr  1  3:00
-			-7:00	Canada	M%sT
-Zone America/Yellowknife 0	-	-00	1935 # Yellowknife founded?
-			-7:00	NT_YK	M%sT	1980
 			-7:00	Canada	M%sT
 Zone America/Inuvik	0	-	-00	1953 # Inuvik founded
 			-8:00	NT_YK	P%sT	1979 Apr lastSun  2:00
@@ -2584,7 +2581,7 @@ Zone America/Dawson	-9:17:40 -	LMT	1900 Aug 20
 # and in addition changes all of Chihuahua to -06 with no DST.
 
 # From Heitor David Pinto (2022-11-28):
-# Now the northern municipalities want to have the same time zone as the
+# Now the northern [municipios] want to have the same time zone as the
 # respective neighboring cities in the US, for example Juárez in UTC-7 with
 # DST, matching El Paso, and Ojinaga in UTC-6 with DST, matching Presidio....
 # the president authorized the publication of the decree for November 29,
@@ -2621,7 +2618,7 @@ Zone America/Merida	-5:58:28 -	LMT	1922 Jan  1  6:00u
 			-5:00	-	EST	1982 Dec  2
 			-6:00	Mexico	C%sT
 # Coahuila, Nuevo León, Tamaulipas (near US border)
-# This includes the following municipalities:
+# This includes the following municipios:
 #   in Coahuila: Acuña, Allende, Guerrero, Hidalgo, Jiménez, Morelos, Nava,
 #     Ocampo, Piedras Negras, Villa Unión, Zaragoza
 #   in Nuevo León: Anáhuac
@@ -2647,8 +2644,8 @@ Zone America/Mexico_City -6:36:36 -	LMT	1922 Jan  1  7:00u
 			-6:00	-	CST	2002 Feb 20
 			-6:00	Mexico	C%sT
 # Chihuahua (near US border - western side)
-# This includes the municipalities of Janos, Ascensión, Juárez, Guadalupe,
-# and Práxedis G Guerrero.
+# This includes the municipios of Janos, Ascensión, Juárez, Guadalupe, and
+# Práxedis G Guerrero.
 # http://gaceta.diputados.gob.mx/PDF/65/2a022/nov/20221124-VII.pdf
 Zone America/Ciudad_Juarez -7:05:56 -	LMT	1922 Jan  1  7:00u
 			-7:00	-	MST	1927 Jun 10 23:00
@@ -2662,7 +2659,8 @@ Zone America/Ciudad_Juarez -7:05:56 -	LMT	1922 Jan  1  7:00u
 			-6:00	-	CST	2022 Nov 30  0:00
 			-7:00	US	M%sT
 # Chihuahua (near US border - eastern side)
-# The municipalities of Coyame del Sotol, Ojinaga, and Manuel Benavides.
+# This includes the municipios of Coyame del Sotol, Ojinaga, and Manuel
+# Benavides.
 # http://gaceta.diputados.gob.mx/PDF/65/2a022/nov/20221124-VII.pdf
 Zone America/Ojinaga	-6:57:40 -	LMT	1922 Jan  1  7:00u
 			-7:00	-	MST	1927 Jun 10 23:00
@@ -3083,7 +3081,7 @@ Zone America/Costa_Rica	-5:36:13 -	LMT	1890        # San José
 #
 # He supplied these references:
 #
-# http://www.prensalatina.com.mx/article.asp?ID=%7B4CC32C1B-A9F7-42FB-8A07-8631AFC923AF%7D&language=ES
+# http://www.prensalatina.com.mx/article.asp?ID={4CC32C1B-A9F7-42FB-8A07-8631AFC923AF}&language=ES
 # http://actualidad.terra.es/sociedad/articulo/cuba_llama_ahorrar_energia_cambio_1957044.htm
 #
 # From Alex Krivenyshev (2007-10-25):

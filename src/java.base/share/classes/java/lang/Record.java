@@ -83,6 +83,7 @@ package java.lang;
  * A record class structure can be obtained at runtime via reflection.
  * See {@link Class#isRecord()} and {@link Class#getRecordComponents()} for more details.
  *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @jls 8.10 Record Types
  * @since 16
  */

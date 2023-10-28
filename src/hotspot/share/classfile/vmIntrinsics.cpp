@@ -28,6 +28,9 @@
 #include "compiler/compilerDirectives.hpp"
 #include "jvm_constants.h"
 #include "jvm_io.h"
+#include "runtime/vm_version.hpp"
+#include "utilities/checkedCast.hpp"
+#include "utilities/tribool.hpp"
 #include "utilities/xmlstream.hpp"
 
 // These are flag-matching functions:
@@ -649,9 +652,8 @@ vmIntrinsics::ID vmIntrinsics::find_id(const char* name) {
   return _none;
 }
 
-bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
-  vmIntrinsics::ID id = method->intrinsic_id();
-  return is_disabled_by_flags(id);
+bool vmIntrinsics::is_intrinsic_available(vmIntrinsics::ID id) {
+  return VM_Version::is_intrinsic_supported(id) && !is_disabled_by_flags(id);
 }
 
 bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
@@ -805,21 +807,21 @@ vmSymbolID vmIntrinsics::class_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
   int shift = 2*vmSymbols::log2_SID_LIMIT + log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
   assert(((ID4(1021,1022,1023,7) >> shift) & mask) == 1021, "");
-  return vmSymbols::as_SID( (info >> shift) & mask );
+  return vmSymbols::as_SID( checked_cast<int>((info >> shift) & mask));
 }
 
 vmSymbolID vmIntrinsics::name_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
   int shift = vmSymbols::log2_SID_LIMIT + log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
   assert(((ID4(1021,1022,1023,7) >> shift) & mask) == 1022, "");
-  return vmSymbols::as_SID( (info >> shift) & mask );
+  return vmSymbols::as_SID( checked_cast<int>((info >> shift) & mask));
 }
 
 vmSymbolID vmIntrinsics::signature_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
   int shift = log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
   assert(((ID4(1021,1022,1023,7) >> shift) & mask) == 1023, "");
-  return vmSymbols::as_SID( (info >> shift) & mask );
+  return vmSymbols::as_SID( checked_cast<int>((info >> shift) & mask));
 }
 
 vmIntrinsics::Flags vmIntrinsics::flags_for(vmIntrinsics::ID id) {

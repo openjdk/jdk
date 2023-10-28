@@ -56,37 +56,28 @@ enum membarrier_cmd {
   MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED = (1 << 4),
 };
 
-#define check_with_errno(check_type, cond, msg)                             \
-  do {                                                                      \
-    int err = errno;                                                        \
-    check_type(cond, "%s: error='%s' (errno=%s)", msg, os::strerror(err),   \
-               os::errno_name(err));                                        \
-} while (false)
-
-#define guarantee_with_errno(cond, msg) check_with_errno(guarantee, cond, msg)
-
-static int membarrier(int cmd, unsigned int flags, int cpu_id) {
+static long membarrier(int cmd, unsigned int flags, int cpu_id) {
   return syscall(SYS_membarrier, cmd, flags, cpu_id); // cpu_id only on >= 5.10
 }
 
 bool LinuxSystemMemoryBarrier::initialize() {
-  int ret = membarrier(MEMBARRIER_CMD_QUERY, 0, 0);
+  long ret = membarrier(MEMBARRIER_CMD_QUERY, 0, 0);
   if (ret < 0) {
-    log_error(os)("MEMBARRIER_CMD_QUERY unsupported");
+    log_info(os)("MEMBARRIER_CMD_QUERY unsupported");
     return false;
   }
   if (!(ret & MEMBARRIER_CMD_PRIVATE_EXPEDITED) ||
       !(ret & MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED)) {
-    log_error(os)("MEMBARRIER PRIVATE_EXPEDITED unsupported");
+    log_info(os)("MEMBARRIER PRIVATE_EXPEDITED unsupported");
     return false;
   }
   ret = membarrier(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED, 0, 0);
   guarantee_with_errno(ret == 0, "MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED failed");
+  log_info(os)("Using MEMBARRIER PRIVATE_EXPEDITED");
   return true;
 }
 
 void LinuxSystemMemoryBarrier::emit() {
-  int s = membarrier(MEMBARRIER_CMD_PRIVATE_EXPEDITED, 0, 0);
+  long s = membarrier(MEMBARRIER_CMD_PRIVATE_EXPEDITED, 0, 0);
   guarantee_with_errno(s >= 0, "MEMBARRIER_CMD_PRIVATE_EXPEDITED failed");
 }
-

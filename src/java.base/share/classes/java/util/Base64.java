@@ -73,6 +73,10 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * method of this class will cause a {@link java.lang.NullPointerException
  * NullPointerException} to be thrown.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2045
+ *      RFC 2045: Multipurpose Internet Mail Extensions (MIME) Part One: Format of Internet Message Bodies
+ * @spec https://www.rfc-editor.org/info/rfc4648
+ *      RFC 4648: The Base16, Base32, and Base64 Data Encodings
  * @author  Xueming Shen
  * @since   1.8
  */

@@ -22,6 +22,8 @@
  */
 package jdk.vm.ci.hotspot;
 
+import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
+
 import jdk.vm.ci.meta.DeoptimizationReason;
 import jdk.vm.ci.meta.JavaMethodProfile;
 import jdk.vm.ci.meta.JavaTypeProfile;
@@ -77,7 +79,7 @@ final class HotSpotProfilingInfo implements ProfilingInfo {
         if (!isMature) {
             return null;
         }
-        findBCI(bci, false);
+        findBCI(bci);
         return dataAccessor.getTypeProfile(methodData, position);
     }
 
@@ -86,7 +88,7 @@ final class HotSpotProfilingInfo implements ProfilingInfo {
         if (!isMature) {
             return null;
         }
-        findBCI(bci, false);
+        findBCI(bci);
         return dataAccessor.getMethodProfile(methodData, position);
     }
 
@@ -95,7 +97,7 @@ final class HotSpotProfilingInfo implements ProfilingInfo {
         if (!isMature) {
             return -1;
         }
-        findBCI(bci, false);
+        findBCI(bci);
         return dataAccessor.getBranchTakenProbability(methodData, position);
     }
 
@@ -104,19 +106,27 @@ final class HotSpotProfilingInfo implements ProfilingInfo {
         if (!isMature) {
             return null;
         }
-        findBCI(bci, false);
+        findBCI(bci);
         return dataAccessor.getSwitchProbabilities(methodData, position);
     }
 
     @Override
     public TriState getExceptionSeen(int bci) {
-        findBCI(bci, true);
+        if (!findBCI(bci)) {
+            // There might data in the extra data section but all accesses to that memory must be
+            // under a lock so go into VM to get the data.
+            int exceptionSeen = compilerToVM().methodDataExceptionSeen(methodData.methodDataPointer, bci);
+            if (exceptionSeen == -1) {
+                return TriState.UNKNOWN;
+            }
+            return TriState.get(exceptionSeen != 0);
+        }
         return dataAccessor.getExceptionSeen(methodData, position);
     }
 
     @Override
     public TriState getNullSeen(int bci) {
-        findBCI(bci, false);
+        findBCI(bci);
         return dataAccessor.getNullSeen(methodData, position);
     }
 
@@ -125,7 +135,7 @@ final class HotSpotProfilingInfo implements ProfilingInfo {
         if (!isMature) {
             return -1;
         }
-        findBCI(bci, false);
+        findBCI(bci);
         return dataAccessor.getExecutionCount(methodData, position);
     }
 
@@ -141,7 +151,7 @@ final class HotSpotProfilingInfo implements ProfilingInfo {
         return count;
     }
 
-    private void findBCI(int targetBCI, boolean searchExtraData) {
+    private boolean findBCI(int targetBCI) {
         assert targetBCI >= 0 : "invalid BCI";
 
         if (methodData.hasNormalData()) {
@@ -151,43 +161,21 @@ final class HotSpotProfilingInfo implements ProfilingInfo {
                 int currentBCI = currentAccessor.getBCI(methodData, currentPosition);
                 if (currentBCI == targetBCI) {
                     normalDataFound(currentAccessor, currentPosition, currentBCI);
-                    return;
+                    return true;
                 } else if (currentBCI > targetBCI) {
                     break;
                 }
                 currentPosition = currentPosition + currentAccessor.getSize(methodData, currentPosition);
             }
         }
-
-        boolean exceptionPossiblyNotRecorded = false;
-        if (searchExtraData && methodData.hasExtraData()) {
-            int currentPosition = methodData.getExtraDataBeginOffset();
-            HotSpotMethodDataAccessor currentAccessor;
-            while ((currentAccessor = methodData.getExtraData(currentPosition)) != null) {
-                int currentBCI = currentAccessor.getBCI(methodData, currentPosition);
-                if (currentBCI == targetBCI) {
-                    extraDataFound(currentAccessor, currentPosition);
-                    return;
-                }
-                currentPosition = currentPosition + currentAccessor.getSize(methodData, currentPosition);
-            }
-
-            if (!methodData.isWithin(currentPosition)) {
-                exceptionPossiblyNotRecorded = true;
-            }
-        }
-
-        noDataFound(exceptionPossiblyNotRecorded);
+        noDataFound(false);
+        return false;
     }
 
     private void normalDataFound(HotSpotMethodDataAccessor data, int pos, int bci) {
         setCurrentData(data, pos);
         this.hintPosition = position;
         this.hintBCI = bci;
-    }
-
-    private void extraDataFound(HotSpotMethodDataAccessor data, int pos) {
-        setCurrentData(data, pos);
     }
 
     private void noDataFound(boolean exceptionPossiblyNotRecorded) {

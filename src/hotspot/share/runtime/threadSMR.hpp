@@ -197,11 +197,11 @@ public:
   template <class T>
   void threads_do(T *cl) const;
 
-  uint length() const                       { return _length; }
+  uint length() const                 { return _length; }
 
-  JavaThread *const thread_at(uint i) const { return _threads[i]; }
+  JavaThread *thread_at(uint i) const { return _threads[i]; }
 
-  JavaThread *const *threads() const        { return _threads; }
+  JavaThread *const *threads() const  { return _threads; }
 
   // Returns -1 if target is not found.
   int find_index_of_JavaThread(JavaThread* target);
@@ -330,6 +330,29 @@ public:
 
   JavaThread *thread_at(uint i) const {
     return list()->thread_at(i);
+  }
+};
+
+// This stack allocated FastThreadsListHandle implements the special case
+// where we want to quickly determine if a JavaThread* is protected by the
+// embedded ThreadsListHandle.
+//
+class FastThreadsListHandle : public StackObj {
+  JavaThread* _protected_java_thread;
+  ThreadsListHandle _tlh;
+
+public:
+  // The 'java_thread' parameter to the constructor must be provided
+  // by a java_lang_Thread::thread_acquire(thread_oop) call which gets
+  // us the JavaThread* stored in the java.lang.Thread object _before_
+  // the embedded ThreadsListHandle is constructed. We use acquire there
+  // to ensure that if we see a non-nullptr value, then we also see the
+  // main ThreadsList updates from the JavaThread* being added.
+  //
+  FastThreadsListHandle(oop thread_oop, JavaThread* java_thread);
+
+  JavaThread* protected_java_thread() {
+    return _protected_java_thread;
   }
 };
 

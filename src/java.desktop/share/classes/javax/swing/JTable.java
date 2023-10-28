@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3209,7 +3209,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             // would have resulted in the layout the user has chosen.
             // Thereafter, during window resizing etc. it has to work off
             // the preferred sizes as usual - the idea being that, whatever
-            // the user does, everything stays in synch and things don't jump
+            // the user does, everything stays in sync and things don't jump
             // around.
             setWidthsFromPreferredWidths(true);
         }
@@ -4036,7 +4036,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         }
 
         /**
-         * Inovked when either the table has changed or the sorter has changed
+         * Invoked when either the table has changed or the sorter has changed
          * and after the sorter has been notified. If necessary this will
          * reapply the selection and variable row heights.
          */

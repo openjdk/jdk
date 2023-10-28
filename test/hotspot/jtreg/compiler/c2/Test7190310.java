@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,16 +39,12 @@ package compiler.c2;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.lang.ref.Cleaner;
 
 public class Test7190310 {
     private static Object str = new Object() {
         public String toString() {
             return "The Object";
-        }
-
-        protected void finalize() throws Throwable {
-            System.out.println("The Object is being finalized");
-            super.finalize();
         }
     };
     private final static ReferenceQueue<Object> rq =
@@ -58,6 +54,7 @@ public class Test7190310 {
 
     public static void main(String[] args)
             throws InterruptedException {
+        Cleaner.create().register(str, () -> System.out.println("The Object is being finalized"));
         Thread reader = new Thread() {
             public void run() {
                 while (wr.get() != null) {

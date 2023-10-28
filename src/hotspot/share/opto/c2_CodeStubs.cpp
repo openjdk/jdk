@@ -52,3 +52,10 @@ void C2CodeStubList::emit(CodeBuffer& cb) {
     assert(max_size >= actual_size, "Expected stub size (%d) must be larger than or equal to actual stub size (%d)", max_size, actual_size);
   }
 }
+
+// move here to avoid circular dependency between c2_CodeStubs.hpp and output.hpp
+void C2CodeStub::add_to_stub_list() {
+  if (!Compile::current()->output()->in_scratch_emit_size()) {
+    Compile::current()->output()->add_stub(this);
+  }
+}

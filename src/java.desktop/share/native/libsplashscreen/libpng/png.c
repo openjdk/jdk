@@ -29,7 +29,7 @@
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  *
- * Copyright (c) 2018-2022 Cosmin Truta
+ * Copyright (c) 2018-2023 Cosmin Truta
  * Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson
  * Copyright (c) 1996-1997 Andreas Dilger
  * Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
@@ -42,7 +42,7 @@
 #include "pngpriv.h"
 
 /* Generate a compiler error if there is an old png.h in the search path. */
-typedef png_libpng_version_1_6_38 Your_png_h_is_not_version_1_6_38;
+typedef png_libpng_version_1_6_40 Your_png_h_is_not_version_1_6_40;
 
 #ifdef __GNUC__
 /* The version tests may need to be added to, but the problem warning has
@@ -843,8 +843,8 @@ png_get_copyright(png_const_structrp png_ptr)
    return PNG_STRING_COPYRIGHT
 #else
    return PNG_STRING_NEWLINE \
-      "libpng version 1.6.38" PNG_STRING_NEWLINE \
-      "Copyright (c) 2018-2022 Cosmin Truta" PNG_STRING_NEWLINE \
+      "libpng version 1.6.40" PNG_STRING_NEWLINE \
+      "Copyright (c) 2018-2023 Cosmin Truta" PNG_STRING_NEWLINE \
       "Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson" \
       PNG_STRING_NEWLINE \
       "Copyright (c) 1996-1997 Andreas Dilger" PNG_STRING_NEWLINE \
@@ -2738,7 +2738,7 @@ png_check_IHDR(png_const_structrp png_ptr,
 
 int /* PRIVATE */
 png_check_fp_number(png_const_charp string, size_t size, int *statep,
-    png_size_tp whereami)
+    size_t *whereami)
 {
    int state = *statep;
    size_t i = *whereami;
