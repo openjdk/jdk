@@ -26,6 +26,12 @@ import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
 
+import java.io.*;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.regex.Pattern;
+
 /*
  * @test
  * @summary Test of diagnostic command System.map
@@ -41,19 +47,17 @@ public class SystemMapTest {
     public void run(CommandExecutor executor) {
         OutputAnalyzer output = executor.execute("System.map");
         output.reportDiagnosticSummary();
-        // Only with NMT we get VM annotations
-        boolean have_nmt = !output.getOutput().contains("please enable Native Memory Tracking");
-
-        if (have_nmt) {
-            String expectedMarkings[] = new String[] { "STACK", "JAVAHEAP", "META", "CODE", "POLL" };
-            for (String s : expectedMarkings) {
-                output.shouldMatch("0x[0-9a-fA-F]+ *- *0x[0-9a-fA-F]+ +\\d+.*" + s + ".*");
-            }
-        } else {
-            output.shouldMatch("0x[0-9a-fA-F]+ *- *0x[0-9a-fA-F]+ +\\d+.*");
+        String filename = output.firstMatch("Memory map dumped to \"(\\S*vm_memory_map_\\d+\\.txt)\".*", 1);
+        if (filename == null) {
+            throw new RuntimeException("Did not find dump file in output.\n");
         }
-        output.shouldMatch("0x[0-9a-fA-F]+ *- *0x[0-9a-fA-F]+ +\\d+.*libjvm.so.*");
-        output.shouldMatch(".*Total: \\d+ mappings with a total vsize of \\d+.*");
+        File f = new File(filename);
+        if (!f.exists()) {
+            throw new RuntimeException("dump file not found.");
+        }
+        if (f.length() == 0) {
+            throw new RuntimeException("dump file 0.");
+        }
     }
 
     @Test

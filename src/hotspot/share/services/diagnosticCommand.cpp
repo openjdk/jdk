@@ -41,6 +41,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nmt/memMapPrinter.hpp"
+#include "nmt/memTracker.hpp"
 #include "nmt/nmtDCmd.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -1168,6 +1169,9 @@ void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
   const char* name = _filename.is_set() ? _filename.value() : default_name.base();
   fileStream fs(name);
   if (fs.is_open()) {
+    if (!MemTracker::enabled()) {
+      output()->print_cr("Note: NMT is disabled. Memory map will be printed without VM annotations.");
+    }
     MemMapPrinter::print_all_mappings(&fs, _human_readable.value());
 #ifndef _WIN32
     char buf[4096];
