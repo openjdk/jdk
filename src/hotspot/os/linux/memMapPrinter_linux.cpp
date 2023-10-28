@@ -26,7 +26,7 @@
 #include "precompiled.hpp"
 
 #include "runtime/os.hpp"
-#include "services/memMapPrinter.hpp"
+#include "nmt/memMapPrinter.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include <limits.h>
 

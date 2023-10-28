@@ -25,7 +25,7 @@
 
 #include "precompiled.hpp"
 
-#include "services/memMapPrinter.hpp"
+#include "nmt/memMapPrinter.hpp"
 #include "utilities/ostream.hpp"
 
 void MemMapPrinter::pd_iterate_all_mappings(MappingPrintClosure& closure) {}

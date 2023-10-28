@@ -34,7 +34,8 @@
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
-#include "services/memMapPrinter.hpp"
+#include "nmt/memFlagBitmap.hpp"
+#include "nmt/memMapPrinter.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -69,30 +70,6 @@ static const char* get_shortname_for_nmt_flag(MEMFLAGS f) {
 #undef DO
   return NMTUtil::flag_to_enum_name(f);
 }
-
-class MemFlagBitmap {
-  uint32_t _v;
-  STATIC_ASSERT(sizeof(_v) * BitsPerByte >= mt_number_of_types);
-
-public:
-  MemFlagBitmap(uint32_t v = 0) : _v(v) {}
-  MemFlagBitmap(const MemFlagBitmap& o) : _v(o._v) {}
-
-  uint32_t raw_value() const { return _v; }
-
-  void set_flag(MEMFLAGS f) {
-    const int bitno = (int)f;
-    _v |= nth_bit(bitno);
-  }
-
-  bool has_flag(MEMFLAGS f) const {
-    const int bitno = (int)f;
-    return _v & nth_bit(bitno);
-  }
-
-  bool has_any() const { return _v > 0; }
-
-};
 
 /// NMT virtual memory
 
