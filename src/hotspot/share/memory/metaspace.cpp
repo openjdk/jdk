@@ -721,17 +721,6 @@ void Metaspace::ergo_initialize() {
 }
 
 void Metaspace::global_initialize() {
-
-  if (UseNewCode)
-  for (int i = 0; i < (int)(2*M); i ++) {
-    char* p = os::reserve_memory(4 * K, false, mtTest);
-    if (p == nullptr) {
-      printf(">>>> %u\n", i); break;
-    }
-    if ((i % 2) == 0) os::commit_memory(p, 4 * K, false);
-
-  }
-
   MetaspaceGC::initialize(); // <- since we do not prealloc init chunks anymore is this still needed?
 
   metaspace::ChunkHeaderPool::initialize();
