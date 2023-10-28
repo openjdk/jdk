@@ -579,9 +579,9 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
         }
         if ((flag & 8) == 8) {
             /* "Data Descriptor" present */
-            if (hasZip64Extra(e) // LOC indicates Zip64 format, expect 8-byte sizes
-                    || inf.getBytesWritten() > ZIP64_MAGICVAL
-                    || inf.getBytesRead() > ZIP64_MAGICVAL) {
+            if (hasZip64Extra(e) ||
+                inf.getBytesWritten() > ZIP64_MAGICVAL ||
+                inf.getBytesRead() > ZIP64_MAGICVAL) {
                 // ZIP64 format
                 readFully(tmpbuf, 0, ZIP64_EXTHDR);
                 long sig = get32(tmpbuf, 0);
