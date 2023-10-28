@@ -852,12 +852,12 @@
     <Field type="CompilerType" name="compiler" label="Compiler" />
     <Field type="long" contentType="hertz" name="ingress" label="Ingress" description="Number of added requests per second"/>
     <Field type="long" contentType="hertz" name="egress" label="Egress" description="Number of removed requests per second"/>
-    <Field type="long" contentType="count" name="size" label="Size" description="Current queue size"/>
-    <Field type="long" contentType="count" name="peak" label="Peak Size" description="Peak queue size"/>
-    <Field type="long" contentType="count" name="added" label="Added" description="Added requests"/>
-    <Field type="long" contentType="count" name="removed" label="Removed" description="Removed requests"/>
-    <Field type="long" contentType="count" name="totalAdded" label="Total Added" description="Total requests"/>
-    <Field type="long" contentType="count" name="totalRemoved" label="Total Removed" description="Total removed requests"/>
+    <Field type="long" name="size" label="Size"/>
+    <Field type="long" name="peak" label="Peak Size"/>
+    <Field type="long" name="added" label="Added"/>
+    <Field type="long" name="removed" label="Removed"/>
+    <Field type="long" name="totalAdded" label="Total Added"/>
+    <Field type="long" name="totalRemoved" label="Total Removed"/>
     <Field type="int" name="compilerThreadCount" label="Number of Compiler Threads for this queue"/>
   </Event>
 

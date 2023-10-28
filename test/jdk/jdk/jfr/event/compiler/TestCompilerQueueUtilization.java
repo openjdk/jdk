@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,25 +42,26 @@ public class TestCompilerQueueUtilization {
     private final static String EVENT_NAME = EventNames.CompilerQueueUtilization;
 
     public static void main(String[] args) throws Exception {
-        Recording recording = new Recording();
-        recording.enable(EVENT_NAME);
-        recording.start();
-        recording.stop();
+        try (Recording recording = new Recording()) {
+            recording.enable(EVENT_NAME);
+            recording.start();
+            recording.stop();
 
-        List<RecordedEvent> events = Events.fromRecording(recording);
-        Events.hasEvents(events);
-        for (RecordedEvent event : events) {
-            System.out.println("Event:" + event);
-            Events.assertField(event, "compiler").notEmpty();
-            Events.assertField(event, "ingress").atLeast(0L);
-            Events.assertField(event, "egress").atLeast(0L);
-            Events.assertField(event, "size").atLeast(0L);
-            Events.assertField(event, "peak").atLeast(0L);
-            Events.assertField(event, "added").atLeast(0L);
-            Events.assertField(event, "removed").atLeast(0L);
-            Events.assertField(event, "totalAdded").atLeast(0L);
-            Events.assertField(event, "totalRemoved").atLeast(0L);
-            Events.assertField(event, "compilerThreadCount").atLeast(0);
+            List<RecordedEvent> events = Events.fromRecording(recording);
+            Events.hasEvents(events);
+            for (RecordedEvent event : events) {
+                System.out.println("Event:" + event);
+                Events.assertField(event, "compiler").notEmpty();
+                Events.assertField(event, "ingress").atLeast(0L);
+                Events.assertField(event, "egress").atLeast(0L);
+                Events.assertField(event, "size").atLeast(0L);
+                Events.assertField(event, "peak").atLeast(0L);
+                Events.assertField(event, "added").atLeast(0L);
+                Events.assertField(event, "removed").atLeast(0L);
+                Events.assertField(event, "totalAdded").atLeast(0L);
+                Events.assertField(event, "totalRemoved").atLeast(0L);
+                Events.assertField(event, "compilerThreadCount").atLeast(0);
+            }
         }
     }
 }
