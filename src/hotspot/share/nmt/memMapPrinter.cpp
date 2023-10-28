@@ -48,7 +48,7 @@
 
 // Short, clear, descriptive names for all possible markers. Note that we only expect to see
 // those that have been used with mmap. Flags left out are printed with their nmt flag name.
-#define NMTFLAGS_DO(f) \
+#define NMT_FLAGS_DO(f) \
   /* flag, short, description */ \
   f(mtGCCardSet,      "CARDTBL", "GC Card table") \
   f(mtClassShared,    "CDS", "CDS archives") \
@@ -66,7 +66,7 @@
 
 static const char* get_shortname_for_nmt_flag(MEMFLAGS f) {
 #define DO(flag, shortname, text) if (flag == f) return shortname;
-  NMTFLAGS_DO(DO)
+  NMT_FLAGS_DO(DO)
 #undef DO
   return NMTUtil::flag_to_enum_name(f);
 }
@@ -208,7 +208,7 @@ static void print_thread_details_for_supposed_stack_address(const void* from, co
 
 static void print_legend(outputStream* st) {
 #define DO(flag, shortname, text) st->print_cr("%10s    %s", shortname, text);
-  NMTFLAGS_DO(DO)
+  NMT_FLAGS_DO(DO)
 #undef DO
 }
 
