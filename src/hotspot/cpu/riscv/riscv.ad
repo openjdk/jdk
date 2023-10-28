@@ -2478,12 +2478,28 @@ encode %{
     __ corrected_idivl(dst_reg, src1_reg, src2_reg, /* want_remainder */ true, /* is_signed */ true);
   %}
 
+  enc_class riscv_enc_moduw(iRegI dst, iRegI src1, iRegI src2) %{
+    C2_MacroAssembler _masm(&cbuf);
+    Register dst_reg = as_Register($dst$$reg);
+    Register src1_reg = as_Register($src1$$reg);
+    Register src2_reg = as_Register($src2$$reg);
+    __ corrected_idivl(dst_reg, src1_reg, src2_reg, /* want_remainder */ true, /* is_signed */ false);
+  %}
+
   enc_class riscv_enc_mod(iRegI dst, iRegI src1, iRegI src2) %{
     C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
     __ corrected_idivq(dst_reg, src1_reg, src2_reg, /* want_remainder */ true, /* is_signed */ true);
+  %}
+
+  enc_class riscv_enc_modu(iRegI dst, iRegI src1, iRegI src2) %{
+    C2_MacroAssembler _masm(&cbuf);
+    Register dst_reg = as_Register($dst$$reg);
+    Register src1_reg = as_Register($src1$$reg);
+    Register src2_reg = as_Register($src2$$reg);
+    __ corrected_idivq(dst_reg, src1_reg, src2_reg, /* want_remainder */ true, /* is_signed */ false);
   %}
 
   enc_class riscv_enc_tail_call(iRegP jump_target) %{
@@ -6752,6 +6768,15 @@ instruct modI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   ins_pipe(ialu_reg_reg);
 %}
 
+instruct UmodI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
+  match(Set dst (UModI src1 src2));
+  ins_cost(IDIVSI_COST);
+  format %{ "remuw  $dst, $src1, $src2\t#@UmodI" %}
+
+  ins_encode(riscv_enc_moduw(dst, src1, src2));
+  ins_pipe(ialu_reg_reg);
+%}
+
 // Long Remainder
 
 instruct modL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
@@ -6760,6 +6785,15 @@ instruct modL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
   format %{ "rem  $dst, $src1, $src2\t#@modL" %}
 
   ins_encode(riscv_enc_mod(dst, src1, src2));
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct UmodL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
+  match(Set dst (UModL src1 src2));
+  ins_cost(IDIVDI_COST);
+  format %{ "remu  $dst, $src1, $src2\t#@UmodL" %}
+
+  ins_encode(riscv_enc_modu(dst, src1, src2));
   ins_pipe(ialu_reg_reg);
 %}
 
