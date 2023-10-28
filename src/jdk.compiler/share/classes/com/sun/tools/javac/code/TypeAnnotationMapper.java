@@ -86,7 +86,9 @@ public final class TypeAnnotationMapper {
             }
             t.interfaces_field = interfaces.toList();
             t.supertype_field = addTypeAnnotations(t.supertype_field, classExtends(65535));
-            t.typarams_field = rewriteTypeParameters(t.typarams_field, CLASS_TYPE_PARAMETER_BOUND);
+            if (t.typarams_field != null) {
+                t.typarams_field = rewriteTypeParameters(t.typarams_field, CLASS_TYPE_PARAMETER_BOUND);
+            }
             return null;
         }
 
@@ -200,7 +202,6 @@ public final class TypeAnnotationMapper {
             // Search the structure of the type to find the contained types at each type path
             Map<Type, List<TypeCompound>> attributesByType = new HashMap<>();
             new TypeAnnotationLocator(attributesByPath, attributesByType).visit(type, List.nil());
-            Assert.check(attributesByPath.isEmpty(), "Failed to locate types for all type paths");
 
             // Rewrite the type and add the annotations
             type = new TypeAnnotationTypeMapping(attributesByType).visit(type, null);
@@ -309,7 +310,17 @@ public final class TypeAnnotationMapper {
             // it's contained types have been rewritten.
             List<TypeCompound> attributes = attributesByType.remove(t);
             Type mapped = f.apply(t, null);
-            return attributes != null ? mapped.annotatedType(attributes) : mapped;
+            if (attributes == null) {
+                return mapped;
+            }
+            // Runtime-visible and -invisible annotations are completed separately, so if the same type has annotations
+            // from both it will get annotated twice.
+            TypeMetadata.Annotations existing = mapped.getMetadata(TypeMetadata.Annotations.class);
+            if (existing != null) {
+                existing.annotationBuffer().addAll(attributes);
+                return mapped;
+            }
+            return mapped.addMetadata(new TypeMetadata.Annotations(attributes));
         }
 
         @Override
