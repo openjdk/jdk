@@ -41,12 +41,9 @@ public:
   const void* from() const { return _from; }
   const void* to() const { return _to; }
   // Will be called for each mapping before VM annotations are printed.
-  // Platforms should print any details that should appear between the mapping addresses
-  //  and the VM annotations.
-  virtual void print_OS_specific_details_heading(outputStream* st) const {}
-  // Will be called for each mapping before VM annotations are printed.
-  // Platforms should print any details that should appear at the end of the line.
-  virtual void print_OS_specific_details_trailing(outputStream* st) const {}
+  virtual void print_OS_specific_details(outputStream* st) const {}
+  // If mapping is backed by a file, the name of that file
+  virtual const char* filename() const { return nullptr; }
 };
 
 class MappingPrintClosure {

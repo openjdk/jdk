@@ -54,12 +54,11 @@ public:
   LinuxMappingPrintInformation(const void* from, const void* to, const ProcMapsInfo* info) :
     MappingPrintInformation(from, to), _info(*info) {}
 
-  void print_OS_specific_details_heading(outputStream* st) const override {
+  void print_OS_specific_details(outputStream* st) const override {
     st->print("%s %s ", _info.prot, _info.offset);
   }
-  void print_OS_specific_details_trailing(outputStream* st) const override {
-    st->print_raw(_info.filename);
-  }
+
+  const char* filename() const override { return _info.filename; }
 };
 
 void MemMapPrinter::pd_print_header(outputStream* st) {
@@ -72,7 +71,7 @@ void MemMapPrinter::pd_print_header(outputStream* st) {
       "from         to         "
 #endif
   );
-  st->print_cr("size          prot offset  VM info");
+  st->print_cr("size          prot offset  What");
 }
 
 void MemMapPrinter::pd_iterate_all_mappings(MappingPrintClosure& closure) {

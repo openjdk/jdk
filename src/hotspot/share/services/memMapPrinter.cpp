@@ -46,7 +46,7 @@
 /// NMT mechanics
 
 // Short, clear, descriptive names for all possible markers. Note that we only expect to see
-// those that have been used with mmap. Others I leave at nullptr.
+// those that have been used with mmap. Flags left out are printed with their nmt flag name.
 #define NMTFLAGS_DO(f) \
   /* flag, short, description */ \
   f(mtGCCardSet,      "CARDTBL", "GC Card table") \
@@ -59,7 +59,8 @@
   f(mtOther,          "JDK", "allocated by JDK libraries other than VM") \
   f(mtMetaspace,      "META", "Metaspace nodes (non-class)") \
   f(mtSafepoint,      "POLL", "Polling pages") \
-  f(mtThreadStack,    "STACK", "(known) Thread Stack")
+  f(mtThreadStack,    "STACK", "(known) Thread Stack") \
+  f(mtTest,           "TEST", "JVM internal test mappings")
   //end
 
 static const char* get_shortname_for_nmt_flag(MEMFLAGS f) {
@@ -192,7 +193,7 @@ struct GCThreadClosure : public ThreadClosure {
     if (_tid == 0 && t != nullptr && vma_touches_thread_stack(_from, _to, t)) {
       _found = true;
       _tid = t->osthread()->thread_id();
-      // lemme stooop! No way to signal stop.
+      // lemme stooop! No way to signal stop :(
     }
   }
 };
@@ -262,7 +263,7 @@ void MappingPrintClosure::do_it(const MappingPrintInformation* info) {
 
   assert(info->from() <= info->to(), "Invalid VMA");
   _out->fill_to(53);
-  info->print_OS_specific_details_heading(_out);
+  info->print_OS_specific_details(_out);
   _out->fill_to(70);
 
   // print NMT information, if available
@@ -284,8 +285,10 @@ void MappingPrintClosure::do_it(const MappingPrintInformation* info) {
   }
 
   // print file name, if available
-  _out->fill_to(100);
-  info->print_OS_specific_details_trailing(_out);
+  const char* f = info->filename();
+  if (f != nullptr) {
+    _out->print_raw(f);
+  }
   _out->cr();
 }
 
