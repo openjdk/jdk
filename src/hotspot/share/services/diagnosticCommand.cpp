@@ -1173,11 +1173,6 @@ void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
       output()->print_cr("Note: NMT is disabled. Memory map will be printed without VM annotations.");
     }
     MemMapPrinter::print_all_mappings(&fs, _human_readable.value());
-#ifndef _WIN32
-    char buf[4096];
-    const char* absname = os::Posix::realpath(name, buf,  sizeof(buf));
-    name = absname != nullptr ? absname : name;
-#endif
     output()->print_cr("Memory map dumped to \"%s\".", name);
   } else {
     output()->print_cr("Failed to open \"%s\" for writing.", name);
