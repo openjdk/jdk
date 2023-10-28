@@ -143,7 +143,7 @@ A brief description of the tiered test groups:
   every day. Because of the widespread use, the tests in `tier1` are
   carefully selected and optimized to run fast, and to run in the most stable
   manner.
-  As a guideline, individual tests in `tier1` should complete in less than ten seconds
+  As a guideline, nearly all individual tests in `tier1` should complete in less than ten seconds
   when run on common configurations used for development. Long-running tests,
   even of core functionality, should occur in higher tiers or be covered in
   other kinds of testing.
