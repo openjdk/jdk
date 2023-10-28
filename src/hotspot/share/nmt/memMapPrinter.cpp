@@ -198,7 +198,9 @@ static void print_thread_details_for_supposed_stack_address(const void* from, co
   if (Universe::heap() != nullptr) {
     GCThreadClosure cl(from, to);
     Universe::heap()->gc_threads_do(&cl);
-    print_thread_details(cl._tid, "GC Thread", st);
+    if (cl._found) {
+      print_thread_details(cl._tid, "GC Thread", st);
+    }
   }
 }
 
