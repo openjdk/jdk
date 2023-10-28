@@ -110,9 +110,8 @@ class CachedNMTInformation : public VirtualMemoryWalker {
   Range* _ranges;
   MEMFLAGS* _flags;
   uintx _count, _capacity;
-  bool _ordered;
 public:
-  CachedNMTInformation() : _ranges(nullptr), _flags(nullptr), _count(0), _capacity(0), _ordered(true) {}
+  CachedNMTInformation() : _ranges(nullptr), _flags(nullptr), _count(0), _capacity(0) {}
 
   ~CachedNMTInformation() {
     ALLOW_C_FUNCTION(free, ::free(_ranges);)
@@ -120,7 +119,12 @@ public:
   }
 
   bool add(const void* from, const void* to, MEMFLAGS f) {
-    const void* highest_from = nullptr;
+    assert(_count == 0 || (from >= _ranges[_count - 1].to), "NMT regions unordered?");
+    // we can just fold two regions if they are adjacent and have the same flag.
+    if (_count > 0 && from == _ranges[_count - 1].to && f == _flags[_count - 1]) {
+      _ranges[_count - 1].to = to;
+      return true;
+    }
     if (_count == _capacity) {
       // Enlarge if needed
       const uintx new_capacity = MAX2((uintx)4096, 2 * _capacity);
@@ -136,12 +140,6 @@ public:
     _ranges[_count].from = from;
     _ranges[_count].to = to;
     _flags[_count] = f;
-    // Keep track of whether the regions are ordered.
-    if (_ordered && from < highest_from) {
-      _ordered = false;
-    } else {
-      highest_from = from;
-    }
     _count++;
     return true;
   }
@@ -153,7 +151,7 @@ public:
     for(uintx i = 0; i < _count; i++) {
       if (range_intersects(from, to, _ranges[i].from, _ranges[i].to)) {
         bm.set_flag(_flags[i]);
-      } else if (_ordered && from < _ranges[i].to) {
+      } else if (from < _ranges[i].to) {
         break;
       }
     }
