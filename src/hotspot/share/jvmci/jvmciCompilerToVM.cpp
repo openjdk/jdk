@@ -944,6 +944,17 @@ C2V_VMENTRY_NULL(jobject, resolveFieldInPool, (JNIEnv* env, jobject, ARGUMENT_PA
   Bytecodes::Code code = (Bytecodes::Code)(((int) opcode) & 0xFF);
   fieldDescriptor fd;
   methodHandle mh(THREAD, UNPACK_PAIR(Method, method));
+
+  Bytecodes::Code bc = (Bytecodes::Code) (((int) opcode) & 0xFF);
+  int holder_index = cp->klass_ref_index_at(index, bc);
+  if (!cp->tag_at(holder_index).is_klass() && !THREAD->can_call_java()) {
+    // If the holder is not resolved in the constant pool and the current
+    // thread cannot call Java, return null. This avoids a Java call
+    // in LinkInfo to load the holder.
+    Symbol* klass_name = cp->klass_ref_at_noresolve(index, bc);
+    return nullptr;
+  }
+
   LinkInfo link_info(cp, index, mh, code, CHECK_NULL);
   LinkResolver::resolve_field(fd, link_info, Bytecodes::java_code(code), false, CHECK_NULL);
   JVMCIPrimitiveArray info = JVMCIENV->wrap(info_handle);
