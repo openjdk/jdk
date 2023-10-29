@@ -1820,57 +1820,6 @@ Klass* JVMCIRuntime::get_klass_by_index(const constantPoolHandle& cpool,
 }
 
 // ------------------------------------------------------------------
-// Implementation of get_field_by_index.
-//
-// Implementation note: the results of field lookups are cached
-// in the accessor klass.
-void JVMCIRuntime::get_field_by_index_impl(InstanceKlass* klass, fieldDescriptor& field_desc,
-                                        int index, Bytecodes::Code bc) {
-  JVMCI_EXCEPTION_CONTEXT;
-
-  assert(klass->is_linked(), "must be linked before using its constant-pool");
-
-  constantPoolHandle cpool(thread, klass->constants());
-
-  // Get the field's name, signature, and type.
-  Symbol* name  = cpool->name_ref_at(index, bc);
-
-  int nt_index = cpool->name_and_type_ref_index_at(index, bc);
-  int sig_index = cpool->signature_ref_index_at(nt_index);
-  Symbol* signature = cpool->symbol_at(sig_index);
-
-  // Get the field's declared holder.
-  int holder_index = cpool->klass_ref_index_at(index, bc);
-  bool holder_is_accessible;
-  Klass* declared_holder = get_klass_by_index(cpool, holder_index,
-                                               holder_is_accessible,
-                                               klass);
-
-  // The declared holder of this field may not have been loaded.
-  // Bail out with partial field information.
-  if (!holder_is_accessible) {
-    return;
-  }
-
-
-  // Perform the field lookup.
-  Klass*  canonical_holder =
-    InstanceKlass::cast(declared_holder)->find_field(name, signature, &field_desc);
-  if (canonical_holder == nullptr) {
-    return;
-  }
-
-  assert(canonical_holder == field_desc.field_holder(), "just checking");
-}
-
-// ------------------------------------------------------------------
-// Get a field by index from a klass's constant pool.
-void JVMCIRuntime::get_field_by_index(InstanceKlass* accessor, fieldDescriptor& fd, int index, Bytecodes::Code bc) {
-  ResourceMark rm;
-  return get_field_by_index_impl(accessor, fd, index, bc);
-}
-
-// ------------------------------------------------------------------
 // Perform an appropriate method lookup based on accessor, holder,
 // name, signature, and bytecode.
 Method* JVMCIRuntime::lookup_method(InstanceKlass* accessor,
