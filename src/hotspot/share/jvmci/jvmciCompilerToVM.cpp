@@ -3034,6 +3034,7 @@ C2V_VMENTRY_0(jboolean, addFailedSpeculation, (JNIEnv* env, jobject, jlong faile
 C2V_END
 
 C2V_VMENTRY(void, callSystemExit, (JNIEnv* env, jobject, jint status))
+  CompilerThreadCanCallJava canCallJava(thread, true);
   JavaValue result(T_VOID);
   JavaCallArguments jargs(1);
   jargs.push_int(status);
