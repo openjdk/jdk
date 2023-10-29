@@ -50,6 +50,10 @@ public class PrimitivePatterns {
         assertEquals(1,  exhaustive4());
         assertEquals(2,  exhaustive5());
         assertEquals(1,  exhaustive6());
+        assertEquals(1,  exhaustive7(true));
+        assertEquals(1,  exhaustive8(true));
+        assertEquals(1,  exhaustive9(true));
+        assertEquals(1,  exhaustive9(false));
         assertEquals(1,  exhaustiveWithRecords1());
         assertEquals(1,  exhaustiveWithRecords2());
         assertEquals(1,  exhaustiveWithRecords4());
@@ -97,6 +101,14 @@ public class PrimitivePatterns {
         assertEquals(2, switchInt(42));
         assertEquals(1, switchChar( '\u0010'));
         assertEquals(2, switchChar('a'));
+        assertEquals(1, testIntInNonEnhancedSwitchStatement(1));
+        assertEquals(0, testIntInNonEnhancedSwitchStatement(0));
+        assertEquals(1, testFloatInEnhancedSwitchStatement(1.0f));
+        assertEquals(0, testFloatInEnhancedSwitchStatement(0.0f));
+        assertEquals(1, testDoubleInEnhancedSwitchStatement(1.0d));
+        assertEquals(0, testDoubleInEnhancedSwitchStatement(0.0d));
+        assertEquals(1, testLongInEnhancedSwitchStatement(1l));
+        assertEquals(0, testLongInEnhancedSwitchStatement(0l));
     }
 
     public static int primitivePattern() {
@@ -228,27 +240,27 @@ public class PrimitivePatterns {
     }
 
     // todo run tests
-    int exhaustive7(Boolean b) {
+    public static int exhaustive7(Boolean b) {
         switch (b) {
             case true: return 1;
             case false: return 2;  // with reminder, null, OK
         }
     }
 
-    int exhaustive7s(Boolean b) {
+    public static int exhaustive7s(Boolean b) {
         return switch (b) {
             case true -> 1;
             case false -> 2;      // with reminder, null, OK
         };
     }
 
-    int exhaustive8(Boolean b) {
+    public static int exhaustive8(Boolean b) {
         switch (b) {
             case boolean bb: return 1;
         }
     }
 
-    int exhaustive9(boolean b) {
+    public static int exhaustive9(boolean b) {
         switch (b) {
             case Boolean bb: return 1;
         }
@@ -483,6 +495,64 @@ public class PrimitivePatterns {
             case '\u0010' -> 1;
             case char cc -> 2;
         };
+    }
+
+    public static int testIntInNonEnhancedSwitchStatement(int v1) {
+        int i = 0;
+        switch (v1) {
+            case 1:
+                i = 1;
+                break;
+        }
+        return i;
+    }
+
+    public static int testFloatInEnhancedSwitchStatement(float v1) {
+        int i = 0;
+        switch (v1) {
+            case 1.0f:
+                i = 1;
+                break;
+            default:
+                i = 0;
+        }
+        return i;
+    }
+
+    public static int testDoubleInEnhancedSwitchStatement(double v1) {
+        int i = 0;
+        switch (v1) {
+            case 1d:
+                i = 1;
+                break;
+            default:
+                i = 0;
+        }
+        return i;
+    }
+
+    public static int testLongInEnhancedSwitchStatement(long v1) {
+        int i = 0;
+        switch (v1) {
+            case 1l:
+                i = 1;
+                break;
+            default:
+                i = 0;
+        }
+        return i;
+    }
+
+    public static int testBooleanInEnhancedSwitchStatement(boolean v1) {
+        int i = 0;
+        switch (v1) {
+            case true:
+                i = 1;
+                break;
+            default:
+                i = 0;
+        }
+        return i;
     }
 
     record R_Integer(Integer x) {}
