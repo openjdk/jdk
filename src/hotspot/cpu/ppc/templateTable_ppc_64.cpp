@@ -4159,14 +4159,13 @@ void TemplateTable::athrow() {
 // at next monitor exit.
 void TemplateTable::monitorenter() {
   transition(atos, vtos);
-
   __ verify_oop(R17_tos);
 
-  Register Rcurrent_monitor  = R11_scratch1,
-           Rcurrent_obj      = R12_scratch2,
+  Register Rcurrent_monitor  = R3_ARG1,
+           Rcurrent_obj      = R4_ARG2,
            Robj_to_lock      = R17_tos,
-           Rscratch1         = R3_ARG1,
-           Rscratch2         = R4_ARG2,
+           Rscratch1         = R11_scratch1,
+           Rscratch2         = R12_scratch2,
            Rbot              = R5_ARG3,
            Rfree_slot        = R6_ARG4;
 
@@ -4181,7 +4180,7 @@ void TemplateTable::monitorenter() {
 
   // ------------------------------------------------------------------------------
   // Null pointer exception.
-  __ null_check_throw(Robj_to_lock, -1, R11_scratch1);
+  __ null_check_throw(Robj_to_lock, -1, Rscratch1);
 
   // Check if any slot is present => short cut to allocation if not.
   __ cmpld(CCR0, Rcurrent_monitor, Rbot);
@@ -4192,13 +4191,14 @@ void TemplateTable::monitorenter() {
   // Note: The order of the monitors is important for C2 OSR which derives the
   //       unlock order from it.
   {
-    Label Lloop, LnotFree;
+    Label Lloop, LnotFree, Lexit;
 
     __ bind(Lloop);
     __ ld(Rcurrent_obj, in_bytes(BasicObjectLock::obj_offset()), Rcurrent_monitor);
-    // Found object?
+    // Exit if current entry is for same object; this guarantees, that new monitor
+    // used for recursive lock is above the older one.
     __ cmpd(CCR0, Rcurrent_obj, Robj_to_lock);
-    __ beq(CCR0, Lfound); // recursive locking
+    __ beq(CCR0, Lexit); // recursive locking
 
     __ cmpdi(CCR0, Rcurrent_obj, 0);
     __ bne(CCR0, LnotFree);
@@ -4208,6 +4208,7 @@ void TemplateTable::monitorenter() {
     __ addi(Rcurrent_monitor, Rcurrent_monitor, frame::interpreter_frame_monitor_size_in_bytes());
     __ cmpld(CCR0, Rcurrent_monitor, Rbot);
     __ bne(CCR0, Lloop);
+    __ bind(Lexit);
   }
 
   // ------------------------------------------------------------------------------
@@ -4246,11 +4247,11 @@ void TemplateTable::monitorexit() {
   transition(atos, vtos);
   __ verify_oop(R17_tos);
 
-  Register Rcurrent_monitor  = R11_scratch1,
-           Rcurrent_obj      = R12_scratch2,
+  Register Rcurrent_monitor  = R3_ARG1,
+           Rcurrent_obj      = R4_ARG2,
            Robj_to_lock      = R17_tos,
-           Rscratch          = R3_ARG1,
-           Rbot              = R4_ARG2;
+           Rscratch          = R11_scratch1,
+           Rbot              = R12_scratch2;
 
   Label Lfound, Lillegal_monitor_state;
 
@@ -4261,7 +4262,7 @@ void TemplateTable::monitorexit() {
   __ addi(Rbot, Rscratch, -frame::ijava_state_size);
 
   // Null pointer check.
-  __ null_check_throw(Robj_to_lock, -1, R11_scratch1);
+  __ null_check_throw(Robj_to_lock, -1, Rscratch);
 
   // Check corner case: unbalanced monitorEnter / Exit.
   __ cmpld(CCR0, Rcurrent_monitor, Rbot);
