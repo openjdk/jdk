@@ -21,10 +21,11 @@
  * questions.
  */
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -39,18 +40,20 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 
 /**
  * @test
  * @bug 8255380 8257445
  * @summary Test that Zip FS can access the LOC offset from the Zip64 extra field
  * @modules jdk.zipfs
- * @run testng TestLocOffsetFromZip64EF
+ * @run junit TestLocOffsetFromZip64EF
  */
 public class TestLocOffsetFromZip64EF {
 
@@ -79,7 +82,7 @@ public class TestLocOffsetFromZip64EF {
      *
      * @throws IOException if an error occurs
      */
-    @BeforeClass
+    @BeforeEach
     public void setUp() throws IOException {
         cleanup();
         createZipWithZip64Ext();
@@ -89,23 +92,22 @@ public class TestLocOffsetFromZip64EF {
      * Delete files used by this test
      * @throws IOException if an error occurs
      */
-    @AfterClass
+    @AfterEach
     public void cleanup() throws IOException {
         Files.deleteIfExists(Path.of(ZIP_FILE_NAME));
     }
 
     /*
-     * DataProvider used to verify that a Zip file that contains a Zip64 Extra
+     * MethodSource used to verify that a Zip file that contains a Zip64 Extra
      * (EXT) header can be traversed
      */
-    @DataProvider(name = "zipInfoTimeMap")
-    protected Object[][] zipInfoTimeMap() {
-        return new Object[][]{
-                {Map.of()},
-                {Map.of("zipinfo-time", "False")},
-                {Map.of("zipinfo-time", "true")},
-                {Map.of("zipinfo-time", "false")}
-        };
+    static Stream<Map<String, String>> zipInfoTimeMap() {
+        return Stream.of(
+                Map.of(),
+                Map.of("zipinfo-time", "False"),
+                Map.of("zipinfo-time", "true"),
+                Map.of("zipinfo-time", "false")
+        );
     }
 
     /**
@@ -113,7 +115,8 @@ public class TestLocOffsetFromZip64EF {
      * @param env Zip FS properties to use when accessing the Zip file
      * @throws IOException if an error occurs
      */
-    @Test(dataProvider = "zipInfoTimeMap")
+    @ParameterizedTest
+    @MethodSource("zipInfoTimeMap")
     public void walkZipFSTest(final Map<String, String> env) throws IOException {
         Set<String> entries = new HashSet<>();
 
@@ -133,7 +136,7 @@ public class TestLocOffsetFromZip64EF {
             }
         }
         // Sanity check that ZIP file had the expected entries
-        assertEquals(entries, Set.of("entry", "entry2", "entry3"));
+        assertEquals(Set.of("entry", "entry2", "entry3"), entries);
     }
 
     /**
