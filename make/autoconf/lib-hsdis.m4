@@ -200,13 +200,13 @@ AC_DEFUN([LIB_BUILD_BINUTILS],
       AC_MSG_ERROR([Cannot continue])
     fi
     AC_MSG_NOTICE([Running binutils make])
-    $MAKE all-opcodes all-libiberty
+    $MAKE -j$JOBS all-opcodes all-libiberty
     if test $? -ne 0; then
       AC_MSG_NOTICE([Automatic building of binutils failed on make. Try building it manually])
       AC_MSG_ERROR([Cannot continue])
     fi
     AC_MSG_NOTICE([Running binutils make install])
-    $MAKE install-opcodes install-libiberty
+    $MAKE -j$JOBS install-opcodes install-libiberty
     if test $? -ne 0; then
       AC_MSG_NOTICE([Automatic building, install step, of binutils failed on make. Try building it manually])
       AC_MSG_ERROR([Cannot continue])
