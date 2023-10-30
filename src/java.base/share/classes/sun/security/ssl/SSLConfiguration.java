@@ -137,56 +137,49 @@ final class SSLConfiguration implements Cloneable {
 
     static {
         boolean globalPropSet = false;
-        boolean clientPropSet = false;
-        boolean serverPropSet = false;
 
         // jdk.tls.maxCertificateChainLength property has no default
-        Integer certLen = GetIntegerAction.privilegedGetProperty(
+        Integer maxCertificateChainLength = GetIntegerAction.privilegedGetProperty(
                 "jdk.tls.maxCertificateChainLength");
-        if (certLen == null || certLen < 0) {
-            certLen = 0;
-        } else {
+        if (maxCertificateChainLength != null && maxCertificateChainLength >= 0) {
             globalPropSet = true;
-        }
-        int maxCertificateChainLength = certLen;
-
-        // Default for jdk.tls.server.maxInboundCertificateChainLength is 8
-        Integer inboundClientLen = GetIntegerAction.privilegedGetProperty(
-                "jdk.tls.server.maxInboundCertificateChainLength");
-        if (inboundClientLen == null || inboundClientLen < 0) {
-            inboundClientLen = 8;
-        } else {
-            serverPropSet = true;
-        }
-
-        // Default for jdk.tls.client.maxInboundCertificateChainLength is 10
-        Integer inboundServerLen = GetIntegerAction.privilegedGetProperty(
-                "jdk.tls.client.maxInboundCertificateChainLength");
-        if (inboundServerLen == null || inboundServerLen < 0) {
-            inboundServerLen = 10;
-        } else {
-            clientPropSet = true;
         }
 
         /*
-         * When jdk.tls.maxCertificateChainLength is set, it will override
-         * the defaults for jdk.tls.server.maxInboundCertificateChainLength and
-         * jdk.tls.client.maxInboundCertificateChainLength if they are not explicitly
-         * set. That means if either of those properties have been set,
-         * the jdk.tls.maxCertificateChainLength property will not override
-         * the values.
+         * If either jdk.tls.server.maxInboundCertificateChainLength or
+         * jdk.tls.client.maxInboundCertificateChainLength is set, it will
+         * override jdk.tls.maxCertificateChainLength, regardless of whether
+         * jdk.tls.maxCertificateChainLength is set or not.
+         * If neither jdk.tls.server.maxInboundCertificateChainLength nor
+         * jdk.tls.client.maxInboundCertificateChainLength is set, the behavior
+         * depends on the setting of jdk.tls.maxCertificateChainLength. If
+         * jdk.tls.maxCertificateChainLength is set, it falls back to that
+         * value; otherwise, it defaults to 8 for
+         * jdk.tls.server.maxInboundCertificateChainLength
+         * and 10 for jdk.tls.client.maxInboundCertificateChainLength.
+         * Usesrs can independently set either
+         * jdk.tls.server.maxInboundCertificateChainLength or
+         * jdk.tls.client.maxInboundCertificateChainLength.
          */
-        if (globalPropSet) {
-            if (!serverPropSet) {
-                inboundClientLen = maxCertificateChainLength;
-            }
-            if (!clientPropSet) {
-                inboundServerLen = maxCertificateChainLength;
-            }
+        Integer inboundClientLen = GetIntegerAction.privilegedGetProperty(
+                "jdk.tls.server.maxInboundCertificateChainLength");
+
+        // Default for jdk.tls.server.maxInboundCertificateChainLength is 8
+        if (inboundClientLen == null || inboundClientLen < 0) {
+            maxInboundClientCertChainLen = globalPropSet ? maxCertificateChainLength : 8;
+        } else {
+            maxInboundClientCertChainLen = inboundClientLen;
         }
 
-        maxInboundClientCertChainLen = inboundClientLen;
-        maxInboundServerCertChainLen = inboundServerLen;
+        Integer inboundServerLen = GetIntegerAction.privilegedGetProperty(
+                "jdk.tls.client.maxInboundCertificateChainLength");
+
+        // Default for jdk.tls.client.maxInboundCertificateChainLength is 10
+        if (inboundServerLen == null || inboundServerLen < 0) {
+            maxInboundServerCertChainLen = globalPropSet ? maxCertificateChainLength : 10;
+        } else {
+            maxInboundServerCertChainLen = inboundServerLen;
+        }
     }
 
     SSLConfiguration(SSLContextImpl sslContext, boolean isClientMode) {
