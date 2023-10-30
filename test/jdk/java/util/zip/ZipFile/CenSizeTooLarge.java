@@ -185,7 +185,7 @@ public class CenSizeTooLarge {
      */
     private static class SparseOutputStream extends FilterOutputStream {
         private final FileChannel channel;
-        private boolean afterLastCEN = false;
+        private boolean sparse = true; // True until the last CEN is written
         private long position = 0;
 
         public SparseOutputStream(FileOutputStream fos) {
@@ -196,26 +196,28 @@ public class CenSizeTooLarge {
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
             position += len;
-            if (afterLastCEN) {
-                out.write(b, off, len);
-            } else {
+            if (sparse) {
                 // Until finding the last CEN, we don't actually write anything,
                 // but instead simply advance the position, creating a sparse file
                 channel.position(position);
+                // Check for last CEN record
                 if (Arrays.equals(LAST_CEN_COMMENT_BYTES, 0, LAST_CEN_COMMENT_BYTES.length, b, off, len)) {
-                    // From here out, actual bytes will be written
-                    afterLastCEN = true;
+                    // From here on, write actual bytes
+                    sparse = false;
                 }
+            } else {
+                // Regular write
+                out.write(b, off, len);
             }
         }
 
         @Override
         public void write(int b) throws IOException {
             position++;
-            if (afterLastCEN) {
-                out.write(b);
-            } else {
+            if (sparse) {
                 channel.position(position);
+            } else {
+                out.write(b);
             }
         }
     }
