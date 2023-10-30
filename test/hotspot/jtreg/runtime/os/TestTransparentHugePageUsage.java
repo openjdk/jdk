@@ -58,7 +58,7 @@ public class TestTransparentHugePageUsage {
       cmdLine.add("-XX:ParallelGCThreads=" + args[0]);
     }
     cmdLine.add("runtime.os.TestTransparentHugePageUsage$CatSmaps");
-    ProcessBuilder builder = ProcessTools.createTestJvm(cmdLine);
+    ProcessBuilder builder = ProcessTools.createTestJavaProcessBuilder(cmdLine);
     checkUsage(new BufferedReader(new InputStreamReader(builder.start().getInputStream())));
   }
 
