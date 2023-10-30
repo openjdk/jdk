@@ -35,6 +35,11 @@
 #include "utilities/resizeableResourceHash.hpp"
 #include "utilities/macros.hpp"
 
+template <typename T>
+static inline void put_native(address p, T x) {
+    memcpy((void*)p, &x, sizeof x);
+}
+
 class PhaseCFG;
 class Compile;
 class BufferBlob;
@@ -99,36 +104,36 @@ class CodeSection {
   bool        _locs_own;        // did I allocate the locs myself?
   bool        _scratch_emit;    // Buffer is used for scratch emit, don't relocate.
   int         _skipped_instructions_size;
-  char        _index;           // my section number (SECT_INST, etc.)
+  int8_t      _index;           // my section number (SECT_INST, etc.)
   CodeBuffer* _outer;           // enclosing CodeBuffer
 
   // (Note:  _locs_point used to be called _last_reloc_offset.)
 
   CodeSection() {
-    _start         = NULL;
-    _mark          = NULL;
-    _end           = NULL;
-    _limit         = NULL;
-    _locs_start    = NULL;
-    _locs_end      = NULL;
-    _locs_limit    = NULL;
-    _locs_point    = NULL;
+    _start         = nullptr;
+    _mark          = nullptr;
+    _end           = nullptr;
+    _limit         = nullptr;
+    _locs_start    = nullptr;
+    _locs_end      = nullptr;
+    _locs_limit    = nullptr;
+    _locs_point    = nullptr;
     _locs_own      = false;
     _scratch_emit  = false;
     _skipped_instructions_size = 0;
-    debug_only(_index = (char)-1);
+    debug_only(_index = -1);
     debug_only(_outer = (CodeBuffer*)badAddress);
   }
 
-  void initialize_outer(CodeBuffer* outer, int index) {
+  void initialize_outer(CodeBuffer* outer, int8_t index) {
     _outer = outer;
     _index = index;
   }
 
   void initialize(address start, csize_t size = 0) {
-    assert(_start == NULL, "only one init step, please");
+    assert(_start == nullptr, "only one init step, please");
     _start         = start;
-    _mark          = NULL;
+    _mark          = nullptr;
     _end           = start;
 
     _limit         = start + size;
@@ -155,7 +160,7 @@ class CodeSection {
   address     end() const           { return _end; }
   address     limit() const         { return _limit; }
   csize_t     size() const          { return (csize_t)(_end - _start); }
-  csize_t     mark_off() const      { assert(_mark != NULL, "not an offset");
+  csize_t     mark_off() const      { assert(_mark != nullptr, "not an offset");
                                       return (csize_t)(_mark - _start); }
   csize_t     capacity() const      { return (csize_t)(_limit - _start); }
   csize_t     remaining() const     { return (csize_t)(_limit - _end); }
@@ -168,13 +173,14 @@ class CodeSection {
   csize_t     locs_point_off() const{ return (csize_t)(_locs_point - _start); }
   csize_t     locs_capacity() const { return (csize_t)(_locs_limit - _locs_start); }
 
-  int         index() const         { return _index; }
-  bool        is_allocated() const  { return _start != NULL; }
+  int8_t      index() const         { return _index; }
+  bool        is_allocated() const  { return _start != nullptr; }
   bool        is_empty() const      { return _start == _end; }
-  bool        has_locs() const      { return _locs_end != NULL; }
+  bool        has_locs() const      { return _locs_end != nullptr; }
 
   // Mark scratch buffer.
   void        set_scratch_emit()    { _scratch_emit = true; }
+  void        clear_scratch_emit()  { _scratch_emit = false; }
   bool        scratch_emit()        { return _scratch_emit; }
 
   CodeBuffer* outer() const         { return _outer; }
@@ -195,7 +201,7 @@ class CodeSection {
   void    set_mark(address pc)      { assert(contains2(pc), "not in codeBuffer");
                                       _mark = pc; }
   void    set_mark()                { _mark = _end; }
-  void    clear_mark()              { _mark = NULL; }
+  void    clear_mark()              { _mark = nullptr; }
 
   void    set_locs_end(relocInfo* p) {
     assert(p <= locs_limit(), "locs data fits in allocated buffer");
@@ -218,7 +224,10 @@ class CodeSection {
     set_end(curr);
   }
 
-  void emit_int16(uint16_t x) { *((uint16_t*) end()) = x; set_end(end() + sizeof(uint16_t)); }
+  template <typename T>
+  void emit_native(T x) { put_native(end(), x); set_end(end() + sizeof x); }
+
+  void emit_int16(uint16_t x) { emit_native(x); }
   void emit_int16(uint8_t x1, uint8_t x2) {
     address curr = end();
     *((uint8_t*)  curr++) = x1;
@@ -234,11 +243,7 @@ class CodeSection {
     set_end(curr);
   }
 
-  void emit_int32(uint32_t x) {
-    address curr = end();
-    *((uint32_t*) curr) = x;
-    set_end(curr + sizeof(uint32_t));
-  }
+  void emit_int32(uint32_t x) { emit_native(x); }
   void emit_int32(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4)  {
     address curr = end();
     *((uint8_t*)  curr++) = x1;
@@ -248,11 +253,10 @@ class CodeSection {
     set_end(curr);
   }
 
-  void emit_int64( uint64_t x)  { *((uint64_t*) end()) = x; set_end(end() + sizeof(uint64_t)); }
-
-  void emit_float( jfloat  x)  { *((jfloat*)  end()) = x; set_end(end() + sizeof(jfloat)); }
-  void emit_double(jdouble x)  { *((jdouble*) end()) = x; set_end(end() + sizeof(jdouble)); }
-  void emit_address(address x) { *((address*) end()) = x; set_end(end() + sizeof(address)); }
+  void emit_int64(uint64_t x)  { emit_native(x); }
+  void emit_float(jfloat  x)   { emit_native(x); }
+  void emit_double(jdouble x)  { emit_native(x); }
+  void emit_address(address x) { emit_native(x); }
 
   // Share a scratch buffer for relocinfo.  (Hacky; saves a resource allocation.)
   void initialize_shared_locs(relocInfo* buf, int length);
@@ -392,7 +396,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
  public:
   typedef int csize_t;  // code size type; would be size_t except for history
-  enum {
+  enum : int8_t {
     // Here is the list of all possible sections.  The order reflects
     // the final layout.
     SECT_FIRST = 0,
@@ -446,16 +450,16 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   void initialize_misc(const char * name) {
     // all pointers other than code_start/end and those inside the sections
-    assert(name != NULL, "must have a name");
+    assert(name != nullptr, "must have a name");
     _name            = name;
-    _before_expand   = NULL;
-    _blob            = NULL;
-    _oop_recorder    = NULL;
-    _overflow_arena  = NULL;
-    _last_insn       = NULL;
+    _before_expand   = nullptr;
+    _blob            = nullptr;
+    _oop_recorder    = nullptr;
+    _overflow_arena  = nullptr;
+    _last_insn       = nullptr;
     _finalize_stubs  = false;
-    _shared_stub_to_interp_requests = NULL;
-    _shared_trampoline_requests = NULL;
+    _shared_stub_to_interp_requests = nullptr;
+    _shared_trampoline_requests = nullptr;
 
     _consts.initialize_outer(this, SECT_CONSTS);
     _insts.initialize_outer(this,  SECT_INSTS);
@@ -466,7 +470,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _const_section_alignment = (int) sizeof(jdouble);
 
 #ifndef PRODUCT
-    _decode_begin    = NULL;
+    _decode_begin    = nullptr;
     // Collect block comments, but restrict collection to cases where a disassembly is output.
     _collect_comments = ( PrintAssembly
                        || PrintStubCode
@@ -521,7 +525,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   CodeBuffer(address code_start, csize_t code_size)
     DEBUG_ONLY(: Scrubber(this, sizeof(*this)))
   {
-    assert(code_start != NULL, "sanity");
+    assert(code_start != nullptr, "sanity");
     initialize_misc("static buffer");
     initialize(code_start, code_size);
     debug_only(verify_section_allocation();)
@@ -563,7 +567,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   const CodeSection* insts() const { return &_insts; }
 
-  // present sections in order; return NULL at end; consts is #0, etc.
+  // present sections in order; return null at end; consts is #0, etc.
   CodeSection* code_section(int n) {
     // This makes the slightly questionable but portable assumption
     // that the various members (_consts, _insts, _stubs, etc.) are
@@ -588,7 +592,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   static int locator(int pos, int sect) { return (pos << sect_bits) | sect; }
   int        locator(address addr) const;
   address    locator_address(int locator) const {
-    if (locator < 0)  return NULL;
+    if (locator < 0)  return nullptr;
     address start = code_section(locator_sect(locator))->start();
     return start + locator_pos(locator);
   }
@@ -652,13 +656,13 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // allocated size of any and all recorded oops
   csize_t total_oop_size() const {
     OopRecorder* recorder = oop_recorder();
-    return (recorder == NULL)? 0: recorder->oop_size();
+    return (recorder == nullptr)? 0: recorder->oop_size();
   }
 
   // allocated size of any and all recorded metadata
   csize_t total_metadata_size() const {
     OopRecorder* recorder = oop_recorder();
-    return (recorder == NULL)? 0: recorder->metadata_size();
+    return (recorder == nullptr)? 0: recorder->metadata_size();
   }
 
   // Configuration functions, called immediately after the CB is constructed.
@@ -673,7 +677,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   address last_insn() const { return _last_insn; }
   void set_last_insn(address a) { _last_insn = a; }
-  void clear_last_insn() { set_last_insn(NULL); }
+  void clear_last_insn() { set_last_insn(nullptr); }
 
 #ifndef PRODUCT
   AsmRemarks &asm_remarks() { return _asm_remarks; }
@@ -698,7 +702,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   // NMethod generation
   void copy_code_and_locs_to(CodeBlob* blob) {
-    assert(blob != NULL, "sane");
+    assert(blob != nullptr, "sane");
     copy_relocations_to(blob);
     copy_code_to(blob);
   }
@@ -709,7 +713,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   }
 
   void block_comment(ptrdiff_t offset, const char* comment) PRODUCT_RETURN;
-  const char* code_string(const char* str) PRODUCT_RETURN_(return NULL;);
+  const char* code_string(const char* str) PRODUCT_RETURN_(return nullptr;);
 
   // Log a little info about section usage in the CodeBuffer
   void log_section_sizes(const char* name);
@@ -749,7 +753,7 @@ class SharedStubToInterpRequest : public ResourceObj {
   CodeBuffer::csize_t _call_offset; // The offset of the call in CodeBuffer
 
  public:
-  SharedStubToInterpRequest(ciMethod* method = NULL, CodeBuffer::csize_t call_offset = -1) : _shared_method(method),
+  SharedStubToInterpRequest(ciMethod* method = nullptr, CodeBuffer::csize_t call_offset = -1) : _shared_method(method),
       _call_offset(call_offset) {}
 
   ciMethod* shared_method() const { return _shared_method; }

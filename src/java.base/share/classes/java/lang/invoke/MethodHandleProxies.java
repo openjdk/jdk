@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,44 @@
 
 package java.lang.invoke;
 
-import java.lang.reflect.*;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.module.ModuleDescriptor;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
-import sun.invoke.WrapperInstance;
-import java.util.ArrayList;
-
+import jdk.internal.classfile.ClassHierarchyResolver;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.CodeBuilder;
+import jdk.internal.classfile.TypeKind;
+import jdk.internal.module.Modules;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.util.ClassFileDumper;
 import sun.reflect.misc.ReflectUtil;
+
+import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandleStatics.*;
+import static java.lang.invoke.MethodType.methodType;
+import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
+import static jdk.internal.classfile.Classfile.*;
 
 /**
  * This class consists exclusively of static methods that help adapt
@@ -61,7 +86,8 @@ public class MethodHandleProxies {
      * even though it re-declares the {@code Object.equals} method and also
      * declares default methods, such as {@code Comparator.reverse}.
      * <p>
-     * The interface must be public and not {@linkplain Class#isSealed() sealed}.
+     * The interface must be public, not {@linkplain Class#isHidden() hidden},
+     * and not {@linkplain Class#isSealed() sealed}.
      * No additional access checks are performed.
      * <p>
      * The resulting instance of the required type will respond to
@@ -133,37 +159,20 @@ public class MethodHandleProxies {
      * @throws WrongMethodTypeException if the target cannot
      *         be converted to the type required by the requested interface
      */
-    // Other notes to implementors:
-    // <p>
-    // No stable mapping is promised between the single-method interface and
-    // the implementation class C.  Over time, several implementation
-    // classes might be used for the same type.
-    // <p>
-    // If the implementation is able
-    // to prove that a wrapper of the required type
-    // has already been created for a given
-    // method handle, or for another method handle with the
-    // same behavior, the implementation may return that wrapper in place of
-    // a new wrapper.
-    // <p>
-    // This method is designed to apply to common use cases
-    // where a single method handle must interoperate with
-    // an interface that implements a function-like
-    // API.  Additional variations, such as single-abstract-method classes with
-    // private constructors, or interfaces with multiple but related
-    // entry points, must be covered by hand-written or automatically
-    // generated adapter classes.
-    //
-    @SuppressWarnings({"removal",
-                       "doclint:reference"}) // cross-module links
+    @SuppressWarnings("doclint:reference") // cross-module links
     @CallerSensitive
     public static <T> T asInterfaceInstance(final Class<T> intfc, final MethodHandle target) {
         if (!intfc.isInterface() || !Modifier.isPublic(intfc.getModifiers()))
             throw newIllegalArgumentException("not a public interface", intfc.getName());
         if (intfc.isSealed())
             throw newIllegalArgumentException("a sealed interface", intfc.getName());
+        if (intfc.isHidden())
+            throw newIllegalArgumentException("a hidden interface", intfc.getName());
+        Objects.requireNonNull(target);
         final MethodHandle mh;
-        if (System.getSecurityManager() != null) {
+        @SuppressWarnings("removal")
+        var sm = System.getSecurityManager();
+        if (sm != null) {
             final Class<?> caller = Reflection.getCallerClass();
             final ClassLoader ccl = caller != null ? caller.getClassLoader() : null;
             ReflectUtil.checkProxyPackageAccess(ccl, intfc);
@@ -171,64 +180,298 @@ public class MethodHandleProxies {
         } else {
             mh = target;
         }
-        ClassLoader proxyLoader = intfc.getClassLoader();
-        if (proxyLoader == null) {
-            ClassLoader cl = Thread.currentThread().getContextClassLoader(); // avoid use of BCP
-            proxyLoader = cl != null ? cl : ClassLoader.getSystemClassLoader();
-        }
-        final Method[] methods = getSingleNameMethods(intfc);
-        if (methods == null)
-            throw newIllegalArgumentException("not a single-method interface", intfc.getName());
-        final MethodHandle[] vaTargets = new MethodHandle[methods.length];
-        for (int i = 0; i < methods.length; i++) {
-            Method sm = methods[i];
-            MethodType smMT = MethodType.methodType(sm.getReturnType(), sm.getParameterTypes());
-            MethodHandle checkTarget = mh.asType(smMT);  // make throw WMT
-            checkTarget = checkTarget.asType(checkTarget.type().changeReturnType(Object.class));
-            vaTargets[i] = checkTarget.asSpreader(Object[].class, smMT.parameterCount());
-        }
-        final InvocationHandler ih = new InvocationHandler() {
-                private Object getArg(String name) {
-                    if ((Object)name == "getWrapperInstanceTarget")  return target;
-                    if ((Object)name == "getWrapperInstanceType")    return intfc;
-                    throw new AssertionError();
-                }
-                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                    for (int i = 0; i < methods.length; i++) {
-                        if (method.equals(methods[i]))
-                            return vaTargets[i].invokeExact(args);
-                    }
-                    if (method.getDeclaringClass() == WrapperInstance.class)
-                        return getArg(method.getName());
-                    if (isObjectMethod(method))
-                        return callObjectMethod(proxy, method, args);
-                    if (isDefaultMethod(method)) {
-                        // no additional access check is performed
-                        return JLRA.invokeDefault(proxy, method, args, null);
-                    }
-                    throw newInternalError("bad proxy method: "+method);
-                }
-            };
 
-        final Object proxy;
-        if (System.getSecurityManager() != null) {
-            // sun.invoke.WrapperInstance is a restricted interface not accessible
-            // by any non-null class loader.
-            final ClassLoader loader = proxyLoader;
-            proxy = AccessController.doPrivileged(new PrivilegedAction<>() {
-                public Object run() {
-                    return Proxy.newProxyInstance(
-                            loader,
-                            new Class<?>[]{ intfc, WrapperInstance.class },
-                            ih);
-                }
-            });
-        } else {
-            proxy = Proxy.newProxyInstance(proxyLoader,
-                                           new Class<?>[]{ intfc, WrapperInstance.class },
-                                           ih);
+        // Define one hidden class for each interface.  Create an instance of
+        // the hidden class for a given target method handle which will be
+        // accessed via getfield.  Multiple instances may be created for a
+        // hidden class.  This approach allows the generated hidden classes
+        // more shareable.
+        //
+        // The implementation class is weakly referenced; a new class is
+        // defined if the last one has been garbage collected.
+        //
+        // An alternative approach is to define one hidden class with the
+        // target method handle as class data and the target method handle
+        // is loaded via ldc/condy.  If more than one target method handles
+        // are used, the extra classes will pollute the same type profiles.
+        // In addition, hidden classes without class data is more friendly
+        // for pre-generation (shifting the dynamic class generation from
+        // runtime to an earlier phrase).
+        Class<?> proxyClass = getProxyClass(intfc);  // throws IllegalArgumentException
+        Lookup lookup = new Lookup(proxyClass);
+        Object proxy;
+        try {
+            MethodHandle constructor = lookup.findConstructor(proxyClass,
+                                                              MT_void_Lookup_MethodHandle_MethodHandle)
+                                             .asType(MT_Object_Lookup_MethodHandle_MethodHandle);
+            proxy = constructor.invokeExact(lookup, target, mh);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
         }
+        assert proxy.getClass().getModule().isNamed() : proxy.getClass() + " " + proxy.getClass().getModule();
         return intfc.cast(proxy);
+    }
+
+    private record MethodInfo(MethodTypeDesc desc, List<ClassDesc> thrown, String fieldName) {}
+
+    private static final ClassFileDumper DUMPER = ClassFileDumper.getInstance(
+            "jdk.invoke.MethodHandleProxies.dumpClassFiles", "DUMP_MH_PROXY_CLASSFILES");
+
+    private static final Set<Class<?>> WRAPPER_TYPES = Collections.newSetFromMap(new WeakHashMap<>());
+    private static final ClassValue<WeakReferenceHolder<Class<?>>> PROXIES = new ClassValue<>() {
+        @Override
+        protected WeakReferenceHolder<Class<?>> computeValue(Class<?> intfc) {
+            return new WeakReferenceHolder<>(newProxyClass(intfc));
+        }
+    };
+
+    private static Class<?> newProxyClass(Class<?> intfc) {
+        List<MethodInfo> methods = new ArrayList<>();
+        Set<Class<?>> referencedTypes = new HashSet<>();
+        referencedTypes.add(intfc);
+        String uniqueName = null;
+        int count = 0;
+        for (Method m : intfc.getMethods()) {
+            if (!Modifier.isAbstract(m.getModifiers()))
+                continue;
+
+            if (isObjectMethod(m))
+                continue;
+
+            // ensure it's SAM interface
+            String methodName = m.getName();
+            if (uniqueName == null) {
+                uniqueName = methodName;
+            } else if (!uniqueName.equals(methodName)) {
+                // too many abstract methods
+                throw newIllegalArgumentException("not a single-method interface", intfc.getName());
+            }
+
+            // the field name holding the method handle for this method
+            String fieldName = "m" + count++;
+            var mt = methodType(m.getReturnType(), JLRA.getExecutableSharedParameterTypes(m), true);
+            var thrown = JLRA.getExecutableSharedExceptionTypes(m);
+            var exceptionTypeDescs =
+                    thrown.length == 0 ? DEFAULT_RETHROWS
+                                       : Stream.concat(DEFAULT_RETHROWS.stream(),
+                                                       Arrays.stream(thrown).map(MethodHandleProxies::desc))
+                                               .distinct().toList();
+            methods.add(new MethodInfo(desc(mt), exceptionTypeDescs, fieldName));
+
+            // find the types referenced by this method
+            addElementType(referencedTypes, m.getReturnType());
+            addElementTypes(referencedTypes, JLRA.getExecutableSharedParameterTypes(m));
+            addElementTypes(referencedTypes, JLRA.getExecutableSharedExceptionTypes(m));
+        }
+
+        if (uniqueName == null)
+            throw newIllegalArgumentException("no method in ", intfc.getName());
+
+        // create a dynamic module for each proxy class, which needs access
+        // to the types referenced by the members of the interface including
+        // the parameter types, return type and exception types
+        var loader = intfc.getClassLoader();
+        Module targetModule = newDynamicModule(loader, referencedTypes);
+
+        // generate a class file in the package of the dynamic module
+        String packageName = targetModule.getName();
+        String intfcName = intfc.getName();
+        int i = intfcName.lastIndexOf('.');
+        // jdk.MHProxy#.Interface
+        String className = packageName + "." + (i > 0 ? intfcName.substring(i + 1) : intfcName);
+        byte[] template = createTemplate(loader, ClassDesc.of(className), desc(intfc), uniqueName, methods);
+        // define the dynamic module to the class loader of the interface
+        var definer = new Lookup(intfc).makeHiddenClassDefiner(className, template, Set.of(), DUMPER);
+
+        @SuppressWarnings("removal")
+        var sm = System.getSecurityManager();
+        Lookup lookup;
+        if (sm != null) {
+            @SuppressWarnings("removal")
+            var l = AccessController.doPrivileged((PrivilegedAction<Lookup>) () ->
+                    definer.defineClassAsLookup(true));
+            lookup = l;
+        } else {
+            lookup = definer.defineClassAsLookup(true);
+        }
+        // cache the wrapper type
+        var ret = lookup.lookupClass();
+        WRAPPER_TYPES.add(ret);
+        return ret;
+    }
+
+    private static final class WeakReferenceHolder<T> {
+        private volatile WeakReference<T> ref;
+
+        WeakReferenceHolder(T value) {
+            set(value);
+        }
+
+        void set(T value) {
+            ref = new WeakReference<>(value);
+        }
+
+        T get() {
+            return ref.get();
+        }
+    }
+
+    private static Class<?> getProxyClass(Class<?> intfc) {
+        WeakReferenceHolder<Class<?>> r = PROXIES.get(intfc);
+        Class<?> cl = r.get();
+        if (cl != null)
+            return cl;
+
+        // avoid spinning multiple classes in a race
+        synchronized (r) {
+            cl = r.get();
+            if (cl != null)
+                return cl;
+
+            // If the referent is cleared, create a new value and update cached weak reference.
+            cl = newProxyClass(intfc);
+            r.set(cl);
+            return cl;
+        }
+    }
+
+    private static final List<ClassDesc> DEFAULT_RETHROWS = List.of(desc(RuntimeException.class), desc(Error.class));
+    private static final ClassDesc CD_UndeclaredThrowableException = desc(UndeclaredThrowableException.class);
+    private static final ClassDesc CD_IllegalAccessException = desc(IllegalAccessException.class);
+    private static final MethodTypeDesc MTD_void_Throwable = MethodTypeDesc.of(CD_void, CD_Throwable);
+    private static final MethodType MT_void_Lookup_MethodHandle_MethodHandle =
+            methodType(void.class, Lookup.class, MethodHandle.class, MethodHandle.class);
+    private static final MethodType MT_Object_Lookup_MethodHandle_MethodHandle =
+            MT_void_Lookup_MethodHandle_MethodHandle.changeReturnType(Object.class);
+    private static final MethodType MT_MethodHandle_Object = methodType(MethodHandle.class, Object.class);
+    private static final MethodTypeDesc MTD_void_Lookup_MethodHandle_MethodHandle =
+            desc(MT_void_Lookup_MethodHandle_MethodHandle);
+    private static final MethodTypeDesc MTD_void_Lookup = MethodTypeDesc.of(CD_void, CD_MethodHandles_Lookup);
+    private static final MethodTypeDesc MTD_MethodHandle_MethodType = MethodTypeDesc.of(CD_MethodHandle, CD_MethodType);
+    private static final MethodTypeDesc MTD_Class = MethodTypeDesc.of(CD_Class);
+    private static final MethodTypeDesc MTD_int = MethodTypeDesc.of(CD_int);
+    private static final MethodTypeDesc MTD_String = MethodTypeDesc.of(CD_String);
+    private static final MethodTypeDesc MTD_void_String = MethodTypeDesc.of(CD_void, CD_String);
+    private static final String TARGET_NAME = "target";
+    private static final String TYPE_NAME = "interfaceType";
+    private static final String ENSURE_ORIGINAL_LOOKUP = "ensureOriginalLookup";
+
+    /**
+     * Creates an implementation class file for a given interface. One implementation class is
+     * defined for each interface.
+     *
+     * @param ifaceDesc the given interface
+     * @param methodName the name of the single abstract method
+     * @param methods the information for implementation methods
+     * @return the bytes of the implementation classes
+     */
+    private static byte[] createTemplate(ClassLoader loader, ClassDesc proxyDesc, ClassDesc ifaceDesc,
+                                         String methodName, List<MethodInfo> methods) {
+        return Classfile.of(ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofClassLoading(loader)))
+                        .build(proxyDesc, clb -> {
+            clb.withSuperclass(CD_Object);
+            clb.withFlags(ACC_FINAL | ACC_SYNTHETIC);
+            clb.withInterfaceSymbols(ifaceDesc);
+
+            // static and instance fields
+            clb.withField(TYPE_NAME, CD_Class, ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
+            clb.withField(TARGET_NAME, CD_MethodHandle, ACC_PRIVATE | ACC_FINAL);
+            for (var mi : methods) {
+                clb.withField(mi.fieldName, CD_MethodHandle, ACC_PRIVATE | ACC_FINAL);
+            }
+
+            // <clinit>
+            clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
+                cob.constantInstruction(ifaceDesc);
+                cob.putstatic(proxyDesc, TYPE_NAME, CD_Class);
+                cob.return_();
+            });
+
+            // <init>(Lookup, MethodHandle target, MethodHandle callerBoundTarget)
+            clb.withMethodBody(INIT_NAME, MTD_void_Lookup_MethodHandle_MethodHandle, 0, cob -> {
+                cob.aload(0);
+                cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
+
+                // call ensureOriginalLookup to verify the given Lookup has access
+                cob.aload(1);
+                cob.invokestatic(proxyDesc, "ensureOriginalLookup", MTD_void_Lookup);
+
+                // this.target = target;
+                cob.aload(0);
+                cob.aload(2);
+                cob.putfield(proxyDesc, TARGET_NAME, CD_MethodHandle);
+
+                // method handles adjusted to the method type of each method
+                for (var mi : methods) {
+                    // this.m<i> = callerBoundTarget.asType(xxType);
+                    cob.aload(0);
+                    cob.aload(3);
+                    cob.constantInstruction(mi.desc);
+                    cob.invokevirtual(CD_MethodHandle, "asType", MTD_MethodHandle_MethodType);
+                    cob.putfield(proxyDesc, mi.fieldName, CD_MethodHandle);
+                }
+
+                // complete
+                cob.return_();
+            });
+
+            // private static void ensureOriginalLookup(Lookup) checks if the given Lookup
+            // has ORIGINAL access to this class, i.e. the lookup class is this class;
+            // otherwise, IllegalAccessException is thrown
+            clb.withMethodBody(ENSURE_ORIGINAL_LOOKUP, MTD_void_Lookup, ACC_PRIVATE | ACC_STATIC, cob -> {
+                var failLabel = cob.newLabel();
+                // check lookupClass
+                cob.aload(0);
+                cob.invokevirtual(CD_MethodHandles_Lookup, "lookupClass", MTD_Class);
+                cob.constantInstruction(proxyDesc);
+                cob.if_acmpne(failLabel);
+                // check original access
+                cob.aload(0);
+                cob.invokevirtual(CD_MethodHandles_Lookup, "lookupModes", MTD_int);
+                cob.constantInstruction(Lookup.ORIGINAL);
+                cob.iand();
+                cob.ifeq(failLabel);
+                // success
+                cob.return_();
+                // throw exception
+                cob.labelBinding(failLabel);
+                cob.new_(CD_IllegalAccessException);
+                cob.dup();
+                cob.aload(0); // lookup
+                cob.invokevirtual(CD_Object, "toString", MTD_String);
+                cob.invokespecial(CD_IllegalAccessException, INIT_NAME, MTD_void_String);
+                cob.athrow();
+            });
+
+            // implementation methods
+            for (MethodInfo mi : methods) {
+                // no need to generate thrown exception attribute
+                clb.withMethodBody(methodName, mi.desc, ACC_PUBLIC, cob -> cob
+                        .trying(bcb -> {
+                                    // return this.handleField.invokeExact(arguments...);
+                                    bcb.aload(0);
+                                    bcb.getfield(proxyDesc, mi.fieldName, CD_MethodHandle);
+                                    for (int j = 0; j < mi.desc.parameterCount(); j++) {
+                                        bcb.loadInstruction(TypeKind.from(mi.desc.parameterType(j)),
+                                                bcb.parameterSlot(j));
+                                    }
+                                    bcb.invokevirtual(CD_MethodHandle, "invokeExact", mi.desc);
+                                    bcb.returnInstruction(TypeKind.from(mi.desc.returnType()));
+                                }, ctb -> ctb
+                                        // catch (Error | RuntimeException | Declared ex) { throw ex; }
+                                        .catchingMulti(mi.thrown, CodeBuilder::athrow)
+                                        // catch (Throwable ex) { throw new UndeclaredThrowableException(ex); }
+                                        .catchingAll(cb -> cb
+                                                .new_(CD_UndeclaredThrowableException)
+                                                .dup_x1()
+                                                .swap()
+                                                .invokespecial(CD_UndeclaredThrowableException,
+                                                        INIT_NAME, MTD_void_Throwable)
+                                                .athrow()
+                                        )
+                        ));
+            }
+        });
     }
 
     private static MethodHandle bindCaller(MethodHandle target, Class<?> hostClass) {
@@ -241,16 +484,7 @@ public class MethodHandleProxies {
      * @return true if the reference is not null and points to an object produced by {@code asInterfaceInstance}
      */
     public static boolean isWrapperInstance(Object x) {
-        return x instanceof WrapperInstance;
-    }
-
-    private static WrapperInstance asWrapperInstance(Object x) {
-        try {
-            if (x != null)
-                return (WrapperInstance) x;
-        } catch (ClassCastException ex) {
-        }
-        throw newIllegalArgumentException("not a wrapper instance");
+        return x != null && WRAPPER_TYPES.contains(x.getClass());
     }
 
     /**
@@ -263,7 +497,17 @@ public class MethodHandleProxies {
      * @throws IllegalArgumentException if the reference x is not to a wrapper instance
      */
     public static MethodHandle wrapperInstanceTarget(Object x) {
-        return asWrapperInstance(x).getWrapperInstanceTarget();
+        if (!isWrapperInstance(x))
+            throw new IllegalArgumentException("not a wrapper instance: " + x);
+
+        try {
+            Class<?> type = x.getClass();
+            MethodHandle getter = new Lookup(type).findGetter(type, TARGET_NAME, MethodHandle.class)
+                                                  .asType(MT_MethodHandle_Object);
+            return (MethodHandle) getter.invokeExact(x);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
     }
 
     /**
@@ -275,52 +519,105 @@ public class MethodHandleProxies {
      * @throws IllegalArgumentException if the reference x is not to a wrapper instance
      */
     public static Class<?> wrapperInstanceType(Object x) {
-        return asWrapperInstance(x).getWrapperInstanceType();
+        if (!isWrapperInstance(x))
+            throw new IllegalArgumentException("not a wrapper instance: " + x);
+
+        try {
+            Class<?> type = x.getClass();
+            MethodHandle originalTypeField = new Lookup(type).findStaticGetter(type, TYPE_NAME, Class.class);
+            return (Class<?>) originalTypeField.invokeExact();
+        } catch (Throwable e) {
+            throw uncaughtException(e);
+        }
+    }
+
+    private static ClassDesc desc(Class<?> cl) {
+        return cl.describeConstable().orElseThrow(() -> newInternalError("Cannot convert class "
+                + cl.getName() + " to a constant"));
+    }
+
+    private static MethodTypeDesc desc(MethodType mt) {
+        return mt.describeConstable().orElseThrow(() -> newInternalError("Cannot convert method type "
+                + mt + " to a constant"));
+    }
+
+    private static final JavaLangReflectAccess JLRA = SharedSecrets.getJavaLangReflectAccess();
+    private static final AtomicInteger counter = new AtomicInteger();
+
+    private static String nextModuleName() {
+        return "jdk.MHProxy" + counter.incrementAndGet();
+    }
+
+    /**
+     * Create a dynamic module defined to the given class loader and has
+     * access to the given types.
+     * <p>
+     * The dynamic module contains only one single package named the same as
+     * the name of the dynamic module.  It's not exported or open.
+     */
+    private static Module newDynamicModule(ClassLoader ld, Set<Class<?>> types) {
+        Objects.requireNonNull(types);
+
+        // create a dynamic module and setup module access
+        String mn = nextModuleName();
+        ModuleDescriptor descriptor = ModuleDescriptor.newModule(mn, Set.of(SYNTHETIC))
+                .packages(Set.of(mn))
+                .build();
+
+        Module dynModule = Modules.defineModule(ld, descriptor, null);
+        Module javaBase = Object.class.getModule();
+
+        Modules.addReads(dynModule, javaBase);
+        Modules.addOpens(dynModule, mn, javaBase);
+
+        for (Class<?> c : types) {
+            ensureAccess(dynModule, c);
+        }
+        return dynModule;
     }
 
     private static boolean isObjectMethod(Method m) {
         return switch (m.getName()) {
             case "toString" -> m.getReturnType() == String.class
-                               && m.getParameterCount() == 0;
+                    && m.getParameterCount() == 0;
             case "hashCode" -> m.getReturnType() == int.class
-                               && m.getParameterCount() == 0;
+                    && m.getParameterCount() == 0;
             case "equals"   -> m.getReturnType() == boolean.class
-                               && m.getParameterCount() == 1
-                               && m.getParameterTypes()[0] == Object.class;
+                    && m.getParameterCount() == 1
+                    && JLRA.getExecutableSharedParameterTypes(m)[0] == Object.class;
             default -> false;
         };
     }
 
-    private static Object callObjectMethod(Object self, Method m, Object[] args) {
-        assert(isObjectMethod(m)) : m;
-        return switch (m.getName()) {
-            case "toString" -> java.util.Objects.toIdentityString(self);
-            case "hashCode" -> System.identityHashCode(self);
-            case "equals"   -> (self == args[0]);
-            default -> null;
-        };
-    }
-
-    private static Method[] getSingleNameMethods(Class<?> intfc) {
-        ArrayList<Method> methods = new ArrayList<>();
-        String uniqueName = null;
-        for (Method m : intfc.getMethods()) {
-            if (isObjectMethod(m))  continue;
-            if (!Modifier.isAbstract(m.getModifiers()))  continue;
-            String mname = m.getName();
-            if (uniqueName == null)
-                uniqueName = mname;
-            else if (!uniqueName.equals(mname))
-                return null;  // too many abstract methods
-            methods.add(m);
+    /*
+     * Ensure the given module can access the given class.
+     */
+    private static void ensureAccess(Module target, Class<?> c) {
+        Module m = c.getModule();
+        // add read edge and qualified export for the target module to access
+        if (!target.canRead(m)) {
+            Modules.addReads(target, m);
         }
-        if (uniqueName == null)  return null;
-        return methods.toArray(new Method[methods.size()]);
+        String pn = c.getPackageName();
+        if (!m.isExported(pn, target)) {
+            Modules.addExports(m, pn, target);
+        }
     }
 
-    private static boolean isDefaultMethod(Method m) {
-        return !Modifier.isAbstract(m.getModifiers());
+    private static void addElementTypes(Set<Class<?>> types, Class<?>... classes) {
+        for (var cls : classes) {
+            addElementType(types, cls);
+        }
     }
 
-    private static final JavaLangReflectAccess JLRA = SharedSecrets.getJavaLangReflectAccess();
+    private static void addElementType(Set<Class<?>> types, Class<?> cls) {
+        Class<?> e = cls;
+        while (e.isArray()) {
+            e = e.getComponentType();
+        }
+
+        if (!e.isPrimitive()) {
+            types.add(e);
+        }
+    }
 }

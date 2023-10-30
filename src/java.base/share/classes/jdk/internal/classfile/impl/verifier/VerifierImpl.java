@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public final class VerifierImpl {
             JVM_CONSTANT_Package                = 20,
             JVM_CONSTANT_ExternalMax            = 20;
 
-static final char JVM_SIGNATURE_SPECIAL = '<',
+    static final char JVM_SIGNATURE_SPECIAL = '<',
             JVM_SIGNATURE_ARRAY = '[',
             JVM_SIGNATURE_BYTE = 'B',
             JVM_SIGNATURE_CHAR = 'C',
@@ -102,9 +102,10 @@ static final char JVM_SIGNATURE_SPECIAL = '<',
     static final int STACKMAP_ATTRIBUTE_MAJOR_VERSION = 50;
     static final int INVOKEDYNAMIC_MAJOR_VERSION = 51;
     static final int NOFAILOVER_MAJOR_VERSION = 51;
+    static final int MAX_CODE_SIZE = 65535;
 
     public static List<VerifyError> verify(ClassModel classModel, Consumer<String> logger) {
-        return verify(classModel, ClassHierarchyResolver.DEFAULT_CLASS_HIERARCHY_RESOLVER, logger);
+        return verify(classModel, ClassHierarchyResolver.defaultResolver(), logger);
     }
 
     public static List<VerifyError> verify(ClassModel classModel, ClassHierarchyResolver classHierarchyResolver, Consumer<String> logger) {
@@ -299,6 +300,9 @@ static final char JVM_SIGNATURE_SPECIAL = '<',
         VerificationType return_type = current_frame.set_locals_from_arg(m, current_type());
         int stackmap_index = 0;
         int code_length = m.codeLength();
+        if (code_length < 1 || code_length > MAX_CODE_SIZE) {
+            verifyError(String.format("Invalid method Code length %d", code_length));
+        }
         var code = ByteBuffer.wrap(_method.codeArray(), 0, _method.codeLength());
         byte[] code_data = generate_code_data(code, code_length);
         int ex_minmax[] = new int[] {code_length, -1};

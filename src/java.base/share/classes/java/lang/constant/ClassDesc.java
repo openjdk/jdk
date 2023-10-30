@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package java.lang.constant;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.TypeDescriptor;
 import java.util.stream.Stream;
 
@@ -149,7 +150,7 @@ public sealed interface ClassDesc
      * @param descriptor a field descriptor string
      * @return a {@linkplain ClassDesc} describing the desired class
      * @throws NullPointerException if the argument is {@code null}
-     * @throws IllegalArgumentException if the name string is not in the
+     * @throws IllegalArgumentException if the descriptor string is not in the
      * correct format
      * @jvms 4.3.2 Field Descriptors
      * @jvms 4.4.1 The CONSTANT_Class_info Structure
@@ -361,6 +362,9 @@ public sealed interface ClassDesc
      * @jvms 4.3.2 Field Descriptors
      */
     String descriptorString();
+
+    @Override
+    Class<?> resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException;
 
     /**
      * Compare the specified object with this descriptor for equality.  Returns

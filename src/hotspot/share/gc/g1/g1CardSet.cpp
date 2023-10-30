@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ G1CardSetConfiguration::G1CardSetConfiguration(uint inline_ptr_bits_per_card,
   _max_cards_in_howl_bitmap(G1CardSetHowl::bitmap_size(_max_cards_in_card_set, _num_buckets_in_howl)),
   _cards_in_howl_bitmap_threshold(_max_cards_in_howl_bitmap * cards_in_bitmap_threshold_percent),
   _log2_max_cards_in_howl_bitmap(log2i_exact(_max_cards_in_howl_bitmap)),
-  _bitmap_hash_mask(~(~(0) << _log2_max_cards_in_howl_bitmap)),
+  _bitmap_hash_mask((1U << _log2_max_cards_in_howl_bitmap) - 1),
   _log2_card_regions_per_heap_region(log2_card_regions_per_heap_region),
   _log2_cards_per_card_region(log2i_exact(_max_cards_in_card_set)) {
 
@@ -258,9 +258,12 @@ class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
 
     uintx get_hash() const { return G1CardSetHashTable::get_hash(_region_idx); }
 
-    bool equals(G1CardSetHashTableValue* value, bool* is_dead) {
-      *is_dead = false;
+    bool equals(G1CardSetHashTableValue* value) {
       return value->_region_idx == _region_idx;
+    }
+
+    bool is_dead(G1CardSetHashTableValue*) {
+      return false;
     }
   };
 
@@ -275,18 +278,6 @@ class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
 
     G1CardSetHashTableValue* value() const { return _value; }
   };
-
-  class G1CardSetHashTableScan : public StackObj {
-    G1CardSet::ContainerPtrClosure* _scan_f;
-  public:
-    explicit G1CardSetHashTableScan(G1CardSet::ContainerPtrClosure* f) : _scan_f(f) { }
-
-    bool operator()(G1CardSetHashTableValue* value) {
-      _scan_f->do_containerptr(value->_region_idx, value->_num_occupied, value->_container);
-      return true;
-    }
-  };
-
 
 public:
   static const size_t InitialLogTableSize = 2;
@@ -335,14 +326,14 @@ public:
     return found.value();
   }
 
-  void iterate_safepoint(G1CardSet::ContainerPtrClosure* cl2) {
-    G1CardSetHashTableScan cl(cl2);
-    _table_scanner.do_safepoint_scan(cl);
+  template <typename SCAN_FUNC>
+  void iterate_safepoint(SCAN_FUNC& scan_f) {
+    _table_scanner.do_safepoint_scan(scan_f);
   }
 
-  void iterate(G1CardSet::ContainerPtrClosure* cl2) {
-    G1CardSetHashTableScan cl(cl2);
-    _table.do_scan(Thread::current(), cl);
+  template <typename SCAN_FUNC>
+  void iterate(SCAN_FUNC& scan_f) {
+    _table.do_scan(Thread::current(), scan_f);
   }
 
   void reset() {
@@ -871,7 +862,7 @@ void G1CardSet::print_info(outputStream* st, uintptr_t card) {
 
   G1CardSetHashTableValue* table_entry = get_container(card_region);
   if (table_entry == nullptr) {
-    st->print("NULL card set");
+    st->print("null card set");
     return;
   }
 
@@ -924,10 +915,16 @@ void G1CardSet::iterate_cards_during_transfer(ContainerPtr const container, Card
 }
 
 void G1CardSet::iterate_containers(ContainerPtrClosure* cl, bool at_safepoint) {
+  auto do_value =
+    [&] (G1CardSetHashTableValue* value) {
+      cl->do_containerptr(value->_region_idx, value->_num_occupied, value->_container);
+      return true;
+    };
+
   if (at_safepoint) {
-    _table->iterate_safepoint(cl);
+    _table->iterate_safepoint(do_value);
   } else {
-    _table->iterate(cl);
+    _table->iterate(do_value);
   }
 }
 

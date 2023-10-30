@@ -31,13 +31,13 @@ import java.util.Set;
 import jdk.internal.classfile.constantpool.ModuleEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.java.lang.constant.ModuleDesc;
+import java.lang.constant.ModuleDesc;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
 
 /**
- * Models a single "requires" declaration in the {@link jdk.internal.classfile.attribute.ModuleAttribute}.
+ * Models a single "requires" declaration in the {@link ModuleAttribute}.
  */
 public sealed interface ModuleRequireInfo
         permits UnboundAttribute.UnboundModuleRequiresInfo {
@@ -56,6 +56,9 @@ public sealed interface ModuleRequireInfo
      */
     int requiresFlagsMask();
 
+    /**
+     * {@return the access flags}
+     */
     default Set<AccessFlag> requiresFlags() {
         return AccessFlag.maskToAccessFlags(requiresFlagsMask(), AccessFlag.Location.MODULE_REQUIRES);
     }
@@ -100,7 +103,7 @@ public sealed interface ModuleRequireInfo
      * @param requiresVersion the required version
      */
     static ModuleRequireInfo of(ModuleDesc requires, int requiresFlags, String requiresVersion) {
-        return new UnboundAttribute.UnboundModuleRequiresInfo(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(requires.moduleName())), requiresFlags, Optional.ofNullable(requiresVersion).map(s -> TemporaryConstantPool.INSTANCE.utf8Entry(s)));
+        return new UnboundAttribute.UnboundModuleRequiresInfo(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(requires.name())), requiresFlags, Optional.ofNullable(requiresVersion).map(s -> TemporaryConstantPool.INSTANCE.utf8Entry(s)));
     }
 
     /**

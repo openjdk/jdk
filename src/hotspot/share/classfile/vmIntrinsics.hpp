@@ -341,6 +341,14 @@ class methodHandle;
    do_name(     copyOf_name,                                     "copyOf")                                              \
    do_signature(copyOf_signature,             "([Ljava/lang/Object;ILjava/lang/Class;)[Ljava/lang/Object;")             \
                                                                                                                         \
+  do_intrinsic(_arraySort,                java_util_DualPivotQuicksort, arraySort_name, arraySort_signature,     F_S)   \
+   do_name(     arraySort_name,                                  "sort")                                                \
+   do_signature(arraySort_signature, "(Ljava/lang/Class;Ljava/lang/Object;JIILjava/util/DualPivotQuicksort$SortOperation;)V") \
+                                                                                                                        \
+  do_intrinsic(_arrayPartition,           java_util_DualPivotQuicksort, arrayPartition_name, arrayPartition_signature, F_S) \
+   do_name(     arrayPartition_name,                             "partition")                                           \
+   do_signature(arrayPartition_signature, "(Ljava/lang/Class;Ljava/lang/Object;JIIIILjava/util/DualPivotQuicksort$PartitionOperation;)[I") \
+                                                                                                                        \
   do_intrinsic(_copyOfRange,              java_util_Arrays,       copyOfRange_name, copyOfRange_signature,       F_S)   \
    do_name(     copyOfRange_name,                                "copyOfRange")                                         \
    do_signature(copyOfRange_signature,        "([Ljava/lang/Object;IILjava/lang/Class;)[Ljava/lang/Object;")            \
@@ -584,9 +592,11 @@ class methodHandle;
    do_alias(    continuationDoYield_signature,     void_int_signature)                                                  \
                                                                                                                         \
   /* java/lang/VirtualThread */                                                                                         \
-  do_intrinsic(_notifyJvmtiMount, java_lang_VirtualThread, notifyJvmtiMount_name, bool_bool_void_signature, F_RN)       \
-  do_intrinsic(_notifyJvmtiUnmount, java_lang_VirtualThread, notifyJvmtiUnmount_name, bool_bool_void_signature, F_RN)   \
-  do_intrinsic(_notifyJvmtiHideFrames, java_lang_VirtualThread, notifyJvmtiHideFrames_name, bool_void_signature, F_RN)  \
+  do_intrinsic(_notifyJvmtiVThreadStart, java_lang_VirtualThread, notifyJvmtiStart_name, void_method_signature, F_RN)   \
+  do_intrinsic(_notifyJvmtiVThreadEnd, java_lang_VirtualThread, notifyJvmtiEnd_name, void_method_signature, F_RN)       \
+  do_intrinsic(_notifyJvmtiVThreadMount, java_lang_VirtualThread, notifyJvmtiMount_name, bool_void_signature, F_RN)     \
+  do_intrinsic(_notifyJvmtiVThreadUnmount, java_lang_VirtualThread, notifyJvmtiUnmount_name, bool_void_signature, F_RN) \
+  do_intrinsic(_notifyJvmtiVThreadHideFrames, java_lang_VirtualThread, notifyJvmtiHideFrames_name, bool_void_signature, F_RN) \
                                                                                                                         \
   /* support for UnsafeConstants */                                                                                     \
   do_class(jdk_internal_misc_UnsafeConstants,      "jdk/internal/misc/UnsafeConstants")                                 \
@@ -1102,7 +1112,7 @@ class methodHandle;
    do_signature(vector_extract_sig, "(Ljava/lang/Class;"                                                                                       \
                                      "Ljava/lang/Class;"                                                                                       \
                                      "I"                                                                                                       \
-                                     "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                           \
+                                     "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;"                                                    \
                                      "I"                                                                                                       \
                                      "Ljdk/internal/vm/vector/VectorSupport$VecExtractOp;)"                                                    \
                                      "J")                                                                                                      \

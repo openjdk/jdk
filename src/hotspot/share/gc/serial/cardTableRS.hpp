@@ -63,9 +63,11 @@ public:
 
   void verify();
 
-  void clear_into_younger(Generation* old_gen);
-
-  void invalidate_or_clear(Generation* old_gen);
+  // Update old gen cards to maintain old-to-young-pointer invariant: Clear
+  // the old generation card table completely if the young generation had been
+  // completely evacuated, otherwise dirties the whole old generation to
+  // conservatively not loose any old-to-young pointer.
+  void maintain_old_to_young_invariant(Generation* old_gen, bool is_young_gen_empty);
 
   // Iterate over the portion of the card-table which covers the given
   // region mr in the given space and apply cl to any dirty sub-regions
@@ -76,25 +78,6 @@ public:
                               CardTableRS* ct);
 
   bool is_in_young(const void* p) const override;
-};
-
-class ClearNoncleanCardWrapper: public MemRegionClosure {
-  DirtyCardToOopClosure* _dirty_card_closure;
-  CardTableRS* _ct;
-
-public:
-
-  typedef CardTable::CardValue CardValue;
-private:
-  // Clears the given card, return true if the corresponding card should be
-  // processed.
-  inline bool clear_card(CardValue* entry);
-  // check alignment of pointer
-  bool is_word_aligned(CardValue* entry);
-
-public:
-  ClearNoncleanCardWrapper(DirtyCardToOopClosure* dirty_card_closure, CardTableRS* ct);
-  void do_MemRegion(MemRegion mr) override;
 };
 
 #endif // SHARE_GC_SERIAL_CARDTABLERS_HPP

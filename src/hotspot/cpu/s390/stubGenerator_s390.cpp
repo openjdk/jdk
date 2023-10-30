@@ -372,9 +372,9 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef ASSERT
       char  assertMsg[] = "check BasicType definition in globalDefinitions.hpp";
       __ z_chi(r_arg_result_type, T_BOOLEAN);
-      __ asm_assert_low(assertMsg, 0x0234);
+      __ asm_assert(Assembler::bcondNotLow, assertMsg, 0x0234);
       __ z_chi(r_arg_result_type, T_NARROWOOP);
-      __ asm_assert_high(assertMsg, 0x0235);
+      __ asm_assert(Assembler::bcondNotHigh, assertMsg, 0x0235);
 #endif
       __ add2reg(r_arg_result_type, -T_BOOLEAN);          // Remove offset.
       __ z_larl(Z_R1, firstHandler);                      // location of first handler
@@ -483,7 +483,7 @@ class StubGenerator: public StubCodeGenerator {
     __ z_st(exception_line, thread_(exception_line));
 
     // Complete return to VM.
-    assert(StubRoutines::_call_stub_return_address != NULL, "must have been generated before");
+    assert(StubRoutines::_call_stub_return_address != nullptr, "must have been generated before");
 
     // Continue in call stub.
     __ z_br(Z_ARG2);
@@ -649,7 +649,7 @@ class StubGenerator: public StubCodeGenerator {
       RuntimeStub::new_runtime_stub(name, &code,
                                     frame_complete_pc - start,
                                     framesize_in_bytes/wordSize,
-                                    NULL /*oop_maps*/, false);
+                                    nullptr /*oop_maps*/, false);
 
     return stub->entry_point();
   }
@@ -685,12 +685,12 @@ class StubGenerator: public StubCodeGenerator {
     const Register Rarray_ptr  = Z_ARG5; // Current value from cache array.
 
     if (UseCompressedOops) {
-      assert(Universe::heap() != NULL, "java heap must be initialized to generate partial_subtype_check stub");
+      assert(Universe::heap() != nullptr, "java heap must be initialized to generate partial_subtype_check stub");
     }
 
     // Always take the slow path.
     __ check_klass_subtype_slow_path(Rsubklass, Rsuperklass,
-                                     Rarray_ptr, Rlength, NULL, &miss);
+                                     Rarray_ptr, Rlength, nullptr, &miss);
 
     // Match falls through here.
     __ clear_reg(Z_RET);               // Zero indicates a match. Set EQ flag in CC.
@@ -740,7 +740,7 @@ class StubGenerator: public StubCodeGenerator {
   void assert_positive_int(Register count) {
 #ifdef ASSERT
     __ z_srag(Z_R0, count, 31);  // Just leave the sign (must be zero) in Z_R0.
-    __ asm_assert_eq("missing zero extend", 0xAFFE);
+    __ asm_assert(Assembler::bcondZero, "missing zero extend", 0xAFFE);
 #endif
   }
 
@@ -3085,9 +3085,16 @@ class StubGenerator: public StubCodeGenerator {
     Unimplemented();
     return nullptr;
   }
-  #endif // INCLUD_JFR
 
-  void generate_initial() {
+  RuntimeStub* generate_jfr_return_lease() {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+  #endif // INCLUDE_JFR
+
+  void generate_initial_stubs() {
     // Generates all stubs and initializes the entry points.
 
     // Entry points that exist in all platforms.
@@ -3125,7 +3132,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::zarch::_trot_table_addr = (address)StubRoutines::zarch::_trot_table;
   }
 
-  void generate_phase1() {
+  void generate_continuation_stubs() {
     if (!Continuations::enabled()) return;
 
     // Continuation stubs:
@@ -3133,11 +3140,19 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
 
-    JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
-    JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
+    JFR_ONLY(generate_jfr_stubs();)
   }
 
-  void generate_all() {
+#if INCLUDE_JFR
+  void generate_jfr_stubs() {
+    StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
+    StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
+    StubRoutines::_jfr_return_lease_stub = generate_jfr_return_lease();
+    StubRoutines::_jfr_return_lease = StubRoutines::_jfr_return_lease_stub->entry_point();
+  }
+#endif // INCLUDE_JFR
+
+  void generate_final_stubs() {
     // Generates all stubs and initializes the entry points.
 
     StubRoutines::zarch::_partial_subtype_check            = generate_partial_subtype_check();
@@ -3153,6 +3168,16 @@ class StubGenerator: public StubCodeGenerator {
     // Arraycopy stubs used by compilers.
     generate_arraycopy_stubs();
 
+    // nmethod entry barriers for concurrent class unloading
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm != nullptr) {
+      StubRoutines::zarch::_nmethod_entry_barrier = generate_nmethod_entry_barrier();
+    }
+
+  }
+
+  void generate_compiler_stubs() {
+#if COMPILER2_OR_JVMCI
     // Generate AES intrinsics code.
     if (UseAESIntrinsics) {
       if (VM_Version::has_Crypto_AES()) {
@@ -3161,7 +3186,7 @@ class StubGenerator: public StubCodeGenerator {
         StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_AES_encrypt("AES_encryptBlock_chaining");
         StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_AES_decrypt("AES_decryptBlock_chaining");
       } else {
-        // In PRODUCT builds, the function pointers will keep their initial (NULL) value.
+        // In PRODUCT builds, the function pointers will keep their initial (null) value.
         // LibraryCallKit::try_to_inline() will return false then, preventing the intrinsic to be called.
         assert(VM_Version::has_Crypto_AES(), "Inconsistent settings. Check vm_version_s390.cpp");
       }
@@ -3171,7 +3196,7 @@ class StubGenerator: public StubCodeGenerator {
       if (VM_Version::has_Crypto_AES_CTR()) {
         StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt("counterMode_AESCrypt");
       } else {
-        // In PRODUCT builds, the function pointers will keep their initial (NULL) value.
+        // In PRODUCT builds, the function pointers will keep their initial (null) value.
         // LibraryCallKit::try_to_inline() will return false then, preventing the intrinsic to be called.
         assert(VM_Version::has_Crypto_AES_CTR(), "Inconsistent settings. Check vm_version_s390.cpp");
       }
@@ -3196,12 +3221,6 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_sha512_implCompressMB = generate_SHA512_stub(true,  "SHA512_multiBlock");
     }
 
-    // nmethod entry barriers for concurrent class unloading
-    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != NULL) {
-      StubRoutines::zarch::_nmethod_entry_barrier = generate_nmethod_entry_barrier();
-    }
-
 #ifdef COMPILER2
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();
@@ -3215,18 +3234,28 @@ class StubGenerator: public StubCodeGenerator {
         = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
     }
 #endif
+#endif // COMPILER2_OR_JVMCI
   }
 
  public:
-  StubGenerator(CodeBuffer* code, int phase) : StubCodeGenerator(code) {
-    _stub_count = (phase == 0) ? 0x100 : 0x200;
-    if (phase == 0) {
-      generate_initial();
-    } else if (phase == 1) {
-      generate_phase1(); // stubs that must be available for the interpreter
-    } else {
-      generate_all();
-    }
+  StubGenerator(CodeBuffer* code, StubsKind kind) : StubCodeGenerator(code) {
+    switch(kind) {
+    case Initial_stubs:
+      generate_initial_stubs();
+      break;
+     case Continuation_stubs:
+      generate_continuation_stubs();
+      break;
+    case Compiler_stubs:
+      generate_compiler_stubs();
+      break;
+    case Final_stubs:
+      generate_final_stubs();
+      break;
+    default:
+      fatal("unexpected stubs kind: %d", kind);
+      break;
+    };
   }
 
  private:
@@ -3263,6 +3292,6 @@ class StubGenerator: public StubCodeGenerator {
 
 };
 
-void StubGenerator_generate(CodeBuffer* code, int phase) {
-  StubGenerator g(code, phase);
+void StubGenerator_generate(CodeBuffer* code, StubCodeGenerator::StubsKind kind) {
+  StubGenerator g(code, kind);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,12 @@
 #include "runtime/threadSMR.inline.hpp"
 
 static bool thread_inclusion_predicate(Thread* t) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   return !t->jfr_thread_local()->is_dead();
 }
 
 static bool java_thread_inclusion_predicate(JavaThread* jt, bool live_only) {
-  assert(jt != NULL, "invariant");
+  assert(jt != nullptr, "invariant");
   if (live_only && jt->thread_state() == _thread_new) {
     return false;
   }
@@ -48,12 +48,12 @@ static NonJavaThread* next_non_java_thread(NonJavaThread::Iterator& iter) {
   while (!iter.end()) {
     NonJavaThread* next = iter.current();
     iter.step();
-    assert(next != NULL, "invariant");
+    assert(next != nullptr, "invariant");
     if (thread_inclusion_predicate(next)) {
       return next;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 JfrJavaThreadIteratorAdapter::JfrJavaThreadIteratorAdapter(bool live_only /* true */) :
@@ -85,7 +85,7 @@ JavaThread* JfrJavaThreadIteratorAdapter::next() {
 JfrNonJavaThreadIteratorAdapter::JfrNonJavaThreadIteratorAdapter(bool live_only /* true */) : _iter(), _next(next_non_java_thread(_iter)) {}
 
 bool JfrNonJavaThreadIteratorAdapter::has_next() const {
-  return _next != NULL;
+  return _next != nullptr;
 }
 
 NonJavaThread* JfrNonJavaThreadIteratorAdapter::next() {

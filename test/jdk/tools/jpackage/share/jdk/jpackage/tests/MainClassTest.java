@@ -44,6 +44,7 @@ import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.CfgFile;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import static jdk.jpackage.tests.MainClassTest.Script.MainClassType.*;
 
@@ -246,6 +247,39 @@ public final class MainClassTest {
                         nonExistingMainClass)).apply(output.stream());
             }
         }
+
+        CfgFile cfg = cmd.readLauncherCfgFile();
+        if (!cmd.hasArgument("--module")) {
+            verifyCfgFileForNonModularApp(cmd, cfg);
+        }
+    }
+
+    private static void verifyCfgFileForNonModularApp(JPackageCommand cmd,
+            CfgFile cfg) {
+        final List<String> mainJarProperties = List.of("app.mainjar");
+        final List<String> classPathProperties = List.of("app.mainclass",
+                "app.classpath");
+
+        final List<String> withProperties;
+        final List<String> withoutProperties;
+
+        if (cmd.hasArgument("--main-jar") && !cmd.hasArgument("--main-class")) {
+            withProperties = mainJarProperties;
+            withoutProperties = classPathProperties;
+        } else {
+            withProperties = classPathProperties;
+            withoutProperties = mainJarProperties;
+        }
+
+        withProperties.forEach(prop -> {
+            TKit.assertNotNull(cfg.getValue("Application", prop), String.format(
+                    "Check \"%s\" property is set", prop));
+        });
+
+        withoutProperties.forEach(prop -> {
+            TKit.assertNull(cfg.getValueUnchecked("Application", prop),
+                    String.format("Check \"%s\" property is NOT set", prop));
+        });
     }
 
     private void initJarWithWrongMainClass() throws IOException {

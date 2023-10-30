@@ -27,20 +27,25 @@ package jdk.internal.foreign.abi.aarch64.linux;
 
 import jdk.internal.foreign.abi.AbstractLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
+import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.aarch64.CallArranger;
 
-import java.lang.foreign.SegmentScope;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.VaList;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.util.function.Consumer;
+import java.nio.ByteOrder;
+import java.util.Map;
 
 /**
  * ABI implementation based on ARM document "Procedure Call Standard for
  * the ARM 64-bit Architecture".
  */
 public final class LinuxAArch64Linker extends AbstractLinker {
+
+    static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
+            SharedUtils.canonicalLayouts(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT);
 
     public static LinuxAArch64Linker getInstance() {
         final class Holder {
@@ -60,21 +65,17 @@ public final class LinuxAArch64Linker extends AbstractLinker {
     }
 
     @Override
-    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function) {
-        return CallArranger.LINUX.arrangeUpcall(targetType, function);
+    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
+        return CallArranger.LINUX.arrangeUpcall(targetType, function, options);
     }
 
-    public static VaList newVaList(Consumer<VaList.Builder> actions, SegmentScope scope) {
-        LinuxAArch64VaList.Builder builder = LinuxAArch64VaList.builder(scope);
-        actions.accept(builder);
-        return builder.build();
+    @Override
+    protected ByteOrder linkerByteOrder() {
+        return ByteOrder.LITTLE_ENDIAN;
     }
 
-    public static VaList newVaListOfAddress(long address, SegmentScope scope) {
-        return LinuxAArch64VaList.ofAddress(address, scope);
-    }
-
-    public static VaList emptyVaList() {
-        return LinuxAArch64VaList.empty();
+    @Override
+    public Map<String, MemoryLayout> canonicalLayouts() {
+        return CANONICAL_LAYOUTS;
     }
 }

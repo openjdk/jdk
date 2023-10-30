@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/serializeClosure.hpp"
 #include "classfile/vmClasses.hpp"
 #include "compiler/oopMap.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -46,7 +47,7 @@ int InstanceStackChunkKlass::_offset_of_stack = 0;
 
 #if INCLUDE_CDS
 void InstanceStackChunkKlass::serialize_offsets(SerializeClosure* f) {
-  f->do_u4((u4*)&_offset_of_stack);
+  f->do_int(&_offset_of_stack);
 }
 #endif
 

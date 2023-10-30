@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,14 @@ public class TestClock_Tick {
     public void test_toString() {
         Clock test = Clock.tick(Clock.systemUTC(), Duration.ofMillis(500));
         assertEquals(test.toString(), "TickClock[SystemClock[Z],PT0.5S]");
+    }
+
+    //-----------------------------------------------------------------------
+    // Ensure divide-by-zero will not be thrown
+    // @bug 8310232
+    public void test_millis() {
+        var test = Clock.tick(Clock.systemUTC(), Duration.ofNanos(1000));
+        test.millis();
     }
 
 }

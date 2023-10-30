@@ -34,7 +34,6 @@ import java.util.regex.Pattern;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
@@ -158,6 +157,9 @@ public class Contents {
     public final Content previewLabel;
     public final Content previewMark;
     public final Content previewPhrase;
+    public final Content restrictedMark;
+    public final Content restrictedMethods;
+    public final Content restrictedPhrase;
     public final Content properties;
     public final Content propertyLabel;
     public final Content propertyDetailsLabel;
@@ -304,6 +306,9 @@ public class Contents {
         previewLabel = getContent("doclet.Preview_Label");
         previewMark = getContent("doclet.Preview_Mark");
         previewPhrase = getContent("doclet.Preview");
+        restrictedMark = getContent("doclet.Restricted_Mark");
+        restrictedMethods = getContent("doclet.Restricted_Methods");
+        restrictedPhrase = getContent("doclet.Restricted");
         properties = getContent("doclet.Properties");
         propertyLabel = getContent("doclet.Property");
         propertyDetailsLabel = getContent("doclet.Property_Detail");
@@ -393,7 +398,7 @@ public class Contents {
      */
     public Content getContent(String key, Object o0, Object o1, Object o2) {
         Content c = new ContentBuilder();
-        Pattern p = Pattern.compile("\\{([012])\\}");
+        Pattern p = Pattern.compile("\\{([012])}");
         String text = resources.getText(key); // TODO: cache
         Matcher m = p.matcher(text);
         int start = 0;

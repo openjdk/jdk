@@ -334,7 +334,7 @@
           "How many times to maximum attempt to flush SATB buffers at the " \
           "end of concurrent marking.")                                     \
                                                                             \
-  product(bool, ShenandoahSuspendibleWorkers, false, EXPERIMENTAL,          \
+  product(bool, ShenandoahSuspendibleWorkers, true, EXPERIMENTAL,           \
           "Suspend concurrent GC worker threads at safepoints")             \
                                                                             \
   product(bool, ShenandoahSATBBarrier, true, DIAGNOSTIC,                    \
@@ -351,9 +351,6 @@
                                                                             \
   product(bool, ShenandoahLoadRefBarrier, true, DIAGNOSTIC,                 \
           "Turn on/off load-reference barriers in Shenandoah")              \
-                                                                            \
-  product(bool, ShenandoahNMethodBarrier, true, DIAGNOSTIC,                 \
-          "Turn on/off NMethod entry barriers in Shenandoah")               \
                                                                             \
   product(bool, ShenandoahStackWatermarkBarrier, true, DIAGNOSTIC,          \
           "Turn on/off stack watermark barriers in Shenandoah")             \

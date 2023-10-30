@@ -142,7 +142,7 @@ void vmClasses::resolve_all(TRAPS) {
     // Object_klass is resolved. See the above resolve_through()
     // call. No mirror objects are accessed/restored in the above call.
     // Mirrors are restored after java.lang.Class is loaded.
-    ArchiveHeapLoader::fixup_regions();
+    ArchiveHeapLoader::fixup_region();
 
     // Initialize the constant pool for the Object_class
     assert(Object_klass()->is_shared(), "must be");
@@ -249,7 +249,7 @@ void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
   SystemDictionary::load_shared_class_misc(klass, loader_data);
   Dictionary* dictionary = loader_data->dictionary();
   dictionary->add_klass(THREAD, klass->name(), klass);
-  SystemDictionary::add_to_hierarchy(THREAD, klass);
+  klass->add_to_hierarchy(THREAD);
   assert(klass->is_loaded(), "Must be in at least loaded state");
 }
 

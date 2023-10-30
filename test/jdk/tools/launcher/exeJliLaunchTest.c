@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -33,12 +31,20 @@
 #include "java.h"
 
 int
-main(int argc, char **argv)
+main(int argc, char **args)
 {
-    return JLI_Launch(argc, argv,
+    //avoid null-terminated array of arguments to test JDK-8303669
+    char **argv = malloc(sizeof(char *) * argc);
+    for (int i = 0; i < argc; i++) {
+        argv[i] = args[i];
+    }
+
+    int ret = JLI_Launch(argc, argv,
                    0, NULL,
                    0, NULL,
                    "1", "0",
                    *argv, *argv,
                    0, 0, 0, 0);
+    free(argv);
+    return ret;
 }

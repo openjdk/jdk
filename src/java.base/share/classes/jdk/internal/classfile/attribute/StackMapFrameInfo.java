@@ -40,11 +40,32 @@ import static jdk.internal.classfile.Classfile.*;
 public sealed interface StackMapFrameInfo
             permits StackMapDecoder.StackMapFrameImpl {
 
+    /**
+     * {@return the frame compact form type}
+     */
     int frameType();
+
+    /**
+     * {@return the frame target label}
+     */
     Label target();
+
+    /**
+     * {@return the expanded local variable types}
+     */
     List<VerificationTypeInfo> locals();
+
+    /**
+     * {@return the expanded stack types}
+     */
     List<VerificationTypeInfo> stack();
 
+    /**
+     * {@return a new stack map frame}
+     * @param target the location of the frame
+     * @param locals the complete list of frame locals
+     * @param stack the complete frame stack
+     */
     public static StackMapFrameInfo of(Label target,
             List<VerificationTypeInfo> locals,
             List<VerificationTypeInfo> stack) {
@@ -56,6 +77,10 @@ public sealed interface StackMapFrameInfo
      * The type of a stack value.
      */
     sealed interface VerificationTypeInfo {
+
+        /**
+         * {@return the tag of the type info}
+         */
         int tag();
     }
 
@@ -63,12 +88,26 @@ public sealed interface StackMapFrameInfo
      * A simple stack value.
      */
     public enum SimpleVerificationTypeInfo implements VerificationTypeInfo {
+
+        /** verification type top */
         ITEM_TOP(VT_TOP),
+
+        /** verification type int */
         ITEM_INTEGER(VT_INTEGER),
+
+        /** verification type float */
         ITEM_FLOAT(VT_FLOAT),
+
+        /** verification type double */
         ITEM_DOUBLE(VT_DOUBLE),
+
+        /** verification type long */
         ITEM_LONG(VT_LONG),
+
+        /** verification type null */
         ITEM_NULL(VT_NULL),
+
+        /** verification type uninitializedThis */
         ITEM_UNINITIALIZED_THIS(VT_UNINITIALIZED_THIS);
 
 
@@ -90,19 +129,30 @@ public sealed interface StackMapFrameInfo
     sealed interface ObjectVerificationTypeInfo extends VerificationTypeInfo
             permits StackMapDecoder.ObjectVerificationTypeInfoImpl {
 
+        /**
+         * {@return a new object verification type info}
+         * @param className the class of the object
+         */
         public static ObjectVerificationTypeInfo of(ClassEntry className) {
             return new StackMapDecoder.ObjectVerificationTypeInfoImpl(className);
         }
 
+        /**
+         * {@return a new object verification type info}
+         * @param classDesc the class of the object
+         */
         public static ObjectVerificationTypeInfo of(ClassDesc classDesc) {
             return of(TemporaryConstantPool.INSTANCE.classEntry(classDesc));
         }
 
         /**
-         * {@return the class of the value}
+         * {@return the class of the object}
          */
         ClassEntry className();
 
+        /**
+         * {@return the class of the object}
+         */
         default ClassDesc classSymbol() {
             return className().asSymbol();
         }
@@ -113,8 +163,16 @@ public sealed interface StackMapFrameInfo
      */
     sealed interface UninitializedVerificationTypeInfo extends VerificationTypeInfo
             permits StackMapDecoder.UninitializedVerificationTypeInfoImpl {
+
+        /**
+         * {@return the {@code new} instruction position that creates this unitialized object}
+         */
         Label newTarget();
 
+        /**
+         * {@return an unitialized verification type info}
+         * @param newTarget the {@code new} instruction position that creates this unitialized object
+         */
         public static UninitializedVerificationTypeInfo of(Label newTarget) {
             return new StackMapDecoder.UninitializedVerificationTypeInfoImpl(newTarget);
         }

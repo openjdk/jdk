@@ -88,7 +88,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 #endif
     EagerlyReclaimHumongousObjects,
     RestorePreservedMarks,
-    ClearRetainedRegionBitmaps,
+    ProcessEvacuationFailedRegions,
     ResetMarkingState,
     NoteStartOfMark,
     GCParPhasesSentinel
@@ -134,15 +134,21 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     MergeLBSkippedCards
   };
 
+  enum GCCodeRootsWorkItems {
+    CodeRootsScannedNMethods
+  };
+
   enum GCMergePSSWorkItems {
     MergePSSCopiedBytes,
     MergePSSLABSize,
     MergePSSLABWasteBytes,
-    MergePSSLABUndoWasteBytes
+    MergePSSLABUndoWasteBytes,
+    MergePSSEvacFailExtra
   };
 
   enum RestoreRetainedRegionsWorkItems {
-    RestoreRetainedRegionsNum,
+    RestoreRetainedRegionsFailedNum,
+    RestoreRetainedRegionsRetainedNum
   };
 
   enum RemoveSelfForwardsWorkItems {

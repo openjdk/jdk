@@ -1,30 +1,28 @@
 /*
- *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *  This code is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 only, as
- *  published by the Free Software Foundation.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
  *
- *  This code is distributed in the hope that it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- *  version 2 for more details (a copy is included in the LICENSE file that
- *  accompanied this code).
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
  *
- *  You should have received a copy of the GNU General Public License version
- *  2 along with this work; if not, write to the Free Software Foundation,
- *  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- *  Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- *  or visit www.oracle.com if you need additional information or have any
- *  questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 /*
  * @test
- * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @modules java.base/jdk.internal.ref
  * @run testng/othervm
  *     --enable-native-access=ALL-UNNAMED
@@ -39,7 +37,7 @@ import org.testng.annotations.NoInjection;
 import org.testng.annotations.Test;
 
 import java.lang.constant.Constable;
-import java.lang.foreign.SegmentScope;
+import java.lang.foreign.Arena;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -56,7 +54,6 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -95,35 +92,22 @@ public class TestNulls {
             ValueLayout.OfFloat.class,
             ValueLayout.OfLong.class,
             ValueLayout.OfDouble.class,
-            ValueLayout.OfAddress.class,
+            AddressLayout.class,
+            PaddingLayout.class,
             GroupLayout.class,
+            StructLayout.class,
+            UnionLayout.class,
             Linker.class,
-            VaList.class,
-            VaList.Builder.class,
+            Linker.Option.class,
             FunctionDescriptor.class,
             SegmentAllocator.class,
-            SegmentScope.class,
+            MemorySegment.Scope.class,
             SymbolLookup.class
     };
 
     static final Set<String> EXCLUDE_LIST = Set.of(
-            "java.lang.foreign.MemorySegment/ofAddress(long,long,java.lang.foreign.SegmentScope,java.lang.Runnable)/3/0",
-            "java.lang.foreign.MemorySegment.MemorySession/openConfined(java.lang.ref.Cleaner)/0/0",
-            "java.lang.foreign.MemorySegment.MemorySession/openShared(java.lang.ref.Cleaner)/0/0",
-            "java.lang.foreign.MemoryLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.SequenceLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.ValueLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.ValueLayout$OfAddress/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.ValueLayout$OfBoolean/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.ValueLayout$OfByte/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.ValueLayout$OfChar/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.ValueLayout$OfShort/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.ValueLayout$OfInt/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.ValueLayout$OfFloat/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.ValueLayout$OfLong/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.ValueLayout$OfDouble/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.GroupLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.FunctionDescriptor/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0"
+            "java.lang.foreign.MemorySegment/reinterpret(java.lang.foreign.Arena,java.util.function.Consumer)/1/0",
+            "java.lang.foreign.MemorySegment/reinterpret(long,java.lang.foreign.Arena,java.util.function.Consumer)/2/0"
     );
 
     static final Set<String> OBJECT_METHODS = Stream.of(Object.class.getMethods())
@@ -158,7 +142,7 @@ public class TestNulls {
         addDefaultMapping(Class.class, String.class);
         addDefaultMapping(Runnable.class, () -> {});
         addDefaultMapping(Object.class, new Object());
-        addDefaultMapping(VarHandle.class, MethodHandles.memorySegmentViewVarHandle(JAVA_INT));
+        addDefaultMapping(VarHandle.class, JAVA_INT.varHandle());
         addDefaultMapping(MethodHandle.class, MethodHandles.identity(int.class));
         addDefaultMapping(List.class, List.of());
         addDefaultMapping(Charset.class, Charset.defaultCharset());
@@ -166,7 +150,7 @@ public class TestNulls {
         addDefaultMapping(MethodType.class, MethodType.methodType(void.class));
         addDefaultMapping(MemoryLayout.class, ValueLayout.JAVA_INT);
         addDefaultMapping(ValueLayout.class, ValueLayout.JAVA_INT);
-        addDefaultMapping(ValueLayout.OfAddress.class, ValueLayout.ADDRESS);
+        addDefaultMapping(AddressLayout.class, ValueLayout.ADDRESS);
         addDefaultMapping(ValueLayout.OfByte.class, ValueLayout.JAVA_BYTE);
         addDefaultMapping(ValueLayout.OfBoolean.class, ValueLayout.JAVA_BOOLEAN);
         addDefaultMapping(ValueLayout.OfChar.class, ValueLayout.JAVA_CHAR);
@@ -175,33 +159,21 @@ public class TestNulls {
         addDefaultMapping(ValueLayout.OfFloat.class, ValueLayout.JAVA_FLOAT);
         addDefaultMapping(ValueLayout.OfLong.class, JAVA_LONG);
         addDefaultMapping(ValueLayout.OfDouble.class, ValueLayout.JAVA_DOUBLE);
+        addDefaultMapping(PaddingLayout.class, MemoryLayout.paddingLayout(4));
         addDefaultMapping(GroupLayout.class, MemoryLayout.structLayout(ValueLayout.JAVA_INT));
+        addDefaultMapping(StructLayout.class, MemoryLayout.structLayout(ValueLayout.JAVA_INT));
+        addDefaultMapping(UnionLayout.class, MemoryLayout.unionLayout(ValueLayout.JAVA_INT));
         addDefaultMapping(SequenceLayout.class, MemoryLayout.sequenceLayout(1, ValueLayout.JAVA_INT));
         addDefaultMapping(SymbolLookup.class, SymbolLookup.loaderLookup());
         addDefaultMapping(MemorySegment.class, MemorySegment.ofArray(new byte[10]));
         addDefaultMapping(FunctionDescriptor.class, FunctionDescriptor.ofVoid());
         addDefaultMapping(Linker.class, Linker.nativeLinker());
-        addDefaultMapping(VaList.class, VaListHelper.vaList);
-        addDefaultMapping(VaList.Builder.class, VaListHelper.vaListBuilder);
-        addDefaultMapping(Arena.class, Arena.openConfined());
-        addDefaultMapping(SegmentScope.class, SegmentScope.auto());
+        addDefaultMapping(Arena.class, Arena.ofConfined());
+        addDefaultMapping(MemorySegment.Scope.class, Arena.ofAuto().scope());
         addDefaultMapping(SegmentAllocator.class, SegmentAllocator.prefixAllocator(MemorySegment.ofArray(new byte[10])));
         addDefaultMapping(Supplier.class, () -> null);
         addDefaultMapping(ClassLoader.class, TestNulls.class.getClassLoader());
-    }
-
-    static class VaListHelper {
-        static final VaList vaList;
-        static final VaList.Builder vaListBuilder;
-
-        static {
-            AtomicReference<VaList.Builder> builderRef = new AtomicReference<>();
-            vaList = VaList.make(b -> {
-                builderRef.set(b);
-                b.addVarg(JAVA_LONG, 42L);
-            }, SegmentScope.auto());
-            vaListBuilder = builderRef.get();
-        }
+        addDefaultMapping(Thread.UncaughtExceptionHandler.class, (thread, ex) -> {});
     }
 
     static final Map<Class<?>, Object[]> REPLACEMENT_VALUES = new HashMap<>();

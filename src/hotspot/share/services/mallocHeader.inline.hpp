@@ -36,22 +36,22 @@
 
 inline MallocHeader::MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_marker)
   : _size(size), _mst_marker(mst_marker), _flags(flags),
-    _unused(0), _canary(_header_canary_life_mark)
+    _unused(0), _canary(_header_canary_live_mark)
 {
   assert(size < max_reasonable_malloc_size, "Too large allocation size?");
   // On 32-bit we have some bits more, use them for a second canary
   // guarding the start of the header.
-  NOT_LP64(_alt_canary = _header_alt_canary_life_mark;)
-  set_footer(_footer_canary_life_mark); // set after initializing _size
+  NOT_LP64(_alt_canary = _header_alt_canary_live_mark;)
+  set_footer(_footer_canary_live_mark); // set after initializing _size
 }
 
 inline void MallocHeader::revive() {
   assert(_canary == _header_canary_dead_mark, "must be dead");
   assert(get_footer() == _footer_canary_dead_mark, "must be dead");
   NOT_LP64(assert(_alt_canary == _header_alt_canary_dead_mark, "must be dead"));
-  _canary = _header_canary_life_mark;
-  NOT_LP64(_alt_canary = _header_alt_canary_life_mark);
-  set_footer(_footer_canary_life_mark);
+  _canary = _header_canary_live_mark;
+  NOT_LP64(_alt_canary = _header_alt_canary_live_mark);
+  set_footer(_footer_canary_live_mark);
 }
 
 // The effects of this method must be reversible with MallocHeader::revive()
@@ -116,12 +116,22 @@ inline const MallocHeader* MallocHeader::resolve_checked(const void* memblock) {
   return MallocHeader::resolve_checked_impl<const void*, const MallocHeader*>(memblock);
 }
 
+
+// Used for debugging purposes only. Check header if it could constitute a valid (live or dead) header.
+inline bool MallocHeader::looks_valid() const {
+  // Note: we define these restrictions loose enough to also catch moderately corrupted blocks.
+  // E.g. we don't check footer canary.
+  return ( (_canary == _header_canary_live_mark NOT_LP64(&& _alt_canary == _header_alt_canary_live_mark)) ||
+           (_canary == _header_canary_dead_mark NOT_LP64(&& _alt_canary == _header_alt_canary_dead_mark)) ) &&
+           _size > 0 && _size < max_reasonable_malloc_size;
+}
+
 inline bool MallocHeader::check_block_integrity(char* msg, size_t msglen, address* p_corruption) const {
   // Note: if you modify the error messages here, make sure you
   // adapt the associated gtests too.
 
   // Check header canary
-  if (_canary != _header_canary_life_mark) {
+  if (_canary != _header_canary_live_mark) {
     *p_corruption = (address)this;
     jio_snprintf(msg, msglen, "header canary broken");
     return false;
@@ -129,7 +139,7 @@ inline bool MallocHeader::check_block_integrity(char* msg, size_t msglen, addres
 
 #ifndef _LP64
   // On 32-bit we have a second canary, check that one too.
-  if (_alt_canary != _header_alt_canary_life_mark) {
+  if (_alt_canary != _header_alt_canary_live_mark) {
     *p_corruption = (address)this;
     jio_snprintf(msg, msglen, "header canary broken");
     return false;
@@ -144,7 +154,7 @@ inline bool MallocHeader::check_block_integrity(char* msg, size_t msglen, addres
   }
 
   // Check footer canary
-  if (get_footer() != _footer_canary_life_mark) {
+  if (get_footer() != _footer_canary_live_mark) {
     *p_corruption = footer_address();
     jio_snprintf(msg, msglen, "footer canary broken at " PTR_FORMAT " (buffer overflow?)",
                  p2i(footer_address()));

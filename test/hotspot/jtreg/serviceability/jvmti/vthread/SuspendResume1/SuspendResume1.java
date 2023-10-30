@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,9 @@
  * @summary Test SuspendThread/ResumeThread, SuspendThreadList/ResumeThreadList
  *          for virtual threads.
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} SuspendResume1.java
+ * @compile SuspendResume1.java
  * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm/native/timeout=600
- *      --enable-preview
  *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
  *      -agentlib:SuspendResume1
  *      SuspendResume1
@@ -39,10 +38,9 @@
  * @test id=no-vmcontinuations
  * @requires vm.continuations
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} SuspendResume1.java
+ * @compile SuspendResume1.java
  * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm/native/timeout=600
- *      --enable-preview
  *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
  *      -agentlib:SuspendResume1
  *      -XX:+UnlockExperimentalVMOptions

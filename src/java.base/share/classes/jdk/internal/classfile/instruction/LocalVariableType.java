@@ -41,7 +41,7 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
  * A pseudo-instruction which models a single entry in the {@link
  * LocalVariableTypeTableAttribute}.  Delivered as a {@link CodeElement} during
  * traversal of the elements of a {@link CodeModel}, according to the setting of
- * the {@link Classfile.Option#processDebug(boolean)} option.
+ * the {@link Classfile.DebugElementsOption} option.
  */
 public sealed interface LocalVariableType extends PseudoInstruction
         permits AbstractPseudoInstruction.UnboundLocalVariableType, BoundLocalVariableType {
@@ -77,6 +77,12 @@ public sealed interface LocalVariableType extends PseudoInstruction
      */
     Label endScope();
 
+    /**
+     * Writes the local variable to the specified writer
+     *
+     * @param buf the writer
+     * @return true if the variable has been written
+     */
     boolean writeTo(BufWriter buf);
 
     /**

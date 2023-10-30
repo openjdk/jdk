@@ -168,7 +168,6 @@ class ClassLoader: AllStatic {
   static PerfCounter* _perf_classes_linked;
   static PerfCounter* _perf_class_link_time;
   static PerfCounter* _perf_class_link_selftime;
-  static PerfCounter* _perf_sys_class_lookup_time;
   static PerfCounter* _perf_shared_classload_time;
   static PerfCounter* _perf_sys_classload_time;
   static PerfCounter* _perf_app_classload_time;
@@ -222,7 +221,7 @@ class ClassLoader: AllStatic {
   CDS_ONLY(static ClassPathEntry* _last_module_path_entry;)
   CDS_ONLY(static void setup_app_search_path(JavaThread* current, const char* class_path);)
   CDS_ONLY(static void setup_module_search_path(JavaThread* current, const char* path);)
-  static void add_to_app_classpath_entries(JavaThread* current,
+  static bool add_to_app_classpath_entries(JavaThread* current,
                                            ClassPathEntry* entry,
                                            bool check_for_duplicates);
   CDS_ONLY(static void add_to_module_path_entries(const char* path,
@@ -289,7 +288,6 @@ class ClassLoader: AllStatic {
   static PerfCounter* perf_classes_linked()           { return _perf_classes_linked; }
   static PerfCounter* perf_class_link_time()          { return _perf_class_link_time; }
   static PerfCounter* perf_class_link_selftime()      { return _perf_class_link_selftime; }
-  static PerfCounter* perf_sys_class_lookup_time()    { return _perf_sys_class_lookup_time; }
   static PerfCounter* perf_shared_classload_time()    { return _perf_shared_classload_time; }
   static PerfCounter* perf_sys_classload_time()       { return _perf_sys_classload_time; }
   static PerfCounter* perf_app_classload_time()       { return _perf_app_classload_time; }

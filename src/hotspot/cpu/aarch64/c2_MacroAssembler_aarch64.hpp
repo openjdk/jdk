@@ -35,6 +35,11 @@
                                   enum shift_kind kind = Assembler::LSL, unsigned shift = 0);
 
  public:
+  // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
+  // See full description in macroAssembler_aarch64.cpp.
+  void fast_lock(Register object, Register box, Register tmp, Register tmp2, Register tmp3);
+  void fast_unlock(Register object, Register box, Register tmp, Register tmp2);
+
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
                       Register tmp1, Register tmp2, FloatRegister vtmp1,
@@ -103,7 +108,7 @@
   void sve_vmaskcast_extend(PRegister dst, PRegister src,
                             uint dst_element_length_in_bytes, uint src_element_lenght_in_bytes);
 
-  void sve_vmaskcast_narrow(PRegister dst, PRegister src,
+  void sve_vmaskcast_narrow(PRegister dst, PRegister src, PRegister ptmp,
                             uint dst_element_length_in_bytes, uint src_element_lenght_in_bytes);
 
   // Vector reduction

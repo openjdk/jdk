@@ -241,6 +241,11 @@ public class Lint
         OPTIONS("options"),
 
         /**
+         * Warn when any output file is written to more than once.
+         */
+        OUTPUT_FILE_CLASH("output-file-clash"),
+
+        /**
          * Warn about issues regarding method overloads.
          */
         OVERLOADS("overloads"),
@@ -330,7 +335,12 @@ public class Lint
         /**
          * Warn about use of preview features.
          */
-        PREVIEW("preview");
+        PREVIEW("preview"),
+
+        /**
+         * Warn about use of restricted methods.
+         */
+        RESTRICTED("restricted");
 
         LintCategory(String option) {
             this(option, false);

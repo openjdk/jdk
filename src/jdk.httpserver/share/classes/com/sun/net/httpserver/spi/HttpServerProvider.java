@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ import java.util.ServiceLoader;
  * Sub-classes of HttpServerProvider provide an implementation of
  * {@link HttpServer} and associated classes. Applications do not normally use
  * this class. See {@link #provider()} for how providers are found and loaded.
+ *
+ * @since 1.6
  */
 public abstract class HttpServerProvider {
 

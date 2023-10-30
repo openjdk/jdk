@@ -179,14 +179,16 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   //  rax: CompiledICHolder
   //  rcx: Receiver
 
-  // Most registers are in use; we'll use rax, rbx, rsi, rdi
+  // Most registers are in use; we'll use rax, rbx, rcx, rdx, rsi, rdi
   // (If we need to make rsi, rdi callee-save, do a push/pop here.)
   const Register recv_klass_reg     = rsi;
   const Register holder_klass_reg   = rax; // declaring interface klass (DECC)
-  const Register resolved_klass_reg = rbx; // resolved interface klass (REFC)
-  const Register temp_reg           = rdi;
+  const Register resolved_klass_reg = rdi; // resolved interface klass (REFC)
+  const Register temp_reg           = rdx;
+  const Register method             = rbx;
+  const Register icholder_reg       = rax;
+  const Register receiver           = rcx;
 
-  const Register icholder_reg = rax;
   __ movptr(resolved_klass_reg, Address(icholder_reg, CompiledICHolder::holder_klass_offset()));
   __ movptr(holder_klass_reg,   Address(icholder_reg, CompiledICHolder::holder_metadata_offset()));
 
@@ -198,35 +200,26 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ load_klass(recv_klass_reg, rcx, noreg);
 
   start_pc = __ pc();
+  __ push(rdx); // temp_reg
 
   // Receiver subtype check against REFC.
-  // Destroys recv_klass_reg value.
-  __ lookup_interface_method(// inputs: rec. class, interface
-                             recv_klass_reg, resolved_klass_reg, noreg,
-                             // outputs:  scan temp. reg1, scan temp. reg2
-                             recv_klass_reg, temp_reg,
-                             L_no_such_interface,
-                             /*return_method=*/false);
-
-  const ptrdiff_t  typecheckSize = __ pc() - start_pc;
-  start_pc = __ pc();
-
   // Get selected method from declaring class and itable index
-  const Register method = rbx;
-  __ load_klass(recv_klass_reg, rcx, noreg); // restore recv_klass_reg
-  __ lookup_interface_method(// inputs: rec. class, interface, itable index
-                             recv_klass_reg, holder_klass_reg, itable_index,
-                             // outputs: method, scan temp. reg
-                             method, temp_reg,
-                             L_no_such_interface);
-
+  __ lookup_interface_method_stub(recv_klass_reg, // input
+                                  holder_klass_reg, // input
+                                  resolved_klass_reg, // input
+                                  method, // output
+                                  temp_reg,
+                                  noreg,
+                                  receiver, // input (x86_32 only: to restore recv_klass value)
+                                  itable_index,
+                                  L_no_such_interface);
   const ptrdiff_t  lookupSize = __ pc() - start_pc;
 
   // We expect we need index_dependent_slop extra bytes. Reason:
   // The emitted code in lookup_interface_method changes when itable_index exceeds 31.
   // For windows, a narrow estimate was found to be 104. Other OSes not tested.
   const ptrdiff_t estimate = 104;
-  const ptrdiff_t codesize = typecheckSize + lookupSize + index_dependent_slop;
+  const ptrdiff_t codesize = lookupSize + index_dependent_slop;
   slop_delta  = (int)(estimate - codesize);
   slop_bytes += slop_delta;
   assert(slop_delta >= 0, "itable #%d: Code size estimate (%d) for lookup_interface_method too small, required: %d", itable_index, (int)estimate, (int)codesize);
@@ -246,6 +239,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   }
 #endif // ASSERT
 
+  __ pop(rdx);
   address ame_addr = __ pc();
   __ jmp(Address(method, Method::from_compiled_offset()));
 
@@ -255,6 +249,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // We force resolving of the call site by jumping to the "handle
   // wrong method" stub, and so let the interpreter runtime do all the
   // dirty work.
+  __ pop(rdx);
   __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
 
   masm->flush();

@@ -1162,7 +1162,7 @@ public final class Float extends Number
         }
 
         // No bits set in significand beyond the *first* exponent bit,
-        // not just the sigificand; quantity is added to the exponent
+        // not just the significand; quantity is added to the exponent
         // to implement a carry out from rounding the significand.
         assert (0xf800 & signif_bits) == 0x0;
 

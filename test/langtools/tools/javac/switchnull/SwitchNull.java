@@ -25,7 +25,6 @@
  * @test
  * @bug 8262891
  * @summary Verify "case null" behavior.
- * @enablePreview
  */
 
 public class SwitchNull {

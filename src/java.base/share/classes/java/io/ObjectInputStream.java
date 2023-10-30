@@ -242,6 +242,7 @@ import sun.security.action.GetIntegerAction;
  * <cite>Java Object Serialization Specification,</cite> Section 1.13,
  * "Serialization of Records"</a> for additional information.
  *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @author      Mike Warres
  * @author      Roger Riggs
  * @see java.io.DataInput
@@ -259,21 +260,6 @@ public class ObjectInputStream
 
     /** marker for unshared objects in internal handle table */
     private static final Object unsharedMarker = new Object();
-
-    /**
-     * immutable table mapping primitive type names to corresponding
-     * class objects
-     */
-    private static final Map<String, Class<?>> primClasses =
-        Map.of("boolean", boolean.class,
-               "byte", byte.class,
-               "char", char.class,
-               "short", short.class,
-               "int", int.class,
-               "long", long.class,
-               "float", float.class,
-               "double", double.class,
-               "void", void.class);
 
     private static class Caches {
         /** cache of subclass security audit results */
@@ -802,7 +788,7 @@ public class ObjectInputStream
         try {
             return Class.forName(name, false, latestUserDefinedLoader());
         } catch (ClassNotFoundException ex) {
-            Class<?> cl = primClasses.get(name);
+            Class<?> cl = Class.forPrimitiveName(name);
             if (cl != null) {
                 return cl;
             } else {
@@ -1450,16 +1436,16 @@ public class ObjectInputStream
      * @param arrayLength the array length
      * @throws NullPointerException if arrayType is null
      * @throws IllegalArgumentException if arrayType isn't actually an array type
-     * @throws NegativeArraySizeException if arrayLength is negative
+     * @throws StreamCorruptedException if arrayLength is negative
      * @throws InvalidClassException if the filter rejects creation
      */
-    private void checkArray(Class<?> arrayType, int arrayLength) throws InvalidClassException {
+    private void checkArray(Class<?> arrayType, int arrayLength) throws ObjectStreamException {
         if (! arrayType.isArray()) {
             throw new IllegalArgumentException("not an array type");
         }
 
         if (arrayLength < 0) {
-            throw new NegativeArraySizeException();
+            throw new StreamCorruptedException("Array length is negative");
         }
 
         filterCheck(arrayType, arrayLength);
@@ -2137,7 +2123,9 @@ public class ObjectInputStream
 
         ObjectStreamClass desc = readClassDesc(false);
         int len = bin.readInt();
-
+        if (len < 0) {
+            throw new StreamCorruptedException("Array length is negative");
+        }
         filterCheck(desc.forClass(), len);
 
         Object array = null;

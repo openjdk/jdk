@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1093,6 +1093,9 @@ public class Modules extends JCTree.Visitor {
                     it = attr.attribType(implName, env, syms.objectType);
                 } finally {
                     env.info.visitingServiceImplementation = prevVisitingServiceImplementation;
+                }
+                if (!it.hasTag(CLASS)) {
+                    continue;
                 }
                 ClassSymbol impl = (ClassSymbol) it.tsym;
                 if ((impl.flags_field & PUBLIC) == 0) {

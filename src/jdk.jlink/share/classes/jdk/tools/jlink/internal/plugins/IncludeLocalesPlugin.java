@@ -135,7 +135,8 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
                         .forEach(children::add);
                     return new AbstractMap.SimpleEntry<String, List<String>>(parent, children);
                 })
-        ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                (l1, l2) -> Stream.concat(l1.stream(), l2.stream()).distinct().toList()));
 
     // Special COMPAT provider locales
     private static final String jaJPJPTag = "ja-JP-JP";

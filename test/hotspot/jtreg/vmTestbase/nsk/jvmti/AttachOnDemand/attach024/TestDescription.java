@@ -37,7 +37,7 @@
  *     Test checks that agent's JAR file is appended at the end of the system class path.
  *     Agent's JAR file contains modified class java.util.TooManyListenersException (it is assumed
  *     that this class isn't loaded before agent is loaded), agent instantiates TooManyListenersException
- *     and checks that non-modified version of this class was loaded from rt.jar (not from agent's JAR).
+ *     and checks that non-modified version of this class was loaded from the jdk image (not from agent's JAR).
  *
  * @library /vmTestbase
  *          /test/lib

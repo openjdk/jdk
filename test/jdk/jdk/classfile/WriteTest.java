@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -52,7 +50,7 @@ class WriteTest {
     @Test
     void testJavapWrite() {
 
-        byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
@@ -94,7 +92,7 @@ class WriteTest {
     @Test
     void testPrimitiveWrite() {
 
-        byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC)
               .with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb

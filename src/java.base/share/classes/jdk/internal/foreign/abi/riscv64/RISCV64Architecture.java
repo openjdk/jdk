@@ -6,7 +6,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -30,9 +32,8 @@ import jdk.internal.foreign.abi.ABIDescriptor;
 import jdk.internal.foreign.abi.Architecture;
 import jdk.internal.foreign.abi.StubLocations;
 import jdk.internal.foreign.abi.VMStorage;
-import jdk.internal.foreign.abi.riscv64.linux.TypeClass;
 
-public class RISCV64Architecture implements Architecture {
+public final class RISCV64Architecture implements Architecture {
     public static final Architecture INSTANCE = new RISCV64Architecture();
 
     private static final short REG64_MASK = 0b0000_0000_0000_0001;
@@ -40,6 +41,9 @@ public class RISCV64Architecture implements Architecture {
 
     private static final int INTEGER_REG_SIZE = 8; // bytes
     private static final int FLOAT_REG_SIZE = 8;
+
+    // Suppresses default constructor, ensuring non-instantiability.
+    private RISCV64Architecture() {}
 
     @Override
     public boolean isStackType(int cls) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test id=default
  * @bug 8284161 8288214
  * @summary Verifies that FRAME_POP event is delivered when called from URL.openStream().
- * @enablePreview
  * @modules jdk.httpserver
  * @library /test/lib
  * @run main/othervm/native
@@ -37,7 +36,6 @@
 /*
  * @test id=no-vmcontinuations
  * @requires vm.continuations
- * @enablePreview
  * @modules jdk.httpserver
  * @library /test/lib
  * @run main/othervm/native

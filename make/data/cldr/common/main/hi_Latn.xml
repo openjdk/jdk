@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -53,6 +53,7 @@ annotations.
 			<territory type="RE">Reunion</territory>
 			<territory type="SH">St. Helena</territory>
 			<territory type="ST">Sao Tome &amp; Principe</territory>
+			<territory type="TR">Turkiye</territory>
 			<territory type="TR" alt="variant">Turkiye</territory>
 			<territory type="UM">U.S. Outlying Islands</territory>
 			<territory type="US" alt="short">America</territory>
@@ -305,6 +306,15 @@ annotations.
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">Ravi</day>
+							<day type="mon">Som</day>
+							<day type="tue">Mangal</day>
+							<day type="wed">Budh</day>
+							<day type="thu">Guru</day>
+							<day type="fri">Shukra</day>
+							<day type="sat">Shani</day>
+						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">Ra</day>
 							<day type="mon">So</day>
@@ -567,6 +577,9 @@ annotations.
 					<eraAbbr>
 						<era type="0">Hijri</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0">Hijri</era>
+					</eraNarrow>
 				</eras>
 			</calendar>
 		</calendars>
@@ -754,6 +767,9 @@ annotations.
 			</field>
 			<field type="day-short">
 				<displayName>din</displayName>
+				<relative type="-1">kal</relative>
+				<relative type="0">aaj</relative>
+				<relative type="1">aane wala kal</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} din mein</relativeTimePattern>
 					<relativeTimePattern count="other">{0} din mein</relativeTimePattern>
@@ -765,6 +781,9 @@ annotations.
 			</field>
 			<field type="day-narrow">
 				<displayName>din</displayName>
+				<relative type="-1">kal</relative>
+				<relative type="0">aaj</relative>
+				<relative type="1">aane wala kal</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} din mein</relativeTimePattern>
 					<relativeTimePattern count="other">{0} din mein</relativeTimePattern>
@@ -1923,6 +1942,9 @@ annotations.
 			<zone type="America/Hermosillo">
 				<exemplarCity>Hermosillo</exemplarCity>
 			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>Ciudad Juarez</exemplarCity>
+			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>Mazatlan</exemplarCity>
 			</zone>
@@ -2427,64 +2449,6 @@ annotations.
 	<numbers>
 		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<minimumGroupingDigits>1</minimumGroupingDigits>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength type="long">
-				<decimalFormat>
-					<pattern type="1000" count="one">0 hazaar</pattern>
-					<pattern type="1000" count="other">0 hazaar</pattern>
-					<pattern type="10000" count="one">00 hazaar</pattern>
-					<pattern type="10000" count="other">00 hazaar</pattern>
-					<pattern type="100000" count="one">0 laakh</pattern>
-					<pattern type="100000" count="other">0 laakh</pattern>
-					<pattern type="1000000" count="one">00 laakh</pattern>
-					<pattern type="1000000" count="other">00 laakh</pattern>
-					<pattern type="10000000" count="one">0 karod</pattern>
-					<pattern type="10000000" count="other">0 karod</pattern>
-					<pattern type="100000000" count="one">00 karod</pattern>
-					<pattern type="100000000" count="other">00 karod</pattern>
-					<pattern type="1000000000" count="one">0 arab</pattern>
-					<pattern type="1000000000" count="other">0 arab</pattern>
-					<pattern type="10000000000" count="one">00 arab</pattern>
-					<pattern type="10000000000" count="other">00 arab</pattern>
-					<pattern type="100000000000" count="one">0 kharab</pattern>
-					<pattern type="100000000000" count="other">0 kharab</pattern>
-					<pattern type="1000000000000" count="one">00 kharab</pattern>
-					<pattern type="1000000000000" count="other">00 kharab</pattern>
-					<pattern type="10000000000000" count="one">000 kharab</pattern>
-					<pattern type="10000000000000" count="other">000 kharab</pattern>
-					<pattern type="100000000000000" count="one">0000 kharab</pattern>
-					<pattern type="100000000000000" count="other">0000 kharab</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-			<decimalFormatLength type="short">
-				<decimalFormat>
-					<pattern type="1000" count="one">0 hazaar</pattern>
-					<pattern type="1000" count="other">0 hazaar</pattern>
-					<pattern type="10000" count="one">00Th</pattern>
-					<pattern type="10000" count="other">00Th</pattern>
-					<pattern type="100000" count="one">0 laakh</pattern>
-					<pattern type="100000" count="other">0 laakh</pattern>
-					<pattern type="1000000" count="one">00 laakh</pattern>
-					<pattern type="1000000" count="other">00 laakh</pattern>
-					<pattern type="10000000" count="one">0 ka'.'</pattern>
-					<pattern type="10000000" count="other">0 ka'.'</pattern>
-					<pattern type="100000000" count="one">00 ka'.'</pattern>
-					<pattern type="100000000" count="other">00 ka'.'</pattern>
-					<pattern type="1000000000" count="one">0 a'.'</pattern>
-					<pattern type="1000000000" count="other">0 a'.'</pattern>
-					<pattern type="10000000000" count="one">00 a'.'</pattern>
-					<pattern type="10000000000" count="other">00 a'.'</pattern>
-					<pattern type="100000000000" count="one">0 kha'.'</pattern>
-					<pattern type="100000000000" count="other">0 kha'.'</pattern>
-					<pattern type="1000000000000" count="one">00 kha'.'</pattern>
-					<pattern type="1000000000000" count="other">00 kha'.'</pattern>
-					<pattern type="10000000000000" count="one">000 kha'.'</pattern>
-					<pattern type="10000000000000" count="other">000 kha'.'</pattern>
-					<pattern type="100000000000000" count="one">000kha'.'</pattern>
-					<pattern type="100000000000000" count="other">000kha'.'</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
 		<scientificFormats numberSystem="latn">
 			<scientificFormatLength>
 				<scientificFormat>
@@ -2498,46 +2462,6 @@ annotations.
 					<pattern>¤#,##,##0.00</pattern>
 					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
 					<pattern alt="noCurrency">#,##,##0.00</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
-			<currencyFormatLength type="short">
-				<currencyFormat type="standard">
-					<pattern type="1000" count="one">¤0 hazaar</pattern>
-					<pattern type="1000" count="one" alt="alphaNextToNumber">¤ 0 hazaar</pattern>
-					<pattern type="1000" count="other">¤0 hazaar</pattern>
-					<pattern type="1000" count="other" alt="alphaNextToNumber">¤ 0 hazaar</pattern>
-					<pattern type="10000" count="one">¤00 hazaar</pattern>
-					<pattern type="10000" count="one" alt="alphaNextToNumber">¤ 00 hazaar</pattern>
-					<pattern type="10000" count="other">¤00 hazaar</pattern>
-					<pattern type="10000" count="other" alt="alphaNextToNumber">¤ 00 hazaar</pattern>
-					<pattern type="100000" count="one">¤0 laakh</pattern>
-					<pattern type="100000" count="one" alt="alphaNextToNumber">¤ 0 laakh</pattern>
-					<pattern type="100000" count="other">¤0 laakh</pattern>
-					<pattern type="100000" count="other" alt="alphaNextToNumber">¤ 0 laakh</pattern>
-					<pattern type="1000000" count="one">¤00 laakh</pattern>
-					<pattern type="1000000" count="one" alt="alphaNextToNumber">¤ 00 laakh</pattern>
-					<pattern type="1000000" count="other">¤00 laakh</pattern>
-					<pattern type="1000000" count="other" alt="alphaNextToNumber">¤ 00 laakh</pattern>
-					<pattern type="10000000" count="one">¤0Cr</pattern>
-					<pattern type="10000000" count="other">¤0 ka'.'</pattern>
-					<pattern type="100000000" count="one">¤00 ka'.'</pattern>
-					<pattern type="100000000" count="other">¤00 ka'.'</pattern>
-					<pattern type="1000000000" count="one">¤0 a'.'</pattern>
-					<pattern type="1000000000" count="one" alt="alphaNextToNumber">¤ 0B</pattern>
-					<pattern type="1000000000" count="other">¤0 a'.'</pattern>
-					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ 0B</pattern>
-					<pattern type="10000000000" count="one">¤00 a'.'</pattern>
-					<pattern type="10000000000" count="one" alt="alphaNextToNumber">¤ 00B</pattern>
-					<pattern type="10000000000" count="other">¤00 a'.'</pattern>
-					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ 00B</pattern>
-					<pattern type="100000000000" count="one">¤0 kha'.'</pattern>
-					<pattern type="100000000000" count="other">¤0 kha'.'</pattern>
-					<pattern type="1000000000000" count="one">¤00 kha'.'</pattern>
-					<pattern type="1000000000000" count="other">¤00 kha'.'</pattern>
-					<pattern type="10000000000000" count="one">¤000 kha'.'</pattern>
-					<pattern type="10000000000000" count="other">¤000 kha'.'</pattern>
-					<pattern type="100000000000000" count="one">¤0000 kha'.'</pattern>
-					<pattern type="100000000000000" count="other">¤0000 kha'.'</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2781,6 +2705,21 @@ annotations.
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>μ {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>n {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>M {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>T {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>P {0}</unitPrefixPattern>
+			</compoundUnit>
 			<unit type="concentr-karat">
 				<displayName>karat</displayName>
 				<unitPattern count="one">{0}kt</unitPattern>
@@ -2912,5 +2851,40 @@ annotations.
 	<personNames>
 		<nameOrderLocales order="givenFirst">und hi</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
+		<sampleName item="nativeG">
+			<nameField type="given">Lalit</nameField>
+		</sampleName>
+		<sampleName item="nativeGS">
+			<nameField type="given">Lalit</nameField>
+			<nameField type="surname">Bharati</nameField>
+		</sampleName>
+		<sampleName item="nativeGGS">
+			<nameField type="given">Lalit</nameField>
+			<nameField type="given2">Mohan</nameField>
+			<nameField type="surname">Bharati</nameField>
+		</sampleName>
+		<sampleName item="nativeFull">
+			<nameField type="title">Shree</nameField>
+			<nameField type="given">Lalit</nameField>
+			<nameField type="given-informal">Lakhan</nameField>
+			<nameField type="given2">Kumaar</nameField>
+			<nameField type="surname-core">Bharati</nameField>
+			<nameField type="generation">Dviteey</nameField>
+			<nameField type="credentials">MD</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">Kathe</nameField>
+			<nameField type="surname">Muller</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">Zazilia</nameField>
+			<nameField type="surname">Stober</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">Prof. Dr.</nameField>
+			<nameField type="given2">Cesar Martin</nameField>
+			<nameField type="surname-core">Bruhl</nameField>
+			<nameField type="surname2">Gonzalez Domingo</nameField>
+		</sampleName>
 	</personNames>
 </ldml>

@@ -28,27 +28,31 @@ package jdk.internal.foreign.abi.aarch64.windows;
 
 import jdk.internal.foreign.abi.AbstractLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
+import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.aarch64.CallArranger;
 
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.SegmentScope;
-import java.lang.foreign.VaList;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.util.function.Consumer;
+import java.nio.ByteOrder;
+import java.util.Map;
 
 /**
  * ABI implementation for Windows/AArch64. Based on AAPCS with
  * changes to va_list.
  */
 public final class WindowsAArch64Linker extends AbstractLinker {
-    private static WindowsAArch64Linker instance;
+
+    static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
+            SharedUtils.canonicalLayouts(ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG, ValueLayout.JAVA_CHAR);
 
     public static WindowsAArch64Linker getInstance() {
-        if (instance == null) {
-            instance = new WindowsAArch64Linker();
+        class Holder {
+            private static final WindowsAArch64Linker INSTANCE =  new WindowsAArch64Linker();
         }
-        return instance;
+        return Holder.INSTANCE;
     }
 
     @Override
@@ -57,22 +61,17 @@ public final class WindowsAArch64Linker extends AbstractLinker {
     }
 
     @Override
-    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function) {
-        return CallArranger.WINDOWS.arrangeUpcall(targetType, function);
+    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
+        return CallArranger.WINDOWS.arrangeUpcall(targetType, function, options);
     }
 
-    public static VaList newVaList(Consumer<VaList.Builder> actions, SegmentScope scope) {
-        WindowsAArch64VaList.Builder builder = WindowsAArch64VaList.builder(scope);
-        actions.accept(builder);
-        return builder.build();
+    @Override
+    protected ByteOrder linkerByteOrder() {
+        return ByteOrder.LITTLE_ENDIAN;
     }
 
-    public static VaList newVaListOfAddress(long address, SegmentScope scope) {
-        return WindowsAArch64VaList.ofAddress(address, scope);
+    @Override
+    public Map<String, MemoryLayout> canonicalLayouts() {
+        return CANONICAL_LAYOUTS;
     }
-
-    public static VaList emptyVaList() {
-        return WindowsAArch64VaList.empty();
-    }
-
 }
