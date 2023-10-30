@@ -88,6 +88,9 @@ public class CenSizeTooLarge {
     private static final String LAST_COMMENT = "LastCEN";
     private static final byte[] LAST_COMMENT_BYTES = LAST_COMMENT.getBytes(StandardCharsets.UTF_8);
 
+    // Expected ZipException message when the CEN does not fit in a Java byte array
+    private static final String CEN_TOO_LARGE_MESSAGE = "invalid END header (central directory size too large)";
+
     // Zip file to create for testing
     private File hugeZipFile;
 
@@ -149,7 +152,7 @@ public class CenSizeTooLarge {
     @Test
     public void centralDirectoryTooLargeToFitInByteArray() {
         ZipException ex = assertThrows(ZipException.class, () -> new ZipFile(hugeZipFile));
-        assertEquals(ex.getMessage(), "invalid END header (central directory size too large)");
+        assertEquals(CEN_TOO_LARGE_MESSAGE, ex.getMessage());
     }
 
     /**
