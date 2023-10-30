@@ -42,6 +42,8 @@
 ciMethodData::ciMethodData(MethodData* md)
 : ciMetadata(md),
   _data_size(0), _extra_data_size(0), _data(nullptr),
+  _parameters_data_offset(0),
+  _ex_handlers_data_offset(0),
   // Set an initial hint. Don't use set_hint_di() because
   // first_di() may be out of bounds if data_size is 0.
   _hint_di(first_di()),
@@ -50,9 +52,7 @@ ciMethodData::ciMethodData(MethodData* md)
   // Initialize the escape information (to "don't know.");
   _eflags(0), _arg_local(0), _arg_stack(0), _arg_returned(0),
   _invocation_counter(0),
-  _orig(),
-  _parameters_data_offset(0),
-  _ex_handlers_data_offset(0) {}
+  _orig() {}
 
 // Check for entries that reference an unloaded method
 class PrepareExtraDataClosure : public CleanExtraDataClosure {
