@@ -80,7 +80,7 @@ public class SecondaryErrorTest {
     // We also check, optionally, that +ErrorLogSecondaryErrorDetails produces callstacks for
     // the secondary error.
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions",
         "-Xmx100M",
         "-XX:-CreateCoredumpOnCrash",

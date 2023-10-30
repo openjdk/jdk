@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_RESOURCEAREA_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/arena.hpp"
 #include "runtime/javaThread.hpp"
 
 // The resource area holds temporary data structures in the VM.
@@ -51,10 +52,11 @@ class ResourceArea: public Arena {
 
 public:
   ResourceArea(MEMFLAGS flags = mtThread) :
-    Arena(flags) DEBUG_ONLY(COMMA _nesting(0)) {}
+    Arena(flags, Arena::Tag::tag_ra) DEBUG_ONLY(COMMA _nesting(0)) {}
 
   ResourceArea(size_t init_size, MEMFLAGS flags = mtThread) :
-    Arena(flags, init_size) DEBUG_ONLY(COMMA _nesting(0)) {}
+    Arena(flags, Arena::Tag::tag_ra, init_size) DEBUG_ONLY(COMMA _nesting(0)) {
+  }
 
   char* allocate_bytes(size_t size, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 

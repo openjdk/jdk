@@ -477,7 +477,7 @@ void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
   space->initialize_threshold();
   HeapWord* start = archive_space.start();
   while (start < archive_space.end()) {
-    size_t word_size = _the_space->block_size(start);
+    size_t word_size = cast_to_oop(start)->size();;
     space->alloc_block(start, start + word_size);
     start += word_size;
   }

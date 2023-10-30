@@ -116,29 +116,7 @@ AsyncLogWriter::AsyncLogWriter()
   }
 }
 
-void AsyncLogWriter::write() {
-  ResourceMark rm;
-  AsyncLogMap<AnyObj::RESOURCE_AREA> snapshot;
-
-  // lock protection. This guarantees I/O jobs don't block logsites.
-  {
-    AsyncLogLocker locker;
-
-    _buffer_staging->reset();
-    swap(_buffer, _buffer_staging);
-
-    // move counters to snapshot and reset them.
-    _stats.iterate([&] (LogFileStreamOutput* output, uint32_t& counter) {
-      if (counter > 0) {
-        bool created = snapshot.put(output, counter);
-        assert(created == true, "sanity check");
-        counter = 0;
-      }
-      return true;
-    });
-    _data_available = false;
-  }
-
+void AsyncLogWriter::write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot) {
   int req = 0;
   auto it = _buffer_staging->iterator();
   while (it.hasNext()) {
@@ -159,7 +137,7 @@ void AsyncLogWriter::write() {
     if (counter > 0) {
       stringStream ss;
       ss.print(UINT32_FORMAT_W(6) " messages dropped due to async logging", counter);
-      output->write_blocking(decorations, ss.as_string(false));
+      output->write_blocking(decorations, ss.freeze());
     }
     return true;
   });
@@ -172,15 +150,31 @@ void AsyncLogWriter::write() {
 
 void AsyncLogWriter::run() {
   while (true) {
+    ResourceMark rm;
+    AsyncLogMap<AnyObj::RESOURCE_AREA> snapshot;
     {
       AsyncLogLocker locker;
 
       while (!_data_available) {
         _lock.wait(0/* no timeout */);
       }
-    }
+      // Only doing a swap and statistics under the lock to
+      // guarantee that I/O jobs don't block logsites.
+      _buffer_staging->reset();
+      swap(_buffer, _buffer_staging);
 
-    write();
+      // move counters to snapshot and reset them.
+      _stats.iterate([&] (LogFileStreamOutput* output, uint32_t& counter) {
+        if (counter > 0) {
+          bool created = snapshot.put(output, counter);
+          assert(created == true, "sanity check");
+          counter = 0;
+        }
+        return true;
+      });
+      _data_available = false;
+    }
+    write(snapshot);
   }
 }
 
