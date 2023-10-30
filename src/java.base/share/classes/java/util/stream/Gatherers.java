@@ -45,8 +45,8 @@ import java.util.stream.Gatherer.Downstream;
 
 /**
  * Implementations of {@link Gatherer} that implement various useful intermediate
- * operations, such as windowing functions, folding functions, transforming elements
- * concurrently, etc.
+ * operations, such as windowing functions, folding functions,
+ * transforming elements concurrently, etc.
 */
 @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
 public final class Gatherers {
@@ -57,8 +57,10 @@ public final class Gatherers {
      * and for the default methods for when implementing the Gatherer interface.
      *
      * This serves the following purposes:
-     * 1. removes the need for using `null` for signalling absence of specified value and thereby hiding user bugs
-     * 2. allows to check against these default values to avoid calling methods needlessly
+     * 1. removes the need for using `null` for signalling absence of specified
+     *    value and thereby hiding user bugs
+     * 2. allows to check against these default values to avoid calling methods
+     *    needlessly
      * 3. allows for more efficient composition and evaluation
      */
     @SuppressWarnings("rawtypes")
@@ -90,18 +92,22 @@ public final class Gatherers {
 
         @ForceInline
         @SuppressWarnings("unchecked")
-        <T, R> BiConsumer<T, Gatherer.Downstream<? super R>> finisher() { return (BiConsumer<T, Downstream<? super R>>) this; }
+        <T, R> BiConsumer<T, Gatherer.Downstream<? super R>> finisher() {
+            return (BiConsumer<T, Downstream<? super R>>) this;
+        }
     }
 
-    record GathererImpl<T, A, R>(@Override Supplier<A> initializer,
-                                 @Override Integrator<A, T, R> integrator,
-                                 @Override BinaryOperator<A> combiner,
-                                 @Override BiConsumer<A, Downstream<? super R>> finisher) implements Gatherer<T, A, R> {
+    record GathererImpl<T, A, R>(
+            @Override Supplier<A> initializer,
+            @Override Integrator<A, T, R> integrator,
+            @Override BinaryOperator<A> combiner,
+            @Override BiConsumer<A, Downstream<? super R>> finisher) implements Gatherer<T, A, R> {
 
-        static <T, A, R> GathererImpl<T, A, R> of(Supplier<A> initializer,
-                                      Integrator<A, T, R> integrator,
-                                      BinaryOperator<A> combiner,
-                                      BiConsumer<A, Downstream<? super R>> finisher) {
+        static <T, A, R> GathererImpl<T, A, R> of(
+                Supplier<A> initializer,
+                Integrator<A, T, R> integrator,
+                BinaryOperator<A> combiner,
+                BiConsumer<A, Downstream<? super R>> finisher) {
             return new GathererImpl<>(
                     Objects.requireNonNull(initializer,"initializer"),
                     Objects.requireNonNull(integrator, "integrator"),
@@ -114,13 +120,17 @@ public final class Gatherers {
     final static class Composite<T, A, R, AA, RR> implements Gatherer<T, Object, RR> {
         private final Gatherer<T, A, ? extends R> left;
         private final Gatherer<? super R, AA, ? extends RR> right;
-        private GathererImpl<T, Object, RR> impl; // FIXME change to a computed constant when available
+        // FIXME change `impl` to a computed constant when available
+        private GathererImpl<T, Object, RR> impl;
 
-        static <T, A, R, AA, RR> Composite<T, A, R, AA, RR> of(Gatherer<T, A, ? extends R> left, Gatherer<? super R, AA, ? extends RR> right) {
+        static <T, A, R, AA, RR> Composite<T, A, R, AA, RR> of(
+                Gatherer<T, A, ? extends R> left,
+                Gatherer<? super R, AA, ? extends RR> right) {
             return new Composite<>(left, right);
         }
 
-        private Composite(Gatherer<T, A, ? extends R> left, Gatherer<? super R, AA, ? extends RR> right) {
+        private Composite(Gatherer<T, A, ? extends R> left,
+                          Gatherer<? super R, AA, ? extends RR> right) {
             this.left = left;
             this.right = right;
         }
@@ -131,27 +141,42 @@ public final class Gatherers {
             // as it should deterministically produce the same result even if
             // initialized concurrently on different threads.
             var i = impl;
-            return (i != null ? i : (impl = (GathererImpl<T, Object, RR>)impl(left, right)));
+            return i != null
+                     ? i
+                     : (impl = (GathererImpl<T, Object, RR>)impl(left, right));
         }
 
-        @Override public Supplier<Object> initializer() { return impl().initializer(); }
-        @Override public Integrator<Object, T, RR> integrator() { return impl().integrator(); }
-        @Override public BinaryOperator<Object> combiner() { return impl().combiner(); }
-        @Override public BiConsumer<Object, Downstream<? super RR>> finisher() { return impl().finisher(); }
+        @Override public Supplier<Object> initializer() {
+            return impl().initializer();
+        }
+
+        @Override public Integrator<Object, T, RR> integrator() {
+            return impl().integrator();
+        }
+
+        @Override public BinaryOperator<Object> combiner() {
+            return impl().combiner();
+        }
+
+        @Override public BiConsumer<Object, Downstream<? super RR>> finisher() {
+            return impl().finisher();
+        }
 
         @Override
-
-        public <AAA, RRR> Gatherer<T, ?, RRR> andThen(Gatherer<? super RR, AAA, ? extends RRR> that) {
+        public <AAA, RRR> Gatherer<T, ?, RRR> andThen(
+                Gatherer<? super RR, AAA, ? extends RRR> that) {
             if (that.getClass() == Composite.class) {
                 @SuppressWarnings("unchecked")
-                var composite = (Composite<? super RR, ?, Object, ?, ? extends RRR>) that;
-                return left.andThen(right.andThen(composite.left).andThen(composite.right));
+                final var c =
+                    (Composite<? super RR, ?, Object, ?, ? extends RRR>) that;
+                return left.andThen(right.andThen(c.left).andThen(c.right));
             } else {
                 return left.andThen(right.andThen(that));
             }
         }
 
-        static final <T, A, R, AA, RR> GathererImpl<T, ?, RR> impl(Gatherer<T, A, R> left, Gatherer<? super R, AA, RR> right) {
+        static final <T, A, R, AA, RR> GathererImpl<T, ?, RR> impl(
+                Gatherer<T, A, R> left, Gatherer<? super R, AA, RR> right) {
             final var leftInitializer = left.initializer();
             final var leftIntegrator = left.integrator();
             final var leftCombiner = left.combiner();
@@ -168,27 +193,37 @@ public final class Gatherers {
             final var leftGreedy = leftIntegrator instanceof Integrator.Greedy;
             final var rightGreedy = rightIntegrator instanceof Integrator.Greedy;
 
-            // For pairs of stateless and greedy Gatherers, we can optimize evaluation as we do not
-            // need to track any state nor any short-circuit signals. This can provide significant
-            // performance improvements.
+            /*
+             * For pairs of stateless and greedy Gatherers, we can optimize
+             * evaluation as we do not need to track any state nor any
+             * short-circuit signals. This can provide significant
+             * performance improvements.
+             */
             if (leftStateless && rightStateless && leftGreedy && rightGreedy) {
                 return new GathererImpl<>(
-                        Gatherer.defaultInitializer(),
-                        Gatherer.Integrator.ofGreedy((unused, element, downstream) ->
-                            leftIntegrator.integrate(null, element, r -> rightIntegrator.integrate(null, r, downstream))
-                        ),
-                        (leftCombiner == Gatherer.defaultCombiner() || rightCombiner == Gatherer.defaultCombiner())
-                                ? Gatherer.defaultCombiner()
-                                : Value.DEFAULT.statelessCombiner
-                        ,
-                        (leftFinisher == Gatherer.<A,R>defaultFinisher() && rightFinisher == Gatherer.<AA,RR>defaultFinisher())
-                                ? Gatherer.defaultFinisher()
-                                : (unused, downstream) -> {
-                            if (leftFinisher != Gatherer.<A,R>defaultFinisher())
-                                leftFinisher.accept(null, r -> rightIntegrator.integrate(null, r, downstream));
-                            if (rightFinisher != Gatherer.<AA,RR>defaultFinisher())
-                                rightFinisher.accept(null, downstream);
-                        }
+                    Gatherer.defaultInitializer(),
+                    Gatherer.Integrator.ofGreedy((unused, element, downstream) ->
+                        leftIntegrator.integrate(
+                                null,
+                                element,
+                                r -> rightIntegrator.integrate(null, r, downstream))
+                    ),
+                    (leftCombiner == Gatherer.defaultCombiner()
+                    || rightCombiner == Gatherer.defaultCombiner())
+                            ? Gatherer.defaultCombiner()
+                            : Value.DEFAULT.statelessCombiner
+                    ,
+                    (leftFinisher == Gatherer.<A,R>defaultFinisher()
+                    && rightFinisher == Gatherer.<AA,RR>defaultFinisher())
+                            ? Gatherer.defaultFinisher()
+                            : (unused, downstream) -> {
+                        if (leftFinisher != Gatherer.<A,R>defaultFinisher())
+                            leftFinisher.accept(
+                                    null,
+                                    r -> rightIntegrator.integrate(null, r, downstream));
+                        if (rightFinisher != Gatherer.<AA,RR>defaultFinisher())
+                            rightFinisher.accept(null, downstream);
+                    }
                 );
             } else {
                 class State {
@@ -197,7 +232,8 @@ public final class Gatherers {
                     boolean leftProceed;
                     boolean rightProceed;
 
-                    private State(A leftState, AA rightState, boolean leftProceed, boolean rightProceed) {
+                    private State(A leftState, AA rightState,
+                                  boolean leftProceed, boolean rightProceed) {
                         this.leftState = leftState;
                         this.rightState = rightState;
                         this.leftProceed = leftProceed;
@@ -206,8 +242,8 @@ public final class Gatherers {
 
                     State() {
                         this(leftStateless ? null : leftInitializer.get(),
-                                rightStateless ? null : rightInitializer.get(),
-                                true, true);
+                             rightStateless ? null : rightInitializer.get(),
+                            true, true);
                     }
 
                     State joinLeft(State right) {
@@ -219,10 +255,17 @@ public final class Gatherers {
                     }
 
                     boolean integrate(T t, Downstream<? super RR> c) {
-                        // rightProceed must be checked after integration of left since that can cause right to short-circuit
-                        // We always want to conditionally write leftProceed here, which means that we only do so if we are
-                        // known to be not-greedy.
-                        return (leftIntegrator.integrate(leftState, t, r -> rightIntegrate(r, c)) || leftGreedy || (leftProceed = false)) && (rightGreedy || rightProceed);
+                        /*
+                         * rightProceed must be checked after integration of
+                         * left since that can cause right to short-circuit
+                         * We always want to conditionally write leftProceed
+                         * here, which means that we only do so if we are
+                         * known to be not-greedy.
+                         */
+                        return (leftIntegrator.integrate(leftState, t, r -> rightIntegrate(r, c))
+                                  || leftGreedy
+                                  || (leftProceed = false))
+                                && (rightGreedy || rightProceed);
                     }
 
                     void finish(Downstream<? super RR> c) {
@@ -232,18 +275,29 @@ public final class Gatherers {
                             rightFinisher.accept(rightState, c);
                     }
 
-                    // Currently we use the following to ferry elements from the left Gatherer
-                    // to the right Gatherer, but we create the Gatherer.Downstream as a lambda which
-                    // means that the default implementation of `isKnownDone()` is used.
-                    // If it is determined that we want to be able to support the full interface
-                    // of Gatherer.Downstream then we have the following options:
-                    //    1. Have State implement Gatherer.Downstream<? super R> and store the
-                    //       passed in Gatherer.Downstream<? super RR> downstream as an instance field in
-                    //       `integrate` and read it in push(R r).
-                    //    2. Allocate a new Gatherer.Downstream<? super R> for each invocation of
-                    //       integrate() which might prove costly.
+                    /*
+                     * Currently we use the following to ferry elements from
+                     * the left Gatherer to the right Gatherer, but we create
+                     * the Gatherer.Downstream as a lambda which means that
+                     * the default implementation of `isKnownDone()` is used.
+                     *
+                     * If it is determined that we want to be able to support
+                     * the full interface of Gatherer.Downstream then we have
+                     *  the following options:
+                     *    1. Have State implement Downstream<? super R>
+                     *       and store the passed in Downstream<? super RR>
+                     *       downstream as an instance field in integrate()
+                     *       and read it in push(R r).
+                     *    2. Allocate a new Gatherer.Downstream<? super R> for
+                     *       each invocation of integrate() which might prove
+                     *       costly.
+                     */
                     public boolean rightIntegrate(R r, Downstream<? super RR> downstream) {
-                        return (rightGreedy || rightProceed) && (rightIntegrator.integrate(rightState, r, downstream) || rightGreedy || (rightProceed = false));
+                        // The following logic is highly performance sensitive
+                        return (rightGreedy || rightProceed)
+                                && (rightIntegrator.integrate(rightState, r, downstream)
+                                || rightGreedy
+                                || (rightProceed = false));
                     }
                 }
 
@@ -252,10 +306,12 @@ public final class Gatherers {
                         (leftGreedy && rightGreedy)
                                 ? Integrator.<State, T, RR>ofGreedy(State::integrate)
                                 : Integrator.<State, T, RR>of(State::integrate),
-                        (leftCombiner == Gatherer.defaultCombiner() || rightCombiner == Gatherer.defaultCombiner())
+                        (leftCombiner == Gatherer.defaultCombiner()
+                        || rightCombiner == Gatherer.defaultCombiner())
                                 ? Gatherer.defaultCombiner()
                                 : State::joinLeft,
-                        (leftFinisher == Gatherer.<A, R>defaultFinisher() && rightFinisher == Gatherer.<AA, RR>defaultFinisher())
+                        (leftFinisher == Gatherer.<A, R>defaultFinisher()
+                        && rightFinisher == Gatherer.<AA, RR>defaultFinisher())
                                 ? Gatherer.defaultFinisher()
                                 : State::finish
                 );
@@ -311,10 +367,11 @@ public final class Gatherers {
     }
 
     /**
-     * Gathers elements into sliding windows, sliding out the most previous element
-     * and sliding in the next element for each subsequent window. If the stream
-     * is empty then no window will be produced. If the size of the stream is smaller
-     * than the window size then only one window will be emitted, containing all elements.
+     * Gathers elements into sliding windows, sliding out the most previous
+     * element and sliding in the next element for each subsequent window.
+     * If the stream is empty then no window will be produced. If the size of
+     * the stream is smaller than the window size then only one window will
+     * be emitted, containing all elements.
      *
      * <p>Example:
      * {@snippet lang = java:
@@ -390,8 +447,9 @@ public final class Gatherers {
      * @return a new Gatherer
      * @throws NullPointerException if any of the parameters are null
      */
-    public static <T, R> Gatherer<T, ?, R> fold(Supplier<R> initial,
-                                                BiFunction<? super R, ? super T, ? extends R> folder) {
+    public static <T, R> Gatherer<T, ?, R> fold(
+            Supplier<R> initial,
+            BiFunction<? super R, ? super T, ? extends R> folder) {
         Objects.requireNonNull(initial, "'initial' must not be null");
         Objects.requireNonNull(folder, "'folder' must not be null");
 
@@ -421,18 +479,27 @@ public final class Gatherers {
      *
      * @param effect the effect to execute with the current element
      * @param <TR> the type of elements the returned gatherer consumes and produces
-     * @return a new gatherer which executes an effect, in order, for each element which passes through it
+     * @return a new gatherer which executes an effect, in order,
+     *         for each element which passes through it
      * @throws NullPointerException if the provided effect is null
      */
-    public static <TR> Gatherer<TR, ?, TR> peekOrdered(final Consumer<? super TR> effect) {
+    public static <TR> Gatherer<TR, ?, TR> peekOrdered(
+            final Consumer<? super TR> effect) {
         Objects.requireNonNull(effect, "'effect' must not be null");
 
-        class PeekOrdered implements Gatherer<TR, Void, TR>, Integrator.Greedy<Void, TR, TR> {
+        class PeekOrdered implements Gatherer<TR, Void, TR>,
+                                     Integrator.Greedy<Void, TR, TR> {
             // Integrator
-            @Override public Integrator<Void, TR, TR> integrator() { return this; }
+            @Override
+            public Integrator<Void, TR, TR> integrator() {
+                return this;
+            }
+
             // Integrator implementation
             @Override
-            public boolean integrate(Void state, TR element, Downstream<? super TR> downstream) {
+            public boolean integrate(Void state,
+                                     TR element,
+                                     Downstream<? super TR> downstream) {
                 effect.accept(element);
                 return downstream.push(element);
             }
@@ -444,32 +511,48 @@ public final class Gatherers {
     /**
      * Runs an effect for each element which passes through this gatherer,
      * in the order in which they are processed -- which in the case of parallel
-     * evaluation can be out-of-sequence compared to the sequential encounter order
-     * of the stream.
+     * evaluation can be out-of-sequence compared to the sequential encounter
+     * order of the stream.
      * 
      * @see #peekOrdered(Consumer) 
      * 
      * @param effect the effect to execute with the current element
      * @param <TR> the type of elements the returned gatherer consumes and produces
-     * @return a new gatherer which executes an effect for each element which passes through it
+     * @return a new gatherer which executes an effect for each element which
+     *         passes through it
      */
-    public static <TR> Gatherer<TR, ?, TR> peek(final Consumer<? super TR> effect) {
+    public static <TR> Gatherer<TR, ?, TR> peek(
+            final Consumer<? super TR> effect) {
         Objects.requireNonNull(effect, "'effect' must not be null");
 
-        class Peek implements Gatherer<TR, Void, TR>, Integrator.Greedy<Void, TR, TR>, BinaryOperator<Void> {
+        class Peek implements Gatherer<TR, Void, TR>,
+                              Integrator.Greedy<Void, TR, TR>,
+                              BinaryOperator<Void> {
             // Integrator
-            @Override public Integrator<Void, TR, TR> integrator() { return this; }
+            @Override
+            public Integrator<Void, TR, TR> integrator() {
+                return this;
+            }
+
             // Integrator implementation
             @Override
-            public boolean integrate(Void state, TR element, Downstream<? super TR> downstream) {
+            public boolean integrate(Void state,
+                                     TR element,
+                                     Downstream<? super TR> downstream) {
                 effect.accept(element);
                 return downstream.push(element);
             }
 
             // Combiner
-            @Override public BinaryOperator<Void> combiner() { return this; }
+            @Override public BinaryOperator<Void> combiner() {
+                return this;
+            }
+
             // Combiner implementation
-            @Override public Void apply(Void unused, Void unused2) { return unused; }
+            @Override
+            public Void apply(Void unused, Void unused2) {
+                return unused;
+            }
         }
 
         return new Peek();
@@ -486,8 +569,9 @@ public final class Gatherers {
      * @return a new Gatherer which performs a prefix scan
      * @throws NullPointerException if any of the parameters are null
      */
-    public static <T, R> Gatherer<T, ?, R> scan(Supplier<R> initial,
-                                                BiFunction<? super R, ? super T, ? extends R> scanner) {
+    public static <T, R> Gatherer<T, ?, R> scan(
+            Supplier<R> initial,
+            BiFunction<? super R, ? super T, ? extends R> scanner) {
         Objects.requireNonNull(initial, "'initial' must not be null");
         Objects.requireNonNull(scanner, "'scanner' must not be null");
 
@@ -498,7 +582,8 @@ public final class Gatherers {
             }
         }
 
-        return Gatherer.ofSequential(State::new, Integrator.<State,T, R>ofGreedy(State::integrate));
+        return Gatherer.ofSequential(State::new,
+                                     Integrator.<State,T, R>ofGreedy(State::integrate));
     }
 
     /**
@@ -522,9 +607,12 @@ public final class Gatherers {
      * @throws IllegalArgumentException if maxConcurrency is less than 1
      * @throws NullPointerException if mapper is null
      */
-    public static <T, R> Gatherer<T,?,R> mapConcurrent(final int maxConcurrency, final Function<? super T, ? extends R> mapper) {
+    public static <T, R> Gatherer<T,?,R> mapConcurrent(
+            final int maxConcurrency,
+            final Function<? super T, ? extends R> mapper) {
         if (maxConcurrency <= 0)
-            throw new IllegalArgumentException("'maxConcurrency' needs to be greater than 0");
+            throw new IllegalArgumentException(
+                    "'maxConcurrency' needs to be greater than 0");
 
         Objects.requireNonNull(mapper, "'mapper' must not be null");
 
@@ -532,7 +620,8 @@ public final class Gatherers {
             final ArrayDeque<Future<R>> window = new ArrayDeque<>(maxConcurrency);
             final Semaphore windowLock = new Semaphore(maxConcurrency);
 
-            final boolean integrate(T element, Downstream<? super R> downstream) {
+            final boolean integrate(T element,
+                                    Downstream<? super R> downstream) {
                 if (!downstream.isRejecting())
                     createTaskFor(element);
                 return flush(0, downstream);
@@ -550,27 +639,32 @@ public final class Gatherers {
                 });
 
                 var wasAddedToWindow = window.add(task);
-                assert wasAddedToWindow; // This should always be true given that we use an ArrayDeque
+                assert wasAddedToWindow;
 
                 Thread.startVirtualThread(task);
             }
 
-            final boolean flush(long atLeastN, Downstream<? super R> downstream) {
+            final boolean flush(long atLeastN,
+                                Downstream<? super R> downstream) {
                 boolean proceed = !downstream.isRejecting();
                 try {
                     Future<R> current;
-                    while(proceed && (current = window.peek()) != null && (current.isDone() || atLeastN > 0)) {
+                    while(proceed
+                          && (current = window.peek()) != null
+                          && (current.isDone() || atLeastN > 0)) {
                         proceed &= downstream.push(current.get());
                         atLeastN -= 1;
 
-                        var correctRemoval = window.pop() == current; // This should logically always be true
+                        var correctRemoval = window.pop() == current;
                         assert correctRemoval;
                     }
                 } catch (Exception e) {
                     proceed = false; // Ensure cleanup
-                    throw (e instanceof RuntimeException re) ? re : new RuntimeException(e);
+                    throw (e instanceof RuntimeException re)
+                            ? re
+                            : new RuntimeException(e);
                 } finally {
-                    // Cancel outstanding tasks if no more elements are to be produced
+                    // Clean up
                     if (!proceed) {
                         Future<R> next;
                         while((next = window.pollFirst()) != null) {
