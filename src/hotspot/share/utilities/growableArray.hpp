@@ -366,20 +366,13 @@ class GrowableArrayWithAllocator : public GrowableArrayView<E> {
 
 protected:
   GrowableArrayWithAllocator(E* data, int capacity) :
-      GrowableArrayView<E>(data, capacity, 0) {
-    for (int i = 0; i < capacity; i++) {
-      ::new ((void*)&data[i]) E();
-    }
-  }
+      GrowableArrayView<E>(data, capacity, 0) {}
 
   GrowableArrayWithAllocator(E* data, int capacity, int initial_len, const E& filler) :
       GrowableArrayView<E>(data, capacity, initial_len) {
     int i = 0;
     for (; i < initial_len; i++) {
       ::new ((void*)&data[i]) E(filler);
-    }
-    for (; i < capacity; i++) {
-      ::new ((void*)&data[i]) E();
     }
   }
 
@@ -545,7 +538,7 @@ void GrowableArrayWithAllocator<E, Derived>::shrink_to_fit() {
     for (int i = 0; i < len; ++i) ::new (&new_data[i]) E(old_data[i]);
   }
   // Destroy contents of old data, and deallocate it.
-  for (int i = 0; i < old_capacity; ++i) old_data[i].~E();
+  for (int i = 0; i < len; ++i) old_data[i].~E();
   if (old_data != nullptr) {
     static_cast<Derived*>(this)->deallocate(old_data);
   }
