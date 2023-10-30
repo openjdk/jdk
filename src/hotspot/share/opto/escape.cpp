@@ -1102,34 +1102,56 @@ bool ConnectionGraph::has_reducible_merge_base(AddPNode* n, Unique_Node_List &re
 // 'ophi' or a casted version of 'ophi'. All SafePoint nodes using the same
 // "version" of Phi use the same debug information (regarding the Phi).
 // Therefore, I collect all safepoints and patch them all at once.
+//
+// The safepoints using the Phi node have to be processed before safepoints of
+// CastPP nodes. The reason is, when reducing a CastPP we add a reference (the
+// NSR merge pointer) to the input of the CastPP (i.e., the Phi) in the
+// safepoint. If we process CastPP's safepoints before Phi's safepoints the
+// algorithm that process Phi's safepoints will think that the added Phi
+// reference is a regular reference.
 bool ConnectionGraph::reduce_phi_on_safepoints(PhiNode* ophi) {
-  Unique_Node_List safepoints;
   PhiNode* selector = create_selector(ophi);
+  Unique_Node_List safepoints;
+  Unique_Node_List casts;
 
-  uint outcnt = ophi->outcnt();
-  for (uint i = 0; i < outcnt; i++) {
+  // Just collect the users of the Phis for later processing
+  // in the needed order.
+  for (uint i = 0; i < ophi->outcnt(); i++) {
     Node* use = ophi->raw_out(i);
     if (use->is_SafePoint()) {
       safepoints.push(use);
     } else if (use->is_CastPP()) {
-      Unique_Node_List child_sfpts;
-
-      for (DUIterator_Fast jmax, j = use->fast_outs(jmax); j < jmax; j++) {
-        Node* use_use = use->fast_out(j);
-        if (use_use->is_SafePoint()) {
-          child_sfpts.push(use_use);
-        } else {
-          assert(use_use->outcnt() == 0, "Only SafePoint users should be left.");
-        }
-      }
-
-      if (!reduce_phi_on_safepoints_helper(ophi, use, selector, child_sfpts)) {
-        return false;
-      }
+      casts.push(use);
+    } else {
+      assert(use->outcnt() == 0, "Only CastPP & SafePoint users should be left.");
     }
   }
 
-  return reduce_phi_on_safepoints_helper(ophi, nullptr, selector, safepoints);
+  // Need to process safepoints using the Phi first
+  if (!reduce_phi_on_safepoints_helper(ophi, nullptr, selector, safepoints)) {
+    return false;
+  }
+
+  // Now process CastPP->safepoints
+  for (uint i = 0; i < casts.size(); i++) {
+    Node* cast = casts.at(i);
+    Unique_Node_List cast_sfpts;
+
+    for (DUIterator_Fast jmax, j = cast->fast_outs(jmax); j < jmax; j++) {
+      Node* use_use = cast->fast_out(j);
+      if (use_use->is_SafePoint()) {
+        cast_sfpts.push(use_use);
+      } else {
+        assert(use_use->outcnt() == 0, "Only SafePoint users should be left.");
+      }
+    }
+
+    if (!reduce_phi_on_safepoints_helper(ophi, cast, selector, cast_sfpts)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 // This method will create a SafePointScalarMERGEnode for each SafePoint in
@@ -4489,7 +4511,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       Node* use = phi->fast_out(j);
       if (!use->is_SafePoint() && !use->is_CastPP()) {
         phi->dump(-3);
-        assert(false, "Unexpected user of reducible Phi -> %s", use->Name());
+        assert(false, "Unexpected user of reducible Phi -> %s : %d", use->Name(), use->outcnt());
       }
     }
   }

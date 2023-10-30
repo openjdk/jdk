@@ -46,6 +46,7 @@ public class AllocationMergesTests {
                                    "-XX:CompileCommand=inline,*::charAt*",
                                    "-XX:CompileCommand=inline,*PicturePositions::*",
                                    "-XX:CompileCommand=inline,*Point::*",
+                                   "-XX:CompileCommand=inline,*Nested::*",
                                    "-XX:CompileCommand=exclude,*::dummy*");
     }
 
@@ -92,7 +93,9 @@ public class AllocationMergesTests {
                  "testSRAndNSR_NoTrap_C2",
                  "testSRAndNSR_Trap_C2",
                  "testString_one_C2",
-                 "testString_two_C2"
+                 "testString_two_C2",
+                 "testLoadNarrowKlass_C2",
+                 "testReReduce_C2"
                 })
     public void runner(RunInfo info) {
         invocations++;
@@ -147,6 +150,8 @@ public class AllocationMergesTests {
         Asserts.assertEQ(testSRAndNSR_NoTrap_Interp(cond1, x, y),                   testSRAndNSR_NoTrap_C2(cond1, x, y));
         Asserts.assertEQ(testString_one_Interp(cond1),                              testString_one_C2(cond1));
         Asserts.assertEQ(testString_two_Interp(cond1),                              testString_two_C2(cond1));
+        Asserts.assertEQ(testLoadNarrowKlass_Interp(cond1),                         testLoadNarrowKlass_C2(cond1));
+        Asserts.assertEQ(testReReduce_Interp(cond1, x, y),                          testReReduce_C2(cond1, x, y));
 
         Asserts.assertEQ(testSRAndNSR_Trap_Interp(false, cond1, cond2, x, y),
                          testSRAndNSR_Trap_C2(info.isTestC2Compiled("testSRAndNSR_Trap_C2"), cond1, cond2, x, y));
@@ -1251,6 +1256,62 @@ public class AllocationMergesTests {
     @DontCompile
     char testString_two_Interp(boolean cond1) { return testString_two(cond1); }
 
+    // -------------------------------------------------------------------------
+
+    @ForceInline
+    Class testLoadNarrowKlass(boolean cond1) {
+        Object p = new Circle(10);
+
+        if (cond1) {
+            p = dummy(1, 2);
+        }
+
+        return p.getClass();
+    }
+
+    @Test
+    @IR(counts = { IRNode.ALLOC, "1" })
+    // The allocation won't be reduced because we don't support NarrowKlass
+    // loads under CastPPs.
+    Class testLoadNarrowKlass_C2(boolean cond1) { return testLoadNarrowKlass(cond1); }
+
+    @DontCompile
+    Class testLoadNarrowKlass_Interp(boolean cond1) { return testLoadNarrowKlass(cond1); }
+
+    // -------------------------------------------------------------------------
+
+    @ForceInline
+    int testReReduce(boolean cond, int x, int y) {
+        Nested A = new Nested(x, y);
+        Nested B = new Nested(y, x);
+        Nested C = new Nested(y, x);
+        Nested P = null;
+
+        if (x == y) {
+            A.other = B;
+            P = A;
+        } else if (x > y) {
+            P = B;
+        } else {
+            C.other = B;
+            P = C;
+        }
+
+        if (x == y)
+            dummy_defaults();
+
+        return P.x;
+    }
+
+    @Test
+    @IR(counts = { IRNode.ALLOC, "1" })
+    // The last allocation won't be reduced because it would cause the creation
+    // of a nested SafePointScalarMergeNode.
+    int testReReduce_C2(boolean cond1, int x, int y) { return testReReduce(cond1, x, y); }
+
+    @DontCompile
+    int testReReduce_Interp(boolean cond1, int x, int y) { return testReReduce(cond1, x, y); }
+
     // ------------------ Utility for Testing ------------------- //
 
     @DontCompile
@@ -1280,6 +1341,16 @@ public class AllocationMergesTests {
     @DontCompile
     static ADefaults dummy_defaults() {
         return new ADefaults();
+    }
+
+    static class Nested {
+        int x, y;
+        Nested other;
+        Nested(int x, int y) {
+            this.x = x;
+            this.y = y;
+            this.other = null;
+        }
     }
 
     static class Point {
