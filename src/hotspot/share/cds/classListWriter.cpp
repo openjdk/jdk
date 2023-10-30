@@ -55,7 +55,7 @@ void ClassListWriter::write(const InstanceKlass* k, const ClassFileStream* cfs) 
   assert(is_enabled(), "must be");
 
   if (!ClassLoader::has_jrt_entry()) {
-    warning("DumpLoadedClassList and CDS are not supported in exploded build");
+    log_warning(cds)("DumpLoadedClassList and CDS are not supported in exploded build");
     DumpLoadedClassList = nullptr;
     return;
   }

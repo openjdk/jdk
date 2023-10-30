@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class TestSnippetUnnamedPackage extends SnippetTester {
 
@@ -87,11 +88,9 @@ public class TestSnippetUnnamedPackage extends SnippetTester {
                 """
                         Before.
                         \s
-                        <div class="snippet-container"><button class="copy snippet-copy" onclick="copySnippet\
-                        (this)"><span data-copied="Copied!">Copy</span><img src="copy.svg" alt="Copy"></button>
-                        <pre class="snippet"><code class="language-java">public class S { }</code></pre>
-                        </div>
+                        %s
 
-                         After.""");
+                         After.""".formatted(getSnippetHtmlRepresentation("C.html",
+                        "public class S { }", Optional.of("java"))));
     }
 }

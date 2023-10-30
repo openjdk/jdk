@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 package sun.nio.ch;
 
 import java.nio.channels.spi.AsynchronousChannelProvider;
+import sun.nio.ch.Pollset;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -34,7 +35,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
-import jdk.internal.misc.Unsafe;
 
 /**
  * AsynchronousChannelGroup implementation based on the AIX pollset framework.
@@ -42,32 +42,10 @@ import jdk.internal.misc.Unsafe;
 final class AixPollPort
     extends Port
 {
-    private static final Unsafe unsafe = Unsafe.getUnsafe();
-
     static {
         IOUtil.load();
-        init();
+        Pollset.init();
     }
-
-    /**
-     * struct pollfd {
-     *     int fd;
-     *     short events;
-     *     short revents;
-     * }
-     */
-    private static final int SIZEOF_POLLFD    = eventSize();
-    private static final int OFFSETOF_EVENTS  = eventsOffset();
-    private static final int OFFSETOF_REVENTS = reventsOffset();
-    private static final int OFFSETOF_FD      = fdOffset();
-
-    // opcodes
-    private static final int PS_ADD     = 0x0;
-    private static final int PS_MOD     = 0x1;
-    private static final int PS_DELETE  = 0x2;
-
-    // maximum number of events to poll at a time
-    private static final int MAX_POLL_EVENTS = 512;
 
     // pollset ID
     private final int pollset;
@@ -87,6 +65,9 @@ final class AixPollPort
 
     // address of the poll array passed to pollset_poll
     private final long address;
+
+    // maximum number of events to poll at a time
+    private static final int MAX_EVENTS_TO_POLL = 512;
 
     // encapsulates an event for a channel
     static class Event {
@@ -142,16 +123,16 @@ final class AixPollPort
         super(provider, pool);
 
         // open pollset
-        this.pollset = pollsetCreate();
+        this.pollset = Pollset.pollsetCreate();
 
         // create socket pair for wakeup mechanism
         int[] sv = new int[2];
         try {
-            socketpair(sv);
+            Pollset.socketpair(sv);
             // register one end with pollset
-            pollsetCtl(pollset, PS_ADD, sv[0], Net.POLLIN);
+            Pollset.pollsetCtl(pollset, Pollset.PS_ADD, sv[0], Net.POLLIN);
         } catch (IOException x) {
-            pollsetDestroy(pollset);
+            Pollset.pollsetDestroy(pollset);
             throw x;
         }
         this.sp = sv;
@@ -159,21 +140,21 @@ final class AixPollPort
         // create socket pair for pollset control mechanism
         sv = new int[2];
         try {
-            socketpair(sv);
+            Pollset.socketpair(sv);
             // register one end with pollset
-            pollsetCtl(pollset, PS_ADD, sv[0], Net.POLLIN);
+            Pollset.pollsetCtl(pollset, Pollset.PS_ADD, sv[0], Net.POLLIN);
         } catch (IOException x) {
-            pollsetDestroy(pollset);
+            Pollset.pollsetDestroy(pollset);
             throw x;
         }
         this.ctlSp = sv;
 
         // allocate the poll array
-        this.address = allocatePollArray(MAX_POLL_EVENTS);
+        this.address = Pollset.allocatePollArray(MAX_EVENTS_TO_POLL);
 
         // create the queue and offer the special event to ensure that the first
         // threads polls
-        this.queue = new ArrayBlockingQueue<Event>(MAX_POLL_EVENTS);
+        this.queue = new ArrayBlockingQueue<Event>(MAX_EVENTS_TO_POLL);
         this.queue.offer(NEED_TO_POLL);
     }
 
@@ -191,19 +172,19 @@ final class AixPollPort
                 return;
             closed = true;
         }
-        freePollArray(address);
-        close0(sp[0]);
-        close0(sp[1]);
-        close0(ctlSp[0]);
-        close0(ctlSp[1]);
-        pollsetDestroy(pollset);
+        Pollset.freePollArray(address);
+        Pollset.close0(sp[0]);
+        Pollset.close0(sp[1]);
+        Pollset.close0(ctlSp[0]);
+        Pollset.close0(ctlSp[1]);
+        Pollset.pollsetDestroy(pollset);
     }
 
-    private void wakeup() {
+    void wakeup() {
         if (wakeupCount.incrementAndGet() == 1) {
             // write byte to socketpair to force wakeup
             try {
-                interrupt(sp[1]);
+                Pollset.interrupt(sp[1]);
             } catch (IOException x) {
                 throw new AssertionError(x);
             }
@@ -258,7 +239,7 @@ final class AixPollPort
             controlQueue.add(ev);
             // write byte to socketpair to force wakeup
             try {
-                interrupt(ctlSp[1]);
+                Pollset.interrupt(ctlSp[1]);
             } catch (IOException x) {
                 throw new AssertionError(x);
             }
@@ -299,9 +280,9 @@ final class AixPollPort
             Iterator<ControlEvent> iter = controlQueue.iterator();
             while (iter.hasNext()) {
                 ControlEvent ev = iter.next();
-                pollsetCtl(pollset, PS_DELETE, ev.fd(), 0);
+                Pollset.pollsetCtl(pollset, Pollset.PS_DELETE, ev.fd(), 0);
                 if (!ev.removeOnly()) {
-                    ev.setError(pollsetCtl(pollset, PS_MOD, ev.fd(), ev.events()));
+                    ev.setError(Pollset.pollsetCtl(pollset, Pollset.PS_MOD, ev.fd(), ev.events()));
                 }
                 iter.remove();
             }
@@ -325,7 +306,8 @@ final class AixPollPort
                     int n;
                     controlLock.lock();
                     try {
-                        n = pollsetPoll(pollset, address, MAX_POLL_EVENTS);
+                        n = Pollset.pollsetPoll(pollset, address,
+                                     MAX_EVENTS_TO_POLL, Pollset.PS_NO_TIMEOUT);
                     } finally {
                         controlLock.unlock();
                     }
@@ -338,14 +320,14 @@ final class AixPollPort
                     fdToChannelLock.readLock().lock();
                     try {
                         while (n-- > 0) {
-                            long eventAddress = getEvent(address, n);
-                            int fd = getDescriptor(eventAddress);
+                            long eventAddress = Pollset.getEvent(address, n);
+                            int fd = Pollset.getDescriptor(eventAddress);
 
                             // To emulate one shot semantic we need to remove
                             // the file descriptor here.
                             if (fd != sp[0] && fd != ctlSp[0]) {
                                 synchronized (controlQueue) {
-                                    pollsetCtl(pollset, PS_DELETE, fd, 0);
+                                    Pollset.pollsetCtl(pollset, Pollset.PS_DELETE, fd, 0);
                                 }
                             }
 
@@ -353,7 +335,7 @@ final class AixPollPort
                             if (fd == sp[0]) {
                                 if (wakeupCount.decrementAndGet() == 0) {
                                     // no more wakeups so drain pipe
-                                    drain1(sp[0]);
+                                    Pollset.drain1(sp[0]);
                                 }
 
                                 // queue special event if there are more events
@@ -368,7 +350,7 @@ final class AixPollPort
                             // wakeup to process control event
                             if (fd == ctlSp[0]) {
                                 synchronized (controlQueue) {
-                                    drain1(ctlSp[0]);
+                                    Pollset.drain1(ctlSp[0]);
                                     processControlQueue();
                                 }
                                 if (n > 0) {
@@ -379,7 +361,7 @@ final class AixPollPort
 
                             PollableChannel channel = fdToChannel.get(fd);
                             if (channel != null) {
-                                int events = getRevents(eventAddress);
+                                int events = Pollset.getRevents(eventAddress);
                                 Event ev = new Event(channel, events);
 
                                 // n-1 events are queued; This thread handles
@@ -467,75 +449,4 @@ final class AixPollPort
             }
         }
     }
-
-    /**
-     * Allocates a poll array to handle up to {@code count} events.
-     */
-    private static long allocatePollArray(int count) {
-        return unsafe.allocateMemory(count * SIZEOF_POLLFD);
-    }
-
-    /**
-     * Free a poll array
-     */
-    private static void freePollArray(long address) {
-        unsafe.freeMemory(address);
-    }
-
-    /**
-     * Returns event[i];
-     */
-    private static long getEvent(long address, int i) {
-        return address + (SIZEOF_POLLFD*i);
-    }
-
-    /**
-     * Returns event->fd
-     */
-    private static int getDescriptor(long eventAddress) {
-        return unsafe.getInt(eventAddress + OFFSETOF_FD);
-    }
-
-    /**
-     * Returns event->events
-     */
-    private static int getEvents(long eventAddress) {
-        return unsafe.getChar(eventAddress + OFFSETOF_EVENTS);
-    }
-
-    /**
-     * Returns event->revents
-     */
-    private static int getRevents(long eventAddress) {
-        return unsafe.getChar(eventAddress + OFFSETOF_REVENTS);
-    }
-
-    // -- Native methods --
-
-    private static native void init();
-
-    private static native int eventSize();
-
-    private static native int eventsOffset();
-
-    private static native int reventsOffset();
-
-    private static native int fdOffset();
-
-    private static native int pollsetCreate() throws IOException;
-
-    private static native int pollsetCtl(int pollset, int opcode, int fd, int events);
-
-    private static native int pollsetPoll(int pollset, long pollAddress, int numfds)
-        throws IOException;
-
-    private static native void pollsetDestroy(int pollset);
-
-    private static native void socketpair(int[] sv) throws IOException;
-
-    private static native void interrupt(int fd) throws IOException;
-
-    private static native void drain1(int fd) throws IOException;
-
-    private static native void close0(int fd);
 }

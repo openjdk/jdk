@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -219,6 +219,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax">സതേൺ ഹൈഡ</language>
 			<language type="he">ഹീബ്രു</language>
 			<language type="hi">ഹിന്ദി</language>
+			<language type="hi_Latn">ഹിന്ദി (ലാറ്റിൻ)</language>
 			<language type="hi_Latn" alt="variant">ഹിംഗ്ലീഷ്</language>
 			<language type="hil">ഹിലിഗയ്നോൺ</language>
 			<language type="hit">ഹിറ്റൈറ്റ്</language>
@@ -313,6 +314,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="li">ലിംബർഗിഷ്</language>
 			<language type="lil">ലില്ലുവെറ്റ്</language>
 			<language type="lkt">ലഗോത്ത</language>
+			<language type="lmo" draft="contributed">ലൊംബാർഡ്</language>
 			<language type="ln">ലിംഗാല</language>
 			<language type="lo">ലാവോ</language>
 			<language type="lol">മോങ്കോ</language>
@@ -1015,7 +1017,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="TM">തുർക്ക്മെനിസ്ഥാൻ</territory>
 			<territory type="TN">ടുണീഷ്യ</territory>
 			<territory type="TO">ടോംഗ</territory>
-			<territory type="TR">തുർക്കി</territory>
+			<territory type="TR">തുർക്കിയെ</territory>
 			<territory type="TT">ട്രിനിഡാഡും ടുബാഗോയും</territory>
 			<territory type="TV">ടുവാലു</territory>
 			<territory type="TW">തായ്‌വാൻ</territory>
@@ -1048,6 +1050,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">സിംബാബ്‌വേ</territory>
 			<territory type="ZZ">അജ്ഞാത പ്രദേശം</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">ഇംഗ്ലണ്ട്</subdivision>
+			<subdivision type="gbsct">സ്‌കോട്ട്‌ലന്റ്</subdivision>
+			<subdivision type="gbwls">വെയിൽസ്</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1996">1996-ലെ ജർമൻ ലിപി</variant>
 			<variant type="1606NICT">1606 വരെയുള്ള ആധുനികമദ്ധ്യകാല ഫ്രഞ്ച്</variant>
@@ -1553,9 +1560,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1563,9 +1576,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2087,9 +2106,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2097,9 +2122,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -4170,6 +4201,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Hermosillo">
 				<exemplarCity>ഹെർമോസില്ലോ</exemplarCity>
 			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>സിയുഡാഡ് ഹുവാരസ്</exemplarCity>
+			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>മസറ്റ്‌ലാൻ</exemplarCity>
 			</zone>
@@ -5670,6 +5704,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<percentSign>%</percentSign>
 			<plusSign>+</plusSign>
 			<minusSign>-</minusSign>
+			<approximatelySign>~</approximatelySign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -7531,6 +7566,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p12">
 				<unitPrefixPattern>ടെറാ{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>P{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="10p18">
 				<unitPrefixPattern>എക്സാ{0}</unitPrefixPattern>
 			</compoundUnit>
@@ -7539,6 +7577,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>യൊറ്റാ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p2">
 				<unitPrefixPattern>mebi{0}</unitPrefixPattern>
@@ -7566,11 +7607,38 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="power2">
 				<compoundUnitPattern1 count="one">വർഗ്ഗം {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="accusative">വർഗ്ഗം {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="dative">വർഗ്ഗം {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="genitive">വർഗ്ഗം {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="instrumental">വർഗ്ഗം {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="locative">വർഗ്ഗം {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="sociative">വർഗ്ഗം {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">വർഗ്ഗം {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="accusative">വർഗ്ഗം {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="dative">വർഗ്ഗം {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="genitive">വർഗ്ഗം {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="instrumental">വർഗ്ഗം {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="locative">വർഗ്ഗം {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="sociative">വർഗ്ഗം {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1 count="one">ക്യുബിക് {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="accusative">ക്യുബിക് {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="dative">ക്യുബിക് {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="genitive">ക്യുബിക് {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="instrumental">ക്യുബിക് {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="locative">ക്യുബിക് {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="sociative">ക്യുബിക് {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">ക്യുബിക് {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="accusative">ക്യുബിക് {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="dative">ക്യുബിക് {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="genitive">ക്യുബിക് {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="instrumental">ക്യുബിക് {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="locative">ക്യുബിക് {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="sociative">ക്യുബിക് {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<gender>neuter</gender>
@@ -7842,6 +7910,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permyriad">
 				<gender>neuter</gender>
+				<displayName>പിരമിഡ്</displayName>
 				<unitPattern count="one">{0} പിരമിഡ്</unitPattern>
 				<unitPattern count="one" case="accusative">{0} പിരമിഡിനെ</unitPattern>
 				<unitPattern count="one" case="dative">{0} പിരമിഡിന്</unitPattern>
@@ -7983,12 +8052,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="accusative">{0} നൂറ്റാണ്ടിനെ</unitPattern>
 				<unitPattern count="one" case="dative">{0} നൂറ്റാണ്ടിന്</unitPattern>
 				<unitPattern count="one" case="genitive">{0} നൂറ്റാണ്ടിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} നൂറ്റാണ്ട്</unitPattern>
 				<unitPattern count="one" case="locative">{0} നൂറ്റാണ്ടിൽ</unitPattern>
 				<unitPattern count="one" case="sociative">{0} നൂറ്റാണ്ടിനോട്</unitPattern>
 				<unitPattern count="other">{0} നൂറ്റാണ്ടുകൾ</unitPattern>
 				<unitPattern count="other" case="accusative">{0} നൂറ്റാണ്ടുകളുടെ</unitPattern>
 				<unitPattern count="other" case="dative">{0} നൂറ്റാണ്ടിലെ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} നൂറ്റാണ്ടിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} നൂറ്റാണ്ടുകൾ</unitPattern>
 				<unitPattern count="other" case="locative">{0} നൂറ്റാണ്ടുകൾ</unitPattern>
 				<unitPattern count="other" case="sociative">{0} നൂറ്റാണ്ടുകൾ</unitPattern>
 			</unit>
@@ -8017,10 +8088,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="accusative">{0} വർഷത്തെ</unitPattern>
 				<unitPattern count="one" case="dative">{0} വർഷത്തിന്</unitPattern>
 				<unitPattern count="one" case="genitive">{0} വർഷത്തിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} വർഷം</unitPattern>
+				<unitPattern count="one" case="locative">{0} വർഷം</unitPattern>
+				<unitPattern count="one" case="sociative">{0} വർഷം</unitPattern>
 				<unitPattern count="other">{0} വർഷം</unitPattern>
 				<unitPattern count="other" case="accusative">{0} വർഷം</unitPattern>
 				<unitPattern count="other" case="dative">{0} വർഷം</unitPattern>
 				<unitPattern count="other" case="genitive">{0} വർഷം</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} വർഷം</unitPattern>
+				<unitPattern count="other" case="locative">{0} വർഷം</unitPattern>
+				<unitPattern count="other" case="sociative">{0} വർഷം</unitPattern>
 				<perUnitPattern>{0} / വർഷം</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
@@ -8033,42 +8110,114 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>neuter</gender>
 				<displayName>മാസം</displayName>
 				<unitPattern count="one">{0} മാസം</unitPattern>
+				<unitPattern count="one" case="accusative">{0} മാസം</unitPattern>
+				<unitPattern count="one" case="dative">{0} മാസം</unitPattern>
+				<unitPattern count="one" case="genitive">{0} മാസം</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} മാസം</unitPattern>
+				<unitPattern count="one" case="locative">{0} മാസം</unitPattern>
+				<unitPattern count="one" case="sociative">{0} മാസം</unitPattern>
 				<unitPattern count="other">{0} മാസം</unitPattern>
+				<unitPattern count="other" case="accusative">{0} മാസം</unitPattern>
+				<unitPattern count="other" case="dative">{0} മാസം</unitPattern>
+				<unitPattern count="other" case="genitive">{0} മാസം</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} മാസം</unitPattern>
+				<unitPattern count="other" case="locative">{0} മാസം</unitPattern>
+				<unitPattern count="other" case="sociative">{0} മാസം</unitPattern>
 				<perUnitPattern>{0} / മാസം</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<gender>neuter</gender>
 				<displayName>ആഴ്ച</displayName>
 				<unitPattern count="one">{0} ആഴ്ച</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ആഴ്ച</unitPattern>
+				<unitPattern count="one" case="dative">{0} ആഴ്ച</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ആഴ്ച</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ആഴ്ച</unitPattern>
+				<unitPattern count="one" case="locative">{0} ആഴ്ച</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ആഴ്ച</unitPattern>
 				<unitPattern count="other">{0} ആഴ്ച</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ആഴ്ച</unitPattern>
+				<unitPattern count="other" case="dative">{0} ആഴ്ച</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ആഴ്ച</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ആഴ്ച</unitPattern>
+				<unitPattern count="other" case="locative">{0} ആഴ്ച</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ആഴ്ച</unitPattern>
 				<perUnitPattern>{0} / ആഴ്ച</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<gender>neuter</gender>
 				<displayName>ദിവസം</displayName>
 				<unitPattern count="one">{0} ദിവസം</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ദിവസം</unitPattern>
+				<unitPattern count="one" case="dative">{0} ദിവസം</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ദിവസം</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ദിവസം</unitPattern>
+				<unitPattern count="one" case="locative">{0} ദിവസം</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ദിവസം</unitPattern>
 				<unitPattern count="other">{0} ദിവസം</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ദിവസം</unitPattern>
+				<unitPattern count="other" case="dative">{0} ദിവസം</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ദിവസം</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ദിവസം</unitPattern>
+				<unitPattern count="other" case="locative">{0} ദിവസം</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ദിവസം</unitPattern>
 				<perUnitPattern>{0} / ദിവസം</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<gender>neuter</gender>
 				<displayName>മണിക്കൂർ</displayName>
 				<unitPattern count="one">{0} മണിക്കൂർ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} മണിക്കൂർ</unitPattern>
+				<unitPattern count="one" case="dative">{0} മണിക്കൂർ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} മണിക്കൂർ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} മണിക്കൂർ</unitPattern>
+				<unitPattern count="one" case="locative">{0} മണിക്കൂർ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} മണിക്കൂർ</unitPattern>
 				<unitPattern count="other">{0} മണിക്കൂർ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} മണിക്കൂർ</unitPattern>
+				<unitPattern count="other" case="dative">{0} മണിക്കൂർ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} മണിക്കൂർ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} മണിക്കൂർ</unitPattern>
+				<unitPattern count="other" case="locative">{0} മണിക്കൂർ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} മണിക്കൂർ</unitPattern>
 				<perUnitPattern>{0} / മണിക്കൂർ</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<gender>neuter</gender>
 				<displayName>മിനിറ്റ്</displayName>
 				<unitPattern count="one">{0} മിനിറ്റ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} മിനിറ്റ്</unitPattern>
+				<unitPattern count="one" case="dative">{0} മിനിറ്റ്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} മിനിറ്റ്</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} മിനിറ്റ്</unitPattern>
+				<unitPattern count="one" case="locative">{0} മിനിറ്റ്</unitPattern>
+				<unitPattern count="one" case="sociative">{0} മിനിറ്റ്</unitPattern>
 				<unitPattern count="other">{0} മിനിറ്റ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} മിനിറ്റ്</unitPattern>
+				<unitPattern count="other" case="dative">{0} മിനിറ്റ്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} മിനിറ്റ്</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} മിനിറ്റ്</unitPattern>
+				<unitPattern count="other" case="locative">{0} മിനിറ്റ്</unitPattern>
+				<unitPattern count="other" case="sociative">{0} മിനിറ്റ്</unitPattern>
 				<perUnitPattern>{0} / മിനിറ്റ്</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<gender>neuter</gender>
 				<displayName>സെക്കൻഡ്</displayName>
 				<unitPattern count="one">{0} സെക്കൻഡ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} സെക്കൻഡ്</unitPattern>
+				<unitPattern count="one" case="dative">{0} സെക്കൻഡ്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} സെക്കൻഡ്</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} സെക്കൻഡ്</unitPattern>
+				<unitPattern count="one" case="locative">{0} സെക്കൻഡ്</unitPattern>
+				<unitPattern count="one" case="sociative">{0} സെക്കൻഡ്</unitPattern>
 				<unitPattern count="other">{0} സെക്കൻഡ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} സെക്കൻഡ്</unitPattern>
+				<unitPattern count="other" case="dative">{0} സെക്കൻഡ്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} സെക്കൻഡ്</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} സെക്കൻഡ്</unitPattern>
+				<unitPattern count="other" case="locative">{0} സെക്കൻഡ്</unitPattern>
+				<unitPattern count="other" case="sociative">{0} സെക്കൻഡ്</unitPattern>
 				<perUnitPattern>{0} / സെക്കൻഡ്</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
@@ -8202,6 +8351,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} കിലോവാട്ട്/മണിക്കൂർ</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
+				<displayName>ഇലക്ട്രോൺവോൾട്ട്</displayName>
 				<unitPattern count="one">{0} ഇലക്ട്രോൺവോൾട്ട്</unitPattern>
 				<unitPattern count="other">{0} ഇലക്ട്രോൺവോൾട്ട്</unitPattern>
 			</unit>
@@ -8211,6 +8361,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ബ്രിട്ടീഷ് തെർമൽ യൂണിറ്റുകൾ</unitPattern>
 			</unit>
 			<unit type="energy-therm-us">
+				<displayName>US തേം</displayName>
 				<unitPattern count="one">{0} US തേം</unitPattern>
 				<unitPattern count="other">{0} US തേം</unitPattern>
 			</unit>
@@ -8236,6 +8387,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="instrumental">{0} ന്യൂട്ടനാൽ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ന്യൂട്ടനിൽ</unitPattern>
 				<unitPattern count="other" case="sociative">{0} ന്യൂട്ടനോട്</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100km</displayName>
+				<unitPattern count="one">{0} kWh/100km</unitPattern>
+				<unitPattern count="other">{0} kWh/100km</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>ജിഗാഹെർട്സ്</displayName>
@@ -8272,14 +8428,74 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-em">
 				<gender>neuter</gender>
+				<displayName>em</displayName>
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="one" case="accusative">{0} em</unitPattern>
+				<unitPattern count="one" case="dative">{0} em</unitPattern>
+				<unitPattern count="one" case="genitive">{0} em</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} em</unitPattern>
+				<unitPattern count="one" case="locative">{0} em</unitPattern>
+				<unitPattern count="one" case="sociative">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
+				<unitPattern count="other" case="accusative">{0} em</unitPattern>
+				<unitPattern count="other" case="dative">{0} em</unitPattern>
+				<unitPattern count="other" case="genitive">{0} em</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} em</unitPattern>
+				<unitPattern count="other" case="locative">{0} em</unitPattern>
+				<unitPattern count="other" case="sociative">{0} em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<gender>neuter</gender>
+				<displayName>px</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="one" case="accusative">{0} px</unitPattern>
+				<unitPattern count="one" case="dative">{0} px</unitPattern>
+				<unitPattern count="one" case="genitive">{0} px</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} px</unitPattern>
+				<unitPattern count="one" case="locative">{0} px</unitPattern>
+				<unitPattern count="one" case="sociative">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+				<unitPattern count="other" case="accusative">{0} px</unitPattern>
+				<unitPattern count="other" case="dative">{0} px</unitPattern>
+				<unitPattern count="other" case="genitive">{0} px</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} px</unitPattern>
+				<unitPattern count="other" case="locative">{0} px</unitPattern>
+				<unitPattern count="other" case="sociative">{0} px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>MP</displayName>
+				<unitPattern count="one">{0} MP</unitPattern>
+				<unitPattern count="other">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>dpcm</displayName>
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} dpcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>dpi</displayName>
+				<unitPattern count="one">{0} dpi</unitPattern>
+				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
 				<displayName>ഡോട്ട്</displayName>
 				<unitPattern count="one">{0} ഡോട്ട്</unitPattern>
 				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>കിലോമീറ്റർ</displayName>
@@ -8291,7 +8507,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>neuter</gender>
 				<displayName>മീറ്റർ</displayName>
 				<unitPattern count="one">{0} മീറ്റർ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} മീറ്റർ</unitPattern>
+				<unitPattern count="one" case="dative">{0} മീറ്റർ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} മീറ്റർ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} മീറ്റർ</unitPattern>
+				<unitPattern count="one" case="locative">{0} മീറ്റർ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} മീറ്റർ</unitPattern>
 				<unitPattern count="other">{0} മീറ്റർ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} മീറ്റർ</unitPattern>
+				<unitPattern count="other" case="dative">{0} മീറ്റർ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} മീറ്റർ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} മീറ്റർ</unitPattern>
+				<unitPattern count="other" case="locative">{0} മീറ്റർ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} മീറ്റർ</unitPattern>
 				<perUnitPattern>{0} / മീറ്റർ</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
@@ -8381,12 +8609,29 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>neuter</gender>
 				<displayName>സ്കാൻഡിനേവിയൻ മൈൽ</displayName>
 				<unitPattern count="one">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
+				<unitPattern count="one" case="dative">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
 				<unitPattern count="other">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
+				<unitPattern count="other" case="dative">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>പോയിന്റ്</displayName>
 				<unitPattern count="one">{0} പോയിന്റ്</unitPattern>
 				<unitPattern count="other">{0} പോയിന്റ്</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>R☉</displayName>
+				<unitPattern count="one">{0} R☉</unitPattern>
+				<unitPattern count="other">{0} R☉</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<gender>neuter</gender>
@@ -8408,12 +8653,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="light-candela">
 				<gender>neuter</gender>
+				<displayName>cd</displayName>
+				<unitPattern count="one">{0} cd</unitPattern>
 				<unitPattern count="one" case="accusative">{0} കാൻഡെലയെ</unitPattern>
 				<unitPattern count="one" case="dative">{0} കാൻഡെലയ്ക്ക്</unitPattern>
 				<unitPattern count="one" case="genitive">{0} കാൻഡെലയുടെ</unitPattern>
 				<unitPattern count="one" case="instrumental">{0} കാൻഡെലയാൽ</unitPattern>
 				<unitPattern count="one" case="locative">{0} കാൻഡെലയിൽ</unitPattern>
 				<unitPattern count="one" case="sociative">{0} കാൻഡെലയോട്</unitPattern>
+				<unitPattern count="other">{0} cd</unitPattern>
 				<unitPattern count="other" case="accusative">{0} കാൻഡെലയെ</unitPattern>
 				<unitPattern count="other" case="dative">{0} കാൻഡെലയ്ക്ക്</unitPattern>
 				<unitPattern count="other" case="genitive">{0} കാൻഡെലയുടെ</unitPattern>
@@ -8423,12 +8671,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="light-lumen">
 				<gender>neuter</gender>
+				<displayName>lm</displayName>
+				<unitPattern count="one">{0} lm</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ലൂമെനെ</unitPattern>
 				<unitPattern count="one" case="dative">{0} ലൂമെന്</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ലൂമെന്റെ</unitPattern>
 				<unitPattern count="one" case="instrumental">{0} ലൂമെനാൽ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ലൂമെനിൽ</unitPattern>
 				<unitPattern count="one" case="sociative">{0} ലൂമെനോട്</unitPattern>
+				<unitPattern count="other">{0} lm</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ലൂമെനെ</unitPattern>
 				<unitPattern count="other" case="dative">{0} ലൂമെന്</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ലൂമെന്റെ</unitPattern>
@@ -8558,6 +8809,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ഡാൽട്ടണുകൾ</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
+				<displayName>ഭൂപിണ്ഡം</displayName>
 				<unitPattern count="one">{0} ഭൂപിണ്ഡം</unitPattern>
 				<unitPattern count="other">{0} ഭൂപിണ്ഡം</unitPattern>
 			</unit>
@@ -8567,6 +8819,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} സൂര്യപിണ്ഡം</unitPattern>
 			</unit>
 			<unit type="mass-grain">
+				<displayName>grain</displayName>
 				<unitPattern count="one">{0} gr</unitPattern>
 				<unitPattern count="other">{0} gr</unitPattern>
 			</unit>
@@ -8842,7 +9095,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>neuter</gender>
 				<displayName>ലിറ്റർ</displayName>
 				<unitPattern count="one">{0} ലിറ്റർ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ലിറ്റർ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ലിറ്റർ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ലിറ്റർ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ലിറ്റർ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ലിറ്റർ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ലിറ്റർ</unitPattern>
 				<unitPattern count="other">{0} ലിറ്റർ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ലിറ്റർ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ലിറ്റർ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ലിറ്റർ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ലിറ്റർ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ലിറ്റർ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ലിറ്റർ</unitPattern>
 				<perUnitPattern>{0} / ലിറ്റർ</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
@@ -8864,18 +9129,47 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>neuter</gender>
 				<displayName>മെട്രിക് പൈന്റ്</displayName>
 				<unitPattern count="one">{0} മെട്രിക് പൈന്റ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} മെട്രിക് പൈന്റ്</unitPattern>
+				<unitPattern count="one" case="dative">{0} മെട്രിക് പൈന്റ്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} മെട്രിക് പൈന്റ്</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} മെട്രിക് പൈന്റ്</unitPattern>
+				<unitPattern count="one" case="locative">{0} മെട്രിക് പൈന്റ്</unitPattern>
+				<unitPattern count="one" case="sociative">{0} മെട്രിക് പൈന്റ്</unitPattern>
 				<unitPattern count="other">{0} മെട്രിക് പൈന്റ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} മെട്രിക് പൈന്റ്</unitPattern>
+				<unitPattern count="other" case="dative">{0} മെട്രിക് പൈന്റ്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} മെട്രിക് പൈന്റ്</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} മെട്രിക് പൈന്റ്</unitPattern>
+				<unitPattern count="other" case="locative">{0} മെട്രിക് പൈന്റ്</unitPattern>
+				<unitPattern count="other" case="sociative">{0} മെട്രിക് പൈന്റ്</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
 				<gender>neuter</gender>
 				<displayName>മെട്രിക് കപ്പ്</displayName>
 				<unitPattern count="one">{0} മെട്രിക് കപ്പ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} മെട്രിക് കപ്പ്</unitPattern>
+				<unitPattern count="one" case="dative">{0} മെട്രിക് കപ്പ്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} മെട്രിക് കപ്പ്</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} മെട്രിക് കപ്പ്</unitPattern>
+				<unitPattern count="one" case="locative">{0} മെട്രിക് കപ്പ്</unitPattern>
+				<unitPattern count="one" case="sociative">{0} മെട്രിക് കപ്പ്</unitPattern>
 				<unitPattern count="other">{0} മെട്രിക് കപ്പ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} മെട്രിക് കപ്പ്</unitPattern>
+				<unitPattern count="other" case="dative">{0} മെട്രിക് കപ്പ്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} മെട്രിക് കപ്പ്</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} മെട്രിക് കപ്പ്</unitPattern>
+				<unitPattern count="other" case="locative">{0} മെട്രിക് കപ്പ്</unitPattern>
+				<unitPattern count="other" case="sociative">{0} മെട്രിക് കപ്പ്</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ഏക്കർ അടി</displayName>
 				<unitPattern count="one">{0} ഏക്കർ അടി</unitPattern>
 				<unitPattern count="other">{0} ഏക്കർ അടി</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>bu</displayName>
+				<unitPattern count="one">{0} bu</unitPattern>
+				<unitPattern count="other">{0} bu</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>ഗാലൻ</displayName>
@@ -8909,6 +9203,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ഫ്ലൂയിഡ് ഔൺസ്</unitPattern>
 				<unitPattern count="other">{0} ഫ്ലൂയിഡ് ഔൺസ്</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp. fl oz</displayName>
+				<unitPattern count="one">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="other">{0} fl oz Imp.</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>ടേബിൾസ്‌പൂൺ</displayName>
 				<unitPattern count="one">{0} ടേബിൾസ്‌പൂൺ</unitPattern>
@@ -8923,6 +9222,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ബാരൽ</displayName>
 				<unitPattern count="one">{0} ബാരൽ</unitPattern>
 				<unitPattern count="other">{0} ബാരൽ</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dstspn</displayName>
+				<unitPattern count="one">{0} dstspn</unitPattern>
+				<unitPattern count="other">{0} dstspn</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dstspn Imp</displayName>
+				<unitPattern count="one">{0} dstspn Imp</unitPattern>
+				<unitPattern count="other">{0} dstspn Imp</unitPattern>
 			</unit>
 			<unit type="volume-drop">
 				<displayName>തുള്ളികൾ</displayName>
@@ -8944,6 +9253,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} നുള്ള്</unitPattern>
 				<unitPattern count="other">{0} നുള്ള്</unitPattern>
 			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt Imp</displayName>
+				<unitPattern count="one">{0} qt Imp.</unitPattern>
+				<unitPattern count="other">{0} qt Imp.</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>കാർഡിനൽ ദിശ</displayName>
 				<coordinateUnitPattern type="east">{0} കിഴക്ക്</coordinateUnitPattern>
@@ -8961,6 +9275,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
@@ -9092,6 +9414,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>പിരമിഡ്</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<displayName>മോൾ</displayName>
@@ -9298,9 +9622,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>ഇലക്ട്രോൺവോൾട്ട്</displayName>
+				<unitPattern count="one">{0} eV</unitPattern>
+				<unitPattern count="other">{0} eV</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
 				<displayName>BTU</displayName>
+				<unitPattern count="one">{0} Btu</unitPattern>
+				<unitPattern count="other">{0} Btu</unitPattern>
 			</unit>
 			<unit type="energy-therm-us">
 				<displayName>US തേം</displayName>
@@ -9309,9 +9637,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>പൗണ്ട് ഫോഴ്സ്</displayName>
+				<unitPattern count="one">{0} lbf</unitPattern>
+				<unitPattern count="other">{0} lbf</unitPattern>
 			</unit>
 			<unit type="force-newton">
 				<displayName>ന്യൂട്ടൻ</displayName>
+				<unitPattern count="one">{0} N</unitPattern>
+				<unitPattern count="other">{0} N</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<unitPattern count="one">{0} kWh/100km</unitPattern>
+				<unitPattern count="other">{0} kWh/100km</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>ജി.ഹെ.</displayName>
@@ -9367,6 +9703,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>dpi</displayName>
 				<unitPattern count="one">{0} dpi</unitPattern>
 				<unitPattern count="other">{0} dpi</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>px</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>കി.മീ.</displayName>
@@ -9473,13 +9818,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} പോ.</unitPattern>
 				<unitPattern count="other">{0} പോ.</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<unitPattern count="one">{0} R☉</unitPattern>
+				<unitPattern count="other">{0} R☉</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>ലക്സ്</displayName>
 				<unitPattern count="one">{0} ലക്സ്</unitPattern>
 				<unitPattern count="other">{0} ലക്സ്</unitPattern>
 			</unit>
+			<unit type="light-candela">
+				<unitPattern count="one">{0} cd</unitPattern>
+				<unitPattern count="other">{0} cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<unitPattern count="one">{0} lm</unitPattern>
+				<unitPattern count="other">{0} lm</unitPattern>
+			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>സോളാർ ലുമിനോസൈട്സ്</displayName>
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
 				<displayName>ട.</displayName>
@@ -9547,9 +9906,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-earth-mass">
 				<displayName>ഭൂപിണ്ഡം</displayName>
+				<unitPattern count="one">{0} M⊕</unitPattern>
+				<unitPattern count="other">{0} M⊕</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>സൂര്യപിണ്ഡം</displayName>
+				<unitPattern count="one">{0} M☉</unitPattern>
+				<unitPattern count="other">{0} M☉</unitPattern>
 			</unit>
 			<unit type="mass-grain">
 				<displayName>grain</displayName>
@@ -9626,6 +9989,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ഹെ.പാ.</unitPattern>
 				<unitPattern count="other">{0} ഹെ.പാ.</unitPattern>
 			</unit>
+			<unit type="pressure-kilopascal">
+				<unitPattern count="one">{0} kPa</unitPattern>
+				<unitPattern count="other">{0} kPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<unitPattern count="one">{0} MPa</unitPattern>
+				<unitPattern count="other">{0} MPa</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>കി.മീ/മ.</displayName>
 				<unitPattern count="one">{0} കി.മീ/മ.</unitPattern>
@@ -9665,6 +10036,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>K</displayName>
 				<unitPattern count="one">{0} K​</unitPattern>
 				<unitPattern count="other">{0} K</unitPattern>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<unitPattern count="one">{0} N⋅m</unitPattern>
+				<unitPattern count="other">{0} N⋅m</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>കി.മീ³</displayName>
@@ -9749,6 +10128,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ഏ. അടി</unitPattern>
 				<unitPattern count="other">{0} ഏ. അടി</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<unitPattern count="one">{0} bu</unitPattern>
+				<unitPattern count="other">{0} bu</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>ഗാ.</displayName>
 				<unitPattern count="one">{0} ഗാ.</unitPattern>
@@ -9781,6 +10164,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ഫ്ലൂ. ഔ.</unitPattern>
 				<unitPattern count="other">{0} ഫ്ലൂ. ഔ.</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<unitPattern count="one">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="other">{0} fl oz Imp.</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>ടേ.സ്‌പൂ.</displayName>
 				<unitPattern count="one">{0} ടേ.സ്‌പൂ.</unitPattern>
@@ -9793,11 +10180,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-barrel">
 				<displayName>ബാരൽ</displayName>
+				<unitPattern count="one">{0} bbl</unitPattern>
+				<unitPattern count="other">{0} bbl</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<unitPattern count="one">{0} dstspn</unitPattern>
+				<unitPattern count="other">{0} dstspn</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<unitPattern count="one">{0} dstspn Imp</unitPattern>
+				<unitPattern count="other">{0} dstspn Imp</unitPattern>
 			</unit>
 			<unit type="volume-drop">
 				<displayName>തുള്ളി</displayName>
 				<unitPattern count="one">{0} തുള്ളി</unitPattern>
 				<unitPattern count="other">{0} തുള്ളി</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<unitPattern count="one">{0} dram fl</unitPattern>
+				<unitPattern count="other">{0} dram fl</unitPattern>
 			</unit>
 			<unit type="volume-jigger">
 				<displayName>ജിഗർ</displayName>
@@ -9809,6 +10210,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} നുള്ള്</unitPattern>
 				<unitPattern count="other">{0} നുള്ള്</unitPattern>
 			</unit>
+			<unit type="volume-quart-imperial">
+				<unitPattern count="one">{0} qt Imp.</unitPattern>
+				<unitPattern count="other">{0} qt Imp.</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>ദിശ</displayName>
 				<coordinateUnitPattern type="east">{0} കി.</coordinateUnitPattern>
@@ -9818,14 +10223,105 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>d{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>c{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>m{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>μ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>n{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="10p-12">
 				<unitPrefixPattern>പി{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>f{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>a{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>z{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-24">
 				<unitPrefixPattern>യോ{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>da{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>h{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>k{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>M{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>G{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>T{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>P{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>E{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>Z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>Y{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>ജി-ഫോഴ്‌സ്</displayName>
@@ -9837,59 +10333,205 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}മീ/സെ²</unitPattern>
 				<unitPattern count="other">{0}മീ/സെ²</unitPattern>
 			</unit>
+			<unit type="angle-revolution">
+				<displayName>റെവ.</displayName>
+				<unitPattern count="one">{0} റെവ.</unitPattern>
+				<unitPattern count="other">{0} റെവ.</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<displayName>റേഡിയൻ</displayName>
+				<unitPattern count="one">{0} റേഡി.</unitPattern>
+				<unitPattern count="other">{0} റേഡി.</unitPattern>
+			</unit>
+			<unit type="angle-degree">
+				<displayName>ഡിഗ്രി</displayName>
+				<unitPattern count="one">{0} ഡിഗ്രി</unitPattern>
+				<unitPattern count="other">{0} ഡിഗ്രി</unitPattern>
+			</unit>
 			<unit type="angle-arc-minute">
+				<displayName>ആർക്ക്.മി.</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
+				<displayName>ആർക്ക്.സെ.</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<displayName>കി.മീ²</displayName>
 				<unitPattern count="one">{0} ച.കിമീ</unitPattern>
 				<unitPattern count="other">{0} ച.കിമീ</unitPattern>
+				<perUnitPattern>{0}/കി.മീ²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
+				<displayName>ഹെക്‌ടർ</displayName>
 				<unitPattern count="one">{0} ഹെ</unitPattern>
 				<unitPattern count="other">{0} ഹെ</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<displayName>മീറ്റർ²</displayName>
 				<unitPattern count="one">{0} ച.മീ</unitPattern>
 				<unitPattern count="other">{0} ച.മീ</unitPattern>
+				<perUnitPattern>{0}/മീ²</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>സെ.മീ²</displayName>
+				<unitPattern count="one">{0} സെ.മീ²</unitPattern>
+				<unitPattern count="other">{0} സെ.മീ²</unitPattern>
+				<perUnitPattern>{0}/സെ.മീ²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
+				<displayName>ചതു.മൈൽ</displayName>
 				<unitPattern count="one">{0} ച.മൈ</unitPattern>
 				<unitPattern count="other">{0} ച.മൈ</unitPattern>
+				<perUnitPattern>{0}/മൈ²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
+				<displayName>ഏക്കർ</displayName>
 				<unitPattern count="one">{0} ഏ</unitPattern>
 				<unitPattern count="other">{0} ഏക്ക</unitPattern>
 			</unit>
+			<unit type="area-square-yard">
+				<displayName>വാര²</displayName>
+				<unitPattern count="one">{0} വാ²</unitPattern>
+				<unitPattern count="other">{0} വാ²</unitPattern>
+			</unit>
 			<unit type="area-square-foot">
+				<displayName>ചതു.അടി</displayName>
 				<unitPattern count="one">{0} ച. അടി</unitPattern>
 				<unitPattern count="other">{0} ച.അടി</unitPattern>
 			</unit>
+			<unit type="area-square-inch">
+				<displayName>ഇഞ്ച്²</displayName>
+				<unitPattern count="one">{0} ഇഞ്ച്²</unitPattern>
+				<unitPattern count="other">{0} ഇഞ്ച്²</unitPattern>
+				<perUnitPattern>{0}/ഇഞ്ച്²</perUnitPattern>
+			</unit>
 			<unit type="area-dunam">
 				<displayName>ദുനം</displayName>
+				<unitPattern count="one">{0} ദുനം</unitPattern>
+				<unitPattern count="other">{0} ദുനം</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>ക്യാരറ്റ്</displayName>
+				<unitPattern count="one">{0} ക്യാ.</unitPattern>
+				<unitPattern count="other">{0} ക്യാ.</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>മി.ഗ്രാം/ഡെ.ലി.</displayName>
+				<unitPattern count="one">{0} മി.ഗ്രാം/ഡെ.ലി.</unitPattern>
+				<unitPattern count="other">{0} മി.ഗ്രാം/ഡെ.ലി.</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>മില്ലിമോൾ/ലിറ്റർ</displayName>
+				<unitPattern count="one">{0} മി.മോ/ലി.</unitPattern>
+				<unitPattern count="other">{0} മി.മോ/ലി.</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<displayName>ഇനം</displayName>
+				<unitPattern count="one">{0} ഇനം</unitPattern>
+				<unitPattern count="other">{0} ഇനം</unitPattern>
+			</unit>
+			<unit type="concentr-permillion">
+				<displayName>പാർട്‌സ്/മില്ല്യൺ</displayName>
+				<unitPattern count="one">{0} പാ.പെ.മി.</unitPattern>
+				<unitPattern count="other">{0} പാ.പെ.മി.</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
+			<unit type="concentr-permille">
+				<displayName>‰</displayName>
+				<unitPattern count="one">{0}‰</unitPattern>
+				<unitPattern count="other">{0}‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>പിരമിഡ്</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>മോൾ</displayName>
+				<unitPattern count="one">{0} മോൾ</unitPattern>
+				<unitPattern count="other">{0} മോൾ</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>ലിറ്റർ/കി.മീ.</displayName>
+				<unitPattern count="one">{0} ലി/കി.മീ.</unitPattern>
+				<unitPattern count="other">{0} ലി/കി.മീ.</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ലി./100 കി.മീ.</displayName>
 				<unitPattern count="one">{0}ലി/100കി.മീ.</unitPattern>
 				<unitPattern count="other">{0}ലി/100കി.മീ</unitPattern>
 			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName>മൈൽ/ഗാ.</displayName>
+				<unitPattern count="one">{0} മൈ/ഗാ.</unitPattern>
+				<unitPattern count="other">{0} മൈ/ഗാ.</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>മൈൽ/ഗാ. ഇംപീ.</displayName>
+				<unitPattern count="one">{0} മൈ.പെ.ഗാ./ഇം‌പീ.</unitPattern>
+				<unitPattern count="other">{0} മൈ.പെ.ഗാ./ഇം‌പീ.</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>പെ.ബൈ.</displayName>
+				<unitPattern count="one">{0} പിബി</unitPattern>
+				<unitPattern count="other">{0} പിബി</unitPattern>
+			</unit>
 			<unit type="digital-terabyte">
 				<displayName>ടിബി</displayName>
+				<unitPattern count="one">{0} ടിബി</unitPattern>
+				<unitPattern count="other">{0} ടിബി</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName>ടെ.ബിറ്റ്</displayName>
+				<unitPattern count="one">{0} ടെ.ബി.</unitPattern>
+				<unitPattern count="other">{0} ടെ.ബി.</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>ജി.ബൈറ്റ്</displayName>
+				<unitPattern count="one">{0} ജിബി</unitPattern>
+				<unitPattern count="other">{0} ജിബി</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName>ജി.ബിറ്റ്</displayName>
+				<unitPattern count="one">{0} Gb</unitPattern>
+				<unitPattern count="other">{0} Gb</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
 				<displayName>എംബി</displayName>
+				<unitPattern count="one">{0} എംബി</unitPattern>
+				<unitPattern count="other">{0} എംബി</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>മെ.ബിറ്റ്</displayName>
+				<unitPattern count="one">{0} മെ.ബി.</unitPattern>
+				<unitPattern count="other">{0} മെ.ബി.</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>കി.ബൈറ്റ്</displayName>
+				<unitPattern count="one">{0} കെബി</unitPattern>
+				<unitPattern count="other">{0} കെബി</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
 				<displayName>കെബി</displayName>
+				<unitPattern count="one">{0} കി.ബിറ്റ്</unitPattern>
+				<unitPattern count="other">{0} കി.ബിറ്റ്</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>ബൈറ്റ്</displayName>
+				<unitPattern count="one">{0} ബൈറ്റ്</unitPattern>
+				<unitPattern count="other">{0} ബൈറ്റ്</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<displayName>ബിറ്റ്</displayName>
+				<unitPattern count="one">{0} ബിറ്റ്</unitPattern>
+				<unitPattern count="other">{0} ബിറ്റ്</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<displayName>നൂ.</displayName>
@@ -9897,6 +10539,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} നൂ.</unitPattern>
 			</unit>
 			<unit type="duration-decade">
+				<displayName>ദശാബ്‌ദം</displayName>
 				<unitPattern count="one">{0}ദശാ.</unitPattern>
 				<unitPattern count="other">{0}ദശാ.</unitPattern>
 			</unit>
@@ -9905,6 +10548,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} വ</unitPattern>
 				<unitPattern count="other">{0} വ</unitPattern>
 				<perUnitPattern>{0}/വ.</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>പാദം</displayName>
+				<unitPattern count="one">{0} പാദം</unitPattern>
+				<unitPattern count="other">{0} പാദങ്ങൾ</unitPattern>
+				<perUnitPattern>{0}/പാദം</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>മാസം</displayName>
@@ -9957,14 +10606,150 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} നാ.സെ.</unitPattern>
 				<unitPattern count="other">{0} നാ.സെ.</unitPattern>
 			</unit>
+			<unit type="electric-ampere">
+				<displayName>ആമ്പിയർ</displayName>
+				<unitPattern count="one">{0} ആ.</unitPattern>
+				<unitPattern count="other">{0} ആ.</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>മില്ലിആമ്പിയർ</displayName>
+				<unitPattern count="one">{0} മി.ആ.</unitPattern>
+				<unitPattern count="other">{0} മി.ആ.</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>ഓം</displayName>
+				<unitPattern count="one">{0} Ω</unitPattern>
+				<unitPattern count="other">{0} Ω</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>വോൾട്ട്</displayName>
+				<unitPattern count="one">{0} V</unitPattern>
+				<unitPattern count="other">{0} V</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName>കി.കലോ.</displayName>
+				<unitPattern count="one">{0} കി.കലോ.</unitPattern>
+				<unitPattern count="other">{0} കി.കലോ.</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName>കലോ.</displayName>
+				<unitPattern count="one">{0} കലോ.</unitPattern>
+				<unitPattern count="other">{0} കലോ.</unitPattern>
+			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName>കലോ.</displayName>
+				<unitPattern count="one">{0} കലോ.</unitPattern>
+				<unitPattern count="other">{0} കലോ.</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName>കി.ജൂ.</displayName>
+				<unitPattern count="one">{0} കി.ജൂ.</unitPattern>
+				<unitPattern count="other">{0} കി.ജൂ.</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>ജൂൾ</displayName>
+				<unitPattern count="one">{0} ജൂ.</unitPattern>
+				<unitPattern count="other">{0} ജൂ.</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName>കി.വാ/മ.</displayName>
+				<unitPattern count="one">{0} കി.വാ/മ.</unitPattern>
+				<unitPattern count="other">{0} കി.വാ/മ.</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>ഇലക്ട്രോൺവോൾട്ട്</displayName>
+				<unitPattern count="one">{0} eV</unitPattern>
+				<unitPattern count="other">{0} eV</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>BTU</displayName>
+				<unitPattern count="one">{0} Btu</unitPattern>
+				<unitPattern count="other">{0} Btu</unitPattern>
+			</unit>
 			<unit type="energy-therm-us">
 				<displayName>US തേം</displayName>
 				<unitPattern count="one">{0} US തേം</unitPattern>
 				<unitPattern count="other">{0} US തേം</unitPattern>
 			</unit>
+			<unit type="force-pound-force">
+				<displayName>പൗണ്ട് ഫോഴ്സ്</displayName>
+				<unitPattern count="one">{0} lbf</unitPattern>
+				<unitPattern count="other">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>ന്യൂട്ടൻ</displayName>
+				<unitPattern count="one">{0} N</unitPattern>
+				<unitPattern count="other">{0} N</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100km</displayName>
+				<unitPattern count="one">{0} kWh/100km</unitPattern>
+				<unitPattern count="other">{0} kWh/100km</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName>ജി.ഹെ.</displayName>
+				<unitPattern count="one">{0} ജി.ഹെ.</unitPattern>
+				<unitPattern count="other">{0} ജി.ഹെ.</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName>മെ.ഹെ.</displayName>
+				<unitPattern count="one">{0} മെ.ഹെ.</unitPattern>
+				<unitPattern count="other">{0} മെ.ഹെ.</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName>കി.ഹെ.</displayName>
+				<unitPattern count="one">{0} കി.ഹെ.</unitPattern>
+				<unitPattern count="other">{0} കി.ഹെ.</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName>ഹെ.</displayName>
+				<unitPattern count="one">{0} ഹെ.</unitPattern>
+				<unitPattern count="other">{0} ഹെ.</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>em</displayName>
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>px</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>MP</displayName>
+				<unitPattern count="one">{0} MP</unitPattern>
+				<unitPattern count="other">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>dpcm</displayName>
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} dpcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>dpi</displayName>
+				<unitPattern count="one">{0} dpi</unitPattern>
+				<unitPattern count="other">{0} dpi</unitPattern>
+			</unit>
 			<unit type="graphics-dot">
+				<displayName>px</displayName>
 				<unitPattern count="one">{0} ഡോട്ട്</unitPattern>
 				<unitPattern count="other">{0} ഡോട്ട്</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>കി.മീ.</displayName>
@@ -10071,6 +10856,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}പോ.</unitPattern>
 				<unitPattern count="other">{0}പോ.</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName>R☉</displayName>
+				<unitPattern count="one">{0} R☉</unitPattern>
+				<unitPattern count="other">{0} R☉</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<displayName>ലക്സ്</displayName>
+				<unitPattern count="one">{0} ലക്സ്</unitPattern>
+				<unitPattern count="other">{0} ലക്സ്</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>cd</displayName>
+				<unitPattern count="one">{0} cd</unitPattern>
+				<unitPattern count="other">{0} cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lm</displayName>
+				<unitPattern count="one">{0} lm</unitPattern>
+				<unitPattern count="other">{0} lm</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>സോളാർ ലുമിനോസൈട്സ്</displayName>
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
+			</unit>
 			<unit type="mass-tonne">
 				<displayName>ട.</displayName>
 				<unitPattern count="one">{0}ട.</unitPattern>
@@ -10122,6 +10932,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-ounce-troy">
 				<displayName>ട്രോ.ഔ.</displayName>
+				<unitPattern count="one">{0} ട്രോ.ഔ.</unitPattern>
+				<unitPattern count="other">{0} ട്രോ.ഔ.</unitPattern>
 			</unit>
 			<unit type="mass-carat">
 				<displayName>ക്യാരറ്റ്</displayName>
@@ -10130,14 +10942,53 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>ഡാ.</displayName>
+				<unitPattern count="one">{0} ഡാ</unitPattern>
+				<unitPattern count="other">{0} ഡാ</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>ഭൂപിണ്ഡം</displayName>
+				<unitPattern count="one">{0} M⊕</unitPattern>
+				<unitPattern count="other">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>സൂര്യപിണ്ഡം</displayName>
+				<unitPattern count="one">{0} M☉</unitPattern>
+				<unitPattern count="other">{0} M☉</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>grain</displayName>
+				<unitPattern count="one">{0} gr</unitPattern>
+				<unitPattern count="other">{0} gr</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName>ജി.വാ.</displayName>
+				<unitPattern count="one">{0} ജി.വാ.</unitPattern>
+				<unitPattern count="other">{0} ജി.വാ.</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName>മെ.വാ.</displayName>
+				<unitPattern count="one">{0} മെ.വാ.</unitPattern>
+				<unitPattern count="other">{0} മെ.വാ.</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<displayName>കി.വാ.</displayName>
 				<unitPattern count="one">{0}kW</unitPattern>
 				<unitPattern count="other">{0}kW</unitPattern>
 			</unit>
 			<unit type="power-watt">
+				<displayName>വാട്ട്</displayName>
 				<unitPattern count="one">{0} വാ</unitPattern>
 				<unitPattern count="other">{0} വാ</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<displayName>മി.വാ.</displayName>
+				<unitPattern count="one">{0} മി.വാ.</unitPattern>
+				<unitPattern count="other">{0} മി.വാ.</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<displayName>എച്ച്.പി.</displayName>
+				<unitPattern count="one">{0} എച്ച്.പി.</unitPattern>
+				<unitPattern count="other">{0} എച്ച്.പി.</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
 				<displayName>മിമീ.മെ.</displayName>
@@ -10146,6 +10997,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>പിഎസ്ഐ</displayName>
+				<unitPattern count="one">{0} പിഎസ്ഐ</unitPattern>
+				<unitPattern count="other">{0} പിഎസ്ഐ</unitPattern>
 			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>ഇഞ്ച് മെ.</displayName>
@@ -10153,6 +11006,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}&quot; Hg</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
+				<displayName>ബാർ</displayName>
 				<unitPattern count="one">{0} ബാർ</unitPattern>
 				<unitPattern count="other">{0}ബാർ</unitPattern>
 			</unit>
@@ -10161,10 +11015,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} മിബാ</unitPattern>
 				<unitPattern count="other">{0} മിബാ</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>atm</displayName>
+				<unitPattern count="one">{0} atm</unitPattern>
+				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>പാ</displayName>
+				<unitPattern count="one">{0} പാ</unitPattern>
+				<unitPattern count="other">{0} പാ</unitPattern>
+			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>ഹെ.പാ.</displayName>
 				<unitPattern count="one">{0} hPa</unitPattern>
 				<unitPattern count="other">{0} hPa</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>kPa</displayName>
+				<unitPattern count="one">{0} kPa</unitPattern>
+				<unitPattern count="other">{0} kPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>MPa</displayName>
+				<unitPattern count="one">{0} MPa</unitPattern>
+				<unitPattern count="other">{0} MPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>കി.മീ/മ.</displayName>
@@ -10206,28 +11080,163 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}K</unitPattern>
 				<unitPattern count="other">{0}K</unitPattern>
 			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>lbf⋅ft</displayName>
+				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>N⋅m</displayName>
+				<unitPattern count="one">{0} N⋅m</unitPattern>
+				<unitPattern count="other">{0} N⋅m</unitPattern>
+			</unit>
 			<unit type="volume-cubic-kilometer">
+				<displayName>കി.മീ³</displayName>
 				<unitPattern count="one">{0} കിമീ³</unitPattern>
 				<unitPattern count="other">{0} കിമീ³</unitPattern>
 			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>മീ³</displayName>
+				<unitPattern count="one">{0} മീ³</unitPattern>
+				<unitPattern count="other">{0} മീ³</unitPattern>
+				<perUnitPattern>{0}/മീ³</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>സെ.മീ³</displayName>
+				<unitPattern count="one">{0} സെ.മീ³</unitPattern>
+				<unitPattern count="other">{0} സെ.മീ³</unitPattern>
+				<perUnitPattern>{0}/സെ.മീ³</perUnitPattern>
+			</unit>
 			<unit type="volume-cubic-mile">
+				<displayName>മൈ³</displayName>
 				<unitPattern count="one">{0} മൈ³</unitPattern>
 				<unitPattern count="other">{0} മൈ³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>വാര³</displayName>
+				<unitPattern count="one">{0} വാ³</unitPattern>
+				<unitPattern count="other">{0} വാ³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>അടി³</displayName>
+				<unitPattern count="one">{0} അടി³</unitPattern>
+				<unitPattern count="other">{0} അടി³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>ഇഞ്ച്³</displayName>
+				<unitPattern count="one">{0} ഇഞ്ച്³</unitPattern>
+				<unitPattern count="other">{0} ഇഞ്ച്³</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>മെ.ലി.</displayName>
+				<unitPattern count="one">{0} മെ.ലി.</unitPattern>
+				<unitPattern count="other">{0} മെ.ലി.</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>ഹെ.ലി.</displayName>
+				<unitPattern count="one">{0} ഹെ.ലി.</unitPattern>
+				<unitPattern count="other">{0} ഹെ.ലി.</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>ലിറ്റർ</displayName>
 				<unitPattern count="one">{0} ലി.</unitPattern>
 				<unitPattern count="other">{0} ലി.</unitPattern>
+				<perUnitPattern>{0}/ലി.</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>ഡെ.ലി.</displayName>
+				<unitPattern count="one">{0} ഡെ.ലി.</unitPattern>
+				<unitPattern count="other">{0} ഡെ.ലി.</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>സെ.ലി.</displayName>
+				<unitPattern count="one">{0} സെ.ലി.</unitPattern>
+				<unitPattern count="other">{0} സെ.ലി.</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>മി.ലി.</displayName>
+				<unitPattern count="one">{0} മി.ലി.</unitPattern>
+				<unitPattern count="other">{0} മി.ലി.</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>മെ. പൈ.</displayName>
+				<unitPattern count="one">{0} മെ. പൈ.</unitPattern>
+				<unitPattern count="other">{0} മെ. പൈ.</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>മെ. ക.</displayName>
+				<unitPattern count="one">{0} മെ. ക.</unitPattern>
+				<unitPattern count="other">{0} മെ. ക.</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>ഏ. അടി</displayName>
+				<unitPattern count="one">{0} ഏ. അടി</unitPattern>
+				<unitPattern count="other">{0} ഏ. അടി</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
+				<displayName>bu</displayName>
 				<unitPattern count="one">{0} പറ</unitPattern>
 				<unitPattern count="other">{0} bu</unitPattern>
 			</unit>
+			<unit type="volume-gallon">
+				<displayName>ഗാ.</displayName>
+				<unitPattern count="one">{0} ഗാ.</unitPattern>
+				<unitPattern count="other">{0} ഗാ.</unitPattern>
+				<perUnitPattern>{0}/ഗാ.</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>ഇംപീ. ഗാലൻ</displayName>
+				<unitPattern count="one">{0} ഗാ. ഇംപീ.</unitPattern>
+				<unitPattern count="other">{0} ഗാ. ഇംപീ.</unitPattern>
+				<perUnitPattern>{0}/ഗാ. ഇംപീ.</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>ക്വാ.</displayName>
+				<unitPattern count="one">{0} ക്വാ.</unitPattern>
+				<unitPattern count="other">{0} ക്വാ.</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>പൈ.</displayName>
+				<unitPattern count="one">{0} പൈ.</unitPattern>
+				<unitPattern count="other">{0} പൈ.</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>കപ്പ്</displayName>
+				<unitPattern count="one">{0} കപ്പ്</unitPattern>
+				<unitPattern count="other">{0} കപ്പ്</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>ഫ്ലൂ. ഔ.</displayName>
+				<unitPattern count="one">{0} ഫ്ലൂ. ഔ.</unitPattern>
+				<unitPattern count="other">{0} ഫ്ലൂ. ഔ.</unitPattern>
+			</unit>
 			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp. fl oz</displayName>
 				<unitPattern count="one">{0}fl oz Im</unitPattern>
 				<unitPattern count="other">{0}fl oz Im</unitPattern>
 			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>ടേ.സ്‌പൂ.</displayName>
+				<unitPattern count="one">{0} ടേ.സ്‌പൂ.</unitPattern>
+				<unitPattern count="other">{0} ടേ.സ്‌പൂ.</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>ടീ.സ്‌പൂ.</displayName>
+				<unitPattern count="one">{0} ടീ.സ്‌പൂ.</unitPattern>
+				<unitPattern count="other">{0} ടീ.സ്‌പൂ.</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName>ബാരൽ</displayName>
+				<unitPattern count="one">{0} bbl</unitPattern>
+				<unitPattern count="other">{0} bbl</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dstspn</displayName>
+				<unitPattern count="one">{0} dstspn</unitPattern>
+				<unitPattern count="other">{0} dstspn</unitPattern>
+			</unit>
 			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dstspn Imp</displayName>
 				<unitPattern count="one">{0}dsp-Imp</unitPattern>
 				<unitPattern count="other">{0}dsp-Imp</unitPattern>
 			</unit>
@@ -10235,6 +11244,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>തു</displayName>
 				<unitPattern count="one">{0}തു</unitPattern>
 				<unitPattern count="other">{0}തു</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dram fluid</displayName>
+				<unitPattern count="one">{0} dram fl</unitPattern>
+				<unitPattern count="other">{0} dram fl</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>ജിഗർ</displayName>
+				<unitPattern count="one">{0} ജിഗർ</unitPattern>
+				<unitPattern count="other">{0} ജിഗർ</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>നുള്ള്</displayName>
+				<unitPattern count="one">{0} നുള്ള്</unitPattern>
+				<unitPattern count="other">{0} നുള്ള്</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt Imp</displayName>
+				<unitPattern count="one">{0} qt Imp.</unitPattern>
+				<unitPattern count="other">{0} qt Imp.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>ദിശ</displayName>
@@ -10267,7 +11296,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="end">{0}, അല്ലെങ്കിൽ {1}</listPatternPart>
 			<listPatternPart type="2">{0} അല്ലെങ്കിൽ {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, അല്ലെങ്കിൽ {1}</listPatternPart>
+			<listPatternPart type="2">{0} അല്ലെങ്കിൽ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, അല്ലെങ്കിൽ {1}</listPatternPart>
+			<listPatternPart type="2">{0} അല്ലെങ്കിൽ {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, {1} എന്നിവ</listPatternPart>
 			<listPatternPart type="2">{0}, {1} എന്നിവ</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
@@ -10475,35 +11519,29 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<personNames>
 		<nameOrderLocales order="givenFirst">und ml</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
-		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
-		<initialPattern type="initial">{0}.</initialPattern>
-		<initialPattern type="initialSequence">{0} {1}</initialPattern>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
+			<namePattern>{given} {given2} {surname} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
-		</personName>
-		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
-			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
 			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{given} {given2-initial} {surname} {suffix}</namePattern>
+			<namePattern>{given} {given2-initial} {surname} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -10521,7 +11559,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal} {surname-initial}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -10533,31 +11571,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{surname} {given} {given2} {suffix}</namePattern>
+			<namePattern>{surname} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
-		</personName>
-		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
 			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname} {given} {given2-initial} {suffix}</namePattern>
+			<namePattern>{surname} {given} {given2-initial} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -10575,7 +11610,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{surname} {given-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -10604,27 +11639,51 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<personName order="sorting" length="short" usage="referring" formality="informal">
 			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
-		<sampleName item="givenOnly">
-			<nameField type="given">സിൻബാഡ്</nameField>
+		<sampleName item="nativeG">
+			<nameField type="given">സെൻഡയ</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
+		<sampleName item="nativeGS">
 			<nameField type="given">ഐറീൻ</nameField>
 			<nameField type="surname">ആഡ്‌ലർ</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
+		<sampleName item="nativeGGS">
 			<nameField type="given">ജോൺ</nameField>
 			<nameField type="given2">ചാണ്ടി</nameField>
 			<nameField type="surname">പടവീട്ടിൽ</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">പ്രൊഫ. ഡോ.</nameField>
+		<sampleName item="nativeFull">
+			<nameField type="title">ശ്രീ.</nameField>
+			<nameField type="given">ബെർട്രാം വിൽബെർഫോഴ്‌സ്</nameField>
+			<nameField type="given-informal">ബെർടീ</nameField>
+			<nameField type="given2">ഹെൻറി റോബർട്ട്</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">വൂസ്റ്റർ</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="generation">ജൂനിയർ</nameField>
+			<nameField type="credentials">എംപി</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">സിൻബാദ്</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">കാത്തി</nameField>
+			<nameField type="surname">മുള്ളർ</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">സസിലിയ</nameField>
+			<nameField type="given2">ഹാമിഷ്</nameField>
+			<nameField type="surname">സ്‌റ്റോബർ</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">പ്രൊഫ. ഡോ.</nameField>
 			<nameField type="given">എയ്‌ഡ കോർണീലിയ</nameField>
 			<nameField type="given-informal">നീൽ</nameField>
 			<nameField type="given2">ഇവ സോഫിയ</nameField>
 			<nameField type="surname-prefix">വാൻ ഡെൻ</nameField>
-			<nameField type="surname-core">വൂൾഫ്</nameField>
-			<nameField type="surname2">ബേക്കർ ഷ്മിത്ത്</nameField>
-			<nameField type="suffix">എം.ഡി. പിഎച്ച്ഡി.</nameField>
+			<nameField type="surname-core">ബ്ര്യൂൾ</nameField>
+			<nameField type="surname2">ഗോൺസാലെസ് ഡൊമിംഗോ</nameField>
+			<nameField type="generation">ജൂനിയർ</nameField>
+			<nameField type="credentials">എം.ഡി. പിഎച്ച്ഡി.</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

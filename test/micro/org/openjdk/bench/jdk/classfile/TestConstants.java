@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -27,14 +25,18 @@ package org.openjdk.bench.jdk.classfile;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 
+import static java.lang.constant.ConstantDescs.CD_String;
+import static java.lang.constant.ConstantDescs.CD_void;
+
 /**
  * TestConstants
  */
 public class TestConstants {
+    public static final ClassDesc CD_MyClass = ClassDesc.of("MyClass");
     public static final ClassDesc CD_System = ClassDesc.of("java.lang.System");
     public static final ClassDesc CD_PrintStream = ClassDesc.of("java.io.PrintStream");
     public static final ClassDesc CD_ArrayList = ClassDesc.of("java.util.ArrayList");
 
-    public static final MethodTypeDesc MTD_INT_VOID = MethodTypeDesc.ofDescriptor("(I)V");
-    public static final MethodTypeDesc MTD_VOID = MethodTypeDesc.ofDescriptor("()V");
+    public static final MethodTypeDesc MTD_void_int = MethodTypeDesc.ofDescriptor("(I)V");
+    public static final MethodTypeDesc MTD_void_StringArray = MethodTypeDesc.of(CD_void, CD_String.arrayType());
 }

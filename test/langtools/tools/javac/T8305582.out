@@ -1,0 +1,6 @@
+T8305582.java:47:26: compiler.err.restricted.type.not.allowed.here: var
+T8305582.java:37:39: compiler.err.deconstruction.pattern.var.not.allowed
+T8305582.java:40:31: compiler.err.deconstruction.pattern.var.not.allowed
+T8305582.java:45:39: compiler.err.deconstruction.pattern.var.not.allowed
+T8305582.java:46:39: compiler.err.deconstruction.pattern.var.not.allowed
+5 errors

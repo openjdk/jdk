@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -35,6 +33,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
+import jdk.internal.classfile.ClassHierarchyResolver;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.CodeModel;
 import jdk.internal.classfile.MethodModel;
@@ -52,7 +51,7 @@ class VerifierSelfTest {
                     .flatMap(p -> p)
                     .filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".class")).forEach(path -> {
                         try {
-                            Classfile.parse(path).verify(null);
+                            Classfile.of().parse(path).verify(null);
                         } catch (IOException e) {
                             throw new AssertionError(e);
                         }
@@ -62,8 +61,10 @@ class VerifierSelfTest {
     @Test
     void testFailedDump() throws IOException {
         Path path = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util/HashMap.class");
-        var classModel = Classfile.parse(path, Classfile.Option.classHierarchyResolver(className -> null));
-        byte[] brokenClassBytes = classModel.transform(
+        var cc = Classfile.of(Classfile.ClassHierarchyResolverOption.of(
+                className -> ClassHierarchyResolver.ClassHierarchyInfo.ofClass(null)));
+        var classModel = cc.parse(path);
+        byte[] brokenClassBytes = cc.transform(classModel,
                 (clb, cle) -> {
                     if (cle instanceof MethodModel mm) {
                         clb.transformMethod(mm, (mb, me) -> {
@@ -78,7 +79,7 @@ class VerifierSelfTest {
                         clb.with(cle);
                 });
         StringBuilder sb = new StringBuilder();
-        if (Classfile.parse(brokenClassBytes).verify(sb::append).isEmpty()) {
+        if (Classfile.of().parse(brokenClassBytes).verify(sb::append).isEmpty()) {
             throw new AssertionError("expected verification failure");
         }
         String output = sb.toString();

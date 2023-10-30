@@ -71,11 +71,6 @@ void FreeHeap(void* p) {
 void* MetaspaceObj::_shared_metaspace_base = nullptr;
 void* MetaspaceObj::_shared_metaspace_top  = nullptr;
 
-void* StackObj::operator new(size_t size)     throw() { ShouldNotCallThis(); return 0; }
-void  StackObj::operator delete(void* p)              { ShouldNotCallThis(); }
-void* StackObj::operator new [](size_t size)  throw() { ShouldNotCallThis(); return 0; }
-void  StackObj::operator delete [](void* p)           { ShouldNotCallThis(); }
-
 void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  size_t word_size,
                                  MetaspaceObj::Type type, TRAPS) throw() {

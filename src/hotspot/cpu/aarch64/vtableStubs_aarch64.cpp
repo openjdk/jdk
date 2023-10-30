@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -51,9 +51,9 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(true);
   VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index);
-  // Can be NULL if there is no free space in the code cache.
-  if (s == NULL) {
-    return NULL;
+  // Can be null if there is no free space in the code cache.
+  if (s == nullptr) {
+    return nullptr;
   }
 
   // Count unused bytes in instruction sequences of variable size.
@@ -118,7 +118,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
     __ cbz(rmethod, L);
     __ ldr(rscratch1, Address(rmethod, Method::from_compiled_offset()));
     __ cbnz(rscratch1, L);
-    __ stop("Vtable entry is NULL");
+    __ stop("Vtable entry is null");
     __ bind(L);
   }
 #endif // PRODUCT
@@ -141,9 +141,9 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(false);
   VtableStub* s = new(stub_code_length) VtableStub(false, itable_index);
-  // Can be NULL if there is no free space in the code cache.
-  if (s == NULL) {
-    return NULL;
+  // Can be null if there is no free space in the code cache.
+  if (s == nullptr) {
+    return nullptr;
   }
 
   // Count unused bytes in instruction sequences of variable size.
@@ -175,7 +175,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // so all registers except arguments are free at this point.
   const Register recv_klass_reg     = r10;
   const Register holder_klass_reg   = r16; // declaring interface klass (DECC)
-  const Register resolved_klass_reg = rmethod; // resolved interface klass (REFC)
+  const Register resolved_klass_reg = r17; // resolved interface klass (REFC)
   const Register temp_reg           = r11;
   const Register temp_reg2          = r15;
   const Register icholder_reg       = rscratch2;
@@ -192,28 +192,13 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ load_klass(recv_klass_reg, j_rarg0);
 
   // Receiver subtype check against REFC.
-  __ lookup_interface_method(// inputs: rec. class, interface
-                             recv_klass_reg, resolved_klass_reg, noreg,
-                             // outputs:  scan temp. reg1, scan temp. reg2
-                             temp_reg2, temp_reg,
-                             L_no_such_interface,
-                             /*return_method=*/false);
-
-  const ptrdiff_t  typecheckSize = __ pc() - start_pc;
-  start_pc = __ pc();
-
   // Get selected method from declaring class and itable index
-  __ lookup_interface_method(// inputs: rec. class, interface, itable index
-                             recv_klass_reg, holder_klass_reg, itable_index,
-                             // outputs: method, scan temp. reg
-                             rmethod, temp_reg,
-                             L_no_such_interface);
-
-  const ptrdiff_t lookupSize = __ pc() - start_pc;
+  __ lookup_interface_method_stub(recv_klass_reg, holder_klass_reg, resolved_klass_reg, rmethod,
+                                  temp_reg, temp_reg2, itable_index, L_no_such_interface);
 
   // Reduce "estimate" such that "padding" does not drop below 8.
   const ptrdiff_t estimate = 124;
-  const ptrdiff_t codesize = typecheckSize + lookupSize;
+  const ptrdiff_t codesize = __ pc() - start_pc;
   slop_delta  = (int)(estimate - codesize);
   slop_bytes += slop_delta;
   assert(slop_delta >= 0, "itable #%d: Code size estimate (%d) for lookup_interface_method too small, required: %d", itable_index, (int)estimate, (int)codesize);
@@ -241,7 +226,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // We force resolving of the call site by jumping to the "handle
   // wrong method" stub, and so let the interpreter runtime do all the
   // dirty work.
-  assert(SharedRuntime::get_handle_wrong_method_stub() != NULL, "check initialization order");
+  assert(SharedRuntime::get_handle_wrong_method_stub() != nullptr, "check initialization order");
   __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
 
   masm->flush();

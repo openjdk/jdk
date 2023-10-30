@@ -487,4 +487,14 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         }
         return attachTimeout;
     }
+
+    protected static void checkNulls(Object... args) {
+        for (Object arg : args) {
+            if (arg instanceof String s) {
+                if (s.indexOf(0) >= 0) {
+                    throw new IllegalArgumentException("illegal null character in command");
+                }
+            }
+        }
+    }
 }

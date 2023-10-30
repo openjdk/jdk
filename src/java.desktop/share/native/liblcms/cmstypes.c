@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2022 Marti Maria Saguer
+//  Copyright (c) 1998-2023 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -1549,6 +1549,12 @@ void *Type_MLU_Read(struct _cms_typehandler_struct* self, cmsIOHANDLER* io, cmsU
         if (!_cmsReadUInt32Number(io, &Len)) goto Error;
         if (!_cmsReadUInt32Number(io, &Offset)) goto Error;
 
+        // Offset MUST be even because it indexes a block of utf16 chars.
+        // Tricky profiles that uses odd positions will not work anyway
+        // because the whole utf16 block is previously converted to wchar_t
+        // and sizeof this type may be of 4 bytes. On Linux systems, for example.
+        if (Offset & 1) goto Error;
+
         // Check for overflow
         if (Offset < (SizeOfHeader + 8)) goto Error;
         if (((Offset + Len) < Len) || ((Offset + Len) > SizeOfTag + 8)) goto Error;
@@ -1576,8 +1582,12 @@ void *Type_MLU_Read(struct _cms_typehandler_struct* self, cmsIOHANDLER* io, cmsU
     }
     else
     {
-        Block = (wchar_t*) _cmsMalloc(self ->ContextID, SizeOfTag);
+        // Make sure this is an even utf16 size.
+        if (SizeOfTag & 1) goto Error;
+
+        Block = (wchar_t*) _cmsCalloc(self ->ContextID, 1, SizeOfTag);
         if (Block == NULL) goto Error;
+
         NumOfWchar = SizeOfTag / sizeof(wchar_t);
         if (!_cmsReadWCharArray(io, NumOfWchar, Block)) {
             _cmsFree(self->ContextID, Block);

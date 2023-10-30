@@ -82,7 +82,8 @@ class GraphKit : public Phase {
 
 #ifdef ASSERT
   ~GraphKit() {
-    assert(!has_exceptions(), "user must call transfer_exceptions_into_jvms");
+    assert(failing() || !has_exceptions(),
+           "unless compilation failed, user must call transfer_exceptions_into_jvms");
   }
 #endif
 
@@ -897,8 +898,8 @@ class GraphKit : public Phase {
     return iff;
   }
 
-  void add_empty_predicates(int nargs = 0);
-  void add_empty_predicate_impl(Deoptimization::DeoptReason reason, int nargs);
+  void add_parse_predicates(int nargs = 0);
+  void add_parse_predicate(Deoptimization::DeoptReason reason, int nargs);
 
   Node* make_constant_from_field(ciField* field, Node* obj);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,11 +37,11 @@
   inline void clear(void) {
     // Clearing _last_Java_sp must be first.
     OrderAccess::release();
-    _last_Java_sp = NULL;
+    _last_Java_sp = nullptr;
     // Fence?
     OrderAccess::fence();
 
-    _last_Java_pc = NULL;
+    _last_Java_pc = nullptr;
   }
 
   inline void set(intptr_t* sp, address pc) {
@@ -55,12 +55,12 @@
     // In order to make sure the transition state is valid for "this"
     // we must clear _last_Java_sp before copying the rest of the new data.
     // Hack Alert: Temporary bugfix for 4717480/4721647
-    // To act like previous version (pd_cache_state) don't NULL _last_Java_sp
+    // To act like previous version (pd_cache_state) don't null _last_Java_sp
     // unless the value is changing.
     //
     if (_last_Java_sp != src->_last_Java_sp) {
       OrderAccess::release();
-      _last_Java_sp = NULL;
+      _last_Java_sp = nullptr;
       OrderAccess::fence();
     }
     _last_Java_pc = src->_last_Java_pc;
@@ -77,7 +77,7 @@
  public:
 
   // We don't have a frame pointer.
-  intptr_t* last_Java_fp(void)        { return NULL; }
+  intptr_t* last_Java_fp(void)        { return nullptr; }
 
   intptr_t* last_Java_sp() const      { return _last_Java_sp; }
   void set_last_Java_sp(intptr_t* sp) { OrderAccess::release(); _last_Java_sp = sp; }

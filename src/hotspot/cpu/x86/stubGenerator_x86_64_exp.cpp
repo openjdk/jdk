@@ -63,7 +63,7 @@
 //
 /******************************************************************************/
 
-ATTRIBUTE_ALIGNED(16) juint _cv[] =
+ATTRIBUTE_ALIGNED(16) static const juint _cv[] =
 {
     0x652b82feUL, 0x40571547UL, 0x652b82feUL, 0x40571547UL, 0xfefa0000UL,
     0x3f862e42UL, 0xfefa0000UL, 0x3f862e42UL, 0xbc9e3b3aUL, 0x3d1cf79aUL,
@@ -72,17 +72,17 @@ ATTRIBUTE_ALIGNED(16) juint _cv[] =
     0xc090cf0fUL, 0x3f811115UL, 0x55548ba1UL, 0x3fc55555UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _mmask[] =
+ATTRIBUTE_ALIGNED(16) static const juint _mmask[] =
 {
     0xffffffc0UL, 0x00000000UL, 0xffffffc0UL, 0x00000000UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _bias[] =
+ATTRIBUTE_ALIGNED(16) static const juint _bias[] =
 {
     0x0000ffc0UL, 0x00000000UL, 0x0000ffc0UL, 0x00000000UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _Tbl_addr[] =
+ATTRIBUTE_ALIGNED(16) static const juint _Tbl_addr[] =
 {
     0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL, 0x0e03754dUL,
     0x3cad7bbfUL, 0x3e778060UL, 0x00002c9aUL, 0x3567f613UL, 0x3c8cd252UL,
@@ -138,27 +138,27 @@ ATTRIBUTE_ALIGNED(16) juint _Tbl_addr[] =
     0x000fa7c1UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _ALLONES[] =
+ATTRIBUTE_ALIGNED(16) static const juint _ALLONES[] =
 {
     0xffffffffUL, 0xffffffffUL, 0xffffffffUL, 0xffffffffUL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _ebias[] =
+ATTRIBUTE_ALIGNED(16) static const juint _ebias[] =
 {
     0x00000000UL, 0x3ff00000UL, 0x00000000UL, 0x3ff00000UL
 };
 
-ATTRIBUTE_ALIGNED(4) juint _XMAX[] =
+ATTRIBUTE_ALIGNED(4) static const juint _XMAX[] =
 {
     0xffffffffUL, 0x7fefffffUL
 };
 
-ATTRIBUTE_ALIGNED(4) juint _XMIN[] =
+ATTRIBUTE_ALIGNED(4) static const juint _XMIN[] =
 {
     0x00000000UL, 0x00100000UL
 };
 
-ATTRIBUTE_ALIGNED(4) juint _INF[] =
+ATTRIBUTE_ALIGNED(4) static const juint _INF[] =
 {
     0x00000000UL, 0x7ff00000UL
 };

@@ -55,6 +55,7 @@ public class Options {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Options(Context context) {
 // DEBUGGING -- Use LinkedHashMap for reproducibility
         values = new LinkedHashMap<>();

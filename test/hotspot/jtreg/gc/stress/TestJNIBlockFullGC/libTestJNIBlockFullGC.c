@@ -45,4 +45,3 @@ Java_gc_stress_TestJNIBlockFullGC_TestJNIBlockFullGC_TestCriticalArray0(JNIEnv *
 
   return result;
 }
-

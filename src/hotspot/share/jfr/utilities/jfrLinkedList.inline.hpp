@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "runtime/atomic.hpp"
 
 template <typename NodeType, typename AllocPolicy>
-JfrLinkedList<NodeType, AllocPolicy>::JfrLinkedList() : _head(NULL) {}
+JfrLinkedList<NodeType, AllocPolicy>::JfrLinkedList() : _head(nullptr) {}
 
 template <typename NodeType, typename AllocPolicy>
 bool JfrLinkedList<NodeType, AllocPolicy>::initialize() {
@@ -44,7 +44,7 @@ inline NodeType* JfrLinkedList<NodeType, AllocPolicy>::head() const {
 
 template <typename NodeType, typename AllocPolicy>
 inline bool JfrLinkedList<NodeType, AllocPolicy>::is_empty() const {
-  return NULL == head();
+  return nullptr == head();
 }
 
 template <typename NodeType, typename AllocPolicy>
@@ -54,7 +54,7 @@ inline bool JfrLinkedList<NodeType, AllocPolicy>::is_nonempty() const {
 
 template <typename NodeType, typename AllocPolicy>
 inline void JfrLinkedList<NodeType, AllocPolicy>::add(NodeType* node) {
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   NodePtr next;
   do {
     next = head();
@@ -68,7 +68,7 @@ inline NodeType* JfrLinkedList<NodeType, AllocPolicy>::remove() {
   NodePtr next;
   do {
     node = head();
-    if (node == NULL) break;
+    if (node == nullptr) break;
     next = (NodePtr)node->_next;
   } while (Atomic::cmpxchg(&_head, node, next) != node);
   return node;
@@ -78,7 +78,7 @@ template <typename NodeType, typename AllocPolicy>
 template <typename Callback>
 void JfrLinkedList<NodeType, AllocPolicy>::iterate(Callback& cb) {
   NodePtr current = head();
-  while (current != NULL) {
+  while (current != nullptr) {
     NodePtr next = (NodePtr)current->_next;
     if (!cb.process(current)) {
       return;
@@ -90,13 +90,13 @@ void JfrLinkedList<NodeType, AllocPolicy>::iterate(Callback& cb) {
 template <typename NodeType, typename AllocPolicy>
 NodeType* JfrLinkedList<NodeType, AllocPolicy>::excise(NodeType* prev, NodeType* node) {
   NodePtr next = (NodePtr)node->_next;
-  if (prev == NULL) {
+  if (prev == nullptr) {
     prev = Atomic::cmpxchg(&_head, node, next);
     if (prev == node) {
-      return NULL;
+      return nullptr;
     }
   }
-  assert(prev != NULL, "invariant");
+  assert(prev != nullptr, "invariant");
   while (prev->_next != node) {
     prev = (NodePtr)prev->_next;
   }
@@ -107,9 +107,9 @@ NodeType* JfrLinkedList<NodeType, AllocPolicy>::excise(NodeType* prev, NodeType*
 
 template <typename NodeType, typename AllocPolicy>
 bool JfrLinkedList<NodeType, AllocPolicy>::in_list(const NodeType* node) const {
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   const NodeType* current = head();
-  while (current != NULL) {
+  while (current != nullptr) {
     if (current == node) {
       return true;
     }

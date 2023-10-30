@@ -74,7 +74,7 @@ public final class VirtualObject implements JavaValue {
      * @param id a unique id that identifies the object within the debug information for one
      *            position in the compiled code.
      * @param isAutoBox a flag that tells the runtime that the object may be a boxed primitive and
-     *            that it possibly needs to be obtained for the box cache instead of creating a new
+     *            that it possibly needs to be obtained from the box cache instead of creating a new
      *            instance.
      * @return a new {@link VirtualObject} instance.
      */

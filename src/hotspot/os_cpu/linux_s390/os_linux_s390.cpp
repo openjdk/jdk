@@ -456,24 +456,30 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc, /*intrsize=*/4);
+  print_instructions(st, pc);
   st->cr();
 }
 
-void os::print_register_info(outputStream *st, const void *context) {
-  if (context == nullptr) return;
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
+  const int register_count = 16 /* r0-r15 */ + 1 /* pc */;
+  int n = continuation;
+  assert(n >= 0 && n <= register_count, "Invalid continuation value");
+  if (context == nullptr || n == register_count) {
+    return;
+  }
 
   const ucontext_t *uc = (const ucontext_t*)context;
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.psw.addr);
-  for (int i = 0; i < 16; i++) {
-    st->print("r%-2d=", i);
-    print_location(st, uc->uc_mcontext.gregs[i]);
+  while (n < register_count) {
+    // Update continuation with next index before printing location
+    continuation = n + 1;
+    if (n == register_count - 1) {
+      st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.psw.addr);
+    } else {
+      st->print("r%-2d=", n);
+      print_location(st, uc->uc_mcontext.gregs[n]);
+    }
+    ++n;
   }
-  st->cr();
 }
 
 #ifndef PRODUCT

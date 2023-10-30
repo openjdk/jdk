@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,9 @@
 
 package javax.xml.stream;
 
-import java.io.File;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Iterator;
-import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
@@ -51,17 +49,6 @@ class FactoryFinder {
      * Internal debug flag.
      */
     private static boolean debug = false;
-
-    /**
-     * Cache for properties in java.home/conf/jaxp.properties
-     */
-    final private static Properties cacheProps = new Properties();
-
-    /**
-     * Flag indicating if properties from java.home/conf/jaxp.properties
-     * have been cached.
-     */
-    private static volatile boolean firstTime = true;
 
     // Define system property "jaxp.debug" to get output
     static {
@@ -266,43 +253,10 @@ class FactoryFinder {
                     "Failed to read factoryId '" + factoryId + "'", se);
         }
 
-        // Try read $java.home/conf/stax.properties followed by
-        // $java.home/conf/jaxp.properties if former not present
-        String configFile = null;
-        try {
-            if (firstTime) {
-                synchronized (cacheProps) {
-                    if (firstTime) {
-                        configFile = SecuritySupport.getSystemProperty("java.home") + File.separator +
-                            "conf" + File.separator + "stax.properties";
-                        final File fStax = new File(configFile);
-                        firstTime = false;
-                        if (SecuritySupport.doesFileExist(fStax)) {
-                            dPrint(()->"Read properties file "+fStax);
-                            cacheProps.load(SecuritySupport.getFileInputStream(fStax));
-                        }
-                        else {
-                            configFile = SecuritySupport.getSystemProperty("java.home") + File.separator +
-                                "conf" + File.separator + "jaxp.properties";
-                            final File fJaxp = new File(configFile);
-                            if (SecuritySupport.doesFileExist(fJaxp)) {
-                                dPrint(()->"Read properties file "+fJaxp);
-                                cacheProps.load(SecuritySupport.getFileInputStream(fJaxp));
-                            }
-                        }
-                    }
-                }
-            }
-            final String factoryClassName = cacheProps.getProperty(factoryId);
-
-            if (factoryClassName != null) {
-                final String foundIn = configFile;
-                dPrint(()->"found in " + foundIn + " value=" + factoryClassName);
-                return newInstance(type, factoryClassName, cl, true);
-            }
-        }
-        catch (Exception ex) {
-            if (debug) ex.printStackTrace();
+        // try to read from the configuration file
+        String factoryClassName = SecuritySupport.readConfig(factoryId, true);
+        if (factoryClassName != null) {
+            return newInstance(type, factoryClassName, cl, true);
         }
 
         if (type.getName().equals(factoryId)) {

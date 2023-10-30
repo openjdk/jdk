@@ -38,4 +38,3 @@
  *          /test/lib
  * @run main/othervm gc.gctests.StringInternSync.StringInternSync -ms high
  */
-

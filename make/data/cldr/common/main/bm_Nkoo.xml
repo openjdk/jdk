@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="bm"/>
+		<script type="Nkoo"/>
+	</identity>
+	<layout>
+		<orientation>
+			<characterOrder>right-to-left</characterOrder>
+		</orientation>
+	</layout>
+	<characters>
+		<exemplarCharacters>[ߊ ߋ ߌ ߍ ߎ ߏ ߐ ߒ ߓ ߔ ߕ ߖ ߗ ߘ ߙ ߚ ߛ ߜ ߝ ߞ ߟ ߡ ߢ ߣ ߤ ߥ ߦ]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[߸ ߹ ߷]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE d MMMM y G</pattern>
+							<datetimeSkeleton draft="unconfirmed">GyMMMMEEEEd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">d MMMM y G</pattern>
+							<datetimeSkeleton draft="unconfirmed">GyMMMMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">d MMM, y G</pattern>
+							<datetimeSkeleton draft="unconfirmed">GyMMMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">d/M/y GGGGG</pattern>
+							<datetimeSkeleton draft="unconfirmed">GGGGGyMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="M" draft="unconfirmed">M</dateFormatItem>
+						<dateFormatItem id="Md" draft="unconfirmed">d/M</dateFormatItem>
+						<dateFormatItem id="MMd" draft="unconfirmed">d/MM</dateFormatItem>
+						<dateFormatItem id="MMdd" draft="unconfirmed">dd/MM</dateFormatItem>
+						<dateFormatItem id="MMM" draft="unconfirmed">MMM</dateFormatItem>
+						<dateFormatItem id="MMMd" draft="unconfirmed">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="unconfirmed">E d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd" draft="unconfirmed">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd" draft="unconfirmed">E d MMMM</dateFormatItem>
+						<dateFormatItem id="ms" draft="unconfirmed">m:ss</dateFormatItem>
+						<dateFormatItem id="y" draft="unconfirmed">y</dateFormatItem>
+						<dateFormatItem id="yM" draft="unconfirmed">M/y</dateFormatItem>
+						<dateFormatItem id="yMd" draft="unconfirmed">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd" draft="unconfirmed">E d/M/y</dateFormatItem>
+						<dateFormatItem id="yMM" draft="unconfirmed">MM/y</dateFormatItem>
+						<dateFormatItem id="yMMM" draft="unconfirmed">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="unconfirmed">d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd" draft="unconfirmed">E d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMM" draft="unconfirmed">MMMM y</dateFormatItem>
+						<dateFormatItem id="yQQQ" draft="unconfirmed">QQQ y</dateFormatItem>
+						<dateFormatItem id="yQQQQ" draft="unconfirmed">QQQQ y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE d MMMM y</pattern>
+							<datetimeSkeleton draft="unconfirmed">yMMMMEEEEd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">d MMMM y</pattern>
+							<datetimeSkeleton draft="unconfirmed">yMMMMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">d MMM, y</pattern>
+							<datetimeSkeleton draft="unconfirmed">yMMMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">d/M/y</pattern>
+							<datetimeSkeleton draft="unconfirmed">yMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss zzzz</pattern>
+							<datetimeSkeleton draft="unconfirmed">HHmmsszzzz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss z</pattern>
+							<datetimeSkeleton draft="unconfirmed">HHmmssz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss</pattern>
+							<datetimeSkeleton draft="unconfirmed">HHmmss</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm</pattern>
+							<datetimeSkeleton draft="unconfirmed">HHmm</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="M" draft="unconfirmed">M</dateFormatItem>
+						<dateFormatItem id="Md" draft="unconfirmed">d/M</dateFormatItem>
+						<dateFormatItem id="MMd" draft="unconfirmed">d/MM</dateFormatItem>
+						<dateFormatItem id="MMdd" draft="unconfirmed">dd/MM</dateFormatItem>
+						<dateFormatItem id="MMM" draft="unconfirmed">MMM</dateFormatItem>
+						<dateFormatItem id="MMMd" draft="unconfirmed">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="unconfirmed">E d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd" draft="unconfirmed">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd" draft="unconfirmed">E d MMMM</dateFormatItem>
+						<dateFormatItem id="ms" draft="unconfirmed">m:ss</dateFormatItem>
+						<dateFormatItem id="y" draft="unconfirmed">y</dateFormatItem>
+						<dateFormatItem id="yM" draft="unconfirmed">M/y</dateFormatItem>
+						<dateFormatItem id="yMd" draft="unconfirmed">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd" draft="unconfirmed">E d/M/y</dateFormatItem>
+						<dateFormatItem id="yMM" draft="unconfirmed">MM/y</dateFormatItem>
+						<dateFormatItem id="yMMM" draft="unconfirmed">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="unconfirmed">d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd" draft="unconfirmed">E d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMM" draft="unconfirmed">MMMM y</dateFormatItem>
+						<dateFormatItem id="yQQQ" draft="unconfirmed">QQQ y</dateFormatItem>
+						<dateFormatItem id="yQQQQ" draft="unconfirmed">QQQQ y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<defaultNumberingSystem>latn</defaultNumberingSystem>
+		<otherNumberingSystems>
+			<native>nkoo</native>
+		</otherNumberingSystems>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤#,##0.00;(¤#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+	</numbers>
+</ldml>

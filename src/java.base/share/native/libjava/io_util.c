@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,16 +204,11 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
 void
 throwFileNotFoundException(JNIEnv *env, jstring path)
 {
-    char buf[256];
-    size_t n;
     jobject x;
-    jstring why = NULL;
+    jstring why;
 
-    n = getLastErrorString(buf, sizeof(buf));
-    if (n > 0) {
-        why = JNU_NewStringPlatform(env, buf);
-        CHECK_NULL(why);
-    }
+    why = getLastErrorString(env);
+    JNU_CHECK_EXCEPTION(env);
     x = JNU_NewObjectByName(env,
                             "java/io/FileNotFoundException",
                             "(Ljava/lang/String;Ljava/lang/String;)V",

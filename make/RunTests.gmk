@@ -93,6 +93,9 @@ endif
 JTREG_FAILURE_HANDLER_DIR := $(TEST_IMAGE_DIR)/failure_handler
 JTREG_FAILURE_HANDLER := $(JTREG_FAILURE_HANDLER_DIR)/jtregFailureHandler.jar
 
+JTREG_TEST_THREAD_FACTORY_DIR := $(TEST_IMAGE_DIR)/jtreg_test_thread_factory
+JTREG_TEST_THREAD_FACTORY_JAR := $(JTREG_TEST_THREAD_FACTORY_DIR)/jtregTestThreadFactory.jar
+
 JTREG_FAILURE_HANDLER_TIMEOUT ?= 0
 
 ifneq ($(wildcard $(JTREG_FAILURE_HANDLER)), )
@@ -175,7 +178,8 @@ ifeq ($(TEST_JOBS), 0)
       c = c * $(TEST_JOBS_FACTOR_JDL); \
       c = c * $(TEST_JOBS_FACTOR_MACHINE); \
       if (c < 1) c = 1; \
-      printf "%.0f", c; \
+      c = c + 0.5; \
+      printf "%d", c; \
     }')
 endif
 
@@ -200,7 +204,7 @@ $(eval $(call SetTestOpt,REPORT,JTREG))
 
 $(eval $(call ParseKeywordVariable, JTREG, \
     SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR FAILURE_HANDLER_TIMEOUT \
-        TEST_MODE ASSERT VERBOSE RETAIN MAX_MEM RUN_PROBLEM_LISTS \
+        TEST_MODE ASSERT VERBOSE RETAIN TEST_THREAD_FACTORY MAX_MEM RUN_PROBLEM_LISTS \
         RETRY_COUNT REPEAT_COUNT MAX_OUTPUT REPORT $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
     STRING_KEYWORDS := OPTIONS JAVA_OPTIONS VM_OPTIONS KEYWORDS \
         EXTRA_PROBLEM_LISTS LAUNCHER_OPTIONS \
@@ -353,7 +357,7 @@ ExpandJtregPath = \
 # with test id: dir/Test.java#selection -> Test.java#selection -> .java#selection -> #selection
 #      without: dir/Test.java           -> Test.java           -> .java           -> <<empty string>>
 TestID = \
-    $(subst .sh,,$(subst .html,,$(subst .java,,$(suffix $(notdir $1)))))
+    $(subst .jasm,,$(subst .sh,,$(subst .html,,$(subst .java,,$(suffix $(notdir $1))))))
 
 # The test id starting with a hash (#testid) will be stripped by all
 # evals in ParseJtregTestSelectionInner and will be reinserted by calling
@@ -592,16 +596,7 @@ define SetupRunMicroTestBody
   endif
 
   # Set library path for native dependencies
-  $1_JMH_JVM_ARGS := -Djava.library.path=$$(TEST_IMAGE_DIR)/micro/native \
-        --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.attribute=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.instruction=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.java.lang.constant=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.components=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.impl=ALL-UNNAMED
+  $1_JMH_JVM_ARGS := -Djava.library.path=$$(TEST_IMAGE_DIR)/micro/native
 
   ifneq ($$(MICRO_VM_OPTIONS)$$(MICRO_JAVA_OPTIONS), )
     $1_JMH_JVM_ARGS += $$(MICRO_VM_OPTIONS) $$(MICRO_JAVA_OPTIONS)
@@ -752,6 +747,7 @@ define SetupRunJtregTestBody
 
   JTREG_VERBOSE ?= fail,error,summary
   JTREG_RETAIN ?= fail,error
+  JTREG_TEST_THREAD_FACTORY ?=
   JTREG_RUN_PROBLEM_LISTS ?= false
   JTREG_RETRY_COUNT ?= 0
   JTREG_REPEAT_COUNT ?= 0
@@ -763,6 +759,14 @@ define SetupRunJtregTestBody
       $$(info Please choose one or the other.)
       $$(error Cannot continue)
     endif
+  endif
+
+  ifneq ($$(JTREG_TEST_THREAD_FACTORY), )
+    $1_JTREG_BASIC_OPTIONS += -testThreadFactoryPath:$$(JTREG_TEST_THREAD_FACTORY_JAR)
+    $1_JTREG_BASIC_OPTIONS += -testThreadFactory:$$(JTREG_TEST_THREAD_FACTORY)
+    $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
+	$$(addprefix $$($1_TEST_ROOT)/, ProblemList-$$(JTREG_TEST_THREAD_FACTORY).txt) \
+    ))
   endif
 
   ifneq ($$(JTREG_LAUNCHER_OPTIONS), )
@@ -797,8 +801,10 @@ define SetupRunJtregTestBody
   $1_JTREG_BASIC_OPTIONS += -e:JIB_DATA_DIR
   # If running on Windows, propagate the _NT_SYMBOL_PATH to enable
   # symbol lookup in hserr files
+  # The minidumps are disabled by default on client Windows, so enable them
   ifeq ($$(call isTargetOs, windows), true)
     $1_JTREG_BASIC_OPTIONS += -e:_NT_SYMBOL_PATH
+    $1_JTREG_BASIC_OPTIONS += -vmoption:-XX:+CreateCoredumpOnCrash
   else ifeq ($$(call isTargetOs, linux), true)
       $1_JTREG_BASIC_OPTIONS += -e:_JVM_DWARF_PATH=$$(SYMBOLS_IMAGE_DIR)
   endif
@@ -857,11 +863,12 @@ define SetupRunJtregTestBody
 
   $$(eval $$(call SetupRunJtregTestCustom, $1))
 
-  clean-workdir-$1:
+  clean-outputdirs-$1:
 	$$(RM) -r $$($1_TEST_SUPPORT_DIR)
+	$$(RM) -r $$($1_TEST_RESULTS_DIR)
 
   $1_COMMAND_LINE := \
-      $$(JAVA) $$($1_JTREG_LAUNCHER_OPTIONS) \
+      $$(JTREG_JAVA) $$($1_JTREG_LAUNCHER_OPTIONS) \
           -Dprogram=jtreg -jar $$(JT_HOME)/lib/jtreg.jar \
           $$($1_JTREG_BASIC_OPTIONS) \
           -testjdk:$$(JDK_UNDER_TEST) \
@@ -904,7 +911,7 @@ define SetupRunJtregTestBody
         done
   endif
 
-  run-test-$1: pre-run-test clean-workdir-$1
+  run-test-$1: pre-run-test clean-outputdirs-$1
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR) \
@@ -941,9 +948,9 @@ define SetupRunJtregTestBody
 	  $$(eval $1_TOTAL := 1) \
 	)
 
-  $1: run-test-$1 parse-test-$1 clean-workdir-$1
+  $1: run-test-$1 parse-test-$1 clean-outputdirs-$1
 
-  TARGETS += $1 run-test-$1 parse-test-$1 clean-workdir-$1
+  TARGETS += $1 run-test-$1 parse-test-$1 clean-outputdirs-$1
   TEST_TARGETS += parse-test-$1
 
 endef

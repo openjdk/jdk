@@ -103,6 +103,11 @@ class PSOldGen : public CHeapObj<mtGC> {
                      (HeapWord*)(_virtual_space->high_boundary()));
   }
 
+  MemRegion committed() const {
+    return MemRegion((HeapWord*)(_virtual_space->low()),
+                     (HeapWord*)(_virtual_space->high()));
+  }
+
   size_t max_gen_size() const { return _max_gen_size; }
   size_t min_gen_size() const { return _min_gen_size; }
 

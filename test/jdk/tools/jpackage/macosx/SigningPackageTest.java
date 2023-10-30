@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Annotations.Parameter;
 
 /**
  * Tests generation of dmg and pkg with --mac-sign and related arguments.
@@ -65,13 +66,13 @@ public class SigningPackageTest {
 
     private static void verifyPKG(JPackageCommand cmd) {
         Path outputBundle = cmd.outputBundle();
-        SigningBase.verifyPkgutil(outputBundle);
-        SigningBase.verifySpctl(outputBundle, "install");
+        SigningBase.verifyPkgutil(outputBundle, getCertIndex(cmd));
+        SigningBase.verifySpctl(outputBundle, "install", getCertIndex(cmd));
     }
 
     private static void verifyDMG(JPackageCommand cmd) {
         Path outputBundle = cmd.outputBundle();
-        SigningBase.verifyCodesign(outputBundle, false);
+        SigningBase.verifyDMG(outputBundle);
     }
 
     private static void verifyAppImageInDMG(JPackageCommand cmd) {
@@ -81,24 +82,31 @@ public class SigningPackageTest {
             // We will be called with all folders in DMG since JDK-8263155, but
             // we only need to verify app.
             if (dmgImage.endsWith(cmd.name() + ".app")) {
-                SigningBase.verifyCodesign(launcherPath, true);
-                SigningBase.verifyCodesign(dmgImage, true);
-                SigningBase.verifySpctl(dmgImage, "exec");
+                SigningBase.verifyCodesign(launcherPath, true, getCertIndex(cmd));
+                SigningBase.verifyCodesign(dmgImage, true, getCertIndex(cmd));
+                SigningBase.verifySpctl(dmgImage, "exec", getCertIndex(cmd));
             }
         });
     }
 
+    private static int getCertIndex(JPackageCommand cmd) {
+        String devName = cmd.getArgumentValue("--mac-signing-key-user-name");
+        return SigningBase.getDevNameIndex(devName);
+    }
+
     @Test
-    public static void test() throws Exception {
-        SigningCheck.checkCertificates();
+    @Parameter("0")
+    @Parameter("1")
+    public static void test(int certIndex) throws Exception {
+        SigningCheck.checkCertificates(certIndex);
 
         new PackageTest()
                 .configureHelloApp()
                 .forTypes(PackageType.MAC)
                 .addInitializer(cmd -> {
                     cmd.addArguments("--mac-sign",
-                            "--mac-signing-key-user-name", SigningBase.DEV_NAME,
-                            "--mac-signing-keychain", SigningBase.KEYCHAIN);
+                            "--mac-signing-key-user-name", SigningBase.getDevName(certIndex),
+                            "--mac-signing-keychain", SigningBase.getKeyChain());
                 })
                 .forTypes(PackageType.MAC_PKG)
                 .addBundleVerifier(SigningPackageTest::verifyPKG)

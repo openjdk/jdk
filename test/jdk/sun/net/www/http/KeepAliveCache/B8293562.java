@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
  * @summary Http keep-alive thread should close sockets without holding a lock
  */
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 import javax.net.ssl.HandshakeCompletedListener;
@@ -45,6 +47,7 @@ import java.net.Proxy;
 import java.net.Socket;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -64,6 +67,7 @@ public class B8293562 {
     public static void startHttpServer() throws Exception {
         server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 10);
         server.setExecutor(Executors.newCachedThreadPool());
+        server.createContext("/", new NotFoundHandler());
         server.start();
     }
 
@@ -232,6 +236,14 @@ public class B8293562 {
         @Override
         public Socket createSocket(Socket s, String host, int port, boolean autoClose) throws IOException {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    static class NotFoundHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange t) throws IOException {
+            t.sendResponseHeaders(404, 3);
+            t.getResponseBody().write("abc".getBytes(StandardCharsets.UTF_8));
         }
     }
 }

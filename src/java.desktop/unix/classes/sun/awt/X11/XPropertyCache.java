@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.*;
  *
  * NOTE: current caching is disabled because of the big variate of
  * uncovered access to properties/changes of properties.  Once the
- * access to properites is rewritten using general mechanisms, caching
+ * access to properties is rewritten using general mechanisms, caching
  * will be enabled.
  */
 public class XPropertyCache {

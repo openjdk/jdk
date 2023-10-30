@@ -34,7 +34,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
 
 /**
- * Models a single "provides" declaration in the {@link jdk.internal.classfile.attribute.ModuleAttribute}.
+ * Models a single "provides" declaration in the {@link ModuleAttribute}.
  */
 public sealed interface ModuleProvideInfo
         permits UnboundAttribute.UnboundModuleProvideInfo {

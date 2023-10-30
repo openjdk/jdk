@@ -76,6 +76,7 @@ public class TransTypes extends TreeTranslator {
     private final Resolve resolve;
     private final CompileStates compileStates;
 
+    @SuppressWarnings("this-escape")
     protected TransTypes(Context context) {
         context.put(transTypesKey, this);
         compileStates = CompileStates.instance(context);
@@ -511,7 +512,7 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitForeachLoop(JCEnhancedForLoop tree) {
-        tree.varOrRecordPattern = translate(tree.varOrRecordPattern, null);
+        tree.var = translate(tree.var, null);
         Type iterableType = tree.expr.type;
         tree.expr = translate(tree.expr, erasure(tree.expr.type));
         if (types.elemtype(tree.expr.type) == null)
@@ -550,7 +551,13 @@ public class TransTypes extends TreeTranslator {
 
     public void visitCase(JCCase tree) {
         tree.labels = translate(tree.labels, null);
+        tree.guard = translate(tree.guard, syms.booleanType);
         tree.stats = translate(tree.stats);
+        result = tree;
+    }
+
+    @Override
+    public void visitAnyPattern(JCAnyPattern tree) {
         result = tree;
     }
 
@@ -568,7 +575,6 @@ public class TransTypes extends TreeTranslator {
     @Override
     public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
         tree.pat = translate(tree.pat, null);
-        tree.guard = translate(tree.guard, syms.booleanType);
         result = tree;
     }
 
@@ -581,12 +587,6 @@ public class TransTypes extends TreeTranslator {
         tree.cases = translate(tree.cases, tree.type);
         tree.type = erasure(tree.type);
         result = retype(tree, tree.type, pt);
-    }
-
-    @Override
-    public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
-        tree.pattern = translate(tree.pattern, null);
-        result = tree;
     }
 
     public void visitRecordPattern(JCRecordPattern tree) {
@@ -835,6 +835,14 @@ public class TransTypes extends TreeTranslator {
             tree.type = erasure(tree.type);
             result = tree;
         }
+    }
+
+    public void visitStringTemplate(JCStringTemplate tree) {
+        tree.processor = translate(tree.processor, erasure(tree.processor.type));
+        tree.expressions = tree.expressions.stream()
+                .map(e -> translate(e, erasure(e.type))).collect(List.collector());
+        tree.type = erasure(tree.type);
+        result = tree;
     }
 
     public void visitSelect(JCFieldAccess tree) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ inline bool UnifiedOopRef::is_null() const {
 
 template <typename T>
 inline UnifiedOopRef create_with_tag(T ref, uintptr_t tag) {
-  assert(ref != NULL, "invariant");
+  assert(ref != nullptr, "invariant");
 
   uintptr_t value = reinterpret_cast<uintptr_t>(ref);
 

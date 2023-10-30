@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ void CodeInstaller::pd_relocate_poll(address pc, jint mark, TRAPS) {
 
 // convert JVMCI register indices (as used in oop maps) to HotSpot registers
 VMReg CodeInstaller::get_hotspot_reg(jint jvmci_reg, TRAPS) {
-  return NULL;
+  return nullptr;
 }
 
 bool CodeInstaller::is_general_purpose_reg(VMReg hotspotRegister) {

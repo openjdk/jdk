@@ -104,6 +104,7 @@ public class Infer {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Infer(Context context) {
         context.put(inferKey, this);
 

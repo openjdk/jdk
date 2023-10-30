@@ -51,7 +51,7 @@ GetDoubleField_t  JNI_FastGetField::jni_fast_GetDoubleField_fp;
 // between loads, which is much more efficient than lfence.
 
 address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
-  const char *name = NULL;
+  const char *name = nullptr;
   switch (type) {
     case T_BOOLEAN: name = "jni_fast_GetBooleanField"; break;
     case T_BYTE:    name = "jni_fast_GetByteField";    break;
@@ -128,7 +128,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
   slowcase_entry_pclist[count++] = __ pc();
   __ bind (slow);
-  address slow_case_addr = NULL;
+  address slow_case_addr = nullptr;
   switch (type) {
     case T_BOOLEAN: slow_case_addr = jni_GetBooleanField_addr(); break;
     case T_BYTE:    slow_case_addr = jni_GetByteField_addr();    break;
@@ -264,7 +264,7 @@ address JNI_FastGetField::generate_fast_get_long_field() {
 }
 
 address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
-  const char *name = NULL;
+  const char *name = nullptr;
   switch (type) {
     case T_FLOAT:  name = "jni_fast_GetFloatField";  break;
     case T_DOUBLE: name = "jni_fast_GetDoubleField"; break;
@@ -343,7 +343,7 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
 
   slowcase_entry_pclist[count++] = __ pc();
   __ bind (slow);
-  address slow_case_addr = NULL;
+  address slow_case_addr = nullptr;
   switch (type) {
     case T_FLOAT:  slow_case_addr = jni_GetFloatField_addr();  break;
     case T_DOUBLE: slow_case_addr = jni_GetDoubleField_addr(); break;
