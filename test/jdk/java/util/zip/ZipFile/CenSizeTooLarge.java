@@ -24,7 +24,6 @@
 /* @test
  * @bug 8272746
  * @summary Verify that ZipFile rejects a ZIP with a CEN size which does not fit in a Java byte array
- * @requires (sun.arch.data.model == "64")
  * @run testng CenSizeTooLarge
  */
 
