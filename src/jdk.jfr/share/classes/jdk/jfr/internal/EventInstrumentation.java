@@ -451,7 +451,6 @@ final class EventInstrumentation {
                 // if (!settingsMethod(eventConfiguration.settingX)) goto fail;
                 codeBuilder.aload(0);
                 getEventConfiguration(codeBuilder);
-                codeBuilder.checkcast(TYPE_EVENT_CONFIGURATION);
                 codeBuilder.ldc(index);
                 invokevirtual(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_EVENT_CONFIGURATION_GET_SETTING);
                 MethodTypeDesc mdesc = MethodTypeDesc.ofDescriptor("(" + sd.paramType().descriptorString() + ")Z");
@@ -712,6 +711,7 @@ final class EventInstrumentation {
     private void getEventConfiguration(CodeBuilder codeBuilder) {
         if (untypedEventConfiguration) {
             codeBuilder.getstatic(getEventClassDesc(), FIELD_EVENT_CONFIGURATION.name(), TYPE_OBJECT);
+            codeBuilder.checkcast(TYPE_EVENT_CONFIGURATION);
         } else {
             codeBuilder.getstatic(getEventClassDesc(), FIELD_EVENT_CONFIGURATION.name(), TYPE_EVENT_CONFIGURATION);
         }
