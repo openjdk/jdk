@@ -31,13 +31,13 @@
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
-import java.io.File;
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -71,6 +71,10 @@ public class CenSizeTooLarge {
     // The number of entries needed to exceed the MAX_CEN_SIZE
     static final int NUM_ENTRIES = (MAX_CEN_SIZE / CEN_HEADER_SIZE) + 1;
 
+    // Helps SparseOutputStream detect write of the last CEN entry
+    private static final String LAST_COMMENT = "LastCEN";
+    private static final byte[] LAST_COMMENT_BYTES = LAST_COMMENT.getBytes(StandardCharsets.UTF_8);
+
     // Zip file to create for testing
     private File hugeZipFile;
 
@@ -82,7 +86,8 @@ public class CenSizeTooLarge {
         hugeZipFile = new File("cen-too-large.zip");
         hugeZipFile.deleteOnExit();
 
-        try (ZipOutputStream zip = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(hugeZipFile)))) {
+        try (OutputStream out = new SparseOutputStream(new FileOutputStream(hugeZipFile));
+             ZipOutputStream zip = new ZipOutputStream(out)) {
 
             // Keep track of entries so we can update extra data before the CEN is written
             ZipEntry[] entries = new ZipEntry[NUM_ENTRIES];
@@ -104,8 +109,13 @@ public class CenSizeTooLarge {
                 // Set the time/date field for faster processing
                 entry.setTimeLocal(TIME_LOCAL);
 
+                if (i == NUM_ENTRIES -1) {
+                    // Help SparseOutputStream detect the last CEN entry write
+                    entry.setComment(LAST_COMMENT);
+                }
                 // Add the entry
                 zip.putNextEntry(entry);
+
 
             }
             // Finish writing the last entry
@@ -151,5 +161,43 @@ public class CenSizeTooLarge {
         // Size of the actual (empty) data
         buffer.putShort(MAX_DATA_SIZE);
         return extra;
+    }
+
+    /**
+     * By writing sparse 'holes' until the last CEN is detected, we can save disk space
+     * used by this test from ~2GB to ~4K
+     */
+    private static class SparseOutputStream extends FilterOutputStream {
+        private final FileChannel channel;
+        private boolean afterLastCEN = false;
+        private long position = 0;
+
+        public SparseOutputStream(FileOutputStream fos) {
+            super(fos);
+            this.channel = fos.getChannel();
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            position += len;
+            if (afterLastCEN) {
+                out.write(b, off, len);
+            } else {
+                channel.position(position);
+                if (Arrays.equals(LAST_COMMENT_BYTES, 0, LAST_COMMENT_BYTES.length, b, off, len)) {
+                    afterLastCEN = true;
+                }
+            }
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            position++;
+            if (afterLastCEN) {
+                out.write(b);
+            } else {
+                channel.position(position);
+            }
+        }
     }
 }
