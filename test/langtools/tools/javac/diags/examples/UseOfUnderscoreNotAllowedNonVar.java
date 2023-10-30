@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,23 +20,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.source.tree;
 
-import jdk.internal.javac.PreviewFeature;
+// key: compiler.err.use.of.underscore.not.allowed.non.variable
 
-/**
- * A tree node for a binding pattern that matches a pattern
- * with a variable of any name and a type of the match candidate;
- * an unnamed pattern.
- *
- * For example the use of underscore {@code _} below:
- * <pre>
- *   if (r instanceof R(_)) {}
- * </pre>
- *
- * @jls 14.30.1 Kinds of Patterns
- *
- * @since 22
- */
-public interface AnyPatternTree extends PatternTree {
+import java.util.function.*;
+
+class UseOfUnderscoreNotAllowedNonVar {
+    IntBinaryOperator f = (int x, int y) -> _ + x;
 }
