@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,11 +224,11 @@ public class TestBufferVectorization {
         ProcessBuilder pb;
         OutputAnalyzer out;
         try {
-            pb = ProcessTools.createJavaProcessBuilder("-XX:-BackgroundCompilation",
-                                                       "-XX:+TraceNewVectors",
-                                                       "compiler.vectorization.TestBufferVectorization",
-                                                       testName,
-                                                       "run");
+            pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:-BackgroundCompilation",
+                                                                  "-XX:+TraceNewVectors",
+                                                                  "compiler.vectorization.TestBufferVectorization",
+                                                                  testName,
+                                                                  "run");
             out = new OutputAnalyzer(pb.start());
         } catch (Exception e) {
             throw new RuntimeException(" Exception launching Java process: " + e);

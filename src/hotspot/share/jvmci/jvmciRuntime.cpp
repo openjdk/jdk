@@ -1253,7 +1253,7 @@ bool JVMCIRuntime::detach_thread(JavaThread* thread, const char* reason, bool ca
   return destroyed_javavm;
 }
 
-JNIEnv* JVMCIRuntime::init_shared_library_javavm(int* create_JavaVM_err) {
+JNIEnv* JVMCIRuntime::init_shared_library_javavm(int* create_JavaVM_err, const char** err_msg) {
   MutexLocker locker(_lock);
   JavaVM* javaVM = _shared_library_javavm;
   if (javaVM == nullptr) {
@@ -1280,7 +1280,7 @@ JNIEnv* JVMCIRuntime::init_shared_library_javavm(int* create_JavaVM_err) {
     JavaVMInitArgs vm_args;
     vm_args.version = JNI_VERSION_1_2;
     vm_args.ignoreUnrecognized = JNI_TRUE;
-    JavaVMOption options[5];
+    JavaVMOption options[6];
     jlong javaVM_id = 0;
 
     // Protocol: JVMCI shared library JavaVM should support a non-standard "_javavm_id"
@@ -1297,6 +1297,8 @@ JNIEnv* JVMCIRuntime::init_shared_library_javavm(int* create_JavaVM_err) {
     options[3].extraInfo = (void*) _fatal;
     options[4].optionString = (char*) "_fatal_log";
     options[4].extraInfo = (void*) _fatal_log;
+    options[5].optionString = (char*) "_createvm_errorstr";
+    options[5].extraInfo = (void*) err_msg;
 
     vm_args.version = JNI_VERSION_1_2;
     vm_args.options = options;

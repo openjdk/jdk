@@ -1318,7 +1318,7 @@ void TemplateTable::idiv() {
   __ bind(no_div0);
   __ pop_i(x11);
   // x10 <== x11 idiv x10
-  __ corrected_idivl(x10, x11, x10, /* want_remainder */ false);
+  __ corrected_idivl(x10, x11, x10, /* want_remainder */ false, /* is_signed */ true);
 }
 
 void TemplateTable::irem() {
@@ -1331,7 +1331,7 @@ void TemplateTable::irem() {
   __ bind(no_div0);
   __ pop_i(x11);
   // x10 <== x11 irem x10
-  __ corrected_idivl(x10, x11, x10, /* want_remainder */ true);
+  __ corrected_idivl(x10, x11, x10, /* want_remainder */ true, /* is_signed */ true);
 }
 
 void TemplateTable::lmul() {
@@ -1350,7 +1350,7 @@ void TemplateTable::ldiv() {
   __ bind(no_div0);
   __ pop_l(x11);
   // x10 <== x11 ldiv x10
-  __ corrected_idivq(x10, x11, x10, /* want_remainder */ false);
+  __ corrected_idivq(x10, x11, x10, /* want_remainder */ false, /* is_signed */ true);
 }
 
 void TemplateTable::lrem() {
@@ -1363,7 +1363,7 @@ void TemplateTable::lrem() {
   __ bind(no_div0);
   __ pop_l(x11);
   // x10 <== x11 lrem x10
-  __ corrected_idivq(x10, x11, x10, /* want_remainder */ true);
+  __ corrected_idivq(x10, x11, x10, /* want_remainder */ true, /* is_signed */ true);
 }
 
 void TemplateTable::lshl() {

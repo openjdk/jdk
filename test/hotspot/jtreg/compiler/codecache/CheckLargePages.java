@@ -50,7 +50,7 @@ public class CheckLargePages {
         final boolean largePages = WHITE_BOX.getBooleanVMFlag("UseLargePages");
         final long largePageSize = WHITE_BOX.getVMLargePageSize();
         if (largePages && (largePageSize == 1024 * 1024 * 1024)) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-XX:+UseLargePages",
                     "-XX:+SegmentedCodeCache",
                     "-XX:InitialCodeCacheSize=2g",

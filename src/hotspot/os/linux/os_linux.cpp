@@ -36,10 +36,11 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
+#include "osContainer_linux.hpp"
 #include "os_linux.inline.hpp"
 #include "os_posix.inline.hpp"
-#include "osContainer_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -64,19 +65,18 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
-#include "signals_posix.hpp"
 #include "semaphore_posix.hpp"
-#include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
+#include "signals_posix.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
-#include "utilities/events.hpp"
 #include "utilities/elfFile.hpp"
-#include "utilities/growableArray.hpp"
+#include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
@@ -3775,6 +3775,8 @@ void os::large_page_init() {
     _large_page_size = HugePages::thp_pagesize();
     _page_sizes.add(_large_page_size);
     _page_sizes.add(os::vm_page_size());
+    // +UseTransparentHugePages implies +UseLargePages
+    UseLargePages = true;
 
   } else {
 
@@ -5298,7 +5300,6 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
     if (num_found == 0) {
       st->print_cr("nothing.");
     }
-    st->cr();
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,12 +51,12 @@ public class SafepointCleanupTest {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:safepoint+cleanup=info",
-                                                                  InnerClass.class.getName());
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:safepoint+cleanup=info",
+                                                                             InnerClass.class.getName());
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:safepoint+cleanup=off",
-                                                   InnerClass.class.getName());
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:safepoint+cleanup=off",
+                                                              InnerClass.class.getName());
         analyzeOutputOff(pb);
     }
 

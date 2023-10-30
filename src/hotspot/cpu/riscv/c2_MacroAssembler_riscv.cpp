@@ -63,7 +63,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(flag, oop);
     lwu(flag, Address(flag, Klass::access_flags_offset()));
-    test_bit(flag, flag, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS), tmp /* tmp */);
+    test_bit(flag, flag, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
     bnez(flag, cont, true /* is_far */);
   }
 
@@ -1571,7 +1571,7 @@ void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRe
   is_double ? fclass_d(t1, src2)
             : fclass_s(t1, src2);
   orr(t0, t0, t1);
-  andi(t0, t0, 0b1100000000); //if src1 or src2 is quiet or signaling NaN then return NaN
+  andi(t0, t0, fclass_mask::nan); // if src1 or src2 is quiet or signaling NaN then return NaN
   beqz(t0, Compare);
   is_double ? fadd_d(dst, src1, src2)
             : fadd_s(dst, src1, src2);
@@ -1669,12 +1669,8 @@ void C2_MacroAssembler::signum_fp(FloatRegister dst, FloatRegister src, FloatReg
   is_double ? fmv_d(dst, src)
             : fmv_s(dst, src);
 
-  //bitmask 0b1100011000 specifies this bits:
-  // 3 - src is -0
-  // 4 - src is +0
-  // 8 - src is signaling NaN
-  // 9 - src is a quiet NaN
-  andi(tmp1, tmp1, 0b1100011000);
+  // check if input is -0, +0, signaling NaN or quiet NaN
+  andi(tmp1, tmp1, fclass_mask::zero | fclass_mask::nan);
 
   bnez(tmp1, done);
 

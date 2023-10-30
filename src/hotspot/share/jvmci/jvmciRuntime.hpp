@@ -280,8 +280,10 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // If the JavaVM was created by this call, then the thread-local JNI
   // interface pointer for the JavaVM is returned otherwise null is returned.
   // If this method tried to create the JavaVM but failed, the error code returned
-  // by JNI_CreateJavaVM is returned in create_JavaVM_err.
-  JNIEnv* init_shared_library_javavm(int* create_JavaVM_err);
+  // by JNI_CreateJavaVM is returned in create_JavaVM_err and, if available, an
+  // error message is malloc'ed and assigned to err_msg. The caller is responsible
+  // for freeing err_msg.
+  JNIEnv* init_shared_library_javavm(int* create_JavaVM_err, const char** err_msg);
 
   // Determines if the JVMCI shared library JavaVM exists for this runtime.
   bool has_shared_library_javavm() { return _shared_library_javavm != nullptr; }
