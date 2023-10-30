@@ -46,6 +46,7 @@ import java.nio.file.StandardOpenOption;
 import java.security.Security;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -57,9 +58,9 @@ import java.util.stream.Stream;
 
 /*
  * @test
- * @summary Tests security properties passed through
- *   java.security and java.security.properties.
- * @bug 8155246 8292297 8292177 8281658
+ * @summary Tests security properties passed through java.security,
+ *   java.security.properties or included from other properties files.
+ * @bug 8155246 8292297 8292177 8281658 8319332
  * @modules java.base/sun.net.www
  * @library /test/lib
  * @run main ConfigFileTest
@@ -113,6 +114,100 @@ public class ConfigFileTest {
                 .shouldContain("Security TLS configuration");
     }
 
+    static void testIncludeBasic(Executor ex, FilesManager filesMgr)
+            throws Exception {
+        PropsFile masterFile = filesMgr.newMasterFile();
+        ExtraPropsFile extraFile = filesMgr.newExtraFile();
+        PropsFile file0 = filesMgr.newFile("file0.properties");
+        PropsFile file1 = filesMgr.newFile("dir1/file1.properties");
+        PropsFile file2 = filesMgr.newFile("dir1/dir2/file2.properties");
+
+        masterFile.addAbsoluteInclude(file0);
+        extraFile.addRelativeInclude(file2);
+        file2.addAbsoluteInclude(file1);
+
+        ex.setMasterFile(masterFile);
+        ex.setExtraFile(extraFile, Executor.ExtraMode.FILE_URI, false);
+        ex.assertSuccess();
+    }
+
+    static void testRepeatedInclude(Executor ex, FilesManager filesMgr)
+            throws Exception {
+        PropsFile masterFile = filesMgr.newMasterFile();
+        PropsFile file0 = filesMgr.newFile("file0.properties");
+        PropsFile file1 = filesMgr.newFile("dir1/file1.properties");
+
+        masterFile.addAbsoluteInclude(file0);
+        masterFile.addAbsoluteInclude(file1);
+        masterFile.addAbsoluteInclude(file0);
+        file1.addRelativeInclude(file0);
+
+        ex.setMasterFile(masterFile);
+        ex.assertSuccess();
+    }
+
+    static void testIncludeWithOverrideAll(Executor ex, FilesManager filesMgr)
+            throws Exception {
+        PropsFile masterFile = filesMgr.newMasterFile();
+        ExtraPropsFile extraFile = filesMgr.newExtraFile();
+        PropsFile file0 = filesMgr.newFile("file0.properties");
+        PropsFile file1 = filesMgr.newFile("dir1/file1.properties");
+
+        masterFile.addRelativeInclude(file0);
+        extraFile.addAbsoluteInclude(file1);
+
+        ex.setMasterFile(masterFile);
+        ex.setExtraFile(extraFile, Executor.ExtraMode.HTTP_SERVED, true);
+        ex.assertSuccess();
+    }
+
+    static void extraPropertiesByHelper(Executor ex, FilesManager filesMgr,
+            Executor.ExtraMode mode) throws Exception {
+        ExtraPropsFile extraFile = filesMgr.newExtraFile();
+        PropsFile file0 = filesMgr.newFile("file0.properties");
+
+        extraFile.addRelativeInclude(file0);
+
+        ex.setMasterFile(filesMgr.newMasterFile());
+        ex.setExtraFile(extraFile, mode, true);
+        ex.assertSuccess();
+    }
+
+    static void testExtraPropertiesByPathAbsolute(Executor ex,
+            FilesManager filesMgr) throws Exception {
+        extraPropertiesByHelper(ex, filesMgr, Executor.ExtraMode.PATH_ABS);
+    }
+
+    static void testExtraPropertiesByPathRelative(Executor ex,
+            FilesManager filesMgr) throws Exception {
+        extraPropertiesByHelper(ex, filesMgr, Executor.ExtraMode.PATH_REL);
+    }
+
+    static void specialCharsIncludes(Executor ex, FilesManager filesMgr,
+            char specialChar) throws Exception {
+        String suffix = specialChar + ".properties";
+        ExtraPropsFile extraFile = filesMgr.newExtraFile("extra" + suffix);
+        PropsFile file0 = filesMgr.newFile("file0" + suffix);
+        PropsFile file1 = filesMgr.newFile("file1" + suffix);
+
+        extraFile.addRelativeInclude(file0);
+        extraFile.addAbsoluteInclude(file1);
+
+        ex.setMasterFile(filesMgr.newMasterFile());
+        ex.setExtraFile(extraFile, Executor.ExtraMode.PATH_ABS, false);
+        ex.assertSuccess();
+    }
+
+    static void testUnicodeIncludes(Executor ex, FilesManager filesMgr)
+            throws Exception {
+        specialCharsIncludes(ex, filesMgr, '\u2022');
+    }
+
+    static void testSpaceIncludes(Executor ex, FilesManager filesMgr)
+            throws Exception {
+        specialCharsIncludes(ex, filesMgr, ' ');
+    }
+
     static void notOverrideOnFailureHelper(Executor ex, FilesManager filesMgr,
             String nonExistentExtraFile) throws Exception {
         // An overriding extra properties file that does not exist
@@ -140,6 +235,12 @@ public class ConfigFileTest {
     static void testNotOverrideOnPathFailure(Executor ex, FilesManager filesMgr)
             throws Exception {
         notOverrideOnFailureHelper(ex, filesMgr, "nonExistentFile.properties");
+    }
+
+    static void testNotOverrideOnDirFailure(Executor ex, FilesManager filesMgr)
+            throws Exception {
+        notOverrideOnFailureHelper(ex, filesMgr, "file:///");
+        ex.getOutputAnalyzer().shouldContain("Is a directory");
     }
 
     static void testNotOverrideOnBadFileURLFailure1(Executor ex,
@@ -170,6 +271,58 @@ public class ConfigFileTest {
      * Error cases
      */
 
+    static void testCannotResolveRelativeFromHTTPServed(Executor ex,
+            FilesManager filesMgr) throws Exception {
+        ExtraPropsFile extraFile = filesMgr.newExtraFile();
+        PropsFile file0 = filesMgr.newFile("file0.properties");
+
+        extraFile.addRelativeInclude(file0);
+
+        ex.setMasterFile(filesMgr.newMasterFile());
+        ex.setExtraFile(extraFile, Executor.ExtraMode.HTTP_SERVED, true);
+        ex.assertError("InternalError: Cannot resolve '" + file0.fileName +
+                "' relative path when included from a URL properties file");
+    }
+
+    static void testCannotIncludeCycles(Executor ex, FilesManager filesMgr)
+            throws Exception {
+        PropsFile masterFile = filesMgr.newMasterFile();
+        PropsFile file0 = filesMgr.newFile("file0.properties");
+        PropsFile file1 = filesMgr.newFile("dir1/file1.properties");
+
+        // Includes chain: master -> file0 -> file1 -> master.
+        file1.addRelativeInclude(masterFile);
+        file0.addRelativeInclude(file1);
+        masterFile.addRelativeInclude(file0);
+
+        ex.setMasterFile(masterFile);
+        ex.assertError(
+                "InternalError: Cyclic include of '" + masterFile.path + "'");
+    }
+
+    static void testCannotIncludeURL(Executor ex, FilesManager filesMgr)
+            throws Exception {
+        PropsFile masterFile = filesMgr.newMasterFile();
+        ExtraPropsFile extraFile = filesMgr.newExtraFile();
+
+        masterFile.addRawProperty("include", extraFile.url.toString());
+
+        ex.setMasterFile(masterFile);
+        ex.assertError("InternalError: Unable to include 'http://127.0.0.1:");
+    }
+
+    static void testCannotIncludeNonexistentFile(Executor ex,
+            FilesManager filesMgr) throws Exception {
+        PropsFile masterFile = filesMgr.newMasterFile();
+
+        String nonexistentPath = "/nonExistentFile.properties";
+        masterFile.addRawProperty("include", nonexistentPath);
+
+        ex.setMasterFile(masterFile);
+        ex.assertError(
+                "InternalError: Unable to include '" + nonexistentPath + "'");
+    }
+
     static void testMustHaveMasterFile(Executor ex, FilesManager filesMgr)
             throws Exception {
         // Launch a JDK without a master java.security file present.
@@ -188,7 +341,27 @@ public class ConfigFileTest {
 }
 
 sealed class PropsFile permits ExtraPropsFile {
+    protected static final class Include {
+        final PropsFile propsFile;
+        final String value;
+
+        private Include(PropsFile propsFile, String value) {
+            this.propsFile = propsFile;
+            this.value = value;
+        }
+
+        static Include of(PropsFile propsFile) {
+            return new Include(propsFile, propsFile.path.toString());
+        }
+
+        static Include of(PropsFile propsFile, String value) {
+            return new Include(propsFile, value);
+        }
+    }
+
+    protected final List<Include> includes = new ArrayList<>();
     protected final PrintWriter writer;
+    protected boolean includedFromExtra = false;
     final String fileName;
     final Path path;
 
@@ -221,6 +394,14 @@ sealed class PropsFile permits ExtraPropsFile {
         writer.println(escape(key, true) + sep + escape(value, false));
     }
 
+    protected void addIncludeDefinition(Include include) {
+        if (include.propsFile instanceof ExtraPropsFile) {
+            throw new RuntimeException("ExtraPropsFile should not be included");
+        }
+        includes.add(include);
+        addRawProperty("include", include.value, " ");
+    }
+
     void addComment(String comment) {
         writer.println("# " + comment);
     }
@@ -229,14 +410,46 @@ sealed class PropsFile permits ExtraPropsFile {
         addRawProperty(key, value, "=");
     }
 
+    void addAbsoluteInclude(PropsFile propsFile) {
+        addIncludeDefinition(Include.of(propsFile));
+    }
+
+    void addRelativeInclude(PropsFile propsFile) {
+        addIncludeDefinition(Include.of(propsFile,
+                path.getParent().relativize(propsFile.path).toString()));
+    }
+
     void assertApplied(OutputAnalyzer oa) {
         oa.shouldContain(Executor.INITIAL_PROP_LOG_MSG + fileName + "=" +
                 FilesManager.APPLIED_PROP_VALUE);
+        for (Include include : includes) {
+            include.propsFile.assertApplied(oa);
+            oa.shouldContain("processing include: '" + include.value + "'");
+        }
     }
 
     void assertWasOverwritten(OutputAnalyzer oa) {
         oa.shouldNotContain(Executor.INITIAL_PROP_LOG_MSG + fileName + "=" +
                 FilesManager.APPLIED_PROP_VALUE);
+        for (Include include : includes) {
+            if (!include.propsFile.includedFromExtra) {
+                include.propsFile.assertWasOverwritten(oa);
+            }
+            oa.shouldContain("processing include: '" + include.value + "'");
+            oa.shouldContain("finished processing " + include.propsFile.path);
+        }
+    }
+
+    void markAsIncludedFromExtra() {
+        includedFromExtra = true;
+        for (Include include : includes) {
+            include.propsFile.markAsIncludedFromExtra();
+        }
+    }
+
+    PropsFile getLastFile() {
+        return includes.isEmpty() ?
+                this : includes.getLast().propsFile.getLastFile();
     }
 
     void close() {
@@ -245,11 +458,29 @@ sealed class PropsFile permits ExtraPropsFile {
 }
 
 final class ExtraPropsFile extends PropsFile {
+    private final Map<String, String> systemProps = new LinkedHashMap<>();
     final URI url;
 
     ExtraPropsFile(String fileName, URI url, Path path) throws IOException {
         super(fileName, path);
         this.url = url;
+    }
+
+    @Override
+    protected void addIncludeDefinition(Include include) {
+        if (includes.isEmpty()) {
+            String propName = "props.fileName";
+            systemProps.put(propName, include.propsFile.fileName);
+            include = Include.of(include.propsFile,
+                    include.value.replace(include.propsFile.fileName,
+                            "${props.none}${" + propName + "}"));
+        }
+        include.propsFile.markAsIncludedFromExtra();
+        super.addIncludeDefinition(include);
+    }
+
+    Map<String, String> getSystemProperties() {
+        return Collections.unmodifiableMap(systemProps);
     }
 }
 
@@ -356,7 +587,7 @@ final class FilesManager implements Closeable {
         propsFile.addRawProperty(fileName, APPLIED_PROP_VALUE);
         propsFile.addComment(ConfigFileTest.SEPARATOR_THIN);
         propsFile.addComment("Property to be overwritten by every properties " +
-                "file (master or extra):");
+                "file (master, extra or included):");
         propsFile.addRawProperty(LAST_FILE_PROP_NAME, fileName);
         propsFile.addComment(ConfigFileTest.SEPARATOR_THIN);
         createdFiles.add(propsFile);
@@ -435,6 +666,7 @@ final class Executor {
     private static final String[] ALWAYS_UNEXPECTED_LOG_MSGS = {
             "java.lang.AssertionError",
             INITIAL_PROP_LOG_MSG + "postInitTest=shouldNotRecord",
+            INITIAL_PROP_LOG_MSG + "include=",
     };
     private static final Path CWD = Path.of(".").toAbsolutePath();
     private static final String JAVA_SEC_PROPS = "java.security.properties";
@@ -499,6 +731,9 @@ final class Executor {
     private void execute(boolean successExpected) throws Exception {
         List<String> allJvmArgs = new ArrayList<>(jvmArgs);
         Map<String, String> allSystemProps = new LinkedHashMap<>(systemProps);
+        if (extraPropsFile != null) {
+            allSystemProps.putAll(extraPropsFile.getSystemProperties());
+        }
         for (Map.Entry<String, String> e : allSystemProps.entrySet()) {
             allJvmArgs.add("-D" + e.getKey() + "=" + e.getValue());
         }
@@ -516,7 +751,7 @@ final class Executor {
         PropsFile lastFile = null;
         if (extraPropsFile != null) {
             extraPropsFile.assertApplied(oa);
-            lastFile = extraPropsFile;
+            lastFile = extraPropsFile.getLastFile();
         }
         if (expectedOverrideAll) {
             oa.shouldContain(OVERRIDING_LOG_MSG);
@@ -526,7 +761,7 @@ final class Executor {
             masterPropsFile.assertApplied(oa);
         }
         if (lastFile == null) {
-            lastFile = masterPropsFile;
+            lastFile = masterPropsFile.getLastFile();
         }
         oa.shouldContain(FilesManager.LAST_FILE_PROP_NAME + "=" +
                 lastFile.fileName);

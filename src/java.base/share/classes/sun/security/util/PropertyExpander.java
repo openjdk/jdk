@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,15 +51,31 @@ public class PropertyExpander {
         }
     }
 
-    public static String expand(String value)
-        throws ExpandException
-    {
-        return expand(value, false);
+    public static String expand(String value) throws ExpandException {
+        return expand(value, false, true);
     }
 
-     public static String expand(String value, boolean encodeURL)
-         throws ExpandException
-     {
+    public static String expand(String value, boolean encodeURL)
+            throws ExpandException {
+        return expand(value, encodeURL, true);
+    }
+
+    /*
+     * In non-strict mode an undefined property is replaced by an empty string.
+     */
+    public static String expandNonStrict(String value) {
+        try {
+            return expand(value, false, false);
+        } catch (ExpandException e) {
+            // should not happen
+            throw new RuntimeException("unexpected expansion error: when " +
+                    "expansion is non-strict, undefined properties should " +
+                    "be replaced by an empty string", e);
+        }
+    }
+
+    private static String expand(String value, boolean encodeURL,
+            boolean strict) throws ExpandException {
         if (value == null)
             return null;
 
@@ -120,10 +136,9 @@ public class PropertyExpander {
                             }
                         }
                         sb.append(val);
-                    } else {
+                    } else if (strict) {
                         throw new ExpandException(
-                                             "unable to expand property " +
-                                             prop);
+                                "unable to expand property " + prop);
                     }
                 }
             }

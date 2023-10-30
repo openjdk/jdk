@@ -28,6 +28,7 @@ package java.security;
 import java.io.*;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -39,6 +40,7 @@ import jdk.internal.event.EventHelper;
 import jdk.internal.event.SecurityPropertyModificationEvent;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.StaticProperty;
+import sun.net.www.protocol.file.FileURLConnection;
 import sun.security.util.Debug;
 import sun.security.util.PropertyExpander;
 
@@ -85,6 +87,10 @@ public final class Security {
 
         private static final String EXTRA_SYS_PROP =
                 "java.security.properties";
+
+        private static Path currentPath;
+
+        private static final Set<Path> activePaths = new HashSet<>();
 
         static void loadAll() {
             // first load the master properties file to
@@ -165,7 +171,42 @@ public final class Security {
                     sdebug.println(
                             "overriding other security properties files!");
                 }
-                props = new Properties();
+                props = new Properties() {
+                    @Override
+                    public synchronized Object put(Object key, Object val) {
+                        if (key instanceof String strKey &&
+                                val instanceof String strVal &&
+                                "include".equals(strKey)) {
+                            loadInclude(strVal);
+                            return null;
+                        }
+                        return super.put(key, val);
+                    }
+                };
+            }
+        }
+
+        private static void loadInclude(String propFile) {
+            String expPropFile = PropertyExpander.expandNonStrict(propFile);
+            if (sdebug != null) {
+                sdebug.println("processing include: '" + propFile + "'" +
+                        (propFile.equals(expPropFile) ? "" :
+                                " (expanded to '" + expPropFile + "')"));
+            }
+            try {
+                Path path = Path.of(expPropFile);
+                if (!path.isAbsolute()) {
+                    if (currentPath == null) {
+                        throw new InternalError("Cannot resolve '" +
+                                expPropFile + "' relative path when included " +
+                                "from a URL properties file");
+                    }
+                    path = currentPath.resolveSibling(path);
+                }
+                loadFromPath(path, LoadingMode.APPEND);
+            } catch (IOException | InvalidPathException e) {
+                throw new InternalError("Unable to include '" + expPropFile +
+                        "'", e);
             }
         }
 
@@ -175,29 +216,47 @@ public final class Security {
             if (path.toFile().isDirectory()) {
                 throw new IOException("Is a directory");
             }
+            if (activePaths.contains(path)) {
+                throw new InternalError("Cyclic include of '" + path + "'");
+            }
             try (InputStream is = Files.newInputStream(path)) {
                 reset(mode);
-                debugLoad(true, path);
-                props.load(is);
-                debugLoad(false, path);
+                Path previousPath = currentPath;
+                currentPath = path;
+                activePaths.add(path);
+                try {
+                    debugLoad(true, path);
+                    props.load(is);
+                    debugLoad(false, path);
+                } finally {
+                    activePaths.remove(path);
+                    currentPath = previousPath;
+                }
             }
         }
 
         private static void loadFromUrl(URL url, LoadingMode mode)
                 throws IOException {
-            try (InputStream is = url.openStream()) {
-                reset(mode);
-                debugLoad(true, url);
-                props.load(is);
-                debugLoad(false, url);
+            URLConnection connection = url.openConnection();
+            if (connection instanceof FileURLConnection fileConnection) {
+                // A local file URL can be interpreted as a Path
+                loadFromPath(fileConnection.getFile().toPath(), mode);
+            } else {
+                try (InputStream is = connection.getInputStream()) {
+                    reset(mode);
+                    debugLoad(true, url);
+                    props.load(is);
+                    debugLoad(false, url);
+                }
             }
         }
 
         private static void debugLoad(boolean start, Object source) {
             if (sdebug != null) {
+                int level = activePaths.isEmpty() ? 1 : activePaths.size();
                 sdebug.println((start ?
-                        "> starting to process " :
-                        "< finished processing ") + source);
+                        ">".repeat(level) + " starting to process " :
+                        "<".repeat(level) + " finished processing ") + source);
             }
         }
     }
