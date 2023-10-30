@@ -152,7 +152,7 @@ size_t MonitorList::unlink_deflated(Thread* current, LogStream* ls,
         if (prev == nullptr && Atomic::load(&_head) != m) {
           // Current batch used to be at head, but it is not at head anymore.
           // Bail out and figure out where we currently are. This avoids long
-          // walks searching for new prev during unlink under heavy lock mutations.
+          // walks searching for new prev during unlink under heavy list inserts.
           break;
         }
       } while (next != nullptr && next->is_being_async_deflated());
