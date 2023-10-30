@@ -47,7 +47,7 @@ SerialBlockOffsetSharedArray::SerialBlockOffsetSharedArray(MemRegion reserved,
   if (!_vs.initialize(rs, 0)) {
     vm_exit_during_initialization("Could not reserve enough space for heap offset array");
   }
-  _offset_array = (u_char*)_vs.low_boundary();
+  _offset_array = (uint8_t*)_vs.low_boundary();
   resize(init_word_size);
   log_trace(gc, bot)("SerialBlockOffsetSharedArray::SerialBlockOffsetSharedArray: ");
   log_trace(gc, bot)("   rs.base(): " PTR_FORMAT " rs.size(): " SIZE_FORMAT_X_0 " rs end(): " PTR_FORMAT,
@@ -129,7 +129,7 @@ void SerialBlockOffsetTable::update_for_block_work(HeapWord* blk_start,
       // -1 so that the reach ends in this region and not at the start
       // of the next.
       size_t reach = offset_card + BOTConstants::power_to_cards_back(i + 1) - 1;
-      u_char value = checked_cast<u_char>(BOTConstants::card_size_in_words() + i);
+      uint8_t value = checked_cast<uint8_t>(BOTConstants::card_size_in_words() + i);
 
       _array->set_offset_array(start_card_for_region, MIN2(reach, end_card), value);
       start_card_for_region = reach + 1;
@@ -147,7 +147,7 @@ void SerialBlockOffsetTable::update_for_block_work(HeapWord* blk_start,
 HeapWord* SerialBlockOffsetTable::block_start_reaching_into_card(const void* addr) const {
   size_t index = _array->index_for(addr);
 
-  u_char offset;
+  uint8_t offset;
   while (true) {
     offset = _array->offset_array(index);
 
@@ -174,8 +174,8 @@ void SerialBlockOffsetTable::verify_for_block(HeapWord* blk_start, HeapWord* blk
   assert(_array->offset_array(start_card) < BOTConstants::card_size_in_words(), "offset card");
 
   for (size_t i = start_card + 1; i <= end_card; ++i) {
-    const u_char prev  = _array->offset_array(i-1);
-    const u_char value = _array->offset_array(i);
+    const uint8_t prev  = _array->offset_array(i-1);
+    const uint8_t value = _array->offset_array(i);
     if (prev != value) {
       assert(value >= prev, "monotonic");
       size_t n_cards_back = BOTConstants::entry_to_cards_back(value);

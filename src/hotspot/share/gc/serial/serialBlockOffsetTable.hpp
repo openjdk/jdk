@@ -46,14 +46,14 @@ class SerialBlockOffsetSharedArray: public CHeapObj<mtGC> {
   // Array for keeping offsets for retrieving object start fast given an
   // address.
   VirtualSpace _vs;
-  u_char* _offset_array;          // byte array keeping backwards offsets
+  uint8_t* _offset_array;          // byte array keeping backwards offsets
 
-  void fill_range(size_t start, size_t num_cards, u_char offset) {
+  void fill_range(size_t start, size_t num_cards, uint8_t offset) {
     void* start_ptr = &_offset_array[start];
     memset(start_ptr, offset, num_cards);
   }
 
-  u_char offset_array(size_t index) const {
+  uint8_t offset_array(size_t index) const {
     assert(index < _vs.committed_size(), "index out of range");
     return _offset_array[index];
   }
@@ -92,10 +92,10 @@ public:
     assert(index < _vs.committed_size(), "index out of range");
     assert(high >= low, "addresses out of order");
     assert(pointer_delta(high, low) < BOTConstants::card_size_in_words(), "offset too large");
-    _offset_array[index] = checked_cast<u_char>(pointer_delta(high, low));
+    _offset_array[index] = checked_cast<uint8_t>(pointer_delta(high, low));
   }
 
-  void set_offset_array(size_t left, size_t right, u_char offset) {
+  void set_offset_array(size_t left, size_t right, uint8_t offset) {
     assert(right < _vs.committed_size(), "right address out of range");
     assert(left <= right, "precondition");
     size_t num_cards = right - left + 1;
