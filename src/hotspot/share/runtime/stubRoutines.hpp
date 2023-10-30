@@ -269,6 +269,8 @@ class StubRoutines: AllStatic {
   static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
   static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
 
+  static address _upcall_stub_exception_handler;
+
  public:
   // Initialization/Testing
   static void    initialize_initial_stubs();               // must happen before universe::genesis
@@ -464,6 +466,11 @@ class StubRoutines: AllStatic {
 
   JFR_ONLY(static address jfr_write_checkpoint() { return _jfr_write_checkpoint; })
   JFR_ONLY(static address jfr_return_lease() { return _jfr_return_lease; })
+
+  static address upcall_stub_exception_handler() {
+    assert(_upcall_stub_exception_handler != nullptr, "not implemented");
+    return _upcall_stub_exception_handler;
+  }
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
 

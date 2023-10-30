@@ -24,9 +24,9 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/mallocHeader.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/os.hpp"
-#include "services/mallocHeader.inline.hpp"
-#include "services/memTracker.hpp"
 #include "unittest.hpp"
 
 // Uncomment to get test output

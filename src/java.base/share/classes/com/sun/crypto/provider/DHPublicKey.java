@@ -49,7 +49,7 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
     private static final long serialVersionUID = 7647557958927458271L;
 
     // the public key
-    private BigInteger y;
+    private final BigInteger y;
 
     // the key bytes, without the algorithm information
     private byte[] key;
@@ -64,10 +64,10 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
     private final BigInteger g;
 
     // the private-value length (optional)
-    private int l;
+    private final int l;
 
     // Note: this OID is used by DHPrivateKey as well.
-    static ObjectIdentifier DH_OID =
+    static final ObjectIdentifier DH_OID =
             ObjectIdentifier.of(KnownOIDs.DiffieHellman);
 
     /**
@@ -153,6 +153,8 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
             // Private-value length is OPTIONAL
             if (params.data.available() != 0) {
                 this.l = params.data.getInteger();
+            } else {
+                this.l = 0;
             }
             if (params.data.available() != 0) {
                 throw new InvalidKeyException("Extra parameter data");
@@ -162,7 +164,10 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
              * Parse the key
              */
             this.key = derKeyVal.data.getBitString();
-            parseKeyBits();
+
+            DerInputStream in = new DerInputStream(this.key);
+            this.y = in.getBigInteger();
+
             if (derKeyVal.data.available() != 0) {
                 throw new InvalidKeyException("Excess key data");
             }
@@ -261,16 +266,6 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
         if (this.l != 0)
             sb.append(LINE_SEP + "l:" + LINE_SEP + "    " + this.l);
         return sb.toString();
-    }
-
-    private void parseKeyBits() throws InvalidKeyException {
-        try {
-            DerInputStream in = new DerInputStream(this.key);
-            this.y = in.getBigInteger();
-        } catch (IOException e) {
-            throw new InvalidKeyException(
-                "Error parsing key encoding: " + e.toString());
-        }
     }
 
     /**

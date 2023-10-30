@@ -1074,7 +1074,26 @@ enum operand_size { int8, int16, int32, uint32, int64 };
 
 #undef INSN
 
-// Float and Double Conversion Instruction
+enum fclass_mask {
+  minf       = 1 << 0,   // negative infinite
+  mnorm      = 1 << 1,   // negative normal number
+  msubnorm   = 1 << 2,   // negative subnormal number
+  mzero      = 1 << 3,   // negative zero
+  pzero      = 1 << 4,   // positive zero
+  psubnorm   = 1 << 5,   // positive subnormal number
+  pnorm      = 1 << 6,   // positive normal number
+  pinf       = 1 << 7,   // positive infinite
+  snan       = 1 << 8,   // signaling NaN
+  qnan       = 1 << 9,   // quiet NaN
+  zero       = mzero    | pzero,
+  subnorm    = msubnorm | psubnorm,
+  norm       = mnorm    | pnorm,
+  inf        = minf     | pinf,
+  nan        = snan     | qnan,
+  finite     = zero     | subnorm   | norm,
+};
+
+// Float and Double Conversion/Classify Instruction
 #define INSN(NAME, op, funct3, funct5, funct7)            \
   void NAME(Register Rd, FloatRegister Rs1) {             \
     unsigned insn = 0;                                    \

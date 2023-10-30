@@ -77,63 +77,63 @@ public class SegmentFactories {
     @ForceInline
     public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize) {
         ensureInitialized();
-        return new NativeMemorySegmentImpl(min, byteSize, false, new GlobalSession(null));
+        return new NativeMemorySegmentImpl(min, byteSize, false, MemorySessionImpl.GLOBAL_SESSION);
     }
 
     public static MemorySegment fromArray(byte[] arr) {
         ensureInitialized();
         Objects.requireNonNull(arr);
-        long byteSize = (long)arr.length * Unsafe.ARRAY_BYTE_INDEX_SCALE;
-        return new OfByte(Unsafe.ARRAY_BYTE_BASE_OFFSET, arr, byteSize, false,
-                MemorySessionImpl.heapSession(arr));
+        long byteSize = (long)arr.length * Utils.BaseAndScale.BYTE.scale();
+        return new OfByte(Utils.BaseAndScale.BYTE.base(), arr, byteSize, false,
+                MemorySessionImpl.createHeap(arr));
     }
 
     public static MemorySegment fromArray(short[] arr) {
         ensureInitialized();
         Objects.requireNonNull(arr);
-        long byteSize = (long)arr.length * Unsafe.ARRAY_SHORT_INDEX_SCALE;
-        return new OfShort(Unsafe.ARRAY_SHORT_BASE_OFFSET, arr, byteSize, false,
-                MemorySessionImpl.heapSession(arr));
+        long byteSize = (long)arr.length * Utils.BaseAndScale.SHORT.scale();
+        return new OfShort(Utils.BaseAndScale.SHORT.base(), arr, byteSize, false,
+                MemorySessionImpl.createHeap(arr));
     }
 
     public static MemorySegment fromArray(int[] arr) {
         ensureInitialized();
         Objects.requireNonNull(arr);
-        long byteSize = (long)arr.length * Unsafe.ARRAY_INT_INDEX_SCALE;
-        return new OfInt(Unsafe.ARRAY_INT_BASE_OFFSET, arr, byteSize, false,
-                MemorySessionImpl.heapSession(arr));
+        long byteSize = (long)arr.length * Utils.BaseAndScale.INT.scale();
+        return new OfInt(Utils.BaseAndScale.INT.base(), arr, byteSize, false,
+                MemorySessionImpl.createHeap(arr));
     }
 
     public static MemorySegment fromArray(char[] arr) {
         ensureInitialized();
         Objects.requireNonNull(arr);
-        long byteSize = (long)arr.length * Unsafe.ARRAY_CHAR_INDEX_SCALE;
-        return new OfChar(Unsafe.ARRAY_CHAR_BASE_OFFSET, arr, byteSize, false,
-                MemorySessionImpl.heapSession(arr));
+        long byteSize = (long)arr.length * Utils.BaseAndScale.CHAR.scale();
+        return new OfChar(Utils.BaseAndScale.CHAR.base(), arr, byteSize, false,
+                MemorySessionImpl.createHeap(arr));
     }
 
     public static MemorySegment fromArray(float[] arr) {
         ensureInitialized();
         Objects.requireNonNull(arr);
-        long byteSize = (long)arr.length * Unsafe.ARRAY_FLOAT_INDEX_SCALE;
-        return new OfFloat(Unsafe.ARRAY_FLOAT_BASE_OFFSET, arr, byteSize, false,
-                MemorySessionImpl.heapSession(arr));
+        long byteSize = (long)arr.length * Utils.BaseAndScale.FLOAT.scale();
+        return new OfFloat(Utils.BaseAndScale.FLOAT.base(), arr, byteSize, false,
+                MemorySessionImpl.createHeap(arr));
     }
 
     public static MemorySegment fromArray(double[] arr) {
         ensureInitialized();
         Objects.requireNonNull(arr);
-        long byteSize = (long)arr.length * Unsafe.ARRAY_DOUBLE_INDEX_SCALE;
-        return new OfDouble(Unsafe.ARRAY_DOUBLE_BASE_OFFSET, arr, byteSize, false,
-                MemorySessionImpl.heapSession(arr));
+        long byteSize = (long)arr.length * Utils.BaseAndScale.DOUBLE.scale();
+        return new OfDouble(Utils.BaseAndScale.DOUBLE.base(), arr, byteSize, false,
+                MemorySessionImpl.createHeap(arr));
     }
 
     public static MemorySegment fromArray(long[] arr) {
         ensureInitialized();
         Objects.requireNonNull(arr);
-        long byteSize = (long)arr.length * Unsafe.ARRAY_LONG_INDEX_SCALE;
-        return new OfLong(Unsafe.ARRAY_LONG_BASE_OFFSET, arr, byteSize, false,
-                MemorySessionImpl.heapSession(arr));
+        long byteSize = (long)arr.length * Utils.BaseAndScale.LONG.scale();
+        return new OfLong(Utils.BaseAndScale.LONG.base(), arr, byteSize, false,
+                MemorySessionImpl.createHeap(arr));
     }
 
     public static MemorySegment allocateSegment(long byteSize, long byteAlignment, MemorySessionImpl sessionImpl,

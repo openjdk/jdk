@@ -30,10 +30,10 @@
 #include "gc/shared/space.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/virtualspace.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #if INCLUDE_PARALLELGC
 #include "gc/parallel/objectStartArray.hpp"

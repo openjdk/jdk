@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class TestDynamicNumberOfGCThreads {
     String[] baseArgs = {"-XX:+UnlockExperimentalVMOptions", "-XX:+" + gcFlag, "-Xmx10M", "-XX:+UseDynamicNumberOfGCThreads", "-Xlog:gc+task=trace", GCTest.class.getName()};
 
     // Base test with gc and +UseDynamicNumberOfGCThreads:
-    ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilder(baseArgs);
+    ProcessBuilder pb_enabled = ProcessTools.createLimitedTestJavaProcessBuilder(baseArgs);
     verifyDynamicNumberOfGCThreads(new OutputAnalyzer(pb_enabled.start()));
 
     // Turn on parallel reference processing
@@ -81,7 +81,7 @@ public class TestDynamicNumberOfGCThreads {
     String[] parRefArgs = new String[baseArgs.length + parRefProcArg.length];
     System.arraycopy(parRefProcArg, 0, parRefArgs, 0,                parRefProcArg.length);
     System.arraycopy(baseArgs,  0, parRefArgs, parRefProcArg.length, baseArgs.length);
-    pb_enabled = ProcessTools.createJavaProcessBuilder(parRefArgs);
+    pb_enabled = ProcessTools.createLimitedTestJavaProcessBuilder(parRefArgs);
     verifyDynamicNumberOfGCThreads(new OutputAnalyzer(pb_enabled.start()));
   }
 
