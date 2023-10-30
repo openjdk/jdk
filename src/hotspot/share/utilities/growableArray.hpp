@@ -502,10 +502,10 @@ void GrowableArrayWithAllocator<E, Derived>::expand_to(int new_capacity) {
          "expected growth but %d <= %d", new_capacity, old_capacity);
   this->_capacity = new_capacity;
   E* newData = static_cast<Derived*>(this)->allocate();
-  int i = 0;
-  for (     ; i < this->_len; i++) ::new ((void*)&newData[i]) E(this->_data[i]);
-  for (     ; i < this->_capacity; i++) ::new ((void*)&newData[i]) E();
-  for (i = 0; i < this->_len; i++) this->_data[i].~E();
+  for (int i = 0; i < this->_len; i++) {
+    ::new ((void*)&newData[i]) E(this->_data[i]);
+    this->_data[i].~E();
+  }
   if (this->_data != nullptr) {
     static_cast<Derived*>(this)->deallocate(this->_data);
   }
