@@ -166,7 +166,8 @@ final class SSLConfiguration implements Cloneable {
 
         // Default for jdk.tls.server.maxInboundCertificateChainLength is 8
         if (inboundClientLen == null || inboundClientLen < 0) {
-            maxInboundClientCertChainLen = globalPropSet ? maxCertificateChainLength : 8;
+            maxInboundClientCertChainLen = globalPropSet ?
+                    maxCertificateChainLength : 8;
         } else {
             maxInboundClientCertChainLen = inboundClientLen;
         }
@@ -176,7 +177,8 @@ final class SSLConfiguration implements Cloneable {
 
         // Default for jdk.tls.client.maxInboundCertificateChainLength is 10
         if (inboundServerLen == null || inboundServerLen < 0) {
-            maxInboundServerCertChainLen = globalPropSet ? maxCertificateChainLength : 10;
+            maxInboundServerCertChainLen = globalPropSet ?
+                    maxCertificateChainLength : 10;
         } else {
             maxInboundServerCertChainLen = inboundServerLen;
         }
