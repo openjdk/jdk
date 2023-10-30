@@ -29,10 +29,10 @@
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run driver gc.g1.TestPinnedOldObjectsEvacuation
+ * @run driver gc.g1.pinnedobjs.TestPinnedOldObjectsEvacuation
  */
 
-package gc.g1;
+package gc.g1.pinnedobjs;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

@@ -37,8 +37,10 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xlog:gc+region=trace -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
  *      -XX:VerifyGCType=full -XX:+VerifyDuringGC -XX:+VerifyAfterGC -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *      TestPinnedHumongousFragmentation
+ *      gc.g1.pinnedobjs.TestPinnedHumongousFragmentation
  */
+
+package gc.g1.pinnedobjs;
 
 import java.util.*;
 

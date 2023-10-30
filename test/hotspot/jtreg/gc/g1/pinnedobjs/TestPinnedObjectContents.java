@@ -33,10 +33,10 @@
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+ZapUnusedHeapArea -Xlog:gc,gc+ergo+cset=trace gc.g1.TestPinnedObjectContents
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+ZapUnusedHeapArea -Xlog:gc,gc+ergo+cset=trace gc.g1.pinnedobjs.TestPinnedObjectContents
  */
 
-package gc.g1;
+package gc.g1.pinnedobjs;
 
 import jdk.internal.misc.Unsafe;
 
