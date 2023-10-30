@@ -71,7 +71,7 @@ import java.util.function.Supplier;
  *     for (T t : data) {
  *         gatherer.integrator().integrate(state, t, downstream);
  *     }
- *     gatherer.finisher().apply(state, downstream);
+ *     gatherer.finisher().accept(state, downstream);
  * }</pre>
  *
  * <p>However, the library is free to partition the input, perform the integrations
@@ -143,7 +143,7 @@ import java.util.function.Supplier;
  *     <li>The first argument passed to the integration function, both
  *     arguments passed to the combiner function, and the argument passed to the
  *     finisher function must be the result of a previous invocation of the
- *     result initializer, integrator, or combiner functions.</li>
+ *     initializer, integrator, or combiner functions.</li>
  *     <li>The implementation should not do anything with the result of any of
  *     the result initializer, integrator, or combiner functions other than to
  *     pass them again to the integrator, combiner, or finisher functions.</li>
