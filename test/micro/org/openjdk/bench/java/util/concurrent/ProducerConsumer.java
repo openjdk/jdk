@@ -35,6 +35,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import org.openjdk.jmh.infra.ThreadParams;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -55,7 +56,7 @@ import java.util.concurrent.TimeUnit;
 @Fork(3)
 public class ProducerConsumer {
 
-    @Param("100")
+    @Param("100") // Will be expanded to at least the number of threads used
     private int capacity;
 
     @Param
@@ -65,7 +66,10 @@ public class ProducerConsumer {
     private Producer prod;
 
     @Setup
-    public void prepare() {
+    public void prepare(ThreadParams params) {
+
+        capacity = Math.max(params.getThreadCount(), capacity);
+
         switch (type) {
             case ABQ_F:
                 q = new ArrayBlockingQueue<>(capacity, true);
