@@ -30,10 +30,11 @@
  * <p>
  * No way to adapt the technique in this test to get a ZIP64 zip file
  * without data descriptors was found.
- * @run testng DataDescriptorSignatureMissing
+ * @run junit DataDescriptorSignatureMissing
  */
 
-import org.testng.annotations.Test;
+
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -41,8 +42,7 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.*;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DataDescriptorSignatureMissing {
 
@@ -60,13 +60,13 @@ public class DataDescriptorSignatureMissing {
                 new ByteArrayInputStream(zip))) {
             ZipEntry first = in.getNextEntry();
             assertNotNull(first, "Zip file is unexpectedly missing first entry");
-            assertEquals(first.getName(), "first");
-            assertEquals(in.readAllBytes(), "first".getBytes(StandardCharsets.UTF_8));
+            assertEquals("first", first.getName());
+            assertArrayEquals("first".getBytes(StandardCharsets.UTF_8), in.readAllBytes());
 
             ZipEntry second = in.getNextEntry();
             assertNotNull(second, "Zip file is unexpectedly missing second entry");
-            assertEquals(second.getName(), "second");
-            assertEquals(in.readAllBytes(), "second".getBytes(StandardCharsets.UTF_8));
+            assertEquals("second", second.getName());
+            assertArrayEquals("second".getBytes(StandardCharsets.UTF_8), in.readAllBytes());
         }
 
     }
