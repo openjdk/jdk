@@ -24,11 +24,11 @@
 /* @test
  * @bug 8272746
  * @summary Verify that ZipFile rejects a ZIP with a CEN size which does not fit in a Java byte array
- * @run testng CenSizeTooLarge
+ * @run junit CenSizeTooLarge
  */
 
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -42,7 +42,8 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CenSizeTooLarge {
     // Maximum allowed CEN size allowed by the ZipFile implementation
@@ -80,7 +81,7 @@ public class CenSizeTooLarge {
     /**
      * Create a zip file with a CEN size which does not fit within a Java byte array
      */
-    @BeforeTest
+    @Before
     public void setup() throws IOException {
         hugeZipFile = new File("cen-too-large.zip");
         hugeZipFile.deleteOnExit();
@@ -134,7 +135,7 @@ public class CenSizeTooLarge {
      */
     @Test
     public void centralDirectoryTooLargeToFitInByteArray() {
-        ZipException ex = expectThrows(ZipException.class, () -> new ZipFile(hugeZipFile));
+        ZipException ex = assertThrows(ZipException.class, () -> new ZipFile(hugeZipFile));
         assertEquals(ex.getMessage(), "invalid END header (central directory size too large)");
     }
 
