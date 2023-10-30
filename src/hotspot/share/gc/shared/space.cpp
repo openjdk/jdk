@@ -504,7 +504,7 @@ HeapWord* TenuredSpace::block_start_const(const void* addr) const {
     cur_block = next_block;
     // Because the BOT is precise, we should never step into the next card
     // (i.e. crossing the card boundary).
-    assert(!BlockOffsetTable::is_crossing_card_boundary(cur_block, (HeapWord*)addr), "must be");
+    assert(!SerialBlockOffsetTable::is_crossing_card_boundary(cur_block, (HeapWord*)addr), "must be");
   }
 }
 

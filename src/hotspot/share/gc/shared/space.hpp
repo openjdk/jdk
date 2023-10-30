@@ -402,12 +402,12 @@ private:
 #if INCLUDE_SERIALGC
 
 // Class TenuredSpace is used by TenuredGeneration; it supports an efficient
-// "block_start" operation via a BlockOffsetTable.
+// "block_start" operation via a SerialBlockOffsetTable.
 
 class TenuredSpace: public ContiguousSpace {
   friend class VMStructs;
  protected:
-  BlockOffsetTable _offsets;
+  SerialBlockOffsetTable _offsets;
 
   // Mark sweep support
   size_t allowed_dead_ratio() const override;

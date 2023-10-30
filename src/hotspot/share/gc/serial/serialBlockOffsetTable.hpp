@@ -38,7 +38,7 @@
 
 class BlockOffsetSharedArray: public CHeapObj<mtGC> {
   friend class VMStructs;
-  friend class BlockOffsetTable;
+  friend class SerialBlockOffsetTable;
 
   // The reserved heap (i.e. old-gen) covered by the shared array.
   MemRegion _reserved;
@@ -73,7 +73,7 @@ public:
   // (see "resize" below) up to the size of "_reserved" (which must be at
   // least "init_word_size".)  The contents of the initial table are
   // undefined; it is the responsibility of the constituent
-  // BlockOffsetTable(s) to initialize cards.
+  // SerialBlockOffsetTable(s) to initialize cards.
   BlockOffsetSharedArray(MemRegion reserved, size_t init_word_size);
 
   // Notes a change in the committed size of the region covered by the
@@ -104,11 +104,11 @@ public:
   }
 };
 
-// BlockOffsetTable divides the covered region into "N"-word subregions (where
+// SerialBlockOffsetTable divides the covered region into "N"-word subregions (where
 // "N" = 2^"LogN".  An array with an entry for each such subregion indicates
 // how far back one must go to find the start of the chunk that includes the
 // first word of the subregion.
-class BlockOffsetTable {
+class SerialBlockOffsetTable {
   friend class VMStructs;
 
   // The array that contains offset values. Its reacts to heap resizing.
@@ -125,7 +125,7 @@ class BlockOffsetTable {
 public:
   // Initialize the table to cover the given space.
   // The contents of the initial table are undefined.
-  BlockOffsetTable(BlockOffsetSharedArray* array) : _array(array) {
+  SerialBlockOffsetTable(BlockOffsetSharedArray* array) : _array(array) {
     assert(BOTConstants::card_size() == CardTable::card_size(), "sanity");
   }
 

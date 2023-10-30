@@ -114,8 +114,8 @@ void BlockOffsetSharedArray::resize(size_t new_word_size) {
 //      Move back N (e.g., 8) entries and repeat with the
 //        value of the new entry
 //
-void BlockOffsetTable::update_for_block_work(HeapWord* blk_start,
-                                             HeapWord* blk_end) {
+void SerialBlockOffsetTable::update_for_block_work(HeapWord* blk_start,
+                                                   HeapWord* blk_end) {
   HeapWord* const cur_card_boundary = align_up_by_card_size(blk_start);
   size_t const offset_card = _array->index_for(cur_card_boundary);
 
@@ -148,7 +148,7 @@ void BlockOffsetTable::update_for_block_work(HeapWord* blk_start,
   debug_only(verify_for_block(blk_start, blk_end);)
 }
 
-HeapWord* BlockOffsetTable::block_start_reaching_into_card(const void* addr) const {
+HeapWord* SerialBlockOffsetTable::block_start_reaching_into_card(const void* addr) const {
   size_t index = _array->index_for(addr);
 
   u_char offset;
@@ -169,7 +169,7 @@ HeapWord* BlockOffsetTable::block_start_reaching_into_card(const void* addr) con
   return q - offset;
 }
 
-void BlockOffsetTable::verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const {
+void SerialBlockOffsetTable::verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const {
   assert(is_crossing_card_boundary(blk_start, blk_end), "precondition");
 
   const size_t start_card = _array->index_for(align_up_by_card_size(blk_start));

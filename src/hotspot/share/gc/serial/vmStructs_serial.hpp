@@ -47,13 +47,13 @@
   nonstatic_field(DefNewGeneration,            _from_space,            ContiguousSpace*)        \
   nonstatic_field(DefNewGeneration,            _to_space,              ContiguousSpace*)        \
                                                                                                 \
-  nonstatic_field(BlockOffsetTable,            _array,                 BlockOffsetSharedArray*) \
+  nonstatic_field(SerialBlockOffsetTable,      _array,                 BlockOffsetSharedArray*) \
                                                                                                 \
   nonstatic_field(BlockOffsetSharedArray,      _reserved,              MemRegion)               \
   nonstatic_field(BlockOffsetSharedArray,      _vs,                    VirtualSpace)            \
   nonstatic_field(BlockOffsetSharedArray,      _offset_array,          u_char*)                 \
                                                                                                 \
-  nonstatic_field(TenuredSpace,                _offsets,               BlockOffsetTable)
+  nonstatic_field(TenuredSpace,                _offsets,               SerialBlockOffsetTable)
 
 #define VM_TYPES_SERIALGC(declare_type,                                       \
                           declare_toplevel_type,                              \
@@ -67,7 +67,7 @@
                                                                               \
   declare_toplevel_type(TenuredGeneration*)                                   \
   declare_toplevel_type(BlockOffsetSharedArray)                               \
-  declare_toplevel_type(BlockOffsetTable)                                     \
+  declare_toplevel_type(SerialBlockOffsetTable)                               \
   declare_toplevel_type(BlockOffsetSharedArray*)
 
 #define VM_INT_CONSTANTS_SERIALGC(declare_constant,                           \
