@@ -855,8 +855,7 @@ public class Main {
                     expand(f, dirFiles, cpaths, version);
                 }
             } else {
-                error(formatMsg("error.nosuch.fileordir", String.valueOf(f)));
-                ok = false;
+                throw new IOException(formatMsg("error.nosuch.fileordir", String.valueOf(f)));
             }
         }
     }
