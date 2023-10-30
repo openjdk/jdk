@@ -39,13 +39,13 @@ import java.util.HexFormat;
  * This uses `count` to determine the state of `buf`.  `buf` can still
  * point to an array while `count` equals zero.
  */
-final class JCEBufferedStream extends ByteArrayOutputStream {
-    public JCEBufferedStream() {
+final class AEADBufferedStream extends ByteArrayOutputStream {
+    public AEADBufferedStream() {
         buf = null;
         count = 0;
     }
 
-    public JCEBufferedStream(int len) {
+    public AEADBufferedStream(int len) {
         buf = new byte[len];
         count = 0;
     }

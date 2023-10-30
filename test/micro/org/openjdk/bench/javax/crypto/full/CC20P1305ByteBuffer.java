@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import org.openjdk.jmh.annotations.Setup;
 
 import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.Cipher;
-import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 
@@ -41,12 +41,9 @@ import java.nio.ByteBuffer;
  * benchmark operation
  */
 
-public class AESGCMByteBuffer extends CryptoBase {
+public class CC20P1305ByteBuffer extends CryptoBase {
 
-    @Param({"AES/GCM/NoPadding"})
-    private String algorithm;
-
-    @Param({"128"})
+    @Param({"256"})
     private int keyLength;
 
     @Param({"1024", "1500", "4096", "16384"})
@@ -61,14 +58,15 @@ public class AESGCMByteBuffer extends CryptoBase {
     SecretKeySpec ks;
     AlgorithmParameterSpec spec;
 
+    private final String algorithm = "ChaCha20-Poly1305/None/NoPadding";
     private static final int IV_BUFFER_SIZE = 32;
-    private static final int IV_MODULO = IV_BUFFER_SIZE / 2;
+    private static final int IV_MODULO = IV_BUFFER_SIZE - 16;
     int iv_index = 0;
     int updateLen = 0;
 
-    AlgorithmParameterSpec getNewSpec() {
+    private AlgorithmParameterSpec getNewSpec() {
         iv_index = (iv_index + 1) % IV_MODULO;
-        return new GCMParameterSpec(96, iv, iv_index, 12);
+        return new IvParameterSpec(iv, iv_index, 12);
     }
 
     @Setup
@@ -78,8 +76,7 @@ public class AESGCMByteBuffer extends CryptoBase {
         // Setup key material
         iv = fillSecureRandom(new byte[IV_BUFFER_SIZE]);
         spec = getNewSpec();
-        ks = new SecretKeySpec(fillSecureRandom(new byte[keyLength / 8]),
-            "AES");
+        ks = new SecretKeySpec(fillSecureRandom(new byte[keyLength / 8]), "AES");
 
         // Setup Cipher classes
         encryptCipher = makeCipher(prov, algorithm);
@@ -152,5 +149,4 @@ public class AESGCMByteBuffer extends CryptoBase {
         encryptedData.flip();
         out.flip();
     }
-
 }

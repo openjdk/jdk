@@ -42,6 +42,9 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class AESGCMBench extends CryptoBase {
 
+    @Param({"128"})
+    private int keyLength;
+
     @Param({"1024", "1500", "4096", "16384"})
     private int dataSize;
 
@@ -68,7 +71,8 @@ public class AESGCMBench extends CryptoBase {
         // Setup key material
         iv = fillSecureRandom(new byte[IV_BUFFER_SIZE]);
         spec = getNewSpec();
-        ks = new SecretKeySpec(fillSecureRandom(new byte[keyLength / 8]), "AES");
+        ks = new SecretKeySpec(fillSecureRandom(new byte[keyLength / 8]),
+            "AES");
 
         // Setup Cipher classes
         encryptCipher = makeCipher(prov, algorithm);

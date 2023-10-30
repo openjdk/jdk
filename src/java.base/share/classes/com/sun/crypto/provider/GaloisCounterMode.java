@@ -40,8 +40,6 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.GCMParameterSpec;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
@@ -680,12 +678,12 @@ abstract class GaloisCounterMode extends CipherSpi {
         final int blockSize;
 
         // buffer for AAD data; if null, meaning update has been called
-        JCEBufferedStream aadBuffer = null;
+        AEADBufferedStream aadBuffer = null;
         int sizeOfAAD = 0;
         boolean aadProcessed = false;
 
         // buffer data for crypto operation
-        JCEBufferedStream ibuffer = null;
+        AEADBufferedStream ibuffer = null;
 
         // Original dst buffer if there was an overlap situation
         ByteBuffer originalDst = null;
@@ -736,7 +734,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         // Initialize internal data buffer, if not already.
         void initBuffer(int len) {
             if (ibuffer == null) {
-                ibuffer = new JCEBufferedStream(len);
+                ibuffer = new AEADBufferedStream(len);
             }
         }
 
@@ -843,7 +841,7 @@ abstract class GaloisCounterMode extends CipherSpi {
 
             if (aadBuffer == null) {
                 if (sizeOfAAD == 0 && !aadProcessed) {
-                    aadBuffer = new JCEBufferedStream(len);
+                    aadBuffer = new AEADBufferedStream(len);
                 } else {
                     // update has already been called
                     throw new IllegalStateException

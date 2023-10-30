@@ -33,14 +33,14 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * This performance tests runs AES/GCM encryption and decryption using byte[]
- * as input and output buffers for single and multi-part testing.
+ * This performance tests runs ChaCha20-Poly1305 encryption and decryption
+ * using byte[] as input and output buffers for single and multi-part testing.
  *
- * This test rotates the IV and creates a new GCMParameterSpec for each encrypt
+ * This test rotates the IV and creates a new IvParameterSpec for each encrypt
  * benchmark operation
  */
 
-public class CC20Poly1305Bench extends CryptoBase {
+public class CC20P1305Bench extends CryptoBase {
 
     @Param({"256"})
     private int keyLength;
