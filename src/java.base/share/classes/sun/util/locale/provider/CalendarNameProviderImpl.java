@@ -314,7 +314,8 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
                 // JRE and CLDR use different resource key conventions
                 // due to historical reasons. (JRE DateFormatSymbols.getEras returns
                 // abbreviations while other getShort*() return abbreviations.)
-                if (adapterType == LocaleProviderAdapter.Type.JRE) {
+                if (adapterType == LocaleProviderAdapter.Type.JRE ||
+                    adapterType == LocaleProviderAdapter.Type.FALLBACK) {
                     if (javatime) {
                         if (baseStyle == LONG) {
                             key.append("long.");

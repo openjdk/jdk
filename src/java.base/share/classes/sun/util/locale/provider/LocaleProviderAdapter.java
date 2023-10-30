@@ -140,16 +140,12 @@ public abstract class LocaleProviderAdapter {
             }
         }
 
-        if (!typeList.isEmpty()) {
-            // bona fide preference exists
-            if (!typeList.contains(Type.CLDR)) {
-                // Append FALLBACK as the last resort when no ResourceBundleBasedAdapter is available.
-                typeList.add(Type.FALLBACK);
-            }
-        } else {
+        if (typeList.isEmpty()) {
             // Default preference list.
             typeList.add(Type.CLDR);
         }
+        // always append FALLBACK
+        typeList.add(Type.FALLBACK);
         adapterPreference = Collections.unmodifiableList(typeList);
 
         // Emit logs, if any, after 'adapterPreference' is initialized which is needed

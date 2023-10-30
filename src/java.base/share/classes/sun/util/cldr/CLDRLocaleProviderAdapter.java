@@ -105,6 +105,11 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     }
 
     @Override
+    public BreakIteratorProvider getBreakIteratorProvider() {
+        return null;
+    }
+
+    @Override
     public CalendarDataProvider getCalendarDataProvider() {
         if (calendarDataProvider == null) {
             @SuppressWarnings("removal")
@@ -140,6 +145,11 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
             }
         }
         return calendarNameProvider;
+    }
+
+    @Override
+    public CollatorProvider getCollatorProvider() {
+        return null;
     }
 
     @Override

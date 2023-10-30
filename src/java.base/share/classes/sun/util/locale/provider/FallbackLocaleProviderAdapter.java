@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,29 +25,18 @@
 
 package sun.util.locale.provider;
 
-import java.util.Collections;
-import java.util.Locale;
 import java.util.Set;
 
-/**
- * FallbackProviderAdapter implementation.
+/*
+ * FallbackProviderAdapter implementation. Fallback provider serves the
+ * following purposes:
  *
- * @author Naoto Sato
+ * - Locale data for ROOT, in case CLDR provider is absent.
+ * - Locale data for BreakIterator/Collator resources for all locales.
+ * - "Gan-nen" support for SimpleDateFormat (provides "FirstYear" for
+ *   Japanese locales.
  */
 public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
-
-    /**
-     * Supported language tag set.
-     */
-    private static final Set<String> rootTagSet =
-        Collections.singleton(Locale.ROOT.toLanguageTag());
-
-    /**
-     * Fallback provider only provides the ROOT locale data.
-     */
-    @SuppressWarnings("this-escape")
-    private final LocaleResources rootLocaleResources =
-        new LocaleResources(this, Locale.ROOT);
 
     /**
      * Returns the type of this LocaleProviderAdapter
@@ -58,17 +47,12 @@ public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
     }
 
     @Override
-    public LocaleResources getLocaleResources(Locale locale) {
-        return rootLocaleResources;
-    }
-
-    @Override
     protected Set<String> createLanguageTagSet(String category) {
-        return rootTagSet;
-    }
-
-    @Override
-    public boolean isSupportedProviderLocale(Locale locale, Set<String>langtags) {
-        return Locale.ROOT.equals(locale);
+        return switch (category) {
+            case "BreakIteratorInfo", "BreakIteratorRules", "CollationData"
+                    -> super.createLanguageTagSet(category);
+            case "FormatData" -> Set.of("ja-JP", "ja", "und");
+            default -> Set.of("und");
+        };
     }
 }

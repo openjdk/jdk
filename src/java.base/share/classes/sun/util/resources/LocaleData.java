@@ -118,7 +118,7 @@ public class LocaleData {
      * to allow accessing a sun.* package.
      */
     public ResourceBundle getBreakIteratorInfo(Locale locale) {
-        return getBundle(JRE.getTextResourcesPackage() + ".BreakIteratorInfo", locale);
+        return getBundle(type.getTextResourcesPackage() + ".BreakIteratorInfo", locale);
     }
 
     /**
@@ -126,7 +126,7 @@ public class LocaleData {
      * privileges to allow accessing a sun.* package.
      */
     public ResourceBundle getBreakIteratorResources(Locale locale) {
-        return getBundle(JRE.getTextResourcesPackage() + ".BreakIteratorResources", locale);
+        return getBundle(type.getTextResourcesPackage() + ".BreakIteratorResources", locale);
     }
 
     /**
@@ -134,7 +134,7 @@ public class LocaleData {
      * to allow accessing a sun.* package.
      */
     public ResourceBundle getCollationData(Locale locale) {
-        return getBundle(JRE.getTextResourcesPackage() + ".CollationData", locale);
+        return getBundle(type.getTextResourcesPackage() + ".CollationData", locale);
     }
 
     /**
