@@ -75,7 +75,7 @@ public class jdk.internal.math.FloatingDecimal {
  * @key randomness
  */
 public class TestFloatingDecimal {
-    private static final int NUM_RANDOM_TESTS = 100000;
+    private static final int NUM_RANDOM_TESTS = 100_000;
 
     private static final Random RANDOM = RandomFactory.getRandom();
 
