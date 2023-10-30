@@ -508,7 +508,7 @@ HeapWord* TenuredSpace::block_start_const(const void* addr) const {
   }
 }
 
-TenuredSpace::TenuredSpace(BlockOffsetSharedArray* sharedOffsetArray,
+TenuredSpace::TenuredSpace(SerialBlockOffsetSharedArray* sharedOffsetArray,
                            MemRegion mr) :
   _offsets(sharedOffsetArray)
 {

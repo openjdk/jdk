@@ -36,7 +36,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-class BlockOffsetSharedArray: public CHeapObj<mtGC> {
+class SerialBlockOffsetSharedArray: public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class SerialBlockOffsetTable;
 
@@ -74,7 +74,7 @@ public:
   // least "init_word_size".)  The contents of the initial table are
   // undefined; it is the responsibility of the constituent
   // SerialBlockOffsetTable(s) to initialize cards.
-  BlockOffsetSharedArray(MemRegion reserved, size_t init_word_size);
+  SerialBlockOffsetSharedArray(MemRegion reserved, size_t init_word_size);
 
   // Notes a change in the committed size of the region covered by the
   // table.  The "new_word_size" may not be larger than the size of the
@@ -112,7 +112,7 @@ class SerialBlockOffsetTable {
   friend class VMStructs;
 
   // The array that contains offset values. Its reacts to heap resizing.
-  BlockOffsetSharedArray* _array;
+  SerialBlockOffsetSharedArray* _array;
 
   void update_for_block_work(HeapWord* blk_start, HeapWord* blk_end);
 
@@ -125,7 +125,7 @@ class SerialBlockOffsetTable {
 public:
   // Initialize the table to cover the given space.
   // The contents of the initial table are undefined.
-  SerialBlockOffsetTable(BlockOffsetSharedArray* array) : _array(array) {
+  SerialBlockOffsetTable(SerialBlockOffsetSharedArray* array) : _array(array) {
     assert(BOTConstants::card_size() == CardTable::card_size(), "sanity");
   }
 

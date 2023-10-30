@@ -27,7 +27,7 @@
 
 #include "gc/serial/serialBlockOffsetTable.hpp"
 
-inline size_t BlockOffsetSharedArray::index_for(const void* p) const {
+inline size_t SerialBlockOffsetSharedArray::index_for(const void* p) const {
   char* pc = (char*)p;
   assert(pc >= (char*)_reserved.start() &&
          pc <  (char*)_reserved.end(),
@@ -38,7 +38,7 @@ inline size_t BlockOffsetSharedArray::index_for(const void* p) const {
   return result;
 }
 
-inline HeapWord* BlockOffsetSharedArray::address_for_index(size_t index) const {
+inline HeapWord* SerialBlockOffsetSharedArray::address_for_index(size_t index) const {
   assert(index < _vs.committed_size(), "bad index");
   HeapWord* result = _reserved.start() + (index << BOTConstants::log_card_size_in_words());
   assert(result >= _reserved.start() && result < _reserved.end(),

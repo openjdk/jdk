@@ -413,7 +413,7 @@ class TenuredSpace: public ContiguousSpace {
   size_t allowed_dead_ratio() const override;
  public:
   // Constructor
-  TenuredSpace(BlockOffsetSharedArray* sharedOffsetArray,
+  TenuredSpace(SerialBlockOffsetSharedArray* sharedOffsetArray,
                MemRegion mr);
 
   HeapWord* block_start_const(const void* addr) const override;

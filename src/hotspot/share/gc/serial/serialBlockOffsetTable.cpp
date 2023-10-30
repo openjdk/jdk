@@ -33,12 +33,8 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 
-//////////////////////////////////////////////////////////////////////
-// BlockOffsetSharedArray
-//////////////////////////////////////////////////////////////////////
-
-BlockOffsetSharedArray::BlockOffsetSharedArray(MemRegion reserved,
-                                               size_t init_word_size):
+SerialBlockOffsetSharedArray::SerialBlockOffsetSharedArray(MemRegion reserved,
+                                                           size_t init_word_size):
   _reserved(reserved) {
   size_t size = compute_size(reserved.word_size());
   ReservedSpace rs(size);
@@ -53,14 +49,14 @@ BlockOffsetSharedArray::BlockOffsetSharedArray(MemRegion reserved,
   }
   _offset_array = (u_char*)_vs.low_boundary();
   resize(init_word_size);
-  log_trace(gc, bot)("BlockOffsetSharedArray::BlockOffsetSharedArray: ");
+  log_trace(gc, bot)("SerialBlockOffsetSharedArray::SerialBlockOffsetSharedArray: ");
   log_trace(gc, bot)("   rs.base(): " PTR_FORMAT " rs.size(): " SIZE_FORMAT_X_0 " rs end(): " PTR_FORMAT,
                      p2i(rs.base()), rs.size(), p2i(rs.base() + rs.size()));
   log_trace(gc, bot)("   _vs.low_boundary(): " PTR_FORMAT "  _vs.high_boundary(): " PTR_FORMAT,
                      p2i(_vs.low_boundary()), p2i(_vs.high_boundary()));
 }
 
-void BlockOffsetSharedArray::resize(size_t new_word_size) {
+void SerialBlockOffsetSharedArray::resize(size_t new_word_size) {
   assert(new_word_size <= _reserved.word_size(), "Resize larger than reserved");
   size_t new_size = compute_size(new_word_size);
   size_t old_size = _vs.committed_size();
