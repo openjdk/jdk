@@ -43,12 +43,10 @@
  *          Linux.
  *
  * @run main/othervm -XX:NMethodSizeLimit=351658240
- *                   -XX:+UseLargePages
  *                   -XX:+UseTransparentHugePages
  *                   compiler.arguments.TestC1Globals
  *
  * @run main/othervm -XX:NMethodSizeLimit=224001703
- *                   -XX:+UseLargePages
  *                   -XX:+UseTransparentHugePages
  *                   compiler.arguments.TestC1Globals
  *
