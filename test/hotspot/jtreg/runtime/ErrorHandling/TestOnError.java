@@ -41,7 +41,7 @@ public class TestOnError {
     public static void main(String[] args) throws Exception {
         String msg = "Test Succeeded";
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
            "-XX:-CreateCoredumpOnCrash",
            "-XX:ErrorHandlerTest=14", // trigger potential SEGV
            "-XX:OnError=echo " + msg,

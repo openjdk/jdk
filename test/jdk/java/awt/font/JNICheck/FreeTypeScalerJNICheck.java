@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -43,7 +43,7 @@ public class FreeTypeScalerJNICheck {
         if (args.length > 0 && args[0].equals("runtest")) {
             runTest();
         } else {
-            ProcessBuilder pb = ProcessTools.createTestJvm("-Xcheck:jni", FreeTypeScalerJNICheck.class.getName(), "runtest");
+            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-Xcheck:jni", FreeTypeScalerJNICheck.class.getName(), "runtest");
             OutputAnalyzer oa = ProcessTools.executeProcess(pb);
             oa.shouldContain("Done").shouldNotContain("WARNING").shouldHaveExitValue(0);
         }

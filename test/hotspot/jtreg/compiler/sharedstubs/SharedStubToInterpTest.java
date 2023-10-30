@@ -51,9 +51,10 @@ import jdk.test.lib.process.ProcessTools;
 public class SharedStubToInterpTest {
     private final static int ITERATIONS_TO_HEAT_LOOP = 20_000;
 
-    private static void runTest(String test) throws Exception {
+    private static void runTest(String compiler, String test) throws Exception {
         String testClassName = SharedStubToInterpTest.class.getName() + "$" + test;
         ArrayList<String> command = new ArrayList<String>();
+        command.add(compiler);
         command.add("-XX:+UnlockDiagnosticVMOptions");
         command.add("-Xbatch");
         command.add("-XX:+PrintRelocations");
@@ -66,7 +67,7 @@ public class SharedStubToInterpTest {
         command.add("-XX:CompileCommand=dontinline," + testClassName + "::" + "log02");
         command.add(testClassName);
 
-        ProcessBuilder pb = ProcessTools.createTestJvm(command);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(command);
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 
@@ -80,7 +81,7 @@ public class SharedStubToInterpTest {
     public static void main(String[] args) throws Exception {
         String[] methods = new String[] { "StaticMethodTest", "FinalClassTest", "FinalMethodTest"};
         for (String methodName : methods) {
-            runTest(methodName);
+            runTest(args[0], methodName);
         }
     }
 

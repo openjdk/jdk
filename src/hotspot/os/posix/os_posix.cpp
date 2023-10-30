@@ -27,20 +27,20 @@
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "os_posix.inline.hpp"
-#include "runtime/globals_extension.hpp"
-#include "runtime/osThread.hpp"
-#include "runtime/frame.inline.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/sharedRuntime.hpp"
-#include "services/attachListener.hpp"
-#include "services/memTracker.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/globals_extension.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/park.hpp"
 #include "runtime/perfMemory.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "services/attachListener.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
@@ -156,13 +156,10 @@ int os::get_native_stack(address* stack, int frames, int toSkip) {
       stack[frame_idx ++] = fr.pc();
     }
     if (fr.fp() == nullptr || fr.cb() != nullptr ||
-        fr.sender_pc() == nullptr || os::is_first_C_frame(&fr)) break;
-
-    if (fr.sender_pc() && !os::is_first_C_frame(&fr)) {
-      fr = os::get_sender_for_C_frame(&fr);
-    } else {
+        fr.sender_pc() == nullptr || os::is_first_C_frame(&fr)) {
       break;
     }
+    fr = os::get_sender_for_C_frame(&fr);
   }
   num_of_frames = frame_idx;
   for (; frame_idx < frames; frame_idx ++) {

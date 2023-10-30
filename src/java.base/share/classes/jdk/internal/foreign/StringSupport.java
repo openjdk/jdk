@@ -39,7 +39,7 @@ import static java.lang.foreign.ValueLayout.*;
 /**
  * Miscellaneous functions to read and write strings, in various charsets.
  */
-public class StringSupport {
+public final class StringSupport {
 
     static final JavaLangAccess JAVA_LANG_ACCESS = SharedSecrets.getJavaLangAccess();
 

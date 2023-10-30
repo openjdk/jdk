@@ -1,37 +1,36 @@
-UnnamedErrors.java:9:17: compiler.err.use.of.underscore.not.allowed
-UnnamedErrors.java:10:17: compiler.err.use.of.underscore.not.allowed
-UnnamedErrors.java:11:20: compiler.err.use.of.underscore.not.allowed
-UnnamedErrors.java:11:26: compiler.err.use.of.underscore.not.allowed
-UnnamedErrors.java:11:32: compiler.err.use.of.underscore.not.allowed
-UnnamedErrors.java:12:17: compiler.err.use.of.underscore.not.allowed
+UnnamedErrors.java:8:17: compiler.err.use.of.underscore.not.allowed.non.variable
+UnnamedErrors.java:9:17: compiler.err.use.of.underscore.not.allowed.non.variable
+UnnamedErrors.java:10:20: compiler.err.use.of.underscore.not.allowed
+UnnamedErrors.java:10:26: compiler.err.use.of.underscore.not.allowed
+UnnamedErrors.java:10:32: compiler.err.use.of.underscore.not.allowed
+UnnamedErrors.java:11:17: compiler.err.use.of.underscore.not.allowed.non.variable
+UnnamedErrors.java:11:24: compiler.err.use.of.underscore.not.allowed
 UnnamedErrors.java:12:24: compiler.err.use.of.underscore.not.allowed
-UnnamedErrors.java:13:24: compiler.err.use.of.underscore.not.allowed
-UnnamedErrors.java:15:18: compiler.err.use.of.underscore.not.allowed
-UnnamedErrors.java:16:23: compiler.err.use.of.underscore.not.allowed
-UnnamedErrors.java:17:19: compiler.err.use.of.underscore.not.allowed
-UnnamedErrors.java:22:26: compiler.err.use.of.underscore.not.allowed
-UnnamedErrors.java:24:26: compiler.err.use.of.underscore.not.allowed
-UnnamedErrors.java:27:18: compiler.err.use.of.underscore.not.allowed
-UnnamedErrors.java:34:18: compiler.err.restricted.type.not.allowed.here: var
-UnnamedErrors.java:77:18: compiler.err.use.of.underscore.not.allowed
-UnnamedErrors.java:77:19: compiler.err.expected: token.identifier
-UnnamedErrors.java:82:40: compiler.err.expected2: :, ->
-UnnamedErrors.java:82:51: compiler.err.expected: =
-UnnamedErrors.java:82:58: compiler.err.expected: ';'
-UnnamedErrors.java:101:14: compiler.err.expected: =
-UnnamedErrors.java:102:22: compiler.err.expected: =
-UnnamedErrors.java:104:26: compiler.err.expected: =
-UnnamedErrors.java:110:13: compiler.err.use.of.underscore.not.allowed.with.brackets
-UnnamedErrors.java:111:18: compiler.err.use.of.underscore.not.allowed.with.brackets
-UnnamedErrors.java:11:17: compiler.err.already.defined: kindname.variable, x, kindname.class, UnnamedErrors
-UnnamedErrors.java:36:13: compiler.err.unconditional.pattern.and.default
-UnnamedErrors.java:45:18: compiler.err.pattern.dominated
-UnnamedErrors.java:54:29: compiler.err.flows.through.from.pattern
-UnnamedErrors.java:61:29: compiler.err.flows.through.from.pattern
-UnnamedErrors.java:68:32: compiler.err.flows.through.from.pattern
-UnnamedErrors.java:82:56: compiler.err.already.defined: kindname.variable, x2, kindname.method, guardErrors(java.lang.Object,int,int)
-UnnamedErrors.java:83:13: compiler.err.switch.mixing.case.types
-UnnamedErrors.java:90:30: compiler.err.pattern.dominated
-- compiler.note.preview.filename: UnnamedErrors.java, DEFAULT
-- compiler.note.preview.recompile
-34 errors
+UnnamedErrors.java:14:18: compiler.err.use.of.underscore.not.allowed.non.variable
+UnnamedErrors.java:15:23: compiler.err.use.of.underscore.not.allowed.non.variable
+UnnamedErrors.java:16:19: compiler.err.use.of.underscore.not.allowed.non.variable
+UnnamedErrors.java:21:26: compiler.err.use.of.underscore.not.allowed.non.variable
+UnnamedErrors.java:23:26: compiler.err.use.of.underscore.not.allowed.non.variable
+UnnamedErrors.java:26:18: compiler.err.use.of.underscore.not.allowed.non.variable
+UnnamedErrors.java:33:18: compiler.err.restricted.type.not.allowed.here: var
+UnnamedErrors.java:76:18: compiler.err.use.of.underscore.not.allowed.non.variable
+UnnamedErrors.java:76:19: compiler.err.expected: token.identifier
+UnnamedErrors.java:81:40: compiler.err.expected2: :, ->
+UnnamedErrors.java:81:51: compiler.err.expected: =
+UnnamedErrors.java:81:58: compiler.err.expected: ';'
+UnnamedErrors.java:100:14: compiler.err.expected: =
+UnnamedErrors.java:101:22: compiler.err.expected: =
+UnnamedErrors.java:103:26: compiler.err.expected: =
+UnnamedErrors.java:109:13: compiler.err.use.of.underscore.not.allowed.with.brackets
+UnnamedErrors.java:110:18: compiler.err.use.of.underscore.not.allowed.with.brackets
+UnnamedErrors.java:114:24: compiler.err.use.of.underscore.not.allowed.non.variable
+UnnamedErrors.java:10:17: compiler.err.already.defined: kindname.variable, x, kindname.class, UnnamedErrors
+UnnamedErrors.java:35:13: compiler.err.unconditional.pattern.and.default
+UnnamedErrors.java:44:18: compiler.err.pattern.dominated
+UnnamedErrors.java:53:29: compiler.err.flows.through.from.pattern
+UnnamedErrors.java:60:29: compiler.err.flows.through.from.pattern
+UnnamedErrors.java:67:32: compiler.err.flows.through.from.pattern
+UnnamedErrors.java:81:56: compiler.err.already.defined: kindname.variable, x2, kindname.method, guardErrors(java.lang.Object,int,int)
+UnnamedErrors.java:82:13: compiler.err.switch.mixing.case.types
+UnnamedErrors.java:89:30: compiler.err.pattern.dominated
+35 errors

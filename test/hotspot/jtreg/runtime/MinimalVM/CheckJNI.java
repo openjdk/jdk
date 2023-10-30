@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import jdk.test.lib.process.ProcessTools;
 public class CheckJNI {
 
     public static void main(String args[]) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-minimal", "-Xcheck:jni", "-version");
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-minimal", "-Xcheck:jni", "-version");
         new OutputAnalyzer(pb.start())
                 .shouldContain("Minimal VM warning: JNI CHECKING is not supported in this VM")
                 .shouldHaveExitValue(0);

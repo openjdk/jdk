@@ -618,13 +618,13 @@ abstract class GaloisCounterMode extends CipherSpi {
      * Intrinsic for the combined AES Galois Counter Mode implementation.
      * AES and GHASH operations are combined in the intrinsic implementation.
      *
-     * Requires 768 bytes (48 AES blocks) to efficiently use the intrinsic.
-     * inLen that is less than 768 size block sizes, before or after this
-     * intrinsic is used, will be done by the calling method
+     * Requires PARALLEN_LEN bytes to efficiently use the intrinsic.
+     * The intrinsic returns the number of bytes processed.
+     * The remaining bytes will be processed by the calling method.
      *
      * Note:
-     * Only Intel processors with AVX512 that support vaes, vpclmulqdq,
-     * avx512dq, and avx512vl trigger this intrinsic.
+     * Intel processors with AVX2 support and above trigger this intrinsic.
+     * Some AARCH64 processors also trigger this intrinsic.
      * Other processors will always use GHASH and GCTR which may have their own
      * intrinsic support
      *
