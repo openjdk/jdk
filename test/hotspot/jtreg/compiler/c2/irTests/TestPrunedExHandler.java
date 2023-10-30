@@ -36,6 +36,7 @@ import compiler.lib.ir_framework.*;
 public class TestPrunedExHandler {
     public static void main(String[] args) {
         TestFramework.runWithFlags(
+            "-XX:+TieredCompilation", // we only profile in tier 3
             "-XX:CompileCommand=dontinline,compiler.c2.irTests.TestPrunedExHandler::outOfLine");
     }
 
