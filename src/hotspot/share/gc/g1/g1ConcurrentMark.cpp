@@ -2162,7 +2162,6 @@ void G1CMTask::reset(G1CMBitMap* mark_bitmap) {
   _calls                         = 0;
   _elapsed_time_ms               = 0.0;
   _termination_time_ms           = 0.0;
-  _termination_start_time_ms     = 0.0;
 
   _mark_stats_cache.reset();
 }
@@ -2761,16 +2760,14 @@ void G1CMTask::do_marking_step(double time_target_ms,
     // Separated the asserts so that we know which one fires.
     assert(_cm->out_of_regions(), "only way to reach here");
     assert(_task_queue->size() == 0, "only way to reach here");
-    _termination_start_time_ms = os::elapsedVTime() * 1000.0;
+    double termination_start_time_ms = os::elapsedVTime() * 1000.0;
 
     // The G1CMTask class also extends the TerminatorTerminator class,
     // hence its should_exit_termination() method will also decide
     // whether to exit the termination protocol or not.
     bool finished = (is_serial ||
                      _cm->terminator()->offer_termination(this));
-    double termination_end_time_ms = os::elapsedVTime() * 1000.0;
-    _termination_time_ms +=
-      termination_end_time_ms - _termination_start_time_ms;
+    _termination_time_ms += (os::elapsedTime() * 1000.0 - termination_start_time_ms);
 
     if (finished) {
       // We're all done.
@@ -2888,7 +2885,6 @@ G1CMTask::G1CMTask(uint worker_id,
   _step_times_ms(),
   _elapsed_time_ms(0.0),
   _termination_time_ms(0.0),
-  _termination_start_time_ms(0.0),
   _marking_step_diff_ms()
 {
   guarantee(task_queue != nullptr, "invariant");
