@@ -80,8 +80,32 @@ public class DataDescriptorSignatureMissing {
      * The 'Data descriptor' record is usually preceded by the recommended, but optional
      * signature value 0x08074b50.
      *
-     * This method produces a ZIP with two entries, where both entries have data descriptors,
-     * but where the signature is removed from the data descriptor of the first entry.
+     * A ZIP entry in streaming mode has the following structure:
+     *
+     *  ------  Local File Header  ------
+     *  000000  signature          0x04034b50
+     *  000004  version            20
+     *  000006  flags              0x0808   # Notice bit 3 is set
+     *  [..] Omitted for brevity
+     *
+     *  ------  File Data  ------
+     *  000035  data               7 bytes
+     *
+     *  ------  Data Descriptor  ------
+     *  000042  signature          0x08074b50
+     *  000046  crc                0x3610a686
+     *  000050  csize              7
+     *  000054  size               5
+     *
+     * A signature-less data descriptor will look like the following:
+     *
+     *  ------  Data Descriptor  ------
+     *  000042  crc                0x3610a686
+     *  000046  csize              7
+     *  000050  size               5
+     *
+     * This method produces a ZIP with two entries, where the first entry
+     * is made signature-less.
      */
     private static byte[] makeZipWithSignaturelessDescriptor() throws IOException {
         // Offset of the signed data descriptor
