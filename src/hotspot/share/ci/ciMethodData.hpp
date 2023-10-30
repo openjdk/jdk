@@ -433,6 +433,12 @@ private:
     return data_index >= data_size();
   }
 
+  bool out_of_bounds_extra(int data_index) {
+    return data_index < data_size() || data_index >= data_size() + extra_data_size();
+  }
+
+  DataLayout* next_data_layout_helper(DataLayout* current, bool extra);
+
   // hint accessors
   int      hint_di() const  { return _hint_di; }
   void set_hint_di(int di)  {
@@ -511,6 +517,7 @@ public:
   ciProfileData* first_data() { return data_at(first_di()); }
   ciProfileData* next_data(ciProfileData* current);
   DataLayout* next_data_layout(DataLayout* current);
+  DataLayout* next_extra_data_layout(DataLayout* current);
   bool is_valid(ciProfileData* current) { return current != nullptr; }
   bool is_valid(DataLayout* current)    { return current != nullptr; }
 

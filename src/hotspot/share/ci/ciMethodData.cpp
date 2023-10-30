@@ -139,8 +139,12 @@ void ciMethodData::load_remaining_extra_data() {
                               // copy everything from extra_data_base() up to parameters_data_base()
                               pointer_delta(parameters_data_base(), extra_data_base(), HeapWordSize));
 
-  // note that we don't copy exception handler data, which is instead looked up directly in the
-  // underlying MethodData object.
+  // skip parameter data copying. Already done in 'load_data'
+
+  // copy exception handler data
+  Copy::disjoint_words_atomic((HeapWord*) mdo->ex_handler_data_base(),
+                              (HeapWord*) ex_handler_data_base(),
+                              ex_handler_data_size() / HeapWordSize);
 
   // speculative trap entries also hold a pointer to a Method so need to be translated
   DataLayout* dp_src  = mdo->extra_data_base();
@@ -380,14 +384,22 @@ ciProfileData* ciMethodData::next_data(ciProfileData* current) {
   return next;
 }
 
-DataLayout* ciMethodData::next_data_layout(DataLayout* current) {
+DataLayout* ciMethodData::next_data_layout_helper(DataLayout* current, bool extra) {
   int current_index = dp_to_di((address)current);
   int next_index = current_index + current->size_in_bytes();
-  if (out_of_bounds(next_index)) {
+  if (extra ? out_of_bounds_extra(next_index) : out_of_bounds(next_index)) {
     return nullptr;
   }
   DataLayout* next = data_layout_at(next_index);
   return next;
+}
+
+DataLayout* ciMethodData::next_data_layout(DataLayout* current) {
+  return next_data_layout_helper(current, false);
+}
+
+DataLayout* ciMethodData::next_extra_data_layout(DataLayout* current) {
+  return next_data_layout_helper(current, true);
 }
 
 ciProfileData* ciMethodData::bci_to_extra_data(int bci, ciMethod* m, bool& two_free_slots) {
@@ -452,8 +464,15 @@ ciProfileData* ciMethodData::bci_to_data(int bci, ciMethod* m) {
 }
 
 ciBitData ciMethodData::ex_handler_bci_to_data(int bci) {
-  BitData data = get_MethodData()->ex_handler_bci_to_data(bci);
-  return ciBitData((DataLayout*) data.dp());
+  assert(_data != nullptr, "must be initialized");
+  for (DataLayout* data = ex_handler_data_base(); data < ex_handler_data_limit(); data = next_extra_data_layout(data)) {
+    assert(data != nullptr, "out of bounds?");
+    if (data->bci() == bci) {
+      return ciBitData(data);
+    }
+  }
+  // called with invalid bci or wrong Method/MethodData
+  ShouldNotReachHere();
 }
 
 // Conservatively decode the trap_state of a ciProfileData.
