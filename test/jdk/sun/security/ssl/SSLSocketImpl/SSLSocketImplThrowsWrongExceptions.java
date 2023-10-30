@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,6 @@ public class SSLSocketImplThrowsWrongExceptions {
     static String pathToStores = "../../../../javax/net/ssl/etc";
     static String keyStoreFile = "keystore";
     static String passwd = "passphrase";
-    static String pkcs12Type = "PKCS12";
 
     /*
      * Is the server ready to serve?
@@ -166,7 +165,6 @@ public class SSLSocketImplThrowsWrongExceptions {
 
         System.setProperty("javax.net.ssl.keyStore", keyFilename);
         System.setProperty("javax.net.ssl.keyStorePassword", passwd);
-        System.setProperty("javax.net.ssl.keyStoreType", pkcs12Type);
 
         if (debug)
             System.setProperty("javax.net.debug", "all");

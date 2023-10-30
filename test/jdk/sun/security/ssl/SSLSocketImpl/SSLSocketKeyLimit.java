@@ -82,7 +82,6 @@ public class SSLSocketKeyLimit {
     static String pathToStores = "../../../../javax/net/ssl/etc/";
     static String keyStoreFile = "keystore";
     static String passwd = "passphrase";
-    static String pkcs12Type = "PKCS12";
     static int dataLen = 10240;
     static byte[] data  = new byte[dataLen];
     static boolean serverwrite = true;
@@ -174,7 +173,6 @@ public class SSLSocketKeyLimit {
 
         System.setProperty("javax.net.ssl.keyStore", keyFilename);
         System.setProperty("javax.net.ssl.keyStorePassword", passwd);
-        System.setProperty("javax.net.ssl.keyStoreType", pkcs12Type);
 
         Arrays.fill(data, (byte)0x0A);
         Thread ts = new Thread(new Server(args[2]));
