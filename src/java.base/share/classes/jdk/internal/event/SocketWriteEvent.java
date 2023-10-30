@@ -105,6 +105,22 @@ public class SocketWriteEvent extends Event {
      * timestamp and the given start time.  If the duration is meets
      * or exceeds the configured value (determined by calling the generated method
      * {@link #shouldCommit(long)}), an event will be emitted by calling
+     * {@link #emit(long, long, long, SocketAddress)}.
+     *
+     * @param start  the start time
+     * @param bytesWritten  how many bytes were sent
+     * @param remote  the address of the remote socket being written to
+     */
+    public static void offer(long start, long bytesWritten, SocketAddress remote) {
+        long duration = timestamp() - start;
+        if (shouldCommit(duration)) {
+            emit(start, duration, bytesWritten, remote);
+        }
+    }
+
+    /**
+     * Helper method to perform a common task of getting event data ready and
+     * then emitting the event by calling
      * {@link #commit(long, long, String, String, int, long)}.
      *
      * @param start  the start time
