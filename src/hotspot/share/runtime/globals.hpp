@@ -733,7 +733,7 @@ const int ObjectAlignmentInBytes = 8;
           "at one time (minimum is 1024).")                                 \
           range(1024, max_jint)                                             \
                                                                             \
-  product(intx, MonitorUnlinkBatch, 1000, DIAGNOSTIC,                       \
+  product(intx, MonitorUnlinkBatch, 500, DIAGNOSTIC,                        \
           "The maximum number of monitors to unlink in one batch.")         \
           constraint(MonitorUnlinkBatchConstraintFunc, AfterErgo)           \
                                                                             \
