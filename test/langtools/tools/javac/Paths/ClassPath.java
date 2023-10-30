@@ -214,7 +214,7 @@ public class ClassPath extends Util {
         // error: no such file or directory
         expectFail(JAR, "cvf non-existing.jar non-existing.file");
         if (Files.exists(Paths.get("non-existing.jar"))) {
-            throw new IllegalStateException("Incomplete non-existing.jar was created");
+            throw new AssertionError("Incomplete non-existing.jar was created");
         }
 
         expectFail(JAR, "uvf A.jar non-existing.file");
