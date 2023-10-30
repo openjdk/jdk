@@ -72,7 +72,16 @@ public class DataDescriptorSignatureMissing {
     }
 
     /**
-     * Produce a ZIP file where the first entry has a signature-less data descriptor
+     * The 'Data descriptor' record is used to facilitate ZIP streaming. If the size of an
+     * entry is unknown at the time the LOC header is written, bit 3 of the General Purpose Bit Flag
+     * is set, and the File data is immediately followed by the 'Data descriptor' record. This record
+     * then contains the compressed and uncompressed sizes of the entry and also the CRC value.
+     *
+     * The 'Data descriptor' record is usually preceded by the recommended, but optional
+     * signature value 0x08074b50.
+     *
+     * This method produces a ZIP with two entries, where both entries have data descriptors,
+     * but where the signature is removed from the data descriptor of the first entry.
      */
     private static byte[] makeZipWithSignaturelessDescriptor() throws IOException {
         // Offset of the signed data descriptor
