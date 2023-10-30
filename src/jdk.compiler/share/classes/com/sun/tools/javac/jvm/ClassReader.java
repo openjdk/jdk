@@ -2278,7 +2278,8 @@ public class ClassReader {
      * 4.7.20-A target_type to locate the correct type to rewrite, and then interpreting the JVMS
      * 4.7.20.2 type_path to associate the annotation with the correct contained type.
      */
-    private static void addTypeAnnotationsToSymbol(Symbol s, List<Attribute.TypeCompound> attributes) {
+    private static void addTypeAnnotationsToSymbol(
+            Symbol s, List<Attribute.TypeCompound> attributes) {
         new TypeAnnotationSymbolVisitor(attributes).visit(s, null);
     }
 
@@ -2302,7 +2303,9 @@ public class ClassReader {
             t.interfaces_field = interfaces.toList();
             t.supertype_field = addTypeAnnotations(t.supertype_field, classExtends(65535));
             if (t.typarams_field != null) {
-                t.typarams_field = rewriteTypeParameters(t.typarams_field, TargetType.CLASS_TYPE_PARAMETER_BOUND);
+                t.typarams_field =
+                        rewriteTypeParameters(
+                                t.typarams_field, TargetType.CLASS_TYPE_PARAMETER_BOUND);
             }
             return null;
         }
@@ -2407,7 +2410,8 @@ public class ClassReader {
 
             // Group the matching annotations by their type path. Each group of annotations will be
             // added to a type at that location.
-            Map<List<TypeAnnotationPosition.TypePathEntry>, ListBuffer<Attribute.TypeCompound>> attributesByPath = new HashMap<>();
+            Map<List<TypeAnnotationPosition.TypePathEntry>, ListBuffer<Attribute.TypeCompound>>
+                    attributesByPath = new HashMap<>();
             for (Attribute.TypeCompound attribute : filtered.toList()) {
                 attributesByPath
                         .computeIfAbsent(attribute.position.location, k -> new ListBuffer<>())
@@ -2434,7 +2438,8 @@ public class ClassReader {
         }
 
         private static Predicate<TypeAnnotationPosition> methodFormalParameter(int index) {
-            return pos -> pos.type == TargetType.METHOD_FORMAL_PARAMETER && pos.parameter_index == index;
+            return pos ->
+                    pos.type == TargetType.METHOD_FORMAL_PARAMETER && pos.parameter_index == index;
         }
 
         private static Predicate<TypeAnnotationPosition> thrownType(int index) {
@@ -2452,11 +2457,13 @@ public class ClassReader {
      */
     private static class TypeAnnotationLocator
             extends Types.DefaultTypeVisitor<Void, List<TypeAnnotationPosition.TypePathEntry>> {
-        private final Map<List<TypeAnnotationPosition.TypePathEntry>, ListBuffer<Attribute.TypeCompound>> attributesByPath;
+        private final Map<List<TypeAnnotationPosition.TypePathEntry>,
+                          ListBuffer<Attribute.TypeCompound>> attributesByPath;
         private final Map<Type, List<Attribute.TypeCompound>> attributesByType;
 
         private TypeAnnotationLocator(
-                Map<List<TypeAnnotationPosition.TypePathEntry>, ListBuffer<Attribute.TypeCompound>> attributesByPath,
+                Map<List<TypeAnnotationPosition.TypePathEntry>, ListBuffer<Attribute.TypeCompound>>
+                        attributesByPath,
                 Map<Type, List<Attribute.TypeCompound>> attributesByType) {
             this.attributesByPath = attributesByPath;
             this.attributesByType = attributesByType;
@@ -2471,15 +2478,16 @@ public class ClassReader {
             // type.
             List<ClassType> enclosing = List.nil();
             for (Type curr = t;
-                 curr != null && curr != Type.noType;
-                 curr = curr.getEnclosingType()) {
+                    curr != null && curr != Type.noType;
+                    curr = curr.getEnclosingType()) {
                 enclosing = enclosing.prepend((ClassType) curr);
             }
             for (ClassType te : enclosing) {
                 if (te.typarams_field != null) {
                     int i = 0;
                     for (Type typaram : te.typarams_field) {
-                        visit(typaram, path.append(new TypeAnnotationPosition.TypePathEntry(TypeAnnotationPosition.TypePathEntryKind.TYPE_ARGUMENT, i++)));
+                        visit(typaram, path.append(new TypeAnnotationPosition.TypePathEntry(
+                                TypeAnnotationPosition.TypePathEntryKind.TYPE_ARGUMENT, i++)));
                     }
                 }
                 visitType(te, path);
@@ -2489,7 +2497,8 @@ public class ClassReader {
         }
 
         @Override
-        public Void visitWildcardType(WildcardType t, List<TypeAnnotationPosition.TypePathEntry> path) {
+        public Void visitWildcardType(
+                WildcardType t, List<TypeAnnotationPosition.TypePathEntry> path) {
             visit(t.type, path.append(TypeAnnotationPosition.TypePathEntry.WILDCARD));
             return super.visitWildcardType(t, path);
         }
@@ -2515,21 +2524,22 @@ public class ClassReader {
 
         private final Map<Type, List<Attribute.TypeCompound>> attributesByType;
 
-        private TypeAnnotationTypeMapping(Map<Type, List<Attribute.TypeCompound>> attributesByType) {
+        private TypeAnnotationTypeMapping(
+                Map<Type, List<Attribute.TypeCompound>> attributesByType) {
             this.attributesByType = attributesByType;
         }
 
         private <T extends Type> Type reannotate(T t, BiFunction<T, Void, Type> f) {
-            // We're relying on object identify of Type instances to record where the annotations need to be added,
-            // so we have to retrieve the annotations for each type before rewriting it, and then add them after
-            // it's contained types have been rewritten.
+            // We're relying on object identify of Type instances to record where the annotations
+            // need to be added, so we have to retrieve the annotations for each type before
+            // rewriting it, and then add them after it's contained types have been rewritten.
             List<Attribute.TypeCompound> attributes = attributesByType.remove(t);
             Type mapped = f.apply(t, null);
             if (attributes == null) {
                 return mapped;
             }
-            // Runtime-visible and -invisible annotations are completed separately, so if the same type has annotations
-            // from both it will get annotated twice.
+            // Runtime-visible and -invisible annotations are completed separately, so if the same
+            // type has annotations from both it will get annotated twice.
             TypeMetadata.Annotations existing = mapped.getMetadata(TypeMetadata.Annotations.class);
             if (existing != null) {
                 existing.annotationBuffer().addAll(attributes);
@@ -2558,7 +2568,6 @@ public class ClassReader {
             return reannotate(t, (x, u) -> x);
         }
     }
-
 
 /************************************************************************
  * Reading Symbols
