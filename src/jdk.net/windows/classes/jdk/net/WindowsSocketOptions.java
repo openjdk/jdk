@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,15 @@
 package jdk.net;
 
 import java.net.SocketException;
-import java.nio.file.attribute.UserPrincipal;
-import java.nio.file.attribute.GroupPrincipal;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import jdk.net.ExtendedSocketOptions.PlatformSocketOptions;
-import sun.nio.fs.UnixUserPrincipals;
+
 
 @SuppressWarnings("removal")
-class MacOSXSocketOptions extends PlatformSocketOptions {
+class WindowsSocketOptions extends PlatformSocketOptions {
 
-    public MacOSXSocketOptions() {
+    public WindowsSocketOptions() {
     }
 
     @Override
@@ -49,23 +47,13 @@ class MacOSXSocketOptions extends PlatformSocketOptions {
     }
 
     @Override
-    void setTcpKeepAliveTime(int fd, final int value) throws SocketException {
-        setTcpKeepAliveTime0(fd, value);
-    }
-
-    @Override
-    boolean peerCredentialsSupported() {
-        return true;
-    }
-
-    @Override
-    void setTcpKeepAliveIntvl(int fd, final int value) throws SocketException {
-        setTcpKeepAliveIntvl0(fd, value);
-    }
-
-    @Override
     int getTcpKeepAliveProbes(int fd) throws SocketException {
         return getTcpKeepAliveProbes0(fd);
+    }
+
+    @Override
+    void setTcpKeepAliveTime(int fd, final int value) throws SocketException {
+        setTcpKeepAliveTime0(fd, value);
     }
 
     @Override
@@ -74,28 +62,23 @@ class MacOSXSocketOptions extends PlatformSocketOptions {
     }
 
     @Override
+    void setTcpKeepAliveIntvl(int fd, final int value) throws SocketException {
+        setTcpKeepAliveIntvl0(fd, value);
+    }
+
+    @Override
     int getTcpKeepAliveIntvl(int fd) throws SocketException {
         return getTcpKeepAliveIntvl0(fd);
     }
 
-    @Override
-    UnixDomainPrincipal getSoPeerCred(int fd) throws SocketException {
-        long l = getSoPeerCred0(fd);
-        int uid = (int)(l >> 32);
-        int gid = (int)l;
-        UserPrincipal user = UnixUserPrincipals.fromUid(uid);
-        GroupPrincipal group = UnixUserPrincipals.fromGid(gid);
-        return new UnixDomainPrincipal(user, group);
-    }
-
-    private static native void setTcpKeepAliveProbes0(int fd, int value) throws SocketException;
-    private static native void setTcpKeepAliveTime0(int fd, int value) throws SocketException;
-    private static native void setTcpKeepAliveIntvl0(int fd, int value) throws SocketException;
-    private static native int getTcpKeepAliveProbes0(int fd) throws SocketException;
-    private static native int getTcpKeepAliveTime0(int fd) throws SocketException;
-    private static native int getTcpKeepAliveIntvl0(int fd) throws SocketException;
-    private static native long getSoPeerCred0(int fd) throws SocketException;
     private static native boolean keepAliveOptionsSupported0();
+    private static native void setTcpKeepAliveProbes0(int fd, int value) throws SocketException;
+    private static native int getTcpKeepAliveProbes0(int fd) throws SocketException;
+    private static native void setTcpKeepAliveTime0(int fd, int value) throws SocketException;
+    private static native int getTcpKeepAliveTime0(int fd) throws SocketException;
+    private static native void setTcpKeepAliveIntvl0(int fd, int value) throws SocketException;
+    private static native int getTcpKeepAliveIntvl0(int fd) throws SocketException;
+
     static {
         if (System.getSecurityManager() == null) {
             System.loadLibrary("extnet");

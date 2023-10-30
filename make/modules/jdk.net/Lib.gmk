@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2023 Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ include LibCommon.gmk
 
 ################################################################################
 
-ifeq ($(call isTargetOs, linux macosx), true)
+ifeq ($(call isTargetOs, linux macosx windows), true)
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBEXTNET, \
       NAME := extnet, \
@@ -35,8 +35,9 @@ ifeq ($(call isTargetOs, linux macosx), true)
       CFLAGS := $(CFLAGS_JDKLIB), \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS := -ljava, \
+      LIBS_unix := -ljava, \
       LIBS_linux := -ljvm, \
+      LIBS_windows := jvm.lib ws2_32.lib $(WIN_JAVA_LIB), \
   ))
 
   $(BUILD_LIBEXTNET): $(call FindLib, java.base, java)
