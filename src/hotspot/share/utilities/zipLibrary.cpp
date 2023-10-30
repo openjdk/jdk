@@ -78,7 +78,7 @@ static void store_function_pointers(const char* path, bool vm_exit_on_failure) {
   ZIP_ReadEntry = CAST_TO_FN_PTR(ZIP_ReadEntry_t, dll_lookup("ZIP_ReadEntry", path, vm_exit_on_failure));
   ZIP_CRC32 = CAST_TO_FN_PTR(ZIP_CRC32_t, dll_lookup("ZIP_CRC32", path, vm_exit_on_failure));
   // The following entry points are most likely optional from a zip library implementation perspective.
-  // Hence no vm_exit on a resolution failure.Further refactorings should investigate this further,
+  // Hence no vm_exit on a resolution failure. Further refactorings should investigate this,
   // and if possible, streamline setting all entry points consistently.
   ZIP_GZip_InitParams = CAST_TO_FN_PTR(ZIP_GZip_InitParams_t, dll_lookup("ZIP_GZip_InitParams", path, false));
   ZIP_GZip_Fully = CAST_TO_FN_PTR(ZIP_GZip_Fully_t, dll_lookup("ZIP_GZip_Fully", path, false));
