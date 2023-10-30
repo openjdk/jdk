@@ -136,7 +136,7 @@ void ciMethodData::load_remaining_extra_data() {
   // Copy the extra data once it is prepared (i.e. cache populated, no release of extra data lock anymore)
   Copy::disjoint_words_atomic((HeapWord*) mdo->extra_data_base(),
                               (HeapWord*)((address) _data + _data_size),
-                              (_extra_data_size - mdo->parameters_size_in_bytes()) / HeapWordSize);
+                              (_extra_data_size - mdo->parameters_size_in_bytes() - _ex_handlers_size) / HeapWordSize);
 
   // speculative trap entries also hold a pointer to a Method so need to be translated
   DataLayout* dp_src  = mdo->extra_data_base();
