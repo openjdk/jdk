@@ -34,12 +34,12 @@
 #include "compiler/compilerThread.hpp"
 #include "memory/arena.hpp"
 #include "memory/resourceArea.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "oops/symbol.hpp"
 #ifdef COMPILER2
 #include "opto/node.hpp" // compile.hpp is not self-contained
 #include "opto/compile.hpp"
 #endif
-#include "services/nmtCommon.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"

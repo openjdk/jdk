@@ -38,14 +38,14 @@ import jdk.test.lib.process.ProcessTools;
 public class TestDieWithHeapDump {
 
   public static void passWith(String... args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
     OutputAnalyzer out = new OutputAnalyzer(pb.start());
     out.shouldNotContain("OutOfMemoryError");
     out.shouldHaveExitValue(0);
   }
 
   public static void failWith(String... args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
     Process p = pb.start();
     OutputAnalyzer out = new OutputAnalyzer(p);
     out.shouldContain("OutOfMemoryError");

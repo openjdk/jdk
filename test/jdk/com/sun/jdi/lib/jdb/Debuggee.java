@@ -123,7 +123,7 @@ public class Debuggee implements Closeable {
                     + onthrowArgs);
             debuggeeArgs.addAll(options);
             debuggeeArgs.add(mainClass);
-            return ProcessTools.createTestJvm(debuggeeArgs);
+            return ProcessTools.createTestJavaProcessBuilder(debuggeeArgs);
         }
 
         public Debuggee launch(String name) {

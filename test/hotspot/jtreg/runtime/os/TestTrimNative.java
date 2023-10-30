@@ -167,7 +167,7 @@ public class TestTrimNative {
     }
 
     private static OutputAnalyzer runTestWithOptions(String[] extraOptions, String[] programOptions) throws IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(prepareOptions(extraOptions, programOptions));
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(prepareOptions(extraOptions, programOptions));
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         return output;

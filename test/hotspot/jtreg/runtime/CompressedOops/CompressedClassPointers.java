@@ -69,7 +69,7 @@ public class CompressedClassPointers {
     // CDS off, small heap, ccs size default (1G)
     // A small heap should allow us to place the ccs within the lower 32G and thus allow zero based encoding.
     public static void smallHeapTest() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedBaseAddress=8g",
             "-Xmx128m",
@@ -86,7 +86,7 @@ public class CompressedClassPointers {
     // CDS off, small heap, ccs size explicitely set to 1G
     // A small heap should allow us to place the ccs within the lower 32G and thus allow zero based encoding.
     public static void smallHeapTestWith1G() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:CompressedClassSpaceSize=1g",
             "-Xmx128m",
@@ -104,7 +104,7 @@ public class CompressedClassPointers {
     // We expect the ccs to be mapped somewhere far beyond the heap, such that it is not possible
     // to use zero based encoding.
     public static void largeHeapTest() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-Xmx30g",
@@ -129,7 +129,7 @@ public class CompressedClassPointers {
     // for compressed oops.
     // We expect a zerobased ccs.
     public static void largeHeapAbove32GTest() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-Xmx31g",
@@ -150,7 +150,7 @@ public class CompressedClassPointers {
 
     // Using large paged heap, metaspace uses small pages.
     public static void largePagesForHeapTest() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-Xmx128m",
                 "-XX:+UseLargePages",
@@ -164,7 +164,7 @@ public class CompressedClassPointers {
     }
 
     public static void heapBaseMinAddressTest() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:HeapBaseMinAddress=1m",
             "-Xlog:gc+heap+coops=debug",
             "-version");
@@ -175,7 +175,7 @@ public class CompressedClassPointers {
 
     public static void sharingTest() throws Exception {
         // Test small heaps
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=./CompressedClassPointers.jsa",
             "-Xmx128m",
@@ -191,7 +191,7 @@ public class CompressedClassPointers {
           output.shouldContain("Loading classes to share");
           output.shouldHaveExitValue(0);
 
-          pb = ProcessTools.createJavaProcessBuilder(
+          pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=./CompressedClassPointers.jsa",
             "-Xmx128m",
@@ -210,7 +210,7 @@ public class CompressedClassPointers {
     }
 
     public static void smallHeapTestNoCoop() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:-UseCompressedOops",
             "-XX:+UseCompressedClassPointers",
             "-XX:+UnlockDiagnosticVMOptions",
@@ -228,7 +228,7 @@ public class CompressedClassPointers {
     }
 
     public static void smallHeapTestWith1GNoCoop() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:-UseCompressedOops",
             "-XX:+UseCompressedClassPointers",
             "-XX:+UnlockDiagnosticVMOptions",
@@ -250,7 +250,7 @@ public class CompressedClassPointers {
     }
 
     public static void largeHeapTestNoCoop() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:-UseCompressedOops",
             "-XX:+UseCompressedClassPointers",
             "-XX:+UnlockDiagnosticVMOptions",
@@ -272,7 +272,7 @@ public class CompressedClassPointers {
     }
 
     public static void largePagesTestNoCoop() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:-UseCompressedOops",
             "-XX:+UseCompressedClassPointers",
             "-XX:+UnlockDiagnosticVMOptions",
@@ -286,7 +286,7 @@ public class CompressedClassPointers {
     }
 
     public static void heapBaseMinAddressTestNoCoop() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:-UseCompressedOops",
             "-XX:+UseCompressedClassPointers",
             "-XX:HeapBaseMinAddress=1m",
@@ -299,7 +299,7 @@ public class CompressedClassPointers {
 
     public static void sharingTestNoCoop() throws Exception {
         // Test small heaps
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:-UseCompressedOops",
             "-XX:+UseCompressedClassPointers",
             "-XX:+UnlockDiagnosticVMOptions",
@@ -317,7 +317,7 @@ public class CompressedClassPointers {
           output.shouldContain("Loading classes to share");
           output.shouldHaveExitValue(0);
 
-          pb = ProcessTools.createJavaProcessBuilder(
+          pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:-UseCompressedOops",
             "-XX:+UseCompressedClassPointers",
             "-XX:+UnlockDiagnosticVMOptions",

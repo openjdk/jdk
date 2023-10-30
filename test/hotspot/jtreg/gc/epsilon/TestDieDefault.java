@@ -37,14 +37,14 @@ import jdk.test.lib.process.ProcessTools;
 public class TestDieDefault {
 
   public static void passWith(String... args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
     OutputAnalyzer out = new OutputAnalyzer(pb.start());
     out.shouldNotContain("OutOfMemoryError");
     out.shouldHaveExitValue(0);
   }
 
   public static void failWith(String... args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
     OutputAnalyzer out = new OutputAnalyzer(pb.start());
     out.shouldContain("OutOfMemoryError");
     if (out.getExitValue() == 0) {

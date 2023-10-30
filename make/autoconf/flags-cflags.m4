@@ -522,7 +522,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     # do this on s390x also for libjvm (where serviceability agent is not supported)
     if test "x$ENABLE_LINKTIME_GC" = xtrue; then
       TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -ffunction-sections -fdata-sections"
-      if test "x$OPENJDK_TARGET_CPU" = xs390x; then
+      if test "x$OPENJDK_TARGET_CPU" = xs390x && test "x$DEBUG_LEVEL" == xrelease; then
         TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -fdata-sections"
       fi
     fi

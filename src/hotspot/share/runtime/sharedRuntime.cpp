@@ -520,7 +520,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
     return StubRoutines::catch_exception_entry();
   }
   if (blob != nullptr && blob->is_upcall_stub()) {
-    return ((UpcallStub*)blob)->exception_handler();
+    return StubRoutines::upcall_stub_exception_handler();
   }
   // Interpreted code
   if (Interpreter::contains(return_address)) {
