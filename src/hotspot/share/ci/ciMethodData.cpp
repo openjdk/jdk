@@ -51,7 +51,6 @@ ciMethodData::ciMethodData(MethodData* md)
   _eflags(0), _arg_local(0), _arg_stack(0), _arg_returned(0),
   _invocation_counter(0),
   _orig(),
-  _parameters(nullptr),
   _parameters_data_offset(0),
   _ex_handlers_data_offset(0) {}
 
@@ -251,8 +250,8 @@ bool ciMethodData::load_data() {
     data = mdo->next_data(data);
   }
   if (mdo->parameters_type_data() != nullptr) {
-    _parameters = data_layout_at(mdo->parameters_type_data_di());
-    ciParametersTypeData* parameters = new ciParametersTypeData(_parameters);
+    DataLayout* parameters_data = data_layout_at(_parameters_data_offset);
+    ciParametersTypeData* parameters = new ciParametersTypeData(parameters_data);
     parameters->translate_from(mdo->parameters_type_data());
   }
 
@@ -631,7 +630,7 @@ uint ciMethodData::arg_modified(int arg) const {
 }
 
 ciParametersTypeData* ciMethodData::parameters_type_data() const {
-  return _parameters != nullptr ? new ciParametersTypeData(_parameters) : nullptr;
+  return parameter_data_size() != 0 ? new ciParametersTypeData(data_layout_at(_parameters_data_offset)) : nullptr;
 }
 
 ByteSize ciMethodData::offset_of_slot(ciProfileData* data, ByteSize slot_offset_in_data) {

@@ -407,12 +407,6 @@ private:
   // Coherent snapshot of original header.
   MethodData::CompilerCounters _orig;
 
-  // Area dedicated to parameters. null if no parameter profiling for this method.
-  DataLayout* _parameters;
-  int parameters_size() const {
-    return _parameters == nullptr ? 0 : parameters_type_data()->size_in_bytes();
-  }
-
   ciMethodData(MethodData* md = nullptr);
 
   // Accessors
