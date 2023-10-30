@@ -836,6 +836,7 @@ printUsage(void)
  "address=<listen/attach address>  transport spec                    \"\"\n"
  "server=y|n                       listen for debugger?              n\n"
  "allow=<IP|IP-list>               If server=y, allows connections only from the IP addresses/subnets specified.\n"
+ "                                 A list of multiple IP address/subnet entries must be separated by \'+\'.\n"
  "                                                                   * (allows connection from any address)\n"
  "launch=<command line>            run debugger on event             none\n"
  "onthrow=<exception name>         debug on throw                    none\n"
