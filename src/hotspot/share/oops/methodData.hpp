@@ -2068,10 +2068,11 @@ private:
   enum { no_parameters = -2, parameters_uninitialized = -1 };
   int _parameters_type_data_di;
 
-  int _num_ex_handler_data;
+  // data index of exception handler profiling data
   int _ex_handler_data_di;
 
   // Beginning of the data entries
+  // See comment in ciMethodData::load_data
   intptr_t _data[1];
 
   // Helper for size computation
@@ -2086,9 +2087,20 @@ private:
     return (DataLayout*) (((address)_data) + data_index);
   }
 
+  static int single_ex_handler_data_cell_count() {
+    return BitData::static_cell_count();
+  }
+
+  static int single_ex_handler_data_size() {
+    return DataLayout::compute_size_in_bytes(single_ex_handler_data_cell_count());
+  }
+
   DataLayout* ex_handler_data_at(int ex_handler_index) const {
-    assert(ex_handler_index >= 0 && ex_handler_index < _num_ex_handler_data, "OOB");
-    return data_layout_at(_ex_handler_data_di + (ex_handler_index * DataLayout::compute_size_in_bytes(BitData::static_cell_count())));
+    return data_layout_at(_ex_handler_data_di + (ex_handler_index * single_ex_handler_data_size()));
+  }
+
+  int num_ex_handler_data() const {
+    return ex_handlers_data_size() / single_ex_handler_data_size();
   }
 
   // Initialize an individual data segment.  Returns the size of
@@ -2292,12 +2304,11 @@ public:
   }
 
   int parameters_size_in_bytes() const {
-    ParametersTypeData* param = parameters_type_data();
-    return param == nullptr ? 0 : param->size_in_bytes();
+    return pointer_delta_as_int((address) parameters_data_limit(), (address) parameters_data_base());
   }
 
-  int ex_handlers_size_in_bytes() const {
-    return _num_ex_handler_data * DataLayout::compute_size_in_bytes(BitData::static_cell_count());
+  int ex_handlers_data_size() const {
+    return pointer_delta_as_int((address) ex_handler_data_limit(), (address) ex_handler_data_base());
   }
 
   // Accessors
@@ -2353,10 +2364,22 @@ public:
   BitData ex_handler_bci_to_data(int bci);
 
   // Add a handful of extra data records, for trap tracking.
+  // Only valid after 'set_size' is called at the end of MethodData::initialize
   DataLayout* extra_data_base() const  { return limit_data_position(); }
   DataLayout* extra_data_limit() const { return (DataLayout*)((address)this + size_in_bytes()); }
-  DataLayout* args_data_limit() const  { return (DataLayout*)((address)this + size_in_bytes() -
-                                                              parameters_size_in_bytes() - ex_handlers_size_in_bytes()); }
+  // pointers to sections in extra data
+  DataLayout* args_data_limit() const  { return parameters_data_base(); }
+  DataLayout* parameters_data_base() const {
+    assert(_parameters_type_data_di != parameters_uninitialized, "called too early");
+    return _parameters_type_data_di != no_parameters ? data_layout_at(_parameters_type_data_di) : parameters_data_limit();
+  }
+  DataLayout* parameters_data_limit() const {
+    assert(_parameters_type_data_di != parameters_uninitialized, "called too early");
+    return ex_handler_data_base();
+  }
+  DataLayout* ex_handler_data_base() const { return data_layout_at(_ex_handler_data_di); }
+  DataLayout* ex_handler_data_limit() const { return extra_data_limit(); }
+
   int extra_data_size() const          { return (int)((address)extra_data_limit() - (address)extra_data_base()); }
   static DataLayout* next_extra(DataLayout* dp);
 
@@ -2404,8 +2427,12 @@ public:
   }
 
   int parameters_type_data_di() const {
-    assert(_parameters_type_data_di != parameters_uninitialized && _parameters_type_data_di != no_parameters, "no args type data");
-    return _parameters_type_data_di;
+    assert(_parameters_type_data_di != parameters_uninitialized, "called too early");
+    return _parameters_type_data_di != no_parameters ? _parameters_type_data_di : ex_handlers_data_di();
+  }
+
+  int ex_handlers_data_di() const {
+    return _ex_handler_data_di;
   }
 
   // Support for code generation

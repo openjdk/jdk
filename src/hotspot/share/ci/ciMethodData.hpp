@@ -379,6 +379,10 @@ private:
   // Data entries
   intptr_t* _data;
 
+  // layout of _data
+  int _parameters_data_offset;
+  int _ex_handlers_data_offset;
+
   // Cached hint for data_layout_before()
   int _hint_di;
 
@@ -409,13 +413,13 @@ private:
     return _parameters == nullptr ? 0 : parameters_type_data()->size_in_bytes();
   }
 
-  int _ex_handlers_size; // size of ex handlers data
-
   ciMethodData(MethodData* md = nullptr);
 
   // Accessors
   int data_size() const { return _data_size; }
   int extra_data_size() const { return _extra_data_size; }
+  int parameter_data_size() const { return _ex_handlers_data_offset - _parameters_data_offset; }
+  int ex_handler_data_size() const { return dp_to_di((address) ex_handler_data_limit()) - _ex_handlers_data_offset; }
   intptr_t * data() const { return _data; }
 
   MethodData* get_MethodData() const {
@@ -427,7 +431,7 @@ private:
   void print_impl(outputStream* st);
 
   DataLayout* data_layout_at(int data_index) const {
-    assert(data_index % sizeof(intptr_t) == 0, "unaligned");
+    assert(data_index % sizeof(intptr_t) == 0, "unaligned: %d", data_index);
     return (DataLayout*) (((address)_data) + data_index);
   }
 
@@ -502,7 +506,7 @@ public:
   bool load_data();
 
   // Convert a dp (data pointer) to a di (data index).
-  int dp_to_di(address dp) {
+  int dp_to_di(address dp) const {
     return pointer_delta_as_int(dp, ((address)_data));
   }
 
@@ -516,9 +520,17 @@ public:
   bool is_valid(ciProfileData* current) { return current != nullptr; }
   bool is_valid(DataLayout* current)    { return current != nullptr; }
 
+  // pointers to sections in _data
+  // NOTE: these may be called before ciMethodData::load_data (is that a bug?).
+  //       this works out since everything is initialized to 0 (i.e. there will appear to be no data)
   DataLayout* extra_data_base() const  { return data_layout_at(data_size()); }
-  DataLayout* args_data_limit() const  { return data_layout_at(data_size() + extra_data_size() -
-                                                               parameters_size() - _ex_handlers_size); }
+  DataLayout* extra_data_limit() const { return data_layout_at(data_size() + extra_data_size()); }
+  // pointers to sections in extra data
+  DataLayout* args_data_limit() const  { return parameters_data_base(); }
+  DataLayout* parameters_data_base() const { return data_layout_at(_parameters_data_offset); }
+  DataLayout* parameters_data_limit() const { return ex_handler_data_base(); }
+  DataLayout* ex_handler_data_base() const { return data_layout_at(_ex_handlers_data_offset); }
+  DataLayout* ex_handler_data_limit() const { return extra_data_limit(); }
 
   // Get the data at an arbitrary bci, or null if there is none. If m
   // is not null look for a SpeculativeTrapData if any first.

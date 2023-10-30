@@ -968,7 +968,7 @@ int MethodData::compute_allocation_size_in_bytes(const methodHandle& method) {
 
   if (PruneDeadCatchBlocks && method()->has_exception_handler()) {
     int num_ex_handlers = method()->exception_table_length();
-    object_size += num_ex_handlers * DataLayout::compute_size_in_bytes(BitData::static_cell_count());
+    object_size += num_ex_handlers * single_ex_handler_data_size();
   }
 
   return object_size;
@@ -1292,18 +1292,15 @@ void MethodData::initialize() {
     _parameters_type_data_di = no_parameters;
   }
 
+  _ex_handler_data_di = data_size + extra_size + arg_data_size + parm_data_size;
   if (PruneDeadCatchBlocks && method()->has_exception_handler()) {
     int num_ex_handlers = method()->exception_table_length();
-    _num_ex_handler_data = num_ex_handlers;
-    object_size += num_ex_handlers * DataLayout::compute_size_in_bytes(BitData::static_cell_count());
-    _ex_handler_data_di = data_size + extra_size + arg_data_size + parm_data_size;
+    object_size += num_ex_handlers * single_ex_handler_data_size();
     ExceptionTableElement* ex_handlers = method()->exception_table_start();
     for (int i = 0; i < num_ex_handlers; i++) {
       DataLayout *dp = ex_handler_data_at(i);
-      dp->initialize(DataLayout::bit_data_tag, ex_handlers[i].handler_pc, BitData::static_cell_count());
+      dp->initialize(DataLayout::bit_data_tag, ex_handlers[i].handler_pc, single_ex_handler_data_cell_count());
     }
-  } else {
-    _num_ex_handler_data = 0;
   }
 
   // Set an initial hint. Don't use set_hint_di() because
@@ -1401,7 +1398,7 @@ ProfileData* MethodData::bci_to_data(int bci) {
 }
 
 BitData MethodData::ex_handler_bci_to_data(int bci) {
-  for (int i = 0; i < _num_ex_handler_data; i++) {
+  for (int i = 0; i < num_ex_handler_data(); i++) {
     DataLayout* ex_handler_data = ex_handler_data_at(i);
     if (ex_handler_data->bci() == bci) {
       return BitData(ex_handler_data);
