@@ -49,8 +49,21 @@ public class CenSizeTooLarge {
     // Maximum allowed CEN size allowed by the ZipFile implementation
     static final int MAX_CEN_SIZE = Integer.MAX_VALUE - ZipFile.ENDHDR - 1;
 
-    // Maximum size (unsigned short) of an extra field allowed by the standard
-    static final int MAX_EXTRA_FIELD_SIZE = 0XFFFF;
+    /**
+     * From the APPNOTE.txt specification:
+     *    4.4.10 file name length: (2 bytes)
+     *    4.4.11 extra field length: (2 bytes)
+     *    4.4.12 file comment length: (2 bytes)
+     *
+     *        The length of the file name, extra field, and comment
+     *        fields respectively.  The combined length of any
+     *        directory record and these three fields SHOULD NOT
+     *        generally exceed 65,535 bytes.
+     *
+     *  Since ZipOutputStream does not enforce the 'combined length' clause,
+     *  we simply use 65,535 (0xFFFF) for the purpose of this test.
+     */
+    static final int MAX_EXTRA_FIELD_SIZE = 65_535;
 
     // Data size (unsigned short)
     // Field size minus the leading header 'tag' and 'data size' fields (2 bytes each)
