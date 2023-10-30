@@ -56,7 +56,7 @@ import java.util.function.Supplier;
  * </ul>
  *
  * <p>Each invocation to {@link #initializer()}, {@link #integrator()}, {@link #combiner()},
- * and {@link #finisher()} must return an equivalent result.
+ * and {@link #finisher()} must return a semantically identical result.
  *
  * <p>Implementations of Gatherer must not capture, retain, or expose to other threads,
  * the references to the state instance, or the downstream {@link Downstream}
@@ -145,7 +145,7 @@ import java.util.function.Supplier;
  *     finisher function must be the result of a previous invocation of the
  *     initializer, integrator, or combiner functions.</li>
  *     <li>The implementation should not do anything with the result of any of
- *     the result initializer, integrator, or combiner functions other than to
+ *     the initializer, integrator, or combiner functions other than to
  *     pass them again to the integrator, combiner, or finisher functions.</li>
  *     <li>Once a state object is passed to the combiner or finisher function, it
  *     is never passed to the integrator function again.</li>
