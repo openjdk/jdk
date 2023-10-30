@@ -54,7 +54,7 @@ public class Client {
     // Wait 4 seconds for response, before giving up on javac server.
     private static final int CONNECTION_TIMEOUT = 4000;
     private static final int MAX_CONNECT_ATTEMPTS = 10;
-    private static final int WAIT_BETWEEN_CONNECT_ATTEMPTS = 4000;
+    private static final int WAIT_BETWEEN_CONNECT_ATTEMPTS = 2000;
 
     private final ClientConfiguration conf;
 
