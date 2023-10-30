@@ -53,7 +53,7 @@ public class InstructionHelper {
     }
 
     public static MethodHandle invokedynamic(MethodHandles.Lookup l, String name, MethodType type, String bsmMethodName,
-                                             MethodType bsmType, ConstantDesc[] boostrapArgs) throws Exception {
+                                             MethodType bsmType, ConstantDesc... boostrapArgs) throws Exception {
         ClassDesc genClassDesc = classDesc(l.lookupClass(), "$Code_" + COUNT.getAndIncrement());
         byte[] byteArray = Classfile.of().build(genClassDesc, classBuilder -> {
             commonBuild(classBuilder);
