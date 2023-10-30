@@ -1831,7 +1831,7 @@ void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
   // We should either make sure that these nodes are properly added back to the CCP worklist
   // in PhaseCCP::push_child_nodes_to_worklist() to update their type or add an exception
   // in the verification code above if that is not possible for some reason (like Load nodes).
-  assert(!failure, "Missed optimization opportunity in PhaseCCP");
+  assert(!failure, "PhaseCCP not at fixpoint: analysis result may be unsound.");
 }
 #endif
 

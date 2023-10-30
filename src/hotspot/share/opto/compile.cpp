@@ -2394,7 +2394,6 @@ void Compile::Optimize() {
   if (failing())  return;
 
   // Conditional Constant Propagation;
-
   PhaseCCP ccp( &igvn );
   assert( true, "Break here to ccp.dump_nodes_and_types(_root,999,1)");
   {
