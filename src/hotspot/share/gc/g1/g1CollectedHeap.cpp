@@ -434,20 +434,12 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
 
     bool succeeded;
     result = do_collection_pause(word_size, gc_count_before, &succeeded, GCCause::_g1_inc_collection_pause);
-    if (result != nullptr) {
-      assert(succeeded, "only way to get back a non-null result");
+    if (succeeded) {
       log_trace(gc, alloc)("%s: Successfully scheduled collection returning " PTR_FORMAT,
                            Thread::current()->name(), p2i(result));
       return result;
     }
 
-    if (succeeded) {
-      // We successfully scheduled a collection which failed to allocate. No
-      // point in trying to allocate further. We'll just return null.
-      log_trace(gc, alloc)("%s: Successfully scheduled collection failing to allocate "
-                           SIZE_FORMAT " words", Thread::current()->name(), word_size);
-      return nullptr;
-    }
     log_trace(gc, alloc)("%s: Unsuccessfully scheduled collection allocating " SIZE_FORMAT " words",
                          Thread::current()->name(), word_size);
 
@@ -666,23 +658,17 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
 
     bool succeeded;
     result = do_collection_pause(word_size, gc_count_before, &succeeded, GCCause::_g1_humongous_allocation);
-    if (result != nullptr) {
-      assert(succeeded, "only way to get back a non-null result");
+    if (succeeded) {
       log_trace(gc, alloc)("%s: Successfully scheduled collection returning " PTR_FORMAT,
                            Thread::current()->name(), p2i(result));
-      size_t size_in_regions = humongous_obj_size_in_regions(word_size);
-      policy()->old_gen_alloc_tracker()->
-        record_collection_pause_humongous_allocation(size_in_regions * HeapRegion::GrainBytes);
+      if (result != nullptr) {
+        size_t size_in_regions = humongous_obj_size_in_regions(word_size);
+        policy()->old_gen_alloc_tracker()->
+          record_collection_pause_humongous_allocation(size_in_regions * HeapRegion::GrainBytes);
+      }
       return result;
     }
 
-    if (succeeded) {
-      // We successfully scheduled a collection which failed to allocate. No
-      // point in trying to allocate further. We'll just return null.
-      log_trace(gc, alloc)("%s: Successfully scheduled collection failing to allocate "
-                           SIZE_FORMAT " words", Thread::current()->name(), word_size);
-      return nullptr;
-    }
     log_trace(gc, alloc)("%s: Unsuccessfully scheduled collection allocating " SIZE_FORMAT "",
                          Thread::current()->name(), word_size);
 

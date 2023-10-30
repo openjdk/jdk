@@ -259,10 +259,6 @@ inline void HeapRegion::update_bot_for_obj(HeapWord* obj_start, size_t obj_size)
   _bot_part.update_for_block(obj_start, obj_end);
 }
 
-inline bool HeapRegion::can_reclaim() const {
-  return !has_pinned_objects();
-}
-
 inline HeapWord* HeapRegion::top_at_mark_start() const {
   return Atomic::load(&_top_at_mark_start);
 }

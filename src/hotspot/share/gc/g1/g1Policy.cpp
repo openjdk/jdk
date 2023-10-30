@@ -532,7 +532,7 @@ double G1Policy::predict_retained_regions_evac_time() const {
     HeapRegion* r = ci->_r;
     // We optimistically assume that any of these marking candidate regions will
     // be reclaimable the next gc, so just consider them as normal.
-    if (!r->can_reclaim()) {
+    if (r->has_pinned_objects()) {
       num_unreclaimable_regions++;
     }
     if (min_regions_left == 0) {
@@ -1502,7 +1502,7 @@ double G1Policy::select_candidates_from_marking(G1CollectionCandidateList* marki
     // space from them (and we expect to get free space from marking candidates).
     // Also prepare to move them to retained regions to be evacuated optionally later
     // to not impact the mixed phase too much.
-    if (!hr->can_reclaim()) {
+    if (hr->has_pinned_objects()) {
       num_unreclaimable_regions++;
       (*iter)->update_num_unreclaimed();
       log_trace(gc, ergo, cset)("Marking candidate %u can not be reclaimed currently. Skipping.", hr->hrm_index());
@@ -1596,7 +1596,7 @@ void G1Policy::select_candidates_from_retained(G1CollectionCandidateList* retain
     double predicted_time_ms = predict_region_total_time_ms(r, collector_state()->in_young_only_phase());
     bool fits_in_remaining_time = predicted_time_ms <= time_remaining_ms;
     // If we can't reclaim that region ignore it for now.
-    if (!r->can_reclaim()) {
+    if (r->has_pinned_objects()) {
       num_unreclaimable_regions++;
       if (ci->update_num_unreclaimed()) {
         log_trace(gc, ergo, cset)("Retained candidate %u can not be reclaimed currently. Skipping.", r->hrm_index());

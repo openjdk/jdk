@@ -404,8 +404,6 @@ public:
   uint pinned_count() const { return Atomic::load(&_pinned_object_count); }
   bool has_pinned_objects() const { return pinned_count() > 0; }
 
-  bool can_reclaim() const;
-
   void set_free();
 
   void set_eden();

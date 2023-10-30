@@ -491,7 +491,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
     // Doing this after all the allocation attempts also tests the
     // undo_allocation() method too.
     undo_allocation(dest_attr, obj_ptr, word_sz, node_index);
-    return handle_evacuation_failure_par(old, old_mark, word_sz, true /* cause_pinned */);
+    return handle_evacuation_failure_par(old, old_mark, word_sz, false /* cause_pinned */);
   }
 
   // We're going to allocate linearly, so might as well prefetch ahead.

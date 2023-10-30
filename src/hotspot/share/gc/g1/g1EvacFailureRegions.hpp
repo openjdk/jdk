@@ -33,9 +33,9 @@ class G1HeapRegionChunkClosure;
 class HeapRegionClosure;
 class HeapRegionClaimer;
 
-// This class records for every region on the heap whether it has to be retained
-// (i.e. pinned or evacuation failure or both) and records for every such region
-// information to speed up iteration of these regions in various gc phases.
+// This class records for every region on the heap whether it had experienced an
+// evacuation failure or has been found pinned or both and records for every such
+// region information to speed up iteration of these regions in various gc phases.
 class G1EvacFailureRegions {
   // Records for every region on the heap whether the region has been retained.
   CHeapBitMap _regions_retained;
