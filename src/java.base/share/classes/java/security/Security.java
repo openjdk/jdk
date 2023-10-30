@@ -25,11 +25,14 @@
 
 package java.security;
 
-import java.net.MalformedURLException;
+import java.io.*;
+import java.net.URI;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.io.*;
-import java.net.URL;
 
 import jdk.internal.access.JavaSecurityPropertiesAccess;
 import jdk.internal.event.EventHelper;
@@ -74,11 +77,135 @@ public final class Security {
         Provider provider;
     }
 
+    private static final class SecPropLoader {
+        private enum LoadingMode {OVERRIDE, APPEND}
+
+        private static final String OVERRIDE_SEC_PROP =
+                "security.overridePropertiesFile";
+
+        private static final String EXTRA_SYS_PROP =
+                "java.security.properties";
+
+        static void loadAll() {
+            // first load the master properties file to
+            // determine the value of OVERRIDE_SEC_PROP
+            loadMaster();
+            loadExtra();
+        }
+
+        private static void loadMaster() {
+            try {
+                loadFromPath(Path.of(StaticProperty.javaHome(), "conf",
+                        "security", "java.security"), LoadingMode.OVERRIDE);
+            } catch (IOException e) {
+                throw new InternalError("Error loading java.security file", e);
+            }
+        }
+
+        private static void loadExtra() {
+            if ("true".equalsIgnoreCase(props.getProperty(OVERRIDE_SEC_PROP))) {
+                String propFile = System.getProperty(EXTRA_SYS_PROP);
+                if (propFile != null) {
+                    LoadingMode mode = LoadingMode.APPEND;
+                    if (propFile.startsWith("=")) {
+                        mode = LoadingMode.OVERRIDE;
+                        propFile = propFile.substring(1);
+                    }
+                    try {
+                        loadExtraHelper(propFile, mode);
+                    } catch (Exception e) {
+                        if (sdebug != null) {
+                            sdebug.println("unable to load security " +
+                                    "properties from " + propFile);
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void loadExtraHelper(String propFile, LoadingMode mode)
+                throws Exception {
+            Path path = null;
+            Exception pathError = null;
+
+            propFile = PropertyExpander.expand(propFile);
+            if (propFile.isEmpty()) {
+                throw new IOException("Empty extra properties file path");
+            }
+
+            // Try to interpret propFile as a Path (local)
+            try {
+                path = Path.of(propFile);
+                if (!path.toFile().exists()) {
+                    pathError = new FileNotFoundException(propFile);
+                }
+            } catch (InvalidPathException e) {
+                pathError = e;
+            }
+
+            if (pathError == null) {
+                loadFromPath(path, mode);
+            } else {
+                // Try to interpret propFile as a URL (local or remote)
+                URL url;
+                try {
+                    url = new URI(propFile).toURL();
+                } catch (IllegalArgumentException ignore) {
+                    // URL has no scheme: pathError is more accurate
+                    throw pathError;
+                }
+                loadFromUrl(url, mode);
+            }
+        }
+
+        private static void reset(LoadingMode mode) {
+            if (mode == LoadingMode.OVERRIDE) {
+                if (sdebug != null && props != null) {
+                    sdebug.println(
+                            "overriding other security properties files!");
+                }
+                props = new Properties();
+            }
+        }
+
+        private static void loadFromPath(Path path, LoadingMode mode)
+                throws IOException {
+            path = path.toRealPath();
+            if (path.toFile().isDirectory()) {
+                throw new IOException("Is a directory");
+            }
+            try (InputStream is = Files.newInputStream(path)) {
+                reset(mode);
+                debugLoad(true, path);
+                props.load(is);
+                debugLoad(false, path);
+            }
+        }
+
+        private static void loadFromUrl(URL url, LoadingMode mode)
+                throws IOException {
+            try (InputStream is = url.openStream()) {
+                reset(mode);
+                debugLoad(true, url);
+                props.load(is);
+                debugLoad(false, url);
+            }
+        }
+
+        private static void debugLoad(boolean start, Object source) {
+            if (sdebug != null) {
+                sdebug.println((start ?
+                        "> starting to process " :
+                        "< finished processing ") + source);
+            }
+        }
+    }
+
     static {
         // doPrivileged here because there are multiple
         // things in initialize that might require privs.
-        // (the FileInputStream call and the File.exists call,
-        // the securityPropFile call, etc)
+        // (the FileInputStream call and the File.exists call, etc)
         @SuppressWarnings("removal")
         var dummy = AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
             initialize();
@@ -94,90 +221,12 @@ public final class Security {
     }
 
     private static void initialize() {
-        props = new Properties();
-        boolean overrideAll = false;
-
-        // first load the system properties file
-        // to determine the value of security.overridePropertiesFile
-        File propFile = securityPropFile("java.security");
-        boolean success = loadProps(propFile, null, false);
-        if (!success) {
-            throw new InternalError("Error loading java.security file");
-        }
-
-        if ("true".equalsIgnoreCase(props.getProperty
-                ("security.overridePropertiesFile"))) {
-
-            String extraPropFile = System.getProperty
-                    ("java.security.properties");
-            if (extraPropFile != null && extraPropFile.startsWith("=")) {
-                overrideAll = true;
-                extraPropFile = extraPropFile.substring(1);
-            }
-            loadProps(null, extraPropFile, overrideAll);
-        }
+        SecPropLoader.loadAll();
         initialSecurityProperties = (Properties) props.clone();
         if (sdebug != null) {
             for (String key : props.stringPropertyNames()) {
                 sdebug.println("Initial security property: " + key + "=" +
                     props.getProperty(key));
-            }
-        }
-
-    }
-
-    private static boolean loadProps(File masterFile, String extraPropFile, boolean overrideAll) {
-        InputStream is = null;
-        try {
-            if (masterFile != null && masterFile.exists()) {
-                is = new FileInputStream(masterFile);
-            } else if (extraPropFile != null) {
-                extraPropFile = PropertyExpander.expand(extraPropFile);
-                File propFile = new File(extraPropFile);
-                URL propURL;
-                if (propFile.exists()) {
-                    propURL = newURL
-                            ("file:" + propFile.getCanonicalPath());
-                } else {
-                    propURL = newURL(extraPropFile);
-                }
-
-                is = propURL.openStream();
-                if (overrideAll) {
-                    props = new Properties();
-                    if (sdebug != null) {
-                        sdebug.println
-                                ("overriding other security properties files!");
-                    }
-                }
-            } else {
-                // unexpected
-                return false;
-            }
-            props.load(is);
-            if (sdebug != null) {
-                // ExceptionInInitializerError if masterFile.getName() is
-                // called here (NPE!). Leave as is (and few lines down)
-                sdebug.println("reading security properties file: " +
-                        masterFile == null ? extraPropFile : "java.security");
-            }
-            return true;
-        } catch (IOException | PropertyExpander.ExpandException e) {
-            if (sdebug != null) {
-                sdebug.println("unable to load security properties from " +
-                        masterFile == null ? extraPropFile : "java.security");
-                e.printStackTrace();
-            }
-            return false;
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException ioe) {
-                    if (sdebug != null) {
-                        sdebug.println("unable to close input stream");
-                    }
-                }
             }
         }
     }
@@ -186,14 +235,6 @@ public final class Security {
      * Don't let anyone instantiate this.
      */
     private Security() {
-    }
-
-    private static File securityPropFile(String filename) {
-        // maybe check for a system property which will specify where to
-        // look. Someday.
-        String sep = File.separator;
-        return new File(StaticProperty.javaHome() + sep + "conf" + sep +
-                        "security" + sep + filename);
     }
 
     /**
@@ -997,10 +1038,5 @@ public final class Security {
             }
         }
         return Collections.unmodifiableSet(result);
-    }
-
-    @SuppressWarnings("deprecation")
-    private static URL newURL(String spec) throws MalformedURLException {
-        return new URL(spec);
     }
 }

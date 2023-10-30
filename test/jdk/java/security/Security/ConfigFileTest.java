@@ -69,7 +69,7 @@ public class ConfigFileTest {
             );
 
             copyJDK(jdkTestDir, copyJdkDir);
-            String extraPropsFile = Path.of(System.getProperty("test.src"), "override.props").toString();
+            String extraPropsFile = Path.of(System.getProperty("test.src"), "override.props").toUri().toString();
 
             // sanity test -XshowSettings:security option
             exerciseShowSettingsSecurity(copiedJava.toString(), "-cp", System.getProperty("test.classes"),
@@ -86,14 +86,14 @@ public class ConfigFileTest {
             exerciseSecurity(0, "SUN version",
                     copiedJava.toString(), "-cp", System.getProperty("test.classes"),
                     "-Djava.security.debug=all", "-Djavax.net.debug=all",
-                    "-Djava.security.properties==file:///" + extraPropsFile + "badFileName",
+                    "-Djava.security.properties==" + extraPropsFile + "badFileName",
                     "ConfigFileTest", "runner");
 
             // test JDK launch with customized properties file
             exerciseSecurity(0, "NumProviders: 6",
                     copiedJava.toString(), "-cp", System.getProperty("test.classes"),
                     "-Djava.security.debug=all", "-Djavax.net.debug=all",
-                    "-Djava.security.properties==file:///" + extraPropsFile,
+                    "-Djava.security.properties==" + extraPropsFile,
                     "ConfigFileTest", "runner");
 
             // delete the master conf file
@@ -111,7 +111,7 @@ public class ConfigFileTest {
             exerciseSecurity(1, "Error loading java.security file",
                     copiedJava.toString(), "-cp", System.getProperty("test.classes"),
                     "-Djava.security.debug=all", "-Djavax.net.debug=all",
-                    "-Djava.security.properties==file:///" + extraPropsFile, "ConfigFileTest", "runner");
+                    "-Djava.security.properties==" + extraPropsFile, "ConfigFileTest", "runner");
 
             if (!overrideDetected) {
                 throw new RuntimeException("Override scenario not seen");
