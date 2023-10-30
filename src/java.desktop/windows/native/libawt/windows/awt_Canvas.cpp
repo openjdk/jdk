@@ -211,14 +211,13 @@ void AwtCanvas::_SetEraseBackground(void *param)
     jboolean doErase = sebs->doErase;
     jboolean doEraseOnResize = sebs->doEraseOnResize;
 
-    {
-        PDATA pData;
-        JNI_CHECK_PEER_GOTO(canvas, ret);
+    PDATA pData;
+    JNI_CHECK_PEER_GOTO(canvas, ret);
 
-        AwtCanvas *c = (AwtCanvas*)pData;
-        c->m_eraseBackground = doErase;
-        c->m_eraseBackgroundOnResize = doEraseOnResize;
-    }
+    AwtCanvas *c;
+    c = (AwtCanvas*)pData;
+    c->m_eraseBackground = doErase;
+    c->m_eraseBackgroundOnResize = doEraseOnResize;
 
 ret:
     env->DeleteGlobalRef(canvas);
