@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,14 +46,14 @@ import jdk.test.lib.thread.XRun;
 
 /**
  * @test
- * @summary test socket read/write events on Socket
+ * @bug 8310978
+ * @summary test socket read/write events on socket adaptors
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm jdk.jfr.event.io.TestSocketEvents
+ * @run main/othervm jdk.jfr.event.io.TestSocketAdapterEvents
  */
-public class TestSocketEvents {
-
+public class TestSocketAdapterEvents {
     private static final int writeInt = 'A';
     private static final byte[] writeBuf = { 'B', 'C', 'D', 'E' };
 
@@ -62,24 +64,26 @@ public class TestSocketEvents {
     }
 
     public static void main(String[] args) throws Throwable {
-        new TestSocketEvents().test();
+        new TestSocketAdapterEvents().test();
     }
 
-    private void test() throws Throwable {
+    public void test() throws Throwable {
         try (Recording recording = new Recording()) {
-            try (ServerSocket ss = new ServerSocket()) {
+            try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
                 recording.enable(IOEvent.EVENT_SOCKET_READ).withThreshold(Duration.ofMillis(0));
                 recording.enable(IOEvent.EVENT_SOCKET_WRITE).withThreshold(Duration.ofMillis(0));
                 recording.start();
 
                 InetAddress lb = InetAddress.getLoopbackAddress();
-                ss.bind(new InetSocketAddress(lb, 0));
+                ssc.bind(new InetSocketAddress(lb, 0));
 
                 TestThread readerThread = new TestThread(new XRun() {
                     @Override
                     public void xrun() throws IOException {
                         byte[] bs = new byte[4];
-                        try (Socket s = ss.accept(); InputStream is = s.getInputStream()) {
+                        try (SocketChannel sc = ssc.accept(); Socket s = sc.socket();
+                             InputStream is = s.getInputStream()) {
+
                             int readInt = is.read();
                             assertEquals(readInt, writeInt, "Wrong readInt");
                             addExpectedEvent(IOEvent.createSocketReadEvent(1, s));
@@ -102,16 +106,15 @@ public class TestSocketEvents {
                 });
                 readerThread.start();
 
-                try (Socket s = new Socket()) {
-                    s.connect(ss.getLocalSocketAddress());
-                    try (OutputStream os = s.getOutputStream()) {
-                        os.write(writeInt);
-                        addExpectedEvent(IOEvent.createSocketWriteEvent(1, s));
-                        os.write(writeBuf, 0, 3);
-                        addExpectedEvent(IOEvent.createSocketWriteEvent(3, s));
-                        os.write(writeBuf);
-                        addExpectedEvent(IOEvent.createSocketWriteEvent(writeBuf.length, s));
-                    }
+                try (SocketChannel sc = SocketChannel.open(ssc.getLocalAddress());
+                     Socket s = sc.socket(); OutputStream os = s.getOutputStream()) {
+
+                    os.write(writeInt);
+                    addExpectedEvent(IOEvent.createSocketWriteEvent(1, s));
+                    os.write(writeBuf, 0, 3);
+                    addExpectedEvent(IOEvent.createSocketWriteEvent(3, s));
+                    os.write(writeBuf);
+                    addExpectedEvent(IOEvent.createSocketWriteEvent(writeBuf.length, s));
                 }
 
                 readerThread.joinAndThrow();
