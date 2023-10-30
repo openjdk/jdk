@@ -3288,14 +3288,11 @@ void TemplateTable::fast_xaccess(TosState state)
 //-----------------------------------------------------------------------------
 // Calls
 
-void TemplateTable::prepare_invoke(Register recv,   // if caller wants to see it
-                                   Register flags   // if caller wants to test it
-                                   ) {
+void TemplateTable::prepare_invoke(Register recv) {
 
   const Register cache = r2;
   Bytecodes::Code code = bytecode();
   const bool load_receiver       = (code != Bytecodes::_invokestatic) && (code != Bytecodes::_invokedynamic);
-  assert_different_registers(recv, flags);
 
   // save 'interpreter return address'
   __ save_bcp();
@@ -3370,7 +3367,7 @@ void TemplateTable::invokevirtual(int byte_no)
   load_resolved_method_entry_virtual(r2,      // ResolvedMethodEntry*
                                      rmethod, // Method* or itable index
                                      r3);     // flags
-  prepare_invoke(r2, r3); // recv, flags
+  prepare_invoke(r2); // recv
 
   // rmethod: index (actually a Method*)
   // r2: receiver
@@ -3387,7 +3384,7 @@ void TemplateTable::invokespecial(int byte_no)
   load_resolved_method_entry_special_or_static(r2,      // ResolvedMethodEntry*
                                                rmethod, // Method*
                                                r3);     // flags
-  prepare_invoke(r2, r3);  // get receiver also for null check and flags
+  prepare_invoke(r2);  // get receiver also for null check
   __ verify_oop(r2);
   __ null_check(r2);
   // do the call
@@ -3404,7 +3401,7 @@ void TemplateTable::invokestatic(int byte_no)
   load_resolved_method_entry_special_or_static(r2,      // ResolvedMethodEntry*
                                                rmethod, // Method*
                                                r3);     // flags
-  prepare_invoke(r2, r3);  // get receiver also for null check and flags
+  prepare_invoke(r2);  // get receiver also for null check
 
   // do the call
   __ profile_call(r0);
@@ -3425,7 +3422,7 @@ void TemplateTable::invokeinterface(int byte_no) {
                                        r0,      // Klass*
                                        rmethod, // Method* or itable/vtable index
                                        r3);     // flags
-  prepare_invoke(r2, r3); // receiver and flags
+  prepare_invoke(r2); // receiver
 
   // r0: interface klass (from f1)
   // rmethod: method (from f2)
@@ -3548,7 +3545,7 @@ void TemplateTable::invokehandle(int byte_no) {
                                     rmethod, // Method*
                                     r0,      // Resolved reference
                                     r3);     // flags
-  prepare_invoke(r2, r3);
+  prepare_invoke(r2);
 
   __ verify_method_ptr(r2);
   __ verify_oop(r2);
