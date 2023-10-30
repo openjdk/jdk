@@ -777,8 +777,8 @@
           "more than this threshold")                                       \
           range(0, 100)                                                     \
                                                                             \
-  product(bool, PruneDeadCatchBlocks, true,                                 \
-          "Prune catch blocks that are never entered")                      \
+  product(bool, PruneDeadExceptionHandlers, true,                           \
+          "Prune exception handlers that are never entered")                \
 
 // end of C2_FLAGS
 
