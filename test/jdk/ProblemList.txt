@@ -611,6 +611,7 @@ java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java 7146541 linux-al
 java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       7191877 generic-all
 
 java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-all
+java/rmi/registry/multipleRegistries/MultipleRegistries.java    8268182 macosx-all
 
 java/rmi/Naming/DefaultRegistryPort.java                        8005619 windows-all
 java/rmi/Naming/legalRegistryNames/LegalRegistryNames.java      8005619 windows-all
