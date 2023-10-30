@@ -85,8 +85,8 @@ public class CenSizeTooLarge {
     static final int NUM_ENTRIES = (MAX_CEN_SIZE / CEN_HEADER_SIZE) + 1;
 
     // Helps SparseOutputStream detect write of the last CEN entry
-    private static final String LAST_COMMENT = "LastCEN";
-    private static final byte[] LAST_COMMENT_BYTES = LAST_COMMENT.getBytes(StandardCharsets.UTF_8);
+    private static final String LAST_CEN_COMMENT = "LastCEN";
+    private static final byte[] LAST_CEN_COMMENT_BYTES = LAST_CEN_COMMENT.getBytes(StandardCharsets.UTF_8);
 
     // Expected ZipException message when the CEN does not fit in a Java byte array
     private static final String CEN_TOO_LARGE_MESSAGE = "invalid END header (central directory size too large)";
@@ -127,7 +127,7 @@ public class CenSizeTooLarge {
 
                 if (i == NUM_ENTRIES -1) {
                     // Help SparseOutputStream detect the last CEN entry write
-                    entry.setComment(LAST_COMMENT);
+                    entry.setComment(LAST_CEN_COMMENT);
                 }
                 // Add the entry
                 zip.putNextEntry(entry);
@@ -199,8 +199,11 @@ public class CenSizeTooLarge {
             if (afterLastCEN) {
                 out.write(b, off, len);
             } else {
+                // Until finding the last CEN, we don't actually write anything,
+                // but instead simply advance the position, creating a sparse file
                 channel.position(position);
-                if (Arrays.equals(LAST_COMMENT_BYTES, 0, LAST_COMMENT_BYTES.length, b, off, len)) {
+                if (Arrays.equals(LAST_CEN_COMMENT_BYTES, 0, LAST_CEN_COMMENT_BYTES.length, b, off, len)) {
+                    // From here out, actual bytes will be written
                     afterLastCEN = true;
                 }
             }
