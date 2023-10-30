@@ -2503,7 +2503,8 @@ void InstanceKlass::clean_implementors_list() {
     for (;;) {
       // Use load_acquire due to competing with inserts
       InstanceKlass* volatile* iklass = adr_implementor();
-      InstanceKlass* impl = (iklass != nullptr) ? Atomic::load_acquire(iklass) : nullptr;
+      assert(iklass != nullptr, "Klass must not be null");
+      InstanceKlass* impl = Atomic::load_acquire(iklass);
       if (impl != nullptr && !impl->is_loader_alive()) {
         // null this field, might be an unloaded instance klass or null
         if (Atomic::cmpxchg(iklass, impl, (InstanceKlass*)nullptr) == impl) {

@@ -1133,6 +1133,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
       // The address of _source_obj at runtime
       oop requested_obj = ArchiveHeapWriter::source_obj_to_requested_obj(_source_obj);
       // The address of this field in the requested space
+      assert(requested_obj != nullptr, "Attempting to load field from null oop");
       address requested_field_addr = cast_from_oop<address>(requested_obj) + fd->offset();
 
       fd->print_on(_st);

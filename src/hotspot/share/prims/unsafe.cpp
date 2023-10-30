@@ -231,7 +231,6 @@ public:
 
   T get_volatile() {
     GuardUnsafeAccess guard(_thread);
-    assert(addr() != nullptr, "Attempting to load from null pointer");
     volatile T ret = RawAccess<MO_SEQ_CST>::load(addr());
     return normalize_for_read(ret);
   }
