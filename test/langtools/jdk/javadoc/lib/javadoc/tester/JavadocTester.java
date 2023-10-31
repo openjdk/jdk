@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.SoftReference;
@@ -59,7 +58,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import javax.tools.StandardJavaFileManager;
+
+//import jdk.lang.classfile.Classfile;
 
 
 /**
@@ -292,14 +294,73 @@ public abstract class JavadocTester {
      * @throws Exception if any errors occurred while executing a test method
      */
     public void runTests(Function<Method, Object[]> f) throws Exception {
-        for (Method m : getClass().getDeclaredMethods()) {
-            Annotation a = m.getAnnotation(Test.class);
-            if (a != null) {
-                runTest(m, f);
-                out.println();
-            }
+        var methods = List.of(getClass().getDeclaredMethods()).stream()
+                .filter(m -> m.isAnnotationPresent(Test.class))
+                .collect(Collectors.toCollection(() -> new ArrayList<>()));
+        var methodOrderComparator = getMethodComparator();
+        if (methodOrderComparator != null) {
+            methods.sort(methodOrderComparator);
+        }
+        for (Method m : methods) {
+            runTest(m, f);
+            out.println();
         }
         printSummary();
+    }
+
+// The following is for when the Classfile library is generally available.
+//    private Comparator<Method> getClassOrderMethodComparator(Class<?> c) {
+//        try {
+//            var url = c.getProtectionDomain().getCodeSource().getLocation();
+//            var path = Path.of(url.toURI()).resolve(c.getName().replace(".", "/") + ".class");
+//            var cf = Classfile.of().parse(path);
+//            var map = new HashMap<String, Integer>();
+//            var index = 0;
+//            for (var m : cf.methods()) {
+//                map.putIfAbsent(m.methodName().stringValue(), index++);
+//            }
+//            return Comparator.<Method>comparingInt(m -> map.getOrDefault(m.getName(), -1));
+//        } catch (URISyntaxException | IOException e) {
+//            throw new Error("Cannot sort methods: " + e, e);
+//        }
+//    }
+
+    /**
+     * {@return the comparator used to sort the default set of methods to be executed,
+     *   or {@code null} if the methods should not be sorted }
+     *
+     * @implSpec This implementation returns a source-order comparator.
+     */
+    public Comparator<Method> getMethodComparator() {
+        return getSourceOrderMethodComparator(getClass());
+    }
+
+    /**
+     * {@return the source-order method comparator for methods in the given class}
+     * @param c the class
+     */
+    public static Comparator<Method> getSourceOrderMethodComparator(Class<?> c) {
+        var path = Path.of(testSrc)
+                .resolve(c.getName()
+                        .replace(".", "/")
+                        .replaceAll("\\$.*", "")
+                        + ".java");
+        try {
+            var src = Files.readString(path);
+            // Fuzzy match for test method declarations.
+            // It doesn't matter if there are false positives, as long as the true positives are in the correct order.
+            // It doesn't matter too much if there are false negatives: they'll just be executed first.
+            var isMethodDecl = Pattern.compile("public +void +(?<name>[A-Za-z][A-Za-z0-9_]*)\\(");
+            var matcher = isMethodDecl.matcher(src);
+            var map = new HashMap<String, Integer>();
+            var index = 0;
+            while (matcher.find()) {
+                map.putIfAbsent(matcher.group("name"), index++);
+            }
+            return Comparator.<Method>comparingInt(m -> map.getOrDefault(m.getName(), -1));
+        } catch (IOException e) {
+            throw new Error("Cannot sort methods: " + e, e);
+        }
     }
 
     /**
