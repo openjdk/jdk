@@ -29,24 +29,26 @@
 #include "oops/symbol.hpp"
 #include "utilities/nonblockingQueue.inline.hpp"
 
-class SymbolBufferQueueNode : public CHeapObj<mtSymbol> {
-  private:
-    Symbol* const _val;
-    SymbolBufferQueueNode* volatile _next;
+class TempSymbolDelayQueueNode : public CHeapObj<mtSymbol> {
+private:
+  Symbol* const _val;
+  TempSymbolDelayQueueNode* volatile _next;
 
-  public:
-    static SymbolBufferQueueNode* volatile* next(SymbolBufferQueueNode& node) {
-      return &node._next;
-    }
+public:
+  static TempSymbolDelayQueueNode* volatile* next(TempSymbolDelayQueueNode& node) {
+    return &node._next;
+  }
 
-    SymbolBufferQueueNode(Symbol* val) : _val(val), _next(nullptr) {
-      _val->increment_refcount();
-    }
+  TempSymbolDelayQueueNode(Symbol* val) : _val(val), _next(nullptr) {
+    _val->increment_refcount();
+  }
 
-    ~SymbolBufferQueueNode() {
-      _val->decrement_refcount();
-    }
+  ~TempSymbolDelayQueueNode() {
+    _val->decrement_refcount();
+  }
 };
+
+typedef NonblockingQueue<TempSymbolDelayQueueNode, &TempSymbolDelayQueueNode::next> TempSymbolDelayQueue;
 
 // TempNewSymbol acts as a handle class in a handle/body idiom and is
 // responsible for proper resource management of the body (which is a Symbol*).
@@ -63,9 +65,9 @@ class SymbolBufferQueueNode : public CHeapObj<mtSymbol> {
 // probe() and lookup_only() will increment the refcount if symbol is found.
 template <bool TEMP>
 class SymbolHandleBase : public StackObj {
-  static NonblockingQueue<SymbolBufferQueueNode, &SymbolBufferQueueNode::next> _cleanup_delay;
+  static TempSymbolDelayQueue _cleanup_delay;
   static volatile int32_t _cleanup_delay_len;
-  static const int32_t CLEANUP_DELAY_QUEUE_LEN = 100;
+  static volatile int32_t _cleanup_delay_max_entries;
 
   Symbol* _temp;
 
@@ -80,8 +82,9 @@ public:
       return;
     }
 
-    // Delay cleanup for temp symbols. But don't requeue existing entries,
-    // or entries that are held elsewhere - it's a waste of effort.
+    // Delay cleanup for temp symbols. Refcount is incremented while in
+    // queue. But don't requeue existing entries, or entries that are held
+    // elsewhere - it's a waste of effort.
     if (s != nullptr && s->refcount() == 1) {
       add_to_cleanup_delay_queue(s);
     }
@@ -111,14 +114,12 @@ public:
   // Temp symbols for the same string can often be created in quick succession,
   // and this queue allows them to be reused instead of churning.
   void add_to_cleanup_delay_queue(Symbol* sym) {
-    if (sym == nullptr) return;
-
-    SymbolBufferQueueNode* node = new SymbolBufferQueueNode(sym);
+    TempSymbolDelayQueueNode* node = new TempSymbolDelayQueueNode(sym);
     _cleanup_delay.push(*node);
 
     // If the queue is now full, implement a one-in, one-out policy.
-    if (Atomic::add(&_cleanup_delay_len, 1, memory_order_relaxed) >= CLEANUP_DELAY_QUEUE_LEN) {
-      SymbolBufferQueueNode* result = _cleanup_delay.pop();
+    if (Atomic::add(&_cleanup_delay_len, 1, memory_order_relaxed) > _cleanup_delay_max_entries) {
+      TempSymbolDelayQueueNode* result = _cleanup_delay.pop();
       if (result != nullptr) {
         delete result;
         Atomic::dec(&_cleanup_delay_len);
@@ -136,18 +137,26 @@ public:
   }
 
   static void drain_cleanup_delay_queue() {
-    SymbolBufferQueueNode* curr;
+    TempSymbolDelayQueueNode* curr;
     while ((curr = _cleanup_delay.pop()) != nullptr) {
       delete curr;
       Atomic::dec(&_cleanup_delay_len);
     }
   }
+
+  // Useful for testing.
+  static void set_cleanup_delay_max_entries(int32_t val) {
+    _cleanup_delay_max_entries = val;
+    drain_cleanup_delay_queue();
+  }
 };
 
 template<bool TEMP>
-NonblockingQueue<SymbolBufferQueueNode, &SymbolBufferQueueNode::next> SymbolHandleBase<TEMP>::_cleanup_delay;
+TempSymbolDelayQueue SymbolHandleBase<TEMP>::_cleanup_delay;
 template<bool TEMP>
 volatile int32_t SymbolHandleBase<TEMP>::_cleanup_delay_len = 0;
+template<bool TEMP>
+volatile int32_t SymbolHandleBase<TEMP>::_cleanup_delay_max_entries = 100;
 
 // TempNewSymbol is a temporary holder for a newly created symbol
 using TempNewSymbol = SymbolHandleBase<true>;

@@ -33,12 +33,13 @@ TEST_VM(SymbolTable, temp_new_symbol) {
   JavaThread* THREAD = JavaThread::current();
   // the thread should be in vm to use locks
   ThreadInVMfromNative ThreadInVMfromNative(THREAD);
+  // Disable the temp symbol cleanup delay queue because it increases refcounts.
+  TempNewSymbol::set_cleanup_delay_max_entries(0);
 
   Symbol* abc = SymbolTable::new_symbol("abc");
   int abccount = abc->refcount();
   TempNewSymbol ss = abc;
-  // TODO: properly account for Symbol cleanup delay queue
-  ASSERT_EQ(ss->refcount(), abccount + 1) << "only one abc";
+  ASSERT_EQ(ss->refcount(), abccount) << "only one abc";
   ASSERT_EQ(ss->refcount(), abc->refcount()) << "should match TempNewSymbol";
 
   Symbol* efg = SymbolTable::new_symbol("efg");
@@ -48,33 +49,33 @@ TEST_VM(SymbolTable, temp_new_symbol) {
 
   TempNewSymbol s1 = efg;
   TempNewSymbol s2 = hij;
-  ASSERT_EQ(s1->refcount(), efgcount + 1) << "one efg";
-  ASSERT_EQ(s2->refcount(), hijcount + 1) << "one hij";
+  ASSERT_EQ(s1->refcount(), efgcount) << "one efg";
+  ASSERT_EQ(s2->refcount(), hijcount) << "one hij";
 
   // Assignment operator
   s1 = s2;
-  ASSERT_EQ(hij->refcount(), hijcount + 2) << "should be two hij";
-  ASSERT_EQ(efg->refcount(), efgcount) << "should be no efg";
+  ASSERT_EQ(hij->refcount(), hijcount + 1) << "should be two hij";
+  ASSERT_EQ(efg->refcount(), efgcount - 1) << "should be no efg";
 
   s1 = ss; // s1 is abc
-  ASSERT_EQ(s1->refcount(), abccount + 2) << "should be two abc (s1 and ss)";
-  ASSERT_EQ(hij->refcount(), hijcount + 1) << "should only have one hij now (s2)";
+  ASSERT_EQ(s1->refcount(), abccount + 1) << "should be two abc (s1 and ss)";
+  ASSERT_EQ(hij->refcount(), hijcount) << "should only have one hij now (s2)";
 
   s1 = *&s1; // self assignment
-  ASSERT_EQ(s1->refcount(), abccount + 2) << "should still be two abc (s1 and ss)";
+  ASSERT_EQ(s1->refcount(), abccount + 1) << "should still be two abc (s1 and ss)";
 
   TempNewSymbol s3;
   Symbol* klm = SymbolTable::new_symbol("klm");
   int klmcount = klm->refcount();
   s3 = klm; // assignment
-  ASSERT_EQ(s3->refcount(), klmcount + 1) << "only one klm now";
+  ASSERT_EQ(s3->refcount(), klmcount) << "only one klm now";
 
   Symbol* xyz = SymbolTable::new_symbol("xyz");
   int xyzcount = xyz->refcount();
   { // inner scope
     TempNewSymbol s_inner = xyz;
   }
-  ASSERT_EQ(xyz->refcount(), xyzcount)
+  ASSERT_EQ(xyz->refcount(), xyzcount - 1)
           << "Should have been decremented by dtor in inner scope";
 
   // Test overflowing refcount making symbol permanent
@@ -139,4 +140,25 @@ TEST_VM(SymbolTable, test_cleanup_leak) {
   Symbol* entry2 = SymbolTable::new_symbol("hash_collision_397476851");
 
   ASSERT_EQ(entry2->refcount(), 1) << "Symbol refcount just created is 1";
+}
+
+TEST_VM(SymbolTable, test_cleanup_delay) {
+  // Check that new temp symbols have an extra refcount increment, which is then
+  // decremented when the queue spills over.
+
+  // Fill up the queue
+  TempNewSymbol::set_cleanup_delay_max_entries(3);
+  TempNewSymbol s1 = SymbolTable::new_symbol("temp-s1");
+  ASSERT_EQ(s1->refcount(), 2) << "TempNewSymbol refcount just created is 2";
+  TempNewSymbol s2 = SymbolTable::new_symbol("temp-s2");
+  ASSERT_EQ(s2->refcount(), 2) << "TempNewSymbol refcount just created is 2";
+  TempNewSymbol s3 = SymbolTable::new_symbol("temp-s3");
+  ASSERT_EQ(s3->refcount(), 2) << "TempNewSymbol refcount just created is 2";
+
+  // Add one more
+  TempNewSymbol s4 = SymbolTable::new_symbol("temp-s4-spillover");
+  ASSERT_EQ(s4->refcount(), 2) << "TempNewSymbol refcount just created is 2";
+
+  // The first symbol should have been removed from the queue and decremented
+  ASSERT_EQ(s1->refcount(), 1) << "TempNewSymbol off queue refcount is 1";
 }
