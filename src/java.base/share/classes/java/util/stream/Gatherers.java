@@ -513,9 +513,9 @@ public final class Gatherers {
      * in the order in which they are processed -- which in the case of parallel
      * evaluation can be out-of-sequence compared to the sequential encounter
      * order of the stream.
-     * 
-     * @see #peekOrdered(Consumer) 
-     * 
+     *
+     * @see #peekOrdered(Consumer)
+     *
      * @param effect the effect to execute with the current element
      * @param <TR> the type of elements the returned gatherer consumes and produces
      * @return a new gatherer which executes an effect for each element which

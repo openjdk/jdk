@@ -83,7 +83,7 @@ import java.util.function.Supplier;
  * combine the partial results to achieve a gathering operation.  (Depending
  * on the specific gathering operation, this may perform better or worse,
  * depending on the relative cost of the integrator and combiner functions.)
- * 
+ *
  * <p>In addition to the predefined implementations in {@link Gatherers}, the
  * static factory methods {@code of(...)} and {@code ofSequential(...)}
  * can be used to construct gatherers.  For example, you could create a gatherer
